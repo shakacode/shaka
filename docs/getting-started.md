@@ -8,7 +8,7 @@ or correcting a broken link in a documentation site.
 
 You need Git, Ruby 3.4, authenticated [GitHub CLI](https://cli.github.com/),
 and a signed-in Codex app, [Codex CLI](https://learn.chatgpt.com/docs/codex/cli#getting-started),
-or [Claude Code](https://code.claude.com/docs/en/setup).
+[Claude Code](https://code.claude.com/docs/en/setup), or Cursor desktop.
 Check `git --version`, `ruby --version`, and `gh auth status` in your terminal;
 run `gh auth login` if needed. Codex terminal users also need `codex --version` to work;
 Claude Code users need `claude --version`.
@@ -59,6 +59,24 @@ this guide shows `$shaka`. Claude Code runs your personal skill instead of a
 same-named skill in a repository's `.claude/skills`, and the skill stops if it was
 loaded from inside the checkout. Keep the trusted source outside any `--add-dir`
 directory. Your usual permission mode applies; installation adds no sandbox.
+
+<a id="use-shaka-in-cursor"></a>
+
+## Install in Cursor
+
+After cloning the source as above, install into Cursor's user skills directory:
+
+```bash
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.cursor/skills"
+```
+
+A successful installer message only means the symlink exists. Start a **new** Agent
+chat and confirm `/shaka` appears in that chat's skill list before sending a task.
+Use `/shaka` wherever this guide shows `$shaka`. A chat that started before the
+link existed will not pick it up. Do not copy `shaka` into a project
+`.cursor/skills` directory inside a candidate checkout. `shaka work` starts Codex
+and is not a Cursor launcher. Cursor usage reporting and complete delivery remain
+unverified.
 
 ## Complete your first task
 
@@ -118,7 +136,8 @@ git -C "$shaka_source" pull --ff-only
 ```
 
 Start a fresh task after upgrading. For a terminal install, pass your dedicated
-skills directory instead; for Claude Code, pass `$HOME/.claude/skills`. Earlier installs used `agent-workflows-v2` or
+skills directory instead; for Claude Code, pass `$HOME/.claude/skills`; for Cursor,
+pass `$HOME/.cursor/skills`. Earlier installs used `agent-workflows-v2` or
 `shakacode-workflows` source directories: keep that location and use it above.
 Inspect old `sw` and `aw` symlinks and unlink only those belonging to this installation.
 Replace any old `sw/scripts` shell `PATH` entry with the `shaka/scripts` path above.
@@ -133,6 +152,7 @@ test -L "$HOME/.agents/skills/shaka" && unlink "$HOME/.agents/skills/shaka"
 ```
 
 Use your dedicated skills directory for a terminal install and remove its shell
-`PATH` entry. For Claude Code, use `$HOME/.claude/skills`. Inspect and remove any old `sw` or `aw` links individually; preserve
+`PATH` entry. For Claude Code, use `$HOME/.claude/skills`. For Cursor, use
+`$HOME/.cursor/skills`. Inspect and remove any old `sw` or `aw` links individually; preserve
 unrelated skills and real directories. To roll back, remove the verified links,
 check out the prior trusted source revision, and run that revision's installer.
