@@ -61,13 +61,17 @@ For each current head, begin one 10-minute optional-review wait budget at the
 first refresh in step 1. This applies equally to an adopted PR and a newly pushed
 head. During that budget, refresh for a named source's check or exact-head submitted
 review/report to appear. Job transitions, retries, replacement, or disappearance
-do not reset the budget. Before claiming that comments are resolved or handing
-off a merge-ready PR:
+do not reset the budget. Before claiming that comments are resolved, follow all
+four steps below. Before handing off a merge-ready PR, complete steps 1 and 2 and
+the required/user-requested-gate clause in step 3; optional-review settlement stays
+with the task owner and does not delay that handoff.
 
 1. Record the exact PR head and refresh required checks and known review jobs.
 2. Apply the public-prose rule above, then read the completed top-level reports and
    all inline threads, following pagination. Verify each completed review's visible
-   report against that head.
+   report against that head. A report body withheld by the public-prose rule is not
+   verified; retain its link and use the applicable optional handoff or required-gate
+   maintainer path below.
 3. Keep the PR unready while required review or a user-requested review gate is
    running or lacks
    a verified report; only the authority that set that requirement can change it.
@@ -96,7 +100,9 @@ exact-head budget expires while a job remains nonterminal—including queued,
 waiting, executing, or blocked on manual approval—or disappears or is replaced.
 A named source whose check or exact-head report never appears during that budget
 is likewise unavailable for the active wait. Transitions, timestamps, annotations,
-log output, retries, and replacements never extend the absolute budget. An explicit
+log output, retries, and replacements never extend the absolute budget. The single
+post-terminal 60-second report refresh in step 3 is the only exception and may end
+after that budget. An explicit
 handoff can then end the active wait; a verified report already received still must
 be handled, while the nonterminal or missing residual state is handed to the named
 later owner.
@@ -108,6 +114,13 @@ This optional-review handoff does not change the general rule: required or
 user-requested review gate still blocks readiness until it completes or the authority
 that set it changes the requirement. Do not turn a pending result into a completed
 one or create an automatic issue, monitor, or heartbeat.
+
+Check names, status, conclusion, submitted-review state, and approval state are
+metadata rather than review prose and remain readable under the public-prose rule.
+They can establish native gates but cannot verify a withheld report body. When a
+required or user-requested review gate depends on withheld prose, retain its link and
+route it to a trusted maintainer for screening and handling; readiness remains blocked
+until that happens or the authority that set the gate changes it.
 
 For example, revision A can have green required validation and no current threads
 while a known review is still running. If that review then publishes a material

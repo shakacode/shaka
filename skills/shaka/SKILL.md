@@ -193,8 +193,9 @@ Uncertain authority or consequential risk requires a decision; safety failures b
 
 Supply the current head and its walkthrough ID. Reverify changed heads and reassess
 authority for changed scope. Never bypass protection or accept missing required checks.
-Wait for required/requested reviews. Read other completed feedback before merge;
-report pending optional reviews without making them a merge gate. When the user
+Wait for required review and user-requested review gates. Read other completed
+feedback before merge; report pending optional reviews without making them a merge
+gate. When the user
 expressly asked to resolve comments, keep task ownership after merge until each
 known optional review settles or receives the documented explicit handoff.
 Leave queues and delayed auto-merge unchanged; this pilot merges immediately while
