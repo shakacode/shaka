@@ -97,8 +97,7 @@ module Shaka
 
     def write_reply(existing, content, target)
       path = if existing
-               collection = target ? 'pulls' : 'issues'
-               "repos/#{@repository}/#{collection}/comments/#{positive_integer(existing['id'])}"
+               "repos/#{@repository}/#{comments_collection(target)}/comments/#{positive_integer(existing['id'])}"
              elsif target
                "repos/#{@repository}/pulls/#{@number}/comments/#{target}/replies"
              else
@@ -109,13 +108,15 @@ module Shaka
 
     # --paginate cannot be combined with --input, so this request carries no body.
     def replies(target)
-      collection = target ? 'pulls' : 'issues'
-      result = execute(['gh', 'api', '--paginate', '--method', 'GET',
-                        "repos/#{@repository}/#{collection}/#{@number}/comments?per_page=100"])
-      raise Error, 'GitHub comment listing must be an array.' unless result.is_a?(Array)
+      pages = execute(['gh', 'api', '--paginate', '--slurp', '--method', 'GET',
+                       "repos/#{@repository}/#{comments_collection(target)}/#{@number}/comments?per_page=100"])
+      raise Error, 'GitHub comment listing must contain arrays of pages.' unless
+        pages.is_a?(Array) && pages.all?(Array)
 
-      result
+      pages.flatten(1)
     end
+
+    def comments_collection(target) = target ? 'pulls' : 'issues'
 
     def reply_mark(key)
       raise Error, 'Expected a short reply key of letters, digits, hyphens or underscores.' unless
