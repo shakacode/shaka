@@ -142,6 +142,24 @@ review that is unavailable, failed, or stale blocks readiness/merge; never silen
 omit it or substitute a reviewer. Follow [review handling](../../docs/review.md)
 for findings and re-review; resolve consequential feedback before merging.
 
+When the task includes resolving PR comments, settle the known review activity
+before ending it. Pin the exact PR head, refresh required checks and known review
+jobs, and read the completed top-level reports and every inline thread. On public
+repositories, use the trusted author screen for comment bodies; withheld outside
+or bot prose remains a link for maintainer triage. A green runner without a visible,
+verified report is still unfinished. Keep required or user-requested review as a
+gate. When the user specifically asked to resolve comments, also keep ownership of
+a known optional review that is actively running until it publishes, fails, or an
+external delay makes an explicit handoff necessary. Do not call the feedback fully
+resolved while that job can still publish it.
+
+Any fix that changes the head invalidates prior review and validation evidence.
+Re-run affected checks and repository validation, obtain or verify required review
+for the new head, reread native threads, and refresh the walkthrough before applying
+the existing merge authority. If an optional review cannot settle, hand off the
+reviewer state, exact head, handled feedback, and owner of a later result; required
+or user-requested review remains blocking. Do not create a monitor or follow-up issue.
+
 Use trusted `gh` for authorized issue/PR reads and publication. Inspect check states,
 not only exit codes: `gh pr checks NUMBER --repo OWNER/REPO --required --json name,state,bucket,link`.
 Invoke these through the saved absolute path of the trusted source:
