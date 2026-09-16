@@ -1,0 +1,137 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'shaka/publication'
+
+# Reproduces the presentation failures observed on real published pull requests.
+class PublicationRegressionTest < Minitest::Test
+  IDENTITY = { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'gpt-5.6-terra', 'effort' => 'low' }.freeze
+
+  # https://github.com/shakacode/shaka/pull/37 published its whole description as one
+  # line containing literal backslash-n sequences instead of paragraph breaks.
+  def test_escaped_newlines_in_supplied_text_are_reported_before_publication
+    content = { 'identity' => IDENTITY,
+                'summary' => 'Resolves #34 with post-rename maintenance.\n\n## Validation\n\nbin/validate passed.' }
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+    assert_includes error.message, 'escape sequence'
+  end
+
+  def test_real_newlines_and_unicode_and_code_escapes_are_preserved
+    body = "First line.\n\nSecond café 🤖 line.\n\n```ruby\nputs \"a\\nb\"\n```\n\nUse `\\n` to separate."
+    rendered = Shaka::Publication.description({ 'identity' => IDENTITY, 'summary' => 'A summary.',
+                                                'sections' => [{ 'heading' => 'Detail', 'body' => body }] })
+    assert_includes rendered, 'Second café 🤖 line.'
+    assert_includes rendered, 'puts "a\nb"'
+    assert_includes rendered, 'Use `\n` to separate.'
+  end
+
+  # https://github.com/shakacode/shaka/pull/38 published a ten-column usage table with an
+  # eleven-column separator, so GitHub rendered zero tables and showed the pipes as text.
+  def test_table_separator_always_matches_the_column_count
+    columns = %w[Provider Model Routed Effort Input Cached Output Reasoning Writes Total]
+    rendered = Shaka::Publication.description(
+      { 'identity' => IDENTITY, 'summary' => 'A summary.',
+        'table' => { 'columns' => columns, 'rows' => [%w[openai sol UNKNOWN medium 1 2 3 4 5 6]] } }
+    )
+    table = rendered.lines.select { |line| line.start_with?('|') }
+    assert_equal 3, table.size
+    assert_equal([columns.size] * 3, table.map do |line|
+      line.strip.delete_prefix('|').delete_suffix('|').split('|').size
+    end)
+  end
+
+  def test_row_width_mismatch_is_a_focused_diagnostic_not_a_broken_table
+    content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
+                'table' => { 'columns' => %w[A B C], 'rows' => [%w[1 2]] } }
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+    assert_includes error.message, '3'
+    assert_includes error.message, '2'
+  end
+end
+
+# Structure the renderer owns so models cannot vary it.
+class PublicationStructureTest < Minitest::Test
+  IDENTITY = PublicationRegressionTest::IDENTITY
+
+  def render(**changes)
+    Shaka::Publication.description({ 'identity' => IDENTITY, 'summary' => 'A summary.' }.merge(changes))
+  end
+
+  def test_identity_line_leads_the_description
+    assert_match(/\A🤖 Codex · OpenAI · gpt-5\.6-terra · low\n\nA summary\.\n/, render)
+  end
+
+  def test_sections_become_second_level_headings_separated_by_one_blank_line
+    rendered = render('sections' => [{ 'heading' => 'Purpose', 'body' => 'Why.' },
+                                     { 'heading' => 'Validation', 'body' => 'How.' }])
+    assert_includes rendered, "\n## Purpose\n\nWhy.\n\n## Validation\n\nHow.\n"
+    refute_includes rendered, "\n\n\n"
+  end
+
+  def test_details_keep_the_blank_lines_github_needs_to_render_their_content
+    rendered = render('details' => [{ 'summary' => 'Rollback', 'body' => "| A |\n| --- |\n| 1 |" }])
+    assert_includes rendered, "<details>\n<summary>Rollback</summary>\n\n| A |"
+    assert_includes rendered, "| 1 |\n\n</details>"
+  end
+
+  def test_missing_or_empty_required_content_is_reported_before_publication
+    [{ 'identity' => IDENTITY }, { 'identity' => IDENTITY, 'summary' => '   ' }, { 'summary' => 'A summary.' }]
+      .each { |content| assert_raises(Shaka::Error) { Shaka::Publication.description(content) } }
+    assert_raises(Shaka::Error) { render('sections' => [{ 'heading' => '', 'body' => 'Why.' }]) }
+  end
+
+  def test_short_replies_stay_short
+    rendered = Shaka::Publication.comment({ 'identity' => IDENTITY, 'summary' => 'Fixed in 0a1b2c3.' })
+    assert_equal "🤖 Codex · OpenAI · gpt-5.6-terra · low\n\nFixed in 0a1b2c3.\n", rendered
+  end
+
+  def test_unknown_identity_fields_are_marked_rather_than_invented
+    rendered = Shaka::Publication.comment({ 'identity' => { 'agent' => 'Codex', 'provider' => 'OpenAI' },
+                                            'summary' => 'Done.' })
+    assert_includes rendered, '🤖 Codex · OpenAI · UNKNOWN · UNKNOWN'
+  end
+
+  def test_walkthroughs_carry_their_revision_and_are_not_approvals
+    rendered = Shaka::Publication.walkthrough({ 'identity' => IDENTITY, 'summary' => 'What changed.',
+                                                'head' => 'a' * 40 })
+    assert_includes rendered, 'a' * 40
+    assert_includes rendered, 'not an approval'
+  end
+
+  def test_a_real_newline_in_a_cell_cannot_split_the_row
+    content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
+                'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] } }
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+    assert_includes error.message, 'single line'
+  end
+
+  def test_a_real_newline_in_a_heading_column_or_details_summary_is_refused
+    [{ 'sections' => [{ 'heading' => "A\nB", 'body' => 'Why.' }] },
+     { 'table' => { 'columns' => ["A\nB"], 'rows' => [] } },
+     { 'details' => [{ 'summary' => "A\nB", 'body' => 'Why.' }] }].each do |part|
+      assert_raises(Shaka::Error) { render(**part) }
+    end
+  end
+
+  def test_tilde_fences_and_multi_backtick_spans_count_as_code
+    body = "~~~\nliteral \\n here\n~~~\n\nand ``a \\n b`` inline."
+    rendered = render('sections' => [{ 'heading' => 'Detail', 'body' => body }])
+    assert_includes rendered, 'literal \n here'
+  end
+
+  def test_a_details_summary_cannot_close_its_own_disclosure
+    rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
+    assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
+    assert_equal 1, rendered.scan('</summary>').size
+    assert_equal 1, rendered.scan('</details>').size
+  end
+
+  def test_collections_that_are_not_lists_are_refused_rather_than_crashing
+    [{ 'sections' => { 'heading' => 'h' } }, { 'sections' => 42 }, { 'details' => 'text' },
+     { 'table' => { 'columns' => 'A', 'rows' => [] } },
+     { 'table' => { 'columns' => %w[A], 'rows' => 'nope' } }].each do |part|
+      error = assert_raises(Shaka::Error) { render(**part) }
+      assert_includes error.message, 'list'
+    end
+  end
+end

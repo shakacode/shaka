@@ -28,6 +28,7 @@ Existing authority is reused; a review-only or PR-only request keeps that stoppi
 | I want to… | Read |
 | --- | --- |
 | Choose merge authority, answer questions, or split a larger task | [Working with your agent](docs/working-with-your-agent.md) |
+| Use master and repository control towers to organize Shaka tasks | [Control towers](docs/control-towers.md) |
 | Understand review findings or a blocked PR | [Review handling](docs/review.md) |
 | Evaluate code, UI, or documentation changes | [Verification and reader trials](docs/verification.md) |
 | Understand model, effort, and token reports | [Usage reporting](docs/usage-reporting.md) |

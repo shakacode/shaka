@@ -6,6 +6,8 @@ require 'optparse'
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/comments'
 require_relative '../lib/shaka/merge'
+require_relative '../lib/shaka/publication'
+require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/usage'
 require_relative '../lib/shaka/work'
 
@@ -19,12 +21,36 @@ if ARGV.first == 'work'
   exit Shaka::Work.run(ARGV)
 end
 
+if ARGV.first == 'recommendation'
+  ARGV.shift
+  exit Shaka::Recommendation.run(ARGV)
+end
+
+COMMANDS = %w[pr comments description reply walkthrough merge].freeze
+
+def content(path)
+  parsed = JSON.parse(File.read(path, encoding: 'UTF-8'))
+  raise Shaka::Error, 'Content file must hold a JSON object.' unless parsed.is_a?(Hash)
+
+  parsed
+rescue JSON::ParserError => e
+  raise Shaka::Error, "Content file is not valid JSON: #{e.message}"
+end
+
+def walkthrough_body(options)
+  return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
+
+  Shaka::Publication.walkthrough(content(options.fetch(:content_file)).merge('head' => options.fetch(:head)))
+end
+
 options = {}
 parser = OptionParser.new do |flags|
-  flags.banner = 'Usage: shaka (pr|comments|walkthrough|merge) OWNER/REPO NUMBER [options]; '
-  flags.banner += 'shaka usage --help; shaka work --help'
+  flags.banner = "Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; "
+  flags.banner += 'shaka usage --help; shaka work --help; shaka recommendation --help'
   flags.on('--head SHA', 'Expected current PR head') { |value| options[:head] = value }
+  flags.on('--content-file PATH', 'Publication content as JSON') { |value| options[:content_file] = value }
   flags.on('--body-file PATH', 'Walkthrough Markdown file') { |value| options[:body_file] = value }
+  flags.on('--key NAME', 'Stable reply key; reused instead of duplicating') { |value| options[:key] = value }
   flags.on('--walkthrough ID', 'Published COMMENT review ID') { |value| options[:walkthrough] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('-h', '--help', 'Show usage') do
@@ -36,9 +62,7 @@ end
 begin
   parser.parse!(ARGV)
   command, repository, number = ARGV
-  unless ARGV.length == 3 && %w[pr comments walkthrough merge].include?(command)
-    raise OptionParser::InvalidArgument, parser.to_s
-  end
+  raise OptionParser::InvalidArgument, parser.to_s unless ARGV.length == 3 && COMMANDS.include?(command)
   raise OptionParser::InvalidArgument, '--issue is only for comments' if options[:issue_only] && command != 'comments'
 
   github = Shaka::GitHub.new(repository, number)
@@ -49,9 +73,13 @@ begin
              raise OptionParser::InvalidArgument, '--head does not apply to issues' if issue_only && options[:head]
 
              Shaka::Comments.new(github).call(issue_only:, expected_head: issue_only ? nil : options[:head])
+           when 'description'
+             github.description(body: Shaka::Publication.description(content(options.fetch(:content_file))))
+           when 'reply'
+             github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
+                          key: options.fetch(:key))
            when 'walkthrough'
-             github.walkthrough(head: options.fetch(:head),
-                                body: File.read(options.fetch(:body_file), encoding: 'UTF-8'))
+             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
            when 'merge'
              Shaka::Merge.new(github).call(head: options.fetch(:head),
                                            walkthrough: options.fetch(:walkthrough))

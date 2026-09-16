@@ -119,6 +119,11 @@ Prospective features and retirement choices belong in issue #36; website work li
 in its own repository and consumes these guides. No fleet coordination, policy engine,
 telemetry service, tracker synchronization, or release automation is part of this kernel.
 
+Master and repository control towers may organize work through the existing
+Shaka procedure as [optional operating roles](control-towers.md). Each delivery
+retains one owner and the same repository gates. This does not restore V1 fleet
+machinery; claim adoption only after a real tower-to-delivery trial.
+
 Rollback: remove the verified skill link or select a prior trusted source revision
 and reinstall. Preserve unrelated installations and user files. See
 [upgrade and removal](getting-started.md#upgrade).
