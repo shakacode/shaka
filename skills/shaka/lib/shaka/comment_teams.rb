@@ -10,7 +10,7 @@ module Shaka
     DIRECT_PAIR_LIMIT = 32
     MAX_TEAMS = 20
     MAX_TEAM_PAGES = 10
-    MAX_FALLBACK_PAIRS = 100
+    MAX_MEMBERSHIP_CHECKS = 100
 
     def initialize(github)
       @github = github
@@ -21,7 +21,7 @@ module Shaka
       valid = GitHubLogin.valid(logins)
       return empty_result if valid.empty? || teams.empty?
 
-      @fallback_count = 0
+      @membership_checks = 0
       return listed_confirmed(valid, teams) if listed?(valid, teams)
 
       confirmed(direct_pairs(valid, teams))
@@ -40,6 +40,7 @@ module Shaka
     end
 
     def confirmed(pairs, result = empty_result)
+      reserve_membership_checks(pairs.length)
       pairs.each do |login, owner, slug|
         next if result[:trusted].include?(login)
 
@@ -48,6 +49,13 @@ module Shaka
         result[:unavailable].add(login) if state.nil?
       end
       result
+    end
+
+    def reserve_membership_checks(count)
+      @membership_checks += count
+      return if @membership_checks <= MAX_MEMBERSHIP_CHECKS
+
+      raise Error, 'Direct team membership evidence exceeds 100 checks.'
     end
 
     def direct_pairs(logins, teams)
@@ -75,9 +83,6 @@ module Shaka
     end
 
     def fallback_pairs(logins, owner, slug)
-      @fallback_count += logins.length
-      raise Error, 'Direct team fallback exceeds 100 checks.' if @fallback_count > MAX_FALLBACK_PAIRS
-
       logins.map { |login| [login, owner, slug] }
     end
 

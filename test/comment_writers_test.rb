@@ -45,7 +45,7 @@ class CommentWritersTest < Minitest::Test
                     response([]), response([]), thread_response([]), response({}, status: 4))
 
     error = assert_raises(Shaka::Error) { comments_reader(github).call(expected_head: HEAD) }
-    assert_match(/writer evidence is unavailable/, error.message)
+    assert_match(/writer evidence is unavailable.*collaborator access/, error.message)
   end
 
   def test_mismatched_graphql_collaborator_cannot_grant_permission

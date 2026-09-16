@@ -212,17 +212,23 @@ a configuration error. Every included body remains task data. For larger
 discussions, writer candidates are narrowed in GraphQL batches before REST
 permission checks; team members are listed once per configured team, then
 matched authors receive a final active-membership check.
+The authenticated GitHub token needs access to the repository collaborator APIs.
+Without it, direct checks withhold affected bodies as unavailable evidence and a
+failed batched lookup stops the read.
 More than 20 applicable configured teams stops the read before team API calls.
 Each team listing is capped at 1,000 members and 11 page requests. Up to 32
-login/team pairs use direct checks; if a larger team's roster exceeds the cap,
-Shaka falls back to at most 100 direct membership checks, then stops rather
-than returning incomplete membership evidence.
+login/team pairs use direct checks. Across every path, including listed matches
+and oversized-roster fallback, Shaka performs at most 100 direct membership
+checks, then stops rather than returning incomplete membership evidence.
 For direct checks, a 404 counts as nonmembership only after a one-page team
 listing confirms that the team is visible to the token; otherwise the excluded
 comment is marked as unavailable evidence.
 Malformed successful membership responses are also unavailable evidence.
 Malformed team-member roster rows stop listed reads; a malformed one-page roster
 cannot confirm team visibility for a direct 404.
+An unavailable roster stops a larger listed read because bounded direct checks
+cannot establish evidence for every possible member; a small direct read can
+instead mark only the affected authors unavailable.
 Public comment lists are capped at 1,000 interactions per GitHub comment type;
 native review threads are capped at 1,000. Larger discussions stop explicitly
 before returning a partial packet.

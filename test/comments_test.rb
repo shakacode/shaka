@@ -29,7 +29,8 @@ class CommentsTest < Minitest::Test
     result = packet(reviews: [review], permissions: [permission('outside', 'read')])
 
     assert_empty bodies(result, 'review_summaries')
-    assert_equal 'review_summary', result['excluded_interactions'].first['kind']
+    assert_equal({ 'kind' => 'review_summary', 'state' => 'APPROVED' },
+                 result['excluded_interactions'].first.slice('kind', 'state'))
     refute_includes JSON.generate(result), review['body']
   end
 

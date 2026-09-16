@@ -83,9 +83,7 @@ module Shaka
       'team' if login.is_a?(String) && team_members.include?(login.downcase)
     end
 
-    def filter(items, kind, context)
-      items.filter_map { |item| screen_item(item, kind, context) }
-    end
+    def filter(items, kind, context) = items.filter_map { |item| screen_item(item, kind, context) }
 
     def screen_item(item, kind, context)
       login = author(item)
@@ -125,8 +123,13 @@ module Shaka
               'url' => item['html_url'], 'body_withheld' => !item['body'].to_s.empty?,
               'verification_unavailable' => unavailable, 'prefiltered' => evidence == 'prefiltered',
               'trust' => bot_in?(item, login, :metadata_bots) ? 'metadata_only' : 'untrusted' }
+      add_review_state(row, item, kind)
       row.merge!(thread) if kind == 'inline_comment'
       row
+    end
+
+    def add_review_state(row, item, kind)
+      row['state'] = item['state'] if kind == 'review_summary'
     end
   end
 end

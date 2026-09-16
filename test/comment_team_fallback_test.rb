@@ -63,4 +63,21 @@ class CommentTeamFallbackTest < Minitest::Test
     assert_match(/list evidence is unavailable/, error.message)
     assert_equal 11, @calls.length
   end
+
+  def test_listed_membership_confirmations_have_one_aggregate_cap
+    authors = logins(101)
+    github = client(*listed_member_pages(authors))
+
+    error = assert_raises(Shaka::Error) do
+      Shaka::CommentTeams.new(github).trusted(authors, [%w[owner maintainers]])
+    end
+
+    assert_match(/100 checks/, error.message)
+    assert_equal 2, @calls.length
+  end
+
+  def listed_member_pages(authors)
+    rows = authors.map { |login| { 'login' => login, 'type' => 'User' } }
+    [response(rows.first(100)), response(rows.last(1))]
+  end
 end

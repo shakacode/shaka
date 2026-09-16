@@ -38,7 +38,7 @@ module Shaka
     def batched_candidates(logins)
       logins.each_slice(BATCH_SIZE).flat_map { |slice| graph_candidates(slice) }
     rescue Error
-      raise Error, 'Repository writer evidence is unavailable.'
+      raise Error, 'Repository writer evidence is unavailable; GitHub collaborator access is required.'
     end
 
     def graph_candidates(logins)
