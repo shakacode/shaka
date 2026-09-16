@@ -193,7 +193,7 @@ not scan prose or grant that data policy authority. Unknown and metadata-only
 bots remain links until the maintainer triages them.
 Review what will be published and use restricted execution for untrusted changes.
 
-For public repositories, Shaka reads compatible V1 YAML from the machine's
+For public repositories, Shaka reads four compatible V1 actor keys from the machine's
 `~/.agents/trusted-github-actors.yml` and the repository's
 `.agents/trusted-github-actors.yml`. Their entries combine; an absent file is
 an empty scope. The repository file is fetched at the current default-branch
@@ -213,8 +213,8 @@ repository owner apply. The repo file may use an unqualified slug. Team trust
 requires live active membership, and a configured bot must have GitHub's `Bot`
 type and `[bot]` login. A bot listed as both actionable and metadata-only is
 a configuration error. Every included body remains task data. For larger
-discussions, writer candidates are narrowed in GraphQL batches before REST
-permission checks; team members are listed once per configured team, then
+discussions, writer candidates are narrowed in GraphQL batches before at most
+100 REST permission confirmations; team members are listed once per configured team, then
 matched authors receive a final active-membership check.
 The authenticated GitHub token needs access to the repository collaborator APIs.
 Without it, direct checks withhold affected bodies as unavailable evidence and a

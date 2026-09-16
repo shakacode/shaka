@@ -123,13 +123,13 @@ module Shaka
               'url' => item['html_url'], 'body_withheld' => !item['body'].to_s.empty?,
               'verification_unavailable' => unavailable, 'prefiltered' => evidence == 'prefiltered',
               'trust' => bot_in?(item, login, :metadata_bots) ? 'metadata_only' : 'untrusted' }
-      add_review_state(row, item, kind)
+      add_review_metadata(row, item, kind)
       row.merge!(thread) if kind == 'inline_comment'
       row
     end
 
-    def add_review_state(row, item, kind)
-      row['state'] = item['state'] if kind == 'review_summary'
+    def add_review_metadata(row, item, kind)
+      row.merge!('state' => item['state'], 'commit_id' => item['commit_id']) if kind == 'review_summary'
     end
   end
 end

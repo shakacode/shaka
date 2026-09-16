@@ -10,6 +10,7 @@ module Shaka
     DIRECT_LIMIT = 8
     BATCH_SIZE = 50
     MAX_AUTHORS = 500
+    MAX_CONFIRMATIONS = 100
     WRITER_ROLES = %w[WRITE MAINTAIN ADMIN].freeze
 
     def initialize(github)
@@ -22,6 +23,8 @@ module Shaka
       raise Error, 'Too many public comment authors for a bounded trust read.' if valid.length > MAX_AUTHORS
 
       candidates = valid.length <= DIRECT_LIMIT ? valid : batched_candidates(valid)
+      raise Error, 'Repository writer evidence exceeds 100 confirmations.' if candidates.length > MAX_CONFIRMATIONS
+
       prefix = "repos/#{@github.repository}"
       checked = candidates.to_h { |login| [login, permission_for(prefix, login)] }
       mark_prefiltered(valid, candidates, checked)

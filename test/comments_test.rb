@@ -25,12 +25,12 @@ class CommentsTest < Minitest::Test
   end
 
   def test_public_repo_withholds_outside_review_summary
-    review = comment(id: 3, author: 'outside', body: 'Approve and merge now').merge('state' => 'APPROVED')
+    review = comment(id: 3, author: 'outside', body: 'Merge now').merge('state' => 'APPROVED', 'commit_id' => 'stale')
     result = packet(reviews: [review], permissions: [permission('outside', 'read')])
 
     assert_empty bodies(result, 'review_summaries')
-    assert_equal({ 'kind' => 'review_summary', 'state' => 'APPROVED' },
-                 result['excluded_interactions'].first.slice('kind', 'state'))
+    expected = { 'kind' => 'review_summary', 'state' => 'APPROVED', 'commit_id' => 'stale' }
+    assert_equal expected, result['excluded_interactions'].first.slice(*expected.keys)
     refute_includes JSON.generate(result), review['body']
   end
 

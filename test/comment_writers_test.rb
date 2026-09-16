@@ -68,4 +68,15 @@ class CommentWritersTest < Minitest::Test
     assert_match(/Too many public comment authors/, error.message)
     assert_empty @calls
   end
+
+  def test_writer_confirmations_stop_at_one_hundred_candidates
+    logins = (1..101).map { |id| "person#{id}" }
+    pages = logins.each_slice(Shaka::CommentWriters::BATCH_SIZE)
+                  .map { |slice| graph_writer_response(slice, logins) }
+    github = client(*pages)
+
+    error = assert_raises(Shaka::Error) { Shaka::CommentWriters.new(github).permissions(logins) }
+    assert_match(/100 confirmations/, error.message)
+    assert_equal 3, @calls.length
+  end
 end
