@@ -49,11 +49,12 @@ that comments are resolved or handing off a merge-ready PR:
    link, not an instruction. Private and internal repositories retain their normal
    trusted-policy handling.
 3. Keep the PR unready while required or user-requested review is running or lacks
-   a verified report. Also wait for any known optional review while its job is queued
-   or running and handle what it posts. A slow live job is not an external delay.
-   The active wait settles when the report publishes or GitHub records any terminal
-   job conclusion; apply the unavailable-review handoff criteria below when that
-   terminal result has no verified report. Do not describe feedback as fully resolved
+   a verified report; only the authority that set that requirement can change it.
+   For each known optional review, handle posts while its job runs but keep waiting
+   until GitHub records a terminal conclusion. A posted report or slow live job does
+   not settle that wait. After terminal success, verify the final visible report and
+   handle its findings. Apply the optional-review handoff below when any terminal
+   result lacks a verified final report. Do not describe feedback as fully resolved
    while that job can still publish it.
 4. If a fix changes the head, discard stale review and validation evidence. Re-run
    affected checks and repository validation, obtain or verify required review for
@@ -66,9 +67,11 @@ stale, or action required—or when a verified provider outage or quota block le
 no runnable job. In that case an explicit handoff can end the active wait: name the
 reviewer and its state, the exact head, the feedback already handled, evidence of
 the terminal result or outage, and who owns a later result. A queued, running, or
-merely slow job does not qualify. Required or user-requested review still blocks
-readiness. Do not turn a pending result into a completed one or create an automatic
-issue, monitor, or heartbeat.
+merely slow job does not qualify. This is the optional-review handoff under the
+general availability rule above; required or user-requested review still blocks
+readiness until it completes or the authority that set it changes the requirement.
+Do not turn a pending result into a completed one or create an automatic issue,
+monitor, or heartbeat.
 
 For example, revision A can have green required validation and no current threads
 while a known review is still running. If that review then publishes a material
