@@ -52,9 +52,9 @@ that comments are resolved or handing off a merge-ready PR:
    a verified report. Also wait for any known optional review while its job is queued
    or running and handle what it posts. A slow live job is not an external delay.
    The active wait settles when the report publishes or GitHub records any terminal
-   job conclusion. A terminal success without a visible verified report and every
-   non-success conclusion make the optional review unavailable, not successful.
-   Do not describe feedback as fully resolved while that job can still publish it.
+   job conclusion; apply the unavailable-review handoff criteria below when that
+   terminal result has no verified report. Do not describe feedback as fully resolved
+   while that job can still publish it.
 4. If a fix changes the head, discard stale review and validation evidence. Re-run
    affected checks and repository validation, obtain or verify required review for
    the new head, reread native threads, and refresh the walkthrough before applying
