@@ -1,15 +1,16 @@
 # Proposal: deterministic delivery checks and locally driven GitHub evaluations
 
 Status: revised after Fable's second SEND BACK (`1810587`); awaiting re-review. No runtime
-implementation or paid benchmark has started. Prepared September 15, 2026,
-against main `d81953f729f52953ea2a86d087616f94fe22d316`, under
+implementation or paid benchmark has started. Updated September 16, 2026,
+against main `76a60cf7f872d2546019716759c20da7b98c91f3`, under
 [pilot issue #1](https://github.com/shakacode/shaka/issues/1).
 Existing acceptance and merge gates remain in effect.
 
 ## 1. Decision and explicit reduction in scope
 
-First make publication mechanics deterministic through existing #44. Then evaluate
-one narrow hypothesis about a skill change through a disposable private GitHub
+PR #54 now supplies the deterministic publication mechanics tracked by #44; its
+remaining cross-model acceptance stays with that issue. Evaluate one narrow
+hypothesis about a skill change through a disposable private GitHub
 repository with real reviews, pushes, Actions, walkthroughs, and Ask/Auto outcomes.
 The maintainer's decision for this revision lifts the local-only GitHub constraint.
 Agent execution, orchestration, grading, and retained evidence stay on the local
@@ -45,19 +46,22 @@ Success requires correct accepted behavior; fewer words/tokens alone is insuffic
   with an API-equivalent estimate of $7.978283. Reviewer cost and actual charges
   remain unknown. Use its observed scale for provisional budgeting, with the
   qualification that these seeded repair deliveries differ from #51's full task.
-- [PR #38](https://github.com/shakacode/shaka/pull/38) is separate and conflicting
-  with current main. Its [handoff](https://github.com/shakacode/shaka/pull/38#issuecomment-5691024590)
-  captures next actions and #51's evidence. Building this runner is not a new
-  prerequisite for #38 or a substitute for #33's acceptance.
-- [#44](https://github.com/shakacode/shaka/issues/44) owns the deterministic publisher.
-  [#45](https://github.com/shakacode/shaka/issues/45) and merged #51 own usage/cost
-  reporting. Extend those once; do not build competing implementations here.
+- [PR #38](https://github.com/shakacode/shaka/pull/38) is now merged in current main.
+  Its [handoff](https://github.com/shakacode/shaka/pull/38#issuecomment-5691024590)
+  and #51 capture the delivery evidence that preceded the merge. Building this
+  runner is not a prerequisite for #38 or a substitute for #33's acceptance.
+- Merged [PR #54](https://github.com/shakacode/shaka/pull/54) supplies #44's shared
+  renderer and verified publication paths. [#44](https://github.com/shakacode/shaka/issues/44)
+  remains open for the ordinary Codex/Terra cross-model delivery. [#45](https://github.com/shakacode/shaka/issues/45)
+  and merged #51 own usage/cost reporting. Extend those once; do not build competing
+  implementations here.
 - Existing `test/github_helper.rb`, `test/merge_test.rb`, and
   `test/review_workflow_test.rb` cover injected GitHub responses, stale-head refusal,
   failed/missing checks, and missing review evidence without model calls.
-- Reconcile accepted changes from [#43](https://github.com/shakacode/shaka/pull/43)
-  and [draft #46](https://github.com/shakacode/shaka/pull/46) before integration.
-  Neither draft supplies new authority or a mandatory supervisor.
+- Current main already includes accepted public-comment changes from
+  [#43](https://github.com/shakacode/shaka/pull/43). Reconcile any overlap from
+  [draft #46](https://github.com/shakacode/shaka/pull/46) before integration;
+  that draft supplies no new authority or mandatory supervisor.
 
 ## 3. Source examples and what to borrow
 
@@ -79,10 +83,11 @@ execution framework. Use Ruby standard libraries and existing native CLIs.
 
 ## 4. Deterministic mechanics
 
-Implement [#44's acceptance](https://github.com/shakacode/shaka/issues/44) in its
-own bounded PR. The agent supplies meaning; Ruby assembles PR descriptions,
-short replies, and commit-bound COMMENT walkthroughs. Reproduce #37's escaped
-newlines and #38's malformed table through the actual publication entry points.
+Merged PR #54 implements the shared deterministic publisher tracked by
+[#44](https://github.com/shakacode/shaka/issues/44). The agent supplies meaning;
+Ruby assembles PR descriptions, short replies, and commit-bound COMMENT walkthroughs.
+#37's escaped newlines and #38's malformed table are regression tests through the
+actual publication entry points.
 
 Use existing validation for serialization, required fields, Unicode/code escapes,
 column counts, current-head linkage, readback, and uncertain-write handling.
@@ -98,8 +103,8 @@ Real delivery evidence still covers the external integration.
 
 ## 5. Hypotheses, fixtures, and protected grading
 
-H1: deterministic publication prevents known formatting errors. Ordinary failing-
-then-passing tests decide this; no paid run is required for mechanical syntax.
+H1: deterministic publication prevents known formatting errors. PR #54's ordinary
+failing-then-passing tests support this; no paid run is required for mechanical syntax.
 H2: a skill rewrite preserves CI repair, review handling, and merge authority with
 possibly lower usage. Run affected cases within each model profile. H3: a merge
 helper change preserves stale-head refusal. Existing Ruby negative tests decide
@@ -157,9 +162,11 @@ demonstrated need; importing those larger corpora is outside v1.
 
 ## 6. Two-message startup and proof of a working baseline
 
-The main skill pauses after recommending a model. Supplying a model flag or saying
-ready in the same initial prompt may not satisfy that sequence. Do not spend a
-candidate matrix before proving main can complete the bounded task unattended.
+The current skill can skip a second response only when the explicitly requested,
+recommended, active, and available settings match and immediate execution is clear.
+This experiment deliberately asks for an intake pause so every arm uses the same
+two-message script. Do not spend a candidate matrix before proving main can complete
+the bounded task unattended.
 
 Use the same finite, preauthored conversation in each arm:
 
@@ -412,7 +419,7 @@ changed lines, and existing validation/independent review.
 | Slice | Scope | Acceptance / stop |
 | --- | --- | --- |
 | 0: qualify sandbox delivery and main | Pinned template and `validate`, machine user/scoped tokens, protection, fresh-repository reset/cleanup script, Docker/Squid, Codex adapter and two-message startup | Half-day spike: prove identity/token/egress gates and a main Ask completion within the declared budget. Missing accounts, plan access or approval stops the spike; no paid candidate runs. |
-| 1: deterministic publication | Existing #44; no duplicate contract | Independently useful completion of #44. This does not depend on benchmarks. |
+| 1: deterministic publication | Delivered by merged #54; no duplicate contract | Core renderer and three publication paths are complete. #44's remaining Terra delivery is ordinary cross-model evidence and does not depend on benchmarks. |
 | 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, API/native-event grading, manifest/results; `plan`, `selftest`, `run` only | Model-free no-op/reference and grading selftests; main/candidate Ask CI-repair pair that informs a decision. Results printed by `run`; no separate compare/rescore commands. |
 | 3: extend only after demonstrated value | Auto review-repair case, then qualified Opus adapter and its cost normalization | Preserve two-profile goal, but present one-profile results as partial until this passes. This extension has its own stated budget; no automatic matrix expansion. |
 
@@ -424,8 +431,9 @@ manual regrading; add no extra command until it has actual work.
 
 Cap evaluation-specific engineering through the first informative **Sol** comparison
 at two working days, including sandbox tooling, isolation and qualification,
-excluding independent #44 work. Account provisioning/token approval must be ready
-for the half-day spike; blocked administration pauses the project. This supersedes
+excluding #44's remaining ordinary cross-model delivery. Account provisioning and
+token approval must be ready for the half-day spike; blocked administration pauses
+the project. This supersedes
 the original promise to build a simulator and two host adapters in that box. Stop
 if the boundary requires a custom proxy, privileged agent container, broad host
 mounts, or repeated setup fixes. After two repair
@@ -451,7 +459,7 @@ These dispositions describe proposal changes, not runtime proof.
 | First S1–S3: staging, cost scale, time cap | Preserved: Sol/main qualifies first, Opus separately; #51-based conditional estimates; 30 minutes for both turns. |
 | First S4–S6: egress, Codex sandbox, readiness | Preserved: Squid/internal network, external container boundary, two-message startup. GitHub permissions/log redirects join preflight. |
 | First S7–S8: benchmark advice and reuse | Preserved: no universal PR note; fresh-baseline budget and strict compatibility, now including sandbox execution policy. |
-| Verified details and nits | Retain Lemans capability warning, Ponytail agent/scorer distinction, #51's 25.35 minutes, #44 ownership, package digest, Sol promotion, and three runner verbs. |
+| Verified details and nits | Retain Lemans capability warning, Ponytail agent/scorer distinction, #51's 25.35 minutes, #44 ownership and #54 completion state, package digest, Sol promotion, and three runner verbs. |
 
 Re-review for APPROVE or SEND BACK with BLOCKER/SHOULD/NIT findings. Focus on
 sandbox isolation, actor/token feasibility, truthful scripted-review coverage,
