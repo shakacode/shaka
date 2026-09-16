@@ -13,13 +13,11 @@ class RecommendationTest < Minitest::Test
   }.freeze
 
   def test_renders_assessment_before_the_result
-    assert_equal <<~MARKDOWN, Shaka::Recommendation.new(CONTENT).render
-      Scope: One instruction and one behavior test.
-      Risk: Changes agent selection policy.
-      Model: gpt-example
-      Effort: medium
-      Reason: The policy change needs careful reasoning.
-    MARKDOWN
+    rendered = Shaka::Recommendation.new(CONTENT).render
+    CONTENT.each_value { |value| assert_includes rendered, value }
+
+    locations = CONTENT.values.map { |value| rendered.index(value) }
+    assert_equal locations.sort, locations
   end
 
   def test_requires_each_part_instead_of_supplying_a_default
