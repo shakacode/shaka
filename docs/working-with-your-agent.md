@@ -213,8 +213,9 @@ repository owner apply. The repo file may use an unqualified slug. Team trust
 requires live active membership, and a configured bot must have GitHub's `Bot`
 type and `[bot]` login. A bot listed as both actionable and metadata-only is
 a configuration error. Every included body remains task data. For larger
-discussions, writer candidates are narrowed in GraphQL batches before at most
-100 REST permission confirmations; team members are listed once per configured team, then
+discussions, writer candidates are narrowed in GraphQL batches. More than 100
+candidates stops the read before REST confirmation; otherwise each candidate is
+confirmed once. Team members are listed once per configured team, then
 matched authors receive a final active-membership check.
 The authenticated GitHub token needs access to the repository collaborator APIs.
 Without it, direct checks withhold affected bodies as unavailable evidence and a

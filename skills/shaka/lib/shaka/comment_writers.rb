@@ -23,7 +23,9 @@ module Shaka
       raise Error, 'Too many public comment authors for a bounded trust read.' if valid.length > MAX_AUTHORS
 
       candidates = valid.length <= DIRECT_LIMIT ? valid : batched_candidates(valid)
-      raise Error, 'Repository writer evidence exceeds 100 confirmations.' if candidates.length > MAX_CONFIRMATIONS
+      if candidates.length > MAX_CONFIRMATIONS
+        raise Error, "Repository writer evidence exceeds #{MAX_CONFIRMATIONS} confirmations."
+      end
 
       prefix = "repos/#{@github.repository}"
       checked = candidates.to_h { |login| [login, permission_for(prefix, login)] }
