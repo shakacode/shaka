@@ -113,8 +113,9 @@ accepted changes; describe its uncertainty before making savings claims.
 
 Public source publication and reviewed, verified implementation PR merges are
 authorized. Runtime prerequisites are Ruby 3.4, Git, authenticated GitHub CLI,
-and GitHub PRs. Registry publication and broader adoption require separate evidence
-and decisions. [Packaging](packaging.md) describes the locally tested gem.
+and GitHub PRs. The `0.1.0.pre.1` RubyGems prerelease reserves the project name;
+future registry releases and broader adoption require separate evidence and decisions.
+[Packaging](packaging.md) describes the tested gem.
 Prospective features and retirement choices belong in issue #36; website work lives
 in its own repository and consumes these guides. No fleet coordination, policy engine,
 telemetry service, tracker synchronization, or release automation is part of this kernel.
