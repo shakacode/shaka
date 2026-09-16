@@ -140,18 +140,19 @@ For every public-repository comment read, apply the
 the express comment-resolution path is not the only screened path.
 Link the current review result from the PR summary and final response. Keep required
 review status and gaps visible; put optional reviewer history in details.
-A green job alone proves no review. Required or user-requested
-review that is unavailable, failed, or stale blocks readiness/merge; never silently
+A green job alone proves no review. Required review or a user-requested review gate
+that is unavailable, failed, or stale blocks readiness/merge; never silently
 omit it or substitute a reviewer. Follow [review handling](../../docs/review.md)
 for findings and re-review; resolve consequential feedback before merging.
 
 When the user expressly asks to resolve PR comments, alone or within broader work,
 follow the [comment-resolution settlement procedure](../../docs/review.md#settle-comment-resolution-work)
 before ending the task. It requires exact-head reports and threads, keeps a known
-optional review owned until its job reaches a terminal conclusion, and invalidates review and
-validation evidence after any fix changes the head. Apply its public-comment trust
-fallback and discovery, nonterminal, and terminal handoff criteria exactly; required or user-requested review
-remains blocking. Do not claim the feedback fully resolved while that procedure says
+optional review owned until its job settles or reaches the bounded explicit handoff,
+and invalidates review and validation evidence after any fix changes the head. Apply
+its public-comment trust fallback and discovery, nonterminal, and terminal handoff
+criteria exactly; required review or a user-requested review gate remains blocking.
+Do not claim the feedback fully resolved while that procedure says
 the review is unsettled. Never create a monitor or follow-up issue for the handoff.
 
 Use trusted `gh` for authorized issue/PR reads and publication. Inspect check states,
