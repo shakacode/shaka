@@ -9,7 +9,7 @@ class CliTest < Minitest::Test
   def test_help_explains_each_operation
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert status.success?, error
-    %w[pr description reply walkthrough merge --head --content-file --key].each do |token|
+    %w[pr description reply walkthrough merge recommendation --head --content-file --key].each do |token|
       assert_includes output, token
     end
   end
@@ -19,6 +19,16 @@ class CliTest < Minitest::Test
                                             '--content-file', '/missing/shaka-content.json')
     refute status.success?
     assert_includes error, 'shaka-content.json'
+  end
+
+  def test_recommendation_renders_without_calling_github
+    without_github do |dir, sentinel|
+      body = JSON.generate(scope: 'Small.', risk: 'Policy.', model: 'gpt-example', effort: 'medium', reason: 'Fit.')
+      output, error, status = run_offline(dir, body, 'recommendation')
+      assert status.success?, error
+      assert_equal "Scope: Small.\nRisk: Policy.\nModel: gpt-example\nEffort: medium\nReason: Fit.\n", output
+      refute File.exist?(sentinel)
+    end
   end
 
   # A stub gh on PATH records any invocation, so "never contacts GitHub" is actually asserted.

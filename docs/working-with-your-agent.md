@@ -39,12 +39,14 @@ the actual merge decision until you can see the finished change.
 
 ## Choose a small execution context
 
-`$shaka` names an available model and low effort before implementation, with one
-sentence explaining the choice. It pauses so you can change the host's model and
-effort settings, then waits for you to say you are ready. Existing explicit settings
-take precedence. On resumption, the agent checks the actual host setting when
-available and tells you when a manual switch is needed; writing a model name in a
-prompt does not change the runner.
+`$shaka` assesses the task's scope and risk, then names an available model and effort
+and explains how the assessment led to that choice. It applies the procedure's
+total-work cost guidance instead of a standing effort default; the current evidence is
+recorded in [#45](https://github.com/shakacode/shaka/issues/45). The agent pauses so you
+can change the host's model and effort settings, then waits for you to say you are ready.
+Existing explicit settings take precedence. On resumption, the agent checks the actual
+host setting when available and tells you when a manual switch is needed; writing a
+model name in a prompt does not change the runner.
 Measure total planning, implementation, retries, and review, not just one attempt.
 
 One owner works solo by default. Independent review still happens when required;

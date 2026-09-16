@@ -24,11 +24,17 @@ on GitHub. Link the work item from the PR when sharing is authorized; do not cre
 a duplicate issue. Reading a tracker does not authorize updating it. Keep private
 task content and links out of public artifacts unless sharing is authorized.
 
-After reading the task and before implementation, name a specific available model
-and low effort with one reason tied to its scope and risk. Honor explicit settings;
-increase effort only for a demonstrated reasoning difficulty, not waiting or tool
-failures. For planning-only requests, include the recommended model and effort in a
-compact execution prompt, then stop before edits; skip the implementation checkpoint.
+After reading the task and before implementation, assess its scope and risk. Use that
+assessment to select a specific available model and specific effort, then explain how
+the assessment led to the result. Choose neither more nor less effort than the task
+justifies; waiting and tool failures do not by themselves justify more effort. Minimize
+total work: effort is not priced per token, input volume dominates spend, and avoiding
+rework is the relevant saving. See [#45](https://github.com/shakacode/shaka/issues/45)
+for the current evidence. Honor explicit settings. Render the checkpoint with the saved
+trusted `scripts/shaka recommendation --content-file PATH`, supplying one-line `scope`,
+`risk`, `model`, `effort`, and `reason` fields; the helper chooses no settings. For
+planning-only requests, include the rendered recommendation in a compact execution
+prompt, then stop before edits; skip the implementation checkpoint.
 For tasks implementing in this session, pause after the recommendation, even if the
 current settings already match, so the user can change the host's actual model and
 effort settings. Do not begin implementation until the user says they are ready. On
