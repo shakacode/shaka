@@ -18,7 +18,7 @@ module Shaka
 
     # Fenced blocks and code spans hold intentional examples; only prose is checked.
     def prose(text)
-      text.gsub(/^~~~.*?^~~~/m, '').gsub(/```.*?```/m, '').gsub(/(`+)[^`]*\1/, '')
+      text.gsub(/^~~~.*?^~~~/m, '').gsub(/```.*?```/m, '').gsub(/(`+)(?:(?!\1).)*\1(?!`)/m, '')
     end
 
     # A summary is interpolated into raw HTML, so it must not be able to close its own tag.

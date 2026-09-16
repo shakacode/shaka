@@ -119,6 +119,14 @@ class PublicationStructureTest < Minitest::Test
     assert_includes rendered, 'literal \n here'
   end
 
+  # https://github.com/shakacode/shaka/issues/56 — a longer delimiter is how GFM
+  # puts a shorter backtick run inside an inline span.
+  def test_a_multi_backtick_span_may_contain_a_shorter_backtick_run
+    body = 'Use ``a `b` \n c`` inline.'
+    rendered = render('sections' => [{ 'heading' => 'Detail', 'body' => body }])
+    assert_includes rendered, 'Use ``a `b` \n c`` inline.'
+  end
+
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
