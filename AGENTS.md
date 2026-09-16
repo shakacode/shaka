@@ -26,6 +26,10 @@ Keep company strategy and private operational data out of product artifacts.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` retains trusted-action metadata for static policy tools;
   it does not configure the pilot runtime.
+- `.agents/trusted-github-actors.yml` is the repository-level public-comment allowlist.
+  The installed `skills/shaka/scripts/shaka comments` command combines it with the
+  machine allowlist, reads only the current default-branch copy, and never trusts a
+  candidate PR's version.
 - Markdown explains decisions and invokes commands. Put executable logic in code.
 - Prefer Ruby standard libraries and GitHub CLI. Runtime needs no new gem.
 - Keep the workflow portable. Codex is the first reference host; host-specific

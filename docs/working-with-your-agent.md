@@ -282,13 +282,13 @@ The intended experience uses existing repository access and trusted configuratio
   unknown identities, unavailable permission evidence, and requests outside that scope
   with a clear reason and the next maintainer action; avoid repeated identity questions.
 
-These are the intake requirements, not a claim of complete automated enforcement.
-The proposed [public-comment filter in PR #43](https://github.com/shakacode/shaka/pull/43)
-admits prose only from human accounts verified to have write, maintain, or admin access.
-It leaves bots, outsiders, and unverified sources as metadata and links for maintainer
-triage. Its comment filtering does not by itself validate an issue's diagnosis, a PR's
-code, or approved bot behavior. Complete team-access coverage and convenient scoped
-bot handling still need implementation evidence and real-use validation.
+The `shaka comments` reader enforces this source boundary for public repositories.
+It admits prose from human accounts verified to have write, maintain, or admin
+access, explicitly configured users and bots, and active members of configured
+GitHub teams. It leaves outsiders, metadata-only bots, and unavailable identities
+as metadata and links for maintainer triage. Comment filtering does not validate an
+issue's diagnosis, a PR's code, or a review bot's claim; owners still verify the
+substance before acting.
 
 ## Knowing whether communication improved
 
