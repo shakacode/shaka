@@ -150,7 +150,7 @@ follow the [comment-resolution settlement procedure](../../docs/review.md#settle
 before ending the task. It requires exact-head reports and threads, keeps a known
 optional review owned until its job reaches a terminal conclusion, and invalidates review and
 validation evidence after any fix changes the head. Apply its public-comment trust
-fallback and terminal-handoff criteria exactly; required or user-requested review
+fallback and discovery, nonterminal, and terminal handoff criteria exactly; required or user-requested review
 remains blocking. Do not claim the feedback fully resolved while that procedure says
 the review is unsettled. Never create a monitor or follow-up issue for the handoff.
 
