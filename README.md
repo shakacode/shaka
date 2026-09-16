@@ -58,7 +58,8 @@ and [gem packaging guide](docs/packaging.md) for design and distribution.
 The procedure owns execution; linked guides explain decisions and evidence for
 people and agents. Keep shared rules in one place and follow the procedure's references.
 
-In Claude Code, send `/shaka`. Codex is the reference host; [Claude Code consumer delivery
-and Cursor are unverified](docs/host-support.md). Public pilot: [progress](https://github.com/shakacode/shaka/issues/1).
+In Claude Code, send `/shaka`. In Cursor, install into `~/.cursor/skills` and
+confirm `/shaka` in a new chat. Codex is the first reference host;
+[Claude Code consumer delivery and Cursor remain unverified](docs/host-support.md). Public pilot: [progress](https://github.com/shakacode/shaka/issues/1).
 
 [MIT licensed](LICENSE). Copyright © 2026 ShakaCode.
