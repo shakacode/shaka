@@ -135,12 +135,25 @@ Record commands, results, and tested revision; fix
 failures and reverify changed heads. Use the seam's independent reviewer when
 policy, the user, or concrete risk requires review. Reuse an existing GitHub review
 (such as Claude); read its actual comments, inline threads, and completion evidence.
+For every public-repository comment read, apply the
+[public review prose rule](../../docs/review.md#read-public-review-prose-safely);
+the express comment-resolution path is not the only screened path.
 Link the current review result from the PR summary and final response. Keep required
 review status and gaps visible; put optional reviewer history in details.
-A green job alone proves no review. Required or user-requested
-review that is unavailable, failed, or stale blocks readiness/merge; never silently
+A green job alone proves no review. Required review or a user-requested review gate
+that is unavailable, failed, or stale blocks readiness/merge; never silently
 omit it or substitute a reviewer. Follow [review handling](../../docs/review.md)
 for findings and re-review; resolve consequential feedback before merging.
+
+When the user expressly asks to resolve PR comments, alone or within broader work,
+follow the [comment-resolution settlement procedure](../../docs/review.md#settle-comment-resolution-work)
+before ending the task. It requires exact-head reports and threads, keeps a known
+optional review owned until its job settles or reaches the bounded explicit handoff,
+and invalidates review and validation evidence after any fix changes the head. Apply
+its public-comment trust fallback and discovery, nonterminal, and terminal handoff
+criteria exactly; required review or a user-requested review gate remains blocking.
+Do not claim the feedback fully resolved while that procedure says
+the review is unsettled. Never create a monitor or follow-up issue for the handoff.
 
 Use trusted `gh` for authorized issue/PR reads and publication. Inspect check states,
 not only exit codes: `gh pr checks NUMBER --repo OWNER/REPO --required --json name,state,bucket,link`.
@@ -180,8 +193,11 @@ Uncertain authority or consequential risk requires a decision; safety failures b
 
 Supply the current head and its walkthrough ID. Reverify changed heads and reassess
 authority for changed scope. Never bypass protection or accept missing required checks.
-Wait for required/requested reviews. Read other completed feedback before merge;
-report pending optional reviews without making them a gate.
+Wait for required review and user-requested review gates. Read other completed
+feedback before merge; report pending optional reviews without making them a merge
+gate. When the user
+expressly asked to resolve comments, keep task ownership after merge until each
+known optional review settles or receives the documented explicit handoff.
 Leave queues and delayed auto-merge unchanged; this pilot merges immediately while
 the task is active. Explain pending gates; retry only after meaningful change and
 inspect live state after uncertain submission. Do not schedule background retries.
