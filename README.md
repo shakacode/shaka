@@ -34,6 +34,7 @@ Existing authority is reused; a review-only or PR-only request keeps that stoppi
 | Understand model, effort, and token reports | [Usage reporting](docs/usage-reporting.md) |
 | Check supported hosts and their limits | [Host support](docs/host-support.md) |
 | Upgrade or remove an installation | [Installation maintenance](docs/getting-started.md#upgrade) |
+| Publish a RubyGems prerelease | [Release process](docs/releasing.md) |
 
 ### For open-source maintainers and contributors
 

@@ -1,8 +1,10 @@
 # Build and test the pilot gem
 
 The gem packages the same skill, installer, and Ruby helpers as the source checkout.
-It adds no runtime gems and does not install a global agent profile. This is a local
-prerelease package; nothing has been published to RubyGems.org.
+It adds no runtime gems and does not install a global agent profile. Version
+`0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name. The source
+installation remains the verified pilot path; registry publication does not establish
+broader host compatibility.
 
 Build from the trusted source directory; RubyGems reads package files relative
 to the working directory. With the source installation from the first-use guide:
@@ -55,6 +57,8 @@ the package. Existing installer tests cover repeat installation, collisions, and
 source updates. These checks validate the artifact; they do not establish host
 compatibility or authorize a registry release.
 
-The provisional package is `shaka` version `0.1.0.pre.1`, distributed under the
+The prerelease package is `shaka` version `0.1.0.pre.1`, distributed under the
 [MIT license](../LICENSE). The gem includes the license and declares it in its metadata.
-Registry publication still requires separate approval. Packaging uses [standard RubyGems tooling](https://guides.rubygems.org/make-your-own-gem/).
+Future registry publication still requires separate maintainer approval and follows
+the [release process](releasing.md). Packaging uses
+[standard RubyGems tooling](https://guides.rubygems.org/make-your-own-gem/).

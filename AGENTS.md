@@ -41,7 +41,8 @@ Dependencies: `bundle install`. Ruby: 3.4 for the initial pilot.
 Review: one visible independent review of meaningful implementation changes.
 Coordination: none; this controlled pilot has no independent same-target writer.
 Merge authority: auto for this pilot's reviewed, verified implementation PRs.
-Release: public source pilot; no registry publication; user skill installation on request.
+Release: public source pilot; RubyGems prereleases require explicit maintainer approval
+and follow `docs/releasing.md`; user skill installation remains on request.
 Native main protection: PRs and up-to-date GitHub Actions `validate` are required;
 no bypass actors, force-push, or deletion. Required approving review count is zero.
 
