@@ -137,7 +137,7 @@ and report it. Every command below runs through that saved path.
   comments OWNER/REPO NUMBER --head SHA
   comments OWNER/REPO ISSUE_NUMBER --issue
   description OWNER/REPO NUMBER --content-file PATH
-  reply OWNER/REPO NUMBER --content-file PATH --key NAME
+  reply OWNER/REPO NUMBER --content-file PATH --key NAME [--comment ROOT_COMMENT_ID]
   walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH
   merge OWNER/REPO NUMBER --head SHA --walkthrough REVIEW_ID
   usage --commit SHA --contribution CATEGORY
@@ -145,7 +145,9 @@ and report it. Every command below runs through that saved path.
 
   `pr` reports the native readiness snapshot for one head together with its required check
   states, or says that check evidence is unavailable; it is not an exit code. `description` replaces only its own marked region, so human and other-bot edits
-  survive. `reply` reuses the comment with the same `--key` instead of duplicating it.
+  survive. `reply` reuses the comment with the same `--key` instead of duplicating it. Pass
+  `--comment` with the root review-comment ID to answer on an inline thread; the helper keeps
+  the model identity prefix on both top-level and inline replies.
   Read issue comments, PR summaries, and inline feedback with `comments`. For public
   repositories it admits prose only from GitHub-verified writers, configured users and
   bots, or active members of configured owner teams. Configuration is additive across

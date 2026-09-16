@@ -58,6 +58,9 @@ parser = OptionParser.new do |flags|
   flags.on('--content-file PATH', 'Publication content as JSON') { |value| options[:content_file] = value }
   flags.on('--body-file PATH', 'Walkthrough Markdown file') { |value| options[:body_file] = value }
   flags.on('--key NAME', 'Stable reply key; reused instead of duplicating') { |value| options[:key] = value }
+  flags.on('--comment ID', Integer, 'Root review comment for an inline-thread reply') do |value|
+    options[:comment] = value
+  end
   flags.on('--walkthrough ID', 'Published COMMENT review ID') { |value| options[:walkthrough] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('-h', '--help', 'Show usage') do
@@ -85,7 +88,7 @@ begin
              github.description(body: Shaka::Publication.description(content(options.fetch(:content_file))))
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
-                          key: options.fetch(:key))
+                          key: options.fetch(:key), comment: options[:comment])
            when 'walkthrough'
              github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
            when 'merge'

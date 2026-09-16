@@ -21,14 +21,17 @@ module Shaka
       confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
     end
 
-    def reply(body:, key:)
+    def reply(body:, key:, comment: nil)
       mark = reply_mark(key)
       content = "#{mark}\n#{publishable(body)}"
+      target = positive_integer(comment) if comment
       pull
       account = viewer
-      existing = replies.find { |comment| ours?(comment, mark, account) }
+      existing = replies(target).find do |reply|
+        ours?(reply, mark, account) && (!target || reply['in_reply_to_id'] == target)
+      end
       verify_rendering(content)
-      confirmed(write_reply(existing, content), content)
+      confirmed(write_reply(existing, content, target), content)
     end
 
     # A body GitHub will not render correctly must never reach the pull request.
@@ -92,9 +95,12 @@ module Shaka
       raise Error, 'The description has an ambiguous or malformed managed region; repair it before publishing.'
     end
 
-    def write_reply(existing, content)
+    def write_reply(existing, content, target)
       path = if existing
-               "repos/#{@repository}/issues/comments/#{positive_integer(existing['id'])}"
+               collection = target ? 'pulls' : 'issues'
+               "repos/#{@repository}/#{collection}/comments/#{positive_integer(existing['id'])}"
+             elsif target
+               "repos/#{@repository}/pulls/#{@number}/comments/#{target}/replies"
              else
                "repos/#{@repository}/issues/#{@number}/comments"
              end
@@ -102,9 +108,10 @@ module Shaka
     end
 
     # --paginate cannot be combined with --input, so this request carries no body.
-    def replies
+    def replies(target)
+      collection = target ? 'pulls' : 'issues'
       result = execute(['gh', 'api', '--paginate', '--method', 'GET',
-                        "repos/#{@repository}/issues/#{@number}/comments?per_page=100"])
+                        "repos/#{@repository}/#{collection}/#{@number}/comments?per_page=100"])
       raise Error, 'GitHub comment listing must be an array.' unless result.is_a?(Array)
 
       result

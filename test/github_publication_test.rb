@@ -29,6 +29,8 @@ module PublicationFixtures
     argv = @calls[index].first
     argv[argv.index('--method') + 1]
   end
+
+  def call_text(index) = @calls[index].first.join(' ')
 end
 
 # A description must merge into the existing body and be confirmed once stored.
@@ -100,6 +102,29 @@ end
 # A reply must find its own keyed comment and never touch anyone else's.
 class GitHubReplyTest < Minitest::Test
   include PublicationFixtures
+
+  def test_an_inline_reply_is_created_on_the_original_review_thread
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+                    response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
+    github.reply(body: BODY, key: 'fix-1', comment: 4_031_740_163)
+    assert_equal ['POST', true, true, "<!-- shaka:reply:fix-1 -->\n#{BODY}"],
+                 [sent_method(4), call_text(2).include?('pulls/42/comments?per_page=100'),
+                  call_text(4).include?('pulls/42/comments/4031740163/replies'), sent_body(4)]
+  end
+
+  def test_an_inline_reply_reuses_its_key_only_within_the_same_thread
+    matching = keyed(7, "<!-- shaka:reply:fix-1 -->\nold").merge('in_reply_to_id' => 4_031_740_163)
+    other = keyed(8, "<!-- shaka:reply:fix-1 -->\nother").merge('in_reply_to_id' => 99)
+    github = client(pull_response(''), viewer_response, response([other, matching]), html_response('<p>ok</p>'),
+                    response({ 'id' => 7, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
+    github.reply(body: BODY, key: 'fix-1', comment: 4_031_740_163)
+    assert_equal ['PATCH', true], [sent_method(4), call_text(4).include?('pulls/comments/7')]
+  end
+
+  def test_an_invalid_inline_comment_id_never_contacts_github
+    assert_raises(Shaka::Error) { client.reply(body: BODY, key: 'fix-1', comment: 0) }
+    assert_empty @calls
+  end
 
   def test_replies_reuse_their_keyed_comment_instead_of_duplicating_it
     listed = response([keyed(7, "<!-- shaka:reply:fix-1 -->\nold")])
