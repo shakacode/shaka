@@ -52,7 +52,7 @@ module Shaka
         pull = open_snapshot
         return pull if expected == pull['headRefOid']
 
-        raise Error, 'Reader are not at the expected head.'
+        raise Error, 'Pull request head no longer matches the expected head.'
       end
 
       def issue_head(expected)
