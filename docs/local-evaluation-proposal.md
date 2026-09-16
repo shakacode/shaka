@@ -2,7 +2,7 @@
 
 Status: revised after Fable and subsequent grading reviews; awaiting final re-review.
 No runtime implementation or paid benchmark has started. Updated September 16, 2026,
-against main `76a60cf7f872d2546019716759c20da7b98c91f3`, under
+against main `ea86ae7f898602a00bb4b8056a3ff4731061c573`, under
 [pilot issue #1](https://github.com/shakacode/shaka/issues/1).
 Existing acceptance and merge gates remain in effect.
 
