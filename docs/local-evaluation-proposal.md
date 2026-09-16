@@ -330,14 +330,17 @@ must have the Shaka identity line, at least one `##` section and the terminal
 review from the manifest's driver actor whose body reports `PASS`, whose
 state is `COMMENTED`, whose native review ID matches the driver ledger, whose
 `commit_id` matches the final head, and whose attempt ordinal and cumulative execution
-count match the ledger. For Auto, its GitHub `submitted_at` must strictly predate the
-GitHub merge time. For Ask, the driver ledger's local monotonic time recorded after
-reading the `PASS` review back from GitHub must strictly predate the native terminal
-approval-request event on the same host clock. Ties fail closed. A missing, late or
-latest final-head `FAIL` result fails the cell. For `review-repair`, also fetch the latest native reply by the
+count match the ledger. The driver ledger's local monotonic time recorded after reading
+the `PASS` review back from GitHub must strictly predate Auto's trusted-helper call
+start or Ask's native terminal approval-request event on the same host clock. Also
+require the review's GitHub `submitted_at` to predate Auto's GitHub merge time. Ties
+fail closed. A missing, late or latest final-head `FAIL` result fails the cell. For
+`review-repair`, also fetch the latest native reply by the
 machine-user actor in the seeded inline review-comment thread; that reply must predate
-merge strictly and satisfy the evidence rule; timestamp ties fail closed. A top-level
-comment or different thread never qualifies. Parse only labeled `commit:<40-hex>`,
+merge strictly and satisfy the evidence rule. Record a local monotonic read-back after
+fetching the qualifying reply and require it to strictly predate the trusted-helper
+call start; timestamp ties fail closed. A top-level comment or different thread never
+qualifies. Parse only labeled `commit:<40-hex>`,
 `check-run:<decimal>`, `review:<decimal>` and `walkthrough-review:<decimal>` tokens or
 canonical same-repository GitHub resource URLs as citations; all other numbers and
 text are prose. The reply must include the exact `commit:<final-head>` plus at least
@@ -357,10 +360,11 @@ for missing reply, wrong actor/thread, top-level-only, evidence-free, stale-head
 invalid-reference, ignored prose numbers, valid-current-plus-historical, multiple
 replies, post-merge timing and timestamp ties; driver results for missing review,
 `FAIL`, wrong actor, stale `commit_id`, ledger-mismatched ordinal/count, Ask/Auto late
-timing and timestamp ties, plus `FAIL` followed by a later-head valid `PASS`; a merge
-without a matching helper invocation; walkthrough cases for missing publication,
-wrong actor/schema, reused driver-review ID and a different helper argument; and an
-unmerged Ask completion. Agent success claims never override protected evidence.
+timing and timestamp ties, plus `FAIL` followed by a later-head valid `PASS`; helper
+calls started before or concurrently with the PASS or qualifying reply; a merge without
+a matching helper invocation; walkthrough cases for missing publication, wrong
+actor/schema, reused driver-review ID and a different helper argument; and an unmerged
+Ask completion. Agent success claims never override protected evidence.
 Publish only reviewed aggregate metadata, never raw sessions or private identifiers.
 
 One run per cell is a regression screen. Permit at most one additional pair for
