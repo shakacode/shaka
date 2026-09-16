@@ -136,9 +136,10 @@ The local driver owns a small, fixed lifecycle:
    `driver-verification: PASS` or `FAIL`, the head SHA, attempt ordinal and cumulative
    verifier execution count, without hidden assertions or reference code. The agent
    may merge or request approval only after a fresh `PASS`. Record every verification
-   in cell duration and cost. A merge, approval request or agent termination after
-   `FAIL` fails the cell; without a final-head `PASS`, expiry of the 30-minute cell cap
-   is `LIMIT_REACHED`. The driver never approves or edits the PR. This scripted review
+   in cell duration and cost. Acting or terminating while the latest driver result for
+   that head is `FAIL` fails the cell; a later-head `PASS` permits recovery. Without a
+   final-head `PASS`, expiry of the 30-minute cell cap is `LIMIT_REACHED`. The driver
+   never approves or edits the PR. This scripted review
    is explicitly labeled, not presented as human/AI review quality. Both cases
    therefore have a defined source of fresh review evidence without human input.
 4. Capture final PR/check/review/merge state through the API and grade locally.
@@ -325,9 +326,11 @@ commit through the API. Require a current-head COMMENT walkthrough and a driver
 verification review from the manifest's driver actor whose body reports `PASS`, whose
 state is `COMMENTED`, whose native review ID matches the driver ledger, whose
 `commit_id` matches the final head, and whose attempt ordinal and cumulative execution
-count match the ledger. Require that review to strictly predate Auto's executed
-trusted-helper merge or Ask's native terminal approval-request event; equal timestamps
-fail closed. A missing, `FAIL` or late result fails the cell. For `review-repair`, also fetch the latest native reply by the
+count match the ledger. For Auto, its GitHub `submitted_at` must strictly predate the
+GitHub merge time. For Ask, the driver ledger's local monotonic time recorded after
+reading the `PASS` review back from GitHub must strictly predate the native terminal
+approval-request event on the same host clock. Ties fail closed. A missing, late or
+latest final-head `FAIL` result fails the cell. For `review-repair`, also fetch the latest native reply by the
 machine-user actor in the seeded inline review-comment thread; that reply must predate
 merge strictly and satisfy the evidence rule; timestamp ties fail closed. A top-level
 comment or different thread never qualifies. Parse only labeled `commit:<40-hex>`,
@@ -348,8 +351,9 @@ for missing reply, wrong actor/thread, top-level-only, evidence-free, stale-head
 invalid-reference, ignored prose numbers, valid-current-plus-historical, multiple
 replies, post-merge timing and timestamp ties; driver results for missing review,
 `FAIL`, wrong actor, stale `commit_id`, ledger-mismatched ordinal/count, Ask/Auto late
-timing and timestamp ties; a merge without a matching helper invocation; and an
-unmerged Ask completion. Agent success claims never override protected evidence.
+timing and timestamp ties, plus `FAIL` followed by a later-head valid `PASS`; a merge
+without a matching helper invocation; and an unmerged Ask completion. Agent success
+claims never override protected evidence.
 Publish only reviewed aggregate metadata, never raw sessions or private identifiers.
 
 One run per cell is a regression screen. Permit at most one additional pair for
