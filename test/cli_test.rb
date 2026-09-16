@@ -10,7 +10,7 @@ class CliTest < Minitest::Test
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert status.success?, error
     operations = %w[pr comments description reply walkthrough merge recommendation checkpoint]
-    (operations + %w[--head --issue --content-file --key]).each do |token|
+    (operations + %w[--head --issue --content-file --key --comment]).each do |token|
       assert_includes output, token
     end
   end
