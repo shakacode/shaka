@@ -13,13 +13,19 @@ validates them. Pin an exact `shaka` version. Everything else under
 ## Install
 
 The API ships in the `shaka` gem; there is no separate gem. The registry
-prerelease `0.1.0.pre.1` predates this API, so until a later prerelease is
-published, build the package from source as the [packaging guide](packaging.md)
-describes. Then load only the library:
+prerelease `0.1.0.pre.1` predates this API and shares its version number with
+the source, so a version requirement alone would select the registry package.
+Until a later prerelease contains the API, pin a reviewed commit from source and
+load only the library:
 
 ```ruby
-gem 'shaka', '= VERSION', require: 'shaka/public_comments'
+gem 'shaka', git: 'https://github.com/shakacode/shaka.git', ref: 'FULL_COMMIT_SHA',
+             require: 'shaka/public_comments'
 ```
+
+After a registry prerelease includes `shaka/public_comments`, pin that exact
+version instead. To try a locally built package without Bundler, follow the
+[packaging guide](packaging.md).
 
 The gem also contains the skill files and the `shaka` and `shaka-install`
 executables. Requiring the library does not install a skill, run an agent, or
