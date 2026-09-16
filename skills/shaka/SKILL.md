@@ -35,12 +35,18 @@ trusted `scripts/shaka recommendation --content-file PATH`, supplying one-line `
 `risk`, `model`, `effort`, and `reason` fields; the helper chooses no settings. For
 planning-only requests, include the rendered recommendation in a compact execution
 prompt, then stop before edits; skip the implementation checkpoint.
-For tasks implementing in this session, pause after the recommendation, even if the
-current settings already match, so the user can change the host's actual model and
-effort settings. Do not begin implementation until the user says they are ready. On
-resumption, verify the settings when possible; a prompt cannot change them.
-If the chosen settings differ and switching is unavailable, give one exact user
-action and wait.
+For implementation, use the saved trusted `scripts/shaka checkpoint --content-file PATH`
+after rendering the recommendation. Supply `requested_model`, `requested_effort`,
+`recommended_model`, `recommended_effort`, `immediate_start`, and `settings_available`;
+also supply `active_model` and `active_effort` when the host reports them.
+The helper only reports whether to proceed or the next action. Skip the second response
+only when the user explicitly supplied both settings, the assessment recommends those
+same settings, those settings are active in the host, immediate execution is unambiguous,
+and the host can use them. Otherwise pause after the recommendation. On resumption,
+verify the settings when possible; a prompt cannot change the runner. For differing
+settings, preserve the user's request and ask them to resolve it against the
+recommendation. If active settings are unreported, ask the user to confirm them.
+For unavailable settings, ask the user to select available settings and reply ready.
 Work solo unless delegation is authorized and useful. Reuse relevant evidence.
 
 Use the host's native task-title tool when available: repository, verified issue/PR

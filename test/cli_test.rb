@@ -9,7 +9,7 @@ class CliTest < Minitest::Test
   def test_help_explains_each_operation
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert status.success?, error
-    operations = %w[pr comments description reply walkthrough merge recommendation]
+    operations = %w[pr comments description reply walkthrough merge recommendation checkpoint]
     (operations + %w[--head --issue --content-file --key]).each do |token|
       assert_includes output, token
     end
@@ -28,6 +28,19 @@ class CliTest < Minitest::Test
       output, error, status = run_offline(dir, body, 'recommendation')
       assert status.success?, error
       assert_equal "Scope: Small.\nRisk: Policy.\nModel: gpt-example\nEffort: medium\nReason: Fit.\n", output
+      refute File.exist?(sentinel)
+    end
+  end
+
+  def test_checkpoint_reports_when_matching_intake_can_proceed_without_github
+    without_github do |dir, sentinel|
+      body = JSON.generate(requested_model: 'gpt-5.6-terra', requested_effort: 'medium',
+                           recommended_model: 'gpt-5.6-terra', recommended_effort: 'medium',
+                           active_model: 'gpt-5.6-terra', active_effort: 'medium',
+                           immediate_start: true, settings_available: true)
+      output, error, status = run_offline(dir, body, 'checkpoint')
+      assert status.success?, error
+      assert_equal({ 'status' => 'proceed' }, JSON.parse(output))
       refute File.exist?(sentinel)
     end
   end
