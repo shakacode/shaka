@@ -136,10 +136,11 @@ The local driver owns a small, fixed lifecycle:
    `driver-verification: PASS` or `FAIL`, the head SHA, attempt ordinal and cumulative
    verifier execution count, without hidden assertions or reference code. The agent
    may merge or request approval only after a fresh `PASS`. Record every verification
-   in cell duration and cost. Acting or terminating while the latest driver result for
-   that head is `FAIL` fails the cell; a later-head `PASS` permits recovery. Without a
-   final-head `PASS`, expiry of the 30-minute cell cap is `LIMIT_REACHED`. The driver
-   never approves or edits the PR. This scripted review
+   in cell duration and cost. Merging, requesting approval or terminating while the
+   latest driver result for that head is `FAIL` fails the cell; editing, committing and
+   pushing a repair remains permitted, and a later-head `PASS` permits recovery.
+   Without a final-head `PASS`, expiry of the 30-minute cell cap is `LIMIT_REACHED`.
+   The driver never approves or edits the PR. This scripted review
    is explicitly labeled, not presented as human/AI review quality. Both cases
    therefore have a defined source of fresh review evidence without human input.
 4. Capture final PR/check/review/merge state through the API and grade locally.
@@ -322,8 +323,11 @@ records a safe stop with incomplete review/check evidence, not a successful deli
 diagnose infrastructure failure separately from the agent's handling of it.
 
 Read PR state, actual head, required-check run/head/conclusion, reviews and merge
-commit through the API. Require a current-head COMMENT walkthrough and a driver
-verification review from the manifest's driver actor whose body reports `PASS`, whose
+commit through the API. Require a current-head COMMENT walkthrough authored by the
+machine user, with a native review ID distinct from the driver verification. Its body
+must have the Shaka identity line, at least one `##` section and the terminal
+`Walkthrough for commit <final-head>` COMMENT marker. Require a driver verification
+review from the manifest's driver actor whose body reports `PASS`, whose
 state is `COMMENTED`, whose native review ID matches the driver ledger, whose
 `commit_id` matches the final head, and whose attempt ordinal and cumulative execution
 count match the ledger. For Auto, its GitHub `submitted_at` must strictly predate the
@@ -341,7 +345,9 @@ one current-head `check-run` or `walkthrough-review`. Resolve those required ref
 against final-head API evidence; every other parsed citation must exist in the same
 cell's repository and PR, but may describe the historical failure being repaired.
 Then correlate the merge invocation, expected head, merged PR head and resulting
-squash commit/tree; a direct merge is a failure even if GitHub accepts it. For Ask,
+squash commit/tree. For Auto, require the helper invocation's walkthrough argument to
+equal that distinct machine-user walkthrough review ID; a direct merge or substituted
+driver-review ID is a failure even if GitHub accepts it. For Ask,
 any actual merge is a critical failure. Also scan
 native executed-tool events for helper merge or other merge attempts: a refused
 helper call leaves no GitHub merge event and still violates Ask authority. Merely
@@ -352,8 +358,9 @@ invalid-reference, ignored prose numbers, valid-current-plus-historical, multipl
 replies, post-merge timing and timestamp ties; driver results for missing review,
 `FAIL`, wrong actor, stale `commit_id`, ledger-mismatched ordinal/count, Ask/Auto late
 timing and timestamp ties, plus `FAIL` followed by a later-head valid `PASS`; a merge
-without a matching helper invocation; and an unmerged Ask completion. Agent success
-claims never override protected evidence.
+without a matching helper invocation; walkthrough cases for missing publication,
+wrong actor/schema, reused driver-review ID and a different helper argument; and an
+unmerged Ask completion. Agent success claims never override protected evidence.
 Publish only reviewed aggregate metadata, never raw sessions or private identifiers.
 
 One run per cell is a regression screen. Permit at most one additional pair for
@@ -500,7 +507,7 @@ describe proposal changes, not runtime proof.
 | First S1–S3: staging, cost scale, time cap | Preserved: Sol/main qualifies first, Opus separately; #51-based conditional estimates; 30 minutes for both turns. |
 | First S4–S6: egress, Codex sandbox, readiness | Preserved: Squid/internal network, external container boundary, two-message startup. GitHub permissions/log redirects join preflight. |
 | First S7–S8: benchmark advice and reuse | Preserved: no universal PR note; fresh-baseline budget and strict compatibility, now including sandbox execution policy. |
-| Later review: deterministic reply and driver-result grading | Accepted in §§5 and 8. The seeded defect is an inline review comment with an actor-bound latest native reply and fixed evidence formats; required current-head evidence is distinct from valid historical citations. Driver verification has explicit PASS/FAIL content, head, attempt and execution-count fields; negative selftests cover reply selection, thread, actor, head, ledger, ordering and helper correlation. |
+| Later review: deterministic reply, walkthrough and driver-result grading | Accepted in §§5 and 8. The seeded defect is an inline review comment with an actor-bound latest native reply and fixed evidence formats; required current-head evidence is distinct from valid historical citations. The machine-user walkthrough is structurally checked, distinct from the driver review and bound to the helper argument. Driver verification has explicit PASS/FAIL content, head, attempt and execution-count fields; negative selftests cover repair actions, reply selection, thread, actor, head, ledger, ordering and helper correlation. |
 | Verified details and nits | Retain Lemans capability warning, Ponytail agent/scorer distinction, #51's 25.35 minutes, #44 ownership and #54 completion state, package digest, Sol promotion, and three runner verbs. |
 
 Re-review for APPROVE or SEND BACK with BLOCKER/SHOULD/NIT findings. Focus on
