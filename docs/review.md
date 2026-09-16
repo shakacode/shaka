@@ -92,20 +92,19 @@ with the task owner and does not delay that handoff.
    and repeat this procedure for the new head, starting a new wait budget, before
    completing the task.
 
-An optional reviewer may remain unavailable after any terminal job without a
-verified report—including success, failure, skipped, cancelled, timed out, neutral,
-stale, or action required—or when a verified provider outage or quota block leaves
-no runnable job. The active optional-review wait also ends when its one 10-minute
-exact-head budget expires while a job remains nonterminal—including queued,
-waiting, executing, or blocked on manual approval—or disappears or is replaced.
-A named source whose check or exact-head report never appears during that budget
-is likewise unavailable for the active wait. Transitions, timestamps, annotations,
-log output, retries, and replacements never extend the absolute budget. The single
-post-terminal 60-second report refresh in step 3 is the only exception and may end
-after that budget. An explicit
-handoff can then end the active wait; a verified report already received still must
-be handled, while the nonterminal or missing residual state is handed to the named
-later owner.
+This paragraph applies only to optional reviewers. An optional reviewer may remain
+unavailable after any terminal job without a verified report—including success,
+failure, skipped, cancelled, timed out, neutral, stale, or action required—or when
+a verified provider outage or quota block leaves no runnable job. The active
+optional-review wait also ends whenever its one 10-minute exact-head budget expires
+without settlement, whether a job or report never appeared, a job remains
+nonterminal, a job disappeared or was replaced, or a checkless report was withheld
+or otherwise could not be verified. Transitions, timestamps, annotations, log output,
+retries, and replacements never extend the absolute budget. The single post-terminal
+60-second report refresh in step 3 is the only exception and may end after that
+budget. An explicit handoff can then end the active wait; a verified report already
+received still must be handled, while the nonterminal, missing, or unverified
+residual state is handed to the named later owner.
 Record in the PR summary and final response the reviewer and state, exact head,
 feedback already handled, retained links for unread prose, terminal/outage/wait
 evidence—including `no job or exact-head report observed during the wait budget`
@@ -151,9 +150,11 @@ that the review settled or that B is ready.
 
 ## Reviews after merge
 
-Wait for required review or user-requested review gates of the current head before merging;
-if one fails or becomes unavailable, use the blocker-or-decision rule in
-Handle review findings rather than the optional-review handoff. Check other
+Wait for required review or user-requested review gates of the current head before
+merging. If one fails or becomes unavailable, use the blocker-or-decision rule in
+Handle review findings rather than the optional-review handoff; that decision path
+cannot clear the gate unless the authority that set it changes the requirement.
+Check other
 running reviews again before merge under the public-prose rule above: read completed
 findings and disclose pending optional reviews without making them a merge gate.
 During an express comment-resolution task, a pending known optional review keeps the
