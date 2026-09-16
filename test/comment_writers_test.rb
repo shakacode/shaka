@@ -55,7 +55,7 @@ class CommentWritersTest < Minitest::Test
     github = client(response({ 'data' => { 'repository' => fields } }))
     logins = (1..9).map { |id| "person#{id}" }
 
-    error = assert_raises(Shaka::Error) { Shaka::CommentWriters.new(github).permissions(logins) }
+    error = assert_raises(Shaka::Error) { Shaka::PublicComments::Writers.new(github).permissions(logins) }
     assert_match(/writer evidence is unavailable/, error.message)
   end
 
@@ -75,7 +75,7 @@ class CommentWritersTest < Minitest::Test
     github = client(response({ 'data' => { 'repository' => fields } }))
     logins = (1..9).map { |id| "person#{id}" }
 
-    error = assert_raises(Shaka::Error) { Shaka::CommentWriters.new(github).permissions(logins) }
+    error = assert_raises(Shaka::Error) { Shaka::PublicComments::Writers.new(github).permissions(logins) }
     assert_match(/writer evidence is unavailable/, error.message)
     assert_equal 1, @calls.length
   end
@@ -84,18 +84,18 @@ class CommentWritersTest < Minitest::Test
     github = client
     logins = (1..501).map { |id| "person#{id}" }
 
-    error = assert_raises(Shaka::Error) { Shaka::CommentWriters.new(github).permissions(logins) }
+    error = assert_raises(Shaka::Error) { Shaka::PublicComments::Writers.new(github).permissions(logins) }
     assert_match(/Too many public comment authors/, error.message)
     assert_empty @calls
   end
 
   def test_writer_confirmations_stop_at_one_hundred_candidates
     logins = (1..101).map { |id| "person#{id}" }
-    pages = logins.each_slice(Shaka::CommentWriters::BATCH_SIZE)
+    pages = logins.each_slice(Shaka::PublicComments::Writers::BATCH_SIZE)
                   .map { |slice| graph_writer_response(slice, logins) }
     github = client(*pages)
 
-    error = assert_raises(Shaka::Error) { Shaka::CommentWriters.new(github).permissions(logins) }
+    error = assert_raises(Shaka::Error) { Shaka::PublicComments::Writers.new(github).permissions(logins) }
     assert_match(/100 confirmations/, error.message)
     assert_equal 3, @calls.length
   end

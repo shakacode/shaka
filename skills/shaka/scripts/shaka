@@ -4,7 +4,7 @@
 require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
-require_relative '../lib/shaka/comments'
+require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
@@ -79,7 +79,8 @@ begin
              issue_only = options.fetch(:issue_only, false)
              raise OptionParser::InvalidArgument, '--head does not apply to issues' if issue_only && options[:head]
 
-             Shaka::Comments.new(github).call(issue_only:, expected_head: issue_only ? nil : options[:head])
+             Shaka::PublicComments::Reader.new(github).call(issue_only:,
+                                                            expected_head: issue_only ? nil : options[:head])
            when 'description'
              github.description(body: Shaka::Publication.description(content(options.fetch(:content_file))))
            when 'reply'

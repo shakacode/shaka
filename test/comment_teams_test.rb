@@ -11,7 +11,7 @@ class CommentTeamsTest < Minitest::Test
 
   def test_direct_membership_accepts_only_active_same_login
     github = client(active('member'), active('pending', state: 'pending'), active('other', url_login: 'stranger'))
-    result = Shaka::CommentTeams.new(github).trusted(%w[member pending other], [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(%w[member pending other], [%w[owner maintainers]])
 
     assert_equal({ trusted: Set['member'], unavailable: Set['other'] }, result)
     assert_equal 3, @calls.length
@@ -22,7 +22,7 @@ class CommentTeamsTest < Minitest::Test
     logins = (1..40).map { |id| "outside#{id}" } + ['member']
     members = [{ 'login' => 'member', 'type' => 'User' }]
     github = client(response(members), active('member'))
-    result = Shaka::CommentTeams.new(github).trusted(logins, [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(logins, [%w[owner maintainers]])
 
     assert_equal Set['member'], result[:trusted]
     assert_batched_team_calls
@@ -36,8 +36,8 @@ class CommentTeamsTest < Minitest::Test
 
   def test_mismatched_list_login_never_reaches_membership_api
     github = client(response([{ 'login' => 'stranger', 'type' => 'User' }]))
-    result = Shaka::CommentTeams.new(github).trusted((1..33).map { |id| "person#{id}" },
-                                                     [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted((1..33).map { |id| "person#{id}" },
+                                                              [%w[owner maintainers]])
 
     assert_empty result[:trusted]
     assert_equal 1, @calls.length
@@ -45,7 +45,7 @@ class CommentTeamsTest < Minitest::Test
 
   def test_unavailable_membership_is_not_trusted
     github = client(response({ 'message' => 'not found' }, status: 1))
-    result = Shaka::CommentTeams.new(github).trusted(['person'], [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(['person'], [%w[owner maintainers]])
     assert_empty result[:trusted]
     assert_equal Set['person'], result[:unavailable]
   end
@@ -53,7 +53,7 @@ class CommentTeamsTest < Minitest::Test
   def test_visible_team_makes_404_definitive_and_reuses_access_probe
     missing = response({ 'message' => 'Not Found' }, status: 1, http_status: 404)
     github = client(missing, response([]), missing)
-    result = Shaka::CommentTeams.new(github).trusted(%w[outside1 outside2], [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(%w[outside1 outside2], [%w[owner maintainers]])
 
     assert_empty result[:trusted]
     assert_empty result[:unavailable]
@@ -64,7 +64,7 @@ class CommentTeamsTest < Minitest::Test
   def test_hidden_team_keeps_404_verification_unavailable
     missing = response({ 'message' => 'Not Found' }, status: 1, http_status: 404)
     github = client(missing, missing)
-    result = Shaka::CommentTeams.new(github).trusted(['person'], [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(['person'], [%w[owner maintainers]])
 
     assert_empty result[:trusted]
     assert_equal Set['person'], result[:unavailable]
@@ -74,7 +74,7 @@ class CommentTeamsTest < Minitest::Test
     listed = response([{ 'login' => 'member', 'type' => 'User' }])
     github = client(listed, response({ 'message' => 'unavailable' }, status: 1))
     logins = (1..33).map { |id| "person#{id}" } + ['member']
-    result = Shaka::CommentTeams.new(github).trusted(logins, [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(logins, [%w[owner maintainers]])
 
     assert_empty result[:trusted]
     assert_equal Set['member'], result[:unavailable]
@@ -83,8 +83,8 @@ class CommentTeamsTest < Minitest::Test
   def test_unavailable_list_stops_instead_of_claiming_complete_evidence
     github = client(response({ 'message' => 'unavailable' }))
     error = assert_raises(Shaka::Error) do
-      Shaka::CommentTeams.new(github).trusted((1..33).map { |id| "person#{id}" },
-                                              [%w[owner maintainers]])
+      Shaka::PublicComments::Teams.new(github).trusted((1..33).map { |id| "person#{id}" },
+                                                       [%w[owner maintainers]])
     end
 
     assert_match(/list evidence is unavailable/, error.message)
@@ -96,7 +96,7 @@ class CommentTeamsTest < Minitest::Test
     responses = Array.new(20) { response([]) }
     github = client(*responses)
 
-    assert_empty Shaka::CommentTeams.new(github).trusted(logins, teams)[:trusted]
+    assert_empty Shaka::PublicComments::Teams.new(github).trusted(logins, teams)[:trusted]
     assert_equal 20, @calls.length
   end
 
@@ -104,7 +104,7 @@ class CommentTeamsTest < Minitest::Test
     github = client
     teams = (1..21).map { |id| ['owner', "team#{id}"] }
 
-    assert_raises(Shaka::Error) { Shaka::CommentTeams.new(github).trusted(['person'], teams) }
+    assert_raises(Shaka::Error) { Shaka::PublicComments::Teams.new(github).trusted(['person'], teams) }
     assert_empty @calls
   end
 end

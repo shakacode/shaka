@@ -31,7 +31,7 @@ class CommentTeamFallbackTest < Minitest::Test
     authors = logins(33)
     github = all_member_client(authors)
 
-    result = Shaka::CommentTeams.new(github).trusted(authors, [%w[owner first], %w[owner second]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(authors, [%w[owner first], %w[owner second]])
     assert_equal Set.new(authors), result[:trusted]
     assert_equal 34, @calls.length
   end
@@ -40,7 +40,7 @@ class CommentTeamFallbackTest < Minitest::Test
     authors = logins(9)
     github = client(*authors.map { |login| pending(login) })
 
-    assert_empty Shaka::CommentTeams.new(github).trusted(authors, [%w[owner maintainers]])[:trusted]
+    assert_empty Shaka::PublicComments::Teams.new(github).trusted(authors, [%w[owner maintainers]])[:trusted]
     assert_equal 9, @calls.length
     assert(@calls.all? { |argv, _| argv[2].include?('/memberships/') })
   end
@@ -49,7 +49,7 @@ class CommentTeamFallbackTest < Minitest::Test
     authors = logins(40)
     github = client(*oversized_pages, *authors.map { |login| pending(login) })
 
-    result = Shaka::CommentTeams.new(github).trusted(authors, [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(authors, [%w[owner maintainers]])
     assert_equal({ trusted: Set.new, unavailable: Set.new }, result)
     assert_equal 51, @calls.length
   end
@@ -57,7 +57,7 @@ class CommentTeamFallbackTest < Minitest::Test
   def test_oversized_listing_stops_before_excessive_direct_fallback
     github = client(*oversized_pages)
     error = assert_raises(Shaka::Error) do
-      Shaka::CommentTeams.new(github).trusted(logins(101), [%w[owner maintainers]])
+      Shaka::PublicComments::Teams.new(github).trusted(logins(101), [%w[owner maintainers]])
     end
 
     assert_match(/list evidence is unavailable/, error.message)
@@ -69,7 +69,7 @@ class CommentTeamFallbackTest < Minitest::Test
     github = client(*listed_member_pages(authors))
 
     error = assert_raises(Shaka::Error) do
-      Shaka::CommentTeams.new(github).trusted(authors, [%w[owner maintainers]])
+      Shaka::PublicComments::Teams.new(github).trusted(authors, [%w[owner maintainers]])
     end
 
     assert_match(/100 checks/, error.message)

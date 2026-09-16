@@ -40,7 +40,7 @@ class CommentConfigScreeningTest < Minitest::Test
     bot = comment(id: 95, author: 'review-bot[bot]', body: 'Bot finding')
           .merge('user' => { 'login' => 'review-bot[bot]', 'type' => 'Bot' })
     member = comment(id: 96, author: 'member', body: 'Team finding')
-    Shaka::Comments.new(configured_client(bot, member), machine_path: path).call(expected_head: HEAD)
+    Shaka::PublicComments::Reader.new(configured_client(bot, member), machine_path: path).call(expected_head: HEAD)
   end
 
   def assert_configured_screening(result)

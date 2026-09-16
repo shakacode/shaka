@@ -14,7 +14,7 @@ class CommentTeamEvidenceTest < Minitest::Test
     logins = (1..33).map { |id| "outside#{id}" }
 
     error = assert_raises(Shaka::Error) do
-      Shaka::CommentTeams.new(github).trusted(logins, [%w[owner maintainers]])
+      Shaka::PublicComments::Teams.new(github).trusted(logins, [%w[owner maintainers]])
     end
 
     assert_match(/Team-member row is malformed/, error.message)
@@ -23,7 +23,7 @@ class CommentTeamEvidenceTest < Minitest::Test
 
   def test_malformed_visibility_probe_keeps_404_unavailable
     github = client(missing_membership, response([{ 'login' => 'person' }]))
-    result = Shaka::CommentTeams.new(github).trusted(['person'], [%w[owner maintainers]])
+    result = Shaka::PublicComments::Teams.new(github).trusted(['person'], [%w[owner maintainers]])
 
     assert_empty result[:trusted]
     assert_equal Set['person'], result[:unavailable]

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'github_helper'
-require 'shaka/comments'
+require 'shaka/public_comments'
 
 module CommentsFixture
   include GitHubHelper
@@ -16,8 +16,8 @@ module CommentsFixture
     threads = default_threads(inline) if threads.empty?
     pages = options.fetch(:thread_pages) { [thread_response(threads)] }
     github = packet_client(visibility, [issue, reviews, inline], pages, options)
-    Shaka::Comments.new(github, trust_config: options.fetch(:trust_config, empty_trust_config))
-                   .call(expected_head: HEAD)
+    Shaka::PublicComments::Reader.new(github, trust_config: options.fetch(:trust_config, empty_trust_config))
+                                 .call(expected_head: HEAD)
   end
 
   def packet_client(visibility, items, pages, options)
@@ -34,7 +34,7 @@ module CommentsFixture
   end
 
   def comments_reader(github)
-    Shaka::Comments.new(github, trust_config: empty_trust_config)
+    Shaka::PublicComments::Reader.new(github, trust_config: empty_trust_config)
   end
 
   def default_threads(inline)
@@ -67,11 +67,11 @@ module CommentsFixture
   def prefilter_pages(visibility, options, items)
     return [] unless visibility == 'public'
 
-    logins = authors(items).select { |login| login.is_a?(String) && login.match?(Shaka::CommentWriters::LOGIN) }
-    return [] if logins.length <= Shaka::CommentWriters::DIRECT_LIMIT
+    logins = authors(items).select { |login| login.is_a?(String) && login.match?(Shaka::PublicComments::Writers::LOGIN) }
+    return [] if logins.length <= Shaka::PublicComments::Writers::DIRECT_LIMIT
 
     writers = options.fetch(:writers, logins)
-    logins.each_slice(Shaka::CommentWriters::BATCH_SIZE).map { |slice| graph_writer_response(slice, writers) }
+    logins.each_slice(Shaka::PublicComments::Writers::BATCH_SIZE).map { |slice| graph_writer_response(slice, writers) }
   end
 
   def graph_writer_response(logins, writers)
@@ -86,7 +86,7 @@ module CommentsFixture
     github = client(response({ 'number' => 42 }), repository_response('public'),
                     response(comments), *prefilter_pages('public', {}, comments), *permissions,
                     repository_response('public'))
-    Shaka::Comments.new(github, trust_config: empty_trust_config).call(issue_only: true)
+    Shaka::PublicComments::Reader.new(github, trust_config: empty_trust_config).call(issue_only: true)
   end
 
   def bodies(result, key)

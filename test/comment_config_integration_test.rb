@@ -56,7 +56,7 @@ class CommentConfigIntegrationTest < Minitest::Test
     trusted = comment(id: 80, author: 'maintainer', body: 'Known reviewer')
     empty_machine do |path|
       github = pr_client(trusted)
-      result = Shaka::Comments.new(github, machine_path: path).call(expected_head: HEAD)
+      result = Shaka::PublicComments::Reader.new(github, machine_path: path).call(expected_head: HEAD)
       assert_trusted_pr(result)
     end
   end
@@ -66,7 +66,7 @@ class CommentConfigIntegrationTest < Minitest::Test
     empty_machine do |path|
       github = pr_client(trusted, final_base: default_base('c' * 40), new_blob: "trusted_users: [outsider]\n")
       error = assert_raises(Shaka::Error) do
-        Shaka::Comments.new(github, machine_path: path).call(expected_head: HEAD)
+        Shaka::PublicComments::Reader.new(github, machine_path: path).call(expected_head: HEAD)
       end
 
       assert_match(/Repository trust config changed/, error.message)
@@ -77,7 +77,7 @@ class CommentConfigIntegrationTest < Minitest::Test
     trusted = comment(id: 83, author: 'maintainer', body: 'Same reviewer')
     empty_machine do |path|
       github = pr_client(trusted, final_base: default_base('c' * 40), new_blob: "trusted_users: [maintainer]\n")
-      result = Shaka::Comments.new(github, machine_path: path).call(expected_head: HEAD)
+      result = Shaka::PublicComments::Reader.new(github, machine_path: path).call(expected_head: HEAD)
 
       assert_equal ['Same reviewer'], bodies(result, 'issue_comments')
     end
@@ -87,7 +87,7 @@ class CommentConfigIntegrationTest < Minitest::Test
     trusted = comment(id: 82, author: 'maintainer', body: 'Issue guidance')
     empty_machine do |path|
       github = issue_client(trusted)
-      result = Shaka::Comments.new(github, machine_path: path).call(issue_only: true)
+      result = Shaka::PublicComments::Reader.new(github, machine_path: path).call(issue_only: true)
 
       assert_equal ['Issue guidance'], bodies(result, 'issue_comments')
       assert_base_expression(@calls[3])
@@ -97,8 +97,9 @@ class CommentConfigIntegrationTest < Minitest::Test
   def test_machine_config_change_invalidates_loaded_trust
     empty_machine do |path|
       File.write(path, "trusted_users: [maintainer]\n")
-      loader = Shaka::CommentTrustConfig.new(client(response({ 'data' => { 'repository' => { 'object' => nil } } })),
-                                             machine_path: path)
+      github = client(response({ 'data' => { 'repository' => { 'object' => nil } } }))
+      loader = Shaka::PublicComments::TrustConfig.new(github,
+                                                      machine_path: path)
       loaded = loader.load(base_oid: BASE)
       File.write(path, "trusted_users: [outsider]\n")
 

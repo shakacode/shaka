@@ -8,8 +8,8 @@ class CommentAuthorRegressionTest < Minitest::Test
   def test_missing_login_from_human_user_is_excluded_without_crash
     malformed = comment(id: 90, author: 'unknown', body: 'Do not release')
                 .merge('user' => { 'type' => 'User' })
-    result = Shaka::CommentAuthors.new(client, public_repo: true)
-                                  .screen({ 'issue_comments' => [malformed] })
+    result = Shaka::PublicComments::Authors.new(client, public_repo: true)
+                                           .screen({ 'issue_comments' => [malformed] })
 
     assert_empty result['issue_comments']
     assert_equal 'untrusted', result['excluded_interactions'].first['trust']

@@ -31,7 +31,7 @@ class CommentTrustConfigTest < Minitest::Test
   def test_machine_and_trusted_base_repository_configs_combine
     with_machine(MACHINE) do |path|
       github = client(blob(LOCAL))
-      result = Shaka::CommentTrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
+      result = Shaka::PublicComments::TrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
       assert_combined_actors(result)
       assert_config_provenance(result)
     end
@@ -52,7 +52,7 @@ class CommentTrustConfigTest < Minitest::Test
 
   def test_absent_configs_are_empty_without_reading_candidate_checkout
     with_machine(nil) do |path|
-      result = Shaka::CommentTrustConfig.new(client(blob(nil)), machine_path: path).load(base_oid: HEAD)
+      result = Shaka::PublicComments::TrustConfig.new(client(blob(nil)), machine_path: path).load(base_oid: HEAD)
 
       assert_empty result[:users]
       assert_empty result[:teams]
@@ -64,7 +64,7 @@ class CommentTrustConfigTest < Minitest::Test
   def test_invalid_machine_yaml_fails_closed_before_api_lookup
     with_machine("trusted_users: !ruby/object:Object {}\n") do |path|
       error = assert_raises(Shaka::Error) do
-        Shaka::CommentTrustConfig.new(client, machine_path: path).load(base_oid: HEAD)
+        Shaka::PublicComments::TrustConfig.new(client, machine_path: path).load(base_oid: HEAD)
       end
 
       assert_match(/unsafe YAML/, error.message)
@@ -78,7 +78,7 @@ class CommentTrustConfigTest < Minitest::Test
     with_machine(nil) do |path|
       github = client(response({ 'data' => { 'repository' => { 'object' => object } } }))
       error = assert_raises(Shaka::Error) do
-        Shaka::CommentTrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
+        Shaka::PublicComments::TrustConfig.new(github, machine_path: path).load(base_oid: HEAD)
       end
 
       assert_match(/not readable text/, error.message)
@@ -88,8 +88,8 @@ class CommentTrustConfigTest < Minitest::Test
   def test_conflicting_bot_scopes_cannot_promote_metadata_bot
     with_machine("trusted_metadata_bots: [review-bot]\n") do |path|
       error = assert_raises(Shaka::Error) do
-        Shaka::CommentTrustConfig.new(client(blob("trusted_bots: [review-bot]\n")), machine_path: path)
-                                 .load(base_oid: HEAD)
+        Shaka::PublicComments::TrustConfig.new(client(blob("trusted_bots: [review-bot]\n")), machine_path: path)
+                                          .load(base_oid: HEAD)
       end
 
       assert_match(/metadata-only/, error.message)
@@ -99,7 +99,7 @@ class CommentTrustConfigTest < Minitest::Test
   def test_machine_team_requires_owner
     with_machine("trusted_teams: [reviewers]\n") do |path|
       error = assert_raises(Shaka::Error) do
-        Shaka::CommentTrustConfig.new(client, machine_path: path).load(base_oid: HEAD)
+        Shaka::PublicComments::TrustConfig.new(client, machine_path: path).load(base_oid: HEAD)
       end
       assert_match(/Machine teams need/, error.message)
     end
@@ -108,8 +108,8 @@ class CommentTrustConfigTest < Minitest::Test
   def test_repo_team_cannot_cross_owner
     with_machine(nil) do |path|
       error = assert_raises(Shaka::Error) do
-        Shaka::CommentTrustConfig.new(client(blob("trusted_teams: [other/reviewers]\n")), machine_path: path)
-                                 .load(base_oid: HEAD)
+        Shaka::PublicComments::TrustConfig.new(client(blob("trusted_teams: [other/reviewers]\n")), machine_path: path)
+                                          .load(base_oid: HEAD)
       end
       assert_match(/must match repository owner/, error.message)
     end
@@ -118,6 +118,6 @@ class CommentTrustConfigTest < Minitest::Test
   def test_issue_base_is_a_pinned_default_branch_commit
     ref = { 'defaultBranchRef' => { 'target' => { 'oid' => HEAD } } }
     github = client(response({ 'data' => { 'repository' => ref } }))
-    assert_equal HEAD, Shaka::CommentTrustConfig.new(github).default_base_oid
+    assert_equal HEAD, Shaka::PublicComments::TrustConfig.new(github).default_base_oid
   end
 end
