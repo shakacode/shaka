@@ -37,7 +37,7 @@ class CommentsTest < Minitest::Test
   def test_public_repo_keeps_maintainer_inline_feedback
     inline = comment(id: 4, author: 'maintainer', body: 'Fix this behavior')
              .merge('path' => 'app.rb', 'original_line' => 9, 'commit_id' => HEAD, 'in_reply_to_id' => 3)
-    result = packet(inline: [inline], permissions: [permission('maintainer', 'maintain')])
+    result = packet(inline: [inline], permissions: [permission('maintainer', 'write')])
 
     assert_equal [inline['body']], bodies(result, 'inline_comments')
     assert_inline_location(result, path: inline['path'], original_line: 9, commit_id: HEAD)

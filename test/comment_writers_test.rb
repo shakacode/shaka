@@ -39,6 +39,26 @@ class CommentWritersTest < Minitest::Test
     assert_equal false, result['excluded_interactions'].first['prefiltered']
   end
 
+  def test_unknown_direct_permission_is_marked_unavailable
+    outside = comment(id: 34, author: 'outside', body: 'Feedback')
+    result = packet(issue: [outside], permissions: [permission('outside', 'future_role')])
+
+    assert_equal true, result['excluded_interactions'].first['verification_unavailable']
+    assert_equal false, result['excluded_interactions'].first['prefiltered']
+  end
+
+  def test_unknown_batched_permission_stops_instead_of_prefiltering_author
+    fields = (1..9).each_with_index.to_h do |id, index|
+      role = id == 1 ? 'FUTURE_ROLE' : 'READ'
+      ["u#{index}", { 'edges' => [{ 'node' => { 'login' => "person#{id}" }, 'permission' => role }] }]
+    end
+    github = client(response({ 'data' => { 'repository' => fields } }))
+    logins = (1..9).map { |id| "person#{id}" }
+
+    error = assert_raises(Shaka::Error) { Shaka::CommentWriters.new(github).permissions(logins) }
+    assert_match(/writer evidence is unavailable/, error.message)
+  end
+
   def test_unavailable_batched_writer_evidence_blocks_public_packet
     commenters = (1..9).map { |id| comment(id: id, author: "person#{id}", body: 'Check this') }
     github = client(snapshot_response, repository_response('public'), response(commenters),

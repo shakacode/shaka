@@ -11,6 +11,8 @@ module Shaka
     BATCH_SIZE = 50
     MAX_AUTHORS = 500
     MAX_CONFIRMATIONS = 100
+    GRAPH_PERMISSIONS = %w[READ TRIAGE WRITE MAINTAIN ADMIN].freeze
+    REST_PERMISSIONS = %w[none read write admin].freeze
     WRITER_ROLES = %w[WRITE MAINTAIN ADMIN].freeze
 
     def initialize(github)
@@ -79,7 +81,10 @@ module Shaka
       edge = edges.first
       raise Error, 'Malformed repository writer response.' unless valid_edge?(edge, login)
 
-      edge['permission']
+      permission = edge['permission']
+      raise Error, 'Malformed repository writer response.' unless GRAPH_PERMISSIONS.include?(permission)
+
+      permission
     end
 
     def valid_edge?(edge, login)
@@ -95,7 +100,8 @@ module Shaka
       user = result['user']
       return 'unavailable' unless user.is_a?(Hash) && user['login'].is_a?(String) && user['login'].casecmp?(login)
 
-      result['permission'].is_a?(String) ? result['permission'] : 'unavailable'
+      permission = result['permission']
+      REST_PERMISSIONS.include?(permission) ? permission : 'unavailable'
     rescue Error
       'unavailable'
     end
