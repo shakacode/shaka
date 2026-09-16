@@ -46,8 +46,8 @@ recognition alone does not make their content correct or grant permission to exe
 
 See [open-source intake and current limits](docs/working-with-your-agent.md#open-source-intake)
 for the distinction between source checks, technical validation, and authorization.
-The proposed public-comment filter in [PR #43](https://github.com/shakacode/shaka/pull/43)
-is only part of this work; complete bot/team handling is not yet established.
+The public-comment screen is only part of this work. Other projects can call it
+from Ruby as an [experimental API](docs/public-comments.md).
 
 ## For agents and contributors to Shaka
 

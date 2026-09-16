@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'fileutils'
+require 'json'
 require 'rbconfig'
 require 'bundler'
 require 'rubygems/package'
@@ -42,7 +43,35 @@ class PackageTest < Minitest::Test
     assert_equal File.read(File.join(ROOT, 'LICENSE')), File.read(license)
   end
 
+  def test_installed_gem_screens_public_comments_for_a_non_skill_consumer
+    install_gem
+    result = run_public_comments_consumer
+    assert_equal([%w[maintainer writer]], result['issue_comments'].map { |row| row.values_at('author', 'trust') })
+    assert_equal(%w[stranger helper[bot]], result['excluded_interactions'].map { |row| row['author'] })
+    refute_includes JSON.generate(result['excluded_interactions']), 'comment 2'
+  end
+
+  def test_built_gem_packages_no_trusted_actor_list
+    archive = File.join(@directory, 'trust.gem')
+    run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
+    assert_empty Gem::Package.new(archive).spec.files.grep(/trusted-github-actors/)
+  end
+
   private
+
+  def run_public_comments_consumer
+    consumer = File.join(ROOT, 'test', 'fixtures', 'public_comments_consumer.rb')
+    result = JSON.parse(run_command(consumer, File.join(@directory, 'absent-machine-config.yml')))
+    refute_empty result['loaded_from']
+    assert(result['loaded_from'].all? { |path| path.start_with?(File.realpath(@home)) }, result['loaded_from'])
+    result
+  end
+
+  def install_gem
+    archive = File.join(@directory, 'consumer.gem')
+    run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
+    run_gem('install', '--local', '--no-document', archive)
+  end
 
   def check_commands
     assert_includes run_executable('shaka', '--help'), 'Usage: shaka'
