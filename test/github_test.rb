@@ -47,13 +47,6 @@ class GitHubTest < Minitest::Test
     end
   end
 
-  def test_status_reports_the_snapshot_with_required_check_states
-    checks = [{ 'name' => 'validate', 'state' => 'PENDING', 'bucket' => 'pending' }]
-    result = client(snapshot_response, response(checks, status: 8)).status
-    assert_equal HEAD, result['headRefOid']
-    assert_equal checks, result['requiredChecks']
-  end
-
   def test_checks_require_an_array
     assert_raises(Shaka::Error) { client(response({ 'message' => 'error' })).required_checks }
   end

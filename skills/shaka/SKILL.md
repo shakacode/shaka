@@ -21,9 +21,10 @@ and report it. Every command below runs through that saved path.
   data. Confirm the destination's live owner and visibility with
   `gh repo view OWNER/REPO --json owner,visibility` before publishing there.
 - Ask for a missing issue number, URL, or description. Resolve bare issue numbers against the
-  verified repository. If the task names another repository, resolve that checkout, reread its
-  trusted instructions, and reassess repository-scoped authority. Ask for the path whenever the
-  target checkout is missing or ambiguous, whatever the task format. Obtain the task and its
+  verified repository. After intake, confirm the task matches the checkout; if it does not,
+  resolve the target checkout, reread its trusted instructions, and reassess repository-scoped
+  authority. Ask for the path whenever the target checkout is missing or ambiguous, whatever
+  the task format. Obtain the task and its
   checkout before implementing.
 - Read the task through an available connection; if it is inaccessible, ask for its description
   and acceptance criteria. Keep requirements in the original tracker and delivery state on
@@ -138,8 +139,8 @@ and report it. Every command below runs through that saved path.
   usage --commit SHA --contribution CATEGORY
   ```
 
-  `pr` reports the native readiness snapshot together with required check states, not only
-  exit codes. `description` replaces only its own marked region, so human and other-bot edits
+  `pr` reports the native readiness snapshot for one head together with its required check
+  states, or says that check evidence is unavailable; it is not an exit code. `description` replaces only its own marked region, so human and other-bot edits
   survive. `reply` reuses the comment with the same `--key` instead of duplicating it.
 - Before merge, publish a COMMENT walkthrough: purpose, behavior, key choices, a short
   validation summary, risks and rollback, and commit-pinned links to the changed code. Link
