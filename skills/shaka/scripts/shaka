@@ -4,6 +4,7 @@
 require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
+require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
@@ -23,6 +24,11 @@ end
 if ARGV.first == 'recommendation'
   ARGV.shift
   exit Shaka::Recommendation.run(ARGV)
+end
+
+if ARGV.first == 'checkpoint'
+  ARGV.shift
+  exit Shaka::Checkpoint.run(ARGV)
 end
 
 COMMANDS = %w[pr description reply walkthrough merge].freeze
@@ -45,7 +51,7 @@ end
 options = {}
 parser = OptionParser.new do |flags|
   flags.banner = "Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; "
-  flags.banner += 'shaka usage --help; shaka work --help; shaka recommendation --help'
+  flags.banner += 'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help'
   flags.on('--head SHA', 'Expected current PR head') { |value| options[:head] = value }
   flags.on('--content-file PATH', 'Publication content as JSON') { |value| options[:content_file] = value }
   flags.on('--body-file PATH', 'Walkthrough Markdown file') { |value| options[:body_file] = value }
