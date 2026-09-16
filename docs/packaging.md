@@ -29,6 +29,10 @@ keep its trusted source outside the agent's writable directories, including any
 temporary directories the host allows. Do not export the test gem environment into
 your application's shell or add the pilot to its Gemfile.
 
+Applications that only need the experimental public-comment screen can load
+`shaka/public_comments` from this package without the skill; see
+[screen public comments from Ruby](public-comments.md).
+
 The package also contains `shaka-install --skills-dir DIR`, which calls
 the existing explicit-directory installer. Use it only when you want a link in a
 chosen skill directory. It preserves existing content and refuses to replace a
