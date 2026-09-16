@@ -2,7 +2,8 @@
 
 Start with `$shaka`. It asks for the issue number, URL, or task description and merge
 preference if missing, then reads the task, recommends a model and effort, and pauses
-so you can change the host settings before implementation.
+before implementation unless matching settings and immediate start were explicit at
+intake.
 You can also supply the task and any limits directly. You should not need to
 learn the agent's internal process to get a useful pull request.
 
@@ -16,7 +17,7 @@ before the answer becomes expensive to change, rather than waiting for PR review
 | The checkout or task is unavailable | Asks for the repository path or task description; does not make you rewrite the workflow prompt. |
 | Required repository instructions are missing | Reads scripts and CI, offers a minimal `AGENTS.md` addition, and asks only about policy it cannot establish. Existing documented commands are sufficient; no new config framework is required. |
 | Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back for approval. Reuses existing authority; without an answer, prepares the PR and asks before merging. |
-| The model and effort have been recommended for implementation | Pauses so you can change the host settings, even if they already match; waits for you to say you are ready before implementation. |
+| The model and effort have been recommended for implementation | Proceeds without another response only when the intake explicitly named matching model and effort, clearly authorized starting now, and those settings are active and usable in the host. Otherwise it pauses with one next action. |
 | The goal or acceptable behavior is unclear | Reads the existing context, then asks the smallest question needed to proceed. |
 | Several routine, reversible approaches fit the request | Chooses one and continues; mentions the assumption if it affects your expectations. |
 | Implementation reveals a product tradeoff, wider scope, or risk | Explains the discovery, recommends a path, and asks before dependent work continues. |
@@ -43,10 +44,13 @@ the actual merge decision until you can see the finished change.
 and explains how the assessment led to that choice. It applies the procedure's
 total-work cost guidance instead of a standing effort default; the current evidence is
 recorded in [#45](https://github.com/shakacode/shaka/issues/45). The agent pauses so you
-can change the host's model and effort settings, then waits for you to say you are ready.
-Existing explicit settings take precedence. On resumption, the agent checks the actual
-host setting when available and tells you when a manual switch is needed; writing a
-model name in a prompt does not change the runner.
+can change the host's model and effort settings, then waits for you to say you are ready,
+unless your intake already explicitly named matching settings and unambiguously said to
+start now. Existing explicit settings take precedence. The host must have those settings
+active and be able to use them; otherwise the agent gives one clarification action and
+waits. A difference between requested and recommended settings remains the user's
+decision. On resumption, the agent checks the actual host setting when available;
+writing a model name in a prompt does not change the runner.
 Measure total planning, implementation, retries, and review, not just one attempt.
 
 One owner works solo by default. Independent review still happens when required;
