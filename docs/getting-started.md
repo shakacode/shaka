@@ -72,10 +72,12 @@ An issue number uses the current repository. A URL can identify another one;
 Shaka asks for its checkout if needed. If it cannot read the task, paste the
 requirements. Private task content stays out of public PRs unless you allow sharing.
 
-The agent reads the task, recommends a model and effort, then pauses. Change the
-host settings if you wish and say **ready**. It implements on a branch, runs your
-repo's checks, opens a PR with a walkthrough, and handles review findings. You get
-the PR link, validation result, and any blocker; detailed evidence is on the PR.
+The agent reads the task and recommends a model and effort. It pauses for **ready**
+unless you explicitly supplied matching model and effort and clearly authorized an
+immediate start, with those settings active in the host. Unavailable or conflicting
+settings still require one user action. It implements on a branch, runs your repo's
+checks, opens a PR with a walkthrough, and handles review findings. You get the PR
+link, validation result, and any blocker; detailed evidence is on the PR.
 
 The example chooses **Ask**: you make the merge decision after the PR is ready.
 To choose **Auto**, say “Merge when checks and required approvals pass” instead.
