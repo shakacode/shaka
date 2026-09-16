@@ -128,6 +128,9 @@ interaction or timing matters. Publish safe, reviewer-accessible evidence labele
 with its tested revision. Captures complement tests; they do not replace them.
 
 Run the seam's validation entry point plus justified focused checks.
+For an asynchronous check, wait for completion and inspect its final exit status
+and output before reporting a pass. A running session or partial green output is
+not a completed check. Recover missing completion evidence or report it as unknown.
 Record commands, results, and tested revision; fix
 failures and reverify changed heads. Use the seam's independent reviewer when
 policy, the user, or concrete risk requires review. Reuse an existing GitHub review
