@@ -44,6 +44,9 @@ module Shaka
       result
     end
 
+    # The readiness a publication or merge decision reads: native PR state plus required checks.
+    def status = snapshot.merge('requiredChecks' => required_checks)
+
     def required_checks
       result = execute(['gh', 'pr', 'checks', @number.to_s, '--repo', @repository,
                         '--required', '--json', 'name,state,bucket,link'], accepted: [0, 1, 8])
