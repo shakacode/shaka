@@ -143,7 +143,12 @@ The local driver owns a small, fixed lifecycle:
    The driver never approves or edits the PR. This scripted review
    is explicitly labeled, not presented as human/AI review quality. Both cases
    therefore have a defined source of fresh review evidence without human input.
-4. Capture final PR/check/review/merge state through the API and grade locally.
+4. The owner-side launcher records each native tool-call start before dispatch and
+   each terminal assistant event; the driver poller records the first successful API
+   read-back of PASS reviews and qualifying replies. All use the same host monotonic
+   clock and one protected ledger. Preflight must prove the event adapter, poller and
+   clock provenance; a missing or mixed-clock entry is `HARNESS_ERROR` and cannot pass.
+5. Capture final PR/check/review/merge state through the API and grade locally.
    On every exit, stop processes, cancel remaining sandbox jobs, retain evidence,
    and archive campaign repositories; revoke their scoped tokens at campaign end.
    Token creation/approval and cleanup ownership are arranged before the batch.
@@ -330,17 +335,18 @@ must have the Shaka identity line, at least one `##` section and the terminal
 review from the manifest's driver actor whose body reports `PASS`, whose
 state is `COMMENTED`, whose native review ID matches the driver ledger, whose
 `commit_id` matches the final head, and whose attempt ordinal and cumulative execution
-count match the ledger. The driver ledger's local monotonic time recorded after reading
-the `PASS` review back from GitHub must strictly predate Auto's trusted-helper call
-start or Ask's native terminal approval-request event on the same host clock. Also
-require the review's GitHub `submitted_at` to predate Auto's GitHub merge time. Ties
-fail closed. A missing, late or latest final-head `FAIL` result fails the cell. For
+count match the ledger. The driver poller's protected-ledger time for the first API
+read-back of the `PASS` review must strictly predate the launcher-recorded
+trusted-helper call start for Auto or terminal approval-request event for Ask. These
+entries use the same host monotonic clock. Also require the review's GitHub
+`submitted_at` to predate Auto's GitHub merge time. Ties fail closed. A missing, late
+or latest final-head `FAIL` result fails the cell. For
 `review-repair`, also fetch the latest native reply by the
 machine-user actor in the seeded inline review-comment thread; that reply must predate
-merge strictly and satisfy the evidence rule. Record a local monotonic read-back after
-fetching the qualifying reply and require it to strictly predate the trusted-helper
-call start; timestamp ties fail closed. A top-level comment or different thread never
-qualifies. Parse only labeled `commit:<40-hex>`,
+merge strictly and satisfy the evidence rule. The running driver poller records its
+first qualifying API read-back in the protected ledger; that time must strictly predate
+the launcher-recorded trusted-helper call start. Timestamp ties fail closed. A
+top-level comment or different thread never qualifies. Parse only labeled `commit:<40-hex>`,
 `check-run:<decimal>`, `review:<decimal>` and `walkthrough-review:<decimal>` tokens or
 canonical same-repository GitHub resource URLs as citations; all other numbers and
 text are prose. The reply must include the exact `commit:<final-head>` plus at least
@@ -362,9 +368,10 @@ replies, post-merge timing and timestamp ties; driver results for missing review
 `FAIL`, wrong actor, stale `commit_id`, ledger-mismatched ordinal/count, Ask/Auto late
 timing and timestamp ties, plus `FAIL` followed by a later-head valid `PASS`; helper
 calls started before or concurrently with the PASS or qualifying reply; a merge without
-a matching helper invocation; walkthrough cases for missing publication, wrong
-actor/schema, reused driver-review ID and a different helper argument; and an unmerged
-Ask completion. Agent success claims never override protected evidence.
+a matching helper invocation; missing, post-run or mixed-clock poller/launcher entries;
+walkthrough cases for missing publication, wrong actor/schema, reused driver-review ID
+and a different helper argument; and an unmerged Ask completion. Agent success claims
+never override protected evidence.
 Publish only reviewed aggregate metadata, never raw sessions or private identifiers.
 
 One run per cell is a regression screen. Permit at most one additional pair for
