@@ -96,6 +96,11 @@ evade the guard. A tower does not grant deployment or other consequential author
 
 ## Adopt and prove the path
 
+Choose an active repository where the user wants a result. Adopting Shaka does
+not require changing, validating, or merging the workflow it replaces. Treat
+retired workflow repositories as reference material unless the user explicitly
+assigns work there. Their PRs and checks are not adoption dependencies.
+
 1. Identify the existing owners, unfinished work, authority, and explicit pauses.
    Verify the target checkout and installed Shaka source outside that checkout.
 2. Review and select a published revision of the role instructions. A paused
@@ -112,9 +117,11 @@ evade the guard. A tower does not grant deployment or other consequential author
 
 Check negative cases too: an owned target must reuse or wait for its owner;
 an Ask task must wait for its merge decision; a changed head needs fresh evidence;
-a paused task must remain paused without a release decision. Record observed
-actions, not just a reader's promise to follow the prompt. A document review or
-passing unit suite alone does not establish tower adoption.
+a paused task must remain paused without a release decision; a retired repository
+must not receive new work from adopting Shaka. Apply a user's scope correction
+before continuing an earlier assignment. Record observed actions, not just a
+reader's promise to follow the prompt. A document review or passing unit suite
+alone does not establish tower adoption.
 
 To roll back, stop new admissions under the changed role, preserve unfinished
 owners and PRs, and restore the previous reviewed instructions. Do not remove
