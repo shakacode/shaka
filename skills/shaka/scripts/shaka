@@ -9,6 +9,7 @@ require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
+require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/usage'
 require_relative '../lib/shaka/work'
 
@@ -73,7 +74,7 @@ begin
 
   github = Shaka::GitHub.new(repository, number)
   result = case command
-           when 'pr' then github.snapshot
+           when 'pr' then Shaka::Status.new(github).call
            when 'comments'
              issue_only = options.fetch(:issue_only, false)
              raise OptionParser::InvalidArgument, '--head does not apply to issues' if issue_only && options[:head]
