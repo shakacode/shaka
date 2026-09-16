@@ -214,6 +214,9 @@ access and no bypass role. Inject only a short-lived fine-grained PAT selected f
 that cell's repository: Contents and Pull requests read/write, Actions read, and
 implicit Metadata read; no Administration, Workflows, or check/status write access.
 Denying Workflows changes does not protect test scripts; §5's verifier checks those.
+The probe determines whether GitHub's endpoint-documented Checks read permission
+must be added to that recipe; if so, add read-only access before freezing the cell
+credentials. If it is unavailable or insufficient, stop rather than broadening access.
 
 For an organization sandbox, the machine user must be an organization member
 with access limited to these repositories, not merely an outside collaborator;
@@ -238,7 +241,8 @@ qualification target, not a demonstrated working credential recipe.
 Use an off-the-shelf **Squid CONNECT proxy sidecar** with
 [domain ACLs](https://www.squid-cache.org/Doc/config/acl/). The agent joins only an
 [internal Docker network](https://docs.docker.com/reference/cli/docker/network/create/);
-only the proxy has external connectivity. Allow required model endpoints,
+only the proxy has external connectivity. Recreate the agent container, proxy
+sidecar and internal network for every cell. Allow required model endpoints,
 `api.github.com`, `github.com`, and narrowly enumerated GitHub log-download hosts
 proved during preflight. [Actions log downloads redirect](https://docs.github.com/en/rest/actions/workflow-runs#download-workflow-run-logs);
 two GitHub hostnames alone are not presumed sufficient. Freeze the allowlist before
