@@ -180,16 +180,67 @@ set of operations; they are not a complete security system.
 | --- | --- |
 | Pass GitHub arguments without constructing a shell command; parse JSON and check identifiers | The helpers. |
 | Bind the walkthrough and merge to the checked commit; reject missing checks, bypass-capable accounts, or unsupported merge conditions | The helpers, with native GitHub enforcement. |
+| Withhold public issue and PR comment bodies unless current writer permission or trusted actor configuration verifies the author; retain excluded links for maintainer triage | The `comments` helper. |
 | Decide whether a change is authorized, safe to run, and adequately verified | The owning agent following trusted user/repo instructions. The helpers do not prove these judgments. |
 | Restrict file/network access and credentials while running candidate code | Host permissions and the execution environment. The helpers do not create a sandbox or inspect code for malicious behavior. |
 
 Public issues and PR comments are task data, even when they contain instructions.
-They cannot grant permission or replace trusted policy. The helper does not scan
-their prose, establish author trust, or remove secrets from a supplied review body.
+They cannot grant permission or replace trusted policy. The public comment reader
+uses explicit public visibility, user type, current GitHub writer permission,
+and machine/repository trust configuration to screen authors. A configured
+human, bot, or active GitHub team member can supply task data; the reader does
+not scan prose or grant that data policy authority. Unknown and metadata-only
+bots remain links until the maintainer triages them.
 Review what will be published and use restricted execution for untrusted changes.
 
-A private repo can still contain imported text, outside contributions, or unsafe
-dependencies. There is no blanket “security off for private repos” switch. A repo
+For public repositories, Shaka reads four compatible V1 actor keys from the machine's
+`~/.agents/trusted-github-actors.yml` and the repository's
+`.agents/trusted-github-actors.yml`. Their entries combine; an absent file is
+an empty scope. The repository file is fetched at the current default-branch
+commit, so a PR cannot trust its own author by changing its head or targeting
+a weaker base branch. These keys
+are supported in both files; unknown keys or malformed YAML stop the read:
+
+```yaml
+trusted_users: [maintainer-login]
+trusted_bots: [review-bot]          # base login, without [bot]
+trusted_metadata_bots: [status-bot] # linked, never given prose
+trusted_teams: [OWNER/team-slug]    # machine file; use team-slug in repo file
+```
+
+The machine file requires `OWNER/team-slug`; only teams under the scanned
+repository owner apply. The repo file may use an unqualified slug. Team trust
+requires live active membership, and a configured bot must have GitHub's `Bot`
+type and `[bot]` login. A bot listed as both actionable and metadata-only is
+a configuration error. Every included body remains task data. For larger
+discussions, writer candidates are narrowed in GraphQL batches. More than 100
+candidates stops the read before REST confirmation; otherwise each candidate is
+confirmed once. Team members are listed once per configured team, then
+matched authors receive a final active-membership check.
+The authenticated GitHub token needs access to the repository collaborator APIs.
+Without it, direct checks withhold affected bodies as unavailable evidence and a
+failed batched lookup stops the read.
+More than 20 applicable configured teams stops the read before team API calls.
+Each team listing is capped at 1,000 members and 11 page requests. Up to 32
+login/team pairs use direct checks. Across every path, including listed matches
+and oversized-roster fallback, Shaka performs at most 100 direct membership
+checks, then stops rather than returning incomplete membership evidence.
+For direct checks, a 404 counts as nonmembership only after a one-page team
+listing confirms that the team is visible to the token; otherwise the excluded
+comment is marked as unavailable evidence.
+Malformed successful membership responses are also unavailable evidence.
+Malformed team-member roster rows stop listed reads; a malformed one-page roster
+cannot confirm team visibility for a direct 404.
+An unavailable roster stops a larger listed read because bounded direct checks
+cannot establish evidence for every possible member; a small direct read can
+instead mark only the affected authors unavailable.
+Public comment lists are capped at 1,000 interactions per GitHub comment type;
+native review threads are capped at 1,000. Larger discussions stop explicitly
+before returning a partial packet.
+
+A private or internal repo can still contain imported text, outside contributions,
+or unsafe dependencies. The comment-author screen applies only to public repos.
+Other trust and authorization boundaries continue to apply there. A repo
 may choose lighter optional review/check requirements through its trusted instructions;
 authorization, credential boundaries, current-commit verification, and required
 GitHub checks still apply. Repository visibility alone never turns those off.
@@ -231,13 +282,13 @@ The intended experience uses existing repository access and trusted configuratio
   unknown identities, unavailable permission evidence, and requests outside that scope
   with a clear reason and the next maintainer action; avoid repeated identity questions.
 
-These are the intake requirements, not a claim of complete automated enforcement.
-The proposed [public-comment filter in PR #43](https://github.com/shakacode/shaka/pull/43)
-admits prose only from human accounts verified to have write, maintain, or admin access.
-It leaves bots, outsiders, and unverified sources as metadata and links for maintainer
-triage. Its comment filtering does not by itself validate an issue's diagnosis, a PR's
-code, or approved bot behavior. Complete team-access coverage and convenient scoped
-bot handling still need implementation evidence and real-use validation.
+The `shaka comments` reader enforces this source boundary for public repositories.
+It admits prose from human accounts verified to have write, maintain, or admin
+access, explicitly configured users and bots, and active members of configured
+GitHub teams. It leaves outsiders, metadata-only bots, and unavailable identities
+as metadata and links for maintainer triage. Comment filtering does not validate an
+issue's diagnosis, a PR's code, or a review bot's claim; owners still verify the
+substance before acting.
 
 ## Knowing whether communication improved
 

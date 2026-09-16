@@ -4,6 +4,7 @@
 require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
+require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
@@ -32,7 +33,7 @@ if ARGV.first == 'checkpoint'
   exit Shaka::Checkpoint.run(ARGV)
 end
 
-COMMANDS = %w[pr description reply walkthrough merge].freeze
+COMMANDS = %w[pr comments description reply walkthrough merge].freeze
 
 def content(path)
   parsed = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -58,6 +59,7 @@ parser = OptionParser.new do |flags|
   flags.on('--body-file PATH', 'Walkthrough Markdown file') { |value| options[:body_file] = value }
   flags.on('--key NAME', 'Stable reply key; reused instead of duplicating') { |value| options[:key] = value }
   flags.on('--walkthrough ID', 'Published COMMENT review ID') { |value| options[:walkthrough] = value }
+  flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('-h', '--help', 'Show usage') do
     puts flags
     exit
@@ -68,10 +70,17 @@ begin
   parser.parse!(ARGV)
   command, repository, number = ARGV
   raise OptionParser::InvalidArgument, parser.to_s unless ARGV.length == 3 && COMMANDS.include?(command)
+  raise OptionParser::InvalidArgument, '--issue is only for comments' if options[:issue_only] && command != 'comments'
 
   github = Shaka::GitHub.new(repository, number)
   result = case command
            when 'pr' then Shaka::Status.new(github).call
+           when 'comments'
+             issue_only = options.fetch(:issue_only, false)
+             raise OptionParser::InvalidArgument, '--head does not apply to issues' if issue_only && options[:head]
+
+             Shaka::PublicComments::Reader.new(github).call(issue_only:,
+                                                            expected_head: issue_only ? nil : options[:head])
            when 'description'
              github.description(body: Shaka::Publication.description(content(options.fetch(:content_file))))
            when 'reply'

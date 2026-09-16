@@ -5,6 +5,7 @@ require 'shaka/github'
 
 module GitHubHelper
   HEAD = 'a' * 40
+  BASE = 'b' * 40
   STATUS = Struct.new(:exitstatus)
 
   def client(*responses)
@@ -16,8 +17,9 @@ module GitHubHelper
     Shaka::GitHub.new('owner/repo', 42, runner: runner)
   end
 
-  def response(value, status: 0)
-    [JSON.generate(value), 'private stderr must not be disclosed', STATUS.new(status)]
+  def response(value, status: 0, http_status: nil)
+    stderr = http_status ? "gh: request failed (HTTP #{http_status})" : 'private stderr must not be disclosed'
+    [JSON.generate(value), stderr, STATUS.new(status)]
   end
 
   def snapshot_response(head: HEAD, state: 'OPEN')

@@ -9,7 +9,8 @@ class CliTest < Minitest::Test
   def test_help_explains_each_operation
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert status.success?, error
-    %w[pr description reply walkthrough merge recommendation checkpoint --head --content-file --key].each do |token|
+    operations = %w[pr comments description reply walkthrough merge recommendation checkpoint]
+    (operations + %w[--head --issue --content-file --key]).each do |token|
       assert_includes output, token
     end
   end
@@ -99,5 +100,11 @@ class CliTest < Minitest::Test
     _output, error, status = Open3.capture3(COMMAND, 'merge', 'owner/repo', '1')
     refute status.success?
     assert_includes error, 'head'
+  end
+
+  def test_pr_comment_reader_requires_an_expected_head
+    _output, error, status = Open3.capture3(COMMAND, 'comments', 'owner/repo', '1')
+    refute status.success?
+    assert_includes error, 'Expected a full PR head'
   end
 end

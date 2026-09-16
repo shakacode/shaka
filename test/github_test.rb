@@ -31,6 +31,7 @@ class GitHubTest < Minitest::Test
   def test_api_failure_does_not_expose_stderr
     error = assert_raises(Shaka::Error) { client(response({}, status: 4)).snapshot }
     assert_match(/exit 4/, error.message)
+    assert_match(/gh api graphql failed/, error.message)
     refute_match(/private/, error.message)
   end
 
@@ -49,6 +50,30 @@ class GitHubTest < Minitest::Test
 
   def test_checks_require_an_array
     assert_raises(Shaka::Error) { client(response({ 'message' => 'error' })).required_checks }
+  end
+
+  def test_api_list_fetch_passes_fixed_argv_without_a_shell
+    result = client(response([{ 'id' => 1 }, { 'id' => 2 }])).api_list('repos/owner/repo/pulls/42/comments')
+    ids = result.map { |item| item['id'] }
+    assert_equal [1, 2], ids
+    assert_equal %w[gh api repos/owner/repo/pulls/42/comments --method GET --input -], @calls.first.first
+  end
+
+  def test_list_failure_identifies_endpoint_without_stderr
+    %w[repos/owner/repo/pulls/42/comments orgs/owner/teams/maintainers/members].each do |path|
+      error = assert_raises(Shaka::Error) { client(response({}, status: 4)).api_list(path) }
+      assert_match(/gh api #{Regexp.escape(path)} failed/, error.message)
+      refute_match(/private stderr/, error.message)
+    end
+  end
+
+  def test_api_failure_keeps_only_http_status_from_stderr
+    error = assert_raises(Shaka::Error) do
+      client(response({ 'message' => 'Not Found' }, status: 1, http_status: 404)).api('orgs/owner/teams/x')
+    end
+
+    assert_equal 404, error.http_status
+    refute_match(/request failed/, error.message)
   end
 
   def test_checks_with_empty_failed_output_report_unavailable_evidence

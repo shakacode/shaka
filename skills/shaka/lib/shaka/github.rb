@@ -24,6 +24,8 @@ module Shaka
   class GitHub
     include Publishing
 
+    attr_reader :repository, :number
+
     def initialize(repository, number, runner: nil)
       unless repository.is_a?(String) && repository.ascii_only? &&
              repository.match?(%r{\A[\w-]+/(?!\.{1,2}\z)[\w.-]+\z})
@@ -71,12 +73,14 @@ module Shaka
       published
     end
 
-    def api(path, method: 'GET', fields: {})
+    def api(path, method: 'GET', fields: {}, expected: Hash)
       result = execute(['gh', 'api', path, '--method', method, '--input', '-'], input: JSON.generate(fields))
-      raise Error, 'GitHub API response must be an object.' unless result.is_a?(Hash)
+      raise Error, 'GitHub API response has an unexpected type.' unless result.is_a?(expected)
 
       result
     end
+
+    def api_list(path) = api(path, expected: Array)
 
     def graphql(query, variables = {})
       response = api('graphql', method: 'POST', fields: { query: query, variables: variables })
@@ -118,9 +122,10 @@ module Shaka
     def execute(argv, input: '', accepted: [0]) = parse_json(capture(argv, input: input, accepted: accepted))
 
     def capture(argv, input: '', accepted: [0])
-      stdout, _stderr, status = @runner.call(argv, stdin_data: input)
+      stdout, stderr, status = @runner.call(argv, stdin_data: input)
+      detail = argv[1] == 'api' ? argv.drop(2).find { |arg| !arg.start_with?('-') } : argv[2]
       unless accepted.include?(status.exitstatus)
-        raise Error, "gh #{argv[1, 2].join(' ')} failed (exit #{status.exitstatus})."
+        raise Error.from_gh("gh #{argv[1]} #{detail} failed (exit #{status.exitstatus}).", stderr)
       end
 
       utf8(stdout)
