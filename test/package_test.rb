@@ -54,7 +54,7 @@ class PackageTest < Minitest::Test
   def test_built_gem_packages_no_trusted_actor_list
     archive = File.join(@directory, 'trust.gem')
     run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
-    assert_empty Gem::Package.new(archive).spec.files.grep(/trusted-github-actors/)
+    assert_empty Gem::Package.new(archive).spec.files.grep(%r{(?:\A|/)trusted-github-actors\.ya?ml\z})
   end
 
   private

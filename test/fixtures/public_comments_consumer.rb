@@ -18,7 +18,7 @@ class RecordedGitHub
     case path
     when 'repos/example/library' then { 'visibility' => 'public' }
     when 'repos/example/library/issues/7' then { 'number' => 7 }
-    when %r{/collaborators/(\w+)/permission\z}
+    when %r{/collaborators/([A-Za-z0-9-]+)/permission\z}
       { 'user' => { 'login' => Regexp.last_match(1) },
         'permission' => Regexp.last_match(1) == 'maintainer' ? 'write' : 'read' }
     else raise Shaka::Error.new("Unexpected read: #{path}", http_status: 404)
