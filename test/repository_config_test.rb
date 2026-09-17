@@ -21,6 +21,10 @@ module RepositoryConfigTestHelpers
     { 'required_checks' => ['validate'], 'direct_push' => false, 'force_push' => false,
       'branch_deletion' => false }
   end
+
+  def merge_policy
+    { 'preference' => 'auto', 'method' => 'squash', 'release' => 'explicit_approval' }
+  end
 end
 
 class RepositoryConfigTest < Minitest::Test
@@ -91,6 +95,13 @@ class RepositoryConfigTest < Minitest::Test
     end
   end
 
+  def test_rejects_a_merge_method_the_helper_cannot_honor
+    with_repository('merge' => merge_policy.merge('method' => 'rebase')) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+      assert_includes message, 'merge.method must be squash'
+    end
+  end
+
   def test_requires_at_least_one_native_check
     with_repository('protection' => protection.merge('required_checks' => [])) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
@@ -137,9 +148,5 @@ class RepositoryConfigTest < Minitest::Test
       'validate' => '.agents/bin/validate',
       'test' => '.agents/bin/test'
     }
-  end
-
-  def merge_policy
-    { 'preference' => 'auto', 'method' => 'squash', 'release' => 'explicit_approval' }
   end
 end

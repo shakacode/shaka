@@ -45,10 +45,12 @@ Keep company strategy and private operational data out of product artifacts.
 
 ## Agent Workflow Configuration
 
-Load and validate `.agents/agent-workflow.yml` with the trusted installed
-`shaka seam check` command. Run the executable paths named there; do not reconstruct
-their behavior from prose. This file retains human-only boundaries, including the
-public-pilot privacy rule, the V1 reuse limit, and release approval requirements.
+Resolve the trusted default branch to an immutable commit. Load and validate
+`.agents/agent-workflow.yml` with the trusted installed `shaka seam check --ref REF`
+command. Run the executable paths named there from the candidate checkout; do not
+reconstruct their behavior from prose. This file retains human-only boundaries,
+including the public-pilot privacy rule, the V1 reuse limit, and release approval
+requirements.
 
 ## Completion
 

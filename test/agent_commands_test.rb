@@ -6,14 +6,13 @@ require 'bundler'
 class AgentCommandsTest < Minitest::Test
   TEST_COMMAND = File.expand_path('../.agents/bin/test', __dir__)
 
-  def test_focused_tests_activate_the_repository_bundle
+  def test_focused_tests_override_an_inherited_bundle
     environment = { 'BUNDLE_GEMFILE' => '/missing/shaka/Gemfile' }
     output, status = Bundler.with_unbundled_env do
       Open3.capture2e(environment, TEST_COMMAND, 'test/recommendation_test.rb')
     end
 
-    refute status.success?
-    assert_includes output, '/missing/shaka/Gemfile'
+    assert status.success?, output
   end
 
   def test_focused_tests_select_the_repository_bundle_from_an_outside_directory

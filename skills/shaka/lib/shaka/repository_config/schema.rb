@@ -52,7 +52,7 @@ module Shaka
         merge = mapping!(@data['merge'], 'merge')
         keys!(merge, %w[preference method release], [], 'merge')
         enum!(merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
-        enum!(merge['method'], %w[merge rebase squash], 'merge.method must be merge, rebase, or squash')
+        equal!(merge['method'], 'squash', 'merge.method must be squash')
         equal!(merge['release'], 'explicit_approval', 'merge.release must be explicit_approval')
       end
 
