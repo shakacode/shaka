@@ -11,8 +11,9 @@ Keep company strategy and private operational data out of product artifacts.
   or an isolated worktree; workers do not publish or merge.
 - This is a fresh kernel. Do not import V1 workflow contracts, ledgers, schemas,
   review reducers, coordination clients, or policy engines as dependencies.
-- GitHub issue #1 owns this pilot. Keep the implementation to its requirements.
-  Use `jg-codex/1-<description>` branches and PRs; never push to `main`.
+- GitHub issue #77 owns remaining pilot acceptance; closed issue #1 holds the original
+  requirements. Keep the implementation to them.
+  Use `jg-codex/<issue>-<description>` branches and PRs; never push to `main`.
 - Product merge preferences are `ask` and `auto`. Review-only work stops at its
   requested outcome. Existing maintainer merge authority persists; do not ask again.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;
