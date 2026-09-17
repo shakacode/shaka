@@ -93,11 +93,12 @@ the section once the PR reaches its outcome. It lists:
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
   the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`.
 - **Task:** the searchable task title, or a task locator the tracker allows sharing.
-- **Thread:** the host-native thread locator when the user or trusted repository
-  instructions authorize public sharing; otherwise `UNKNOWN`. Build a Codex locator
-  from the thread ID reported in `CODEX_THREAD_ID`, and publish
-  `codex://threads/<thread-id>` as a raw, unformatted URL, never a Markdown link or
-  inline code. The owner field's machine alias tells the maintainer where to open it.
+- **Thread:** the host-native thread locator. Publish it only when the user or trusted
+  repository instructions authorize public sharing and this guide defines a locator
+  for the host; otherwise use `UNKNOWN`. For Codex, require `CODEX_THREAD_ID` to contain
+  a UUID and publish `codex://threads/<thread-id>` as a raw, unformatted URL, never a
+  Markdown link or inline code. Other hosts use `UNKNOWN` until this guide defines their
+  locator. The owner field's machine alias tells the maintainer where to open it.
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
