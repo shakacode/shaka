@@ -140,15 +140,23 @@ module Shaka
     end
 
     def require_usage_table(items)
-      usage = items.find { |item| item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i) }
-      return if separator_row?(usage && usage['body'])
+      bodies = items.filter_map do |item|
+        item['body'] if item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i)
+      end
+      return if bodies.any? { |body| complete_markdown_table?(body) }
 
       raise Error, 'Publication description requires usage details with a table.'
     end
 
-    def separator_row?(body)
-      body.is_a?(String) && body.lines.any? { |line| line.match?(TABLE_SEPARATOR) }
+    def complete_markdown_table?(body)
+      return false unless body.is_a?(String)
+
+      PublicationText.prose(body).lines.map(&:rstrip).each_cons(3).any? do |header, separator, data|
+        pipe_row?(header) && separator.match?(TABLE_SEPARATOR) && pipe_row?(data) && !data.match?(TABLE_SEPARATOR)
+      end
     end
+
+    def pipe_row?(line) = line.match?(/\A\s*\|.+\|\s*\z/)
 
     def revision
       head = @content['head']

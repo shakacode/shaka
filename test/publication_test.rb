@@ -71,6 +71,23 @@ class PublicationRegressionTest < Minitest::Test
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(description_content('details' => [prose])) }
     assert_includes error.message, 'usage'
   end
+
+  def test_a_separator_line_alone_does_not_count_as_a_usage_table
+    decoy = { 'summary' => 'Usage',
+              'body' => "Native usage is PARTIAL: 70 responses.\n\n| --- |" }
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(description_content('details' => [decoy])) }
+    assert_includes error.message, 'usage'
+  end
+
+  def test_a_later_usage_detail_with_a_complete_table_is_accepted
+    rendered = Shaka::Publication.description(
+      description_content('details' => [
+                            { 'summary' => 'Usage notes', 'body' => 'See the snapshot below.' },
+                            USAGE
+                          ])
+    )
+    assert_includes rendered, '| openai | 1 |'
+  end
 end
 
 # Structure the renderer owns so models cannot vary it.
