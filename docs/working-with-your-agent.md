@@ -97,10 +97,12 @@ absolute paths, transcripts, and customer context out of public PRs.
 To resume in the original task, read the note, then refresh the live PR. To transfer
 to a fresh task, first confirm that the previous owner has stopped or explicitly handed
 over ownership. An old timestamp or an idle task is not proof of abandonment. The new
-owner rechecks the live head, required checks, review, and merge authority instead of
-trusting the note, preserves any uncommitted work left in the previous checkout, and
-updates the owner field. The note records state only. It grants no authority and is
-not a lock, lease, or heartbeat.
+owner treats the note as stale evidence and rechecks the live head, required checks,
+review, and merge authority. Before editing, it checks the previous checkout for
+staged, unstaged, and untracked changes, unpushed commits, and stashes, and preserves
+them. Then it updates the owner field. A crash can leave no note or an outdated one;
+recover from live state rather than stopping. The note records state only. It grants
+no authority and is not a lock, lease, or heartbeat.
 
 ## When a task needs several PRs
 
