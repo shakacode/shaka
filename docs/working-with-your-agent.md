@@ -91,8 +91,12 @@ whole managed region, so republish every section with only the note changed. Rem
 the section once the PR reaches its outcome. It lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
-  the task picks when it becomes owner, such as `studio-mac · Claude Code desktop · k7q2`.
-- **Task:** the searchable task title, or a task locator the tracker allows sharing.
+  the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`.
+- **Task:** the searchable task title.
+- **Thread:** the host-native task locator when one is available. Build a Codex locator
+  from the host-reported thread ID, such as `CODEX_THREAD_ID`, and publish
+  `codex://threads/<thread-id>` as a raw, unformatted URL, never a Markdown link or
+  inline code. The owner field's machine alias tells the maintainer where to open it.
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
@@ -100,8 +104,10 @@ the section once the PR reaches its outcome. It lists:
   blocker, waiting for a named decision, or handing over to a named task.
 - **Next action:** the one step that continues the work.
 
-Keep private task links, raw session IDs, hostnames that identify people or clients,
-absolute paths, transcripts, and customer context out of public PRs.
+Treat the published Codex thread URL as a public locator: it contains no prompt or
+thread content and grants no access by itself. Keep private tracker links, other raw
+session IDs, hostnames that identify people or clients, absolute paths, transcripts,
+and customer context out of public PRs.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner, including a different tag, ownership was transferred: keep any local
