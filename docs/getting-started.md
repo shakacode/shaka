@@ -139,9 +139,10 @@ and merge preference:
 The command creates `.agents/agent-workflow.yml` and small executable wrappers
 under `.agents/bin/`. Its default merge preference is **Ask**. Add
 `--merge-preference auto` only when that is the repository's established authority;
-repeat `--required-check` and `--trusted-action` as needed, and use `--plan` for an
-existing repository-relative plan. Commands are parsed as argument lists, so put
-shell pipelines or other compound behavior in a repository-owned script.
+provide at least one `--required-check` and repeat it for every required GitHub check.
+Repeat `--trusted-action` as needed, and use `--plan` for an existing
+repository-relative plan. Commands are parsed as argument lists, so put shell pipelines
+or other compound behavior in a repository-owned script.
 
 Initialization validates every input before writing. It is safe to repeat when the
 generated files are unchanged and refuses to overwrite a repository-owned file or

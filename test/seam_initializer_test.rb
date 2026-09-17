@@ -23,12 +23,16 @@ module SeamInitializerTestHelpers
 
   def init(root, setup_command: 'bin/setup', validate_command: 'bin/validate',
            test_command: 'bundle exec rake test')
-    arguments = [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
-                 '--setup-command', setup_command, '--validate-command', validate_command,
-                 '--test-command', test_command, '--review-check', 'claude-review',
-                 '--required-check', 'validate', '--trusted-action', 'actions/checkout',
-                 '--trusted-action', 'ruby/setup-ruby']
-    Open3.capture3(*arguments)
+    Open3.capture3(*init_arguments(root, setup_command:, validate_command:, test_command:))
+  end
+
+  def init_arguments(root, setup_command: 'bin/setup', validate_command: 'bin/validate',
+                     test_command: 'bundle exec rake test')
+    [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
+     '--setup-command', setup_command, '--validate-command', validate_command,
+     '--test-command', test_command, '--review-check', 'claude-review',
+     '--required-check', 'validate', '--trusted-action', 'actions/checkout',
+     '--trusted-action', 'ruby/setup-ruby']
   end
 
   def generated_files(root)
@@ -173,6 +177,53 @@ class SeamInitializerTest < Minitest::Test
 
       refute status.success?
       assert_includes error, 'plan does not exist: docs/missing.md'
+      refute File.exist?(File.join(root, '.agents'))
+    end
+  end
+end
+
+class SeamInitializerValidationTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_rejects_missing_required_policy_before_writing
+    %w[--base-branch --review-check --required-check].each do |flag|
+      with_repository do |root|
+        arguments = init_arguments(root)
+        arguments.slice!(arguments.index(flag), 2)
+        _output, error, status = Open3.capture3(*arguments)
+
+        refute status.success?
+        assert_includes error, 'is required'
+        refute File.exist?(File.join(root, '.agents'))
+      end
+    end
+  end
+
+  def test_rejects_an_invalid_branch_before_writing
+    with_repository do |root|
+      _output, error, status = Open3.capture3(*init_arguments(root).tap { |args| args[args.index('main')] = '-bad' })
+      refute status.success?
+      assert_includes error, 'base branch must be a valid Git branch name'
+      refute File.exist?(File.join(root, '.agents'))
+    end
+  end
+
+  def test_rejects_a_non_executable_command_before_writing
+    with_repository do |root|
+      File.write(File.join(root, 'bin/not-executable'), "#!/bin/sh\n")
+      _output, error, status = init(root, setup_command: 'bin/not-executable')
+      refute status.success?
+      assert_includes error, 'setup command is not executable'
+      refute File.exist?(File.join(root, '.agents'))
+    end
+  end
+
+  def test_rejects_an_invalid_merge_preference_before_writing
+    with_repository do |root|
+      _output, error, status = Open3.capture3(*init_arguments(root), '--merge-preference', 'sometimes')
+
+      refute status.success?
+      assert_includes error, 'invalid argument'
       refute File.exist?(File.join(root, '.agents'))
     end
   end
