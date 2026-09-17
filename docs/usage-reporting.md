@@ -90,8 +90,9 @@ When the `fast` model param is present, the cost table also shows a configured-m
 on-demand USD scenario for `grok-4.6` and `grok-4.6-fast` using Cursor's published
 list prices verified September 16, 2026. Codex credits stay UNKNOWN. Cache writes
 have no published Cursor rate, so they remain inside ordinary input. Missing
-Fast/standard billing mode, other Cursor models, and included-quota versus on-demand
-terms keep the estimate UNKNOWN. These figures are not a Cursor invoice.
+Fast/standard billing mode or an unsupported Cursor model keeps the scenario UNKNOWN.
+The dollar amount is that list-price scenario, not an invoice: included quota, actual
+charges, and other account terms remain UNKNOWN.
 
 ## Coverage and fallback
 
