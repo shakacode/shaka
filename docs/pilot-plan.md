@@ -24,7 +24,7 @@ This record defines the current product, not proof that acceptance is complete.
 | R12 | Improve results without shifting work to the maintainer. | Compare developer attention, total tokens, delivery time, and quality on comparable real changes. Include retries and review. Fewer tokens alone is not success. |
 | R13 | Understand the agent on the first reading. | One owner explains outcomes, reasons, blockers, and decisions in familiar terms. Follow task/repo writing preferences. Ask important questions when needed and recommend a path. Keep supporting evidence in expandable PR details and material risks and gaps visible. See [working with your agent](working-with-your-agent.md). |
 | R14 | Verify the failure and the visible result. | For behavior changes, observe a meaningful failing test, make it pass, then refactor. Use the repo's tools. If automation is impractical, explain and capture before/after behavior. Visible changes need inspected, safe, reviewer-accessible screenshots tied to the tested revision; add video when timing or interaction matters. See [verification](verification.md). |
-| R15 | Know when a finished chat can be archived. | After the complete final report for a genuinely finished task, end with exactly `This chat is ready for archiving.` Do not use the sentence while work, a blocker, a handoff, or a decision remains. |
+| R15 | Know when a finished chat can be archived. | In a user-facing chat whose host format permits prose, end a genuinely finished task's complete final report with exactly `This chat is ready for archiving.` Do not use the sentence while work, a blocker, a handoff, or a decision remains. Preserve machine-only response formats that forbid trailing prose. |
 
 ## Design
 
