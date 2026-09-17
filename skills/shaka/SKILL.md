@@ -242,9 +242,10 @@ and report it. Every command below runs through that saved path.
   expressly asked to resolve comments, keep task ownership after merge until each known
   optional review settles or receives the documented explicit handoff.
 - At the task's stopping point, refresh usage for the affected commits and turns, replacing
-  overlapping snapshots. Then republish the PR description with that usage and its recovery
-  note refreshed, or removed when the PR reached its outcome. Report every PR's link and
-  outcome, brief validation, and remaining work or blocker.
+  overlapping snapshots. When this task owns the PR, republish its description with that
+  usage and its recovery note refreshed, or removed when the PR reached its outcome;
+  review-only work leaves the description alone. Report every PR's link and outcome, brief
+  validation, and remaining work or blocker.
 - When the task is genuinely finished in a user-facing chat whose host format permits prose,
   such as after its PR is merged with no remaining work, put exactly
   `This chat is ready for archiving.` on the last line after the rest of the required final
