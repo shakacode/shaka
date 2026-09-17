@@ -6,12 +6,17 @@ Give your agent a task. Get a verified PR and a clear explanation.
 $shaka Fix the failing search test
 ```
 
-Or establish a control tower to organize the work — `$rct` from a Codex task in the
-repository's saved project, or `/mct-claude` from the Claude Code desktop session
-that will coordinate repositories:
+Or establish a control tower to organize the work. From a Codex task in the
+repository's saved project:
 
 ```text
 $rct
+```
+
+From the Claude Code desktop session that will coordinate repositories:
+
+```text
+/mct-claude
 ```
 
 You steer the work. Shaka takes it through delivery:
