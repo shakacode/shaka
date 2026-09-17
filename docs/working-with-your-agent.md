@@ -104,16 +104,18 @@ the original task recovers from live state rather than stopping.
 A fresh task takes over only when the maintainer confirms, in that task or on the PR,
 that the previous task has stopped or is handing over. An old timestamp, an idle task,
 or a missing note is not that confirmation. Without it, report the PR's state and stop
-before writing. After confirmation, treat the note as stale evidence and recheck the
+before writing. After confirmation, first publish your own owner with a new random tag,
+which needs no earlier note. Then treat the old note as stale evidence and recheck the
 live head, required checks, review, and merge authority. When you can open the previous
 checkout, check it before editing for staged, unstaged, and untracked changes, unpushed
 commits, and stashes, and preserve them. When you cannot, because it is on another
 machine, moved, or deleted, work from the pushed branch and record unpushed work from
-the previous owner as UNKNOWN; a fresh clone is not the previous checkout. Then publish
-your own owner with a new random tag, which needs no earlier note.
+the previous owner as UNKNOWN; a fresh clone is not the previous checkout.
 
 The note records state only. It grants no authority and is not a lock, lease, or
-heartbeat.
+heartbeat. The owner check narrows, but cannot close, the gap between reading the note
+and writing. The maintainer's confirmation that the previous task stopped is what
+prevents two writers.
 
 ## When a task needs several PRs
 
