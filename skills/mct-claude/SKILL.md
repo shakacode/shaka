@@ -65,10 +65,10 @@ not drop the suffix while the role is held. Do not add a tower file, database, o
 sidebar group: `move_sessions` unpins a pinned session, and the live session list is
 the only record this role keeps.
 
-Report the session ID, title, and pin state. On first setup, report that no
-repository tower is registered yet. When reusing an established master, report the
-tower set you derive from the current session list instead, so the user is not told
-that registered towers are missing. Then stop and wait for a registration or an
+Report the session ID, title, and pin state, then derive the current tower set from
+live sessions and report that too. Never assume a new master starts with none:
+registrations live in each tower's own transcript, so towers acknowledged by an
+earlier master survive its replacement. Then stop and wait for a registration or an
 assignment.
 
 ## Accept repository registrations
