@@ -45,7 +45,7 @@ and report it. Every command below runs through that saved path.
 
 ## 2. Plan
 
-- Resolve setup, validation, focused checks, base branch, review, hosted-CI triggers, changelog,
+- Resolve setup, validation, checks, base branch, review, hosted-CI triggers, changelog,
   release conventions, and merge authority from the repository seam: trusted `AGENTS.md`,
   existing `.agents/bin/<name>` entry points, and `.agents/agent-workflow.yml` when present.
   A repo may declare commands directly in `AGENTS.md`; documented commands alone can be a
@@ -122,8 +122,8 @@ and report it. Every command below runs through that saved path.
   authorized issue and PR reads and for publication. Publish only within the task's scope;
   without a PR, put supporting tables and checks in the final report, and link from chats
   that cannot collapse details.
-- Open a draft PR while review or staged hosted CI remains when the reviewer supports drafts;
-  otherwise use the repository's documented review-ready path.
+- While review or staged CI remains, use a draft if the reviewer supports it; otherwise use
+  the repository's review-ready path.
 - Write plain English: the outcome and why, in established project terms, following user and
   repo writing preferences, with the context the reader needs and no separate clarification
   skill. Keep decisions, risks, and evidence gaps visible. Name specific things in summaries
@@ -200,12 +200,12 @@ and report it. Every command below runs through that saved path.
 
 ## 6. Review
 
-- Meaningful implementation requires one visible independent review from a different model
-  family, preferably a different provider. Another session of the implementation model does
-  not qualify. Trivial prose-only or no-op changes may omit it with the reason recorded. Use
-  the seam's named reviewer when it qualifies; otherwise add an authorized alternate without
-  replacing a separately required named gate. Read the actual report, inline threads, and
-  completion evidence. A green job alone proves no review. For every
+- Meaningful implementation needs one visible independent review from a different model
+  family, preferably provider. Another session of the implementation model does not qualify.
+  Trivial prose-only or no-op changes may omit it with a recorded reason. Use the seam's named
+  reviewer when it qualifies; otherwise add an authorized alternate without replacing a
+  separately required named gate. Read the actual report, threads, and completion evidence.
+  A green job alone proves no review. For every
   public-repository comment you read, apply the
   [public review prose rule](../../docs/review.md#read-public-review-prose-safely); the
   express comment-resolution path is not the only screened path.
