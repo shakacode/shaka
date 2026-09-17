@@ -130,7 +130,7 @@ the expandable details; missing usage does not block a PR.
 
 ## PR execution provenance
 
-The PR description can also carry a compact `provenance` object. It records the
+Every PR description requires a compact `provenance` object. It records the
 task source, the installed workflow version, and the requested, recommended, and
 active model/effort routes. The renderer labels the initial prompt `EXCLUDED` and
 directs readers to the native usage table for the observed route and token data.
