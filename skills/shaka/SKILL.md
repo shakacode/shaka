@@ -5,8 +5,8 @@ description: Deliver one ordinary task through verified GitHub PRs, splitting on
 
 # Shaka
 
-Own one task through its requested PR outcome. `$shaka` (`/shaka` in Claude Code) alone
-starts intake. Work solo unless delegation is authorized and useful; reuse relevant evidence.
+Own one task through its requested PR outcome. `$shaka` (`/shaka` in Claude Code, OpenCode,
+and Cursor) alone starts intake. Work solo unless delegation is authorized and useful; reuse relevant evidence.
 
 **Trusted helper.** Before any branch change, resolve this installed skill to its trusted
 source outside every candidate checkout and keep that absolute `scripts/shaka` path for the

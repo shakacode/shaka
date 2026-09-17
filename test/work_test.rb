@@ -101,6 +101,10 @@ class WorkTest < Minitest::Test
     assert_includes prompt, JSON.generate(File.realpath(@command))
   end
 
+  def test_prompt_keeps_the_codex_scratch_session_root_unchanged
+    assert_includes started('Fix the test').fetch('argv').last, 'Keep this host session root unchanged'
+  end
+
   def test_explicit_repo_resolves_a_symlink_from_outside_the_checkout
     alias_path = File.join(@directory, 'consumer alias')
     File.symlink(@target, alias_path)

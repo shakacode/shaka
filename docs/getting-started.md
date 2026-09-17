@@ -8,10 +8,11 @@ or correcting a broken link in a documentation site.
 
 You need Git, Ruby 3.4, authenticated [GitHub CLI](https://cli.github.com/),
 and a signed-in Codex app, [Codex CLI](https://learn.chatgpt.com/docs/codex/cli#getting-started),
-[Claude Code](https://code.claude.com/docs/en/setup), or Cursor desktop.
+[Claude Code](https://code.claude.com/docs/en/setup), [Cursor](https://cursor.com/docs/cli/installation)
+desktop, or [OpenCode](https://opencode.ai).
 Check `git --version`, `ruby --version`, and `gh auth status` in your terminal;
 run `gh auth login` if needed. Codex terminal users also need `codex --version` to work;
-Claude Code users need `claude --version`.
+Claude Code users need `claude --version`; OpenCode users need `opencode --version`.
 The skill uses no development gems. Keep your application's own Ruby version.
 
 Your repository's `.agents/agent-workflow.yml` names executable setup, validation,
@@ -94,6 +95,30 @@ The hook writes allowlisted usage metadata only. Start a new Agent chat after
 changing hooks. `shaka usage` then reads `CURSOR_CONVERSATION_ID` against
 `~/.cursor/shaka-usage`. See [usage reporting](usage-reporting.md#what-the-cursor-reader-includes).
 
+<a id="use-shaka-in-opencode"></a>
+
+## Install in OpenCode
+
+After cloning the source as above, install into OpenCode's canonical user skills directory:
+
+```bash
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.config/opencode/skills"
+```
+
+OpenCode also reads the compatibility directories `~/.claude/skills` and
+`~/.agents/skills`; prefer the canonical path so the installation is not shadowed
+by another host's copy and a project-local `.opencode/skills` override stays
+explicit. Start a **new** OpenCode session in the repository you want to change
+and confirm `shaka` appears in that session's skill list before sending a task.
+Use `/shaka` wherever this guide shows `$shaka`. Do not copy `shaka` into a project
+`.opencode/skills` directory inside a candidate checkout. Keep the trusted source
+outside the working directory. Your usual permission mode applies; installation
+adds no sandbox. `shaka work --host opencode` starts the interactive TUI from a
+terminal with the same task flow. OpenCode publishes no session identifier to the
+commands it runs, so name the session yourself: `shaka usage --host opencode --session
+ID` exports it, and `opencode session list` prints the identifiers.
+See [usage reporting](usage-reporting.md#what-the-opencode-reader-includes).
+
 ## Complete your first task
 
 Send this, replacing the example with your issue number, task URL, or description:
@@ -135,6 +160,9 @@ outside that checkout with Ruby 3.4 selected. Add the `PATH` line to your shell
 startup file to make `shaka` available in new terminals.
 The launcher uses a separate temporary session and native approval prompts;
 [host support](host-support.md#startup-boundary-and-current-validation) records its tested limits.
+Pass `--host opencode` instead to start the OpenCode TUI in that repository;
+OpenCode keeps its own sessions outside the checkout, so no separate session
+directory is created.
 
 ## Upgrade
 
@@ -154,7 +182,7 @@ git -C "$shaka_source" pull --ff-only
 Start a fresh task after upgrading. `--with-rct` is for the Codex app's native task
 and project tools. Omit it for a terminal install and pass your dedicated skills
 directory instead; for Claude Code, pass `$HOME/.claude/skills`; for Cursor, pass
-`$HOME/.cursor/skills`. Earlier installs used `agent-workflows-v2` or
+`$HOME/.cursor/skills`; for OpenCode, pass `$HOME/.config/opencode/skills`. Earlier installs used `agent-workflows-v2` or
 `shakacode-workflows` source directories: keep that location and use it above.
 Inspect old `sw` and `aw` symlinks and unlink only those belonging to this installation.
 Replace any old `sw/scripts` shell `PATH` entry with the `shaka/scripts` path above.
@@ -170,6 +198,6 @@ test -L "$HOME/.agents/skills/rct" && unlink "$HOME/.agents/skills/rct"
 
 Use your dedicated skills directory for a terminal install and remove its shell
 `PATH` entry. For Claude Code, use `$HOME/.claude/skills`. For Cursor, use
-`$HOME/.cursor/skills`. Inspect and remove any old `sw` or `aw` links individually; preserve
+`$HOME/.cursor/skills`. For OpenCode, use `$HOME/.config/opencode/skills`. Inspect and remove any old `sw` or `aw` links individually; preserve
 unrelated skills and real directories. To roll back, remove the verified links,
 check out the prior trusted source revision, and run that revision's installer.
