@@ -9,9 +9,9 @@ or the final response when there is no PR:
 shaka usage --commit FULL_COMMIT_SHA --contribution implementation
 ```
 
-The helper reads the current host's records, Codex, Claude Code, or Cursor. When more
+The helper reads the current host's records, Codex, Claude Code, Cursor, or OpenCode. When more
 than one host's session context is present, pass `--host codex`, `--host claude-code`,
-or `--host cursor`.
+`--host cursor`, or `--host opencode`.
 
 Contribution categories are `implementation`, `review`, `integration`, and
 `shared-planning`. Supply several affected commit SHAs separated by commas when
@@ -93,6 +93,32 @@ have no published Cursor rate, so they remain inside ordinary input. Missing
 Fast/standard billing mode or an unsupported Cursor model keeps the scenario UNKNOWN.
 The dollar amount is that list-price scenario, not an invoice: included quota, actual
 charges, and other account terms remain UNKNOWN.
+
+## What the OpenCode reader includes
+
+The reader runs `opencode export` for one session and keeps only per-message usage
+metadata; message parts carry transcript text and are never read. The session comes
+from `OPENCODE_SESSION_ID` or an explicit `--session ID` (`ses_...`); without either,
+usage stays UNKNOWN. `opencode export` truncates its JSON when stdout is a pipe, so
+the helper redirects to a temporary file before parsing.
+
+A turn is a user message: assistant messages join the turn through their `parentID`.
+The default selects the session's latest user turn with its assistant responses;
+`--turn ID` selects explicit user messages and `--all-turns` counts every assistant
+response with an identified turn. Pass repeated `--file PATH` with saved export JSON
+for contributor or resumed-session snapshots instead of running the export.
+
+Rows report the export's provider, the session model as the configured model, the
+response's model as the routed model, and the per-response variant as effort.
+Unlike Codex, input excludes cache reads and writes, so the three are separate
+amounts that the native total sums with output and reasoning. There is no published
+rate card in the helper, so cost scenarios stay UNKNOWN with an unsupported-provider
+reason. The configured model falls back to UNKNOWN when the export omits it.
+
+The reader was exercised against `opencode export` from 1.18.31. It matched an
+independent per-response aggregate for a real 49-response session: response count,
+all five token categories and their total, the response interval, and the source
+version. Records it cannot read produce UNKNOWN.
 
 ## Coverage and fallback
 

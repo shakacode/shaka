@@ -24,7 +24,7 @@ module Shaka
       task = arguments.join(' ')
       raise Error, 'Supply a task URL or description; use shaka work --help' if task.strip.empty?
 
-      launch(target(options[:repository]), task)
+      launch(target(options[:repository]), task, options.fetch(:host))
     rescue Error, SystemCallError, OptionParser::ParseError => e
       warn "shaka work: #{e.message}"
       1
@@ -40,7 +40,13 @@ module Shaka
       target
     end
 
-    def self.launch(target, task)
+    def self.launch(target, task, host)
+      return exec({}, 'opencode', target, '--prompt', prompt(target, task), chdir: target) if host == 'opencode'
+
+      launch_codex(target, task)
+    end
+
+    def self.launch_codex(target, task)
       session = create_session(target)
       temporary = File.join(session, 'tmp')
       exec({ 'TMPDIR' => temporary, 'TMPPREFIX' => "#{temporary}/zsh" },
@@ -75,9 +81,10 @@ module Shaka
     end
 
     def self.options(arguments)
-      options = { repository: Dir.pwd }
+      options = { repository: Dir.pwd, host: 'codex' }
       parser = OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka work [--repo PATH] TASK_URL_OR_DESCRIPTION'
+        flags.banner = 'Usage: shaka work [--host codex|opencode] [--repo PATH] TASK_URL_OR_DESCRIPTION'
+        flags.on('--host NAME', %w[codex opencode], 'Native host to start (default codex)') { |v| options[:host] = v }
         flags.on('--repo PATH', 'Override the current checkout') { |value| options[:repository] = value }
         flags.on('-h', '--help') { options[:help] = true }
       end

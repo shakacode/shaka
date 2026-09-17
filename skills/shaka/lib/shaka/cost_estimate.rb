@@ -116,15 +116,15 @@ module Shaka
 
     def price(record, mode)
       provider, model = record['configuration']
+      return [nil, 'Unsupported provider or configured model'] unless %w[openai cursor].include?(provider)
+
       tokens, reason = categories(record['usage'])
       return [nil, reason] if reason
 
       if provider == 'openai'
         openai_price(model, mode, tokens)
-      elsif provider == 'cursor'
-        cursor_price(model, record['billing_mode'], mode, tokens)
       else
-        [nil, 'Unsupported provider or configured model']
+        cursor_price(model, record['billing_mode'], mode, tokens)
       end
     end
 

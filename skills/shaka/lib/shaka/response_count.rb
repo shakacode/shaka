@@ -17,5 +17,26 @@ module Shaka
       end
       @responses[identity] ||= record
     end
+
+    # Without explicit turns, every source uses the first source's latest turn.
+    def count_selected(sources, turns, all_turns)
+      records = sources.map(&:first).flat_map(&:values)
+      selected(records, wanted_turns(sources, turns), all_turns).each { |record| count(record) }
+    end
+
+    # Every mode needs an identified turn, as in the Codex reader.
+    def selected(records, wanted, all_turns)
+      identified = records.select { |record| turn?(record['turn_id']) }
+      unreadable if all_turns && identified.size < records.size
+      all_turns ? identified : identified.select { |record| wanted.include?(record['turn_id']) }
+    end
+
+    def wanted_turns(sources, turns)
+      (turns.empty? ? [sources.dig(0, 1)] : turns).select { |turn| turn?(turn) }
+    end
+
+    def turn?(turn)
+      turn.is_a?(String) && !turn.strip.empty?
+    end
   end
 end
