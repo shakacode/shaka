@@ -107,7 +107,7 @@ and report it. Every command below runs through that saved path.
   check, wait for completion and inspect its final exit status and output before reporting a
   pass; a running session or partial green output is not a completed check. Recover missing
   completion evidence or report it as unknown.
-- If the seam stages expensive hosted CI, run local checks but delay its trigger until first
+- If the seam stages hosted CI, run local checks but delay its trigger until first
   review repairs settle. Never defer always-on required, security, or trust checks.
 - Record commands, results, and the tested revision. Fix failures and reverify changed heads.
 - For visible changes, inspect before and after screenshots, and add a short video when
@@ -201,7 +201,7 @@ and report it. Every command below runs through that saved path.
 ## 6. Review
 
 - Meaningful implementation needs one visible independent review from a different model
-  family, preferably provider. Another session of the implementation model does not qualify.
+  family, preferably a different provider. Another session of that model does not qualify.
   Trivial prose-only or no-op changes may omit it with a recorded reason. Use the seam's named
   reviewer when it qualifies; otherwise add an authorized alternate without replacing a
   separately required named gate. Read the actual report, threads, and completion evidence.
@@ -219,7 +219,7 @@ and report it. Every command below runs through that saved path.
   finding, reassess the design or the mechanism before patching again. Resolve consequential
   feedback before merging, following [review handling](../../docs/review.md) for findings and
   re-review.
-- After first review repairs, fire any staged hosted-CI trigger for the stable candidate.
+- After review repairs, fire any staged hosted-CI trigger for the stable candidate.
   Later fixes require fresh affected current-head review and checks.
 - When the user expressly asks to resolve PR comments, alone or within broader work, follow
   the [comment-resolution settlement procedure](../../docs/review.md#settle-comment-resolution-work)
