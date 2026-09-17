@@ -79,9 +79,9 @@ From the first PR description until the PR reaches its outcome, keep a `Recovery
 section there. Work can stop at any time, for a blocker, a pending decision, a
 handoff, or an interruption. Someone reopening the PR should find the owning task
 and its next step without reading the conversation. Refresh the section at
-meaningful progress and at each stopping point with the `description` helper, which
-replaces only its own region. Remove it once the PR reaches its outcome. The section
-lists:
+meaningful progress and at each stopping point. The `description` helper replaces its
+whole managed region, so republish every section with only the note changed. Remove
+the section once the PR reaches its outcome. It lists:
 
 - **Owner:** a machine alias chosen for publication and the host, such as
   `studio-mac · Claude Code desktop`.
@@ -89,7 +89,8 @@ lists:
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
-- **State:** in progress, blocked with the blocker, or waiting for a named decision.
+- **State:** in progress, waiting for a named review or check, blocked with the
+  blocker, or waiting for a named decision.
 - **Next action:** the one step that continues the work.
 
 Keep private task links, raw session IDs, hostnames that identify people or clients,
