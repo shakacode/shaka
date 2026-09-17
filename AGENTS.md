@@ -2,6 +2,7 @@
 
 This public pilot implements the small product described in `docs/pilot-plan.md`.
 The maintainer authorized implementation, publication, and merging verified PRs.
+The maintainer authorizes public Codex task locators in unfinished-PR recovery notes.
 Keep company strategy and private operational data out of product artifacts.
 
 ## Working agreement

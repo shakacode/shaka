@@ -185,11 +185,11 @@ and report it. Every command below runs through that saved path.
   in the usage details. Publish only aggregate metadata: no prompts, tool output, raw
   sessions, local paths, private run IDs, or secrets. Missing usage is not a merge gate. Read
   [usage reporting](../../docs/usage-reporting.md) for turn selection and overlap rules.
-- Every PR description published before the PR's outcome includes its current
-  [recovery note](../../docs/working-with-your-agent.md#recover-an-unfinished-pr) and
-  the native task locator when available. For Codex, publish the raw
-  `codex://threads/<thread-id>` URL with the public machine alias; never format it as
-  a Markdown link or inline code.
+- Each unfinished PR description includes a
+  [recovery note](../../docs/working-with-your-agent.md#recover-an-unfinished-pr).
+  Publish a task locator only when the user or trusted repo instructions authorize it;
+  otherwise `UNKNOWN`. For Codex, put raw `codex://threads/<thread-id>` beside the public
+  machine alias; never link or code-format it.
 - For each PR description, also supply the renderer's `provenance` object: its
   `task_source` is `description`, `issue`, or `pull_request`; `initial_prompt`
   is always `EXCLUDED`; and `workflow_version`, `requested_model`,
