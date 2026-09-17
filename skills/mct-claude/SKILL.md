@@ -53,9 +53,11 @@ not claim the role is established.
 
 Then search for other masters once more. Two concurrent `/mct-claude` invocations
 can both pass the first search before either has stamped itself, and the readback
-only proves this session's own state. If another session now qualifies, stop with
-`MCT setup error: master control tower is ambiguous`, name both sessions, and do
-not report success.
+only proves this session's own state. At this point any other session carrying the
+`MCT — Shaka` suffix is a conflict, whether or not it has recorded a setup result
+yet: applying the stricter rule above would let each racing session dismiss the
+other and both report success. Stop with `MCT setup error: master control tower is
+ambiguous`, name both sessions, and do not report success.
 
 The title suffix is the registry. Repository towers find this session by it, so do
 not drop the suffix while the role is held. Do not add a tower file, database, or
@@ -79,11 +81,13 @@ establish each fact from your own reads rather than from the message:
 - `list_events` on that session shows its own recorded tower setup for this
   repository. A title suffix, a matching `cwd`, or the registration message alone
   is not proof of the role;
-- no other live session's own transcript records a completed registration for that
-  same `OWNER/REPOSITORY`. Read the `list_sessions` candidates with `list_events`
-  instead of recalling what you acknowledged. `list_events` cannot read the current
-  session, so a tower's own transcript is the only durable evidence, and losing
-  earlier turns here must not let a second tower be acknowledged; and
+- no other live session's own transcript holds a completed registration, or an
+  acknowledgment from this master it has not completed yet, for that same
+  `OWNER/REPOSITORY`. Read the `list_sessions` candidates with `list_events`
+  instead of recalling what you acknowledged: `list_events` cannot read the current
+  session, so a tower's own transcript is the only durable evidence. An
+  acknowledgment lands there as a labelled turn when it is delivered, so a
+  registration still in flight blocks a second one for the same repository; and
 - the named default branch matches live GitHub metadata.
 
 Acknowledge with `send_message` back to that session, naming the exact
