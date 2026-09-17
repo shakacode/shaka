@@ -22,7 +22,7 @@ These apply to the whole document, whatever the settings are.
 | Exactly one YAML document | A second document could hide alternate policy. |
 | No duplicate keys, at any depth | YAML would silently keep the last value. |
 | All mapping keys must be strings | Keeps the contract typed and comparable. |
-| No anchors or aliases, no custom classes or symbols | Loaded with `safe_load`; policy stays inspectable. |
+| No aliases, no custom classes or symbols | Loaded with `safe_load`. An anchor is accepted while nothing references it; an alias is rejected. |
 | Unknown keys are rejected at every level | A typo fails loudly instead of disabling a gate. |
 | Comments are ignored | Safe to document the file inline; they never reach the parsed contract. |
 
@@ -125,8 +125,13 @@ Optional allowlist of GitHub Actions used by the repository's trusted workflows,
 ## What `seam init` writes
 
 The initializer produces the smallest complete contract: `version`, `base_branch`, the
-three required commands as `.agents/bin/` wrappers, `review` with `required` and `check`,
-`merge`, and `protection`. It adds `plan` and `trusted_actions` only when you pass them.
+three required commands as `.agents/bin/` wrappers, `review`, `merge`, and `protection`.
+It adds `plan` and `trusted_actions` only when you pass them.
+
+The generated `review` section depends on the policy. With `always` or
+`meaningful_changes` it holds `required` and `check`, and `--review-check` is mandatory.
+With `--review-policy none` it holds `required` alone, and passing `--review-check` is
+rejected — matching the rule above that the other review keys must be absent.
 
 It omits the `model_family`, `provider`, and `draft` group, which is valid — the group is
 optional as a whole. Add all three by hand when you want Shaka to compare reviewer
