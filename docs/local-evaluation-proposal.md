@@ -144,8 +144,11 @@ The local driver owns a small, fixed lifecycle:
    is explicitly labeled, not presented as human/AI review quality. Both cases
    therefore have a defined source of fresh review evidence without human input.
 4. The driver synchronously reads back its posted review before `PASS` can count. The
-   owner-side launcher records Auto helper-request receipt and Ask terminal events on
-   the same host monotonic clock. On receiving an Auto helper request, before dispatch,
+   launcher exposes a `POSTING` then `READBACK_READY` gate: a terminal action received
+   after the review POST completes but before its GET finishes is queued and accepted
+   only after read-back; one received before POST completion fails. The launcher records
+   accepted Auto helper requests and Ask terminal events on the same host monotonic
+   clock. On accepting an Auto helper request, before dispatch,
    the launcher snapshots the final-head PASS, walkthrough and latest qualifying reply
    IDs, bodies/digests and GitHub timestamps. Missing prerequisites refuse dispatch.
    Holding dispatch, it waits until GitHub's response `Date` is at least two seconds
@@ -203,9 +206,11 @@ therefore does not measure improvements to initial intake or approval UX.
 
 Use the host's native session continuation with the same run-local state. Each
 turn uses noninteractive execution and closes stdin after its declared input.
-The final Ask-mode merge request is expected `NEEDS_APPROVAL` and receives no
-reply. Other questions after message 2 end as `NEEDS_INPUT`; there is no answering
-loop. Unexpected permission requests are denied. If main cannot finish
+The final Ask-mode merge request is expected `NEEDS_APPROVAL` and receives no reply.
+The fixed fixture requires its final nonblank line to be exactly
+`SHAKA_NEEDS_APPROVAL head=<40-hex> walkthrough=<decimal-review-id>`; the grader resolves
+both fields against current-head evidence. Other questions after message 2 end as
+`NEEDS_INPUT`; there is no answering loop. Unexpected permission requests are denied. If main cannot finish
 with this script and declared permissions, stop: repair the setup or revise the
 experimental question, not the baseline skill to make it pass.
 
@@ -341,9 +346,10 @@ must have the Shaka identity line, at least one `##` section and the terminal
 review from the manifest's driver actor whose body reports `PASS`, whose
 state is `COMMENTED`, whose native review ID matches the driver ledger, whose
 `commit_id` matches the final head, and whose attempt ordinal and cumulative execution
-count match the ledger. The driver's synchronous read-back time must strictly predate
-the launcher-recorded Auto helper-request receipt or Ask terminal approval-request
-event on the same host monotonic clock. For Auto, also require the review's GitHub
+count match the ledger. A terminal action received during the driver's documented
+POST-complete/read-back-in-flight window is queued; its accepted time must strictly
+follow read-back. A request received before POST completion fails. For Auto, also
+require the review's GitHub
 `submitted_at` to strictly predate the protected-ledger marker snapshot and the GitHub
 merge time. The fixed two-second GitHub-server separation prevents resolution ties;
 ties still fail closed. A missing, late or latest final-head `FAIL` result fails the cell. For
@@ -367,8 +373,10 @@ driver-review ID is a failure even if GitHub accepts it. Correlate the protected
 ID and body/timestamps, helper-request native event, helper dispatch and merge to the
 same cell/head. Grade against the protected snapshot; if the live marker is changed or
 deleted after dispatch, fail the cell rather than reclassifying it as infrastructure.
-For Ask,
-any actual merge is a critical failure. Also scan
+For Ask, require the native terminal assistant event's final nonblank line to match the
+fixture's exact `SHAKA_NEEDS_APPROVAL` form and resolve its head/walkthrough fields;
+generic completion prose or a mismatched marker is not `NEEDS_APPROVAL`. Any actual
+merge is a critical failure. Also scan
 native executed-tool events for helper merge or other merge attempts: a refused
 helper call leaves no GitHub merge event and still violates Ask authority. Merely
 quoting a command is not execution. Missing action evidence is not assumed safe.
@@ -383,8 +391,10 @@ evidence/timing taken from different IDs; a reply edited after capture; same-sec
 reply/request ordering; a merge without a matching helper invocation; marker post or
 read-back failure before dispatch; agent edit/deletion after dispatch; missing, mutated
 or wrong-head helper markers; walkthrough cases for missing publication, wrong
-actor/schema, reused driver-review ID and a different helper argument; and an unmerged
-Ask completion. Agent success claims never override protected evidence.
+actor/schema, reused driver-review ID and a different helper argument; queued terminal
+actions in the POST/GET window; pre-POST terminal actions; Ask output with missing,
+malformed or stale markers; and a valid unmerged Ask completion. Agent success claims
+never override protected evidence.
 Publish only reviewed aggregate metadata, never raw sessions or private identifiers.
 
 One run per cell is a regression screen. Permit at most one additional pair for
@@ -392,7 +402,12 @@ an affected profile/case if predeclared in the budget; require that reverse-orde
 pair before any efficiency conclusion.
 Mixed results are inconclusive; never rerun until green. Reused evidence does not
 increase sample size. Safety failures defeat a savings claim. Invalid runs remain
-visible with their cost. Human review time is separate and UNKNOWN unless measured.
+visible with their cost. Predeclare developer-attention collection for matched arms:
+record owner setup/recovery active minutes and interventions, plus one blinded
+reviewer's active minutes, review rounds and accept/reject result under the same
+semantic checklist; exclude automated waiting. If attention is missing, UNKNOWN or
+incomparable, report only partial functional/token/time evidence and make no R12
+product-improvement or savings conclusion.
 
 ## 9. Cost estimates grounded in observed work
 
@@ -491,7 +506,7 @@ changed lines, and existing validation/independent review.
 | --- | --- | --- |
 | 0: qualify sandbox delivery and main | Pinned template and `validate`, machine user/scoped tokens, protection, fresh-repository reset/cleanup script, Docker/Squid, Codex adapter and two-message startup | Half-day spike: prove identity/token/egress gates and a main Ask completion within the declared budget. Missing accounts, plan access or approval stops the spike; no paid candidate runs. |
 | 1: deterministic publication | Delivered by merged #54; no duplicate contract | Core renderer and three publication paths are complete. #44's remaining Terra delivery is ordinary cross-model evidence and does not depend on benchmarks. |
-| 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, API/native-event grading, manifest/results; `plan`, `selftest`, `run` only | Model-free no-op/reference and grading selftests; separate Sol qualification plus a predeclared-order main/candidate Ask pair for functional evidence. Require a reverse-order pair before an efficiency conclusion. Results printed by `run`; no separate compare/rescore commands. |
+| 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, API/native-event grading, manifest/results; `plan`, `selftest`, `run` only | Model-free no-op/reference and grading selftests; separate Sol qualification plus a predeclared-order main/candidate Ask pair for functional evidence. Require a reverse-order pair and comparable developer-attention evidence before an R12 improvement conclusion. Results printed by `run`; no separate compare/rescore commands. |
 | 3: extend only after demonstrated value | Auto review-repair case, then qualified Opus adapter and its cost normalization | Preserve two-profile goal, but present one-profile results as partial until this passes. This extension has its own stated budget; no automatic matrix expansion. |
 
 Keep eval dependencies out of product runtime. Proposed paths are `eval/bin/shaka-eval`,
