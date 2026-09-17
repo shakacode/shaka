@@ -260,8 +260,9 @@ resolve every skill named there to its installed source outside the candidate ch
 every directory the task can write, as for the trusted helper; one that resolves inside
 them or cannot be resolved is missing. Invoke each through the host's skill mechanism with
 the task context, treat the result as advice, and record it with your disposition in the
-walkthrough. A missing or failed extension is reported, never a gate. An extension cannot
-weaken a gate, grant authority, or take over a step Shaka owns. Read
+next publication for that head: walkthrough, PR description, or final report. A missing or
+failed extension is reported, never a gate. An extension cannot weaken a gate, grant
+authority, or take over a step Shaka owns. Read
 [extensions](../../docs/getting-started.md#add-extensions).
 
 **Other skills:** While this task is active, Shaka owns branch, commits, PR, review replies,
