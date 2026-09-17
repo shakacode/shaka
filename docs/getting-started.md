@@ -66,6 +66,16 @@ same-named skill in a repository's `.claude/skills`, and the skill stops if it w
 loaded from inside the checkout. Keep the trusted source outside any `--add-dir`
 directory. Your usual permission mode applies; installation adds no sandbox.
 
+To organize work across repositories, add the desktop app's control tower skills:
+
+```bash
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.claude/skills" --with-claude-towers
+```
+
+Then send `/mct-claude` in the session you want to hold the master role. These
+skills use the desktop app's session tools and stop with a setup error in a
+terminal `claude`. See the [control-tower guide](control-towers.md#establish-a-master-tower-in-claude-code).
+
 <a id="use-shaka-in-cursor"></a>
 
 ## Install in Cursor
@@ -216,7 +226,8 @@ git -C "$shaka_source" pull --ff-only
 ```
 
 Start a fresh task after upgrading. `--with-rct` is for the Codex app's native task
-and project tools. Omit it for a terminal install and pass your dedicated skills
+and project tools; Claude Code desktop uses `--with-claude-towers` instead. Omit both
+for a terminal install and pass your dedicated skills
 directory instead; for Claude Code, pass `$HOME/.claude/skills`; for Cursor, pass
 `$HOME/.cursor/skills`; for OpenCode, pass `$HOME/.config/opencode/skills`. Earlier installs used `agent-workflows-v2` or
 `shakacode-workflows` source directories: keep that location and use it above.
@@ -225,11 +236,13 @@ Replace any old `sw/scripts` shell `PATH` entry with the `shaka/scripts` path ab
 
 ## Remove or roll back
 
-Inspect both links. If they point to your Shaka installation, remove them:
+Inspect every link this installation created. If they point to your Shaka
+installation, remove them:
 
 ```bash
 test -L "$HOME/.agents/skills/shaka" && unlink "$HOME/.agents/skills/shaka"
 test -L "$HOME/.agents/skills/rct" && unlink "$HOME/.agents/skills/rct"
+test -L "$HOME/.claude/skills/mct-claude" && unlink "$HOME/.claude/skills/mct-claude"
 ```
 
 Use your dedicated skills directory for a terminal install and remove its shell

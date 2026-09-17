@@ -17,9 +17,10 @@ Create a Codex task in the saved project for the intended repository, then send:
 $rct
 ```
 
-This setup entry point currently requires the Codex app's native project and task
-tools. Claude Code, Cursor, and terminal-only installs receive `$shaka` without
-`$rct`.
+This setup entry point requires the Codex app's native project and task tools.
+Claude Code desktop establishes its towers with its own skills, described below.
+Cursor, OpenCode, and terminal-only installs receive `$shaka` and use the
+[role prompts](#role-prompts).
 
 The installed RCT skill verifies the task's project, current Git root, remotes,
 and live GitHub identity. It makes the current task the one RCT for that repository,
@@ -37,6 +38,34 @@ The setup request authorizes its native title, pin, and registration operations.
 It does not assign backlog work or create delivery tasks. After registration, the
 RCT gives a read-only backlog recommendation; start a selected delivery through
 `$shaka`.
+
+## Establish a master tower in Claude Code
+
+Install the tower skills with `--with-claude-towers`, open the Claude Code desktop
+session you want to hold the master role, and send:
+
+```text
+/mct-claude
+```
+
+The skill refuses to become a second master: it searches your active sessions for
+one already holding the role and stops with `MCT setup error: master control tower
+already exists` when it finds one. Otherwise it renames the session to end in
+`MCT — Shaka`, pins it, reads both changes back, and reports the result.
+
+That title suffix is the whole registry. Repository towers find the master by it,
+and the master derives the current tower set from the live session list, so the role
+adds no file, database, or scheduler. Keep the suffix while the session holds the
+role. This skill needs the desktop app's session tools; a terminal `claude` stops
+with `MCT setup error: host session tools are unavailable`, and the role prompt
+below remains the supported fallback.
+
+Establishing the master authorizes its own title, pin, and acknowledgment
+operations. It assigns no backlog, creates no worker session, and grants no merge
+authority. A repository tower registers by message; the master verifies the
+repository, session, and default branch from its own reads before acknowledging,
+and refuses a repository that already has a tower. A delivered or queued message is
+not acknowledgment in either direction.
 
 ## Who owns what
 

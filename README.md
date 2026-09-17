@@ -6,8 +6,9 @@ Give your agent a task. Get a verified PR and a clear explanation.
 $shaka Fix the failing search test
 ```
 
-Or establish the current repository's control tower from a task in its saved
-Codex project:
+Or establish a control tower to organize the work — `$rct` from a Codex task in the
+repository's saved project, or `/mct-claude` from the Claude Code desktop session
+that will coordinate repositories:
 
 ```text
 $rct
@@ -60,7 +61,8 @@ from Ruby as an [experimental API](docs/public-comments.md).
 
 Start with the [Shaka skill](skills/shaka/SKILL.md), whose small trust bootstrap
 loads the packaged [workflow configuration](skills/shaka/config/workflow.yml)
-through `shaka workflow`, or the focused [repository control tower setup](skills/rct/SKILL.md).
+through `shaka workflow`, or the focused [repository control tower setup](skills/rct/SKILL.md)
+and [Claude Code master tower setup](skills/mct-claude/SKILL.md).
 Each repository's validated `.agents/agent-workflow.yml` separately supplies
 commands and authority; `AGENTS.md` retains human-only boundaries. Create a missing
 contract with `shaka seam init` after identifying the repository's real commands
