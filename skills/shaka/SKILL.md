@@ -131,9 +131,10 @@ and report it. Every command below runs through that saved path.
   diff-shaped phrasing such as "Adds … and makes …". Keep exact commands, identifiers,
   domain terms, risks, and evidence.
 - Supply meaning as content JSON and let the helper render it: it owns the `🤖` identity line,
-  headings, spacing, tables, and details, and marks unknown model or effort rather than
-  inventing them. Keys are `identity`, `summary`, optional `sections`, `table`, and `details`,
-  plus `head` for a walkthrough. It refuses literal escape sequences in prose, mismatched
+  the walkthrough `# Code Walkthrough` title, headings, spacing, tables, and details, and marks
+  unknown model or effort rather than inventing them. Keys are `identity`, `summary`, optional
+  `sections`, `table`, and `details`, plus `head` for a walkthrough. It refuses literal escape
+  sequences in prose, mismatched
   table rows, empty required content, and any body GitHub does not render. Fenced blocks
   and delimiter-balanced inline code spans, including a longer run whose payload contains
   a shorter backtick run, are treated as code rather than prose.

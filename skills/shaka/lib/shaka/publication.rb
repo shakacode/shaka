@@ -61,7 +61,7 @@ module Shaka
   class Publication
     def self.description(content) = new(content).render(%i[sections table details])
     def self.comment(content) = new(content).render([])
-    def self.walkthrough(content) = new(content).render(%i[sections table details revision])
+    def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
 
     def initialize(content)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
@@ -69,9 +69,10 @@ module Shaka
       @content = content
     end
 
-    def render(parts)
-      blocks = [PublicationText.identity(@content['identity']),
-                PublicationText.required(@content['summary'], 'summary')]
+    def render(parts, title: false)
+      blocks = [PublicationText.identity(@content['identity'])]
+      blocks << '# Code Walkthrough' if title
+      blocks << PublicationText.required(@content['summary'], 'summary')
       parts.each { |part| blocks.concat(send(part)) }
       "#{blocks.join("\n\n")}\n"
     end
