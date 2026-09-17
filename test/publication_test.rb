@@ -6,20 +6,29 @@ require 'shaka/publication'
 # Reproduces the presentation failures observed on real published pull requests.
 class PublicationRegressionTest < Minitest::Test
   IDENTITY = { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'gpt-5.6-terra', 'effort' => 'low' }.freeze
+  TABLE = { 'columns' => %w[Check Commit Result], 'rows' => [%w[bin/validate abc123 pass]] }.freeze
+  USAGE = { 'summary' => 'Usage',
+            'body' => "| Provider | Native total |\n| --- | ---: |\n| openai | 1 |" }.freeze
+
+  def description_content(**changes)
+    { 'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE, 'details' => [USAGE] }.merge(changes)
+  end
 
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one
   # line containing literal backslash-n sequences instead of paragraph breaks.
   def test_escaped_newlines_in_supplied_text_are_reported_before_publication
-    content = { 'identity' => IDENTITY,
-                'summary' => 'Resolves #34 with post-rename maintenance.\n\n## Validation\n\nbin/validate passed.' }
+    content = description_content(
+      'summary' => 'Resolves #34 with post-rename maintenance.\n\n## Validation\n\nbin/validate passed.'
+    )
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
     assert_includes error.message, 'escape sequence'
   end
 
   def test_real_newlines_and_unicode_and_code_escapes_are_preserved
     body = "First line.\n\nSecond café 🤖 line.\n\n```ruby\nputs \"a\\nb\"\n```\n\nUse `\\n` to separate."
-    rendered = Shaka::Publication.description({ 'identity' => IDENTITY, 'summary' => 'A summary.',
-                                                'sections' => [{ 'heading' => 'Detail', 'body' => body }] })
+    rendered = Shaka::Publication.description(
+      description_content('sections' => [{ 'heading' => 'Detail', 'body' => body }])
+    )
     assert_includes rendered, 'Second café 🤖 line.'
     assert_includes rendered, 'puts "a\nb"'
     assert_includes rendered, 'Use `\n` to separate.'
@@ -30,22 +39,37 @@ class PublicationRegressionTest < Minitest::Test
   def test_table_separator_always_matches_the_column_count
     columns = %w[Provider Model Routed Effort Input Cached Output Reasoning Writes Total]
     rendered = Shaka::Publication.description(
-      { 'identity' => IDENTITY, 'summary' => 'A summary.',
-        'table' => { 'columns' => columns, 'rows' => [%w[openai sol UNKNOWN medium 1 2 3 4 5 6]] } }
+      description_content('table' => { 'columns' => columns, 'rows' => [%w[openai sol UNKNOWN medium 1 2 3 4 5 6]] })
     )
-    table = rendered.lines.select { |line| line.start_with?('|') }
-    assert_equal 3, table.size
-    assert_equal([columns.size] * 3, table.map do |line|
+    widths = visible_table_widths(rendered)
+    assert_equal [columns.size] * 3, widths
+  end
+
+  def visible_table_widths(markdown)
+    markdown.split('<details>', 2).first.lines.select { |line| line.start_with?('|') }.map do |line|
       line.strip.delete_prefix('|').delete_suffix('|').split('|').size
-    end)
+    end
   end
 
   def test_row_width_mismatch_is_a_focused_diagnostic_not_a_broken_table
-    content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
-                'table' => { 'columns' => %w[A B C], 'rows' => [%w[1 2]] } }
+    content = description_content('table' => { 'columns' => %w[A B C], 'rows' => [%w[1 2]] })
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
     assert_includes error.message, '3'
     assert_includes error.message, '2'
+  end
+
+  # https://github.com/shakacode/shaka/pull/71 published validation and usage as prose,
+  # so GitHub rendered no tables in the managed description.
+  def test_a_description_without_a_table_is_refused
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(description_content.except('table')) }
+    assert_includes error.message, 'table'
+  end
+
+  def test_usage_details_restated_as_prose_are_refused
+    prose = { 'summary' => 'Final native usage snapshot',
+              'body' => 'Native usage is PARTIAL: 70 responses from the latest Codex turn.' }
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(description_content('details' => [prose])) }
+    assert_includes error.message, 'usage'
   end
 end
 
@@ -54,7 +78,11 @@ class PublicationStructureTest < Minitest::Test
   IDENTITY = PublicationRegressionTest::IDENTITY
 
   def render(**changes)
-    Shaka::Publication.description({ 'identity' => IDENTITY, 'summary' => 'A summary.' }.merge(changes))
+    Shaka::Publication.description(
+      { 'identity' => IDENTITY, 'summary' => 'A summary.',
+        'table' => PublicationRegressionTest::TABLE,
+        'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
+    )
   end
 
   def test_identity_line_leads_the_description
@@ -69,7 +97,8 @@ class PublicationStructureTest < Minitest::Test
   end
 
   def test_details_keep_the_blank_lines_github_needs_to_render_their_content
-    rendered = render('details' => [{ 'summary' => 'Rollback', 'body' => "| A |\n| --- |\n| 1 |" }])
+    rendered = render('details' => [PublicationRegressionTest::USAGE,
+                                    { 'summary' => 'Rollback', 'body' => "| A |\n| --- |\n| 1 |" }])
     assert_includes rendered, "<details>\n<summary>Rollback</summary>\n\n| A |"
     assert_includes rendered, "| 1 |\n\n</details>"
   end
@@ -78,6 +107,8 @@ class PublicationStructureTest < Minitest::Test
     [{ 'identity' => IDENTITY }, { 'identity' => IDENTITY, 'summary' => '   ' }, { 'summary' => 'A summary.' }]
       .each { |content| assert_raises(Shaka::Error) { Shaka::Publication.description(content) } }
     assert_raises(Shaka::Error) { render('sections' => [{ 'heading' => '', 'body' => 'Why.' }]) }
+    error = assert_raises(Shaka::Error) { render('details' => [{ 'summary' => 'Rollback', 'body' => 'Revert.' }]) }
+    assert_includes error.message, 'usage'
   end
 
   def test_short_replies_stay_short
@@ -140,10 +171,11 @@ class PublicationStructureTest < Minitest::Test
   end
 
   def test_a_details_summary_cannot_close_its_own_disclosure
-    rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
+    rendered = render('details' => [PublicationRegressionTest::USAGE,
+                                    { 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    assert_equal 1, rendered.scan('</summary>').size
-    assert_equal 1, rendered.scan('</details>').size
+    assert_equal 2, rendered.scan('</summary>').size
+    assert_equal 2, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
