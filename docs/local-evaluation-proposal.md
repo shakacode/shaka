@@ -1,7 +1,8 @@
 # Proposal: deterministic delivery checks and locally driven GitHub evaluations
 
-Status: approved for the bounded Slice 0 spike after Fable 5.1 review.
-No runtime implementation or paid benchmark has started. Updated September 16, 2026,
+Status: approved for the bounded Slice 0 spike after Fable 5.1 review, with a
+two-public-repository qualification exception that cannot qualify measured cells.
+No runtime implementation or paid benchmark has started. Updated September 17, 2026,
 against then-current `main` (the exact base remains in PR metadata), under
 [pilot acceptance issue #77](https://github.com/shakacode/shaka/issues/77).
 Existing acceptance and merge gates remain in effect.
@@ -10,8 +11,10 @@ Existing acceptance and merge gates remain in effect.
 
 PR #54 now supplies the deterministic publication mechanics tracked by #44; its
 remaining cross-model acceptance stays with that issue. Evaluate one narrow
-hypothesis about a skill change through a disposable private GitHub
-repository with real reviews, pushes, Actions, walkthroughs, and Ask/Auto outcomes.
+hypothesis about a skill change through disposable GitHub repositories with real
+reviews, pushes, Actions, walkthroughs, and Ask/Auto outcomes. Slice 0 may use a
+disposable public probe repository and a separate disposable public feasibility
+repository only to qualify delivery mechanics; every measured cell remains private.
 The maintainer's decision for this revision lifts the local-only GitHub constraint.
 Agent execution, orchestration, grading, and retained evidence stay on the local
 machine; model inference and sandbox Actions use their respective hosted services.
@@ -117,6 +120,12 @@ short job timeout, read-only workflow permissions, and no repository secrets.
 Do not copy Shaka's Claude review workflow or add paid review jobs. Reference
 solutions, hidden assertions, and known-bad patches stay in private local assets,
 not public source or sandbox repositories: a scoped PAT still reads public GitHub.
+Slice 0 uses separate public-safe throwaway fixtures for the probe and feasibility
+repositories. The probe content is unrelated to the feasibility task; neither fixture
+is reused in a measured case or copied into the measured template. Only the preapproved
+public template, task, diff, reviews, walkthrough, and Actions output may appear there;
+raw local transcripts, internal/private notes, credentials, and hidden/reference assets
+stay local.
 
 | Case | Driver-created starting state | Required outcome |
 | --- | --- | --- |
@@ -128,7 +137,9 @@ the seeded inline thread with `commit:<40-hex>` and at least one current-head
 `check-run:<decimal>` or `walkthrough-review:<decimal>` token. The grader does not
 assume an undocumented convention or infer evidence from prose or URLs.
 
-The local driver owns a small, fixed lifecycle:
+The local driver owns a small, fixed lifecycle. This lifecycle begins with measured
+Slice 2; Slice 0 uses only the reduced qualification in §11 and creates no case or
+hidden-grading cell:
 
 1. Create a fresh private repository from the pinned template content; verify its
    tree/workflow, policy, identities and protection before launching the agent.
@@ -166,13 +177,18 @@ The local driver owns a small, fixed lifecycle:
    `FAIL`. Preflight proves marker mutation/deletion detection and Ask event capture.
 5. Capture final PR/check/review/merge state through the API and grade locally.
    On every exit, stop processes, cancel remaining sandbox jobs, retain evidence,
-   and archive campaign repositories; revoke their scoped tokens at campaign end.
-   Token creation/approval and cleanup ownership are arranged before the batch.
+   and archive or delete campaign repositories; revoke their scoped tokens at campaign
+   end. Token creation/approval and cleanup ownership are arranged before the batch.
 
-**One repository per cell, grouped in one campaign manifest.** This modifies
+**One repository per measured cell, grouped in one campaign manifest.** This modifies
 Fable's one-repository-per-campaign suggestion: resetting branches does not hide
-previous PR solutions from the next agent. Each token can access only its cell's
-private repository. The reset script creates a clean replacement from the template;
+previous PR solutions from the next agent. Slice 0's separate public probe and
+feasibility repositories prove mechanics only and produce no baseline, candidate or
+measured-cell evidence. At Slice 0 exit, delete both public repositories and revoke
+both scoped tokens. Deletion reduces discoverability but does not make published
+content confidential. Each
+later token can access only its private measured-cell repository. The reset script
+creates a clean replacement from the template;
 it never reuses solved history or disables protection to rewind `main`. Prepare
 all cell credentials before unattended execution; do not build a token service.
 
@@ -262,13 +278,17 @@ give the machine user no team, role, or direct sibling-repository grants; and in
 no login session, SSH key, stored `gh` credential, or credential other than the
 current cell's PAT. Preflight must prove that both API reads and clone attempts against
 a sibling private repository are denied from the agent container. Apply the same
-isolation to the separate probe token and revoke it before measured cells. If the
+isolation to both Slice 0 public-repository tokens and revoke them before provisioning
+measured cells. Apply it separately to the measured campaign's private probe token and
+revoke that token before measured cells run. If the
 account remains able to discover or read sibling/probe repositories through any
 credential available to the runner, stop rather than measure. The membership
 requirement follows from
 [GitHub's documented fine-grained PAT limitation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
-Confirm organization token approval and a plan supporting private branch protection
-before setup. A machine-user seat may add cost. Never substitute the owner's token.
+Confirm organization token approval before setup. GitHub Free's public-repository
+branch protection is sufficient only for the two Slice 0 qualification repositories; a plan
+supporting private branch protection remains mandatory before measured cells. A
+machine-user seat may add cost. Never substitute the owner's token.
 
 Protect `main`: require a PR, up-to-date `validate` from the GitHub Actions app,
 zero required approving reviews, no bypass (including admins), force-push or deletion.
@@ -276,9 +296,13 @@ Enable squash only; disable merge queues and delayed auto-merge. These are nativ
 [branch-protection settings](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
 Preflight Shaka's actual snapshot and required-check commands as the machine user:
 `viewerCanMergeAsAdmin` must be false and the required check list nonempty. Prove
-push/log-read/review-publication/helper-merge in a separate probe repository using
-the same identity/permission recipe and its own scoped token. Check each cell
-credential before launch; never expose probe history to a measured cell. A missing capability
+push/log-read/review-publication/helper-merge in a disposable public probe repository
+using the same identity/permission/protection recipe and its own scoped token. Its
+mechanics-only content must be unrelated to the main Ask fixture. Then use a separate
+clean public repository for the main Ask feasibility run; never copy probe history into
+it. Measured campaigns instead use a private probe and private cell
+repositories. Check each cell credential before launch; never expose probe history to
+a measured cell. A missing capability
 is `HARNESS_ERROR`; never relax the helper, protection, or token scope to pass.
 GitHub's PAT guide and [Checks endpoint documentation](https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference)
 differ on fine-grained Checks support, so the proposed minimal token is a
@@ -294,8 +318,9 @@ proved during preflight. [Actions log downloads redirect](https://docs.github.co
 two GitHub hostnames alone are not presumed sufficient. Freeze the allowlist before
 both arms. Deny other destinations, direct/IP-literal/non-TLS egress and private/host
 addresses, including DNS resolutions to those ranges. No broad cloud wildcard or
-custom auth/billing proxy. Domain ACLs do not restrict repositories; the scoped
-token and private repository visibility provide that boundary.
+custom auth/billing proxy. Domain ACLs do not restrict repositories. The public Slice 0
+repositories have no read-isolation claim; their scoped tokens limit writes, while later measured
+cells also rely on private repository visibility for read isolation.
 
 Proxy variables alone are not enforcement. Phase 0 probes unset proxies, direct
 IPs, host.docker.internal and a second private sandbox; none may escape the intended
@@ -478,11 +503,13 @@ quoting runs. Apply request-level thresholds and tiers before aggregation. Keep
 Codex credits, API-equivalent USD and actual charges distinct.
 
 Add [GitHub Actions plan allowance and runner rates](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
-to the rate record: private-repository standard runners consume the owner's shared
-allowance (for example, Team includes 3,000 minutes/month). Do not assume unused
-minutes. Current standard Linux 2-core x64 overage is $0.006/minute; refresh before
-execution. Estimate seeded failures, probes, fixes and cleanup jobs as well as
-model cells; record billed runner time separately from queue delay. Fixture runtime
+to the rate record. Standard GitHub-hosted runner minutes for Slice 0's public
+repositories are currently free and unlimited; prohibit larger runners, which are
+still billed. Private-repository standard runners consume the owner's shared allowance
+(for example, Team includes 3,000 minutes/month). Do not assume unused minutes.
+Current standard Linux 2-core x64 overage is $0.006/minute; refresh before execution.
+Estimate seeded failures, probes, fixes and cleanup jobs as well as model cells; record
+billed runner time separately from queue delay. Fixture runtime
 under a minute is not a bound on setup or total billed job duration. Report storage
 and any incremental machine-user seat cost separately, UNKNOWN until established.
 
@@ -534,7 +561,7 @@ changed lines, and existing validation/independent review.
 
 | Slice | Scope | Acceptance / stop |
 | --- | --- | --- |
-| 0: qualify sandbox delivery and main | Pinned template and `validate`, machine user/scoped tokens, protection, fresh-repository reset/cleanup script, Docker/Squid, Codex adapter and two-message startup | Half-day spike: prove identity/token/egress gates and a main Ask completion within the declared budget. Missing accounts, plan access or approval stops the spike; no paid candidate runs. |
+| 0: qualify sandbox delivery and main | Pinned template and `validate`, machine user/scoped tokens, protection, fresh-repository reset/cleanup script, Docker/Squid, Codex adapter and two-message startup | Half-day spike: use one disposable public probe repository to qualify push/log-read/review-publication/helper-merge mechanics, then one separate clean public feasibility repository for a main Ask completion within the declared budget. Apply the same public protection and identity/permission recipe to both. Use unrelated throwaway probe and feasibility fixtures that are never measured or reused; publish only the preapproved public content listed in §5. Neither repository can qualify baseline, candidate or measured-cell evidence. Missing accounts or approval stops the spike; no paid candidate runs. |
 | 1: deterministic publication | Delivered by merged #54; no duplicate contract | Core renderer and three publication paths are complete. #44's remaining Terra delivery is ordinary cross-model evidence and does not depend on benchmarks. |
 | 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, Ask grading, manifest/results; `plan`, `selftest`, `run` only | Keep the Ask contract to six assertions: protected driver verification/readback reports `PASS` for hidden tests at the final head before the terminal event, the required check is green at that head before the terminal event, the machine user published a valid COMMENT walkthrough there that the driver read back before the terminal event and that remains identical to its protected readback, the PR remains open, no merge occurred and no forbidden merge attempt is visible in executed command lines, and the final `SHAKA_NEEDS_APPROVAL` marker resolves to that head and walkthrough. Prove those assertions with focused happy/negative selftests, including pending-check-at-terminal and post-terminal walkthrough-mutation failures, then run a separate Sol qualification and predeclared-order main/candidate Ask pair for functional evidence. Matched same-fixture warm-ups, reverse order, comparable cache evidence and developer-attention data permit only a benchmark comparison; R12 remains gated on separate matched real changes. Results print through `run`; no separate compare/rescore commands. |
 | 3: extend only after demonstrated value | Auto review-repair case, then qualified Opus adapter and its cost normalization | Add the review reply, immutable seeded comment, driver PASS, pre-dispatch snapshot/marker, Auto request/dispatch ordering and exactly-one trusted-helper squash assertions here. Cover one valid Auto path and focused failures for each assertion instead of an exhaustive combination matrix. Preserve the two-profile goal, but present one-profile results as partial until this passes. This extension has its own stated budget; no automatic matrix expansion. |
@@ -567,7 +594,7 @@ describe proposal changes, not runtime proof.
 | --- | --- |
 | Second B1: paid cases need real GitHub | Accepted in §§1, 5, 7, 8. Real failed runs, pushes, review evidence, current-head walkthroughs, Ask stop and helper Auto merge. The maintainer's changed constraint supersedes the earlier deferral. |
 | Second B2: an owner token blocks the merge helper | Accepted in §7. Non-admin machine user with Write access, one-repository PAT, owner outside containers, enforced native protection. Actual commands must qualify before paid runs. |
-| Second S1: sandbox lifecycle | Accepted with an isolation correction in §5: one fresh private repository per cell, grouped by campaign, prevents reading prior PR solutions. Template, pre-failed PR, reset/cleanup and token revocation are explicit; no Claude review workflow. |
+| Second S1: sandbox lifecycle | Accepted with an isolation correction in §5: one fresh private repository per measured cell, grouped by campaign, prevents reading prior PR solutions. The later public Slice 0 exception proves mechanics only. Template, pre-failed PR, reset/cleanup and token revocation are explicit; no Claude review workflow. |
 | Second S2: per-case authority | Accepted in §§5–6. Manifest field and first message establish Ask/Auto; no ad-hoc later authorization. Final Ask request ends the cell without human input. |
 | Second S3: CI time/cost | Accepted in §§5, 7, 9. CI wait is inside 30 minutes; small cached fixture, queue/run timings, Actions allowance and additional setup costs are recorded. |
 | Second S4: Ask merge/attempt detection | Narrowed in §8. Live PR state catches an actual merge, and visible executed command lines catch observed refused helper calls and alternate attempts. Attempt-detection completeness is unavailable when an API request is hidden inside an executed script. |
@@ -580,10 +607,12 @@ describe proposal changes, not runtime proof.
 | Later review: reply grammar and organization membership isolation | Accepted in §§5–7. Message 1 now states the machine-readable reply-evidence contract verbatim. Organization sandboxes require No permission as the member default, no sibling grants or alternate credentials, denied sibling API/clone probes, and probe-token revocation before measurement. |
 | Later review: qualification cache asymmetry | Accepted in §§6, 8, 9 and 11. Qualification cannot warm only main for an efficiency claim. Both packages need matched same-fixture warm-ups, comparable native cache evidence and counterbalanced measured pairs; otherwise results remain functional only. The allowance rises to seven cells. |
 | Fable 5.1: mutable seed, merge-attempt overclaim and grading scope | Accepted without new mechanisms. The final grader compares the seeded comment to its protected digest/timestamps; merge-attempt claims cover only visible commands; Slice 2 has six Ask assertions; Auto reply/marker/dispatch grading stays in Slice 3 with focused cases. |
+| Post-approval constraint: no organization upgrade | Accepted as a Slice 0-only exception in §§1, 5, 7, 9 and 11. GitHub Free can protect separate disposable public probe and feasibility repositories. Their unrelated throwaway fixtures are never reused for measurement; only preapproved public content may appear. Both repositories are deleted and both tokens revoked at exit. Public evidence cannot qualify measured cells, and private branch protection remains a Slice 2 prerequisite. |
 | Verified details and nits | Retain Lemans capability warning, Ponytail agent/scorer distinction, #51's 25.35 minutes, #44 ownership and #54 completion state, package digest, Sol promotion, and three runner verbs. |
 
 Fable 5.1 approved the bounded approach after these corrections. Start Slice 0 without
-another proposal review; its account, plan, credential and budget gates still apply.
+another proposal review; its account, credential and budget gates still apply. Private
+branch-protection plan access remains a gate for measured cells, not the public Slice 0 qualification.
 Prefer deletion to new mechanisms.
 
 Implementation uses one owner, recommends Sol/medium for bounded Ruby/docs work and
