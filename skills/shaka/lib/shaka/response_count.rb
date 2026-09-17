@@ -11,7 +11,8 @@ module Shaka
 
       previous = @responses[identity]
       if previous && previous != record
-        previous.merge!('usage' => {}, 'configuration' => [nil] * 4, 'timestamp' => nil, 'turn_id' => nil)
+        previous.merge!('usage' => {}, 'configuration' => [nil] * 4, 'timestamp' => nil, 'turn_id' => nil,
+                        'billing_mode' => nil)
         @gaps << 'Conflicting response copies'
       end
       @responses[identity] ||= record

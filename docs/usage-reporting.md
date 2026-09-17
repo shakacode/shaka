@@ -38,7 +38,7 @@ local records do not establish the model that executed each response.
 
 The report also shows two **configured-model scenarios** for supported OpenAI
 models: Standard Codex credits and Standard API-equivalent USD. Rates and source
-dates appear with each report. The estimate prices each unique response before
+dates appear with each report. Cursor Grok 4.6 has a parallel on-demand USD scenario. The estimate prices each unique response before
 summing, so model switches and requests crossing the API context threshold are
 handled separately. Cached input is removed from ordinary input. For the API
 scenario, cache writes are removed too and priced at the published write rate;
@@ -85,6 +85,14 @@ absent from these parent-agent events.
 The reader was exercised against desktop `3.20.21` hook payloads for `grok-4.6`.
 Install the hook as described in [getting started](getting-started.md#use-shaka-in-cursor);
 without persisted stop records, Cursor usage stays UNKNOWN.
+
+When the `fast` model param is present, the cost table also shows a configured-model
+on-demand USD scenario for `grok-4.6` and `grok-4.6-fast` using Cursor's published
+list prices verified September 16, 2026. Codex credits stay UNKNOWN. Cache writes
+have no published Cursor rate, so they remain inside ordinary input. Missing
+Fast/standard billing mode or an unsupported Cursor model keeps the scenario UNKNOWN.
+The dollar amount is that list-price scenario, not an invoice: included quota, actual
+charges, and other account terms remain UNKNOWN.
 
 ## Coverage and fallback
 
