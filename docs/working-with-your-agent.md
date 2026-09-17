@@ -206,9 +206,10 @@ In chat, link to supporting records instead of reproducing them. A changed risk 
 missing required evidence belongs in the next visible update.
 
 Collapsed content remains readable and public wherever the PR is public. It is
-not private storage. Keep prompts, raw sessions, private identifiers, and secrets
-out of published evidence. Collapsing text also does not reduce its token cost
-when an agent loads it. Keep useful evidence once and retrieve details as needed.
+not private storage. Keep prompts, raw sessions, secrets, and private identifiers
+out of published evidence. An explicitly authorized recovery task locator is public,
+not a private identifier. Collapsing text also does not reduce its token cost when an
+agent loads it. Keep useful evidence once and retrieve details as needed.
 
 ## Writing preferences
 
