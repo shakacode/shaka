@@ -98,9 +98,8 @@ absolute paths, transcripts, and customer context out of public PRs.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner or a higher takeover number, ownership was transferred: report that
-and stop. Otherwise refresh
-the live PR. A crash can leave no note or an outdated one; the original task recovers
-from live state rather than stopping.
+and stop. Otherwise refresh the live PR. A crash can leave no note or an outdated one;
+the original task recovers from live state rather than stopping.
 
 A fresh task takes over only when the maintainer confirms, in that task or on the PR,
 that the previous task has stopped or is handing over. An old timestamp, an idle task,
