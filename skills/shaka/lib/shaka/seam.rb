@@ -22,11 +22,11 @@ module Shaka
     end
 
     def run
-      operation = @arguments.shift
       parser = option_parser
       parser.parse!(@arguments)
       return help(parser) if @options[:help]
 
+      operation = @arguments.shift
       validate_operation(operation, parser)
       render_config
     end

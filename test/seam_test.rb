@@ -15,6 +15,13 @@ class SeamTest < Minitest::Test
     assert_includes output, 'shaka seam check'
   end
 
+  def test_help_before_the_operation_succeeds
+    output, error, status = Open3.capture3(COMMAND, 'seam', '--help')
+
+    assert status.success?, error
+    assert_includes output, 'shaka seam check'
+  end
+
   def test_check_can_read_policy_from_a_trusted_git_ref
     with_repository do |root|
       commit_repository(root)
