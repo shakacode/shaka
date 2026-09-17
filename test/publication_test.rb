@@ -98,6 +98,18 @@ class PublicationStructureTest < Minitest::Test
     assert_includes rendered, 'not an approval'
   end
 
+  # Without this H1, GitHub reviews read as untitled comments instead of the
+  # titled COMMENT walkthrough on https://github.com/shakacode/shaka/pull/71#pullrequestreview-5229855190
+  def test_walkthroughs_use_an_h1_title_after_identity
+    rendered = Shaka::Publication.walkthrough({ 'identity' => IDENTITY, 'summary' => 'What changed.',
+                                                'head' => 'a' * 40 })
+    assert_match(/\A🤖 Codex · OpenAI · gpt-5\.6-terra · low\n\n# Code Walkthrough\n\nWhat changed.\n/m,
+                 rendered)
+    refute_includes Shaka::Publication.comment({ 'identity' => IDENTITY, 'summary' => 'Fixed.' }),
+                    '# Code Walkthrough'
+    refute_includes render, '# Code Walkthrough'
+  end
+
   def test_a_real_newline_in_a_cell_cannot_split_the_row
     content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
                 'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] } }
