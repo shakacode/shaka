@@ -38,7 +38,7 @@ module Shaka
     end
 
     def machine_alias
-      value = @environment.fetch('AGENT_COORD_MACHINE_ID', 'UNKNOWN')
+      value = @environment.fetch('SHAKA_MACHINE_ALIAS', 'UNKNOWN')
       raise Error, 'Publication provenance machine alias is invalid.' unless valid?(value)
 
       value

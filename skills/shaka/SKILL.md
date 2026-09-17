@@ -193,7 +193,7 @@ and report it. Every command below runs through that saved path.
   `requested_effort`, `recommended_model`, `recommended_effort`, `active_model`,
   and `active_effort` use allowlisted text or `UNKNOWN`. These are the object's
   exact nine flat keys. It publishes route selection without prompts or reasoning
-  text, adds the public machine alias from `AGENT_COORD_MACHINE_ID`, and keeps the
+  text, adds the public machine alias from `SHAKA_MACHINE_ALIAS`, and keeps the
   native usage table as the only record of observed route and token data.
 - Done when the PR description, walkthrough, and usage describe the current head.
 
