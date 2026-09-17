@@ -183,8 +183,8 @@ and report it. Every command below runs through that saved path.
   in the usage details. Publish only aggregate metadata: no prompts, tool output, raw
   sessions, local paths, private run IDs, or secrets. Missing usage is not a merge gate. Read
   [usage reporting](../../docs/usage-reporting.md) for turn selection and overlap rules.
-- Include a [recovery note](../../docs/working-with-your-agent.md#recover-an-unfinished-pr) in the first PR description, refresh it at
-  unfinished stopping points, and remove it at the outcome.
+- Every PR description published before the PR's outcome includes its current
+  [recovery note](../../docs/working-with-your-agent.md#recover-an-unfinished-pr).
 - Done when the PR description, walkthrough, and usage describe the current head.
 
 ## 6. Review
@@ -241,8 +241,9 @@ and report it. Every command below runs through that saved path.
   through [reviews after merge](../../docs/review.md#reviews-after-merge). When the user
   expressly asked to resolve comments, keep task ownership after merge until each known
   optional review settles or receives the documented explicit handoff.
-- At the task's stopping point, refresh usage for the affected commits and turns, replacing
-  overlapping snapshots. Report every PR's link and outcome, brief validation, and remaining
+- At the task's stopping point, refresh the PR description's recovery note, or remove it
+  when the PR reached its outcome. Refresh usage for the affected commits and turns,
+  replacing overlapping snapshots. Report every PR's link and outcome, brief validation, and remaining
   work or blocker.
 - When the task is genuinely finished in a user-facing chat whose host format permits prose,
   such as after its PR is merged with no remaining work, put exactly
