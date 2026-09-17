@@ -242,8 +242,13 @@ installation, remove them:
 ```bash
 test -L "$HOME/.agents/skills/shaka" && unlink "$HOME/.agents/skills/shaka"
 test -L "$HOME/.agents/skills/rct" && unlink "$HOME/.agents/skills/rct"
-test -L "$HOME/.claude/skills/mct-claude" && unlink "$HOME/.claude/skills/mct-claude"
+test -L "$HOME/.agents/skills/mct-claude" && unlink "$HOME/.agents/skills/mct-claude"
 ```
+
+Remove every link your install created, not only the tower one: a Claude Code
+install with `--with-claude-towers` creates both `shaka` and `mct-claude` in the
+same directory, and leaving `shaka` behind makes an older installer refuse that
+destination during rollback.
 
 Use your dedicated skills directory for a terminal install and remove its shell
 `PATH` entry. For Claude Code, use `$HOME/.claude/skills`. For Cursor, use

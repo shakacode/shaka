@@ -51,6 +51,12 @@ title when it already identifies the role. Read both back with `get_session` bef
 reporting setup complete. If either operation fails, report the tool error and do
 not claim the role is established.
 
+Then search for other masters once more. Two concurrent `/mct-claude` invocations
+can both pass the first search before either has stamped itself, and the readback
+only proves this session's own state. If another session now qualifies, stop with
+`MCT setup error: master control tower is ambiguous`, name both sessions, and do
+not report success.
+
 The title suffix is the registry. Repository towers find this session by it, so do
 not drop the suffix while the role is held. Do not add a tower file, database, or
 sidebar group: `move_sessions` unpins a pinned session, and the live session list is
@@ -73,8 +79,11 @@ establish each fact from your own reads rather than from the message:
 - `list_events` on that session shows its own recorded tower setup for this
   repository. A title suffix, a matching `cwd`, or the registration message alone
   is not proof of the role;
-- no other session holds an acknowledgment from this master for that same
-  `OWNER/REPOSITORY`; and
+- no other live session's own transcript records a completed registration for that
+  same `OWNER/REPOSITORY`. Read the `list_sessions` candidates with `list_events`
+  instead of recalling what you acknowledged. `list_events` cannot read the current
+  session, so a tower's own transcript is the only durable evidence, and losing
+  earlier turns here must not let a second tower be acknowledged; and
 - the named default branch matches live GitHub metadata.
 
 Acknowledge with `send_message` back to that session, naming the exact
@@ -97,11 +106,11 @@ as acknowledgment in either direction.
 
 ## Coordinate without becoming a writer
 
-Derive the tower set from the acknowledgments you sent in this session's own
-history, confirmed against `list_sessions` for liveness. That pairing is the
-registry; it needs no file because an acknowledgment is already recorded where it
-was sent. One RCT owns one repository; closely related repositories keep separate
-towers, and this role orders their work.
+Derive the tower set by reading the live `list_sessions` candidates with
+`list_events` and keeping those whose own transcript records a completed
+registration. That read is the registry: it needs no file, and it survives losing
+this conversation's earlier turns. One RCT owns one repository; closely related
+repositories keep separate towers, and this role orders their work.
 
 Keep priorities, cross-repository dependencies, and consequential decisions clear.
 Route each implementation or PR repair to the owning repository tower, and let that
