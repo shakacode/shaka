@@ -82,6 +82,15 @@ module SeamInitializerTestHelpers
     File.write(path, "#!/bin/sh\necho repository-owned\n")
     path
   end
+
+  def with_external_executable
+    Dir.mktmpdir('shaka-seam-outside') do |outside|
+      path = File.join(outside, 'setup')
+      File.write(path, "#!/bin/sh\n")
+      File.chmod(0o755, path)
+      yield path
+    end
+  end
 end
 
 class SeamInitializerTest < Minitest::Test
@@ -225,6 +234,33 @@ class SeamInitializerValidationTest < Minitest::Test
       refute status.success?
       assert_includes error, 'invalid argument'
       refute File.exist?(File.join(root, '.agents'))
+    end
+  end
+
+  def test_refuses_a_symlinked_agents_directory
+    with_repository do |root|
+      FileUtils.mkdir_p(File.join(root, 'elsewhere'))
+      File.symlink(File.join(root, 'elsewhere'), File.join(root, '.agents'))
+
+      _output, error, status = init(root)
+
+      refute status.success?
+      assert_includes error, 'Refusing unsafe directory: .agents'
+      assert_empty Dir.children(File.join(root, 'elsewhere'))
+    end
+  end
+
+  def test_refuses_a_command_symlink_that_escapes_the_repository
+    with_external_executable do |target|
+      with_repository do |root|
+        File.symlink(target, File.join(root, 'bin/external-setup'))
+
+        _output, error, status = init(root, setup_command: 'bin/external-setup')
+
+        refute status.success?
+        assert_includes error, 'setup command must resolve inside the repository'
+        refute File.exist?(File.join(root, '.agents'))
+      end
     end
   end
 end
