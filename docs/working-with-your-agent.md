@@ -150,7 +150,29 @@ when an agent loads it. Keep useful evidence once and retrieve details as needed
 
 ## Writing preferences
 
-The skill provides a plain-English default. Your repo can customize the audience,
+Without any repository setting, Shaka writes to a portable baseline. Before it
+publishes a PR description, walkthrough, or final response, it rereads each summary
+and checks these points:
+
+- The first sentence names the outcome a reader will notice, not the diff.
+- Each sentence carries one main idea when practical.
+- A condition sits next to the behavior it limits.
+- Sentences have a clear subject and an active verb.
+- A walkthrough explains the earlier behavior and the new capability before files or
+  diff mechanics.
+- Exact commands, identifiers, domain terms, risks, and evidence survive the edit.
+
+This summary is accurate but hard to read. It joins two changes under one verb and
+holds the condition until the end:
+
+> Adds a short owner-only command for following the automatic agent-stack sync log and makes both concise and extended tips advertise the log and service-status commands only where that LaunchAgent exists.
+
+The reader-first version separates the changes and keeps the condition beside the
+behavior it limits:
+
+> Owner shells can now follow the automatic agent-stack sync log with `agent-stack-sync-log`. When the LaunchAgent is installed, `tips` and `tips -a` also show the log and service-status commands.
+
+The baseline is a self-edit, not a score or a linter. Your repo can customize the audience,
 language, vocabulary, and level of detail in its existing `AGENTS.md`. For example:
 
 ```markdown
