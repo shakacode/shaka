@@ -136,8 +136,9 @@ a skill installed alongside Shaka itself, never one inside your checkout or the 
 session and temporary directories; anything else counts as missing. It invokes the skill
 through the host, treats what comes back as advice, and records the result and its
 disposition in the next thing it publishes for that head: the walkthrough, the PR
-description, or the final report. If Shaka acts on the advice, the result is a new head
-that goes through verification, explanation, review, and the merge decision again. A missing or failed extension is reported and the task continues. An extension
+description, or the final report. Adopted advice re-enters the procedure at the step it
+affects; a change to a published head goes through verification, explanation, review, and
+the merge decision again. A missing or failed extension is reported and the task continues. An extension
 cannot weaken a gate, grant authority, or take over a step Shaka owns, so a skill that
 commits, pushes, opens PRs, or merges on its own is an alternative to Shaka, not an
 extension. An extension's own network use is your responsibility. Session prose styles
