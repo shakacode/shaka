@@ -42,6 +42,7 @@ begin
       puts "Installed: #{destination} -> #{source}"
     end
   end
+  puts "Next: #{File.join(File.expand_path(skills_dir), 'shaka/scripts/shaka')} seam init --help"
 rescue OptionParser::ParseError, SystemCallError => e
   warn e.message
   exit 1

@@ -4,7 +4,17 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'rbconfig'
 
+module InstallTestAssertions
+  def assert_skill_link(source, destination, content)
+    assert File.symlink?(destination)
+    assert_equal File.realpath(source), File.readlink(destination)
+    assert_equal content, File.read(File.join(destination, 'SKILL.md'))
+  end
+end
+
 class InstallTest < Minitest::Test
+  include InstallTestAssertions
+
   def setup
     @directory = Dir.mktmpdir('workflows-install')
     @source = File.join(@directory, 'source', 'skills', 'shaka')
@@ -28,6 +38,7 @@ class InstallTest < Minitest::Test
     assert status.success?, output
     assert_skill_link(@source, @destination, 'version one')
     assert_skill_link(@rct_source, @rct_destination, 'rct version one')
+    assert_includes output, "#{File.join(@destination, 'scripts/shaka')} seam init --help"
   end
 
   def test_repeat_install_keeps_the_same_link
@@ -111,12 +122,6 @@ class InstallTest < Minitest::Test
   end
 
   private
-
-  def assert_skill_link(source, destination, content)
-    assert File.symlink?(destination)
-    assert_equal File.realpath(source), File.readlink(destination)
-    assert_equal content, File.read(File.join(destination, 'SKILL.md'))
-  end
 
   def write_skills
     File.write(File.join(@source, 'SKILL.md'), 'version one')
