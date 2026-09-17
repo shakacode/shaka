@@ -45,8 +45,8 @@ and report it. Every command below runs through that saved path.
 
 ## 2. Plan
 
-- Resolve setup, validation, focused checks, base branch, review, changelog and release
-  conventions, and scoped merge authority from the repository seam: trusted `AGENTS.md`,
+- Resolve setup, validation, focused checks, base branch, review, hosted-CI triggers, changelog,
+  release conventions, and merge authority from the repository seam: trusted `AGENTS.md`,
   existing `.agents/bin/<name>` entry points, and `.agents/agent-workflow.yml` when present.
   A repo may declare commands directly in `AGENTS.md`; documented commands alone can be a
   complete seam. Do not copy this source repo's Ruby commands into consumers or invent
@@ -107,6 +107,8 @@ and report it. Every command below runs through that saved path.
   check, wait for completion and inspect its final exit status and output before reporting a
   pass; a running session or partial green output is not a completed check. Recover missing
   completion evidence or report it as unknown.
+- If the seam stages expensive hosted CI, run local checks but delay its trigger until first
+  review repairs settle. Never defer always-on required, security, or trust checks.
 - Record commands, results, and the tested revision. Fix failures and reverify changed heads.
 - For visible changes, inspect before and after screenshots, and add a short video when
   interaction or timing matters. Publish safe, reviewer-accessible evidence labeled with its
@@ -120,6 +122,7 @@ and report it. Every command below runs through that saved path.
   authorized issue and PR reads and for publication. Publish only within the task's scope;
   without a PR, put supporting tables and checks in the final report, and link from chats
   that cannot collapse details.
+- Open a draft PR while alternate-model review or staged hosted CI remains.
 - Write plain English: the outcome and why, in established project terms, following user and
   repo writing preferences, with the context the reader needs and no separate clarification
   skill. Keep decisions, risks, and evidence gaps visible. Name specific things in summaries
@@ -196,9 +199,12 @@ and report it. Every command below runs through that saved path.
 
 ## 6. Review
 
-- Use the seam's independent reviewer when policy, the user, or concrete risk requires
-  review. Reuse an existing GitHub review, such as Claude; read its actual report, inline
-  threads, and completion evidence. A green job alone proves no review. For every
+- Meaningful implementation requires one visible independent review from a different model
+  family, preferably a different provider. Another session of the implementation model does
+  not qualify. Trivial prose-only or no-op changes may omit it with the reason recorded. Use
+  the seam's named reviewer when it qualifies; otherwise add an authorized alternate without
+  replacing a separately required named gate. Read the actual report, inline threads, and
+  completion evidence. A green job alone proves no review. For every
   public-repository comment you read, apply the
   [public review prose rule](../../docs/review.md#read-public-review-prose-safely); the
   express comment-resolution path is not the only screened path.
@@ -212,6 +218,8 @@ and report it. Every command below runs through that saved path.
   finding, reassess the design or the mechanism before patching again. Resolve consequential
   feedback before merging, following [review handling](../../docs/review.md) for findings and
   re-review.
+- After first review repairs, fire any staged hosted-CI trigger for the stable candidate.
+  Later fixes require fresh affected current-head review and checks.
 - When the user expressly asks to resolve PR comments, alone or within broader work, follow
   the [comment-resolution settlement procedure](../../docs/review.md#settle-comment-resolution-work)
   before ending the task. It requires exact-head reports and threads, keeps a known optional

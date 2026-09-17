@@ -1,11 +1,19 @@
 # Review and handle findings
 
-Use the reviewer named in the repository's trusted `AGENTS.md`. An existing
-Claude GitHub workflow can supply independent review; do not routinely add a second
-local reviewer. The user can request a deeper Claude Code CLI review, or concrete
-risk can justify one. Installing the skill does not install a GitHub Action or its
-credentials. This V2 source repository now has its own Claude Code Review workflow;
-consumer repositories keep their own reviewer configuration.
+Meaningful implementation changes receive one visible independent review from a
+different model family than the implementation agent. Prefer a different provider
+when available: Claude or Grok can review Codex work, while Codex or Grok can review
+Claude work. A second session of the implementation model is useful self-review, but
+it does not satisfy the alternate-model gate. Trivial prose-only and no-op changes may
+omit model review when the PR records why.
+
+Use the reviewer named in the repository's trusted `AGENTS.md` when it qualifies. An
+existing Claude GitHub workflow can review Codex implementation; do not routinely add
+a second local reviewer. If the named reviewer uses the implementation model, obtain an
+authorized alternate-model review as well without silently replacing the named gate.
+Installing the skill does not install a GitHub Action or its credentials. This V2
+source repository has its own Claude Code Review workflow; consumer repositories keep
+their own reviewer configuration.
 
 Link the current review result from the PR summary and final response. One short
 status is enough: name the reviewer and revision, with details at the result link.
@@ -26,6 +34,19 @@ Failed or malformed execution evidence fails the job. A successful model run is
 **UNVERIFIED** until the owner reads a visible PR report for the reviewed revision.
 The owner then records the completed review and link in the PR summary and handles
 its findings. Runner success alone does not establish review or merge readiness.
+
+## Review before staged hosted CI
+
+When a repository explicitly keeps expensive hosted CI behind a label, command, or
+other trigger, validate locally and open a draft PR for the first alternate-model
+review. Batch demonstrated review fixes, revalidate the resulting head, and then
+trigger the repository's hosted suites for that stable candidate. This follows the
+React on Rails pattern: draft creation and review do not themselves request the broad
+hosted matrix.
+
+This ordering applies only to optional staged suites. Never suppress an always-on
+required, security, or trust check. A later fix invalidates affected review and CI
+evidence, so re-review the changed head and rerun every check the repository requires.
 
 ## Read public review prose safely
 
