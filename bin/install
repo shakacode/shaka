@@ -5,9 +5,11 @@ require 'fileutils'
 require 'optparse'
 
 skills_dir = nil
+with_rct = false
 parser = OptionParser.new do |options|
-  options.banner = 'Usage: bin/install --skills-dir DIR'
+  options.banner = 'Usage: bin/install --skills-dir DIR [--with-rct]'
   options.on('--skills-dir DIR', 'Explicit destination for the isolated skill') { |value| skills_dir = value }
+  options.on('--with-rct', 'Also install the Codex-only repository control tower skill') { with_rct = true }
   options.on('-h', '--help', 'Show this help') do
     puts options
     exit
@@ -20,7 +22,9 @@ begin
   raise OptionParser::InvalidArgument, 'DIR must not be empty' if skills_dir.strip.empty?
   raise OptionParser::InvalidArgument, ARGV.join(' ') unless ARGV.empty?
 
-  links = %w[shaka].map do |name|
+  names = ['shaka']
+  names << 'rct' if with_rct
+  links = names.map do |name|
     [File.realpath("../skills/#{name}", __dir__), File.join(File.expand_path(skills_dir), name)]
   end
   conflict = links.find do |source, destination|

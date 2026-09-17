@@ -6,6 +6,13 @@ Give your agent a task. Get a verified PR and a clear explanation.
 $shaka Fix the failing search test
 ```
 
+Or establish the current repository's control tower from a task in its saved
+Codex project:
+
+```text
+$rct
+```
+
 You steer the work. Shaka takes it through delivery:
 
 - Reads your repository's instructions and asks about missing requirements.
@@ -51,7 +58,8 @@ from Ruby as an [experimental API](docs/public-comments.md).
 
 ## For agents and contributors to Shaka
 
-Start with the [agent procedure](skills/shaka/SKILL.md). Each repository's `AGENTS.md`
+Start with the [agent procedure](skills/shaka/SKILL.md), or the focused
+[repository control tower setup](skills/rct/SKILL.md). Each repository's `AGENTS.md`
 supplies its commands and authority; [Shaka's contributor instructions](AGENTS.md)
 name this project's setup and checks. See the [requirements](docs/pilot-plan.md)
 and [gem packaging guide](docs/packaging.md) for design and distribution.
