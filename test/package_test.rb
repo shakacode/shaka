@@ -62,8 +62,10 @@ class PackageTest < Minitest::Test
   def run_public_comments_consumer
     consumer = File.join(ROOT, 'test', 'fixtures', 'public_comments_consumer.rb')
     result = JSON.parse(run_command(consumer, File.join(@directory, 'absent-machine-config.yml')))
-    refute_empty result['loaded_from']
-    assert(result['loaded_from'].all? { |path| path.start_with?(File.realpath(@home)) }, result['loaded_from'])
+    loaded = result.fetch('loaded_from')
+    refute_empty loaded
+    assert(loaded.all? { |path| path.start_with?(File.realpath(@home)) }, loaded)
+    assert_empty(loaded.grep(%r{/(?:github|work|merge)\.rb\z|/scripts/shaka\z}), loaded)
     result
   end
 

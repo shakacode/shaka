@@ -47,4 +47,5 @@ class RecordedGitHub
 end
 
 reader = Shaka::PublicComments::Reader.new(RecordedGitHub.new, machine_path: ARGV.fetch(0))
-puts JSON.generate(reader.call(issue_only: true).merge('loaded_from' => $LOADED_FEATURES.grep(/reader\.rb\z/)))
+loaded = $LOADED_FEATURES.grep(%r{/gems/shaka-.+/})
+puts JSON.generate(reader.call(issue_only: true).merge('loaded_from' => loaded))
