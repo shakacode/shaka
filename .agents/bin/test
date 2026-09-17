@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require 'bundler/setup'
-
 root = File.expand_path('../..', __dir__)
 Dir.chdir(root) do
+  require 'bundler/setup'
+
   tests = ARGV.empty? ? Dir.glob('test/**/*_test.rb') : ARGV
   abort 'Provide one or more test files.' if tests.empty?
 

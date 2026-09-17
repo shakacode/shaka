@@ -10,7 +10,7 @@ module Shaka
   class RepositoryConfig
     PATH = '.agents/agent-workflow.yml'
 
-    attr_reader :base_branch, :commands, :review, :merge
+    attr_reader :base_branch, :commands, :review, :merge, :protection
 
     def self.load(root: Dir.pwd, source: nil)
       new(root:, source:).load
@@ -47,6 +47,7 @@ module Shaka
       @commands = @data.fetch('commands')
       @review = @data.fetch('review')
       @merge = @data.fetch('merge')
+      @protection = @data.fetch('protection')
     end
   end
 end

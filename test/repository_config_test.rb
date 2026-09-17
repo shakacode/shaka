@@ -16,6 +16,11 @@ module RepositoryConfigTestHelpers
       yield
     end
   end
+
+  def protection
+    { 'required_checks' => ['validate'], 'direct_push' => false, 'force_push' => false,
+      'branch_deletion' => false }
+  end
 end
 
 class RepositoryConfigTest < Minitest::Test
@@ -29,6 +34,7 @@ class RepositoryConfigTest < Minitest::Test
       assert_equal '.agents/bin/validate', config.command('validate')
       assert_equal 'meaningful_changes', config.review.fetch('required')
       assert_equal 'auto', config.merge.fetch('preference')
+      assert_equal ['validate'], config.protection.fetch('required_checks')
     end
   end
 
@@ -135,10 +141,5 @@ class RepositoryConfigTest < Minitest::Test
 
   def merge_policy
     { 'preference' => 'auto', 'method' => 'squash', 'release' => 'explicit_approval' }
-  end
-
-  def protection
-    { 'required_checks' => ['validate'], 'direct_push' => false, 'force_push' => false,
-      'branch_deletion' => false }
   end
 end
