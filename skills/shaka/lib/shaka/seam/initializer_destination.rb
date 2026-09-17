@@ -29,7 +29,7 @@ module Shaka
 
       def matching_destination?(path, content)
         matches = File.file?(path) && !File.symlink?(path) && File.read(path, encoding: 'UTF-8') == content
-        matches &&= File.executable?(path) if wrapper_path?(path)
+        matches &&= (File.stat(path).mode & 0o7777) == destination_mode(path)
         matches
       end
 
@@ -48,12 +48,13 @@ module Shaka
 
       def write_new_file(path, content)
         flags = File::WRONLY | File::CREAT | File::EXCL
-        mode = wrapper_path?(path) ? 0o755 : 0o644
         File.open(path, flags, 0o600) do |file|
           file.write(content)
-          file.chmod(mode)
+          file.chmod(destination_mode(path))
         end
       end
+
+      def destination_mode(path) = wrapper_path?(path) ? 0o755 : 0o644
 
       def wrapper_path?(path) = File.dirname(path) == File.join(@root, '.agents/bin')
     end

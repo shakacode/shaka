@@ -27,7 +27,8 @@ module Shaka
       end
 
       def invalid_command?(arguments)
-        arguments.empty? || arguments.first.include?('=') || arguments.intersect?(CONTROL_TOKENS)
+        arguments.empty? || arguments.first.start_with?('-') || arguments.first.include?('=') ||
+          arguments.intersect?(CONTROL_TOKENS)
       end
 
       def validate_executable(executable, name)
@@ -39,6 +40,7 @@ module Shaka
 
       def validate_path_executable(executable, name)
         found = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).any? do |directory|
+          directory = @root if directory.empty?
           path = File.expand_path(File.join(directory, executable), @root)
           File.file?(path) && File.executable?(path)
         end
@@ -47,7 +49,7 @@ module Shaka
 
       def base_branch
         value = required('base_branch')
-        output, status = Open3.capture2e('git', '-C', @root, 'check-ref-format', '--branch', value)
+        output, _error, status = Open3.capture3('git', '-C', @root, 'check-ref-format', '--branch', value)
         raise Error, 'base branch must be a valid Git branch name' unless status.success?
         raise Error, 'base branch must be an explicit branch name' unless output.strip == value
 

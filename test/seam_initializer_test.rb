@@ -93,6 +93,15 @@ module SeamInitializerTestHelpers
     end
   end
 
+  def with_noisy_git
+    Dir.mktmpdir('shaka-fake-git') do |bin|
+      git = File.join(bin, 'git')
+      File.write(git, "#!/bin/sh\nprintf 'main\\n'\nprintf 'warning\\n' >&2\n")
+      File.chmod(0o755, git)
+      yield({ 'PATH' => [bin, ENV.fetch('PATH', '')].join(File::PATH_SEPARATOR) })
+    end
+  end
+
   def git!(root, *)
     output, status = Open3.capture2e('git', '-C', root, *)
     raise output unless status.success?
@@ -107,8 +116,20 @@ module SeamInitializerTestHelpers
   end
 end
 
+module SeamInitializerAssertions
+  def assert_refuses_changed_mode(root, relative, mode)
+    path = File.join(root, relative)
+    File.chmod(mode, path)
+    _output, error, status = init(root)
+    refute status.success?
+    assert_includes error, "Refusing existing destination: #{relative}"
+    assert_equal mode, File.stat(path).mode & 0o777
+  end
+end
+
 class SeamInitializerTest < Minitest::Test
   include SeamInitializerTestHelpers
+  include SeamInitializerAssertions
 
   def test_init_creates_and_validates_a_complete_repository_seam
     with_repository do |root|
@@ -152,6 +173,20 @@ class SeamInitializerTest < Minitest::Test
       refute status.success?
       assert_includes error, 'Refusing existing destination: .agents/bin/setup'
       refute File.executable?(setup)
+    end
+  end
+
+  def test_refuses_a_generated_wrapper_with_overly_permissive_mode
+    with_repository do |root|
+      assert init(root).last.success?
+      assert_refuses_changed_mode(root, '.agents/bin/setup', 0o777)
+    end
+  end
+
+  def test_refuses_a_generated_config_with_overly_permissive_mode
+    with_repository do |root|
+      assert init(root).last.success?
+      assert_refuses_changed_mode(root, '.agents/agent-workflow.yml', 0o666)
     end
   end
 
@@ -286,6 +321,45 @@ class SeamInitializerValidationTest < Minitest::Test
       refute status.success?
       assert_includes error, 'test command is not available on PATH'
       refute File.exist?(File.join(root, '.agents'))
+    end
+  end
+
+  def test_rejects_an_executable_name_that_starts_with_a_dash
+    with_repository do |root|
+      _output, error, status = init(root, test_command: '-report')
+
+      refute status.success?
+      assert_includes error, 'must be a simple argv command'
+      refute File.exist?(File.join(root, '.agents'))
+    end
+  end
+end
+
+class SeamInitializerEnvironmentTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_empty_path_entry_resolves_a_command_from_the_repository_root
+    with_repository do |root|
+      executable = File.join(root, 'local-setup')
+      File.write(executable, "#!/bin/sh\nexit 0\n")
+      File.chmod(0o755, executable)
+      environment = { 'PATH' => [nil, ENV.fetch('PATH', '')].join(File::PATH_SEPARATOR) }
+      arguments = init_arguments(root, setup_command: 'local-setup')
+
+      output, error, status = Open3.capture3(environment, *arguments)
+
+      assert status.success?, error
+      assert_complete_seam(root, output)
+    end
+  end
+
+  def test_branch_validation_ignores_successful_git_stderr
+    with_repository do |root|
+      with_noisy_git do |environment|
+        output, error, status = Open3.capture3(environment, *init_arguments(root))
+        assert status.success?, error
+        assert_complete_seam(root, output)
+      end
     end
   end
 
