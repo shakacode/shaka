@@ -170,9 +170,9 @@ and report it. Every command below runs through that saved path.
 - Extensions: `before-walkthrough`. Then, before merge, publish a COMMENT walkthrough:
   purpose, behavior, key choices, a short validation summary, risks and rollback, and
   commit-pinned links to the changed code. Link the current walkthrough prominently from the
-  PR summary and the final response, and reuse it for the same revision. After publishing for a new head, try to collapse older
-  walkthroughs with trusted GitHub tools, preserving their revision, evidence, and human
-  edits; if that is unavailable, keep the current link and explain the limitation. Cleanup
+  PR summary and the final response, and reuse it for the same revision. After publishing
+  for a new head, try to collapse older walkthroughs with trusted GitHub tools, preserving
+  their revision, evidence, and human edits; if that is unavailable, keep the current link and explain the limitation. Cleanup
   does not block merge. COMMENT is not approval.
 - Report usage with `usage` for each task, choosing `implementation`, `review`,
   `integration`, or `shared-planning` to match the work. Use `--all-turns` only when the
