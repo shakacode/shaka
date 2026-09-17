@@ -342,7 +342,10 @@ Read PR state, actual head, required-check run/head/conclusion, reviews and merg
 commit through the API. Require a current-head COMMENT walkthrough authored by the
 machine user, with a native review ID distinct from the driver verification. Its body
 must have the Shaka identity line, at least one `##` section and the terminal
-`Walkthrough for commit <final-head>` COMMENT marker. Require a driver verification
+`Walkthrough for commit <final-head>` COMMENT marker. For Auto, grade that schema
+against the exact walkthrough ID, body digest, `created_at` and `updated_at` captured in
+the pre-dispatch snapshot; the live body and timestamps must still match. A later edit,
+deletion or missing snapshot fails. Require a driver verification
 review from the manifest's driver actor whose body reports `PASS`, whose
 state is `COMMENTED`, whose native review ID matches the driver ledger, whose
 `commit_id` matches the final head, and whose attempt ordinal and cumulative execution
@@ -391,10 +394,10 @@ evidence/timing taken from different IDs; a reply edited after capture; same-sec
 reply/request ordering; a merge without a matching helper invocation; marker post or
 read-back failure before dispatch; agent edit/deletion after dispatch; missing, mutated
 or wrong-head helper markers; walkthrough cases for missing publication, wrong
-actor/schema, reused driver-review ID and a different helper argument; queued terminal
-actions in the POST/GET window; pre-POST terminal actions; Ask output with missing,
-malformed or stale markers; and a valid unmerged Ask completion. Agent success claims
-never override protected evidence.
+actor/schema, reused driver-review ID, a different helper argument and mutation after
+capture; queued terminal actions in the POST/GET window; pre-POST terminal actions;
+Ask output with missing, malformed or stale markers; and a valid unmerged Ask
+completion. Agent success claims never override protected evidence.
 Publish only reviewed aggregate metadata, never raw sessions or private identifiers.
 
 One run per cell is a regression screen. Permit at most one additional pair for
