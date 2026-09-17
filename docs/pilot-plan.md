@@ -59,6 +59,9 @@ where present; direct command declarations need no extra configuration.
 Missing optional capabilities are n/a. Resolve missing required commands or conflicting
 policy before dependent work. Candidate policy edits cannot weaken the current task's
 trusted requirements. Do not copy this project's Ruby checks into consumer repositories.
+Trusted instructions may also name installed skills as **extensions** at fixed points of
+the procedure (issue #35). Their output is advice; they cannot weaken a gate, grant
+authority, or take over a step Shaka owns, and with none named the procedure is unchanged.
 
 ## Host boundary
 

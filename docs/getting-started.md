@@ -129,15 +129,16 @@ Shaka extensions:
   before-merge: compound-engineering:ce-code-review mode:agent
 ```
 
-Points: `after-plan`, `after-green` (the tests pass), `before-walkthrough`, `after-review`
-(the findings are collected), and `before-merge`. Write each skill name exactly as your host
-lists it, with any arguments the skill accepts. Shaka invokes it through the host's skill
-mechanism, treats what comes back as advice, and records the result and its disposition in
-the walkthrough. A missing or failed extension is reported and the task continues. An
-extension cannot weaken a check, grant merge authority, or take over a step Shaka owns, so
-a skill that commits, pushes, opens PRs, or merges on its own is an alternative to Shaka,
-not an extension. An extension's own network use is your responsibility. Session prose
-styles such as terse chat modes never change published PR text.
+Use any of `after-plan`, `after-green` (validation passed), `before-walkthrough`,
+`after-review` (findings collected), or `before-merge`. Write each skill name exactly as
+your host lists it, with any arguments the skill accepts. Shaka first resolves the name to
+its installed source outside your checkout; a name that exists only inside the checkout
+counts as missing. It invokes the skill through the host, treats what comes back as advice,
+and records the result and its disposition in the walkthrough. A missing or failed extension
+is reported and the task continues. An extension cannot weaken a check, grant merge
+authority, or take over a step Shaka owns, so a skill that commits, pushes, opens PRs, or
+merges on its own is an alternative to Shaka, not an extension. Its network use is your
+responsibility. Session prose styles such as terse chat modes never change published PR text.
 
 ## Use a fresh terminal session
 
