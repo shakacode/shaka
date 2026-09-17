@@ -16,6 +16,10 @@ module Shaka
                '-c', 'sandbox_workspace_write.exclude_slash_tmp=true',
                '-c', 'sandbox_workspace_write.exclude_tmpdir_env_var=true',
                '-c', 'sandbox_workspace_write.network_access=false'].freeze
+    # OpenCode reads .opencode plugins, opencode.json and instructions from its working
+    # directory upward, and runs that plugin code. The target is a candidate checkout, so
+    # it must supply none of them; the trusted global configuration still loads.
+    OPENCODE_ENV = { 'OPENCODE_DISABLE_PROJECT_CONFIG' => 'true' }.freeze
     # Codex runs from its own scratch session; OpenCode runs from the target checkout itself,
     # so only Codex can be told to leave its session root alone.
     SESSION_RULE = {
@@ -47,9 +51,9 @@ module Shaka
     end
 
     def self.launch(target, task, host)
-      return exec({}, 'opencode', target, '--prompt', prompt(target, task, host), chdir: target) if host == 'opencode'
+      return launch_codex(target, task) unless host == 'opencode'
 
-      launch_codex(target, task)
+      exec(OPENCODE_ENV, 'opencode', target, '--prompt', prompt(target, task, host), chdir: target)
     end
 
     def self.launch_codex(target, task)

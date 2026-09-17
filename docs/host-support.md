@@ -22,7 +22,7 @@ establish complete usage attribution.
 | Capability | Codex CLI 0.154.0 | Claude Code desktop 2.1.270, CLI 2.1.272 | Cursor CLI 2026.09.10-fd3934a | OpenCode 1.18.31 |
 | --- | --- | --- | --- | --- |
 | Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. |
-| OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. Not separately probed. |
+| OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. |
 | Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. | Consumer delivery unverified. |
 | Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. |
 
@@ -121,14 +121,18 @@ directory and rely on the permission mode you already use.
 interactive TUI in that repository with the trusted workflow prompt; OpenCode
 keeps its own sessions outside the checkout, so the launcher creates no separate
 session directory. It refuses a target that overlaps the trusted workflow and
-leaves account and model settings alone. The next required evidence is a
-complete ordinary consumer PR delivered with `/shaka`, including TUI skill
-activation and Ask/Auto stopping behavior.
+leaves account and model settings alone. It also sets
+`OPENCODE_DISABLE_PROJECT_CONFIG`, because OpenCode otherwise reads `.opencode`
+plugins, `opencode.json` and instructions from its working directory upward and
+runs that plugin code; the trusted global configuration still loads. The next
+required evidence is a complete ordinary consumer PR delivered with `/shaka`,
+including TUI skill activation and Ask/Auto stopping behavior.
 
 OpenCode publishes no session identifier to the commands it runs, so
-`shaka usage --host opencode` needs an explicit `--session ID`. The next reader
-evidence is an identifier published into the tool environment, or a confirmed
-upstream way to read the current session from inside it.
+`shaka usage --host opencode` needs a session named with `--session ID`, a
+wrapper that sets `OPENCODE_SESSION_ID`, or saved exports passed with `--file`.
+The next reader evidence is an identifier published into the tool environment,
+or a confirmed upstream way to read the current session from inside it.
 
 ## Usage is a separate capability
 

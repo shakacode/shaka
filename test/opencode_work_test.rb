@@ -48,7 +48,7 @@ module OpencodeWorkFixture
       #!/usr/bin/env ruby
       require 'json'
       File.write(ENV.fetch('WORK_CAPTURE'), JSON.generate(
-        argv: ARGV, cwd: Dir.pwd
+        argv: ARGV, cwd: Dir.pwd, project_config: ENV['OPENCODE_DISABLE_PROJECT_CONFIG']
       ))
     RUBY
     FileUtils.chmod(0o755, executable)
@@ -72,6 +72,10 @@ class OpencodeWorkTest < Minitest::Test
     assert_includes prompt, File.realpath(File.join(@source, 'SKILL.md'))
     assert_equal task, JSON.parse(prompt.lines.last)
     refute File.exist?(marker)
+  end
+
+  def test_refuses_project_local_components_from_the_target_checkout
+    assert_equal 'true', started('Fix the test')['project_config']
   end
 
   def test_prompt_does_not_forbid_changing_the_checkout_opencode_runs_in
