@@ -92,7 +92,7 @@ the section once the PR reaches its outcome. It lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
   the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`.
-- **Task:** the searchable task title.
+- **Task:** the searchable task title, or a task locator the tracker allows sharing.
 - **Thread:** the host-native task locator when one is available. Build a Codex locator
   from the thread ID reported in `CODEX_THREAD_ID`, and publish
   `codex://threads/<thread-id>` as a raw, unformatted URL, never a Markdown link or
