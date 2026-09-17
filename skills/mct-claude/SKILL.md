@@ -42,16 +42,21 @@ Search active sessions for the `MCT — Shaka` suffix with `list_sessions` and
 says a session was set up or attempted setup; its own recorded result says the role
 took hold.
 
-- If this session already holds the role, reuse it and repair only a missing title
-  or pin state.
-- If one other session holds it, stop with `MCT setup error: master control tower
-  already exists`, identify that session, and direct the user there.
-- If several sessions carry the suffix, stop with `MCT setup error: master control
-  tower is ambiguous` and list them with what each recorded. Do not pick one, and do
-  not assume the most recent is correct. A suffix left behind by an abandoned or
-  failed setup is a stale hint rather than a corrupt registry; say so, and let the
-  user clear it.
-- Otherwise this session takes the role.
+Take the first of these that matches, in this order. Counting the suffix before
+anything else is what makes the detection above real: reusing this session first
+would let a duplicate re-invoke itself and report success.
+
+- If more than one live session carries the suffix, counting this one, stop with
+  `MCT setup error: master control tower is ambiguous` and list them with what each
+  recorded. Do not pick one, do not assume the most recent is correct, and never
+  exempt this session from the count. A suffix left behind by an abandoned or failed
+  setup is a stale hint rather than a corrupt registry; say so, and let the user
+  clear it.
+- If this session is the only one carrying it, reuse it and repair only a missing
+  title or pin state.
+- If exactly one other session carries it, stop with `MCT setup error: master
+  control tower already exists`, identify that session, and direct the user there.
+- Otherwise no session carries it, and this session takes the role.
 
 Rename this session with `set_session_title` to a concise title ending in
 `MCT — Shaka`, and pin it with `set_pinned`. Preserve a more specific user-chosen
@@ -90,7 +95,10 @@ Acknowledge with `send_message` back to that session, naming the exact
 registers the tower only, and releases no paused work, backlog assignment, worker
 session, or merge authority.
 
-Refuse instead when a check fails:
+Refuse instead when a check fails, and send that refusal to the requesting session
+with `send_message` as well as reporting it here. That tower ended its turn awaiting
+a pushed reply, so a refusal reported only in this session leaves it waiting
+indefinitely.
 
 - another live session already records a completed registration for that repository:
   `MCT registration error: repository already has an RCT`. A session carrying a
