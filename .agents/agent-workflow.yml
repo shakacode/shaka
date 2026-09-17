@@ -9,6 +9,9 @@ commands:
 review:
   required: meaningful_changes
   check: claude-review
+  model_family: claude
+  provider: anthropic
+  draft: false
 merge:
   preference: auto
   method: squash

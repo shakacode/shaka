@@ -53,12 +53,19 @@ decision. On resumption, the agent checks the actual host setting when available
 writing a model name in a prompt does not change the runner.
 Measure total planning, implementation, retries, and review, not just one attempt.
 
-One owner works solo by default. Independent review still happens when required;
-solo implementation does not waive the review policy. A separate planning task is
-optional. Ask `$shaka` to plan only when scope or a handoff needs thought; it returns
-the plan without an implementation checkpoint. Its output should name the task,
-recommended model/effort, acceptance, affected paths, checks, merge authority,
-and stopping point. Do not copy the whole planning conversation.
+One owner works solo by default. Meaningful implementation still gets one visible
+review from a different model family, preferably a different provider. For example,
+Claude or Grok reviews Codex implementation; a second Codex session does not satisfy
+that gate. A separate planning task is optional. Ask `$shaka` to plan only when scope
+or a handoff needs thought; it returns the plan without an implementation checkpoint.
+Its output should name the task, recommended model/effort, acceptance, affected paths,
+checks, merge authority, and stopping point. Do not copy the whole planning conversation.
+
+If the repository exposes `trigger_hosted_ci`, it must also provide `validate_local`. The agent
+runs that cheaper validation and handles the first alternate-model review before requesting suites for
+the stable candidate. It uses a draft only when every required reviewer supports drafts, or
+the repository's documented review-ready path otherwise. Always-on required and security
+checks still run normally. A changed head requires fresh affected review and CI evidence.
 
 Use a fresh task for a new implementation objective. Keep an existing task while
 it owns unfinished changes, or hand over its branch, current revision, completed

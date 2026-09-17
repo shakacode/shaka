@@ -2,11 +2,15 @@
 
 require 'pathname'
 require_relative '../error'
+require_relative 'review_schema'
+require_relative 'validation'
 
 module Shaka
   class RepositoryConfig
     # Validates the complete version-one repository contract.
     class Schema
+      include Validation
+
       REQUIRED = %w[version base_branch commands review merge protection].freeze
       OPTIONAL = %w[plan trusted_actions].freeze
 
@@ -32,21 +36,21 @@ module Shaka
 
       def validate_commands
         commands = mapping!(@data['commands'], 'commands')
-        names = %w[setup validate test]
-        keys!(commands, names, [], 'commands')
-        names.each { |name| executable!(commands[name], "commands.#{name}") }
+        required = %w[setup validate test]
+        optional = %w[validate_local trigger_hosted_ci]
+        keys!(commands, required, optional, 'commands')
+        if commands.key?('trigger_hosted_ci') && !commands.key?('validate_local')
+          raise Error, 'commands.trigger_hosted_ci requires commands.validate_local'
+        end
+
+        commands.each { |name, path| executable!(path, "commands.#{name}") }
       end
 
       def validate_review
         review = mapping!(@data['review'], 'review')
-        keys!(review, ['required'], ['check'], 'review')
-        enum!(review['required'], %w[always meaningful_changes none],
-              'review.required must be always, meaningful_changes, or none')
-        if review['required'] == 'none'
-          raise Error, 'review.check must be omitted when review.required is none' if review.key?('check')
-        else
-          string!(review['check'], 'review.check')
-        end
+        optional = %w[check model_family provider draft]
+        keys!(review, ['required'], optional, 'review')
+        ReviewSchema.new(review).validate
       end
 
       def validate_merge
@@ -87,21 +91,11 @@ module Shaka
         value
       end
 
-      def string!(value, label)
-        raise Error, "#{label} must be a non-empty string" unless value.is_a?(String) && !value.strip.empty?
-
-        value
-      end
-
       def strings!(value, label)
         valid = value.is_a?(Array) && value.all? { |item| item.is_a?(String) && !item.strip.empty? }
         raise Error, "#{label} must be a list of non-empty strings" unless valid
 
         value
-      end
-
-      def enum!(value, allowed, message)
-        raise Error, message unless allowed.include?(value)
       end
 
       def equal!(actual, expected, message)

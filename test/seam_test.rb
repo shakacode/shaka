@@ -54,7 +54,8 @@ class SeamTest < Minitest::Test
     {
       'version' => 1, 'base_branch' => 'main',
       'commands' => %w[setup validate test].to_h { |name| [name, ".agents/bin/#{name}"] },
-      'review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review' },
+      'review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review',
+                    'model_family' => 'claude', 'provider' => 'anthropic', 'draft' => false },
       'merge' => { 'preference' => 'auto', 'method' => 'squash', 'release' => 'explicit_approval' },
       'protection' => { 'required_checks' => ['validate'], 'direct_push' => false,
                         'force_push' => false, 'branch_deletion' => false }

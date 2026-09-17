@@ -1,11 +1,22 @@
 # Review and handle findings
 
-Use the reviewer named in the repository's trusted `AGENTS.md`. An existing
-Claude GitHub workflow can supply independent review; do not routinely add a second
-local reviewer. The user can request a deeper Claude Code CLI review, or concrete
-risk can justify one. Installing the skill does not install a GitHub Action or its
-credentials. This V2 source repository now has its own Claude Code Review workflow;
-consumer repositories keep their own reviewer configuration.
+Meaningful implementation changes receive one visible independent review from a
+different model family than the implementation agent. Prefer a different provider
+when available: Claude or Grok can review Codex work, while Codex or Grok can review
+Claude work. A second session of the implementation model is useful self-review, but
+it does not satisfy the alternate-model gate. Trivial prose-only and no-op changes may
+omit model review when the PR records why.
+
+Use the reviewer named in the repository's trusted `.agents/agent-workflow.yml` when it
+qualifies. Its `model_family` and `provider` identify the reviewer. Version-one seams may omit
+that metadata; verify identity from the trusted workflow rather than a check name. An
+existing Claude GitHub workflow can review Codex implementation; do not routinely add
+a second local reviewer. If the named reviewer uses the implementation model, obtain an
+authorized alternate-model review as well without silently replacing the named gate.
+The user may request deeper review, and concrete risk may justify it.
+Installing the skill does not install a GitHub Action or its credentials. This V2
+source repository has its own Claude Code Review workflow; consumer repositories keep
+their own reviewer configuration.
 
 Link the current review result from the PR summary and final response. One short
 status is enough: name the reviewer and revision, with details at the result link.
@@ -26,6 +37,23 @@ Failed or malformed execution evidence fails the job. A successful model run is
 **UNVERIFIED** until the owner reads a visible PR report for the reviewed revision.
 The owner then records the completed review and link in the PR summary and handles
 its findings. Runner success alone does not establish review or merge readiness.
+
+## Review before staged hosted CI
+
+During planning, verify draft support for every reviewer needed to satisfy the gate. Use a
+draft only when all support it; otherwise use the repository's review-ready path. Run
+`commands.validate_local` before review when present, otherwise `commands.validate`. A seam
+with `commands.trigger_hosted_ci` must define `validate_local`; after batching fixes, run the
+full `validate` command and then the trigger. This follows the React on Rails pattern: draft
+creation and review do not request its broad hosted matrix.
+
+This ordering applies only to optional staged suites. Never suppress an always-on
+required, security, or trust check. A later fix invalidates affected review and CI
+evidence, so re-review the changed head and rerun every check the repository requires.
+The active Shaka owner enforces this sequence and records its GitHub evidence. Seam validation
+checks configuration shape; it deliberately does not add the workflow ledger or policy engine
+excluded from this pilot. Likewise, `review.required: none` disables a repository-named gate,
+not R17's alternate-model baseline for meaningful implementation.
 
 ## Read public review prose safely
 
