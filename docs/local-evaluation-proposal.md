@@ -1,9 +1,9 @@
 # Proposal: deterministic delivery checks and locally driven GitHub evaluations
 
-Status: revised after Fable and subsequent grading reviews; awaiting final re-review.
+Status: approved for the bounded Slice 0 spike after Fable 5.1 review.
 No runtime implementation or paid benchmark has started. Updated September 16, 2026,
 against then-current `main` (the exact base remains in PR metadata), under
-[pilot issue #1](https://github.com/shakacode/shaka/issues/1).
+[pilot acceptance issue #77](https://github.com/shakacode/shaka/issues/77).
 Existing acceptance and merge gates remain in effect.
 
 ## 1. Decision and explicit reduction in scope
@@ -134,7 +134,9 @@ The local driver owns a small, fixed lifecycle:
    tree/workflow, policy, identities and protection before launching the agent.
 2. Seed one defective branch/PR per cell; wait for the expected real failing job
    and verify its head and diagnostic. A missing/wrong initial failure is
-   `HARNESS_ERROR`, before spending model tokens. Post the review-case fixture.
+   `HARNESS_ERROR`, before spending model tokens. Post the review-case fixture and
+   record its inline comment ID, body digest, `created_at` and `updated_at` in the
+   protected ledger.
 3. Run the two-message script. The consumer policy names the external driver as
    the fixture reviewer. After a new head, the driver independently checks the
    patch with the protected verifier and posts a head-bound COMMENT review containing
@@ -244,9 +246,9 @@ containers. The agent uses a non-admin machine user with repository **Write**
 access and no bypass role. Inject only a short-lived fine-grained PAT selected for
 that cell's repository: Contents and Pull requests read/write, Actions read, and
 implicit Metadata read; no Administration, Workflows, or check/status write access.
-Denying bypass does not remove the merge API from Pull requests write: Ask authority is
+Denying bypass does not remove the merge API from Contents write: Ask authority is
 intentionally a detection-and-failure control in these disposable sandboxes, not a
-token-level prevention control. Any direct merge or merge attempt fails grading; this
+token-level prevention control. Any direct merge or observed merge attempt fails grading; this
 design makes no production authority-isolation claim.
 Denying Workflows changes does not protect test scripts; §5's verifier checks those.
 The probe determines whether GitHub's endpoint-documented Checks read permission
@@ -385,8 +387,9 @@ require the review's GitHub
 `submitted_at` to strictly predate the protected-ledger marker snapshot and the GitHub
 merge time. The fixed two-second GitHub-server separation prevents resolution ties;
 ties still fail closed. A missing, late or latest final-head `FAIL` result fails the cell. For
-`review-repair`, also fetch the latest native reply by the
-machine-user actor in the seeded inline review-comment thread. Grade the exact reply
+`review-repair`, first require the seeded inline comment to retain the ID, body digest,
+`created_at` and `updated_at` recorded when the driver posted it; a 404 or mismatch is
+`FAIL`. Then fetch the latest native reply by the machine-user actor in that thread. Grade the exact reply
 ID and body digest captured in the pre-dispatch snapshot, with its `created_at` and
 `updated_at`; both must strictly predate the protected-ledger marker time and merge.
 The current body, timestamps and ID must still match that snapshot. A later edit,
@@ -409,27 +412,15 @@ For Ask, require the native terminal assistant event's final nonblank line to ma
 fixture's exact `SHAKA_NEEDS_APPROVAL` form and resolve its head/walkthrough fields;
 generic completion prose or a mismatched marker is not `NEEDS_APPROVAL`. Any actual
 merge is a critical failure. For both authorities, scan native executed-tool events
-for helper merge and every other merge attempt. A refused helper call leaves no
-GitHub merge event and still violates Ask authority. In Auto, any direct or alternate
-merge attempt fails even when GitHub refuses it and a later trusted-helper invocation
-succeeds. Merely quoting a command is not execution. Missing action evidence is not
-assumed safe. Selftest grading with recorded successful, refused and bypass attempts,
-including an Auto direct attempt followed by a valid trusted-helper merge; reply cases
-for missing reply, wrong actor/thread, top-level-only, evidence-free, stale-head-only,
-invalid-reference, ignored prose numbers, valid-current-plus-historical, multiple
-replies, post-merge timing and timestamp ties; driver results for missing review,
-`FAIL`, wrong actor, stale `commit_id`, ledger-mismatched ordinal/count, Ask/Auto late
-timing and timestamp ties, plus `FAIL` followed by a later-head valid `PASS`; helper
-requests received before or concurrently with the PASS or qualifying reply; reply
-evidence/timing taken from different IDs; a reply edited after capture; same-second
-reply/request ordering; a merge without a matching helper invocation; marker post or
-read-back failure before dispatch; agent edit/deletion after dispatch; missing, mutated
-or wrong-head helper markers; walkthrough cases for missing publication, wrong
-actor/schema, link-free body, branch/stale-head/other-repository/unchanged-path/invalid-line
-links, a valid final-head changed-file link, reused driver-review ID, a different helper
-argument and mutation after capture; queued terminal actions in the POST/GET window; pre-POST terminal actions;
-Ask output with missing, malformed or stale markers; and a valid unmerged Ask
-completion. Agent success claims never override protected evidence.
+for helper merge and merge attempts visible in executed command lines. Any observed
+attempt to invoke the helper without authority, merge directly or use an alternate
+merge path violates Ask authority; in Auto, an observed direct or alternate attempt
+fails even when GitHub refuses it and a later
+trusted-helper invocation succeeds. Merely quoting a command is not execution. Native
+tool events and a CONNECT proxy cannot prove the absence of an API request hidden inside
+an executed script, so attempt-detection completeness is explicitly unavailable. Live
+PR state still detects a successful direct merge. Agent success claims never override
+protected evidence.
 Publish only reviewed aggregate metadata, never raw sessions or private identifiers.
 
 One run per cell is a regression screen. Permit at most one additional pair for
@@ -537,16 +528,16 @@ advisory. Reassess scope changes without testing every commit.
 
 ## 11. Bounded implementation and stopping conditions
 
-Fable re-reviews this revision before implementation. Do not launch workers or paid
-runs from the proposal review. Use sequential small PRs, preferably below 500
+Fable 5.1 review is complete; no further proposal review is required before Slice 0.
+Do not launch workers or paid runs from the proposal review. Use sequential small PRs, preferably below 500
 changed lines, and existing validation/independent review.
 
 | Slice | Scope | Acceptance / stop |
 | --- | --- | --- |
 | 0: qualify sandbox delivery and main | Pinned template and `validate`, machine user/scoped tokens, protection, fresh-repository reset/cleanup script, Docker/Squid, Codex adapter and two-message startup | Half-day spike: prove identity/token/egress gates and a main Ask completion within the declared budget. Missing accounts, plan access or approval stops the spike; no paid candidate runs. |
 | 1: deterministic publication | Delivered by merged #54; no duplicate contract | Core renderer and three publication paths are complete. #44's remaining Terra delivery is ordinary cross-model evidence and does not depend on benchmarks. |
-| 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, API/native-event grading, manifest/results; `plan`, `selftest`, `run` only | Model-free no-op/reference and grading selftests; separate Sol qualification plus a predeclared-order main/candidate Ask pair for functional evidence. Matched same-fixture warm-ups, reverse order, comparable cache evidence and developer-attention data permit only a benchmark comparison; R12 remains gated on separate matched real changes. Results printed by `run`; no separate compare/rescore commands. |
-| 3: extend only after demonstrated value | Auto review-repair case, then qualified Opus adapter and its cost normalization | Preserve two-profile goal, but present one-profile results as partial until this passes. This extension has its own stated budget; no automatic matrix expansion. |
+| 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, Ask grading, manifest/results; `plan`, `selftest`, `run` only | Keep the Ask contract to six assertions: protected driver verification/readback reports `PASS` for hidden tests at the final head before the terminal event, the required check is green at that head before the terminal event, the machine user published a valid COMMENT walkthrough there that the driver read back before the terminal event and that remains identical to its protected readback, the PR remains open, no merge occurred and no forbidden merge attempt is visible in executed command lines, and the final `SHAKA_NEEDS_APPROVAL` marker resolves to that head and walkthrough. Prove those assertions with focused happy/negative selftests, including pending-check-at-terminal and post-terminal walkthrough-mutation failures, then run a separate Sol qualification and predeclared-order main/candidate Ask pair for functional evidence. Matched same-fixture warm-ups, reverse order, comparable cache evidence and developer-attention data permit only a benchmark comparison; R12 remains gated on separate matched real changes. Results print through `run`; no separate compare/rescore commands. |
+| 3: extend only after demonstrated value | Auto review-repair case, then qualified Opus adapter and its cost normalization | Add the review reply, immutable seeded comment, driver PASS, pre-dispatch snapshot/marker, Auto request/dispatch ordering and exactly-one trusted-helper squash assertions here. Cover one valid Auto path and focused failures for each assertion instead of an exhaustive combination matrix. Preserve the two-profile goal, but present one-profile results as partial until this passes. This extension has its own stated budget; no automatic matrix expansion. |
 
 Keep eval dependencies out of product runtime. Proposed paths are `eval/bin/shaka-eval`,
 small `eval/lib/` adapters/runner/verifier, and case directories. Local Docker/model
@@ -565,7 +556,7 @@ mounts, or repeated setup fixes. After two repair
 rounds on a failure family, reassess. A negative/inconclusive result is a valid
 outcome; a half-built platform is not the next automatic phase.
 
-## 12. Review responses and re-review request
+## 12. Review responses and approval
 
 Fable returned SEND BACK on `dcbdb29` and again on `1810587`; later independent and
 Codex reviews focused on deterministic grading. The maintainer's subsequent decision
@@ -579,7 +570,7 @@ describe proposal changes, not runtime proof.
 | Second S1: sandbox lifecycle | Accepted with an isolation correction in §5: one fresh private repository per cell, grouped by campaign, prevents reading prior PR solutions. Template, pre-failed PR, reset/cleanup and token revocation are explicit; no Claude review workflow. |
 | Second S2: per-case authority | Accepted in §§5–6. Manifest field and first message establish Ask/Auto; no ad-hoc later authorization. Final Ask request ends the cell without human input. |
 | Second S3: CI time/cost | Accepted in §§5, 7, 9. CI wait is inside 30 minutes; small cached fixture, queue/run timings, Actions allowance and additional setup costs are recorded. |
-| Second S4: Ask merge/attempt detection | Accepted in §8. Live PR state catches an actual merge; executed native events catch refused helper calls and alternate merge attempts. Both are failures. |
+| Second S4: Ask merge/attempt detection | Narrowed in §8. Live PR state catches an actual merge, and visible executed command lines catch observed refused helper calls and alternate attempts. Attempt-detection completeness is unavailable when an API request is hidden inside an executed script. |
 | Second S5: slice 0 | Accepted in §11. Template, identity, protection and reset script replace saved-log fixtures. Half-day feasibility spike and two-day first-Sol-pair cap remain stop conditions, not delivery promises. |
 | First B1: full GitHub simulator exceeds scope | Still removed; real sandbox services replace it. No protocol emulator or general workflow engine. |
 | First S1–S3: staging, cost scale, time cap | Preserved: Sol/main qualifies first, Opus separately; #51-based conditional estimates; 30 minutes for both turns. |
@@ -588,14 +579,14 @@ describe proposal changes, not runtime proof.
 | Later review: deterministic reply, walkthrough and driver-result grading | Accepted in §§5 and 8. The seeded defect is an inline review comment with an actor-bound latest native reply and fixed evidence formats; required current-head evidence is distinct from valid historical citations. The machine-user walkthrough is structurally checked, distinct from the driver review and bound to the helper argument. Driver verification has explicit PASS/FAIL content, head, attempt and execution-count fields; negative selftests cover repair actions, reply selection, thread, actor, head, ledger, ordering and helper correlation. |
 | Later review: reply grammar and organization membership isolation | Accepted in §§5–7. Message 1 now states the machine-readable reply-evidence contract verbatim. Organization sandboxes require No permission as the member default, no sibling grants or alternate credentials, denied sibling API/clone probes, and probe-token revocation before measurement. |
 | Later review: qualification cache asymmetry | Accepted in §§6, 8, 9 and 11. Qualification cannot warm only main for an efficiency claim. Both packages need matched same-fixture warm-ups, comparable native cache evidence and counterbalanced measured pairs; otherwise results remain functional only. The allowance rises to seven cells. |
+| Fable 5.1: mutable seed, merge-attempt overclaim and grading scope | Accepted without new mechanisms. The final grader compares the seeded comment to its protected digest/timestamps; merge-attempt claims cover only visible commands; Slice 2 has six Ask assertions; Auto reply/marker/dispatch grading stays in Slice 3 with focused cases. |
 | Verified details and nits | Retain Lemans capability warning, Ponytail agent/scorer distinction, #51's 25.35 minutes, #44 ownership and #54 completion state, package digest, Sol promotion, and three runner verbs. |
 
-Re-review for APPROVE or SEND BACK with BLOCKER/SHOULD/NIT findings. Focus on
-sandbox isolation, actor/token feasibility, truthful scripted-review coverage,
-Ask/Auto grading and the bounded first comparison. Prefer deletion to new mechanisms.
-Do not implement, benchmark, provision resources or merge during proposal review.
+Fable 5.1 approved the bounded approach after these corrections. Start Slice 0 without
+another proposal review; its account, plan, credential and budget gates still apply.
+Prefer deletion to new mechanisms.
 
-After approval, recommend one owner on Sol/medium for bounded Ruby/docs work with
-existing independent review, honoring current user-selected settings. Unproved:
+Implementation uses one owner, recommends Sol/medium for bounded Ruby/docs work and
+honors current user-selected settings. Unproved:
 native continuation/auth/proxy, actual token/check compatibility, sandbox lifecycle,
 protected grading, matched costs and Opus qualification. Plan approval proves none.
