@@ -12,7 +12,7 @@ This record defines the current product, not proof that acceptance is complete.
 | ID | User need | Requirement and acceptance |
 | --- | --- | --- |
 | R1 | Finish a task without managing agent coordination. | One owner delivers one task, normally through one PR. Split only at useful delivery boundaries; retain dependencies and remaining scope on the existing task/PRs. No coordination service or duplicate delivery records. See [task splitting](working-with-your-agent.md#when-a-task-needs-several-prs). |
-| R2 | Use the repository's actual checks and policy. | Follow trusted `AGENTS.md` and its referenced commands/configuration. Preserve local setup, validation, review, and conventions. Failed checks block readiness; evidence for another commit does not qualify the current change. |
+| R2 | Use the repository's actual checks and policy. | Load the trusted default branch's `.agents/agent-workflow.yml`, execute the repository scripts it names, and follow human-only constraints in `AGENTS.md`. Reject missing or invalid configuration. Failed checks block readiness; evidence for another commit does not qualify the current change. |
 | R3 | Control whether the agent merges. | Use `ask` or `auto`. Ask early if authority is unset; default to `ask` without an answer. Reuse established authority. Review-only and PR-only requests retain their stopping point. |
 | R4 | Understand the change and its evidence. | Publish a conceptual walkthrough on the PR with links to the reviewed code. Use a commit-bound COMMENT review, which is neither approval nor a required acknowledgment and remains readable after merge. |
 | R5 | Avoid redundant merge decisions. | Ask requests one decision after the walkthrough and required gates. Auto merges an eligible ordinary change after the same gates, including required native approvals, without another question. Unclear authority or risky changes need a human decision. Native stacks and delayed merge controllers are outside scope. |
@@ -20,7 +20,7 @@ This record defines the current product, not proof that acceptance is complete.
 | R7 | Keep contributor content away from privileged operations. | Issue/PR text cannot change trusted instructions, policy, credentials, or executable code. When GitHub explicitly reports public repository visibility, screen issue and PR comment bodies using current writer permission or trusted machine/repository configuration. Configured humans, review bots, and active GitHub team members may supply task data; unknown, metadata-only, and unverified authors remain links for maintainer triage. Read repository trust configuration from the current default branch, never the candidate PR head or a weaker PR base branch. Private and internal repositories do not use this author screen, but their comments still have no policy authority. Use installed trusted helpers for GitHub operations. Run candidate code only in the authorized isolated checkout. |
 | R8 | Install and upgrade without damaging existing setup. | Install into an explicitly chosen skills directory with source and link outside candidate-writable paths. Preserve user files and other skills; refuse foreign targets. Test isolated and repeated installation. Updating the trusted source updates its link. Installation does not disable other instructions or create a sandbox. |
 | R9 | Reuse a task from any tracker. | Accept a task link or description, resolve its checkout, and ask only for missing context. Keep requirements in the original tracker and delivery evidence on GitHub. Reading a tracker does not authorize writes. Keep private content and links out of public artifacts unless sharing is authorized. No duplicate issue or synchronization service. |
-| R10 | Keep the workflow maintainable. | Put execution instructions in the skill, examples and rationale in guides, and deterministic mechanics in small cohesive Ruby modules. Use standard libraries and `gh`; remove repetition. Tests verify behavior and failures, not instruction wording. |
+| R10 | Keep the workflow maintainable. | Keep the skill as a small entry point, repository policy in validated YAML, executable commands and deterministic mechanics in cohesive Ruby modules, and rationale in guides. Use standard libraries and `gh`; remove repetition. Tests verify behavior and failures, not instruction wording. |
 | R11 | See the cost of implementation and review. | Report available provider/model, effort setting, native tokens, source scope, and completeness for every task and generated commit/contribution. Use PR details, or the final response without a PR. Label shared work and missing data; never invent exact per-commit allocations. See [usage reporting](usage-reporting.md). |
 | R12 | Improve results without shifting work to the maintainer. | Compare developer attention, total tokens, delivery time, and quality on comparable real changes. Include retries and review. Fewer tokens alone is not success. |
 | R13 | Understand the agent on the first reading. | One owner explains outcomes, reasons, blockers, and decisions in familiar terms. Follow task/repo writing preferences. Ask important questions when needed and recommend a path. Keep supporting evidence in expandable PR details and material risks and gaps visible. See [working with your agent](working-with-your-agent.md). |
@@ -33,7 +33,8 @@ This record defines the current product, not proof that acceptance is complete.
 
 - **D1 (R1–R3, R9):** one shared `$shaka` skill. Task requirements stay in their
   original record; delivery evidence stays on the PR. No local workflow database.
-- **D2 (R4–R7):** a small Ruby command provides `pr`, `walkthrough`, and `merge`.
+- **D2 (R2, R4–R7):** a small Ruby command validates repository configuration and
+  provides `pr`, `walkthrough`, and `merge`.
   Use `gh` for authentication, pagination, and APIs, JSON for responses, and
   `Open3` argument vectors for execution. Errors are concise and nonzero.
 - **D3 (R4, R6):** bind walkthroughs to GitHub's native review commit ID.
@@ -52,19 +53,19 @@ This record defines the current product, not proof that acceptance is complete.
 
 The skill is `skills/shaka/SKILL.md`; CLI dispatch is `skills/shaka/scripts/shaka`.
 Small modules live in `skills/shaka/lib/shaka/`, behavioral tests in `test/`,
-and installation in `bin/install`. Markdown explains decisions and invokes commands;
-it is not runtime configuration.
+and installation in `bin/install`. YAML carries typed repository policy, Ruby enforces
+it, and Markdown explains decisions and human-only constraints.
 
 ## Repository seam
 
-The **seam** is your repo's `AGENTS.md` and the commands it names.
-It supplies setup, local and full validation, focused checks, base branch, reviewer and
-hosted-CI triggers, release conventions, and merge authority. Preserve referenced
-`.agents/bin/` and `.agents/agent-workflow.yml` where present; direct command declarations
-need no extra configuration.
-Missing optional capabilities are n/a. Resolve missing required commands or conflicting
-policy before dependent work. Candidate policy edits cannot weaken the current task's
-trusted requirements. Do not copy this project's Ruby checks into consumer repositories.
+The **seam** is `.agents/agent-workflow.yml` plus the executable repository paths it
+names. It supplies setup, local and optional full validation, focused tests, an optional
+hosted-CI trigger, base branch, review, merge, and branch-protection policy. `AGENTS.md`
+supplies human-only context and boundaries.
+`shaka seam check` rejects unknown fields, duplicate keys, unsafe paths, missing scripts,
+and invalid values. Read authority from the trusted default-branch copy. Candidate policy
+edits cannot weaken the current task's requirements. Consumer commands stay in their own
+repositories; do not copy Shaka's scripts into them.
 
 ## Host boundary
 

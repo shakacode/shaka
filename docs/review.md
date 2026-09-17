@@ -7,7 +7,9 @@ Claude work. A second session of the implementation model is useful self-review,
 it does not satisfy the alternate-model gate. Trivial prose-only and no-op changes may
 omit model review when the PR records why.
 
-Use the reviewer named in the repository's trusted `AGENTS.md` when it qualifies. An
+Use the reviewer named in the repository's trusted `.agents/agent-workflow.yml` when it
+qualifies. Its `model_family` and `provider` identify the reviewer; compare them with the
+implementation identity instead of inferring identity from a check name. An
 existing Claude GitHub workflow can review Codex implementation; do not routinely add
 a second local reviewer. If the named reviewer uses the implementation model, obtain an
 authorized alternate-model review as well without silently replacing the named gate.
@@ -38,14 +40,13 @@ its findings. Runner success alone does not establish review or merge readiness.
 
 ## Review before staged hosted CI
 
-During planning, read the trusted seam and reviewer workflow to determine whether the
-named reviewer runs on drafts. When a repository explicitly keeps expensive hosted CI
-behind a label, command, or other trigger, validate locally and use a draft for the first
-alternate-model review only when draft review is explicitly supported. Otherwise use
-the repository's documented review-ready path without firing optional hosted CI. Batch
-demonstrated fixes, revalidate, and trigger hosted suites for the stable candidate. This
-follows the React on Rails pattern: draft creation and review do not request its broad
-hosted matrix.
+During planning, read `review.draft` in the trusted seam and confirm that behavior in the
+named reviewer workflow. Run `commands.validate` locally and use a draft for the first
+alternate-model review only when both say drafts are supported. Otherwise use the
+repository's review-ready path. When `commands.trigger_hosted_ci` exists, batch demonstrated
+review fixes before running it; run `commands.validate_full` at the same post-review stage
+when present. This follows the React on Rails pattern: draft creation and review do not
+request its broad hosted matrix.
 
 This ordering applies only to optional staged suites. Never suppress an always-on
 required, security, or trust check. A later fix invalidates affected review and CI

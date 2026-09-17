@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative 'error'
+require_relative 'public_comments/bounded_list'
 require_relative 'publication'
 
 module Shaka
@@ -11,6 +12,7 @@ module Shaka
     OPEN_MARK = '<!-- shaka:begin -->'
     CLOSE_MARK = '<!-- shaka:end -->'
     ESCAPE = /\\[nrt]/
+    REPLY_PAGES = 20
     SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
 
     def description(body:)
@@ -106,14 +108,11 @@ module Shaka
       api(path, method: existing ? 'PATCH' : 'POST', fields: { body: content })
     end
 
-    # --paginate cannot be combined with --input, so this request carries no body.
+    # gh has no --slurp, and --paginate concatenates pages into invalid JSON,
+    # so the shared bounded reader requests one page at a time.
     def replies(target)
-      pages = execute(['gh', 'api', '--paginate', '--slurp', '--method', 'GET',
-                       "repos/#{@repository}/#{comments_collection(target)}/#{@number}/comments?per_page=100"])
-      raise Error, 'GitHub comment listing must contain arrays of pages.' unless
-        pages.is_a?(Array) && pages.all?(Array)
-
-      pages.flatten(1)
+      path = "repos/#{@repository}/#{comments_collection(target)}/#{@number}/comments"
+      PublicComments::BoundedList.new(self, max_pages: REPLY_PAGES, label: 'Comment listing').call(path)
     end
 
     def comments_collection(target) = target ? 'pulls' : 'issues'

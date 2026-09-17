@@ -30,8 +30,8 @@ Keep company strategy and private operational data out of product artifacts.
 - `skills/shaka/SKILL.md` is the public workflow entry point.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
-- `.agents/agent-workflow.yml` retains trusted-action metadata for static policy tools;
-  it does not configure the pilot runtime.
+- `.agents/agent-workflow.yml` is the machine-readable repository contract. It
+  names executable commands and records review, merge, and protection policy.
 - `.agents/trusted-github-actors.yml` is the repository-level public-comment allowlist.
   The installed `skills/shaka/scripts/shaka comments` command combines it with the
   machine allowlist, reads only the current default-branch copy, and never trusts a
@@ -45,19 +45,12 @@ Keep company strategy and private operational data out of product artifacts.
 
 ## Agent Workflow Configuration
 
-Base branch: `main`. Plan location: `docs/pilot-plan.md`.
-Validation: `bin/validate` runs tests and `bundle exec rubocop`.
-Dependencies: `bundle install`. Ruby: 3.4 for the initial pilot.
-Review: one visible independent alternate-model review of meaningful implementation
-changes. The reviewer must use a different model family from the implementation agent;
-prefer a different provider when available. This repository's Claude job starts after a
-draft is marked ready; this repository has no staged hosted-CI trigger.
-Coordination: none; this controlled pilot has no independent same-target writer.
-Merge authority: auto for this pilot's reviewed, verified implementation PRs.
-Release: public source pilot; RubyGems prereleases require explicit maintainer approval
-and follow `docs/releasing.md`; user skill installation remains on request.
-Native main protection: PRs and up-to-date GitHub Actions `validate` are required;
-no bypass actors, force-push, or deletion. Required approving review count is zero.
+Resolve the trusted default branch to an immutable commit. Load and validate
+`.agents/agent-workflow.yml` with the trusted installed `shaka seam check --ref REF`
+command. Run the executable paths named there from the candidate checkout; do not
+reconstruct their behavior from prose. This file retains human-only boundaries,
+including the public-pilot privacy rule, the V1 reuse limit, and release approval
+requirements.
 
 ## Completion
 
