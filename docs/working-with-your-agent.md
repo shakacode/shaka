@@ -62,10 +62,10 @@ Its output should name the task, recommended model/effort, acceptance, affected 
 checks, merge authority, and stopping point. Do not copy the whole planning conversation.
 
 If the repository exposes an explicit trigger for expensive hosted CI, the agent runs
-local validation, opens a draft PR, and handles the first alternate-model review before
-requesting those suites for the stable candidate. Always-on required and security checks
-still run normally. A fix that changes the head requires fresh affected review and CI
-evidence.
+local validation and handles the first alternate-model review before requesting those
+suites for the stable candidate. It uses a draft when the reviewer supports drafts, or
+the repository's documented review-ready path otherwise. Always-on required and security
+checks still run normally. A changed head requires fresh affected review and CI evidence.
 
 Use a fresh task for a new implementation objective. Keep an existing task while
 it owns unfinished changes, or hand over its branch, current revision, completed

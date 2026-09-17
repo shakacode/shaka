@@ -39,10 +39,11 @@ its findings. Runner success alone does not establish review or merge readiness.
 
 When a repository explicitly keeps expensive hosted CI behind a label, command, or
 other trigger, validate locally and open a draft PR for the first alternate-model
-review. Batch demonstrated review fixes, revalidate the resulting head, and then
-trigger the repository's hosted suites for that stable candidate. This follows the
-React on Rails pattern: draft creation and review do not themselves request the broad
-hosted matrix.
+review when that reviewer supports drafts. Otherwise use the repository's documented
+pre-ready or review-ready path without firing optional hosted CI. Batch demonstrated
+review fixes, revalidate the resulting head, and then trigger the repository's hosted
+suites for that stable candidate. This follows the React on Rails pattern: draft
+creation and review do not themselves request the broad hosted matrix.
 
 This ordering applies only to optional staged suites. Never suppress an always-on
 required, security, or trust check. A later fix invalidates affected review and CI

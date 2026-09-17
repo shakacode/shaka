@@ -122,7 +122,8 @@ and report it. Every command below runs through that saved path.
   authorized issue and PR reads and for publication. Publish only within the task's scope;
   without a PR, put supporting tables and checks in the final report, and link from chats
   that cannot collapse details.
-- Open a draft PR while alternate-model review or staged hosted CI remains.
+- Open a draft PR while review or staged hosted CI remains when the reviewer supports drafts;
+  otherwise use the repository's documented review-ready path.
 - Write plain English: the outcome and why, in established project terms, following user and
   repo writing preferences, with the context the reader needs and no separate clarification
   skill. Keep decisions, risks, and evidence gaps visible. Name specific things in summaries
