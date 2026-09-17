@@ -29,21 +29,32 @@ module Shaka
       @responses = {}
       @versions = []
       @gaps = []
-      sources = files.map { |file| read(file) }
-      records = sources.flat_map { |chosen, _| chosen.values }
-      selected(records, wanted_turns(sources, turns), all_turns).each { |record| count(record.except('preferred')) }
+      files.each { |file| ingest(file, turns, all_turns) }
     end
 
     private
 
-    def wanted_turns(sources, turns)
-      (turns.empty? ? [sources.dig(0, 1)] : turns).select { |turn| turn?(turn) }
+    def ingest(file, turns, all_turns)
+      chosen, last = read(file)
+      wanted = selected_turns(chosen, last, turns, all_turns)
+      keep_selected(chosen, wanted, all_turns)
     end
 
-    def selected(records, wanted, all_turns)
-      identified = records.select { |record| turn?(record['turn_id']) }
-      unreadable if all_turns && identified.size < records.size
-      all_turns ? identified : identified.select { |record| wanted.include?(record['turn_id']) }
+    def keep_selected(chosen, wanted, all_turns)
+      identified = chosen.values.select { |record| turn?(record['turn_id']) }
+      unreadable if all_turns && identified.size < chosen.values.size
+      identified.each { |record| count(record.except('preferred')) if wanted.include?(record['turn_id']) }
+    end
+
+    def selected_turns(chosen, last, turns, all_turns)
+      ids = if all_turns
+              chosen.keys
+            elsif turns.empty?
+              [last]
+            else
+              turns
+            end
+      ids.select { |turn| turn?(turn) }
     end
 
     def turn?(turn)

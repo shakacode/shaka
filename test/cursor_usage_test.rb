@@ -12,6 +12,7 @@ module CursorUsageFixture
   OTHER = '22222222-2222-4222-8222-222222222222'
   OLD = '00000000-0000-4000-8000-000000000001'
   NEW = '00000000-0000-4000-8000-000000000002'
+  THIRD = '00000000-0000-4000-8000-000000000003'
   CLEAR = { 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }.freeze
   ROW = '| cursor | grok-4.6 | cursor-grok-4.6-medium | medium | 100 | 40 | 20 | UNKNOWN | 7 | UNKNOWN |'
 
@@ -77,6 +78,16 @@ class CursorUsageTest < Minitest::Test
       file = write_records(directory, [stored(OLD, 900), stored(NEW, 100)])
       assert_includes report('--host', 'cursor', '--file', file, '--all-turns'), '| 1000 |'
       assert_includes report('--host', 'cursor', '--file', file, '--turn', OLD), '| 900 |'
+    end
+  end
+
+  def test_each_file_contributes_its_latest_generation
+    Dir.mktmpdir do |directory|
+      first = write_records(directory, [stored(OLD, 900), stored(NEW, 100)])
+      second = write_records(directory, [stored(THIRD, 200)], name: "#{OTHER}.jsonl")
+      output = report('--host', 'cursor', '--file', first, '--file', second)
+      assert_includes output, '| 300 | 80 | 40 | UNKNOWN | 14 | UNKNOWN |'
+      refute_includes output, '| 900 |'
     end
   end
 
