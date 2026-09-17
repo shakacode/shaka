@@ -6,7 +6,8 @@ module Shaka
   class RepositoryConfig
     # Validates the reviewer identity and trigger policy.
     class ReviewSchema
-      FIELDS = %w[check model_family provider draft].freeze
+      STRING_FIELDS = %w[check model_family provider].freeze
+      FIELDS = [*STRING_FIELDS, 'draft'].freeze
 
       def initialize(review)
         @review = review
@@ -38,7 +39,7 @@ module Shaka
         missing = FIELDS.find { |key| !@review.key?(key) }
         raise Error, "missing review key: #{missing}" if missing
 
-        FIELDS.first(3).each { |key| string!(@review[key], "review.#{key}") }
+        STRING_FIELDS.each { |key| string!(@review[key], "review.#{key}") }
         return if [true, false].include?(@review['draft'])
 
         raise Error, 'review.draft must be true or false'
