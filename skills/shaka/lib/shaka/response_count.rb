@@ -3,6 +3,10 @@
 module Shaka
   # Counts each native response once across sources; conflicting copies keep no usage.
   module ResponseCount
+    # Whether a reader's input counter already contains its cached and written subsets,
+    # as every published rate in the cost estimator assumes.
+    INCLUSIVE_INPUT = true
+
     private
 
     def count(record)

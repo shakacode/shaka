@@ -24,7 +24,7 @@ establish complete usage attribution.
 | Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. |
 | OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. Not separately probed. |
 | Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. | Consumer delivery unverified. |
-| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); attribution remains partial. |
+| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. |
 
 The Codex write test establishes that particular local boundary. It does not
 establish equivalent behavior in the desktop app, other versions, or other hosts.
@@ -101,6 +101,12 @@ The checked Cursor CLI exposes `--workspace`, `--add-dir`, `--sandbox`, and
 and V2 delivery have not been exercised, so these flags are not sufficient grounds
 for a supported launch recipe.
 
+Inspect the targets in the [official Cursor installation instructions](https://cursor.com/docs/cli/installation)
+before installing. The inspected upstream installer creates both `agent` and
+`cursor-agent` commands; those names can collide with another installed tool.
+Prefer an existing signed-in host for a trial. The dedicated package startup check
+did not change global command links or establish a general installation method.
+
 ## OpenCode
 
 Use the [OpenCode install recipe](getting-started.md#use-shaka-in-opencode).
@@ -119,11 +125,10 @@ leaves account and model settings alone. The next required evidence is a
 complete ordinary consumer PR delivered with `/shaka`, including TUI skill
 activation and Ask/Auto stopping behavior.
 
-Inspect the targets in the [official Cursor installation instructions](https://cursor.com/docs/cli/installation)
-before installing. The inspected upstream installer creates both `agent` and
-`cursor-agent` commands; those names can collide with another installed tool.
-Prefer an existing signed-in host for a trial. The dedicated package startup check
-did not change global command links or establish a general installation method.
+OpenCode publishes no session identifier to the commands it runs, so
+`shaka usage --host opencode` needs an explicit `--session ID`. The next reader
+evidence is an identifier published into the tool environment, or a confirmed
+upstream way to read the current session from inside it.
 
 ## Usage is a separate capability
 

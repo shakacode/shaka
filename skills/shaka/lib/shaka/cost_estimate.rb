@@ -83,8 +83,9 @@ module Shaka
       'gpt-6-astra' => { credits: %w[250 25 1250], api: %w[10 1 50] }
     }.freeze
 
-    def initialize(responses)
+    def initialize(responses, inclusive_input: true)
       @responses = responses
+      @inclusive_input = inclusive_input
     end
 
     def report
@@ -114,7 +115,10 @@ module Shaka
       [reason ? nil : amounts.sum { |amount, _| amount }, reason]
     end
 
+    # Every published rate here bills input inclusive of its cached and written subsets.
     def price(record, mode)
+      return [nil, 'Cache-exclusive input is unpriced'] unless @inclusive_input
+
       provider, model = record['configuration']
       return [nil, 'Unsupported provider or configured model'] unless %w[openai cursor].include?(provider)
 

@@ -95,7 +95,7 @@ class OpencodeUsageTest < Minitest::Test
       assert_includes output, 'OpenCode source versions: 1.18.31'
       assert_includes output, 'Input excludes cache reads and writes'
       assert_includes output, '| opencode | session-model | medium | UNKNOWN | UNKNOWN |'
-      assert_includes output, 'Unsupported provider or configured model'
+      assert_includes output, 'Cache-exclusive input is unpriced'
       assert_includes output, '2026-'
     end
   end
@@ -127,6 +127,19 @@ class OpencodeUsageTest < Minitest::Test
       assert_includes output, ROW
       assert_includes output, 'explicit files'
       refute_includes output, SESSION
+    end
+  end
+
+  def test_openai_provider_responses_are_never_priced_from_cache_inclusive_rates
+    Dir.mktmpdir do |directory|
+      priced = assistant_message('resp-new', NEW_USER, 1_789_660_287_053, 1_789_660_292_357,
+                                 tokens(100_000, 10_000, 1_000))
+      priced['info'].merge!('providerID' => 'openai', 'modelID' => 'gpt-5.6-sol')
+      document = single_fixture(priced).tap { |export| export['info']['model']['id'] = 'gpt-5.6-sol' }
+      output = report('--host', 'opencode', '--file', write_export(directory, document))
+      assert_includes output, '| openai | gpt-5.6-sol | medium | UNKNOWN | UNKNOWN |'
+      assert_includes output, 'Cache-exclusive input is unpriced'
+      refute_includes output, '$0.384000'
     end
   end
 
@@ -202,12 +215,14 @@ class OpencodeUsageFailuresTest < Minitest::Test
     end
   end
 
-  def test_missing_session_context_reports_unknown
+  def test_missing_session_context_names_the_session_flag
     Dir.mktmpdir do |directory|
       executable = File.join(directory, 'opencode')
       File.write(executable, "#!/bin/sh\nexit 1\n")
       File.chmod(0o755, executable)
-      assert_includes report('--host', 'opencode', environment: stub_environment(directory)), 'Responses: UNKNOWN'
+      output = report('--host', 'opencode', environment: stub_environment(directory))
+      assert_includes output, 'Responses: UNKNOWN'
+      assert_includes output, 'Pass an OpenCode session with --session ID.'
     end
   end
 end

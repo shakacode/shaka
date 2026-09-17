@@ -11,6 +11,7 @@ module Shaka
     HOST = 'Claude Code'
     NOTE = 'Anthropic input excludes cached input and cache writes; reasoning output is part of output.'
     LATEST_SCOPE = 'latest turn of the session, including its subagents; earlier turns excluded'
+    INCLUSIVE_INPUT = false
 
     attr_reader :responses, :versions, :gaps
 

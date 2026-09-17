@@ -74,6 +74,12 @@ class OpencodeWorkTest < Minitest::Test
     refute File.exist?(marker)
   end
 
+  def test_prompt_does_not_forbid_changing_the_checkout_opencode_runs_in
+    prompt = started('Fix the test')['argv'].last
+    assert_includes prompt, 'Keep the trusted workflow outside writable paths.'
+    refute_includes prompt, 'Keep this host session root unchanged'
+  end
+
   def test_prompt_pins_the_workflow_helper_and_launching_ruby
     prompt = started('Fix the test')['argv'].last
     assert_includes prompt, JSON.generate(File.realpath(RbConfig.ruby))

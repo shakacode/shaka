@@ -97,10 +97,12 @@ charges, and other account terms remain UNKNOWN.
 ## What the OpenCode reader includes
 
 The reader runs `opencode export` for one session and keeps only per-message usage
-metadata; message parts carry transcript text and are never read. The session comes
-from `OPENCODE_SESSION_ID` or an explicit `--session ID` (`ses_...`); without either,
-usage stays UNKNOWN. `opencode export` truncates its JSON when stdout is a pipe, so
-the helper redirects to a temporary file before parsing.
+metadata; message parts carry transcript text and are never read. OpenCode 1.18.31
+publishes no session identifier to the commands it runs, so name the session yourself
+with `--host opencode --session ID` (`ses_...`); `opencode session list` prints the
+identifiers. The reader also accepts `OPENCODE_SESSION_ID` for a wrapper or plugin that
+sets it, and reports UNKNOWN when neither is present. `opencode export` truncates its
+JSON when stdout is a pipe, so the helper redirects to a temporary file before parsing.
 
 A turn is a user message: assistant messages join the turn through their `parentID`.
 The default selects the session's latest user turn with its assistant responses;
@@ -111,9 +113,10 @@ for contributor or resumed-session snapshots instead of running the export.
 Rows report the export's provider, the session model as the configured model, the
 response's model as the routed model, and the per-response variant as effort.
 Unlike Codex, input excludes cache reads and writes, so the three are separate
-amounts that the native total sums with output and reasoning. There is no published
-rate card in the helper, so cost scenarios stay UNKNOWN with an unsupported-provider
-reason. The configured model falls back to UNKNOWN when the export omits it.
+amounts that the native total sums with output and reasoning. Every rate the helper
+publishes bills input inclusive of those subsets, so OpenCode rows stay UNKNOWN with a
+cache-exclusive reason even when the response ran on a provider the helper otherwise
+prices. The configured model falls back to UNKNOWN when the export omits it.
 
 The reader was exercised against `opencode export` from 1.18.31. It matched an
 independent per-response aggregate for a real 49-response session: response count,

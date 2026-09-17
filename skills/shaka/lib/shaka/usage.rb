@@ -47,7 +47,7 @@ module Shaka
       flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |v|
         options[:files] << v
       end
-      flags.on('--session ID', 'OpenCode session to export') { |v| options[:files] << "session:#{v}" }
+      flags.on('--session ID', 'OpenCode session; needs --host opencode') { |v| options[:files] << "session:#{v}" }
       flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
       flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |v| options[:turns] << v }
     end
@@ -94,7 +94,7 @@ module Shaka
         #{rows}
 
         </details>
-        #{CostEstimate.new(@responses).report}
+        #{CostEstimate.new(@responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report}
       MARKDOWN
     end
 

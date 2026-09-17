@@ -114,8 +114,9 @@ Use `/shaka` wherever this guide shows `$shaka`. Do not copy `shaka` into a proj
 `.opencode/skills` directory inside a candidate checkout. Keep the trusted source
 outside the working directory. Your usual permission mode applies; installation
 adds no sandbox. `shaka work --host opencode` starts the interactive TUI from a
-terminal with the same task flow. `shaka usage` reads `OPENCODE_SESSION_ID`, or a
-session passed with `--session ID`, through `opencode export`.
+terminal with the same task flow. OpenCode publishes no session identifier to the
+commands it runs, so name the session yourself: `shaka usage --host opencode --session
+ID` exports it, and `opencode session list` prints the identifiers.
 See [usage reporting](usage-reporting.md#what-the-opencode-reader-includes).
 
 ## Complete your first task

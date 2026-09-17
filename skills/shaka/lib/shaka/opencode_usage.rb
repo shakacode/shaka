@@ -14,9 +14,12 @@ module Shaka
     NOTE = 'Input excludes cache reads and writes; native total sums input, output, reasoning, and cache.'
     LATEST_SCOPE = 'latest user turn of the session, including its assistant responses; earlier turns excluded'
     SESSION = /\Ases_[A-Za-z0-9]+\z/
+    INCLUSIVE_INPUT = false
 
     attr_reader :responses, :versions, :gaps
 
+    # OpenCode 1.18.31 exports no session identifier into the tool environment, so this
+    # finds a session only when a wrapper or plugin sets one; otherwise pass --session ID.
     def self.discover
       identity = ENV.fetch('OPENCODE_SESSION_ID', nil)
       identity.is_a?(String) && identity.match?(SESSION) ? ["session:#{identity}"] : []
@@ -26,6 +29,7 @@ module Shaka
       @responses = {}
       @versions = []
       @gaps = []
+      unreadable('Pass an OpenCode session with --session ID.') if files.empty?
       live, stored = files.partition { |file| file.start_with?('session:') }
       sources = stored.map { |file| read_file(file) } + live.map { |entry| export(entry.delete_prefix('session:')) }
       count_selected(sources, turns, all_turns)
@@ -69,12 +73,9 @@ module Shaka
       messages = document['messages'] if document.is_a?(Hash)
       return [unreadable, nil] unless messages.is_a?(Array)
 
-      remember_version(document['info'])
-      [assistant_records(messages, configured_model(document['info'])), latest_turn(messages)]
-    end
-
-    def remember_version(info)
+      info = document['info']
       @versions << info['version'] if info.is_a?(Hash) && info['version'].is_a?(String)
+      [assistant_records(messages, configured_model(info)), latest_turn(messages)]
     end
 
     def configured_model(info)
