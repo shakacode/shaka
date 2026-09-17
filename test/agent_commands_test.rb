@@ -7,7 +7,7 @@ class AgentCommandsTest < Minitest::Test
   TEST_COMMAND = File.expand_path('../.agents/bin/test', __dir__)
 
   def test_focused_tests_override_an_inherited_bundle
-    environment = { 'BUNDLE_GEMFILE' => '/missing/shaka/Gemfile' }
+    environment = { 'BUNDLE_GEMFILE' => '/missing/shaka/Gemfile', 'RUBYOPT' => '-rbundler/setup' }
     output, status = Bundler.with_unbundled_env do
       Open3.capture2e(environment, TEST_COMMAND, 'test/recommendation_test.rb')
     end

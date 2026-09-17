@@ -1,13 +1,12 @@
-#!/usr/bin/env ruby
-# frozen_string_literal: true
+#!/bin/sh
+set -eu
 
-root = File.expand_path('../..', __dir__)
-ENV['BUNDLE_GEMFILE'] = File.join(root, 'Gemfile')
-Dir.chdir(root) do
-  require 'bundler/setup'
-
-  tests = ARGV.empty? ? Dir.glob('test/**/*_test.rb') : ARGV
-  abort 'Provide one or more test files.' if tests.empty?
-
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+unset RUBYOPT RUBYLIB
+export BUNDLE_GEMFILE="$root/Gemfile"
+cd "$root"
+exec bundle exec ruby -Itest -e '
+  tests = ARGV.empty? ? Dir.glob("test/**/*_test.rb") : ARGV
+  abort "Provide one or more test files." if tests.empty?
   tests.each { |path| require File.expand_path(path) }
-end
+' "$@"
