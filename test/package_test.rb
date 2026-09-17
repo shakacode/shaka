@@ -84,8 +84,7 @@ class PackageTest < Minitest::Test
   end
 
   def check_public_skills(skills, source)
-    shaka = File.realpath(File.join(skills, 'shaka'))
-    check_shaka_skill(shaka, source)
+    check_shaka_skill(File.realpath(File.join(skills, 'shaka')), source)
     %w[rct mct-claude].each do |name|
       tower = File.realpath(File.join(skills, name))
       assert File.file?(File.join(tower, 'SKILL.md')), name
