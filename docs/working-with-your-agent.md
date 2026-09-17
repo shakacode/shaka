@@ -90,27 +90,29 @@ the section once the PR reaches its outcome. It lists:
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
 - **State:** in progress, waiting for a named review or check, blocked with the
-  blocker, or waiting for a named decision.
+  blocker, waiting for a named decision, or handing over to a named task.
 - **Next action:** the one step that continues the work.
 
 Keep private task links, raw session IDs, hostnames that identify people or clients,
 absolute paths, transcripts, and customer context out of public PRs.
 
 To resume in the original task, read the live note before writing. If it names a
-different owner, including a different tag, ownership was transferred: report that
-and stop. Otherwise refresh the live PR. A crash can leave no note or an outdated one;
-the original task recovers from live state rather than stopping.
+different owner, including a different tag, ownership was transferred: keep any local
+uncommitted or unpushed work in place without pushing it, report that work and the
+transfer, and stop. Otherwise refresh the live PR. A crash can leave no note or an
+outdated one; the original task recovers from live state rather than stopping.
 
 A fresh task takes over only when the maintainer confirms, in that task or on the PR,
 that the previous task has stopped or is handing over. An old timestamp, an idle task,
 or a missing note is not that confirmation. Without it, report the PR's state and stop
-before writing. After confirmation, first publish your own owner with a new random tag,
-which needs no earlier note. Then treat the old note as stale evidence and recheck the
-live head, required checks, review, and merge authority. When you can open the previous
-checkout, check it before editing for staged, unstaged, and untracked changes, unpushed
-commits, and stashes, and preserve them. When you cannot, because it is on another
-machine, moved, or deleted, work from the pushed branch and record unpushed work from
-the previous owner as UNKNOWN; a fresh clone is not the previous checkout.
+before writing. After confirmation, read the live head, treat the old note as stale
+evidence, and publish a complete note with your own owner and a new random tag before
+any other work. Then recheck required checks, review, and merge authority. When you can
+open the previous checkout, check it before editing for staged, unstaged, and untracked
+changes, unpushed commits, and stashes, and preserve them. When you cannot, because it
+is on another machine, moved, or deleted, work from the pushed branch and record
+unpushed work from the previous owner as UNKNOWN; a fresh clone is not the previous
+checkout.
 
 The note records state only. It grants no authority and is not a lock, lease, or
 heartbeat. The owner check narrows, but cannot close, the gap between reading the note

@@ -39,7 +39,7 @@ and report it. Every command below runs through that saved path.
 - Use the host's native task-title tool when available: repository, verified issue or PR
   identifier, and short outcome. Update the same task when its PR is created or adopted;
   preserve user-chosen titles. Without that tool, suggest the title once.
-- Before adopting another task's unfinished PR, follow the transfer steps for its
+- Before writing to an unfinished PR, whether resuming or adopting it, follow its
   [recovery note](../../docs/working-with-your-agent.md#recover-an-unfinished-pr).
 - Done when the task, its checkout, trusted instructions, and merge preference are known.
 
