@@ -36,6 +36,9 @@ recorded setup result is.
 
 - If another session holds the role, stop with `MCT setup error: master control
   tower already exists`, identify that session, and direct the user there.
+- If more than one session qualifies, stop with `MCT setup error: master control
+  tower is ambiguous` and list the candidates for the user to resolve. Do not pick
+  one, and do not assume the most recent is correct.
 - If this session is already the MCT, reuse it and repair only a missing title or
   pin state.
 - Otherwise this session becomes the MCT.
@@ -53,8 +56,11 @@ not drop the suffix while the role is held. Do not add a tower file, database, o
 sidebar group: `move_sessions` unpins a pinned session, and the live session list is
 the only record this role keeps.
 
-Report the session ID, title, pin state, and that no repository tower is registered
-yet. Then stop and wait for a registration or an assignment.
+Report the session ID, title, and pin state. On first setup, report that no
+repository tower is registered yet. When reusing an established master, report the
+tower set you derive from the current session list instead, so the user is not told
+that registered towers are missing. Then stop and wait for a registration or an
+assignment.
 
 ## Accept repository registrations
 
@@ -64,7 +70,10 @@ establish each fact from your own reads rather than from the message:
 
 - `get_session` on the named RCT session ID returns a live session whose `cwd`
   selects the named repository's Git root;
-- `list_sessions` shows no other `RCT — Shaka` session for that same
+- `list_events` on that session shows its own recorded tower setup for this
+  repository. A title suffix, a matching `cwd`, or the registration message alone
+  is not proof of the role;
+- no other session holds an acknowledgment from this master for that same
   `OWNER/REPOSITORY`; and
 - the named default branch matches live GitHub metadata.
 
@@ -75,8 +84,10 @@ session, or merge authority.
 
 Refuse instead when a check fails:
 
-- a different live session already owns that repository: `MCT registration error:
-  repository already has an RCT`;
+- a different live session already holds an acknowledgment for that repository:
+  `MCT registration error: repository already has an RCT`. A session that carries
+  the title suffix but was never acknowledged does not own the repository and must
+  not block a corrected replacement;
 - the session ID, repository, or default branch does not match your reads:
   `MCT registration error: registration facts do not match`.
 
@@ -86,9 +97,11 @@ as acknowledgment in either direction.
 
 ## Coordinate without becoming a writer
 
-Derive the tower set live from `list_sessions` whenever you need it. One RCT owns
-one repository; closely related repositories keep separate towers, and this role
-orders their work.
+Derive the tower set from the acknowledgments you sent in this session's own
+history, confirmed against `list_sessions` for liveness. That pairing is the
+registry; it needs no file because an acknowledgment is already recorded where it
+was sent. One RCT owns one repository; closely related repositories keep separate
+towers, and this role orders their work.
 
 Keep priorities, cross-repository dependencies, and consequential decisions clear.
 Route each implementation or PR repair to the owning repository tower, and let that
