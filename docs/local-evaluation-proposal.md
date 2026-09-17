@@ -125,9 +125,8 @@ not public source or sandbox repositories: a scoped PAT still reads public GitHu
 
 The `review-repair` message 1 states its reply-evidence grammar verbatim: reply on
 the seeded inline thread with `commit:<40-hex>` and at least one current-head
-`check-run:<decimal>` or `walkthrough-review:<decimal>` token; canonical
-same-repository GitHub resource URLs are accepted in place of those tokens. The
-grader does not assume an undocumented convention or infer evidence from prose.
+`check-run:<decimal>` or `walkthrough-review:<decimal>` token. The grader does not
+assume an undocumented convention or infer evidence from prose or URLs.
 
 The local driver owns a small, fixed lifecycle:
 
@@ -367,7 +366,12 @@ Read PR state, actual head, required-check run/head/conclusion, reviews and merg
 commit through the API. Require a current-head COMMENT walkthrough authored by the
 machine user, with a native review ID distinct from the driver verification. Its body
 must have the Shaka identity line, at least one `##` section and the terminal
-`Walkthrough for commit <final-head>` COMMENT marker. For Auto, grade that schema
+`Walkthrough for commit <final-head>` COMMENT marker. It must also contain at least
+one canonical same-repository
+`https://github.com/<owner>/<repo>/blob/<final-head>/<path>#L<line>` link whose SHA is
+the final head, whose path appears in the PR's changed-file set, and whose line anchor
+resolves in that final blob. Branch, stale-head, other-repository, unchanged-file and
+invalid-line links do not qualify. For Auto, grade that schema
 against the exact walkthrough ID, body digest, `created_at` and `updated_at` captured in
 the pre-dispatch snapshot; the live body and timestamps must still match. A later edit,
 deletion or missing snapshot fails. Require a driver verification
@@ -388,10 +392,9 @@ ID and body digest captured in the pre-dispatch snapshot, with its `created_at` 
 The current body, timestamps and ID must still match that snapshot. A later edit,
 deletion, different reply or missing snapshot fails. Timestamp ties fail closed. A
 top-level comment or different thread never qualifies. Parse only labeled `commit:<40-hex>`,
-`check-run:<decimal>` and `walkthrough-review:<decimal>` tokens or
-canonical same-repository GitHub resource URLs as citations; all other numbers and
-text are prose. After resolving tokens and URLs, the evidence must include the exact
-final-head commit plus at least one current-head check run or walkthrough review.
+`check-run:<decimal>` and `walkthrough-review:<decimal>` tokens as citations; all
+other numbers, text and URLs are prose. The evidence must include the exact final-head
+commit plus at least one current-head check run or walkthrough review.
 Resolve those required references against final-head API evidence; every other parsed
 citation must exist in the same cell's repository and PR, but may describe the
 historical failure being repaired.
@@ -422,8 +425,9 @@ evidence/timing taken from different IDs; a reply edited after capture; same-sec
 reply/request ordering; a merge without a matching helper invocation; marker post or
 read-back failure before dispatch; agent edit/deletion after dispatch; missing, mutated
 or wrong-head helper markers; walkthrough cases for missing publication, wrong
-actor/schema, reused driver-review ID, a different helper argument and mutation after
-capture; queued terminal actions in the POST/GET window; pre-POST terminal actions;
+actor/schema, link-free body, branch/stale-head/other-repository/unchanged-path/invalid-line
+links, a valid final-head changed-file link, reused driver-review ID, a different helper
+argument and mutation after capture; queued terminal actions in the POST/GET window; pre-POST terminal actions;
 Ask output with missing, malformed or stale markers; and a valid unmerged Ask
 completion. Agent success claims never override protected evidence.
 Publish only reviewed aggregate metadata, never raw sessions or private identifiers.
