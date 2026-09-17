@@ -10,8 +10,9 @@ module Shaka
     TASK_SOURCES = %w[description issue pull_request].freeze
     SAFE_VALUE = /\A(?:UNKNOWN|[A-Za-z0-9][A-Za-z0-9._:-]{0,79})\z/
 
-    def initialize(spec)
+    def initialize(spec, environment: ENV)
       @spec = spec
+      @environment = environment
     end
 
     def detail
@@ -27,14 +28,20 @@ module Shaka
     def rows
       values = validated
       [
+        ['Machine alias', machine_alias],
         ['Task source', values.fetch('task_source')],
-        ['Initial prompt', values.fetch('initial_prompt')],
         ['Workflow version', values.fetch('workflow_version')],
         ['Requested route', route(values, 'requested')],
         ['Recommended route', route(values, 'recommended')],
-        ['Active setting', route(values, 'active')],
-        ['Observed route', 'See native usage']
+        ['Active setting', route(values, 'active')]
       ]
+    end
+
+    def machine_alias
+      value = @environment.fetch('AGENT_COORD_MACHINE_ID', 'UNKNOWN')
+      raise Error, 'Publication provenance machine alias is invalid.' unless valid?(value)
+
+      value
     end
 
     def validated
