@@ -136,12 +136,16 @@ satisfies nor removes that requirement.
 
 ## Separate gem decision
 
-Decision: keep `Shaka::PublicComments` in the `shaka` gem.
+Decision: keep `Shaka::PublicComments` in the `shaka` gem. This records the
+[#64](https://github.com/shakacode/shaka/issues/64) extract gate: there is still
+no second consumer and no independent release-cycle requirement.
 
-Evidence: no consumer outside Shaka uses the API yet. The installed-gem test
-consumer proves the boundary works without the skill, but it is not independent
-demand. The API has no release cycle separate from Shaka's.
+Evidence: no application outside this repository consumes the API. The
+installed-gem test consumer proves the library loads without the skill, the CLI
+GitHub client, or Shaka's work and merge helpers, but it is not independent
+demand. The API shares Shaka's version and release process.
 
-Revisit this when a real non-Shaka consumer records a concrete need here, such as
-releasing on a different cadence than Shaka, or being unable to accept the skill
-files and executables in its bundle. Extract a gem only with that evidence.
+Open a new issue when a named non-Shaka consumer records a concrete need, such
+as releasing on a different cadence than Shaka, or being unable to accept the
+skill files and executables in its bundle. Extract a gem only with that
+evidence.
