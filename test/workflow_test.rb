@@ -80,6 +80,7 @@ end
 
 class WorkflowCommandTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  GUIDE_LINK = %r{\]\(<([^>]+/docs/[\w-]+\.md)(?:#([\w-]+))?>\)}
 
   def test_workflow_command_renders_every_phase_and_boundary
     output, status = Open3.capture2e(COMMAND, 'workflow')
@@ -96,5 +97,25 @@ class WorkflowCommandTest < Minitest::Test
 
     refute status.success?
     assert_includes output, 'Usage: shaka workflow'
+  end
+
+  def test_rendered_guide_links_resolve_to_existing_headings
+    output, status = Open3.capture2e(COMMAND, 'workflow')
+    links = output.scan(GUIDE_LINK)
+
+    assert status.success?, output
+    refute_empty links
+    links.each do |path, anchor|
+      assert File.file?(path), "#{path} is not a guide"
+      assert_includes heading_slugs(path), anchor, "#{path} has no heading for ##{anchor}" if anchor
+    end
+  end
+
+  private
+
+  def heading_slugs(file)
+    File.readlines(file, encoding: 'UTF-8').grep(/\A#+ /).map do |line|
+      line.sub(/\A#+ /, '').strip.downcase.gsub(/[^\w\s-]/, '').gsub(/\s+/, '-')
+    end
   end
 end
