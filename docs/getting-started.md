@@ -15,9 +15,11 @@ run `gh auth login` if needed. Codex terminal users also need `codex --version` 
 Claude Code users need `claude --version`; OpenCode users need `opencode --version`.
 The skill uses no development gems. Keep your application's own Ruby version.
 
-Your repository's `.agents/agent-workflow.yml` names executable setup, validation,
-and focused-test paths, the base branch, review policy, and merge authority. Shaka
-validates this contract and helps add it when it is missing. Keep long
+Shaka's installed `SKILL.md` is a small trust bootstrap. It invokes `shaka workflow`,
+which strictly validates and renders the packaged workflow configuration before the
+agent acts. Your repository's separate `.agents/agent-workflow.yml` names executable
+setup, validation, and focused-test paths, the base branch, review policy, and merge
+authority. Shaka validates this contract and helps add it when it is missing. Keep long
 commands in repository scripts and human-only constraints in `AGENTS.md`.
 To merge, GitHub must enforce required checks for the acting account, allow squash
 merges, and satisfy required approvals. Otherwise, Shaka explains the blocker on the PR.
