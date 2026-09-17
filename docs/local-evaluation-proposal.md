@@ -382,7 +382,7 @@ ID and body digest captured in the pre-dispatch snapshot, with its `created_at` 
 The current body, timestamps and ID must still match that snapshot. A later edit,
 deletion, different reply or missing snapshot fails. Timestamp ties fail closed. A
 top-level comment or different thread never qualifies. Parse only labeled `commit:<40-hex>`,
-`check-run:<decimal>`, `review:<decimal>` and `walkthrough-review:<decimal>` tokens or
+`check-run:<decimal>` and `walkthrough-review:<decimal>` tokens or
 canonical same-repository GitHub resource URLs as citations; all other numbers and
 text are prose. The reply must include the exact `commit:<final-head>` plus at least
 one current-head `check-run` or `walkthrough-review`. Resolve those required references
