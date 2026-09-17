@@ -83,8 +83,8 @@ meaningful progress and at each stopping point. The `description` helper replace
 whole managed region, so republish every section with only the note changed. Remove
 the section once the PR reaches its outcome. It lists:
 
-- **Owner:** a machine alias chosen for publication, the host, and a takeover number
-  that starts at 1, such as `studio-mac · Claude Code desktop · takeover 1`.
+- **Owner:** a machine alias chosen for publication, the host, and a short random tag
+  the task picks when it becomes owner, such as `studio-mac · Claude Code desktop · k7q2`.
 - **Task:** the searchable task title, or a task locator the tracker allows sharing.
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
@@ -97,7 +97,7 @@ Keep private task links, raw session IDs, hostnames that identify people or clie
 absolute paths, transcripts, and customer context out of public PRs.
 
 To resume in the original task, read the live note before writing. If it names a
-different owner or a higher takeover number, ownership was transferred: report that
+different owner, including a different tag, ownership was transferred: report that
 and stop. Otherwise refresh the live PR. A crash can leave no note or an outdated one;
 the original task recovers from live state rather than stopping.
 
@@ -110,7 +110,7 @@ checkout, check it before editing for staged, unstaged, and untracked changes, u
 commits, and stashes, and preserve them. When you cannot, because it is on another
 machine, moved, or deleted, work from the pushed branch and record unpushed work from
 the previous owner as UNKNOWN; a fresh clone is not the previous checkout. Then publish
-your own owner with the next takeover number.
+your own owner with a new random tag, which needs no earlier note.
 
 The note records state only. It grants no authority and is not a lock, lease, or
 heartbeat.
