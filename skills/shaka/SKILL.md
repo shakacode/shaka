@@ -202,7 +202,7 @@ and report it. Every command below runs through that saved path.
 ## 6. Review
 
 - Meaningful implementation needs visible independent review from a different model family,
-  preferably a different provider. A same-model session does not qualify. Trivial prose/no-op may omit
+  preferably a different provider. A same-model session does not qualify. Trivial prose/no-op may omit it
   with a recorded reason. Use the named reviewer when it qualifies; otherwise add an
   authorized alternate without replacing a required named gate. Read its report, threads,
   and completion evidence; a green job alone proves no review. For every
