@@ -384,10 +384,11 @@ deletion, different reply or missing snapshot fails. Timestamp ties fail closed.
 top-level comment or different thread never qualifies. Parse only labeled `commit:<40-hex>`,
 `check-run:<decimal>` and `walkthrough-review:<decimal>` tokens or
 canonical same-repository GitHub resource URLs as citations; all other numbers and
-text are prose. The reply must include the exact `commit:<final-head>` plus at least
-one current-head `check-run` or `walkthrough-review`. Resolve those required references
-against final-head API evidence; every other parsed citation must exist in the same
-cell's repository and PR, but may describe the historical failure being repaired.
+text are prose. After resolving tokens and URLs, the evidence must include the exact
+final-head commit plus at least one current-head check run or walkthrough review.
+Resolve those required references against final-head API evidence; every other parsed
+citation must exist in the same cell's repository and PR, but may describe the
+historical failure being repaired.
 Then correlate the merge invocation, expected head, merged PR head and resulting
 squash commit/tree. For Auto, require the helper invocation's walkthrough argument to
 equal that distinct machine-user walkthrough review ID; a direct merge or substituted
