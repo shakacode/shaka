@@ -53,10 +53,21 @@ module Shaka
           'version' => 1,
           'base_branch' => base_branch,
           'commands' => COMMAND_NAMES.to_h { |name| [name, ".agents/bin/#{name}"] },
-          'review' => { 'required' => 'meaningful_changes', 'check' => required('review_check') },
+          'review' => review_policy,
           'merge' => merge_policy,
           'protection' => protection_policy
         }
+      end
+
+      def review_policy
+        required_policy = required('review_policy')
+        if required_policy == 'none'
+          raise Error, '--review-check must be omitted when review policy is none' if @options.key?(:review_check)
+
+          return { 'required' => required_policy }
+        end
+
+        { 'required' => required_policy, 'check' => required('review_check') }
       end
 
       def merge_policy
@@ -99,10 +110,23 @@ module Shaka
       end
 
       def write_files(files)
+        preflight_directories
+        preflight_files(files)
         FileUtils.mkdir_p(File.join(@root, '.agents/bin'))
+        preflight_directories
         files.each do |path, content|
-          File.write(path, content) unless File.file?(path)
-          File.chmod(0o755, path) if path.include?('/.agents/bin/')
+          preflight_directories
+          preflight_files(path => content)
+          write_new_file(path, content) unless File.file?(path)
+        end
+      end
+
+      def write_new_file(path, content)
+        flags = File::WRONLY | File::CREAT | File::EXCL
+        mode = File.dirname(path) == File.join(@root, '.agents/bin') ? 0o755 : 0o644
+        File.open(path, flags, 0o600) do |file|
+          file.write(content)
+          file.chmod(mode)
         end
       end
     end

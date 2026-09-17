@@ -39,8 +39,8 @@ module Shaka
       raise OptionParser::InvalidArgument, parser.to_s unless valid
 
       if operation == 'check'
-        init_keys = %i[base_branch setup_command validate_command test_command review_check merge_preference
-                       required_checks plan trusted_actions]
+        init_keys = %i[base_branch setup_command validate_command test_command review_policy review_check
+                       merge_preference required_checks plan trusted_actions]
         raise OptionParser::InvalidArgument, 'init options do not apply to check' if @options.keys.intersect?(init_keys)
       elsif @options.key?(:ref)
         raise OptionParser::InvalidArgument, '--ref does not apply to init'
@@ -92,6 +92,8 @@ module Shaka
     end
 
     def add_policy_options(flags)
+      flags.on('--review-policy MODE', %w[always meaningful_changes none],
+               'always, meaningful_changes, or none') { |value| @options[:review_policy] = value }
       flags.on('--review-check NAME', 'Independent review check name') { |value| @options[:review_check] = value }
       flags.on('--merge-preference MODE', %w[ask auto], 'ask or auto (default: ask)') do |value|
         @options[:merge_preference] = value

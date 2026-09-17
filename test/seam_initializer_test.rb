@@ -30,7 +30,8 @@ module SeamInitializerTestHelpers
                      test_command: 'bundle exec rake test')
     [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
      '--setup-command', setup_command, '--validate-command', validate_command,
-     '--test-command', test_command, '--review-check', 'claude-review',
+     '--test-command', test_command, '--review-policy', 'meaningful_changes',
+     '--review-check', 'claude-review',
      '--required-check', 'validate', '--trusted-action', 'actions/checkout',
      '--trusted-action', 'ruby/setup-ruby']
   end
@@ -178,10 +179,7 @@ class SeamInitializerTest < Minitest::Test
 
   def test_rejects_a_missing_plan_before_writing
     with_repository do |root|
-      arguments = [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
-                   '--setup-command', 'bin/setup', '--validate-command', 'bin/validate',
-                   '--test-command', 'bundle exec rake test', '--review-check', 'claude-review',
-                   '--required-check', 'validate', '--plan', 'docs/missing.md']
+      arguments = [*init_arguments(root), '--plan', 'docs/missing.md']
       _output, error, status = Open3.capture3(*arguments)
 
       refute status.success?
@@ -195,7 +193,7 @@ class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
   def test_rejects_missing_required_policy_before_writing
-    %w[--base-branch --review-check --required-check].each do |flag|
+    %w[--base-branch --review-policy --review-check --required-check].each do |flag|
       with_repository do |root|
         arguments = init_arguments(root)
         arguments.slice!(arguments.index(flag), 2)
@@ -205,6 +203,19 @@ class SeamInitializerValidationTest < Minitest::Test
         assert_includes error, 'is required'
         refute File.exist?(File.join(root, '.agents'))
       end
+    end
+  end
+
+  def test_review_policy_none_omits_the_review_check
+    with_repository do |root|
+      arguments = init_arguments(root)
+      arguments[arguments.index('meaningful_changes')] = 'none'
+      arguments.slice!(arguments.index('--review-check'), 2)
+
+      output, error, status = Open3.capture3(*arguments)
+
+      assert status.success?, error
+      assert_equal({ 'required' => 'none' }, JSON.parse(output).fetch('review'))
     end
   end
 

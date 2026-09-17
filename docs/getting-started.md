@@ -132,6 +132,7 @@ and merge preference:
   --setup-command "bin/setup" \
   --validate-command "bin/validate" \
   --test-command "bundle exec rake test" \
+  --review-policy meaningful_changes \
   --review-check claude-review \
   --required-check validate
 ```
@@ -139,6 +140,8 @@ and merge preference:
 The command creates `.agents/agent-workflow.yml` and small executable wrappers
 under `.agents/bin/`. Its default merge preference is **Ask**. Add
 `--merge-preference auto` only when that is the repository's established authority;
+choose `--review-policy always`, `meaningful_changes`, or `none`, and supply
+`--review-check` unless the policy is `none`. Also
 provide at least one `--required-check` and repeat it for every required GitHub check.
 Repeat `--trusted-action` as needed, and use `--plan` for an existing
 repository-relative plan. Commands are parsed as argument lists, so put shell pipelines
