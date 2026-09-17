@@ -31,10 +31,18 @@ module Shaka
       end
 
       def validate_executable(executable, name)
-        return unless executable.include?('/')
+        return validate_path_executable(executable, name) unless executable.include?('/')
 
         path = repository_file(executable, "#{name} command")
         raise Error, "#{name} command is not executable: #{executable}" unless File.executable?(path)
+      end
+
+      def validate_path_executable(executable, name)
+        found = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).any? do |directory|
+          path = File.expand_path(File.join(directory, executable), @root)
+          File.file?(path) && File.executable?(path)
+        end
+        raise Error, "#{name} command is not available on PATH: #{executable}" unless found
       end
 
       def base_branch

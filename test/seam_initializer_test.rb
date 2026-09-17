@@ -227,6 +227,16 @@ class SeamInitializerValidationTest < Minitest::Test
     end
   end
 
+  def test_rejects_a_missing_path_command_before_writing
+    with_repository do |root|
+      _output, error, status = init(root, test_command: 'shaka-command-that-does-not-exist')
+
+      refute status.success?
+      assert_includes error, 'test command is not available on PATH'
+      refute File.exist?(File.join(root, '.agents'))
+    end
+  end
+
   def test_rejects_an_invalid_merge_preference_before_writing
     with_repository do |root|
       _output, error, status = Open3.capture3(*init_arguments(root), '--merge-preference', 'sometimes')
