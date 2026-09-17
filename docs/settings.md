@@ -31,7 +31,7 @@ These apply to the whole document, whatever the settings are.
 | Setting | Required | Type | Value |
 | --- | --- | --- | --- |
 | `version` | yes | integer | Exactly `1`. |
-| `base_branch` | yes | string | Non-empty branch name that work starts from. |
+| `base_branch` | yes | string | Non-empty string naming the branch work starts from. See the note below. |
 | `commands` | yes | mapping | [Executable paths](#commands). |
 | `review` | yes | mapping | [Reviewer policy](#review). |
 | `merge` | yes | mapping | [Merge authority](#merge). |
@@ -41,6 +41,13 @@ These apply to the whole document, whatever the settings are.
 
 Repository-relative means exactly that: an absolute path, a path that escapes the
 repository, or a symlink resolving outside it is rejected.
+
+`base_branch` is checked only as a non-empty string. `shaka seam check` does not test it
+against Git's branch-name rules, so a hand-edited value such as `-not-a-branch`,
+`has space`, or `a..b` passes validation and fails later, when the workflow tries to use
+the branch. `shaka seam init` is stricter: it rejects any value that
+`git check-ref-format --branch` does not accept. Prefer initializing the seam, and check
+a hand-edited `base_branch` yourself.
 
 ## `commands`
 
