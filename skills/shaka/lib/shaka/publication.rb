@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'provenance'
 
 module Shaka
   # Checks supplied text for the mechanical failures models reproduce by hand.
@@ -61,7 +62,7 @@ module Shaka
   class Publication
     TABLE_SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
 
-    def self.description(content) = new(content, require_tables: true).render(%i[sections table details])
+    def self.description(content) = new(content, require_tables: true).render(%i[sections table provenance details])
     def self.comment(content) = new(content).render([])
     def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
 
@@ -131,6 +132,13 @@ module Shaka
       rendered = items.map { |detail| details_block(detail) }
       require_usage_table(items) if @require_tables
       rendered
+    end
+
+    def provenance
+      spec = @content.fetch('provenance') do
+        raise Error, 'Publication description requires execution provenance.'
+      end
+      [details_block(ExecutionProvenance.new(spec).detail)]
     end
 
     def details_block(detail)

@@ -127,3 +127,18 @@ or tool output. The helper reads local files and prints allowlisted aggregate
 metadata; it neither modifies sessions nor publishes to GitHub. Review the report
 for task coverage before publishing it. The visible coverage note stays outside
 the expandable details; missing usage does not block a PR.
+
+## PR execution provenance
+
+The PR description can also carry a compact `provenance` object. It records the
+task source, the installed workflow version, and the requested, recommended, and
+active model/effort routes. The renderer labels the initial prompt `EXCLUDED` and
+directs readers to the native usage table for the observed route and token data.
+It never accepts prompt text, reasoning text, transcripts, local paths, private
+run identifiers, or arbitrary metadata.
+
+Supply one of `description`, `issue`, or `pull_request` for `task_source`; use
+`UNKNOWN` where route metadata is unavailable. The public record is useful for
+comparing comparable tasks and workflow versions, but it does not establish a
+causal saving. Compare it with developer attention, retries, review findings,
+delivery time, accepted quality, and regressions or reverts.

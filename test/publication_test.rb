@@ -3,6 +3,12 @@
 require_relative 'test_helper'
 require 'shaka/publication'
 
+PUBLIC_PROVENANCE = { 'task_source' => 'description', 'initial_prompt' => 'EXCLUDED',
+                      'workflow_version' => 'v1.2.3',
+                      'requested_model' => 'gpt-5.6-terra', 'requested_effort' => 'medium',
+                      'recommended_model' => 'gpt-5.6-terra', 'recommended_effort' => 'medium',
+                      'active_model' => 'gpt-5.6-terra', 'active_effort' => 'medium' }.freeze
+
 # Reproduces the presentation failures observed on real published pull requests.
 class PublicationRegressionTest < Minitest::Test
   IDENTITY = { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'gpt-5.6-terra', 'effort' => 'low' }.freeze
@@ -11,7 +17,8 @@ class PublicationRegressionTest < Minitest::Test
             'body' => "| Provider | Native total |\n| --- | ---: |\n| openai | 1 |" }.freeze
 
   def description_content(**changes)
-    { 'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE, 'details' => [USAGE] }.merge(changes)
+    { 'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE,
+      'provenance' => PUBLIC_PROVENANCE, 'details' => [USAGE] }.merge(changes)
   end
 
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one
@@ -98,6 +105,7 @@ class PublicationStructureTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => IDENTITY, 'summary' => 'A summary.',
         'table' => PublicationRegressionTest::TABLE,
+        'provenance' => PUBLIC_PROVENANCE,
         'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
     )
   end
@@ -160,7 +168,8 @@ class PublicationStructureTest < Minitest::Test
 
   def test_a_real_newline_in_a_cell_cannot_split_the_row
     content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
-                'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] } }
+                'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] },
+                'provenance' => PUBLIC_PROVENANCE }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
     assert_includes error.message, 'single line'
   end
@@ -191,8 +200,8 @@ class PublicationStructureTest < Minitest::Test
     rendered = render('details' => [PublicationRegressionTest::USAGE,
                                     { 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    assert_equal 2, rendered.scan('</summary>').size
-    assert_equal 2, rendered.scan('</details>').size
+    assert_equal 3, rendered.scan('</summary>').size
+    assert_equal 3, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
@@ -202,5 +211,30 @@ class PublicationStructureTest < Minitest::Test
       error = assert_raises(Shaka::Error) { render(**part) }
       assert_includes error.message, 'list'
     end
+  end
+end
+
+class PublicationProvenanceRequirementTest < Minitest::Test
+  # Catches a renderer that accepts the structured metadata but silently drops it,
+  # leaving a PR without the route evidence needed for later comparison.
+  def test_description_renders_public_safe_execution_provenance
+    content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
+                'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
+                'details' => [PublicationRegressionTest::USAGE] }
+    rendered = Shaka::Publication.description(content)
+
+    assert_includes rendered, '<summary>Execution provenance</summary>'
+    assert_includes rendered, '| Initial prompt | EXCLUDED |'
+    assert_includes rendered, '| Requested route | gpt-5.6-terra / medium |'
+    assert_includes rendered, '| Observed route | See native usage |'
+  end
+
+  def test_description_refuses_missing_execution_provenance
+    content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
+                'table' => PublicationRegressionTest::TABLE,
+                'details' => [PublicationRegressionTest::USAGE] }
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+
+    assert_includes error.message, 'provenance'
   end
 end
