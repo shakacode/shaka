@@ -63,7 +63,8 @@ and stopping point. Do not copy the whole planning conversation.
 Use a fresh task for a new implementation objective. Keep an existing task while
 it owns unfinished changes, or hand over its branch, current revision, completed
 checks, remaining work, and authority before another task takes ownership. Recheck
-live state on resume; a summary is not fresh merge evidence. No second writer is
+live state on resume; a summary is not fresh merge evidence. An unfinished PR keeps
+a [recovery note](#recover-an-unfinished-pr). No second writer is
 needed. Keep product decisions in the existing plan and work state in the PR.
 
 Task names identify the repository, verified issue/PR, and outcome. For example,
@@ -71,6 +72,35 @@ Task names identify the repository, verified issue/PR, and outcome. For example,
 `sample-app issue #42 / PR #57 — fix search timeout` when that PR is created.
 Use the native rename capability and preserve user-chosen titles. A title is for
 finding the task; it does not establish merge authority or ownership by itself.
+
+### Recover an unfinished PR
+
+When work stops before its outcome, for a blocker, a pending decision, a handoff, or
+an interruption, keep a `Recovery` section in the PR description. Someone reopening
+the PR should find the owning task and its next step without reading the conversation.
+Refresh the section at meaningful progress and at each stopping point with the
+`description` helper, which replaces only its own region. Remove it once the PR
+reaches its outcome. The section lists:
+
+- **Owner:** a machine alias chosen for publication and the host, such as
+  `studio-mac · Claude Code desktop`.
+- **Task:** the searchable task title, or a task locator the tracker allows sharing.
+- **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
+  publication time is not evidence of later or earlier activity.
+- **Revision:** the branch and current head.
+- **State:** in progress, blocked with the blocker, or waiting for a named decision.
+- **Next action:** the one step that continues the work.
+
+Keep private task links, raw session IDs, hostnames that identify people or clients,
+absolute paths, transcripts, and customer context out of public PRs.
+
+To resume in the original task, read the note, then refresh the live PR. To transfer
+to a fresh task, first confirm that the previous owner has stopped or explicitly handed
+over ownership. An old timestamp or an idle task is not proof of abandonment. The new
+owner rechecks the live head, required checks, review, and merge authority instead of
+trusting the note, preserves any uncommitted work left in the previous checkout, and
+updates the owner field. The note records state only. It grants no authority and is
+not a lock, lease, or heartbeat.
 
 ## When a task needs several PRs
 
