@@ -5,6 +5,8 @@ module Shaka
   module CursorCost
     RATES = { 'grok-4.6' => { 'standard' => %w[2 0.5 6], 'fast' => %w[4 1 12] } }.freeze
 
+    private
+
     def cursor_price(model, billing, mode, tokens)
       return [nil, 'Cursor credit rates unpublished'] if mode == :credits
 
@@ -20,6 +22,8 @@ module Shaka
   # Report copy for configured-model cost scenarios.
   module CostCopy
     VERIFIED = '2026-09-16'
+
+    private
 
     def markdown(rows, reasons)
       <<~MARKDOWN

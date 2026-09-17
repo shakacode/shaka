@@ -7,6 +7,8 @@ require_relative 'response_count'
 module Shaka
   # Reads effort and Fast/standard billing flags from Cursor model_params.
   module CursorParams
+    private
+
     def effort(params)
       param(params, 'effort')
     end
