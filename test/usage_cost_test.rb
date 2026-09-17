@@ -67,6 +67,31 @@ class UsageCostTest < Minitest::Test
     assert_includes report, 'Unsupported provider or configured model'
   end
 
+  def test_cursor_grok_keeps_unpriced_writes_in_ordinary_input
+    report = Shaka::CostEstimate.new([cursor_record]).report
+    assert_includes report, '| cursor | grok-4.6 | medium | UNKNOWN | $0.000260 |'
+    assert_includes report, 'Actual charge: UNKNOWN'
+    assert_includes report, 'Cursor on-demand'
+    refute_includes report, '0.000000'
+  end
+
+  def test_cursor_grok_fast_and_missing_billing_mode
+    report = Shaka::CostEstimate.new([cursor_record(billing: 'fast')]).report
+    assert_includes report, '| cursor | grok-4.6-fast | medium | UNKNOWN | $0.000520 |'
+    unknown = cursor_record(billing: nil)
+    report = Shaka::CostEstimate.new([unknown]).report
+    assert_includes report, '| cursor | grok-4.6 | medium | UNKNOWN | UNKNOWN |'
+    assert_includes report, 'Unsupported provider or configured model'
+  end
+
+  def test_cursor_long_context_does_not_invent_a_threshold
+    record = cursor_record(usage: { 'input_tokens' => 200_000, 'cached_input_tokens' => 0,
+                                    'cache_write_input_tokens' => 0, 'output_tokens' => 0 })
+    report = Shaka::CostEstimate.new([record]).report
+    assert_includes report, '| cursor | grok-4.6 | medium | UNKNOWN | $0.400000 |'
+    refute_includes report, '$0.800000'
+  end
+
   private
 
   def priced_context(turn, model, effort: 'high')
@@ -79,5 +104,12 @@ class UsageCostTest < Minitest::Test
                                         cache_write_input_tokens: tokens.fetch(:writes, 0),
                                         output_tokens: tokens.fetch(:output, 20), reasoning_output_tokens: 0)
     end
+  end
+
+  def cursor_record(billing: 'standard', usage: {})
+    { 'configuration' => %w[cursor grok-4.6 cursor-grok-4.6-medium medium],
+      'billing_mode' => billing,
+      'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40,
+                   'cache_write_input_tokens' => 7, 'output_tokens' => 20 }.merge(usage) }
   end
 end

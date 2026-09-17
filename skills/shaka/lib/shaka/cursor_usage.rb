@@ -5,9 +5,33 @@ require_relative 'cursor_usage_store'
 require_relative 'response_count'
 
 module Shaka
+  # Reads effort and Fast/standard billing flags from Cursor model_params.
+  module CursorParams
+    private
+
+    def effort(params)
+      param(params, 'effort')
+    end
+
+    def billing_mode(params)
+      value = param(params, 'fast')
+      if [true, 'true'].include?(value)
+        'fast'
+      elsif [false, 'false'].include?(value)
+        'standard'
+      end
+    end
+
+    def param(params, id)
+      found = params.find { |item| item.is_a?(Hash) && item['id'] == id } if params.is_a?(Array)
+      found['value'] if found
+    end
+  end
+
   # Reads persisted Cursor stop-hook usage; transcripts and bubble tokenCount are unused.
   class CursorUsage
     include ResponseCount
+    include CursorParams
 
     HOST = 'Cursor'
     NOTE = 'Cached input and cache writes are part of input; reasoning output and native total are UNKNOWN. ' \
@@ -83,9 +107,14 @@ module Shaka
       return unless turn?(payload['generation_id'])
 
       @versions << payload['cursor_version'] if payload['cursor_version'].is_a?(String)
+      record(payload)
+    end
+
+    def record(payload)
       { 'response_id' => payload['generation_id'], 'turn_id' => payload['generation_id'],
         'timestamp' => payload['timestamp'], 'preferred' => payload['hook_event_name'] == 'stop',
-        'configuration' => configuration(payload), 'usage' => tokens(payload) }
+        'configuration' => configuration(payload), 'billing_mode' => billing_mode(payload['model_params']),
+        'usage' => tokens(payload) }
     end
 
     def configuration(payload)
@@ -95,11 +124,6 @@ module Shaka
     def tokens(payload)
       { 'input_tokens' => payload['input_tokens'], 'cached_input_tokens' => payload['cache_read_tokens'],
         'output_tokens' => payload['output_tokens'], 'cache_write_input_tokens' => payload['cache_write_tokens'] }
-    end
-
-    def effort(params)
-      found = params.find { |item| item.is_a?(Hash) && item['id'] == 'effort' } if params.is_a?(Array)
-      found['value'] if found
     end
 
     def parse(line)
