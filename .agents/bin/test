@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+root = File.expand_path('../..', __dir__)
+Dir.chdir(root) do
+  tests = ARGV.empty? ? Dir.glob('test/**/*_test.rb').sort : ARGV
+  abort 'Provide one or more test files.' if tests.empty?
+
+  tests.each { |path| require File.expand_path(path) }
+end

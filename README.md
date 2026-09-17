@@ -59,9 +59,9 @@ from Ruby as an [experimental API](docs/public-comments.md).
 ## For agents and contributors to Shaka
 
 Start with the [agent procedure](skills/shaka/SKILL.md), or the focused
-[repository control tower setup](skills/rct/SKILL.md). Each repository's `AGENTS.md`
-supplies its commands and authority; [Shaka's contributor instructions](AGENTS.md)
-name this project's setup and checks. See the [requirements](docs/pilot-plan.md)
+[repository control tower setup](skills/rct/SKILL.md). Each repository's validated
+`.agents/agent-workflow.yml` supplies commands and authority; `AGENTS.md` retains
+human-only boundaries. See the [requirements](docs/pilot-plan.md)
 and [gem packaging guide](docs/packaging.md) for design and distribution.
 The procedure owns execution; linked guides explain decisions and evidence for
 people and agents. Keep shared rules in one place and follow the procedure's references.
