@@ -226,3 +226,15 @@ class GitHubReplyPaginationTest < Minitest::Test
     assert_raises(Shaka::Error) { github.reply(body: BODY, key: 'fix-1') }
   end
 end
+
+# A target with more comment pages than Shaka reads must be refused, not truncated.
+class GitHubReplyLimitTest < Minitest::Test
+  include PublicationFixtures
+
+  def test_a_target_with_more_pages_than_shaka_reads_is_refused
+    pages = Array.new(21) { response(full_page) }
+    github = client(pull_response(''), viewer_response, *pages)
+    error = assert_raises(Shaka::Error) { github.reply(body: BODY, key: 'fix-1') }
+    assert_includes error.message, 'pages'
+  end
+end
