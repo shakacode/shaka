@@ -141,6 +141,20 @@ class SeamInitializerTest < Minitest::Test
     end
   end
 
+  def test_refuses_a_generated_wrapper_with_changed_mode
+    with_repository do |root|
+      assert init(root).last.success?
+      setup = File.join(root, '.agents/bin/setup')
+      File.chmod(0o644, setup)
+
+      _output, error, status = init(root)
+
+      refute status.success?
+      assert_includes error, 'Refusing existing destination: .agents/bin/setup'
+      refute File.executable?(setup)
+    end
+  end
+
   def test_refuses_foreign_config_before_writing_any_wrapper
     with_repository do |root|
       FileUtils.mkdir_p(File.join(root, '.agents'))
