@@ -13,7 +13,7 @@ review:
   provider: anthropic
   draft: false
 merge:
-  preference: auto
+  preference: ask
   method: squash
   release: explicit_approval
 protection:
