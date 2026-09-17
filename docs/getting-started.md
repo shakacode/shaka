@@ -75,8 +75,23 @@ chat and confirm `/shaka` appears in that chat's skill list before sending a tas
 Use `/shaka` wherever this guide shows `$shaka`. A chat that started before the
 link existed will not pick it up. Do not copy `shaka` into a project
 `.cursor/skills` directory inside a candidate checkout. `shaka work` starts Codex
-and is not a Cursor launcher. Cursor usage reporting and complete delivery remain
-unverified.
+and is not a Cursor launcher. Complete Cursor delivery remains unverified.
+
+To persist native token records, add this command to the `stop` array in
+`~/.cursor/hooks.json` without removing other hooks:
+
+```json
+{
+  "command": "skills/shaka/scripts/cursor-usage-hook"
+}
+```
+
+User-level hooks run with `~/.cursor` as the working directory, so that path
+reaches the skill installed into `~/.cursor/skills`.
+
+The hook writes allowlisted usage metadata only. Start a new Agent chat after
+changing hooks. `shaka usage` then reads `CURSOR_CONVERSATION_ID` against
+`~/.cursor/shaka-usage`. See [usage reporting](usage-reporting.md#what-the-cursor-reader-includes).
 
 ## Complete your first task
 

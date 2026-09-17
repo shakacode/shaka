@@ -9,8 +9,9 @@ or the final response when there is no PR:
 shaka usage --commit FULL_COMMIT_SHA --contribution implementation
 ```
 
-The helper reads the current host's records, Codex or Claude Code. When both hosts'
-session context is present, pass `--host codex` or `--host claude-code`.
+The helper reads the current host's records, Codex, Claude Code, or Cursor. When more
+than one host's session context is present, pass `--host codex`, `--host claude-code`,
+or `--host cursor`.
 
 Contribution categories are `implementation`, `review`, `integration`, and
 `shared-planning`. Supply several affected commit SHAs separated by commas when
@@ -66,6 +67,25 @@ reader was exercised against desktop `2.1.270` and CLI `2.1.272` transcripts. It
 matched an independent per-response aggregate for a session with a subagent, and
 Claude Code's own totals for two CLI runs. Records it cannot read produce UNKNOWN.
 
+## What the Cursor reader includes
+
+The reader uses `CURSOR_CONVERSATION_ID` to find one JSONL file beneath
+`CURSOR_USAGE_DIR` (default `~/.cursor/shaka-usage`). Cursor agent transcripts and
+local bubble `tokenCount` values are not used: Grok sessions store those counters as
+zero even when the host reports tokens on hooks.
+
+Cursor writes usable counters on `stop` and `afterAgentResponse` hook payloads. The
+installed `cursor-usage-hook` persists only the `stop` payload's allowlisted usage
+fields. Input includes cache reads and cache writes; the three remain separate
+columns as in Codex. Reasoning output and native total stay UNKNOWN. A turn is a
+`generation_id`. The default selects that source's latest generation. `stop` and
+`afterAgentResponse` for the same generation are one response. Subagent tokens are
+absent from these parent-agent events.
+
+The reader was exercised against desktop `3.20.21` hook payloads for `grok-4.6`.
+Install the hook as described in [getting started](getting-started.md#use-shaka-in-cursor);
+without persisted stop records, Cursor usage stays UNKNOWN.
+
 ## Coverage and fallback
 
 The Codex adapter was exercised against desktop `0.154.0-alpha.6.2` and stable Codex
@@ -81,7 +101,8 @@ Human active time and total historical consumption are not inferred.
 When host discovery is unavailable or several turns/contributors belong to the
 work, the agent may supply repeated `--file PATH` and `--turn ID` options using
 its private source context. Without `--turn`, each Codex file contributes its latest
-turn, and Claude Code files use the first file's latest turn. For a session dedicated to one task, use `--all-turns` to include planning,
+turn, Claude Code files use the first file's latest turn, and Cursor files use
+each source's latest generation. For a session dedicated to one task, use `--all-turns` to include planning,
 implementation, user answers, and merge turns together. It cannot be combined with
 `--turn`. A fresh `shaka work` session starts with one task; if it later contains
 unrelated work or inherited history, select relevant turns instead. Never include
