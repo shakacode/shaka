@@ -1,6 +1,6 @@
 # Build and test the pilot gem
 
-The gem packages the same skill, installer, and Ruby helpers as the source checkout.
+The gem packages the same skills, installer, and Ruby helpers as the source checkout.
 It adds no runtime gems and does not install a global agent profile. Version
 `0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name. The source
 installation remains the verified pilot path; registry publication does not establish
@@ -34,10 +34,11 @@ Applications that only need the experimental public-comment screen can load
 [screen public comments from Ruby](public-comments.md).
 
 The package also contains `shaka-install --skills-dir DIR`, which calls
-the existing explicit-directory installer. Use it only when you want a link in a
-chosen skill directory. It preserves existing content and refuses to replace a
-different source. The [first-use guide](getting-started.md) explains the trusted
-source and host startup boundaries.
+the existing explicit-directory installer. It installs the portable `shaka` skill
+by default; add `--with-rct` only for a Codex app skills directory. It preserves
+existing content and refuses to replace a different source. The
+[first-use guide](getting-started.md) explains the trusted source and host startup
+boundaries.
 
 ## Upgrade, rollback, and removal
 
@@ -47,7 +48,7 @@ destination, remove only the known pilot symlinks, then run the new version's
 installer. Do not remove a foreign directory or silently repoint another skill.
 You can retain the prior gem version and relink it for rollback.
 
-Remove the pilot `shaka` skill link before uninstalling the version it points to. For the
+Remove the pilot `shaka` and `rct` skill links before uninstalling the version they point to. For the
 isolated packaging check above:
 
 ```bash

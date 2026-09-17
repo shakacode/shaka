@@ -30,16 +30,16 @@ mkdir -p "$HOME/agent-tools"
 git clone https://github.com/shakacode/shaka.git "$HOME/agent-tools/shaka"
 ```
 
-Inspect the cloned `bin/install` and `skills/shaka/` source. Then, with Ruby 3.4
-available, install the skill:
+Inspect the cloned `bin/install`, `skills/shaka/`, and `skills/rct/` source. Then,
+with Ruby 3.4 available, install the skills:
 
 ```bash
-"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.agents/skills"
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.agents/skills" --with-rct
 ```
 
 <a id="use-shaka-in-the-codex-app"></a>
 
-Open a Codex task in the repository you want to change. The skill should appear on
+Open a Codex task in the repository you want to change. The skills should appear on
 the next turn; restart Codex if it does not. Installation preserves other skills
 and settings. The task uses the app's existing permissions; this installation does
 not create a sandbox for untrusted contributor code.
@@ -147,23 +147,24 @@ git -C "$shaka_source" remote -v
 git -C "$shaka_source" status --short
 git -C "$shaka_source" switch main
 git -C "$shaka_source" pull --ff-only
-"$shaka_source/bin/install" --skills-dir "$HOME/.agents/skills"
+"$shaka_source/bin/install" --skills-dir "$HOME/.agents/skills" --with-rct
 ```
 
-Start a fresh task after upgrading. For a terminal install, pass your dedicated
-skills directory instead; for Claude Code, pass `$HOME/.claude/skills`; for Cursor,
-pass `$HOME/.cursor/skills`. Earlier installs used `agent-workflows-v2` or
+Start a fresh task after upgrading. `--with-rct` is for the Codex app's native task
+and project tools. Omit it for a terminal install and pass your dedicated skills
+directory instead; for Claude Code, pass `$HOME/.claude/skills`; for Cursor, pass
+`$HOME/.cursor/skills`. Earlier installs used `agent-workflows-v2` or
 `shakacode-workflows` source directories: keep that location and use it above.
 Inspect old `sw` and `aw` symlinks and unlink only those belonging to this installation.
 Replace any old `sw/scripts` shell `PATH` entry with the `shaka/scripts` path above.
 
 ## Remove or roll back
 
-Inspect the link with `ls -l "$HOME/.agents/skills/shaka"`. If it points to your
-Shaka installation, remove it:
+Inspect both links. If they point to your Shaka installation, remove them:
 
 ```bash
 test -L "$HOME/.agents/skills/shaka" && unlink "$HOME/.agents/skills/shaka"
+test -L "$HOME/.agents/skills/rct" && unlink "$HOME/.agents/skills/rct"
 ```
 
 Use your dedicated skills directory for a terminal install and remove its shell

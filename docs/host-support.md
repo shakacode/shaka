@@ -6,7 +6,9 @@ first task. Neither Claude Code nor Cursor has a verified complete V2 consumer
 delivery yet.
 
 The hosts share one `shaka` skill and the same Ruby helpers for GitHub
-operations. Your repository keeps its existing `AGENTS.md`, commands, and policy.
+operations. The optional `rct` skill currently requires the Codex app's native
+project, task, pin, follow-up, and wait tools, so install it only there with
+`--with-rct`. Your repository keeps its existing `AGENTS.md`, commands, and policy.
 Host-specific work covers installation, instruction loading, execution permissions,
 and reading native usage records. It does not create three copies of the workflow.
 

@@ -6,8 +6,37 @@ moving. Each implementation or PR repair has one owner who uses the installed
 `$shaka` skill through the requested outcome.
 
 These are optional roles in your existing tasks. They need no new service,
-workflow database, scheduler, or Shaka extension. Start with one repository and
-one real delivery. Keep using Shaka directly when a tower would add no value.
+workflow database, or scheduler. Start with one repository and one real delivery.
+Keep using Shaka directly when a tower would add no value.
+
+## Establish a repository tower
+
+Create a Codex task in the saved project for the intended repository, then send:
+
+```text
+$rct
+```
+
+This setup entry point currently requires the Codex app's native project and task
+tools. Claude Code, Cursor, and terminal-only installs receive `$shaka` without
+`$rct`.
+
+The installed RCT skill verifies the task's project, current Git root, remotes,
+and live GitHub identity. It makes the current task the one RCT for that repository,
+pins it, and registers it with the existing MCT. Setup is incomplete until the MCT
+acknowledges the same repository and task. Missing or ambiguous repository identity,
+an existing different RCT, and missing or ambiguous MCT ownership are errors rather
+than guesses.
+
+One RCT owns one repository. Closely related repositories still use separate RCTs;
+the MCT coordinates their ordering and dependencies. If a saved project contains
+several repositories, start the task with its current checkout rooted in the one
+repository the tower will own. `$rct` takes no path or repository argument.
+
+The setup request authorizes its native title, pin, and registration operations.
+It does not assign backlog work or create delivery tasks. After registration, the
+RCT gives a read-only backlog recommendation; start a selected delivery through
+`$shaka`.
 
 ## Who owns what
 
@@ -27,7 +56,7 @@ GitHub. A private portfolio page may link to them; do not copy private prioritie
 task links, or customer context into a public PR. A dashboard is a view, not
 proof of ownership, authorization, or completion.
 
-## Start with existing tasks
+## Role prompts
 
 Give an existing portfolio task this role and a bounded outcome:
 

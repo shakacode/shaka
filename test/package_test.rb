@@ -26,7 +26,7 @@ class PackageTest < Minitest::Test
     run_gem('install', '--local', '--no-document', archive)
     check_commands
     source = install_skill
-    File.unlink(File.join(@directory, 'pilot skills', 'shaka'))
+    %w[shaka rct].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
     run_gem('uninstall', 'shaka', '--all', '--executables', '--ignore-dependencies')
     refute File.exist?(File.join(@home, 'bin', 'shaka'))
     refute File.exist?(source)
@@ -77,18 +77,21 @@ class PackageTest < Minitest::Test
     assert_includes run_executable('shaka', '--help'), 'Usage: shaka'
   end
 
-  def check_public_skill(skills, source)
+  def check_public_skills(skills, source)
     shaka = File.realpath(File.join(skills, 'shaka'))
+    rct = File.realpath(File.join(skills, 'rct'))
     assert File.file?(File.join(shaka, 'SKILL.md'))
     assert_equal source, shaka
+    assert File.file?(File.join(rct, 'SKILL.md'))
+    assert_equal File.dirname(source), File.dirname(rct)
   end
 
   def install_skill
     skills = File.join(@directory, 'pilot skills')
-    run_executable('shaka-install', '--skills-dir', skills)
+    run_executable('shaka-install', '--skills-dir', skills, '--with-rct')
     source = File.realpath(File.join(skills, 'shaka'))
     assert source.start_with?("#{File.realpath(@home)}/gems/"), source
-    check_public_skill(skills, source)
+    check_public_skills(skills, source)
     assert File.file?(File.join(source, 'SKILL.md'))
     assert File.file?(File.join(source, 'scripts', 'shaka'))
     source
