@@ -186,6 +186,7 @@ class OpencodeUsageFailuresTest < Minitest::Test
       output = report('--host', 'opencode', '--session', SESSION, environment: stub_environment(directory))
       assert_includes output, 'Responses: UNKNOWN'
       assert_includes output, 'OpenCode export failed'
+      refute_includes output, 'Unreadable or unidentifiable records'
     end
   end
 

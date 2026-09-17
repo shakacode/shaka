@@ -41,18 +41,20 @@ module Shaka
         return [unreadable('Pass an OpenCode session with --session ID.'), nil]
       end
 
-      extract(run_export(session))
+      document = run_export(session)
+      return [unreadable('OpenCode export failed for the selected session.'), nil] if document.nil?
+
+      extract(document)
     rescue SystemCallError
       [unreadable('OpenCode export is unavailable.'), nil]
     end
 
     def run_export(session)
       Dir.mktmpdir('shaka-opencode-export') do |directory|
-        path = File.join(directory, 'export.json')
-        success = system('opencode', 'export', session, out: path, err: File::NULL)
-        return unreadable('OpenCode export failed for the selected session.') unless success
+        target = File.join(directory, 'export.json')
+        return nil unless system('opencode', 'export', session, out: target, err: File::NULL)
 
-        parse(File.read(path, encoding: 'UTF-8'))
+        parse(File.read(target, encoding: 'UTF-8'))
       end
     end
 
