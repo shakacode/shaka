@@ -11,7 +11,6 @@ require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
-require_relative '../lib/shaka/opencode_usage'
 require_relative '../lib/shaka/usage'
 require_relative '../lib/shaka/work'
 
