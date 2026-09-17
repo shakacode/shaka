@@ -13,6 +13,14 @@ class SkillTest < Minitest::Test
     assert_operator File.size(SKILL), :<=, 20 * 1024
   end
 
+  def test_shaka_skill_is_only_the_trusted_workflow_bootstrap
+    skill = File.read(SKILL, encoding: 'UTF-8')
+
+    assert_includes skill, "helper's `workflow` command"
+    refute_match(/^## \d+\. /, skill)
+    assert_operator skill.lines.size, :<=, 25
+  end
+
   def test_rct_skill_stays_small
     assert_operator File.size(RCT_SKILL), :<=, 8 * 1024
   end

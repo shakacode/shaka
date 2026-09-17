@@ -1,6 +1,9 @@
 # Build and test the pilot gem
 
-The gem packages the same skills, installer, and Ruby helpers as the source checkout.
+The gem packages the same skills, workflow configuration, installer, and Ruby helpers
+as the source checkout. The `shaka` skill is a small trust bootstrap: `shaka workflow`
+strictly validates and renders its packaged `skills/shaka/config/workflow.yml` before
+an agent follows the procedure.
 It adds no runtime gems and does not install a global agent profile. Version
 `0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name. The source
 installation remains the verified pilot path; registry publication does not establish
@@ -22,6 +25,7 @@ individual commands:
 shaka_gem_home=$(mktemp -d)
 GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" gem install --local --no-document ./shaka-0.1.0.pre.1.gem
 GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" "$shaka_gem_home/bin/shaka" --help
+GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" "$shaka_gem_home/bin/shaka" workflow
 ```
 
 Keep this temporary home for packaging checks only. A real pilot installation must
