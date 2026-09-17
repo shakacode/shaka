@@ -27,7 +27,7 @@ This record defines the current product, not proof that acceptance is complete.
 | R14 | Verify the failure and the visible result. | For behavior changes, observe a meaningful failing test, make it pass, then refactor. Use the repo's tools. If automation is impractical, explain and capture before/after behavior. Visible changes need inspected, safe, reviewer-accessible screenshots tied to the tested revision; add video when timing or interaction matters. See [verification](verification.md). |
 | R15 | Know when a finished chat can be archived. | In a user-facing chat whose host format permits prose, end a genuinely finished task's complete final report with exactly `This chat is ready for archiving.` Do not use the sentence while work, a blocker, a handoff, or a decision remains. Preserve machine-only response formats that forbid trailing prose. |
 | R16 | Recover an unfinished PR without its conversation. | While a PR has not reached its outcome, its description keeps a [recovery note](working-with-your-agent.md#recover-an-unfinished-pr) with owner, task, last observed activity, revision, state, and next action, and removes it at the outcome. Publish only safe aliases and shareable locators. A fresh task takes over only after the maintainer confirms the previous task stopped or is handing over. It then reads the live head, publishes a complete note with a new random owner tag before any other work, rechecks checks, review, and authority, preserves reachable local work, and marks unreachable local work UNKNOWN. A resuming task that finds another owner or tag keeps its local work unpushed, reports it, and stops. The note grants no authority; the maintainer's confirmation, not the note, prevents two writers. No heartbeat, lease, or coordination service. |
-| R17 | Catch implementation mistakes before spending broad CI time. | Meaningful implementation gets one visible independent review from a different model family, preferably a different provider. When a repository explicitly stages expensive hosted CI, review and batch fixes on a draft candidate when the reviewer supports drafts, or use the documented review-ready path otherwise, before triggering those suites. Always-on required, security, and trust checks remain immediate; changed heads need fresh affected evidence. |
+| R17 | Catch implementation mistakes before spending broad CI time. | Meaningful implementation gets one visible independent review from a different model family, preferably a different provider. When a repository explicitly stages expensive hosted CI, review and batch fixes on the candidate before triggering those suites. Always-on required, security, and trust checks remain immediate; changed heads need fresh affected evidence. |
 
 ## Design
 
@@ -58,9 +58,10 @@ it is not runtime configuration.
 ## Repository seam
 
 The **seam** is your repo's `AGENTS.md` and the commands it names.
-It supplies setup, validation, focused checks, base branch, review, release conventions,
-and merge authority. Preserve referenced `.agents/bin/` and `.agents/agent-workflow.yml`
-where present; direct command declarations need no extra configuration.
+It supplies setup, local and full validation, focused checks, base branch, reviewer and
+hosted-CI triggers, release conventions, and merge authority. Preserve referenced
+`.agents/bin/` and `.agents/agent-workflow.yml` where present; direct command declarations
+need no extra configuration.
 Missing optional capabilities are n/a. Resolve missing required commands or conflicting
 policy before dependent work. Candidate policy edits cannot weaken the current task's
 trusted requirements. Do not copy this project's Ruby checks into consumer repositories.

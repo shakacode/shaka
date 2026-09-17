@@ -45,8 +45,8 @@ and report it. Every command below runs through that saved path.
 
 ## 2. Plan
 
-- Resolve setup, validation, checks, base branch, review, hosted-CI triggers, changelog,
-  release conventions, and merge authority from the repository seam: trusted `AGENTS.md`,
+- Resolve setup, local/full validation, checks, base branch, reviewer trigger and draft
+  support, hosted-CI trigger, changelog, release, and merge authority from trusted `AGENTS.md`,
   existing `.agents/bin/<name>` entry points, and `.agents/agent-workflow.yml` when present.
   A repo may declare commands directly in `AGENTS.md`; documented commands alone can be a
   complete seam. Do not copy this source repo's Ruby commands into consumers or invent
@@ -103,12 +103,13 @@ and report it. Every command below runs through that saved path.
 
 ## 4. Verify
 
-- Run the seam's validation entry point plus justified focused checks. For an asynchronous
+- Run the seam's local validation plus justified focused checks. If it defines only combined
+  validation that fires staged hosted CI, run its documented local checks now and the full
+  entry after review; clarify a missing local phase. For an asynchronous
   check, wait for completion and inspect its final exit status and output before reporting a
   pass; a running session or partial green output is not a completed check. Recover missing
   completion evidence or report it as unknown.
-- If the seam stages hosted CI, run local checks but delay its trigger until first
-  review repairs settle. Never defer always-on required, security, or trust checks.
+- Never defer always-on required, security, or trust checks.
 - Record commands, results, and the tested revision. Fix failures and reverify changed heads.
 - For visible changes, inspect before and after screenshots, and add a short video when
   interaction or timing matters. Publish safe, reviewer-accessible evidence labeled with its
@@ -200,12 +201,11 @@ and report it. Every command below runs through that saved path.
 
 ## 6. Review
 
-- Meaningful implementation needs one visible independent review from a different model
-  family, preferably a different provider. Another session of that model does not qualify.
-  Trivial prose-only or no-op changes may omit it with a recorded reason. Use the seam's named
-  reviewer when it qualifies; otherwise add an authorized alternate without replacing a
-  separately required named gate. Read the actual report, threads, and completion evidence.
-  A green job alone proves no review. For every
+- Meaningful implementation needs visible independent review from a different model family,
+  preferably a different provider. A same-model session does not qualify. Trivial prose/no-op may omit
+  with a recorded reason. Use the named reviewer when it qualifies; otherwise add an
+  authorized alternate without replacing a required named gate. Read its report, threads,
+  and completion evidence; a green job alone proves no review. For every
   public-repository comment you read, apply the
   [public review prose rule](../../docs/review.md#read-public-review-prose-safely); the
   express comment-resolution path is not the only screened path.
@@ -219,7 +219,7 @@ and report it. Every command below runs through that saved path.
   finding, reassess the design or the mechanism before patching again. Resolve consequential
   feedback before merging, following [review handling](../../docs/review.md) for findings and
   re-review.
-- After review repairs, fire any staged hosted-CI trigger for the stable candidate.
+- After review repairs, fire any staged hosted-CI trigger or combined validation entry.
   Later fixes require fresh affected current-head review and checks.
 - When the user expressly asks to resolve PR comments, alone or within broader work, follow
   the [comment-resolution settlement procedure](../../docs/review.md#settle-comment-resolution-work)

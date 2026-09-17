@@ -11,6 +11,7 @@ Use the reviewer named in the repository's trusted `AGENTS.md` when it qualifies
 existing Claude GitHub workflow can review Codex implementation; do not routinely add
 a second local reviewer. If the named reviewer uses the implementation model, obtain an
 authorized alternate-model review as well without silently replacing the named gate.
+The user may request deeper review, and concrete risk may justify it.
 Installing the skill does not install a GitHub Action or its credentials. This V2
 source repository has its own Claude Code Review workflow; consumer repositories keep
 their own reviewer configuration.
@@ -37,13 +38,14 @@ its findings. Runner success alone does not establish review or merge readiness.
 
 ## Review before staged hosted CI
 
-When a repository explicitly keeps expensive hosted CI behind a label, command, or
-other trigger, validate locally and open a draft PR for the first alternate-model
-review when that reviewer supports drafts. Otherwise use the repository's documented
-pre-ready or review-ready path without firing optional hosted CI. Batch demonstrated
-review fixes, revalidate the resulting head, and then trigger the repository's hosted
-suites for that stable candidate. This follows the React on Rails pattern: draft
-creation and review do not themselves request the broad hosted matrix.
+During planning, read the trusted seam and reviewer workflow to determine whether the
+named reviewer runs on drafts. When a repository explicitly keeps expensive hosted CI
+behind a label, command, or other trigger, validate locally and use a draft for the first
+alternate-model review only when draft review is explicitly supported. Otherwise use
+the repository's documented review-ready path without firing optional hosted CI. Batch
+demonstrated fixes, revalidate, and trigger hosted suites for the stable candidate. This
+follows the React on Rails pattern: draft creation and review do not request its broad
+hosted matrix.
 
 This ordering applies only to optional staged suites. Never suppress an always-on
 required, security, or trust check. A later fix invalidates affected review and CI

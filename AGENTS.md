@@ -50,7 +50,8 @@ Validation: `bin/validate` runs tests and `bundle exec rubocop`.
 Dependencies: `bundle install`. Ruby: 3.4 for the initial pilot.
 Review: one visible independent alternate-model review of meaningful implementation
 changes. The reviewer must use a different model family from the implementation agent;
-prefer a different provider when available.
+prefer a different provider when available. This repository's Claude job starts after a
+draft is marked ready; this repository has no staged hosted-CI trigger.
 Coordination: none; this controlled pilot has no independent same-target writer.
 Merge authority: auto for this pilot's reviewed, verified implementation PRs.
 Release: public source pilot; RubyGems prereleases require explicit maintainer approval
