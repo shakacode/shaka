@@ -223,9 +223,10 @@ experimental question, not the baseline skill to make it pass.
 Qualify Sol first with one main run. Qualification never becomes a measured baseline.
 Then run a separately provisioned main/candidate pair in the predeclared arm order.
 One ordering supports a functional regression screen, not a benchmark token or
-delivery-time comparison; that comparison requires one reverse-order pair. Opus joins only after its
-own main skill/adapter succeeds under the same contract. A failed host qualification
-is not evidence that the candidate skill is worse.
+delivery-time comparison. Qualification must not leave only main warm for an efficiency
+comparison: apply §8's matched warm-up rule before the counterbalanced measured pairs.
+Opus joins only after its own main skill/adapter succeeds under the same contract. A
+failed host qualification is not evidence that the candidate skill is worse.
 
 ## 7. Local isolation, GitHub identity, and bounded execution
 
@@ -343,11 +344,16 @@ validation still runs. Alias/routing drift makes older results provisional; a
 fresh baseline is appropriate when that uncertainty could change the decision.
 
 Counterbalance arm order across profiles/repeats and record native cache behavior.
-A fresh local home does not clear provider caches. Qualification runs are never
-measured baselines, and one pair cannot support an efficiency conclusion because its
-second arm may inherit warmer provider caches. Require the reverse-order pair before
-crediting a token or delivery-time saving. This is model-plus-host comparison; equal
-provider effort labels do not imply equal compute.
+A fresh local home does not clear provider caches. Before any efficiency-measured pair,
+run one unmeasured warm-up cell for each package with the same fixture and execution
+contract, in a predeclared counterbalanced order. Qualification never substitutes for
+only main's warm-up; it may count as main's warm-up only when it used that same fixture
+and the candidate receives the matched warm-up. Require comparable native cache-read
+categories and eligible-prefix behavior; if the host cannot expose enough evidence to
+show symmetric priming, report functional results only. After matched warm-ups, require
+both main/candidate and candidate/main measured pairs before crediting a token or
+delivery-time saving. This is model-plus-host comparison; equal provider effort labels
+do not imply equal compute.
 
 Keep local manifest, patch, native events/usage, assertion results and API snapshots
 outside tracked source. Record termination separately from assertion verdict:
@@ -462,8 +468,9 @@ These are planning references, not forecasts, caps, invoices, or an assertion th
 checkpoint tasks consume a full delivery's tokens. First matched runs replace the
 reference with observed per-case usage. No small warm-cache example should headline
 the budget. Cache sensitivity remains relevant but is not a second invented quote.
-A reverse-order Sol pair raises the first efficiency-claim allowance to five cells,
-about $39.89 and 2.5 hours. At the 30-minute per-cell cap, the three base rows have
+A matched main/candidate warm-up plus the reverse-order Sol pair raises the first
+efficiency-claim allowance to seven cells, about $55.85 and 3.5 hours. At the
+30-minute per-cell cap, the three base rows have
 sequential run envelopes of 1.5, 3 and 5 hours, plus bounded setup/verification;
 one observation does not establish a distribution.
 
@@ -534,7 +541,7 @@ changed lines, and existing validation/independent review.
 | --- | --- | --- |
 | 0: qualify sandbox delivery and main | Pinned template and `validate`, machine user/scoped tokens, protection, fresh-repository reset/cleanup script, Docker/Squid, Codex adapter and two-message startup | Half-day spike: prove identity/token/egress gates and a main Ask completion within the declared budget. Missing accounts, plan access or approval stops the spike; no paid candidate runs. |
 | 1: deterministic publication | Delivered by merged #54; no duplicate contract | Core renderer and three publication paths are complete. #44's remaining Terra delivery is ordinary cross-model evidence and does not depend on benchmarks. |
-| 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, API/native-event grading, manifest/results; `plan`, `selftest`, `run` only | Model-free no-op/reference and grading selftests; separate Sol qualification plus a predeclared-order main/candidate Ask pair for functional evidence. Reverse order and developer-attention data permit only a benchmark comparison; R12 remains gated on separate matched real changes. Results printed by `run`; no separate compare/rescore commands. |
+| 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, API/native-event grading, manifest/results; `plan`, `selftest`, `run` only | Model-free no-op/reference and grading selftests; separate Sol qualification plus a predeclared-order main/candidate Ask pair for functional evidence. Matched same-fixture warm-ups, reverse order, comparable cache evidence and developer-attention data permit only a benchmark comparison; R12 remains gated on separate matched real changes. Results printed by `run`; no separate compare/rescore commands. |
 | 3: extend only after demonstrated value | Auto review-repair case, then qualified Opus adapter and its cost normalization | Preserve two-profile goal, but present one-profile results as partial until this passes. This extension has its own stated budget; no automatic matrix expansion. |
 
 Keep eval dependencies out of product runtime. Proposed paths are `eval/bin/shaka-eval`,
@@ -576,6 +583,7 @@ describe proposal changes, not runtime proof.
 | First S7–S8: benchmark advice and reuse | Preserved: no universal PR note; fresh-baseline budget and strict compatibility, now including sandbox execution policy. |
 | Later review: deterministic reply, walkthrough and driver-result grading | Accepted in §§5 and 8. The seeded defect is an inline review comment with an actor-bound latest native reply and fixed evidence formats; required current-head evidence is distinct from valid historical citations. The machine-user walkthrough is structurally checked, distinct from the driver review and bound to the helper argument. Driver verification has explicit PASS/FAIL content, head, attempt and execution-count fields; negative selftests cover repair actions, reply selection, thread, actor, head, ledger, ordering and helper correlation. |
 | Later review: reply grammar and organization membership isolation | Accepted in §§5–7. Message 1 now states the machine-readable reply-evidence contract verbatim. Organization sandboxes require No permission as the member default, no sibling grants or alternate credentials, denied sibling API/clone probes, and probe-token revocation before measurement. |
+| Later review: qualification cache asymmetry | Accepted in §§6, 8, 9 and 11. Qualification cannot warm only main for an efficiency claim. Both packages need matched same-fixture warm-ups, comparable native cache evidence and counterbalanced measured pairs; otherwise results remain functional only. The allowance rises to seven cells. |
 | Verified details and nits | Retain Lemans capability warning, Ponytail agent/scorer distinction, #51's 25.35 minutes, #44 ownership and #54 completion state, package digest, Sol promotion, and three runner verbs. |
 
 Re-review for APPROVE or SEND BACK with BLOCKER/SHOULD/NIT findings. Focus on
