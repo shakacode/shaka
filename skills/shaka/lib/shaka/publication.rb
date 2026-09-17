@@ -59,14 +59,17 @@ module Shaka
 
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
-    def self.description(content) = new(content).render(%i[sections table details])
+    TABLE_SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
+
+    def self.description(content) = new(content, require_tables: true).render(%i[sections table details])
     def self.comment(content) = new(content).render([])
     def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
 
-    def initialize(content)
+    def initialize(content, require_tables: false)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
+      @require_tables = require_tables
     end
 
     def render(parts, title: false)
@@ -88,11 +91,22 @@ module Shaka
 
     def table
       spec = @content['table']
-      return [] if spec.nil?
+      if spec.nil?
+        raise Error, 'Publication description requires a table.' if @require_tables
+
+        return []
+      end
 
       columns = table_columns(spec)
-      rows = PublicationText.list(spec['rows'], 'table rows').map { |row| table_row(row, columns.size) }
+      rows = table_data_rows(spec, columns.size)
       [[table_line(columns), table_line(['---'] * columns.size), *rows].join("\n")]
+    end
+
+    def table_data_rows(spec, width)
+      rows = PublicationText.list(spec['rows'], 'table rows')
+      raise Error, 'Publication table must include at least one row.' if rows.empty?
+
+      rows.map { |row| table_row(row, width) }
     end
 
     def table_columns(spec)
@@ -113,12 +127,36 @@ module Shaka
     def table_line(cells) = "| #{cells.map { |cell| cell.gsub('|', '\\|') }.join(' | ')} |"
 
     def details
-      PublicationText.list(@content['details'], 'details').map do |detail|
-        summary = PublicationText.summary_text(detail['summary'], 'details summary')
-        body = PublicationText.required(detail['body'], "details #{summary}")
-        "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
+      items = PublicationText.list(@content['details'], 'details')
+      rendered = items.map { |detail| details_block(detail) }
+      require_usage_table(items) if @require_tables
+      rendered
+    end
+
+    def details_block(detail)
+      summary = PublicationText.summary_text(detail['summary'], 'details summary')
+      body = PublicationText.required(detail['body'], "details #{summary}")
+      "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
+    end
+
+    def require_usage_table(items)
+      bodies = items.filter_map do |item|
+        item['body'] if item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i)
+      end
+      return if bodies.any? { |body| complete_markdown_table?(body) }
+
+      raise Error, 'Publication description requires usage details with a table.'
+    end
+
+    def complete_markdown_table?(body)
+      return false unless body.is_a?(String)
+
+      PublicationText.prose(body).lines.map(&:rstrip).each_cons(3).any? do |header, separator, data|
+        pipe_row?(header) && separator.match?(TABLE_SEPARATOR) && pipe_row?(data) && !data.match?(TABLE_SEPARATOR)
       end
     end
+
+    def pipe_row?(line) = line.match?(/\A\s*\|.+\|\s*\z/)
 
     def revision
       head = @content['head']

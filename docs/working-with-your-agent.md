@@ -126,7 +126,9 @@ name it (such as “the `$shaka` PR skill”) instead of saying “the skill” 
 Link to the current code walkthrough
 and review result; do not repeat their complete contents. Show decisions, blockers,
 and missing required review prominently. Put supporting validation, optional review
-history, routine rollback, and usage in clearly labeled details.
+history, routine rollback, and usage in clearly labeled details. The description
+helper requires a check table and usage details that include the usage helper's
+tables; it refuses a prose restatement of usage.
 
 ### Keep one current walkthrough
 
