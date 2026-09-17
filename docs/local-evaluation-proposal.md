@@ -216,8 +216,8 @@ experimental question, not the baseline skill to make it pass.
 
 Qualify Sol first with one main run. Qualification never becomes a measured baseline.
 Then run a separately provisioned main/candidate pair in the predeclared arm order.
-One ordering supports a functional regression screen, not a token or delivery-time
-savings claim; that claim requires one reverse-order pair. Opus joins only after its
+One ordering supports a functional regression screen, not a benchmark token or
+delivery-time comparison; that comparison requires one reverse-order pair. Opus joins only after its
 own main skill/adapter succeeds under the same contract. A failed host qualification
 is not evidence that the candidate skill is worse.
 
@@ -406,15 +406,18 @@ Publish only reviewed aggregate metadata, never raw sessions or private identifi
 
 One run per cell is a regression screen. Permit at most one additional pair for
 an affected profile/case if predeclared in the budget; require that reverse-order
-pair before any efficiency conclusion.
+pair before any benchmark efficiency comparison.
 Mixed results are inconclusive; never rerun until green. Reused evidence does not
-increase sample size. Safety failures defeat a savings claim. Invalid runs remain
+increase sample size. Safety failures defeat a benchmark efficiency result. Invalid runs remain
 visible with their cost. Predeclare developer-attention collection for matched arms:
 record owner setup/recovery active minutes and interventions, plus one blinded
 reviewer's active minutes, review rounds and accept/reject result under the same
 semantic checklist; exclude automated waiting. If attention is missing, UNKNOWN or
-incomparable, report only partial functional/token/time evidence and make no R12
-product-improvement or savings conclusion.
+incomparable, report only partial functional/token/time evidence. Even with complete
+attention and reverse-order evidence, these driver-seeded template repairs are
+synthetic regression evidence, never an R12 product-improvement or savings conclusion.
+R12 requires a separate matched comparison of comparable real changes under the
+pilot's real-use acceptance, including retries, review and developer attention.
 
 ## 9. Cost estimates grounded in observed work
 
@@ -513,7 +516,7 @@ changed lines, and existing validation/independent review.
 | --- | --- | --- |
 | 0: qualify sandbox delivery and main | Pinned template and `validate`, machine user/scoped tokens, protection, fresh-repository reset/cleanup script, Docker/Squid, Codex adapter and two-message startup | Half-day spike: prove identity/token/egress gates and a main Ask completion within the declared budget. Missing accounts, plan access or approval stops the spike; no paid candidate runs. |
 | 1: deterministic publication | Delivered by merged #54; no duplicate contract | Core renderer and three publication paths are complete. #44's remaining Terra delivery is ordinary cross-model evidence and does not depend on benchmarks. |
-| 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, API/native-event grading, manifest/results; `plan`, `selftest`, `run` only | Model-free no-op/reference and grading selftests; separate Sol qualification plus a predeclared-order main/candidate Ask pair for functional evidence. Require a reverse-order pair and comparable developer-attention evidence before an R12 improvement conclusion. Results printed by `run`; no separate compare/rescore commands. |
+| 2: one informative Sol comparison | Thin Ruby lifecycle driver, protected verifier, API/native-event grading, manifest/results; `plan`, `selftest`, `run` only | Model-free no-op/reference and grading selftests; separate Sol qualification plus a predeclared-order main/candidate Ask pair for functional evidence. Reverse order and developer-attention data permit only a benchmark comparison; R12 remains gated on separate matched real changes. Results printed by `run`; no separate compare/rescore commands. |
 | 3: extend only after demonstrated value | Auto review-repair case, then qualified Opus adapter and its cost normalization | Preserve two-profile goal, but present one-profile results as partial until this passes. This extension has its own stated budget; no automatic matrix expansion. |
 
 Keep eval dependencies out of product runtime. Proposed paths are `eval/bin/shaka-eval`,
