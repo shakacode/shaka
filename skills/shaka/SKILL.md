@@ -187,9 +187,9 @@ and report it. Every command below runs through that saved path.
   [usage reporting](../../docs/usage-reporting.md) for turn selection and overlap rules.
 - Each unfinished PR description includes a
   [recovery note](../../docs/working-with-your-agent.md#recover-an-unfinished-pr).
-  Publish a task locator only when the user or trusted repo instructions authorize it;
-  otherwise `UNKNOWN`. For Codex, put raw `codex://threads/<thread-id>` beside the public
-  machine alias; never link or code-format it.
+  Its `Thread` field follows that recovery note's publication rule. For Codex, put raw
+  `codex://threads/<thread-id>` beside the public machine alias; never link or
+  code-format it.
 - For each PR description, also supply the renderer's `provenance` object: its
   `task_source` is `description`, `issue`, or `pull_request`; `initial_prompt`
   is always `EXCLUDED`; and `workflow_version`, `requested_model`,

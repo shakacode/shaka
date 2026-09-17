@@ -93,7 +93,7 @@ the section once the PR reaches its outcome. It lists:
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
   the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`.
 - **Task:** the searchable task title, or a task locator the tracker allows sharing.
-- **Thread:** the host-native task locator when the user or trusted repository
+- **Thread:** the host-native thread locator when the user or trusted repository
   instructions authorize public sharing; otherwise `UNKNOWN`. Build a Codex locator
   from the thread ID reported in `CODEX_THREAD_ID`, and publish
   `codex://threads/<thread-id>` as a raw, unformatted URL, never a Markdown link or
@@ -105,9 +105,8 @@ the section once the PR reaches its outcome. It lists:
   blocker, waiting for a named decision, or handing over to a named task.
 - **Next action:** the one step that continues the work.
 
-Treat an authorized Codex thread URL as public metadata for that task. Keep private
-tracker links, other raw session IDs, hostnames that identify people or clients,
-absolute paths, transcripts, and customer context out of public PRs.
+Keep private tracker links, other raw session IDs, hostnames that identify people or
+clients, absolute paths, transcripts, and customer context out of public PRs.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner, including a different tag, ownership was transferred: keep any local
@@ -207,9 +206,9 @@ missing required evidence belongs in the next visible update.
 
 Collapsed content remains readable and public wherever the PR is public. It is
 not private storage. Keep prompts, raw sessions, secrets, and private identifiers
-out of published evidence. A recovery task locator is public metadata only when the
-user or trusted repository instructions authorize publishing it. Collapsing text also
-does not reduce its token cost when an agent loads it. Keep useful evidence once and
+out of published evidence. The recovery note's `Thread` field follows the publication
+rule in [Recover an unfinished PR](#recover-an-unfinished-pr). Collapsing text also does
+not reduce its token cost when an agent loads it. Keep useful evidence once and
 retrieve details as needed.
 
 ## Writing preferences

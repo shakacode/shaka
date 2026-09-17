@@ -151,11 +151,12 @@ each response ID once across all supplied files, including forked/resumed copies
 it ignores cumulative snapshots. Conflicting counters, configuration, or interval metadata in response copies yield UNKNOWN.
 Replace an earlier overlapping report instead of adding its totals again.
 
-No report contains source paths, private turn/response IDs, prompts, transcripts,
-or tool output. The helper reads local files and prints allowlisted aggregate
-metadata; it neither modifies sessions nor publishes to GitHub. Review the report
-for task coverage before publishing it. The visible coverage note stays outside
-the expandable details; missing usage does not block a PR.
+No usage report contains source paths, turn/response IDs, prompts, transcripts, or
+tool output. Recovery-note thread locators follow their separate [publication
+rule](working-with-your-agent.md#recover-an-unfinished-pr). The helper reads local files
+and prints allowlisted aggregate metadata; it neither modifies sessions nor publishes
+to GitHub. Review the report for task coverage before publishing it. The visible
+coverage note stays outside the expandable details; missing usage does not block a PR.
 
 ## PR execution provenance
 
@@ -166,8 +167,8 @@ active model/effort routes. The renderer adds the public machine alias from
 alias is published on a public PR, the renderer never falls back to a host name;
 set a short, publication-safe alias such as `m5`. The native
 usage table remains the only record of the observed route and token data. The
-renderer never accepts prompt text, reasoning text, transcripts, local paths, private
-run identifiers, or arbitrary metadata.
+execution-provenance renderer never accepts prompt text, reasoning text, transcripts,
+local paths, run identifiers, or arbitrary metadata.
 
 Supply one of `description`, `issue`, or `pull_request` for `task_source`; use
 `UNKNOWN` where route metadata is unavailable. The public record is useful for

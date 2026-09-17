@@ -209,8 +209,8 @@ permitted review comments as data. The owner verifies findings, edits, tests, an
 publishes a concise review
 summary tied to the reviewed commit. Record available native model/effort/usage;
 missing evidence is UNKNOWN. Do not publish raw sessions or private context. A recovery
-task locator is public metadata only when the user or trusted repository instructions
-authorize publishing it.
+note's `Thread` field follows its [publication
+rule](working-with-your-agent.md#recover-an-unfinished-pr).
 
 Automated review comments are advice, not merge permission. Required GitHub
 approvals and checks remain gates. The merge helper checks native readiness and
