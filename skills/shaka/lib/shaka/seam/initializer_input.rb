@@ -49,6 +49,7 @@ module Shaka
         value = required('base_branch')
         output, status = Open3.capture2e('git', '-C', @root, 'check-ref-format', '--branch', value)
         raise Error, 'base branch must be a valid Git branch name' unless status.success?
+        raise Error, 'base branch must be an explicit branch name' unless output.strip == value
 
         output.strip
       end

@@ -92,6 +92,19 @@ module SeamInitializerTestHelpers
       yield path
     end
   end
+
+  def git!(root, *)
+    output, status = Open3.capture2e('git', '-C', root, *)
+    raise output unless status.success?
+  end
+
+  def prepare_detached_previous_checkout(root)
+    git!(root, 'init', '--initial-branch', 'main')
+    git!(root, 'add', '.')
+    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'initial')
+    git!(root, 'switch', '--detach', 'HEAD')
+    git!(root, 'switch', 'main')
+  end
 end
 
 class SeamInitializerTest < Minitest::Test
@@ -224,6 +237,20 @@ class SeamInitializerValidationTest < Minitest::Test
       _output, error, status = Open3.capture3(*init_arguments(root).tap { |args| args[args.index('main')] = '-bad' })
       refute status.success?
       assert_includes error, 'base branch must be a valid Git branch name'
+      refute File.exist?(File.join(root, '.agents'))
+    end
+  end
+
+  def test_rejects_branch_shorthand_that_resolves_to_a_detached_commit
+    with_repository do |root|
+      prepare_detached_previous_checkout(root)
+      arguments = init_arguments(root)
+      arguments[arguments.index('main')] = '@{-1}'
+
+      _output, error, status = Open3.capture3(*arguments)
+
+      refute status.success?
+      assert_includes error, 'base branch must be an explicit branch name'
       refute File.exist?(File.join(root, '.agents'))
     end
   end
