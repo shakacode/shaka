@@ -34,9 +34,12 @@ module Shaka
       def validate_commands
         commands = mapping!(@data['commands'], 'commands')
         required = %w[setup validate test]
-        optional = %w[validate_full trigger_hosted_ci]
+        optional = %w[validate_local trigger_hosted_ci]
         keys!(commands, required, optional, 'commands')
         commands.each { |name, path| executable!(path, "commands.#{name}") }
+        return unless commands.key?('trigger_hosted_ci') && !commands.key?('validate_local')
+
+        raise Error, 'commands.trigger_hosted_ci requires commands.validate_local'
       end
 
       def validate_review

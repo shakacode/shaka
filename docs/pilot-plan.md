@@ -59,7 +59,7 @@ it, and Markdown explains decisions and human-only constraints.
 ## Repository seam
 
 The **seam** is `.agents/agent-workflow.yml` plus the executable repository paths it
-names. It supplies setup, local and optional full validation, focused tests, an optional
+names. It supplies setup, full and optional pre-review validation, focused tests, an optional
 hosted-CI trigger, base branch, review, merge, and branch-protection policy. `AGENTS.md`
 supplies human-only context and boundaries.
 `shaka seam check` rejects unknown fields, duplicate keys, unsafe paths, missing scripts,

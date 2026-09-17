@@ -61,9 +61,9 @@ or a handoff needs thought; it returns the plan without an implementation checkp
 Its output should name the task, recommended model/effort, acceptance, affected paths,
 checks, merge authority, and stopping point. Do not copy the whole planning conversation.
 
-If the repository exposes an explicit `trigger_hosted_ci` command, the agent runs local
-validation and handles the first alternate-model review before requesting those suites for
-the stable candidate. It uses a draft when the seam and reviewer workflow support drafts, or
+If the repository exposes `trigger_hosted_ci`, it must also provide `validate_local`. The agent
+runs that cheaper validation and handles the first alternate-model review before requesting suites for
+the stable candidate. It uses a draft only when every required reviewer supports drafts, or
 the repository's documented review-ready path otherwise. Always-on required and security
 checks still run normally. A changed head requires fresh affected review and CI evidence.
 

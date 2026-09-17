@@ -47,11 +47,9 @@ and report it. Every command below runs through that saved path.
 
 ## 2. Plan
 
-- Resolve setup, local and optional full validation, focused tests, an optional hosted-CI
-  trigger, base branch, review, and scoped merge authority from the validated YAML seam. Run
-  the executable paths it names; do not reconstruct commands from prose. `AGENTS.md` may add
-  human constraints but cannot replace the YAML contract. Inspect the named reviewer workflow
-  to confirm its configured model identity and whether it actually runs on drafts.
+- Resolve commands, base branch, review, and merge authority from the validated YAML seam;
+  run its paths, not prose reconstructions. `AGENTS.md` adds constraints, not contract fields.
+  Verify each required reviewer's identity and draft support from metadata and trusted workflows.
 - If the seam is missing, inspect existing scripts and CI, obtain every missing policy choice,
   then add the smallest YAML contract with explicit command paths and policy. Never guess
   checks or grant merge authority. Validate the result with `seam check`. Candidate changes
@@ -102,9 +100,9 @@ and report it. Every command below runs through that saved path.
 
 ## 4. Verify
 
-- Run `commands.validate` plus justified focused checks before review. Defer
-  `commands.validate_full` and `commands.trigger_hosted_ci`, when present, until the review
-  repair batch is complete. For an asynchronous
+- Before review run `commands.validate_local` when present, otherwise `commands.validate`,
+  plus focused checks. Defer full `validate` and `trigger_hosted_ci` when local validation
+  exists until the repair batch is complete. For an asynchronous
   check, wait for completion and inspect its final exit status and output before reporting a
   pass; a running session or partial green output is not a completed check. Recover missing
   completion evidence or report it as unknown.
@@ -122,8 +120,7 @@ and report it. Every command below runs through that saved path.
   authorized issue and PR reads and for publication. Publish only within the task's scope;
   without a PR, put supporting tables and checks in the final report, and link from chats
   that cannot collapse details.
-- While review or staged CI remains, use a draft only when `review.draft` is true and the
-  named workflow confirms that behavior; otherwise use the repository's review-ready path.
+- Use a draft only when every needed reviewer supports it; otherwise use the review-ready path.
 - Write plain English: the outcome and why, in established project terms, following user and
   repo writing preferences, with the context the reader needs and no separate clarification
   skill. Keep decisions, risks, and evidence gaps visible. Name specific things in summaries
@@ -200,10 +197,10 @@ and report it. Every command below runs through that saved path.
 
 ## 6. Review
 
-- Meaningful implementation needs visible independent review from a different model family,
-  preferably a different provider. Compare the implementation identity with
-  `review.model_family` and `review.provider`; a same-model session does not qualify. Trivial
-  prose/no-op may omit review with a recorded reason. Use the named reviewer when it
+- Meaningful implementation needs visible review from a different model family, preferably
+  another provider. Compare identities using review metadata or a trusted workflow for legacy seams,
+  never a check name. Same-model review does not qualify. Trivial prose/no-op may omit review
+  with a recorded reason. Use the named reviewer when it
   qualifies; otherwise add an authorized alternate without replacing a required named gate.
   Read its report, threads, and completion evidence; a green job alone proves no review. For every
   public-repository comment you read, apply the
@@ -219,8 +216,7 @@ and report it. Every command below runs through that saved path.
   finding, reassess the design or the mechanism before patching again. Resolve consequential
   feedback before merging, following [review handling](../../docs/review.md) for findings and
   re-review.
-- After review repairs, run `commands.validate_full` and `commands.trigger_hosted_ci` when
-  present. Later fixes require fresh affected current-head review and checks.
+- After repairs, run deferred `validate`, then `trigger_hosted_ci`. Later fixes need fresh evidence.
 - When the user expressly asks to resolve PR comments, alone or within broader work, follow
   the [comment-resolution settlement procedure](../../docs/review.md#settle-comment-resolution-work)
   before ending the task. It requires exact-head reports and threads, keeps a known optional

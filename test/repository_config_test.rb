@@ -60,7 +60,7 @@ module RepositoryConfigTestHelpers
   end
 
   def optional_commands
-    { 'validate_full' => '.agents/bin/validate_full',
+    { 'validate_local' => '.agents/bin/validate_local',
       'trigger_hosted_ci' => '.agents/bin/trigger_hosted_ci' }
   end
 end
@@ -141,7 +141,7 @@ class RepositoryConfigTest < Minitest::Test
     end
   end
 
-  def test_loads_optional_full_validation_and_hosted_ci_commands
+  def test_loads_optional_local_validation_and_hosted_ci_commands
     with_repository('commands' => commands.merge(optional_commands)) do |root|
       optional_commands.each_key { |name| create_command(root, name) }
       config = Shaka::RepositoryConfig.load(root:)
@@ -152,11 +152,28 @@ class RepositoryConfigTest < Minitest::Test
   end
 
   def test_requires_reviewer_identity_and_draft_support
-    review = { 'required' => 'meaningful_changes', 'check' => 'claude-review' }
+    review = { 'required' => 'meaningful_changes', 'check' => 'claude-review',
+               'model_family' => 'claude' }
     with_repository('review' => review) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'missing review key: model_family'
+      assert_includes message, 'missing review key: provider'
+    end
+  end
+
+  def test_accepts_the_original_version_one_review_shape
+    review = { 'required' => 'meaningful_changes', 'check' => 'claude-review' }
+    with_repository('review' => review) do |root|
+      assert_equal review, Shaka::RepositoryConfig.load(root:).review
+    end
+  end
+
+  def test_a_hosted_ci_trigger_requires_local_validation
+    staged = commands.merge('trigger_hosted_ci' => '.agents/bin/trigger_hosted_ci')
+    with_repository('commands' => staged) do |root|
+      create_command(root, 'trigger_hosted_ci')
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+      assert_includes message, 'requires commands.validate_local'
     end
   end
 
