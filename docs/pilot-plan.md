@@ -2,7 +2,8 @@
 
 Give your agent a task. Get a verified PR and a clear explanation.
 The goal is better software with less developer attention, delivery time, and token use.
-[Issue #1](https://github.com/shakacode/shaka/issues/1) owns progress and real-use evidence;
+[Issue #77](https://github.com/shakacode/shaka/issues/77) owns remaining progress and real-use evidence;
+closed [issue #1](https://github.com/shakacode/shaka/issues/1) holds the original pilot build;
 [issue #36](https://github.com/shakacode/shaka/issues/36) owns prospective scope and retirement decisions.
 This record defines the current product, not proof that acceptance is complete.
 
@@ -89,7 +90,7 @@ unchanged. The current helper performs immediate squash merges while the task is
 - Exercise Ask and Auto on real PRs. Publish and read back a walkthrough tied to
   the current head, honor native approvals, and verify protected merge behavior.
 - A new user follows [getting started](getting-started.md) in a fresh Codex task
-  and reaches a PR without needing another guide. Record the trial on issue #1.
+  and reaches a PR without needing another guide. Record the trial on issue #77.
 - Before claiming adoption, complete several real changes, including a small fix,
   review fixes, failed CI, and a changed PR head. Unit tests alone do not establish this.
 
