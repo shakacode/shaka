@@ -216,7 +216,7 @@ and report it. Every command below runs through that saved path.
   finding, reassess the design or the mechanism before patching again. Resolve consequential
   feedback before merging, following [review handling](../../docs/review.md) for findings and
   re-review.
-- After repairs, run deferred `validate`, then `trigger_hosted_ci`. Later fixes need fresh evidence.
+- After repairs, run deferred `validate`, then `trigger_hosted_ci` when present. Later fixes need fresh evidence.
 - When the user expressly asks to resolve PR comments, alone or within broader work, follow
   the [comment-resolution settlement procedure](../../docs/review.md#settle-comment-resolution-work)
   before ending the task. It requires exact-head reports and threads, keeps a known optional

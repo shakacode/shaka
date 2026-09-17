@@ -3,11 +3,14 @@
 require 'pathname'
 require_relative '../error'
 require_relative 'review_schema'
+require_relative 'validation'
 
 module Shaka
   class RepositoryConfig
     # Validates the complete version-one repository contract.
     class Schema
+      include Validation
+
       REQUIRED = %w[version base_branch commands review merge protection].freeze
       OPTIONAL = %w[plan trusted_actions].freeze
 
@@ -36,10 +39,11 @@ module Shaka
         required = %w[setup validate test]
         optional = %w[validate_local trigger_hosted_ci]
         keys!(commands, required, optional, 'commands')
-        commands.each { |name, path| executable!(path, "commands.#{name}") }
-        return unless commands.key?('trigger_hosted_ci') && !commands.key?('validate_local')
+        if commands.key?('trigger_hosted_ci') && !commands.key?('validate_local')
+          raise Error, 'commands.trigger_hosted_ci requires commands.validate_local'
+        end
 
-        raise Error, 'commands.trigger_hosted_ci requires commands.validate_local'
+        commands.each { |name, path| executable!(path, "commands.#{name}") }
       end
 
       def validate_review
@@ -87,21 +91,11 @@ module Shaka
         value
       end
 
-      def string!(value, label)
-        raise Error, "#{label} must be a non-empty string" unless value.is_a?(String) && !value.strip.empty?
-
-        value
-      end
-
       def strings!(value, label)
         valid = value.is_a?(Array) && value.all? { |item| item.is_a?(String) && !item.strip.empty? }
         raise Error, "#{label} must be a list of non-empty strings" unless valid
 
         value
-      end
-
-      def enum!(value, allowed, message)
-        raise Error, message unless allowed.include?(value)
       end
 
       def equal!(actual, expected, message)

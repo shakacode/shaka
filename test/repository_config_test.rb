@@ -171,7 +171,6 @@ class RepositoryConfigTest < Minitest::Test
   def test_a_hosted_ci_trigger_requires_local_validation
     staged = commands.merge('trigger_hosted_ci' => '.agents/bin/trigger_hosted_ci')
     with_repository('commands' => staged) do |root|
-      create_command(root, 'trigger_hosted_ci')
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
       assert_includes message, 'requires commands.validate_local'
     end

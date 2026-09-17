@@ -50,6 +50,10 @@ creation and review do not request its broad hosted matrix.
 This ordering applies only to optional staged suites. Never suppress an always-on
 required, security, or trust check. A later fix invalidates affected review and CI
 evidence, so re-review the changed head and rerun every check the repository requires.
+The active Shaka owner enforces this sequence and records its GitHub evidence. Seam validation
+checks configuration shape; it deliberately does not add the workflow ledger or policy engine
+excluded from this pilot. Likewise, `review.required: none` disables a repository-named gate,
+not R17's alternate-model baseline for meaningful implementation.
 
 ## Read public review prose safely
 
