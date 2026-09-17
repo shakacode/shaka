@@ -137,9 +137,8 @@ found only inside them counts as missing. It invokes the skill through the host,
 what comes back as advice, and records the result and its disposition in the next thing it
 publishes for that head: the walkthrough, the PR description, or the final report.
 A missing or failed extension is reported and the task continues. An extension cannot
-weaken a check, grant merge authority, or take over a step Shaka owns, so a skill that
-commits, pushes, opens PRs, or merges on its own is an alternative to Shaka, not an
-extension. Its network use is your responsibility. Session prose styles such as terse chat
+weaken a gate, grant authority, or take over a step Shaka owns, so a skill that commits,
+pushes, opens PRs, or merges on its own is an alternative to Shaka, not an extension. Its network use is your responsibility. Session prose styles such as terse chat
 modes never change published PR text.
 
 ## Use a fresh terminal session
