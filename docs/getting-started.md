@@ -132,8 +132,8 @@ Shaka extensions:
 Use any of `after-plan`, `after-green` (validation passed), `before-walkthrough`,
 `after-review` (findings collected), or `before-merge`. Write each skill name exactly as
 your host lists it, with any arguments the skill accepts. Shaka first resolves the name to
-its installed source outside your checkout; a name that exists only inside the checkout
-counts as missing. It invokes the skill through the host, treats what comes back as advice,
+its installed source outside your checkout and any directory the task can write; a name
+found only inside them counts as missing. It invokes the skill through the host, treats what comes back as advice,
 and records the result and its disposition in the walkthrough. A missing or failed extension
 is reported and the task continues. An extension cannot weaken a check, grant merge
 authority, or take over a step Shaka owns, so a skill that commits, pushes, opens PRs, or
