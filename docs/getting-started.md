@@ -118,6 +118,32 @@ Existing merge authority is reused; review-only and PR-only requests stop there.
 Auto still waits for required approvals and raises risky decisions. If a task stops
 at a blocker, resume it to continue; it does not keep trying in the background.
 
+## Add extensions
+
+Shaka runs alone by default. To add advice from another installed skill at a fixed point,
+name it in your repository's trusted `AGENTS.md` or in your own global instructions:
+
+```markdown
+Shaka extensions:
+  after-green: /code-review
+  before-merge: compound-engineering:ce-code-review mode:agent
+```
+
+Use any of `after-plan`, `after-green` (validation passed), `before-walkthrough`,
+`after-review` (findings collected), or `before-merge`. Write each skill name exactly as
+your host lists it, with any arguments the skill accepts. Shaka first resolves the name to a
+skill installed alongside Shaka itself, never one inside your checkout or the task's session
+and temporary directories; anything else counts as missing. It invokes the skill through the
+host, treats what comes back as advice, and records the result and its disposition in the
+next thing it publishes for that head: the walkthrough, the PR description, or the final
+report. Adopted advice re-enters the procedure at the step it affects; a change to a
+published head goes through verification, explanation, review, and the merge decision again.
+A missing or failed extension is reported and the task continues. An extension cannot weaken
+a gate, grant authority, or take over a step Shaka owns, so a skill that commits, pushes,
+opens PRs, or merges on its own is an alternative to Shaka, not an extension. An extension's
+own network use is your responsibility. Session prose styles such as terse chat modes never
+change published PR text.
+
 ## Use a fresh terminal session
 
 After cloning the source, install into a dedicated directory outside your repositories:
