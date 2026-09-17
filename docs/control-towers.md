@@ -48,17 +48,26 @@ session you want to hold the master role, and send:
 /mct-claude
 ```
 
-The skill refuses to become a second master: it searches your active sessions for
-one already holding the role and stops with `MCT setup error: master control tower
-already exists` when it finds one. Otherwise it renames the session to end in
-`MCT — Shaka`, pins it, reads both changes back, and reports the result.
+The skill searches your active sessions for one already holding the role and stops
+with `MCT setup error: master control tower already exists` when it finds one, or
+`master control tower is ambiguous` when several carry the title. Otherwise it
+renames the session to end in `MCT — Shaka`, pins it, reads both changes back, and
+reports the result.
 
-That title suffix is the whole registry. Repository towers find the master by it,
-and the master derives the current tower set from the live session list, so the role
-adds no file, database, or scheduler. Keep the suffix while the session holds the
-role. This skill needs the desktop app's session tools; a terminal `claude` stops
-with `MCT setup error: host session tools are unavailable`, and the role prompt
-below remains the supported fallback.
+One master per installation is a rule you keep, not something the skill enforces.
+Searching the session list and renaming a session are separate calls, so two setups
+started at the same moment can both succeed. The skill reports that on its next read
+and asks you to resolve it; it never picks a winner, and it never renames, unpins,
+or ends another session. A title left behind by an abandoned setup is a stale hint
+you can clear, not a corrupt registry.
+
+Repository towers find the master by that suffix, so keep it while the session holds
+the role. Each registration lives in its own tower's transcript, and the master
+derives the current tower set by reading live sessions, so the role adds no file,
+database, or scheduler, and towers survive replacing the master itself. This skill
+needs the desktop app's session tools; a terminal `claude` stops with `MCT setup
+error: host session tools are unavailable`, and the role prompt below remains the
+supported fallback.
 
 Establishing the master authorizes its own title, pin, and acknowledgment
 operations. It assigns no backlog, creates no worker session, and grants no merge
