@@ -119,6 +119,38 @@ commands it runs, so name the session yourself: `shaka usage --host opencode --s
 ID` exports it, and `opencode session list` prints the identifiers.
 See [usage reporting](usage-reporting.md#what-the-opencode-reader-includes).
 
+## Initialize a repository seam
+
+Installing the skill does not write policy into every repository. Initialize each
+repository explicitly after identifying its real scripts, checks, review provider,
+and merge preference:
+
+```bash
+"$HOME/.agents/skills/shaka/scripts/shaka" seam init \
+  --root /path/to/repository \
+  --base-branch main \
+  --setup-command "bin/setup" \
+  --validate-command "bin/validate" \
+  --test-command "bundle exec rake test" \
+  --review-policy meaningful_changes \
+  --review-check claude-review \
+  --required-check validate
+```
+
+The command creates `.agents/agent-workflow.yml` and small executable wrappers
+under `.agents/bin/`. Its default merge preference is **Ask**. Add
+`--merge-preference auto` only when that is the repository's established authority;
+choose `--review-policy always`, `meaningful_changes`, or `none`, and supply
+`--review-check` unless the policy is `none`. Also
+provide at least one `--required-check` and repeat it for every required GitHub check.
+Repeat `--trusted-action` as needed, and use `--plan` for an existing
+repository-relative plan. Commands are parsed as argument lists, so put shell pipelines
+or other compound behavior in a repository-owned script.
+
+Initialization validates every input before writing. It is safe to repeat when the
+generated files are unchanged and refuses to overwrite a repository-owned file or
+symlink. Use the path printed by `bin/install` when you installed elsewhere.
+
 ## Complete your first task
 
 Send this, replacing the example with your issue number, task URL, or description:

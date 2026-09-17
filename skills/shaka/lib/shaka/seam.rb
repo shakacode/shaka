@@ -4,6 +4,7 @@ require 'json'
 require 'optparse'
 require_relative 'error'
 require_relative 'repository_config'
+require_relative 'seam/initializer'
 require_relative 'trusted_config_source'
 
 module Shaka
@@ -28,30 +29,82 @@ module Shaka
 
       operation = @arguments.shift
       validate_operation(operation, parser)
-      render_config
+      render_config(operation)
     end
 
     private
 
     def validate_operation(operation, parser)
-      return if operation == 'check' && @arguments.empty?
+      valid = %w[check init].include?(operation) && @arguments.empty?
+      raise OptionParser::InvalidArgument, parser.to_s unless valid
 
-      raise OptionParser::InvalidArgument, parser.to_s
+      if operation == 'check'
+        init_keys = %i[base_branch setup_command validate_command test_command review_policy review_check
+                       merge_preference required_checks plan trusted_actions]
+        raise OptionParser::InvalidArgument, 'init options do not apply to check' if @options.keys.intersect?(init_keys)
+      elsif @options.key?(:ref)
+        raise OptionParser::InvalidArgument, '--ref does not apply to init'
+      end
     end
 
-    def render_config
-      source = TrustedConfigSource.new(root:).read(@options[:ref]) if @options[:ref]
-      puts JSON.pretty_generate(RepositoryConfig.load(root:, source:).to_h)
+    def render_config(operation)
+      config = if operation == 'init'
+                 Initializer.new(root:, options: @options).call
+               else
+                 source = TrustedConfigSource.new(root:).read(@options[:ref]) if @options[:ref]
+                 RepositoryConfig.load(root:, source:)
+               end
+      puts JSON.pretty_generate(config.to_h)
       0
     end
 
     def option_parser
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka seam check [--root DIR] [--ref REF]'
-        flags.on('--root DIR', 'Repository root (default: current directory)') { |value| @options[:root] = value }
-        flags.on('--ref REF', 'Read policy from this trusted Git commit') { |value| @options[:ref] = value }
+        flags.banner = usage
+        add_common_options(flags)
+        add_init_options(flags)
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
+    end
+
+    def usage
+      "Usage: shaka seam check [--root DIR] [--ref REF]\n       " \
+        'shaka seam init --root DIR --base-branch BRANCH [options]'
+    end
+
+    def add_common_options(flags)
+      flags.on('--root DIR', 'Repository root (default: current directory)') { |value| @options[:root] = value }
+      flags.on('--ref REF', 'Read policy from this trusted Git commit') { |value| @options[:ref] = value }
+    end
+
+    def add_init_options(flags)
+      flags.on('--base-branch BRANCH', 'Base branch for a new seam') { |value| @options[:base_branch] = value }
+      add_command_options(flags)
+      add_policy_options(flags)
+    end
+
+    def add_command_options(flags)
+      %w[setup validate test].each do |name|
+        flags.on("--#{name}-command COMMAND", "Simple argv command for #{name}") do |value|
+          @options[:"#{name}_command"] = value
+        end
+      end
+    end
+
+    def add_policy_options(flags)
+      flags.on('--review-policy MODE', %w[always meaningful_changes none],
+               'always, meaningful_changes, or none') { |value| @options[:review_policy] = value }
+      flags.on('--review-check NAME', 'Independent review check name') { |value| @options[:review_check] = value }
+      flags.on('--merge-preference MODE', %w[ask auto], 'ask or auto (default: ask)') do |value|
+        @options[:merge_preference] = value
+      end
+      repeatable(flags, '--required-check NAME', :required_checks, 'Required native check; repeatable')
+      flags.on('--plan PATH', 'Optional repository-relative plan path') { |value| @options[:plan] = value }
+      repeatable(flags, '--trusted-action ACTION', :trusted_actions, 'Trusted action identifier; repeatable')
+    end
+
+    def repeatable(flags, option, key, description)
+      flags.on(option, description) { |value| (@options[key] ||= []) << value }
     end
 
     def help(parser)

@@ -13,6 +13,7 @@ class SeamTest < Minitest::Test
 
     assert status.success?, error
     assert_includes output, 'shaka seam check'
+    assert_includes output, 'shaka seam init'
   end
 
   def test_help_before_the_operation_succeeds

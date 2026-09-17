@@ -3,6 +3,7 @@
 
 require 'fileutils'
 require 'optparse'
+require 'shellwords'
 
 skills_dir = nil
 with_rct = false
@@ -42,6 +43,8 @@ begin
       puts "Installed: #{destination} -> #{source}"
     end
   end
+  executable = File.join(File.expand_path(skills_dir), 'shaka/scripts/shaka')
+  puts "Next: #{Shellwords.escape(executable)} seam init --help"
 rescue OptionParser::ParseError, SystemCallError => e
   warn e.message
   exit 1

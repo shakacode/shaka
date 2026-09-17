@@ -51,8 +51,9 @@ and report it. Every command below runs through that saved path.
   run its paths, not prose reconstructions. `AGENTS.md` adds constraints, not contract fields.
   Verify each required reviewer's identity and draft support from metadata and trusted workflows.
 - If the seam is missing, inspect existing scripts and CI, obtain every missing policy choice,
-  then add the smallest YAML contract with explicit command paths and policy. Never guess
-  checks or grant merge authority. Validate the result with `seam check`. Candidate changes
+  then run the saved helper's `seam init` with explicit commands and policy. Never guess
+  checks or grant merge authority. The initializer validates the generated contract, repeats
+  safely, and refuses repository-owned destinations. Candidate changes
   stay subject to the previously trusted boundary, and settings for another workflow grant
   this one no permission to merge or run background work.
 - Assess scope and risk, then select a specific available model and effort and explain how
