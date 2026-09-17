@@ -161,9 +161,10 @@ the expandable details; missing usage does not block a PR.
 
 Every PR description requires a compact `provenance` object. It records the
 task source, the installed workflow version, and the requested, recommended, and
-active model/effort routes. The renderer labels the initial prompt `EXCLUDED` and
-directs readers to the native usage table for the observed route and token data.
-It never accepts prompt text, reasoning text, transcripts, local paths, private
+active model/effort routes. The renderer adds the public machine alias from
+`AGENT_COORD_MACHINE_ID`, or `UNKNOWN` when the alias is unavailable. The native
+usage table remains the only record of the observed route and token data. The
+renderer never accepts prompt text, reasoning text, transcripts, local paths, private
 run identifiers, or arbitrary metadata.
 
 Supply one of `description`, `issue`, or `pull_request` for `task_source`; use

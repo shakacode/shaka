@@ -224,9 +224,10 @@ class PublicationProvenanceRequirementTest < Minitest::Test
     rendered = Shaka::Publication.description(content)
 
     assert_includes rendered, '<summary>Execution provenance</summary>'
-    assert_includes rendered, '| Initial prompt | EXCLUDED |'
+    assert_includes rendered, '| Machine alias |'
     assert_includes rendered, '| Requested route | gpt-5.6-terra / medium |'
-    assert_includes rendered, '| Observed route | See native usage |'
+    refute_includes rendered, '| Initial prompt |'
+    refute_includes rendered, '| Observed route |'
   end
 
   def test_description_refuses_missing_execution_provenance
