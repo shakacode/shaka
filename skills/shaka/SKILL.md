@@ -124,6 +124,12 @@ and report it. Every command below runs through that saved path.
   and sections. Keep blockers visible; put supporting checks, review history, rollback, and
   usage in `details`. Avoid repeated status updates. Store useful evidence once and retrieve
   it as needed; collapsing does not save tokens.
+- Before publishing the PR description, walkthrough, or final response, self-edit each
+  summary against the [portable baseline](../../docs/working-with-your-agent.md#writing-preferences):
+  lead with the outcome the reader notices, keep one main idea per sentence, put each
+  condition beside the behavior it limits, and prefer a clear subject and active verb over
+  diff-shaped phrasing such as "Adds … and makes …". Keep exact commands, identifiers,
+  domain terms, risks, and evidence.
 - Supply meaning as content JSON and let the helper render it: it owns the `🤖` identity line,
   headings, spacing, tables, and details, and marks unknown model or effort rather than
   inventing them. Keys are `identity`, `summary`, optional `sections`, `table`, and `details`,
