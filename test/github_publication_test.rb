@@ -29,6 +29,8 @@ module PublicationFixtures
     argv = @calls[index].first
     argv[argv.index('--method') + 1]
   end
+
+  def call_text(index) = @calls[index].first.join(' ')
 end
 
 # A description must merge into the existing body and be confirmed once stored.
@@ -101,8 +103,31 @@ end
 class GitHubReplyTest < Minitest::Test
   include PublicationFixtures
 
+  def test_an_inline_reply_is_created_on_the_original_review_thread
+    github = client(pull_response(''), viewer_response, response([[]]), html_response('<p>ok</p>'),
+                    response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
+    github.reply(body: BODY, key: 'fix-1', comment: 4_031_740_163)
+    assert_equal ['POST', true, true, "<!-- shaka:reply:fix-1 -->\n#{BODY}"],
+                 [sent_method(4), call_text(2).include?('pulls/42/comments?per_page=100'),
+                  call_text(4).include?('pulls/42/comments/4031740163/replies'), sent_body(4)]
+  end
+
+  def test_an_inline_reply_reuses_its_key_only_within_the_same_thread
+    matching = keyed(7, "<!-- shaka:reply:fix-1 -->\nold").merge('in_reply_to_id' => 4_031_740_163)
+    other = keyed(8, "<!-- shaka:reply:fix-1 -->\nother").merge('in_reply_to_id' => 99)
+    github = client(pull_response(''), viewer_response, response([[other, matching]]), html_response('<p>ok</p>'),
+                    response({ 'id' => 7, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
+    github.reply(body: BODY, key: 'fix-1', comment: 4_031_740_163)
+    assert_equal ['PATCH', true], [sent_method(4), call_text(4).include?('pulls/comments/7')]
+  end
+
+  def test_an_invalid_inline_comment_id_never_contacts_github
+    assert_raises(Shaka::Error) { client.reply(body: BODY, key: 'fix-1', comment: 0) }
+    assert_empty @calls
+  end
+
   def test_replies_reuse_their_keyed_comment_instead_of_duplicating_it
-    listed = response([keyed(7, "<!-- shaka:reply:fix-1 -->\nold")])
+    listed = response([[keyed(7, "<!-- shaka:reply:fix-1 -->\nold")]])
     github = client(pull_response(''), viewer_response, listed, html_response('<p>ok</p>'),
                     response({ 'id' => 7, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
@@ -111,7 +136,7 @@ class GitHubReplyTest < Minitest::Test
   end
 
   def test_a_reply_without_an_existing_comment_is_created_once
-    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+    github = client(pull_response(''), viewer_response, response([[]]), html_response('<p>ok</p>'),
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
     assert_equal 'POST', sent_method(4)
@@ -125,16 +150,26 @@ class GitHubReplyTest < Minitest::Test
   end
 
   def test_replies_are_fetched_across_every_page
-    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+    github = client(pull_response(''), viewer_response, response([[]]), html_response('<p>ok</p>'),
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
     listing = @calls[2].first.join(' ')
     assert_includes listing, '--paginate'
+    assert_includes listing, '--slurp'
     assert_includes listing, 'per_page=100'
   end
 
+  def test_paginated_reply_pages_are_flattened_before_key_lookup
+    existing = keyed(7, "<!-- shaka:reply:fix-1 -->\nold")
+    pages = response([[keyed(6, 'first page')], [existing]])
+    github = client(pull_response(''), viewer_response, pages, html_response('<p>ok</p>'),
+                    response({ 'id' => 7, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
+    github.reply(body: BODY, key: 'fix-1')
+    assert_equal ['PATCH', true], [sent_method(4), call_text(4).include?('issues/comments/7')]
+  end
+
   def test_a_comment_written_by_someone_else_is_never_overwritten
-    listed = response([keyed(7, "<!-- shaka:reply:fix-1 -->\ntheirs", 'a-contributor')])
+    listed = response([[keyed(7, "<!-- shaka:reply:fix-1 -->\ntheirs", 'a-contributor')]])
     github = client(pull_response(''), viewer_response, listed, html_response('<p>ok</p>'),
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
@@ -142,7 +177,7 @@ class GitHubReplyTest < Minitest::Test
   end
 
   def test_a_marker_quoted_inside_a_comment_is_never_overwritten
-    listed = response([keyed(7, 'quoting <!-- shaka:reply:fix-1 --> in passing')])
+    listed = response([[keyed(7, 'quoting <!-- shaka:reply:fix-1 --> in passing')]])
     github = client(pull_response(''), viewer_response, listed, html_response('<p>ok</p>'),
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
