@@ -1,9 +1,10 @@
 # Host support
 
 Codex CLI is the reference host for this pilot and Claude Code the second host.
-Follow the [getting-started guide](getting-started.md) for installation and your
-first task. Neither Claude Code nor Cursor has a verified complete V2 consumer
-delivery yet.
+OpenCode is the third host: its canonical install path, TUI launcher, and
+export-based usage reader are implemented. Follow the [getting-started guide](getting-started.md)
+for installation and your first task. Neither Claude Code, Cursor, nor OpenCode
+has a verified complete V2 consumer delivery yet.
 
 The hosts share one `shaka` skill and the same Ruby helpers for GitHub
 operations. The optional `rct` skill currently requires the Codex app's native
@@ -18,12 +19,12 @@ These observations were made on September 14 and 15, 2026. A successful install 
 startup does not establish a complete workflow, and workflow success does not
 establish complete usage attribution.
 
-| Capability | Codex CLI 0.154.0 | Claude Code desktop 2.1.270, CLI 2.1.272 | Cursor CLI 2026.09.10-fd3934a |
-| --- | --- | --- | --- |
-| Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. |
-| OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. |
-| Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. |
-| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. |
+| Capability | Codex CLI 0.154.0 | Claude Code desktop 2.1.270, CLI 2.1.272 | Cursor CLI 2026.09.10-fd3934a | OpenCode 1.18.31 |
+| --- | --- | --- | --- | --- |
+| Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. |
+| OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. |
+| Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. | Consumer delivery unverified. |
+| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. |
 
 The Codex write test establishes that particular local boundary. It does not
 establish equivalent behavior in the desktop app, other versions, or other hosts.
@@ -105,6 +106,33 @@ before installing. The inspected upstream installer creates both `agent` and
 `cursor-agent` commands; those names can collide with another installed tool.
 Prefer an existing signed-in host for a trial. The dedicated package startup check
 did not change global command links or establish a general installation method.
+
+## OpenCode
+
+Use the [OpenCode install recipe](getting-started.md#use-shaka-in-opencode).
+The canonical global directory is `~/.config/opencode/skills`; the
+`~/.claude/skills` and `~/.agents/skills` compatibility directories also load,
+so prefer the canonical path to avoid shadowing. Do not copy the skill into a
+project `.opencode/skills` directory inside a candidate checkout: a later source
+overrides the same skill ID. Keep the trusted source outside the working
+directory and rely on the permission mode you already use.
+
+`shaka work --host opencode --repo /path/to/repository "task"` starts the
+interactive TUI in that repository with the trusted workflow prompt; OpenCode
+keeps its own sessions outside the checkout, so the launcher creates no separate
+session directory. It refuses a target that overlaps the trusted workflow and
+leaves account and model settings alone. It also sets
+`OPENCODE_DISABLE_PROJECT_CONFIG`, because OpenCode otherwise reads `.opencode`
+plugins, `opencode.json` and instructions from its working directory upward and
+runs that plugin code; the trusted global configuration still loads. The next
+required evidence is a complete ordinary consumer PR delivered with `/shaka`,
+including TUI skill activation and Ask/Auto stopping behavior.
+
+OpenCode publishes no session identifier to the commands it runs, so
+`shaka usage --host opencode` needs a session named with `--session ID`, a
+wrapper that sets `OPENCODE_SESSION_ID`, or saved exports passed with `--file`.
+The next reader evidence is an identifier published into the tool environment,
+or a confirmed upstream way to read the current session from inside it.
 
 ## Usage is a separate capability
 

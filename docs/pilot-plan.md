@@ -67,7 +67,9 @@ repositories; do not copy Shaka's scripts into them.
 Codex is the reference host. Claude Code skill startup, precedence over a same-named
 repository skill, and its usage reader were verified on September 15; a complete
 consumer delivery is still required before claiming Claude Code delivery support.
-Validate Cursor after that.
+Validate Cursor after that. OpenCode's canonical install path, TUI launcher, and
+export-based usage reader follow the same pattern; its consumer delivery is likewise
+unverified.
 Share the skill and GitHub helpers; keep host installation,
 permissions, and native usage readers separate. See [host support](host-support.md)
 for tested versions, startup boundaries, and known gaps.
