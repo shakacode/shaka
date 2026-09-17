@@ -83,8 +83,8 @@ meaningful progress and at each stopping point. The `description` helper replace
 whole managed region, so republish every section with only the note changed. Remove
 the section once the PR reaches its outcome. It lists:
 
-- **Owner:** a machine alias chosen for publication and the host, such as
-  `studio-mac · Claude Code desktop`.
+- **Owner:** a machine alias chosen for publication, the host, and a takeover number
+  that starts at 1, such as `studio-mac · Claude Code desktop · takeover 1`.
 - **Task:** the searchable task title, or a task locator the tracker allows sharing.
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
@@ -97,7 +97,8 @@ Keep private task links, raw session IDs, hostnames that identify people or clie
 absolute paths, transcripts, and customer context out of public PRs.
 
 To resume in the original task, read the live note before writing. If it names a
-different owner, ownership was transferred: report that and stop. Otherwise refresh
+different owner or a higher takeover number, ownership was transferred: report that
+and stop. Otherwise refresh
 the live PR. A crash can leave no note or an outdated one; the original task recovers
 from live state rather than stopping.
 
@@ -105,11 +106,12 @@ A fresh task takes over only when the maintainer confirms, in that task or on th
 that the previous task has stopped or is handing over. An old timestamp, an idle task,
 or a missing note is not that confirmation. Without it, report the PR's state and stop
 before writing. After confirmation, treat the note as stale evidence and recheck the
-live head, required checks, review, and merge authority. When the previous checkout is
-on the same machine, check it before editing for staged, unstaged, and untracked
-changes, unpushed commits, and stashes, and preserve them. On another machine, work
-from the pushed branch and record unpushed work from the previous owner as UNKNOWN; a
-fresh clone is not the previous checkout. Then update the owner field.
+live head, required checks, review, and merge authority. When you can open the previous
+checkout, check it before editing for staged, unstaged, and untracked changes, unpushed
+commits, and stashes, and preserve them. When you cannot, because it is on another
+machine, moved, or deleted, work from the pushed branch and record unpushed work from
+the previous owner as UNKNOWN; a fresh clone is not the previous checkout. Then publish
+your own owner with the next takeover number.
 
 The note records state only. It grants no authority and is not a lock, lease, or
 heartbeat.
