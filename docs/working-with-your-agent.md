@@ -75,12 +75,13 @@ finding the task; it does not establish merge authority or ownership by itself.
 
 ### Recover an unfinished PR
 
-When work stops before its outcome, for a blocker, a pending decision, a handoff, or
-an interruption, keep a `Recovery` section in the PR description. Someone reopening
-the PR should find the owning task and its next step without reading the conversation.
-Refresh the section at meaningful progress and at each stopping point with the
-`description` helper, which replaces only its own region. Remove it once the PR
-reaches its outcome. The section lists:
+From the first PR description until the PR reaches its outcome, keep a `Recovery`
+section there. Work can stop at any time, for a blocker, a pending decision, a
+handoff, or an interruption. Someone reopening the PR should find the owning task
+and its next step without reading the conversation. Refresh the section at
+meaningful progress and at each stopping point with the `description` helper, which
+replaces only its own region. Remove it once the PR reaches its outcome. The section
+lists:
 
 - **Owner:** a machine alias chosen for publication and the host, such as
   `studio-mac · Claude Code desktop`.
@@ -98,11 +99,13 @@ To resume in the original task, read the note, then refresh the live PR. To tran
 to a fresh task, first confirm that the previous owner has stopped or explicitly handed
 over ownership. An old timestamp or an idle task is not proof of abandonment. The new
 owner treats the note as stale evidence and rechecks the live head, required checks,
-review, and merge authority. Before editing, it checks the previous checkout for
-staged, unstaged, and untracked changes, unpushed commits, and stashes, and preserves
-them. Then it updates the owner field. A crash can leave no note or an outdated one;
-recover from live state rather than stopping. The note records state only. It grants
-no authority and is not a lock, lease, or heartbeat.
+review, and merge authority. When the previous checkout is on the same machine,
+check it before editing for staged, unstaged, and untracked changes, unpushed commits,
+and stashes, and preserve them. On another machine, work from the pushed branch and
+record unpushed work from the previous owner as UNKNOWN; a fresh clone is not the
+previous checkout. Then update the owner field. A crash can leave no note or an
+outdated one; recover from live state rather than stopping. The note records state
+only. It grants no authority and is not a lock, lease, or heartbeat.
 
 ## When a task needs several PRs
 
