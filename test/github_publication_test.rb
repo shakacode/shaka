@@ -21,6 +21,8 @@ module PublicationFixtures
 
   def viewer_response(login = 'shaka-bot') = response({ 'login' => login })
 
+  def full_page = Array.new(100) { |index| keyed(index + 100, 'filler') }
+
   def keyed(id, body, login = 'shaka-bot')
     { 'id' => id, 'body' => body, 'user' => { 'login' => login } }
   end
@@ -104,7 +106,7 @@ class GitHubReplyTest < Minitest::Test
   include PublicationFixtures
 
   def test_an_inline_reply_is_created_on_the_original_review_thread
-    github = client(pull_response(''), viewer_response, response([[]]), html_response('<p>ok</p>'),
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1', comment: 4_031_740_163)
     assert_equal ['POST', true, true, "<!-- shaka:reply:fix-1 -->\n#{BODY}"],
@@ -115,7 +117,7 @@ class GitHubReplyTest < Minitest::Test
   def test_an_inline_reply_reuses_its_key_only_within_the_same_thread
     matching = keyed(7, "<!-- shaka:reply:fix-1 -->\nold").merge('in_reply_to_id' => 4_031_740_163)
     other = keyed(8, "<!-- shaka:reply:fix-1 -->\nother").merge('in_reply_to_id' => 99)
-    github = client(pull_response(''), viewer_response, response([[other, matching]]), html_response('<p>ok</p>'),
+    github = client(pull_response(''), viewer_response, response([other, matching]), html_response('<p>ok</p>'),
                     response({ 'id' => 7, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1', comment: 4_031_740_163)
     assert_equal ['PATCH', true], [sent_method(4), call_text(4).include?('pulls/comments/7')]
@@ -127,7 +129,7 @@ class GitHubReplyTest < Minitest::Test
   end
 
   def test_replies_reuse_their_keyed_comment_instead_of_duplicating_it
-    listed = response([[keyed(7, "<!-- shaka:reply:fix-1 -->\nold")]])
+    listed = response([keyed(7, "<!-- shaka:reply:fix-1 -->\nold")])
     github = client(pull_response(''), viewer_response, listed, html_response('<p>ok</p>'),
                     response({ 'id' => 7, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
@@ -136,7 +138,7 @@ class GitHubReplyTest < Minitest::Test
   end
 
   def test_a_reply_without_an_existing_comment_is_created_once
-    github = client(pull_response(''), viewer_response, response([[]]), html_response('<p>ok</p>'),
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
     assert_equal 'POST', sent_method(4)
@@ -149,27 +151,8 @@ class GitHubReplyTest < Minitest::Test
     end
   end
 
-  def test_replies_are_fetched_across_every_page
-    github = client(pull_response(''), viewer_response, response([[]]), html_response('<p>ok</p>'),
-                    response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
-    github.reply(body: BODY, key: 'fix-1')
-    listing = @calls[2].first.join(' ')
-    assert_includes listing, '--paginate'
-    assert_includes listing, '--slurp'
-    assert_includes listing, 'per_page=100'
-  end
-
-  def test_paginated_reply_pages_are_flattened_before_key_lookup
-    existing = keyed(7, "<!-- shaka:reply:fix-1 -->\nold")
-    pages = response([[keyed(6, 'first page')], [existing]])
-    github = client(pull_response(''), viewer_response, pages, html_response('<p>ok</p>'),
-                    response({ 'id' => 7, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
-    github.reply(body: BODY, key: 'fix-1')
-    assert_equal ['PATCH', true], [sent_method(4), call_text(4).include?('issues/comments/7')]
-  end
-
   def test_a_comment_written_by_someone_else_is_never_overwritten
-    listed = response([[keyed(7, "<!-- shaka:reply:fix-1 -->\ntheirs", 'a-contributor')]])
+    listed = response([keyed(7, "<!-- shaka:reply:fix-1 -->\ntheirs", 'a-contributor')])
     github = client(pull_response(''), viewer_response, listed, html_response('<p>ok</p>'),
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
@@ -177,7 +160,7 @@ class GitHubReplyTest < Minitest::Test
   end
 
   def test_a_marker_quoted_inside_a_comment_is_never_overwritten
-    listed = response([[keyed(7, 'quoting <!-- shaka:reply:fix-1 --> in passing')]])
+    listed = response([keyed(7, 'quoting <!-- shaka:reply:fix-1 --> in passing')])
     github = client(pull_response(''), viewer_response, listed, html_response('<p>ok</p>'),
                     response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
     github.reply(body: BODY, key: 'fix-1')
@@ -202,5 +185,56 @@ class GitHubReplyTest < Minitest::Test
     github = client(response({}, status: 1))
     assert_raises(Shaka::Error) { github.reply(body: BODY, key: 'fix-1') }
     assert_equal 1, @calls.size
+  end
+end
+
+# The reply listing must page with flags gh actually accepts.
+class GitHubReplyPaginationTest < Minitest::Test
+  include PublicationFixtures
+
+  def test_the_reply_listing_uses_flags_gh_accepts
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+                    response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
+    github.reply(body: BODY, key: 'fix-1')
+    listing = call_text(2)
+    refute_includes listing, '--slurp'
+    refute_includes listing, '--paginate'
+    assert_includes listing, 'per_page=100'
+    assert_includes listing, 'page=1'
+  end
+
+  def test_replies_are_fetched_across_every_page
+    existing = keyed(7, "<!-- shaka:reply:fix-1 -->\nold")
+    github = client(pull_response(''), viewer_response, response(full_page), response([existing]),
+                    html_response('<p>ok</p>'),
+                    response({ 'id' => 7, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
+    github.reply(body: BODY, key: 'fix-1')
+    assert_includes call_text(3), 'page=2'
+    assert_equal ['PATCH', true], [sent_method(5), call_text(5).include?('issues/comments/7')]
+  end
+
+  def test_a_short_page_ends_the_reply_listing
+    github = client(pull_response(''), viewer_response, response([keyed(6, 'first page')]),
+                    html_response('<p>ok</p>'),
+                    response({ 'id' => 9, 'body' => "<!-- shaka:reply:fix-1 -->\n#{BODY}" }))
+    github.reply(body: BODY, key: 'fix-1')
+    assert_equal 5, @calls.size
+  end
+
+  def test_a_comment_listing_that_is_not_an_array_is_reported
+    github = client(pull_response(''), viewer_response, response({ 'message' => 'Not Found' }))
+    assert_raises(Shaka::Error) { github.reply(body: BODY, key: 'fix-1') }
+  end
+end
+
+# A target with more comment pages than Shaka reads must be refused, not truncated.
+class GitHubReplyLimitTest < Minitest::Test
+  include PublicationFixtures
+
+  def test_a_target_with_more_pages_than_shaka_reads_is_refused
+    pages = Array.new(21) { response(full_page) }
+    github = client(pull_response(''), viewer_response, *pages)
+    error = assert_raises(Shaka::Error) { github.reply(body: BODY, key: 'fix-1') }
+    assert_includes error.message, 'pages'
   end
 end
