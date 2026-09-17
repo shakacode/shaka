@@ -95,17 +95,22 @@ lists:
 Keep private task links, raw session IDs, hostnames that identify people or clients,
 absolute paths, transcripts, and customer context out of public PRs.
 
-To resume in the original task, read the note, then refresh the live PR. To transfer
-to a fresh task, first confirm that the previous owner has stopped or explicitly handed
-over ownership. An old timestamp or an idle task is not proof of abandonment. The new
-owner treats the note as stale evidence and rechecks the live head, required checks,
-review, and merge authority. When the previous checkout is on the same machine,
-check it before editing for staged, unstaged, and untracked changes, unpushed commits,
-and stashes, and preserve them. On another machine, work from the pushed branch and
-record unpushed work from the previous owner as UNKNOWN; a fresh clone is not the
-previous checkout. Then update the owner field. A crash can leave no note or an
-outdated one; recover from live state rather than stopping. The note records state
-only. It grants no authority and is not a lock, lease, or heartbeat.
+To resume in the original task, read the note, then refresh the live PR. A crash can
+leave no note or an outdated one; the original task recovers from live state rather
+than stopping.
+
+A fresh task takes over only when the maintainer confirms, in that task or on the PR,
+that the previous task has stopped or is handing over. An old timestamp, an idle task,
+or a missing note is not that confirmation. Without it, report the PR's state and stop
+before writing. After confirmation, treat the note as stale evidence and recheck the
+live head, required checks, review, and merge authority. When the previous checkout is
+on the same machine, check it before editing for staged, unstaged, and untracked
+changes, unpushed commits, and stashes, and preserve them. On another machine, work
+from the pushed branch and record unpushed work from the previous owner as UNKNOWN; a
+fresh clone is not the previous checkout. Then update the owner field.
+
+The note records state only. It grants no authority and is not a lock, lease, or
+heartbeat.
 
 ## When a task needs several PRs
 
