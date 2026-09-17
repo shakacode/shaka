@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require_relative 'repository_config'
 
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
