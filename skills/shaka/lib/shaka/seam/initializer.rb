@@ -110,7 +110,7 @@ module Shaka
       end
 
       def write_files(files)
-        # Recheck around every open so a concurrent local change cannot bypass preflight.
+        # Narrow accidental-change windows; same-target concurrent writers are unsupported.
         preflight_directories
         preflight_files(files)
         FileUtils.mkdir_p(File.join(@root, '.agents/bin'))
