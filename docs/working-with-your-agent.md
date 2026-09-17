@@ -63,7 +63,8 @@ and stopping point. Do not copy the whole planning conversation.
 Use a fresh task for a new implementation objective. Keep an existing task while
 it owns unfinished changes, or hand over its branch, current revision, completed
 checks, remaining work, and authority before another task takes ownership. Recheck
-live state on resume; a summary is not fresh merge evidence. No second writer is
+live state on resume; a summary is not fresh merge evidence. An unfinished PR keeps
+a [recovery note](#recover-an-unfinished-pr). No second writer is
 needed. Keep product decisions in the existing plan and work state in the PR.
 
 Task names identify the repository, verified issue/PR, and outcome. For example,
@@ -71,6 +72,52 @@ Task names identify the repository, verified issue/PR, and outcome. For example,
 `sample-app issue #42 / PR #57 — fix search timeout` when that PR is created.
 Use the native rename capability and preserve user-chosen titles. A title is for
 finding the task; it does not establish merge authority or ownership by itself.
+
+### Recover an unfinished PR
+
+From the first PR description until the PR reaches its outcome, keep a `Recovery`
+section there. Work can stop at any time, for a blocker, a pending decision, a
+handoff, or an interruption. Someone reopening the PR should find the owning task
+and its next step without reading the conversation. Refresh the section at
+meaningful progress and at each stopping point. The `description` helper replaces its
+whole managed region, so republish every section with only the note changed. Remove
+the section once the PR reaches its outcome. It lists:
+
+- **Owner:** a machine alias chosen for publication, the host, and a short random tag
+  the task picks when it becomes owner, such as `studio-mac · Claude Code desktop · k7q2`.
+- **Task:** the searchable task title, or a task locator the tracker allows sharing.
+- **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
+  publication time is not evidence of later or earlier activity.
+- **Revision:** the branch and current head.
+- **State:** in progress, waiting for a named review or check, blocked with the
+  blocker, waiting for a named decision, or handing over to a named task.
+- **Next action:** the one step that continues the work.
+
+Keep private task links, raw session IDs, hostnames that identify people or clients,
+absolute paths, transcripts, and customer context out of public PRs.
+
+To resume in the original task, read the live note before writing. If it names a
+different owner, including a different tag, ownership was transferred: keep any local
+uncommitted or unpushed work in place without pushing it, report that work and the
+transfer, and stop. Otherwise refresh the live PR. A crash can leave no note or an
+outdated one; the original task recovers from live state rather than stopping.
+
+A fresh task takes over only when the maintainer confirms, in that task or on the PR,
+that the previous task has stopped or is handing over. An old timestamp, an idle task,
+or a missing note is not that confirmation. Without it, report the PR's state and stop
+before writing. After confirmation, read the live head, treat the old note as stale
+evidence, and publish a complete note with your own owner and a new random tag before
+any other work. Then recheck required checks, review, and merge authority. When you can
+open the previous checkout, check it before editing for staged, unstaged, and untracked
+changes, unpushed commits, and stashes, and preserve them. When you cannot, because it
+is on another machine, moved, or deleted, work from the pushed branch and record
+unpushed work from the previous owner as UNKNOWN; a fresh clone is not the previous
+checkout.
+
+The note records state only. It grants no authority and is not a lock, lease, or
+heartbeat. The owner check narrows, but cannot close, the gap between reading the note
+and writing. The maintainer's confirmation that the previous task stopped is what
+prevents two writers.
 
 ## When a task needs several PRs
 

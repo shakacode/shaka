@@ -26,6 +26,7 @@ This record defines the current product, not proof that acceptance is complete.
 | R13 | Understand the agent on the first reading. | One owner explains outcomes, reasons, blockers, and decisions in familiar terms. Follow task/repo writing preferences. Ask important questions when needed and recommend a path. Keep supporting evidence in expandable PR details and material risks and gaps visible. See [working with your agent](working-with-your-agent.md). |
 | R14 | Verify the failure and the visible result. | For behavior changes, observe a meaningful failing test, make it pass, then refactor. Use the repo's tools. If automation is impractical, explain and capture before/after behavior. Visible changes need inspected, safe, reviewer-accessible screenshots tied to the tested revision; add video when timing or interaction matters. See [verification](verification.md). |
 | R15 | Know when a finished chat can be archived. | In a user-facing chat whose host format permits prose, end a genuinely finished task's complete final report with exactly `This chat is ready for archiving.` Do not use the sentence while work, a blocker, a handoff, or a decision remains. Preserve machine-only response formats that forbid trailing prose. |
+| R16 | Recover an unfinished PR without its conversation. | While a PR has not reached its outcome, its description keeps a [recovery note](working-with-your-agent.md#recover-an-unfinished-pr) with owner, task, last observed activity, revision, state, and next action, and removes it at the outcome. Publish only safe aliases and shareable locators. A fresh task takes over only after the maintainer confirms the previous task stopped or is handing over. It then reads the live head, publishes a complete note with a new random owner tag before any other work, rechecks checks, review, and authority, preserves reachable local work, and marks unreachable local work UNKNOWN. A resuming task that finds another owner or tag keeps its local work unpushed, reports it, and stops. The note grants no authority; the maintainer's confirmation, not the note, prevents two writers. No heartbeat, lease, or coordination service. |
 
 ## Design
 
@@ -91,6 +92,8 @@ unchanged. The current helper performs immediate squash merges while the task is
   the current head, honor native approvals, and verify protected merge behavior.
 - A new user follows [getting started](getting-started.md) in a fresh Codex task
   and reaches a PR without needing another guide. Record the trial on issue #77.
+- Interrupt a real unfinished PR, then continue it once from its recovery note in the
+  original task and once in a fresh task. Record both on issue #77.
 - Before claiming adoption, complete several real changes, including a small fix,
   review fixes, failed CI, and a changed PR head. Unit tests alone do not establish this.
 
