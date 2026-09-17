@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'psych'
+require_relative '../error'
+
 module Shaka
   class RepositoryConfig
     # Rejects ambiguous YAML before Psych silently keeps the last value.
