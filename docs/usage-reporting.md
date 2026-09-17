@@ -162,7 +162,9 @@ the expandable details; missing usage does not block a PR.
 Every PR description requires a compact `provenance` object. It records the
 task source, the installed workflow version, and the requested, recommended, and
 active model/effort routes. The renderer adds the public machine alias from
-`AGENT_COORD_MACHINE_ID`, or `UNKNOWN` when the alias is unavailable. The native
+`SHAKA_MACHINE_ALIAS`, or `UNKNOWN` when that variable is unset. Because the
+alias is published on a public PR, the renderer never falls back to a host name;
+set a short, publication-safe alias such as `m5`. The native
 usage table remains the only record of the observed route and token data. The
 renderer never accepts prompt text, reasoning text, transcripts, local paths, private
 run identifiers, or arbitrary metadata.
