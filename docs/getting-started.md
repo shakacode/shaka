@@ -246,16 +246,18 @@ test -L "$HOME/.agents/skills/shaka" && unlink "$HOME/.agents/skills/shaka"
 test -L "$HOME/.agents/skills/rct" && unlink "$HOME/.agents/skills/rct"
 ```
 
-A Claude Code install puts both of its links in that host's own directory, so
-remove them there instead:
+A Claude Code install with towers puts all three of its links in that host's own
+directory, so remove them there instead:
 
 ```bash
 test -L "$HOME/.claude/skills/shaka" && unlink "$HOME/.claude/skills/shaka"
 test -L "$HOME/.claude/skills/mct-claude" && unlink "$HOME/.claude/skills/mct-claude"
+test -L "$HOME/.claude/skills/rct-claude" && unlink "$HOME/.claude/skills/rct-claude"
 ```
 
-Remove every link the install created, not only the tower one. Leaving `shaka`
-behind makes an older installer refuse that destination during rollback.
+Remove every link the install created, not only the tower ones. The installer
+refuses any destination it does not already own, so one link left behind blocks
+reinstalling that revision.
 
 Use your dedicated skills directory for a terminal install and remove its shell
 `PATH` entry. For Claude Code, use `$HOME/.claude/skills`. For Cursor, use
