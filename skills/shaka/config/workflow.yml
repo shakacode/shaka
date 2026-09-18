@@ -179,9 +179,10 @@ phases:
         revision, evidence, and human edits; unavailable cleanup does not block merge.
       - Divide the two: the description carries what a reader needs without working through the PR,
         and the walkthrough carries the reasoning. Only the description carries the outcome headline,
-        decisions and blockers, missing required review, the check table, provenance, usage, the
-        recovery note, and the links out. Only the walkthrough carries the rejected alternatives, the
-        order that makes the change readable, and commit-pinned links. Purpose, risk, rollback, and
+        the delivery decisions and blockers a maintainer must act on, missing required review, the
+        check table, provenance, usage, the recovery note, and the links out. Only the walkthrough
+        carries the implementation choices and the alternatives they rejected, the order that makes
+        the change readable, and commit-pinned links. Purpose, risk, rollback, and
         validation belong in both at different resolutions: share the subject, never the sentences,
         because a copied paragraph goes stale when you republish at a new head. Every summary still
         leads with what its own reader notices, which for a walkthrough is the behavior that changed.
