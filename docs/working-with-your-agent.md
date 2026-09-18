@@ -83,12 +83,14 @@ finding the task; it does not establish merge authority or ownership by itself.
 ### Recover an unfinished PR
 
 From the first PR description until the PR reaches its outcome, keep a `Recovery`
-section there. Work can stop at any time, for a blocker, a pending decision, a
-handoff, or an interruption. Someone reopening the PR should find the owning task
-and its next step without reading the conversation. Refresh the section at
-meaningful progress and at each stopping point. The `description` helper replaces its
-whole managed region, so republish every section with only the note changed. Remove
-the section once the PR reaches its outcome. It lists:
+section there, and push a snapshot of unfinished work so it survives the machine.
+Work can stop at any time, for a blocker, a pending decision, a handoff, or an
+interruption. Someone reopening the PR should find the owning task and its next step
+without reading the conversation. Refresh the section at meaningful progress and at
+each stopping point. The `description` helper replaces its whole managed region, so
+republish every section, and re-pin the walkthrough link, the check table, and usage
+to the head the note names rather than carrying older ones forward. Remove the section
+once the PR reaches its outcome. It lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
   the task picks when it becomes owner, such as `studio-mac · Claude Code desktop · k7q2`.
@@ -96,12 +98,42 @@ the section once the PR reaches its outcome. It lists:
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
+- **Workspace:** where the work was happening, so the same owner can return to it
+  months later. Name the checkout directory and, when the host has one, its session
+  or task identifier. See the privacy rule below.
+- **Unfinished work:** the snapshot branch when there is one, then whatever it does
+  not hold. `none` when nothing was left unfinished.
+- **Stopped because:** the reason work ended, such as an ordinary pause, a lost
+  network, exhausted tokens, or a crash. A crash means the note may predate the last
+  change, so treat its other fields as stale.
+- **Merge authority:** `ask` or `auto` as answered for this task, or UNKNOWN.
+  Authority is scoped to a task, so a successor cannot recover it from anywhere else.
 - **State:** in progress, waiting for a named review or check, blocked with the
-  blocker, waiting for a named decision, or handing over to a named task.
+  blocker, waiting for a named decision, or handing over to a named task. A handover
+  names the successor's owner tag once it is known.
 - **Next action:** the one step that continues the work.
 
-Keep private task links, raw session IDs, hostnames that identify people or clients,
-absolute paths, transcripts, and customer context out of public PRs.
+Keep prompts, transcripts, credentials, private task links, and customer context out
+of public PRs. An identifier that only names a file or a session on one machine reveals
+nothing to a reader without that machine, so a host session or task identifier belongs
+in the note. A link to a hosted task does not.
+
+Workspace paths are published by default, because the owner who comes back is usually
+the one who left. A repository that treats contributor paths or machine names as
+sensitive sets `recovery.workspace_path: false` in its seam, and the note then carries
+the machine alias and the checkout's own directory name instead of a full path. See
+[settings](settings.md#recovery).
+
+Unfinished work that lives only in one checkout is lost when that directory is
+removed, and the editors that create worktrees remove them on their own schedule. So
+when work stops with anything uncommitted, commit it on a branch named after the PR
+branch with a `wip/` prefix and push that branch. Include files that were never added,
+since half-finished research is exactly what a later reader cannot reconstruct; files
+the repository ignores stay out, which keeps local configuration and secrets on the
+machine. The snapshot branch has no pull request, so it runs no checks. Name it in the
+note, delete it when the PR reaches its outcome, and say in the note what the snapshot
+does not hold. A repository that does not want these branches sets
+`recovery.snapshot: false`, and then unfinished work stays on the machine that made it.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner, including a different tag, ownership was transferred: keep any local

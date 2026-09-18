@@ -2,6 +2,7 @@
 
 require 'pathname'
 require_relative '../error'
+require_relative 'recovery_schema'
 require_relative 'review_schema'
 require_relative 'validation'
 
@@ -12,7 +13,7 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version base_branch commands review merge protection].freeze
-      OPTIONAL = %w[plan trusted_actions].freeze
+      OPTIONAL = %w[plan trusted_actions recovery].freeze
 
       def initialize(root:, data:)
         @root = root
@@ -22,17 +23,26 @@ module Shaka
       def validate
         mapping!(@data, PATH)
         keys!(@data, REQUIRED, OPTIONAL, PATH)
-        equal!(@data['version'], 1, 'version must be 1')
-        string!(@data['base_branch'], 'base_branch')
-        file!(@data['plan'], 'plan') if @data.key?('plan')
+        validate_header
         validate_commands
         validate_review
         validate_merge
         validate_protection
-        validate_trusted_actions
+        validate_optional
       end
 
       private
+
+      def validate_header
+        equal!(@data['version'], 1, 'version must be 1')
+        string!(@data['base_branch'], 'base_branch')
+        file!(@data['plan'], 'plan') if @data.key?('plan')
+      end
+
+      def validate_optional
+        validate_trusted_actions
+        RecoverySchema.new(@data['recovery']).validate if @data.key?('recovery')
+      end
 
       def validate_commands
         commands = mapping!(@data['commands'], 'commands')

@@ -217,6 +217,10 @@ phases:
         after an uncertain submission, and never schedule background retries.
       - Verify the result and read newly arrived reviews before finishing. Handle late findings through
         the packaged [post-merge procedure](<{{package_root}}/docs/review.md#reviews-after-merge>).
+      - At the stopping point, when work is unfinished and the seam's `recovery.snapshot` is not
+        `false`, commit everything left in the checkout, including files never added, onto a
+        `wip/` branch named after the PR branch and push it. It has no pull request and runs no
+        checks. Delete it at outcome.
       - At the stopping point, refresh usage for affected commits and turns, replacing overlapping
         snapshots. When this task owns the PR, republish its description with that usage and remove
         the recovery note after outcome. Review-only work leaves the description alone. Report every

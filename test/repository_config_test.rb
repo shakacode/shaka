@@ -190,3 +190,38 @@ class RepositoryConfigTest < Minitest::Test
     end
   end
 end
+
+# The optional recovery policy decides what an unfinished pull request may publish.
+class RepositoryConfigRecoveryTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  def test_recovery_defaults_to_publishing_a_workspace_and_a_snapshot
+    with_repository do |root|
+      assert_equal({ 'workspace_path' => true, 'snapshot' => true }, Shaka::RepositoryConfig.load(root:).recovery)
+    end
+  end
+
+  def test_a_repository_can_opt_out_of_publishing_its_workspace_path
+    with_repository('recovery' => { 'workspace_path' => false }) do |root|
+      recovery = Shaka::RepositoryConfig.load(root:).recovery
+
+      assert_equal [false, true], recovery.values_at('workspace_path', 'snapshot')
+    end
+  end
+
+  def test_rejects_an_unknown_recovery_key
+    with_repository('recovery' => { 'workspace' => false }) do |root|
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, 'unknown key: workspace'
+    end
+  end
+
+  def test_rejects_a_recovery_value_that_is_not_a_boolean
+    with_repository('recovery' => { 'snapshot' => 'yes' }) do |root|
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, 'recovery.snapshot must be true or false'
+    end
+  end
+end

@@ -38,6 +38,7 @@ These apply to the whole document, whatever the settings are.
 | `protection` | yes | mapping | [Expected branch protection](#protection). |
 | `plan` | no | string | Repository-relative path to an existing file. |
 | `trusted_actions` | no | list of strings | Non-empty when present. |
+| `recovery` | no | mapping | [Recovery note and snapshot policy](#recovery). |
 
 Repository-relative means exactly that: an absolute path, a path that escapes the
 repository, or a symlink resolving outside it is rejected.
@@ -122,7 +123,23 @@ expectation explicitly rather than leaving it implied.
 Optional allowlist of GitHub Actions used by the repository's trusted workflows, such as
 `actions/checkout`. When the key is present it must hold at least one non-empty string.
 
+## `recovery`
+
+Optional. Both keys are optional booleans, and both default to `true` when the section or
+the key is absent. They govern the [recovery note](working-with-your-agent.md#recover-an-unfinished-pr)
+a pull request carries while it is unfinished.
+
+| Setting | Allowed values | Meaning |
+| --- | --- | --- |
+| `workspace_path` | `true` or `false` | `true` publishes the checkout's path in the note. `false` publishes the machine alias and the checkout's directory name instead. |
+| `snapshot` | `true` or `false` | `true` pushes unfinished work to a `wip/` branch when a task stops. `false` leaves it on the machine that made it. |
+
+Set `workspace_path: false` where contributor paths or machine names are sensitive. Set
+`snapshot: false` where unfinished work must not reach the remote at all. `seam init` writes
+neither key, so a repository that says nothing gets both defaults.
+
 ## What `seam init` writes
+
 
 The initializer produces the smallest complete contract: `version`, `base_branch`, the
 three required commands as `.agents/bin/` wrappers, `review`, `merge`, and `protection`.

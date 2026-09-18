@@ -30,6 +30,10 @@ protection:
   direct_push: false
   force_push: false
   branch_deletion: false
+# Recovery note policy for unfinished pull requests; both default to true.
+recovery:
+  workspace_path: true
+  snapshot: true
 # Optional allowlist of GitHub Actions used by trusted workflows.
 trusted_actions:
   - actions/checkout
