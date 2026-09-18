@@ -89,7 +89,7 @@ Without persisted stop records, token counters stay UNKNOWN, the report names
 `usage reader unavailable: no readable Cursor stop-hook records`, and an inferred
 host-context row still uses provider `cursor` plus `CURSOR_MODEL_ID`,
 `CURSOR_MODEL`, and `CURSOR_MODEL_EFFORT` when those host values are present.
-Explicit `--file` reports do not copy the current chat's model environment.
+Explicit `--file` or `--turn` reports do not copy the current chat's model environment.
 `shaka doctor` fails on Cursor until a readable stop-hook file exists.
 Missing usage still does not block an otherwise authorized merge.
 

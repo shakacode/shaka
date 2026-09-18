@@ -35,7 +35,7 @@ module Shaka
     end
 
     def context_row
-      return unless @inferred
+      return unless @inferred && @options[:turns].empty?
 
       @source.context_configuration if @source.respond_to?(:context_configuration)
     end

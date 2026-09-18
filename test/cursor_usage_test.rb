@@ -46,7 +46,11 @@ module CursorUsageFixture
   end
 
   def empty_cursor_report(directory, extra = {})
-    report(environment: { 'CURSOR_CONVERSATION_ID' => SESSION, 'CURSOR_USAGE_DIR' => directory }.merge(extra))
+    report(environment: empty_cursor_env(directory).merge(extra))
+  end
+
+  def empty_cursor_env(directory)
+    { 'CURSOR_CONVERSATION_ID' => SESSION, 'CURSOR_USAGE_DIR' => directory }
   end
 
   def assert_cursor_unavailable(output, row)
@@ -169,6 +173,15 @@ class CursorUsageFailuresTest < Minitest::Test
       env = { 'CURSOR_MODEL_ID' => 'grok-4.6', 'CURSOR_MODEL' => 'cursor-grok-4.6-medium',
               'CURSOR_MODEL_EFFORT' => 'medium' }
       output = report('--host', 'cursor', '--file', file, environment: env)
+      assert_includes output, 'usage reader unavailable'
+      refute_includes output, 'grok-4.6'
+    end
+  end
+
+  def test_explicit_turns_do_not_copy_ambient_cursor_models
+    Dir.mktmpdir do |directory|
+      env = { 'CURSOR_MODEL_ID' => 'grok-4.6' }
+      output = report('--turn', NEW, environment: empty_cursor_env(directory).merge(env))
       assert_includes output, 'usage reader unavailable'
       refute_includes output, 'grok-4.6'
     end
