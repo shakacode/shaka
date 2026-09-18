@@ -8,10 +8,16 @@ module DoctorHelper
   INSTALLED = "gh version 2.64.0 (2026-09-01)\n"
   WRITABLE = '{"nameWithOwner":"owner/repo","viewerPermission":"WRITE"}'
 
-  def doctor(root: File.expand_path('..', __dir__), environment: { 'SHAKA_MACHINE_ALIAS' => 'm5' },
-             responses: {}, runner: nil, usage_files: [__FILE__])
-    subject = Shaka::Doctor.new(root: root, environment: environment, runner: runner || stub_gh(responses),
-                                usage_source: ->(_host) { usage_files })
+  DEFAULTS = { root: nil, environment: { 'SHAKA_MACHINE_ALIAS' => 'm5' }, responses: {}, runner: nil,
+               usage_files: nil, host_name: 'test-machine.local' }.freeze
+
+  def doctor(**overrides)
+    options = DEFAULTS.merge(overrides)
+    system = Shaka::Doctor::System.new(runner: options[:runner] || stub_gh(options[:responses]),
+                                       usage_source: ->(_host) { options[:usage_files] || [__FILE__] },
+                                       host_name: options[:host_name])
+    subject = Shaka::Doctor.new(root: options[:root] || File.expand_path('..', __dir__),
+                                environment: options[:environment], system: system)
     [subject.report, subject.blocked?]
   end
 

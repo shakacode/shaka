@@ -11,7 +11,29 @@ module Shaka
   # Read-only: it inspects the environment and changes no repository and no setting.
   class Doctor
     SEVERITY = { 'healthy' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
-    RUNNER = ->(argv) { Open3.capture3(*argv).then { |out, err, status| [out, err, status.success?] } }
+    TIMEOUT = 15
+
+    # A doctor is run precisely when something is wrong, so a stalled credential helper or a
+    # hanging network call must become one check's answer instead of stopping the report.
+    def self.runner(timeout: TIMEOUT)
+      lambda do |argv|
+        Open3.popen3(*argv) do |stdin, stdout, stderr, process|
+          stdin.close
+          next ['', "no answer within #{timeout}s", false] unless process.join(timeout)
+
+          [stdout.read, stderr.read, process.value.success?]
+        end
+      end
+    end
+
+    # Everything doctor reaches outside its own process, in one place so a test can state
+    # the machine it describes instead of inheriting the one it runs on.
+    System = Struct.new(:runner, :usage_source, :host_name, keyword_init: true) do
+      def self.default
+        new(runner: Doctor.runner, usage_source: ->(name) { Usage::READERS.fetch(name).discover },
+            host_name: MachineAlias.system_name)
+      end
+    end
 
     def self.run(arguments)
       options = {}
@@ -51,12 +73,11 @@ module Shaka
 
     private_class_method :report, :option_parser, :help
 
-    def initialize(root:, host: nil, environment: ENV, runner: RUNNER, usage_source: nil)
+    def initialize(root:, host: nil, environment: ENV, system: System.default)
       @root = root
       @stated = !host.nil?
       @host = host || Usage.detected_host
-      @source = Checks.new(root: root, host: @host, environment: environment, runner: runner,
-                           usage_source: usage_source || ->(host) { Usage::READERS.fetch(host).discover })
+      @source = Checks.new(root: root, host: @host, environment: environment, system: system)
     end
 
     def checks = @checks ||= @source.call
@@ -76,7 +97,15 @@ module Shaka
 
     # Detection falls back to codex when a host exposes no session identifier, so the report
     # says which host it assumed and `--host` states it instead.
-    def context = "Ruby #{RUBY_VERSION} · host #{@host}#{' (detected)' unless @stated} · root #{@root}"
+    # Detection answers nil when several hosts are present and falls back to codex when none
+    # is, so the report always says which host it used and how sure it is.
+    def context = "Ruby #{RUBY_VERSION} · host #{named_host} · root #{@root}"
+
+    def named_host
+      return 'ambiguous' if @host.nil?
+
+      @stated ? @host : "#{@host} (detected)"
+    end
 
     def render(item)
       lines = ["[#{item.fetch(:status).upcase}] #{item.fetch(:name)} — #{item.fetch(:summary)}"]

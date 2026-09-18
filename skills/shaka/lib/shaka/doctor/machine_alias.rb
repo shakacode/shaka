@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'socket'
 require_relative '../provenance'
 require_relative 'check'
 
@@ -18,7 +19,18 @@ module Shaka
       GUIDANCE = "Export #{VARIABLE} as a short deliberate token such as `m5`. It appears in " \
                  "public pull requests, so do not use this machine's own name.".freeze
 
-      def initialize(environment) = @environment = environment
+      def initialize(environment, host_name: self.class.system_name)
+        @environment = environment
+        @host_name = host_name
+      end
+
+      # A shell exports HOST and HOSTNAME inconsistently, and usually not to a command like
+      # this one, so the system's own answer is what makes this guard actually fire.
+      def self.system_name
+        Socket.gethostname
+      rescue StandardError
+        nil
+      end
 
       def call
         value = @environment[VARIABLE]
@@ -48,7 +60,13 @@ module Shaka
       end
 
       def host_name?(value)
-        HOST_NAMES.filter_map { |name| @environment[name] }.any? { |name| name.casecmp?(value) }
+        candidates.any? { |name| name.casecmp?(value) }
+      end
+
+      # The bare name counts too: `build-host` is as identifying as `build-host.local`.
+      def candidates
+        names = HOST_NAMES.filter_map { |name| @environment[name] } + [@host_name].compact
+        (names + names.map { |name| name.split('.').first }).reject(&:empty?).uniq
       end
 
       def valid?(value) = ExecutionProvenance::SAFE_VALUE.match?(value)

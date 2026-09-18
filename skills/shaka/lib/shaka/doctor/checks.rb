@@ -15,17 +15,18 @@ module Shaka
       WRITER = %w[ADMIN MAINTAIN WRITE].freeze
       SEAM = '.agents/agent-workflow.yml'
 
-      def initialize(root:, host:, environment:, runner:, usage_source:)
+      def initialize(root:, host:, environment:, system:)
         @root = root
         @host = host
         @environment = environment
-        @runner = runner
-        @usage_source = usage_source
+        @system = system
       end
 
-      def call = [github_cli, repository_access, repository_seam, MachineAlias.new(@environment).call, usage_source]
+      def call = [github_cli, repository_access, repository_seam, alias_check, usage_source]
 
       private
+
+      def alias_check = MachineAlias.new(@environment, host_name: @system.host_name).call
 
       def github_cli
         out, error, ok = run(%w[gh --version])
@@ -43,10 +44,7 @@ module Shaka
         out, error, ok = run(['gh', 'repo', 'view', '--json', 'nameWithOwner,viewerPermission'], chdir: @root)
         return unreachable_repository(first_line(error)) unless ok
 
-        parsed = JSON.parse(out)
-        return unreachable_repository('gh returned a response that is not repository JSON') unless parsed.is_a?(Hash)
-
-        permission(parsed)
+        permission(JSON.parse(out))
       rescue JSON::ParserError
         unreachable_repository('gh returned a response that is not repository JSON')
       end
@@ -56,12 +54,17 @@ module Shaka
               guidance: 'Run doctor inside the checkout you publish from, and sign in with `gh auth login`.')
       end
 
+      # Healthy has to name the repository and the permission it actually saw; a response
+      # missing either one establishes nothing, however well-formed its JSON is.
       def permission(parsed)
-        level = parsed['viewerPermission']
-        repository = parsed['nameWithOwner']
+        repository = parsed.is_a?(Hash) ? parsed['nameWithOwner'] : nil
+        level = parsed.is_a?(Hash) ? parsed['viewerPermission'] : nil
+        unless repository.is_a?(String) && !repository.empty? && level.is_a?(String)
+          return unreachable_repository('gh did not report a repository and a permission')
+        end
         return check('Repository access', 'healthy', "#{repository} is writable as #{level}") if WRITER.include?(level)
 
-        check('Repository access', 'failed', "#{repository} is not writable (#{level || 'no permission'})",
+        check('Repository access', 'failed', "#{repository} is not writable (#{level})",
               guidance: 'Use an account with write access, or re-authenticate with `gh auth login`.')
       end
 
@@ -83,30 +86,37 @@ module Shaka
               guidance: 'Run `shaka seam init` here, or point `--root` at the repository you meant.')
       end
 
-      # discover locates sources; it does not open them, so unreadable ones are reported here.
+      # discover locates sources; it never opens them. Only a file this command can read is
+      # evidence, so a session handle it cannot open is reported as located, not as ready.
       def usage_source
-        located = @usage_source.call(@host)
-        return no_usage_source("no #{@host} session source") if located.empty?
-        return no_usage_source(unreadable_of(located)) if unreadable(located).any?
+        return no_usage_source('the host is ambiguous') if @host.nil?
 
-        check('Usage source', 'healthy', "#{located.length} readable #{@host} source(s)")
+        located = @system.usage_source.call(@host)
+        opened, unopened = located.partition { |entry| File.readable?(entry.to_s) }
+        return check('Usage source', 'healthy', "#{opened.length} readable #{@host} source(s)") if openable?(located)
+
+        no_usage_source(shortfall(located, unopened))
       rescue KeyError, SystemCallError => e
         no_usage_source(first_line(e.message))
       end
 
-      def unreadable(located) = located.select { |entry| entry.start_with?('/') && !File.readable?(entry) }
+      def openable?(located) = !located.empty? && located.all? { |entry| File.readable?(entry.to_s) }
 
-      def unreadable_of(located) = "#{unreadable(located).length} of #{located.length} sources cannot be read"
+      def shortfall(located, unopened)
+        return "no #{@host} session source" if located.empty?
+
+        "#{unopened.length} of #{located.length} #{@host} sources cannot be opened here"
+      end
 
       def no_usage_source(reason)
-        check('Usage source', 'degraded', "#{reason}; usage tables will be empty",
-              guidance: "Run the task from #{@host} so its session transcript exists, " \
-                        'or pass `--file` to `shaka usage`.')
+        check('Usage source', 'degraded', "#{reason}; usage may be incomplete",
+              guidance: 'Pass `--host` to name the host, and `--file` to `shaka usage` when its ' \
+                        'session source is not a file this command can read.')
       end
 
       # A command that cannot even launch is this check's answer, never an aborted report.
       def run(argv, chdir: nil)
-        chdir ? Dir.chdir(chdir) { @runner.call(argv) } : @runner.call(argv)
+        chdir ? Dir.chdir(chdir) { @system.runner.call(argv) } : @system.runner.call(argv)
       rescue SystemCallError => e
         ['', first_line(e.message), false]
       end

@@ -18,9 +18,10 @@ class DoctorCliTest < Minitest::Test
   # OpenCode exposes no session identifier, so detection falls back to codex; stating the
   # host must reach the report instead of silently checking the wrong one.
   def test_a_stated_host_replaces_detection
+    system = Shaka::Doctor::System.new(runner: ->(*) { ['', 'stub', false] }, host_name: 'test-machine',
+                                       usage_source: ->(host) { host == 'opencode' ? [__FILE__] : [] })
     subject = Shaka::Doctor.new(root: File.expand_path('..', __dir__), host: 'opencode',
-                                environment: {}, runner: ->(*) { ['', 'stub', false] },
-                                usage_source: ->(host) { host == 'opencode' ? [__FILE__] : [] })
+                                environment: {}, system: system)
     assert_includes subject.report, 'opencode'
     refute_includes subject.report, 'detected'
   end
@@ -33,6 +34,15 @@ class DoctorCliTest < Minitest::Test
     assert_includes output, 'Repository seam'
     assert_includes output, 'Machine alias'
     assert_empty error
+  end
+
+  # A hang is the one failure a diagnostic must not have: it looks exactly like working.
+  def test_a_command_that_never_answers_becomes_a_result_instead_of_a_hang
+    out, error, ok = Shaka::Doctor.runner(timeout: 0.2).call(%w[sleep 30])
+
+    refute ok
+    assert_empty out
+    assert_includes error, '0.2s'
   end
 
   private

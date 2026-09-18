@@ -52,6 +52,19 @@ class DoctorTest < Minitest::Test
     assert_includes report, 'DEGRADED'
   end
 
+  # HOST and HOSTNAME are shell variables a command like this usually does not receive,
+  # so the guard has to ask the system for its own name or it never fires in practice.
+  def test_the_system_host_name_is_caught_without_any_host_variable
+    report, = doctor(environment: { 'SHAKA_MACHINE_ALIAS' => 'test-machine.local' })
+    assert_includes report, 'DEGRADED'
+  end
+
+  # `build-host` identifies the machine exactly as much as `build-host.local` does.
+  def test_the_bare_form_of_a_dotted_host_name_is_caught
+    report, = doctor(environment: { 'SHAKA_MACHINE_ALIAS' => 'test-machine' })
+    assert_includes report, 'DEGRADED'
+  end
+
   def test_a_deliberate_alias_is_healthy_even_when_a_host_name_is_present
     report, blocked = doctor(environment: { 'SHAKA_MACHINE_ALIAS' => 'm5', 'HOST' => 'build-host' })
     refute_includes report, 'DEGRADED'
@@ -69,6 +82,30 @@ class DoctorTest < Minitest::Test
     report, blocked = doctor(usage_files: ['/definitely/missing/transcript.jsonl'])
     assert_includes report, 'DEGRADED'
     refute blocked
+  end
+
+  # An OpenCode session handle is not a file, so doctor cannot open it and must not claim it did.
+  def test_a_session_handle_doctor_cannot_open_is_not_reported_as_ready
+    report, blocked = doctor(usage_files: ['session:ses_example'])
+    assert_includes report, 'DEGRADED'
+    refute blocked
+  end
+
+  # Detection answers nil when several hosts are present, and a blank host is not a report.
+  def test_an_ambiguous_host_is_named_rather_than_left_blank
+    report, blocked = with_two_hosts { doctor(usage_files: []) }
+    assert_includes report, 'ambiguous'
+    refute_match(/host +·/, report)
+    refute blocked
+  end
+
+  def with_two_hosts
+    original = ENV.values_at('CODEX_THREAD_ID', 'CLAUDE_CODE_SESSION_ID')
+    ENV['CODEX_THREAD_ID'] = 'thread'
+    ENV['CLAUDE_CODE_SESSION_ID'] = 'session'
+    yield
+  ensure
+    ENV['CODEX_THREAD_ID'], ENV['CLAUDE_CODE_SESSION_ID'] = original
   end
 
   # One pass: a blocking failure must not hide the checks after it.
