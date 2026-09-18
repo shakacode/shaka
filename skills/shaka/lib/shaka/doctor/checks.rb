@@ -96,7 +96,8 @@ module Shaka
         unopened = located.reject { |entry| openable?(entry) }
         return no_usage_source(shortfall(located, unopened)) if located.empty? || unopened.any?
 
-        check('Usage source', 'healthy', "#{located.length} readable #{@host} source(s)")
+        check('Usage source', 'healthy', "#{located.length} openable #{@host} source(s); " \
+                                         'doctor does not parse them')
       rescue KeyError, SystemCallError => e
         no_usage_source(first_line(e.message))
       end

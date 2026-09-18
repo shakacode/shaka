@@ -69,6 +69,13 @@ class DoctorTest < Minitest::Test
     end
   end
 
+  # An exported-but-empty HOST used to crash the whole command instead of reporting anything.
+  def test_a_blank_host_variable_does_not_abort_the_report
+    report, blocked = doctor(environment: { 'SHAKA_MACHINE_ALIAS' => 'm5', 'HOST' => '', 'HOSTNAME' => '' })
+    assert_includes report, 'Machine alias'
+    refute blocked
+  end
+
   def test_the_suggestion_is_dropped_when_every_example_collides
     report, = doctor(host_name: 'lab1', environment: { 'HOST' => 'm5', 'HOSTNAME' => 'm1' })
     assert_includes report, 'a short deliberate token.'

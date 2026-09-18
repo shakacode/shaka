@@ -48,7 +48,7 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka doctor [--root DIR]'
         flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
-        flags.on('--host NAME', Usage::READERS.keys, 'codex, claude-code, cursor, or opencode') do |value|
+        flags.on('--host NAME', Usage::READERS.keys, Usage::READERS.keys.join(', ')) do |value|
           options[:host] = value
         end
         flags.on('-h', '--help', 'Show usage') { options[:help] = true }

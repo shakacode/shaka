@@ -81,9 +81,10 @@ module Shaka
       end
 
       # The bare name counts too: `build-host` is as identifying as `build-host.local`.
+      # Blank names are dropped first: "".split('.') is empty, and its .first is nil.
       def candidates
-        names = HOST_NAMES.filter_map { |name| @environment[name] } + [@host_name].compact
-        (names + names.map { |name| name.split('.').first }).reject(&:empty?).uniq
+        names = (HOST_NAMES.map { |name| @environment[name] } + [@host_name]).reject { |n| n.to_s.empty? }
+        names.flat_map { |name| [name, name.split('.').first] }.compact.uniq
       end
 
       def valid?(value) = ExecutionProvenance::SAFE_VALUE.match?(value)

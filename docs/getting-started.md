@@ -191,8 +191,11 @@ degrades when the alias *is* this machine's own
 name, because publication accepts that value and would put your machine name in every public
 pull request.
 
-Doctor names the host it checked usage sources for. Detection falls back to Codex when a host
-exposes no session identifier, so OpenCode users should pass `--host opencode`.
+Doctor names the host it checked usage sources for, and says when it only detected that host
+rather than being told. Detection falls back to Codex when a host exposes no session
+identifier, and answers nothing when several are present, so pass `--host` to state it.
+Doctor confirms a session source is an openable file; whether its records parse is what
+`shaka usage` itself reports.
 
 ## Complete your first task
 
