@@ -249,12 +249,13 @@ tables; it refuses a prose restatement of usage.
 
 ### Split the description and the walkthrough
 
-A later reader finds the description on their way past; they find the walkthrough only
-by coming back to this PR. The description travels into `git log`, a squash-merge commit
-body, and search results, and it is maintained to describe the current head. The
-walkthrough stays readable after merge, but it is bound to one commit, and a later head
-supersedes it and collapses it. Anything a reader needs without opening this PR's
-timeline therefore belongs in the description, even when the walkthrough explains it too.
+A later reader meets the description first and reaches the walkthrough only by working
+back through this PR. The description heads the merged PR, turns up in search, and is
+maintained to describe the current head; whether it also reaches the commit body depends
+on the repository's squash-message setting, so do not assume `git log` carries it. The
+walkthrough stays readable after merge, but it is bound to one commit that a later head
+supersedes. Anything a reader needs without working through this PR's timeline therefore
+belongs in the description, even when the walkthrough explains it too.
 
 Copied prose is a staleness bug rather than mere repetition. Republishing at a new head
 refreshes one copy and leaves the other one wrong.
@@ -280,7 +281,7 @@ the other unchanged sits in the wrong artifact.
 
 Four questions settle most cases:
 
-- Would a reader need this a year from now, from `git log` alone? Put it in the description.
+- Would a reader need this a year from now, from the merged PR alone? Put it in the description.
 - Does it change whether to merge, or what to do afterward? Description. Does it only change
   how quickly the diff makes sense? Walkthrough.
 - Does it need a file path or a line number to make sense? Walkthrough.
