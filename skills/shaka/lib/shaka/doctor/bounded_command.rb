@@ -39,12 +39,17 @@ module Shaka
       end
 
       def collect(stdout, stderr, process)
-        streams = { stdout => +'', stderr => +'' }
+        streams = { stdout => +''.b, stderr => +''.b }
         deadline = now + @timeout
         return expired(process) unless drained?(streams, deadline) && exited?(process, deadline)
 
-        [streams.fetch(stdout), streams.fetch(stderr), process.value.success?]
+        [text(streams.fetch(stdout)), text(streams.fetch(stderr)), process.value.success?]
       end
+
+      # read_nonblock answers binary, unlike the buffered read it replaced. A caller puts this
+      # straight into a UTF-8 message, so a localized error from the command would raise an
+      # encoding error and take down the report. Scrub makes that impossible.
+      def text(buffer) = buffer.force_encoding(Encoding::UTF_8).scrub
 
       # Returns false once the deadline passes, so a child that never closes its pipes and a
       # child that floods them are both bounded.

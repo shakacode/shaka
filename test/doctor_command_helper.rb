@@ -1,0 +1,53 @@
+# frozen_string_literal: true
+
+require 'shaka/doctor'
+
+# Support for the bounded-command tests: each one states the child it describes and measures
+# how long the command took to answer, because a deadline that silently waits is the exact
+# failure these tests exist to catch.
+module DoctorCommandHelper
+  # SIGKILL is uncatchable, so an undeliverable signal is simulated by not sending one.
+  class UnkillableCommand < Shaka::Doctor::BoundedCommand
+    private
+
+    def terminate(_pid) = nil
+  end
+
+  def run_bounded(timeout, argv, chdir = nil)
+    Shaka::Doctor::BoundedCommand.new(timeout: timeout).call(argv, chdir)
+  end
+
+  def timed
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    result = yield
+    [Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, result]
+  end
+
+  def pid_in(path) = Integer(File.read(path).strip)
+
+  def kill_quietly(pid)
+    Process.kill('KILL', pid)
+  rescue Errno::ESRCH, Errno::EPERM, ArgumentError
+    nil
+  end
+
+  # A killed process lingers until its parent reaps it, and a descendant is reparented before
+  # init can, so the check waits for it to disappear instead of racing the teardown. A survivor
+  # sleeps for thirty seconds and is still there when the wait runs out.
+  def refute_alive(pid, message, within: 5)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + within
+    while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+      return unless alive?(pid)
+
+      sleep 0.05
+    end
+    flunk message
+  end
+
+  def alive?(pid)
+    Process.kill(0, pid)
+    true
+  rescue Errno::ESRCH
+    false
+  end
+end
