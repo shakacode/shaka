@@ -128,12 +128,24 @@ Unfinished work that lives only in one checkout is lost when that directory is
 removed, and the editors that create worktrees remove them on their own schedule. So
 when work stops with anything uncommitted, commit it on a branch named after the PR
 branch with a `wip/` prefix and push that branch. Include files that were never added,
-since half-finished research is exactly what a later reader cannot reconstruct; files
-the repository ignores stay out, which keeps local configuration and secrets on the
-machine. The snapshot branch has no pull request, so it runs no checks. Name it in the
-note, delete it when the PR reaches its outcome, and say in the note what the snapshot
-does not hold. A repository that does not want these branches sets
-`recovery.snapshot: false`, and then unfinished work stays on the machine that made it.
+since half-finished research is exactly what a later reader cannot reconstruct.
+
+A push is permanent: deleting the branch later does not reliably remove what it
+published, and a public repository publishes it to everyone. So read the list of files
+the snapshot would add before pushing, and leave out anything that looks like a
+credential, a key, a customer artifact, or a private export, whatever its name. Being
+absent from `.gitignore` says nothing about whether a file is safe; ignored files are
+excluded because they are usually local configuration, not because ignoring makes a
+file public. Name the excluded files in the note as work the snapshot does not hold,
+and leave them on the machine. When the list is too large to read, snapshot the
+tracked changes alone and say so.
+
+Name the branch in the note and delete it when the PR reaches its outcome. The
+snapshot carries no pull request, so checks that run on pull requests do not run;
+a repository whose CI runs on every pushed branch will still run it, and should scope
+those triggers or set `recovery.snapshot: false`. A repository that does not want
+these branches at all sets the same key, and then unfinished work stays on the machine
+that made it.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner, including a different tag, ownership was transferred: keep any local

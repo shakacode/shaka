@@ -88,19 +88,6 @@ module Shaka
         raise Error, 'trusted_actions must not be empty' if actions.empty?
       end
 
-      def keys!(mapping, required, optional, label)
-        unknown = mapping.keys - required - optional
-        missing = required - mapping.keys
-        raise Error, "unknown key: #{unknown.first}" unless unknown.empty?
-        raise Error, "missing #{label} key: #{missing.first}" unless missing.empty?
-      end
-
-      def mapping!(value, label)
-        raise Error, "#{label} must be a mapping" unless value.is_a?(Hash) && value.keys.all?(String)
-
-        value
-      end
-
       def strings!(value, label)
         valid = value.is_a?(Array) && value.all? { |item| item.is_a?(String) && !item.strip.empty? }
         raise Error, "#{label} must be a list of non-empty strings" unless valid
