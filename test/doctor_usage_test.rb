@@ -35,6 +35,17 @@ class DoctorUsageTest < Minitest::Test
     refute blocked
   end
 
+  # An empty transcript opens fine and still produces no usage rows.
+  def test_an_empty_transcript_is_not_counted_as_a_usage_source
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'session.jsonl')
+      File.write(path, '')
+      report, blocked = doctor(usage_files: [path])
+      assert_includes report, 'DEGRADED'
+      refute blocked
+    end
+  end
+
   # A readable directory is not a transcript.
   def test_a_directory_is_not_counted_as_a_usage_source
     Dir.mktmpdir do |dir|

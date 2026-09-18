@@ -101,8 +101,12 @@ module Shaka
         no_usage_source(first_line(e.message))
       end
 
-      # A readable directory, FIFO, or device is not a transcript this command can read.
-      def openable?(entry) = File.file?(entry.to_s) && File.readable?(entry.to_s)
+      # A readable directory, FIFO, or device is not a transcript, and an empty file carries
+      # no responses, so neither is evidence that usage will have anything to report.
+      def openable?(entry)
+        path = entry.to_s
+        File.file?(path) && File.readable?(path) && !File.empty?(path)
+      end
 
       def shortfall(located, unopened)
         return "no #{@host} session source" if located.empty?
