@@ -58,10 +58,15 @@ module DoctorCommandHelper
     flunk message
   end
 
+  # Only ESRCH means nothing is there. EPERM means something is, and cannot be signalled from
+  # here — which a group being torn down can answer transiently — so it counts as alive and the
+  # caller keeps waiting. A genuine survivor still runs the wait out and fails.
   def alive?(pid)
     Process.kill(0, pid)
     true
   rescue Errno::ESRCH
     false
+  rescue Errno::EPERM
+    true
   end
 end
