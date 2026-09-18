@@ -27,7 +27,7 @@ begin
 
   names = ['shaka']
   names << 'rct' if with_rct
-  names << 'mct-claude' if with_claude_towers
+  names.push('mct-claude', 'rct-claude') if with_claude_towers
   links = names.map do |name|
     [File.realpath("../skills/#{name}", __dir__), File.join(File.expand_path(skills_dir), name)]
   end

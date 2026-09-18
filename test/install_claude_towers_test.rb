@@ -5,7 +5,8 @@ require 'fileutils'
 require 'rbconfig'
 
 class InstallClaudeTowersTest < Minitest::Test
-  SKILLS = { 'shaka' => 'shaka source', 'rct' => 'rct source', 'mct-claude' => 'mct source' }.freeze
+  SKILLS = { 'shaka' => 'shaka source', 'rct' => 'rct source',
+             'mct-claude' => 'mct source', 'rct-claude' => 'rct-claude source' }.freeze
 
   def setup
     @directory = Dir.mktmpdir('workflows-claude-towers')
@@ -20,12 +21,11 @@ class InstallClaudeTowersTest < Minitest::Test
     FileUtils.remove_entry(@directory)
   end
 
-  def test_installs_the_master_tower_beside_shaka
+  def test_installs_both_tower_skills_beside_shaka
     output, status = install('--with-claude-towers')
 
     assert status.success?, output
-    assert_linked('shaka')
-    assert_linked('mct-claude')
+    %w[shaka mct-claude rct-claude].each { |name| assert_linked(name) }
   end
 
   # The Codex tower drives native tools Claude Code does not have, so one flag never implies the other.
@@ -34,15 +34,14 @@ class InstallClaudeTowersTest < Minitest::Test
     refute File.exist?(destination('rct'))
   end
 
-  def test_codex_tower_does_not_install_the_claude_master_tower
+  def test_codex_tower_does_not_install_the_claude_towers
     assert install('--with-rct').last.success?
-    refute File.exist?(destination('mct-claude'))
+    %w[mct-claude rct-claude].each { |name| refute File.exist?(destination(name)), name }
   end
 
   def test_default_install_omits_every_tower
     assert install.last.success?
-    refute File.exist?(destination('rct'))
-    refute File.exist?(destination('mct-claude'))
+    %w[rct mct-claude rct-claude].each { |name| refute File.exist?(destination(name)), name }
   end
 
   # A partial install would leave one tower skill linked and the other silently missing.

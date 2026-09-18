@@ -67,7 +67,8 @@ from Ruby as an [experimental API](docs/public-comments.md).
 Start with the [Shaka skill](skills/shaka/SKILL.md), whose small trust bootstrap
 loads the packaged [workflow configuration](skills/shaka/config/workflow.yml)
 through `shaka workflow`, or the focused [repository control tower setup](skills/rct/SKILL.md)
-and [Claude Code master tower setup](skills/mct-claude/SKILL.md).
+and the Claude Code [master](skills/mct-claude/SKILL.md) and
+[repository](skills/rct-claude/SKILL.md) tower setups.
 Each repository's validated `.agents/agent-workflow.yml` separately supplies
 commands and authority; `AGENTS.md` retains human-only boundaries. Create a missing
 contract with `shaka seam init` after identifying the repository's real commands

@@ -53,8 +53,8 @@ destination, remove only the known pilot symlinks, then run the new version's
 installer. Do not remove a foreign directory or silently repoint another skill.
 You can retain the prior gem version and relink it for rollback.
 
-Remove the pilot `shaka`, `rct`, and `mct-claude` skill links before uninstalling the version they
-point to. For the
+Remove the pilot `shaka`, `rct`, `mct-claude`, and `rct-claude` skill links before uninstalling the
+version they point to. For the
 isolated packaging check above:
 
 ```bash

@@ -10,8 +10,8 @@ The hosts share one `shaka` skill and the same Ruby helpers for GitHub
 operations. Control tower skills are host-specific because they drive native task
 tools. The optional `rct` skill requires the Codex app's native project, task,
 pin, follow-up, and wait tools, so install it only there with `--with-rct`. Claude
-Code desktop has its own equivalents and installs `mct-claude` with
-`--with-claude-towers`. Cursor, OpenCode, and terminal-only installs stay
+Code desktop has its own equivalents and installs `mct-claude` and `rct-claude`
+with `--with-claude-towers`. Cursor, OpenCode, and terminal-only installs stay
 Shaka-only and use the [role prompts](control-towers.md#role-prompts).
 Your repository keeps its existing `AGENTS.md`, commands, and policy.
 Host-specific work covers installation, instruction loading, execution permissions,
@@ -91,8 +91,8 @@ delivered with `/shaka`.
 ### Control towers in Claude Code
 
 The desktop app exposes session tools that cover what the Codex tower skill needs,
-so `--with-claude-towers` installs `mct-claude` for the master role. These tools
-belong to the desktop app; `claude` in a terminal does not have them, and the skill
+so `--with-claude-towers` installs `mct-claude` for the master role and `rct-claude`
+for repository towers. These tools belong to the desktop app; `claude` in a terminal does not have them, and the skill
 stops with a setup error rather than guessing.
 
 | Tower requirement | Codex app | Claude Code desktop |

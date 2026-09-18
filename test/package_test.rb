@@ -26,7 +26,7 @@ class PackageTest < Minitest::Test
     run_gem('install', '--local', '--no-document', archive)
     check_commands
     source = install_skill
-    %w[shaka rct mct-claude].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
+    %w[shaka rct mct-claude rct-claude].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
     run_gem('uninstall', 'shaka', '--all', '--executables', '--ignore-dependencies')
     refute File.exist?(File.join(@home, 'bin', 'shaka'))
     refute File.exist?(source)
@@ -85,7 +85,7 @@ class PackageTest < Minitest::Test
 
   def check_public_skills(skills, source)
     check_shaka_skill(File.realpath(File.join(skills, 'shaka')), source)
-    %w[rct mct-claude].each do |name|
+    %w[rct mct-claude rct-claude].each do |name|
       tower = File.realpath(File.join(skills, name))
       assert File.file?(File.join(tower, 'SKILL.md')), name
       assert_equal File.dirname(source), File.dirname(tower)

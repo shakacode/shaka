@@ -76,13 +76,36 @@ repository, session, and default branch from its own reads before acknowledging,
 and refuses a repository that already has a tower. A delivered or queued message is
 not acknowledgment in either direction.
 
-**The Claude repository tower is not shipped yet.** `--with-claude-towers` links the
-master skill alone, so nothing can currently register with it: `$rct` needs the Codex
-app's tools and searches Codex tasks for its master, and the role prompts below do not
-title, pin, or register a session. Until the repository skill lands, `/mct-claude`
-establishes and holds the role, but its registration and tower-set flow is
-unreachable, and a Claude master cannot coordinate Codex repository towers. Use the
-Codex pair for a working tower today.
+## Establish a repository tower in Claude Code
+
+With a master established, open a Claude Code desktop session in the repository you
+want the tower to own, and send:
+
+```text
+/rct-claude
+```
+
+It takes no arguments: the session's own checkout selects the repository. The skill
+confirms the Git root, the remotes, and live GitHub identity, and that the session's
+origin directory contains that root. Missing or ambiguous repository identity, an
+existing tower for the same repository, and a missing or ambiguous master are errors
+rather than guesses.
+
+The skill renames the session to end in `RCT — Shaka`, pins it, and then states the
+completed setup in the session itself: the repository, session, default branch, and
+one-repository scope. That written record, not the title, is what makes the role
+durable — the master establishes ownership by reading the tower's session, and towers
+outlive the master that acknowledged them.
+
+Registration is a message, and this host has no bounded wait for another session, so
+the tower reports `awaiting acknowledgment` and ends its turn. The master's answer
+arrives as an ordinary labelled turn. Setup is complete only when that answer names
+the same repository and session; a delivered or queued message is not acknowledgment,
+and a refusal comes back the same way rather than leaving the tower waiting.
+
+The two hosts cannot see each other's sessions, so a Claude master coordinates Claude
+repository towers and a Codex master coordinates Codex ones. Do not mix hosts within
+one tower set.
 
 ## Who owns what
 
