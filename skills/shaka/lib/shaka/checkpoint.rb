@@ -7,6 +7,8 @@ require_relative 'error'
 module Shaka
   # Decides whether an intake already supplies the implementation checkpoint.
   class Checkpoint
+    VALUE_ACTION = 'Name the user problem this solves and the cheaper alternative you rejected, then reply ready.'
+
     def self.run(arguments)
       path = content_path(arguments)
       return 0 unless path
@@ -61,8 +63,13 @@ module Shaka
     private
 
     def proceed?
-      explicit_settings? && matching_settings? && active_settings? && immediate_start? && settings_available?
+      value_established? && explicit_settings? && matching_settings? && active_settings? &&
+        immediate_start? && settings_available?
     end
+
+    # Absent means the user named the task, which already establishes its value.
+    # Only an agent proposing work, or acting on an unverified report, sets this false.
+    def value_established? = @content['value_established'] != false
 
     def explicit_settings?
       %w[requested_model requested_effort recommended_model recommended_effort].all? do |field|
@@ -85,6 +92,12 @@ module Shaka
     def settings_available? = @content['settings_available'] == true
 
     def pause_reason
+      return 'value_not_established' unless value_established?
+
+      settings_pause_reason
+    end
+
+    def settings_pause_reason
       return 'settings_unavailable' unless settings_available?
       return 'settings_not_explicit' unless explicit_settings?
       return 'settings_conflict' if settings_conflict?
@@ -104,6 +117,8 @@ module Shaka
     end
 
     def action(reason)
+      return VALUE_ACTION if reason == 'value_not_established'
+
       return 'Select an available model and effort, then reply ready.' if reason == 'settings_unavailable'
 
       return 'Resolve the requested and recommended settings, then reply ready.' if reason == 'settings_conflict'

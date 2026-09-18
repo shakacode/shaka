@@ -56,13 +56,16 @@ phases:
         priced per token, input volume dominates spend, and avoiding rework is the saving
         ([#45](https://github.com/shakacode/shaka/issues/45) holds the evidence). Honor explicit
         settings. Render the checkpoint with `recommendation --content-file PATH`,
-        supplying one-line `scope`, `risk`, `model`, `effort`, and `reason`; the helper chooses no
-        settings.
+        supplying one-line `value`, `scope`, `risk`, `model`, `effort`, and `reason`; the helper
+        chooses no settings and judges no claim. `value` follows the packaged
+        [planning guide](<{{package_root}}/docs/working-with-your-agent.md#say-what-the-work-is-worth>).
       - For a planning-only request, include the rendered recommendation in a compact execution
         prompt with the usage report, then stop before edits and skip the implementation checkpoint.
       - For implementation, run `checkpoint --content-file PATH` with `requested_model`,
         `requested_effort`, `recommended_model`, `recommended_effort`, `immediate_start`, and
         `settings_available`, plus `active_model` and `active_effort` when the host reports them.
+        Add `value_established: false` only when you proposed the task or took it from an
+        unverified report; omit it when the user named the task.
         It answers proceed, or pause with the next action. Proceed without another response only
         when the user explicitly supplied both settings, they match the recommendation, they are
         active and usable in the host, and immediate start is unambiguous. Otherwise pause after the

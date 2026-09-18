@@ -8,7 +8,7 @@ require_relative 'publication'
 module Shaka
   # Renders the model checkpoint after the agent has assessed and selected settings.
   class Recommendation
-    FIELDS = %w[scope risk model effort reason].freeze
+    FIELDS = %w[value scope risk model effort reason].freeze
 
     def self.run(arguments)
       path = content_path(arguments)
@@ -55,16 +55,9 @@ module Shaka
     end
 
     def render
-      values = FIELDS.to_h do |field|
-        [field, PublicationText.single_line(@content[field], "recommendation #{field}")]
-      end
-      <<~MARKDOWN
-        Scope: #{values.fetch('scope')}
-        Risk: #{values.fetch('risk')}
-        Model: #{values.fetch('model')}
-        Effort: #{values.fetch('effort')}
-        Reason: #{values.fetch('reason')}
-      MARKDOWN
+      FIELDS.map do |field|
+        "#{field.capitalize}: #{PublicationText.single_line(@content[field], "recommendation #{field}")}\n"
+      end.join
     end
   end
 end

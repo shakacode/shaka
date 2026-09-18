@@ -24,10 +24,12 @@ class CliTest < Minitest::Test
 
   def test_recommendation_renders_without_calling_github
     without_github do |dir, sentinel|
-      body = JSON.generate(scope: 'Small.', risk: 'Policy.', model: 'gpt-example', effort: 'medium', reason: 'Fit.')
+      body = JSON.generate(value: 'Slow search.', scope: 'Small.', risk: 'Policy.',
+                           model: 'gpt-example', effort: 'medium', reason: 'Fit.')
       output, error, status = run_offline(dir, body, 'recommendation')
       assert status.success?, error
-      assert_equal "Scope: Small.\nRisk: Policy.\nModel: gpt-example\nEffort: medium\nReason: Fit.\n", output
+      assert_equal "Value: Slow search.\nScope: Small.\nRisk: Policy.\n" \
+                   "Model: gpt-example\nEffort: medium\nReason: Fit.\n", output
       refute File.exist?(sentinel)
     end
   end

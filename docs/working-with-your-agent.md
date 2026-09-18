@@ -80,6 +80,23 @@ Task names identify the repository, verified issue/PR, and outcome. For example,
 Use the native rename capability and preserve user-chosen titles. A title is for
 finding the task; it does not establish merge authority or ownership by itself.
 
+### Say what the work is worth
+
+Before it names a model, `$shaka` writes one line saying which user problem the change
+solves and which cheaper alternative it rejected. Cheaper usually means a sentence in a
+guide, a seam setting, a clearer error message, or doing nothing. The helper renders that
+line and checks only that it is one nonempty line; nothing scores the claim, because an
+engine that grades natural-language justification is what
+[#36](https://github.com/shakacode/shaka/issues/36) section 5 retires. The line exists so
+you can check it against the diff in one read.
+
+Who named the task decides whether the agent may answer that question by itself. When you
+named the task, its value is settled and the agent proceeds. When the agent proposed the
+work itself, or took it from an unverified report such as a scan, a linter sweep, or a
+model's own review, the agent says so and waits for you to agree. That pause outranks
+every model and effort question, because choosing settings for work that should not happen
+wastes the turn.
+
 ### Recover an unfinished PR
 
 From the first PR description until the PR reaches its outcome, keep a `Recovery`

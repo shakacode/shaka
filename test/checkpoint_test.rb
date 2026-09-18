@@ -52,6 +52,40 @@ class CheckpointTest < Minitest::Test
     assert_pause result, 'settings_unverified'
   end
 
+  # Issue #36 section 5 retires evidence engines that judge natural-language claims,
+  # so the helper carries the agent's own verdict instead of scoring the value text.
+  def test_unestablished_value_pauses_agent_proposed_work
+    result = Shaka::Checkpoint.new(default_content.merge('value_established' => false)).result
+
+    assert_pause result, 'value_not_established'
+  end
+
+  def test_established_value_proceeds
+    result = Shaka::Checkpoint.new(default_content.merge('value_established' => true)).result
+
+    assert_equal 'proceed', result.fetch('status')
+  end
+
+  # A user who named the task already established its value, so the field is absent
+  # for ordinary work and its absence must not add a turn.
+  def test_absent_value_field_proceeds
+    refute_includes default_content.keys, 'value_established'
+
+    assert_equal 'proceed', Shaka::Checkpoint.new(default_content).result.fetch('status')
+  end
+
+  # Asking an agent to pick a model for work that should not happen wastes the turn,
+  # so the value verdict outranks every settings reason.
+  def test_unestablished_value_outranks_every_settings_reason
+    [{ 'settings_available' => false }, { 'immediate_start' => false },
+     { 'recommended_model' => 'gpt-5.6-sol' }, { 'active_model' => 'gpt-5.6-sol' },
+     { 'active_effort' => nil }].each do |settings_problem|
+      content = default_content.merge(settings_problem).merge('value_established' => false)
+
+      assert_pause Shaka::Checkpoint.new(content).result, 'value_not_established'
+    end
+  end
+
   private
 
   def default_content
