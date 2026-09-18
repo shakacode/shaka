@@ -18,13 +18,23 @@ module DoctorCommandHelper
   class InterruptedCommand < Shaka::Doctor::BoundedCommand
     attr_reader :spawned
 
+    def initialize(timeout:, after: 0)
+      super(timeout: timeout)
+      @after = after
+    end
+
     private
 
     def spawn_without_stdin(argv, options)
       super.tap { |result| @spawned = result.last.pid }
     end
 
-    def drained?(*) = raise(Interrupt)
+    # `after` lets the leader exit first, so the interrupt can arrive while only a descendant
+    # is still holding the pipes.
+    def drained?(*)
+      sleep @after
+      raise Interrupt
+    end
   end
 
   def run_bounded(timeout, argv, chdir = nil)

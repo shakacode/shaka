@@ -58,6 +58,19 @@ class DoctorCommandTest < Minitest::Test
     refute_alive(command.spawned, 'an interrupted call stranded its child')
   end
 
+  # The leader can be gone while a descendant holds the pipes, so liveness of the leader is
+  # the wrong thing to condition cleanup on.
+  def test_an_interrupt_after_the_leader_exits_still_takes_the_group
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'pid')
+      command = InterruptedCommand.new(timeout: 30, after: 0.3)
+      script = "sh -c 'echo $$ > #{path}; sleep 30' &"
+
+      assert_raises(Interrupt) { command.call(['sh', '-c', script]) }
+      refute_alive(pid_in(path), 'an interrupt stranded a descendant once the leader had gone')
+    end
+  end
+
   # A child can close both pipes and keep running, so the wait after draining is bounded too.
   def test_a_child_that_closes_its_pipes_and_keeps_running_is_still_bounded
     elapsed, (_out, _error, ok) = timed { run_bounded(0.3, ['sh', '-c', 'exec 1>&- 2>&-; sleep 30']) }

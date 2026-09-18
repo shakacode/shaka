@@ -27,12 +27,19 @@ module Shaka
         options = { pgroup: true }
         options[:chdir] = chdir if chdir
         _stdin, stdout, stderr, process = spawn_without_stdin(argv, options)
-        collect(stdout, stderr, process)
+        result = collect(stdout, stderr, process)
+        answered = true
+        result
       ensure
         # `pgroup: true` also isolates the child from the terminal, so Ctrl-C reaches this
-        # process and not the command it started. Leaving on any exception has to take the
-        # group with it, or interrupting doctor strands the very process it was bounding.
-        cleanup(process) if process&.alive?
+        # process and not the command it started. Leaving by exception has to take the group
+        # with it, or interrupting doctor strands the very process it was bounding.
+        #
+        # The condition is whether this call answered, not whether the leader is alive: the
+        # leader can exit while a descendant holds the pipes and keeps running, which is the
+        # same distinction `terminate` makes. A call that answered has already cleaned up
+        # after a timeout, and after success has nothing to clean up.
+        cleanup(process) if process && !answered
         [stdout, stderr].each { |io| io.close unless io.nil? || io.closed? }
       end
 
