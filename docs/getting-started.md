@@ -168,6 +168,24 @@ Initialization validates every input before writing. It is safe to repeat when t
 generated files are unchanged and refuses to overwrite a repository-owned file or
 symlink. Use the path printed by `bin/install` when you installed elsewhere.
 
+## Check your setup
+
+`shaka doctor` reports, in one pass, whether this machine can run the workflow and
+publish a complete pull request. It is read-only: it changes no repository and no
+setting.
+
+```bash
+"$HOME/.agents/skills/shaka/scripts/shaka" doctor --root /path/to/repository
+```
+
+Each check is `HEALTHY`, `DEGRADED`, `FAILED`, or `SKIPPED`, worst first, with the next
+step for anything that is not healthy. A `FAILED` check blocks publication and the
+command exits non-zero; a `DEGRADED` check still publishes, with something missing from
+the result. Missing GitHub authentication or write access fails, and so does a missing or
+invalid repository seam. An unset `SHAKA_MACHINE_ALIAS` only degrades: the provenance row
+reads `UNKNOWN`. Set it to a short deliberate token such as `m5`, never this machine's own
+name, because it appears in public pull requests.
+
 ## Complete your first task
 
 Send this, replacing the example with your issue number, task URL, or description:

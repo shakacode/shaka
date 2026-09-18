@@ -6,6 +6,7 @@ require 'optparse'
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
+require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
@@ -45,6 +46,11 @@ if ARGV.first == 'workflow'
   exit Shaka::Workflow.run(ARGV)
 end
 
+if ARGV.first == 'doctor'
+  ARGV.shift
+  exit Shaka::Doctor.run(ARGV)
+end
+
 COMMANDS = %w[pr comments description reply walkthrough merge].freeze
 
 def content(path)
@@ -68,6 +74,7 @@ parser = OptionParser.new do |flags|
   flags.banner += 'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help'
   flags.banner += '; shaka seam check --help'
   flags.banner += '; shaka workflow --help'
+  flags.banner += '; shaka doctor --help'
   flags.on('--head SHA', 'Expected current PR head') { |value| options[:head] = value }
   flags.on('--content-file PATH', 'Publication content as JSON') { |value| options[:content_file] = value }
   flags.on('--body-file PATH', 'Walkthrough Markdown file') { |value| options[:body_file] = value }
