@@ -51,8 +51,9 @@ defines the tower's boundary: one RCT never owns more than one repository, and a
 cross-repository task belongs with the master.
 
 Stop with `RCT setup error: session is not in a repository` when `cwd` is not inside a
-Git worktree, and with `RCT setup error: repository is ambiguous` when several remotes
-identify plausible repositories or GitHub confirms none. List what you observed and
+Git worktree, `RCT setup error: repository is ambiguous` when several remotes identify
+plausible repositories, and `RCT setup error: repository is unconfirmed` when live
+GitHub metadata confirms none. Too many candidates and none are different problems. List what you observed and
 tell the user to start `/rct-claude` in a session opened in the intended checkout.
 
 Read `AGENTS.md` and referenced policy from a freshly fetched default-branch revision,
