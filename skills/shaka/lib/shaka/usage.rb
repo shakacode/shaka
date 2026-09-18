@@ -6,6 +6,7 @@ require_relative 'codex_usage'
 require_relative 'cost_estimate'
 require_relative 'cursor_usage'
 require_relative 'opencode_usage'
+require_relative 'pi_usage'
 
 module Shaka
   # Read-only reporting of per-response usage records from a supported host.
@@ -13,9 +14,10 @@ module Shaka
     FIELDS = %w[input_tokens cached_input_tokens output_tokens reasoning_output_tokens
                 cache_write_input_tokens total_tokens].freeze
     READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage, 'cursor' => CursorUsage,
-                'opencode' => OpencodeUsage }.freeze
+                'opencode' => OpencodeUsage, 'pi' => PiUsage }.freeze
     HOST_CONTEXT = { 'codex' => 'CODEX_THREAD_ID', 'claude-code' => 'CLAUDE_CODE_SESSION_ID',
-                     'cursor' => 'CURSOR_CONVERSATION_ID', 'opencode' => 'OPENCODE_SESSION_ID' }.freeze
+                     'cursor' => 'CURSOR_CONVERSATION_ID', 'opencode' => 'OPENCODE_SESSION_ID',
+                     'pi' => 'PI_CODING_AGENT' }.freeze
 
     def self.run(arguments)
       options = { files: [], turns: [], host: detected_host }
@@ -43,7 +45,7 @@ module Shaka
     end
 
     def self.source_options(flags, options)
-      flags.on('--host NAME', READERS.keys, 'codex, claude-code, cursor, or opencode') { |v| options[:host] = v }
+      flags.on('--host NAME', READERS.keys, 'codex, claude-code, cursor, opencode, or pi') { |v| options[:host] = v }
       flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |v|
         options[:files] << v
       end
@@ -53,10 +55,8 @@ module Shaka
     end
 
     def self.detected_host
-      found = HOST_CONTEXT.select { |_, variable| ENV.key?(variable) }.keys
-      return if found.size > 1
-
-      found.first || 'codex'
+      found = HOST_CONTEXT.select { |host, variable| host == 'pi' ? ENV[variable] == 'true' : ENV.key?(variable) }.keys
+      found.size > 1 ? nil : found.first || 'codex'
     end
 
     def self.valid_mapping?(options)

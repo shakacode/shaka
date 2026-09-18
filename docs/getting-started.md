@@ -15,9 +15,13 @@ run `gh auth login` if needed. Codex terminal users also need `codex --version` 
 Claude Code users need `claude --version`; OpenCode users need `opencode --version`.
 The skill uses no development gems. Keep your application's own Ruby version.
 
-Your repository's `.agents/agent-workflow.yml` names executable setup, validation,
-and focused-test paths, the base branch, review policy, and merge authority. Shaka
-validates this contract and helps add it when it is missing. Keep long
+Shaka's installed `SKILL.md` is a small trust bootstrap. It invokes `shaka workflow`,
+which strictly validates and renders the packaged workflow configuration before the
+agent acts. Your repository's separate `.agents/agent-workflow.yml` names executable
+setup, validation, and focused-test paths, the base branch, review policy, and merge
+authority. Shaka validates this contract and helps add it when it is missing.
+[Settings](settings.md) documents every key, its allowed values, and what fails when
+one is wrong. Keep long
 commands in repository scripts and human-only constraints in `AGENTS.md`.
 To merge, GitHub must enforce required checks for the acting account, allow squash
 merges, and satisfy required approvals. Otherwise, Shaka explains the blocker on the PR.
@@ -61,6 +65,19 @@ this guide shows `$shaka`. Claude Code runs your personal skill instead of a
 same-named skill in a repository's `.claude/skills`, and the skill stops if it was
 loaded from inside the checkout. Keep the trusted source outside any `--add-dir`
 directory. Your usual permission mode applies; installation adds no sandbox.
+
+To organize work across repositories, add the desktop app's control tower skills:
+
+```bash
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.claude/skills" --with-claude-towers
+```
+
+Send `/mct-claude` in the session you want to hold the master role, then
+`/rct-claude` in a session opened in each repository a tower should own. These skills
+use the desktop app's session tools and stop with a setup error in a terminal
+`claude`. See the control-tower guide for the
+[master](control-towers.md#establish-a-master-tower-in-claude-code) and
+[repository](control-towers.md#establish-a-repository-tower-in-claude-code) roles.
 
 <a id="use-shaka-in-cursor"></a>
 
@@ -151,6 +168,35 @@ Initialization validates every input before writing. It is safe to repeat when t
 generated files are unchanged and refuses to overwrite a repository-owned file or
 symlink. Use the path printed by `bin/install` when you installed elsewhere.
 
+## Check your setup
+
+`shaka doctor` reports, in one pass, whether this machine can run the workflow and
+publish a complete pull request. It is read-only: it changes no repository and no
+setting.
+
+```bash
+"$HOME/.agents/skills/shaka/scripts/shaka" doctor --root /path/to/repository
+```
+
+Each check is `HEALTHY`, `DEGRADED`, or `FAILED`, worst first, with the next step for
+anything that is not healthy. A `FAILED` check blocks publication and the command exits
+non-zero; a `DEGRADED` check still publishes, with something missing from the result.
+
+Doctor fails rather than guessing when it cannot establish what it checks. A repository it
+cannot resolve as writable fails, whatever the reason, so a passing report always means
+verified write access. A missing or invalid repository seam fails too. An unset
+`SHAKA_MACHINE_ALIAS` only degrades: the provenance row reads `UNKNOWN`. Set it to a short
+deliberate token such as `m5` — any token that is not this machine's own name. Doctor also
+degrades when the alias *is* this machine's own
+name, because publication accepts that value and would put your machine name in every public
+pull request.
+
+Doctor names the host it checked usage sources for, and says when it only detected that host
+rather than being told. Detection falls back to Codex when a host exposes no session
+identifier, and answers nothing when several are present, so pass `--host` to state it.
+Doctor confirms a session source is an openable file; whether its records parse is what
+`shaka usage` itself reports.
+
 ## Complete your first task
 
 Send this, replacing the example with your issue number, task URL, or description:
@@ -212,7 +258,8 @@ git -C "$shaka_source" pull --ff-only
 ```
 
 Start a fresh task after upgrading. `--with-rct` is for the Codex app's native task
-and project tools. Omit it for a terminal install and pass your dedicated skills
+and project tools; Claude Code desktop uses `--with-claude-towers` instead. Omit both
+for a terminal install and pass your dedicated skills
 directory instead; for Claude Code, pass `$HOME/.claude/skills`; for Cursor, pass
 `$HOME/.cursor/skills`; for OpenCode, pass `$HOME/.config/opencode/skills`. Earlier installs used `agent-workflows-v2` or
 `shakacode-workflows` source directories: keep that location and use it above.
@@ -221,12 +268,26 @@ Replace any old `sw/scripts` shell `PATH` entry with the `shaka/scripts` path ab
 
 ## Remove or roll back
 
-Inspect both links. If they point to your Shaka installation, remove them:
+Inspect every link this installation created. If they point to your Shaka
+installation, remove them:
 
 ```bash
 test -L "$HOME/.agents/skills/shaka" && unlink "$HOME/.agents/skills/shaka"
 test -L "$HOME/.agents/skills/rct" && unlink "$HOME/.agents/skills/rct"
 ```
+
+A Claude Code install with towers puts all three of its links in that host's own
+directory, so remove them there instead:
+
+```bash
+test -L "$HOME/.claude/skills/shaka" && unlink "$HOME/.claude/skills/shaka"
+test -L "$HOME/.claude/skills/mct-claude" && unlink "$HOME/.claude/skills/mct-claude"
+test -L "$HOME/.claude/skills/rct-claude" && unlink "$HOME/.claude/skills/rct-claude"
+```
+
+Remove every link the install created, not only the tower ones. The installer
+refuses any destination it does not already own, so one link left behind blocks
+reinstalling that revision.
 
 Use your dedicated skills directory for a terminal install and remove its shell
 `PATH` entry. For Claude Code, use `$HOME/.claude/skills`. For Cursor, use

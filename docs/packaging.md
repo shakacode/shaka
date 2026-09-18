@@ -1,6 +1,9 @@
 # Build and test the pilot gem
 
-The gem packages the same skills, installer, and Ruby helpers as the source checkout.
+The gem packages the same skills, workflow configuration, installer, and Ruby helpers
+as the source checkout. The `shaka` skill is a small trust bootstrap: `shaka workflow`
+strictly validates and renders its packaged `skills/shaka/config/workflow.yml` before
+an agent follows the procedure.
 It adds no runtime gems and does not install a global agent profile. Version
 `0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name. The source
 installation remains the verified pilot path; registry publication does not establish
@@ -22,6 +25,7 @@ individual commands:
 shaka_gem_home=$(mktemp -d)
 GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" gem install --local --no-document ./shaka-0.1.0.pre.1.gem
 GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" "$shaka_gem_home/bin/shaka" --help
+GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" "$shaka_gem_home/bin/shaka" workflow
 ```
 
 Keep this temporary home for packaging checks only. A real pilot installation must
@@ -35,7 +39,8 @@ Applications that only need the experimental public-comment screen can load
 
 The package also contains `shaka-install --skills-dir DIR`, which calls
 the existing explicit-directory installer. It installs the portable `shaka` skill
-by default; add `--with-rct` only for a Codex app skills directory. It preserves
+by default; add `--with-rct` only for a Codex app skills directory, or
+`--with-claude-towers` only for a Claude Code desktop skills directory. It preserves
 existing content and refuses to replace a different source. The
 [first-use guide](getting-started.md) explains the trusted source and host startup
 boundaries.
@@ -48,7 +53,8 @@ destination, remove only the known pilot symlinks, then run the new version's
 installer. Do not remove a foreign directory or silently repoint another skill.
 You can retain the prior gem version and relink it for rollback.
 
-Remove the pilot `shaka` and `rct` skill links before uninstalling the version they point to. For the
+Remove the pilot `shaka`, `rct`, `mct-claude`, and `rct-claude` skill links before uninstalling the
+version they point to. For the
 isolated packaging check above:
 
 ```bash

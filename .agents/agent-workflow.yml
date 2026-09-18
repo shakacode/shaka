@@ -1,27 +1,36 @@
+# Shaka repository contract. Every setting is documented in docs/settings.md.
+# Validate any change with: shaka seam check --root .
 ---
 version: 1
+# Branch that new work starts from and merges into.
 base_branch: main
+# Optional repository-relative plan document.
 plan: docs/pilot-plan.md
+# Executable repository paths Shaka runs; keep compound logic inside these scripts.
 commands:
   setup: .agents/bin/setup
   validate: .agents/bin/validate
   test: .agents/bin/test
+# Reviewer policy. A review from the implementer's own model family does not qualify.
 review:
   required: meaningful_changes
   check: claude-review
   model_family: claude
   provider: anthropic
   draft: false
+# Merge authority and method for a finished pull request.
 merge:
   preference: ask
   method: squash
   release: explicit_approval
+# Branch protection Shaka expects GitHub to enforce; it never bypasses these.
 protection:
   required_checks:
     - validate
   direct_push: false
   force_push: false
   branch_deletion: false
+# Optional allowlist of GitHub Actions used by trusted workflows.
 trusted_actions:
   - actions/checkout
   - anthropics/claude-code-action

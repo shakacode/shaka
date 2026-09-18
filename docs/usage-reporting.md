@@ -9,9 +9,10 @@ or the final response when there is no PR:
 shaka usage --commit FULL_COMMIT_SHA --contribution implementation
 ```
 
-The helper reads the current host's records, Codex, Claude Code, Cursor, or OpenCode. When more
-than one host's session context is present, pass `--host codex`, `--host claude-code`,
-`--host cursor`, or `--host opencode`.
+The helper reads the current host's records: Codex, Claude Code, Cursor, OpenCode, or Pi. When
+more than one host context is present, pass `--host codex`, `--host claude-code`, `--host cursor`,
+`--host opencode`, or `--host pi`. This is required when another agent is started inside Pi because
+that child inherits Pi's process marker. Selecting Pi never falls back to unrelated Codex records.
 
 Contribution categories are `implementation`, `review`, `integration`, and
 `shared-planning`. Supply several affected commit SHAs separated by commas when
@@ -123,6 +124,46 @@ independent per-response aggregate for a real 49-response session: response coun
 all five token categories and their total, the response interval, and the source
 version. Records it cannot read produce UNKNOWN.
 
+## What the Pi reader includes
+
+The reader uses `PI_SESSION_FILE` only when its v3 session header has a non-empty ID that
+matches `PI_SESSION_ID` exactly. This supports current SDK-provided custom IDs without publishing
+them. An ephemeral session, missing file, older format, malformed header, or identity mismatch
+stays UNKNOWN; it never triggers the old Codex fallback. Reopen or export a legacy session with
+current Pi before reporting it. Explicit `--host pi --file PATH` remains available for saved
+contributor or resumed-session evidence.
+
+Pi stores an append-only session tree. The reader validates entry identities and parent
+links, starts at the current leaf, and walks back to the root. Abandoned `/tree` branches
+are therefore excluded. A Pi turn is one user message and the assistant responses that
+follow it before the next user message. The default selects the latest such turn on the
+active branch; `--turn ID` selects active-branch user entries, and `--all-turns` includes
+all identified turns on that branch.
+
+Rows use each assistant response's provider and selected model as configured evidence.
+The optional `responseModel` is the routed model; it stays UNKNOWN when the provider does not
+record it rather than falling back to the configured model. Active-branch thinking-level entries
+supply effective effort. Pi input excludes cache reads and cache writes, so the three counters
+stay separate. The native total is copied rather than recomputed. Supported providers also record
+reasoning as a subset of output. When reasoning is absent, it stays UNKNOWN unless zero output
+proves zero reasoning. A present invalid value or one that exceeds output makes that response's
+usage contradictory and therefore UNKNOWN.
+
+Pi's recorded `usage.cost.total` appears in the existing API-equivalent USD column as native
+nominal cost. It is not recalculated from tokens. Codex credits, subscription treatment, discounts,
+service tier, account terms, and the actual invoice remain UNKNOWN.
+
+The reader was exercised against Pi 0.85.1 in a real delivery session. Its selected active-branch
+responses matched an independent aggregate for input, output, reasoning, cache reads, cache writes,
+native total, and native nominal cost. Malformed trees and conflicting response copies produce
+UNKNOWN without publishing session content, paths, or identifiers.
+
+Compaction and branch-summary entries can carry separate summarizer usage, but the pilot reader
+counts assistant responses only and discloses when such usage on the active branch is excluded.
+Tool-nested model usage is also excluded. Pi's `/session` total may be
+published separately as comparison evidence for a dedicated session; never hand-edit it into the
+helper's report or use it to attribute summary usage to a turn.
+
 ## Coverage and fallback
 
 The Codex adapter was exercised against desktop `0.154.0-alpha.6.2` and stable Codex
@@ -132,14 +173,16 @@ or unreadable records and missing fields produce UNKNOWN. Reports are PARTIAL
 snapshots: active work, external reviewers, tool-model calls, and other agents
 may add usage that is absent from the selected sources. Routed model, billing mode,
 service tier, account terms, and actual provider charges are not established by
-these tokens. API-equivalent USD is a scenario, not a subscription invoice.
+these tokens. API-equivalent USD is a scenario or Pi's recorded native nominal cost,
+not a subscription invoice.
 Human active time and total historical consumption are not inferred.
 
 When host discovery is unavailable or several turns/contributors belong to the
 work, the agent may supply repeated `--file PATH` and `--turn ID` options using
 its private source context. Without `--turn`, each Codex file contributes its latest
-turn, Claude Code files use the first file's latest turn, and Cursor files use
-each source's latest generation. For a session dedicated to one task, use `--all-turns` to include planning,
+turn, Claude Code files use the first file's latest turn, Cursor files use
+each source's latest generation, and Pi files use the first file's latest active-branch
+user turn. For a session dedicated to one task, use `--all-turns` to include planning,
 implementation, user answers, and merge turns together. It cannot be combined with
 `--turn`. A fresh `shaka work` session starts with one task; if it later contains
 unrelated work or inherited history, select relevant turns instead. Never include

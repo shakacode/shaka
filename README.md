@@ -6,11 +6,17 @@ Give your agent a task. Get a verified PR and a clear explanation.
 $shaka Fix the failing search test
 ```
 
-Or establish the current repository's control tower from a task in its saved
-Codex project:
+Or establish a control tower to organize the work. From a Codex task in the
+repository's saved project:
 
 ```text
 $rct
+```
+
+From the Claude Code desktop session that will coordinate repositories:
+
+```text
+/mct-claude
 ```
 
 You steer the work. Shaka takes it through delivery:
@@ -58,11 +64,15 @@ from Ruby as an [experimental API](docs/public-comments.md).
 
 ## For agents and contributors to Shaka
 
-Start with the [agent procedure](skills/shaka/SKILL.md), or the focused
-[repository control tower setup](skills/rct/SKILL.md). Each repository's validated
-`.agents/agent-workflow.yml` supplies commands and authority; `AGENTS.md` retains
-human-only boundaries. Create a missing contract with `shaka seam init` after
-identifying the repository's real commands and policy. See the [requirements](docs/pilot-plan.md)
+Start with the [Shaka skill](skills/shaka/SKILL.md), whose small trust bootstrap
+loads the packaged [workflow configuration](skills/shaka/config/workflow.yml)
+through `shaka workflow`, or the focused [repository control tower setup](skills/rct/SKILL.md)
+and the Claude Code [master](skills/mct-claude/SKILL.md) and
+[repository](skills/rct-claude/SKILL.md) tower setups.
+Each repository's validated `.agents/agent-workflow.yml` separately supplies
+commands and authority; `AGENTS.md` retains human-only boundaries. Create a missing
+contract with `shaka seam init` after identifying the repository's real commands
+and policy. See the [requirements](docs/pilot-plan.md)
 and [gem packaging guide](docs/packaging.md) for design and distribution.
 The procedure owns execution; linked guides explain decisions and evidence for
 people and agents. Keep shared rules in one place and follow the procedure's references.

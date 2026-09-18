@@ -2,29 +2,35 @@
 
 Codex CLI is the reference host for this pilot and Claude Code the second host.
 OpenCode is the third host: its canonical install path, TUI launcher, and
-export-based usage reader are implemented. Follow the [getting-started guide](getting-started.md)
+export-based usage reader are implemented. Pi runs the same Agent Skill and has a
+native persistent-session usage reader. Follow the [getting-started guide](getting-started.md)
 for installation and your first task. Neither Claude Code, Cursor, nor OpenCode
-has a verified complete V2 consumer delivery yet.
+has a verified complete V2 consumer delivery yet; this reader task is the first
+recorded Pi delivery trial, not broad Pi adoption evidence.
 
 The hosts share one `shaka` skill and the same Ruby helpers for GitHub
-operations. The optional `rct` skill currently requires the Codex app's native
-project, task, pin, follow-up, and wait tools, so install it only there with
-`--with-rct`. Your repository keeps its existing `AGENTS.md`, commands, and policy.
+operations. Control tower skills are host-specific because they drive native task
+tools. The optional `rct` skill requires the Codex app's native project, task,
+pin, follow-up, and wait tools, so install it only there with `--with-rct`. Claude
+Code desktop has its own equivalents and installs `mct-claude` and `rct-claude`
+with `--with-claude-towers`. Cursor, OpenCode, and terminal-only installs stay
+Shaka-only and use the [role prompts](control-towers.md#role-prompts).
+Your repository keeps its existing `AGENTS.md`, commands, and policy.
 Host-specific work covers installation, instruction loading, execution permissions,
-and reading native usage records. It does not create three copies of the workflow.
+and reading native usage records. It does not create separate copies of the workflow.
 
 ## What has been verified
 
-These observations were made on September 14 and 15, 2026. A successful install or CLI
+These observations were made on September 14, 15, and 17, 2026. A successful install or CLI
 startup does not establish a complete workflow, and workflow success does not
 establish complete usage attribution.
 
-| Capability | Codex CLI 0.154.0 | Claude Code desktop 2.1.270, CLI 2.1.272 | Cursor CLI 2026.09.10-fd3934a | OpenCode 1.18.31 |
-| --- | --- | --- | --- | --- |
-| Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. |
-| OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. |
-| Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. | Consumer delivery unverified. |
-| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. |
+| Capability | Codex CLI 0.154.0 | Claude Code desktop 2.1.270, CLI 2.1.272 | Cursor CLI 2026.09.10-fd3934a | OpenCode 1.18.31 | Pi 0.85.1 |
+| --- | --- | --- | --- | --- | --- |
+| Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. | Shared Agent Skill loaded from a trusted external source; no Pi-specific copy or launcher. |
+| OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. | The user's Pi tool permissions apply; no separate boundary was probed. |
+| Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. | Consumer delivery unverified. | This usage-reader implementation is the first recorded delivery trial; broader consumer evidence remains pending. |
+| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. | Reader matched an independent aggregate of selected active-branch responses, including reasoning and native nominal cost; abandoned branches were excluded. Compaction, branch-summary, and tool-nested model usage remain excluded. |
 
 The Codex write test establishes that particular local boundary. It does not
 establish equivalent behavior in the desktop app, other versions, or other hosts.
@@ -84,6 +90,61 @@ keep the trusted source outside any `--add-dir` directory, and rely on the permi
 mode you already use. The next required evidence is a complete ordinary consumer PR
 delivered with `/shaka`.
 
+### Control towers in Claude Code
+
+The desktop app exposes session tools that cover what the Codex tower skill needs,
+so `--with-claude-towers` installs `mct-claude` for the master role and `rct-claude`
+for repository towers. These tools belong to the desktop app; `claude` in a terminal does not have them, and the skill
+stops with a setup error rather than guessing.
+
+| Tower requirement | Codex app | Claude Code desktop |
+| --- | --- | --- |
+| Current task and its project | Native task and project tools | `get_session` for `self`; its `cwd` alone selects the repository |
+| Find towers and read candidates | Native task search | `list_sessions` for titles, `list_events` for a candidate's own record |
+| Stamp the role | Native rename and pin | `set_session_title` and `set_pinned`, read back with `get_session` |
+| Reach another tower | Native follow-up | `send_message`, whose result distinguishes `delivered` from `queued` |
+| Wait for a reply | Bounded native task wait | No equivalent |
+
+The missing bounded wait changes one step rather than blocking the role.
+Registration is acknowledged by a reply that arrives as an ordinary labelled user
+turn, so a tower reports `awaiting acknowledgment`, ends its turn, and completes
+setup when the reply lands. Towers do not poll or start a monitor, and neither a
+`queued` nor a `delivered` result is acknowledgment.
+
+Sidebar groups are deliberately unused: `move_sessions` unpins a pinned session, so
+the title suffix is the only role stamp and the live session list is the only
+registry. These tool observations were made on September 17, 2026. A complete
+Claude Code tower and delivery trial is still required.
+
+### Read the session listing completely
+
+Both tower skills find each other by title, so a listing that stops early is a tower
+that does not exist as far as the reader is concerned. `list_sessions` returns one
+recent page, twenty by default, and a role held past that page reads as unheld: setup
+then creates the duplicate the search exists to prevent. Raise the limit until the
+listing is exhausted.
+
+A busy account can make that listing too large to return whole. The host saves it and
+names the file in the tool result; read it from that path. Never answer an oversized
+listing by retrying with a smaller limit, which silently restores the paging bug. A
+first trial on September 18, 2026 exhausted one account at 413 sessions and overflowed
+at roughly 210KB, so both branches occur in ordinary use.
+
+This applies to every listing a tower takes, not only the one at setup. Checking that
+a repository is unowned, and refreshing the tower set later, read the same account and
+fail the same way when they stop at the first page.
+
+`list_sessions` also never includes the session calling it. A rule that counts every
+session holding a role cannot be answered from the listing alone, or the count is short
+by one and a genuine conflict reads as an ordinary handover. How this session is added
+depends on what the role is made of: a title comes back from `get_session`, while a
+record written into a session's transcript is not readable for the caller at all, since
+`list_events` refuses it. Each tower skill names the source its own rule needs.
+
+`search_session_transcripts` does not help here: it matches message content, not
+titles, and the trial returned nothing for a title stamp. Find towers by title with
+`list_sessions`, and confirm a candidate's role by reading it with `list_events`.
+
 ## Cursor
 
 Keep an existing, authenticated host configuration in place when preparing a
@@ -133,6 +194,20 @@ OpenCode publishes no session identifier to the commands it runs, so
 wrapper that sets `OPENCODE_SESSION_ID`, or saved exports passed with `--file`.
 The next reader evidence is an identifier published into the tool environment,
 or a confirmed upstream way to read the current session from inside it.
+
+## Pi
+
+Pi exposes the current persistent session through `PI_SESSION_FILE` and
+`PI_SESSION_ID`. The usage reader checks those values against a v3 header, walks only
+the active JSONL tree branch, and does not search other session files. Missing,
+ephemeral, mismatched, older, or malformed evidence stays UNKNOWN instead of falling
+back to Codex. Mixed Pi and nested-host markers require explicit `--host` selection.
+The reader publishes only aggregate metadata; [usage reporting](usage-reporting.md)
+documents turn selection, optional reasoning, nominal native cost, and excluded
+summary/tool-model usage.
+
+This support adds no Pi-specific skill copy, launcher, installation mechanism, or RCT
+behavior. Pi continues to use the shared skill and the user's existing tool permissions.
 
 ## Usage is a separate capability
 

@@ -26,7 +26,7 @@ class PackageTest < Minitest::Test
     run_gem('install', '--local', '--no-document', archive)
     check_commands
     source = install_skill
-    %w[shaka rct].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
+    %w[shaka rct mct-claude rct-claude].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
     run_gem('uninstall', 'shaka', '--all', '--executables', '--ignore-dependencies')
     refute File.exist?(File.join(@home, 'bin', 'shaka'))
     refute File.exist?(source)
@@ -77,20 +77,30 @@ class PackageTest < Minitest::Test
 
   def check_commands
     assert_includes run_executable('shaka', '--help'), 'Usage: shaka'
+    workflow = run_executable('shaka', 'workflow')
+    assert_includes workflow, '## 1. Intake'
+    assert_includes workflow, '## 7. Finish'
+    assert_match(/\]\(<[^>]+gem home[^>]+>\)/, workflow)
   end
 
   def check_public_skills(skills, source)
-    shaka = File.realpath(File.join(skills, 'shaka'))
-    rct = File.realpath(File.join(skills, 'rct'))
+    check_shaka_skill(File.realpath(File.join(skills, 'shaka')), source)
+    %w[rct mct-claude rct-claude].each do |name|
+      tower = File.realpath(File.join(skills, name))
+      assert File.file?(File.join(tower, 'SKILL.md')), name
+      assert_equal File.dirname(source), File.dirname(tower)
+    end
+  end
+
+  def check_shaka_skill(shaka, source)
     assert File.file?(File.join(shaka, 'SKILL.md'))
+    assert File.file?(File.join(shaka, 'config', 'workflow.yml'))
     assert_equal source, shaka
-    assert File.file?(File.join(rct, 'SKILL.md'))
-    assert_equal File.dirname(source), File.dirname(rct)
   end
 
   def install_skill
     skills = File.join(@directory, 'pilot skills')
-    run_executable('shaka-install', '--skills-dir', skills, '--with-rct')
+    run_executable('shaka-install', '--skills-dir', skills, '--with-rct', '--with-claude-towers')
     source = File.realpath(File.join(skills, 'shaka'))
     assert source.start_with?("#{File.realpath(@home)}/gems/"), source
     check_public_skills(skills, source)
