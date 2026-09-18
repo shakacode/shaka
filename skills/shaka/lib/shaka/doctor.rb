@@ -11,8 +11,8 @@ module Shaka
   # Read-only: it inspects the environment and changes no repository and no setting.
   class Doctor
     SEVERITY = { 'healthy' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
-    # No deadline: a stalled gh can still hang this command. Bounding it correctly needs real
-    # process supervision, so it is tracked separately rather than faked here.
+    # No deadline: a stalled gh can still hang this command (shakacode/shaka#106). Bounding it
+    # correctly needs real process supervision, so it is tracked there rather than faked here.
     RUNNER = ->(argv) { Open3.capture3(*argv).then { |out, err, status| [out, err, status.success?] } }
 
     # Everything doctor reaches outside its own process, in one place so a test can state
