@@ -268,14 +268,15 @@ resolutions, which is why the rule says to share the subject and never the sente
 Copied prose is a staleness bug rather than mere repetition, because republishing the
 walkthrough at a new head refreshes one copy and leaves the other one wrong.
 
-Four questions settle most of what the rule leaves open:
+Three questions settle most of what the rule leaves open:
 
 - Would a reader need this a year from now, from the merged PR alone? Put it in the description.
 - Does it change whether to merge, or what to do afterward? Description. Does it only change
   how quickly the diff makes sense? Walkthrough.
 - Does it need a file path or a line number to make sense? Walkthrough.
-- Can each artifact be understood by someone who never opened the other? Each needs its own
-  purpose sentence, so that much overlap is required.
+
+Whatever those answers, each artifact needs its own purpose sentence, because a reader may
+open either one without the other. That much overlap is required rather than wasteful.
 
 A walkthrough earns its length from the change, not from the writer. Cover every change
 completely and stop; a long walkthrough for a small diff costs a reader more than the
