@@ -13,6 +13,7 @@ module Shaka
       include Check
 
       WRITER = %w[ADMIN MAINTAIN WRITE].freeze
+      RUBY = '3.4'
       SEAM = '.agents/agent-workflow.yml'
 
       def initialize(root:, host:, environment:, system:)
@@ -22,11 +23,21 @@ module Shaka
         @system = system
       end
 
-      def call = [github_cli, repository_access, repository_seam, alias_check, usage_source]
+      def call = [ruby_runtime, github_cli, repository_access, repository_seam, alias_check, usage_source]
 
       private
 
       def alias_check = MachineAlias.new(@environment, host_name: @system.host_name).call
+
+      # An older Ruby runs this command and then fails somewhere less obvious, so the declared
+      # prerequisite is checked rather than merely printed.
+      def ruby_runtime
+        running = @system.ruby_version
+        return check('Ruby', 'healthy', running) if Gem::Version.new(running) >= Gem::Version.new(RUBY)
+
+        check('Ruby', 'failed', "#{running} is older than the required #{RUBY}",
+              guidance: "Select Ruby #{RUBY} or newer for the shell that runs this skill.")
+      end
 
       def github_cli
         out, error, ok = run(%w[gh --version])
@@ -122,8 +133,9 @@ module Shaka
       end
 
       # A command that cannot even launch is this check's answer, never an aborted report.
+      # The child is scoped to its directory directly; Dir.chdir would move the whole process.
       def run(argv, chdir: nil)
-        chdir ? Dir.chdir(chdir) { @system.runner.call(argv) } : @system.runner.call(argv)
+        @system.runner.call(argv, chdir)
       rescue SystemCallError => e
         ['', first_line(e.message), false]
       end

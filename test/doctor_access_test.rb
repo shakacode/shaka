@@ -8,6 +8,21 @@ require 'fileutils'
 class DoctorAccessTest < Minitest::Test
   include DoctorHelper
 
+  # Ruby 3.4 is a declared prerequisite, so an older runtime is a failure to report here
+  # rather than a confusing error somewhere later.
+  def test_a_ruby_older_than_the_requirement_blocks
+    report, blocked = doctor(ruby_version: '3.3.9')
+    assert_includes report, 'FAILED'
+    assert_includes report, '3.3.9'
+    assert blocked
+  end
+
+  def test_a_newer_ruby_is_accepted
+    report, blocked = doctor(ruby_version: '4.0.0')
+    refute_includes report, 'FAILED'
+    refute blocked
+  end
+
   def test_a_missing_github_cli_blocks
     report, blocked = doctor(runner: ->(*) { raise Errno::ENOENT, 'gh' })
     assert_includes report, 'FAILED'

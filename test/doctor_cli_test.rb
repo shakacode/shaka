@@ -18,7 +18,8 @@ class DoctorCliTest < Minitest::Test
   # OpenCode exposes no session identifier, so detection falls back to codex; stating the
   # host must reach the report instead of silently checking the wrong one.
   def test_a_stated_host_replaces_detection
-    system = Shaka::Doctor::System.new(runner: ->(*) { ['', 'stub', false] }, host_name: 'test-machine',
+    system = Shaka::Doctor::System.new(runner: ->(*) { ['', 'stub', false] },
+                                       host_name: 'test-machine', ruby_version: RUBY_VERSION,
                                        usage_source: ->(host) { host == 'opencode' ? [__FILE__] : [] })
     subject = Shaka::Doctor.new(root: File.expand_path('..', __dir__), host: 'opencode',
                                 environment: {}, system: system)

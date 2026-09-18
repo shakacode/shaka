@@ -13,14 +13,17 @@ module Shaka
     SEVERITY = { 'healthy' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
     # No deadline: a stalled gh can still hang this command (shakacode/shaka#106). Bounding it
     # correctly needs real process supervision, so it is tracked there rather than faked here.
-    RUNNER = ->(argv) { Open3.capture3(*argv).then { |out, err, status| [out, err, status.success?] } }
+    RUNNER = lambda do |argv, chdir = nil|
+      options = chdir ? { chdir: chdir } : {}
+      Open3.capture3(*argv, **options).then { |out, err, status| [out, err, status.success?] }
+    end
 
     # Everything doctor reaches outside its own process, in one place so a test can state
     # the machine it describes instead of inheriting the one it runs on.
-    System = Struct.new(:runner, :usage_source, :host_name, keyword_init: true) do
+    System = Struct.new(:runner, :usage_source, :host_name, :ruby_version, keyword_init: true) do
       def self.default
         new(runner: RUNNER, usage_source: ->(name) { Usage::READERS.fetch(name).discover },
-            host_name: MachineAlias.system_name)
+            host_name: MachineAlias.system_name, ruby_version: RUBY_VERSION)
       end
     end
 
@@ -84,11 +87,9 @@ module Shaka
 
     def overall = checks.map { |item| item.fetch(:status) }.max_by { |status| SEVERITY.fetch(status) } || 'healthy'
 
-    # Detection falls back to codex when a host exposes no session identifier, so the report
-    # says which host it assumed and `--host` states it instead.
     # Detection answers nil when several hosts are present and falls back to codex when none
     # is, so the report always says which host it used and how sure it is.
-    def context = "Ruby #{RUBY_VERSION} · host #{named_host} · root #{@root}"
+    def context = "host #{named_host} · root #{@root}"
 
     def named_host
       return 'ambiguous' if @host.nil?
