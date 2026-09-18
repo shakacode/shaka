@@ -4,6 +4,7 @@ require 'open3'
 require 'optparse'
 require_relative 'error'
 require_relative 'usage'
+require_relative 'doctor/bounded_command'
 require_relative 'doctor/checks'
 
 module Shaka
@@ -11,12 +12,10 @@ module Shaka
   # Read-only: it inspects the environment and changes no repository and no setting.
   class Doctor
     SEVERITY = { 'healthy' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
-    # No deadline: a stalled gh can still hang this command (shakacode/shaka#106). Bounding it
-    # correctly needs real process supervision, so it is tracked there rather than faked here.
-    RUNNER = lambda do |argv, chdir = nil|
-      options = chdir ? { chdir: chdir } : {}
-      Open3.capture3(*argv, **options).then { |out, err, status| [out, err, status.success?] }
-    end
+    # Long enough that a slow network answer is not mistaken for a hang, short enough that a
+    # stalled credential helper does not look like a working command.
+    TIMEOUT = 15
+    RUNNER = BoundedCommand.new(timeout: TIMEOUT)
 
     # Everything doctor reaches outside its own process, in one place so a test can state
     # the machine it describes instead of inheriting the one it runs on.
