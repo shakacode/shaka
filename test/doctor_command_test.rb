@@ -24,8 +24,19 @@ class DoctorCommandTest < Minitest::Test
       _out, _error, ok = run_bounded(0.2, ['sh', '-c', "echo $$ > #{path}; sleep 30"])
       refute ok
 
-      pid = Integer(File.read(path).strip)
-      assert_raises(Errno::ESRCH, 'the child outlived its deadline') { Process.kill(0, pid) }
+      refute_alive(pid_in(path), 'the child outlived its deadline')
+    end
+  end
+
+  # The leader can exit and be reaped while a descendant holds the pipes open, so the group
+  # must be addressed by the pid it was created with rather than looked up at expiry.
+  def test_a_timeout_kills_a_descendant_that_outlived_the_leader
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'pid')
+      _out, _error, ok = run_bounded(0.5, ['sh', '-c', "sh -c 'echo $$ > #{path}; sleep 30' &"])
+      refute ok
+
+      refute_alive(pid_in(path), 'a descendant outlived the deadline')
     end
   end
 
@@ -70,6 +81,28 @@ class DoctorCommandTest < Minitest::Test
   end
 
   private
+
+  def pid_in(path) = Integer(File.read(path).strip)
+
+  # A killed process lingers until its parent reaps it, and a descendant is reparented before
+  # init can, so the check waits for it to disappear instead of racing the teardown. A survivor
+  # sleeps for thirty seconds and is still there when the wait runs out.
+  def refute_alive(pid, message, within: 5)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + within
+    while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+      return unless alive?(pid)
+
+      sleep 0.05
+    end
+    flunk message
+  end
+
+  def alive?(pid)
+    Process.kill(0, pid)
+    true
+  rescue Errno::ESRCH
+    false
+  end
 
   def run_bounded(timeout, argv, chdir = nil)
     Shaka::Doctor::BoundedCommand.new(timeout: timeout).call(argv, chdir)

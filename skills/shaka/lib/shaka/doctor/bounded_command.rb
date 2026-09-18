@@ -82,9 +82,12 @@ module Shaka
         ['', "no answer within #{@timeout}s", false]
       end
 
-      # The whole group: signalling only the leader would leave its descendants running.
+      # The whole group, addressed by the pid it was created with. `pgroup: true` makes the
+      # child its own group leader, so the group id is that pid — and asking the system for it
+      # at expiry would fail exactly when it matters, because the leader can exit and be reaped
+      # while a descendant holds the pipes open and keeps running.
       def terminate(pid)
-        Process.kill('KILL', -Process.getpgid(pid))
+        Process.kill('KILL', -pid)
       rescue Errno::ESRCH, Errno::EPERM
         nil
       end
