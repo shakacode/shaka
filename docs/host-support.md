@@ -135,9 +135,11 @@ a repository is unowned, and refreshing the tower set later, read the same accou
 fail the same way when they stop at the first page.
 
 `list_sessions` also never includes the session calling it. A rule that counts every
-session holding a role cannot be answered from the listing alone: read this session
-with `get_session` for `self` and add it before counting, or the count is short by one
-and a genuine conflict reads as an ordinary handover.
+session holding a role cannot be answered from the listing alone, or the count is short
+by one and a genuine conflict reads as an ordinary handover. How this session is added
+depends on what the role is made of: a title comes back from `get_session`, while a
+record written into a session's transcript is not readable for the caller at all, since
+`list_events` refuses it. Each tower skill names the source its own rule needs.
 
 `search_session_transcripts` does not help here: it matches message content, not
 titles, and the trial returned nothing for a title stamp. Find towers by title with

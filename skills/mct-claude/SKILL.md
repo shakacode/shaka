@@ -34,8 +34,9 @@ suffix is how towers find this session, not a lock.
 
 ## Establish the master
 
-Read this session with `get_session` for `self` and record its session ID. Reject
-invocation arguments; the current session is the only accepted subject.
+Read this session with `get_session` for `self` and record its session ID and title.
+The listing below leaves this session out, so every branch needs its title from here.
+Reject invocation arguments; the current session is the only accepted subject.
 
 Search active sessions for the `MCT — Shaka` suffix with `list_sessions`, read
 completely as the [host guide](../../docs/host-support.md#read-the-session-listing-completely)
@@ -48,8 +49,7 @@ Take the first of these that matches, in this order. Counting the suffix before
 anything else is what makes the detection above real: reusing this session first
 would let a duplicate re-invoke itself and report success.
 
-- If more than one session carries the suffix, counting this one — the listing leaves
-  it out, so read its title with `get_session` — stop with
+- If more than one session carries the suffix, counting this one, stop with
   `MCT setup error: master control tower is ambiguous` and list them with what each
   recorded. Do not pick one, do not assume the most recent is correct, and never
   exempt this session from the count. A suffix left behind by an abandoned or failed
