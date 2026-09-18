@@ -135,9 +135,9 @@ a pull request carries while it is unfinished.
 | `snapshot` | `true` or `false` | `true` lets `shaka snapshot` push unfinished work to a `wip/` branch when a task stops, screening credential-like paths first. `false` leaves it on the machine that made it. |
 
 Set `workspace_path: false` where contributor paths or machine names are sensitive. Set
-`snapshot: false` where unfinished work must not reach the remote at all, or where CI runs on
-every pushed branch. `seam init` writes
-neither key, so a repository that says nothing gets both defaults.
+`snapshot: false` where unfinished work must not reach the remote at all, or where CI
+runs on every pushed branch. `seam init` writes neither key, so a repository that says
+nothing gets both defaults.
 
 ## What `seam init` writes
 
