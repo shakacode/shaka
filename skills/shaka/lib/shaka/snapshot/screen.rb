@@ -10,11 +10,12 @@ module Shaka
     # here, which is why the command prints what it would publish before publishing it.
     class Screen
       DENIED = [
-        %r{(\A|/)\.(env|netrc|npmrc|pgpass|git-credentials)(\.|\z)},
-        %r{(\A|/)\.(aws|ssh|gnupg)/},
-        %r{(\A|/)\.docker/config\.json\z},
-        %r{(\A|/)id_(rsa|dsa|ecdsa|ed25519)(\.|\z)},
-        /\.(pem|key|p12|pfx|keystore|jks|ppk)\z/,
+        %r{(\A|/|\.)env(\.|\z)}i,
+        %r{(\A|/)\.(netrc|npmrc|pgpass|git-credentials)(\.|\z)}i,
+        %r{(\A|/)\.(aws|ssh|gnupg)/}i,
+        %r{(\A|/)\.docker/config\.json\z}i,
+        %r{(\A|/)id_(rsa|dsa|ecdsa|ed25519)(\.|\z)}i,
+        /\.(pem|key|p12|pfx|keystore|jks|ppk)\z/i,
         %r{(\A|/)(credential|credentials|secret|secrets|service[-_]account)[^/]*\z}i,
         /(secret|token|password|passwd|apikey|api[-_]key)/i
       ].freeze

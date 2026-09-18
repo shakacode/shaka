@@ -22,6 +22,13 @@ class SnapshotScreenTest < Minitest::Test
     assert_empty screen.included
   end
 
+  def test_environment_files_are_held_back_whatever_their_case_or_prefix
+    paths = ['staging.env', 'service.ENV', '.Env.local', 'config/BACKEND.env', 'certs/server.PEM']
+    screen = Shaka::Snapshot::Screen.new(paths)
+
+    assert_empty screen.included
+  end
+
   def test_credentials_are_held_back_whatever_the_directory
     paths = ['.env', 'app/.env.local', 'deploy/id_rsa', 'certs/server.pem', 'config/credentials.json',
              'scripts/rotate_api_key.sh', '.netrc']
@@ -73,6 +80,12 @@ module SnapshotRepository
     JSON.parse(output)
   end
 
+  # Publishing confirms the plan that was read, so the digest comes from a planning run.
+  def publish_snapshot(work)
+    digest = run_snapshot(work).fetch('digest')
+    run_snapshot(work, '--push', '--expect', digest)
+  end
+
   def published_files(work, commit)
     git(work, 'ls-tree', '--name-only', '-r', commit).split("\n").sort
   end
@@ -91,6 +104,19 @@ module SnapshotRepository
     git(source, 'commit', '--quiet', '--message', 'nested')
     git(work, '-c', 'protocol.file.allow=always', 'submodule', '--quiet', 'add', source, 'nested')
     git(work, 'commit', '--quiet', '--message', 'add submodule')
+  end
+
+  # A seam the schema accepts, so the recovery setting itself decides the outcome.
+  def write_seam(work, snapshot:)
+    Dir.mkdir(File.join(work, '.agents'))
+    Dir.mkdir(File.join(work, '.agents/bin'))
+    %w[setup validate test].each do |name|
+      path = File.join(work, '.agents/bin', name)
+      File.write(path, "#!/bin/sh\nexit 0\n")
+      File.chmod(0o755, path)
+    end
+    template = File.read(File.expand_path('fixtures/snapshot_seam.yml', __dir__))
+    File.write(File.join(work, '.agents/agent-workflow.yml'), format(template, snapshot: snapshot))
   end
 
   def write(work, files)
@@ -144,7 +170,7 @@ class SnapshotTest < Minitest::Test
     in_repository do |work|
       write(work, 'README.md' => "base\nmore\n", 'research.md' => "half an idea\n", 'api_key.txt' => "nope\n")
 
-      report = run_snapshot(work, '--push')
+      report = publish_snapshot(work)
 
       assert_equal ['wip/feature', true, ['README.md', 'research.md'], ['api_key.txt']],
                    report.values_at('branch', 'published', 'adds', 'held_back')
@@ -161,7 +187,7 @@ class SnapshotTest < Minitest::Test
       git(work, 'mv', 'README.md', 'moved.md')
       File.delete(File.join(work, 'beta.txt'))
 
-      report = run_snapshot(work, '--push')
+      report = publish_snapshot(work)
 
       assert_equal [['moved.md'], ['README.md', 'beta.txt']], report.values_at('adds', 'removes')
       assert_equal ['moved.md'], published_files(work, report['commit'])
@@ -207,6 +233,32 @@ class SnapshotTest < Minitest::Test
     end
   end
 
+  def test_publishing_without_the_plan_digest_is_refused
+    in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+
+      result = nil
+      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push']) } }
+
+      assert_equal 1, result
+      assert_empty remote_branches(work)
+    end
+  end
+
+  def test_a_changed_checkout_invalidates_the_plan_digest
+    in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+      digest = run_snapshot(work).fetch('digest')
+      write(work, 'later.md' => "arrived after the plan\n")
+
+      result = nil
+      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', digest]) } }
+
+      assert_equal 1, result
+      assert_empty remote_branches(work)
+    end
+  end
+
   def test_a_clean_checkout_publishes_nothing
     in_repository do |work|
       report = run_snapshot(work, '--push')
@@ -221,12 +273,34 @@ end
 class SnapshotBoundaryTest < Minitest::Test
   include SnapshotRepository
 
+  def test_a_seam_that_allows_snapshots_still_publishes
+    in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+      write_seam(work, snapshot: true)
+
+      assert_equal true, publish_snapshot(work)['published']
+    end
+  end
+
+  def test_a_seam_that_disables_snapshots_refuses_to_publish
+    in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+      write_seam(work, snapshot: false)
+
+      result = nil
+      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } }
+
+      assert_equal 1, result
+      assert_empty remote_branches(work)
+    end
+  end
+
   def test_it_runs_from_a_subdirectory
     in_repository do |work|
       Dir.mkdir(File.join(work, 'sub'))
       write(work, 'README.md' => "base\nmore\n", 'sub/nested.md' => "deep\n")
 
-      report = run_snapshot(File.join(work, 'sub'), '--push')
+      report = publish_snapshot(File.join(work, 'sub'))
 
       assert_equal ['README.md', 'sub/nested.md'], report['adds']
       assert_equal ['README.md', 'sub/nested.md'], published_files(work, report['commit'])

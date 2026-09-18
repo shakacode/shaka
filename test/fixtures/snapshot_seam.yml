@@ -1,0 +1,21 @@
+---
+version: 1
+base_branch: main
+commands:
+  setup: .agents/bin/setup
+  validate: .agents/bin/validate
+  test: .agents/bin/test
+review:
+  required: none
+merge:
+  preference: ask
+  method: squash
+  release: explicit_approval
+protection:
+  required_checks:
+    - validate
+  direct_push: false
+  force_push: false
+  branch_deletion: false
+recovery:
+  snapshot: %{snapshot}

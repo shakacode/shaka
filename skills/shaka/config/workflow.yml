@@ -219,7 +219,7 @@ phases:
         the packaged [post-merge procedure](<{{package_root}}/docs/review.md#reviews-after-merge>).
       - At the stopping point, when work is unfinished and the seam's `recovery.snapshot` is not
         `false`, run `snapshot` to print what it would publish and what it holds back, read that
-        list for content the screen cannot see, then run `snapshot --push`. It commits against the
+        list for content the screen cannot see, then run `snapshot --push --expect DIGEST` with the digest it printed. It commits against the
         current head without touching the checkout and pushes a `wip/` branch that carries no pull
         request. Record its branch and the held-back files in the note. Run `snapshot --delete` at
         outcome.

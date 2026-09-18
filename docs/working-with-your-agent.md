@@ -114,7 +114,9 @@ once the PR reaches its outcome. It lists:
 - **Next action:** the one step that continues the work.
 
 Keep prompts, transcripts, credentials, private task links, and customer context out
-of public PRs. An identifier that only names a file or a session on one machine reveals
+of public PRs. A workspace path usually contains a username, and a machine alias is a
+name someone chose, so both are published only under the setting below and both are
+withheld when it is off. An identifier that only names a file or a session on one machine reveals
 nothing to a reader without that machine, so a host session or task identifier belongs
 in the note. A link to a hosted task does not.
 
@@ -134,7 +136,9 @@ A push is permanent: deleting the branch later does not reliably remove what it
 published, and a public repository publishes it to everyone. So the snapshot happens in
 two steps. `shaka snapshot` prints what it would publish, what it would remove, and the
 paths it holds back because they look like credentials or keys. Read that list, then run
-`shaka snapshot --push` to publish it. The command commits against the current head
+`shaka snapshot --push --expect <digest>` with the digest that plan printed. The digest
+binds the push to what was read, so a file that changed in between stops the push instead
+of publishing something nobody saw. The command commits against the current head
 through a temporary index, so the working tree and the index are untouched, and it
 carries renames and deletions rather than resurrecting files.
 
