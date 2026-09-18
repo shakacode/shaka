@@ -95,6 +95,11 @@ Acknowledge with `send_message` back to that session, naming the exact
 registers the tower only, and releases no paused work, backlog assignment, worker
 session, or merge authority.
 
+Read the delivery result for every reply, acknowledgment and refusal alike. Anything
+other than `delivered` or `queued` means the tower never received the answer and is
+still waiting: report `MCT registration error: reply was not delivered` with the
+observed error, and do not treat the registration as settled.
+
 Refuse instead when a check fails, and send that refusal to the requesting session
 with `send_message` as well as reporting it here. That tower ended its turn awaiting
 a pushed reply, so a refusal reported only in this session leaves it waiting
