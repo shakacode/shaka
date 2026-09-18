@@ -82,13 +82,16 @@ finding the task; it does not establish merge authority or ownership by itself.
 
 ### Recover an unfinished PR
 
-From the first PR description until the PR reaches its outcome, keep a `Recovery`
-section there. Work can stop at any time, for a blocker, a pending decision, a
-handoff, or an interruption. Someone reopening the PR should find the owning task
-and its next step without reading the conversation. Refresh the section at
-meaningful progress and at each stopping point. The `description` helper replaces its
+From the first PR description until the PR reaches its outcome, keep a recovery note
+there as a collapsed `WIP Details` disclosure. Work can stop at any time, for a
+blocker, a pending decision, a handoff, or an interruption. Someone reopening the PR
+should find the owning task and its next step without reading the conversation, while
+the normal PR summary stays compact. Publish the note through the `description`
+helper's `details` list so GitHub renders it as `<details><summary>WIP Details</summary>`.
+Refresh it at meaningful progress and at each stopping point. The helper replaces its
 whole managed region, so republish every section with only the note changed. Remove
-the section once the PR reaches its outcome. It lists:
+the entire disclosure only after GitHub confirms the PR reached its outcome; a failed
+merge attempt still needs it. The note lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
   the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`.
