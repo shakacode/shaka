@@ -78,6 +78,16 @@ class DoctorAccessTest < Minitest::Test
     end
   end
 
+  # Reading a FIFO would block the whole report, so the seam must be a regular file.
+  def test_a_seam_path_that_is_not_a_regular_file_blocks
+    Dir.mktmpdir do |dir|
+      FileUtils.mkdir_p(File.join(dir, '.agents', 'agent-workflow.yml'))
+      report, blocked = doctor(root: dir)
+      assert_includes report, 'FAILED'
+      assert blocked
+    end
+  end
+
   def test_an_unreadable_seam_blocks_with_its_validation_error
     Dir.mktmpdir do |dir|
       FileUtils.mkdir_p(File.join(dir, '.agents'))

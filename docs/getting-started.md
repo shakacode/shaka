@@ -186,7 +186,8 @@ Doctor fails rather than guessing when it cannot establish what it checks. A rep
 cannot resolve as writable fails, whatever the reason, so a passing report always means
 verified write access. A missing or invalid repository seam fails too. An unset
 `SHAKA_MACHINE_ALIAS` only degrades: the provenance row reads `UNKNOWN`. Set it to a short
-deliberate token such as `m5`. Doctor also degrades when the alias *is* this machine's own
+deliberate token such as `m5` — any token that is not this machine's own name. Doctor also
+degrades when the alias *is* this machine's own
 name, because publication accepts that value and would put your machine name in every public
 pull request.
 

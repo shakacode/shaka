@@ -16,8 +16,7 @@ module Shaka
 
       VARIABLE = 'SHAKA_MACHINE_ALIAS'
       HOST_NAMES = %w[HOST HOSTNAME].freeze
-      GUIDANCE = "Export #{VARIABLE} as a short deliberate token such as `m5`. It appears in " \
-                 "public pull requests, so do not use this machine's own name.".freeze
+      EXAMPLES = %w[m5 m1 lab1].freeze
 
       def initialize(environment, host_name: self.class.system_name)
         @environment = environment
@@ -45,11 +44,20 @@ module Shaka
       private
 
       def unset
-        check('Machine alias', 'degraded', "#{VARIABLE} is unset; provenance will read UNKNOWN", guidance: GUIDANCE)
+        check('Machine alias', 'degraded', "#{VARIABLE} is unset; provenance will read UNKNOWN", guidance: guidance)
       end
 
       def unpublishable
-        check('Machine alias', 'failed', "#{VARIABLE} is set to a value publication refuses", guidance: GUIDANCE)
+        check('Machine alias', 'failed', "#{VARIABLE} is set to a value publication refuses", guidance: guidance)
+      end
+
+      # A machine may well be called `m5`, and suggesting its own name is the one thing this
+      # check exists to prevent, so the example is checked against the machine like any value.
+      def guidance
+        example = EXAMPLES.find { |token| !host_name?(token) }
+        suggestion = example ? "a short deliberate token such as `#{example}`" : 'a short deliberate token'
+        "Export #{VARIABLE} as #{suggestion}. It appears in public pull requests, so do not use " \
+          "this machine's own name."
       end
 
       # Without this machine's name there is nothing to compare against, so the guard did not
@@ -65,7 +73,7 @@ module Shaka
       def host_name
         check('Machine alias', 'degraded', "#{VARIABLE} is this machine's own name",
               guidance: 'Publication would put your machine name in every public pull request. ' \
-                        'Replace it with a short deliberate token such as `m5`.')
+                        "Replace it: #{guidance}")
       end
 
       def host_name?(value)

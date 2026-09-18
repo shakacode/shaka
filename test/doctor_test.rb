@@ -59,6 +59,21 @@ class DoctorTest < Minitest::Test
     assert_includes report, 'DEGRADED'
   end
 
+  # A machine really can be called `m5`, and suggesting its own name back to it is the one
+  # thing this check exists to prevent.
+  def test_the_suggested_example_is_never_this_machine_name
+    %w[m5 m5.local].each do |name|
+      report, = doctor(host_name: name, environment: {})
+      assert_includes report, 'DEGRADED', name
+      refute_match(/`m5`/, report, name)
+    end
+  end
+
+  def test_the_suggestion_is_dropped_when_every_example_collides
+    report, = doctor(host_name: 'lab1', environment: { 'HOST' => 'm5', 'HOSTNAME' => 'm1' })
+    assert_includes report, 'a short deliberate token.'
+  end
+
   # `build-host` identifies the machine exactly as much as `build-host.local` does.
   def test_the_bare_form_of_a_dotted_host_name_is_caught
     report, = doctor(environment: { 'SHAKA_MACHINE_ALIAS' => 'test-machine' })

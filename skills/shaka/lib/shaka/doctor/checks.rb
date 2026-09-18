@@ -72,7 +72,7 @@ module Shaka
       # It deliberately does not restate the seam's commands or merge preference: doctor takes
       # no authority from the seam, and the workflow revalidates policy from a trusted ref.
       def repository_seam
-        return missing_seam unless File.exist?(File.join(@root, SEAM))
+        return missing_seam unless File.file?(File.join(@root, SEAM))
 
         RepositoryConfig.load(root: @root)
         check('Repository seam', 'healthy', "#{SEAM} loads and validates in this working tree")
@@ -81,8 +81,9 @@ module Shaka
               guidance: 'Repair the contract, or let `shaka seam init` rewrite a valid one.')
       end
 
+      # File.file? rather than File.exist?: reading a FIFO here would block the whole report.
       def missing_seam
-        check('Repository seam', 'failed', "this root has no #{SEAM}",
+        check('Repository seam', 'failed', "this root has no #{SEAM} regular file",
               guidance: 'Run `shaka seam init` here, or point `--root` at the repository you meant.')
       end
 
