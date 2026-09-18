@@ -270,10 +270,11 @@ links to the current walkthrough and review result. The walkthrough alone carrie
 reason for the approach and the alternatives it rejected, the order that makes the
 implementation readable, and commit-pinned code links.
 
-Purpose, risk, and validation belong in both at different resolutions. The description
-states the purpose in a sentence, names the risk that changes the merge decision, and
-carries the check table. The walkthrough states that same purpose as the prior behavior
-it changes, gives failure modes for each change, and says which evidence covers which
+Purpose, risk, rollback, and validation belong in both at different resolutions. The
+description states the purpose in a sentence, names the risk that changes the merge
+decision, keeps the routine rollback in details, and carries the check table. The
+walkthrough states that same purpose as the prior behavior it changes, gives the failure
+modes and rollback consequence for each change, and says which evidence covers which
 change. Share the subject, never the sentences: a paragraph you could paste from one into
 the other unchanged sits in the wrong artifact.
 
