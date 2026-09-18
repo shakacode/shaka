@@ -108,14 +108,18 @@ module Shaka
       def usage_source
         return no_usage_source('the host is ambiguous') if @host.nil?
 
+        inspect_usage_source
+      rescue KeyError, SystemCallError => e
+        usage_shortfall(first_line(e.message))
+      end
+
+      def inspect_usage_source
         located = @system.usage_source.call(@host)
         unopened = located.reject { |entry| openable?(entry) }
-        return no_usage_source(shortfall(located, unopened)) if located.empty? || unopened.any?
+        return usage_shortfall(shortfall(located, unopened)) if located.empty? || unopened.any?
 
         check('Usage source', 'healthy', "#{located.length} openable #{@host} source(s); " \
                                          'doctor does not parse them')
-      rescue KeyError, SystemCallError => e
-        no_usage_source(first_line(e.message))
       end
 
       # A readable directory, FIFO, or device is not a transcript, and an empty file carries
@@ -129,6 +133,17 @@ module Shaka
         return "no #{@host} session source" if located.empty?
 
         "#{unopened.length} of #{located.length} #{@host} sources cannot be opened here"
+      end
+
+      def usage_shortfall(reason)
+        @host == 'cursor' ? missing_cursor_usage(reason) : no_usage_source(reason)
+      end
+
+      def missing_cursor_usage(reason)
+        check('Usage source', 'failed', "#{reason}; Cursor stop-hook usage is not readable",
+              guidance: 'Install the Cursor stop hook from the getting-started guide, start a new ' \
+                        'Agent chat, and confirm `shaka usage` can open a stop-hook file for this ' \
+                        'conversation.')
       end
 
       def no_usage_source(reason)

@@ -13,6 +13,21 @@ class DoctorUsageTest < Minitest::Test
     refute blocked
   end
 
+  # Cursor deliveries already published an all-UNKNOWN usage table; fail at doctor instead.
+  def test_a_missing_cursor_stop_hook_source_blocks
+    report, blocked = doctor(host: 'cursor', usage_files: [])
+    assert_includes report, 'FAILED'
+    assert_includes report, 'stop-hook'
+    assert blocked
+    assert_includes report, 'getting-started'
+  end
+
+  def test_an_unreadable_cursor_stop_hook_source_blocks
+    report, blocked = doctor(host: 'cursor', usage_files: ['/definitely/missing/transcript.jsonl'])
+    assert_includes report, 'FAILED'
+    assert blocked
+  end
+
   # discover only locates sources, so a located-but-unreadable transcript is not healthy.
   def test_a_located_but_unreadable_usage_source_degrades
     report, blocked = doctor(usage_files: ['/definitely/missing/transcript.jsonl'])
