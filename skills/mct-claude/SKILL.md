@@ -130,8 +130,9 @@ Derive the tower set by reading the live `list_sessions` candidates with
 `list_events`, again listing completely, and keeping those whose own transcript
 records a completed registration. That read is the registry; it needs no file,
 database, or sidebar group. Do not add one: `move_sessions` unpins a pinned session,
-and the live session list is the only record this role keeps. One RCT owns one repository; closely
-related repositories keep separate towers, and this role orders their work.
+and the live session list is the only record this role keeps. One RCT owns one
+repository; closely related repositories keep separate towers, and this role orders
+their work.
 
 Keep priorities, cross-repository dependencies, and consequential decisions clear.
 Route each implementation or PR repair to the owning repository tower, and let that
