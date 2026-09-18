@@ -40,9 +40,12 @@ invocation arguments; the current session is the only accepted subject.
 Search active sessions for the `MCT — Shaka` suffix with `list_sessions`, raising its
 limit until the listing is exhausted: it returns one recent page, twenty by default,
 so a master sitting past that page is invisible here, and this session would wrongly
-appoint itself a second master. `search_session_transcripts` matches message content, not titles, so it is a
-second net only. Read the candidates with `list_events`. A title says a session was set up or attempted setup;
-its own recorded result says the role took hold.
+appoint itself a second master. `search_session_transcripts` matches message content,
+not titles, so it is a second net only. A busy account can make that listing too large
+to return whole; read it from wherever the host puts it instead, and never retry with a
+smaller limit, which restores the bug. Read the candidates with `list_events`. A title
+says a session was set up or attempted setup; its own recorded result says the role
+took hold.
 
 Take the first of these that matches, in this order. Counting the suffix before
 anything else is what makes the detection above real: reusing this session first
