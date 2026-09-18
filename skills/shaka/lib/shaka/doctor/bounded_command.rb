@@ -19,34 +19,51 @@ module Shaka
       # an undeliverable signal — so cleanup can never reintroduce the hang this class removes.
       GRACE = 1
 
+      # One invocation's handles. Built before the spawn, so cleanup never depends on an
+      # assignment that may not have happened, and per call, so the shared runner stays stateless.
+      Child = Struct.new(:process, :stdout, :stderr, :answered)
+
       def initialize(timeout:)
         @timeout = timeout
       end
 
       def call(argv, chdir = nil)
-        options = { pgroup: true }
-        options[:chdir] = chdir if chdir
-        _stdin, stdout, stderr, process = spawn_without_stdin(argv, options)
-        result = collect(stdout, stderr, process)
-        answered = true
+        child = Child.new
+        start(child, argv, spawn_options(chdir))
+        result = collect(child.stdout, child.stderr, child.process)
+        child.answered = true
         result
       ensure
-        # `pgroup: true` also isolates the child from the terminal, so Ctrl-C reaches this
-        # process and not the command it started. Leaving by exception has to take the group
-        # with it, or interrupting doctor strands the very process it was bounding.
-        #
-        # The condition is whether this call answered, not whether the leader is alive: the
-        # leader can exit while a descendant holds the pipes and keeps running, which is the
-        # same distinction `terminate` makes. A call that answered has already cleaned up
-        # after a timeout, and after success has nothing to clean up.
-        cleanup(process) if process && !answered
-        [stdout, stderr].each { |io| io.close unless io.nil? || io.closed? }
+        release(child)
       end
 
       private
 
-      def spawn_without_stdin(argv, options)
-        Open3.popen3(*argv, **options).tap { |stdin,| stdin.close }
+      def spawn_options(chdir)
+        chdir ? { pgroup: true, chdir: chdir } : { pgroup: true }
+      end
+
+      # Every handle the cleanup needs is recorded before any interrupt can be delivered.
+      # A local assigned after the fork is not good enough: an interrupt landing in between
+      # leaves a child in its own process group, which the terminal's Ctrl-C never reaches
+      # and nothing else knows about.
+      def start(child, argv, options)
+        Thread.handle_interrupt(Interrupt => :never) do
+          stdin, stdout, stderr, process = Open3.popen3(*argv, **options)
+          child.stdout = stdout
+          child.stderr = stderr
+          child.process = process
+          stdin.close
+        end
+      end
+
+      # `pgroup: true` isolates the child from the terminal, so leaving by exception has to
+      # take the group with it or interrupting doctor strands the very process it was
+      # bounding. A call that answered has already cleaned up after a timeout and has nothing
+      # to clean up after success.
+      def release(child)
+        cleanup(child.process) if child.process && !child.answered
+        [child.stdout, child.stderr].each { |io| io.close unless io.nil? || io.closed? }
       end
 
       def collect(stdout, stderr, process)

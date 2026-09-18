@@ -58,6 +58,15 @@ class DoctorCommandTest < Minitest::Test
     refute_alive(command.spawned, 'an interrupted call stranded its child')
   end
 
+  # The narrowest window: an interrupt arriving the moment the child exists, before the call
+  # has anything assigned. The child is in its own group, so no Ctrl-C will ever reach it.
+  def test_an_interrupt_the_moment_the_child_exists_does_not_strand_it
+    command = InterruptedAtSpawnCommand.new(timeout: 30)
+
+    assert_raises(Interrupt) { command.call(%w[sleep 30]) }
+    refute_alive(command.spawned, 'a child spawned before the interrupt was stranded')
+  end
+
   # The leader can be gone while a descendant holds the pipes, so liveness of the leader is
   # the wrong thing to condition cleanup on.
   def test_an_interrupt_after_the_leader_exits_still_takes_the_group

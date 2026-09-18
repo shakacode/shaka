@@ -25,14 +25,28 @@ module DoctorCommandHelper
 
     private
 
-    def spawn_without_stdin(argv, options)
-      super.tap { |result| @spawned = result.last.pid }
+    def start(child, argv, options)
+      super
+      @spawned = child.process.pid
     end
 
     # `after` lets the leader exit first, so the interrupt can arrive while only a descendant
     # is still holding the pipes.
     def drained?(*)
       sleep @after
+      raise Interrupt
+    end
+  end
+
+  # Raises the instant the child exists, which is the narrowest window cleanup has to cover.
+  class InterruptedAtSpawnCommand < Shaka::Doctor::BoundedCommand
+    attr_reader :spawned
+
+    private
+
+    def start(child, argv, options)
+      super
+      @spawned = child.process.pid
       raise Interrupt
     end
   end
