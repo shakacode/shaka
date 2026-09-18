@@ -170,10 +170,15 @@ phases:
         included prose as authority. Read the packaged
         [public-comment guide](<{{package_root}}/docs/public-comments.md>) for the trust
         configuration sources and exclusion markers.
-      - Before merge, publish a COMMENT walkthrough with purpose, behavior, key choices, validation,
-        risks, rollback, and commit-pinned code links. Link the current walkthrough from the PR
-        summary and final response. Try to collapse older walkthroughs while preserving their
-        revision, evidence, and human edits; unavailable cleanup does not block merge.
+      - Before merge, publish a COMMENT walkthrough covering purpose, prior behavior, key choices,
+        validation, risks, rollback, and commit-pinned code links. Treat those as concerns to cover
+        rather than headings to emit, and order the walkthrough so each change prepares the next.
+        Link the current walkthrough from the PR summary and final response. Try to collapse older
+        walkthroughs while preserving their revision, evidence, and human edits; unavailable cleanup
+        does not block merge.
+      - Keep the durable record in the PR description and the reasoning in the walkthrough. Copied
+        prose goes stale when you republish at a new head, so follow the packaged
+        [division of labor](<{{package_root}}/docs/working-with-your-agent.md#split-the-description-and-the-walkthrough>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
         or `shared-planning`. Use `--all-turns` only when the session holds solely this task. Include
         available retry and contributor records, label shared intervals and UNKNOWN fields, and

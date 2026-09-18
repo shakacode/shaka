@@ -241,12 +241,63 @@ label a mixed contribution as AI-edited rather than claiming authorship of it al
 
 Use short headings for the change and its user impact. When discussing a workflow,
 name it (such as “the `$shaka` PR skill”) instead of saying “the skill” without context.
-Link to the current code walkthrough
-and review result; do not repeat their complete contents. Show decisions, blockers,
+Link to the current code walkthrough and review result. Show decisions, blockers,
 and missing required review prominently. Put supporting validation, optional review
 history, routine rollback, and usage in clearly labeled details. The description
 helper requires a check table and usage details that include the usage helper's
 tables; it refuses a prose restatement of usage.
+
+### Split the description and the walkthrough
+
+The description outlives the merge and the walkthrough does not. Someone finds the
+description months later through `git log` or a PR search, while a new commit
+supersedes the walkthrough and collapses it. Anything a reader needs after the merge
+therefore belongs in the description, even when the walkthrough explains it too.
+
+Copied prose is a staleness bug rather than mere repetition. Republishing at a new head
+refreshes one copy and leaves the other one wrong.
+
+The two artifacts also meet readers in different postures. The description meets someone
+deciding whether to merge, who may never open the diff. The walkthrough meets someone who
+has already decided to read the code. So the description answers what changed for whom and
+whether to trust it, and the walkthrough answers why the code looks like this.
+
+The description alone carries the outcome headline, the decisions and blockers, missing
+required review, the check table, provenance, usage details, the recovery note, and the
+links to the current walkthrough and review result. The walkthrough alone carries prior
+behavior, the reason for the approach and the alternatives it rejected, the order that
+makes the implementation readable, and commit-pinned code links.
+
+Purpose, risk, and validation belong in both at different resolutions. The description
+states the purpose in a sentence, names the risk that changes the merge decision, and
+carries the check table. The walkthrough explains prior behavior in a paragraph, gives
+failure modes for each change, and says which evidence covers which change. Share the
+subject, never the sentences: a paragraph you could paste from one into the other
+unchanged sits in the wrong artifact.
+
+Four questions settle most cases:
+
+- Would a reader need this a year from now, from `git log` alone? Put it in the description.
+- Does it change whether to merge, or what to do afterward? Description. Does it only change
+  how quickly the diff makes sense? Walkthrough.
+- Does it need a file path or a line number to make sense? Walkthrough.
+- Can each artifact be understood by someone who never opened the other? Each needs its own
+  purpose sentence, so that much overlap is required.
+
+### Write the walkthrough in dependency order
+
+Order the walkthrough so that each change prepares the next, rather than by file name or
+commit order. That usually means the outcome and prior behavior first, then contract, data
+model, or interface changes, then core behavior, then integrations, UI, and operational
+wiring, and finally tests, documentation, migrations, and generated artifacts. Reorder when
+the change itself demands it.
+
+Separate mechanical movement, generated output, dependency bumps, and formatting from the
+changes that alter behavior, so churn does not hide the reason for the work.
+
+Explain behavior instead of narrating syntax, and define an unfamiliar domain term the first
+time it appears. Purpose, behavior, key choices, validation, risks, and rollback are concerns
+to cover, not headings to emit; a walkthrough that fills in a form teaches nobody anything.
 
 ### Keep one current walkthrough
 
