@@ -38,16 +38,21 @@ module DoctorCommandHelper
     end
   end
 
-  # Raises the instant the child exists, which is the narrowest window cleanup has to cover.
-  class InterruptedAtSpawnCommand < Shaka::Doctor::BoundedCommand
+  # Delivers a real asynchronous interrupt in the one interval that matters: after the child
+  # exists and before the call has recorded it. Raising after `start` returns would prove
+  # nothing, because by then every handle is published.
+  class InterruptedInsideSpawnCommand < Shaka::Doctor::BoundedCommand
     attr_reader :spawned
 
     private
 
-    def start(child, argv, options)
-      super
-      @spawned = child.process.pid
-      raise Interrupt
+    def spawn(argv, options)
+      result = super
+      @spawned = result.last.pid
+      target = Thread.current
+      Thread.new { target.raise(Interrupt) }.join
+      sleep 0.05 # a safe point, so an undeferred interrupt lands here rather than later
+      result
     end
   end
 

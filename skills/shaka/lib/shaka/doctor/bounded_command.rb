@@ -49,13 +49,15 @@ module Shaka
       # and nothing else knows about.
       def start(child, argv, options)
         Thread.handle_interrupt(Interrupt => :never) do
-          stdin, stdout, stderr, process = Open3.popen3(*argv, **options)
+          stdin, stdout, stderr, process = spawn(argv, options)
           child.stdout = stdout
           child.stderr = stderr
           child.process = process
           stdin.close
         end
       end
+
+      def spawn(argv, options) = Open3.popen3(*argv, **options)
 
       # `pgroup: true` isolates the child from the terminal, so leaving by exception has to
       # take the group with it or interrupting doctor strands the very process it was
