@@ -132,7 +132,7 @@ a pull request carries while it is unfinished.
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
 | `workspace_path` | `true` or `false` | `true` publishes the checkout's path in the note. `false` publishes the machine alias and the checkout's directory name instead. |
-| `snapshot` | `true` or `false` | `true` pushes unfinished work to a `wip/` branch when a task stops. `false` leaves it on the machine that made it. |
+| `snapshot` | `true` or `false` | `true` lets `shaka snapshot` push unfinished work to a `wip/` branch when a task stops, screening credential-like paths first. `false` leaves it on the machine that made it. |
 
 Set `workspace_path: false` where contributor paths or machine names are sensitive. Set
 `snapshot: false` where unfinished work must not reach the remote at all, or where CI runs on
@@ -140,7 +140,6 @@ every pushed branch. `seam init` writes
 neither key, so a repository that says nothing gets both defaults.
 
 ## What `seam init` writes
-
 
 The initializer produces the smallest complete contract: `version`, `base_branch`, the
 three required commands as `.agents/bin/` wrappers, `review`, `merge`, and `protection`.

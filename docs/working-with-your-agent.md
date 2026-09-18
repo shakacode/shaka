@@ -131,16 +131,18 @@ branch with a `wip/` prefix and push that branch. Include files that were never 
 since half-finished research is exactly what a later reader cannot reconstruct.
 
 A push is permanent: deleting the branch later does not reliably remove what it
-published, and a public repository publishes it to everyone. So read the list of files
-the snapshot would add before pushing, and leave out anything that looks like a
-credential, a key, a customer artifact, or a private export, whatever its name. Being
-absent from `.gitignore` says nothing about whether a file is safe; ignored files are
-excluded because they are usually local configuration, not because ignoring makes a
-file public. Name the excluded files in the note as work the snapshot does not hold,
-and leave them on the machine. When the list is too large to read, snapshot the
-tracked changes alone and say so.
+published, and a public repository publishes it to everyone. So the snapshot is not a
+judgement call. `shaka snapshot` collects what the checkout holds, holds back paths
+that look like credentials or keys whatever their directory, commits the rest against
+the current head without touching the working tree or the index, and pushes it. It
+prints the files it published and the files it held back. Being absent from
+`.gitignore` says nothing about whether a file is safe; ignored files are excluded
+because they are usually local configuration, not because ignoring makes a file
+public. Name the held-back files in the note as work the snapshot does not hold, and
+read the published list before trusting it, since no screen catches everything.
 
-Name the branch in the note and delete it when the PR reaches its outcome. The
+Name the branch in the note, and run `shaka snapshot --delete` when the PR reaches its
+outcome. The
 snapshot carries no pull request, so checks that run on pull requests do not run;
 a repository whose CI runs on every pushed branch will still run it, and should scope
 those triggers or set `recovery.snapshot: false`. A repository that does not want
