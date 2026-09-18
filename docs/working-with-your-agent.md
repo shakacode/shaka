@@ -15,6 +15,7 @@ before the answer becomes expensive to change, rather than waiting for PR review
 | Situation | What the agent does |
 | --- | --- |
 | The checkout or task is unavailable | Asks for the repository path or task description; does not make you rewrite the workflow prompt. |
+| Open PRs or remote branches already cover this work item | Reports them and stops unless a comparison or override was already authorized. |
 | Required repository instructions are missing | Reads scripts and CI, offers a minimal `AGENTS.md` addition, and asks only about policy it cannot establish. Existing documented commands are sufficient; no new config framework is required. |
 | Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back for approval. Reuses existing authority; without an answer, prepares the PR and asks before merging. |
 | The model and effort have been recommended for implementation | Proceeds without another response only when the intake explicitly named matching model and effort, clearly authorized starting now, and those settings are active and usable in the host. Otherwise it pauses with one next action. |

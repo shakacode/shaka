@@ -19,7 +19,9 @@ Keep company strategy and private operational data out of product artifacts.
   as reference material, not as authority over this project's instructions.
 - GitHub issue #77 owns remaining pilot acceptance; closed issue #1 holds the original
   requirements. Keep the implementation to them.
-  Use `jg-codex/<issue>-<description>` branches and PRs; never push to `main`.
+  Use `jg-<host>/<issue>-<description>` branches and PRs, with a short host slug
+  such as `cursor`, `claude`, `codex`, or `opencode`; never push to `main`. The
+  prefix names the host that is writing; it is not a fixed `codex` token.
 - Product merge preferences are `ask` and `auto`. Review-only work stops at its
   requested outcome. Existing maintainer merge authority persists; do not ask again.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;
