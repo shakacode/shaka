@@ -86,7 +86,9 @@ module Shaka
       push(plan)
     end
 
-    def allowed? = Policy.new(root: @root, remote: @options[:remote]).allows_snapshot?
+    def allowed?
+      Policy.new(root: @root, remote: @options[:remote], git: method(:git)).allows_snapshot?
+    end
 
     def current_plan
       Plan.new(root: @root, branch: snapshot_branch, remote_head: remote_head, git: method(:git)).to_h
@@ -103,14 +105,14 @@ module Shaka
     end
 
     def push(plan)
-      commit = write_commit(plan['adds'], plan['removes'])
+      commit = write_commit(plan)
       git('push', "--force-with-lease=#{reference}:#{remote_commit}", @options[:remote], "#{commit}:#{reference}")
       report(plan.merge('published' => true, 'commit' => commit))
     end
 
-    def write_commit(adds, removes)
-      builder = Tree.new(git: method(:git))
-      git('commit-tree', builder.build(adds, removes), '-p', builder.parent, '-m', message).strip
+    # The confirmed plan already named its tree, so publishing commits that exact tree.
+    def write_commit(plan)
+      git('commit-tree', plan.fetch('tree'), '-p', plan.fetch('parent'), '-m', message).strip
     end
 
     def message

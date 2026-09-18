@@ -22,19 +22,24 @@ module Shaka
         { 'branch' => @branch, 'published' => false, 'adds' => publishable,
           'removes' => removals, 'held_back' => screen.excluded,
           'held_back_submodules' => nested, 'unpushed_commits' => unpushed_commits,
-          'digest' => digest }
+          'tree' => tree, 'parent' => parent, 'digest' => digest }
       end
 
       private
 
       def removals = changes.removed - surviving
 
+      def builder = @builder ||= Tree.new(git: @git)
+
+      def tree = @tree ||= builder.build(publishable, removals)
+
+      def parent = @parent ||= builder.parent
+
       # The digest names the exact tree and parent, so editing a listed file invalidates it.
       def digest
         return 'none' if publishable.empty? && removals.empty?
 
-        tree = Tree.new(git: @git)
-        "#{tree.build(publishable, removals)[0, 12]}.#{tree.parent[0, 7]}"
+        "#{tree[0, 12]}.#{parent[0, 7]}"
       end
 
       def screen = @screen ||= Screen.new((changes.added + surviving).uniq.sort)
@@ -53,10 +58,10 @@ module Shaka
       end
 
       # The push carries every object the snapshot's parent needs, so name that history.
+      # A branch the remote has never seen still has commits nobody published.
       def unpushed_commits
-        return [] if @remote_head.empty?
-
-        @git.call('log', '--oneline', '--no-decorate', "#{@remote_head}..HEAD").split("\n")
+        range = @remote_head.empty? ? ['HEAD', '--not', '--remotes'] : ["#{@remote_head}..HEAD"]
+        @git.call('log', '--oneline', '--no-decorate', *range).split("\n")
       rescue Error
         ['UNKNOWN']
       end

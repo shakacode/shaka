@@ -283,6 +283,20 @@ end
 class SnapshotBoundaryTest < Minitest::Test
   include SnapshotRepository
 
+  def test_deleting_the_local_seam_does_not_escape_the_trusted_setting
+    in_repository do |work|
+      write_seam(work, snapshot: false)
+      File.delete(File.join(work, '.agents/agent-workflow.yml'))
+      write(work, 'research.md' => "half an idea\n")
+
+      result = nil
+      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } }
+
+      assert_equal 1, result
+      refute_includes remote_branches(work).join, 'wip/'
+    end
+  end
+
   def test_a_seam_that_allows_snapshots_still_publishes
     in_repository do |work|
       write_seam(work, snapshot: true)
