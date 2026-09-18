@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 require_relative 'error'
 require_relative 'publishing'
+require_relative 'walkthrough_evidence'
 
 module Shaka
   # The native pull-request evidence a publication decision depends on.
@@ -46,12 +47,18 @@ module Shaka
       result
     end
 
-    def required_checks
-      result = execute(['gh', 'pr', 'checks', @number.to_s, '--repo', @repository,
-                        '--required', '--json', 'name,state,bucket,link'], accepted: [0, 1, 8])
-      raise Error, 'GitHub required checks response must be an array.' unless result.is_a?(Array)
+    def checks(required: false)
+      argv = ['gh', 'pr', 'checks', @number.to_s, '--repo', @repository]
+      argv << '--required' if required
+      argv.push('--json', 'name,state,bucket,link')
+      result = execute(argv, accepted: [0, 1, 8])
+      raise Error, 'GitHub checks response must be an array.' unless result.is_a?(Array)
 
       result
+    end
+
+    def required_checks
+      checks(required: true)
     rescue Error
       raise Error, 'Required-check evidence is unavailable; confirm native required checks and GitHub access.'
     end
@@ -61,16 +68,10 @@ module Shaka
     end
 
     def walkthrough(head:, body:)
-      body = utf8(body)
-      raise Error, 'Walkthrough body must be nonempty.' if body.strip.empty?
-
+      body = publishable(body)
       verify_head(head)
-      verify_rendering(body)
-      created = api(reviews_path, method: 'POST', fields: { event: 'COMMENT', commit_id: head, body: body })
-      published = review(created['id'])
-      verify_review(published, created['id'], head, body)
-      verify_head(head, review_id: created['id'])
-      published
+      WalkthroughEvidence.new(self).verify(head, body)
+      record_walkthrough(head, body)
     end
 
     def api(path, method: 'GET', fields: {}, expected: Hash)
@@ -99,8 +100,15 @@ module Shaka
       value.to_i
     end
 
-    def reviews_path
-      "repos/#{@repository}/pulls/#{@number}/reviews"
+    def reviews_path = "repos/#{@repository}/pulls/#{@number}/reviews"
+
+    def record_walkthrough(head, body)
+      verify_rendering(body)
+      created = api(reviews_path, method: 'POST', fields: { event: 'COMMENT', commit_id: head, body: body })
+      published = review(created['id'])
+      verify_review(published, created['id'], head, body)
+      verify_head(head, review_id: created['id'])
+      published
     end
 
     def verify_head(head, review_id: nil)
