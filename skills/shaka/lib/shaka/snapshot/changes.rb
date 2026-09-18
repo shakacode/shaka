@@ -30,13 +30,15 @@ module Shaka
         end
       end
 
+      # A rename and a copy both carry a source field; only a rename leaves it behind.
       def record(entry, pending, result)
         index = entry[0]
         worktree = entry[1]
         path = entry[PREFIX..].to_s
         return if path.empty?
 
-        result[:removed] << pending.shift.to_s if %w[R C].include?(index)
+        source = pending.shift.to_s if %w[R C].include?(index)
+        result[:removed] << source if index == 'R'
         deleted = index == 'D' || worktree == 'D'
         result[deleted ? :removed : :added] << path
       end

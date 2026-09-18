@@ -14,6 +14,14 @@ class SnapshotScreenTest < Minitest::Test
     assert_equal ['README.md', 'docs/research.md', 'lib/thing.rb'], screen.included
   end
 
+  def test_credential_files_without_an_extension_are_held_back
+    paths = ['.aws/credentials', 'config/credentials', '.pgpass', '.docker/config.json',
+             '.ssh/known_hosts', 'vendor/secrets']
+    screen = Shaka::Snapshot::Screen.new(paths)
+
+    assert_empty screen.included
+  end
+
   def test_credentials_are_held_back_whatever_the_directory
     paths = ['.env', 'app/.env.local', 'deploy/id_rsa', 'certs/server.pem', 'config/credentials.json',
              'scripts/rotate_api_key.sh', '.netrc']
@@ -33,6 +41,13 @@ class SnapshotChangesTest < Minitest::Test
     assert_equal ['alpha.txt'], changes.removed
   end
 
+  def test_a_copy_keeps_its_source
+    changes = Shaka::Snapshot::Changes.new(['C  copy.txt', 'origin.txt'])
+
+    assert_equal ['copy.txt'], changes.added
+    assert_empty changes.removed
+  end
+
   def test_deleted_files_are_removed_rather_than_added
     changes = Shaka::Snapshot::Changes.new([' D beta.txt', '?? delta.txt', ' M kept.txt'])
 
@@ -41,8 +56,72 @@ class SnapshotChangesTest < Minitest::Test
   end
 end
 
+# Builds a throwaway repository so the snapshot runs against real git.
+module SnapshotRepository
+  def run_snapshot(work, *arguments)
+    output = nil
+    Dir.chdir(work) do
+      output = capture_io { assert_equal 0, Shaka::Snapshot.new(arguments).run }.first
+    end
+    JSON.parse(output)
+  end
+
+  def published_files(work, commit)
+    git(work, 'ls-tree', '--name-only', '-r', commit).split("\n").sort
+  end
+
+  def remote_branches(work)
+    git(work, 'ls-remote', '--heads', 'origin').split("\n")
+  end
+
+  def add_submodule(work)
+    source = File.join(File.dirname(work), 'nested-source')
+    git(File.dirname(work), 'init', '--quiet', source)
+    git(source, 'config', 'user.email', 'test@example.com')
+    git(source, 'config', 'user.name', 'Test')
+    File.write(File.join(source, 'README.md'), "nested\n")
+    git(source, 'add', '--all')
+    git(source, 'commit', '--quiet', '--message', 'nested')
+    git(work, '-c', 'protocol.file.allow=always', 'submodule', '--quiet', 'add', source, 'nested')
+    git(work, 'commit', '--quiet', '--message', 'add submodule')
+  end
+
+  def write(work, files)
+    files.each { |name, body| File.write(File.join(work, name), body) }
+  end
+
+  def in_repository
+    Dir.mktmpdir('shaka-snapshot-test') do |root|
+      work = File.join(root, 'work')
+      git(root, 'init', '--quiet', '--bare', File.join(root, 'origin'))
+      git(root, 'init', '--quiet', work)
+      seed(work, File.join(root, 'origin'))
+      yield work
+    end
+  end
+
+  def seed(work, origin)
+    git(work, 'config', 'user.email', 'test@example.com')
+    git(work, 'config', 'user.name', 'Test')
+    File.write(File.join(work, 'README.md'), "base\n")
+    git(work, 'add', '--all')
+    git(work, 'commit', '--quiet', '--message', 'base')
+    git(work, 'remote', 'add', 'origin', origin)
+    git(work, 'checkout', '--quiet', '-b', 'feature')
+  end
+
+  def git(directory, *argv)
+    output, error, status = Open3.capture3('git', '-C', directory, *argv)
+    raise "git #{argv.first} failed: #{error}" unless status.success?
+
+    output
+  end
+end
+
 # The snapshot must publish real work without disturbing the checkout it came from.
 class SnapshotTest < Minitest::Test
+  include SnapshotRepository
+
   def test_it_plans_without_publishing_until_asked
     in_repository do |work|
       write(work, 'research.md' => "half an idea\n")
@@ -90,53 +169,33 @@ class SnapshotTest < Minitest::Test
       assert_empty report['adds']
     end
   end
+end
 
-  private
+# Snapshots must work from anywhere in a checkout, and never overstate a submodule.
+class SnapshotBoundaryTest < Minitest::Test
+  include SnapshotRepository
 
-  def run_snapshot(work, *arguments)
-    output = nil
-    Dir.chdir(work) do
-      output = capture_io { assert_equal 0, Shaka::Snapshot.new(arguments).run }.first
-    end
-    JSON.parse(output)
-  end
+  def test_it_runs_from_a_subdirectory
+    in_repository do |work|
+      Dir.mkdir(File.join(work, 'sub'))
+      write(work, 'README.md' => "base\nmore\n", 'sub/nested.md' => "deep\n")
 
-  def published_files(work, commit)
-    git(work, 'ls-tree', '--name-only', '-r', commit).split("\n").sort
-  end
+      report = run_snapshot(File.join(work, 'sub'), '--push')
 
-  def remote_branches(work)
-    git(work, 'ls-remote', '--heads', 'origin').split("\n")
-  end
-
-  def write(work, files)
-    files.each { |name, body| File.write(File.join(work, name), body) }
-  end
-
-  def in_repository
-    Dir.mktmpdir('shaka-snapshot-test') do |root|
-      work = File.join(root, 'work')
-      git(root, 'init', '--quiet', '--bare', File.join(root, 'origin'))
-      git(root, 'init', '--quiet', work)
-      seed(work, File.join(root, 'origin'))
-      yield work
+      assert_equal ['README.md', 'sub/nested.md'], report['adds']
+      assert_equal ['README.md', 'sub/nested.md'], published_files(work, report['commit'])
     end
   end
 
-  def seed(work, origin)
-    git(work, 'config', 'user.email', 'test@example.com')
-    git(work, 'config', 'user.name', 'Test')
-    File.write(File.join(work, 'README.md'), "base\n")
-    git(work, 'add', '--all')
-    git(work, 'commit', '--quiet', '--message', 'base')
-    git(work, 'remote', 'add', 'origin', origin)
-    git(work, 'checkout', '--quiet', '-b', 'feature')
-  end
+  def test_edits_inside_a_submodule_are_held_back_rather_than_claimed
+    in_repository do |work|
+      add_submodule(work)
+      File.write(File.join(work, 'nested', 'README.md'), "changed inside\n")
 
-  def git(directory, *argv)
-    output, error, status = Open3.capture3('git', '-C', directory, *argv)
-    raise "git #{argv.first} failed: #{error}" unless status.success?
+      report = run_snapshot(work)
 
-    output
+      assert_equal ['nested'], report['held_back_submodules']
+      refute_includes report['adds'], 'nested'
+    end
   end
 end

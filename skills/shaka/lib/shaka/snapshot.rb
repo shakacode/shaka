@@ -28,6 +28,7 @@ module Shaka
 
     def run
       parse
+      @root = capture('rev-parse', '--show-toplevel').strip
       @branch = git('rev-parse', '--abbrev-ref', 'HEAD').strip
       raise Error, 'Snapshot needs a named branch, not a detached head.' if @branch == 'HEAD'
 
@@ -69,12 +70,22 @@ module Shaka
 
     def plan_for(changes)
       screen = Screen.new(changes.added)
-      { 'branch' => snapshot_branch, 'published' => false, 'adds' => screen.included,
-        'removes' => changes.removed, 'held_back' => screen.excluded }
+      nested = screen.included & submodules
+      { 'branch' => snapshot_branch, 'published' => false, 'adds' => screen.included - nested,
+        'removes' => changes.removed, 'held_back' => screen.excluded,
+        'held_back_submodules' => nested }
+    end
+
+    # A superproject records a submodule as one commit, so edits inside it cannot travel.
+    def submodules
+      @submodules ||= git('ls-files', '--stage', '-z').split(SEPARATOR).filter_map do |entry|
+        entry.split("\t", 2).last if entry.start_with?('160000 ')
+      end
     end
 
     def push(plan)
       commit = write_commit(plan['adds'], plan['removes'])
+      fetch_snapshot_ref
       git('push', '--force-with-lease', @options[:remote], "#{commit}:refs/heads/#{snapshot_branch}")
       report(plan.merge('published' => true, 'commit' => commit))
     end
@@ -100,9 +111,23 @@ module Shaka
       puts JSON.pretty_generate(payload)
     end
 
+    # Without the remote's own ref, --force-with-lease expects the branch not to exist.
+    def fetch_snapshot_ref
+      reference = "refs/heads/#{snapshot_branch}"
+      git('fetch', @options[:remote], "+#{reference}:refs/remotes/#{@options[:remote]}/#{snapshot_branch}")
+    rescue Error
+      nil
+    end
+
     def git(*argv, index: nil)
+      capture(*argv, index: index)
+    end
+
+    # Status paths are relative to the repository root, so every command runs there.
+    def capture(*argv, index: nil)
       environment = index ? { 'GIT_INDEX_FILE' => index } : {}
-      output, error, status = Open3.capture3(environment, 'git', *argv)
+      location = @root ? ['-C', @root] : []
+      output, error, status = Open3.capture3(environment, 'git', *location, *argv)
       raise Error, "git #{argv.first} failed: #{error.lines.first&.strip}" unless status.success?
 
       output
