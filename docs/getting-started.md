@@ -75,8 +75,9 @@ To organize work across repositories, add the desktop app's control tower skills
 Send `/mct-claude` in the session you want to hold the master role, then
 `/rct-claude` in a session opened in each repository a tower should own. These skills
 use the desktop app's session tools and stop with a setup error in a terminal
-`claude`. See the
-[control-tower guide](control-towers.md#establish-a-master-tower-in-claude-code).
+`claude`. See the control-tower guide for the
+[master](control-towers.md#establish-a-master-tower-in-claude-code) and
+[repository](control-towers.md#establish-a-repository-tower-in-claude-code) roles.
 
 <a id="use-shaka-in-cursor"></a>
 

@@ -86,8 +86,10 @@ want the tower to own, and send:
 ```
 
 It takes no arguments: the session's own checkout selects the repository. The skill
-confirms the Git root, the remotes, and live GitHub identity, and that the session's
-origin directory contains that root. Missing or ambiguous repository identity, an
+confirms the Git root, the remotes, and live GitHub identity, and that the root and the
+session's origin directory belong to the same repository. It compares the Git common
+directory rather than filesystem paths, so an ordinary linked worktree beside its
+original checkout is valid. Missing or ambiguous repository identity, an
 existing tower for the same repository, and a missing or ambiguous master are errors
 rather than guesses.
 

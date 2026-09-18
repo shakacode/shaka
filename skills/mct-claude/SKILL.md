@@ -91,9 +91,10 @@ transcript is the only durable record, and it outlives both this conversation's
 earlier turns and this master.
 
 Acknowledge with `send_message` back to that session, naming the exact
-`OWNER/REPOSITORY` and RCT session ID you verified. State that the acknowledgment
-registers the tower only, and releases no paused work, backlog assignment, worker
-session, or merge authority.
+`OWNER/REPOSITORY`, the RCT session ID you verified, and this session's own ID, so
+the tower can confirm the answer came from the master it chose. State that the
+acknowledgment registers the tower only, and releases no paused work, backlog
+assignment, worker session, or merge authority.
 
 Read the delivery result for every reply, acknowledgment and refusal alike. Anything
 other than `delivered` or `queued` means the tower never received the answer and is
@@ -116,8 +117,7 @@ Acknowledging is not atomic either. If two towers end up registered for one
 repository, a later read shows both: report the conflict with what each recorded and
 ask the user which tower keeps the repository. Do not choose, and do not try to
 withdraw an acknowledgment already sent. Name the observed state and one concrete
-recovery action. Never acknowledge a fact you did not read yourself, and never treat
-a `queued` or `delivered` delivery result as acknowledgment in either direction.
+recovery action, and never acknowledge a fact you did not read yourself.
 
 ## Coordinate without becoming a writer
 
