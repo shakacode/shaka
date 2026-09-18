@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'rubygems/version'
 require_relative '../error'
 require_relative '../repository_config'
 require_relative 'check'
