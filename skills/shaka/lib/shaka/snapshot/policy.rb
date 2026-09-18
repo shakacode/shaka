@@ -7,13 +7,13 @@ module Shaka
   class Snapshot
     # Answers whether this repository lets unfinished work leave the machine.
     #
-    # Both the question and the answer come from the trusted remote branch, so a candidate
-    # checkout can neither rewrite the setting nor delete the seam to escape it. When a
-    # remote exists but its seam cannot be read, publishing refuses: the checkout's own
-    # copy could say anything, and a push cannot be taken back. A repository with no remote
-    # has nowhere to publish, so it is left alone.
+    # The remote names its own default branch and supplies the seam from it, so nothing in
+    # the checkout chooses the answer or the place it comes from. A remote that cannot be
+    # reached refuses, because a push cannot be taken back. A remote whose default branch
+    # carries no seam has said nothing, and a repository with no remote has nowhere to
+    # publish, so both keep the default.
     class Policy
-      NO_SEAM = :no_seam
+      SYMREF = %r{\Aref:\s+refs/heads/(?<branch>\S+)\s+HEAD\b}
 
       def initialize(root:, remote:, git:)
         @root = root
@@ -24,9 +24,14 @@ module Shaka
       def allows_snapshot?
         return true unless remote?
 
-        source = trusted
-        raise Error, "Cannot read the trusted seam from #{@remote}; snapshots refuse." if source.nil?
-        return true if source == NO_SEAM
+        listing = symrefs
+        return true if listing.strip.empty?
+
+        branch = branch_in(listing)
+        raise Error, "Cannot read the default branch from #{@remote}; snapshots refuse." if branch.nil?
+
+        source = seam(branch)
+        return true if source.nil?
 
         RepositoryConfig.new(root: @root, source: source).load.recovery.fetch('snapshot')
       end
@@ -35,55 +40,32 @@ module Shaka
 
       def remote? = !@git.call('remote').split("\n").empty?
 
-      # The checkout may name its base branch, but every ref consulted is a remote one.
-      # When none is present, the remote itself is asked once: a remote with no branches
-      # has no seam, while a remote that cannot be reached leaves the answer unknown.
-      def trusted
-        found = from_refs
-        return found unless found.nil?
-
-        return nil unless fetched?
-
-        from_refs || NO_SEAM
+      # An empty listing means a remote with no branches; a failure means no answer at all.
+      def symrefs
+        @git.call('ls-remote', '--symref', @remote, 'HEAD')
+      rescue Error
+        raise Error, "Cannot reach #{@remote} to read its snapshot policy; snapshots refuse."
       end
 
-      def from_refs
-        refs.each do |ref|
-          next unless resolves?(ref)
-
-          return read(ref)
-        end
-        nil
+      def branch_in(listing)
+        match = listing.lines.lazy.filter_map { |line| SYMREF.match(line) }.first
+        match && match[:branch]
       end
 
-      def fetched?
-        @git.call('fetch', '--quiet', @remote, "+refs/heads/*:refs/remotes/#{@remote}/*")
+      # The seam is read from the fetched remote commit, never from the working tree.
+      def seam(branch)
+        @git.call('fetch', '--quiet', @remote, "refs/heads/#{branch}")
+        @git.call('show', "FETCH_HEAD:#{RepositoryConfig::PATH}")
+      rescue Error
+        fetched?(branch) ? nil : raise(Error, "Cannot read the trusted seam from #{@remote}.")
+      end
+
+      def fetched?(branch)
+        @git.call('rev-parse', '--verify', '--end-of-options', 'FETCH_HEAD^{commit}')
+        @git.call('ls-remote', @remote, "refs/heads/#{branch}")
         true
       rescue Error
         false
-      end
-
-      def refs = ["#{@remote}/HEAD", *candidate_base].uniq
-
-      def candidate_base
-        base = RepositoryConfig.load(root: @root).base_branch
-        base.match?(%r{\A[\w.\-/]+\z}) ? ["#{@remote}/#{base}"] : []
-      rescue Shaka::Error, SystemCallError
-        []
-      end
-
-      def resolves?(ref)
-        @git.call('rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}")
-        true
-      rescue Error
-        false
-      end
-
-      # A trusted branch that resolves but carries no seam means the repository has none.
-      def read(ref)
-        @git.call('show', "#{ref}:#{RepositoryConfig::PATH}")
-      rescue Error
-        NO_SEAM
       end
     end
   end

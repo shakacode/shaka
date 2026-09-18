@@ -120,6 +120,17 @@ module SnapshotRepository
     publish_seam(work)
   end
 
+  # A branch whose own seam allows snapshots and names itself as the base.
+  def add_permissive_branch(work)
+    git(work, 'checkout', '--quiet', '-b', 'permissive')
+    template = File.read(File.expand_path('fixtures/snapshot_seam.yml', __dir__))
+    File.write(File.join(work, '.agents/agent-workflow.yml'),
+               format(template, snapshot: true).sub('base_branch: main', 'base_branch: permissive'))
+    git(work, 'add', '--all')
+    git(work, 'commit', '--quiet', '--message', 'permissive seam')
+    git(work, 'push', '--quiet', 'origin', 'HEAD:refs/heads/permissive')
+  end
+
   # The policy reads the seam from the trusted remote branch, so the fixture lives there.
   def publish_seam(work)
     git(work, 'add', '--all')
@@ -287,6 +298,20 @@ class SnapshotBoundaryTest < Minitest::Test
     in_repository do |work|
       write_seam(work, snapshot: false)
       File.delete(File.join(work, '.agents/agent-workflow.yml'))
+      write(work, 'research.md' => "half an idea\n")
+
+      result = nil
+      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } }
+
+      assert_equal 1, result
+      refute_includes remote_branches(work).join, 'wip/'
+    end
+  end
+
+  def test_a_redirected_base_branch_cannot_choose_the_trusted_copy
+    in_repository do |work|
+      write_seam(work, snapshot: false)
+      add_permissive_branch(work)
       write(work, 'research.md' => "half an idea\n")
 
       result = nil

@@ -12,7 +12,6 @@ module Shaka
   # Publishes unfinished work to a branch that carries no pull request.
   class Snapshot
     PREFIX = 'wip/'
-    SEPARATOR = "\0"
 
     def self.run(arguments)
       new(arguments).run
