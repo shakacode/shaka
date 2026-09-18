@@ -45,7 +45,7 @@ class DoctorCommandTest < Minitest::Test
       assert_operator elapsed, :>=, Shaka::Doctor::BoundedCommand::GRACE
       assert_operator elapsed, :<, Shaka::Doctor::BoundedCommand::GRACE + 3, 'the cleanup join was unbounded'
     ensure
-      kill_quietly(pid_in(path))
+      kill_group_and_wait(pid_in(path))
     end
   end
 

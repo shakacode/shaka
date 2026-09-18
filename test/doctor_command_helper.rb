@@ -25,6 +25,20 @@ module DoctorCommandHelper
 
   def pid_in(path) = Integer(File.read(path).strip)
 
+  # Signalling the leader alone orphans whatever it started, which is the very leak the
+  # command under test prevents. Teardown kills the group and waits for it to empty; a group
+  # with no members answers ESRCH.
+  def kill_group_and_wait(pgid, within: 5)
+    kill_quietly(-pgid)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + within
+    while Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+      return unless alive?(-pgid)
+
+      sleep 0.05
+    end
+    flunk 'the test left a process group running'
+  end
+
   def kill_quietly(pid)
     Process.kill('KILL', pid)
   rescue Errno::ESRCH, Errno::EPERM, ArgumentError
