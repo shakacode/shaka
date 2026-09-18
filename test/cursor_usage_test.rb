@@ -13,7 +13,8 @@ module CursorUsageFixture
   OLD = '00000000-0000-4000-8000-000000000001'
   NEW = '00000000-0000-4000-8000-000000000002'
   THIRD = '00000000-0000-4000-8000-000000000003'
-  CLEAR = { 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }.freeze
+  CLEAR = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil,
+            'CURSOR_CONVERSATION_ID' => nil }.freeze
   ROW = '| cursor | grok-4.6 | cursor-grok-4.6-medium | medium | 100 | 40 | 20 | UNKNOWN | 7 | UNKNOWN |'
 
   private

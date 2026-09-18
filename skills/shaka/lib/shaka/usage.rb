@@ -6,14 +6,16 @@ require_relative 'codex_usage'
 require_relative 'cost_estimate'
 require_relative 'cursor_usage'
 require_relative 'opencode_usage'
+require_relative 'pi_usage'
 
 module Shaka
   # Read-only reporting of per-response usage records from a supported host.
   class Usage
     FIELDS = %w[input_tokens cached_input_tokens output_tokens reasoning_output_tokens
                 cache_write_input_tokens total_tokens].freeze
+    UNKNOWN_COUNT = 'Responses: UNKNOWN (no readable per-response records)'
     READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage, 'cursor' => CursorUsage,
-                'opencode' => OpencodeUsage }.freeze
+                'opencode' => OpencodeUsage, 'pi' => PiUsage }.freeze
     HOST_CONTEXT = { 'codex' => 'CODEX_THREAD_ID', 'claude-code' => 'CLAUDE_CODE_SESSION_ID',
                      'cursor' => 'CURSOR_CONVERSATION_ID', 'opencode' => 'OPENCODE_SESSION_ID' }.freeze
 
@@ -43,7 +45,7 @@ module Shaka
     end
 
     def self.source_options(flags, options)
-      flags.on('--host NAME', READERS.keys, 'codex, claude-code, cursor, or opencode') { |v| options[:host] = v }
+      flags.on('--host NAME', READERS.keys, 'codex, claude-code, cursor, opencode, or pi') { |v| options[:host] = v }
       flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |v|
         options[:files] << v
       end
@@ -53,6 +55,8 @@ module Shaka
     end
 
     def self.detected_host
+      return 'pi' if ENV.fetch('PI_CODING_AGENT', nil) == 'true'
+
       found = HOST_CONTEXT.select { |_, variable| ENV.key?(variable) }.keys
       return if found.size > 1
 
@@ -119,9 +123,7 @@ module Shaka
       end
     end
 
-    def count
-      @responses.empty? ? 'Responses: UNKNOWN (no readable per-response records)' : "#{@responses.size} responses"
-    end
+    def count = @responses.empty? ? UNKNOWN_COUNT : "#{@responses.size} responses"
 
     def versions
       @source.versions.empty? ? 'UNKNOWN' : @source.versions.uniq.map { |version| safe(version) }.join(', ')
