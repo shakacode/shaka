@@ -28,8 +28,9 @@ module Shaka
     def markdown(rows, reasons)
       <<~MARKDOWN
 
-        Cost estimates are PARTIAL configured-model scenarios for the selected native responses.
-        Actual charge: UNKNOWN (routed model, billing mode, service tier, account terms, and external work unavailable).
+        Cost evidence is PARTIAL: configured-model scenarios and recorded native nominal cost
+        cover only the selected responses. Actual charge: UNKNOWN (routed model, billing mode,
+        service tier, account terms, discounts, and external work unavailable).
 
         <details>
         <summary>Cost scenarios</summary>
@@ -37,10 +38,11 @@ module Shaka
         Standard Codex credit and Standard OpenAI API-equivalent rates, plus Cursor on-demand
         Grok 4.6 list prices, verified #{VERIFIED}; historical rates and account-specific terms
         may differ. Effort has no price multiplier. Cached input and reasoning output are
-        subsets, not extra charges. OpenAI API cache writes are included in input and priced
-        separately; Codex credit cache-write pricing is unavailable. Cursor cache writes have
-        no published separate rate and stay in ordinary input. The OpenAI API scenario applies
-        each request's 272K context threshold before summing; Cursor reports apply none.
+        subsets, not extra charges. Pi rows use Pi's recorded native nominal USD rather than a
+        Shaka recalculation; their Codex credit estimate stays UNKNOWN. OpenAI API cache writes
+        are included in input and priced separately; Codex credit cache-write pricing is unavailable.
+        Cursor cache writes have no published separate rate and stay in ordinary input. The OpenAI
+        API scenario applies each request's 272K context threshold before summing; Cursor reports apply none.
 
         | Provider | Configured model | Effort | Codex credits estimate | API-equivalent USD estimate |
         | --- | --- | --- | ---: | ---: |
@@ -117,6 +119,21 @@ module Shaka
 
     # Every published rate here bills input inclusive of its cached and written subsets.
     def price(record, mode)
+      native_price(record, mode) || configured_price(record, mode)
+    end
+
+    def native_price(record, mode)
+      usage = record['usage']
+      return unless usage.is_a?(Hash) && usage.key?('native_cost_usd')
+      return [nil, 'Codex credit estimate unavailable for Pi'] if mode == :credits
+
+      value = usage['native_cost_usd']
+      return [nil, 'Native nominal cost unavailable'] unless value.is_a?(Numeric) && value.finite? && value >= 0
+
+      [value, nil]
+    end
+
+    def configured_price(record, mode)
       return [nil, 'Cache-exclusive input is unpriced'] unless @inclusive_input
 
       provider, model = record['configuration']
@@ -125,11 +142,9 @@ module Shaka
       tokens, reason = categories(record['usage'])
       return [nil, reason] if reason
 
-      if provider == 'openai'
-        openai_price(model, mode, tokens)
-      else
-        cursor_price(model, record['billing_mode'], mode, tokens)
-      end
+      return openai_price(model, mode, tokens) if provider == 'openai'
+
+      cursor_price(model, record['billing_mode'], mode, tokens)
     end
 
     def openai_price(model, mode, tokens)

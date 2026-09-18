@@ -8,8 +8,8 @@ module OpencodeUsageFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
   COMMIT = 'a' * 40
   SESSION = 'ses_0123456789abcdefABCDEF'
-  CLEAR = { 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil,
-            'OPENCODE_SESSION_ID' => nil }.freeze
+  CLEAR = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil,
+            'CURSOR_CONVERSATION_ID' => nil, 'OPENCODE_SESSION_ID' => nil }.freeze
   OLD_USER = 'msg-old-user'
   NEW_USER = 'msg-new-user'
   ROW = '| opencode | session-model | routed-model | medium | 475 | 9201 | 314 | 5 | 0 | 9995 |'
