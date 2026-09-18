@@ -5,6 +5,7 @@ require 'open3'
 require 'optparse'
 require 'tmpdir'
 require_relative 'error'
+require_relative 'snapshot/changes'
 require_relative 'snapshot/screen'
 
 module Shaka
@@ -44,7 +45,8 @@ module Shaka
 
     def option_parser
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka snapshot [--remote NAME] [--delete]'
+        flags.banner = 'Usage: shaka snapshot [--push] [--remote NAME] [--delete]'
+        flags.on('--push', 'Publish the snapshot; without it the plan is printed only') { @options[:push] = true }
         flags.on('--remote NAME', 'Remote to publish to; default origin') { |name| @options[:remote] = name }
         flags.on('--delete', 'Delete this branch snapshot instead of publishing one') { @options[:delete] = true }
       end
@@ -58,34 +60,33 @@ module Shaka
     end
 
     def publish
-      screen = Screen.new(unfinished)
-      return report('branch' => nil, 'included' => [], 'excluded' => screen.excluded) if screen.included.empty?
+      plan = plan_for(Changes.new(git('status', '--porcelain', '-uall', '-z').split(SEPARATOR)))
+      return report(plan.merge('branch' => nil)) if plan['adds'].empty? && plan['removes'].empty?
+      return report(plan) unless @options[:push]
 
-      commit = write_commit(screen.included)
+      push(plan)
+    end
+
+    def plan_for(changes)
+      screen = Screen.new(changes.added)
+      { 'branch' => snapshot_branch, 'published' => false, 'adds' => screen.included,
+        'removes' => changes.removed, 'held_back' => screen.excluded }
+    end
+
+    def push(plan)
+      commit = write_commit(plan['adds'], plan['removes'])
       git('push', '--force-with-lease', @options[:remote], "#{commit}:refs/heads/#{snapshot_branch}")
-      report('branch' => snapshot_branch, 'commit' => commit,
-             'included' => screen.included, 'excluded' => screen.excluded)
-    end
-
-    # Every path git would add: changed, staged, and never-added files, without ignored ones.
-    def unfinished
-      entries = git('status', '--porcelain', '-uall', '-z').split(SEPARATOR)
-      entries.filter_map { |entry| path_of(entry) }.uniq.sort
-    end
-
-    def path_of(entry)
-      return nil if entry.length < 4 || entry.start_with?('D ', ' D')
-
-      entry[3..]
+      report(plan.merge('published' => true, 'commit' => commit))
     end
 
     # A temporary index keeps the working tree and the real index untouched.
-    def write_commit(paths)
+    def write_commit(adds, removes)
       Dir.mktmpdir('shaka-snapshot') do |dir|
         index = File.join(dir, 'index')
         parent = git('rev-parse', 'HEAD').strip
         git('read-tree', 'HEAD', index: index)
-        git('add', '--force', '--', *paths, index: index)
+        git('add', '--force', '--', *adds, index: index) unless adds.empty?
+        git('update-index', '--force-remove', '--', *removes, index: index) unless removes.empty?
         tree = git('write-tree', index: index).strip
         git('commit-tree', tree, '-p', parent, '-m', message, index: index).strip
       end
