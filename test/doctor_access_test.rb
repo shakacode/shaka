@@ -57,7 +57,8 @@ class DoctorAccessTest < Minitest::Test
   def test_an_object_missing_the_repository_or_permission_blocks
     incomplete = ['{"viewerPermission":"WRITE"}', '{"nameWithOwner":"owner/repo"}',
                   '{"nameWithOwner":7,"viewerPermission":"WRITE"}',
-                  '{"nameWithOwner":"","viewerPermission":"WRITE"}']
+                  '{"nameWithOwner":"","viewerPermission":"WRITE"}',
+                  '{"nameWithOwner":"owner/repo","viewerPermission":""}']
     incomplete.each do |body|
       report, blocked = doctor(responses: { view: [body, '', true] })
       assert_includes report, 'FAILED', body

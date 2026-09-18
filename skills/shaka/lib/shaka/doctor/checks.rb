@@ -71,7 +71,7 @@ module Shaka
       def permission(parsed)
         repository = parsed.is_a?(Hash) ? parsed['nameWithOwner'] : nil
         level = parsed.is_a?(Hash) ? parsed['viewerPermission'] : nil
-        unless repository.is_a?(String) && !repository.empty? && level.is_a?(String)
+        unless repository.is_a?(String) && !repository.empty? && level.is_a?(String) && !level.empty?
           return unreachable_repository('gh did not report a repository and a permission')
         end
         return check('Repository access', 'healthy', "#{repository} is writable as #{level}") if WRITER.include?(level)
