@@ -9,10 +9,10 @@ or the final response when there is no PR:
 shaka usage --commit FULL_COMMIT_SHA --contribution implementation
 ```
 
-The helper reads the current host's records: Codex, Claude Code, Cursor, OpenCode, or Pi. When more
-than one non-Pi host's session context is present, pass `--host codex`, `--host claude-code`,
-`--host cursor`, or `--host opencode`. `PI_CODING_AGENT=true` selects Pi even when the process
-inherits another host's context, so a Pi session never falls back to unrelated Codex records.
+The helper reads the current host's records: Codex, Claude Code, Cursor, OpenCode, or Pi. When
+more than one host context is present, pass `--host codex`, `--host claude-code`, `--host cursor`,
+`--host opencode`, or `--host pi`. This is required when another agent is started inside Pi because
+that child inherits Pi's process marker. Selecting Pi never falls back to unrelated Codex records.
 
 Contribution categories are `implementation`, `review`, `integration`, and
 `shared-planning`. Supply several affected commit SHAs separated by commas when
@@ -126,10 +126,12 @@ version. Records it cannot read produce UNKNOWN.
 
 ## What the Pi reader includes
 
-The reader uses `PI_SESSION_FILE` only when its session header matches `PI_SESSION_ID`.
-An ephemeral session, missing file, malformed header, or identity mismatch stays UNKNOWN;
-it never triggers the old Codex fallback. Explicit `--host pi --file PATH` remains
-available for saved contributor or resumed-session evidence.
+The reader uses `PI_SESSION_FILE` only when its v3 session header has a non-empty ID that
+matches `PI_SESSION_ID` exactly. This supports current SDK-provided custom IDs without publishing
+them. An ephemeral session, missing file, older format, malformed header, or identity mismatch
+stays UNKNOWN; it never triggers the old Codex fallback. Reopen or export a legacy session with
+current Pi before reporting it. Explicit `--host pi --file PATH` remains available for saved
+contributor or resumed-session evidence.
 
 Pi stores an append-only session tree. The reader validates entry identities and parent
 links, starts at the current leaf, and walks back to the root. Abandoned `/tree` branches
@@ -138,17 +140,29 @@ follow it before the next user message. The default selects the latest such turn
 active branch; `--turn ID` selects active-branch user entries, and `--all-turns` includes
 all identified turns on that branch.
 
-Rows preserve each assistant response's provider and observed model, while model-change
-and thinking-level entries supply the applicable configured model and effective effort.
-Pi input excludes cache reads and cache writes, so the three counters stay separate.
-The native total is copied rather than recomputed. Reasoning output remains UNKNOWN
-because Pi's supported session format does not expose it as a separate counter.
+Rows use each assistant response's provider and selected model as configured evidence.
+The optional `responseModel` is the routed model; it stays UNKNOWN when the provider does not
+record it rather than falling back to the configured model. Active-branch thinking-level entries
+supply effective effort. Pi input excludes cache reads and cache writes, so the three counters
+stay separate. The native total is copied rather than recomputed. Supported providers also record
+reasoning as a subset of output. When reasoning is absent, it stays UNKNOWN unless zero output
+proves zero reasoning. A present invalid value or one that exceeds output makes that response's
+usage contradictory and therefore UNKNOWN.
 
-The reader was exercised against Pi 0.85.1 in a real delivery session. Its selected
-active-branch responses matched an independent aggregate for input, output, cache reads,
-cache writes, and native total. Reasoning-output usage remains the evidence gap.
-Malformed trees and conflicting response copies produce UNKNOWN without publishing
-session content, paths, or identifiers.
+Pi's recorded `usage.cost.total` appears in the existing API-equivalent USD column as native
+nominal cost. It is not recalculated from tokens. Codex credits, subscription treatment, discounts,
+service tier, account terms, and the actual invoice remain UNKNOWN.
+
+The reader was exercised against Pi 0.85.1 in a real delivery session. Its selected active-branch
+responses matched an independent aggregate for input, output, reasoning, cache reads, cache writes,
+native total, and native nominal cost. Malformed trees and conflicting response copies produce
+UNKNOWN without publishing session content, paths, or identifiers.
+
+Compaction and branch-summary entries can carry separate summarizer usage, but the pilot reader
+counts assistant responses only and discloses when such usage on the active branch is excluded.
+Tool-nested model usage is also excluded. Pi's `/session` total may be
+published separately as comparison evidence for a dedicated session; never hand-edit it into the
+helper's report or use it to attribute summary usage to a turn.
 
 ## Coverage and fallback
 
@@ -159,7 +173,8 @@ or unreadable records and missing fields produce UNKNOWN. Reports are PARTIAL
 snapshots: active work, external reviewers, tool-model calls, and other agents
 may add usage that is absent from the selected sources. Routed model, billing mode,
 service tier, account terms, and actual provider charges are not established by
-these tokens. API-equivalent USD is a scenario, not a subscription invoice.
+these tokens. API-equivalent USD is a scenario or Pi's recorded native nominal cost,
+not a subscription invoice.
 Human active time and total historical consumption are not inferred.
 
 When host discovery is unavailable or several turns/contributors belong to the

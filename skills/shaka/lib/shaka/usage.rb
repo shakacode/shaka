@@ -13,11 +13,11 @@ module Shaka
   class Usage
     FIELDS = %w[input_tokens cached_input_tokens output_tokens reasoning_output_tokens
                 cache_write_input_tokens total_tokens].freeze
-    UNKNOWN_COUNT = 'Responses: UNKNOWN (no readable per-response records)'
     READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage, 'cursor' => CursorUsage,
                 'opencode' => OpencodeUsage, 'pi' => PiUsage }.freeze
     HOST_CONTEXT = { 'codex' => 'CODEX_THREAD_ID', 'claude-code' => 'CLAUDE_CODE_SESSION_ID',
-                     'cursor' => 'CURSOR_CONVERSATION_ID', 'opencode' => 'OPENCODE_SESSION_ID' }.freeze
+                     'cursor' => 'CURSOR_CONVERSATION_ID', 'opencode' => 'OPENCODE_SESSION_ID',
+                     'pi' => 'PI_CODING_AGENT' }.freeze
 
     def self.run(arguments)
       options = { files: [], turns: [], host: detected_host }
@@ -55,12 +55,8 @@ module Shaka
     end
 
     def self.detected_host
-      return 'pi' if ENV.fetch('PI_CODING_AGENT', nil) == 'true'
-
-      found = HOST_CONTEXT.select { |_, variable| ENV.key?(variable) }.keys
-      return if found.size > 1
-
-      found.first || 'codex'
+      found = HOST_CONTEXT.select { |host, variable| host == 'pi' ? ENV[variable] == 'true' : ENV.key?(variable) }.keys
+      found.size > 1 ? nil : found.first || 'codex'
     end
 
     def self.valid_mapping?(options)
@@ -123,7 +119,9 @@ module Shaka
       end
     end
 
-    def count = @responses.empty? ? UNKNOWN_COUNT : "#{@responses.size} responses"
+    def count
+      @responses.empty? ? 'Responses: UNKNOWN (no readable per-response records)' : "#{@responses.size} responses"
+    end
 
     def versions
       @source.versions.empty? ? 'UNKNOWN' : @source.versions.uniq.map { |version| safe(version) }.join(', ')

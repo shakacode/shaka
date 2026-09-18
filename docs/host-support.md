@@ -30,7 +30,7 @@ establish complete usage attribution.
 | Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. | Shared Agent Skill loaded from a trusted external source; no Pi-specific copy or launcher. |
 | OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. | The user's Pi tool permissions apply; no separate boundary was probed. |
 | Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. | Consumer delivery unverified. | This usage-reader implementation is the first recorded delivery trial; broader consumer evidence remains pending. |
-| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. | Reader matched an independent aggregate of selected active-branch responses; abandoned branches were excluded and reasoning output remains UNKNOWN. |
+| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. | Reader matched an independent aggregate of selected active-branch responses, including reasoning and native nominal cost; abandoned branches were excluded. Compaction, branch-summary, and tool-nested model usage remain excluded. |
 
 The Codex write test establishes that particular local boundary. It does not
 establish equivalent behavior in the desktop app, other versions, or other hosts.
@@ -169,11 +169,13 @@ or a confirmed upstream way to read the current session from inside it.
 ## Pi
 
 Pi exposes the current persistent session through `PI_SESSION_FILE` and
-`PI_SESSION_ID`. The usage reader checks those values, walks only the active JSONL
-tree branch, and does not search other session files. Missing, ephemeral, mismatched,
-or malformed evidence stays UNKNOWN instead of falling back to Codex. The reader
-publishes only aggregate metadata; [usage reporting](usage-reporting.md) documents
-turn selection, counters, and the remaining reasoning-output gap.
+`PI_SESSION_ID`. The usage reader checks those values against a v3 header, walks only
+the active JSONL tree branch, and does not search other session files. Missing,
+ephemeral, mismatched, older, or malformed evidence stays UNKNOWN instead of falling
+back to Codex. Mixed Pi and nested-host markers require explicit `--host` selection.
+The reader publishes only aggregate metadata; [usage reporting](usage-reporting.md)
+documents turn selection, optional reasoning, nominal native cost, and excluded
+summary/tool-model usage.
 
 This support adds no Pi-specific skill copy, launcher, installation mechanism, or RCT
 behavior. Pi continues to use the shared skill and the user's existing tool permissions.

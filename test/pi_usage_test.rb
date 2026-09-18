@@ -13,16 +13,16 @@ module PiUsageFixture
   OLD_TURN = '33333333'
   ABANDONED_TURN = '55555555'
   CURRENT_TURN = '99999999'
-  OLD_ROUTE = %w[observed-old routed-old].freeze
-  ABANDONED_ROUTE = %w[observed-abandoned routed-abandoned].freeze
-  CURRENT_ROUTE = %w[observed-new routed-new].freeze
-  OLD_ROW = '| observed-old | configured-old | routed-old | high | 900 | 40 | 20 | UNKNOWN | 7 | 967 |'
-  CURRENT_ROW = '| observed-new | configured-new | routed-new | low | 300 | 80 | 40 | UNKNOWN | 14 | 434 |'
+  OLD_ROUTE = %w[observed-old configured-old routed-old].freeze
+  ABANDONED_ROUTE = %w[observed-abandoned configured-abandoned routed-abandoned].freeze
+  CURRENT_ROUTE = %w[observed-new configured-new routed-new].freeze
+  OLD_ROW = '| observed-old | configured-old | routed-old | high | 900 | 40 | 20 | 5 | 7 | 967 |'
+  CURRENT_ROW = '| observed-new | configured-new | routed-new | low | 300 | 80 | 40 | 10 | 14 | 434 |'
 
   private
 
-  def header(identity = SESSION)
-    { type: 'session', version: 3, id: identity, timestamp: '2026-09-17T08:00:00.000Z',
+  def header(identity = SESSION, version: 3)
+    { type: 'session', version: version, id: identity, timestamp: '2026-09-17T08:00:00.000Z',
       cwd: '/private/SENSITIVE-PATH' }
   end
 
@@ -37,10 +37,12 @@ module PiUsageFixture
 
   def assistant(id, parent, response, input, route)
     entry('message', id, parent,
-          message: { role: 'assistant', responseId: response, provider: route.first, model: route.last,
-                     content: [{ type: 'text', text: 'SENSITIVE-RESPONSE' }], timestamp: 1_789_632_000_000,
+          message: { role: 'assistant', responseId: response, provider: route[0], model: route[1],
+                     responseModel: route[2], content: [{ type: 'text', text: 'SENSITIVE-RESPONSE' }],
+                     timestamp: 1_789_632_000_000,
                      usage: { input: input, output: 20, cacheRead: 40, cacheWrite: 7,
-                              reasoning: 5, totalTokens: input + 67 } })
+                              reasoning: 5, totalTokens: input + 67,
+                              cost: { total: input / 1_000_000.0 } } })
   end
 
   def branched_session
@@ -78,9 +80,13 @@ module PiUsageFixture
     file
   end
 
+  def capture_report(*, environment: {})
+    Open3.capture3(CLEAR.merge(environment), COMMAND, 'usage', '--commit', COMMIT,
+                   '--contribution', 'implementation', *)
+  end
+
   def report(*, environment: {})
-    output, error, status = Open3.capture3(CLEAR.merge(environment), COMMAND, 'usage', '--commit', COMMIT,
-                                           '--contribution', 'implementation', *)
+    output, error, status = capture_report(*, environment: environment)
     assert status.success?, error
     output
   end
@@ -105,18 +111,72 @@ module PiUsageFixture
   end
 end
 
+module PiUsageMutationFixture
+  private
+
+  def forked_records(without_response_ids)
+    original = Marshal.load(Marshal.dump(branched_session))
+    forked = Marshal.load(Marshal.dump(branched_session))
+    forked[0] = header('forked-session')
+    [original, forked].each { |records| remove_response_ids(records) } if without_response_ids
+    [original, forked]
+  end
+
+  def fork_report(directory, without_response_ids)
+    original, forked = forked_records(without_response_ids)
+    first = write_session(directory, original, name: 'first.jsonl')
+    second = write_session(directory, forked, name: 'forked.jsonl')
+    report('--host', 'pi', '--file', first, '--file', second, '--all-turns')
+  end
+
+  def remove_response_ids(records)
+    records.each { |record| record[:message]&.delete(:responseId) }
+  end
+
+  def current_messages(records)
+    records.filter_map { |record| record[:message] }
+           .select { |message| message[:model] == 'configured-new' }
+  end
+
+  def remove_optional_evidence(records)
+    messages = current_messages(records)
+    messages.each { |message| message.delete(:responseModel) }
+    messages.first[:usage].delete(:reasoning)
+    messages.last[:usage][:reasoning] = nil
+  end
+
+  def set_native_cost(records, cost)
+    usage = records.last[:message][:usage]
+    cost.nil? ? usage.delete(:cost) : usage[:cost] = { total: cost }
+  end
+end
+
 class PiUsageTest < Minitest::Test
   include PiUsageFixture
+  include PiUsageMutationFixture
 
-  def test_detects_pi_before_inherited_codex_context_and_uses_latest_active_branch_turn
+  def test_detects_pi_and_uses_latest_active_branch_turn
     Dir.mktmpdir do |directory|
-      output = discovered(write_session(directory, branched_session),
-                          extra: { 'CODEX_THREAD_ID' => '00000000-0000-4000-8000-000000000099' })
+      output = discovered(write_session(directory, branched_session))
       assert_includes output, CURRENT_ROW
+      assert_includes output, '| observed-new | configured-new | low | UNKNOWN | $0.000300 |'
       assert_includes output, '2 responses'
       assert_includes output, 'Pi source versions: 3'
       assert_includes output, 'latest user turn on the active branch'
       refute_match(/800|900|SENSITIVE|response-|private-call|#{Regexp.escape(SESSION)}/, output)
+    end
+  end
+
+  def test_mixed_host_context_requires_an_explicit_host
+    Dir.mktmpdir do |directory|
+      file = write_session(directory, branched_session)
+      environment = CLEAR.merge('PI_CODING_AGENT' => 'true', 'PI_SESSION_ID' => SESSION,
+                                'PI_SESSION_FILE' => file, 'CODEX_THREAD_ID' => 'nested-codex')
+      output, error, status = capture_report(environment: environment)
+      refute status.success?
+      assert_empty output
+      assert_includes error, 'invalid options'
+      assert_includes report('--host', 'pi', environment: environment), CURRENT_ROW
     end
   end
 
@@ -129,29 +189,75 @@ class PiUsageTest < Minitest::Test
     end
   end
 
-  def test_repeated_sources_count_each_response_once
+  def test_forked_sessions_deduplicate_response_ids_and_entry_fallbacks
+    [false, true].each do |remove_response_ids|
+      Dir.mktmpdir do |directory|
+        output = fork_report(directory, remove_response_ids)
+        assert_includes output, '3 responses'
+        assert_includes output, '| 300 | 80 | 40 | 10 | 14 | 434 |'
+        assert_includes output, '| observed-new | configured-new | low | UNKNOWN | $0.000300 |'
+      end
+    end
+  end
+
+  def test_missing_response_model_and_reasoning_remain_unknown
     Dir.mktmpdir do |directory|
-      file = write_session(directory, branched_session)
-      output = report('--host', 'pi', '--file', file, '--file', file, '--all-turns')
-      assert_includes output, '3 responses'
-      assert_includes output, '| 300 | 80 | 40 | UNKNOWN | 14 | 434 |'
+      records = Marshal.load(Marshal.dump(branched_session))
+      remove_optional_evidence(records)
+      output = report('--host', 'pi', '--file', write_session(directory, records))
+      assert_includes output, '| observed-new | configured-new | UNKNOWN | low | 300 | 80 | 40 | UNKNOWN | 14 | 434 |'
+    end
+  end
+
+  def test_zero_output_proves_zero_reasoning_when_counter_is_omitted
+    Dir.mktmpdir do |directory|
+      records = Marshal.load(Marshal.dump(branched_session))
+      message = records.last[:message]
+      message[:stopReason] = 'aborted'
+      message[:usage].merge!(output: 0, totalTokens: 247)
+      message[:usage].delete(:reasoning)
+      output = report('--host', 'pi', '--file', write_session(directory, records))
+      assert_includes output, '| observed-new | configured-new | routed-new | low | 300 | 80 | 20 | 5 | 14 | 414 |'
+    end
+  end
+
+  def test_compaction_usage_is_disclosed_but_not_counted
+    Dir.mktmpdir do |directory|
+      records = branched_session << entry('compaction', 'dddddddd', 'cccccccc',
+                                          summary: 'SENSITIVE-SUMMARY',
+                                          usage: { input: 999, output: 99, cacheRead: 0, cacheWrite: 0,
+                                                   totalTokens: 1098 })
+      output = report('--host', 'pi', '--file', write_session(directory, records))
+      assert_includes output, '2 responses'
+      assert_includes output, 'Compaction/summary usage on active branch excluded'
+      refute_match(/1098|SENSITIVE/, output)
     end
   end
 end
 
 class PiUsageFailuresTest < Minitest::Test
   include PiUsageFixture
+  include PiUsageMutationFixture
 
   def test_ephemeral_pi_evidence_does_not_fall_back_to_codex
-    output = report(environment: { 'PI_CODING_AGENT' => 'true',
-                                   'CODEX_THREAD_ID' => '00000000-0000-4000-8000-000000000099' })
-    assert_unknown_pi(output)
+    assert_unknown_pi(report(environment: { 'PI_CODING_AGENT' => 'true' }))
   end
 
-  def test_mismatched_pi_session_identity_is_unknown
+  def test_custom_session_identity_matches_exactly
     Dir.mktmpdir do |directory|
-      file = write_session(directory, branched_session)
-      assert_unknown_pi(discovered(file, identity: '00000000-0000-4000-8000-000000000099'))
+      records = branched_session
+      records[0] = header('sdk.custom-session')
+      output = discovered(write_session(directory, records), identity: 'sdk.custom-session')
+      assert_includes output, CURRENT_ROW
+      assert_unknown_pi(discovered(write_session(directory, records), identity: 'other-session'))
+    end
+  end
+
+  def test_only_v3_sessions_are_available
+    Dir.mktmpdir do |directory|
+      records = branched_session
+      records[0] = header(SESSION, version: 2)
+      assert_unavailable(write_session(directory, records))
     end
   end
 
@@ -178,15 +284,42 @@ class PiUsageFailuresTest < Minitest::Test
     end
   end
 
-  def test_conflicting_response_copies_are_unknown
+  def test_conflicting_response_copies_across_fork_headers_are_unknown
     Dir.mktmpdir do |directory|
-      changed = Marshal.load(Marshal.dump(branched_session))
-      changed.last[:message][:usage][:input] = 999
-      first = write_session(directory, branched_session, name: 'first.jsonl')
-      second = write_session(directory, changed, name: 'second.jsonl')
+      original, changed = forked_records(false)
+      changed.last[:message][:usage].merge!(input: 999, totalTokens: 1066, cost: { total: 0.000999 })
+      first = write_session(directory, original, name: 'first.jsonl')
+      second = write_session(directory, changed, name: 'forked.jsonl')
       output = report('--host', 'pi', '--file', first, '--file', second)
       assert_includes output, 'Conflicting response copies'
       assert_includes output, '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+      assert_includes output, '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+    end
+  end
+
+  def test_invalid_reasoning_makes_the_response_usage_unknown
+    ['SENSITIVE', -1, 21].each do |reasoning|
+      Dir.mktmpdir do |directory|
+        records = Marshal.load(Marshal.dump(branched_session))
+        records.last[:message][:usage][:reasoning] = reasoning
+        output = report('--host', 'pi', '--file', write_session(directory, records))
+        assert_includes output, '| observed-new | configured-new | routed-new | low | UNKNOWN | UNKNOWN | UNKNOWN |'
+        assert_includes output, 'Unreadable or unidentifiable records'
+        refute_includes output, 'SENSITIVE'
+      end
+    end
+  end
+
+  def test_missing_or_invalid_native_cost_stays_unknown_without_losing_tokens
+    [nil, 'SENSITIVE', -1].each do |cost|
+      Dir.mktmpdir do |directory|
+        records = Marshal.load(Marshal.dump(branched_session))
+        set_native_cost(records, cost)
+        output = report('--host', 'pi', '--file', write_session(directory, records))
+        assert_includes output, CURRENT_ROW
+        assert_includes output, '| observed-new | configured-new | low | UNKNOWN | UNKNOWN |'
+        refute_includes output, 'SENSITIVE'
+      end
     end
   end
 
