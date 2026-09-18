@@ -64,8 +64,9 @@ phases:
       - For implementation, run `checkpoint --content-file PATH` with `requested_model`,
         `requested_effort`, `recommended_model`, `recommended_effort`, `immediate_start`, and
         `settings_available`, plus `active_model` and `active_effort` when the host reports them.
-        Add `value_established: false` only when you proposed the task or took it from an
-        unverified report; omit it when the user named the task.
+        `value_established` records the verdict now, not where the task came from: send false
+        while the value is still only yours, from work you proposed or an unverified report,
+        send true once the user agrees, and omit it when the user named the task.
         It answers proceed, or pause with the next action. Proceed without another response only
         when the user explicitly supplied both settings, they match the recommendation, they are
         active and usable in the host, and immediate start is unambiguous. Otherwise pause after the

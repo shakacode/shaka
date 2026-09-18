@@ -7,7 +7,7 @@ require_relative 'error'
 module Shaka
   # Decides whether an intake already supplies the implementation checkpoint.
   class Checkpoint
-    VALUE_ACTION = 'Name the user problem this solves and the cheaper alternative you rejected, then reply ready.'
+    VALUE_ACTION = 'Accept or reject the value stated above, then reply ready.'
 
     def self.run(arguments)
       path = content_path(arguments)

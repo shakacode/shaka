@@ -70,10 +70,20 @@ class CheckpointTest < Minitest::Test
     assert_pause result, 'value_not_established'
   end
 
-  def test_established_value_proceeds
+  # The verdict, not the task's origin. Agent-proposed work stays agent-proposed forever,
+  # so tying the field to origin would pause the same task on every resumption.
+  def test_value_agreed_on_resumption_proceeds
     result = Shaka::Checkpoint.new(default_content.merge('value_established' => true)).result
 
     assert_equal 'proceed', result.fetch('status')
+  end
+
+  # The recommendation already rendered the Value line, so the pause asks the user to
+  # decide on it rather than to write one.
+  def test_value_pause_asks_the_user_to_decide_not_to_author
+    result = Shaka::Checkpoint.new(default_content.merge('value_established' => false)).result
+
+    assert_match(/accept or reject/i, result.fetch('action'))
   end
 
   # A user who named the task already established its value, so the field is absent
