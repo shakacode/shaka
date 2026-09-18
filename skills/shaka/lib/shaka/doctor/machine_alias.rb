@@ -37,6 +37,7 @@ module Shaka
         return unset if value.nil? || value.empty?
         return unpublishable unless valid?(value)
         return host_name if host_name?(value)
+        return unverified_alias if candidates.empty?
 
         check('Machine alias', 'healthy', "provenance will publish #{value}")
       end
@@ -49,6 +50,14 @@ module Shaka
 
       def unpublishable
         check('Machine alias', 'failed', "#{VARIABLE} is set to a value publication refuses", guidance: GUIDANCE)
+      end
+
+      # Without this machine's name there is nothing to compare against, so the guard did not
+      # run. Reporting healthy would claim a check that never happened.
+      def unverified_alias
+        check('Machine alias', 'degraded', 'this machine has no name to compare the alias against',
+              guidance: "Confirm #{VARIABLE} is not this machine's own name; it appears in public " \
+                        'pull requests.')
       end
 
       # Degrades rather than blocks: the value publishes, and whether to publish it is the user's.

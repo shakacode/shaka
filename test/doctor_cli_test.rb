@@ -36,15 +36,6 @@ class DoctorCliTest < Minitest::Test
     assert_empty error
   end
 
-  # A hang is the one failure a diagnostic must not have: it looks exactly like working.
-  def test_a_command_that_never_answers_becomes_a_result_instead_of_a_hang
-    out, error, ok = Shaka::Doctor.runner(timeout: 0.2).call(%w[sleep 30])
-
-    refute ok
-    assert_empty out
-    assert_includes error, '0.2s'
-  end
-
   private
 
   def capture_doctor(path, root)

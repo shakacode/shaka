@@ -9,7 +9,7 @@ module DoctorHelper
   WRITABLE = '{"nameWithOwner":"owner/repo","viewerPermission":"WRITE"}'
 
   DEFAULTS = { root: nil, environment: { 'SHAKA_MACHINE_ALIAS' => 'm5' }, responses: {}, runner: nil,
-               usage_files: nil, host_name: 'test-machine.local' }.freeze
+               usage_files: nil, host_name: 'test-machine.local', host: 'claude-code' }.freeze
 
   def doctor(**overrides)
     options = DEFAULTS.merge(overrides)
@@ -17,7 +17,7 @@ module DoctorHelper
                                        usage_source: ->(_host) { options[:usage_files] || [__FILE__] },
                                        host_name: options[:host_name])
     subject = Shaka::Doctor.new(root: options[:root] || File.expand_path('..', __dir__),
-                                environment: options[:environment], system: system)
+                                host: options[:host], environment: options[:environment], system: system)
     [subject.report, subject.blocked?]
   end
 

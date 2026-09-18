@@ -11,26 +11,15 @@ module Shaka
   # Read-only: it inspects the environment and changes no repository and no setting.
   class Doctor
     SEVERITY = { 'healthy' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
-    TIMEOUT = 15
-
-    # A doctor is run precisely when something is wrong, so a stalled credential helper or a
-    # hanging network call must become one check's answer instead of stopping the report.
-    def self.runner(timeout: TIMEOUT)
-      lambda do |argv|
-        Open3.popen3(*argv) do |stdin, stdout, stderr, process|
-          stdin.close
-          next ['', "no answer within #{timeout}s", false] unless process.join(timeout)
-
-          [stdout.read, stderr.read, process.value.success?]
-        end
-      end
-    end
+    # No deadline: a stalled gh can still hang this command. Bounding it correctly needs real
+    # process supervision, so it is tracked separately rather than faked here.
+    RUNNER = ->(argv) { Open3.capture3(*argv).then { |out, err, status| [out, err, status.success?] } }
 
     # Everything doctor reaches outside its own process, in one place so a test can state
     # the machine it describes instead of inheriting the one it runs on.
     System = Struct.new(:runner, :usage_source, :host_name, keyword_init: true) do
       def self.default
-        new(runner: Doctor.runner, usage_source: ->(name) { Usage::READERS.fetch(name).discover },
+        new(runner: RUNNER, usage_source: ->(name) { Usage::READERS.fetch(name).discover },
             host_name: MachineAlias.system_name)
       end
     end

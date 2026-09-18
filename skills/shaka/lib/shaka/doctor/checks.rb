@@ -92,15 +92,16 @@ module Shaka
         return no_usage_source('the host is ambiguous') if @host.nil?
 
         located = @system.usage_source.call(@host)
-        opened, unopened = located.partition { |entry| File.readable?(entry.to_s) }
-        return check('Usage source', 'healthy', "#{opened.length} readable #{@host} source(s)") if openable?(located)
+        unopened = located.reject { |entry| openable?(entry) }
+        return no_usage_source(shortfall(located, unopened)) if located.empty? || unopened.any?
 
-        no_usage_source(shortfall(located, unopened))
+        check('Usage source', 'healthy', "#{located.length} readable #{@host} source(s)")
       rescue KeyError, SystemCallError => e
         no_usage_source(first_line(e.message))
       end
 
-      def openable?(located) = !located.empty? && located.all? { |entry| File.readable?(entry.to_s) }
+      # A readable directory, FIFO, or device is not a transcript this command can read.
+      def openable?(entry) = File.file?(entry.to_s) && File.readable?(entry.to_s)
 
       def shortfall(located, unopened)
         return "no #{@host} session source" if located.empty?

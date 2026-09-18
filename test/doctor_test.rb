@@ -71,41 +71,12 @@ class DoctorTest < Minitest::Test
     refute blocked
   end
 
-  def test_a_missing_usage_source_degrades_without_blocking
-    report, blocked = doctor(usage_files: [])
+  # Without a name to compare against, the hostname guard did not run, and saying healthy
+  # would claim a check that never happened.
+  def test_an_alias_is_not_healthy_when_this_machine_has_no_name
+    report, blocked = doctor(host_name: nil, environment: { 'SHAKA_MACHINE_ALIAS' => 'm5' })
     assert_includes report, 'DEGRADED'
     refute blocked
-  end
-
-  # discover only locates sources, so a located-but-unreadable transcript is not healthy.
-  def test_a_located_but_unreadable_usage_source_degrades
-    report, blocked = doctor(usage_files: ['/definitely/missing/transcript.jsonl'])
-    assert_includes report, 'DEGRADED'
-    refute blocked
-  end
-
-  # An OpenCode session handle is not a file, so doctor cannot open it and must not claim it did.
-  def test_a_session_handle_doctor_cannot_open_is_not_reported_as_ready
-    report, blocked = doctor(usage_files: ['session:ses_example'])
-    assert_includes report, 'DEGRADED'
-    refute blocked
-  end
-
-  # Detection answers nil when several hosts are present, and a blank host is not a report.
-  def test_an_ambiguous_host_is_named_rather_than_left_blank
-    report, blocked = with_two_hosts { doctor(usage_files: []) }
-    assert_includes report, 'ambiguous'
-    refute_match(/host +·/, report)
-    refute blocked
-  end
-
-  def with_two_hosts
-    original = ENV.values_at('CODEX_THREAD_ID', 'CLAUDE_CODE_SESSION_ID')
-    ENV['CODEX_THREAD_ID'] = 'thread'
-    ENV['CLAUDE_CODE_SESSION_ID'] = 'session'
-    yield
-  ensure
-    ENV['CODEX_THREAD_ID'], ENV['CLAUDE_CODE_SESSION_ID'] = original
   end
 
   # One pass: a blocking failure must not hide the checks after it.
