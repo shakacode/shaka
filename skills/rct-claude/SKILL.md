@@ -72,11 +72,16 @@ past an unread page reads as no tower. Read the candidates with `list_events`.
 Ownership is a completed registration recorded in a session's own transcript; a title
 or a matching `cwd` is not.
 
+The listing leaves this session out, and no tool reads its transcript: `get_session`
+returns metadata only, and `list_events` refuses the current session. So this session's
+own registration is known from this conversation, not from a tool. If this conversation
+does not show it, report that this session's state is unverified and let the user
+resolve it, rather than counting it as unregistered.
+
 Take the first of these that matches, in this order:
 
 - If more than one session records a completed registration for this
-  `OWNER/REPOSITORY`, counting this one from `get_session` because the listing leaves
-  it out, stop with `RCT setup error: repository has
+  `OWNER/REPOSITORY`, this one included, stop with `RCT setup error: repository has
   conflicting towers`, list them, and let the user resolve it. Do not pick one.
 - If exactly one other session records one, stop with `RCT setup error: repository
   already has an RCT`, identify that session, and direct the user there.
