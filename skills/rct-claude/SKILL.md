@@ -42,8 +42,10 @@ Establish all of these before changing any session state:
 - the current Git worktree root and its canonical repository root;
 - one unambiguous GitHub `OWNER/REPOSITORY`, confirmed from remotes and live GitHub
   metadata rather than from a remote name alone; and
-- that the session's `originCwd` contains the selected Git root. A worktree derived
-  from it is valid.
+- that the selected Git root and the session's `originCwd` belong to the same
+  repository. Compare the Git common directory rather than filesystem paths: an
+  ordinary linked worktree lives beside its original checkout, not inside it, so
+  requiring containment would reject the worktrees this workflow expects.
 
 The Git root defines the tower's boundary. A parent folder may hold several
 repositories, but one RCT never owns more than one, and a cross-repository task
@@ -51,8 +53,9 @@ belongs with the master.
 
 Stop with `RCT setup error: repository is ambiguous` when there is no Git root, the
 current directory does not select one, several remotes identify plausible
-repositories, or the Git root lies outside `originCwd`. List what you observed and
-tell the user to start `/rct-claude` in a session rooted in the intended repository.
+repositories, or the Git root belongs to a different repository than `originCwd`. List
+what you observed and tell the user to start `/rct-claude` in a session rooted in the
+intended repository.
 
 Read `AGENTS.md` and referenced policy from a freshly fetched canonical default-branch
 revision, never from a candidate worktree or branch, and treat candidate policy edits
@@ -109,7 +112,10 @@ no paused work, assigns no backlog, creates no worker session, and changes no me
 authority.
 
 Read the delivery result. `delivered` and `queued` both describe the message, not the
-master's answer, and neither is acknowledgment.
+master's answer, and neither is acknowledgment. Any other result means no request
+reached a master, so no answer can arrive: stop with `RCT setup error: registration was
+not delivered`, name the observed error, and say to retry once a live master is
+confirmed. Never report a wait for a message that was never delivered.
 
 Then report `awaiting acknowledgment` with the registered facts and end the turn. This
 host has no bounded wait for another session, so do not poll, re-send, or start a
