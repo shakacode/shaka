@@ -163,7 +163,8 @@ phases:
         publish only aggregate metadata. Read the packaged
         [usage guide](<{{package_root}}/docs/usage-reporting.md>) for selection and overlap rules.
       - Every PR description published before outcome includes its current
-        [recovery note](<{{package_root}}/docs/working-with-your-agent.md#recover-an-unfinished-pr>).
+        [recovery note](<{{package_root}}/docs/working-with-your-agent.md#recover-an-unfinished-pr>)
+        as a collapsed `WIP Details` disclosure.
       - Description provenance has exactly nine flat keys: `task_source`, `initial_prompt`,
         `workflow_version`, `requested_model`, `requested_effort`, `recommended_model`,
         `recommended_effort`, `active_model`, and `active_effort`. `initial_prompt` is `EXCLUDED`;
@@ -222,8 +223,9 @@ phases:
         the packaged [post-merge procedure](<{{package_root}}/docs/review.md#reviews-after-merge>).
       - At the stopping point, refresh usage for affected commits and turns, replacing overlapping
         snapshots. When this task owns the PR, republish its description with that usage and remove
-        the recovery note after outcome. Review-only work leaves the description alone. Report every
-        PR link and outcome, brief validation, and remaining work or blocker.
+        the `WIP Details` recovery note after GitHub confirms the outcome. Review-only work leaves
+        the description alone. Report every PR link and outcome, brief validation, and remaining
+        work or blocker.
       - When the task is genuinely finished in a prose-capable chat, put exactly
         `This chat is ready for archiving.` on the last line. Do not use it for a handoff, blocker,
         pending decision, or machine-only format.
