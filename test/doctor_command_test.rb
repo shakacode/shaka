@@ -12,7 +12,8 @@ class DoctorCommandTest < Minitest::Test
     elapsed, (out, error, ok) = timed { run_bounded(0.2, %w[sleep 30]) }
 
     refute ok
-    assert_operator elapsed, :<, 2, 'the deadline did not bound the wait'
+    assert_operator elapsed, :<, 1, 'the configured deadline was not closely honored'
+    assert_operator elapsed, :>=, 0.2, 'the command gave up before its deadline'
     assert_empty out
     assert_includes error, '0.2'
   end
@@ -24,7 +25,9 @@ class DoctorCommandTest < Minitest::Test
       _out, _error, ok = run_bounded(0.2, ['sh', '-c', "echo $$ > #{path}; sleep 30"])
       refute ok
 
-      refute_alive(pid_in(path), 'the child outlived its deadline')
+      assert_raises(Errno::ESRCH, 'expiry must reap the child it owns before returning') do
+        Process.kill(0, pid_in(path))
+      end
     end
   end
 
@@ -47,6 +50,17 @@ class DoctorCommandTest < Minitest::Test
     assert ok
     assert_equal 200_000, out.bytesize
     assert_operator elapsed, :<, 9, 'the read deadlocked until the deadline'
+  end
+
+  # Draining stdout fully before stderr looks correct until both fill their buffers at once.
+  def test_both_streams_filling_at_once_does_not_deadlock
+    script = 'print "o" * 200_000; $stderr.print "e" * 200_000'
+    elapsed, (out, error, ok) = timed { run_bounded(10, ['ruby', '-e', script]) }
+
+    assert ok
+    assert_equal 200_000, out.bytesize
+    assert_equal 200_000, error.bytesize
+    assert_operator elapsed, :<, 9, 'one stream was drained only after the other'
   end
 
   def test_a_command_that_answers_returns_its_streams_separately
