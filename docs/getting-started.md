@@ -178,13 +178,20 @@ setting.
 "$HOME/.agents/skills/shaka/scripts/shaka" doctor --root /path/to/repository
 ```
 
-Each check is `HEALTHY`, `DEGRADED`, `FAILED`, or `SKIPPED`, worst first, with the next
-step for anything that is not healthy. A `FAILED` check blocks publication and the
-command exits non-zero; a `DEGRADED` check still publishes, with something missing from
-the result. Missing GitHub authentication or write access fails, and so does a missing or
-invalid repository seam. An unset `SHAKA_MACHINE_ALIAS` only degrades: the provenance row
-reads `UNKNOWN`. Set it to a short deliberate token such as `m5`, never this machine's own
-name, because it appears in public pull requests.
+Each check is `HEALTHY`, `DEGRADED`, or `FAILED`, worst first, with the next step for
+anything that is not healthy. A `FAILED` check blocks publication and the command exits
+non-zero; a `DEGRADED` check still publishes, with something missing from the result.
+
+Doctor fails rather than guessing when it cannot establish what it checks. A repository it
+cannot resolve as writable fails, whatever the reason, so a passing report always means
+verified write access. A missing or invalid repository seam fails too. An unset
+`SHAKA_MACHINE_ALIAS` only degrades: the provenance row reads `UNKNOWN`. Set it to a short
+deliberate token such as `m5`. Doctor also degrades when the alias *is* this machine's own
+name, because publication accepts that value and would put your machine name in every public
+pull request.
+
+Doctor names the host it checked usage sources for. Detection falls back to Codex when a host
+exposes no session identifier, so OpenCode users should pass `--host opencode`.
 
 ## Complete your first task
 

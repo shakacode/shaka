@@ -10,7 +10,7 @@ module Shaka
   # Reports whether this machine can run the workflow and publish a complete pull request.
   # Read-only: it inspects the environment and changes no repository and no setting.
   class Doctor
-    SEVERITY = { 'healthy' => 0, 'skipped' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
+    SEVERITY = { 'healthy' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
     RUNNER = ->(argv) { Open3.capture3(*argv).then { |out, err, status| [out, err, status.success?] } }
 
     def self.run(arguments)
@@ -19,16 +19,16 @@ module Shaka
       parser.parse!(arguments)
       return help(parser) if options[:help]
 
-      report(arguments, options, parser)
+      report(arguments, options)
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
       warn "shaka: #{e.message}"
       1
     end
 
-    def self.report(arguments, options, parser)
-      raise OptionParser::InvalidArgument, parser.to_s unless arguments.empty?
+    def self.report(arguments, options)
+      raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
 
-      subject = new(root: File.realpath(options.fetch(:root, Dir.pwd)))
+      subject = new(root: File.realpath(options.fetch(:root, Dir.pwd)), host: options[:host])
       puts subject.report
       subject.blocked? ? 1 : 0
     end
@@ -37,6 +37,9 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka doctor [--root DIR]'
         flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
+        flags.on('--host NAME', Usage::READERS.keys, 'codex, claude-code, cursor, or opencode') do |value|
+          options[:host] = value
+        end
         flags.on('-h', '--help', 'Show usage') { options[:help] = true }
       end
     end
@@ -48,9 +51,10 @@ module Shaka
 
     private_class_method :report, :option_parser, :help
 
-    def initialize(root:, environment: ENV, runner: RUNNER, usage_source: nil)
+    def initialize(root:, host: nil, environment: ENV, runner: RUNNER, usage_source: nil)
       @root = root
-      @host = Usage.detected_host
+      @stated = !host.nil?
+      @host = host || Usage.detected_host
       @source = Checks.new(root: root, host: @host, environment: environment, runner: runner,
                            usage_source: usage_source || ->(host) { Usage::READERS.fetch(host).discover })
     end
@@ -70,7 +74,9 @@ module Shaka
 
     def overall = checks.map { |item| item.fetch(:status) }.max_by { |status| SEVERITY.fetch(status) } || 'healthy'
 
-    def context = "Ruby #{RUBY_VERSION} · host #{@host} · root #{@root}"
+    # Detection falls back to codex when a host exposes no session identifier, so the report
+    # says which host it assumed and `--host` states it instead.
+    def context = "Ruby #{RUBY_VERSION} · host #{@host}#{' (detected)' unless @stated} · root #{@root}"
 
     def render(item)
       lines = ["[#{item.fetch(:status).upcase}] #{item.fetch(:name)} — #{item.fetch(:summary)}"]

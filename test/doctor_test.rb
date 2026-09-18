@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'shaka/doctor'
-require 'fileutils'
+require_relative 'doctor_helper'
 
 class DoctorTest < Minitest::Test
-  AUTHENTICATED = "github.com\n  Logged in to github.com account octocat\n"
-  WRITABLE = '{"nameWithOwner":"owner/repo","viewerPermission":"WRITE"}'
+  include DoctorHelper
 
   def test_a_ready_environment_reports_healthy_and_does_not_block
     report, blocked = doctor
@@ -39,55 +37,36 @@ class DoctorTest < Minitest::Test
     refute_includes report, 'customer machine'
   end
 
-  def test_unauthenticated_github_blocks
-    report, blocked = doctor(responses: { auth: ['', 'not logged in', false] })
-    assert_includes report, 'FAILED'
-    assert blocked
-  end
-
-  def test_a_missing_github_cli_blocks
-    report, blocked = doctor(runner: ->(*) { raise Errno::ENOENT, 'gh' })
-    assert_includes report, 'FAILED'
-    assert blocked
-  end
-
-  # The summary a user reads should name the missing contract, not leak a file-open error.
-  def test_a_missing_repository_seam_blocks_and_names_the_contract
-    Dir.mktmpdir do |dir|
-      report, blocked = doctor(root: dir)
-      assert_includes report, 'FAILED'
-      assert_includes report, '.agents/agent-workflow.yml'
-      refute_includes report, 'rb_sysopen'
-      assert blocked
-    end
-  end
-
-  def test_an_unreadable_seam_blocks_with_its_validation_error
-    Dir.mktmpdir do |dir|
-      FileUtils.mkdir_p(File.join(dir, '.agents'))
-      File.write(File.join(dir, '.agents', 'agent-workflow.yml'), "version: 99\n")
-      report, blocked = doctor(root: dir)
-      assert_includes report, 'FAILED'
-      assert blocked
-    end
-  end
-
-  def test_a_checkout_without_github_access_blocks
-    reader = ['{"nameWithOwner":"owner/repo","viewerPermission":"READ"}', '', true]
-    report, blocked = doctor(responses: { view: reader })
-    assert_includes report, 'FAILED'
-    assert blocked
-  end
-
-  # Somewhere with no GitHub remote is a valid place to run doctor, not a failure.
-  def test_a_checkout_without_a_remote_is_skipped_rather_than_failed
-    report, blocked = doctor(responses: { view: ['', 'none of the git remotes point to a known host', false] })
-    assert_includes report, 'SKIPPED'
+  # Publication accepts a host name, so doctor is the only thing standing between the
+  # machine's own name and every public pull request it would appear in.
+  def test_an_alias_set_to_the_machine_name_is_flagged_without_republishing_it
+    name = 'developer-laptop-m5-max'
+    report, blocked = doctor(environment: { 'SHAKA_MACHINE_ALIAS' => name, 'HOSTNAME' => name })
+    assert_includes report, 'DEGRADED'
+    refute_includes report, name
     refute blocked
   end
 
-  def test_an_unreadable_usage_source_degrades_without_blocking
+  def test_an_alias_matching_the_host_name_in_another_case_is_still_flagged
+    report, = doctor(environment: { 'SHAKA_MACHINE_ALIAS' => 'Build-Host', 'HOST' => 'build-host' })
+    assert_includes report, 'DEGRADED'
+  end
+
+  def test_a_deliberate_alias_is_healthy_even_when_a_host_name_is_present
+    report, blocked = doctor(environment: { 'SHAKA_MACHINE_ALIAS' => 'm5', 'HOST' => 'build-host' })
+    refute_includes report, 'DEGRADED'
+    refute blocked
+  end
+
+  def test_a_missing_usage_source_degrades_without_blocking
     report, blocked = doctor(usage_files: [])
+    assert_includes report, 'DEGRADED'
+    refute blocked
+  end
+
+  # discover only locates sources, so a located-but-unreadable transcript is not healthy.
+  def test_a_located_but_unreadable_usage_source_degrades
+    report, blocked = doctor(usage_files: ['/definitely/missing/transcript.jsonl'])
     assert_includes report, 'DEGRADED'
     refute blocked
   end
@@ -95,33 +74,14 @@ class DoctorTest < Minitest::Test
   # One pass: a blocking failure must not hide the checks after it.
   def test_every_check_is_reported_even_when_one_fails
     ready, = doctor
-    broken, = doctor(environment: {}, responses: { auth: ['', 'not logged in', false] })
+    broken, = doctor(environment: {}, responses: { view: ['', 'gh auth login required', false] })
     assert_equal check_names(ready), check_names(broken)
-    assert_operator check_names(broken).length, :>=, 4
+    assert_equal 5, check_names(broken).length
   end
 
   def test_the_worst_status_is_reported_first
-    report, = doctor(environment: {}, responses: { auth: ['', 'not logged in', false] })
+    report, = doctor(environment: {}, responses: { view: ['', 'gh auth login required', false] })
     statuses = report.scan(/^\[(\w+)\]/).flatten
     assert_equal statuses.sort_by { |status| -Shaka::Doctor::SEVERITY.fetch(status.downcase) }, statuses
-  end
-
-  private
-
-  def check_names(report) = report.scan(/^\[\w+\] ([^\n]+?) —/).flatten.sort
-
-  def doctor(root: File.expand_path('..', __dir__), environment: { 'SHAKA_MACHINE_ALIAS' => 'm5' },
-             responses: {}, runner: nil, usage_files: ['/transcript.jsonl'])
-    runner ||= stub_runner(responses)
-    subject = Shaka::Doctor.new(root: root, environment: environment, runner: runner,
-                                usage_source: ->(_host) { usage_files })
-    [subject.report, subject.blocked?]
-  end
-
-  def stub_runner(responses)
-    lambda do |argv|
-      key = argv.include?('auth') ? :auth : :view
-      responses.fetch(key, key == :auth ? [AUTHENTICATED, '', true] : [WRITABLE, '', true])
-    end
   end
 end

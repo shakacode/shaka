@@ -15,6 +15,16 @@ class DoctorCliTest < Minitest::Test
     assert_equal(0, silently { Shaka::Doctor.run(['--help']) })
   end
 
+  # OpenCode exposes no session identifier, so detection falls back to codex; stating the
+  # host must reach the report instead of silently checking the wrong one.
+  def test_a_stated_host_replaces_detection
+    subject = Shaka::Doctor.new(root: File.expand_path('..', __dir__), host: 'opencode',
+                                environment: {}, runner: ->(*) { ['', 'stub', false] },
+                                usage_source: ->(host) { host == 'opencode' ? [__FILE__] : [] })
+    assert_includes subject.report, 'opencode'
+    refute_includes subject.report, 'detected'
+  end
+
   # End to end through the real command, with a stub gh so no request leaves the machine.
   def test_the_command_reports_every_check_and_exits_non_zero_when_something_blocks
     output, error, status = stub_gh { |path, root| capture_doctor(path, root) }
