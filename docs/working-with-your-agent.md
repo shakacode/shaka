@@ -249,10 +249,12 @@ tables; it refuses a prose restatement of usage.
 
 ### Split the description and the walkthrough
 
-The description outlives the merge and the walkthrough does not. Someone finds the
-description months later through `git log` or a PR search, while a new commit
-supersedes the walkthrough and collapses it. Anything a reader needs after the merge
-therefore belongs in the description, even when the walkthrough explains it too.
+A later reader finds the description on their way past; they find the walkthrough only
+by coming back to this PR. The description travels into `git log`, a squash-merge commit
+body, and search results, and it is maintained to describe the current head. The
+walkthrough stays readable after merge, but it is bound to one commit, and a later head
+supersedes it and collapses it. Anything a reader needs without opening this PR's
+timeline therefore belongs in the description, even when the walkthrough explains it too.
 
 Copied prose is a staleness bug rather than mere repetition. Republishing at a new head
 refreshes one copy and leaves the other one wrong.
@@ -264,16 +266,16 @@ whether to trust it, and the walkthrough answers why the code looks like this.
 
 The description alone carries the outcome headline, the decisions and blockers, missing
 required review, the check table, provenance, usage details, the recovery note, and the
-links to the current walkthrough and review result. The walkthrough alone carries prior
-behavior, the reason for the approach and the alternatives it rejected, the order that
-makes the implementation readable, and commit-pinned code links.
+links to the current walkthrough and review result. The walkthrough alone carries the
+reason for the approach and the alternatives it rejected, the order that makes the
+implementation readable, and commit-pinned code links.
 
 Purpose, risk, and validation belong in both at different resolutions. The description
 states the purpose in a sentence, names the risk that changes the merge decision, and
-carries the check table. The walkthrough explains prior behavior in a paragraph, gives
-failure modes for each change, and says which evidence covers which change. Share the
-subject, never the sentences: a paragraph you could paste from one into the other
-unchanged sits in the wrong artifact.
+carries the check table. The walkthrough states that same purpose as the prior behavior
+it changes, gives failure modes for each change, and says which evidence covers which
+change. Share the subject, never the sentences: a paragraph you could paste from one into
+the other unchanged sits in the wrong artifact.
 
 Four questions settle most cases:
 

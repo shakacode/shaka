@@ -176,8 +176,9 @@ phases:
         Link the current walkthrough from the PR summary and final response. Try to collapse older
         walkthroughs while preserving their revision, evidence, and human edits; unavailable cleanup
         does not block merge.
-      - Keep the durable record in the PR description and the reasoning in the walkthrough. Copied
-        prose goes stale when you republish at a new head, so follow the packaged
+      - Keep the record a later reader finds in the PR description and the reasoning in the
+        walkthrough. Copied prose goes stale when you republish at a new head, so follow the
+        packaged
         [division of labor](<{{package_root}}/docs/working-with-your-agent.md#split-the-description-and-the-walkthrough>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
         or `shared-planning`. Use `--all-turns` only when the session holds solely this task. Include
