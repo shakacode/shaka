@@ -15,6 +15,9 @@ module Shaka
     # this bounds.
     class BoundedCommand
       READ_SIZE = 4096
+      # SIGKILL to the group normally lands at once. This bounds the one case where it cannot —
+      # an undeliverable signal — so cleanup can never reintroduce the hang this class removes.
+      GRACE = 1
 
       def initialize(timeout:)
         @timeout = timeout
@@ -78,7 +81,7 @@ module Shaka
 
       def expired(process)
         terminate(process.pid)
-        process.join
+        process.join(GRACE)
         ['', "no answer within #{@timeout}s", false]
       end
 

@@ -31,6 +31,14 @@ class DoctorCommandTest < Minitest::Test
     end
   end
 
+  # Cleanup after expiry is bounded too: an undeliverable signal must not put back the hang.
+  def test_expiry_returns_even_though_cleanup_may_not_reap
+    elapsed, (_out, _error, ok) = timed { run_bounded(0.2, %w[sleep 30]) }
+
+    refute ok
+    assert_operator elapsed, :<, Shaka::Doctor::BoundedCommand::GRACE + 1
+  end
+
   # The leader can exit and be reaped while a descendant holds the pipes open, so the group
   # must be addressed by the pid it was created with rather than looked up at expiry.
   def test_a_timeout_kills_a_descendant_that_outlived_the_leader

@@ -34,7 +34,8 @@ class DoctorAccessTest < Minitest::Test
     assert blocked
     assert_equal 6, check_names(report).length, 'a timeout ended the report'
     assert_includes report, 'Machine alias'
-    assert_operator elapsed, :<, 2, 'the two calls shared one budget instead of a deadline each'
+    assert_operator elapsed, :>=, 0.35, 'the two calls shared one deadline instead of one each'
+    assert_operator elapsed, :<, 2, 'the calls were not bounded'
   end
 
   def test_a_missing_github_cli_blocks
