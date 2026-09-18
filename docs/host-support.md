@@ -134,6 +134,11 @@ This applies to every listing a tower takes, not only the one at setup. Checking
 a repository is unowned, and refreshing the tower set later, read the same account and
 fail the same way when they stop at the first page.
 
+`list_sessions` also never includes the session calling it. A rule that counts every
+session holding a role cannot be answered from the listing alone: read this session
+with `get_session` for `self` and add it before counting, or the count is short by one
+and a genuine conflict reads as an ordinary handover.
+
 `search_session_transcripts` does not help here: it matches message content, not
 titles, and the trial returned nothing for a title stamp. Find towers by title with
 `list_sessions`, and confirm a candidate's role by reading it with `list_events`.

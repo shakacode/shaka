@@ -74,8 +74,9 @@ or a matching `cwd` is not.
 
 Take the first of these that matches, in this order:
 
-- If more than one live session records a completed registration for this
-  `OWNER/REPOSITORY`, counting this one, stop with `RCT setup error: repository has
+- If more than one session records a completed registration for this
+  `OWNER/REPOSITORY`, counting this one from `get_session` because the listing leaves
+  it out, stop with `RCT setup error: repository has
   conflicting towers`, list them, and let the user resolve it. Do not pick one.
 - If exactly one other session records one, stop with `RCT setup error: repository
   already has an RCT`, identify that session, and direct the user there.
