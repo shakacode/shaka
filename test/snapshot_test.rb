@@ -48,6 +48,13 @@ class SnapshotChangesTest < Minitest::Test
     assert_empty changes.removed
   end
 
+  def test_a_rename_detected_in_the_worktree_column_is_read_the_same_way
+    changes = Shaka::Snapshot::Changes.new([' R gamma.txt', 'alpha.txt', ' M kept.txt'])
+
+    assert_equal ['gamma.txt', 'kept.txt'], changes.added
+    assert_equal ['alpha.txt'], changes.removed
+  end
+
   def test_deleted_files_are_removed_rather_than_added
     changes = Shaka::Snapshot::Changes.new([' D beta.txt', '?? delta.txt', ' M kept.txt'])
 
@@ -158,6 +165,20 @@ class SnapshotTest < Minitest::Test
 
       assert_equal [['moved.md'], ['README.md', 'beta.txt']], report.values_at('adds', 'removes')
       assert_equal ['moved.md'], published_files(work, report['commit'])
+    end
+  end
+
+  def test_an_untracked_embedded_repository_is_held_back
+    in_repository do |work|
+      embedded = File.join(work, 'embedded')
+      Dir.mkdir(embedded)
+      git(embedded, 'init', '--quiet', embedded)
+      File.write(File.join(embedded, 'inner.md'), "nested work\n")
+
+      report = run_snapshot(work)
+
+      assert_equal ['embedded/'], report['held_back_submodules']
+      assert_empty report['adds']
     end
   end
 

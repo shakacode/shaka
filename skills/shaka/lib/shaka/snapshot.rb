@@ -70,13 +70,17 @@ module Shaka
 
     def plan_for(changes)
       screen = Screen.new(changes.added)
-      nested = screen.included & submodules
+      nested = screen.included.select { |path| nested?(path) }
       { 'branch' => snapshot_branch, 'published' => false, 'adds' => screen.included - nested,
         'removes' => changes.removed, 'held_back' => screen.excluded,
         'held_back_submodules' => nested }
     end
 
-    # A superproject records a submodule as one commit, so edits inside it cannot travel.
+    # Neither a tracked submodule nor an untracked embedded repository can travel in this
+    # commit: the superproject would record one gitlink and leave the work behind. With
+    # -uall, only an embedded repository is reported as a directory.
+    def nested?(path) = path.end_with?('/') || submodules.include?(path)
+
     def submodules
       @submodules ||= git('ls-files', '--stage', '-z').split(SEPARATOR).filter_map do |entry|
         entry.split("\t", 2).last if entry.start_with?('160000 ')

@@ -10,6 +10,7 @@ module Shaka
     # destination followed by its source as a separate field with no status prefix.
     class Changes
       PREFIX = 3
+      MOVED = %w[R C].freeze
 
       def initialize(entries)
         @entries = entries.reject { |entry| entry.to_s.empty? }
@@ -30,17 +31,15 @@ module Shaka
         end
       end
 
-      # A rename and a copy both carry a source field; only a rename leaves it behind.
+      # A rename and a copy carry a source field in either column; only a rename drops it.
       def record(entry, pending, result)
-        index = entry[0]
-        worktree = entry[1]
+        codes = [entry[0], entry[1]]
         path = entry[PREFIX..].to_s
         return if path.empty?
 
-        source = pending.shift.to_s if %w[R C].include?(index)
-        result[:removed] << source if index == 'R'
-        deleted = index == 'D' || worktree == 'D'
-        result[deleted ? :removed : :added] << path
+        source = codes.intersect?(MOVED) ? pending.shift.to_s : nil
+        result[:removed] << source if source && codes.include?('R')
+        result[codes.include?('D') ? :removed : :added] << path
       end
     end
   end
