@@ -42,8 +42,9 @@ limit until the listing is exhausted: it returns one recent page, twenty by defa
 so a master sitting past that page is invisible here, and this session would wrongly
 appoint itself a second master. `search_session_transcripts` matches message content,
 not titles, so it is a second net only. A busy account can make that listing too large
-to return whole; read it from wherever the host puts it instead, and never retry with a
-smaller limit, which restores the bug. Read the candidates with `list_events`. A title
+to return whole. The host then saves it and names the file in the tool result; read it
+from that path, and never retry with a smaller limit, which restores the bug. Read the
+candidates with `list_events`. A title
 says a session was set up or attempted setup; its own recorded result says the role
 took hold.
 

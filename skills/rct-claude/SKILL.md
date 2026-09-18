@@ -68,8 +68,9 @@ List active sessions once with `list_sessions`, raising its limit until the list
 exhausted, and keep both the `RCT — Shaka` and `MCT — Shaka` suffixes from that single
 pass: the master search below reuses it rather than paging the account twice. The
 listing returns one recent page, twenty by default, so a tower past that page reads as
-no tower. A busy account can make it too large to return whole; read it from wherever
-the host puts it instead, and never retry with a smaller limit, which restores the bug.
+no tower. A busy account can make it too large to return whole. The host then saves it
+and names the file in the tool result; read it from that path, and never retry with a
+smaller limit, which restores the bug.
 `search_session_transcripts` matches message content, not titles, so it is a second
 net only. Read the candidates with `list_events`. Ownership is a completed registration
 recorded in a session's own transcript; a title or a matching `cwd` is not.
