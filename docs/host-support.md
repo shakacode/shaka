@@ -99,8 +99,8 @@ stops with a setup error rather than guessing.
 
 | Tower requirement | Codex app | Claude Code desktop |
 | --- | --- | --- |
-| Current task and its project | Native task and project tools | `get_session` for `self`, whose `cwd` and `originCwd` are real paths |
-| Find towers and read candidates | Native task search | `list_sessions`, `search_session_transcripts`, and `list_events` |
+| Current task and its project | Native task and project tools | `get_session` for `self`; its `cwd` alone selects the repository |
+| Find towers and read candidates | Native task search | `list_sessions` for titles, `list_events` for a candidate's own record |
 | Stamp the role | Native rename and pin | `set_session_title` and `set_pinned`, read back with `get_session` |
 | Reach another tower | Native follow-up | `send_message`, whose result distinguishes `delivered` from `queued` |
 | Wait for a reply | Bounded native task wait | No equivalent |
@@ -115,6 +115,28 @@ Sidebar groups are deliberately unused: `move_sessions` unpins a pinned session,
 the title suffix is the only role stamp and the live session list is the only
 registry. These tool observations were made on September 17, 2026. A complete
 Claude Code tower and delivery trial is still required.
+
+### Read the session listing completely
+
+Both tower skills find each other by title, so a listing that stops early is a tower
+that does not exist as far as the reader is concerned. `list_sessions` returns one
+recent page, twenty by default, and a role held past that page reads as unheld: setup
+then creates the duplicate the search exists to prevent. Raise the limit until the
+listing is exhausted.
+
+A busy account can make that listing too large to return whole. The host saves it and
+names the file in the tool result; read it from that path. Never answer an oversized
+listing by retrying with a smaller limit, which silently restores the paging bug. A
+first trial on September 18, 2026 exhausted one account at 413 sessions and overflowed
+at roughly 210KB, so both branches occur in ordinary use.
+
+This applies to every listing a tower takes, not only the one at setup. Checking that
+a repository is unowned, and refreshing the tower set later, read the same account and
+fail the same way when they stop at the first page.
+
+`search_session_transcripts` does not help here: it matches message content, not
+titles, and the trial returned nothing for a title stamp. Find towers by title with
+`list_sessions`, and confirm a candidate's role by reading it with `list_events`.
 
 ## Cursor
 
