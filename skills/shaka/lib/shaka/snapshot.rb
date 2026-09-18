@@ -5,8 +5,8 @@ require 'open3'
 require 'optparse'
 require 'tmpdir'
 require_relative 'error'
-require_relative 'snapshot/changes'
-require_relative 'snapshot/screen'
+require_relative 'repository_config'
+require_relative 'snapshot/plan'
 
 module Shaka
   # Publishes unfinished work to a branch that carries no pull request.
@@ -31,6 +31,7 @@ module Shaka
       @root = capture('rev-parse', '--show-toplevel').strip
       @branch = git('rev-parse', '--abbrev-ref', 'HEAD').strip
       raise Error, 'Snapshot needs a named branch, not a detached head.' if @branch == 'HEAD'
+      raise Error, 'This repository sets recovery.snapshot to false.' unless allowed?
 
       @options[:delete] ? delete : publish
       0
@@ -55,42 +56,43 @@ module Shaka
 
     def snapshot_branch = "#{PREFIX}#{@branch}"
 
+    def reference = "refs/heads/#{snapshot_branch}"
+
+    # The seam decides whether unfinished work may leave the machine at all. A repository
+    # without a seam has said nothing, so the default applies; a seam that cannot be read
+    # refuses, because publishing is the irreversible answer.
+    def allowed?
+      return true unless File.exist?(File.join(@root, RepositoryConfig::PATH))
+
+      RepositoryConfig.load(root: @root).recovery.fetch('snapshot')
+    end
+
     def delete
-      git('push', @options[:remote], '--delete', snapshot_branch)
-      report('deleted' => snapshot_branch)
+      git('push', @options[:remote], '--delete', snapshot_branch) unless remote_commit.empty?
+      report('deleted' => snapshot_branch, 'existed' => !remote_commit.empty?)
+    end
+
+    # An exact lease needs no remote-tracking ref, which a fresh checkout does not have.
+    def remote_commit
+      @remote_commit ||= git('ls-remote', @options[:remote], reference).split(/\s/).first.to_s
+    end
+
+    def remote_head
+      @remote_head ||= git('ls-remote', @options[:remote], "refs/heads/#{@branch}").split(/\s/).first.to_s
     end
 
     def publish
-      plan = plan_for(Changes.new(git('status', '--porcelain', '-uall', '-z').split(SEPARATOR)))
+      plan = Plan.new(root: @root, branch: snapshot_branch, remote_head: remote_head,
+                      git: method(:git)).to_h
       return report(plan.merge('branch' => nil)) if plan['adds'].empty? && plan['removes'].empty?
       return report(plan) unless @options[:push]
 
       push(plan)
     end
 
-    def plan_for(changes)
-      screen = Screen.new(changes.added)
-      nested = screen.included.select { |path| nested?(path) }
-      { 'branch' => snapshot_branch, 'published' => false, 'adds' => screen.included - nested,
-        'removes' => changes.removed, 'held_back' => screen.excluded,
-        'held_back_submodules' => nested }
-    end
-
-    # Neither a tracked submodule nor an untracked embedded repository can travel in this
-    # commit: the superproject would record one gitlink and leave the work behind. With
-    # -uall, only an embedded repository is reported as a directory.
-    def nested?(path) = path.end_with?('/') || submodules.include?(path)
-
-    def submodules
-      @submodules ||= git('ls-files', '--stage', '-z').split(SEPARATOR).filter_map do |entry|
-        entry.split("\t", 2).last if entry.start_with?('160000 ')
-      end
-    end
-
     def push(plan)
       commit = write_commit(plan['adds'], plan['removes'])
-      fetch_snapshot_ref
-      git('push', '--force-with-lease', @options[:remote], "#{commit}:refs/heads/#{snapshot_branch}")
+      git('push', "--force-with-lease=#{reference}:#{remote_commit}", @options[:remote], "#{commit}:#{reference}")
       report(plan.merge('published' => true, 'commit' => commit))
     end
 
@@ -113,14 +115,6 @@ module Shaka
 
     def report(payload)
       puts JSON.pretty_generate(payload)
-    end
-
-    # Without the remote's own ref, --force-with-lease expects the branch not to exist.
-    def fetch_snapshot_ref
-      reference = "refs/heads/#{snapshot_branch}"
-      git('fetch', @options[:remote], "+#{reference}:refs/remotes/#{@options[:remote]}/#{snapshot_branch}")
-    rescue Error
-      nil
     end
 
     def git(*argv, index: nil)

@@ -132,7 +132,7 @@ a pull request carries while it is unfinished.
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
 | `workspace_path` | `true` or `false` | `true` publishes the checkout's path in the note. `false` publishes the machine alias and the checkout's directory name instead. |
-| `snapshot` | `true` or `false` | `true` lets `shaka snapshot` push unfinished work to a `wip/` branch when a task stops, screening credential-like paths first. `false` leaves it on the machine that made it. |
+| `snapshot` | `true` or `false` | `true` lets `shaka snapshot` push unfinished work to a `wip/` branch when a task stops, screening credential-like paths first. `false` makes the command refuse, so the work stays on the machine that made it. |
 
 Set `workspace_path: false` where contributor paths or machine names are sensitive. Set
 `snapshot: false` where unfinished work must not reach the remote at all, or where CI

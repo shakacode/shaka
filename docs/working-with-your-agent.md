@@ -150,8 +150,10 @@ outcome. The
 snapshot carries no pull request, so checks that run on pull requests do not run;
 a repository whose CI runs on every pushed branch will still run it, and should scope
 those triggers or set `recovery.snapshot: false`. A repository that does not want
-these branches at all sets the same key, and then unfinished work stays on the machine
-that made it.
+these branches at all sets the same key, and the command itself then refuses, whoever
+runs it. A seam it cannot read also refuses, because publishing is the irreversible
+answer. The plan also lists any commits on the branch that the remote does not have,
+since pushing the snapshot publishes those too.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner, including a different tag, ownership was transferred: keep any local

@@ -182,6 +182,31 @@ class SnapshotTest < Minitest::Test
     end
   end
 
+  def test_a_seam_that_cannot_be_read_refuses_to_publish
+    in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+      Dir.mkdir(File.join(work, '.agents'))
+      File.write(File.join(work, '.agents/agent-workflow.yml'), "---\nrecovery:\n  snapshot: false\n")
+
+      result = nil
+      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push']) } }
+
+      assert_equal 1, result
+      assert_empty remote_branches(work)
+    end
+  end
+
+  def test_a_file_reported_deleted_but_still_on_disk_is_published
+    in_repository do |work|
+      write(work, 'conflicted.md' => "one side survived\n")
+
+      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote_head: '',
+                                       git: ->(*argv) { git(work, *argv) }).to_h
+
+      assert_includes plan['adds'], 'conflicted.md'
+    end
+  end
+
   def test_a_clean_checkout_publishes_nothing
     in_repository do |work|
       report = run_snapshot(work, '--push')
