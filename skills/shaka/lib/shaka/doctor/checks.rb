@@ -69,15 +69,19 @@ module Shaka
       # Healthy has to name the repository and the permission it actually saw; a response
       # missing either one establishes nothing, however well-formed its JSON is.
       def permission(parsed)
-        repository = parsed.is_a?(Hash) ? parsed['nameWithOwner'] : nil
-        level = parsed.is_a?(Hash) ? parsed['viewerPermission'] : nil
-        unless repository.is_a?(String) && !repository.empty? && level.is_a?(String) && !level.empty?
-          return unreachable_repository('gh did not report a repository and a permission')
-        end
+        repository = stated(parsed, 'nameWithOwner')
+        level = stated(parsed, 'viewerPermission')
+        return unreachable_repository('gh did not report a repository and a permission') unless repository && level
         return check('Repository access', 'healthy', "#{repository} is writable as #{level}") if WRITER.include?(level)
 
         check('Repository access', 'failed', "#{repository} is not writable (#{level})",
               guidance: 'Use an account with write access, or re-authenticate with `gh auth login`.')
+      end
+
+      # Present, a string, and not blank: anything less states nothing.
+      def stated(parsed, field)
+        value = parsed[field] if parsed.is_a?(Hash)
+        value if value.is_a?(String) && !value.empty?
       end
 
       # This reads the working tree, so it answers whether this checkout's contract is usable.
