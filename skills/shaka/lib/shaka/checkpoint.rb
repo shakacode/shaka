@@ -69,7 +69,11 @@ module Shaka
 
     # Absent means the user named the task, which already establishes its value.
     # Only an agent proposing work, or acting on an unverified report, sets this false.
-    def value_established? = @content['value_established'] != false
+    # A present non-boolean is a malformed verdict, not a quiet yes.
+    def value_established?
+      verdict = @content.fetch('value_established', true)
+      [true, false].include?(verdict) ? verdict : raise(Error, 'Checkpoint value_established must be true or false.')
+    end
 
     def explicit_settings?
       %w[requested_model requested_effort recommended_model recommended_effort].all? do |field|
