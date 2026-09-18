@@ -39,8 +39,8 @@ invocation arguments; the current session is the only accepted subject.
 
 Search active sessions for the `MCT — Shaka` suffix with `list_sessions`, raising its
 limit until the listing is exhausted: it returns one recent page, twenty by default,
-so a master past that page reads as no master and this session would take a held
-role. `search_session_transcripts` matches message content, not titles, so it is a
+so a master sitting past that page is invisible here, and this session would wrongly
+appoint itself a second master. `search_session_transcripts` matches message content, not titles, so it is a
 second net only. Read the candidates with `list_events`. A title says a session was set up or attempted setup;
 its own recorded result says the role took hold.
 
