@@ -79,11 +79,15 @@ class CheckpointTest < Minitest::Test
   end
 
   # The recommendation already rendered the Value line, so the pause asks the user to
-  # decide on it rather than to write one.
-  def test_value_pause_asks_the_user_to_decide_not_to_author
-    result = Shaka::Checkpoint.new(default_content.merge('value_established' => false)).result
+  # decide on it rather than to write one. Both answers need a next step: this is the
+  # one checkpoint reason where the honest answer can be that no work should happen,
+  # and telling a rejecting user to reply ready would be incoherent.
+  def test_value_pause_names_a_next_step_for_both_answers
+    action = Shaka::Checkpoint.new(default_content.merge('value_established' => false)).result.fetch('action')
 
-    assert_match(/accept or reject/i, result.fetch('action'))
+    assert_match(/ready/i, action)
+    assert_match(/reject/i, action)
+    assert_match(/stops here/i, action)
   end
 
   # A user who named the task already established its value, so the field is absent
