@@ -127,8 +127,12 @@ phases:
         against the [portable baseline](<{{package_root}}/docs/working-with-your-agent.md#writing-preferences>):
         lead with the outcome the reader notices, keep one main idea per sentence, put each condition
         beside the behavior it limits, and prefer a clear subject and active verb over diff-shaped
-        phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence.
-      - Supply meaning as content JSON and let the helper render it. It owns identity, headings,
+        phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
+        wrappers and inflated significance. A reply leads with the decision and uses the thread's
+        shared context.
+      - Supply meaning as content JSON and let the helper render it. Self-edit those summaries before
+        calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
+        do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `sections`, required `table`, required `provenance`, and required usage `details`;
         walkthroughs also require `head`. It refuses literal escape sequences in prose, mismatched
