@@ -152,12 +152,25 @@ class CursorUsageFailuresTest < Minitest::Test
 
   def test_host_context_fills_models_when_stop_records_are_missing
     Dir.mktmpdir do |directory|
-      extra = { 'CURSOR_MODEL_ID' => 'grok-4.6', 'CURSOR_MODEL' => 'cursor-grok-4.6-medium' }
-      row = '| cursor | grok-4.6 | cursor-grok-4.6-medium | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | ' \
+      extra = { 'CURSOR_MODEL_ID' => 'grok-4.6', 'CURSOR_MODEL' => 'cursor-grok-4.6-medium',
+                'CURSOR_MODEL_EFFORT' => 'medium' }
+      row = '| cursor | grok-4.6 | cursor-grok-4.6-medium | medium | UNKNOWN | UNKNOWN | UNKNOWN | ' \
             'UNKNOWN | UNKNOWN | UNKNOWN |'
       output = empty_cursor_report(directory, extra)
       assert_cursor_unavailable(output, row)
       refute_includes output, '| 100 |'
+    end
+  end
+
+  def test_explicit_files_do_not_copy_ambient_cursor_models
+    Dir.mktmpdir do |directory|
+      file = File.join(directory, 'empty.jsonl')
+      File.write(file, '')
+      env = { 'CURSOR_MODEL_ID' => 'grok-4.6', 'CURSOR_MODEL' => 'cursor-grok-4.6-medium',
+              'CURSOR_MODEL_EFFORT' => 'medium' }
+      output = report('--host', 'cursor', '--file', file, environment: env)
+      assert_includes output, 'usage reader unavailable'
+      refute_includes output, 'grok-4.6'
     end
   end
 

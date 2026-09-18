@@ -35,6 +35,8 @@ module Shaka
     end
 
     def context_row
+      return unless @inferred
+
       @source.context_configuration if @source.respond_to?(:context_configuration)
     end
 

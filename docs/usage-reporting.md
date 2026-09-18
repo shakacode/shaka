@@ -86,9 +86,11 @@ absent from these parent-agent events.
 The reader was exercised against desktop `3.20.21` hook payloads for `grok-4.6`.
 Install the hook as described in [getting started](getting-started.md#use-shaka-in-cursor).
 Without persisted stop records, token counters stay UNKNOWN, the report names
-`usage reader unavailable: no readable Cursor stop-hook records`, and the row still
-uses provider `cursor` plus `CURSOR_MODEL_ID` / `CURSOR_MODEL` when those host values
-are present. `shaka doctor` fails on Cursor until a readable stop-hook file exists.
+`usage reader unavailable: no readable Cursor stop-hook records`, and an inferred
+host-context row still uses provider `cursor` plus `CURSOR_MODEL_ID`,
+`CURSOR_MODEL`, and `CURSOR_MODEL_EFFORT` when those host values are present.
+Explicit `--file` reports do not copy the current chat's model environment.
+`shaka doctor` fails on Cursor until a readable stop-hook file exists.
 Missing usage still does not block an otherwise authorized merge.
 
 When the `fast` model param is present, the cost table also shows a configured-model
