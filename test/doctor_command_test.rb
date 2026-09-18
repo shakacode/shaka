@@ -49,6 +49,15 @@ class DoctorCommandTest < Minitest::Test
     end
   end
 
+  # Ctrl-C reaches this process, not the group it isolated, so leaving on an exception has to
+  # take the child with it rather than strand what the deadline existed to bound.
+  def test_an_interrupted_call_does_not_strand_its_child
+    command = InterruptedCommand.new(timeout: 30)
+
+    assert_raises(Interrupt) { command.call(%w[sleep 30]) }
+    refute_alive(command.spawned, 'an interrupted call stranded its child')
+  end
+
   # A child can close both pipes and keep running, so the wait after draining is bounded too.
   def test_a_child_that_closes_its_pipes_and_keeps_running_is_still_bounded
     elapsed, (_out, _error, ok) = timed { run_bounded(0.3, ['sh', '-c', 'exec 1>&- 2>&-; sleep 30']) }

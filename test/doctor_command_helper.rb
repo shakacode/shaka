@@ -13,6 +13,20 @@ module DoctorCommandHelper
     def terminate(_pid) = nil
   end
 
+  # Stands in for an interrupt arriving while the command waits on its child. It records the
+  # pid it spawned, so the check does not race the child writing one down.
+  class InterruptedCommand < Shaka::Doctor::BoundedCommand
+    attr_reader :spawned
+
+    private
+
+    def spawn_without_stdin(argv, options)
+      super.tap { |result| @spawned = result.last.pid }
+    end
+
+    def drained?(*) = raise(Interrupt)
+  end
+
   def run_bounded(timeout, argv, chdir = nil)
     Shaka::Doctor::BoundedCommand.new(timeout: timeout).call(argv, chdir)
   end

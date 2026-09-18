@@ -29,6 +29,10 @@ module Shaka
         _stdin, stdout, stderr, process = spawn_without_stdin(argv, options)
         collect(stdout, stderr, process)
       ensure
+        # `pgroup: true` also isolates the child from the terminal, so Ctrl-C reaches this
+        # process and not the command it started. Leaving on any exception has to take the
+        # group with it, or interrupting doctor strands the very process it was bounding.
+        cleanup(process) if process&.alive?
         [stdout, stderr].each { |io| io.close unless io.nil? || io.closed? }
       end
 
@@ -85,9 +89,13 @@ module Shaka
       end
 
       def expired(process)
+        cleanup(process)
+        ['', "no answer within #{@timeout}s", false]
+      end
+
+      def cleanup(process)
         terminate(process.pid)
         process.join(GRACE)
-        ['', "no answer within #{@timeout}s", false]
       end
 
       # The whole group, addressed by the pid it was created with. `pgroup: true` makes the
