@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'digest'
 require_relative '../error'
 require_relative 'changes'
 require_relative 'screen'
+require_relative 'tree'
 
 module Shaka
   class Snapshot
@@ -19,18 +19,22 @@ module Shaka
       end
 
       def to_h
-        plan = { 'branch' => @branch, 'published' => false, 'adds' => publishable,
-                 'removes' => changes.removed - surviving, 'held_back' => screen.excluded,
-                 'held_back_submodules' => nested, 'unpushed_commits' => unpushed_commits }
-        plan.merge('digest' => digest(plan))
+        { 'branch' => @branch, 'published' => false, 'adds' => publishable,
+          'removes' => removals, 'held_back' => screen.excluded,
+          'held_back_submodules' => nested, 'unpushed_commits' => unpushed_commits,
+          'digest' => digest }
       end
 
       private
 
-      # The digest binds a push to the plan someone actually read.
-      def digest(plan)
-        material = plan.values_at('adds', 'removes', 'held_back', 'held_back_submodules').flatten
-        Digest::SHA256.hexdigest(material.join(SEPARATOR))[0, 12]
+      def removals = changes.removed - surviving
+
+      # The digest names the exact tree and parent, so editing a listed file invalidates it.
+      def digest
+        return 'none' if publishable.empty? && removals.empty?
+
+        tree = Tree.new(git: @git)
+        "#{tree.build(publishable, removals)[0, 12]}.#{tree.parent[0, 7]}"
       end
 
       def screen = @screen ||= Screen.new((changes.added + surviving).uniq.sort)

@@ -117,6 +117,15 @@ module SnapshotRepository
     end
     template = File.read(File.expand_path('fixtures/snapshot_seam.yml', __dir__))
     File.write(File.join(work, '.agents/agent-workflow.yml'), format(template, snapshot: snapshot))
+    publish_seam(work)
+  end
+
+  # The policy reads the seam from the trusted remote branch, so the fixture lives there.
+  def publish_seam(work)
+    git(work, 'add', '--all')
+    git(work, 'commit', '--quiet', '--message', 'seam')
+    git(work, 'push', '--quiet', 'origin', 'HEAD:refs/heads/main')
+    git(work, 'fetch', '--quiet', 'origin')
   end
 
   def write(work, files)
@@ -143,8 +152,9 @@ module SnapshotRepository
     git(work, 'checkout', '--quiet', '-b', 'feature')
   end
 
-  def git(directory, *argv)
-    output, error, status = Open3.capture3('git', '-C', directory, *argv)
+  def git(directory, *argv, index: nil)
+    environment = index ? { 'GIT_INDEX_FILE' => index } : {}
+    output, error, status = Open3.capture3(environment, 'git', '-C', directory, *argv)
     raise "git #{argv.first} failed: #{error}" unless status.success?
 
     output
@@ -226,8 +236,8 @@ class SnapshotTest < Minitest::Test
     in_repository do |work|
       write(work, 'conflicted.md' => "one side survived\n")
 
-      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote_head: '',
-                                       git: ->(*argv) { git(work, *argv) }).to_h
+      runner = ->(*argv, index: nil) { git(work, *argv, index: index) }
+      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote_head: '', git: runner).to_h
 
       assert_includes plan['adds'], 'conflicted.md'
     end
@@ -275,8 +285,8 @@ class SnapshotBoundaryTest < Minitest::Test
 
   def test_a_seam_that_allows_snapshots_still_publishes
     in_repository do |work|
-      write(work, 'research.md' => "half an idea\n")
       write_seam(work, snapshot: true)
+      write(work, 'research.md' => "half an idea\n")
 
       assert_equal true, publish_snapshot(work)['published']
     end
@@ -284,14 +294,14 @@ class SnapshotBoundaryTest < Minitest::Test
 
   def test_a_seam_that_disables_snapshots_refuses_to_publish
     in_repository do |work|
-      write(work, 'research.md' => "half an idea\n")
       write_seam(work, snapshot: false)
+      write(work, 'research.md' => "half an idea\n")
 
       result = nil
       Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } }
 
       assert_equal 1, result
-      assert_empty remote_branches(work)
+      refute_includes remote_branches(work).join, 'wip/'
     end
   end
 

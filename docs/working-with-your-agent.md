@@ -136,7 +136,7 @@ A push is permanent: deleting the branch later does not reliably remove what it
 published, and a public repository publishes it to everyone. So the snapshot happens in
 two steps. `shaka snapshot` prints what it would publish, what it would remove, and the
 paths it holds back because they look like credentials or keys. Read that list, then run
-`shaka snapshot --push --expect <digest>` with the digest that plan printed. The digest
+`shaka snapshot --push --expect <digest>` with the digest that plan printed. The digest names the exact tree and parent, so it
 binds the push to what was read, so a file that changed in between stops the push instead
 of publishing something nobody saw. The command commits against the current head
 through a temporary index, so the working tree and the index are untouched, and it
@@ -155,8 +155,8 @@ snapshot carries no pull request, so checks that run on pull requests do not run
 a repository whose CI runs on every pushed branch will still run it, and should scope
 those triggers or set `recovery.snapshot: false`. A repository that does not want
 these branches at all sets the same key, and the command itself then refuses, whoever
-runs it. A seam it cannot read also refuses, because publishing is the irreversible
-answer. The plan also lists any commits on the branch that the remote does not have,
+runs it. Once a repository has a seam, a trusted copy the command cannot read also refuses,
+because the checkout's own copy could say anything and publishing is irreversible. The plan also lists any commits on the branch that the remote does not have,
 since pushing the snapshot publishes those too.
 
 To resume in the original task, read the live note before writing. If it names a

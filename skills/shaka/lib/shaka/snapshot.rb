@@ -3,10 +3,10 @@
 require 'json'
 require 'open3'
 require 'optparse'
-require 'tmpdir'
 require_relative 'error'
 require_relative 'snapshot/plan'
 require_relative 'snapshot/policy'
+require_relative 'snapshot/tree'
 
 module Shaka
   # Publishes unfinished work to a branch that carries no pull request.
@@ -108,17 +108,9 @@ module Shaka
       report(plan.merge('published' => true, 'commit' => commit))
     end
 
-    # A temporary index keeps the working tree and the real index untouched.
     def write_commit(adds, removes)
-      Dir.mktmpdir('shaka-snapshot') do |dir|
-        index = File.join(dir, 'index')
-        parent = git('rev-parse', 'HEAD').strip
-        git('read-tree', 'HEAD', index: index)
-        git('add', '--force', '--', *adds, index: index) unless adds.empty?
-        git('update-index', '--force-remove', '--', *removes, index: index) unless removes.empty?
-        tree = git('write-tree', index: index).strip
-        git('commit-tree', tree, '-p', parent, '-m', message, index: index).strip
-      end
+      builder = Tree.new(git: method(:git))
+      git('commit-tree', builder.build(adds, removes), '-p', builder.parent, '-m', message).strip
     end
 
     def message
