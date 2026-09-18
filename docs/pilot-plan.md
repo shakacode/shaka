@@ -138,7 +138,10 @@ telemetry service, tracker synchronization, or release automation is part of thi
 Master and repository control towers may organize work through the existing
 Shaka procedure as [optional operating roles](control-towers.md). The focused
 `$rct` setup skill establishes one repository tower and registers it with an
-existing master; it adds no coordination service or multi-repository owner. Each delivery
+existing master; it adds no coordination service or multi-repository owner. The
+`/mct-claude` and `/rct-claude` skills establish the same two roles on Claude Code
+desktop under the same limits, deriving the tower set from the host's live session list rather than
+from any new file, database, or scheduler. Each delivery
 retains one owner and the same repository gates. This does not restore V1 fleet
 machinery; claim adoption only after a real tower-to-delivery trial.
 

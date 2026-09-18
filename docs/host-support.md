@@ -7,9 +7,13 @@ for installation and your first task. Neither Claude Code, Cursor, nor OpenCode
 has a verified complete V2 consumer delivery yet.
 
 The hosts share one `shaka` skill and the same Ruby helpers for GitHub
-operations. The optional `rct` skill currently requires the Codex app's native
-project, task, pin, follow-up, and wait tools, so install it only there with
-`--with-rct`. Your repository keeps its existing `AGENTS.md`, commands, and policy.
+operations. Control tower skills are host-specific because they drive native task
+tools. The optional `rct` skill requires the Codex app's native project, task,
+pin, follow-up, and wait tools, so install it only there with `--with-rct`. Claude
+Code desktop has its own equivalents and installs `mct-claude` and `rct-claude`
+with `--with-claude-towers`. Cursor, OpenCode, and terminal-only installs stay
+Shaka-only and use the [role prompts](control-towers.md#role-prompts).
+Your repository keeps its existing `AGENTS.md`, commands, and policy.
 Host-specific work covers installation, instruction loading, execution permissions,
 and reading native usage records. It does not create three copies of the workflow.
 
@@ -83,6 +87,32 @@ There is no `shaka work` launcher for Claude Code. Start `claude` in the reposit
 keep the trusted source outside any `--add-dir` directory, and rely on the permission
 mode you already use. The next required evidence is a complete ordinary consumer PR
 delivered with `/shaka`.
+
+### Control towers in Claude Code
+
+The desktop app exposes session tools that cover what the Codex tower skill needs,
+so `--with-claude-towers` installs `mct-claude` for the master role and `rct-claude`
+for repository towers. These tools belong to the desktop app; `claude` in a terminal does not have them, and the skill
+stops with a setup error rather than guessing.
+
+| Tower requirement | Codex app | Claude Code desktop |
+| --- | --- | --- |
+| Current task and its project | Native task and project tools | `get_session` for `self`, whose `cwd` and `originCwd` are real paths |
+| Find towers and read candidates | Native task search | `list_sessions`, `search_session_transcripts`, and `list_events` |
+| Stamp the role | Native rename and pin | `set_session_title` and `set_pinned`, read back with `get_session` |
+| Reach another tower | Native follow-up | `send_message`, whose result distinguishes `delivered` from `queued` |
+| Wait for a reply | Bounded native task wait | No equivalent |
+
+The missing bounded wait changes one step rather than blocking the role.
+Registration is acknowledged by a reply that arrives as an ordinary labelled user
+turn, so a tower reports `awaiting acknowledgment`, ends its turn, and completes
+setup when the reply lands. Towers do not poll or start a monitor, and neither a
+`queued` nor a `delivered` result is acknowledgment.
+
+Sidebar groups are deliberately unused: `move_sessions` unpins a pinned session, so
+the title suffix is the only role stamp and the live session list is the only
+registry. These tool observations were made on September 17, 2026. A complete
+Claude Code tower and delivery trial is still required.
 
 ## Cursor
 

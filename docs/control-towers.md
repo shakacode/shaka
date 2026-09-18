@@ -17,9 +17,10 @@ Create a Codex task in the saved project for the intended repository, then send:
 $rct
 ```
 
-This setup entry point currently requires the Codex app's native project and task
-tools. Claude Code, Cursor, and terminal-only installs receive `$shaka` without
-`$rct`.
+This setup entry point requires the Codex app's native project and task tools.
+Claude Code desktop establishes its towers with its own skills, described below.
+Cursor, OpenCode, and terminal-only installs receive `$shaka` and use the
+[role prompts](#role-prompts).
 
 The installed RCT skill verifies the task's project, current Git root, remotes,
 and live GitHub identity. It makes the current task the one RCT for that repository,
@@ -37,6 +38,76 @@ The setup request authorizes its native title, pin, and registration operations.
 It does not assign backlog work or create delivery tasks. After registration, the
 RCT gives a read-only backlog recommendation; start a selected delivery through
 `$shaka`.
+
+## Establish a master tower in Claude Code
+
+Install the tower skills with `--with-claude-towers`, open the Claude Code desktop
+session you want to hold the master role, and send:
+
+```text
+/mct-claude
+```
+
+The skill searches your active sessions for one already holding the role and stops
+with `MCT setup error: master control tower already exists` when it finds one, or
+`master control tower is ambiguous` when several carry the title. Otherwise it
+renames the session to end in `MCT — Shaka`, pins it, reads both changes back, and
+reports the result.
+
+One master per installation is a rule you keep, not something the skill enforces.
+Searching the session list and renaming a session are separate calls, so two setups
+started at the same moment can both succeed. The skill reports that on its next read
+and asks you to resolve it; it never picks a winner, and it never renames, unpins,
+or ends another session. A title left behind by an abandoned setup is a stale hint
+you can clear, not a corrupt registry.
+
+Repository towers find the master by that suffix, so keep it while the session holds
+the role. Each registration lives in its own tower's transcript, and the master
+derives the current tower set by reading live sessions, so the role adds no file,
+database, or scheduler, and towers survive replacing the master itself. This skill
+needs the desktop app's session tools; a terminal `claude` stops with `MCT setup
+error: host session tools are unavailable`, and the role prompt below remains the
+supported fallback.
+
+Establishing the master authorizes its own title, pin, and acknowledgment
+operations. It assigns no backlog, creates no worker session, and grants no merge
+authority. A repository tower registers by message; the master verifies the
+repository, session, and default branch from its own reads before acknowledging,
+and refuses a repository that already has a tower. A delivered or queued message is
+not acknowledgment in either direction.
+
+## Establish a repository tower in Claude Code
+
+With a master established, open a Claude Code desktop session in the repository you
+want the tower to own, and send:
+
+```text
+/rct-claude
+```
+
+It takes no arguments: the session's own checkout selects the repository. The skill
+confirms the Git root, the remotes, and live GitHub identity, and that the root and the
+session's origin directory belong to the same repository. It compares the Git common
+directory rather than filesystem paths, so an ordinary linked worktree beside its
+original checkout is valid. Missing or ambiguous repository identity, an
+existing tower for the same repository, and a missing or ambiguous master are errors
+rather than guesses.
+
+The skill renames the session to end in `RCT — Shaka`, pins it, and then states the
+completed setup in the session itself: the repository, session, default branch, and
+one-repository scope. That written record, not the title, is what makes the role
+durable — the master establishes ownership by reading the tower's session, and towers
+outlive the master that acknowledged them.
+
+Registration is a message, and this host has no bounded wait for another session, so
+the tower reports `awaiting acknowledgment` and ends its turn. The master's answer
+arrives as an ordinary labelled turn. Setup is complete only when that answer names
+the same repository and session; a delivered or queued message is not acknowledgment,
+and a refusal comes back the same way rather than leaving the tower waiting.
+
+The two hosts cannot see each other's sessions, so a Claude master coordinates Claude
+repository towers and a Codex master coordinates Codex ones. Do not mix hosts within
+one tower set.
 
 ## Who owns what
 

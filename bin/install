@@ -7,10 +7,12 @@ require 'shellwords'
 
 skills_dir = nil
 with_rct = false
+with_claude_towers = false
 parser = OptionParser.new do |options|
-  options.banner = 'Usage: bin/install --skills-dir DIR [--with-rct]'
+  options.banner = 'Usage: bin/install --skills-dir DIR [--with-rct] [--with-claude-towers]'
   options.on('--skills-dir DIR', 'Explicit destination for the isolated skill') { |value| skills_dir = value }
   options.on('--with-rct', 'Also install the Codex-only repository control tower skill') { with_rct = true }
+  options.on('--with-claude-towers', 'Also install the Claude Code control tower skills') { with_claude_towers = true }
   options.on('-h', '--help', 'Show this help') do
     puts options
     exit
@@ -25,6 +27,7 @@ begin
 
   names = ['shaka']
   names << 'rct' if with_rct
+  names.push('mct-claude', 'rct-claude') if with_claude_towers
   links = names.map do |name|
     [File.realpath("../skills/#{name}", __dir__), File.join(File.expand_path(skills_dir), name)]
   end
