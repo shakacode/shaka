@@ -168,6 +168,35 @@ Initialization validates every input before writing. It is safe to repeat when t
 generated files are unchanged and refuses to overwrite a repository-owned file or
 symlink. Use the path printed by `bin/install` when you installed elsewhere.
 
+## Check your setup
+
+`shaka doctor` reports, in one pass, whether this machine can run the workflow and
+publish a complete pull request. It is read-only: it changes no repository and no
+setting.
+
+```bash
+"$HOME/.agents/skills/shaka/scripts/shaka" doctor --root /path/to/repository
+```
+
+Each check is `HEALTHY`, `DEGRADED`, or `FAILED`, worst first, with the next step for
+anything that is not healthy. A `FAILED` check blocks publication and the command exits
+non-zero; a `DEGRADED` check still publishes, with something missing from the result.
+
+Doctor fails rather than guessing when it cannot establish what it checks. A repository it
+cannot resolve as writable fails, whatever the reason, so a passing report always means
+verified write access. A missing or invalid repository seam fails too. An unset
+`SHAKA_MACHINE_ALIAS` only degrades: the provenance row reads `UNKNOWN`. Set it to a short
+deliberate token such as `m5` — any token that is not this machine's own name. Doctor also
+degrades when the alias *is* this machine's own
+name, because publication accepts that value and would put your machine name in every public
+pull request.
+
+Doctor names the host it checked usage sources for, and says when it only detected that host
+rather than being told. Detection falls back to Codex when a host exposes no session
+identifier, and answers nothing when several are present, so pass `--host` to state it.
+Doctor confirms a session source is an openable file; whether its records parse is what
+`shaka usage` itself reports.
+
 ## Complete your first task
 
 Send this, replacing the example with your issue number, task URL, or description:
