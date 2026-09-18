@@ -76,6 +76,14 @@ repository, session, and default branch from its own reads before acknowledging,
 and refuses a repository that already has a tower. A delivered or queued message is
 not acknowledgment in either direction.
 
+**The Claude repository tower is not shipped yet.** `--with-claude-towers` links the
+master skill alone, so nothing can currently register with it: `$rct` needs the Codex
+app's tools and searches Codex tasks for its master, and the role prompts below do not
+title, pin, or register a session. Until the repository skill lands, `/mct-claude`
+establishes and holds the role, but its registration and tower-set flow is
+unreachable, and a Claude master cannot coordinate Codex repository towers. Use the
+Codex pair for a working tower today.
+
 ## Who owns what
 
 | Role | Owns | Completion evidence |
