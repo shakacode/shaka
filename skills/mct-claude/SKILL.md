@@ -84,7 +84,10 @@ establish each fact from your own reads rather than from the message:
   repository. A title suffix, a matching `cwd`, or the registration message alone is
   not proof of the role;
 - no other live session's transcript records a completed registration for that same
-  `OWNER/REPOSITORY`; and
+  `OWNER/REPOSITORY`. List sessions completely for this check too, as the
+  [host guide](../../docs/host-support.md#read-the-session-listing-completely)
+  describes: a first page that hides an older tower is how a duplicate gets
+  acknowledged; and
 - the named default branch matches live GitHub metadata.
 
 Read those candidates with `list_events` rather than recalling what you
@@ -124,10 +127,10 @@ recovery action, and never acknowledge a fact you did not read yourself.
 ## Coordinate without becoming a writer
 
 Derive the tower set by reading the live `list_sessions` candidates with
-`list_events` and keeping those whose own transcript records a completed
-registration. That read is the registry; it needs no file, database, or sidebar
-group. Do not add one: `move_sessions` unpins a pinned session, and the live session
-list is the only record this role keeps. One RCT owns one repository; closely
+`list_events`, again listing completely, and keeping those whose own transcript
+records a completed registration. That read is the registry; it needs no file,
+database, or sidebar group. Do not add one: `move_sessions` unpins a pinned session,
+and the live session list is the only record this role keeps. One RCT owns one repository; closely
 related repositories keep separate towers, and this role orders their work.
 
 Keep priorities, cross-repository dependencies, and consequential decisions clear.

@@ -100,7 +100,7 @@ stops with a setup error rather than guessing.
 | Tower requirement | Codex app | Claude Code desktop |
 | --- | --- | --- |
 | Current task and its project | Native task and project tools | `get_session` for `self`; its `cwd` alone selects the repository |
-| Find towers and read candidates | Native task search | `list_sessions`, `search_session_transcripts`, and `list_events` |
+| Find towers and read candidates | Native task search | `list_sessions` for titles, `list_events` for a candidate's own record |
 | Stamp the role | Native rename and pin | `set_session_title` and `set_pinned`, read back with `get_session` |
 | Reach another tower | Native follow-up | `send_message`, whose result distinguishes `delivered` from `queued` |
 | Wait for a reply | Bounded native task wait | No equivalent |
@@ -130,8 +130,13 @@ listing by retrying with a smaller limit, which silently restores the paging bug
 first trial on September 18, 2026 exhausted one account at 413 sessions and overflowed
 at roughly 210KB, so both branches occur in ordinary use.
 
-`search_session_transcripts` matches message content rather than titles, so it is a
-second net and cannot carry the search alone.
+This applies to every listing a tower takes, not only the one at setup. Checking that
+a repository is unowned, and refreshing the tower set later, read the same account and
+fail the same way when they stop at the first page.
+
+`search_session_transcripts` does not help here: it matches message content, not
+titles, and the trial returned nothing for a title stamp. Find towers by title with
+`list_sessions`, and confirm a candidate's role by reading it with `list_events`.
 
 ## Cursor
 
