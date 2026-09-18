@@ -9,8 +9,46 @@ require_relative 'opencode_usage'
 require_relative 'pi_usage'
 
 module Shaka
+  # Host-context fallback rows when a reader has no per-response records.
+  module UsageTable
+    private
+
+    def rows
+      grouped = @responses.group_by { |record| record['configuration'] }
+      grouped = { context_row => [] } if grouped.empty? && context_row
+      grouped.map do |configuration, group|
+        "| #{(configuration.map { |value| safe(value) } + totals(group)).join(' | ')} |"
+      end.join("\n")
+    end
+
+    def totals(group)
+      Usage::FIELDS.map { |field| total_field(group, field) }
+    end
+
+    def total_field(group, field)
+      values = group.map { |record| record['usage'].is_a?(Hash) ? record['usage'][field] : nil }
+      countable?(values) ? values.sum : 'UNKNOWN'
+    end
+
+    def countable?(values)
+      values.any? && values.all? { |value| value.is_a?(Integer) && value >= 0 }
+    end
+
+    def context_row
+      @source.context_configuration if @source.respond_to?(:context_configuration)
+    end
+
+    def cost_responses
+      return @responses unless @responses.empty? && context_row
+
+      [{ 'configuration' => context_row, 'usage' => {} }]
+    end
+  end
+
   # Read-only reporting of per-response usage records from a supported host.
   class Usage
+    include UsageTable
+
     FIELDS = %w[input_tokens cached_input_tokens output_tokens reasoning_output_tokens
                 cache_write_input_tokens total_tokens].freeze
     READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage, 'cursor' => CursorUsage,
@@ -94,7 +132,7 @@ module Shaka
         #{rows}
 
         </details>
-        #{CostEstimate.new(@responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report}
+        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report}
       MARKDOWN
     end
 
@@ -104,19 +142,6 @@ module Shaka
       return 'all turns in selected sources' if @options[:all_turns]
 
       @options[:turns].empty? ? @source.class::LATEST_SCOPE : 'explicitly selected turns'
-    end
-
-    def rows
-      @responses.group_by { |record| record['configuration'] }.map do |configuration, group|
-        "| #{(configuration.map { |value| safe(value) } + totals(group)).join(' | ')} |"
-      end.join("\n")
-    end
-
-    def totals(group)
-      FIELDS.map do |field|
-        values = group.map { |record| record['usage'].is_a?(Hash) ? record['usage'][field] : nil }
-        values.all? { |value| value.is_a?(Integer) && value >= 0 } ? values.sum : 'UNKNOWN'
-      end
     end
 
     def count

@@ -38,6 +38,7 @@ module Shaka
            'Parent-agent turn only; subagents excluded.'
     LATEST_SCOPE = 'latest generation only per source; earlier turns excluded'
     EVENTS = %w[stop afterAgentResponse].freeze
+    UNAVAILABLE = 'usage reader unavailable: no readable Cursor stop-hook records'
 
     attr_reader :responses, :versions, :gaps
 
@@ -53,7 +54,14 @@ module Shaka
       @responses = {}
       @versions = []
       @gaps = []
+      @identified = false
       files.each { |file| ingest(file, turns, all_turns) }
+      @gaps << UNAVAILABLE unless @identified
+    end
+
+    def context_configuration
+      ['cursor', present(ENV.fetch('CURSOR_MODEL_ID', nil)), present(ENV.fetch('CURSOR_MODEL', nil)),
+       present(ENV.fetch('CURSOR_MODEL_EFFORT', nil))]
     end
 
     private
@@ -66,8 +74,13 @@ module Shaka
 
     def keep_selected(chosen, wanted, all_turns)
       identified = chosen.values.select { |record| turn?(record['turn_id']) }
+      @identified ||= identified.any?
       unreadable if all_turns && identified.size < chosen.values.size
       identified.each { |record| count(record.except('preferred')) if wanted.include?(record['turn_id']) }
+    end
+
+    def present(value)
+      value if value.is_a?(String) && !value.strip.empty?
     end
 
     def selected_turns(chosen, last, turns, all_turns)
