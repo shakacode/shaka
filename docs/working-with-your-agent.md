@@ -287,8 +287,8 @@ Order the walkthrough so that each change prepares the next, rather than by file
 commit order. That usually means the prior behavior and the new behavior first, then
 contract, data model, or interface changes, then core behavior, then integrations, UI, and
 operational wiring, and finally tests, documentation, migrations, and generated artifacts.
-Reorder when the change itself demands it. The outcome itself stays in the description; the
-walkthrough opens on the behavior that changed.
+Reorder when the change itself demands it. The outcome headline stays in the description; a
+walkthrough leads with the behavior that changed, which is what its own reader notices.
 
 Separate mechanical movement, generated output, dependency bumps, and formatting from the
 changes that alter behavior, so churn does not hide the reason for the work.

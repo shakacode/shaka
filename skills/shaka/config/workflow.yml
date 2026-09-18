@@ -178,12 +178,14 @@ phases:
         the PR summary and final response. Try to collapse older walkthroughs while preserving their
         revision, evidence, and human edits; unavailable cleanup does not block merge.
       - Divide the two: the description carries what a reader needs without working through the PR,
-        and the walkthrough carries the reasoning. Only the description carries the outcome, decisions
-        and blockers, missing required review, the check table, provenance, usage, the recovery note,
-        and the links out. Only the walkthrough carries the rejected alternatives, the order that
-        makes the change readable, and commit-pinned links. Purpose, risk, rollback, and validation
-        belong in both at different resolutions: share the subject, never the sentences, because a
-        copied paragraph goes stale when you republish at a new head. Read the packaged
+        and the walkthrough carries the reasoning. Only the description carries the outcome headline,
+        decisions and blockers, missing required review, the check table, provenance, usage, the
+        recovery note, and the links out. Only the walkthrough carries the rejected alternatives, the
+        order that makes the change readable, and commit-pinned links. Purpose, risk, rollback, and
+        validation belong in both at different resolutions: share the subject, never the sentences,
+        because a copied paragraph goes stale when you republish at a new head. Every summary still
+        leads with what its own reader notices, which for a walkthrough is the behavior that changed.
+        Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/docs/working-with-your-agent.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
         or `shared-planning`. Use `--all-turns` only when the session holds solely this task. Include
