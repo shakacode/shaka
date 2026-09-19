@@ -145,7 +145,7 @@ module SnapshotFixtures
   # A second remote holding this branch, so reachability cannot be read from all remotes.
   def elsewhere(work)
     other = File.join(File.dirname(work), 'elsewhere')
-    git(File.dirname(work), 'init', '--quiet', '--bare', other)
+    git(File.dirname(work), 'init', '--quiet', '--bare', '--initial-branch', 'main', other)
     git(work, 'remote', 'add', 'elsewhere', other)
     git(work, 'push', '--quiet', 'elsewhere', 'HEAD:refs/heads/feature')
     git(work, 'fetch', '--quiet', 'elsewhere')
@@ -197,10 +197,13 @@ module SnapshotRepository
     files.each { |name, body| File.write(File.join(work, name), body) }
   end
 
+  # The origin names `main` as its HEAD, as a real remote does. Without that the bare
+  # repository's HEAD dangles at whatever `init.defaultBranch` says, which the policy
+  # refuses, and the test would pass or fail with the machine's git configuration.
   def in_repository
     Dir.mktmpdir('shaka-snapshot-test') do |root|
       work = File.join(root, 'work')
-      git(root, 'init', '--quiet', '--bare', File.join(root, 'origin'))
+      git(root, 'init', '--quiet', '--bare', '--initial-branch', 'main', File.join(root, 'origin'))
       git(root, 'init', '--quiet', work)
       seed(work, File.join(root, 'origin'))
       yield work
