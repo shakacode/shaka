@@ -71,17 +71,19 @@ Every value must be a repository-relative path to a file that exists and is
 
 `required` is the only mandatory key. `check` names the reviewer's status check.
 
-The three `required` values record when the gate named by `check` should apply. **The workflow
-does not branch on this value yet.** Its review phase lets trivial prose or no-op work omit
-review with a recorded reason whatever is set here, and nothing consumes the field beyond
-validating it and writing it. So the current behavior matches `meaningful_changes` for every
-value, and the other two state an intent the workflow does not enforce.
+The three `required` values record when the gate named by `check` should apply, and `check` is
+bound to them: validation requires it for `always` and `meaningful_changes`, and rejects it for
+`none`. Choosing `none` therefore leaves no named gate to satisfy.
 
-| Value | Intended trigger for the named gate |
+`always` is the exception. The workflow's review phase lets trivial prose or no-op work omit
+review with a recorded reason whatever is set here, and nothing consumes this value to withdraw
+that exemption, so `always` currently behaves exactly like `meaningful_changes`.
+
+| Value | Trigger for the named gate |
 | --- | --- |
-| `always` | Every pull request, with no exemption for trivial work. Not enforced today. |
-| `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. This is the behavior for every value today. |
-| `none` | Never. The repository declares no named gate. Not enforced today. |
+| `always` | Every pull request, with no exemption for trivial work. Not yet distinguished from `meaningful_changes`. |
+| `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. |
+| `none` | Never. Validation rejects `check`, so the repository declares no named gate. |
 
 One rule holds whatever this value says: meaningful implementation needs a review from a
 different model family than the implementer, and `none` does not switch that baseline off.
