@@ -7,6 +7,13 @@ module GitHubHelper
   HEAD = 'a' * 40
   BASE = 'b' * 40
   STATUS = Struct.new(:exitstatus)
+  CHANGED_FILE = 'skills/shaka/config/workflow.yml'
+  PINNED_LINK = "https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}#L154-L156".freeze
+  WALKTHROUGH = "See #{PINNED_LINK}. Gates: validate, claude-review.".freeze
+  COMPLETED_GATES = [
+    { 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' },
+    { 'name' => 'claude-review', 'state' => 'SUCCESS', 'bucket' => 'pass' }
+  ].freeze
 
   def client(*responses)
     @calls = []
@@ -26,7 +33,30 @@ module GitHubHelper
     response({ 'data' => { 'repository' => { 'pullRequest' => { 'headRefOid' => head, 'state' => state } } } })
   end
 
-  def review_response(**changes)
-    response({ 'id' => 123, 'state' => 'COMMENTED', 'commit_id' => HEAD, 'body' => 'A walkthrough.' }.merge(changes))
+  def review_response(body: WALKTHROUGH, **changes)
+    response({ 'id' => 123, 'state' => 'COMMENTED', 'commit_id' => HEAD, 'body' => body }.merge(changes))
+  end
+
+  def files_response(names = [CHANGED_FILE])
+    response(names.map { |name| { 'filename' => name } })
+  end
+
+  def gate_responses
+    required = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    [response(required), response(COMPLETED_GATES)]
+  end
+
+  def html_response(html = '<p>A walkthrough.</p>')
+    [html, 'private stderr must not be disclosed', STATUS.new(0)]
+  end
+
+  def publish_responses(*extra)
+    [snapshot_response, files_response, *gate_responses, html_response, review_response, review_response, *extra]
+  end
+
+  def pending_review_gate_responses
+    passed = { 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }
+    pending = { 'name' => 'claude-review', 'state' => 'PENDING', 'bucket' => 'pending' }
+    [response([passed]), response([passed, pending])]
   end
 end

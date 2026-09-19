@@ -30,7 +30,7 @@ establish complete usage attribution.
 | Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. | Shared Agent Skill loaded from a trusted external source; no Pi-specific copy or launcher. |
 | OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. | The user's Pi tool permissions apply; no separate boundary was probed. |
 | Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. | Consumer delivery unverified. | This usage-reader implementation is the first recorded delivery trial; broader consumer evidence remains pending. |
-| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader exercised against desktop `3.20.21` `grok-4.6` payloads; transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. | Reader matched an independent aggregate of selected active-branch responses, including reasoning and native nominal cost; abandoned branches were excluded. Compaction, branch-summary, and tool-nested model usage remain excluded. |
+| Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader works against captured desktop `3.20.21` `grok-4.6` payloads, but has not produced records in a real delivery ([#111](https://github.com/shakacode/shaka/pull/111)); transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. | Reader matched an independent aggregate of selected active-branch responses, including reasoning and native nominal cost; abandoned branches were excluded. Compaction, branch-summary, and tool-nested model usage remain excluded. |
 
 The Codex write test establishes that particular local boundary. It does not
 establish equivalent behavior in the desktop app, other versions, or other hosts.
@@ -99,8 +99,8 @@ stops with a setup error rather than guessing.
 
 | Tower requirement | Codex app | Claude Code desktop |
 | --- | --- | --- |
-| Current task and its project | Native task and project tools | `get_session` for `self`, whose `cwd` and `originCwd` are real paths |
-| Find towers and read candidates | Native task search | `list_sessions`, `search_session_transcripts`, and `list_events` |
+| Current task and its project | Native task and project tools | `get_session` for `self`; its `cwd` alone selects the repository |
+| Find towers and read candidates | Native task search | `list_sessions` for titles, `list_events` for a candidate's own record |
 | Stamp the role | Native rename and pin | `set_session_title` and `set_pinned`, read back with `get_session` |
 | Reach another tower | Native follow-up | `send_message`, whose result distinguishes `delivered` from `queued` |
 | Wait for a reply | Bounded native task wait | No equivalent |
@@ -115,6 +115,35 @@ Sidebar groups are deliberately unused: `move_sessions` unpins a pinned session,
 the title suffix is the only role stamp and the live session list is the only
 registry. These tool observations were made on September 17, 2026. A complete
 Claude Code tower and delivery trial is still required.
+
+### Read the session listing completely
+
+Both tower skills find each other by title, so a listing that stops early is a tower
+that does not exist as far as the reader is concerned. `list_sessions` returns one
+recent page, twenty by default, and a role held past that page reads as unheld: setup
+then creates the duplicate the search exists to prevent. Raise the limit until the
+listing is exhausted.
+
+A busy account can make that listing too large to return whole. The host saves it and
+names the file in the tool result; read it from that path. Never answer an oversized
+listing by retrying with a smaller limit, which silently restores the paging bug. A
+first trial on September 18, 2026 exhausted one account at 413 sessions and overflowed
+at roughly 210KB, so both branches occur in ordinary use.
+
+This applies to every listing a tower takes, not only the one at setup. Checking that
+a repository is unowned, and refreshing the tower set later, read the same account and
+fail the same way when they stop at the first page.
+
+`list_sessions` also never includes the session calling it. A rule that counts every
+session holding a role cannot be answered from the listing alone, or the count is short
+by one and a genuine conflict reads as an ordinary handover. How this session is added
+depends on what the role is made of: a title comes back from `get_session`, while a
+record written into a session's transcript is not readable for the caller at all, since
+`list_events` refuses it. Each tower skill names the source its own rule needs.
+
+`search_session_transcripts` does not help here: it matches message content, not
+titles, and the trial returned nothing for a title stamp. Find towers by title with
+`list_sessions`, and confirm a candidate's role by reading it with `list_events`.
 
 ## Cursor
 

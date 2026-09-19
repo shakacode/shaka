@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require 'json'
 require 'open3'
+require 'shaka/cursor_usage'
 
 module CursorUsageFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -42,6 +43,21 @@ module CursorUsageFixture
                                            '--contribution', 'implementation', *)
     assert status.success?, error
     output
+  end
+
+  def empty_cursor_report(directory, extra = {})
+    report(environment: empty_cursor_env(directory).merge(extra))
+  end
+
+  def empty_cursor_env(directory)
+    { 'CURSOR_CONVERSATION_ID' => SESSION, 'CURSOR_USAGE_DIR' => directory }
+  end
+
+  def assert_cursor_unavailable(output, row)
+    assert_includes output, 'Responses: UNKNOWN'
+    assert_includes output, Shaka::CursorUsage::UNAVAILABLE
+    assert_includes output, row
+    refute_includes output, '| 0 |'
   end
 
   def latest_and_duplicate(directory)
@@ -133,8 +149,41 @@ class CursorUsageFailuresTest < Minitest::Test
   def test_discovery_ignores_another_conversation
     Dir.mktmpdir do |directory|
       write_records(directory, [stored(NEW, 100)], name: "#{OTHER}.jsonl")
-      env = { 'CURSOR_CONVERSATION_ID' => SESSION, 'CURSOR_USAGE_DIR' => directory }
-      assert_includes report(environment: env), 'Responses: UNKNOWN'
+      row = '| cursor | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+      assert_cursor_unavailable(empty_cursor_report(directory), row)
+    end
+  end
+
+  def test_host_context_fills_models_when_stop_records_are_missing
+    Dir.mktmpdir do |directory|
+      extra = { 'CURSOR_MODEL_ID' => 'grok-4.6', 'CURSOR_MODEL' => 'cursor-grok-4.6-medium',
+                'CURSOR_MODEL_EFFORT' => 'medium' }
+      row = '| cursor | grok-4.6 | cursor-grok-4.6-medium | medium | UNKNOWN | UNKNOWN | UNKNOWN | ' \
+            'UNKNOWN | UNKNOWN | UNKNOWN |'
+      output = empty_cursor_report(directory, extra)
+      assert_cursor_unavailable(output, row)
+      refute_includes output, '| 100 |'
+    end
+  end
+
+  def test_explicit_files_do_not_copy_ambient_cursor_models
+    Dir.mktmpdir do |directory|
+      file = File.join(directory, 'empty.jsonl')
+      File.write(file, '')
+      env = { 'CURSOR_MODEL_ID' => 'grok-4.6', 'CURSOR_MODEL' => 'cursor-grok-4.6-medium',
+              'CURSOR_MODEL_EFFORT' => 'medium' }
+      output = report('--host', 'cursor', '--file', file, environment: env)
+      assert_includes output, 'usage reader unavailable'
+      refute_includes output, 'grok-4.6'
+    end
+  end
+
+  def test_explicit_turns_do_not_copy_ambient_cursor_models
+    Dir.mktmpdir do |directory|
+      env = { 'CURSOR_MODEL_ID' => 'grok-4.6' }
+      output = report('--turn', NEW, environment: empty_cursor_env(directory).merge(env))
+      assert_includes output, 'usage reader unavailable'
+      refute_includes output, 'grok-4.6'
     end
   end
 

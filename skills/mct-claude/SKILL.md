@@ -34,19 +34,22 @@ suffix is how towers find this session, not a lock.
 
 ## Establish the master
 
-Read this session with `get_session` for `self` and record its session ID. Reject
-invocation arguments; the current session is the only accepted subject.
+Read this session with `get_session` for `self` and record its session ID and title.
+The listing below leaves this session out, so every branch needs its title from here.
+Reject invocation arguments; the current session is the only accepted subject.
 
-Search active sessions for the `MCT — Shaka` suffix with `list_sessions` and
-`search_session_transcripts`, then read the candidates with `list_events`. A title
-says a session was set up or attempted setup; its own recorded result says the role
-took hold.
+Search active sessions for the `MCT — Shaka` suffix with `list_sessions`, read
+completely as the [host guide](../../docs/host-support.md#read-the-session-listing-completely)
+describes. A master sitting past an unread page is invisible here, and this session
+would wrongly appoint itself a second master. Read the candidates with `list_events`.
+A title says a session was set up or attempted setup; its own recorded result says the
+role took hold.
 
 Take the first of these that matches, in this order. Counting the suffix before
 anything else is what makes the detection above real: reusing this session first
 would let a duplicate re-invoke itself and report success.
 
-- If more than one live session carries the suffix, counting this one, stop with
+- If more than one session carries the suffix, counting this one, stop with
   `MCT setup error: master control tower is ambiguous` and list them with what each
   recorded. Do not pick one, do not assume the most recent is correct, and never
   exempt this session from the count. A suffix left behind by an abandoned or failed
@@ -82,7 +85,10 @@ establish each fact from your own reads rather than from the message:
   repository. A title suffix, a matching `cwd`, or the registration message alone is
   not proof of the role;
 - no other live session's transcript records a completed registration for that same
-  `OWNER/REPOSITORY`; and
+  `OWNER/REPOSITORY`. List sessions completely for this check too, as the
+  [host guide](../../docs/host-support.md#read-the-session-listing-completely)
+  describes: a first page that hides an older tower is how a duplicate gets
+  acknowledged; and
 - the named default branch matches live GitHub metadata.
 
 Read those candidates with `list_events` rather than recalling what you
@@ -122,11 +128,12 @@ recovery action, and never acknowledge a fact you did not read yourself.
 ## Coordinate without becoming a writer
 
 Derive the tower set by reading the live `list_sessions` candidates with
-`list_events` and keeping those whose own transcript records a completed
-registration. That read is the registry; it needs no file, database, or sidebar
-group. Do not add one: `move_sessions` unpins a pinned session, and the live session
-list is the only record this role keeps. One RCT owns one repository; closely
-related repositories keep separate towers, and this role orders their work.
+`list_events`, again listing completely, and keeping those whose own transcript
+records a completed registration. That read is the registry; it needs no file,
+database, or sidebar group. Do not add one: `move_sessions` unpins a pinned session,
+and the live session list is the only record this role keeps. One RCT owns one
+repository; closely related repositories keep separate towers, and this role orders
+their work.
 
 Keep priorities, cross-repository dependencies, and consequential decisions clear.
 Route each implementation or PR repair to the owning repository tower, and let that

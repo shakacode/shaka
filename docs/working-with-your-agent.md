@@ -105,17 +105,26 @@ one assessment.
 
 ### Recover an unfinished PR
 
-From the first PR description until the PR reaches its outcome, keep a `Recovery`
-section there. Work can stop at any time, for a blocker, a pending decision, a
-handoff, or an interruption. Someone reopening the PR should find the owning task
-and its next step without reading the conversation. Refresh the section at
-meaningful progress and at each stopping point. The `description` helper replaces its
+From the first PR description until the PR reaches its outcome, keep a recovery note
+there as a collapsed `WIP Details` disclosure. Work can stop at any time, for a
+blocker, a pending decision, a handoff, or an interruption. Someone reopening the PR
+should find the owning task and its next step without reading the conversation, while
+the normal PR summary stays compact. Publish the note through the `description`
+helper's `details` list so GitHub renders it as `<details><summary>WIP Details</summary>`.
+Refresh it at meaningful progress and at each stopping point. The helper replaces its
 whole managed region, so republish every section with only the note changed. Remove
-the section once the PR reaches its outcome. It lists:
+the entire disclosure only after GitHub confirms the PR reached its outcome; a failed
+merge attempt still needs it. The note lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
-  the task picks when it becomes owner, such as `studio-mac · Claude Code desktop · k7q2`.
+  the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`.
 - **Task:** the searchable task title, or a task locator the tracker allows sharing.
+- **Thread:** the host-native thread locator. Publish it only when the user or trusted
+  repository instructions authorize public sharing and this guide defines a locator
+  for the host; otherwise use `UNKNOWN`. For Codex, require `CODEX_THREAD_ID` to contain
+  a UUID and publish `codex://threads/<thread-id>` as a raw, unformatted URL, never a
+  Markdown link or inline code. Other hosts use `UNKNOWN` until this guide defines their
+  locator. The owner field's machine alias tells the maintainer where to open it.
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
@@ -123,8 +132,8 @@ the section once the PR reaches its outcome. It lists:
   blocker, waiting for a named decision, or handing over to a named task.
 - **Next action:** the one step that continues the work.
 
-Keep private task links, raw session IDs, hostnames that identify people or clients,
-absolute paths, transcripts, and customer context out of public PRs.
+Keep private tracker links, other raw session IDs, hostnames that identify people or
+clients, absolute paths, transcripts, and customer context out of public PRs.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner, including a different tag, ownership was transferred: keep any local
@@ -223,9 +232,11 @@ In chat, link to supporting records instead of reproducing them. A changed risk 
 missing required evidence belongs in the next visible update.
 
 Collapsed content remains readable and public wherever the PR is public. It is
-not private storage. Keep prompts, raw sessions, private identifiers, and secrets
-out of published evidence. Collapsing text also does not reduce its token cost
-when an agent loads it. Keep useful evidence once and retrieve details as needed.
+not private storage. Keep prompts, raw sessions, secrets, and private identifiers
+out of published evidence. The recovery note's `Thread` field follows the publication
+rule in [Recover an unfinished PR](#recover-an-unfinished-pr). Collapsing text also does
+not reduce its token cost when an agent loads it. Keep useful evidence once and
+retrieve details as needed.
 
 ## Writing preferences
 
@@ -240,6 +251,18 @@ and checks these points:
 - A walkthrough explains the earlier behavior and the new capability before files or
   diff mechanics.
 - Exact commands, identifiers, domain terms, risks, and evidence survive the edit.
+- Open with the point. Skip greetings, praise, and offers to continue, such as
+  "Great question", "Let's dive in", or "I hope this helps".
+- State the fact. Leave off significance dressing such as pivotal, testament, or
+  landscape.
+- In a reply, lead with the decision and rely on what the thread already established.
+  Every kept sentence should add something the reader does not already have.
+
+Self-edit the content JSON, then let the helper render it. Do not rewrite the
+published GitHub body. A consumer repository may install its own prose-rewriting
+skill for blogs or docs; `$shaka` does not invoke one.
+
+### PR summary
 
 This summary is accurate but hard to read. It joins two changes under one verb and
 holds the condition until the end:
@@ -250,6 +273,26 @@ The reader-first version separates the changes and keeps the condition beside th
 behavior it limits:
 
 > Owner shells can now follow the automatic agent-stack sync log with `agent-stack-sync-log`. When the LaunchAgent is installed, `tips` and `tips -a` also show the log and service-status commands.
+
+### Walkthrough
+
+A walkthrough that narrates the diff is hard to review without opening the files:
+
+> This change adds an H1 to `Publication.walkthrough` and updates the skill so COMMENT reviews get a title.
+
+Name the earlier behavior, then the new one:
+
+> Untitled COMMENT reviews showed as ordinary comments. They now open with `# Code Walkthrough` after the identity line, so GitHub lists them as titled walkthroughs. Descriptions and ordinary replies stay untitled.
+
+### Review reply
+
+A reply that re-proves the diagnosis buries the decision:
+
+> You're right that non-owner shells still see the log commands. I checked `tips` and `tips -a`, and both print `agent-stack-sync-log` before they test for the LaunchAgent. We could move that check above the extra commands. I think we should still land this PR as the writing baseline and file the tips change separately.
+
+Lead with the decision and use the thread's context:
+
+> Agreed that non-owner shells shouldn't see the log commands, but that tips gate is a separate change. This PR stays the writing baseline; I'll open a follow-up for the LaunchAgent check.
 
 The baseline is a self-edit, not a score or a linter. Your repo can customize the audience,
 language, vocabulary, and level of detail in its existing `AGENTS.md`. For example:

@@ -27,8 +27,12 @@ class SkillTest < Minitest::Test
     assert_operator File.size(RCT_SKILL), :<=, 8 * 1024
   end
 
+  # The first live trial found rules these skills lacked: exhausting the session listing,
+  # and a repository check that wrongly assumed a session's origin directory is a repository.
+  # Like PR #38 did for the procedure, the budget moves by content rather than by cutting
+  # rules to fit a number inherited from the simpler Codex tower.
   def test_claude_tower_skills_stay_small
-    [MCT_SKILL, RCT_CLAUDE_SKILL].each { |skill| assert_operator File.size(skill), :<=, 8 * 1024, skill }
+    [MCT_SKILL, RCT_CLAUDE_SKILL].each { |skill| assert_operator File.size(skill), :<=, 9 * 1024, skill }
   end
 
   # A skill whose frontmatter name does not match its directory is not the skill the host loads.
