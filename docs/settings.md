@@ -196,5 +196,6 @@ identity. The generated merge preference is `ask` unless you pass `--merge-prefe
 | Whole-file and top-level rules | `skills/shaka/lib/shaka/repository_config/schema.rb` |
 | Reviewer policy | `skills/shaka/lib/shaka/repository_config/review_schema.rb` |
 | Feature-branch layout | `skills/shaka/lib/shaka/repository_config/branch_schema.rb` |
+| Recovery note policy | `skills/shaka/lib/shaka/repository_config/recovery_schema.rb` |
 | One document, no duplicate keys | `skills/shaka/lib/shaka/repository_config/duplicate_keys.rb` |
 | Generated contract | `skills/shaka/lib/shaka/seam/initializer.rb` |
