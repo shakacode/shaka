@@ -312,16 +312,20 @@ justification anchors on it instead of finding the hole. On a public repository,
 review prose permitted by the public-prose rule above; retain withheld comments as links rather
 than supplying their bodies.
 
-Restrict the CLI to read and search tools and disable candidate instructions, hooks, plugins,
-and MCP servers. Verified flags, current for the versions named:
+Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers. Verified
+flags, current for the versions named:
 
 | CLI | Review invocation | Isolation |
 | --- | --- | --- |
-| Codex 0.154.0 | `codex exec -s read-only -o report.md -` reads the prompt from stdin; the rendered prompt carries the `base...head` scope. `codex exec review --base REF` has its own review instructions and **refuses a custom prompt** — `--base` cannot be combined with `[PROMPT]` — so use plain `exec` when you want these instructions | `-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, `--ignore-user-config` skips `$CODEX_HOME/config.toml`, `--ephemeral` persists no session |
+| Codex 0.154.0 | `codex exec -s read-only -o "$(mktemp -t shaka-review).md" -` reads the prompt from stdin. Keep the output path outside the repository: `-o` overwrites whatever it names, so a repo-relative `report.md` would destroy a file in the worktree; the rendered prompt carries the `base...head` scope. `codex exec review --base REF` has its own review instructions and **refuses a custom prompt** — `--base` cannot be combined with `[PROMPT]` — so use plain `exec` when you want these instructions | `-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, `--ignore-user-config` skips `$CODEX_HOME/config.toml`, `--ephemeral` persists no session |
 | Grok 1.0.30 | `grok --prompt-file PATH -m MODEL --reasoning-effort EFFORT --output-format plain` | `--permission-mode plan`, `--disallowed-tools`, `--deny RULE`, `--disable-web-search`, `--no-subagents`. `--sandbox PROFILE` exists but its profile names are not listed in help |
 
 Both invocations above were run against this repository, so they are exercised rather than read
-off `--help`. Neither CLI documents a per-invocation flag that disables MCP servers; Codex's
+off `--help`. Note what they do not cover: these flags skip user configuration and execpolicy
+rules, not a repository's own `AGENTS.md` or similar instruction files, which the CLI still loads
+from the checkout it runs in. That is fine when the branch is yours; reviewing an untrusted
+contribution locally calls for restricted execution, under
+[what the helpers protect](working-with-your-agent.md#what-the-helpers-protect). Neither CLI documents a per-invocation flag that disables MCP servers; Codex's
 `--ignore-user-config` drops config-defined servers, and Grok manages them through `grok mcp`.
 Codex exposes no reasoning-effort flag on `exec review`, so record its effort as UNKNOWN unless
 the model's own output reports it. Check `--help` before relying on any of these; flags move.

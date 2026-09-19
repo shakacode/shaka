@@ -218,16 +218,14 @@ required native gate, and that gate need not belong to any listed reviewer.
 
 #### Sizing the list
 
-Substitution needs two entries whose model family did not contribute: one for the review, one for
-the fallback when the first is exhausted. So size the list as the largest number of model families
-that can contribute to one change, plus two.
+Count model families, not providers. `anthropic/claude` plus `openai/codex` is two providers and
+still leaves a Codex implementation with only `openai/codex` once Anthropic is exhausted — its own
+family, so nothing qualifies. A third family fixes that; a fourth also covers a change two
+families worked on.
 
-Counting distinct providers is not enough — `anthropic/claude` plus `openai/codex` leaves a Codex
-implementation with only `openai/codex` once Anthropic is exhausted, and that is its own model
-family. Counting families without counting contributors is not enough either: three families
-substitute for a solo implementer, but an owner and a delegated worker on two of those three
-leave one eligible entry and no fallback, and three contributors leave none. If you delegate
-across two families, list four. Two is enough when your implementers are never listed reviewers.
+Running short is a graceful outcome rather than a failure: `shaka reviewer` returns `outside_list`,
+and the owner obtains an authorized reviewer outside the list. Size for the reviews you expect to
+run, not for every combination.
 
 List a reviewer you cannot run yourself. One that runs on GitHub needs no local provider
 credentials, so a repository with no second-provider key still gets its alternate review that
