@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative '../repository_config'
 require_relative '../trusted_config_source'
+require_relative 'bytes'
 
 module Shaka
   class Snapshot
@@ -24,8 +25,8 @@ module Shaka
       end
 
       def allows_snapshot?
-        refs = listing
-        return true if refs.strip.empty?
+        refs = advertised
+        return true if refs.empty?
 
         source = seam(default_branch(refs), refs)
         return true if source.nil?
@@ -34,6 +35,13 @@ module Shaka
       end
 
       private
+
+      # A remote may advertise a ref whose name is not valid UTF-8, and one of those on a
+      # branch nobody here cares about must not take the listing down with it. The lines stay
+      # bytes until a field is matched, and only a readable line can match.
+      def advertised
+        Bytes.split(listing, "\n").reject { |line| line.b.strip.empty? }
+      end
 
       def listing
         @git.call('ls-remote', '--symref', @remote)
@@ -44,7 +52,8 @@ module Shaka
       # A remote holding refs must say which branch is authoritative. An unadvertised or
       # dangling HEAD leaves the seam unread, which is not the same as having no contract.
       def default_branch(refs)
-        match = refs.lines.lazy.filter_map { |line| SYMREF.match(line) }.first
+        readable = refs.lazy.select(&:valid_encoding?)
+        match = readable.filter_map { |line| SYMREF.match(line) }.first
         match&.[](:branch) ||
           raise(Error, "Cannot read the default branch from #{@remote}; snapshots refuse.")
       end
@@ -63,9 +72,11 @@ module Shaka
       end
 
       def tip(branch, refs)
-        line = refs.lines.find { |candidate| candidate.split("\t").last.to_s.strip == "refs/heads/#{branch}" }
-        line&.split("\t")&.first ||
-          raise(Error, "#{@remote} advertises no #{branch}.")
+        wanted = "refs/heads/#{branch}".b
+        line = refs.find { |candidate| candidate.b.split("\t").last.to_s.strip == wanted }
+        raise Error, "#{@remote} advertises no #{branch}." if line.nil?
+
+        line.b.split("\t").first
       end
     end
   end

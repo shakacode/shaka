@@ -32,11 +32,17 @@ module Shaka
       end
 
       # The confirmed plan already named its tree, so publishing commits that exact tree.
-      def commit(tree:, message:)
-        @git.call('commit-tree', tree, '-m', message, environment: identity).strip
+      def commit(tree:, branch:)
+        @git.call('commit-tree', tree, '-m', message(branch), environment: identity).strip
       end
 
       private
+
+      def message(branch)
+        "Snapshot unfinished work on #{branch}\n\n" \
+          'Published by shaka snapshot. Not for review or merge. This commit has no parent ' \
+          "and holds only the files the snapshot listed; the branch it came from is elsewhere.\n"
+      end
 
       def identity = configured_identity? ? {} : IDENTITY
 

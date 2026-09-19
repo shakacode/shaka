@@ -68,7 +68,7 @@ module Shaka
     def reference = "refs/heads/#{snapshot_branch}"
 
     def delete
-      git('push', @options[:remote], '--delete', snapshot_branch) unless remote_commit.empty?
+      remove unless remote_commit.empty?
       report('deleted' => readable_branch, 'existed' => !remote_commit.empty?)
     end
 
@@ -118,8 +118,14 @@ module Shaka
       empty = plan.merge('branch' => nil)
       return report(empty) unless @options[:push] && !remote_commit.empty?
 
-      git('push', "--force-with-lease=#{reference}:#{remote_commit}", @options[:remote], ":#{reference}")
+      remove
       report(empty.merge('deleted' => readable_branch))
+    end
+
+    # Deleting takes the same lease as replacing: between reading the remote's value and
+    # this push, another publisher may have left the only copy of its own unfinished work.
+    def remove
+      git('push', "--force-with-lease=#{reference}:#{remote_commit}", @options[:remote], ":#{reference}")
     end
 
     # The push must publish the plan that was read, not whatever the checkout holds now.
@@ -137,13 +143,7 @@ module Shaka
     end
 
     def write_commit(plan)
-      Tree.new(git: method(:git)).commit(tree: plan.fetch('tree'), message:)
-    end
-
-    def message
-      "Snapshot unfinished work on #{Bytes.readable(@branch)}\n\n" \
-        'Published by shaka snapshot. Not for review or merge. This commit has no parent and ' \
-        "holds only the files the snapshot listed; the branch it came from is elsewhere.\n"
+      Tree.new(git: method(:git)).commit(tree: plan.fetch('tree'), branch: Bytes.readable(@branch))
     end
 
     def report(payload)

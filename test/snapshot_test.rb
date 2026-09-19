@@ -750,6 +750,20 @@ class SnapshotPolicyTest < Minitest::Test
     assert_raises(Shaka::Error) { policy.allows_snapshot? }
   end
 
+  # One unreadable ref name elsewhere on the remote must not take the listing down. Open3
+  # labels git's output UTF-8 without checking it, so the stub does the same.
+  def test_a_ref_name_that_is_not_valid_utf8_does_not_stop_the_read
+    listing = "ref: refs/heads/main\tHEAD\n#{TIP}\tHEAD\n#{TIP}\trefs/heads/bad\xFFname\n" \
+              "#{TIP}\trefs/heads/main\n"
+    git = stub_remote('ls-remote --symref origin' => listing.b.force_encoding(Encoding::UTF_8),
+                      'fetch --quiet origin refs/heads/main' => '',
+                      "ls-tree #{TIP} -- .agents/agent-workflow.yml" => "\n")
+
+    policy = Shaka::Snapshot::Policy.new(root: Dir.pwd, remote: 'origin', git:)
+
+    assert_equal true, policy.allows_snapshot?
+  end
+
   def test_a_remote_that_advertises_nothing_keeps_the_default
     git = stub_remote('ls-remote --symref origin' => "\n")
     policy = Shaka::Snapshot::Policy.new(root: Dir.pwd, remote: 'origin', git:)
