@@ -56,6 +56,17 @@ class ReviewPromptTest < Minitest::Test
     refute_includes err, 'KeyError'
   end
 
+  # An unset shell variable expands to empty, which must not render a prompt with no revision.
+  def test_rejects_an_empty_required_value
+    _, err, status = Open3.capture3(
+      File.expand_path('../skills/shaka/scripts/shaka', __dir__),
+      'review-prompt', '--base', 'main', '--head', '', '--reviewer', 'openai/codex'
+    )
+
+    refute status.success?
+    assert_includes err, '--head is required'
+  end
+
   def test_rejects_a_reviewer_without_a_model_family
     _, err, status = Open3.capture3(
       File.expand_path('../skills/shaka/scripts/shaka', __dir__),

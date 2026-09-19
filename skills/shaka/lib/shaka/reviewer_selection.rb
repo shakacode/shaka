@@ -15,6 +15,14 @@ module Shaka
     AVAILABLE = 'available'
     UNAVAILABLE = 'unavailable'
     SAME_PROVIDER = 'same provider as the implementation'
+    NOTES = {
+      'different_provider' => 'Run %s: a provider that did not implement this.',
+      'same_provider' => 'Run %s: no other provider is available, and its context is still fresh.',
+      'same_model' => 'No listed reviewer is available. Run %s in a fresh context, which is a ' \
+                      'valid review, and the GitHub reviews still run on the pushed branch.',
+      'hosted_only' => 'Nothing can review locally, including the implementation model. Push and ' \
+                       'let the GitHub reviews review the branch; say that no local review ran.'
+    }.freeze
 
     def self.parse(text)
       provider, family, extra = text.to_s.split('/', -1)
@@ -58,10 +66,10 @@ module Shaka
     end
 
     def verdict(selected, reasons)
-      outcome = selected ? outcome_for(selected, reasons) : 'same_model'
+      outcome = outcome_for(selected, reasons)
       {
         'outcome' => outcome,
-        'reviewer' => selected ? identity(selected) : implementer,
+        'reviewer' => reviewer_for(outcome, selected),
         'implementation_providers' => providers,
         'considered' => reasons.map { |entry, why| { 'reviewer' => identity(entry), 'reason' => why } },
         'note' => note(outcome, selected)
@@ -69,18 +77,25 @@ module Shaka
     end
 
     def outcome_for(selected, reasons)
-      reasons.assoc(selected).last == AVAILABLE ? 'different_provider' : 'same_provider'
+      return reasons.assoc(selected).last == AVAILABLE ? 'different_provider' : 'same_provider' if selected
+      # The implementation model in a fresh context is the last local option, unless it is itself
+      # unavailable; then no local review runs and the GitHub reviews are the review.
+      return 'same_model' unless implementers_unavailable?
+
+      'hosted_only'
     end
 
+    def reviewer_for(outcome, selected)
+      return identity(selected) if selected
+      return implementer if outcome == 'same_model'
+
+      nil
+    end
+
+    def implementers_unavailable? = @implementers.all? { |entry| unavailable?(entry) }
+
     def note(outcome, selected)
-      case outcome
-      when 'different_provider' then "Run #{identity(selected)}: a provider that did not implement this."
-      when 'same_provider'
-        "Run #{identity(selected)}: no other provider is available, and its context is still fresh."
-      else
-        "No listed reviewer is available. Run #{implementer} in a fresh context, which is a valid " \
-        'review, and the GitHub reviews still run on the pushed branch.'
-      end
+      format(NOTES.fetch(outcome), selected ? identity(selected) : implementer)
     end
 
     def unavailable?(entry)

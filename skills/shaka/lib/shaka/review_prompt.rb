@@ -63,8 +63,10 @@ module Shaka
 
     private
 
+    # An unset shell variable expands to an empty string, which would render `git diff main...`
+    # and an attestation line with no revision in it.
     def require_options!
-      missing = REQUIRED.find { |key| !@options.key?(key) }
+      missing = REQUIRED.find { |key| @options[key].to_s.strip.empty? }
       raise OptionParser::MissingArgument, "--#{missing} is required" if missing
     end
 

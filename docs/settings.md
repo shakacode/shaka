@@ -232,12 +232,15 @@ cannot run locally as well — one that runs on GitHub needs no local credential
 `shaka reviewer` applies the preference, so neither this document nor the workflow restates it:
 
 ```text
-shaka reviewer --root . --ref origin/main --implementer anthropic/claude
-shaka reviewer --root . --ref origin/main --implementer openai/codex --unavailable anthropic/claude
+shaka reviewer --root . --ref 889e4f1 --implementer anthropic/claude
+shaka reviewer --root . --ref 889e4f1 --implementer openai/codex --unavailable anthropic/claude
 ```
 
-It returns `different_provider`, `same_provider`, or `same_model`, with the reason it assigned every
-entry. None is an error.
+Pass the commit intake resolved, not a branch name: a remote-tracking ref moves, and the policy
+should be the snapshot the task started from.
+
+It returns `different_provider`, `same_provider`, `same_model`, or `hosted_only` when nothing can
+review locally, with the reason it assigned every entry. None is an error.
 [Choose a local reviewer](review.md#choose-a-local-reviewer) explains the outcomes and what counts
 as unavailable, and [invoke a reviewer locally](review.md#invoke-a-reviewer-locally) renders the
 reviewer's instructions.

@@ -41,8 +41,10 @@ class ReviewerSelectionTest < Minitest::Test
   end
 
   # The implementation model in a fresh context is a review, not a failure.
-  def test_falls_back_to_the_implementation_model_when_nothing_is_available
-    result = select(['anthropic/claude'], unavailable: %w[anthropic/claude openai/codex xai/grok])
+  def test_falls_back_to_the_implementation_model_when_nothing_listed_is_available
+    roster = [{ 'provider' => 'openai', 'model_family' => 'codex' },
+              { 'provider' => 'xai', 'model_family' => 'grok' }]
+    result = select(['anthropic/claude'], unavailable: %w[openai/codex xai/grok], reviewers: roster)
 
     assert_equal 'same_model', result.fetch('outcome')
     assert_equal 'anthropic/claude', result.fetch('reviewer')
@@ -76,6 +78,16 @@ class ReviewerSelectionTest < Minitest::Test
     assert_equal 'same provider as the implementation', reasons.fetch('anthropic/claude')
     assert_equal 'unavailable', reasons.fetch('openai/codex')
     assert_equal 'available', reasons.fetch('xai/grok')
+  end
+
+  # An implementer marked unavailable cannot review either, so no local review runs.
+  def test_reports_hosted_only_when_even_the_implementer_is_unavailable
+    result = select(['anthropic/claude'],
+                    unavailable: %w[anthropic/claude openai/codex xai/grok])
+
+    assert_equal 'hosted_only', result.fetch('outcome')
+    assert_nil result.fetch('reviewer')
+    assert_includes result.fetch('note'), 'no local review ran'
   end
 
   def test_requires_at_least_one_implementer

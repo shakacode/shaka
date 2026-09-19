@@ -52,8 +52,8 @@ shaka reviewer [--root DIR] [--ref REF] --implementer PROVIDER/FAMILY [--impleme
 ```
 
 Pass `--implementer` once per provider and model family that produced part of the change, counting
-a delegated worker. Pass `--ref` with the trusted commit you gave `seam check`, so the preference
-order comes from the default branch rather than the branch under review. Pass `--unavailable` for
+a delegated worker. Pass `--ref` with the immutable commit intake resolved and gave `seam check`, so the preference
+order comes from that snapshot rather than the branch under review or a ref that has since moved. Pass `--unavailable` for
 anything you have evidence cannot run: exhausted credits or quota, a provider outage, or no
 runnable job.
 
@@ -64,6 +64,7 @@ Three outcomes, none of them an error:
 | `different_provider` | Run this reviewer. Its provider did not implement the change. |
 | `same_provider` | Run this reviewer. No other provider is available, and its context is still fresh. |
 | `same_model` | Nothing listed is available. Run the implementation model in a fresh context, which is a valid review. |
+| `hosted_only` | Nothing can review locally, including the implementation model. Push and let the GitHub reviews review the branch, and say that no local review ran. |
 
 Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked
 provider. Missing local credentials for a provider are not a problem to solve here — if you have no
@@ -88,9 +89,9 @@ required, security, or trust check. A later fix invalidates affected review and 
 evidence, so re-review the changed head and rerun every check the repository requires.
 The active Shaka owner enforces this sequence and records its GitHub evidence. Seam validation
 checks configuration shape; it deliberately does not add the workflow ledger or policy engine
-excluded from this pilot. Likewise, `review.required: none` disables a repository-named gate,
-not R17's alternate-model baseline for meaningful implementation, which is why such a seam
-still carries its reviewer list.
+excluded from this pilot. Likewise, `review.required: none` disables a repository-named gate, not the adversarial review
+itself: a fresh session still reviews before the push, running the implementation model when that
+is what is available.
 
 ## Read public review prose safely
 
