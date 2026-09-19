@@ -39,6 +39,7 @@ These apply to the whole document, whatever the settings are.
 | `plan` | no | string | Repository-relative path to an existing file. |
 | `trusted_actions` | no | list of strings | Non-empty when present. |
 | `branches` | no | mapping | [Feature-branch layout](#branches). |
+| `recovery` | no | mapping | [Recovery note policy](#recovery). |
 
 Repository-relative means exactly that: an absolute path, a path that escapes the
 repository, or a symlink resolving outside it is rejected.
@@ -151,6 +152,25 @@ consumer's layout differs.
 `seam init` writes `branches.name` as `{login}-{host}/{issue}-{description}` so a new
 repository has an explicit layout. Change that string when the repo already names
 branches differently.
+
+## `recovery`
+
+Optional mapping. Its one key, `workspace_path`, is a boolean and defaults to `true` when
+the section or the key is absent. It governs the
+[recovery note](working-with-your-agent.md#recover-an-unfinished-pr) a pull request carries
+while it is unfinished.
+
+| Setting | Allowed values | Meaning |
+| --- | --- | --- |
+| `workspace_path` | `true` or `false` | `true` lets the note carry the checkout's path and the host session identifier. `false` tells the workflow to omit that field. The owner alias is published either way. Read the note below on what enforces this. |
+
+Set `workspace_path: false` where contributor paths are sensitive. `seam init` does not
+write the key, so a repository that says nothing gets the default.
+
+The setting tells the workflow what a recovery note may carry. The publisher does not yet
+refuse a note that ignores it, so today it binds the agent rather than the publication
+boundary. Enforcement belongs with the same trusted-seam reading the snapshot command
+introduces, and lands with it.
 
 ## What `seam init` writes
 

@@ -14,6 +14,19 @@ module Shaka
         value
       end
 
+      def mapping!(value, label)
+        raise Error, "#{label} must be a mapping" unless value.is_a?(Hash) && value.keys.all?(String)
+
+        value
+      end
+
+      def keys!(mapping, required, optional, label)
+        unknown = mapping.keys - required - optional
+        missing = required - mapping.keys
+        raise Error, "unknown key: #{unknown.first}" unless unknown.empty?
+        raise Error, "missing #{label} key: #{missing.first}" unless missing.empty?
+      end
+
       def enum!(value, allowed, message)
         raise Error, message unless allowed.include?(value)
       end
