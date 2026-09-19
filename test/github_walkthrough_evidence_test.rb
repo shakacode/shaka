@@ -107,4 +107,20 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
     published = github.walkthrough(head: HEAD, body: body)
     assert_equal 'COMMENTED', published['state']
   end
+
+  def test_walkthrough_pin_to_a_path_with_a_plus_sign_is_accepted
+    name = 'lib/a+b.rb'
+    body = "See https://github.com/owner/repo/blob/#{HEAD}/#{name}. Gates: validate, claude-review."
+    github = client(snapshot_response, files_response([name]), *gate_responses, html_response,
+                    review_response(body: body), review_response(body: body), snapshot_response)
+    published = github.walkthrough(head: HEAD, body: body)
+    assert_equal 'COMMENTED', published['state']
+  end
+
+  def test_walkthrough_requires_a_cancelled_required_check
+    cancelled = [{ 'name' => 'validate', 'state' => 'CANCELLED', 'bucket' => 'cancel' }]
+    github = client(snapshot_response, files_response, response(cancelled), response(cancelled))
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: "See #{PINNED_LINK}.") }
+    assert_includes error.message, 'validate'
+  end
 end

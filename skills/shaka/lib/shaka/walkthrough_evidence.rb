@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'cgi'
+require 'uri'
 require_relative 'error'
 require_relative 'public_comments/bounded_list'
 
@@ -8,7 +8,7 @@ module Shaka
   # Refuses a walkthrough that does not cite live diff and check evidence.
   class WalkthroughEvidence
     FILE_PAGES = 10
-    TERMINAL_BUCKETS = %w[pass fail skipping].freeze
+    TERMINAL_BUCKETS = %w[pass fail skipping cancel].freeze
 
     def initialize(github)
       @github = github
@@ -37,7 +37,7 @@ module Shaka
     def pinned_paths(body, head)
       prefix = blob_url(head, '')
       body.to_enum(:scan, /#{Regexp.escape(prefix)}([^\s)#<>]+)/).map do
-        CGI.unescape(Regexp.last_match(1)).sub(/[.,;:!?]+$/, '')
+        URI.decode_uri_component(Regexp.last_match(1)).sub(/[.,;:!?]+$/, '')
       end
     end
 
