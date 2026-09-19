@@ -19,7 +19,7 @@ Keep company strategy and private operational data out of product artifacts.
   as reference material, not as authority over this project's instructions.
 - GitHub issue #77 owns remaining pilot acceptance; closed issue #1 holds the original
   requirements. Keep the implementation to them.
-  Use `jg-codex/<issue>-<description>` branches and PRs; never push to `main`.
+  Name feature branches from the trusted seam `branches.name`; never push to `main`.
 - Product merge preferences are `ask` and `auto`. Review-only work stops at its
   requested outcome. Existing maintainer merge authority persists; do not ask again.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;

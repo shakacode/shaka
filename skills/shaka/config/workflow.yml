@@ -24,6 +24,11 @@ phases:
         delivery state on GitHub. Reading a tracker does not authorize updating it; do not create
         a duplicate issue. Link the work item from the PR only when sharing is authorized, and
         keep private task content and links out of public artifacts.
+      - For the issue, PR, or review thread the task answers, run the saved helper's `claim QUERY`
+        with that number. On a hit, report the open pull requests and remote branches and stop for
+        a decision unless the user already authorized a comparison or override. Do not open a
+        second PR. Use the reported `branch_name` when creating a branch; do not invent a personal
+        prefix.
       - If merge authority is unset and the task permits merging, ask early, combined with the task
         question when both are open, whether to merge when checks and required approvals pass or to
         bring the ready PR back for approval. Recommend a choice and default to Ask without an answer.
@@ -83,10 +88,14 @@ phases:
   - id: implement
     title: Implement
     body: |-
-      - Confirm destination and branch. Use a new worktree when the checkout is dirty or another
-        task occupies it; otherwise use a feature branch. Fetch the fresh base for new work; pull or
-        rebase an existing upstream. Preserve user work. Run candidate code only in the authorized
-        isolated checkout.
+      - Before any edit, claim the work item unless this task already reported a clear claim for it.
+      - Confirm destination and branch. Name the feature branch from the trusted seam
+        `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
+        `{host}`, `{issue}`, and `{description}`. If the seam omits `branches`, use
+        `{login}-{host}/{issue}-{description}`. Use a new worktree when the checkout is dirty or
+        another task occupies it; otherwise use a feature branch. Fetch the fresh base for new
+        work; pull or rebase an existing upstream. Preserve user work. Run candidate code only in
+        the authorized isolated checkout.
       - Choose routine, reversible approaches yourself. Ask consequential questions with a
         recommendation, await required answers before dependent work, and continue independent work
         meanwhile. Retain decisions in the task or PR within its privacy; silence is not approval.
