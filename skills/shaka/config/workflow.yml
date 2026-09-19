@@ -118,11 +118,14 @@ phases:
         it as unknown.
       - Never defer always-on required, security, or trust checks.
       - Record commands, results, and the tested revision. Fix failures and reverify changed heads.
+      - Commit the validated change before reviewing it. The reviewer reads `git diff BASE...HEAD`,
+        so the work has to be a revision it can name and attest to; the push waits for Explain.
       - Meaningful implementation gets an adversarial review before you push, and its findings
         fixed first, so the pushed branch costs fewer CI runs and review rounds. What makes the
         review adversarial is the context, not the model: a fresh session that did not produce the
         change is a valid reviewer, including one running the implementation model. Trivial prose
-        or no-op work may omit review with a recorded reason.
+        or no-op work may omit review with a recorded reason. Fixing a finding changes the head, so
+        revalidate and review the new one.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
         comes from the default branch. Pass `--implementer` once per provider and model family that
@@ -141,12 +144,12 @@ phases:
         [verification guide](<{{package_root}}/docs/verification.md>) when deciding what evidence a
         change needs.
     done_when: >-
-      Validation passed on the exact head you will publish, and the local adversarial review either
-      ran with its findings handled or reported that nothing could review locally.
+      The change is committed, validation passed on that exact head, and the local adversarial
+      review either ran with its findings handled or reported that nothing could review locally.
   - id: explain
     title: Explain
     body: |-
-      - Commit and push the verified head, then open or adopt its PR. Use trusted `gh` for authorized
+      - Push the reviewed head, then open or adopt its PR. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.

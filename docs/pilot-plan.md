@@ -49,7 +49,7 @@ This record defines the current product, not proof that acceptance is complete.
 - **D6 (R10):** runtime uses Ruby standard libraries. Development uses Bundler,
   Minitest, and ordinary RuboCop defaults through `bin/validate`.
 - **D7 (R2, R12, R17):** repository seams own CI commands and triggers. Shaka orders
-  alternate-model review before optional staged hosted CI without copying a consumer's
+  the adversarial review before optional staged hosted CI without copying a consumer's
   label machinery or weakening current-head gates.
 - **D8 (R18):** the seam carries reviewer preference as ordered data, `shaka reviewer` applies it,
   and `shaka review-prompt` creates the fresh context that makes a review adversarial. No scheduler,

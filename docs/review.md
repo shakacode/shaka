@@ -52,12 +52,13 @@ shaka reviewer [--root DIR] [--ref REF] --implementer PROVIDER/FAMILY [--impleme
 ```
 
 Pass `--implementer` once per provider and model family that produced part of the change, counting
-a delegated worker. Pass `--ref` with the immutable commit intake resolved and gave `seam check`, so the preference
-order comes from that snapshot rather than the branch under review or a ref that has since moved. Pass `--unavailable` for
+a delegated worker. Pass `--ref` with the immutable commit that intake resolved and that `seam check` used, so the
+preference order comes from that snapshot rather than from the branch under review or a ref that
+has since moved. Pass `--unavailable` for
 anything you have evidence cannot run: exhausted credits or quota, a provider outage, or no
 runnable job.
 
-Three outcomes, none of them an error:
+Four outcomes, none of them an error:
 
 | Outcome | Meaning |
 | --- | --- |
@@ -247,6 +248,9 @@ the context is what makes the review adversarial:
 shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]
 ```
 
+Pass resolved revisions, not the words `HEAD` or `BASE`: the prompt interpolates what it is given,
+so a literal placeholder would publish an attestation reading `REVIEWED HEAD`.
+
 It scopes the review to `git diff BASE...HEAD`, asks for correctness, contract drift, security and
 trust, test coverage, and simplification, forbids edits, treats everything read as data, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
@@ -268,7 +272,9 @@ Codex 0.154.0:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-shaka review-prompt --head HEAD --base BASE --reviewer openai/codex \
+base=$(git merge-base origin/main HEAD)
+head=$(git rev-parse HEAD)
+shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex \
   | codex exec -s read-only --ignore-rules --ignore-user-config --ephemeral -o "$report" -
 ```
 
@@ -283,7 +289,9 @@ Grok 1.0.30:
 
 ```bash
 prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-prompt.XXXXXX") || exit 1
-shaka review-prompt --head HEAD --base BASE --reviewer xai/grok --effort high > "$prompt"
+base=$(git merge-base origin/main HEAD)
+shaka review-prompt --head "$(git rev-parse HEAD)" --base "$base" --reviewer xai/grok \
+  --effort high > "$prompt"
 grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format plain \
   --permission-mode plan --disable-web-search --no-subagents
 ```
