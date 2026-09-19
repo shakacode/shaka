@@ -241,17 +241,81 @@ label a mixed contribution as AI-edited rather than claiming authorship of it al
 
 Use short headings for the change and its user impact. When discussing a workflow,
 name it (such as “the `$shaka` PR skill”) instead of saying “the skill” without context.
-Link to the current code walkthrough
-and review result; do not repeat their complete contents. Show decisions, blockers,
+Link to the current code walkthrough and review result. Show decisions, blockers,
 and missing required review prominently. Put supporting validation, optional review
 history, routine rollback, and usage in clearly labeled details. The description
 helper requires a check table and usage details that include the usage helper's
 tables; it refuses a prose restatement of usage.
 
+### Why the description and the walkthrough differ
+
+A later reader meets the description first and reaches the walkthrough only by working
+back through this PR. The description heads the merged PR, turns up in search, and is
+maintained to describe the current head; whether it also reaches the commit body depends
+on the repository's squash-message setting, so do not assume `git log` carries it. The
+walkthrough stays readable after merge, but it is bound to one commit that a later head
+supersedes.
+
+The two also meet readers in different postures. The description meets someone deciding
+whether to merge, who may never open the diff. The walkthrough meets someone who has
+already decided to read the code. So the description answers what changed for whom and
+whether to trust it, and the walkthrough answers why the code looks like this.
+
+Both facts point the same way, and the `explain` step states the resulting rule: the
+description carries what a reader needs without working through the PR, and the
+walkthrough carries the reasoning. A few subjects belong in both at different
+resolutions, which is why the rule says to share the subject and never the sentences.
+Copied prose is a staleness bug rather than mere repetition, because republishing the
+walkthrough at a new head refreshes one copy and leaves the other one wrong.
+
+Three questions settle most of what the rule leaves open. They serve the reader-need rule
+rather than replace it, so when two of them disagree, ask which reader needs the fact and
+follow that answer:
+
+- Would a reader need this a year from now, from the merged PR alone? Put it in the description.
+- Does it change whether to merge, or what to do afterward? Description. Does it only change
+  how quickly the diff makes sense? Walkthrough.
+- Does it need a file path or a line number to make sense? Walkthrough.
+
+Durability and a file reference do not settle it by themselves. A rollback a maintainer
+runs without reading the code belongs to the description, while an architectural tradeoff
+that explains why the code looks this way belongs to the walkthrough, though both last and
+both name files.
+
+Whatever those answers, each artifact needs its own purpose sentence, because a reader may
+open either one without the other. That much overlap is required rather than wasteful.
+
+A walkthrough earns its length from the change, not from the writer. Cover every change
+completely and stop; a long walkthrough for a small diff costs a reader more than the
+diff would have.
+
+### How a walkthrough is ordered
+
+The [portable baseline](#writing-preferences) already asks a walkthrough to explain the
+earlier behavior and the new capability before files or diff mechanics, and shows the
+difference. Ordering decides what follows that opening.
+
+Order the rest so that each change prepares the next, rather than by file name or commit
+order. That usually means contract, data model, or interface changes first, then core
+behavior, then integrations, UI, and operational wiring, and finally tests, documentation,
+migrations, and generated artifacts. Reorder when the change itself demands it. The outcome
+headline stays in the description; a walkthrough leads with the behavior that changed, which
+is what its own reader notices.
+
+Separate mechanical movement, generated output, dependency bumps, and formatting from the
+changes that alter behavior, so churn does not hide the reason for the work.
+
+Define an unfamiliar domain term the first time it appears, and cover the concerns that
+matter rather than emitting a heading for each one; a walkthrough that fills in a form
+teaches nobody anything.
+
 ### Keep one current walkthrough
 
 Update the existing walkthrough for wording changes at the same revision. A new
-commit needs a walkthrough attached to that commit. After publishing and confirming
+commit needs a walkthrough attached to that commit. Write that one for the new head
+instead of adding to the old body. Review history belongs in the description's
+details, so a walkthrough that grows a paragraph each round stops explaining the
+change and starts logging the process. After publishing and confirming
 its link, try to edit your older walkthroughs using trusted GitHub tools: show “Superseded — read the current
 walkthrough” with that link, then preserve the old body inside `<details>` labeled
 with its original revision. Update the PR description's link. Do not relabel old
@@ -276,7 +340,7 @@ Without any repository setting, Shaka writes to a portable baseline. Before it
 publishes a PR description, walkthrough, or final response, it rereads each summary
 and checks these points:
 
-- The first sentence names the outcome a reader will notice, not the diff.
+- The first sentence names the outcome its reader will notice, not the diff.
 - Each sentence carries one main idea when practical.
 - A condition sits next to the behavior it limits.
 - Sentences have a clear subject and an active verb.
