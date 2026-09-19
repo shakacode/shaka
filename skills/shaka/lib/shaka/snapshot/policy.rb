@@ -32,7 +32,9 @@ module Shaka
 
       private
 
-      def empty_remote? = ask('ls-remote', '--heads', @remote).strip.empty?
+      # Every ref counts here, not only heads: a remote holding just a tag has published
+      # something, so it is not the brand-new repository that keeps the default.
+      def empty_remote? = ask('ls-remote', @remote).strip.empty?
 
       # A remote holding branches must say which one is authoritative. An unadvertised or
       # dangling HEAD leaves the seam unread, which is not the same as having no contract.

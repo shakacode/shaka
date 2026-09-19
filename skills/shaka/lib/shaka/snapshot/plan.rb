@@ -54,12 +54,15 @@ module Shaka
         @changes ||= Changes.new(@git.call('status', '--porcelain', '-uall', '-z').split(SEPARATOR))
       end
 
-      # A conflicted path can be reported as deleted while the file is still on disk. A
-      # directory that took the deleted file's name is not that file, and adding it would
-      # stage the children the checkout ignores.
+      # A conflicted path can be reported as deleted while the resolution is still on disk,
+      # and a symlink is a resolution like any other, including a broken one or one naming a
+      # directory. A directory that took the deleted file's name is not that file, though,
+      # and adding it would stage the children the checkout ignores.
       def surviving
-        @surviving ||= changes.removed.select { |path| File.file?(File.join(@root, path)) }
+        @surviving ||= changes.removed.select { |path| resolved?(File.join(@root, path)) }
       end
+
+      def resolved?(path) = File.symlink?(path) || File.file?(path)
 
       # The push carries every object the snapshot's parent needs, so name that history.
       # A branch the remote has never seen still has commits nobody published.

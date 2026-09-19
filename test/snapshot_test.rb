@@ -158,9 +158,7 @@ module SnapshotRepository
 
   def run_snapshot(work, *arguments)
     output = nil
-    Dir.chdir(work) do
-      output = capture_io { assert_equal 0, Shaka::Snapshot.new(arguments).run }.first
-    end
+    isolated { Dir.chdir(work) { output = capture_io { assert_equal 0, Shaka::Snapshot.new(arguments).run }.first } }
     JSON.parse(output)
   end
 
@@ -184,8 +182,14 @@ module SnapshotRepository
 
   def push_snapshot(work, digest, *extra)
     result = nil
-    Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', digest] + extra) } }
+    isolated { Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', digest] + extra) } } }
     result
+  end
+
+  def without_identity(work, *fields)
+    fields.each { |field| git(work, 'config', '--unset', field) }
+    git(work, 'config', 'user.useConfigOnly', 'true')
+    write(work, 'research.md' => "half an idea\n")
   end
 
   def commit_all(work, message)
@@ -220,12 +224,27 @@ module SnapshotRepository
     git(work, 'checkout', '--quiet', '-b', 'feature')
   end
 
+  # The machine's own git configuration must not decide what these tests prove. A global
+  # ignore rule, a default branch name, or a configured identity would otherwise make a
+  # fixture mean something different here than it does on a runner.
+  ISOLATED = { 'GIT_CONFIG_GLOBAL' => File::NULL, 'GIT_CONFIG_SYSTEM' => File::NULL }.freeze
+
   def git(directory, *argv, index: nil)
-    environment = index ? { 'GIT_INDEX_FILE' => index } : {}
+    environment = ISOLATED.merge(index ? { 'GIT_INDEX_FILE' => index } : {})
     output, error, status = Open3.capture3(environment, 'git', '-C', directory, *argv)
     raise "git #{argv.first} failed: #{error}" unless status.success?
 
     output
+  end
+
+  # The command shells out to git itself, so it needs the same isolation.
+  def isolated
+    previous = ENV.to_h.slice(*ISOLATED.keys)
+    ENV.update(ISOLATED)
+    yield
+  ensure
+    ISOLATED.each_key { |key| ENV.delete(key) }
+    ENV.update(previous)
   end
 end
 
@@ -293,10 +312,23 @@ class SnapshotTest < Minitest::Test
       File.write(File.join(work, '.agents/agent-workflow.yml'), "---\nrecovery:\n  snapshot: false\n")
 
       result = nil
-      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push']) } }
+      isolated { Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push']) } } }
 
       assert_equal 1, result
       assert_empty remote_branches(work)
+    end
+  end
+
+  # A delete/modify conflict resolved to a symlink, which the status still calls deleted.
+  def test_a_conflict_resolved_to_a_symlink_is_published
+    in_repository do |work|
+      File.symlink('missing-target', File.join(work, 'link'))
+      runner = ->(*argv, **rest) { argv.first == 'status' ? "UD link\0" : git(work, *argv, **rest) }
+
+      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote: 'origin',
+                                       remote_head: '', git: runner).to_h
+
+      assert_equal [['link'], []], plan.values_at('adds', 'removes')
     end
   end
 
@@ -317,7 +349,7 @@ class SnapshotTest < Minitest::Test
       write(work, 'research.md' => "half an idea\n")
 
       result = nil
-      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push']) } }
+      isolated { Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push']) } } }
 
       assert_equal 1, result
       assert_empty remote_branches(work)
@@ -331,7 +363,7 @@ class SnapshotTest < Minitest::Test
       write(work, 'later.md' => "arrived after the plan\n")
 
       result = nil
-      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', digest]) } }
+      isolated { Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', digest]) } } }
 
       assert_equal 1, result
       assert_empty remote_branches(work)
@@ -407,10 +439,16 @@ class SnapshotHistoryTest < Minitest::Test
 
   def test_a_checkout_without_a_git_identity_still_publishes
     in_repository do |work|
-      git(work, 'config', '--unset', 'user.email')
-      git(work, 'config', '--unset', 'user.name')
-      git(work, 'config', 'user.useConfigOnly', 'true')
-      write(work, 'research.md' => "half an idea\n")
+      without_identity(work, 'user.email', 'user.name')
+
+      assert_equal true, publish_snapshot(work)['published']
+    end
+  end
+
+  # Git needs both fields, so half a configuration must not read as a whole one.
+  def test_a_checkout_with_only_half_an_identity_still_publishes
+    in_repository do |work|
+      without_identity(work, 'user.name')
 
       assert_equal true, publish_snapshot(work)['published']
     end
@@ -440,7 +478,7 @@ class SnapshotBoundaryTest < Minitest::Test
       write(work, 'research.md' => "half an idea\n")
 
       result = nil
-      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } }
+      isolated { Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } } }
 
       assert_equal 1, result
       refute_includes remote_branches(work).join, 'wip/'
@@ -454,7 +492,7 @@ class SnapshotBoundaryTest < Minitest::Test
       write(work, 'research.md' => "half an idea\n")
 
       result = nil
-      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } }
+      isolated { Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } } }
 
       assert_equal 1, result
       refute_includes remote_branches(work).join, 'wip/'
@@ -476,7 +514,7 @@ class SnapshotBoundaryTest < Minitest::Test
       write(work, 'research.md' => "half an idea\n")
 
       result = nil
-      Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } }
+      isolated { Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } } }
 
       assert_equal 1, result
       refute_includes remote_branches(work).join, 'wip/'
@@ -530,7 +568,7 @@ class SnapshotPolicyTest < Minitest::Test
   TIP = '1111111111111111111111111111111111111111'
 
   def test_a_failed_fetch_is_not_read_as_a_repository_without_a_seam
-    git = stub_remote('ls-remote --heads origin' => "#{TIP}\trefs/heads/main\n",
+    git = stub_remote('ls-remote origin' => "#{TIP}\trefs/heads/main\n",
                       'ls-remote --symref origin HEAD' => "ref: refs/heads/main\tHEAD\n",
                       'ls-remote origin refs/heads/main' => "#{TIP}\trefs/heads/main\n",
                       'fetch --quiet origin refs/heads/main' => Shaka::Error.new('could not read from remote'))
@@ -541,7 +579,7 @@ class SnapshotPolicyTest < Minitest::Test
   end
 
   def test_a_default_branch_without_a_seam_keeps_the_default
-    git = stub_remote('ls-remote --heads origin' => "#{TIP}\trefs/heads/main\n",
+    git = stub_remote('ls-remote origin' => "#{TIP}\trefs/heads/main\n",
                       'ls-remote --symref origin HEAD' => "ref: refs/heads/main\tHEAD\n",
                       'ls-remote origin refs/heads/main' => "#{TIP}\trefs/heads/main\n",
                       'fetch --quiet origin refs/heads/main' => '',
@@ -553,7 +591,17 @@ class SnapshotPolicyTest < Minitest::Test
   end
 
   def test_a_remote_with_branches_but_no_advertised_head_refuses
-    git = stub_remote('ls-remote --heads origin' => "#{TIP}\trefs/heads/main\n",
+    git = stub_remote('ls-remote origin' => "#{TIP}\trefs/heads/main\n",
+                      'ls-remote --symref origin HEAD' => "\n")
+
+    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git:)
+
+    assert_raises(Shaka::Error) { policy.allows_snapshot? }
+  end
+
+  def test_a_remote_advertising_only_a_tag_must_still_name_its_default_branch
+    git = stub_remote('ls-remote origin' => "#{TIP}\trefs/tags/v1\n",
+                      'ls-remote --heads origin' => "\n",
                       'ls-remote --symref origin HEAD' => "\n")
 
     policy = Shaka::Snapshot::Policy.new(remote: 'origin', git:)
@@ -562,7 +610,7 @@ class SnapshotPolicyTest < Minitest::Test
   end
 
   def test_a_remote_that_advertises_nothing_keeps_the_default
-    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git: stub_remote('ls-remote --heads origin' => "\n"))
+    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git: stub_remote('ls-remote origin' => "\n"))
 
     assert_equal true, policy.allows_snapshot?
   end

@@ -41,8 +41,11 @@ module Shaka
 
       def identity = configured_identity? ? {} : IDENTITY
 
-      def configured_identity?
-        !@git.call('config', '--get', 'user.email').strip.empty?
+      # Git needs both fields, so a host that set only one has not configured an identity.
+      def configured_identity? = %w[user.name user.email].all? { |field| configured?(field) }
+
+      def configured?(field)
+        !@git.call('config', '--get', field).strip.empty?
       rescue Error
         false
       end
