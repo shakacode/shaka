@@ -27,7 +27,8 @@ This record defines the current product, not proof that acceptance is complete.
 | R14 | Verify the failure and the visible result. | For behavior changes, observe a meaningful failing test, make it pass, then refactor. Use the repo's tools. If automation is impractical, explain and capture before/after behavior. Visible changes need inspected, safe, reviewer-accessible screenshots tied to the tested revision; add video when timing or interaction matters. See [verification](verification.md). |
 | R15 | Know when a finished chat can be archived. | In a user-facing chat whose host format permits prose, end a genuinely finished task's complete final report with exactly `This chat is ready for archiving.` Do not use the sentence while work, a blocker, a handoff, or a decision remains. Preserve machine-only response formats that forbid trailing prose. |
 | R16 | Recover an unfinished PR without its conversation. | While a PR has not reached its outcome, its description keeps a [recovery note](working-with-your-agent.md#recover-an-unfinished-pr) as a collapsed `WIP Details` disclosure with owner, task, thread, last observed activity, revision, workspace, unfinished work, stopped because, merge authority, state, and next action. Remove the disclosure only after GitHub confirms the outcome. Its `Thread` field follows that recovery note's publication rule, and its workspace field is published unless the seam sets `recovery.workspace_path` to `false`. A fresh task takes over only after the maintainer confirms the previous task stopped or is handing over. It then reads the live head, publishes a complete note with a new random owner tag before any other work, rechecks checks, review, and authority, preserves reachable local work, and marks unreachable local work UNKNOWN. A resuming task that finds another owner or tag keeps its local work unpushed, reports it, and stops. The note grants no authority; the maintainer's confirmation, not the note, prevents two writers. No heartbeat, lease, or coordination service. |
-| R17 | Catch implementation mistakes before spending broad CI time. | Meaningful implementation gets one visible independent review from a different model family, preferably a different provider. When a repository explicitly stages expensive hosted CI, review and batch fixes on the candidate before triggering those suites. Always-on required, security, and trust checks remain immediate; changed heads need fresh affected evidence. |
+| R17 | Catch mistakes before spending CI and reviewer time. | Meaningful implementation gets an adversarial review before the branch is pushed, and its findings are fixed first, so the pushed branch costs fewer CI runs and review rounds. When a repository stages expensive hosted CI, review and batch fixes before triggering those suites. Always-on required, security, and trust checks remain immediate; changed heads need fresh affected evidence. |
+| R18 | Always have a reviewer available. | What makes a review adversarial is the context, not the model: a fresh session that did not produce the change is a valid reviewer, including one running the implementation model. `review.reviewers` lists local reviewers in preference order and `shaka reviewer` prefers a provider that did not implement the change, moving past anything evidenced unavailable. No input is an error: with nothing listed available the implementation model in a fresh context reviews, and the GitHub reviews still run on the pushed branch. Each reviewer and revision is recorded in the chat and the PR review status line. See [review](review.md#choose-a-local-reviewer). |
 
 ## Design
 
@@ -48,8 +49,11 @@ This record defines the current product, not proof that acceptance is complete.
 - **D6 (R10):** runtime uses Ruby standard libraries. Development uses Bundler,
   Minitest, and ordinary RuboCop defaults through `bin/validate`.
 - **D7 (R2, R12, R17):** repository seams own CI commands and triggers. Shaka orders
-  alternate-model review before optional staged hosted CI without copying a consumer's
+  the adversarial review before optional staged hosted CI without copying a consumer's
   label machinery or weakening current-head gates.
+- **D8 (R18):** the seam carries reviewer preference as ordered data, `shaka reviewer` applies it,
+  and `shaka review-prompt` creates the fresh context that makes a review adversarial. No scheduler,
+  retry queue, or provider credit ledger enters this pilot.
 
 The skill is `skills/shaka/SKILL.md`; CLI dispatch is `skills/shaka/scripts/shaka`.
 Small modules live in `skills/shaka/lib/shaka/`, behavioral tests in `test/`,
@@ -100,6 +104,8 @@ unchanged. The current helper performs immediate squash merges while the task is
   the current head, honor native approvals, and verify protected merge behavior.
 - Exercise one meaningful Codex implementation with a visible Claude or Grok review,
   and one consumer's staged hosted-CI path with review fixes completed before dispatch.
+- Exercise one recorded substitution: a listed reviewer unavailable on evidence, the
+  next provider's review completed, and both records present in the chat and the PR.
 - A new user follows [getting started](getting-started.md) in a fresh Codex task
   and reaches a PR without needing another guide. Record the trial on issue #77.
 - Interrupt a real unfinished PR, then continue it once from its recovery note in the
