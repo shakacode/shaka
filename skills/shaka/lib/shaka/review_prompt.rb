@@ -35,8 +35,7 @@ module Shaka
       head: ['--head SHA', 'Revision under review'],
       base: ['--base REF', 'Base the change is measured against'],
       reviewer: ['--reviewer ID', 'PROVIDER/FAMILY that will review'],
-      effort: ['--effort NAME', 'Reasoning effort the reviewer will run with'],
-      repository: ['--repository NAME', 'OWNER/REPO for the heading']
+      effort: ['--effort NAME', 'Reasoning effort the reviewer will run with']
     }.freeze
 
     def self.run(arguments)
@@ -74,11 +73,9 @@ module Shaka
     end
 
     def heading
-      lines = ['You are reviewing a change you did not write. Do not implement anything.', '']
-      lines << "REPOSITORY: #{@options[:repository]}" if @options[:repository]
-      lines << "BASE: #{base}          HEAD: #{head}"
-      lines << "REVIEWER: #{reviewer}, reasoning effort #{effort}"
-      lines.join("\n")
+      ['You are reviewing a change you did not write. Do not implement anything.', '',
+       "BASE: #{base}          HEAD: #{head}",
+       "REVIEWER: #{reviewer}, reasoning effort #{effort}"].join("\n")
     end
 
     def scope

@@ -298,7 +298,7 @@ Render its instructions rather than writing them each time:
 
 ```text
 shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]
-                    [--repository OWNER/REPO] [--self-review]
+                    [--self-review]
 ```
 
 The rendered prompt scopes the review to `git diff BASE...HEAD`, asks for correctness, contract
