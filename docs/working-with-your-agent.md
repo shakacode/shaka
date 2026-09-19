@@ -55,9 +55,25 @@ writing a model name in a prompt does not change the runner.
 Measure total planning, implementation, retries, and review, not just one attempt.
 
 One owner works solo by default. Meaningful implementation still gets one visible
-review from a different model family, preferably a different provider. For example,
-Claude or Grok reviews Codex implementation; a second Codex session does not satisfy
-that gate. A separate planning task is optional. Ask `$shaka` to plan only when scope
+review from a different model family, and from a different provider whenever one is
+available, taken in order from the seam's `review.reviewers` list. For example, Claude
+or Grok reviews Codex implementation; a second Codex session does not satisfy that gate.
+If the preferred provider is out of credits, the agent moves to the next provider at
+once and tells you which reviewer it used instead and why. If no other provider is
+available, it uses a different model family from the same provider and says the review
+was same-provider, rather than stopping.
+
+You do not need an API key or login for a second provider. If your alternate reviewer runs
+on GitHub, the agent pushes the branch and uses that review, which is an ordinary path and
+not a fallback. It prefers to get the review before pushing and before broad CI runs, but
+that is an intent rather than a rule, and a GitHub-hosted reviewer necessarily reviews after
+the push. When no qualifying reviewer can run locally, the agent may make a cheap self-review pass
+first: a different model inside a contributing family, with raised reasoning effort and
+adversarial instructions. It will say that is a self-review pass, not a review, because a
+model family reviewing its own change never satisfies the gate. When every listed reviewer shares a
+contributing family, the agent looks for an authorized reviewer outside the list rather than
+stopping. It reports a blocker only when no reviewer of a non-contributing model family can
+actually review, listed or not. A separate planning task is optional. Ask `$shaka` to plan only when scope
 or a handoff needs thought; it returns the plan without an implementation checkpoint.
 Its output should name the task, recommended model/effort, acceptance, affected paths,
 checks, merge authority, and stopping point. Do not copy the whole planning conversation.

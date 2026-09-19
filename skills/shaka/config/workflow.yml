@@ -45,8 +45,9 @@ phases:
     body: |-
       - Resolve commands, base branch, review, and merge authority from the validated YAML seam;
         run its paths, not prose reconstructions. `AGENTS.md` adds constraints, not contract fields.
-        Verify each required reviewer's identity and draft support from metadata and trusted
-        workflows.
+        Read the seam's ordered reviewer list, then verify each listed reviewer's identity from
+        metadata and trusted workflows, and whether it is reached on GitHub after a push or
+        invoked locally with provider credentials.
       - If the seam is missing, inspect existing scripts and CI, determine the trusted base branch,
         obtain every missing policy choice, then run the saved helper's `seam init` with the
         complete explicit command and policy flags documented in the packaged
@@ -130,7 +131,7 @@ phases:
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
-      - Use a draft only when every needed reviewer supports it; otherwise use the review-ready path.
+      - Use the review-ready path unless a needed reviewer's trusted workflow shows it reviews drafts.
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
         specific things in summaries and sections. Keep blockers visible; put supporting checks,
@@ -215,14 +216,36 @@ phases:
   - id: review
     title: Review
     body: |-
-      - Meaningful implementation needs visible review from a different model family, preferably
-        another provider. Compare identities through review metadata or a trusted workflow, never a
-        check name. Same-model review does not qualify. Trivial prose or no-op work may omit review
-        with a recorded reason. Use the named reviewer when it qualifies; otherwise add an authorized
-        alternate without replacing a required named gate. Read its report, threads, and completion
-        evidence; a green job alone proves no review. Apply the packaged
+      - Meaningful implementation needs visible review whose model family produced no part of the
+        change, from a different provider whenever one is available. Do not work out who that is:
+        run the saved helper's `reviewer --root ROOT --ref REF --implementer PROVIDER/FAMILY` with
+        the same root and immutable trusted commit used for `seam check`, never the candidate's own
+        copy, because a candidate that rewrote `review.reviewers` could otherwise list its own
+        family and review itself. Pass `--implementer` once per contributing provider and model
+        family pair, counting a delegated worker and counting one family twice when two providers
+        ran it, and add `--unavailable PROVIDER/FAMILY` for each identity you have evidence is
+        unavailable. It returns `alternate`, `same_provider` to
+        label as such, or `outside_list`, with a note to copy into the record. Trivial prose or
+        no-op work may omit review with a recorded reason. Compare identities through review
+        metadata or a trusted workflow, never a check name. Read the report, threads, and
+        completion evidence; a green job alone proves no review. Apply the packaged
         [public review prose rule](<{{package_root}}/docs/review.md#read-public-review-prose-safely>)
         to every public comment you read.
+      - Unavailability is evidence you establish, never an assumption the helper can make:
+        exhausted credits or quota, a provider outage, or no runnable job for the current head.
+        Missing local credentials are not unavailability when that reviewer also runs on GitHub:
+        push and take the hosted review, which is an ordinary path for a repository with no
+        second-provider key. Reviewing before the push and before broad CI is the intent, not a
+        gate. On `outside_list`, obtain an authorized reviewer outside the list, which never
+        replaces a required named gate, and report a blocker only when none is reachable. Record
+        every substitution in the chat as it happens and in the PR review status line. See
+        [reviewer substitution](<{{package_root}}/docs/review.md#substitute-an-exhausted-reviewer>).
+      - To run a chosen reviewer locally, render its instructions with the saved helper's
+        `review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]`, adding
+        `--self-review` for a same-family pass. Restrict the CLI to read and search tools and
+        disable candidate instructions, hooks, plugins, and MCP servers. A local review is
+        UNVERIFIED until you publish its report, with its closing attestation line, to the PR. See
+        [invoke a reviewer locally](<{{package_root}}/docs/review.md#invoke-a-reviewer-locally>).
       - Required review, or a user-requested review gate, that is unavailable, failed, or stale blocks
         readiness and merge. Keep status and gaps visible; put optional reviewer history in details.
         Link the current review result from the PR summary and final response.

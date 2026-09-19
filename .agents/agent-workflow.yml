@@ -15,9 +15,15 @@ commands:
 review:
   required: meaningful_changes
   check: claude-review
-  model_family: claude
-  provider: anthropic
-  draft: false
+  # Ordered reviewer preference. `shaka reviewer` chooses from this list; the rule lives in
+  # docs/settings.md#reviewreviewers, so do not restate it here.
+  reviewers:
+    - provider: anthropic
+      model_family: claude
+    - provider: openai
+      model_family: codex
+    - provider: xai
+      model_family: grok
 # Merge authority and method for a finished pull request.
 merge:
   preference: ask

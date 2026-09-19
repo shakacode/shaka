@@ -27,7 +27,8 @@ This record defines the current product, not proof that acceptance is complete.
 | R14 | Verify the failure and the visible result. | For behavior changes, observe a meaningful failing test, make it pass, then refactor. Use the repo's tools. If automation is impractical, explain and capture before/after behavior. Visible changes need inspected, safe, reviewer-accessible screenshots tied to the tested revision; add video when timing or interaction matters. See [verification](verification.md). |
 | R15 | Know when a finished chat can be archived. | In a user-facing chat whose host format permits prose, end a genuinely finished task's complete final report with exactly `This chat is ready for archiving.` Do not use the sentence while work, a blocker, a handoff, or a decision remains. Preserve machine-only response formats that forbid trailing prose. |
 | R16 | Recover an unfinished PR without its conversation. | While a PR has not reached its outcome, its description keeps a [recovery note](working-with-your-agent.md#recover-an-unfinished-pr) as a collapsed `WIP Details` disclosure with owner, task, thread, last observed activity, revision, workspace, unfinished work, stopped because, merge authority, state, and next action. Remove the disclosure only after GitHub confirms the outcome. Its `Thread` field follows that recovery note's publication rule, and its workspace field is published unless the seam sets `recovery.workspace_path` to `false`. A fresh task takes over only after the maintainer confirms the previous task stopped or is handing over. It then reads the live head, publishes a complete note with a new random owner tag before any other work, rechecks checks, review, and authority, preserves reachable local work, and marks unreachable local work UNKNOWN. A resuming task that finds another owner or tag keeps its local work unpushed, reports it, and stops. The note grants no authority; the maintainer's confirmation, not the note, prevents two writers. No heartbeat, lease, or coordination service. |
-| R17 | Catch implementation mistakes before spending broad CI time. | Meaningful implementation gets one visible independent review from a different model family, preferably a different provider. When a repository explicitly stages expensive hosted CI, review and batch fixes on the candidate before triggering those suites. Always-on required, security, and trust checks remain immediate; changed heads need fresh affected evidence. |
+| R17 | Catch implementation mistakes before spending broad CI time. | Meaningful implementation gets one visible independent review from a different model family, and a different provider whenever one is available, taken from the seam's ordered reviewer list under R18. When a repository explicitly stages expensive hosted CI, review and batch fixes on the candidate before triggering those suites. Always-on required, security, and trust checks remain immediate; changed heads need fresh affected evidence. |
+| R18 | Keep independent review available when a provider runs out. | `review.reviewers` is an ordered preference list of `provider` and `model_family` identities. `shaka reviewer` chooses from it, excluding every model family and provider that contributed the change including a delegated worker's, and returns the qualifying reviewer, the same-provider floor to label as such, or no listed candidate. The agent supplies unavailability as evidence — exhausted credits or quota, an outage, or no runnable job — and moves on immediately rather than waiting or retrying. A reviewer reached on GitHub needs no local credentials, so missing local credentials are not unavailability and pre-push review is an intent rather than a gate. With no listed candidate the owner obtains an authorized reviewer outside the list, which never replaces a required named gate, and reports a blocker only when none is reachable. Each substitution is recorded in the chat and in the PR review status line. See [review](review.md#substitute-an-exhausted-reviewer). |
 
 ## Design
 
@@ -50,6 +51,10 @@ This record defines the current product, not proof that acceptance is complete.
 - **D7 (R2, R12, R17):** repository seams own CI commands and triggers. Shaka orders
   alternate-model review before optional staged hosted CI without copying a consumer's
   label machinery or weakening current-head gates.
+- **D8 (R18):** the seam carries reviewer preference as ordered data, `shaka reviewer` computes
+  the choice from it, and the agent supplies the evidence and records the decision. Markdown
+  states what the outcomes mean, not how they are derived. No scheduler, retry queue, or
+  provider credit ledger enters this pilot.
 
 The skill is `skills/shaka/SKILL.md`; CLI dispatch is `skills/shaka/scripts/shaka`.
 Small modules live in `skills/shaka/lib/shaka/`, behavioral tests in `test/`,
@@ -100,6 +105,8 @@ unchanged. The current helper performs immediate squash merges while the task is
   the current head, honor native approvals, and verify protected merge behavior.
 - Exercise one meaningful Codex implementation with a visible Claude or Grok review,
   and one consumer's staged hosted-CI path with review fixes completed before dispatch.
+- Exercise one recorded substitution: a listed reviewer unavailable on evidence, the
+  next provider's review completed, and both records present in the chat and the PR.
 - A new user follows [getting started](getting-started.md) in a fresh Codex task
   and reaches a PR without needing another guide. Record the trial on issue #77.
 - Interrupt a real unfinished PR, then continue it once from its recovery note in the

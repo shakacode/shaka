@@ -12,6 +12,73 @@ out-of-range values all fail rather than being ignored.
 
 Keep human-only constraints in `AGENTS.md`. This file holds only typed policy.
 
+## Every setting in one file
+
+This is a complete seam using every setting, including the two optional ones. Each section is
+explained below.
+
+```yaml
+---
+version: 1
+base_branch: main
+plan: docs/pilot-plan.md
+commands:
+  setup: .agents/bin/setup
+  validate: .agents/bin/validate
+  test: .agents/bin/test
+  validate_local: .agents/bin/validate_local
+  trigger_hosted_ci: .agents/bin/trigger_hosted_ci
+review:
+  required: meaningful_changes
+  check: claude-review
+  reviewers:
+    - provider: anthropic
+      model_family: claude
+    - provider: openai
+      model_family: codex
+    - provider: xai
+      model_family: grok
+merge:
+  preference: ask
+  method: squash
+  release: explicit_approval
+protection:
+  required_checks:
+    - validate
+  direct_push: false
+  force_push: false
+  branch_deletion: false
+trusted_actions:
+  - actions/checkout
+  - anthropics/claude-code-action
+  - ruby/setup-ruby
+```
+
+The smallest valid seam drops every optional setting — `plan`, `trusted_actions`,
+`reviewers`, and the two optional commands:
+
+```yaml
+---
+version: 1
+base_branch: main
+commands:
+  setup: .agents/bin/setup
+  validate: .agents/bin/validate
+  test: .agents/bin/test
+review:
+  required: none
+merge:
+  preference: ask
+  method: squash
+  release: explicit_approval
+protection:
+  required_checks:
+    - validate
+  direct_push: false
+  force_push: false
+  branch_deletion: false
+```
+
 ## File rules
 
 These apply to the whole document, whatever the settings are.
@@ -40,6 +107,19 @@ These apply to the whole document, whatever the settings are.
 | `trusted_actions` | no | list of strings | Non-empty when present. |
 | `branches` | no | mapping | [Feature-branch layout](#branches). |
 | `recovery` | no | mapping | [Recovery note policy](#recovery). |
+
+### When `version` changes
+
+`version` stays `1` while the pilot revises this contract. A revision that removes or renames
+a key makes an older seam fail `seam check` loudly, with a non-zero exit and the offending key
+named, so nothing is silently misread and no version bump is needed to stay safe. The
+`review.reviewers` list replacing the earlier flat `model_family`, `provider`, and `draft`
+fields is such a revision.
+
+`version` becomes `2` on the first change that could let an existing seam be read as something
+it does not mean — a key whose meaning or default changes while its name and shape stay valid —
+or once repositories outside this pilot depend on the contract, whichever comes first. Until
+then a bump would force every consumer to edit a file for no behavioral difference.
 
 Repository-relative means exactly that: an absolute path, a path that escapes the
 repository, or a symlink resolving outside it is rejected.
@@ -85,29 +165,90 @@ that exemption, so `always` currently behaves exactly like `meaningful_changes`.
 | `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. |
 | `none` | Never. Validation rejects `check`, so the repository declares no named gate. |
 
-One rule holds whatever this value says: meaningful implementation needs a review from a
-different model family than the implementer, and `none` does not switch that baseline off.
+One rule holds whatever this value says: meaningful implementation gets an adversarial review
+before the branch is pushed, and `none` does not switch that off. What makes the review
+adversarial is the context rather than the model, so a fresh session of the implementation model
+qualifies; a different provider is preferred, not required.
 [Review](review.md) defines the baseline and the rest of the review procedure.
 
 | Setting | Required | Allowed values |
 | --- | --- | --- |
 | `required` | yes | `always`, `meaningful_changes`, `none` |
 | `check` | when `required` is not `none` | Non-empty string |
-| `model_family` | all-or-nothing | Non-empty string |
-| `provider` | all-or-nothing | Non-empty string |
-| `draft` | all-or-nothing | `true` or `false` |
+| `reviewers` | no | Ordered non-empty list of reviewer entries |
 
-Two conditional rules matter:
+When `required` is `none`, `check` must be **omitted**; leaving it behind fails validation.
+`reviewers` stays valid there, because `none` drops the repository's named check and not the
+alternate-review baseline. Declaring it is not enforced — a seam with `required: none` and no
+`reviewers` loads — but it is the only way that seam expresses reviewer order, and the baseline
+applies either way.
 
-- When `required` is `none`, then `check`, `model_family`, `provider`, and `draft` must
-  all be **omitted**. Leaving one behind fails validation.
-- `model_family`, `provider`, and `draft` are a single group. Supply all three or none;
-  supplying one or two fails validation.
+### `review.reviewers`
 
-The metadata group exists so Shaka can tell reviewer identity from implementer identity.
-A review from the implementer's own model family does not satisfy the gate, and a check
-name alone is not evidence that a review happened. `draft` records whether that reviewer
-runs on draft pull requests; when it is `false`, Shaka uses the review-ready path instead.
+`reviewers` is an ordered preference list. Each entry is one reviewer identity and nothing else:
+
+| Setting | Required | Allowed values |
+| --- | --- | --- |
+| `provider` | yes | Non-empty string, such as `anthropic`, `openai`, `xai` |
+| `model_family` | yes | Non-empty string, such as `claude`, `codex`, `grok` |
+
+```yaml
+review:
+  required: meaningful_changes
+  check: claude-review
+  reviewers:
+    - provider: anthropic
+      model_family: claude
+    - provider: openai
+      model_family: codex
+    - provider: xai
+      model_family: grok
+```
+
+Validation rejects an empty list, a malformed entry, an unknown key, and a repeated identity. It
+does **not** check that the list can survive exhaustion, because that depends on who implements a
+change and the schema cannot know.
+
+An entry carries no `draft` flag and no per-entry `check`. Whether a reviewer runs on draft pull
+requests is decided by its own trigger — the standard reviewer workflow guards on
+`draft == false` — so read the trusted workflow rather than a copy in the seam that can drift
+from it. Identity is compared through review metadata or a trusted workflow, never a check name,
+so a per-entry check name would have no job to do. The top-level `review.check` still names the
+required native gate, and that gate need not belong to any listed reviewer.
+
+#### Sizing the list
+
+Substitution needs two entries whose model family did not contribute: one for the review, one for
+the fallback when the first is exhausted. So size the list as the largest number of model families
+that can contribute to one change, plus two.
+
+Counting distinct providers is not enough — `anthropic/claude` plus `openai/codex` leaves a Codex
+implementation with only `openai/codex` once Anthropic is exhausted, and that is its own model
+family. Counting families without counting contributors is not enough either: three families
+substitute for a solo implementer, but an owner and a delegated worker on two of those three
+leave one eligible entry and no fallback, and three contributors leave none. If you delegate
+across two families, list four. Two is enough when your implementers are never listed reviewers.
+
+List a reviewer you cannot run yourself. One that runs on GitHub needs no local provider
+credentials, so a repository with no second-provider key still gets its alternate review that
+way; Shaka pushes and takes the hosted review rather than reporting a blocker.
+
+#### Choosing from the list
+
+`shaka reviewer` computes the choice, so neither this document nor the workflow restates the
+comparison:
+
+```text
+shaka reviewer --root . --ref origin/main --implementer anthropic/claude
+shaka reviewer --root . --ref origin/main --implementer openai/codex --unavailable anthropic/claude
+```
+
+It returns `alternate`, `same_provider`, or `outside_list`, with the reason it assigned every
+entry. To run the chosen reviewer from a local CLI, render its instructions with
+`shaka review-prompt` and follow
+[invoke a reviewer locally](review.md#invoke-a-reviewer-locally). [Substitute an exhausted reviewer](review.md#substitute-an-exhausted-reviewer) explains
+the outcomes, what counts as unavailability, why missing local credentials do not count, and the
+delegated-worker case.
 
 ## `merge`
 
@@ -207,9 +348,10 @@ The generated `review` section depends on the policy. With `always` or
 With `--review-policy none` it holds `required` alone, and passing `--review-check` is
 rejected — matching the rule above that the other review keys must be absent.
 
-It omits the `model_family`, `provider`, and `draft` group, which is valid — the group is
-optional as a whole. Add all three by hand when you want Shaka to compare reviewer
-identity. The generated merge preference is `ask` unless you pass `--merge-preference auto`.
+It omits `reviewers`, which is valid — the list is optional. Add it by hand when you want
+Shaka to choose a reviewer and substitute an exhausted provider; the initializer has no flags
+for reviewer entries yet. The generated merge preference is `ask` unless you pass
+`--merge-preference auto`.
 
 ## Where each rule is enforced
 
@@ -217,7 +359,8 @@ identity. The generated merge preference is `ask` unless you pass `--merge-prefe
 | --- | --- |
 | Contract path, and the `safe_load` limits on aliases, classes, and symbols | `skills/shaka/lib/shaka/repository_config.rb` |
 | Top-level keys and section values | `skills/shaka/lib/shaka/repository_config/schema.rb` |
-| Reviewer policy | `skills/shaka/lib/shaka/repository_config/review_schema.rb` |
+| Reviewer list shape | `skills/shaka/lib/shaka/repository_config/review_schema.rb` |
+| Reviewer choice | `skills/shaka/lib/shaka/reviewer_selection.rb` |
 | Feature-branch layout | `skills/shaka/lib/shaka/repository_config/branch_schema.rb` |
 | Recovery note policy | `skills/shaka/lib/shaka/repository_config/recovery_schema.rb` |
 | One document, no duplicate keys | `skills/shaka/lib/shaka/repository_config/duplicate_keys.rb` |

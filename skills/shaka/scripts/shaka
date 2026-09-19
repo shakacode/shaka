@@ -11,6 +11,8 @@ require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
+require_relative '../lib/shaka/review_prompt'
+require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/usage'
@@ -35,6 +37,16 @@ end
 if ARGV.first == 'checkpoint'
   ARGV.shift
   exit Shaka::Checkpoint.run(ARGV)
+end
+
+if ARGV.first == 'review-prompt'
+  ARGV.shift
+  exit Shaka::ReviewPrompt.run(ARGV)
+end
+
+if ARGV.first == 'reviewer'
+  ARGV.shift
+  exit Shaka::Reviewer.run(ARGV)
 end
 
 if ARGV.first == 'seam'
@@ -78,6 +90,8 @@ options = {}
 parser = OptionParser.new do |flags|
   flags.banner = "Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; "
   flags.banner += 'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help'
+  flags.banner += '; shaka reviewer --help'
+  flags.banner += '; shaka review-prompt --help'
   flags.banner += '; shaka seam check --help'
   flags.banner += '; shaka workflow --help'
   flags.banner += '; shaka doctor --help'

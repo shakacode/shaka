@@ -1,69 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'fileutils'
-require 'yaml'
+require_relative 'repository_fixture'
 require 'shaka/repository_config'
-
-module RepositoryConfigTestHelpers
-  def with_outside_validate_symlink(root)
-    Dir.mktmpdir('outside-command') do |outside_root|
-      outside = File.join(outside_root, 'validate')
-      File.write(outside, "#!/bin/sh\n")
-      path = File.join(root, '.agents/bin/validate')
-      FileUtils.rm(path)
-      File.symlink(outside, path)
-      yield
-    end
-  end
-
-  def protection
-    { 'required_checks' => ['validate'], 'direct_push' => false, 'force_push' => false,
-      'branch_deletion' => false }
-  end
-
-  def merge_policy
-    { 'preference' => 'auto', 'method' => 'squash', 'release' => 'explicit_approval' }
-  end
-
-  def with_repository(overrides = {})
-    Dir.mktmpdir('shaka-repository-config') do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
-      create_commands(root)
-      File.write(File.join(root, 'PLAN.md'), "# Plan\n")
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config.merge(overrides)))
-      yield root
-    end
-  end
-
-  def config
-    {
-      'version' => 1, 'base_branch' => 'main', 'plan' => 'PLAN.md', 'commands' => commands,
-      'review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review',
-                    'model_family' => 'claude', 'provider' => 'anthropic', 'draft' => false },
-      'merge' => merge_policy, 'protection' => protection, 'trusted_actions' => ['actions/checkout']
-    }
-  end
-
-  def create_commands(root)
-    %w[setup validate test].each { |name| create_command(root, name) }
-  end
-
-  def create_command(root, name)
-    path = File.join(root, '.agents/bin', name)
-    File.write(path, "#!/bin/sh\nexit 0\n")
-    File.chmod(0o755, path)
-  end
-
-  def commands
-    %w[setup validate test].to_h { |name| [name, ".agents/bin/#{name}"] }
-  end
-
-  def optional_commands
-    { 'validate_local' => '.agents/bin/validate_local',
-      'trigger_hosted_ci' => '.agents/bin/trigger_hosted_ci' }
-  end
-end
 
 class RepositoryConfigTest < Minitest::Test
   include RepositoryConfigTestHelpers
@@ -76,15 +15,6 @@ class RepositoryConfigTest < Minitest::Test
       assert_equal '.agents/bin/validate', config.command('validate')
       assert_equal 'auto', config.merge.fetch('preference')
       assert_equal ['validate'], config.protection.fetch('required_checks')
-    end
-  end
-
-  def test_loads_the_review_policy
-    with_repository do |root|
-      review = Shaka::RepositoryConfig.load(root:).review
-
-      assert_equal ['meaningful_changes', 'claude', false],
-                   review.values_at('required', 'model_family', 'draft')
     end
   end
 
@@ -148,23 +78,6 @@ class RepositoryConfigTest < Minitest::Test
       actual = optional_commands.keys.map { |name| config.command(name) }
 
       assert_equal optional_commands.values, actual
-    end
-  end
-
-  def test_requires_reviewer_identity_and_draft_support
-    review = { 'required' => 'meaningful_changes', 'check' => 'claude-review',
-               'model_family' => 'claude' }
-    with_repository('review' => review) do |root|
-      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-
-      assert_includes message, 'missing review key: provider'
-    end
-  end
-
-  def test_accepts_the_original_version_one_review_shape
-    review = { 'required' => 'meaningful_changes', 'check' => 'claude-review' }
-    with_repository('review' => review) do |root|
-      assert_equal review, Shaka::RepositoryConfig.load(root:).review
     end
   end
 

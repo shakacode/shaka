@@ -5,23 +5,32 @@ require_relative 'validation'
 
 module Shaka
   class RepositoryConfig
-    # Validates the reviewer identity and trigger policy.
+    # Validates the ordered reviewer preference list and trigger policy.
     class ReviewSchema
       include Validation
 
-      STRING_FIELDS = %w[model_family provider].freeze
-      METADATA_FIELDS = [*STRING_FIELDS, 'draft'].freeze
+      IDENTITY = %w[provider model_family].freeze
+      RETIRED = %w[model_family provider draft].freeze
+
+      # The flat metadata group became an ordered list, so name the migration rather than
+      # reporting an unknown key at a seam the previous release accepted.
+      def self.retired!(review)
+        found = RETIRED & review.keys
+        return if found.empty?
+
+        raise Error, "review.#{found.first} moved into review.reviewers; see docs/settings.md"
+      end
 
       def initialize(review)
         @review = review
       end
 
+      # A seam with no native gate still declares its reviewer order, because
+      # `required: none` drops the repository's named check, not the alternate-review baseline.
       def validate
-        required = @review['required']
-        enum!(required)
-        return reject_policy if required == 'none'
-
-        require_policy
+        enum!(@review['required'])
+        validate_check
+        reviewers!(@review['reviewers']) if @review.key?('reviewers')
       end
 
       private
@@ -31,23 +40,43 @@ module Shaka
         super(value, allowed, 'review.required must be always, meaningful_changes, or none')
       end
 
-      def reject_policy
-        extra = ['check', *METADATA_FIELDS].find { |key| @review.key?(key) }
-        raise Error, "review.#{extra} must be omitted when review.required is none" if extra
+      def validate_check
+        return string!(@review['check'], 'review.check') unless @review['required'] == 'none'
+        raise Error, 'review.check must be omitted when review.required is none' if @review.key?('check')
       end
 
-      def require_policy
-        string!(@review['check'], 'review.check')
-        present = METADATA_FIELDS & @review.keys
-        return if present.empty?
+      def reviewers!(reviewers)
+        raise Error, 'review.reviewers must be a list' unless reviewers.is_a?(Array)
+        raise Error, 'review.reviewers must not be empty' if reviewers.empty?
 
-        missing = METADATA_FIELDS - @review.keys
-        raise Error, "missing review key: #{missing.first}" unless missing.empty?
+        reviewers.each_with_index { |entry, index| entry!(entry, index) }
+        identities = reviewers.map { |entry| entry.values_at(*IDENTITY) }
+        repeated = identities.tally.find { |_, count| count > 1 }
+        raise Error, "review.reviewers repeats #{repeated.first.join('/')}" if repeated
+      end
 
-        STRING_FIELDS.each { |key| string!(@review[key], "review.#{key}") }
-        return if [true, false].include?(@review['draft'])
+      def entry!(entry, index)
+        label = "review.reviewers[#{index}]"
+        raise Error, "#{label} must be a mapping" unless entry.is_a?(Hash) && entry.keys.all?(String)
 
-        raise Error, 'review.draft must be true or false'
+        keys!(entry, label)
+        IDENTITY.each { |key| component!(entry[key], "#{label}.#{key}") }
+      end
+
+      # `shaka reviewer` reads identities as PROVIDER/MODEL_FAMILY and strips each part, so a
+      # padded or slash-bearing value here would not match the identity the agent passes and a
+      # contributing family could pass as eligible.
+      def component!(value, label)
+        string!(value, label)
+        raise Error, "#{label} must not contain '/'" if value.include?('/')
+        raise Error, "#{label} must not start or end with whitespace" if value != value.strip
+      end
+
+      def keys!(entry, label)
+        unknown = entry.keys - IDENTITY
+        missing = IDENTITY - entry.keys
+        raise Error, "unknown #{label} key: #{unknown.first}" unless unknown.empty?
+        raise Error, "missing #{label} key: #{missing.first}" unless missing.empty?
       end
     end
   end
