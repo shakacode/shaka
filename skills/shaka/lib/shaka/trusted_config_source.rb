@@ -10,9 +10,14 @@ module Shaka
       @root = root
     end
 
+    # Replacement refs live in the checkout and are applied by default, so a candidate could
+    # otherwise substitute its own commit for the one this resolved and be believed.
+    NO_REPLACE = '--no-replace-objects'
+
     def read(ref)
       sha = resolve(ref)
-      source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
+      source, error, status = Open3.capture3('git', '-C', @root, NO_REPLACE, 'show',
+                                             "#{sha}:#{RepositoryConfig::PATH}")
       raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?
 
       source
@@ -21,7 +26,8 @@ module Shaka
     private
 
     def resolve(ref)
-      arguments = ['git', '-C', @root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}"]
+      arguments = ['git', '-C', @root, NO_REPLACE, 'rev-parse', '--verify', '--end-of-options',
+                   "#{ref}^{commit}"]
       sha, error, status = Open3.capture3(*arguments)
       raise Error, "Invalid trusted ref #{ref}: #{error.strip}" unless status.success?
 

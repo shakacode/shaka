@@ -143,8 +143,48 @@ class SnapshotChangesTest < Minitest::Test
   end
 end
 
+# The remotes these tests need: one that denies, one that lies, one that cannot be reached.
+module SnapshotRemotes
+  # A remote that fetches from one repository and pushes to another, which denies snapshots.
+  def denying_push_url(work)
+    other = File.join(File.dirname(work), 'deny')
+    git(File.dirname(work), 'init', '--quiet', '--bare', '--initial-branch', 'main', other)
+    write_seam_file(work, snapshot: false)
+    commit_all(work, 'denying seam')
+    git(work, 'push', '--quiet', other, 'HEAD:refs/heads/main')
+    git(work, 'config', 'remote.origin.pushurl', other)
+    other
+  end
+
+  # A locally manufactured commit standing in for the one the remote advertised.
+  def permissive_replacement(work)
+    advertised = Shaka::Snapshot::Bytes.first_field(git(work, 'ls-remote', 'origin', 'refs/heads/main'))
+    write_seam_file(work, snapshot: true)
+    commit_all(work, 'locally permissive')
+    git(work, 'replace', '-f', advertised, git(work, 'rev-parse', 'HEAD').strip)
+  end
+
+  def write_seam_file(work, snapshot:)
+    template = File.read(File.expand_path('fixtures/snapshot_seam.yml', __dir__))
+    File.write(File.join(work, '.agents/agent-workflow.yml'), format(template, snapshot:))
+  end
+
+  # An ssh remote whose transport records that it ran, so reaching it is observable.
+  def unreachable_remote(work)
+    contacted = File.join(File.dirname(work), 'contacted')
+    probe = File.join(File.dirname(work), 'probe.sh')
+    File.write(probe, "#!/bin/sh\ntouch #{contacted}\nexit 1\n")
+    File.chmod(0o755, probe)
+    git(work, 'remote', 'set-url', 'origin', 'ssh://example.invalid/repo.git')
+    git(work, 'config', 'core.sshCommand', probe)
+    contacted
+  end
+end
+
 # The repositories these tests need: a seam, a submodule, a merge, a second remote.
 module SnapshotFixtures
+  include SnapshotRemotes
+
   def add_submodule(work)
     source = File.join(File.dirname(work), 'nested-source')
     git(File.dirname(work), 'init', '--quiet', source)
@@ -254,17 +294,6 @@ module SnapshotRepository
       git(work, 'remote', 'add', 'origin', File.join(root, 'origin'))
       yield work
     end
-  end
-
-  # An ssh remote whose transport records that it ran, so reaching it is observable.
-  def unreachable_remote(work)
-    contacted = File.join(File.dirname(work), 'contacted')
-    probe = File.join(File.dirname(work), 'probe.sh')
-    File.write(probe, "#!/bin/sh\ntouch #{contacted}\nexit 1\n")
-    File.chmod(0o755, probe)
-    git(work, 'remote', 'set-url', 'origin', 'ssh://example.invalid/repo.git')
-    git(work, 'config', 'core.sshCommand', probe)
-    contacted
   end
 
   # The refusal paths report through stderr, which the JSON reader cannot see.
@@ -673,6 +702,32 @@ class SnapshotBoundaryTest < Minitest::Test
       isolated { Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', 'anything']) } } }
 
       assert_equal 1, result
+      refute_includes remote_branches(work).join, 'wip/'
+    end
+  end
+
+  # The repository that receives the push is the one whose policy binds it.
+  def test_a_separate_push_url_answers_for_itself
+    in_repository do |work|
+      write_seam(work, snapshot: true)
+      deny = denying_push_url(work)
+      write(work, 'research.md' => "half an idea\n")
+      digest = run_snapshot(work).fetch('digest')
+
+      assert_equal 1, push_snapshot(work, digest)
+      refute_includes git(work, 'ls-remote', '--heads', deny).to_s, 'wip/'
+    end
+  end
+
+  # A replacement ref lives in the checkout, and the checkout does not decide this.
+  def test_a_replacement_ref_cannot_stand_in_for_the_remote_seam
+    in_repository do |work|
+      write_seam(work, snapshot: false)
+      permissive_replacement(work)
+      write(work, 'research.md' => "half an idea\n")
+      digest = run_snapshot(work).fetch('digest')
+
+      assert_equal 1, push_snapshot(work, digest)
       refute_includes remote_branches(work).join, 'wip/'
     end
   end

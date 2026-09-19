@@ -220,7 +220,10 @@ scope those triggers or set `recovery.snapshot: false`. A repository that does n
 these branches at all sets the same key, and the command then refuses whoever runs it. It
 reads that key from the remote's own default branch, never from the checkout, because the
 checkout's copy could say anything and publishing cannot be taken back. It asks whichever
-target the push would use, including one named as a path or a URL. A remote it cannot
+repository the push would actually reach, which is the push URL when a remote fetches from
+one place and pushes to another, and it reads that seam with replacement refs disabled so
+nothing in the checkout can stand in for the commit the remote named. A remote configured
+to push to several URLs refuses, because one lease cannot hold them all. A remote it cannot
 read refuses for the same reason, as does one that holds branches without saying which is
 its default. Only a remote advertising nothing at all keeps the default, because an empty
 repository has published no contract.

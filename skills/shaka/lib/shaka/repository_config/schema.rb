@@ -105,9 +105,9 @@ module Shaka
       end
 
       def file!(value, label)
-        return string!(value, label) unless @local
-
         path = repository_path(value, label)
+        return path unless @local
+
         raise Error, "#{label} does not exist: #{value}" unless File.file?(path)
 
         real_path = File.realpath(path)
@@ -125,11 +125,23 @@ module Shaka
 
       def repository_path(value, label)
         relative = string!(value, label)
+        return remote_path(relative, label) unless @local
+
         expanded = File.expand_path(relative, @root)
         inside = !Pathname.new(relative).absolute? && expanded.start_with?("#{@root}/")
         raise Error, "#{label} must stay inside the repository" unless inside
 
         expanded
+      end
+
+      # Without the repository a seam came from, the same rule is read from the text: not
+      # absolute, and never stepping out of the repository through a parent directory.
+      def remote_path(relative, label)
+        path = Pathname.new(relative)
+        escapes = path.absolute? || path.each_filename.include?('..')
+        raise Error, "#{label} must stay inside the repository" if escapes
+
+        relative
       end
     end
   end

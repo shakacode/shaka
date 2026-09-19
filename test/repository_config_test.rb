@@ -251,6 +251,20 @@ class RepositoryConfigRecoveryTest < Minitest::Test
     assert_includes error.message, 'missing'
   end
 
+  def test_a_remote_seam_with_an_escaping_command_path_is_rejected
+    source = remote_seam(snapshot: true).sub('.agents/bin/setup', '../elsewhere/setup')
+    error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.recovery_from(source) }
+
+    assert_includes error.message, 'must stay inside the repository'
+  end
+
+  def test_a_remote_seam_with_an_absolute_command_path_is_rejected
+    source = remote_seam(snapshot: true).sub('.agents/bin/setup', '/etc/setup')
+    error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.recovery_from(source) }
+
+    assert_includes error.message, 'must stay inside the repository'
+  end
+
   # A complete contract whose command paths exist only in the repository it came from.
   def remote_seam(snapshot:)
     template = File.read(File.expand_path('fixtures/snapshot_seam.yml', __dir__))

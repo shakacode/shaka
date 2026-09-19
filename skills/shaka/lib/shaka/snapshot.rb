@@ -8,6 +8,7 @@ require_relative 'snapshot/bytes'
 require_relative 'snapshot/options'
 require_relative 'snapshot/plan'
 require_relative 'snapshot/policy'
+require_relative 'snapshot/target'
 require_relative 'snapshot/tree'
 
 module Shaka
@@ -19,10 +20,9 @@ module Shaka
   class Snapshot
     PREFIX = 'wip/'
 
-    # Status paths are literal paths, not pathspecs: a file named `:(glob)**` would
-    # otherwise match far more than itself, and the plan would stop describing what gets
-    # published.
-    LITERAL = { 'GIT_LITERAL_PATHSPECS' => '1' }.freeze
+    # Status paths are literal, and a checkout-local replacement ref must never stand in
+    # for the commit a remote named, so neither is left to whatever the checkout configured.
+    SAFE = { 'GIT_LITERAL_PATHSPECS' => '1', 'GIT_NO_REPLACE_OBJECTS' => '1' }.freeze
 
     def self.run(arguments)
       new(arguments).run
@@ -40,6 +40,7 @@ module Shaka
       parse
       @root = Bytes.trimmed(capture('rev-parse', '--show-toplevel'))
       @branch = named_branch
+      @target = Target.resolve(remote: @options[:remote], git: method(:git))
 
       @options[:delete] ? delete : publish
       0
@@ -74,7 +75,7 @@ module Shaka
 
     # An exact lease needs no remote-tracking ref, which a fresh checkout does not have.
     def remote_commit
-      @remote_commit ||= Bytes.first_field(git('ls-remote', @options[:remote], reference))
+      @remote_commit ||= Bytes.first_field(git('ls-remote', @target, reference))
     end
 
     # Planning never asks the remote anything, not even a question it could recover from:
@@ -83,7 +84,7 @@ module Shaka
     def remote_head
       return '' unless @options[:push]
 
-      @remote_head ||= Bytes.first_field(git('ls-remote', @options[:remote], "refs/heads/#{@branch}"))
+      @remote_head ||= Bytes.first_field(git('ls-remote', @target, "refs/heads/#{@branch}"))
     rescue Error
       @remote_head = ''
     end
@@ -101,7 +102,7 @@ module Shaka
     end
 
     def allowed?
-      Policy.new(root: @root, remote: @options[:remote], git: method(:git)).allows_snapshot?
+      Policy.new(root: @root, remote: @target, git: method(:git)).allows_snapshot?
     end
 
     def current_plan
@@ -132,7 +133,7 @@ module Shaka
     # Deleting takes the same lease as replacing: between reading the remote's value and
     # this push, another publisher may have left the only copy of its own unfinished work.
     def remove
-      git('push', "--force-with-lease=#{reference}:#{remote_commit}", @options[:remote], ":#{reference}")
+      git('push', "--force-with-lease=#{reference}:#{remote_commit}", @target, ":#{reference}")
     end
 
     # The push must publish the plan that was read, not whatever the checkout holds now.
@@ -153,7 +154,7 @@ module Shaka
 
     def push(plan)
       commit = write_commit(plan)
-      git('push', "--force-with-lease=#{reference}:#{remote_commit}", @options[:remote], "#{commit}:#{reference}")
+      git('push', "--force-with-lease=#{reference}:#{remote_commit}", @target, "#{commit}:#{reference}")
       report(plan.merge('published' => true, 'commit' => commit))
     end
 
@@ -171,7 +172,7 @@ module Shaka
 
     # Status paths are relative to the repository root, so every command runs there.
     def capture(*argv, index: nil, environment: {})
-      environment = LITERAL.merge(environment, index ? { 'GIT_INDEX_FILE' => index } : {})
+      environment = SAFE.merge(environment, index ? { 'GIT_INDEX_FILE' => index } : {})
       location = @root ? ['-C', @root] : []
       output, error, status = Open3.capture3(environment, 'git', *location, *argv)
       raise Error, "git #{argv.first} failed: #{error.lines.first&.strip}" unless status.success?
