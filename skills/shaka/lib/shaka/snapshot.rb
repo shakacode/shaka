@@ -74,7 +74,7 @@ module Shaka
 
     # An exact lease needs no remote-tracking ref, which a fresh checkout does not have.
     def remote_commit
-      @remote_commit ||= Bytes.trimmed(git('ls-remote', @options[:remote], reference)).split(/\s/).first.to_s
+      @remote_commit ||= Bytes.first_field(git('ls-remote', @options[:remote], reference))
     end
 
     # Planning never asks the remote anything, not even a question it could recover from:
@@ -83,8 +83,7 @@ module Shaka
     def remote_head
       return '' unless @options[:push]
 
-      @remote_head ||= Bytes.trimmed(git('ls-remote', @options[:remote], "refs/heads/#{@branch}"))
-                            .split(/\s/).first.to_s
+      @remote_head ||= Bytes.first_field(git('ls-remote', @options[:remote], "refs/heads/#{@branch}"))
     rescue Error
       @remote_head = ''
     end
@@ -121,7 +120,10 @@ module Shaka
     # it was set to keep off the remote.
     def settle(plan)
       empty = plan.merge('branch' => nil)
-      return report(empty) unless @options[:push] && !remote_commit.empty?
+      return report(empty) unless @options[:push]
+
+      refuse_stale(plan)
+      return report(empty) if remote_commit.empty?
 
       remove
       report(empty.merge('deleted' => readable_branch))
@@ -135,10 +137,18 @@ module Shaka
 
     # The push must publish the plan that was read, not whatever the checkout holds now.
     def confirm(plan)
-      expected = @options[:expect]
-      raise Error, 'Publishing needs --expect with the digest the plan printed.' if expected.nil?
-      raise Error, "The checkout changed since that plan; its digest is now #{plan['digest']}." if
-        expected != plan['digest']
+      raise Error, 'Publishing needs --expect with the digest the plan printed.' if @options[:expect].nil?
+
+      refuse_stale(plan)
+    end
+
+    # A command carrying an expectation that no longer matches is stale, and that is true
+    # even where the work it would do now is a deletion: the plan it was given named files
+    # this checkout no longer has, and the snapshot may be their only remaining copy.
+    def refuse_stale(plan)
+      return if @options[:expect].nil? || @options[:expect] == plan['digest']
+
+      raise Error, "The checkout changed since that plan; its digest is now #{plan['digest']}."
     end
 
     def push(plan)

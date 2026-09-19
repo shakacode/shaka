@@ -98,6 +98,13 @@ class SnapshotBytesTest < Minitest::Test
     assert_equal ['bad?name', true], [rendered, rendered.valid_encoding?]
   end
 
+  # `ls-remote` echoes the ref name beside the sha, and that name may be unreadable.
+  def test_the_first_field_survives_an_unreadable_ref_name
+    line = "#{'a' * 40}\trefs/heads/#{BAD}\n".b
+
+    assert_equal 'a' * 40, Shaka::Snapshot::Bytes.first_field(line)
+  end
+
   def test_splitting_keeps_each_entry_as_its_own_bytes
     entries = Shaka::Snapshot::Bytes.split("one\0#{BAD}\0".b, "\0")
 
@@ -515,6 +522,21 @@ class SnapshotHistoryTest < Minitest::Test
       report = publish_snapshot(work)
 
       assert_empty git(work, 'rev-list', '--parents', '-1', report['commit']).split[1..]
+    end
+  end
+
+  # A stale command must not delete the snapshot that may hold the only copy of its work.
+  def test_a_stale_digest_refuses_to_delete_an_existing_snapshot
+    in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+      publish_snapshot(work)
+      commit_all(work, 'finished the draft')
+      write(work, 'later.md' => "arrived after\n")
+      digest = run_snapshot(work).fetch('digest')
+      File.delete(File.join(work, 'later.md'))
+
+      assert_equal 1, push_snapshot(work, digest)
+      assert_includes remote_branches(work).join, 'wip/feature'
     end
   end
 
