@@ -62,6 +62,12 @@ class ClaimTest < Minitest::Test
     assert JSON.parse(stdout).fetch('collision')
   end
 
+  def test_asks_github_for_more_than_the_default_page_of_pull_requests
+    seen = pr_argv(prs: [], branches: '')
+
+    assert_equal '1000', seen.fetch(seen.index('--limit') + 1)
+  end
+
   private
 
   def claim(query, prs:, branches:, branch_name: nil)
@@ -77,6 +83,17 @@ class ClaimTest < Minitest::Test
     [stdout.string, status]
   ensure
     $stdout = original
+  end
+
+  def pr_argv(prs:, branches:)
+    seen = nil
+    inner = runner(prs: prs, branches: branches)
+    wrapped = lambda do |argv, **|
+      seen = argv if argv[1] == 'pr'
+      inner.call(argv)
+    end
+    Shaka::Claim.new(query: '36', root: Dir.pwd, runner: wrapped, branch_name: nil).result
+    seen
   end
 
   def runner(prs:, branches:)

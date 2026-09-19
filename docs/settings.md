@@ -148,14 +148,17 @@ This repository omits `branches` and uses that default, so a GitHub login is the
 person token rather than a hardcoded maintainer prefix. Add the mapping when a
 consumer's layout differs.
 
-`seam init` omits `branches`. Add the mapping by hand when the repository wants an
-explicit layout.
+`seam init` writes `branches.name` as `{login}-{host}/{issue}-{description}` so a new
+repository has an explicit layout. Change that string when the repo already names
+branches differently.
 
 ## What `seam init` writes
 
 The initializer produces the smallest complete contract: `version`, `base_branch`, the
-three required commands as `.agents/bin/` wrappers, `review`, `merge`, and `protection`.
-It adds `plan` and `trusted_actions` only when you pass them.
+three required commands as `.agents/bin/` wrappers, `review`, `merge`, `protection`, and
+`branches.name` set to `{login}-{host}/{issue}-{description}` so the layout is visible in
+the seam instead of only in Ruby. It adds `plan` and `trusted_actions` only when you pass
+them. Edit `branches.name` afterward when the repository already uses a different layout.
 
 The generated `review` section depends on the policy. With `always` or
 `meaningful_changes` it holds `required` and `check`, and `--review-check` is mandatory.

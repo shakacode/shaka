@@ -75,7 +75,8 @@ module Shaka
     private
 
     def listed_pull_requests
-      parsed = JSON.parse(capture(['gh', 'pr', 'list', '--search', @query, '--state', 'open', '--json', PR_JSON]))
+      parsed = JSON.parse(capture(['gh', 'pr', 'list', '--search', @query, '--state', 'open', '--limit', '1000',
+                                   '--json', PR_JSON]))
       raise Error, 'GitHub pull request list must be an array.' unless parsed.is_a?(Array)
 
       parsed
