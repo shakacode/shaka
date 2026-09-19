@@ -82,17 +82,26 @@ finding the task; it does not establish merge authority or ownership by itself.
 
 ### Recover an unfinished PR
 
-From the first PR description until the PR reaches its outcome, keep a `Recovery`
-section there. Work can stop at any time, for a blocker, a pending decision, a
-handoff, or an interruption. Someone reopening the PR should find the owning task
-and its next step without reading the conversation. Refresh the section at
-meaningful progress and at each stopping point. The `description` helper replaces its
+From the first PR description until the PR reaches its outcome, keep a recovery note
+there as a collapsed `WIP Details` disclosure. Work can stop at any time, for a
+blocker, a pending decision, a handoff, or an interruption. Someone reopening the PR
+should find the owning task and its next step without reading the conversation, while
+the normal PR summary stays compact. Publish the note through the `description`
+helper's `details` list so GitHub renders it as `<details><summary>WIP Details</summary>`.
+Refresh it at meaningful progress and at each stopping point. The helper replaces its
 whole managed region, so republish every section with only the note changed. Remove
-the section once the PR reaches its outcome. It lists:
+the entire disclosure only after GitHub confirms the PR reached its outcome; a failed
+merge attempt still needs it. The note lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
-  the task picks when it becomes owner, such as `studio-mac · Claude Code desktop · k7q2`.
+  the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`.
 - **Task:** the searchable task title, or a task locator the tracker allows sharing.
+- **Thread:** the host-native thread locator. Publish it only when the user or trusted
+  repository instructions authorize public sharing and this guide defines a locator
+  for the host; otherwise use `UNKNOWN`. For Codex, require `CODEX_THREAD_ID` to contain
+  a UUID and publish `codex://threads/<thread-id>` as a raw, unformatted URL, never a
+  Markdown link or inline code. Other hosts use `UNKNOWN` until this guide defines their
+  locator. The owner field's machine alias tells the maintainer where to open it.
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
@@ -100,8 +109,8 @@ the section once the PR reaches its outcome. It lists:
   blocker, waiting for a named decision, or handing over to a named task.
 - **Next action:** the one step that continues the work.
 
-Keep private task links, raw session IDs, hostnames that identify people or clients,
-absolute paths, transcripts, and customer context out of public PRs.
+Keep private tracker links, other raw session IDs, hostnames that identify people or
+clients, absolute paths, transcripts, and customer context out of public PRs.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner, including a different tag, ownership was transferred: keep any local
@@ -200,9 +209,11 @@ In chat, link to supporting records instead of reproducing them. A changed risk 
 missing required evidence belongs in the next visible update.
 
 Collapsed content remains readable and public wherever the PR is public. It is
-not private storage. Keep prompts, raw sessions, private identifiers, and secrets
-out of published evidence. Collapsing text also does not reduce its token cost
-when an agent loads it. Keep useful evidence once and retrieve details as needed.
+not private storage. Keep prompts, raw sessions, secrets, and private identifiers
+out of published evidence. The recovery note's `Thread` field follows the publication
+rule in [Recover an unfinished PR](#recover-an-unfinished-pr). Collapsing text also does
+not reduce its token cost when an agent loads it. Keep useful evidence once and
+retrieve details as needed.
 
 ## Writing preferences
 

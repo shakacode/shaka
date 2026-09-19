@@ -28,6 +28,13 @@ class GitHubTest < Minitest::Test
     end
   end
 
+  def test_all_checks_omit_the_required_flag
+    checks = [{ 'name' => 'claude-review', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    assert_equal checks, client(response(checks)).checks
+    assert_equal ['gh', 'pr', 'checks', '42', '--repo', 'owner/repo', '--json', 'name,state,bucket,link'],
+                 @calls.first.first
+  end
+
   def test_api_failure_does_not_expose_stderr
     error = assert_raises(Shaka::Error) { client(response({}, status: 4)).snapshot }
     assert_match(/exit 4/, error.message)
