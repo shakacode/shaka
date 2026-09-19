@@ -228,6 +228,18 @@ and checks these points:
 - A walkthrough explains the earlier behavior and the new capability before files or
   diff mechanics.
 - Exact commands, identifiers, domain terms, risks, and evidence survive the edit.
+- Open with the point. Skip greetings, praise, and offers to continue, such as
+  "Great question", "Let's dive in", or "I hope this helps".
+- State the fact. Leave off significance dressing such as pivotal, testament, or
+  landscape.
+- In a reply, lead with the decision and rely on what the thread already established.
+  Every kept sentence should add something the reader does not already have.
+
+Self-edit the content JSON, then let the helper render it. Do not rewrite the
+published GitHub body. A consumer repository may install its own prose-rewriting
+skill for blogs or docs; `$shaka` does not invoke one.
+
+### PR summary
 
 This summary is accurate but hard to read. It joins two changes under one verb and
 holds the condition until the end:
@@ -238,6 +250,26 @@ The reader-first version separates the changes and keeps the condition beside th
 behavior it limits:
 
 > Owner shells can now follow the automatic agent-stack sync log with `agent-stack-sync-log`. When the LaunchAgent is installed, `tips` and `tips -a` also show the log and service-status commands.
+
+### Walkthrough
+
+A walkthrough that narrates the diff is hard to review without opening the files:
+
+> This change adds an H1 to `Publication.walkthrough` and updates the skill so COMMENT reviews get a title.
+
+Name the earlier behavior, then the new one:
+
+> Untitled COMMENT reviews showed as ordinary comments. They now open with `# Code Walkthrough` after the identity line, so GitHub lists them as titled walkthroughs. Descriptions and ordinary replies stay untitled.
+
+### Review reply
+
+A reply that re-proves the diagnosis buries the decision:
+
+> You're right that non-owner shells still see the log commands. I checked `tips` and `tips -a`, and both print `agent-stack-sync-log` before they test for the LaunchAgent. We could move that check above the extra commands. I think we should still land this PR as the writing baseline and file the tips change separately.
+
+Lead with the decision and use the thread's context:
+
+> Agreed that non-owner shells shouldn't see the log commands, but that tips gate is a separate change. This PR stays the writing baseline; I'll open a follow-up for the LaunchAgent check.
 
 The baseline is a self-edit, not a score or a linter. Your repo can customize the audience,
 language, vocabulary, and level of detail in its existing `AGENTS.md`. For example:
