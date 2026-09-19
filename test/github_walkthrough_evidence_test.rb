@@ -22,6 +22,15 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
     assert_equal 2, @calls.size
   end
 
+  # Catches README.md as a prefix of an unrelated README.md.old blob URL.
+  def test_walkthrough_pin_that_only_prefixes_a_changed_path_is_refused
+    github = client(snapshot_response, files_response(['README.md']))
+    body = "See https://github.com/owner/repo/blob/#{HEAD}/README.md.old."
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: body) }
+    assert_includes error.message, 'commit-pinned'
+    assert_equal 2, @calls.size
+  end
+
   def test_walkthrough_pin_to_a_renamed_file_previous_path_is_accepted
     files = response([{ 'filename' => 'new.yml', 'previous_filename' => CHANGED_FILE }])
     github = client(snapshot_response, files, *gate_responses, html_response, review_response, review_response,
@@ -56,5 +65,29 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
     github = client(snapshot_response, files_response, *pending_review_gate_responses, html_response,
                     review_response(body: body), review_response(body: body), snapshot_response)
     assert_equal 'COMMENTED', github.walkthrough(head: HEAD, body: body)['state']
+  end
+
+  # Catches swallowing a required-check fetch failure as an empty gate list.
+  def test_walkthrough_fails_when_required_check_evidence_is_unavailable
+    github = client(snapshot_response, files_response, response({ 'message' => 'error' }))
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH) }
+    assert_includes error.message, 'array'
+    assert_equal 3, @calls.size
+  end
+
+  # Catches omitting a skipped required check that merge still treats as terminal.
+  def test_walkthrough_requires_a_skipped_required_check
+    skipped = [{ 'name' => 'validate', 'state' => 'SKIPPED', 'bucket' => 'skipping' }]
+    github = client(snapshot_response, files_response, response(skipped), response(skipped))
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: "See #{PINNED_LINK}.") }
+    assert_includes error.message, 'validate'
+  end
+
+  def test_walkthrough_pin_on_a_later_files_page_is_accepted
+    page_one = (1..100).map { |index| "other/#{index}.txt" }
+    github = client(snapshot_response, files_response(page_one), files_response, *gate_responses, html_response,
+                    review_response, review_response, snapshot_response)
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+    assert_equal 'COMMENTED', published['state']
   end
 end

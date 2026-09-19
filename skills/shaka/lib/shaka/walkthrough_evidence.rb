@@ -1,10 +1,15 @@
 # frozen_string_literal: true
 
+require 'cgi'
 require_relative 'error'
+require_relative 'public_comments/bounded_list'
 
 module Shaka
   # Refuses a walkthrough that does not cite live diff and check evidence.
   class WalkthroughEvidence
+    FILE_PAGES = 10
+    TERMINAL_BUCKETS = %w[pass fail skipping].freeze
+
     def initialize(github)
       @github = github
     end
@@ -17,13 +22,21 @@ module Shaka
     private
 
     def verify_commit_pin(head, body)
-      files = @github.api_list("repos/#{@github.repository}/pulls/#{@github.number}/files?per_page=100")
-      raise Error, 'Walkthrough file list is malformed.' unless files.all?(Hash)
-
-      paths = files.flat_map { |file| [file['filename'], file['previous_filename']].compact }
-      return if paths.any? { |path| body.include?(blob_url(head, path)) }
+      paths = changed_paths
+      return if pinned_paths(body, head).intersect?(paths)
 
       raise Error, 'Walkthrough requires a commit-pinned link to a changed file.'
+    end
+
+    def changed_paths
+      path = "repos/#{@github.repository}/pulls/#{@github.number}/files"
+      files = PublicComments::BoundedList.new(@github, max_pages: FILE_PAGES, label: 'Walkthrough file list').call(path)
+      files.flat_map { |file| [file['filename'], file['previous_filename']].compact }
+    end
+
+    def pinned_paths(body, head)
+      prefix = blob_url(head, '')
+      body.to_enum(:scan, /#{Regexp.escape(prefix)}([^\s)#]+)/).map { CGI.unescape(Regexp.last_match(1)) }
     end
 
     def blob_url(head, path) = "https://github.com/#{@github.repository}/blob/#{head}/#{path}"
@@ -39,11 +52,7 @@ module Shaka
       (completed_names(required_rows) + review_names).uniq
     end
 
-    def required_rows
-      @github.checks(required: true)
-    rescue Error
-      []
-    end
+    def required_rows = @github.checks(required: true)
 
     def review_names
       completed_names(@github.checks).grep(/review/i)
@@ -55,7 +64,7 @@ module Shaka
 
         name = row['name']
         next unless name.is_a?(String) && !name.empty?
-        next unless %w[pass fail].include?(row['bucket'].to_s)
+        next unless TERMINAL_BUCKETS.include?(row['bucket'].to_s)
 
         name
       end
