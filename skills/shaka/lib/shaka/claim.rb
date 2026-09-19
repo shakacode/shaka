@@ -4,6 +4,8 @@ require 'json'
 require 'open3'
 require 'optparse'
 require_relative 'error'
+require_relative 'claim/names'
+require_relative 'repository_config'
 
 module Shaka
   # Lists open pull requests and remote branches that already cover a work item.
@@ -14,7 +16,8 @@ module Shaka
       query, root = parse(arguments)
       return 0 unless query
 
-      puts JSON.generate(new(query: query, root: root, runner: runner).result)
+      subject = new(query: query, root: root, runner: runner, branch_name: branch_name_for(root))
+      puts JSON.generate(subject.result)
       0
     rescue OptionParser::ParseError, JSON::ParserError, SystemCallError, Shaka::Error => e
       warn "shaka: #{e.message}"
@@ -44,12 +47,17 @@ module Shaka
       nil
     end
 
-    private_class_method :parse, :option_parser, :help
+    def self.branch_name_for(root)
+      RepositoryConfig.load(root: root).to_h.dig('branches', 'name')
+    end
 
-    def initialize(query:, root:, runner: nil)
+    private_class_method :parse, :option_parser, :help, :branch_name_for
+
+    def initialize(query:, root:, runner: nil, branch_name: nil)
       @query = positive_integer(query).to_s
       @root = root
       @runner = runner || ->(argv, stdin_data: '') { Open3.capture3(*argv, stdin_data: stdin_data, chdir: @root) }
+      @names = Names.new(query: @query, template: branch_name)
     end
 
     def result
@@ -57,6 +65,7 @@ module Shaka
       matching = matching_branches
       {
         'query' => @query,
+        'branch_name' => @names.reported,
         'pull_requests' => listed,
         'branches' => matching,
         'collision' => listed.any? || matching.any?
@@ -77,11 +86,9 @@ module Shaka
     def matching_branches
       capture(['git', 'ls-remote', '--heads', 'origin']).each_line.filter_map do |line|
         name = line.split("\t", 2)[1]&.delete_prefix('refs/heads/')&.strip
-        name if name&.match?(branch_pattern)
+        name if name && @names.cover?(name)
       end
     end
-
-    def branch_pattern = %r{(?:^|/)#{Regexp.escape(@query)}-}
 
     def capture(argv)
       stdout, _stderr, status = @runner.call(argv, stdin_data: '')

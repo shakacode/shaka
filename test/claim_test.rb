@@ -39,6 +39,16 @@ class ClaimTest < Minitest::Test
     assert_equal ['jg-cursor/36-restore-workflow-judgment'], result.fetch('branches')
   end
 
+  def test_a_seam_template_matches_a_repository_specific_layout
+    heads = "aaa\trefs/heads/feature/36/restore-lines\n" \
+            "bbb\trefs/heads/feature/136/unrelated\n"
+    result = claim('36', prs: [], branches: heads, branch_name: 'feature/{issue}/{description}')
+
+    assert result.fetch('collision')
+    assert_equal ['feature/36/restore-lines'], result.fetch('branches')
+    assert_equal 'feature/{issue}/{description}', result.fetch('branch_name')
+  end
+
   def test_refuses_a_non_numeric_work_item
     error = assert_raises(Shaka::Error) { claim('restore', prs: [], branches: '') }
 
@@ -54,8 +64,9 @@ class ClaimTest < Minitest::Test
 
   private
 
-  def claim(query, prs:, branches:)
-    Shaka::Claim.new(query: query, root: Dir.pwd, runner: runner(prs: prs, branches: branches)).result
+  def claim(query, prs:, branches:, branch_name: nil)
+    Shaka::Claim.new(query: query, root: Dir.pwd, runner: runner(prs: prs, branches: branches),
+                     branch_name: branch_name).result
   end
 
   def capture_cli(arguments, prs:, branches:)

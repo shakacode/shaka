@@ -38,6 +38,7 @@ These apply to the whole document, whatever the settings are.
 | `protection` | yes | mapping | [Expected branch protection](#protection). |
 | `plan` | no | string | Repository-relative path to an existing file. |
 | `trusted_actions` | no | list of strings | Non-empty when present. |
+| `branches` | no | mapping | [Feature-branch layout](#branches). |
 
 Repository-relative means exactly that: an absolute path, a path that escapes the
 repository, or a symlink resolving outside it is rejected.
@@ -122,6 +123,34 @@ expectation explicitly rather than leaving it implied.
 Optional allowlist of GitHub Actions used by the repository's trusted workflows, such as
 `actions/checkout`. When the key is present it must hold at least one non-empty string.
 
+## `branches`
+
+Optional feature-branch layout for this repository. When present it is a mapping whose
+only key is `name`, a non-empty template that **must** include `{issue}`.
+
+Allowed placeholders:
+
+| Placeholder | Meaning |
+| --- | --- |
+| `{login}` | GitHub account running the task (`gh api user --jq .login`) |
+| `{host}` | Host slug such as `cursor`, `claude`, `codex`, or `opencode` |
+| `{issue}` | Issue, PR, or related work-item number |
+| `{description}` | Short slug |
+
+The template is repository policy, not a per-machine guess. Do not put a person's
+initials or a host-local naming convention in Shaka's code. A consumer that already
+uses another layout, such as `feature/{issue}/{description}`, sets that string here.
+`shaka claim` reports `branch_name` from this setting, or
+`{login}-{host}/{issue}-{description}` when the key is omitted, and still treats a
+`/{issue}-` path segment as a collision so older branches remain visible.
+
+This repository omits `branches` and uses that default, so a GitHub login is the
+person token rather than a hardcoded maintainer prefix. Add the mapping when a
+consumer's layout differs.
+
+`seam init` omits `branches`. Add the mapping by hand when the repository wants an
+explicit layout.
+
 ## What `seam init` writes
 
 The initializer produces the smallest complete contract: `version`, `base_branch`, the
@@ -143,5 +172,6 @@ identity. The generated merge preference is `ask` unless you pass `--merge-prefe
 | --- | --- |
 | Whole-file and top-level rules | `skills/shaka/lib/shaka/repository_config/schema.rb` |
 | Reviewer policy | `skills/shaka/lib/shaka/repository_config/review_schema.rb` |
+| Feature-branch layout | `skills/shaka/lib/shaka/repository_config/branch_schema.rb` |
 | One document, no duplicate keys | `skills/shaka/lib/shaka/repository_config/duplicate_keys.rb` |
 | Generated contract | `skills/shaka/lib/shaka/seam/initializer.rb` |
