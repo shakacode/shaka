@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 require 'optparse'
 require_relative 'error'
+require_relative 'snapshot/options'
 require_relative 'snapshot/plan'
 require_relative 'snapshot/policy'
 require_relative 'snapshot/tree'
@@ -17,6 +18,11 @@ module Shaka
   class Snapshot
     PREFIX = 'wip/'
 
+    # Status paths are literal paths, not pathspecs: a file named `:(glob)**` would
+    # otherwise match far more than itself, and the plan would stop describing what gets
+    # published.
+    LITERAL = { 'GIT_LITERAL_PATHSPECS' => '1' }.freeze
+
     def self.run(arguments)
       new(arguments).run
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
@@ -25,15 +31,14 @@ module Shaka
     end
 
     def initialize(arguments)
-      @arguments = arguments.dup
-      @options = { remote: 'origin' }
+      @arguments = arguments
+      @options = {}
     end
 
     def run
       parse
       @root = capture('rev-parse', '--show-toplevel').strip
-      @branch = git('rev-parse', '--abbrev-ref', 'HEAD').strip
-      raise Error, 'Snapshot needs a named branch, not a detached head.' if @branch == 'HEAD'
+      @branch = named_branch
 
       @options[:delete] ? delete : publish
       0
@@ -41,20 +46,17 @@ module Shaka
 
     private
 
-    def parse
-      parser = option_parser
-      parser.parse!(@arguments)
-      raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty?
+    # `symbolic-ref` answers before the first commit exists, where `rev-parse HEAD` cannot,
+    # and still refuses a detached head. A repository with drafts and no commits is exactly
+    # the case a snapshot is for.
+    def named_branch
+      git('symbolic-ref', '--quiet', '--short', 'HEAD').strip
+    rescue Error
+      raise Error, 'Snapshot needs a named branch, not a detached head.'
     end
 
-    def option_parser
-      OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka snapshot [--push] [--remote NAME] [--delete]'
-        flags.on('--push', 'Publish the snapshot; without it the plan is printed only') { @options[:push] = true }
-        flags.on('--expect DIGEST', 'The digest the plan printed; required with --push') { |v| @options[:expect] = v }
-        flags.on('--remote NAME', 'Remote to publish to; default origin') { |name| @options[:remote] = name }
-        flags.on('--delete', 'Delete this branch snapshot instead of publishing one') { @options[:delete] = true }
-      end
+    def parse
+      @options = Options.parse(@arguments)
     end
 
     def snapshot_branch = "#{PREFIX}#{@branch}"
@@ -134,7 +136,7 @@ module Shaka
 
     # Status paths are relative to the repository root, so every command runs there.
     def capture(*argv, index: nil, environment: {})
-      environment = environment.merge(index ? { 'GIT_INDEX_FILE' => index } : {})
+      environment = LITERAL.merge(environment, index ? { 'GIT_INDEX_FILE' => index } : {})
       location = @root ? ['-C', @root] : []
       output, error, status = Open3.capture3(environment, 'git', *location, *argv)
       raise Error, "git #{argv.first} failed: #{error.lines.first&.strip}" unless status.success?

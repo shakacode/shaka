@@ -203,6 +203,25 @@ module SnapshotRepository
     result
   end
 
+  # A checkout on a named branch that has no commits yet, and a remote to refuse or accept.
+  def in_unborn_repository
+    Dir.mktmpdir('shaka-snapshot-test') do |root|
+      work = File.join(root, 'work')
+      git(root, 'init', '--quiet', '--bare', '--initial-branch', 'main', File.join(root, 'origin'))
+      git(root, 'init', '--quiet', '--initial-branch', 'feature', work)
+      git(work, 'config', 'user.email', 'test@example.com')
+      git(work, 'remote', 'add', 'origin', File.join(root, 'origin'))
+      yield work
+    end
+  end
+
+  # The refusal paths report through stderr, which the JSON reader cannot see.
+  def run_failing(work, *arguments)
+    error = nil
+    isolated { Dir.chdir(work) { error = capture_io { Shaka::Snapshot.run(arguments) }.last } }
+    error
+  end
+
   def without_identity(work, *fields)
     fields.each { |field| git(work, 'config', '--unset', field) }
     git(work, 'config', 'user.useConfigOnly', 'true')
@@ -461,6 +480,39 @@ class SnapshotHistoryTest < Minitest::Test
       write(work, 'research.md' => "half an idea\n")
 
       assert_equal ['research.md'], run_snapshot(work)['adds']
+    end
+  end
+
+  # A status path is a name on disk, not a pattern: `:(top,glob)**` names one file.
+  def test_a_filename_that_looks_like_a_pathspec_publishes_only_itself
+    in_repository do |work|
+      write(work, '.gitignore' => "secret.env\n")
+      commit_all(work, 'ignore')
+      write(work, 'secret.env' => "SECRET=1\n", ':(top,glob)**' => "odd\n")
+
+      report = publish_snapshot(work)
+
+      assert_equal [':(top,glob)**'], published_files(work, report['commit'])
+    end
+  end
+
+  # Drafts in a repository that has never committed are exactly what this is for.
+  def test_a_repository_without_its_first_commit_can_still_snapshot
+    in_unborn_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+
+      report = publish_snapshot(work)
+
+      assert_equal ['research.md'], published_files(work, report['commit'])
+    end
+  end
+
+  # A remote name beginning with a dash is an option to git, not a place to push.
+  def test_a_remote_that_looks_like_an_option_is_refused
+    in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+
+      assert_includes run_failing(work, '--remote=--receive-pack=/tmp/evil'), 'cannot begin with a dash'
     end
   end
 
