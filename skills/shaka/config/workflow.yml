@@ -138,7 +138,7 @@ phases:
         evidence once and retrieve it as needed; collapsing does not save tokens.
       - Before publishing the PR description, walkthrough, or final response, self-edit each summary
         against the [portable baseline](<{{package_root}}/docs/working-with-your-agent.md#writing-preferences>):
-        lead with the outcome the reader notices, keep one main idea per sentence, put each condition
+        lead with the outcome its reader notices, keep one main idea per sentence, put each condition
         beside the behavior it limits, and prefer a clear subject and active verb over diff-shaped
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
         wrappers and inflated significance. A reply leads with the decision and uses the thread's
