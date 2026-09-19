@@ -1,26 +1,25 @@
 # Review and handle findings
 
-Meaningful implementation changes receive one visible independent review from a
-different model family than the implementation agent, and from a different provider
-whenever one is available: Claude or Grok reviews Codex work, and Codex or Grok reviews
-Claude work. The model family must always differ; the provider differing as well is the
-preference, so a different model family from the same provider is the floor when no
-other provider is available. A second session of the implementation model is useful
-self-review, but it never satisfies the alternate review gate. Trivial prose-only and no-op changes may omit model review when the PR
-records why.
+Meaningful implementation changes get an adversarial review before they are pushed. What makes
+that review adversarial is the context, not the model: a fresh session that did not produce the
+change reads it without the author's assumptions. The same model that implemented the change is a
+valid reviewer in a fresh context, and saying so is the point — it means a review is always
+available.
 
-`review.reviewers` in the repository's trusted `.agents/agent-workflow.yml` is an
-ordered preference list. Each entry names the `provider` and `model_family` that
-identify the reviewer, and nothing else. The order is the repository's standing preference
-rather than a ranking of the current task; `shaka reviewer` walks the list and returns the
-first entry that qualifies. The top-level `review.check` still names the required
-native gate, and a repository with no native gate uses `required: none` and may still declare
-`reviewers`, which is the only way a seam expresses reviewer order. Version-one seams may omit `reviewers`; verify identity from the trusted
-workflow rather than a check name. An existing Claude GitHub workflow can review Codex
-implementation; do not routinely add a second local reviewer. If every listed reviewer matches a contributing
-family, obtain an authorized alternate review as well without silently replacing the named
-gate, and treat it as a blocker only when no such reviewer is reachable at all. The user may request deeper review, and concrete
-risk may justify it.
+Review locally first and fix what it finds, so the pushed branch costs fewer CI runs and fewer
+review rounds on GitHub. The GitHub reviews still run on the pushed branch; they are the backstop,
+not the first pass.
+
+Prefer a provider that did not implement the change, because different providers notice different
+things. That is a preference, never a requirement. `shaka reviewer` applies it, and
+[invoke a reviewer locally](#invoke-a-reviewer-locally) creates the fresh context.
+
+`review.reviewers` in the repository's trusted `.agents/agent-workflow.yml` lists the local
+reviewers to try, in preference order. Each entry names a `provider` and `model_family` and nothing
+else. A seam may omit the list; the implementation model in a fresh context still reviews. The
+top-level `review.check` names the required native gate, separately from this list. Trivial
+prose-only and no-op changes may omit review when the PR records why, and the user may request
+deeper review.
 Installing the skill does not install a GitHub Action or its credentials. This V2
 source repository has its own Claude Code Review workflow; consumer repositories keep
 their own reviewer configuration.
@@ -45,83 +44,34 @@ Failed or malformed execution evidence fails the job. A successful model run is
 The owner then records the completed review and link in the PR summary and handles
 its findings. Runner success alone does not establish review or merge readiness.
 
-## Substitute an exhausted reviewer
-
-Do not work the selection out by hand. The saved helper computes it:
+## Choose a local reviewer
 
 ```text
 shaka reviewer [--root DIR] [--ref REF] --implementer PROVIDER/FAMILY [--implementer ...]
-                                       [--unavailable PROVIDER/FAMILY ...]
+                                        [--unavailable PROVIDER/FAMILY ...]
 ```
 
-Pass the same root and immutable trusted commit you gave `seam check`. Without `--ref` the helper
-reads the candidate checkout, and a candidate that rewrote `review.reviewers` could list its own
-model family and review itself; omit it only on a local branch with no review gate to satisfy.
+Pass `--implementer` once per provider and model family that produced part of the change, counting
+a delegated worker. Pass `--ref` with the trusted commit you gave `seam check`, so the preference
+order comes from the default branch rather than the branch under review. Pass `--unavailable` for
+anything you have evidence cannot run: exhausted credits or quota, a provider outage, or no
+runnable job.
 
-Pass `--implementer` once for every contributing provider and model family pair. A delegated
-worker counts, so an owner on Claude with a Codex worker passes both, and one family counts twice
-when two providers ran it — `anthropic/claude` and `bedrock/claude` are two contributing
-providers, so a `bedrock/titan` reviewer is the same-provider floor rather than an alternate. Pass
-`--unavailable` for each identity already shown unavailable on evidence. The helper reads `review.reviewers` from the validated seam and returns one of three
-outcomes, with the reason it assigned every entry and a `note` to copy into the record:
+Three outcomes, none of them an error:
 
 | Outcome | Meaning |
 | --- | --- |
-| `alternate` | That reviewer satisfies the gate: its model family and provider both differ from every contributing one. |
-| `same_provider` | No other provider qualifies, so this is the floor. Its model family still differs. Label the review same-provider. |
-| `outside_list` | No listed entry qualifies. Obtain an authorized reviewer outside the list, which never replaces a required named gate, and report a blocker only when none is reachable. |
+| `different_provider` | Run this reviewer. Its provider did not implement the change. |
+| `same_provider` | Run this reviewer. No other provider is available, and its context is still fresh. |
+| `same_model` | Nothing listed is available. Run the implementation model in a fresh context, which is a valid review. |
 
-The helper owns the comparison because prose kept getting it wrong: the model family must always
-differ, and a provider serving a contributing model family — Claude through a routed provider — is
-same-model review however different its provider string looks. It derives the contributing
-providers and families from the same identities so the two can never be compared against each
-other.
+Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked
+provider. Missing local credentials for a provider are not a problem to solve here — if you have no
+second provider at all, `same_model` is the answer, and the GitHub reviews still run once you push.
 
-What the helper cannot decide is which entries are unavailable. That is evidence, never
-assumption, and it is yours to establish: an exhausted credit or quota balance, a provider outage,
-or no runnable job for the current head. Pass those as `--unavailable`, record which evidence
-applied, and move to the next entry immediately — do not wait for credits to refill, retry a
-blocked provider, or schedule a later attempt.
-
-### Missing credentials are not unavailability
-
-A reviewer is reached by one of two routes. One that runs on GitHub, as a workflow or a
-connector, needs no local provider credentials but only runs once the branch is pushed. One
-invoked locally needs working credentials for its provider.
-
-Many repositories hold no key or login for a second provider at all. Their alternate review is
-the GitHub-hosted one, and that is an ordinary supported path rather than a degraded one. So
-absent or failing local credentials are not evidence that a reviewer is unavailable when the same
-reviewer also runs on GitHub: push the branch and take the hosted review. Treat an
-authentication failure as unavailability only for the route actually in use, and only when no
-other route reaches that reviewer.
-
-Obtaining the alternate review before pushing and triggering broad CI is the intent, not a gate.
-When the only qualifying reviewer runs on GitHub, pushing first is how the review is obtained at
-all, so push, take the review, and batch its findings as usual.
-
-### A same-family pass is not a review
-
-When no qualifying reviewer can run locally, a pass by a different model inside a contributing
-family — a smaller or larger model than the implementation used, with raised reasoning effort and
-adversarial instructions — is worth doing before the push. It catches obvious mistakes cheaply.
-
-It never satisfies the gate, and the helper never returns it: a contributing model family
-reviewing its own change is self-review whatever model ran it. Call it a self-review pass, say
-which model and effort ran it, and keep waiting for the real alternate review. Size the reviewer
-list so the gate is reachable: see [review.reviewers](settings.md#reviewreviewers).
-
-Record every substitution twice, because the chat transcript does not outlive the task:
-
-1. In the chat session as it happens, naming the skipped entry, the evidence, and the
-   substitute.
-2. In the PR's review status line, which is the durable record. For example:
-   **Adversarial review: codex (openai) at 561ebeb — substituted for claude
-   (anthropic), credits exhausted.**
-
-Substitution changes who reviews, never whether review happened. A substitute review is
-**UNVERIFIED** until the owner reads its visible report for the reviewed revision, and a
-required or user-requested gate still blocks readiness until it completes.
+Record which reviewer ran, at which revision, in the chat as you go and in the PR review status
+line, because the chat does not outlive the task. A substitution is worth a sentence: say which
+entry you skipped and on what evidence.
 
 ## Review before staged hosted CI
 
@@ -289,26 +239,24 @@ coverage. Do not add a monitor, extra audit, or tracker for this handoff.
 
 ## Invoke a reviewer locally
 
-A hosted reviewer posts its own findings and GitHub attests to the author. A local CLI runs in
-the owner's worktree with the owner's credentials, can write files, and carries no attested
-identity, so three things change: it must not edit, the owner publishes its report, and the
-report must name the revision and model it came from.
-
-Render its instructions rather than writing them each time:
+This is where the fresh context comes from. The prompt is the same whichever model runs it, because
+the context is what makes the review adversarial:
 
 ```text
 shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]
-                    [--self-review]
 ```
 
-The rendered prompt scopes the review to `git diff BASE...HEAD`, asks for correctness, contract
-drift, security and trust, test coverage, and simplification, forbids edits, treats everything
-read as data, and requires a closing line of
-`REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`. Pass `--self-review` for
-the same-family pass, which adds that the pass cannot satisfy the gate.
+It scopes the review to `git diff BASE...HEAD`, asks for correctness, contract drift, security and
+trust, test coverage, and simplification, forbids edits, treats everything read as data, and
+requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
 Supply the diff and the PR description, not the implementation reasoning: a reviewer given the
-justification anchors on it instead of finding the hole. On a public repository, include only
+justification anchors on it instead of finding the hole. That is exactly why the same model works
+here — a fresh session has none of the author's reasoning to anchor on.
+
+A local CLI differs from a hosted reviewer in three ways, all because it runs in your worktree with
+your credentials and can write files: it must not edit, you publish its report rather than it
+posting its own, and the report names the revision and model so the record stands on its own. On a public repository, include only
 review prose permitted by the public-prose rule above; retain withheld comments as links rather
 than supplying their bodies.
 

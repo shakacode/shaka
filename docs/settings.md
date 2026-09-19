@@ -218,35 +218,29 @@ required native gate, and that gate need not belong to any listed reviewer.
 
 #### Sizing the list
 
-Count model families, not providers. `anthropic/claude` plus `openai/codex` is two providers and
-still leaves a Codex implementation with only `openai/codex` once Anthropic is exhausted — its own
-family, so nothing qualifies. A third family fixes that; a fourth also covers a change two
-families worked on.
+The list names the local reviewers to try, in preference order. One entry is enough; none is also
+valid, since the implementation model in a fresh context still reviews and the GitHub reviews still
+run on the pushed branch.
 
-Running short is a graceful outcome rather than a failure: `shaka reviewer` returns `outside_list`,
-and the owner obtains an authorized reviewer outside the list. Size for the reviews you expect to
-run, not for every combination.
-
-List a reviewer you cannot run yourself. One that runs on GitHub needs no local provider
-credentials, so a repository with no second-provider key still gets its alternate review that
-way; Shaka pushes and takes the hosted review rather than reporting a blocker.
+A second provider is worth listing because different providers notice different things. Count
+providers rather than families for that: `anthropic/claude` plus `openai/codex` gives a Claude
+implementation a different provider to try, and a Codex implementation one too. List a reviewer you
+cannot run locally as well — one that runs on GitHub needs no local credentials.
 
 #### Choosing from the list
 
-`shaka reviewer` computes the choice, so neither this document nor the workflow restates the
-comparison:
+`shaka reviewer` applies the preference, so neither this document nor the workflow restates it:
 
 ```text
 shaka reviewer --root . --ref origin/main --implementer anthropic/claude
 shaka reviewer --root . --ref origin/main --implementer openai/codex --unavailable anthropic/claude
 ```
 
-It returns `alternate`, `same_provider`, or `outside_list`, with the reason it assigned every
-entry. To run the chosen reviewer from a local CLI, render its instructions with
-`shaka review-prompt` and follow
-[invoke a reviewer locally](review.md#invoke-a-reviewer-locally). [Substitute an exhausted reviewer](review.md#substitute-an-exhausted-reviewer) explains
-the outcomes, what counts as unavailability, why missing local credentials do not count, and the
-delegated-worker case.
+It returns `different_provider`, `same_provider`, or `same_model`, with the reason it assigned every
+entry. None is an error.
+[Choose a local reviewer](review.md#choose-a-local-reviewer) explains the outcomes and what counts
+as unavailable, and [invoke a reviewer locally](review.md#invoke-a-reviewer-locally) renders the
+reviewer's instructions.
 
 ## `merge`
 

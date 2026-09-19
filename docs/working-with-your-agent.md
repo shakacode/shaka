@@ -54,26 +54,21 @@ decision. On resumption, the agent checks the actual host setting when available
 writing a model name in a prompt does not change the runner.
 Measure total planning, implementation, retries, and review, not just one attempt.
 
-One owner works solo by default. Meaningful implementation still gets one visible
-review from a different model family, and from a different provider whenever one is
-available, taken in order from the seam's `review.reviewers` list. For example, Claude
-or Grok reviews Codex implementation; a second Codex session does not satisfy that gate.
-If the preferred provider is out of credits, the agent moves to the next provider at
-once and tells you which reviewer it used instead and why. If no other provider is
-available, it uses a different model family from the same provider and says the review
-was same-provider, rather than stopping.
+One owner works solo by default. Meaningful implementation still gets an adversarial review
+before the branch is pushed, so problems are fixed before they cost CI runs and review rounds
+on GitHub.
 
-You do not need an API key or login for a second provider. If your alternate reviewer runs
-on GitHub, the agent pushes the branch and uses that review, which is an ordinary path and
-not a fallback. It prefers to get the review before pushing and before broad CI runs, but
-that is an intent rather than a rule, and a GitHub-hosted reviewer necessarily reviews after
-the push. When no qualifying reviewer can run locally, the agent may make a cheap self-review pass
-first: a different model inside a contributing family, with raised reasoning effort and
-adversarial instructions. It will say that is a self-review pass, not a review, because a
-model family reviewing its own change never satisfies the gate. When every listed reviewer shares a
-contributing family, the agent looks for an authorized reviewer outside the list rather than
-stopping. It reports a blocker only when no reviewer of a non-contributing model family can
-actually review, listed or not. A separate planning task is optional. Ask `$shaka` to plan only when scope
+What makes that review adversarial is the context, not the model. A fresh session that did not
+write the change reads it without the author's assumptions, so the same model that implemented
+it is a valid reviewer — which means a review is always available. The agent prefers a provider
+that did not implement the change, because different providers notice different things, and it
+tells you which reviewer it used and why.
+
+You do not need an API key for a second provider. If one is out of credits or you have none at
+all, the agent runs the implementation model in a fresh context and says so; that is an ordinary
+outcome, not a failure. The GitHub reviews still run on the pushed branch either way.
+
+A separate planning task is optional. Ask `$shaka` to plan only when scope
 or a handoff needs thought; it returns the plan without an implementation checkpoint.
 Its output should name the task, recommended model/effort, acceptance, affected paths,
 checks, merge authority, and stopping point. Do not copy the whole planning conversation.

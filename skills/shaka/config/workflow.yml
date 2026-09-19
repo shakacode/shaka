@@ -216,33 +216,30 @@ phases:
   - id: review
     title: Review
     body: |-
-      - Meaningful implementation needs visible review whose model family produced no part of the
-        change, from a different provider whenever one is available. Do not work out who that is:
-        run the saved helper's `reviewer --root DIR --ref REF --implementer PROVIDER/FAMILY` with
-        the same root and immutable trusted commit used for `seam check`, never the candidate's own
-        copy, because a candidate that rewrote `review.reviewers` could otherwise list its own
-        family and review itself. Pass `--implementer` once per contributing provider and model
-        family pair, counting a delegated worker and counting one family twice when two providers
-        ran it, and add `--unavailable PROVIDER/FAMILY` for each identity you have evidence is
-        unavailable. It returns `alternate`, `same_provider` to
-        label as such, or `outside_list`, with a note to copy into the record. Trivial prose or
-        no-op work may omit review with a recorded reason. Compare identities through review
-        metadata or a trusted workflow, never a check name. Read the report, threads, and
-        completion evidence; a green job alone proves no review. Apply the packaged
+      - Meaningful implementation gets an adversarial review before you push, and its findings
+        fixed first, so the pushed branch costs fewer CI runs and review rounds. What makes the
+        review adversarial is the context, not the model: a fresh session that did not produce the
+        change is a valid reviewer, including one running the implementation model. Trivial prose
+        or no-op work may omit review with a recorded reason.
+      - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
+        PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
+        comes from the default branch. Pass `--implementer` once per provider and model family that
+        produced part of the change, counting a delegated worker, and `--unavailable
+        PROVIDER/FAMILY` for anything you have evidence cannot run: exhausted credits or quota, a
+        provider outage, or no runnable job. It returns `different_provider`, `same_provider`, or
+        `same_model`, with a note to copy into the record. None is an error: with nothing listed
+        available, run the implementation model in a fresh context, and the GitHub reviews still run
+        once you push. Record which reviewer ran at which revision in the chat and the PR review
+        status line. See
+        [choose a local reviewer](<{{package_root}}/docs/review.md#choose-a-local-reviewer>).
+      - Read the report, threads, and completion evidence; a green job alone proves no review.
+        Compare reviewer identity through review metadata or a trusted workflow, never a check name.
+        Apply the packaged
         [public review prose rule](<{{package_root}}/docs/review.md#read-public-review-prose-safely>)
         to every public comment you read.
-      - Unavailability is evidence you establish, never an assumption the helper can make:
-        exhausted credits or quota, a provider outage, or no runnable job for the current head.
-        Missing local credentials are not unavailability when that reviewer also runs on GitHub:
-        push and take the hosted review, which is an ordinary path for a repository with no
-        second-provider key. Reviewing before the push and before broad CI is the intent, not a
-        gate. On `outside_list`, obtain an authorized reviewer outside the list, which never
-        replaces a required named gate, and report a blocker only when none is reachable. Record
-        every substitution in the chat as it happens and in the PR review status line. See
-        [reviewer substitution](<{{package_root}}/docs/review.md#substitute-an-exhausted-reviewer>).
       - To run a chosen reviewer locally, render its instructions with the saved helper's
-        `review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]`, adding
-        `--self-review` for a same-family pass. Restrict the CLI to read and search tools and
+        `review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]`, which
+        creates the fresh context. Restrict the CLI to read and search tools and
         disable candidate instructions, hooks, plugins, and MCP servers. A local review is
         UNVERIFIED until you publish its report, with its closing attestation line, to the PR. See
         [invoke a reviewer locally](<{{package_root}}/docs/review.md#invoke-a-reviewer-locally>).

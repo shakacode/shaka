@@ -3,18 +3,18 @@
 require_relative 'error'
 
 module Shaka
-  # Chooses the reviewer that satisfies the alternate-review gate.
+  # Chooses which local reviewer to run first.
   #
-  # The gate has one invariant: a reviewer's model family must not have produced any part of the
-  # change. A differing provider is the preference layered on top of it. Both sets are derived here
-  # from the same implementer identities, which is what stops a provider being compared against a
-  # model family; stating the rule in prose twice is what let that happen before.
+  # What makes a review adversarial is the context, not the model: a fresh session that did not
+  # produce the change reviews it honestly, even when it runs the model that wrote it. So there is
+  # no disqualifying identity here and no blocker. A different provider is preferred because
+  # different providers notice different things, and the implementation model in a fresh context is
+  # an ordinary answer when no other is available.
   class ReviewerSelection
     IDENTITY = %w[provider model_family].freeze
-    ELIGIBLE = 'eligible'
+    AVAILABLE = 'available'
     UNAVAILABLE = 'unavailable'
-    FAMILY_CONTRIBUTED = 'model family contributed'
-    PROVIDER_CONTRIBUTED = 'provider contributed'
+    SAME_PROVIDER = 'same provider as the implementation'
 
     def self.parse(text)
       provider, family, extra = text.to_s.split('/', -1)
@@ -41,72 +41,62 @@ module Shaka
 
     private
 
-    # A same-provider reviewer is the floor, so it is only chosen once no eligible entry remains.
+    # Prefer a provider that did not implement the change; otherwise any available entry will do.
     def pick(reasons)
-      [ELIGIBLE, PROVIDER_CONTRIBUTED].each do |wanted|
+      [AVAILABLE, SAME_PROVIDER].each do |wanted|
         found = reasons.find { |_, why| why == wanted }
         return found.first if found
       end
       nil
     end
 
-    # A contributing family can never qualify, so report that ahead of unavailability, which is
-    # only this attempt's state. Provider-contributed stays last: it is still selectable as the floor.
     def reason(entry)
-      return FAMILY_CONTRIBUTED if families.include?(fold(entry['model_family']))
       return UNAVAILABLE if unavailable?(entry)
-      return PROVIDER_CONTRIBUTED if providers.include?(fold(entry['provider']))
+      return SAME_PROVIDER if providers.include?(fold(entry['provider']))
 
-      ELIGIBLE
+      AVAILABLE
     end
 
     def verdict(selected, reasons)
-      outcome = outcome_for(selected, reasons)
+      outcome = selected ? outcome_for(selected, reasons) : 'same_model'
       {
         'outcome' => outcome,
-        'reviewer' => selected && identity(selected),
-        'contributing_providers' => providers,
-        'contributing_families' => families,
+        'reviewer' => selected ? identity(selected) : implementer,
+        'implementation_providers' => providers,
         'considered' => reasons.map { |entry, why| { 'reviewer' => identity(entry), 'reason' => why } },
         'note' => note(outcome, selected)
       }
     end
 
     def outcome_for(selected, reasons)
-      return 'outside_list' unless selected
-      return 'alternate' if reasons.assoc(selected).last == ELIGIBLE
-
-      'same_provider'
+      reasons.assoc(selected).last == AVAILABLE ? 'different_provider' : 'same_provider'
     end
 
     def note(outcome, selected)
       case outcome
-      when 'alternate' then "#{identity(selected)} satisfies the alternate-review gate."
+      when 'different_provider' then "Run #{identity(selected)}: a provider that did not implement this."
       when 'same_provider'
-        "#{identity(selected)} is the same-provider floor; label the review same-provider."
+        "Run #{identity(selected)}: no other provider is available, and its context is still fresh."
       else
-        'No listed reviewer qualifies. Obtain an authorized reviewer outside the list, which ' \
-        'never replaces a required named gate, and report a blocker only when none is reachable.'
+        "No listed reviewer is available. Run #{implementer} in a fresh context, which is a valid " \
+        'review, and the GitHub reviews still run on the pushed branch.'
       end
     end
 
-    # Compare the components, never the joined string: "openai/foo"/"codex" and
-    # "openai"/"foo/codex" render alike and are different identities.
     def unavailable?(entry)
       @unavailable.any? { |blocked| key(blocked) == key(entry) }
     end
 
-    # An identity read from display metadata may be cased differently than the seam spells it, and
-    # a case-sensitive miss would let a contributing family qualify as its own reviewer.
+    # Compare components and fold case: an identity read from display metadata may be spelled
+    # differently than the seam spells it, and a miss would pick a less preferred reviewer.
     def key(entry) = entry.values_at(*IDENTITY).map { |part| fold(part) }
 
     def fold(value) = value.to_s.downcase
 
-    def families = @families ||= @implementers.map { |entry| fold(entry['model_family']) }.uniq
-
     def providers = @providers ||= @implementers.map { |entry| fold(entry['provider']) }.uniq
 
-    # Display only; selection never keys on this string.
+    def implementer = identity(@implementers.first)
+
     def identity(entry) = entry.values_at(*IDENTITY).join('/')
   end
 end

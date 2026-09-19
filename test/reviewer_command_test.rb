@@ -14,7 +14,7 @@ class ReviewerCommandTest < Minitest::Test
     with_repository do |root|
       result = reviewer(root, '--implementer', 'anthropic/claude')
 
-      assert_equal 'alternate', result.fetch('outcome')
+      assert_equal 'different_provider', result.fetch('outcome')
       assert_equal 'openai/codex', result.fetch('reviewer')
     end
   end
@@ -37,7 +37,7 @@ class ReviewerCommandTest < Minitest::Test
       candidate = reviewer(root, '--implementer', 'anthropic/claude')
       trusted = reviewer(root, '--ref', 'HEAD', '--implementer', 'anthropic/claude')
 
-      assert_equal 'outside_list', candidate.fetch('outcome')
+      assert_equal 'same_provider', candidate.fetch('outcome')
       assert_equal 'openai/codex', trusted.fetch('reviewer')
     end
   end

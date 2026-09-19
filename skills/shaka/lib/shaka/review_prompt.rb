@@ -69,7 +69,7 @@ module Shaka
     end
 
     def render
-      [heading, scope, list('Report on:', FOCUS), list('Rules:', rules), closing].join("\n\n")
+      [heading, scope, list('Report on:', FOCUS), list('Rules:', RULES), closing].join("\n\n")
     end
 
     def heading
@@ -78,19 +78,7 @@ module Shaka
        "REVIEWER: #{reviewer}, reasoning effort #{effort}"].join("\n")
     end
 
-    def scope
-      text = "The change is exactly: git diff #{base}...#{head}"
-      return text unless @options[:self_review]
-
-      "#{text}\n\nThis is a self-review pass: your model family produced part of this change, so " \
-        'it cannot satisfy the independent review gate. Find what the implementation missed anyway.'
-    end
-
-    def rules
-      return RULES unless @options[:self_review]
-
-      [*RULES, 'Do not claim this review is independent. It is a self-review pass.']
-    end
+    def scope = "The change is exactly: git diff #{base}...#{head}"
 
     def closing
       "End with exactly:\nREVIEWED #{head} BY #{reviewer} EFFORT #{effort} FINDINGS <n>"
@@ -111,7 +99,6 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY'
         add_value_options(flags)
-        flags.on('--self-review', 'Same-family pass that cannot satisfy the gate') { @options[:self_review] = true }
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
     end

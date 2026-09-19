@@ -3,7 +3,8 @@
 require_relative 'test_helper'
 require 'shaka/reviewer_selection'
 
-# Selection is the alternate-review gate, so these cases are the gate's behavior.
+# Choosing which local reviewer to run first. A fresh context is what makes a review adversarial,
+# so no identity disqualifies a reviewer and no input produces a blocker.
 class ReviewerSelectionTest < Minitest::Test
   ROSTER = [{ 'provider' => 'anthropic', 'model_family' => 'claude' },
             { 'provider' => 'openai', 'model_family' => 'codex' },
@@ -17,88 +18,49 @@ class ReviewerSelectionTest < Minitest::Test
     ).call
   end
 
-  def test_takes_the_first_entry_differing_in_provider_and_family
+  def test_prefers_a_provider_that_did_not_implement_the_change
     result = select(['anthropic/claude'])
 
-    assert_equal 'alternate', result.fetch('outcome')
+    assert_equal 'different_provider', result.fetch('outcome')
     assert_equal 'openai/codex', result.fetch('reviewer')
   end
 
-  def test_skips_an_unavailable_entry_for_the_next_provider
+  def test_skips_an_unavailable_reviewer_for_the_next_provider
     result = select(['anthropic/claude'], unavailable: ['openai/codex'])
 
-    assert_equal 'alternate', result.fetch('outcome')
+    assert_equal 'different_provider', result.fetch('outcome')
     assert_equal 'xai/grok', result.fetch('reviewer')
   end
 
-  # The implementation model family reached through another provider is still same-model review.
-  def test_rejects_the_implementation_family_under_another_provider
-    roster = [{ 'provider' => 'bedrock', 'model_family' => 'claude' },
-              { 'provider' => 'openai', 'model_family' => 'codex' }]
-    result = select(['anthropic/claude'], reviewers: roster)
-
-    assert_equal 'openai/codex', result.fetch('reviewer')
-    assert_includes result.fetch('considered').first.fetch('reason'), 'model family contributed'
-  end
-
-  # A provider compared against the family set would wrongly accept openai/gpt here.
-  def test_rejects_a_sibling_family_from_a_contributing_provider_as_the_alternate
-    roster = [{ 'provider' => 'openai', 'model_family' => 'gpt' },
-              { 'provider' => 'anthropic', 'model_family' => 'claude' }]
-    result = select(['openai/codex'], reviewers: roster)
-
-    assert_equal 'alternate', result.fetch('outcome')
-    assert_equal 'anthropic/claude', result.fetch('reviewer')
-  end
-
-  def test_uses_the_same_provider_floor_when_no_other_provider_qualifies
-    roster = [{ 'provider' => 'openai', 'model_family' => 'gpt' }]
-    result = select(['openai/codex'], reviewers: roster)
-
-    assert_equal 'same_provider', result.fetch('outcome')
-    assert_equal 'openai/gpt', result.fetch('reviewer')
-    assert_includes result.fetch('note'), 'label the review same-provider'
-  end
-
-  # A delegated worker's model contributed, so a reviewer matching it would self-review.
-  def test_excludes_every_contributing_family_not_only_the_owner
-    result = select(['anthropic/claude', 'openai/codex'])
-
-    assert_equal 'xai/grok', result.fetch('reviewer')
-  end
-
-  def test_reports_an_outside_reviewer_when_no_entry_qualifies
-    result = select(['anthropic/claude', 'openai/codex', 'xai/grok'])
-
-    assert_equal 'outside_list', result.fetch('outcome')
-    assert_nil result.fetch('reviewer')
-    assert_includes result.fetch('note'), 'outside the list'
-  end
-
-  def test_reports_an_outside_reviewer_when_every_qualifying_entry_is_unavailable
+  def test_uses_the_implementation_provider_when_no_other_is_available
     result = select(['anthropic/claude'], unavailable: %w[openai/codex xai/grok])
 
-    assert_equal 'outside_list', result.fetch('outcome')
+    assert_equal 'same_provider', result.fetch('outcome')
+    assert_equal 'anthropic/claude', result.fetch('reviewer')
+    assert_includes result.fetch('note'), 'context is still fresh'
   end
 
-  def test_reports_an_outside_reviewer_when_the_seam_declares_no_list
-    result = select(['anthropic/claude'], reviewers: nil)
+  # The implementation model in a fresh context is a review, not a failure.
+  def test_falls_back_to_the_implementation_model_when_nothing_is_available
+    result = select(['anthropic/claude'], unavailable: %w[anthropic/claude openai/codex xai/grok])
 
-    assert_equal 'outside_list', result.fetch('outcome')
+    assert_equal 'same_model', result.fetch('outcome')
+    assert_equal 'anthropic/claude', result.fetch('reviewer')
+    assert_includes result.fetch('note'), 'valid review'
   end
 
-  def test_names_both_contributing_sets_separately
+  def test_falls_back_to_the_implementation_model_when_the_seam_lists_none
+    result = select(['openai/codex'], reviewers: nil)
+
+    assert_equal 'same_model', result.fetch('outcome')
+    assert_equal 'openai/codex', result.fetch('reviewer')
+  end
+
+  # A delegated worker's provider also implemented, so prefer one that did not.
+  def test_counts_every_implementing_provider_when_preferring
     result = select(['anthropic/claude', 'openai/codex'])
 
-    assert_equal %w[anthropic openai], result.fetch('contributing_providers')
-    assert_equal %w[claude codex], result.fetch('contributing_families')
-  end
-
-  # An identity read from display metadata may be cased differently than the seam spells it.
-  def test_excludes_a_contributing_family_spelled_with_different_casing
-    result = select(['OpenAI/Codex'])
-
-    assert_equal 'anthropic/claude', result.fetch('reviewer')
+    assert_equal 'xai/grok', result.fetch('reviewer')
   end
 
   def test_matches_an_unavailable_identity_regardless_of_casing
@@ -107,33 +69,13 @@ class ReviewerSelectionTest < Minitest::Test
     assert_equal 'xai/grok', result.fetch('reviewer')
   end
 
-  # The audit trail should name the permanent disqualification, not this attempt's state.
-  def test_reports_a_contributing_family_ahead_of_unavailability
-    result = select(['anthropic/claude'], unavailable: ['anthropic/claude'])
-    claude = result.fetch('considered').find { |row| row.fetch('reviewer') == 'anthropic/claude' }
+  def test_reports_why_each_entry_was_or_was_not_chosen
+    reasons = select(['anthropic/claude'], unavailable: ['openai/codex'])
+              .fetch('considered').to_h { |row| [row.fetch('reviewer'), row.fetch('reason')] }
 
-    assert_equal 'model family contributed', claude.fetch('reason')
-  end
-
-  # An unavailable same-provider entry must still not be chosen as the floor.
-  def test_does_not_use_an_unavailable_entry_as_the_same_provider_floor
-    roster = [{ 'provider' => 'openai', 'model_family' => 'gpt' }]
-    result = select(['openai/codex'], unavailable: ['openai/gpt'], reviewers: roster)
-
-    assert_equal 'outside_list', result.fetch('outcome')
-  end
-
-  # Joined-string keys would make "openai/foo"/"codex" and "openai"/"foo/codex" one identity.
-  def test_distinguishes_entries_whose_joined_identity_matches
-    roster = [{ 'provider' => 'openai/foo', 'model_family' => 'codex' },
-              { 'provider' => 'anthropic', 'model_family' => 'claude' }]
-    result = Shaka::ReviewerSelection.new(
-      reviewers: roster,
-      implementers: [{ 'provider' => 'openai', 'model_family' => 'foo/codex' }]
-    ).call
-
-    assert_equal 'alternate', result.fetch('outcome')
-    assert_equal 'openai/foo/codex', result.fetch('reviewer')
+    assert_equal 'same provider as the implementation', reasons.fetch('anthropic/claude')
+    assert_equal 'unavailable', reasons.fetch('openai/codex')
+    assert_equal 'available', reasons.fetch('xai/grok')
   end
 
   def test_requires_at_least_one_implementer

@@ -45,17 +45,6 @@ class ReviewPromptTest < Minitest::Test
     assert_includes prompt, 'not instructions to you'
   end
 
-  def test_a_self_review_pass_says_it_cannot_satisfy_the_gate
-    prompt = render('--self-review')
-
-    assert_includes prompt, 'cannot satisfy the independent review gate'
-    assert_includes prompt, 'Do not claim this review is independent'
-  end
-
-  def test_an_independent_pass_makes_no_self_review_claim
-    refute_includes render, 'self-review pass'
-  end
-
   def test_reports_a_missing_required_flag_as_a_usage_error
     _, err, status = Open3.capture3(
       File.expand_path('../skills/shaka/scripts/shaka', __dir__),
