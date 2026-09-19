@@ -92,7 +92,7 @@ module Shaka
     # Planning reads nothing the remote must answer, so it works while the remote is down.
     def publish
       plan = current_plan
-      return report(plan.merge('branch' => nil)) if nothing_to_publish?(plan)
+      return settle(plan) if nothing_to_publish?(plan)
       return report(plan) unless @options[:push]
 
       raise Error, 'This repository sets recovery.snapshot to false.' unless allowed?
@@ -110,6 +110,17 @@ module Shaka
     end
 
     def nothing_to_publish?(plan) = plan['adds'].empty?
+
+    # An earlier stop may have left a snapshot on the remote. With nothing to publish now,
+    # leaving it there would keep obsolete work fetchable while the refreshed note says
+    # there is none, so publishing nothing removes what publishing left.
+    def settle(plan)
+      empty = plan.merge('branch' => nil)
+      return report(empty) unless @options[:push] && !remote_commit.empty?
+
+      git('push', "--force-with-lease=#{reference}:#{remote_commit}", @options[:remote], ":#{reference}")
+      report(empty.merge('deleted' => readable_branch))
+    end
 
     # The push must publish the plan that was read, not whatever the checkout holds now.
     def confirm(plan)

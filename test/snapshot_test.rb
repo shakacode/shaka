@@ -509,28 +509,36 @@ class SnapshotHistoryTest < Minitest::Test
     end
   end
 
-  # Planning must not wait on a remote at all, not even one whose failure it recovers from.
-  def test_planning_asks_the_remote_nothing
+  # A note that says there is no snapshot must not leave one fetchable behind it.
+  def test_publishing_nothing_removes_a_snapshot_an_earlier_stop_left
     in_repository do |work|
-      contacted = unreachable_remote(work)
       write(work, 'research.md' => "half an idea\n")
+      publish_snapshot(work)
+      commit_all(work, 'finished the draft')
 
-      report = run_snapshot(work)
+      report = run_snapshot(work, '--push')
 
-      assert_equal [['research.md'], ['UNKNOWN']], report.values_at('adds', 'unpushed_commits')
-      refute_path_exists contacted
+      assert_equal ['wip/feature', nil], report.values_at('deleted', 'branch')
+      refute_includes remote_branches(work).join, 'wip/'
     end
   end
 
-  # Planning reads nothing the remote must answer, so it survives a remote that is down.
-  def test_planning_works_while_the_remote_is_unreachable
+  # Clean means the remote already holds it, not merely that nothing is uncommitted.
+  def test_a_checkout_the_remote_already_holds_publishes_nothing
     in_repository do |work|
-      git(work, 'remote', 'set-url', 'origin', File.join(work, 'missing.git'))
-      write(work, 'research.md' => "half an idea\n")
+      git(work, 'push', '--quiet', 'origin', 'HEAD:refs/heads/feature')
 
-      assert_equal ['research.md'], run_snapshot(work)['adds']
+      report = run_snapshot(work, '--push')
+
+      assert_nil report['branch']
+      assert_empty report['adds']
     end
   end
+end
+
+# The host the command runs on, and the command line it is given.
+class SnapshotHostTest < Minitest::Test
+  include SnapshotRepository
 
   # A status path is a name on disk, not a pattern: `:(top,glob)**` names one file.
   def test_a_filename_that_looks_like_a_pathspec_publishes_only_itself
@@ -582,15 +590,26 @@ class SnapshotHistoryTest < Minitest::Test
     end
   end
 
-  # Clean means the remote already holds it, not merely that nothing is uncommitted.
-  def test_a_checkout_the_remote_already_holds_publishes_nothing
+  # Planning must not wait on a remote at all, not even one whose failure it recovers from.
+  def test_planning_asks_the_remote_nothing
     in_repository do |work|
-      git(work, 'push', '--quiet', 'origin', 'HEAD:refs/heads/feature')
+      contacted = unreachable_remote(work)
+      write(work, 'research.md' => "half an idea\n")
 
-      report = run_snapshot(work, '--push')
+      report = run_snapshot(work)
 
-      assert_nil report['branch']
-      assert_empty report['adds']
+      assert_equal [['research.md'], ['UNKNOWN']], report.values_at('adds', 'unpushed_commits')
+      refute_path_exists contacted
+    end
+  end
+
+  # Planning reads nothing the remote must answer, so it survives a remote that is down.
+  def test_planning_works_while_the_remote_is_unreachable
+    in_repository do |work|
+      git(work, 'remote', 'set-url', 'origin', File.join(work, 'missing.git'))
+      write(work, 'research.md' => "half an idea\n")
+
+      assert_equal ['research.md'], run_snapshot(work)['adds']
     end
   end
 end
