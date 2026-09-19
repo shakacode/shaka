@@ -93,9 +93,9 @@ you can check it against the diff in one read.
 Who named the task decides whether the agent may answer that question by itself. When you
 named the task, its value is settled and the agent proceeds. When the agent proposed the
 work itself, or took it from an unverified report such as a scan, a linter sweep, or a
-model's own review, the agent says so and waits. You accept or reject the line it wrote;
-once you accept, the value is established and stays established for the rest of the task.
-The origin of the task does not change, but the verdict does.
+model's own review, the agent says so and waits. Accept the line it wrote and the value is
+established for the rest of the task; reject it and the task stops there. The origin of the
+task does not change, but the verdict does.
 
 That pause outranks every model and effort reason, so you are never asked to fix a model
 setting for work you are about to decline. The agent still does its own scope and effort
