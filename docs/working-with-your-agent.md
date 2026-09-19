@@ -312,7 +312,10 @@ teaches nobody anything.
 ### Keep one current walkthrough
 
 Update the existing walkthrough for wording changes at the same revision. A new
-commit needs a walkthrough attached to that commit. After publishing and confirming
+commit needs a walkthrough attached to that commit. Write that one for the new head
+instead of adding to the old body. Review history belongs in the description's
+details, so a walkthrough that grows a paragraph each round stops explaining the
+change and starts logging the process. After publishing and confirming
 its link, try to edit your older walkthroughs using trusted GitHub tools: show “Superseded — read the current
 walkthrough” with that link, then preserve the old body inside `<details>` labeled
 with its original revision. Update the PR description's link. Do not relabel old

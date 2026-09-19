@@ -176,8 +176,10 @@ phases:
         order the walkthrough so each change prepares the next, following the packaged
         [walkthrough order](<{{package_root}}/docs/working-with-your-agent.md#how-a-walkthrough-is-ordered>).
         Cover every change completely and stop; length comes from the change, never from the writer.
-        Link the current walkthrough from the PR summary and final response. Try to collapse older walkthroughs while preserving their
-        revision, evidence, and human edits; unavailable cleanup does not block merge.
+        Link the current walkthrough from the PR summary and final response. Write each new
+        walkthrough for its head instead of adding to the last one; review history belongs in the
+        description. Try to collapse older walkthroughs while preserving their revision, evidence,
+        and human edits; unavailable cleanup does not block merge.
       - Divide the two by what each reader needs. The description serves someone who will not work
         through the PR, so it carries the outcome headline, the delivery decisions and blockers a
         maintainer must act on, missing required review, the check table, provenance, usage, the
