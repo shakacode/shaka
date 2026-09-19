@@ -131,7 +131,9 @@ merge attempt still needs it. The note lists:
   a UUID and publish `codex://threads/<thread-id>`. For Claude Code, require
   `CLAUDE_CODE_HOST_SESSION_ID` to be set and publish the link the host reports for that
   session; the desktop app supplies one, and a host that reports none, such as a plain
-  terminal, uses `UNKNOWN`. Do not assemble a link from the identifier yourself: publish
+  terminal, uses `UNKNOWN`. That is not `CLAUDE_CODE_SESSION_ID`, which names the
+  transcript on disk and is what [usage reporting](usage-reporting.md) reads; both are set
+  and they hold different values. Do not assemble a link from the identifier yourself: publish
   the one the host gives, or `UNKNOWN`. Publish either as a raw, unformatted URL, never a
   Markdown link or inline code. Other hosts use `UNKNOWN` until this guide defines their
   locator. The link opens on the machine the owner field names, which is what that field
@@ -169,8 +171,10 @@ contains a username, so one setting governs the pair. They are published by defa
 because the owner who comes back is usually the one who left, and between them they are
 the whole route back: the thread reopens the session, and the path says which directory it
 was working in. A repository that treats either as sensitive sets
-`recovery.workspace_path: false` in its seam, and the note then omits both fields. The
-publisher does not yet enforce that, so it binds the task writing the note.
+`recovery.workspace_path: false` in its seam, and the note then publishes both as
+`UNKNOWN` rather than dropping them, so a note that withholds the route back still has the
+same shape as one that gives it, and a reader can tell a withheld field from a missing one.
+The publisher does not yet enforce that, so it binds the task writing the note.
 See [settings](settings.md#recovery).
 
 The `Owner` alias stays in either case. It is a name chosen for publication rather than a

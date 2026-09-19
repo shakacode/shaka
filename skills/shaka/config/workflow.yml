@@ -199,7 +199,8 @@ phases:
         [recovery note](<{{package_root}}/docs/working-with-your-agent.md#recover-an-unfinished-pr>)
         as a collapsed `WIP Details` disclosure. Its workspace field carries the checkout path
         and its thread field the host's link back to this session, unless the seam sets
-        `recovery.workspace_path` to `false`, which omits both; nothing but this step enforces
+        `recovery.workspace_path` to `false`, which publishes both as UNKNOWN rather than
+        dropping the fields; nothing but this step enforces
         that. The thread link follows the guide's rule for the host: Codex builds it from
         `CODEX_THREAD_ID`, Claude Code publishes the link its host reports rather than one
         assembled from `CLAUDE_CODE_HOST_SESSION_ID`, and any host the guide does not cover
