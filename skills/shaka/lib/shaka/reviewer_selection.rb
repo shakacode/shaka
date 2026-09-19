@@ -80,7 +80,7 @@ module Shaka
       return reasons.assoc(selected).last == AVAILABLE ? 'different_provider' : 'same_provider' if selected
       # The implementation model in a fresh context is the last local option, unless it is itself
       # unavailable; then no local review runs and the GitHub reviews are the review.
-      return 'same_model' unless implementers_unavailable?
+      return 'same_model' if available_implementer
 
       'hosted_only'
     end
@@ -92,10 +92,14 @@ module Shaka
       nil
     end
 
-    def implementers_unavailable? = @implementers.all? { |entry| unavailable?(entry) }
+    # The fallback must name an implementer that can actually run, not just the first one listed.
+    def available_implementer = @implementers.find { |entry| !unavailable?(entry) }
 
     def note(outcome, selected)
-      format(NOTES.fetch(outcome), selected ? identity(selected) : implementer)
+      template = NOTES.fetch(outcome)
+      return template unless template.include?('%s')
+
+      format(template, selected ? identity(selected) : implementer)
     end
 
     def unavailable?(entry)
@@ -110,7 +114,7 @@ module Shaka
 
     def providers = @providers ||= @implementers.map { |entry| fold(entry['provider']) }.uniq
 
-    def implementer = identity(@implementers.first)
+    def implementer = identity(available_implementer || @implementers.first)
 
     def identity(entry) = entry.values_at(*IDENTITY).join('/')
   end

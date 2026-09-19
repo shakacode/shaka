@@ -57,6 +57,13 @@ class ReviewPromptTest < Minitest::Test
   end
 
   # An unset shell variable expands to empty, which must not render a prompt with no revision.
+  def test_reads_an_empty_effort_as_unknown
+    prompt = render('--effort', '')
+
+    assert_includes prompt, 'reasoning effort UNKNOWN'
+    assert_includes prompt, 'EFFORT UNKNOWN FINDINGS <n>'
+  end
+
   def test_rejects_an_empty_required_value
     _, err, status = Open3.capture3(
       File.expand_path('../skills/shaka/scripts/shaka', __dir__),

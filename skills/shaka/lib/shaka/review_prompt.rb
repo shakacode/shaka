@@ -90,7 +90,12 @@ module Shaka
 
     def head = @options.fetch(:head)
     def base = @options.fetch(:base)
-    def effort = @options.fetch(:effort, 'UNKNOWN')
+
+    # An unset shell variable expands to empty, which would render `EFFORT  FINDINGS`.
+    def effort
+      value = @options[:effort].to_s.strip
+      value.empty? ? 'UNKNOWN' : value
+    end
 
     def reviewer
       identity = ReviewerSelection.parse(@options.fetch(:reviewer))

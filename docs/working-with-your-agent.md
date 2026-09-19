@@ -74,9 +74,9 @@ Its output should name the task, recommended model/effort, acceptance, affected 
 checks, merge authority, and stopping point. Do not copy the whole planning conversation.
 
 If the repository exposes `trigger_hosted_ci`, it must also provide `validate_local`. The agent
-runs that cheaper validation and handles the first alternate-model review before requesting suites for
-the stable candidate. It uses a draft only when every required reviewer supports drafts, or
-the repository's documented review-ready path otherwise. Always-on required and security
+runs that cheaper validation and handles the first adversarial review before requesting suites for
+the stable candidate, whichever model that review runs. It uses the review-ready path unless a
+needed reviewer's trusted workflow shows it reviews drafts. Always-on required and security
 checks still run normally. A changed head requires fresh affected review and CI evidence.
 
 Use a fresh task for a new implementation objective. Keep an existing task while

@@ -11,7 +11,8 @@ commands:
   setup: .agents/bin/setup
   validate: .agents/bin/validate
   test: .agents/bin/test
-# Reviewer policy. A review from the implementer's own model family does not qualify.
+# Reviewer policy. A fresh context is what makes a review adversarial, so the implementation
+# model qualifies; a different provider is only preferred.
 review:
   required: meaningful_changes
   check: claude-review

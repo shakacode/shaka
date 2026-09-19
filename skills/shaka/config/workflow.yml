@@ -129,8 +129,9 @@ phases:
         produced part of the change, counting a delegated worker, and `--unavailable
         PROVIDER/FAMILY` for anything you have evidence cannot run: exhausted credits or quota, a
         provider outage, or no runnable job. It returns `different_provider`, `same_provider`, or
-        `same_model`, with a note to copy into the record. None is an error: with nothing listed
-        available, run the implementation model in a fresh context, and the GitHub reviews still run
+        `same_model`, or `hosted_only`, with a note to copy into the record. None is an error: with
+        nothing listed available, run the implementation model in a fresh context; with nothing able
+        to run locally at all, `hosted_only` says so, and either way the GitHub reviews still run
         once you push. Record which reviewer ran at which revision in the chat and the PR review
         status line. See
         [choose a local reviewer](<{{package_root}}/docs/review.md#choose-a-local-reviewer>).

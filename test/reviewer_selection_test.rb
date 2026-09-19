@@ -90,6 +90,16 @@ class ReviewerSelectionTest < Minitest::Test
     assert_includes result.fetch('note'), 'no local review ran'
   end
 
+  # With several implementers, the fallback must name one that can actually run.
+  def test_names_an_available_implementer_for_the_same_model_fallback
+    roster = [{ 'provider' => 'xai', 'model_family' => 'grok' }]
+    result = select(['anthropic/claude', 'openai/codex'],
+                    unavailable: %w[xai/grok anthropic/claude], reviewers: roster)
+
+    assert_equal 'same_model', result.fetch('outcome')
+    assert_equal 'openai/codex', result.fetch('reviewer')
+  end
+
   def test_requires_at_least_one_implementer
     error = assert_raises(Shaka::Error) { select([]) }
 
