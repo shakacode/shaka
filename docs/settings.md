@@ -173,7 +173,10 @@ defaults.
 The two keys are enforced in different places, and the difference matters. `snapshot` is
 enforced by the command: it reads the key from the remote's own default branch before it
 pushes anything, so editing or deleting the checkout's copy changes nothing, and a remote
-it cannot read refuses. `workspace_path` still tells only the workflow what a note may
+it cannot read refuses. That remote contract is validated whole before the key is read,
+because reading one section out of a document nothing has checked assumes the rest of it.
+Only its command and `plan` paths go unchecked, since those name files in the repository
+the seam came from rather than the checkout reading it. `workspace_path` still tells only the workflow what a note may
 carry; the publisher does not refuse a note that ignores it. Enforcing it means teaching
 the description publisher to read the same remote seam on every publication, which is a
 change to the publication boundary and is not part of the snapshot command.

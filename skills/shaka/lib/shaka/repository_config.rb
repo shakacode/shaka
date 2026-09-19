@@ -19,13 +19,14 @@ module Shaka
       new(root:, source:).load
     end
 
-    # A seam read from another checkout answers only the recovery question, so only that
-    # section is validated: its command paths describe the repository it came from.
+    # A seam read from another checkout is validated whole, because reading one section out
+    # of a contract nothing has checked assumes the rest of it. Only its command and plan
+    # paths go unchecked, since those describe the repository it came from, not this one.
     def self.recovery_from(source)
       data = parse(source)
+      Schema.new(root: nil, data:, local: false).validate
       return DEFAULT_RECOVERY unless data.key?('recovery')
 
-      RecoverySchema.new(data['recovery']).validate
       DEFAULT_RECOVERY.merge(data['recovery'])
     end
 

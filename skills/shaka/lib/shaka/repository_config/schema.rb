@@ -16,9 +16,12 @@ module Shaka
       REQUIRED = %w[version base_branch commands review merge protection].freeze
       OPTIONAL = %w[plan trusted_actions branches recovery].freeze
 
-      def initialize(root:, data:)
+      # A seam read from another checkout describes a repository this one does not have, so
+      # its command and plan paths are checked as values rather than as files on disk.
+      def initialize(root:, data:, local: true)
         @root = root
         @data = data
+        @local = local
       end
 
       def validate
@@ -102,6 +105,8 @@ module Shaka
       end
 
       def file!(value, label)
+        return string!(value, label) unless @local
+
         path = repository_path(value, label)
         raise Error, "#{label} does not exist: #{value}" unless File.file?(path)
 
@@ -113,6 +118,8 @@ module Shaka
 
       def executable!(value, label)
         path = file!(value, label)
+        return unless @local
+
         raise Error, "#{label} is not executable: #{value}" unless File.executable?(path)
       end
 

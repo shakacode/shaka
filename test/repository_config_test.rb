@@ -216,23 +216,45 @@ class RepositoryConfigRecoveryTest < Minitest::Test
     end
   end
 
+  # The commands a remote seam names live in its own checkout, not in the one reading it.
   def test_a_remote_seam_answers_recovery_without_its_own_command_paths
-    source = "---\nversion: 1\ncommands:\n  setup: bin/setup\nrecovery:\n  snapshot: false\n"
-
     assert_equal({ 'workspace_path' => true, 'snapshot' => false },
-                 Shaka::RepositoryConfig.recovery_from(source))
+                 Shaka::RepositoryConfig.recovery_from(remote_seam(snapshot: false)))
   end
 
   def test_a_remote_seam_without_a_recovery_section_keeps_the_defaults
+    source = remote_seam(snapshot: true).sub(/recovery:\n  snapshot: \w+\n/, '')
+
     assert_equal({ 'workspace_path' => true, 'snapshot' => true },
-                 Shaka::RepositoryConfig.recovery_from("---\nversion: 1\n"))
+                 Shaka::RepositoryConfig.recovery_from(source))
   end
 
   def test_a_remote_seam_with_an_unknown_recovery_key_is_rejected
-    source = "---\nrecovery:\n  snapshots: false\n"
+    source = remote_seam(snapshot: true).sub('snapshot:', 'snapshots:')
     error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.recovery_from(source) }
 
     assert_includes error.message, 'unknown key: snapshots'
+  end
+
+  # Reading one section out of a contract nothing has checked assumes all the rest of it.
+  def test_a_remote_seam_that_is_not_a_valid_contract_is_rejected
+    source = remote_seam(snapshot: true).sub('version: 1', 'version: 99')
+    error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.recovery_from(source) }
+
+    assert_includes error.message, 'version must be 1'
+  end
+
+  def test_a_remote_seam_missing_a_required_section_is_rejected
+    source = remote_seam(snapshot: true).sub(/merge:\n(  \w+: \w+\n)+/, '')
+    error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.recovery_from(source) }
+
+    assert_includes error.message, 'missing'
+  end
+
+  # A complete contract whose command paths exist only in the repository it came from.
+  def remote_seam(snapshot:)
+    template = File.read(File.expand_path('fixtures/snapshot_seam.yml', __dir__))
+    format(template, snapshot:)
   end
 
   def test_rejects_an_unknown_recovery_key
