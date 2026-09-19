@@ -154,8 +154,10 @@ and merge preference:
   --required-check validate
 ```
 
-The command creates `.agents/agent-workflow.yml` and small executable wrappers
-under `.agents/bin/`. Its default merge preference is **Ask**. Add
+The command creates `.agents/agent-workflow.yml`, small executable wrappers under
+`.agents/bin/`, and an `.agents/README.md` that tells a reader of that repository what
+the directory is and links to the [seam settings reference](settings.md). Its default
+merge preference is **Ask**. Add
 `--merge-preference auto` only when that is the repository's established authority;
 choose `--review-policy always`, `meaningful_changes`, or `none`, and supply
 `--review-check` unless the policy is `none`. Also
