@@ -50,9 +50,11 @@ module Shaka
       nil
     end
 
+    # A contributing family can never qualify, so report that ahead of unavailability, which is
+    # only this attempt's state. Provider-contributed stays last: it is still selectable as the floor.
     def reason(entry)
-      return UNAVAILABLE if unavailable?(entry)
       return FAMILY_CONTRIBUTED if families.include?(fold(entry['model_family']))
+      return UNAVAILABLE if unavailable?(entry)
       return PROVIDER_CONTRIBUTED if providers.include?(fold(entry['provider']))
 
       ELIGIBLE

@@ -107,6 +107,22 @@ class ReviewerSelectionTest < Minitest::Test
     assert_equal 'xai/grok', result.fetch('reviewer')
   end
 
+  # The audit trail should name the permanent disqualification, not this attempt's state.
+  def test_reports_a_contributing_family_ahead_of_unavailability
+    result = select(['anthropic/claude'], unavailable: ['anthropic/claude'])
+    claude = result.fetch('considered').find { |row| row.fetch('reviewer') == 'anthropic/claude' }
+
+    assert_equal 'model family contributed', claude.fetch('reason')
+  end
+
+  # An unavailable same-provider entry must still not be chosen as the floor.
+  def test_does_not_use_an_unavailable_entry_as_the_same_provider_floor
+    roster = [{ 'provider' => 'openai', 'model_family' => 'gpt' }]
+    result = select(['openai/codex'], unavailable: ['openai/gpt'], reviewers: roster)
+
+    assert_equal 'outside_list', result.fetch('outcome')
+  end
+
   # Joined-string keys would make "openai/foo"/"codex" and "openai"/"foo/codex" one identity.
   def test_distinguishes_entries_whose_joined_identity_matches
     roster = [{ 'provider' => 'openai/foo', 'model_family' => 'codex' },
