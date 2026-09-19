@@ -71,6 +71,24 @@ Every value must be a repository-relative path to a file that exists and is
 
 `required` is the only mandatory key. `check` names the reviewer's status check.
 
+The three `required` values record when the gate named by `check` should apply, and `check` is
+bound to them: validation requires it for `always` and `meaningful_changes`, and rejects it for
+`none`. Choosing `none` therefore leaves no named gate to satisfy.
+
+`always` is the exception. The workflow's review phase lets trivial prose or no-op work omit
+review with a recorded reason whatever is set here, and nothing consumes this value to withdraw
+that exemption, so `always` currently behaves exactly like `meaningful_changes`.
+
+| Value | Trigger for the named gate |
+| --- | --- |
+| `always` | Every pull request, with no exemption for trivial work. Not yet distinguished from `meaningful_changes`. |
+| `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. |
+| `none` | Never. Validation rejects `check`, so the repository declares no named gate. |
+
+One rule holds whatever this value says: meaningful implementation needs a review from a
+different model family than the implementer, and `none` does not switch that baseline off.
+[Review](review.md) defines the baseline and the rest of the review procedure.
+
 | Setting | Required | Allowed values |
 | --- | --- | --- |
 | `required` | yes | `always`, `meaningful_changes`, `none` |
@@ -193,7 +211,8 @@ identity. The generated merge preference is `ask` unless you pass `--merge-prefe
 
 | Area | Source |
 | --- | --- |
-| Whole-file and top-level rules | `skills/shaka/lib/shaka/repository_config/schema.rb` |
+| Contract path, and the `safe_load` limits on aliases, classes, and symbols | `skills/shaka/lib/shaka/repository_config.rb` |
+| Top-level keys and section values | `skills/shaka/lib/shaka/repository_config/schema.rb` |
 | Reviewer policy | `skills/shaka/lib/shaka/repository_config/review_schema.rb` |
 | Feature-branch layout | `skills/shaka/lib/shaka/repository_config/branch_schema.rb` |
 | Recovery note policy | `skills/shaka/lib/shaka/repository_config/recovery_schema.rb` |
