@@ -8,7 +8,9 @@ approval because a published version cannot be replaced.
 
 ## Release process
 
-1. Change `spec.version` in `shaka.gemspec` through a reviewed pull request and merge it.
+1. Change `Shaka::VERSION` in `skills/shaka/lib/shaka/version.rb` through a reviewed pull
+   request and merge it. The gemspec reads that constant, and `shaka seam init` stamps it
+   into the `.agents/README.md` it generates.
 2. Start from a clean, current `main` checkout.
 3. Install dependencies and run the repository validation:
 

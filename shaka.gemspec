@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require_relative 'skills/shaka/lib/shaka/version'
+
 Gem::Specification.new do |spec|
   spec.name = 'shaka'
-  spec.version = '0.1.0.pre.1'
+  spec.version = Shaka::VERSION
   spec.summary = 'Give your agent a task. Get a verified, explained pull request.'
   spec.authors = ['ShakaCode']
   spec.license = 'MIT'

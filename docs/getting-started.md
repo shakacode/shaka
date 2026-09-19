@@ -154,8 +154,10 @@ and merge preference:
   --required-check validate
 ```
 
-The command creates `.agents/agent-workflow.yml` and small executable wrappers
-under `.agents/bin/`. Its default merge preference is **Ask**. Add
+The command creates `.agents/agent-workflow.yml`, small executable wrappers under
+`.agents/bin/`, and an `.agents/README.md` that tells a reader of that repository what
+the directory is and links to the [seam settings reference](settings.md). Its default
+merge preference is **Ask**. Add
 `--merge-preference auto` only when that is the repository's established authority;
 choose `--review-policy always`, `meaningful_changes`, or `none`, and supply
 `--review-check` unless the policy is `none`. Also
@@ -166,7 +168,8 @@ or other compound behavior in a repository-owned script.
 
 Initialization validates every input before writing. It is safe to repeat when the
 generated files are unchanged and refuses to overwrite a repository-owned file or
-symlink. Use the path printed by `bin/install` when you installed elsewhere.
+symlink. The README carries the skill version that wrote it, so a repeat after a Shaka
+upgrade leaves the repository's copy in place rather than refusing the whole run. Use the path printed by `bin/install` when you installed elsewhere.
 
 ## Check your setup
 

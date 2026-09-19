@@ -28,9 +28,18 @@ module Shaka
       end
 
       def matching_destination?(path, content)
-        matches = File.file?(path) && !File.symlink?(path) && File.read(path, encoding: 'UTF-8') == content
-        matches &&= (File.stat(path).mode & 0o7777) == destination_mode(path)
-        matches
+        return false unless File.file?(path) && !File.symlink?(path)
+        return false unless (File.stat(path).mode & 0o7777) == destination_mode(path)
+
+        existing = File.read(path, encoding: 'UTF-8')
+        existing == content || previously_generated_readme?(path, existing)
+      end
+
+      # The README records the generating skill version, so an upgrade changes its text while
+      # the repository's copy stays correct. Recognizing our own marker keeps a plain repeat of
+      # `seam init` from aborting over a file nobody edited. Everything else stays byte-exact.
+      def previously_generated_readme?(path, existing)
+        path == File.join(@root, Initializer::README_PATH) && existing.start_with?(readme_marker)
       end
 
       def write_files(files)
