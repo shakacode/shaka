@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'bytes'
 require_relative 'changes'
 require_relative 'screen'
 require_relative 'tree'
@@ -34,7 +35,7 @@ module Shaka
       # Git works in path bytes and the report is JSON, so what the reader sees is scrubbed
       # while the commands keep the bytes. Only held-back paths can be unreadable, because
       # the screen refuses to publish a name it cannot render.
-      def readable(paths) = paths.map { |path| path.scrub('?') }
+      def readable(paths) = paths.map { |path| Bytes.readable(path) }
 
       # Deletions describe the checkout rather than the snapshot: with no parent there is
       # nothing to delete from. They are reported so the recovery note can record them.
@@ -58,9 +59,7 @@ module Shaka
         @changes ||= Changes.new(split(@git.call('status', '--porcelain', '-uall', '-z')))
       end
 
-      def split(output)
-        output.b.split(SEPARATOR).map { |entry| entry.force_encoding(Encoding::UTF_8) }
-      end
+      def split(output) = Bytes.split(output, SEPARATOR)
 
       # A conflicted path can be reported as deleted while the resolution is still on disk,
       # and a symlink is a resolution like any other, including a broken one or one naming a

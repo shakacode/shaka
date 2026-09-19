@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 require 'optparse'
 require_relative 'error'
+require_relative 'snapshot/bytes'
 require_relative 'snapshot/options'
 require_relative 'snapshot/plan'
 require_relative 'snapshot/policy'
@@ -37,7 +38,7 @@ module Shaka
 
     def run
       parse
-      @root = capture('rev-parse', '--show-toplevel').strip
+      @root = Bytes.trimmed(capture('rev-parse', '--show-toplevel'))
       @branch = named_branch
 
       @options[:delete] ? delete : publish
@@ -50,7 +51,7 @@ module Shaka
     # and still refuses a detached head. A repository with drafts and no commits is exactly
     # the case a snapshot is for.
     def named_branch
-      git('symbolic-ref', '--quiet', '--short', 'HEAD').strip
+      Bytes.trimmed(git('symbolic-ref', '--quiet', '--short', 'HEAD'))
     rescue Error
       raise Error, 'Snapshot needs a named branch, not a detached head.'
     end
@@ -61,21 +62,29 @@ module Shaka
 
     def snapshot_branch = "#{PREFIX}#{@branch}"
 
+    # A ref name keeps its bytes for git and is rendered for anything a person reads.
+    def readable_branch = Bytes.readable(snapshot_branch)
+
     def reference = "refs/heads/#{snapshot_branch}"
 
     def delete
       git('push', @options[:remote], '--delete', snapshot_branch) unless remote_commit.empty?
-      report('deleted' => snapshot_branch, 'existed' => !remote_commit.empty?)
+      report('deleted' => readable_branch, 'existed' => !remote_commit.empty?)
     end
 
     # An exact lease needs no remote-tracking ref, which a fresh checkout does not have.
     def remote_commit
-      @remote_commit ||= git('ls-remote', @options[:remote], reference).split(/\s/).first.to_s
+      @remote_commit ||= Bytes.trimmed(git('ls-remote', @options[:remote], reference)).split(/\s/).first.to_s
     end
 
-    # Planning must work offline, so an unreachable remote means no known remote head.
+    # Planning never asks the remote anything, not even a question it could recover from:
+    # an unreachable or slow remote must not delay a plan. Only a push compares against the
+    # remote's own answer, and an unreachable one there means no known head.
     def remote_head
-      @remote_head ||= git('ls-remote', @options[:remote], "refs/heads/#{@branch}").split(/\s/).first.to_s
+      return '' unless @options[:push]
+
+      @remote_head ||= Bytes.trimmed(git('ls-remote', @options[:remote], "refs/heads/#{@branch}"))
+                            .split(/\s/).first.to_s
     rescue Error
       @remote_head = ''
     end
@@ -97,7 +106,7 @@ module Shaka
     end
 
     def current_plan
-      Plan.new(root: @root, branch: snapshot_branch, remote_head:, git: method(:git)).to_h
+      Plan.new(root: @root, branch: readable_branch, remote_head:, git: method(:git)).to_h
     end
 
     def nothing_to_publish?(plan) = plan['adds'].empty?
@@ -121,7 +130,7 @@ module Shaka
     end
 
     def message
-      "Snapshot unfinished work on #{@branch}\n\n" \
+      "Snapshot unfinished work on #{Bytes.readable(@branch)}\n\n" \
         'Published by shaka snapshot. Not for review or merge. This commit has no parent and ' \
         "holds only the files the snapshot listed; the branch it came from is elsewhere.\n"
     end

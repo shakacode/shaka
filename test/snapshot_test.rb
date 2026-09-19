@@ -71,6 +71,31 @@ class SnapshotScreenTest < Minitest::Test
   end
 end
 
+# Git speaks bytes, and a ref name or a path need not be valid UTF-8. This cannot be
+# reproduced through a real repository on APFS, which refuses to create such a ref, so the
+# boundary that converts git's output is exercised on its own.
+class SnapshotBytesTest < Minitest::Test
+  BAD = "bad\xFFname".b
+
+  def test_trimming_a_name_that_is_not_valid_utf8_keeps_its_bytes
+    trimmed = Shaka::Snapshot::Bytes.trimmed("#{BAD}\n".b)
+
+    assert_equal [BAD, Encoding::UTF_8, false], [trimmed.b, trimmed.encoding, trimmed.valid_encoding?]
+  end
+
+  def test_rendering_replaces_only_what_cannot_be_read
+    rendered = Shaka::Snapshot::Bytes.readable(Shaka::Snapshot::Bytes.text(BAD))
+
+    assert_equal ['bad?name', true], [rendered, rendered.valid_encoding?]
+  end
+
+  def test_splitting_keeps_each_entry_as_its_own_bytes
+    entries = Shaka::Snapshot::Bytes.split("one\0#{BAD}\0".b, "\0")
+
+    assert_equal ['one', BAD], [entries.first, entries.last.b]
+  end
+end
+
 # Git reports a rename as two fields and a deletion as an ordinary change.
 class SnapshotChangesTest < Minitest::Test
   def test_a_rename_adds_its_destination_and_removes_its_source
@@ -213,6 +238,17 @@ module SnapshotRepository
       git(work, 'remote', 'add', 'origin', File.join(root, 'origin'))
       yield work
     end
+  end
+
+  # An ssh remote whose transport records that it ran, so reaching it is observable.
+  def unreachable_remote(work)
+    contacted = File.join(File.dirname(work), 'contacted')
+    probe = File.join(File.dirname(work), 'probe.sh')
+    File.write(probe, "#!/bin/sh\ntouch #{contacted}\nexit 1\n")
+    File.chmod(0o755, probe)
+    git(work, 'remote', 'set-url', 'origin', 'ssh://example.invalid/repo.git')
+    git(work, 'config', 'core.sshCommand', probe)
+    contacted
   end
 
   # The refusal paths report through stderr, which the JSON reader cannot see.
@@ -470,6 +506,19 @@ class SnapshotHistoryTest < Minitest::Test
       report = publish_snapshot(work)
 
       assert_empty git(work, 'rev-list', '--parents', '-1', report['commit']).split[1..]
+    end
+  end
+
+  # Planning must not wait on a remote at all, not even one whose failure it recovers from.
+  def test_planning_asks_the_remote_nothing
+    in_repository do |work|
+      contacted = unreachable_remote(work)
+      write(work, 'research.md' => "half an idea\n")
+
+      report = run_snapshot(work)
+
+      assert_equal [['research.md'], ['UNKNOWN']], report.values_at('adds', 'unpushed_commits')
+      refute_path_exists contacted
     end
   end
 

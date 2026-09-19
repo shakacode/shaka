@@ -204,8 +204,10 @@ nobody can read is a name nobody can review. Name the
 held-back files in the note as work the snapshot does not hold. It holds back submodules
 and embedded repositories the same way, since their work cannot travel in one commit.
 
-Printing the plan reads only the checkout, so it works while the remote is down. Only the
-push asks the remote anything.
+Printing the plan reads only the checkout, so it works while the remote is down, slow, or
+asking for a password. It asks the remote nothing at all, which is why a plan reports its
+unpushed commits as UNKNOWN: that answer lives on the remote. The push reports them for
+real, and the note takes them from there.
 
 Name the branch in the note, and run `shaka snapshot --delete` when the PR reaches its
 outcome. The snapshot carries no pull request, so checks that run on pull requests do not
