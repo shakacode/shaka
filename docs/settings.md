@@ -71,6 +71,12 @@ Every value must be a repository-relative path to a file that exists and is
 
 `required` is the only mandatory key. `check` names the reviewer's status check.
 
+The three `required` values choose when a repository-named review gate applies, not how much
+review the workflow performs. `none` switches off that named gate only; it does not remove the
+alternate-model baseline that meaningful implementation still needs, so selecting it buys less
+than it appears to. [Review](review.md) defines that baseline and the rest of the review
+procedure; read it before changing this value.
+
 | Setting | Required | Allowed values |
 | --- | --- | --- |
 | `required` | yes | `always`, `meaningful_changes`, `none` |
@@ -193,7 +199,8 @@ identity. The generated merge preference is `ask` unless you pass `--merge-prefe
 
 | Area | Source |
 | --- | --- |
-| Whole-file and top-level rules | `skills/shaka/lib/shaka/repository_config/schema.rb` |
+| Contract path, and the `safe_load` limits on aliases, classes, and symbols | `skills/shaka/lib/shaka/repository_config.rb` |
+| Top-level keys and section values | `skills/shaka/lib/shaka/repository_config/schema.rb` |
 | Reviewer policy | `skills/shaka/lib/shaka/repository_config/review_schema.rb` |
 | Feature-branch layout | `skills/shaka/lib/shaka/repository_config/branch_schema.rb` |
 | Recovery note policy | `skills/shaka/lib/shaka/repository_config/recovery_schema.rb` |
