@@ -284,18 +284,23 @@ diff would have.
 
 ### How a walkthrough is ordered
 
-Order the walkthrough so that each change prepares the next, rather than by file name or
-commit order. That usually means the prior behavior and the new behavior first, then
-contract, data model, or interface changes, then core behavior, then integrations, UI, and
-operational wiring, and finally tests, documentation, migrations, and generated artifacts.
-Reorder when the change itself demands it. The outcome headline stays in the description; a
-walkthrough leads with the behavior that changed, which is what its own reader notices.
+The [portable baseline](#writing-preferences) already asks a walkthrough to explain the
+earlier behavior and the new capability before files or diff mechanics, and shows the
+difference. Ordering decides what follows that opening.
+
+Order the rest so that each change prepares the next, rather than by file name or commit
+order. That usually means contract, data model, or interface changes first, then core
+behavior, then integrations, UI, and operational wiring, and finally tests, documentation,
+migrations, and generated artifacts. Reorder when the change itself demands it. The outcome
+headline stays in the description; a walkthrough leads with the behavior that changed, which
+is what its own reader notices.
 
 Separate mechanical movement, generated output, dependency bumps, and formatting from the
 changes that alter behavior, so churn does not hide the reason for the work.
 
-Explain behavior instead of narrating syntax, and define an unfamiliar domain term the first
-time it appears. A walkthrough that fills in a form teaches nobody anything.
+Define an unfamiliar domain term the first time it appears, and cover the concerns that
+matter rather than emitting a heading for each one; a walkthrough that fills in a form
+teaches nobody anything.
 
 ### Keep one current walkthrough
 
