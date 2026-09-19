@@ -36,6 +36,7 @@ protection:
 # Recovery note policy for unfinished pull requests; defaults to true.
 recovery:
   workspace_path: true
+  snapshot: true
 # Optional allowlist of GitHub Actions used by trusted workflows.
 trusted_actions:
   - actions/checkout

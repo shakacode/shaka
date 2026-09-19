@@ -39,7 +39,7 @@ These apply to the whole document, whatever the settings are.
 | `plan` | no | string | Repository-relative path to an existing file. |
 | `trusted_actions` | no | list of strings | Non-empty when present. |
 | `branches` | no | mapping | [Feature-branch layout](#branches). |
-| `recovery` | no | mapping | [Recovery note policy](#recovery). |
+| `recovery` | no | mapping | [Recovery note and snapshot policy](#recovery). |
 
 Repository-relative means exactly that: an absolute path, a path that escapes the
 repository, or a symlink resolving outside it is rejected.
@@ -155,22 +155,28 @@ branches differently.
 
 ## `recovery`
 
-Optional mapping. Its one key, `workspace_path`, is a boolean and defaults to `true` when
-the section or the key is absent. It governs the
+Optional mapping. Both keys are booleans and both default to `true` when the section or
+the key is absent. They govern the
 [recovery note](working-with-your-agent.md#recover-an-unfinished-pr) a pull request carries
-while it is unfinished.
+while it is unfinished, and the unfinished work that note describes.
 
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
 | `workspace_path` | `true` or `false` | `true` lets the note carry the checkout path. `false` tells the workflow to omit the `Workspace` field. The owner alias and the `Thread` locator follow their own rules either way. Read the note below on what enforces this. |
+| `snapshot` | `true` or `false` | `true` lets `shaka snapshot` push unfinished work to a `wip/` branch when a task stops, holding back credential-like paths first. `false` makes the command itself refuse, so unfinished work stays on the machine that made it. |
 
-Set `workspace_path: false` where contributor paths are sensitive. `seam init` does not
-write the key, so a repository that says nothing gets the default.
+Set `workspace_path: false` where contributor paths are sensitive. Set `snapshot: false`
+where unfinished work must not reach the remote at all, or where CI runs on every pushed
+branch. `seam init` writes neither key, so a repository that says nothing gets both
+defaults.
 
-The setting tells the workflow what a recovery note may carry. The publisher does not yet
-refuse a note that ignores it, so today it binds the agent rather than the publication
-boundary. Enforcement belongs with the same trusted-seam reading the snapshot command
-introduces, and lands with it.
+The two keys are enforced in different places, and the difference matters. `snapshot` is
+enforced by the command: it reads the key from the remote's own default branch before it
+pushes anything, so editing or deleting the checkout's copy changes nothing, and a remote
+it cannot read refuses. `workspace_path` still tells only the workflow what a note may
+carry; the publisher does not refuse a note that ignores it. Enforcing it means teaching
+the description publisher to read the same remote seam on every publication, which is a
+change to the publication boundary and is not part of the snapshot command.
 
 ## What `seam init` writes
 
@@ -197,5 +203,6 @@ identity. The generated merge preference is `ask` unless you pass `--merge-prefe
 | Reviewer policy | `skills/shaka/lib/shaka/repository_config/review_schema.rb` |
 | Feature-branch layout | `skills/shaka/lib/shaka/repository_config/branch_schema.rb` |
 | Recovery note policy | `skills/shaka/lib/shaka/repository_config/recovery_schema.rb` |
+| Snapshot refusal | `skills/shaka/lib/shaka/snapshot/policy.rb` |
 | One document, no duplicate keys | `skills/shaka/lib/shaka/repository_config/duplicate_keys.rb` |
 | Generated contract | `skills/shaka/lib/shaka/seam/initializer.rb` |

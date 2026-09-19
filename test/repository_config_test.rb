@@ -195,22 +195,44 @@ end
 class RepositoryConfigRecoveryTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
-  def test_recovery_defaults_to_publishing_a_workspace
+  def test_recovery_defaults_to_publishing_a_workspace_and_snapshotting
     with_repository do |root|
-      assert_equal({ 'workspace_path' => true }, Shaka::RepositoryConfig.load(root:).recovery)
+      assert_equal({ 'workspace_path' => true, 'snapshot' => true },
+                   Shaka::RepositoryConfig.load(root:).recovery)
     end
   end
 
   def test_the_effective_contract_includes_the_recovery_default
     with_repository do |root|
-      assert_equal({ 'workspace_path' => true }, Shaka::RepositoryConfig.load(root:).to_h.fetch('recovery'))
+      assert_equal({ 'workspace_path' => true, 'snapshot' => true },
+                   Shaka::RepositoryConfig.load(root:).to_h.fetch('recovery'))
     end
   end
 
   def test_a_repository_can_opt_out_of_publishing_its_workspace_path
     with_repository('recovery' => { 'workspace_path' => false }) do |root|
-      assert_equal({ 'workspace_path' => false }, Shaka::RepositoryConfig.load(root:).recovery)
+      assert_equal({ 'workspace_path' => false, 'snapshot' => true },
+                   Shaka::RepositoryConfig.load(root:).recovery)
     end
+  end
+
+  def test_a_remote_seam_answers_recovery_without_its_own_command_paths
+    source = "---\nversion: 1\ncommands:\n  setup: bin/setup\nrecovery:\n  snapshot: false\n"
+
+    assert_equal({ 'workspace_path' => true, 'snapshot' => false },
+                 Shaka::RepositoryConfig.recovery_from(source))
+  end
+
+  def test_a_remote_seam_without_a_recovery_section_keeps_the_defaults
+    assert_equal({ 'workspace_path' => true, 'snapshot' => true },
+                 Shaka::RepositoryConfig.recovery_from("---\nversion: 1\n"))
+  end
+
+  def test_a_remote_seam_with_an_unknown_recovery_key_is_rejected
+    source = "---\nrecovery:\n  snapshots: false\n"
+    error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.recovery_from(source) }
+
+    assert_includes error.message, 'unknown key: snapshots'
   end
 
   def test_rejects_an_unknown_recovery_key

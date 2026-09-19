@@ -12,6 +12,7 @@ require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/seam'
+require_relative '../lib/shaka/snapshot'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/usage'
 require_relative '../lib/shaka/work'
@@ -40,6 +41,11 @@ end
 if ARGV.first == 'seam'
   ARGV.shift
   exit Shaka::Seam.run(ARGV)
+end
+
+if ARGV.first == 'snapshot'
+  ARGV.shift
+  exit Shaka::Snapshot.run(ARGV)
 end
 
 if ARGV.first == 'workflow'
@@ -79,6 +85,7 @@ parser = OptionParser.new do |flags|
   flags.banner = "Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; "
   flags.banner += 'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help'
   flags.banner += '; shaka seam check --help'
+  flags.banner += '; shaka snapshot --help'
   flags.banner += '; shaka workflow --help'
   flags.banner += '; shaka doctor --help'
   flags.on('--head SHA', 'Expected current PR head') { |value| options[:head] = value }

@@ -110,7 +110,8 @@ From the first PR description until the PR reaches its outcome, keep a recovery 
 there as a collapsed `WIP Details` disclosure. Work can stop at any time, for a
 blocker, a pending decision, a handoff, or an interruption. Someone reopening the PR
 should find the owning task and its next step without reading the conversation, while
-the normal PR summary stays compact. Publish the note through the `description`
+the normal PR summary stays compact. Work that lives only in the checkout is pushed to a
+snapshot branch, so the note describes something a reader can still fetch. Publish the note through the `description`
 helper's `details` list so GitHub renders it as `<details><summary>WIP Details</summary>`.
 Refresh it at meaningful progress and at each stopping point. The helper replaces its
 whole managed region, so republish every section with only the note changed, and
@@ -133,8 +134,9 @@ merge attempt still needs it. The note lists:
 - **Revision:** the branch and current head.
 - **Workspace:** the checkout directory, so the same owner can return to it months
   later. See the privacy rule below; the `Thread` field carries the host locator.
-- **Unfinished work:** everything the pushed branch does not hold, which includes
-  uncommitted changes, deletions, files never added, commits never pushed, and stashes.
+- **Unfinished work:** the snapshot branch when there is one, then everything neither
+  branch holds, which includes uncommitted changes, deletions, files never added, commits
+  never pushed, stashes, and the paths the snapshot held back.
   Name files where the names are safe to publish, count them where a name would leak a
   customer or a private identifier, and write UNKNOWN when the checkout cannot be read
   or has not been inspected yet, which is where a fresh takeover starts. Refresh it
@@ -162,6 +164,41 @@ left. A repository that treats contributor paths as sensitive sets
 `recovery.workspace_path: false` in its seam, and the note then omits the `Workspace`
 field. The publisher does not yet enforce that, so it binds the task writing the note.
 See [settings](settings.md#recovery).
+
+Unfinished work that lives only in one checkout is lost when that directory is removed,
+and the editors that create worktrees remove them on their own schedule. So when work
+stops with anything uncommitted, commit it on a branch named after the PR branch with a
+`wip/` prefix and push that branch. Include files that were never added, since
+half-finished research is exactly what a later reader cannot reconstruct.
+
+A push is permanent: deleting the branch later does not reliably remove what it
+published, and a public repository publishes it to everyone. So the snapshot happens in
+two steps. `shaka snapshot` prints what it would publish, what it would remove, and the
+paths it holds back because they look like credentials or keys. Read that list, then run
+`shaka snapshot --push --expect <digest>` with the digest that plan printed. The digest
+names the exact tree and parent, so a file that changed in between stops the push instead
+of publishing something nobody saw. The command commits against the current head through
+a temporary index, so the working tree and the index are untouched, and it carries
+renames and deletions rather than resurrecting files.
+
+The screen reads path names only, every segment of them, and holds back anything that
+reads as a credential, a key, or an environment file. It cannot see a credential pasted
+inside an ordinary-looking research note, which is why the list is printed before
+anything is pushed and why you read it. Being absent from `.gitignore` says nothing about
+whether a file is safe; ignored files stay behind because they are usually local
+configuration, not because ignoring makes a file public. Name the held-back files in the
+note as work the snapshot does not hold. The plan also lists commits the remote does not
+have, since pushing the snapshot publishes those too, and holds back submodules and
+embedded repositories, whose work cannot travel in this commit.
+
+Name the branch in the note, and run `shaka snapshot --delete` when the PR reaches its
+outcome. The snapshot carries no pull request, so checks that run on pull requests do not
+run; a repository whose CI runs on every pushed branch will still run it, and should
+scope those triggers or set `recovery.snapshot: false`. A repository that does not want
+these branches at all sets the same key, and the command then refuses whoever runs it. It
+reads that key from the remote's own default branch, never from the checkout, because the
+checkout's copy could say anything and publishing cannot be taken back. A remote it
+cannot read refuses for the same reason.
 
 The `Owner` alias stays in either case. It is a name chosen for publication rather than a
 hostname, and the note needs some way to say who holds the work. A repository where even

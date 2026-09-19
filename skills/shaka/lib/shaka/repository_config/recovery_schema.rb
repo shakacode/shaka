@@ -9,7 +9,7 @@ module Shaka
     class RecoverySchema
       include Validation
 
-      KEYS = %w[workspace_path].freeze
+      KEYS = %w[workspace_path snapshot].freeze
 
       def initialize(recovery)
         @recovery = recovery
