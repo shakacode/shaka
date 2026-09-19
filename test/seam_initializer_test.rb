@@ -137,6 +137,7 @@ class SeamInitializerTest < Minitest::Test
 
       assert status.success?, error
       assert_complete_seam(root, output)
+      assert_equal '{login}-{host}/{issue}-{description}', JSON.parse(output).dig('branches', 'name')
     end
   end
 

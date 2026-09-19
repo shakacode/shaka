@@ -2,6 +2,7 @@
 
 require 'pathname'
 require_relative '../error'
+require_relative 'branch_schema'
 require_relative 'review_schema'
 require_relative 'validation'
 
@@ -12,7 +13,7 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version base_branch commands review merge protection].freeze
-      OPTIONAL = %w[plan trusted_actions].freeze
+      OPTIONAL = %w[plan trusted_actions branches].freeze
 
       def initialize(root:, data:)
         @root = root
@@ -29,7 +30,7 @@ module Shaka
         validate_review
         validate_merge
         validate_protection
-        validate_trusted_actions
+        validate_optional
       end
 
       private
@@ -69,6 +70,11 @@ module Shaka
         raise Error, 'protection.required_checks must not be empty' if checks.empty?
 
         fields.drop(1).each { |key| equal!(protection[key], false, "protection.#{key} must be false") }
+      end
+
+      def validate_optional
+        validate_trusted_actions
+        BranchSchema.new(@data['branches']).validate if @data.key?('branches')
       end
 
       def validate_trusted_actions

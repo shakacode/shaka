@@ -56,7 +56,8 @@ module Shaka
           'commands' => COMMAND_NAMES.to_h { |name| [name, ".agents/bin/#{name}"] },
           'review' => review_policy,
           'merge' => merge_policy,
-          'protection' => protection_policy
+          'protection' => protection_policy,
+          'branches' => { 'name' => '{login}-{host}/{issue}-{description}' }
         }
       end
 

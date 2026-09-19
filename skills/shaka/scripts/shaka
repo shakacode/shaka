@@ -6,6 +6,7 @@ require 'optparse'
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
+require_relative '../lib/shaka/claim'
 require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
@@ -49,6 +50,11 @@ end
 if ARGV.first == 'doctor'
   ARGV.shift
   exit Shaka::Doctor.run(ARGV)
+end
+
+if ARGV.first == 'claim'
+  ARGV.shift
+  exit Shaka::Claim.run(ARGV)
 end
 
 COMMANDS = %w[pr comments description reply walkthrough merge].freeze
