@@ -11,9 +11,10 @@ module Shaka
     class Plan
       SEPARATOR = "\0"
 
-      def initialize(root:, branch:, remote_head:, git:)
+      def initialize(root:, branch:, remote:, remote_head:, git:)
         @root = root
         @branch = branch
+        @remote = remote
         @remote_head = remote_head
         @git = git
       end
@@ -68,7 +69,7 @@ module Shaka
         @unpushed_commits = ['UNKNOWN']
       end
 
-      # The snapshot commits on top of the local head, so an unpushed commit travels with the
+      # The snapshot commits on top of the local head, so unpushed history travels with the
       # push and cannot be held back. Naming its screened paths lets publishing refuse
       # instead, since the only other way to hold them back is to rewrite that history.
       def unpushed_held_back
@@ -76,13 +77,23 @@ module Shaka
         paths == ['UNKNOWN'] ? paths : Screen.new(paths).excluded
       end
 
+      # `rev-list --objects` names every object the push would transfer, and names it by the
+      # path it is stored under. That is the set git itself sends, so nothing arrives through
+      # a merge resolution, a deleted-then-restored file, or any other diff the walk missed.
       def unpushed_paths
-        @git.call('log', '--name-only', '--pretty=format:', *range).split("\n").reject(&:empty?).uniq.sort
+        @git.call('rev-list', '--objects', *range).lines.filter_map do |line|
+          path = line.chomp.split(' ', 2).last
+          path unless path.nil? || path.empty?
+        end.uniq.sort
       rescue Error
         ['UNKNOWN']
       end
 
-      def range = @remote_head.empty? ? ['HEAD', '--not', '--remotes'] : ["#{@remote_head}..HEAD"]
+      # Reachability is measured against the remote being published to. Another remote
+      # holding the commit says nothing about what this one has already received.
+      def range
+        @remote_head.empty? ? ['HEAD', '--not', "--remotes=#{@remote}"] : ["#{@remote_head}..HEAD"]
+      end
 
       # Neither a tracked submodule nor an untracked embedded repository can travel in this
       # commit: the superproject would record one gitlink and leave the work behind. With

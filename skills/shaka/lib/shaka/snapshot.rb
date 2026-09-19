@@ -91,7 +91,8 @@ module Shaka
     end
 
     def current_plan
-      Plan.new(root: @root, branch: snapshot_branch, remote_head: remote_head, git: method(:git)).to_h
+      Plan.new(root: @root, branch: snapshot_branch, remote: @options[:remote],
+               remote_head: remote_head, git: method(:git)).to_h
     end
 
     # Commits nobody has pushed are lost with the checkout too, so they are work to publish.
@@ -117,9 +118,9 @@ module Shaka
       report(plan.merge('published' => true, 'commit' => commit))
     end
 
-    # The confirmed plan already named its tree, so publishing commits that exact tree.
     def write_commit(plan)
-      git('commit-tree', plan.fetch('tree'), '-p', plan.fetch('parent'), '-m', message).strip
+      Tree.new(git: method(:git)).commit(tree: plan.fetch('tree'), parent: plan.fetch('parent'),
+                                         message:)
     end
 
     def message
@@ -130,13 +131,13 @@ module Shaka
       puts JSON.pretty_generate(payload)
     end
 
-    def git(*argv, index: nil)
-      capture(*argv, index: index)
+    def git(*argv, index: nil, environment: {})
+      capture(*argv, index:, environment:)
     end
 
     # Status paths are relative to the repository root, so every command runs there.
-    def capture(*argv, index: nil)
-      environment = index ? { 'GIT_INDEX_FILE' => index } : {}
+    def capture(*argv, index: nil, environment: {})
+      environment = environment.merge(index ? { 'GIT_INDEX_FILE' => index } : {})
       location = @root ? ['-C', @root] : []
       output, error, status = Open3.capture3(environment, 'git', *location, *argv)
       raise Error, "git #{argv.first} failed: #{error.lines.first&.strip}" unless status.success?

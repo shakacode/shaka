@@ -11,7 +11,7 @@ module Shaka
     # is invisible here, which is why the command prints what it would publish first.
     class Screen
       DENIED = [
-        %r{(\A|/|\.)env(\.|\z)}i,
+        %r{(\A|/|\.)env(\.|/|\z)}i,
         %r{(\A|/)\.(netrc|npmrc|pgpass|git-credentials)(\.|\z)}i,
         %r{(\A|/)\.(aws|ssh|gnupg)/}i,
         %r{(\A|/)\.docker/config\.json\z}i,

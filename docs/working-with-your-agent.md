@@ -192,10 +192,13 @@ repositories the same way, since their work cannot travel in this commit.
 
 Commits the remote has never seen are unfinished work too, so a branch with nothing
 uncommitted still gets a snapshot when it carries them. The plan lists those commits, and
-it lists the paths they touch that the screen would have held back. Those cannot be held
-back, because the snapshot commits on top of the local head and the whole branch travels
-with it, so the push refuses instead. Take the file out of that history, or leave the
-branch where it is and say so in the note.
+it screens every path the push would transfer, which is the object set git itself would
+send rather than a walk over diffs, so a file that arrived in a merge resolution or was
+deleted and restored is named like any other. Those paths cannot be held back, because the
+snapshot commits on top of the local head and the whole branch travels with it, so the
+push refuses instead. Take the file out of that history, or leave the branch where it is
+and say so in the note. What counts as already sent is measured against the remote being
+published to; another remote holding the same commit says nothing about this one.
 
 Printing the plan reads only the checkout, so it works while the remote is down. Only the
 push asks the remote anything.
@@ -206,8 +209,11 @@ run; a repository whose CI runs on every pushed branch will still run it, and sh
 scope those triggers or set `recovery.snapshot: false`. A repository that does not want
 these branches at all sets the same key, and the command then refuses whoever runs it. It
 reads that key from the remote's own default branch, never from the checkout, because the
-checkout's copy could say anything and publishing cannot be taken back. A remote it
-cannot read refuses for the same reason.
+checkout's copy could say anything and publishing cannot be taken back. It asks whichever
+target the push would use, including one named as a path or a URL. A remote it cannot
+read refuses for the same reason, as does one that holds branches without saying which is
+its default. Only a remote advertising nothing at all keeps the default, because an empty
+repository has published no contract.
 
 The `Owner` alias stays in either case. It is a name chosen for publication rather than a
 hostname, and the note needs some way to say who holds the work. A repository where even

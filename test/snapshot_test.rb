@@ -37,6 +37,13 @@ class SnapshotScreenTest < Minitest::Test
     assert_empty screen.included
   end
 
+  def test_an_environment_directory_holds_back_what_it_contains
+    paths = ['env/database.yml', '.env/production.yml', 'config/env/settings.yml']
+    screen = Shaka::Snapshot::Screen.new(paths)
+
+    assert_empty screen.included
+  end
+
   def test_credentials_are_held_back_whatever_the_directory
     paths = ['.env', 'app/.env.local', 'deploy/id_rsa', 'certs/server.pem', 'config/credentials.json',
              'scripts/rotate_api_key.sh', '.netrc']
@@ -78,30 +85,8 @@ class SnapshotChangesTest < Minitest::Test
   end
 end
 
-# Builds a throwaway repository so the snapshot runs against real git.
-module SnapshotRepository
-  def run_snapshot(work, *arguments)
-    output = nil
-    Dir.chdir(work) do
-      output = capture_io { assert_equal 0, Shaka::Snapshot.new(arguments).run }.first
-    end
-    JSON.parse(output)
-  end
-
-  # Publishing confirms the plan that was read, so the digest comes from a planning run.
-  def publish_snapshot(work)
-    digest = run_snapshot(work).fetch('digest')
-    run_snapshot(work, '--push', '--expect', digest)
-  end
-
-  def published_files(work, commit)
-    git(work, 'ls-tree', '--name-only', '-r', commit).split("\n").sort
-  end
-
-  def remote_branches(work)
-    git(work, 'ls-remote', '--heads', 'origin').split("\n")
-  end
-
+# The repositories these tests need: a seam, a submodule, a merge, a second remote.
+module SnapshotFixtures
   def add_submodule(work)
     source = File.join(File.dirname(work), 'nested-source')
     git(File.dirname(work), 'init', '--quiet', source)
@@ -145,9 +130,61 @@ module SnapshotRepository
     git(work, 'fetch', '--quiet', 'origin')
   end
 
-  def push_snapshot(work, digest)
+  # The credential exists only in the merge commit, so no parent's diff ever names it.
+  def merge_that_adds_credentials(work)
+    git(work, 'checkout', '--quiet', '-b', 'side')
+    write(work, 'side.md' => "side\n")
+    commit_all(work, 'side')
+    git(work, 'checkout', '--quiet', 'feature')
+    git(work, 'merge', '--quiet', '--no-ff', '--no-commit', 'side')
+    Dir.mkdir(File.join(work, 'config'))
+    write(work, 'config/credentials.json' => "{}\n")
+    commit_all(work, 'merge')
+  end
+
+  # A second remote holding this branch, so reachability cannot be read from all remotes.
+  def elsewhere(work)
+    other = File.join(File.dirname(work), 'elsewhere')
+    git(File.dirname(work), 'init', '--quiet', '--bare', other)
+    git(work, 'remote', 'add', 'elsewhere', other)
+    git(work, 'push', '--quiet', 'elsewhere', 'HEAD:refs/heads/feature')
+    git(work, 'fetch', '--quiet', 'elsewhere')
+  end
+end
+
+# Builds a throwaway repository so the snapshot runs against real git.
+module SnapshotRepository
+  include SnapshotFixtures
+
+  def run_snapshot(work, *arguments)
+    output = nil
+    Dir.chdir(work) do
+      output = capture_io { assert_equal 0, Shaka::Snapshot.new(arguments).run }.first
+    end
+    JSON.parse(output)
+  end
+
+  # Publishing confirms the plan that was read, so the digest comes from a planning run.
+  def publish_snapshot(work)
+    digest = run_snapshot(work).fetch('digest')
+    run_snapshot(work, '--push', '--expect', digest)
+  end
+
+  def published_files(work, commit)
+    git(work, 'ls-tree', '--name-only', '-r', commit).split("\n").sort
+  end
+
+  def remote_branches(work)
+    git(work, 'ls-remote', '--heads', 'origin').split("\n")
+  end
+
+  def remote_branches_of(work, url)
+    git(work, 'ls-remote', '--heads', url).split("\n")
+  end
+
+  def push_snapshot(work, digest, *extra)
     result = nil
-    Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', digest]) } }
+    Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', digest] + extra) } }
     result
   end
 
@@ -265,7 +302,8 @@ class SnapshotTest < Minitest::Test
       write(work, 'conflicted.md' => "one side survived\n")
 
       runner = ->(*argv, index: nil) { git(work, *argv, index: index) }
-      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote_head: '', git: runner).to_h
+      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote: 'origin',
+                                       remote_head: '', git: runner).to_h
 
       assert_includes plan['adds'], 'conflicted.md'
     end
@@ -329,6 +367,31 @@ class SnapshotHistoryTest < Minitest::Test
     end
   end
 
+  def test_a_credential_added_by_a_merge_resolution_refuses_to_publish
+    in_repository do |work|
+      merge_that_adds_credentials(work)
+      plan = run_snapshot(work)
+
+      assert_includes plan['unpushed_held_back'], 'config/credentials.json'
+      assert_equal [1, []], [push_snapshot(work, plan['digest']), remote_branches(work)]
+    end
+  end
+
+  # Another remote holding the commit says nothing about what this one has received.
+  def test_history_only_another_remote_holds_is_still_screened
+    in_repository do |work|
+      git(work, 'push', '--quiet', 'origin', 'HEAD:refs/heads/feature')
+      Dir.mkdir(File.join(work, 'config'))
+      write(work, 'config/credentials.json' => "{}\n")
+      commit_all(work, 'credentials')
+      elsewhere(work)
+      plan = run_snapshot(work)
+
+      assert_includes plan['unpushed_held_back'], 'config/credentials.json'
+      assert_equal 1, push_snapshot(work, plan['digest'])
+    end
+  end
+
   # Planning reads nothing the remote must answer, so it survives a remote that is down.
   def test_planning_works_while_the_remote_is_unreachable
     in_repository do |work|
@@ -336,6 +399,17 @@ class SnapshotHistoryTest < Minitest::Test
       write(work, 'research.md' => "half an idea\n")
 
       assert_equal ['research.md'], run_snapshot(work)['adds']
+    end
+  end
+
+  def test_a_checkout_without_a_git_identity_still_publishes
+    in_repository do |work|
+      git(work, 'config', '--unset', 'user.email')
+      git(work, 'config', '--unset', 'user.name')
+      git(work, 'config', 'user.useConfigOnly', 'true')
+      write(work, 'research.md' => "half an idea\n")
+
+      assert_equal true, publish_snapshot(work)['published']
     end
   end
 
@@ -453,7 +527,7 @@ class SnapshotPolicyTest < Minitest::Test
   TIP = '1111111111111111111111111111111111111111'
 
   def test_a_failed_fetch_is_not_read_as_a_repository_without_a_seam
-    git = stub_remote('remote' => "origin\n",
+    git = stub_remote('ls-remote --heads origin' => "#{TIP}\trefs/heads/main\n",
                       'ls-remote --symref origin HEAD' => "ref: refs/heads/main\tHEAD\n",
                       'ls-remote origin refs/heads/main' => "#{TIP}\trefs/heads/main\n",
                       'fetch --quiet origin refs/heads/main' => Shaka::Error.new('could not read from remote'))
@@ -464,7 +538,7 @@ class SnapshotPolicyTest < Minitest::Test
   end
 
   def test_a_default_branch_without_a_seam_keeps_the_default
-    git = stub_remote('remote' => "origin\n",
+    git = stub_remote('ls-remote --heads origin' => "#{TIP}\trefs/heads/main\n",
                       'ls-remote --symref origin HEAD' => "ref: refs/heads/main\tHEAD\n",
                       'ls-remote origin refs/heads/main' => "#{TIP}\trefs/heads/main\n",
                       'fetch --quiet origin refs/heads/main' => '',
@@ -473,6 +547,36 @@ class SnapshotPolicyTest < Minitest::Test
     policy = Shaka::Snapshot::Policy.new(remote: 'origin', git:)
 
     assert_equal true, policy.allows_snapshot?
+  end
+
+  def test_a_remote_with_branches_but_no_advertised_head_refuses
+    git = stub_remote('ls-remote --heads origin' => "#{TIP}\trefs/heads/main\n",
+                      'ls-remote --symref origin HEAD' => "\n")
+
+    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git:)
+
+    assert_raises(Shaka::Error) { policy.allows_snapshot? }
+  end
+
+  def test_a_remote_that_advertises_nothing_keeps_the_default
+    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git: stub_remote('ls-remote --heads origin' => "\n"))
+
+    assert_equal true, policy.allows_snapshot?
+  end
+
+  # A target named by path or URL is the one that gets the push, so it answers for itself.
+  def test_a_remote_named_by_path_answers_for_itself
+    in_repository do |work|
+      write_seam(work, snapshot: false)
+      origin = git(work, 'remote', 'get-url', 'origin').strip
+      git(work, 'remote', 'remove', 'origin')
+      write(work, 'research.md' => "half an idea\n")
+
+      result = push_snapshot(work, 'anything', '--remote', origin)
+
+      assert_equal 1, result
+      refute_includes remote_branches_of(work, origin).join, 'wip/'
+    end
   end
 
   def test_the_remote_seam_decides_although_the_checkout_lacks_its_commands
