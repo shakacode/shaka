@@ -268,14 +268,19 @@ resolutions, which is why the rule says to share the subject and never the sente
 Copied prose is a staleness bug rather than mere repetition, because republishing the
 walkthrough at a new head refreshes one copy and leaves the other one wrong.
 
-Three questions settle most of what the rule leaves open. Try them in order and take the
-first answer, so a fact that is both durable and tied to a line still goes where a later
-reader will find it:
+Three questions settle most of what the rule leaves open. They serve the reader-need rule
+rather than replace it, so when two of them disagree, ask which reader needs the fact and
+follow that answer:
 
 - Would a reader need this a year from now, from the merged PR alone? Put it in the description.
 - Does it change whether to merge, or what to do afterward? Description. Does it only change
   how quickly the diff makes sense? Walkthrough.
 - Does it need a file path or a line number to make sense? Walkthrough.
+
+Durability and a file reference do not settle it by themselves. A rollback a maintainer
+runs without reading the code belongs to the description, while an architectural tradeoff
+that explains why the code looks this way belongs to the walkthrough, though both last and
+both name files.
 
 Whatever those answers, each artifact needs its own purpose sentence, because a reader may
 open either one without the other. That much overlap is required rather than wasteful.
