@@ -71,20 +71,21 @@ Every value must be a repository-relative path to a file that exists and is
 
 `required` is the only mandatory key. `check` names the reviewer's status check.
 
-The three `required` values choose when the gate named by `check` applies. They direct the
-workflow, which honors them; no status check enforces the difference, and the named check still
-runs whenever the repository configures it to.
+The three `required` values record when the gate named by `check` should apply. **The workflow
+does not branch on this value yet.** Its review phase lets trivial prose or no-op work omit
+review with a recorded reason whatever is set here, and nothing consumes the field beyond
+validating it and writing it. So the current behavior matches `meaningful_changes` for every
+value, and the other two state an intent the workflow does not enforce.
 
-| Value | When the named gate applies |
+| Value | Intended trigger for the named gate |
 | --- | --- |
-| `always` | Every pull request, with no exemption for trivial work. |
-| `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. |
-| `none` | Never. The repository declares no named gate. |
+| `always` | Every pull request, with no exemption for trivial work. Not enforced today. |
+| `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. This is the behavior for every value today. |
+| `none` | Never. The repository declares no named gate. Not enforced today. |
 
-`none` is narrower than it looks. It switches off the named gate alone and does not remove the
-alternate-model baseline that meaningful implementation still needs, so a review from a
-different model family remains required. [Review](review.md) defines that baseline and the rest
-of the review procedure.
+One rule holds whatever this value says: meaningful implementation needs a review from a
+different model family than the implementer, and `none` does not switch that baseline off.
+[Review](review.md) defines the baseline and the rest of the review procedure.
 
 | Setting | Required | Allowed values |
 | --- | --- | --- |
