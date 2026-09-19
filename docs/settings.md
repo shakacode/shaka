@@ -180,10 +180,14 @@ while it is unfinished.
 
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
-| `workspace_path` | `true` or `false` | `true` lets the note carry the checkout path. `false` tells the workflow to omit the `Workspace` field. The owner alias and the `Thread` locator follow their own rules either way. Read the note below on what enforces this. |
+| `workspace_path` | `true` or `false` | `true` lets the note carry the checkout path and the host's link back to the session. `false` tells the workflow to omit both the `Workspace` and `Thread` fields, which are the two that name the owner's machine. The owner alias stays either way. Read the note below on what enforces this. |
 
-Set `workspace_path: false` where contributor paths are sensitive. `seam init` does not
-write the key, so a repository that says nothing gets the default.
+Set `workspace_path: false` where contributor paths or session links are sensitive.
+`seam init` does not write the key, so a repository that says nothing gets the default.
+
+The key governs both fields rather than one each, because they answer the same question
+and a repository that hides one has little reason to publish the other. Split it if a
+repository ever needs them apart.
 
 The setting tells the workflow what a recovery note may carry. The publisher does not yet
 refuse a note that ignores it, so today it binds the agent rather than the publication

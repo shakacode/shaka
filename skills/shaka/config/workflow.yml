@@ -198,8 +198,10 @@ phases:
       - Every PR description published before outcome includes its current
         [recovery note](<{{package_root}}/docs/working-with-your-agent.md#recover-an-unfinished-pr>)
         as a collapsed `WIP Details` disclosure. Its workspace field carries the checkout path
-        unless the seam sets `recovery.workspace_path` to `false`, which omits that field;
-        nothing but this step enforces that.
+        and its thread field the host's link back to this session, unless the seam sets
+        `recovery.workspace_path` to `false`, which omits both; nothing but this step enforces
+        that. Publish the link the host reports rather than assembling one, and `UNKNOWN` when
+        it reports none.
       - Description provenance has exactly nine flat keys: `task_source`, `initial_prompt`,
         `workflow_version`, `requested_model`, `requested_effort`, `recommended_model`,
         `recommended_effort`, `active_model`, and `active_effort`. `initial_prompt` is `EXCLUDED`;
