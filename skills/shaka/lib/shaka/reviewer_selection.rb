@@ -52,8 +52,8 @@ module Shaka
 
     def reason(entry)
       return UNAVAILABLE if unavailable?(entry)
-      return FAMILY_CONTRIBUTED if families.include?(entry['model_family'])
-      return PROVIDER_CONTRIBUTED if providers.include?(entry['provider'])
+      return FAMILY_CONTRIBUTED if families.include?(fold(entry['model_family']))
+      return PROVIDER_CONTRIBUTED if providers.include?(fold(entry['provider']))
 
       ELIGIBLE
     end
@@ -91,12 +91,18 @@ module Shaka
     # Compare the components, never the joined string: "openai/foo"/"codex" and
     # "openai"/"foo/codex" render alike and are different identities.
     def unavailable?(entry)
-      @unavailable.any? { |blocked| blocked.values_at(*IDENTITY) == entry.values_at(*IDENTITY) }
+      @unavailable.any? { |blocked| key(blocked) == key(entry) }
     end
 
-    def families = @families ||= @implementers.map { |entry| entry['model_family'] }.uniq
+    # An identity read from display metadata may be cased differently than the seam spells it, and
+    # a case-sensitive miss would let a contributing family qualify as its own reviewer.
+    def key(entry) = entry.values_at(*IDENTITY).map { |part| fold(part) }
 
-    def providers = @providers ||= @implementers.map { |entry| entry['provider'] }.uniq
+    def fold(value) = value.to_s.downcase
+
+    def families = @families ||= @implementers.map { |entry| fold(entry['model_family']) }.uniq
+
+    def providers = @providers ||= @implementers.map { |entry| fold(entry['provider']) }.uniq
 
     # Display only; selection never keys on this string.
     def identity(entry) = entry.values_at(*IDENTITY).join('/')

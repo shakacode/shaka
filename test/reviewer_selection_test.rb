@@ -94,6 +94,19 @@ class ReviewerSelectionTest < Minitest::Test
     assert_equal %w[claude codex], result.fetch('contributing_families')
   end
 
+  # An identity read from display metadata may be cased differently than the seam spells it.
+  def test_excludes_a_contributing_family_spelled_with_different_casing
+    result = select(['OpenAI/Codex'])
+
+    assert_equal 'anthropic/claude', result.fetch('reviewer')
+  end
+
+  def test_matches_an_unavailable_identity_regardless_of_casing
+    result = select(['anthropic/claude'], unavailable: ['OpenAI/Codex'])
+
+    assert_equal 'xai/grok', result.fetch('reviewer')
+  end
+
   # Joined-string keys would make "openai/foo"/"codex" and "openai"/"foo/codex" one identity.
   def test_distinguishes_entries_whose_joined_identity_matches
     roster = [{ 'provider' => 'openai/foo', 'model_family' => 'codex' },

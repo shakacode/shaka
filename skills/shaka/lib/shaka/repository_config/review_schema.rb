@@ -50,7 +50,13 @@ module Shaka
         raise Error, 'review.reviewers must not be empty' if reviewers.empty?
 
         reviewers.each_with_index { |entry, index| entry!(entry, index) }
-        identities = reviewers.map { |entry| entry.values_at(*IDENTITY) }
+        repeated!(reviewers)
+      end
+
+      # Selection folds case when it compares identities, so two spellings of one identity must
+      # not both validate here.
+      def repeated!(reviewers)
+        identities = reviewers.map { |entry| entry.values_at(*IDENTITY).map(&:downcase) }
         repeated = identities.tally.find { |_, count| count > 1 }
         raise Error, "review.reviewers repeats #{repeated.first.join('/')}" if repeated
       end

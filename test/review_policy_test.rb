@@ -67,6 +67,16 @@ class ReviewPolicyTest < Minitest::Test
 
   # `shaka reviewer` strips each component, so a padded value here would never match the
   # identity the agent passes and a contributing family could pass as eligible.
+  # Selection folds case, so two spellings of one identity must not both validate.
+  def test_rejects_a_repeated_reviewer_identity_differing_only_by_casing
+    cased = reviewers + [{ 'provider' => 'OpenAI', 'model_family' => 'Codex' }]
+    with_repository('review' => review_policy('reviewers' => cased)) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.reviewers repeats openai/codex'
+    end
+  end
+
   def test_rejects_an_identity_component_padded_with_whitespace
     padded = [{ 'provider' => 'bedrock', 'model_family' => 'claude ' }]
     with_repository('review' => review_policy('reviewers' => padded)) do |root|
