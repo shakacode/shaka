@@ -187,9 +187,18 @@ inside an ordinary-looking research note, which is why the list is printed befor
 anything is pushed and why you read it. Being absent from `.gitignore` says nothing about
 whether a file is safe; ignored files stay behind because they are usually local
 configuration, not because ignoring makes a file public. Name the held-back files in the
-note as work the snapshot does not hold. The plan also lists commits the remote does not
-have, since pushing the snapshot publishes those too, and holds back submodules and
-embedded repositories, whose work cannot travel in this commit.
+note as work the snapshot does not hold. It holds back submodules and embedded
+repositories the same way, since their work cannot travel in this commit.
+
+Commits the remote has never seen are unfinished work too, so a branch with nothing
+uncommitted still gets a snapshot when it carries them. The plan lists those commits, and
+it lists the paths they touch that the screen would have held back. Those cannot be held
+back, because the snapshot commits on top of the local head and the whole branch travels
+with it, so the push refuses instead. Take the file out of that history, or leave the
+branch where it is and say so in the note.
+
+Printing the plan reads only the checkout, so it works while the remote is down. Only the
+push asks the remote anything.
 
 Name the branch in the note, and run `shaka snapshot --delete` when the PR reaches its
 outcome. The snapshot carries no pull request, so checks that run on pull requests do not

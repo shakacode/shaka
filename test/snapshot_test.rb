@@ -145,6 +145,12 @@ module SnapshotRepository
     git(work, 'fetch', '--quiet', 'origin')
   end
 
+  def push_snapshot(work, digest)
+    result = nil
+    Dir.chdir(work) { capture_io { result = Shaka::Snapshot.run(['--push', '--expect', digest]) } }
+    result
+  end
+
   def commit_all(work, message)
     git(work, 'add', '--all')
     git(work, 'commit', '--quiet', '--message', message)
@@ -290,9 +296,54 @@ class SnapshotTest < Minitest::Test
       assert_empty remote_branches(work)
     end
   end
+end
 
-  def test_a_clean_checkout_publishes_nothing
+# The pushed branch carries the local history, not only the working tree.
+class SnapshotHistoryTest < Minitest::Test
+  include SnapshotRepository
+
+  def test_committed_work_that_was_never_pushed_is_published
     in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+      commit_all(work, 'research')
+
+      report = publish_snapshot(work)
+
+      assert_equal true, report['published']
+      assert_includes published_files(work, report['commit']), 'research.md'
+      refute_empty report['unpushed_commits']
+    end
+  end
+
+  def test_a_credential_in_an_unpushed_commit_refuses_to_publish
+    in_repository do |work|
+      Dir.mkdir(File.join(work, 'config'))
+      write(work, 'config/credentials.json' => "{}\n")
+      commit_all(work, 'credentials')
+      plan = run_snapshot(work)
+
+      result = push_snapshot(work, plan['digest'])
+
+      assert_equal [['config/credentials.json'], 1, []],
+                   [plan['unpushed_held_back'], result, remote_branches(work)]
+    end
+  end
+
+  # Planning reads nothing the remote must answer, so it survives a remote that is down.
+  def test_planning_works_while_the_remote_is_unreachable
+    in_repository do |work|
+      git(work, 'remote', 'set-url', 'origin', File.join(work, 'missing.git'))
+      write(work, 'research.md' => "half an idea\n")
+
+      assert_equal ['research.md'], run_snapshot(work)['adds']
+    end
+  end
+
+  # Clean means the remote already holds it, not merely that nothing is uncommitted.
+  def test_a_checkout_the_remote_already_holds_publishes_nothing
+    in_repository do |work|
+      git(work, 'push', '--quiet', 'origin', 'HEAD:refs/heads/feature')
+
       report = run_snapshot(work, '--push')
 
       assert_nil report['branch']

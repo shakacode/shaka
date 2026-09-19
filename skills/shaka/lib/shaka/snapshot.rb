@@ -74,12 +74,13 @@ module Shaka
       @remote_head = ''
     end
 
+    # Planning reads nothing the remote must answer, so it works while the remote is down.
     def publish
-      raise Error, 'This repository sets recovery.snapshot to false.' unless allowed?
-
       plan = current_plan
       return report(plan.merge('branch' => nil)) if nothing_to_publish?(plan)
       return report(plan) unless @options[:push]
+
+      raise Error, 'This repository sets recovery.snapshot to false.' unless allowed?
 
       confirm(plan)
       push(plan)
@@ -93,7 +94,10 @@ module Shaka
       Plan.new(root: @root, branch: snapshot_branch, remote_head: remote_head, git: method(:git)).to_h
     end
 
-    def nothing_to_publish?(plan) = plan['adds'].empty? && plan['removes'].empty?
+    # Commits nobody has pushed are lost with the checkout too, so they are work to publish.
+    def nothing_to_publish?(plan)
+      plan['adds'].empty? && plan['removes'].empty? && plan['unpushed_commits'].empty?
+    end
 
     # The push must publish the plan that was read, not whatever the checkout holds now.
     def confirm(plan)
@@ -101,6 +105,10 @@ module Shaka
       raise Error, 'Publishing needs --expect with the digest the plan printed.' if expected.nil?
       raise Error, "The checkout changed since that plan; its digest is now #{plan['digest']}." if
         expected != plan['digest']
+
+      carried = plan.fetch('unpushed_held_back')
+      raise Error, "Unpushed commits carry #{carried.join(', ')}; the push cannot hold them back." unless
+        carried.empty?
     end
 
     def push(plan)
