@@ -120,6 +120,15 @@ class ReviewerSelectionTest < Minitest::Test
     assert_equal 'openai/foo/codex', result.fetch('reviewer')
   end
 
+  # split('/') drops trailing empties, so a stray slash would have validated.
+  def test_rejects_an_identity_with_a_stray_slash
+    ['openai/gpt/', 'openai/', '/gpt'].each do |text|
+      error = assert_raises(Shaka::Error) { Shaka::ReviewerSelection.parse(text) }
+
+      assert_includes error.message, 'PROVIDER/MODEL_FAMILY'
+    end
+  end
+
   def test_rejects_an_identity_without_a_model_family
     error = assert_raises(Shaka::Error) { Shaka::ReviewerSelection.parse('anthropic') }
 

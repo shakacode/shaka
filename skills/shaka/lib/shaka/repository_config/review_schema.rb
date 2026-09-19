@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../reviewer_selection'
 require_relative 'validation'
 
 module Shaka
@@ -9,7 +10,8 @@ module Shaka
     class ReviewSchema
       include Validation
 
-      IDENTITY = %w[provider model_family].freeze
+      # The validator enforces exactly what selection consumes, so both read one definition.
+      IDENTITY = ReviewerSelection::IDENTITY
       RETIRED = %w[model_family provider draft].freeze
 
       # The flat metadata group became an ordered list, so name the migration rather than

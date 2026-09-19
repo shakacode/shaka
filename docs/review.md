@@ -50,8 +50,8 @@ its findings. Runner success alone does not establish review or merge readiness.
 Do not work the selection out by hand. The saved helper computes it:
 
 ```text
-shaka reviewer --root ROOT --ref REF --implementer PROVIDER/FAMILY [--implementer ...]
-                                     [--unavailable PROVIDER/FAMILY ...]
+shaka reviewer [--root DIR] [--ref REF] --implementer PROVIDER/FAMILY [--implementer ...]
+                                       [--unavailable PROVIDER/FAMILY ...]
 ```
 
 Pass the same root and immutable trusted commit you gave `seam check`. Without `--ref` the helper
@@ -317,11 +317,11 @@ flags, current for the versions named:
 
 | CLI | Review invocation | Isolation |
 | --- | --- | --- |
-| Codex 0.154.0 | `codex exec -s read-only -o "$(mktemp -t shaka-review).md" -` reads the prompt from stdin. Keep the output path outside the repository: `-o` overwrites whatever it names, so a repo-relative `report.md` would destroy a file in the worktree; the rendered prompt carries the `base...head` scope. `codex exec review --base REF` has its own review instructions and **refuses a custom prompt** — `--base` cannot be combined with `[PROMPT]` — so use plain `exec` when you want these instructions | `-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, `--ignore-user-config` skips `$CODEX_HOME/config.toml`, `--ephemeral` persists no session |
-| Grok 1.0.30 | `grok --prompt-file PATH -m MODEL --reasoning-effort EFFORT --output-format plain` | `--permission-mode plan`, `--disallowed-tools`, `--deny RULE`, `--disable-web-search`, `--no-subagents`. `--sandbox PROFILE` exists but its profile names are not listed in help |
+| Codex 0.154.0 | `codex exec -s read-only --ignore-rules --ignore-user-config --ephemeral -o "$(mktemp -t shaka-review).md" -` reads the prompt from stdin, and the rendered prompt carries the `base...head` scope | `-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, `--ignore-user-config` skips `$CODEX_HOME/config.toml`, `--ephemeral` persists no session. Keep `-o` outside the repository: it overwrites whatever it names. `codex exec review --base REF` has its own instructions and **refuses a custom prompt**, so use plain `exec` for these |
+| Grok 1.0.30 | `grok --prompt-file PATH -m MODEL --reasoning-effort EFFORT --output-format plain --permission-mode plan --disable-web-search --no-subagents` | `--permission-mode plan` withholds edit approval, and the other two remove web access and subagents. Narrow further with `--disallowed-tools TOOLS` or `--deny RULE` for the tools your run should not reach. `--sandbox PROFILE` exists but help does not list its profile names |
 
-Both invocations above were run against this repository, so they are exercised rather than read
-off `--help`. Note what they do not cover: these flags skip user configuration and execpolicy
+The Codex invocation above, with those flags, is the one that produced this pull request's local
+review, so it is exercised rather than read off `--help`. The Grok flags come from its `--help`. Note what they do not cover: these flags skip user configuration and execpolicy
 rules, not a repository's own `AGENTS.md` or similar instruction files, which the CLI still loads
 from the checkout it runs in. That is fine when the branch is yours; reviewing an untrusted
 contribution locally calls for restricted execution, under

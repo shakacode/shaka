@@ -17,7 +17,7 @@ module Shaka
     PROVIDER_CONTRIBUTED = 'provider contributed'
 
     def self.parse(text)
-      provider, family, extra = text.to_s.split('/')
+      provider, family, extra = text.to_s.split('/', -1)
       parts = [provider, family]
       valid = extra.nil? && parts.all? { |part| part.is_a?(String) && !part.strip.empty? }
       raise Error, "Reviewer identity must be PROVIDER/MODEL_FAMILY: #{text}" unless valid

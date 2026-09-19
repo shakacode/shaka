@@ -218,7 +218,7 @@ phases:
     body: |-
       - Meaningful implementation needs visible review whose model family produced no part of the
         change, from a different provider whenever one is available. Do not work out who that is:
-        run the saved helper's `reviewer --root ROOT --ref REF --implementer PROVIDER/FAMILY` with
+        run the saved helper's `reviewer --root DIR --ref REF --implementer PROVIDER/FAMILY` with
         the same root and immutable trusted commit used for `seam check`, never the candidate's own
         copy, because a candidate that rewrote `review.reviewers` could otherwise list its own
         family and review itself. Pass `--implementer` once per contributing provider and model
