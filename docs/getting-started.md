@@ -168,7 +168,8 @@ or other compound behavior in a repository-owned script.
 
 Initialization validates every input before writing. It is safe to repeat when the
 generated files are unchanged and refuses to overwrite a repository-owned file or
-symlink. Use the path printed by `bin/install` when you installed elsewhere.
+symlink. The README carries the skill version that wrote it, so a repeat after a Shaka
+upgrade leaves the repository's copy in place rather than refusing the whole run. Use the path printed by `bin/install` when you installed elsewhere.
 
 ## Check your setup
 

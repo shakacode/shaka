@@ -434,6 +434,20 @@ class SeamInitializerReadmeTest < Minitest::Test
     end
   end
 
+  def test_repeat_init_keeps_a_readme_generated_by_another_skill_version
+    with_repository do |root|
+      assert init(root).last.success?
+      path = File.join(root, '.agents/README.md')
+      stale = File.read(path).sub('from Shaka ', 'from Shaka 0.0.1.pre.0 ')
+      File.write(path, stale)
+
+      _output, error, status = init(root)
+
+      assert status.success?, error
+      assert_equal stale, File.read(path)
+    end
+  end
+
   def test_refuses_a_generated_readme_with_overly_permissive_mode
     with_repository do |root|
       assert init(root).last.success?
