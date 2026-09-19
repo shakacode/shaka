@@ -268,7 +268,9 @@ resolutions, which is why the rule says to share the subject and never the sente
 Copied prose is a staleness bug rather than mere repetition, because republishing the
 walkthrough at a new head refreshes one copy and leaves the other one wrong.
 
-Three questions settle most of what the rule leaves open:
+Three questions settle most of what the rule leaves open. Try them in order and take the
+first answer, so a fact that is both durable and tied to a line still goes where a later
+reader will find it:
 
 - Would a reader need this a year from now, from the merged PR alone? Put it in the description.
 - Does it change whether to merge, or what to do afterward? Description. Does it only change
