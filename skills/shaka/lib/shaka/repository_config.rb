@@ -10,7 +10,9 @@ module Shaka
   class RepositoryConfig
     PATH = '.agents/agent-workflow.yml'
 
-    attr_reader :base_branch, :commands, :review, :merge, :protection
+    DEFAULT_RECOVERY = { 'workspace_path' => true }.freeze
+
+    attr_reader :base_branch, :commands, :review, :merge, :protection, :recovery
 
     def self.load(root: Dir.pwd, source: nil)
       new(root:, source:).load
@@ -36,8 +38,9 @@ module Shaka
       commands.fetch(name.to_s)
     end
 
+    # Callers read this as the effective contract, so defaults belong in it.
     def to_h
-      @data.dup
+      @data.merge('recovery' => recovery)
     end
 
     private
@@ -48,6 +51,7 @@ module Shaka
       @review = @data.fetch('review')
       @merge = @data.fetch('merge')
       @protection = @data.fetch('protection')
+      @recovery = DEFAULT_RECOVERY.merge(@data.fetch('recovery', {}))
     end
   end
 end

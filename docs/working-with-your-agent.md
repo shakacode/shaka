@@ -113,7 +113,9 @@ should find the owning task and its next step without reading the conversation, 
 the normal PR summary stays compact. Publish the note through the `description`
 helper's `details` list so GitHub renders it as `<details><summary>WIP Details</summary>`.
 Refresh it at meaningful progress and at each stopping point. The helper replaces its
-whole managed region, so republish every section with only the note changed. Remove
+whole managed region, so republish every section with only the note changed, and
+re-pin the walkthrough link, the check table, and usage to the head the note names
+rather than carrying older ones forward. Remove
 the entire disclosure only after GitHub confirms the PR reached its outcome; a failed
 merge attempt still needs it. The note lists:
 
@@ -129,12 +131,41 @@ merge attempt still needs it. The note lists:
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
+- **Workspace:** the checkout directory, so the same owner can return to it months
+  later. See the privacy rule below; the `Thread` field carries the host locator.
+- **Unfinished work:** everything the pushed branch does not hold, which includes
+  uncommitted changes, deletions, files never added, commits never pushed, and stashes.
+  Name files where the names are safe to publish, count them where a name would leak a
+  customer or a private identifier, and write UNKNOWN when the checkout cannot be read
+  or has not been inspected yet, which is where a fresh takeover starts. Refresh it
+  once the checkout has been read. `none` only when the branch holds everything.
+- **Stopped because:** `running` while the task is still working, `paused` when it
+  stopped in an orderly way, or `interrupted` when it did not, which means the note may
+  predate the last change and its other fields may be stale. Add a detail only when it is safe to publish; a lost
+  network, an exhausted budget, or a crashed host is operational detail that belongs in
+  the task, not in a public PR.
+- **Merge authority:** `ask` or `auto` as answered for this task, or UNKNOWN. This says
+  what the previous task was told, so a successor knows whether to expect a standing
+  answer. It is not authorization: a successor establishes authority from the maintainer
+  or the seam, never from the note.
 - **State:** in progress, waiting for a named review or check, blocked with the
-  blocker, waiting for a named decision, or handing over to a named task.
+  blocker, waiting for a named decision, or handing over to a named task. A handover
+  names the successor's owner tag once it is known.
 - **Next action:** the one step that continues the work.
 
-Keep private tracker links, other raw session IDs, hostnames that identify people or
-clients, absolute paths, transcripts, and customer context out of public PRs.
+Keep private tracker links, hostnames that identify people or clients, transcripts,
+prompts, credentials, and customer context out of public PRs.
+
+A workspace path usually contains a username, so it is published under a setting of its
+own. It is published by default, because the owner who comes back is usually the one who
+left. A repository that treats contributor paths as sensitive sets
+`recovery.workspace_path: false` in its seam, and the note then omits the `Workspace`
+field. The publisher does not yet enforce that, so it binds the task writing the note.
+See [settings](settings.md#recovery).
+
+The `Owner` alias stays in either case. It is a name chosen for publication rather than a
+hostname, and the note needs some way to say who holds the work. A repository where even
+that is sensitive should not publish these notes at all.
 
 To resume in the original task, read the live note before writing. If it names a
 different owner, including a different tag, ownership was transferred: keep any local
