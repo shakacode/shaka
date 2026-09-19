@@ -569,6 +569,27 @@ class SnapshotHistoryTest < Minitest::Test
     end
   end
 
+  # The flag the guide tells people to run at outcome, which force-pushes a deletion.
+  def test_deleting_removes_a_published_snapshot
+    in_repository do |work|
+      write(work, 'research.md' => "half an idea\n")
+      publish_snapshot(work)
+
+      report = run_snapshot(work, '--delete')
+
+      assert_equal ['wip/feature', true], report.values_at('deleted', 'existed')
+      refute_includes remote_branches(work).join, 'wip/'
+    end
+  end
+
+  def test_deleting_what_was_never_published_changes_nothing
+    in_repository do |work|
+      report = run_snapshot(work, '--delete')
+
+      assert_equal ['wip/feature', false], report.values_at('deleted', 'existed')
+    end
+  end
+
   # A note that says there is no snapshot must not leave one fetchable behind it.
   def test_publishing_nothing_removes_a_snapshot_an_earlier_stop_left
     in_repository do |work|
