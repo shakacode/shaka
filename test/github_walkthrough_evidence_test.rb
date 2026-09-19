@@ -71,7 +71,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   def test_walkthrough_fails_when_required_check_evidence_is_unavailable
     github = client(snapshot_response, files_response, response({ 'message' => 'error' }))
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH) }
-    assert_includes error.message, 'array'
+    assert_includes error.message, 'unavailable'
     assert_equal 3, @calls.size
   end
 
@@ -88,6 +88,23 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
     github = client(snapshot_response, files_response(page_one), files_response, *gate_responses, html_response,
                     review_response, review_response, snapshot_response)
     published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+    assert_equal 'COMMENTED', published['state']
+  end
+
+  # Catches a valid blob URL that ends a sentence with a period and no line anchor.
+  def test_walkthrough_pin_followed_by_sentence_punctuation_is_accepted
+    body = "See https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}. Gates: validate, claude-review."
+    github = client(snapshot_response, files_response, *gate_responses, html_response,
+                    review_response(body: body), review_response(body: body), snapshot_response)
+    published = github.walkthrough(head: HEAD, body: body)
+    assert_equal 'COMMENTED', published['state']
+  end
+
+  def test_walkthrough_pin_inside_angle_brackets_is_accepted
+    body = "See <https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}>. Gates: validate, claude-review."
+    github = client(snapshot_response, files_response, *gate_responses, html_response,
+                    review_response(body: body), review_response(body: body), snapshot_response)
+    published = github.walkthrough(head: HEAD, body: body)
     assert_equal 'COMMENTED', published['state']
   end
 end

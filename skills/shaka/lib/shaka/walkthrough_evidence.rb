@@ -36,13 +36,15 @@ module Shaka
 
     def pinned_paths(body, head)
       prefix = blob_url(head, '')
-      body.to_enum(:scan, /#{Regexp.escape(prefix)}([^\s)#]+)/).map { CGI.unescape(Regexp.last_match(1)) }
+      body.to_enum(:scan, /#{Regexp.escape(prefix)}([^\s)#<>]+)/).map do
+        CGI.unescape(Regexp.last_match(1)).sub(/[.,;:!?]+$/, '')
+      end
     end
 
     def blob_url(head, path) = "https://github.com/#{@github.repository}/blob/#{head}/#{path}"
 
     def verify_gates(body)
-      missing = gate_names.reject { |name| body.include?(name) }
+      missing = gate_names.reject { |name| named_gate?(body, name) }
       return if missing.empty?
 
       raise Error, "Walkthrough omits completed gates: #{missing.join(', ')}."
@@ -52,7 +54,11 @@ module Shaka
       (completed_names(required_rows) + review_names).uniq
     end
 
-    def required_rows = @github.checks(required: true)
+    def required_rows = @github.required_checks
+
+    def named_gate?(body, name)
+      body.match?(/(?<![A-Za-z0-9_-])#{Regexp.escape(name)}(?![A-Za-z0-9_-])/)
+    end
 
     def review_names
       completed_names(@github.checks).grep(/review/i)
