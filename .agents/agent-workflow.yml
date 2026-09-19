@@ -23,6 +23,9 @@ merge:
   preference: ask
   method: squash
   release: explicit_approval
+# Feature-branch layout. {login} is gh api user --jq .login; {host} is the tool.
+branches:
+  name: '{login}-{host}/{issue}-{description}'
 # Branch protection Shaka expects GitHub to enforce; it never bypasses these.
 protection:
   required_checks:
