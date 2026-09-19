@@ -163,7 +163,7 @@ while it is unfinished, and the unfinished work that note describes.
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
 | `workspace_path` | `true` or `false` | `true` lets the note carry the checkout path. `false` tells the workflow to omit the `Workspace` field. The owner alias and the `Thread` locator follow their own rules either way. Read the note below on what enforces this. |
-| `snapshot` | `true` or `false` | `true` lets `shaka snapshot` push unfinished work to a `wip/` branch when a task stops, holding back credential-like paths first. `false` makes the command itself refuse, so unfinished work stays on the machine that made it. |
+| `snapshot` | `true` or `false` | `true` lets `shaka snapshot` push the working tree's unfinished files to a `wip/` branch when a task stops, holding back credential-like paths first. The commit has no parent, so no history leaves with it. `false` makes the command itself refuse, so unfinished work stays on the machine that made it. |
 
 Set `workspace_path: false` where contributor paths are sensitive. Set `snapshot: false`
 where unfinished work must not reach the remote at all, or where CI runs on every pushed

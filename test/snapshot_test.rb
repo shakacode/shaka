@@ -37,6 +37,15 @@ class SnapshotScreenTest < Minitest::Test
     assert_empty screen.included
   end
 
+  # The names reviewers found missing, each one a real credential file in the wild.
+  def test_well_known_credential_files_are_held_back
+    paths = ['terraform.tfstate', 'infra/terraform.tfstate.backup', 'kubeconfig',
+             '.kube/config', 'keys/firebase-adminsdk-a1b2c.json', 'gcp-serviceaccount.json']
+    screen = Shaka::Snapshot::Screen.new(paths)
+
+    assert_empty screen.included
+  end
+
   def test_an_environment_directory_holds_back_what_it_contains
     paths = ['env/database.yml', '.env/production.yml', 'config/env/settings.yml']
     screen = Shaka::Snapshot::Screen.new(paths)
@@ -325,8 +334,8 @@ class SnapshotTest < Minitest::Test
       File.symlink('missing-target', File.join(work, 'link'))
       runner = ->(*argv, **rest) { argv.first == 'status' ? "UD link\0" : git(work, *argv, **rest) }
 
-      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote: 'origin',
-                                       remote_head: '', git: runner).to_h
+      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote_head: '',
+                                       git: runner).to_h
 
       assert_equal [['link'], []], plan.values_at('adds', 'removes')
     end
@@ -337,8 +346,8 @@ class SnapshotTest < Minitest::Test
       write(work, 'conflicted.md' => "one side survived\n")
 
       runner = ->(*argv, index: nil) { git(work, *argv, index: index) }
-      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote: 'origin',
-                                       remote_head: '', git: runner).to_h
+      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote_head: '',
+                                       git: runner).to_h
 
       assert_includes plan['adds'], 'conflicted.md'
     end
@@ -375,55 +384,53 @@ end
 class SnapshotHistoryTest < Minitest::Test
   include SnapshotRepository
 
-  def test_committed_work_that_was_never_pushed_is_published
+  # The snapshot carries no history, so a local commit stays where it is and gets named.
+  def test_local_commits_are_named_rather_than_published
     in_repository do |work|
+      git(work, 'push', '--quiet', 'origin', 'HEAD:refs/heads/feature')
       write(work, 'research.md' => "half an idea\n")
       commit_all(work, 'research')
 
+      report = run_snapshot(work)
+
+      assert_equal [[], 1], [report['adds'], report['unpushed_commits'].length]
+      assert_nil report['branch']
+    end
+  end
+
+  # A credential committed locally cannot reach the remote, because no history travels.
+  def test_a_credential_in_a_local_commit_does_not_travel
+    in_repository do |work|
+      Dir.mkdir(File.join(work, 'config'))
+      write(work, 'config/credentials.json' => "{}\n")
+      commit_all(work, 'credentials')
+      write(work, 'research.md' => "half an idea\n")
+
       report = publish_snapshot(work)
 
-      assert_equal true, report['published']
-      assert_includes published_files(work, report['commit']), 'research.md'
-      refute_empty report['unpushed_commits']
+      assert_equal ['research.md'], published_files(work, report['commit'])
     end
   end
 
-  def test_a_credential_in_an_unpushed_commit_refuses_to_publish
-    in_repository do |work|
-      Dir.mkdir(File.join(work, 'config'))
-      write(work, 'config/credentials.json' => "{}\n")
-      commit_all(work, 'credentials')
-      plan = run_snapshot(work)
-
-      result = push_snapshot(work, plan['digest'])
-
-      assert_equal [['config/credentials.json'], 1, []],
-                   [plan['unpushed_held_back'], result, remote_branches(work)]
-    end
-  end
-
-  def test_a_credential_added_by_a_merge_resolution_refuses_to_publish
+  def test_a_credential_added_by_a_merge_resolution_does_not_travel
     in_repository do |work|
       merge_that_adds_credentials(work)
-      plan = run_snapshot(work)
+      write(work, 'research.md' => "half an idea\n")
 
-      assert_includes plan['unpushed_held_back'], 'config/credentials.json'
-      assert_equal [1, []], [push_snapshot(work, plan['digest']), remote_branches(work)]
+      report = publish_snapshot(work)
+
+      assert_equal ['research.md'], published_files(work, report['commit'])
     end
   end
 
-  # Another remote holding the commit says nothing about what this one has received.
-  def test_history_only_another_remote_holds_is_still_screened
+  # The one property every history finding reduces to: the commit has no ancestry at all.
+  def test_the_published_commit_has_no_parent
     in_repository do |work|
-      git(work, 'push', '--quiet', 'origin', 'HEAD:refs/heads/feature')
-      Dir.mkdir(File.join(work, 'config'))
-      write(work, 'config/credentials.json' => "{}\n")
-      commit_all(work, 'credentials')
-      elsewhere(work)
-      plan = run_snapshot(work)
+      write(work, 'research.md' => "half an idea\n")
 
-      assert_includes plan['unpushed_held_back'], 'config/credentials.json'
-      assert_equal 1, push_snapshot(work, plan['digest'])
+      report = publish_snapshot(work)
+
+      assert_empty git(work, 'rev-list', '--parents', '-1', report['commit']).split[1..]
     end
   end
 
@@ -544,7 +551,7 @@ class SnapshotBoundaryTest < Minitest::Test
       report = publish_snapshot(work)
 
       assert_equal [['notes/keep.md'], ['notes']], report.values_at('adds', 'removes')
-      assert_equal ['.gitignore', 'README.md', 'notes/keep.md'], published_files(work, report['commit'])
+      assert_equal ['notes/keep.md'], published_files(work, report['commit'])
     end
   end
 

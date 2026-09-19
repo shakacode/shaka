@@ -8,13 +8,16 @@ require_relative 'tree'
 module Shaka
   class Snapshot
     # Decides what one snapshot would publish, so it can be read before anything is pushed.
+    #
+    # What the push sends is the list this prints and nothing else, because the commit it
+    # builds has no parent. The screen therefore covers the whole publication, and the list
+    # is short enough that reading it is real review rather than a formality.
     class Plan
       SEPARATOR = "\0"
 
-      def initialize(root:, branch:, remote:, remote_head:, git:)
+      def initialize(root:, branch:, remote_head:, git:)
         @root = root
         @branch = branch
-        @remote = remote
         @remote_head = remote_head
         @git = git
       end
@@ -23,26 +26,19 @@ module Shaka
         { 'branch' => @branch, 'published' => false, 'adds' => publishable,
           'removes' => removals, 'held_back' => screen.excluded,
           'held_back_submodules' => nested, 'unpushed_commits' => unpushed_commits,
-          'unpushed_held_back' => unpushed_held_back,
-          'tree' => tree, 'parent' => parent, 'digest' => digest }
+          'tree' => tree, 'digest' => digest }
       end
 
       private
 
+      # Deletions describe the checkout rather than the snapshot: with no parent there is
+      # nothing to delete from. They are reported so the recovery note can record them.
       def removals = changes.removed - surviving
 
-      def builder = @builder ||= Tree.new(git: @git)
+      def tree = @tree ||= Tree.new(git: @git).build(publishable)
 
-      def tree = @tree ||= builder.build(publishable, removals)
-
-      def parent = @parent ||= builder.parent
-
-      # The digest names the exact tree and parent, so editing a listed file invalidates it.
-      def digest
-        return 'none' if publishable.empty? && removals.empty? && unpushed_commits.empty?
-
-        "#{tree[0, 12]}.#{parent[0, 7]}"
-      end
+      # The digest names the exact tree, so editing a listed file invalidates it.
+      def digest = publishable.empty? ? 'none' : tree[0, 12]
 
       def screen = @screen ||= Screen.new((changes.added + surviving).uniq.sort)
 
@@ -64,38 +60,15 @@ module Shaka
 
       def resolved?(path) = File.symlink?(path) || File.file?(path)
 
-      # The push carries every object the snapshot's parent needs, so name that history.
-      # A branch the remote has never seen still has commits nobody published.
+      # A snapshot does not carry local commits, so the note must say they exist. This
+      # describes the checkout rather than gating the push: the remote's own answer for this
+      # branch is the only comparison, and UNKNOWN when it has never advertised one.
       def unpushed_commits
-        @unpushed_commits ||= @git.call('log', '--oneline', '--no-decorate', *range).split("\n")
-      rescue Error
-        @unpushed_commits = ['UNKNOWN']
-      end
+        return ['UNKNOWN'] if @remote_head.empty?
 
-      # The snapshot commits on top of the local head, so unpushed history travels with the
-      # push and cannot be held back. Naming its screened paths lets publishing refuse
-      # instead, since the only other way to hold them back is to rewrite that history.
-      def unpushed_held_back
-        paths = unpushed_paths
-        paths == ['UNKNOWN'] ? paths : Screen.new(paths).excluded
-      end
-
-      # `rev-list --objects` names every object the push would transfer, and names it by the
-      # path it is stored under. That is the set git itself sends, so nothing arrives through
-      # a merge resolution, a deleted-then-restored file, or any other diff the walk missed.
-      def unpushed_paths
-        @git.call('rev-list', '--objects', *range).lines.filter_map do |line|
-          path = line.chomp.split(' ', 2).last
-          path unless path.nil? || path.empty?
-        end.uniq.sort
+        @git.call('log', '--oneline', '--no-decorate', "#{@remote_head}..HEAD").split("\n")
       rescue Error
         ['UNKNOWN']
-      end
-
-      # Reachability is measured against the remote being published to. Another remote
-      # holding the commit says nothing about what this one has already received.
-      def range
-        @remote_head.empty? ? ['HEAD', '--not', "--remotes=#{@remote}"] : ["#{@remote_head}..HEAD"]
       end
 
       # Neither a tracked submodule nor an untracked embedded repository can travel in this

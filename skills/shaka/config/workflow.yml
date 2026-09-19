@@ -243,9 +243,10 @@ phases:
       - At the stopping point, when work is unfinished and the seam's `recovery.snapshot` is not
         `false`, run `snapshot` to print what it would publish and what it holds back, read that
         list for content the screen cannot see, then run `snapshot --push --expect DIGEST` with the
-        digest it printed. It commits against the current head without touching the checkout and
-        pushes a `wip/` branch that carries no pull request. Record its branch and the held-back
-        files in the note. Run `snapshot --delete` at outcome.
+        digest it printed. It publishes those files as a parentless commit on a `wip/` branch that
+        carries no pull request, without touching the checkout, and carries no history, so local
+        commits stay local. Record its branch, the held-back files, and any unpushed commits in the
+        note. Run `snapshot --delete` at outcome.
       - At the stopping point, refresh usage for affected commits and turns, replacing overlapping
         snapshots. When this task owns the PR, republish its description with that usage and remove
         the `WIP Details` recovery note after GitHub confirms the outcome. Review-only work leaves

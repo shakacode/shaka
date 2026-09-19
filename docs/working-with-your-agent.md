@@ -135,8 +135,9 @@ merge attempt still needs it. The note lists:
 - **Workspace:** the checkout directory, so the same owner can return to it months
   later. See the privacy rule below; the `Thread` field carries the host locator.
 - **Unfinished work:** the snapshot branch when there is one, then everything neither
-  branch holds, which includes uncommitted changes, deletions, files never added, commits
-  never pushed, stashes, and the paths the snapshot held back.
+  branch holds, which includes deletions, commits never pushed, stashes, and the paths the
+  snapshot held back. A snapshot carries files, not history, so local commits belong here
+  even when one was taken.
   Name files where the names are safe to publish, count them where a name would leak a
   customer or a private identifier, and write UNKNOWN when the checkout cannot be read
   or has not been inspected yet, which is where a fresh takeover starts. Refresh it
@@ -167,38 +168,39 @@ See [settings](settings.md#recovery).
 
 Unfinished work that lives only in one checkout is lost when that directory is removed,
 and the editors that create worktrees remove them on their own schedule. So when work
-stops with anything uncommitted, commit it on a branch named after the PR branch with a
-`wip/` prefix and push that branch. Include files that were never added, since
-half-finished research is exactly what a later reader cannot reconstruct.
+stops with anything uncommitted, push those files to a branch named after the PR branch
+with a `wip/` prefix. Include files that were never added, since half-finished research is
+exactly what a later reader cannot reconstruct.
 
 A push is permanent: deleting the branch later does not reliably remove what it
 published, and a public repository publishes it to everyone. So the snapshot happens in
-two steps. `shaka snapshot` prints what it would publish, what it would remove, and the
-paths it holds back because they look like credentials or keys. Read that list, then run
-`shaka snapshot --push --expect <digest>` with the digest that plan printed. The digest
-names the exact tree and parent, so a file that changed in between stops the push instead
-of publishing something nobody saw. The command commits against the current head through
-a temporary index, so the working tree and the index are untouched, and it carries
-renames and deletions rather than resurrecting files.
+two steps. `shaka snapshot` prints what it would publish, what the checkout no longer has,
+and the paths it holds back because they read as credentials or keys. Read that list, then
+run `shaka snapshot --push --expect <digest>` with the digest that plan printed. The digest
+names the exact tree, so a file that changed in between stops the push instead of
+publishing something nobody saw.
+
+The snapshot publishes the files on that list and nothing else. Its commit has no parent,
+so no history travels with it: not a commit you never pushed, not a file some earlier
+branch held, not something a merge resolution left behind. The list you read is the whole
+publication. That is what makes reading it worth doing, and it is why the command builds
+the commit through a temporary index rather than from your branch, leaving the working
+tree and the index untouched.
+
+The price is that local commits stay local. The plan names them, and the note records
+that they exist only in that checkout, but a snapshot cannot recover them: it carries the
+files as they stand now, which is the work, not the steps that produced it. Push the
+branch itself if the history matters.
 
 The screen reads path names only, every segment of them, and holds back anything that
-reads as a credential, a key, or an environment file. It cannot see a credential pasted
-inside an ordinary-looking research note, which is why the list is printed before
-anything is pushed and why you read it. Being absent from `.gitignore` says nothing about
-whether a file is safe; ignored files stay behind because they are usually local
-configuration, not because ignoring makes a file public. Name the held-back files in the
-note as work the snapshot does not hold. It holds back submodules and embedded
-repositories the same way, since their work cannot travel in this commit.
-
-Commits the remote has never seen are unfinished work too, so a branch with nothing
-uncommitted still gets a snapshot when it carries them. The plan lists those commits, and
-it screens every path the push would transfer, which is the object set git itself would
-send rather than a walk over diffs, so a file that arrived in a merge resolution or was
-deleted and restored is named like any other. Those paths cannot be held back, because the
-snapshot commits on top of the local head and the whole branch travels with it, so the
-push refuses instead. Take the file out of that history, or leave the branch where it is
-and say so in the note. What counts as already sent is measured against the remote being
-published to; another remote holding the same commit says nothing about this one.
+reads as a credential, a key, an environment file, or a state file that tends to hold
+them. It cannot see a credential pasted inside an ordinary-looking research note, and no
+list of names is ever complete, which is why the plan is printed before anything is
+pushed and why you read it rather than trusting the screen. Being absent from
+`.gitignore` says nothing about whether a file is safe; ignored files stay behind because
+they are usually local configuration, not because ignoring makes a file public. Name the
+held-back files in the note as work the snapshot does not hold. It holds back submodules
+and embedded repositories the same way, since their work cannot travel in one commit.
 
 Printing the plan reads only the checkout, so it works while the remote is down. Only the
 push asks the remote anything.

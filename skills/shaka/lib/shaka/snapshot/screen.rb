@@ -18,7 +18,9 @@ module Shaka
         %r{(\A|/)id_(rsa|dsa|ecdsa|ed25519)(\.|\z)}i,
         /\.(pem|key|p12|pfx|keystore|jks|ppk)\z/i,
         %r{(\A|/)(credential|secret|service[-_]account)[^/]*(/|\z)}i,
-        /(secret|token|password|passwd|apikey|api[-_]key)/i
+        %r{(\A|/)\.kube/}i,
+        /\.tfstate(\.|\z)/i,
+        /(secret|token|password|passwd|apikey|api[-_]key|kubeconfig|adminsdk|service[-_]?account)/i
       ].freeze
 
       def initialize(paths)

@@ -5,10 +5,12 @@ require_relative '../error'
 
 module Shaka
   class Snapshot
-    # Builds and commits the tree a snapshot would publish, without touching the checkout.
+    # Builds and commits the tree a snapshot publishes, without touching the checkout.
     #
-    # A temporary index is used, so the working tree and the real index are untouched, and
-    # the same tree answers both what a plan would publish and what a push commits.
+    # The tree holds the listed files and nothing else, and the commit has no parent, so a
+    # snapshot carries exactly what its plan named. Nothing reachable from the local head
+    # travels with it: not an unpushed commit, not a merge resolution, not a file some other
+    # remote once held. A temporary index keeps the working tree and the real index untouched.
     class Tree
       # A host that never configured a git identity can still save its work: this branch is
       # not for review or merge, so a stand-in name beats refusing to keep the work.
@@ -20,22 +22,19 @@ module Shaka
         @git = git
       end
 
-      # The confirmed plan already named its tree, so publishing commits that exact tree.
-      def commit(tree:, parent:, message:)
-        @git.call('commit-tree', tree, '-p', parent, '-m', message, environment: identity).strip
-      end
-
-      def build(adds, removes)
+      # The index starts empty, so a path that was never listed cannot reach the tree.
+      def build(paths)
         Dir.mktmpdir('shaka-snapshot') do |dir|
           index = File.join(dir, 'index')
-          @git.call('read-tree', 'HEAD', index: index)
-          @git.call('add', '--force', '--', *adds, index: index) unless adds.empty?
-          @git.call('update-index', '--force-remove', '--', *removes, index: index) unless removes.empty?
-          @git.call('write-tree', index: index).strip
+          @git.call('add', '--force', '--', *paths, index:) unless paths.empty?
+          @git.call('write-tree', index:).strip
         end
       end
 
-      def parent = @git.call('rev-parse', 'HEAD').strip
+      # The confirmed plan already named its tree, so publishing commits that exact tree.
+      def commit(tree:, message:)
+        @git.call('commit-tree', tree, '-m', message, environment: identity).strip
+      end
 
       private
 
