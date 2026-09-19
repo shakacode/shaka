@@ -37,6 +37,14 @@ class SnapshotScreenTest < Minitest::Test
     assert_empty screen.included
   end
 
+  # A keyword ending a longer name, which anchoring at the segment start used to miss.
+  def test_credential_names_are_held_back_wherever_the_word_sits
+    paths = ['aws_credentials.json', 'db-credentials.yml', 'my-project-service-account.json']
+    screen = Shaka::Snapshot::Screen.new(paths)
+
+    assert_empty screen.included
+  end
+
   # The names reviewers found missing, each one a real credential file in the wild.
   def test_well_known_credential_files_are_held_back
     paths = ['terraform.tfstate', 'infra/terraform.tfstate.backup', 'kubeconfig',
@@ -329,6 +337,18 @@ class SnapshotTest < Minitest::Test
   end
 
   # A delete/modify conflict resolved to a symlink, which the status still calls deleted.
+  # Git reports path bytes, and a checkout may hold a name that is not valid UTF-8.
+  def test_a_path_that_is_not_valid_utf8_is_planned_rather_than_raising
+    in_repository do |work|
+      runner = ->(*argv, **rest) { argv.first == 'status' ? "?? bad\xFFname\0".b : git(work, *argv, **rest) }
+
+      plan = Shaka::Snapshot::Plan.new(root: work, branch: 'wip/feature', remote_head: '',
+                                       git: runner).to_h
+
+      assert_equal [[], ['bad?name']], plan.values_at('adds', 'held_back')
+    end
+  end
+
   def test_a_conflict_resolved_to_a_symlink_is_published
     in_repository do |work|
       File.symlink('missing-target', File.join(work, 'link'))
@@ -573,51 +593,46 @@ class SnapshotPolicyTest < Minitest::Test
   include SnapshotRepository
 
   TIP = '1111111111111111111111111111111111111111'
+  LISTING = "ref: refs/heads/main\tHEAD\n#{TIP}\tHEAD\n#{TIP}\trefs/heads/main\n".freeze
 
   def test_a_failed_fetch_is_not_read_as_a_repository_without_a_seam
-    git = stub_remote('ls-remote origin' => "#{TIP}\trefs/heads/main\n",
-                      'ls-remote --symref origin HEAD' => "ref: refs/heads/main\tHEAD\n",
-                      'ls-remote origin refs/heads/main' => "#{TIP}\trefs/heads/main\n",
+    git = stub_remote('ls-remote --symref origin' => LISTING,
                       'fetch --quiet origin refs/heads/main' => Shaka::Error.new('could not read from remote'))
 
-    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git:)
+    policy = Shaka::Snapshot::Policy.new(root: Dir.pwd, remote: 'origin', git:)
 
     assert_raises(Shaka::Error) { policy.allows_snapshot? }
   end
 
   def test_a_default_branch_without_a_seam_keeps_the_default
-    git = stub_remote('ls-remote origin' => "#{TIP}\trefs/heads/main\n",
-                      'ls-remote --symref origin HEAD' => "ref: refs/heads/main\tHEAD\n",
-                      'ls-remote origin refs/heads/main' => "#{TIP}\trefs/heads/main\n",
+    git = stub_remote('ls-remote --symref origin' => LISTING,
                       'fetch --quiet origin refs/heads/main' => '',
                       "ls-tree #{TIP} -- .agents/agent-workflow.yml" => "\n")
 
-    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git:)
+    policy = Shaka::Snapshot::Policy.new(root: Dir.pwd, remote: 'origin', git:)
 
     assert_equal true, policy.allows_snapshot?
   end
 
   def test_a_remote_with_branches_but_no_advertised_head_refuses
-    git = stub_remote('ls-remote origin' => "#{TIP}\trefs/heads/main\n",
-                      'ls-remote --symref origin HEAD' => "\n")
+    git = stub_remote('ls-remote --symref origin' => "#{TIP}\trefs/heads/main\n")
 
-    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git:)
+    policy = Shaka::Snapshot::Policy.new(root: Dir.pwd, remote: 'origin', git:)
 
     assert_raises(Shaka::Error) { policy.allows_snapshot? }
   end
 
   def test_a_remote_advertising_only_a_tag_must_still_name_its_default_branch
-    git = stub_remote('ls-remote origin' => "#{TIP}\trefs/tags/v1\n",
-                      'ls-remote --heads origin' => "\n",
-                      'ls-remote --symref origin HEAD' => "\n")
+    git = stub_remote('ls-remote --symref origin' => "#{TIP}\trefs/tags/v1\n")
 
-    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git:)
+    policy = Shaka::Snapshot::Policy.new(root: Dir.pwd, remote: 'origin', git:)
 
     assert_raises(Shaka::Error) { policy.allows_snapshot? }
   end
 
   def test_a_remote_that_advertises_nothing_keeps_the_default
-    policy = Shaka::Snapshot::Policy.new(remote: 'origin', git: stub_remote('ls-remote origin' => "\n"))
+    git = stub_remote('ls-remote --symref origin' => "\n")
+    policy = Shaka::Snapshot::Policy.new(root: Dir.pwd, remote: 'origin', git:)
 
     assert_equal true, policy.allows_snapshot?
   end

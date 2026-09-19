@@ -23,13 +23,18 @@ module Shaka
       end
 
       def to_h
-        { 'branch' => @branch, 'published' => false, 'adds' => publishable,
-          'removes' => removals, 'held_back' => screen.excluded,
-          'held_back_submodules' => nested, 'unpushed_commits' => unpushed_commits,
+        { 'branch' => @branch, 'published' => false, 'adds' => readable(publishable),
+          'removes' => readable(removals), 'held_back' => readable(screen.excluded),
+          'held_back_submodules' => readable(nested), 'unpushed_commits' => unpushed_commits,
           'tree' => tree, 'digest' => digest }
       end
 
       private
+
+      # Git works in path bytes and the report is JSON, so what the reader sees is scrubbed
+      # while the commands keep the bytes. Only held-back paths can be unreadable, because
+      # the screen refuses to publish a name it cannot render.
+      def readable(paths) = paths.map { |path| path.scrub('?') }
 
       # Deletions describe the checkout rather than the snapshot: with no parent there is
       # nothing to delete from. They are reported so the recovery note can record them.
@@ -46,8 +51,15 @@ module Shaka
 
       def nested = @nested ||= screen.included.select { |path| nested?(path) }
 
+      # Git reports path bytes, which need not be valid UTF-8, so the stream is split as
+      # bytes and each path is labelled UTF-8 afterwards. A name that is not valid UTF-8
+      # then reaches the screen and the report as its own bytes rather than raising.
       def changes
-        @changes ||= Changes.new(@git.call('status', '--porcelain', '-uall', '-z').split(SEPARATOR))
+        @changes ||= Changes.new(split(@git.call('status', '--porcelain', '-uall', '-z')))
+      end
+
+      def split(output)
+        output.b.split(SEPARATOR).map { |entry| entry.force_encoding(Encoding::UTF_8) }
       end
 
       # A conflicted path can be reported as deleted while the resolution is still on disk,
@@ -77,7 +89,7 @@ module Shaka
       def nested?(path) = path.end_with?('/') || submodules.include?(path)
 
       def submodules
-        @submodules ||= @git.call('ls-files', '--stage', '-z').split(SEPARATOR).filter_map do |entry|
+        @submodules ||= split(@git.call('ls-files', '--stage', '-z')).filter_map do |entry|
           entry.split("\t", 2).last if entry.start_with?('160000 ')
         end
       end

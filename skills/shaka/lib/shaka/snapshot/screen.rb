@@ -20,7 +20,8 @@ module Shaka
         %r{(\A|/)(credential|secret|service[-_]account)[^/]*(/|\z)}i,
         %r{(\A|/)\.kube/}i,
         /\.tfstate(\.|\z)/i,
-        /(secret|token|password|passwd|apikey|api[-_]key|kubeconfig|adminsdk|service[-_]?account)/i
+        /(credential|secret|token|password|passwd|apikey|api[-_]key|kubeconfig|adminsdk)/i,
+        /service[-_]?account/i
       ].freeze
 
       def initialize(paths)
@@ -29,7 +30,18 @@ module Shaka
 
       def included = @paths - excluded
 
-      def excluded = @paths.select { |path| DENIED.any? { |pattern| path.match?(pattern) } }
+      def excluded = @paths.select { |path| denied?(path) }
+
+      private
+
+      # A name the plan cannot render is a name nobody can review, and the printed plan is
+      # what makes this safe. So a path that is not valid UTF-8 is held back rather than
+      # matched against patterns it would raise on.
+      def denied?(path)
+        return true unless path.valid_encoding?
+
+        DENIED.any? { |pattern| path.match?(pattern) }
+      end
     end
   end
 end

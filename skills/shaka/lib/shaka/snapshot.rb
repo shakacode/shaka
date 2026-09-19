@@ -91,7 +91,7 @@ module Shaka
     end
 
     def allowed?
-      Policy.new(remote: @options[:remote], git: method(:git)).allows_snapshot?
+      Policy.new(root: @root, remote: @options[:remote], git: method(:git)).allows_snapshot?
     end
 
     def current_plan

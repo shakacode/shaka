@@ -198,7 +198,9 @@ them. It cannot see a credential pasted inside an ordinary-looking research note
 list of names is ever complete, which is why the plan is printed before anything is
 pushed and why you read it rather than trusting the screen. Being absent from
 `.gitignore` says nothing about whether a file is safe; ignored files stay behind because
-they are usually local configuration, not because ignoring makes a file public. Name the
+they are usually local configuration, not because ignoring makes a file public. A name the
+plan cannot print, because it is not valid text, is held back for that reason alone: a name
+nobody can read is a name nobody can review. Name the
 held-back files in the note as work the snapshot does not hold. It holds back submodules
 and embedded repositories the same way, since their work cannot travel in one commit.
 
