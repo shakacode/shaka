@@ -138,9 +138,9 @@ merge attempt still needs it. The note lists:
   Name files where the names are safe to publish, count them where a name would leak a
   customer or a private identifier, and write UNKNOWN when the checkout cannot be read.
   `none` only when the branch holds everything.
-- **Stopped because:** `paused` when the task stopped in an orderly way, or
-  `interrupted` when it did not, which means the note may predate the last change and
-  its other fields may be stale. Add a detail only when it is safe to publish; a lost
+- **Stopped because:** `running` while the task is still working, `paused` when it
+  stopped in an orderly way, or `interrupted` when it did not, which means the note may
+  predate the last change and its other fields may be stale. Add a detail only when it is safe to publish; a lost
   network, an exhausted budget, or a crashed host is operational detail that belongs in
   the task, not in a public PR.
 - **Merge authority:** `ask` or `auto` as answered for this task, or UNKNOWN. This says
