@@ -136,8 +136,9 @@ merge attempt still needs it. The note lists:
 - **Unfinished work:** everything the pushed branch does not hold, which includes
   uncommitted changes, deletions, files never added, commits never pushed, and stashes.
   Name files where the names are safe to publish, count them where a name would leak a
-  customer or a private identifier, and write UNKNOWN when the checkout cannot be read.
-  `none` only when the branch holds everything.
+  customer or a private identifier, and write UNKNOWN when the checkout cannot be read
+  or has not been inspected yet, which is where a fresh takeover starts. Refresh it
+  once the checkout has been read. `none` only when the branch holds everything.
 - **Stopped because:** `running` while the task is still working, `paused` when it
   stopped in an orderly way, or `interrupted` when it did not, which means the note may
   predate the last change and its other fields may be stale. Add a detail only when it is safe to publish; a lost
