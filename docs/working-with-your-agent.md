@@ -265,11 +265,11 @@ Name the earlier behavior, then the new one:
 
 A reply that re-proves the diagnosis buries the decision:
 
-> You're right that the merge helper still accepts a stale walkthrough ID. I checked `Merge#call` and the review lookup, and the head comparison happens after the walkthrough is loaded. We could add a commit_id check there. I think we should still land this PR as a docs-only change and file the helper fix separately.
+> You're right that non-owner shells still see the log commands. I checked `tips` and `tips -a`, and both print `agent-stack-sync-log` before they test for the LaunchAgent. We could move that check above the extra commands. I think we should still land this PR as the writing baseline and file the tips change separately.
 
 Lead with the decision and use the thread's context:
 
-> Agreed on the stale walkthrough ID, but that helper check is a separate change. This PR stays the docs baseline; I'll open a follow-up for the commit_id guard.
+> Agreed that non-owner shells shouldn't see the log commands, but that tips gate is a separate change. This PR stays the writing baseline; I'll open a follow-up for the LaunchAgent check.
 
 The baseline is a self-edit, not a score or a linter. Your repo can customize the audience,
 language, vocabulary, and level of detail in its existing `AGENTS.md`. For example:
