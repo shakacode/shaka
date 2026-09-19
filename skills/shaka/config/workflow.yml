@@ -202,8 +202,8 @@ phases:
         `recovery.workspace_path` to `false`, which publishes both as UNKNOWN rather than
         dropping the fields; nothing but this step enforces
         that. The thread link follows the guide's rule for the host: Codex builds it from
-        `CODEX_THREAD_ID`, Claude Code publishes the link its host reports rather than one
-        assembled from `CLAUDE_CODE_HOST_SESSION_ID`, and any host the guide does not cover
+        `CODEX_THREAD_ID`, Claude Code asks the host for this session's metadata and publishes
+        the `link` it returns, and any host the guide does not cover, or that reports no link,
         uses `UNKNOWN`.
       - Description provenance has exactly nine flat keys: `task_source`, `initial_prompt`,
         `workflow_version`, `requested_model`, `requested_effort`, `recommended_model`,

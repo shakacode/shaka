@@ -127,17 +127,19 @@ merge attempt still needs it. The note lists:
 - **Thread:** the host's own way back into the session that did the work, so the pull
   request leads to it rather than only describing it. This is the field that answers
   "where was I", and it is published under the same setting as the workspace below,
-  because both name the owner's machine. For Codex, require `CODEX_THREAD_ID` to contain
-  a UUID and publish `codex://threads/<thread-id>`. For Claude Code, require
-  `CLAUDE_CODE_HOST_SESSION_ID` to be set and publish the link the host reports for that
-  session; the desktop app supplies one, and a host that reports none, such as a plain
-  terminal, uses `UNKNOWN`. That is not `CLAUDE_CODE_SESSION_ID`, which names the
-  transcript on disk and is what [usage reporting](usage-reporting.md) reads; both are set
-  and they hold different values. Do not assemble a link from the identifier yourself: publish
-  the one the host gives, or `UNKNOWN`. Publish either as a raw, unformatted URL, never a
-  Markdown link or inline code. Other hosts use `UNKNOWN` until this guide defines their
-  locator. The link opens on the machine the owner field names, which is what that field
-  is for; from a different machine it opens only while that machine is reachable.
+  because both name the owner's machine. Publish it as a raw, unformatted URL, never a
+  Markdown link or inline code. For Codex, require `CODEX_THREAD_ID` to contain a UUID
+  and publish `codex://threads/<thread-id>`. For Claude Code, require
+  `CLAUDE_CODE_HOST_SESSION_ID` to be set, then ask the host for this session's metadata,
+  which the desktop app answers through its session-management tool, and publish the
+  `link` it returns verbatim rather than building one from the identifier: the identifier
+  confirms which session answered, and the host owns the shape of the URL. That variable
+  is not `CLAUDE_CODE_SESSION_ID`, which names the transcript on disk and is what
+  [usage reporting](usage-reporting.md) reads; both are set and they differ. A plain
+  terminal reports no link, as does a host whose organization has turned app links off,
+  and the answer is then `UNKNOWN`. Other hosts use `UNKNOWN` until this guide defines
+  their locator. The link opens on the machine the owner field names, which is what that
+  field is for; from a different machine it opens only while that machine is reachable.
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
