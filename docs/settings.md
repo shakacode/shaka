@@ -71,11 +71,20 @@ Every value must be a repository-relative path to a file that exists and is
 
 `required` is the only mandatory key. `check` names the reviewer's status check.
 
-The three `required` values choose when a repository-named review gate applies, not how much
-review the workflow performs. `none` switches off that named gate only; it does not remove the
-alternate-model baseline that meaningful implementation still needs, so selecting it buys less
-than it appears to. [Review](review.md) defines that baseline and the rest of the review
-procedure; read it before changing this value.
+The three `required` values choose when the gate named by `check` applies. They direct the
+workflow, which honors them; no status check enforces the difference, and the named check still
+runs whenever the repository configures it to.
+
+| Value | When the named gate applies |
+| --- | --- |
+| `always` | Every pull request, with no exemption for trivial work. |
+| `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. |
+| `none` | Never. The repository declares no named gate. |
+
+`none` is narrower than it looks. It switches off the named gate alone and does not remove the
+alternate-model baseline that meaningful implementation still needs, so a review from a
+different model family remains required. [Review](review.md) defines that baseline and the rest
+of the review procedure.
 
 | Setting | Required | Allowed values |
 | --- | --- | --- |
