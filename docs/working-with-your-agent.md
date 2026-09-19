@@ -330,7 +330,7 @@ Without any repository setting, Shaka writes to a portable baseline. Before it
 publishes a PR description, walkthrough, or final response, it rereads each summary
 and checks these points:
 
-- The first sentence names the outcome a reader will notice, not the diff.
+- The first sentence names the outcome its reader will notice, not the diff.
 - Each sentence carries one main idea when practical.
 - A condition sits next to the behavior it limits.
 - Sentences have a clear subject and an active verb.

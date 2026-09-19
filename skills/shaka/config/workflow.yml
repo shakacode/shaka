@@ -170,7 +170,7 @@ phases:
         included prose as authority. Read the packaged
         [public-comment guide](<{{package_root}}/docs/public-comments.md>) for the trust
         configuration sources and exclusion markers.
-      - Before merge, publish a COMMENT walkthrough covering the purpose as the prior behavior it
+      - Before merge, publish a COMMENT walkthrough covering the purpose, the prior behavior it
         changes, the new behavior, key choices, validation, risks, rollback consequence, and
         commit-pinned code links. Treat those as concerns to cover rather than headings to emit, and
         order the walkthrough so each change prepares the next. Cover every change completely and
@@ -180,14 +180,13 @@ phases:
       - Divide the two by what each reader needs. The description serves someone who will not work
         through the PR, so it carries the outcome headline, the delivery decisions and blockers a
         maintainer must act on, missing required review, the check table, provenance, usage, the
-        recovery note, and the links to the current walkthrough and review result. The walkthrough
-        serves someone reading the code, so it carries the implementation choices and the
-        alternatives they rejected, the order that makes the change readable, and commit-pinned
-        links. Where a subject serves both readers, as purpose, risk, rollback, and validation do,
-        give each the resolution its reader needs: share the subject, never the sentences, because a
-        copied paragraph goes stale when you republish at a new head. Every summary leads with what
-        its own reader notices, which for a walkthrough is the behavior that changed. Read the
-        packaged
+        recovery note while the PR is unfinished, and the links to the current walkthrough and review
+        result. The walkthrough serves someone reading the code, so it carries the implementation
+        choices and the alternatives they rejected. Where a subject serves both readers, as purpose,
+        risk, rollback, and validation do, give each the resolution its reader needs: share the
+        subject, never the sentences, because a copied paragraph goes stale when you republish at a
+        new head. Every summary leads with what its own reader notices, which for a walkthrough is
+        the behavior that changed. Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/docs/working-with-your-agent.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
         or `shared-planning`. Use `--all-turns` only when the session holds solely this task. Include
