@@ -162,7 +162,7 @@ while it is unfinished.
 
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
-| `workspace_path` | `true` or `false` | `true` lets the note carry the checkout's path and the host session identifier. `false` tells the workflow to omit that field. The owner alias is published either way. Read the note below on what enforces this. |
+| `workspace_path` | `true` or `false` | `true` lets the note carry the checkout path. `false` tells the workflow to omit the `Workspace` field. The owner alias and the `Thread` locator follow their own rules either way. Read the note below on what enforces this. |
 
 Set `workspace_path: false` where contributor paths are sensitive. `seam init` does not
 write the key, so a repository that says nothing gets the default.
