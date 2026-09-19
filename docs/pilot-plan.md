@@ -3,8 +3,8 @@
 Give your agent a task. Get a verified PR and a clear explanation.
 The goal is better software with less developer attention, delivery time, and token use.
 [Issue #77](https://github.com/shakacode/shaka/issues/77) owns remaining progress and real-use evidence;
-closed [issue #1](https://github.com/shakacode/shaka/issues/1) holds the original pilot build;
-[issue #36](https://github.com/shakacode/shaka/issues/36) owns prospective scope and retirement decisions.
+closed [issue #1](https://github.com/shakacode/shaka/issues/1) holds the original pilot build.
+Scope and retirement decisions are recorded in this plan.
 This record defines the current product, not proof that acceptance is complete.
 
 ## Requirements
@@ -131,7 +131,7 @@ authorized. Runtime prerequisites are Ruby 3.4, Git, authenticated GitHub CLI,
 and GitHub PRs. The `0.1.0.pre.1` RubyGems prerelease reserves the project name;
 future registry releases and broader adoption require separate evidence and decisions.
 [Packaging](packaging.md) describes the tested gem.
-Prospective features and retirement choices belong in issue #36; website work lives
+Prospective features and retirement choices are recorded in this plan; website work lives
 in its own repository and consumes these guides. No fleet coordination, policy engine,
 telemetry service, tracker synchronization, or release automation is part of this kernel.
 
