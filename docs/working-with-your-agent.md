@@ -211,7 +211,10 @@ real, and the note takes them from there.
 
 Name the branch in the note, and run `shaka snapshot --delete` when the PR reaches its
 outcome. Pushing when there is nothing left to publish removes a snapshot an earlier stop
-left, so the note and the remote cannot disagree about whether one exists. The snapshot carries no pull request, so checks that run on pull requests do not
+left, so the note and the remote cannot disagree about whether one exists. Removing never
+asks the setting: `recovery.snapshot` says what may be published, a deletion publishes
+nothing, and a repository that turns the setting off still needs to clear what earlier
+runs left there. The snapshot carries no pull request, so checks that run on pull requests do not
 run; a repository whose CI runs on every pushed branch will still run it, and should
 scope those triggers or set `recovery.snapshot: false`. A repository that does not want
 these branches at all sets the same key, and the command then refuses whoever runs it. It

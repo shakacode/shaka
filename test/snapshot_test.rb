@@ -37,6 +37,15 @@ class SnapshotScreenTest < Minitest::Test
     assert_empty screen.included
   end
 
+  # An underscore separates a word as surely as a dot does, and `environment.rb` does not.
+  def test_environment_names_are_held_back_without_a_separator_character
+    held = ['staging_env.yml', 'prod_env_vars.json', 'env_backup_2024']
+    ordinary = ['config/environment.rb', 'app/envelope.png', 'docs/development.md']
+    screen = Shaka::Snapshot::Screen.new(held + ordinary)
+
+    assert_equal [ordinary.sort, held.sort], [screen.included.sort, screen.excluded.sort]
+  end
+
   # A keyword ending a longer name, which anchoring at the segment start used to miss.
   def test_credential_names_are_held_back_wherever_the_word_sits
     paths = ['aws_credentials.json', 'db-credentials.yml', 'my-project-service-account.json']

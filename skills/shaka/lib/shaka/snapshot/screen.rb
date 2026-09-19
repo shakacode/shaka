@@ -11,13 +11,12 @@ module Shaka
     # is invisible here, which is why the command prints what it would publish first.
     class Screen
       DENIED = [
-        %r{(\A|/|\.)env(\.|/|\z)}i,
+        %r{(\A|[/._-])env([./_-]|\z)}i,
         %r{(\A|/)\.(netrc|npmrc|pgpass|git-credentials)(\.|\z)}i,
         %r{(\A|/)\.(aws|ssh|gnupg)/}i,
         %r{(\A|/)\.docker/config\.json\z}i,
         %r{(\A|/)id_(rsa|dsa|ecdsa|ed25519)(\.|\z)}i,
         /\.(pem|key|p12|pfx|keystore|jks|ppk)\z/i,
-        %r{(\A|/)(credential|secret|service[-_]account)[^/]*(/|\z)}i,
         %r{(\A|/)\.kube/}i,
         /\.tfstate(\.|\z)/i,
         /(credential|secret|token|password|passwd|apikey|api[-_]key|kubeconfig|adminsdk)/i,

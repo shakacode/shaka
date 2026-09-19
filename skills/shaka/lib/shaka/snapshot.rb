@@ -114,6 +114,11 @@ module Shaka
     # An earlier stop may have left a snapshot on the remote. With nothing to publish now,
     # leaving it there would keep obsolete work fetchable while the refreshed note says
     # there is none, so publishing nothing removes what publishing left.
+    #
+    # Removal does not ask the policy. `recovery.snapshot` governs what may be published,
+    # and a deletion publishes nothing; a repository that turns the setting off must still
+    # be able to clear what earlier runs left, or the setting would strand exactly the work
+    # it was set to keep off the remote.
     def settle(plan)
       empty = plan.merge('branch' => nil)
       return report(empty) unless @options[:push] && !remote_commit.empty?
