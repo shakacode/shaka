@@ -145,8 +145,8 @@ uses another layout, such as `feature/{issue}/{description}`, sets that string h
 `{login}-{host}/{issue}-{description}` when the key is omitted, and still treats a
 `/{issue}-` path segment as a collision so older branches remain visible.
 
-This repository omits `branches` and uses that default, so a GitHub login is the
-person token rather than a hardcoded maintainer prefix. Add the mapping when a
+This repository sets `branches.name` to that default, so a GitHub login is the
+person token rather than a hardcoded maintainer prefix. Change the mapping when a
 consumer's layout differs.
 
 `seam init` writes `branches.name` as `{login}-{host}/{issue}-{description}` so a new
