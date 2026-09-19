@@ -120,14 +120,26 @@ the entire disclosure only after GitHub confirms the PR reached its outcome; a f
 merge attempt still needs it. The note lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
-  the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`.
+  the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`. The alias
+  has to tell the owner's own machines apart, since saying which one holds the work is
+  the whole point of it; a name like `mac` fails that on a desk with two of them.
 - **Task:** the searchable task title, or a task locator the tracker allows sharing.
-- **Thread:** the host-native thread locator. Publish it only when the user or trusted
-  repository instructions authorize public sharing and this guide defines a locator
-  for the host; otherwise use `UNKNOWN`. For Codex, require `CODEX_THREAD_ID` to contain
-  a UUID and publish `codex://threads/<thread-id>` as a raw, unformatted URL, never a
-  Markdown link or inline code. Other hosts use `UNKNOWN` until this guide defines their
-  locator. The owner field's machine alias tells the maintainer where to open it.
+- **Thread:** the host's own way back into the session that did the work, so the pull
+  request leads to it rather than only describing it. This is the field that answers
+  "where was I", and it is published under the same setting as the workspace below,
+  because both name the owner's machine. Publish it as a raw, unformatted URL, never a
+  Markdown link or inline code. For Codex, require `CODEX_THREAD_ID` to contain a UUID
+  and publish `codex://threads/<thread-id>`. For Claude Code, require
+  `CLAUDE_CODE_HOST_SESSION_ID` to be set, then ask the host for this session's metadata,
+  which the desktop app answers through its session-management tool, and publish the
+  `link` it returns verbatim rather than building one from the identifier: the identifier
+  confirms which session answered, and the host owns the shape of the URL. That variable
+  is not `CLAUDE_CODE_SESSION_ID`, which names the transcript on disk and is what
+  [usage reporting](usage-reporting.md) reads; both are set and they differ. A plain
+  terminal reports no link, as does a host whose organization has turned app links off,
+  and the answer is then `UNKNOWN`. Other hosts use `UNKNOWN` until this guide defines
+  their locator. The link opens on the machine the owner field names, which is what that
+  field is for; from a different machine it opens only while that machine is reachable.
 - **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
   publication time is not evidence of later or earlier activity.
 - **Revision:** the branch and current head.
@@ -156,11 +168,15 @@ merge attempt still needs it. The note lists:
 Keep private tracker links, hostnames that identify people or clients, transcripts,
 prompts, credentials, and customer context out of public PRs.
 
-A workspace path usually contains a username, so it is published under a setting of its
-own. It is published by default, because the owner who comes back is usually the one who
-left. A repository that treats contributor paths as sensitive sets
-`recovery.workspace_path: false` in its seam, and the note then omits the `Workspace`
-field. The publisher does not yet enforce that, so it binds the task writing the note.
+The `Workspace` path and the `Thread` link both say where the work is, and a path usually
+contains a username, so one setting governs the pair. They are published by default,
+because the owner who comes back is usually the one who left, and between them they are
+the whole route back: the thread reopens the session, and the path says which directory it
+was working in. A repository that treats either as sensitive sets
+`recovery.workspace_path: false` in its seam, and the note then publishes both as
+`UNKNOWN` rather than dropping them, so a note that withholds the route back still has the
+same shape as one that gives it, and a reader can tell a withheld field from a missing one.
+The publisher does not yet enforce that, so it binds the task writing the note.
 See [settings](settings.md#recovery).
 
 The `Owner` alias stays in either case. It is a name chosen for publication rather than a
