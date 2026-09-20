@@ -254,12 +254,15 @@ coverage note stays outside the expandable details; missing usage does not block
 ## Naming the published block
 
 A PR description has to carry the report inside a `details` entry whose summary
-mentions usage. Name that entry **Usage and cost**. It holds both halves of the
-report, the native token table and the priced scenario, so a summary naming either
-half alone misdescribes the other: calling it token usage drops the money, and
-calling it native usage claims Shaka copied a figure it calculated. Inside it the
-helper names its own collapsed blocks, `Token detail` and `Cost scenarios`, which is
-why the outer summary should not repeat either name.
+mentions usage; that much the renderer checks. It does not check the wording, and
+nothing but the agent keeps the rest of this section.
+
+Call that entry **Usage and cost**. It holds both halves of the report, the native
+token table and the priced scenario, so a summary naming either half alone
+misdescribes the other: calling it token usage drops the money, and calling it native
+usage claims Shaka copied a figure it calculated from a rate card. Inside it the
+helper names its own collapsed blocks, `Token detail` and `Cost scenarios`, so
+repeating either name in the outer summary nests a heading inside itself.
 
 ## PR execution provenance
 
