@@ -96,22 +96,20 @@ class PublicationRegressionTest < Minitest::Test
     )
     assert_includes rendered, '| openai | 1 |'
   end
+end
 
+class PublicationUsageCostSummaryTest < Minitest::Test
   # Break: Usage and cost as a collapsed summary without the USD total forces a second expand
   # to learn the scenario price that is already in the body table.
   def test_usage_and_cost_summary_includes_usd_totals_from_the_body
-    body = "#{USAGE.fetch('body')}\n\n| Metric | grok-4.6 |\n| --- | --- |\n| USD estimate | $0.758116 |\n"
-    rendered = Shaka::Publication.description(
-      description_content('details' => [{ 'summary' => 'Usage and cost', 'body' => body }])
-    )
+    rendered = publish('Usage and cost', '| Metric | grok-4.6 |', '| --- | --- |',
+                       '| USD estimate | $0.758116 |')
     assert_includes rendered, '<summary>Usage and cost · $0.758116</summary>'
   end
 
   def test_usage_and_cost_summary_does_not_repeat_totals_already_in_the_summary
-    body = "#{USAGE.fetch('body')}\n\n| Metric | grok-4.6 |\n| --- | --- |\n| USD estimate | $0.758116 |\n"
-    rendered = Shaka::Publication.description(
-      description_content('details' => [{ 'summary' => 'Usage and cost · $0.758116', 'body' => body }])
-    )
+    rendered = publish('Usage and cost · $0.758116', '| Metric | grok-4.6 |', '| --- | --- |',
+                       '| USD estimate | $0.758116 |')
     assert_includes rendered, '<summary>Usage and cost · $0.758116</summary>'
     refute_includes rendered, '$0.758116 · $0.758116'
   end
@@ -119,22 +117,37 @@ class PublicationRegressionTest < Minitest::Test
   # Break: a summary that already names one of two USD cells still gets the full
   # list appended, so the header shows $1 twice for two scenarios.
   def test_usage_and_cost_summary_appends_only_usd_cells_missing_from_the_header
-    body = "#{USAGE.fetch('body')}\n\n| Metric | a | b |\n| --- | --- | --- |\n| USD estimate | $1 | $2 |\n"
-    rendered = Shaka::Publication.description(
-      description_content('details' => [{ 'summary' => 'Usage and cost · $1', 'body' => body }])
-    )
+    rendered = publish('Usage and cost · $1', '| Metric | a | b |', '| --- | --- | --- |',
+                       '| USD estimate | $1 | $2 |')
     assert_includes rendered, '<summary>Usage and cost · $1 · $2</summary>'
     refute_includes rendered, '$1 · $1 · $2'
   end
 
+  # Break: include? treats two scenarios that share one USD amount as already listed.
+  def test_usage_and_cost_summary_keeps_equal_usd_totals_for_each_scenario
+    rendered = publish('Usage and cost · $1.000000', '| Metric | a | b |', '| --- | --- | --- |',
+                       '| USD estimate | $1.000000 | $1.000000 |')
+    assert_includes rendered, '<summary>Usage and cost · $1.000000 · $1.000000</summary>'
+  end
+
   # Break: appending a raw USD cell after summary_text lets markup close the disclosure.
   def test_usage_and_cost_summary_escapes_usd_cells
-    body = "#{USAGE.fetch('body')}\n\n| Metric | x |\n| --- | --- |\n| USD estimate | </summary><h1> |\n"
-    rendered = Shaka::Publication.description(
-      description_content('details' => [{ 'summary' => 'Usage and cost', 'body' => body }])
-    )
+    rendered = publish('Usage and cost', '| Metric | x |', '| --- | --- |',
+                       '| USD estimate | </summary><h1> |')
     assert_includes rendered, '<summary>Usage and cost · &lt;/summary&gt;&lt;h1&gt;</summary>'
     refute_match(%r{<summary>Usage and cost · </summary>}, rendered)
+  end
+
+  private
+
+  def publish(summary, header, separator, estimate)
+    body = "#{PublicationRegressionTest::USAGE.fetch('body')}\n\n#{header}\n#{separator}\n#{estimate}\n"
+    Shaka::Publication.description(
+      { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
+        'details' => [{ 'summary' => summary, 'body' => body }] }
+    )
   end
 end
 
