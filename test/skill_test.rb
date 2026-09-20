@@ -8,6 +8,7 @@ class SkillTest < Minitest::Test
   MCT_SKILL = File.expand_path('../skills/mct-claude/SKILL.md', __dir__)
   RCT_CLAUDE_SKILL = File.expand_path('../skills/rct-claude/SKILL.md', __dir__)
   INTERNAL_GUIDE = File.expand_path('../.agents/guides/shaka-learning.md', __dir__)
+  AGENT_INSTRUCTIONS = File.expand_path('../AGENTS.md', __dir__)
   PROJECT_SKILL_GLOBS = %w[.agents .claude .codex .cursor .opencode].map do |directory|
     File.expand_path("../#{directory}/skills/*/SKILL.md", __dir__)
   end.freeze
@@ -55,8 +56,13 @@ class SkillTest < Minitest::Test
   def test_internal_learning_guide_cannot_be_loaded_as_a_candidate_skill
     assert File.file?(INTERNAL_GUIDE)
     assert_empty(PROJECT_SKILL_GLOBS.flat_map { |glob| Dir.glob(glob) })
+    refute_includes File.read(AGENT_INSTRUCTIONS, encoding: 'UTF-8'), '.agents/guides/shaka-learning.md'
+  end
 
-    package = Gem::Specification.load(File.expand_path('../shaka.gemspec', __dir__))
+  def test_internal_learning_guide_is_not_packaged
+    root = File.expand_path('..', __dir__)
+    package = Dir.chdir(root) { Gem::Specification.load('shaka.gemspec') }
+    refute_empty package.files
     refute(package.files.any? { |path| path.start_with?('.agents/') })
   end
 
