@@ -70,6 +70,8 @@ loads the packaged [workflow configuration](skills/shaka/config/workflow.yml)
 through `shaka workflow`, or the focused [repository control tower setup](skills/rct/SKILL.md)
 and the Claude Code [master](skills/mct-claude/SKILL.md) and
 [repository](skills/rct-claude/SKILL.md) tower setups.
+`shaka enforcement` reports what backs each imperative rule that workflow states:
+a command that fails, a GitHub setting that refuses, or the agent alone.
 Each repository exposes predictable engineering commands through `.agents/bin/` and keeps
 typed authority in `.agents/agent-workflow.yml`; `AGENTS.md` retains human-only boundaries.
 Create a missing contract with `shaka seam init` after identifying the repository's real
