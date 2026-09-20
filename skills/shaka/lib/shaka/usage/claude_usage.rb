@@ -28,10 +28,10 @@ module Shaka
     end
 
     def canonical_model(usage)
-      return unless usage.is_a?(Hash)
+      return unless usage.is_a?(Hash) && usage.size == 1
 
-      entries = usage.values.grep(Hash)
-      entries.first['canonicalModel'] if entries.one?
+      entry = usage.values.first
+      entry['canonicalModel'] if entry.is_a?(Hash)
     end
 
     def present_name(value)

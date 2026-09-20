@@ -95,6 +95,18 @@ class ClaudeUsageTest < Minitest::Test
     end
   end
 
+  # A null sibling under a second modelUsage key would still leave one Hash value.
+  def test_print_mode_with_a_null_model_usage_sibling_does_not_guess_a_rate
+    Dir.mktmpdir do |directory|
+      extra = { modelUsage: { 'claude-opus-5[1m]' => { 'canonicalModel' => 'claude-opus-5' },
+                              'claude-haiku-4-5' => nil } }
+      output = report('--host', 'claude-code', '--file', print_result_file(directory, extra),
+                      '--contribution', 'review')
+      assert_metric output, 'Routed model', 'UNKNOWN'
+      assert_metric output, 'USD estimate', 'UNKNOWN'
+    end
+  end
+
   def test_counts_the_final_streamed_usage_of_each_response_in_the_latest_turn
     Dir.mktmpdir do |directory|
       file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900), prompt('new'),
