@@ -27,6 +27,11 @@ class ReviewPaceTest < Minitest::Test
   def test_matching_seam_and_override_keep_swift
     assert_equal 'swift', Shaka::ReviewPace.effective(seam: nil, override: nil)
   end
+
+  def test_thorough_merge_states_do_not_follow_the_default_constant
+    assert_equal %w[CLEAN], Shaka::ReviewPace.allowed_merge_states('thorough', false)
+    assert_includes Shaka::ReviewPace.allowed_merge_states('swift', false), 'UNSTABLE'
+  end
 end
 
 class ReviewPaceSeamTest < Minitest::Test
@@ -49,6 +54,14 @@ class ReviewPaceSeamTest < Minitest::Test
 
   def test_rejects_an_unknown_review_pace
     with_repository('review' => review_policy('pace' => 'fast')) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.pace must be swift or thorough'
+    end
+  end
+
+  def test_rejects_a_null_review_pace
+    with_repository('review' => review_policy('pace' => nil)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
       assert_includes message, 'review.pace must be swift or thorough'

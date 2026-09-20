@@ -242,10 +242,11 @@ Product default is `swift`: merge after required checks and independent review f
 task, without waiting for optional jobs to make GitHub `CLEAN`. `thorough` waits for the
 named `review.check` on the current head and refuses `UNSTABLE`.
 
-Read the value from the trusted default-branch seam (`shaka seam check --ref`), not from
-the candidate PR copy. Record a this-task override on the PR when the user asks for the
-other mode. Combine them with thorough winning: a swift override cannot weaken a thorough
-seam. Pass the effective value as `shaka merge --pace`; omitting `--pace` is swift.
+Read the value from the trusted default-branch seam (`shaka seam check --ref` and
+`shaka merge --ref`), not from the candidate PR copy. Record a this-task override on the PR
+when the user asks for the other mode. Combine them with thorough winning: a swift override
+cannot weaken a thorough seam. `merge --pace` is only the this-task override; omitting `--ref`
+and `--pace` is swift.
 
 When `required` is `none`, `check` must be **omitted**; leaving it behind fails validation.
 `reviewers` stays valid there, because `none` drops the repository's named check and not the

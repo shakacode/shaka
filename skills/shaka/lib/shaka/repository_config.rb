@@ -62,7 +62,7 @@ module Shaka
     end
 
     def with_default_pace(review)
-      review.key?('pace') ? review : review.merge('pace' => ReviewPace::DEFAULT)
+      review.merge('pace' => ReviewPace.normalize(review['pace']))
     end
   end
 end

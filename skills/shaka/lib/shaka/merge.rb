@@ -7,9 +7,9 @@ require_relative 'review_pace'
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
   class Merge
-    def initialize(github, pace: nil)
+    def initialize(github, pace: nil, seam_pace: nil)
       @github = github
-      @pace = ReviewPace.normalize(pace)
+      @pace = ReviewPace.effective(seam: seam_pace, override: pace)
       @submission = MergeSubmission.new(github)
     end
 

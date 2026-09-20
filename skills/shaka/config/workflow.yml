@@ -273,8 +273,8 @@ phases:
         is thorough. Read pace from `shaka seam check --ref`, never from candidate YAML. Thorough
         wins: a candidate seam or a swift this-task request cannot weaken a thorough trusted seam.
         Record a this-task override on the PR when the user asks for the other mode. Pass the
-        effective value as `merge --pace`; omitting `--pace` is swift, so thorough must pass
-        `--pace thorough`.
+        effective wait with `merge --ref` from intake plus `--pace` only for a this-task override.
+        Omitting both is swift. A thorough trusted seam still wins if `--pace swift` is passed.
       - In swift, when the local reviewer is a different provider than every implementer, do not
         wait for GitHub `review.check`. Leave that job running; findings that arrive after merge
         follow
@@ -316,8 +316,8 @@ phases:
         whether or not a local review already ran. In swift, do not wait for optional checks to make
         merge state CLEAN; `merge` accepts UNSTABLE once required checks pass. In thorough, wait
         for a verified `review.check` on the current head and do not merge while the state is
-        UNSTABLE. Pass `merge --pace` with the effective value. Read completed feedback
-        before merge and report pending optional reviews.
+        UNSTABLE. Pass `merge --ref` from intake and `--pace` only for a this-task override. Read
+        completed feedback before merge and report pending optional reviews.
       - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the recovery note for this GitHub merge

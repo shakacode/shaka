@@ -33,7 +33,7 @@ module Shaka
       def validate
         enum!(@review['required'])
         validate_check
-        ReviewPace.normalize(@review['pace']) if @review.key?('pace')
+        validate_pace
         reviewers!(@review['reviewers']) if @review.key?('reviewers')
       end
 
@@ -47,6 +47,11 @@ module Shaka
       def validate_check
         return string!(@review['check'], 'review.check') unless @review['required'] == 'none'
         raise Error, 'review.check must be omitted when review.required is none' if @review.key?('check')
+      end
+
+      def validate_pace
+        return unless @review.key?('pace')
+        raise Error, 'review.pace must be swift or thorough' unless ReviewPace::VALUES.include?(@review['pace'])
       end
 
       def reviewers!(reviewers)

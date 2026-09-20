@@ -127,6 +127,15 @@ class MergeNativeGateTest < Minitest::Test
     assert_empty @client.mutations
   end
 
+  def test_thorough_seam_cannot_be_overridden_to_swift_at_merge
+    merge = Shaka::Merge.new(@client, pace: 'swift', seam_pace: 'thorough')
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    assert_match(/not CLEAN/, error.message)
+    assert_empty @client.mutations
+  end
+
   def test_queue_enabled_pull_request_can_enqueue_when_optional_checks_are_pending
     entry = queue_entry
     ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'UNSTABLE')

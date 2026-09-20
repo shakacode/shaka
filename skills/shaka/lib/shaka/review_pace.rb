@@ -21,7 +21,7 @@ module Shaka
     end
 
     def self.allowed_merge_states(pace, queue_enabled)
-      swift = normalize(pace) == DEFAULT
+      swift = normalize(pace) == 'swift'
       return %w[CLEAN BEHIND BLOCKED UNSTABLE] if queue_enabled && swift
       return %w[CLEAN BEHIND BLOCKED] if queue_enabled
       return %w[CLEAN UNSTABLE] if swift

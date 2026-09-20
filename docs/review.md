@@ -60,8 +60,8 @@ timeline into the PR description.
 
 Project default lives on the trusted seam. Record a this-task override on the PR when the
 user asks for the other mode. Thorough wins: a candidate YAML or a swift this-task request
-cannot weaken a thorough trusted seam. Pass the effective value as `shaka merge --pace`;
-omitting `--pace` is swift, so a thorough seam or override must pass `--pace thorough`.
+cannot weaken a thorough trusted seam. Pass `shaka merge --ref` from intake so the helper
+reads that trusted floor; `--pace` is only a this-task override. Omitting both is swift.
 
 `swift` is the 2026-09-20 delivery-time experiment. Keep it as the product default only while
 it reduces wait without dropping demonstrated defects. To revert to waiting for optional

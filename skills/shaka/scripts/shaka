@@ -15,6 +15,7 @@ require_relative '../lib/shaka/review_prompt'
 require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
+require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
@@ -80,6 +81,12 @@ rescue JSON::ParserError => e
   raise Shaka::Error, "Content file is not valid JSON: #{e.message}"
 end
 
+def merge_seam_pace(options)
+  return unless options[:ref]
+
+  Shaka::TrustedConfigSource.load(root: options[:root] || Dir.pwd, ref: options[:ref]).review.fetch('pace')
+end
+
 def walkthrough_body(options)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
@@ -106,6 +113,8 @@ parser = OptionParser.new do |flags|
   flags.on('--pace PACE', Shaka::ReviewPace::VALUES, 'Review wait mode: swift or thorough') do |value|
     options[:pace] = value
   end
+  flags.on('--root DIR', 'Repository root for trusted merge pace') { |value| options[:root] = value }
+  flags.on('--ref REF', 'Trusted commit for merge pace') { |value| options[:ref] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('-h', '--help', 'Show usage') do
     puts flags
@@ -136,8 +145,11 @@ begin
            when 'walkthrough'
              github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
            when 'merge'
-             Shaka::Merge.new(github, pace: options[:pace]).call(head: options.fetch(:head),
-                                                                 walkthrough: options.fetch(:walkthrough))
+             Shaka::Merge.new(github, pace: options[:pace],
+                                      seam_pace: merge_seam_pace(options)).call(
+                                        head: options.fetch(:head),
+                                        walkthrough: options.fetch(:walkthrough)
+                                      )
            end
   puts JSON.pretty_generate(result)
 rescue OptionParser::ParseError, KeyError, SystemCallError, Shaka::Error => e
