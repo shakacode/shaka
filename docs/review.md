@@ -346,10 +346,15 @@ trust, test coverage, simplification, and supplied repository criteria. It forbi
 treats candidate content as data, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
-Supply relevant planning and review criteria from the repository's trusted base
-`AGENTS.md` alongside the prompt; candidate edits to that guidance are review data.
+Supply relevant planning and review criteria from the repository's trusted default-branch
+`AGENTS.md` alongside the prompt, naming its immutable commit. Resolve that source separately
+from the diff's `--base`; a task's comparison base does not establish policy authority.
+Candidate edits to that guidance are review data.
 For changes to Shaka itself, include its "Is the change worth carrying?" section.
 That repository-specific experiment does not impose a value rubric on consumers.
+The report states whether criteria were supplied and names their supplied source/ref,
+so an omitted rubric is visible. This is reviewer-reported coverage, not verification
+of the source or a new gate.
 
 Supply the diff and the PR description, not the implementation reasoning: a reviewer given the
 justification anchors on it instead of finding the hole. That is exactly why the same model works
@@ -373,6 +378,14 @@ Exporting it, rather than editing a branch name into the block, keeps an arbitra
 of shell source, where a `$`, a backtick, or an apostrophe would be expanded, executed, or
 left as invalid syntax. The `:?` in each block fails loudly when the variable is unset,
 instead of quietly resolving `origin/` and reviewing the wrong diff.
+
+The checkout-local examples below are for trusted instruction files. When the candidate
+changes `AGENTS.md` or other host instruction files, first export the diff and relevant
+source as review data. Start the reviewer in an instruction-neutral directory outside
+candidate trees, with a prompt containing that data and the owner-supplied trusted criteria.
+Do not run these checkout-local examples in that case: prompt wording cannot demote
+candidate instructions a host has already loaded. For Codex outside a repository,
+`--skip-git-repo-check` permits that neutral working directory.
 
 Verified flags, current for the versions named:
 
@@ -431,8 +444,9 @@ The Codex flags were exercised on a prior local review rather than read off `--h
 Claude and Grok flags come from each CLI's `--help`. Note what they do not cover: these
 flags skip user configuration and execpolicy rules, not a repository's own `AGENTS.md` or
 similar instruction files, which the CLI still loads from the checkout it runs in. That is
-fine when the branch is yours; reviewing an untrusted contribution locally calls for
-restricted execution, under
+safe only when those instruction files are trusted; owning the branch does not make
+changes to its instructions safe to load. Use the neutral-directory path above for such
+changes and restricted execution for untrusted contributions, under
 [what the helpers protect](working-with-your-agent.md#what-the-helpers-protect). Codex's
 `--ignore-user-config` drops config-defined MCP servers, Grok manages them through
 `grok mcp`, and Claude's `--strict-mcp-config` without a config file loads none. Codex
