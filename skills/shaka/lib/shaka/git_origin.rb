@@ -69,7 +69,7 @@ module Shaka
 
     def repository_path(raw, origin)
       path = raw.split(/[?#]/, 2).first&.delete_suffix('.git')
-      return path if path&.match?(%r{\A[^/]+/[^/]+\z}) && !path.match?(/%(?![0-9A-Fa-f]{2})/)
+      return path if path&.match?(%r{\A[A-Za-z0-9._~-]+/[A-Za-z0-9._~-]+\z})
 
       parse_error(origin)
     end
@@ -91,7 +91,7 @@ module Shaka
 
     def authority(parsed_url)
       host = parsed_url.fetch(:host).downcase
-      parsed_url[:port] ? "#{host}:#{parsed_url[:port]}" : host
+      default_port?(parsed_url) ? host : "#{host}:#{parsed_url[:port]}"
     end
     private_class_method :authority
 

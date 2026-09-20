@@ -36,6 +36,10 @@ class GitOriginTest < Minitest::Test
                  Shaka::GitOrigin.canonical_url('ssh://user:token@ghe.example:2222/acme/repo.git')
     assert_equal 'ssh://ghe.example/acme/repo',
                  Shaka::GitOrigin.canonical_url('ssh://git@ghe.example/acme/repo.git')
+    assert_equal 'ssh://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('ssh://git@ghe.example:22/acme/repo.git')
+    assert_equal 'https://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('https://ghe.example:443/acme/repo.git')
   end
 
   def test_identity_from_urls_with_an_authority_port
@@ -100,6 +104,14 @@ class GitOriginTest < Minitest::Test
   def test_identity_rejects_an_invalid_percent_escape
     error = assert_raises(Shaka::Error) do
       Shaka::GitOrigin.identity('https://ghe.example/acme/repo%ZZ.git')
+    end
+
+    assert_includes error.message, 'ghe.example'
+  end
+
+  def test_identity_rejects_an_unencoded_space
+    error = assert_raises(Shaka::Error) do
+      Shaka::GitOrigin.identity('https://ghe.example/acme/my repo.git')
     end
 
     assert_includes error.message, 'ghe.example'

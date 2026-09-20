@@ -244,8 +244,10 @@ class ReposCatalogOriginTest < Minitest::Test
       registered_repository(home, name: 'scp', prefix: 'GHE', origin: 'git@ghe.example:acme/repo.git')
       registered_repository(home, name: 'ssh', prefix: 'GHE', origin: 'ssh://git@ghe.example:22/acme/repo.git')
       catalog = refresh(home)
+      urls = catalog.fetch('repositories').map { |row| row.fetch('url') }.uniq
 
       assert_empty catalog.fetch('duplicate_prefixes')
+      assert_equal ['ssh://ghe.example/acme/repo'], urls
     end
   end
 
@@ -275,6 +277,19 @@ class ReposCatalogOriginTest < Minitest::Test
       kept = registered_repository(home, name: 'alpha', prefix: 'ALP')
       broken = registered_repository(home, name: 'broken', prefix: 'BRK',
                                            origin: 'https://ghe.example/acme/repo%ZZ.git')
+      catalog, error, status = refresh_result(home)
+
+      refute_predicate status, :success?
+      assert_includes error, broken
+      assert_equal [expected_row('alpha', kept, prefix: 'ALP', source: 'seam')], catalog.fetch('repositories')
+    end
+  end
+
+  def test_refresh_skips_an_origin_with_an_unencoded_space
+    with_home do |home|
+      kept = registered_repository(home, name: 'alpha', prefix: 'ALP')
+      broken = registered_repository(home, name: 'spaced', prefix: 'SPC',
+                                           origin: 'https://ghe.example/acme/my repo.git')
       catalog, error, status = refresh_result(home)
 
       refute_predicate status, :success?
