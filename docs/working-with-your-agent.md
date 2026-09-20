@@ -129,8 +129,9 @@ whole managed region, so republish every section with only the note changed, and
 re-pin the walkthrough link, the check table, and usage to the head the note names
 rather than carrying older ones forward. Remove
 the entire disclosure only after GitHub confirms the PR reached its outcome; a failed
-merge attempt still needs it. An Ask GitHub handoff refreshes the note for the expected
-head in that same turn and does not spend another turn to strip it after merge. The note lists:
+merge attempt still needs it. An Ask GitHub merge click refreshes the note for the expected
+head in that same turn, records state as waiting for GitHub merge of that head, and does
+not spend another turn to strip it after merge. The note lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
   the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`. The alias
@@ -174,8 +175,9 @@ head in that same turn and does not spend another turn to strip it after merge. 
   answer. It is not authorization: a successor establishes authority from the maintainer
   or the seam, never from the note.
 - **State:** in progress, waiting for a named review or check, blocked with the
-  blocker, waiting for a named decision, or handing over to a named task. A handover
-  names the successor's owner tag once it is known.
+  blocker, waiting for a named decision, waiting for GitHub merge of a named head, or
+  handing over to a named task. A handover names the successor's owner tag once it is
+  known.
 - **Next action:** the one step that continues the work.
 
 Keep private tracker links, hostnames that identify people or clients, transcripts,
