@@ -7,14 +7,15 @@ require_relative 'trusted_path_resolver'
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
   class TrustedConfigSource
-    def self.load(root:, ref: nil)
+    def self.load(root:, ref: nil, candidate_commands: true)
       return RepositoryConfig.load(root:) unless ref
 
-      new(root:).load(ref)
+      new(root:, candidate_commands:).load(ref)
     end
 
-    def initialize(root:)
+    def initialize(root:, candidate_commands: true)
       @root = root
+      @candidate_commands = candidate_commands
     end
 
     def load(ref)
@@ -22,7 +23,8 @@ module Shaka
       source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
       raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?
 
-      RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha))
+      RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
+                            candidate_commands: @candidate_commands)
     end
 
     private
@@ -38,6 +40,7 @@ module Shaka
     def optional_commands(sha)
       validate_command_directory(sha)
       resolver = TrustedPathResolver.new(root: @root, sha:)
+      validate_required_commands(resolver, sha)
       entries = command_entries(resolver)
       validate_legacy_command_entries(resolver, entries, sha)
       RepositoryConfig::CommandPaths::OPTIONAL.filter_map do |name, path|
@@ -45,6 +48,15 @@ module Shaka
 
         validate_command_entry(entries.fetch(path), path, sha, resolver)
         name
+      end
+    end
+
+    def validate_required_commands(resolver, sha)
+      RepositoryConfig::CommandPaths::REQUIRED.each_value do |path|
+        entry = resolver.entry(path)
+        raise Error, "#{path} is missing at trusted ref #{sha}" unless entry
+
+        validate_command_entry(entry, path, sha, resolver)
       end
     end
 

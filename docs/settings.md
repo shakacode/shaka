@@ -22,6 +22,7 @@ This is a complete seam using every YAML setting. Each section is explained belo
 ```yaml
 ---
 version: 1
+repo_prefix: SHAKA
 base_branch: main
 plan: docs/pilot-plan.md
 review:
@@ -44,8 +45,8 @@ recovery:
 ```
 
 The smallest valid YAML seam drops every optional setting — `base_branch`, `plan`,
-`review.pace`, `reviewers`, `branches`, and `recovery` — and does not provide either
-optional command entry point:
+`review.pace`, `reviewers`, `branches`, `recovery`, and `repo_prefix` — and does not
+provide either optional command entry point:
 
 ```yaml
 ---
@@ -81,6 +82,7 @@ These apply to the whole document, whatever the settings are.
 | `plan` | no | string | Repository-relative path to an existing file. |
 | `branches` | no | mapping | [Feature-branch layout](#branches). |
 | `recovery` | no | mapping | [Recovery note policy](#recovery). |
+| `repo_prefix` | no | string | [Display prefix](#repo_prefix). |
 
 ### What is intentionally absent
 
@@ -414,14 +416,40 @@ refuse a note that ignores it, so today it binds the agent rather than the publi
 boundary. Enforcement belongs with the same trusted-seam reading the snapshot command
 introduces, and lands with it.
 
+## `repo_prefix`
+
+Optional display prefix for this repository. When present it is a string of 1–6
+uppercase ASCII letters or digits, for example `SHAKA` or `ROR`. `shaka seam check`
+validates that string. Without `--ref` it reads the working tree so you can edit
+the seam locally; pass `--ref` for the trusted default-branch copy the workflow
+uses. An invalid value is a blocker; callers must not fall back.
+
+The field is presentation metadata only. It grants no ownership, trust, workflow, or
+merge authority. RCT and MCT titles, and other task labels that need to tell
+repositories apart, may use it.
+
+When the key is absent, callers derive a prefix from the repository name: use the
+basename of the `origin` remote after stripping `.git`, or the repository root
+basename when `origin` is unavailable; for a multi-segment name take the first
+character of each of the first six `-`, `_`, or space-separated segments, and for a
+single-segment name take its first 4 characters or the whole name when shorter.
+Other punctuation is dropped so the result is still 1–6 uppercase ASCII letters or
+digits (`agent-workflows` → `AW`, `react_on_rails` → `ROR`, `shakapacker` →
+`SHAK`, `go` → `GO`, `web3` → `WEB3`, `3d-tiles` → `3T`, `d3.js` → `D3JS`). Print
+the resolved value with `shaka prefix --root DIR --ref REF`.
+
+A rebuildable install-local catalog of known repositories is not seam policy. See
+[repository catalog](repository-catalog.md).
+
 ## What `seam init` writes
 
 The initializer produces the smallest complete contract: the three required `.agents/bin/`
 wrappers plus YAML containing `version`, `review`, `merge`, and `branches.name` set to
 `{login}-{host}/{issue}-{description}` so the layout is visible in the seam instead of only
 in Ruby. It adds `base_branch` and `plan` only when you pass them, so a repository that
-bases work on its default branch writes no `base_branch` at all. Edit `branches.name`
-afterward when the repository already uses a different layout.
+bases work on its default branch writes no `base_branch` at all. It does not write
+`repo_prefix`; add that by hand when a repository wants a stable display name. Edit
+`branches.name` afterward when the repository already uses a different layout.
 
 The generated `review` section depends on the policy. With `always` or
 `meaningful_changes` it holds `required` and `check`, and `--review-check` is mandatory.
