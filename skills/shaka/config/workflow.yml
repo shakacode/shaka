@@ -178,7 +178,7 @@ phases:
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `walkthrough`, optional `sections`, required `table`, required `provenance`, and
         required usage `details`; walkthroughs also require `head`. The helper always renders
-        `## Code Walkthrough` after the summary: the COMMENT review URL when `walkthrough` is
+        a Code Walkthrough link after the summary: the COMMENT review URL when `walkthrough` is
         supplied, otherwise `_Not published yet._`. Do not bury that URL in the opening paragraph.
         It refuses literal escape sequences in prose, mismatched
         table rows, empty required content, and bodies GitHub does not render.
@@ -209,7 +209,7 @@ phases:
         [walkthrough order](<{{package_root}}/docs/working-with-your-agent.md#how-a-walkthrough-is-ordered>).
         Cover every change completely and stop; length comes from the change, never from the writer.
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
-        until then the helper keeps the heading and prints `_Not published yet._`. Link the current
+        until then the helper prints `_Not published yet._`. Link the current
         review result from the PR summary and final response. Write each new
         walkthrough for its head instead of adding to the last one; review history belongs in the
         description. Try to collapse older walkthroughs while preserving their revision, evidence,

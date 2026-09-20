@@ -217,7 +217,8 @@ class PublicationStructureTest < Minitest::Test
 end
 
 # https://github.com/shakacode/shaka/pull/137 buried the walkthrough in the opening
-# sentence, so GitHub's outline had no Code Walkthrough heading to click.
+# sentence. Keep a dedicated link after the summary instead of a heading that
+# repeats the same words as the link text.
 class PublicationWalkthroughLinkTest < Minitest::Test
   def render(walkthrough: PublicationRegressionTest::WALKTHROUGH)
     Shaka::Publication.description(
@@ -227,17 +228,18 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     )
   end
 
-  def test_descriptions_lead_with_a_code_walkthrough_heading_and_review_link
+  def test_descriptions_lead_with_a_code_walkthrough_review_link
     link = PublicationRegressionTest::WALKTHROUGH
     rendered = render
 
-    assert_includes rendered, "A summary.\n\n## Code Walkthrough\n\n[Code Walkthrough](#{link})\n"
+    assert_includes rendered, "A summary.\n\n[Code Walkthrough](#{link})\n"
+    refute_includes rendered, '## Code Walkthrough'
     refute_match(/^# Code Walkthrough/, rendered)
   end
 
-  def test_the_walkthrough_heading_precedes_other_description_sections
+  def test_the_walkthrough_link_precedes_other_description_sections
     rendered = render_with_section
-    walkthrough_at = rendered.index("## Code Walkthrough\n")
+    walkthrough_at = rendered.index('[Code Walkthrough](')
     section_at = rendered.index("## Outcome\n")
 
     refute_nil walkthrough_at
@@ -255,18 +257,20 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     )
   end
 
-  def test_a_description_without_a_walkthrough_link_reserves_the_heading
+  def test_a_description_without_a_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: nil)
 
-    assert_includes rendered, "## Code Walkthrough\n\n_Not published yet._"
+    assert_includes rendered, "A summary.\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
+    refute_includes rendered, '## Code Walkthrough'
   end
 
-  def test_a_blank_walkthrough_link_reserves_the_heading
+  def test_a_blank_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: '  ')
 
-    assert_includes rendered, "## Code Walkthrough\n\n_Not published yet._"
+    assert_includes rendered, "A summary.\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
+    refute_includes rendered, '## Code Walkthrough'
   end
 
   def test_a_blob_pr_or_issue_comment_url_is_not_a_walkthrough_link

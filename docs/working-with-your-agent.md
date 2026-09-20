@@ -270,10 +270,10 @@ label a mixed contribution as AI-edited rather than claiming authorship of it al
 Use short headings for the change and its user impact. When discussing a workflow,
 name it (such as “the `$shaka` PR skill”) instead of saying “the skill” without context.
 Link to the current code walkthrough and review result. The description helper
-always renders a `## Code Walkthrough` heading immediately after the summary, so
-GitHub's outline shows it. When the COMMENT review exists, supply its URL
-(`#pullrequestreview-…`) as `walkthrough`; until then the helper prints
-`_Not published yet._`. Do not leave that link only in the opening paragraph. Show decisions, blockers,
+always renders a Code Walkthrough link immediately after the summary. When the
+COMMENT review exists, supply its URL (`#pullrequestreview-…`) as `walkthrough`;
+until then the helper prints `_Not published yet._`. Do not leave that link only
+in the opening paragraph. Show decisions, blockers,
 and missing required review prominently. Put supporting validation, optional review
 history, routine rollback, and usage in clearly labeled details. The description
 helper requires a check table and usage details that include the usage helper's
