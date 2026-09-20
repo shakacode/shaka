@@ -396,8 +396,9 @@ eight-word prose runs, because copied sentences are a spec violation rather
 than a matter of taste. The comparison reads the published sibling from GitHub, so
 dropping the walkthrough link does not excuse a description from it. Code, HTML,
 link targets, and the identity line and headings the helper itself renders are not
-counted. Prose in a script written without spaces, such as Chinese or Japanese,
-produces too few tokens to form a run, so the check does not reach it.
+counted, and a copied heading is a shared label rather than a copied resolution.
+Prose in a script written without spaces, such as Chinese or Japanese, produces too
+few tokens to form a run, so the check does not reach it.
 
 It also prints a reading grade, whether the opening
 sentence is diff-shaped, hedging and decorative-emphasis density, and filler

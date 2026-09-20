@@ -10,17 +10,22 @@ module Shaka
       LINK = /\[([^\]]*)\]\([^)]*\)/
       URL = %r{https?://\S+}
       WORD = /[[:alnum:]']+/
-      GENERATED = /\A(?:\u{1F916}|\#{1,6}[ \t])/
+      IDENTITY = /\A\u{1F916}/
+      HEADING = /\A\#{1,6}[ \t]/
 
       module_function
 
       # Code, HTML, link targets and bare URLs are not sentences the writer composed,
       # and two summaries citing the same commit would otherwise look like copied prose.
-      # The identity line and the headings are the helper's own words, identical in every
-      # pair it renders, so counting them would report copying that nobody wrote.
+      # The leading identity line and the headings are labels rather than sentences, and
+      # every pair the helper renders repeats them, so counting them would report copying
+      # that nobody wrote. Copied headings go uncounted as a result; a shared label is not
+      # the copied resolution the rule is about.
       def text(markdown)
         bare = PublicationText.prose(markdown.to_s).gsub(LINK, '\1').gsub(TAG, ' ').gsub(URL, ' ')
-        bare.lines.grep_v(GENERATED).join
+        lines = bare.lines
+        lines.shift if lines.first&.match?(IDENTITY)
+        lines.grep_v(HEADING).join
       end
 
       # Unicode-aware, so accented and Cyrillic prose is compared rather than skipped.

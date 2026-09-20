@@ -47,13 +47,11 @@ class GitHubWritingTest < Minitest::Test
     assert_equal merged, github.description(body: body)['body']
   end
 
-  # An ordinary approval or a human comment is not the walkthrough.
-  def test_an_untitled_review_is_not_treated_as_the_walkthrough
-    plain = response([{ 'id' => 9, 'state' => 'APPROVED', 'body' => walkthrough_body,
-                        'user' => { 'login' => 'shaka-bot' } },
-                      { 'id' => 8, 'state' => 'COMMENTED', 'body' => COPIED,
-                        'user' => { 'login' => 'shaka-bot' } }])
-    publishes_description(plain)
+  # An approval carries no walkthrough, whoever wrote it.
+  def test_a_review_that_is_not_a_comment_is_not_treated_as_the_walkthrough
+    approval = response([{ 'id' => 9, 'state' => 'APPROVED', 'body' => walkthrough_body,
+                           'user' => { 'login' => 'shaka-bot' } }])
+    publishes_description(approval)
   end
 
   # Anyone may review a public pull request, so a titled review is not authority.
@@ -61,9 +59,17 @@ class GitHubWritingTest < Minitest::Test
     publishes_description(reviews(walkthrough_body, login: 'outsider'), viewer_response)
   end
 
-  # A later review quoting the title is not the walkthrough it quotes.
-  def test_a_review_that_only_quotes_the_walkthrough_title_is_not_the_sibling
-    publishes_description(reviews("#{IDENTITY}\n\nOn '# Code Walkthrough':\n\n#{COPIED}"))
+  # A walkthrough supplied as raw Markdown is still the sibling a description sits beside.
+  def test_a_walkthrough_published_without_the_rendered_title_is_still_the_sibling
+    github = client(pull_body('old'), reviews(COPIED), viewer_response)
+    error = assert_raises(Shaka::Error) { github.description(body: SUMMARY) }
+    assert_includes error.message, 'This description repeats'
+  end
+
+  # A body carrying two managed regions names no single description to compare.
+  def test_an_ambiguous_description_region_is_not_compared
+    doubled = "<!-- shaka:begin -->\n#{SUMMARY}<!-- shaka:end -->\n<!-- shaka:begin -->\nB\n<!-- shaka:end -->"
+    assert_equal 123, publishes(pull_body(doubled))
   end
 
   def publishes_description(*siblings)

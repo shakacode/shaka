@@ -59,8 +59,12 @@ module Shaka
 
     # Only the managed region is the description this workflow wrote; the rest of the body
     # belongs to a person or another bot and is not this writer's prose to answer for.
+    # An ambiguous body has no one region to read, and publishing into it is refused too.
     def managed_body
-      pull['body'].to_s[/#{Regexp.escape(OPEN_MARK)}\n(.*?)#{Regexp.escape(CLOSE_MARK)}/m, 1]
+      body = pull['body'].to_s
+      return unless body.scan(OPEN_MARK).size == 1 && body.scan(CLOSE_MARK).size == 1
+
+      body[/#{Regexp.escape(OPEN_MARK)}\n(.*?)#{Regexp.escape(CLOSE_MARK)}/m, 1]
     end
 
     # The account this workflow publishes as; only its own reviews are its walkthroughs.

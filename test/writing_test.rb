@@ -58,6 +58,13 @@ class WritingDuplicationTest < Minitest::Test
           "#{identity}\n\n# Code Walkthrough\n\nMaintainers can read why the loader raises early.")
   end
 
+  # Only the leading identity line is the helper's; a robot emoji mid-body is prose.
+  def test_a_robot_emoji_inside_the_body_does_not_exempt_the_line_it_opens
+    line = '🤖 The loader now rejects an unknown review mode before the workflow starts.'
+    error = assert_raises(Shaka::Error) { check("Merging is safe.\n#{line}", "It raises early.\n#{line}") }
+    assert_includes error.message, 'This description repeats'
+  end
+
   # A first walkthrough published before any description has nothing to compare.
   def test_an_absent_sibling_never_blocks_publication
     check(DESCRIPTION, nil)
