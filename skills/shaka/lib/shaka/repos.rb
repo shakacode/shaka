@@ -50,7 +50,8 @@ module Shaka
       catalog, skipped = catalog_payload
       home.write_catalog(catalog)
       puts JSON.pretty_generate(catalog)
-      skipped || report_duplicates(catalog.fetch('duplicate_prefixes')).nonzero? ? 1 : 0
+      skipped_status = skipped ? 1 : 0
+      [skipped_status, report_duplicates(catalog.fetch('duplicate_prefixes'))].max
     end
 
     def catalog_payload
@@ -85,7 +86,7 @@ module Shaka
     def collision_key(row)
       uri = URI(row.fetch('url'))
       host = uri.port && uri.port != uri.default_port ? "#{uri.host}:#{uri.port}" : uri.host
-      "#{host}/#{row.fetch('identity')}"
+      "#{host.downcase}/#{row.fetch('identity')}"
     end
 
     def report_duplicates(duplicates)

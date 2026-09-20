@@ -68,4 +68,14 @@ class GitOriginTest < Minitest::Test
     assert_equal 'ssh://ghe.example/acme/repo',
                  Shaka::GitOrigin.canonical_url('deploy@ghe.example:acme/repo.git')
   end
+
+  def test_parse_errors_do_not_echo_credentials
+    error = assert_raises(Shaka::Error) do
+      Shaka::GitOrigin.identity('https://user:SECRET@ghe.example/group/sub/repo.git?token=MORE')
+    end
+
+    assert_includes error.message, 'https://ghe.example/group/sub/repo.git'
+    refute_includes error.message, 'SECRET'
+    refute_includes error.message, 'MORE'
+  end
 end

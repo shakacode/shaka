@@ -224,4 +224,29 @@ class ReposCatalogOriginTest < Minitest::Test
       assert_equal [expected_row('alpha', kept, prefix: 'ALP', source: 'seam')], catalog.fetch('repositories')
     end
   end
+
+  def test_refresh_still_reports_prefix_collisions_when_a_root_is_skipped
+    with_home do |home|
+      registered_repository(home, name: 'alpha', prefix: 'DUP')
+      registered_repository(home, name: 'beta', prefix: 'DUP')
+      gone = registered_repository(home, name: 'gone', prefix: 'GONE')
+      FileUtils.rm_rf(gone)
+      catalog, error, status = refresh_result(home)
+
+      refute_predicate status, :success?
+      assert_match(/#{Regexp.escape(gone)}.*DUP/m, error)
+      assert_equal %w[github.com/acme/alpha github.com/acme/beta], catalog.dig('duplicate_prefixes', 'DUP')
+    end
+  end
+
+  def test_refresh_treats_host_case_as_the_same_repository
+    with_home do |home|
+      registered_repository(home, name: 'repo', prefix: 'SAME')
+      registered_repository(home, name: 'cased', prefix: 'SAME', origin: 'https://GitHub.com/acme/repo.git')
+      catalog = refresh(home)
+
+      assert_empty catalog.fetch('duplicate_prefixes')
+      assert_equal %w[acme/repo acme/repo], identities(catalog)
+    end
+  end
 end

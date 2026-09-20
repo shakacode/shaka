@@ -31,7 +31,7 @@ module Shaka
     def canonical_url(url)
       parsed_url = parsed(url)
       identity = parsed_url.fetch(:identity)
-      return "https://github.com/#{identity}" if parsed_url.fetch(:host) == 'github.com'
+      return "https://github.com/#{identity}" if parsed_url.fetch(:host).casecmp?('github.com')
 
       scheme = parsed_url[:scheme]
       host = authority(parsed_url)
@@ -73,14 +73,19 @@ module Shaka
     private_class_method :repository_path
 
     def authority(parsed_url)
-      host = parsed_url.fetch(:host)
+      host = parsed_url.fetch(:host).downcase
       parsed_url[:port] ? "#{host}:#{parsed_url[:port]}" : host
     end
     private_class_method :authority
 
     def parse_error(origin)
-      raise Error, "Cannot parse owner/name from origin #{origin}"
+      raise Error, "Cannot parse owner/name from origin #{redacted_origin(origin)}"
     end
     private_class_method :parse_error
+
+    def redacted_origin(origin)
+      origin.to_s.split(/[?#]/, 2).first.sub(%r{\A((?:https?|ssh)://)[^/]*@}, '\1')
+    end
+    private_class_method :redacted_origin
   end
 end
