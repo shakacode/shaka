@@ -106,6 +106,17 @@ class SeamPrefixTest < Minitest::Test
     end
   end
 
+  def test_prefix_rejects_a_trusted_ref_that_omits_setup
+    with_repository('repo_prefix' => 'PLAN') do |root|
+      FileUtils.rm(File.join(root, '.agents/bin/setup'))
+      commit_repository(root)
+      _output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+
+      refute_predicate status, :success?
+      assert_includes error, '.agents/bin/setup'
+    end
+  end
+
   def test_prefix_follows_a_trusted_plan_symlink_inside_the_commit
     with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/plan.md') do |root|
       FileUtils.mkdir_p(File.join(root, 'docs'))

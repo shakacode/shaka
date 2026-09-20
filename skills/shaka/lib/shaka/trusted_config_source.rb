@@ -40,6 +40,7 @@ module Shaka
     def optional_commands(sha)
       validate_command_directory(sha)
       resolver = TrustedPathResolver.new(root: @root, sha:)
+      validate_required_commands(resolver, sha)
       entries = command_entries(resolver)
       validate_legacy_command_entries(resolver, entries, sha)
       RepositoryConfig::CommandPaths::OPTIONAL.filter_map do |name, path|
@@ -47,6 +48,15 @@ module Shaka
 
         validate_command_entry(entries.fetch(path), path, sha, resolver)
         name
+      end
+    end
+
+    def validate_required_commands(resolver, sha)
+      RepositoryConfig::CommandPaths::REQUIRED.each_value do |path|
+        entry = resolver.entry(path)
+        raise Error, "#{path} is missing at trusted ref #{sha}" unless entry
+
+        validate_command_entry(entry, path, sha, resolver)
       end
     end
 

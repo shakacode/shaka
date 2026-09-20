@@ -93,6 +93,14 @@ module ReposCatalogHelpers
     output, status = Open3.capture2e('git', '-C', root, *)
     raise output unless status.success?
   end
+
+  def omit_trusted_setup(root)
+    FileUtils.rm(File.join(root, '.agents/bin/setup'))
+    git!(root, 'add', '-A')
+    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'omit setup')
+    git!(root, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
+    root
+  end
 end
 
 class ReposCatalogTest < Minitest::Test
@@ -320,6 +328,19 @@ class ReposCatalogSkipTest < Minitest::Test
 
       refute_predicate status, :success?
       assert_includes error, broken
+      assert_equal [expected_row('alpha', kept, prefix: 'ALP', source: 'seam')], catalog.fetch('repositories')
+    end
+  end
+
+  def test_refresh_skips_a_trusted_ref_that_omits_setup
+    with_home do |home|
+      kept = registered_repository(home, name: 'alpha', prefix: 'ALP')
+      broken = omit_trusted_setup(registered_repository(home, name: 'broken', prefix: 'BRK'))
+      catalog, error, status = refresh_result(home)
+
+      refute_predicate status, :success?
+      assert_includes error, broken
+      assert_includes error, '.agents/bin/setup'
       assert_equal [expected_row('alpha', kept, prefix: 'ALP', source: 'seam')], catalog.fetch('repositories')
     end
   end
