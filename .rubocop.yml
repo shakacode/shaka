@@ -1,4 +1,14 @@
+plugins:
+  - rubocop-minitest
+  - rubocop-performance
+
 AllCops:
   NewCops: enable
   SuggestExtensions: false
   TargetRubyVersion: 3.4
+
+# Default Minitest cops flag hundreds of existing assertions. Keep the plugin loaded
+# so new cops remain visible; apply them to tests in a later PR.
+Minitest:
+  Exclude:
+    - test/**/*

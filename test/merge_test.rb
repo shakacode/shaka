@@ -106,10 +106,8 @@ class MergeNativeGateTest < Minitest::Test
 
   def test_refuses_unknown_queue_state
     %w[isMergeQueueEnabled isInMergeQueue].each do |key|
-      [nil].each do |value|
-        @client.snapshots = [snapshot.merge(key => value)]
-        assert_blocked(/queue state is unknown/)
-      end
+      @client.snapshots = [snapshot.merge(key => nil)]
+      assert_blocked(/queue state is unknown/)
     end
   end
 
