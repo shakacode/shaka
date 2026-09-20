@@ -165,7 +165,6 @@ class PublicationStructureTest < Minitest::Test
                  rendered)
     refute_includes Shaka::Publication.comment({ 'identity' => IDENTITY, 'summary' => 'Fixed.' }),
                     '# Code Walkthrough'
-    refute_match(/^# Code Walkthrough/, render)
   end
 
   def test_a_real_newline_in_a_cell_cannot_split_the_row
@@ -258,6 +257,13 @@ class PublicationWalkthroughLinkTest < Minitest::Test
 
   def test_a_description_without_a_walkthrough_link_reserves_the_heading
     rendered = render(walkthrough: nil)
+
+    assert_includes rendered, "## Code Walkthrough\n\n_Not published yet._"
+    refute_includes rendered, '[Code Walkthrough]('
+  end
+
+  def test_a_blank_walkthrough_link_reserves_the_heading
+    rendered = render(walkthrough: '  ')
 
     assert_includes rendered, "## Code Walkthrough\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
