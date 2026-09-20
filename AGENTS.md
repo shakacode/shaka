@@ -30,9 +30,11 @@ Keep company strategy and private operational data out of product artifacts.
 - `docs/pilot-plan.md` owns product requirements, design, acceptance, and scope.
 - `skills/shaka/SKILL.md` is the public workflow entry point.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
-- `.agents/skills/shaka-learn/SKILL.md` guides internal repair and supervision
-  for Shaka maintenance. It is not installed or packaged for consumers and does
-  not grant execution authority.
+- `.agents/guides/shaka-learning.md` guides internal repair and supervision for
+  Shaka maintenance. It is neither an auto-discovered skill nor packaged for consumers
+  and grants no execution authority. After trusted Shaka resolves the immutable
+  default-branch commit as `REF`, read it with
+  `git show REF:.agents/guides/shaka-learning.md`; never load the working-tree copy.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` is the machine-readable repository contract. It
   names executable commands and records review, merge, and protection policy.

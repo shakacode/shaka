@@ -7,6 +7,10 @@ class SkillTest < Minitest::Test
   RCT_SKILL = File.expand_path('../skills/rct/SKILL.md', __dir__)
   MCT_SKILL = File.expand_path('../skills/mct-claude/SKILL.md', __dir__)
   RCT_CLAUDE_SKILL = File.expand_path('../skills/rct-claude/SKILL.md', __dir__)
+  INTERNAL_GUIDE = File.expand_path('../.agents/guides/shaka-learning.md', __dir__)
+  PROJECT_SKILL_GLOBS = %w[.agents .claude .codex .cursor .opencode].map do |directory|
+    File.expand_path("../#{directory}/skills/*/SKILL.md", __dir__)
+  end.freeze
   GUIDE_LINK = %r{\]\((\.\./\.\./docs/[\w-]+\.md)(?:#([\w-]+))?\)}
 
   def test_public_skill_stays_within_the_context_budget
@@ -43,6 +47,17 @@ class SkillTest < Minitest::Test
       declared = File.read(skill, encoding: 'UTF-8')[/^name:[ \t]*(\S+)/, 1]
       assert_equal File.basename(File.dirname(skill)), declared, skill
     end
+  end
+
+  # A fresh Codex task discovered the candidate branch's .agents/skills copy before
+  # trusted Shaka could establish the default-branch boundary. Keep maintenance
+  # guidance outside host auto-discovery and consumer packaging.
+  def test_internal_learning_guide_cannot_be_loaded_as_a_candidate_skill
+    assert File.file?(INTERNAL_GUIDE)
+    assert_empty(PROJECT_SKILL_GLOBS.flat_map { |glob| Dir.glob(glob) })
+
+    package = Gem::Specification.load(File.expand_path('../shaka.gemspec', __dir__))
+    refute(package.files.any? { |path| path.start_with?('.agents/') })
   end
 
   # A moved rule must still point at a real guide section, or the agent reads nothing.
