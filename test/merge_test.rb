@@ -167,6 +167,15 @@ class MergeCheckTest < Minitest::Test
     end
   end
 
+  # Production break: UNSTABLE only covers optional checks. A failed required
+  # check must still refuse merge even when GitHub reports UNSTABLE.
+  def test_unstable_does_not_override_a_failed_required_check
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+    @client.checks = [{ 'name' => 'Validate', 'state' => 'FAILURE', 'bucket' => 'fail' }]
+
+    assert_blocked(/Required check/)
+  end
+
   def test_inconsistent_or_malformed_check_results_block
     [nil, 'success', {}, { 'state' => 'SUCCESS', 'bucket' => 'pass' },
      { 'name' => 'Validate', 'state' => 'SUCCESS', 'bucket' => 'pending' },

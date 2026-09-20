@@ -88,6 +88,9 @@ module Shaka
     end
 
     def verify_native_state(pull)
+      # UNSTABLE means only non-required checks are pending or failing.
+      # Required checks are still verified separately.
+      # See docs/review.md#faster-merge-while-optional-reviews-run.
       unless pull['isInMergeQueue']
         allowed = if pull['isMergeQueueEnabled']
                     %w[CLEAN BEHIND BLOCKED UNSTABLE]

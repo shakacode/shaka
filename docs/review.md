@@ -64,14 +64,16 @@ Independent review is one of:
 - a verified `review.check` report for that SHA
 
 When the local reviewer is a different provider than every implementer, merge after required
-checks (`validate` here) pass. Leave GitHub Claude, hosted Codex, and CodeRabbit running. Read
+checks (`validate` here) pass, unless the user expressly made another review a merge gate.
+Leave GitHub Claude, hosted Codex, and CodeRabbit running. Read
 whatever they have already posted; do not wait for jobs still in progress.
 
 When no different-provider local review ran, wait for **one** verified `review.check` report on
 the first ready-for-review push of the task. Do not wait for that check again after a nit-only
 or diagnostic-only follow-up SHA.
 
-After two repair rounds, or when remaining findings are nits on an otherwise small head, merge.
+After two repair rounds, remaining nits do not start another cycle. Remaining demonstrated
+defects still block until fixed, declined with evidence, or the maintainer decides.
 Post-merge comments are expected. Evaluate each one: fix a demonstrated defect in a small PR,
 or decline it. Do not stay in a nit loop.
 
