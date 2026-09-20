@@ -110,6 +110,15 @@ class GitOriginParseTest < Minitest::Test
     refute_includes error.message, 'TOKEN'
   end
 
+  def test_parse_errors_do_not_echo_nested_scp_userinfo
+    error = assert_raises(Shaka::Error) do
+      Shaka::GitOrigin.identity('user@SECRET@ghe.example:group/sub/repo.git')
+    end
+
+    assert_includes error.message, 'ghe.example:group/sub/repo.git'
+    refute_includes error.message, 'SECRET'
+  end
+
   def test_identity_rejects_an_invalid_percent_escape
     error = assert_raises(Shaka::Error) do
       Shaka::GitOrigin.identity('https://ghe.example/acme/repo%ZZ.git')
