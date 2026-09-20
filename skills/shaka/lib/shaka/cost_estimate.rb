@@ -57,7 +57,7 @@ module Shaka
     end
 
     def priced_rate_copy(columns)
-      providers = columns.map { |column| column[:provider] }
+      providers = priced_columns(columns).map { |column| column[:provider] }
       [
         ('Standard Codex credit and OpenAI API-equivalent rates' if providers.include?('openai')),
         ('Cursor on-demand list prices' if providers.include?('cursor'))
@@ -66,6 +66,10 @@ module Shaka
 
     def native_intro
       'Pi recorded native nominal USD.'
+    end
+
+    def priced_columns(columns)
+      columns.reject { |column| column[:native] }
     end
 
     def footer(columns, reasons)
@@ -130,7 +134,7 @@ module Shaka
     end
 
     def credits_row?(columns)
-      columns.any? { |column| column[:provider] == 'openai' || column[:credits] }
+      priced_columns(columns).any? { |column| column[:provider] == 'openai' || column[:credits] }
     end
 
     def source_line(columns)
@@ -141,10 +145,11 @@ module Shaka
     end
 
     def source_links(columns)
-      providers = columns.map { |column| column[:provider] }
+      priced = priced_columns(columns)
+      providers = priced.map { |column| column[:provider] }
       [
         (CREDIT_SOURCE if providers.include?('openai')),
-        *model_source_links(columns),
+        *model_source_links(priced),
         (CACHE_SOURCE if providers.include?('openai')),
         (CURSOR_PRICING if providers.include?('cursor'))
       ].compact
@@ -179,7 +184,7 @@ module Shaka
     def priced_totals(group, reasons, provider)
       credits, credit_reason = total(group, :credits)
       api, api_reason = total(group, :api)
-      reasons << credit_reason if credit_reason && keep_credit_reason?(provider, credits)
+      reasons << credit_reason if credit_reason && keep_credit_reason?(provider, credits, group)
       reasons << api_reason if api_reason
       [credits, api]
     end
@@ -195,8 +200,8 @@ module Shaka
       end
     end
 
-    def keep_credit_reason?(provider, credits)
-      provider == 'openai' || credits
+    def keep_credit_reason?(provider, credits, group)
+      credits || (provider == 'openai' && !native_cost?(group))
     end
 
     def blank_column

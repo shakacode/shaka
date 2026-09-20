@@ -157,3 +157,24 @@ class UsageCursorCostTest < Minitest::Test
     end
   end
 end
+
+class UsageNativePiCostTest < Minitest::Test
+  def test_openai_provider_native_cost_does_not_use_rate_cards
+    report = Shaka::CostEstimate.new([native_openai_record]).report
+    assert_metric report, 'USD estimate', '$0.000300'
+    refute_includes report, 'Credits estimate'
+    refute_includes report, '2026-09-16'
+    refute_includes report, 'learn.chatgpt.com'
+    refute_includes report, 'developers.openai.com'
+    assert_includes report, 'Pi recorded native nominal USD'
+  end
+
+  private
+
+  def native_openai_record
+    { 'configuration' => %w[openai gpt-5.6-terra UNKNOWN high],
+      'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 0,
+                   'cache_write_input_tokens' => 0, 'output_tokens' => 20,
+                   'native_cost_usd' => 0.0003 } }
+  end
+end
