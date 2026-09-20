@@ -91,10 +91,59 @@ class MergeNativeGateTest < Minitest::Test
   end
 
   def test_refuses_stale_or_unknown_merge_state
-    %w[BEHIND BLOCKED DIRTY DRAFT HAS_HOOKS UNKNOWN UNSTABLE].each do |state|
+    %w[BEHIND BLOCKED DIRTY DRAFT HAS_HOOKS UNKNOWN].each do |state|
       @client.snapshots = [snapshot.merge('mergeStateStatus' => state)]
-      assert_blocked(/not CLEAN/)
+      assert_blocked(/not CLEAN or UNSTABLE/)
     end
+  end
+
+  # Production break: GitHub reports UNSTABLE when only non-required checks are
+  # pending or failing. Requiring CLEAN here holds merge while claude-review or
+  # CodeRabbit is still running after validate has passed.
+  def test_allows_unstable_when_only_optional_checks_are_pending
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+
+    assert_equal 'MERGED', @merge.call(head: HEAD, walkthrough: 17)['state']
+  end
+
+  # Production break: thorough pace waits for optional review jobs. Allowing
+  # UNSTABLE here would merge while claude-review is still pending or red.
+  def test_thorough_pace_refuses_unstable_optional_checks
+    merge = Shaka::Merge.new(@client, pace: 'thorough')
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    assert_match(/not CLEAN/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_queue_enabled_thorough_pace_refuses_unstable_enqueue
+    merge = Shaka::Merge.new(@client, pace: 'thorough')
+    ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'UNSTABLE')
+    @client.snapshots = [ready]
+
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    assert_match(/not CLEAN or BEHIND or BLOCKED/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_thorough_seam_cannot_be_overridden_to_swift_at_merge
+    merge = Shaka::Merge.new(@client, pace: 'swift', seam_pace: 'thorough')
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    assert_match(/not CLEAN/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_queue_enabled_pull_request_can_enqueue_when_optional_checks_are_pending
+    entry = queue_entry
+    ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'UNSTABLE')
+    queued = ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => entry)
+    @client.snapshots = [ready, ready, queued]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
+
+    assert_equal 'merge_queue', @merge.call(head: HEAD, walkthrough: 17).fetch('submission')
   end
 
   def test_refuses_bypass_capable_or_unknown_actor
@@ -156,6 +205,15 @@ class MergeCheckTest < Minitest::Test
       @client.checks = [{ 'name' => 'Validate', 'state' => state, 'bucket' => 'pass' }]
       assert_blocked(/Required check/)
     end
+  end
+
+  # Production break: UNSTABLE only covers optional checks. A failed required
+  # check must still refuse merge even when GitHub reports UNSTABLE.
+  def test_unstable_does_not_override_a_failed_required_check
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+    @client.checks = [{ 'name' => 'Validate', 'state' => 'FAILURE', 'bucket' => 'fail' }]
+
+    assert_blocked(/Required check/)
   end
 
   def test_inconsistent_or_malformed_check_results_block
@@ -242,7 +300,7 @@ class MergeQueueSubmissionTest < Minitest::Test
   def test_queue_enabled_pull_request_rejects_conflicting_or_unknown_state
     %w[DIRTY DRAFT HAS_HOOKS UNKNOWN].each do |state|
       @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => state)]
-      assert_blocked(/not CLEAN or BEHIND or BLOCKED/)
+      assert_blocked(/not CLEAN or BEHIND or BLOCKED or UNSTABLE/)
     end
   end
 

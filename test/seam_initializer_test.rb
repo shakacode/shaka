@@ -294,7 +294,7 @@ class SeamInitializerValidationTest < Minitest::Test
       output, error, status = Open3.capture3(*arguments)
 
       assert_predicate status, :success?, error
-      assert_equal({ 'required' => 'none' }, JSON.parse(output).fetch('review'))
+      assert_equal({ 'required' => 'none', 'pace' => 'swift' }, JSON.parse(output).fetch('review'))
     end
   end
 

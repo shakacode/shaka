@@ -27,6 +27,7 @@ plan: docs/pilot-plan.md
 review:
   required: meaningful_changes
   check: claude-review
+  pace: swift
   reviewers:
     - provider: anthropic
       model_family: claude
@@ -42,8 +43,9 @@ recovery:
   workspace_path: false
 ```
 
-The smallest valid YAML seam drops every optional setting — `plan`, `reviewers`,
-`branches`, and `recovery` — and does not provide either optional command entry point:
+The smallest valid YAML seam drops every optional setting — `plan`, `review.pace`,
+`reviewers`, `branches`, and `recovery` — and does not provide either optional command
+entry point:
 
 ```yaml
 ---
@@ -93,10 +95,11 @@ checks from GitHub before merging. Trusted workflow files carry their own pinned
 references. A second unchecked copy in YAML would not enforce any boundary and could disagree
 with the service that does.
 
-`review.check` serves a different purpose: it selects the reviewer result that the Shaka
-workflow must wait for whenever repository policy requires review, even if GitHub branch
-protection does not require that check. GitHub remains authoritative for the native check list;
-the seam remains authoritative for Shaka's review choice.
+`review.check` names the GitHub review job Shaka should read. That job is a backstop, not a
+GitHub required merge check. `review.pace` (`swift` by default, or `thorough`) controls whether
+Shaka waits for that job and for GitHub `CLEAN` before merge. A this-task override may raise
+swift to thorough; a candidate YAML cannot lower a thorough trusted seam to swift. GitHub remains
+authoritative for the native check list; the seam remains authoritative for Shaka's review choice.
 
 Repositories that use an action allowlist as input to a real security scanner should keep it
 in that scanner's supported policy file. Shaka V2 has no such consumer, so it does not accept
@@ -197,11 +200,18 @@ existing policy. Migrate across that trust boundary in this order:
 
 ## `review`
 
-`required` is the only mandatory key. `check` names the reviewer's status check.
+`required` is the only mandatory key. `check` names the reviewer's GitHub status check.
 
-The three `required` values record when the gate named by `check` should apply, and `check` is
+That named check is a review source to read, not a GitHub required merge check. Branch
+protection in this repository requires `validate` only. See
+[review pace](review.md#review-pace).
+
+The three `required` values record when the named GitHub review job is the independent-review
+backstop, and `check` is
 bound to them: validation requires it for `always` and `meaningful_changes`, and rejects it for
-`none`. Choosing `none` therefore leaves no named gate to satisfy.
+`none`. Choosing `none` therefore leaves no named GitHub review job. Under `swift`, when a
+different-provider local review already covers the current head, do not wait for that job
+before merge. `thorough` still waits for the named check.
 
 `always` is the exception. The workflow's review phase lets trivial prose or no-op work omit
 review with a recorded reason whatever is set here, and nothing consumes this value to withdraw
@@ -223,7 +233,20 @@ qualifies; a different provider is preferred, not required.
 | --- | --- | --- |
 | `required` | yes | `always`, `meaningful_changes`, `none` |
 | `check` | when `required` is not `none` | Non-empty string |
+| `pace` | no | `swift` (default when omitted) or `thorough` |
 | `reviewers` | no | Ordered non-empty list of reviewer entries |
+
+### `review.pace`
+
+Product default is `swift`: merge after required checks and independent review for the
+task, without waiting for optional jobs to make GitHub `CLEAN`. `thorough` waits for the
+named `review.check` on the current head and refuses `UNSTABLE`.
+
+Read the value from the trusted default-branch seam (`shaka seam check --ref` and
+`shaka merge --ref`), not from the candidate PR copy. Record a this-task override on the PR
+when the user asks for the other mode. Combine them with thorough winning: a swift override
+cannot weaken a thorough seam. `merge --pace` is only the this-task override; omitting `--ref`
+and `--pace` is swift.
 
 When `required` is `none`, `check` must be **omitted**; leaving it behind fails validation.
 `reviewers` stays valid there, because `none` drops the repository's named check and not the
@@ -244,6 +267,7 @@ applies either way.
 review:
   required: meaningful_changes
   check: claude-review
+  pace: swift
   reviewers:
     - provider: anthropic
       model_family: claude
@@ -262,7 +286,7 @@ requests is decided by its own trigger — the standard reviewer workflow guards
 `draft == false` — so read the trusted workflow rather than a copy in the seam that can drift
 from it. Identity is compared through review metadata or a trusted workflow, never a check name,
 so a per-entry check name would have no job to do. The top-level `review.check` still names the
-required native gate, and that gate need not belong to any listed reviewer.
+GitHub review job to read, and that job need not belong to any listed reviewer.
 
 #### Sizing the list
 

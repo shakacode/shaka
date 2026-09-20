@@ -125,7 +125,7 @@ class ReviewPolicyTest < Minitest::Test
   def test_accepts_the_original_version_one_review_shape
     review = { 'required' => 'meaningful_changes', 'check' => 'claude-review' }
     with_repository('review' => review) do |root|
-      assert_equal review, Shaka::RepositoryConfig.load(root:).review
+      assert_equal review.merge('pace' => 'swift'), Shaka::RepositoryConfig.load(root:).review
     end
   end
 end

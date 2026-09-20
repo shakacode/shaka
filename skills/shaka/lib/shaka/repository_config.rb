@@ -2,6 +2,7 @@
 
 require 'yaml'
 require_relative 'error'
+require_relative 'review_pace'
 require_relative 'repository_config/command_paths'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
@@ -48,16 +49,20 @@ module Shaka
 
     # Callers read this as the effective contract, so defaults belong in it.
     def to_h
-      @data.merge('commands' => commands, 'recovery' => recovery)
+      @data.merge('commands' => commands, 'review' => review, 'recovery' => recovery)
     end
 
     private
 
     def assign_sections
       @base_branch = @data.fetch('base_branch')
-      @review = @data.fetch('review')
+      @review = with_default_pace(@data.fetch('review'))
       @merge = @data.fetch('merge')
       @recovery = DEFAULT_RECOVERY.merge(@data.fetch('recovery', {}))
+    end
+
+    def with_default_pace(review)
+      review.merge('pace' => ReviewPace.normalize(review['pace']))
     end
   end
 end

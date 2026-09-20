@@ -97,10 +97,12 @@ unknown or bypass-capable identities block. Leave repository queue settings and 
 auto-merges unchanged. The helper performs an immediate squash merge when the base has no
 queue. When the base has Merge Queue enabled, the helper lets GitHub's enqueue operation
 decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKED` expected
-reviewed head; conflicting or unreadable merge state still blocks. Queue admission is not Auto
+reviewed head, and also `UNSTABLE` when effective `review.pace` is `swift`; conflicting or
+unreadable merge state still blocks. Queue admission is not Auto
 task completion: the active Auto task waits for GitHub's current-base integration checks and
 terminal result. Ask archives after the GitHub click; a later queue failure is a new task.
 Queue submission does not relax walkthrough, review, authority, or required-check gates.
+Under `swift`, pending or failing optional checks may still leave the native state `UNSTABLE`.
 
 ## Verification and exit criteria
 
