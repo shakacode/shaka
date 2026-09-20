@@ -7,6 +7,8 @@ unfinished tasks. A **Master Control Tower (MCT)** coordinates several RCTs and
 their dependencies. For example, it can track a library fix that must land before
 an application upgrade.
 
+The [architecture guide](architecture.md) explains why towers do not replace a delivery's owner or records.
+
 Ask your agent to install the optional tower skills for your environment and
 establish the master. Then open a task in each repository and invoke its setup skill:
 
