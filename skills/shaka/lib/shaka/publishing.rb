@@ -60,11 +60,11 @@ module Shaka
     # Only the managed region is the description this workflow wrote; the rest of the body
     # belongs to a person or another bot and is not this writer's prose to answer for.
     # An ambiguous body names no single description. That is a body this workflow cannot
-    # have written and already refuses to publish into, so reading it stops here as well
-    # rather than reporting the comparison as one with nothing to compare.
+    # have written and already refuses to publish into, so reading it stops here as well.
+    # Either marker on its own is enough to ask, since an edit can delete just one.
     def managed_body
       body = pull['body'].to_s
-      check_region(body, body.scan(OPEN_MARK).size, body.scan(CLOSE_MARK).size) if body.include?(OPEN_MARK)
+      check_region(body, body.scan(OPEN_MARK).size, body.scan(CLOSE_MARK).size) if body.match?(/shaka:(begin|end)/)
       body[/#{Regexp.escape(OPEN_MARK)}\n(.*?)#{Regexp.escape(CLOSE_MARK)}/m, 1]
     end
 

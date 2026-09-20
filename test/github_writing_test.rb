@@ -70,7 +70,16 @@ class GitHubWritingTest < Minitest::Test
   # into it is already refused, so reading it stops the walkthrough rather than skipping.
   def test_an_ambiguous_description_region_stops_the_walkthrough
     doubled = "<!-- shaka:begin -->\n#{SUMMARY}<!-- shaka:end -->\n<!-- shaka:begin -->\nB\n<!-- shaka:end -->"
-    github = client(snapshot_response, pull_body(doubled))
+    stops_the_walkthrough(doubled)
+  end
+
+  # An edit that deletes one marker leaves a region this workflow cannot have written.
+  def test_an_orphaned_closing_marker_stops_the_walkthrough
+    stops_the_walkthrough("#{SUMMARY}<!-- shaka:end -->")
+  end
+
+  def stops_the_walkthrough(body)
+    github = client(snapshot_response, pull_body(body))
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: walkthrough_body) }
     assert_includes error.message, 'ambiguous'
   end
