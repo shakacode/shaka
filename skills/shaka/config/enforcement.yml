@@ -37,8 +37,10 @@ rules:
     quote: Do not open a second PR.
     enforced_by: reported
     detector: >-
-      `claim QUERY` reports every open pull request and remote branch matching the work item and
-      sets `collision`. Nothing then stops the second PR: acting on the collision is the agent's.
+      `claim QUERY` sets `collision` from an unqualified `gh pr list --search`, which reads
+      titles, bodies, and comments, and from branch names on `origin`. It misses a fork branch
+      that never names the work item, and it matches any PR whose text happens to contain the
+      number. Nothing then stops the second PR: acting on the collision is the agent's.
   - id: seam-branch-name
     phase: intake
     quote: do not invent a personal prefix

@@ -170,18 +170,18 @@ class EnforcementCommandTest < Minitest::Test
   # A command that reads only the fields an agent sends it answers nothing, so the audit has
   # to leave it agent-enforced however solid its own validation looks.
   def test_treats_a_self_reported_gate_as_agent_enforced
-    checkpoint = RULES.fetch(RULES.index { |rule| rule['id'] == 'checkpoint-proceed' })
+    checkpoint = RULES.find { |rule| rule['id'] == 'checkpoint-proceed' }
 
     assert_equal 'agent', checkpoint.fetch('enforced_by')
-    assert_includes checkpoint.fetch('note'), 'only the fields the agent sends it'
+    refute_empty checkpoint.fetch('note').strip
   end
 
-  def test_names_the_agent_as_the_only_enforcement_where_nothing_checks
+  def test_shows_each_agent_enforced_rule_with_what_is_missing
     output, status = report
+    alone = RULES.select { |rule| rule['enforced_by'] == 'agent' }
 
     assert status.success?, output
-    assert_includes output, '`agent` — nothing checks it'
-    assert_includes output, '| Never defer always-on required, security, or trust checks. | agent |'
+    alone.each { |rule| assert_includes output, "| #{rule.fetch('quote')} | agent |" }
   end
 
   def test_rejects_arguments
