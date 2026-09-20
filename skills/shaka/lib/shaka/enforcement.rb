@@ -14,10 +14,11 @@ module Shaka
              "- `reported` — a command surfaces the violation; the agent can still proceed.\n" \
              "- `github` — a repository setting refuses it.\n" \
              '- `agent` — nothing checks it; the note says what is missing.'
-    SCOPE = 'This audit covers the rules workflow.yml states with never, must, do not, or ' \
-            'only when. Its other imperative sentences, such as restrictive `only ...` ' \
-            'clauses, are outside it. It reads packaged text alone: nothing here confirms ' \
-            'that a GitHub setting is still active.'
+    SCOPE = 'The scan behind this audit finds the rules workflow.yml states with never, ' \
+            'must, do not, or only when; an entry may classify a rule stated another way, ' \
+            'but nothing requires one. It reads packaged text alone, so a `github` row ' \
+            'describes the repository that ships this audit and nothing here confirms that ' \
+            'setting is still active.'
     HEADER = "| Rule | Enforced by | What backs it |\n| --- | --- | --- |"
 
     def self.run(arguments)

@@ -31,7 +31,11 @@ module Shaka
 
     def check(rules)
       located = @sections.transform_values { [] }
-      rules.each { |rule| located.fetch(section(rule)) << locate(rule) }
+      rules.each do |rule|
+        span = locate(rule)
+        overlapping!(rule, located.fetch(section(rule)), span)
+        located.fetch(section(rule)) << span
+      end
       complete!(located)
     end
 
@@ -53,6 +57,14 @@ module Shaka
       raise Error, "rule #{rule['id']} quotes #{rule['phase']} text that appears twice" if text.index(quote, at + 1)
 
       [at, at + quote.length]
+    end
+
+    # Two entries over one sentence would answer the same question twice, and nothing would
+    # say which answer to believe.
+    def overlapping!(rule, taken, (from, to))
+      return unless taken.any? { |start, finish| from < finish && start < to }
+
+      raise Error, "rule #{rule['id']} classifies #{rule['phase']} text another rule already covers"
     end
 
     # A rule added to workflow.yml fails here until an entry classifies what enforces it.

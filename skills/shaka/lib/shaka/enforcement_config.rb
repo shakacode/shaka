@@ -57,15 +57,8 @@ module Shaka
       unknown = rule.keys - RULE_KEYS
       raise Error, "unknown #{label} key: #{unknown.first}" unless unknown.empty?
 
-      quote!(rule, label)
-      enforcement!(rule, label)
-    end
-
-    def quote!(rule, label)
       text!(rule['quote'], "#{label} quote")
-      return if EnforcementCoverage::MARKER.match?(rule['quote'])
-
-      raise Error, "#{label} quote states no rule"
+      enforcement!(rule, label)
     end
 
     # A rule something other than the agent touches names that mechanism; an agent-enforced

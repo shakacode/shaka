@@ -10,6 +10,7 @@ version: 1
 # missing. A command that only inspects what the agent told it does not answer the question,
 # so its rule is agent-enforced and the note names the command. Loading validates that every
 # quote still appears in the workflow and that no rule stated in those four forms is left out.
+# An entry may also classify a rule the scan does not find, as isolated-checkout does.
 rules:
   - id: trusted-seam-ref
     phase: intake
@@ -79,6 +80,14 @@ rules:
     note: >-
       `merge` submits one ordinary pull request at a time, but nothing detects a native stack
       created outside it.
+  - id: isolated-checkout
+    phase: implement
+    quote: Run candidate code only in the authorized isolated checkout.
+    enforced_by: agent
+    note: >-
+      Nothing observes where candidate code runs. The scan does not reach this rule either,
+      because it restricts with a bare "only"; it is classified here because it is a trust
+      boundary, and #131 names it.
   - id: workers-do-not-publish
     phase: implement
     quote: Delegated workers own exclusive files or worktrees and never publish or merge.
@@ -208,8 +217,8 @@ rules:
     detector: >-
       `Merge#verify_checks` refuses an empty or non-passing required-check list,
       `Merge#verify_snapshot` refuses a head that moved, and `Merge#verify_submission_mode`
-      refuses when `viewerCanMergeAsAdmin` is true. The active "Protect main" ruleset supplies
-      `required_status_checks` on GitHub.
+      refuses when `viewerCanMergeAsAdmin` is true. shakacode/shaka's "Protect main" ruleset
+      supplies `required_status_checks` on GitHub as well.
   - id: no-background-retries
     phase: finish
     quote: never schedule background retries
@@ -235,5 +244,7 @@ rules:
     quote: Never push to `main`.
     enforced_by: github
     detector: >-
-      The active "Protect main" ruleset requires a pull request and blocks non-fast-forward
-      pushes and branch deletion, so GitHub rejects a direct push.
+      The "Protect main" ruleset on shakacode/shaka requires a pull request and blocks
+      non-fast-forward pushes and branch deletion, so GitHub rejects a direct push there. It
+      describes the repository that ships this audit, not whichever repository is being worked
+      on, and nothing reads the live setting.

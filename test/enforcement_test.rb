@@ -11,7 +11,7 @@ class EnforcementConfigTest < Minitest::Test
 
     refute_empty rules
     assert_equal rules.length, rules.map { |rule| rule.fetch('id') }.uniq.length
-    rules.each { |rule| assert_match Shaka::EnforcementCoverage::MARKER, rule.fetch('quote') }
+    rules.each { |rule| refute_empty rule.fetch('quote').strip }
   end
 
   def test_every_audited_rule_names_what_backs_it
@@ -45,13 +45,24 @@ class EnforcementConfigTest < Minitest::Test
     end
   end
 
-  def test_rejects_an_entry_that_quotes_no_rule
-    audit = packaged_audit
-    audit.fetch('rules').first['quote'] = 'Read the task through an available connection'
+  # The scan misses restrictive "only ..." rules, so an entry has to be able to classify one
+  # the scan never demands. Running candidate code outside its checkout is that kind of rule.
+  def test_classifies_a_trust_rule_the_scan_does_not_find
+    rule = Shaka::EnforcementConfig.load.fetch('rules').find { |entry| entry['id'] == 'isolated-checkout' }
 
-    error = assert_raises(Shaka::Error) { load_audit(audit) }
+    refute_nil rule
+    refute_match Shaka::EnforcementCoverage::MARKER, rule.fetch('quote')
+    assert_equal 'agent', rule.fetch('enforced_by')
+  end
 
-    assert_includes error.message, 'states no rule'
+  def test_rejects_two_entries_answering_for_one_sentence
+    message = mutated_message do |rules|
+      overlapping = rules.first.dup
+      overlapping['id'] = 'shadow'
+      rules.push(overlapping)
+    end
+
+    assert_includes message, 'another rule already covers'
   end
 
   def test_rejects_an_ambiguous_quote
@@ -136,8 +147,8 @@ class EnforcementCommandTest < Minitest::Test
 
     assert status.success?, output
     assert_includes output, 'never, must, do not, or only when'
-    assert_includes output, 'outside it'
-    assert_includes output, 'nothing here confirms that a GitHub setting is still active'
+    assert_includes output, 'an entry may classify a rule stated another way'
+    assert_includes output, 'nothing here confirms that setting is still active'
   end
 
   # A command that only reports a violation must not read as one that refuses it.
