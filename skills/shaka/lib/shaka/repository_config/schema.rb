@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../branch_name'
 require_relative '../error'
 require_relative 'branch_schema'
 require_relative 'command_schema'
@@ -13,8 +14,8 @@ module Shaka
     class Schema
       include Validation
 
-      REQUIRED = %w[version base_branch review merge].freeze
-      OPTIONAL = %w[plan branches recovery].freeze
+      REQUIRED = %w[version review merge].freeze
+      OPTIONAL = %w[base_branch plan branches recovery].freeze
 
       attr_reader :commands
 
@@ -37,10 +38,12 @@ module Shaka
 
       private
 
+      # base_branch is validated only when present. An absent key resolves to the
+      # repository's default branch at runtime, which is valid by construction.
       def validate_header
         raise Error, 'version must be 1' unless @data['version'] == 1
 
-        string!(@data['base_branch'], 'base_branch')
+        BranchName.explicit!(@data['base_branch'], label: 'base_branch', root: @root) if @data.key?('base_branch')
         file!(@data['plan'], 'plan') if @data.key?('plan')
       end
 

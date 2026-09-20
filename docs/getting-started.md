@@ -147,7 +147,6 @@ preference:
 ```bash
 "$HOME/.agents/skills/shaka/scripts/shaka" seam init \
   --root /path/to/repository \
-  --base-branch main \
   --setup-command "bin/setup" \
   --validate-command "bin/validate" \
   --test-command "bundle exec rake test" \
@@ -158,7 +157,8 @@ preference:
 The command creates `.agents/agent-workflow.yml`, small executable wrappers under
 `.agents/bin/`, and an `.agents/README.md` that tells a reader of that repository what
 the directory is and links to the [seam settings reference](settings.md). Its default
-merge preference is **Ask**. Add
+merge preference is **Ask**, and it bases work on the repository's default branch unless you
+pass `--base-branch` to name another one, such as `develop`. Add
 `--merge-preference auto` only when that is the repository's established authority;
 choose `--review-policy always`, `meaningful_changes`, or `none`, and supply
 `--review-check` unless the policy is `none`. Use `--plan` for an existing

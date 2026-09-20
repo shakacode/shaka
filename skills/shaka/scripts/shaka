@@ -112,6 +112,7 @@ parser = OptionParser.new do |flags|
   end
   flags.on('--root DIR', 'Repository root for trusted merge pace') { |value| options[:root] = value }
   flags.on('--ref REF', 'Trusted commit for merge pace') { |value| options[:ref] = value }
+  flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('-h', '--help', 'Show usage') do
     puts flags
@@ -145,6 +146,7 @@ begin
              Shaka::Merge.new(github, pace: options[:pace],
                                       seam_pace: merge_seam_pace(options)).call(
                                         head: options.fetch(:head),
+                                        base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough)
                                       )
            end

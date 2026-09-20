@@ -355,14 +355,20 @@ posting its own, and the report names the revision and model so the record stand
 review prose permitted by the public-prose rule above; retain withheld comments as links rather
 than supplying their bodies.
 
-Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers. Verified
-flags, current for the versions named:
+Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers. Set
+`SHAKA_BASE_BRANCH` to this task's base branch first, so the review reads the same diff the
+pull request will merge; it is the repository's default branch unless the seam or the task
+names another one. Verified flags, current for the versions named:
+
+```bash
+SHAKA_BASE_BRANCH=main
+```
 
 Codex 0.154.0:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-base=$(git merge-base origin/main HEAD)
+base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex \
   | codex exec -s read-only --ignore-rules --ignore-user-config --ephemeral -o "$report" -
@@ -379,7 +385,7 @@ Claude Code:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-base=$(git merge-base origin/main HEAD)
+base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
   | claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
@@ -398,7 +404,7 @@ Grok 1.0.30:
 
 ```bash
 prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-prompt.XXXXXX") || exit 1
-base=$(git merge-base origin/main HEAD)
+base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
 shaka review-prompt --head "$(git rev-parse HEAD)" --base "$base" --reviewer xai/grok \
   --effort high > "$prompt"
 grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format plain \

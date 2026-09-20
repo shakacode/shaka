@@ -43,14 +43,13 @@ recovery:
   workspace_path: false
 ```
 
-The smallest valid YAML seam drops every optional setting — `plan`, `review.pace`,
-`reviewers`, `branches`, and `recovery` — and does not provide either optional command
-entry point:
+The smallest valid YAML seam drops every optional setting — `base_branch`, `plan`,
+`review.pace`, `reviewers`, `branches`, and `recovery` — and does not provide either
+optional command entry point:
 
 ```yaml
 ---
 version: 1
-base_branch: main
 review:
   required: none
 merge:
@@ -76,9 +75,9 @@ These apply to the whole document, whatever the settings are.
 | Setting | Required | Type | Value |
 | --- | --- | --- | --- |
 | `version` | yes | integer | Exactly `1`. |
-| `base_branch` | yes | string | Non-empty string naming the branch work starts from. See the note below. |
 | `review` | yes | mapping | [Reviewer policy](#review). |
 | `merge` | yes | mapping | [Merge authority](#merge). |
+| `base_branch` | no | string | Branch name Git accepts and that unambiguously names a branch. Absent means the repository's default branch. See the note below. |
 | `plan` | no | string | Repository-relative path to an existing file. |
 | `branches` | no | mapping | [Feature-branch layout](#branches). |
 | `recovery` | no | mapping | [Recovery note policy](#recovery). |
@@ -124,12 +123,36 @@ then a bump would force every consumer to edit a file for no behavioral differen
 Repository-relative means exactly that: an absolute path, a path that escapes the
 repository, or a symlink resolving outside it is rejected.
 
-`base_branch` is checked only as a non-empty string. `shaka seam check` does not test it
-against Git's branch-name rules, so a hand-edited value such as `-not-a-branch`,
-`has space`, or `a..b` passes validation and fails later, when the workflow tries to use
-the branch. `shaka seam init` is stricter: it rejects any value that
-`git check-ref-format --branch` does not accept. Prefer initializing the seam, and check
-a hand-edited `base_branch` yourself.
+`base_branch` names the branch work starts from and the branch its pull request targets.
+Set it only when that branch is not the repository's default branch, as `develop` would be;
+an absent key resolves to the default branch, which `gh repo view --json defaultBranchRef`
+reports. You can name a different base for one task in plain language, such as "target
+`release-2.x`". You are the only source the agent accepts one from: a base read out of an
+issue, a PR description, or a comment would let that text choose which code the setup and
+validation commands run. Only this setting and the repository's default branch establish a
+base. Anything else the task resolves — a base you named, or the branch a PR it adopted
+already targets — is confirmed in the plan checkpoint and holds merge at Ask for that task.
+Separately, and whatever the base is, `shaka merge` compares the pull request's live target
+to the base the change was validated against and refuses a mismatch, rechecking immediately
+before it submits. A pull request retargeted after planning therefore does not merge a diff
+that was reviewed against a different branch, except in the moment of the merge request
+itself, which GitHub's API gives no way to pin; the merge result reports the branch it
+landed on so that case is at least visible. Either way the base changes only the start
+commit and the PR target. It never changes where policy is read from, which stays the
+default branch via `shaka seam check --ref`, so no task can widen its own authority by
+choosing a base.
+
+Both `shaka seam check` and `shaka seam init` reject a present value that
+`git check-ref-format --branch` does not accept, so `-not-a-branch`, `has space`,
+`ends.lock`, and `a..b` fail at validation instead of later, when the workflow tries to use
+the branch. Three kinds of value Git itself accepts are rejected as well, because none of
+them unambiguously names a branch: shorthand such as `@{-1}`, which resolves to a commit; a
+qualified ref such as `refs/heads/main`; and a name shaped like one of Git's own root refs,
+meaning `@` or an unslashed all-uppercase name such as `FETCH_HEAD` or `MERGE_AUTOSTASH`,
+which Git resolves to that root ref wherever a revision is expected. Uppercase below the top
+level, as in `release/RC1`, is unambiguous and accepted. Whether the branch *exists* is the stronger check; it needs a fetched remote and
+belongs in `shaka doctor`. Validating the name shells out to `git`, which is the one
+subprocess plain `seam check` runs.
 
 ## Standard command scripts
 
@@ -392,10 +415,11 @@ introduces, and lands with it.
 ## What `seam init` writes
 
 The initializer produces the smallest complete contract: the three required `.agents/bin/`
-wrappers plus YAML containing `version`, `base_branch`, `review`, `merge`, and
-`branches.name` set to `{login}-{host}/{issue}-{description}` so the layout is visible in
-the seam instead of only in Ruby. It adds `plan` only when you pass it. Edit
-`branches.name` afterward when the repository already uses a different layout.
+wrappers plus YAML containing `version`, `review`, `merge`, and `branches.name` set to
+`{login}-{host}/{issue}-{description}` so the layout is visible in the seam instead of only
+in Ruby. It adds `base_branch` and `plan` only when you pass them, so a repository that
+bases work on its default branch writes no `base_branch` at all. Edit `branches.name`
+afterward when the repository already uses a different layout.
 
 The generated `review` section depends on the policy. With `always` or
 `meaningful_changes` it holds `required` and `check`, and `--review-check` is mandatory.

@@ -5,6 +5,7 @@ require 'shaka/merge'
 
 module MergeFixtures
   HEAD = 'a' * 40
+  BASE = 'main'
 
   class Client
     attr_accessor :snapshots, :checks, :review_result, :mutation_result, :mutation_error
@@ -50,20 +51,21 @@ module MergeFixtures
     @client.checks = [{ 'name' => 'Validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
     @client.review_result = { 'id' => 17, 'commit_id' => HEAD, 'state' => 'COMMENTED', 'body' => 'Walkthrough' }
     @client.mutation_result = { 'mergePullRequest' => { 'pullRequest' => {
-      'headRefOid' => HEAD, 'state' => 'MERGED', 'merged' => true, 'mergeCommit' => { 'oid' => 'b' * 40 }
+      'headRefOid' => HEAD, 'baseRefName' => BASE, 'state' => 'MERGED', 'merged' => true,
+      'mergeCommit' => { 'oid' => 'b' * 40 }
     } } }
     @merge = Shaka::Merge.new(@client)
   end
 
   def snapshot
-    { 'id' => 'PR_123', 'headRefOid' => HEAD, 'baseRefName' => 'main', 'state' => 'OPEN', 'isDraft' => false,
+    { 'id' => 'PR_123', 'headRefOid' => HEAD, 'baseRefName' => BASE, 'state' => 'OPEN', 'isDraft' => false,
       'viewerCanMergeAsAdmin' => false, 'isMergeQueueEnabled' => false, 'isInMergeQueue' => false,
       'mergeQueueEntry' => nil,
       'autoMergeRequest' => nil, 'mergeStateStatus' => 'CLEAN', 'reviewDecision' => nil }
   end
 
   def assert_blocked(pattern)
-    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, walkthrough: 17) }
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
     assert_match pattern, error.message
     assert_empty @client.mutations
   end
@@ -190,7 +192,7 @@ class MergeCheckTest < Minitest::Test
     @client.checks = [%w[SUCCESS pass], %w[NEUTRAL skipping], %w[SKIPPED skipping]].map do |state, bucket|
       { 'name' => state, 'state' => state, 'bucket' => bucket }
     end
-    assert_equal 'MERGED', @merge.call(head: HEAD, walkthrough: 17)['state']
+    assert_equal 'MERGED', @merge.call(head: HEAD, base: BASE, walkthrough: 17)['state']
   end
 
   def test_empty_or_unknown_check_list_blocks
@@ -443,8 +445,21 @@ class MergeSubmissionTest < Minitest::Test
 
   def test_rejects_invalid_head_before_submission
     [nil, '', 'main'].each do |head|
-      error = assert_raises(Shaka::Error) { @merge.call(head: head, walkthrough: 17) }
+      error = assert_raises(Shaka::Error) { @merge.call(head: head, base: BASE, walkthrough: 17) }
       assert_match(/full commit SHA/, error.message)
+    end
+    assert_empty @client.mutations
+  end
+
+  def test_a_retarget_blocks_even_when_the_head_is_unchanged
+    @client.snapshots = [snapshot, snapshot.merge('baseRefName' => 'release-2.x')]
+    assert_blocked(/targets "release-2\.x", not the validated base "main"/)
+  end
+
+  def test_rejects_a_missing_base_before_submission
+    [nil, '', '  '].each do |base|
+      error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: base, walkthrough: 17) }
+      assert_match(/validated against/, error.message)
     end
     assert_empty @client.mutations
   end
@@ -460,13 +475,23 @@ class MergeSubmissionTest < Minitest::Test
 
   def test_passes_expected_head_to_server_and_returns_native_merge_result
     @client.snapshots = [snapshot.merge('reviewDecision' => 'APPROVED')]
-    result = @merge.call(head: HEAD, walkthrough: 17)
+    result = @merge.call(head: HEAD, base: BASE, walkthrough: 17)
     assert_equal 'b' * 40, result.dig('mergeCommit', 'oid')
     assert_equal 17, @client.requested_review
     query, variables = @client.mutations.fetch(0)
     assert_includes query, 'expectedHeadOid: $head'
     assert_equal({ 'id' => 'PR_123', 'head' => HEAD }, variables)
     assert_equal 1, @client.mutations.length
+  end
+
+  # The mutation cannot pin a base, so the branch it merged into is the only evidence a
+  # retarget inside that last request leaves behind.
+  def test_reports_the_base_the_merge_landed_on
+    @client.snapshots = [snapshot.merge('reviewDecision' => 'APPROVED')]
+    result = @merge.call(head: HEAD, base: BASE, walkthrough: 17)
+
+    assert_includes @client.mutations.fetch(0).first, 'baseRefName'
+    assert_equal BASE, result.fetch('baseRefName')
   end
 
   def test_changed_head_after_reading_checks_blocks
@@ -481,7 +506,7 @@ class MergeSubmissionTest < Minitest::Test
 
   def test_head_change_at_server_is_rejected_without_retry
     @client.mutation_error = Shaka::Error.new('Head branch was modified')
-    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, walkthrough: 17) }
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
     assert_match(/Head branch was modified.*inspect live PR state/, error.message)
     assert_equal 1, @client.mutations.length
   end
@@ -489,7 +514,7 @@ class MergeSubmissionTest < Minitest::Test
   def test_unknown_mutation_outcome_requires_inspection
     [nil, 'merged', { 'pullRequest' => { 'state' => 'MERGED' } }].each do |payload|
       @client.mutation_result = { 'mergePullRequest' => payload }
-      error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, walkthrough: 17) }
+      error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
       assert_match(/did not confirm.*inspect live PR state/, error.message)
     end
     assert_equal 3, @client.mutations.length

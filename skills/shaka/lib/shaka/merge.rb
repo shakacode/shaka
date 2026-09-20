@@ -13,11 +13,12 @@ module Shaka
       @submission = MergeSubmission.new(github)
     end
 
-    def call(head:, walkthrough:)
-      raise Error, 'Expected a full commit SHA' unless head.is_a?(String) && head.match?(/\A[0-9a-f]{40}\z/)
+    def call(head:, base:, walkthrough:)
+      verify_arguments(head, base)
 
       initial = @github.snapshot
       verify_snapshot(initial, head)
+      verify_validated_base(initial, base)
       verify_checks(@github.required_checks)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
       current = @github.snapshot
@@ -29,6 +30,22 @@ module Shaka
     end
 
     private
+
+    def verify_arguments(head, base)
+      raise Error, 'Expected a full commit SHA' unless head.is_a?(String) && head.match?(/\A[0-9a-f]{40}\z/)
+      return if base.is_a?(String) && !base.strip.empty?
+
+      raise Error, 'Expected the base branch the change was validated against'
+    end
+
+    # verify_same_base catches a base moving during this run. This catches the case that run
+    # cannot see: a PR whose target was never the branch the change was validated against,
+    # because it was retargeted earlier or a stated base was never applied to an adopted PR.
+    def verify_validated_base(pull, base)
+      return if pull['baseRefName'] == base
+
+      raise Error, "PR targets #{pull['baseRefName'].inspect}, not the validated base #{base.inspect}"
+    end
 
     def reconcile_queued_replay(initial, current, head)
       unless current['state'] == 'MERGED'

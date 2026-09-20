@@ -24,9 +24,14 @@ module RepositoryConfigTestHelpers
       FileUtils.mkdir_p(File.join(root, '.agents/bin'))
       create_commands(root)
       File.write(File.join(root, 'PLAN.md'), "# Plan\n")
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config.merge(overrides)))
+      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(overrides)))
       yield root
     end
+  end
+
+  # A nil override removes the key, so a test can exercise an absent optional setting.
+  def seam(overrides)
+    config.merge(overrides).compact
   end
 
   def config

@@ -92,7 +92,7 @@ lives; it does not mean deleting every V1 key and hoping the defaults are equiva
 
 | V1 setting | V2 destination | Migration rule |
 | --- | --- | --- |
-| `base_branch` | `base_branch` | Copy after verifying the live default branch. |
+| `base_branch` | `base_branch` | Omit it when V1 named the live default branch; carry it forward only when the repository really bases work elsewhere. |
 | Command descriptions and `.agents/bin/*` | Fixed `.agents/bin/` interface | Provide executable `.agents/bin/setup`, `.agents/bin/validate`, and `.agents/bin/test`; add `.agents/bin/validate-local` and `.agents/bin/trigger-hosted-ci` only when those optional capabilities exist. Do not repeat these paths in YAML. |
 | `review_gate`, `automation_reviewers` | `review` | Translate the actual required review and ordered available reviewers. Keep richer human conditions in `AGENTS.md`. |
 | `merge_submission`, `autonomous_merge`, `approval_exempt` | `merge` plus `AGENTS.md` | Choose `ask` or authorized `auto`. V2 follows live native state: it submits an immediate squash on a queue-disabled base or enqueues the reviewed head when Merge Queue is already enabled. Repository-specific autonomous or approval-exempt paths remain outside the portable seam. |

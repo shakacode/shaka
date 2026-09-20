@@ -52,6 +52,8 @@ module Shaka
         "# #{MARKER}\n#{YAML.dump(config)}"
       end
 
+      # base_branch is omitted when it was not requested: an absent key means the
+      # repository's default branch, so writing one would pin a value nobody chose.
       def config_hash
         {
           'version' => 1,
@@ -59,7 +61,7 @@ module Shaka
           'review' => review_policy,
           'merge' => { 'preference' => @options.fetch(:merge_preference, 'ask') },
           'branches' => { 'name' => '{login}-{host}/{issue}-{description}' }
-        }
+        }.compact
       end
 
       def review_policy
