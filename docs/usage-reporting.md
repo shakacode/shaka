@@ -88,9 +88,10 @@ counter or the whole group, which the reader reports as no searches; a group tha
 present but unreadable, or a count that is not a non-negative whole number, stays
 UNKNOWN rather than being priced as though nothing was searched. A response recorded
 at fast speed is labelled apart from a standard one on the same model, so a report
-covering both still says which column is which. Server-side code execution is billed by container time against a
-monthly free allowance rather than per request, and is free alongside web search or
-fetch, so no per-response record prices it and none of these estimates include it. Anthropic publishes no context threshold, so no
+covering both still says which column is which. Server-side code execution is not priced here at all. Anthropic
+meters it by container time against a monthly allowance rather than per request, and
+waives it when the same request uses web search or fetch, so no per-response record
+establishes what it cost; none of these estimates include it. Anthropic publishes no context threshold, so no
 long-context multiplier applies. The
 cost table heads its column with the priced model, which for Claude Code is the routed
 model, because the configured model is UNKNOWN. Models outside the published rate table
