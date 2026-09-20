@@ -61,6 +61,11 @@ class GitHubWritingTest < Minitest::Test
     publishes_description(reviews(walkthrough_body, login: 'outsider'), viewer_response)
   end
 
+  # A later review quoting the title is not the walkthrough it quotes.
+  def test_a_review_that_only_quotes_the_walkthrough_title_is_not_the_sibling
+    publishes_description(reviews("#{IDENTITY}\n\nOn '# Code Walkthrough':\n\n#{COPIED}"))
+  end
+
   def publishes_description(*siblings)
     body = "#{SUMMARY}\n#{LINK}\n"
     merged = "<!-- shaka:begin -->\n#{body}<!-- shaka:end -->"

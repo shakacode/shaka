@@ -183,7 +183,8 @@ phases:
         It refuses literal escape sequences in prose, mismatched
         table rows, empty required content, and bodies GitHub does not render.
       - The helper compares each summary with its published sibling and refuses a `description` or
-        `walkthrough` that repeats more than five percent of its own eight-word prose runs, naming
+        `walkthrough` that repeats more than five percent of the shorter summary's eight-word prose
+        runs, whichever of the pair publishes second, naming
         the runs to re-resolve. Code, HTML, link targets, the helper's own identity line and
         headings, and a sibling that does not exist yet are not counted, and neither is prose in
         a script written without spaces. It also prints a reading grade, a diff-shaped opening sentence, hedging and

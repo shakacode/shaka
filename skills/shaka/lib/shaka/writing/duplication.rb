@@ -22,11 +22,14 @@ module Shaka
       end
 
       # An absent sibling is the ordinary first publication, never a failure.
+      # The shorter summary is the denominator, so one copied sentence reads the same
+      # whichever of the pair is published second.
       def check(label)
         return if @sibling.to_s.strip.empty?
 
-        shared = (mine & Prose.shingles(@sibling, SIZE)).to_a
-        ratio = shared.size.fdiv([mine.size, 1].max)
+        theirs = Prose.shingles(@sibling, SIZE)
+        shared = (mine & theirs).to_a
+        ratio = shared.size.fdiv([mine.size, theirs.size].min.clamp(1..))
         return if ratio <= THRESHOLD
 
         raise Error, message(label, ratio, shared)
@@ -37,9 +40,9 @@ module Shaka
       def mine = @mine ||= Prose.shingles(@text, SIZE)
 
       def message(label, ratio, shared)
-        "This #{label} repeats #{format('%.1f', ratio * 100)} percent of its own eight-word runs from the " \
-          "published sibling, above the #{(THRESHOLD * 100).to_i} percent limit; share the subject, never the " \
-          "sentences. Re-resolve #{quoted(shared)}."
+        "This #{label} repeats #{format('%.1f', ratio * 100)} percent of the shorter summary's eight-word " \
+          "runs from its published sibling, above the #{(THRESHOLD * 100).to_i} percent limit; share the subject, " \
+          "never the sentences. Re-resolve #{quoted(shared)}."
       end
 
       def quoted(shared)

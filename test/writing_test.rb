@@ -22,7 +22,14 @@ class WritingDuplicationTest < Minitest::Test
   def test_refusal_quotes_the_shared_runs_and_its_own_ratio
     error = assert_raises(Shaka::Error) { check(DESCRIPTION, WALKTHROUGH) }
     assert_includes error.message, 'rejects an unknown review mode before the workflow'
-    assert_match(/\d+\.\d percent of its own eight-word runs/, error.message)
+    assert_match(/\d+\.\d percent of the shorter summary's eight-word runs/, error.message)
+  end
+
+  # Whichever of the pair publishes second, one copied sentence reads the same.
+  def test_one_copied_sentence_is_refused_from_either_direction
+    long = "#{DESCRIPTION} #{'Unrelated wording carries this summary past two hundred separate runs. ' * 12}"
+    assert_raises(Shaka::Error) { check(long, WALKTHROUGH) }
+    assert_raises(Shaka::Error) { check(WALKTHROUGH, long, 'walkthrough') }
   end
 
   def test_the_named_surface_appears_in_the_refusal

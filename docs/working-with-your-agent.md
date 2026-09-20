@@ -391,8 +391,8 @@ published GitHub body. A consumer repository may install its own prose-rewriting
 skill for blogs or docs; `$shaka` does not invoke one.
 
 Part of this is machine-checked. The helper refuses a description or
-walkthrough that repeats more than five percent of its own eight-word prose runs
-from its published sibling, because copied sentences are a spec violation rather
+walkthrough that repeats more than five percent of the shorter summary's
+eight-word prose runs, because copied sentences are a spec violation rather
 than a matter of taste. The comparison reads the published sibling from GitHub, so
 dropping the walkthrough link does not excuse a description from it. Code, HTML,
 link targets, and the identity line and headings the helper itself renders are not
