@@ -116,6 +116,17 @@ class PublicationRegressionTest < Minitest::Test
     refute_includes rendered, '$0.758116 · $0.758116'
   end
 
+  # Break: a summary that already names one of two USD cells still gets the full
+  # list appended, so the header shows $1 twice for two scenarios.
+  def test_usage_and_cost_summary_appends_only_usd_cells_missing_from_the_header
+    body = "#{USAGE.fetch('body')}\n\n| Metric | a | b |\n| --- | --- | --- |\n| USD estimate | $1 | $2 |\n"
+    rendered = Shaka::Publication.description(
+      description_content('details' => [{ 'summary' => 'Usage and cost · $1', 'body' => body }])
+    )
+    assert_includes rendered, '<summary>Usage and cost · $1 · $2</summary>'
+    refute_includes rendered, '$1 · $1 · $2'
+  end
+
   # Break: appending a raw USD cell after summary_text lets markup close the disclosure.
   def test_usage_and_cost_summary_escapes_usd_cells
     body = "#{USAGE.fetch('body')}\n\n| Metric | x |\n| --- | --- |\n| USD estimate | </summary><h1> |\n"

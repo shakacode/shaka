@@ -46,9 +46,10 @@ module Shaka
       return summary unless summary.match?(/usage/i)
 
       totals = usd_estimate_cells(body).map { |cell| summary_text(cell, 'usage cost cell') }
-      return summary if totals.empty? || totals.all? { |cell| summary.include?(cell) }
+      missing = totals.reject { |cell| summary.include?(cell) }
+      return summary if missing.empty?
 
-      "#{summary} · #{totals.join(' · ')}"
+      "#{summary} · #{missing.join(' · ')}"
     end
 
     def usd_estimate_cells(body)
