@@ -40,6 +40,8 @@ module Shaka
       def hook_command?(command)
         token = command.split.first
         File.basename(token.to_s) == NAME
+      rescue ArgumentError
+        false
       end
     end
   end

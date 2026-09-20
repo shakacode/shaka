@@ -34,6 +34,11 @@ class CursorStopHookTest < Minitest::Test
     with_hooks('stop' => [{ 'command' => 'echo cursor-usage-hook' }]) { |path| refute installed?(path) }
   end
 
+  # Break: File.basename raises ArgumentError on a null byte, and that escapes installed?.
+  def test_a_null_byte_in_a_stop_command_is_not_installed
+    with_hooks('stop' => [{ 'command' => "\0cursor-usage-hook" }]) { |path| refute installed?(path) }
+  end
+
   private
 
   def installed?(path)
