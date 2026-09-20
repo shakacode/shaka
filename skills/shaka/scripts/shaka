@@ -8,6 +8,7 @@ require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/claim'
 require_relative '../lib/shaka/doctor'
+require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
@@ -59,6 +60,11 @@ if ARGV.first == 'workflow'
   exit Shaka::Workflow.run(ARGV)
 end
 
+if ARGV.first == 'enforcement'
+  ARGV.shift
+  exit Shaka::Enforcement.run(ARGV)
+end
+
 if ARGV.first == 'doctor'
   ARGV.shift
   exit Shaka::Doctor.run(ARGV)
@@ -94,7 +100,7 @@ def usage_banner
   ["Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; ",
    'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help',
    '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka seam check --help',
-   '; shaka workflow --help', '; shaka doctor --help'].join
+   '; shaka workflow --help', '; shaka enforcement --help', '; shaka doctor --help'].join
 end
 
 options = {}
