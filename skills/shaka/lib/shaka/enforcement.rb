@@ -20,6 +20,8 @@ module Shaka
             'describes the repository that ships this audit and nothing here confirms that ' \
             'setting is still active.'
     HEADER = "| Rule | Enforced by | What backs it |\n| --- | --- | --- |"
+    # Package-relative: the report is pasted into issues, and an absolute path names a machine.
+    SOURCE = 'skills/shaka/config/enforcement.yml'
 
     def self.run(arguments)
       new(arguments).run
@@ -64,7 +66,7 @@ module Shaka
         listed = rules.select { |rule| rule['phase'] == id }
         "## #{title}\n\n#{HEADER}\n#{listed.map { |rule| row(rule) }.join("\n")}" unless listed.empty?
       end
-      ['# Workflow rule enforcement', "Audit source: `#{EnforcementConfig::PATH}`",
+      ['# Workflow rule enforcement', "Audit source: `#{SOURCE}`",
        tally(rules), QUESTION, LEGEND, SCOPE, *sections].join("\n\n")
     end
 

@@ -227,6 +227,15 @@ class EnforcementCommandTest < Minitest::Test
     alone.each { |rule| assert_includes output, "| #{rule['rule'] || rule.fetch('quote')} | agent |" }
   end
 
+  # The report gets pasted into issues, so it must not carry the path of the machine that ran it.
+  def test_names_its_source_without_naming_this_machine
+    output, status = report
+
+    assert status.success?, output
+    assert_includes output, 'skills/shaka/config/enforcement.yml'
+    refute_includes output, File.expand_path('..', __dir__)
+  end
+
   def test_rejects_arguments
     output, status = Open3.capture2e(COMMAND, 'enforcement', 'candidate.yml')
 
