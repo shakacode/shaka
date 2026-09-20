@@ -27,27 +27,24 @@ Keep company strategy and private operational data out of product artifacts.
 
 ## Is the change worth carrying?
 
-For Shaka changes, evaluate value during planning when substantial complexity is
-proposed, and revisit it in the existing adversarial review when the diff grows.
-Name the observed problem, affected users or workflow, and evidence of frequency
-or impact; mark missing evidence as unknown. Compare that benefit with ongoing
-maintenance: dependencies, parsing, configuration, failure paths, compatibility,
-and tests. Line count is evidence, not a cutoff.
+For Shaka changes, use the existing [value checkpoint](docs/working-with-your-agent.md#say-what-the-work-is-worth)
+and respect settled maintainer scope. When planning proposes substantial complexity,
+or the implementation materially increases the expected cost, assess the tradeoff
+in that checkpoint or the existing adversarial review.
 
-Consider keeping current behavior, an instruction or workaround, a smaller fix,
-an existing library, or an optional extension. New kernel behavior should earn
-its maintenance cost through benefit to core delivery; evaluate customizable
-editorial preferences and speculative conveniences outside the kernel first.
-An issue, passing tests, or time already spent does not establish value.
-A smaller alternative should preserve demonstrated failure handling. Name any
-lost guarantees and the evidence that losing them is acceptable; fewer lines
-alone do not justify leaving failures, leaked resources, or weakened safeguards.
+Compare observed user or workflow benefit with ongoing maintenance: dependencies,
+parsing, configuration, failure paths, compatibility, and tests. Mark missing impact
+or frequency evidence as unknown; line count is evidence, not a cutoff. Consider a
+smaller fix, existing library, optional extension, or the checkpoint's cheaper alternatives.
+New kernel behavior should earn its maintenance cost through benefit to core delivery;
+evaluate customizable editorial preferences and speculative conveniences outside it first.
 
-Report a brief recommendation: proceed, simplify, evaluate first, or defer,
-with evidence and the smallest useful alternative. Treat uncertain value as a
-maintainer decision, separate from demonstrated defects; preserve necessary
-security and correctness fixes even when they require complexity. This is part
-of planning and review, not a numerical score or an additional approval gate.
+A smaller alternative should preserve demonstrated failure handling. Name any lost
+guarantees and evidence that losing them is acceptable; fewer lines alone do not justify
+leaving failures, leaked resources, or weakened safeguards. Report a brief recommendation
+(proceed, simplify, evaluate first, or defer), with evidence and the smallest useful
+alternative. Separate value observations from demonstrated defects. Surface changed
+assumptions for the maintainer's existing decision; add no score or approval gate.
 
 ## Structure
 

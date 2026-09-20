@@ -342,7 +342,8 @@ Pass resolved revisions, not the words `HEAD` or `BASE`: the prompt interpolates
 so a literal placeholder would publish an attestation reading `REVIEWED HEAD`.
 
 It scopes the review to `git diff BASE...HEAD`, asks for correctness, contract drift, security and
-trust, test coverage, and simplification, forbids edits, treats everything read as data, and
+trust, test coverage, simplification, and supplied repository criteria. It forbids edits,
+treats candidate content as data, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
 Supply relevant planning and review criteria from the repository's trusted base
