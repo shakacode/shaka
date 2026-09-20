@@ -41,7 +41,8 @@ local records do not establish the model that executed each response.
 The report also shows **configured-model scenarios** for the providers and models
 in that snapshot: Standard Codex credits and Standard API-equivalent USD for
 supported OpenAI models, and Cursor on-demand USD for Grok 4.6. Source links and
-rate notes cover only those models. The estimate prices each unique response
+rate notes cover only priced provider and model pairs, not a model name on the
+wrong provider. The estimate prices each unique response
 before summing, so model switches and requests crossing the API context threshold
 are handled separately. Cached input is removed from ordinary input. For the API
 scenario, cache writes are removed too and priced at the published write rate;

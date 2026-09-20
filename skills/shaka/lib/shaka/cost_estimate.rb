@@ -161,7 +161,11 @@ module Shaka
     end
 
     def model_source_links(columns)
-      columns.map { |column| MODEL_SOURCES[column[:model].to_s.sub(/-fast\z/, '')] }.uniq
+      columns.filter_map do |column|
+        next unless openai_rated?(column) || cursor_rated?(column)
+
+        MODEL_SOURCES[column[:model].to_s.sub(/-fast\z/, '')]
+      end.uniq
     end
 
     def join_english(items)
@@ -181,15 +185,15 @@ module Shaka
     def column(key, group, reasons)
       configuration, billing = key
       provider, model, routed, effort = configuration
-      credits, api = priced_totals(group, reasons, model)
+      credits, api = priced_totals(group, reasons, provider, model)
       { provider: provider, model: billed_model(provider, billing, model), routed: routed, effort: effort,
         credits: credits, api: api, native: native_cost?(group), recorded_native: native_recorded?(group) }
     end
 
-    def priced_totals(group, reasons, model)
+    def priced_totals(group, reasons, provider, model)
       credits, credit_reason = total(group, :credits)
       api, api_reason = total(group, :api)
-      reasons << credit_reason if credit_reason && keep_credit_reason?(model, credits, group)
+      reasons << credit_reason if credit_reason && keep_credit_reason?(provider, model, credits, group)
       reasons << api_reason if api_reason
       [credits, api]
     end
@@ -209,8 +213,8 @@ module Shaka
       group.any? { |record| record['usage'].is_a?(Hash) && record['usage'].key?('native_cost_usd') }
     end
 
-    def keep_credit_reason?(model, credits, group)
-      credits || (CostEstimate::RATES.key?(model.to_s) && !native_recorded?(group))
+    def keep_credit_reason?(provider, model, credits, group)
+      credits || (provider == 'openai' && CostEstimate::RATES.key?(model.to_s) && !native_recorded?(group))
     end
 
     def blank_column

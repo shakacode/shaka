@@ -133,6 +133,29 @@ class UsageCursorCostTest < Minitest::Test
     assert_includes report, 'Unsupported provider or configured model'
   end
 
+  def test_cursor_named_openai_model_omits_openai_source_links
+    record = { 'configuration' => %w[cursor gpt-5.6-terra cursor-terra medium],
+               'billing_mode' => 'standard',
+               'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 0,
+                            'cache_write_input_tokens' => 0, 'output_tokens' => 20 } }
+    report = Shaka::CostEstimate.new([record]).report
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    refute_includes report, 'developers.openai.com'
+    refute_includes report, 'learn.chatgpt.com'
+    refute_includes report, 'cursor.com'
+    refute_includes report, 'Cursor credit rates unpublished'
+  end
+
+  def test_anthropic_named_cursor_model_omits_cursor_source_links
+    record = { 'configuration' => %w[anthropic grok-4.6 claude-test high],
+               'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40,
+                            'cache_write_input_tokens' => 7, 'output_tokens' => 20 } }
+    report = Shaka::CostEstimate.new([record]).report
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    refute_includes report, 'cursor.com'
+    refute_includes report, 'developers.openai.com'
+  end
+
   def test_cursor_long_context_does_not_invent_a_threshold
     record = cursor_record(usage: { 'input_tokens' => 200_000, 'cached_input_tokens' => 0,
                                     'cache_write_input_tokens' => 0, 'output_tokens' => 0 })
