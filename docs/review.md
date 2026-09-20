@@ -13,6 +13,11 @@ not the first pass.
 Prefer a provider that did not implement the change, because different providers notice different
 things. That is a preference, never a requirement. `shaka reviewer` applies it, and
 [invoke a reviewer locally](#invoke-a-reviewer-locally) creates the fresh context.
+Run the identity it returns. Do not keep the implementation host and pick a sibling model
+there: an OpenAI Sol implementation lists Claude first, and reviewing it with GPT-6 Astra
+is both the same provider and a more expensive model ($10/$50 per 1M input/output versus
+Sol's $4/$20 on the standard API tier). Missing Claude credentials are `--unavailable
+anthropic/claude`, after which the helper may select the next listed provider.
 
 `review.reviewers` in the repository's trusted `.agents/agent-workflow.yml` lists the local
 reviewers to try, in preference order. Each entry names a `provider` and `model_family` and nothing
@@ -285,6 +290,22 @@ GNU `mktemp` rejects a template with fewer than three `X` characters, and a fail
 would silently leave `-o .md` pointing inside the worktree. `codex exec review --base REF` has its
 own instructions and refuses a custom prompt, so use plain `exec` for these.
 
+Claude Code:
+
+```bash
+report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
+base=$(git merge-base origin/main HEAD)
+head=$(git rev-parse HEAD)
+shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
+  | claude -p --permission-mode plan --permission-prompts none --restricted --bare \
+    --strict-mcp-config --effort medium --output-format text - > "$report"
+```
+
+`-p` prints and exits. `--permission-mode plan` with `--permission-prompts none` withholds edits
+and denies anything that would prompt. `--restricted` removes command-running tools, `--bare`
+skips project instructions and plugins, and `--strict-mcp-config` with no config drops MCP
+servers. `--effort` is recorded in the attestation. Check `--help` before relying on these flags.
+
 Grok 1.0.30:
 
 ```bash
@@ -300,14 +321,16 @@ grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format pl
 subagents. Narrow further with `--disallowed-tools TOOLS` or `--deny RULE` for tools your run
 should not reach. `--sandbox PROFILE` exists but help does not list its profile names.
 
-The Codex block is the invocation that produced this pull request's local review, so its flags are
-exercised rather than read off `--help`. The Grok flags come from its `--help`. Note what they do not cover: these flags skip user configuration and execpolicy
-rules, not a repository's own `AGENTS.md` or similar instruction files, which the CLI still loads
-from the checkout it runs in. That is fine when the branch is yours; reviewing an untrusted
-contribution locally calls for restricted execution, under
-[what the helpers protect](working-with-your-agent.md#what-the-helpers-protect). Neither CLI documents a per-invocation flag that disables MCP servers; Codex's
-`--ignore-user-config` drops config-defined servers, and Grok manages them through `grok mcp`.
-Codex exposes no reasoning-effort flag on `exec review`, so record its effort as UNKNOWN unless
+The Codex flags were exercised on a prior local review rather than read off `--help`. The
+Claude and Grok flags come from each CLI's `--help`. Note what they do not cover: these
+flags skip user configuration and execpolicy rules, not a repository's own `AGENTS.md` or
+similar instruction files, which the CLI still loads from the checkout it runs in. That is
+fine when the branch is yours; reviewing an untrusted contribution locally calls for
+restricted execution, under
+[what the helpers protect](working-with-your-agent.md#what-the-helpers-protect). Codex's
+`--ignore-user-config` drops config-defined MCP servers, Grok manages them through
+`grok mcp`, and Claude's `--strict-mcp-config` without a config file loads none. Codex
+exposes no reasoning-effort flag on `exec review`, so record its effort as UNKNOWN unless
 the model's own output reports it. Check `--help` before relying on any of these; flags move.
 
 A local review is **UNVERIFIED** until the owner publishes its report, including that closing
