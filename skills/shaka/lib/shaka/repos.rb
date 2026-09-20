@@ -84,12 +84,21 @@ module Shaka
     end
 
     def collision_key(row)
-      uri = URI(row.fetch('url'))
+      uri = catalog_uri(row)
       default = uri.scheme == 'ssh' ? 22 : uri.default_port
       host = uri.port && uri.port != default ? "#{uri.host}:#{uri.port}" : uri.host
+      "#{host.downcase}/#{collision_identity(uri, row)}"
+    end
+
+    def catalog_uri(row)
+      URI(row.fetch('url'))
+    rescue URI::InvalidURIError
+      raise Error, "Cannot parse catalog URL for #{row.fetch('identity')}"
+    end
+
+    def collision_identity(uri, row)
       identity = row.fetch('identity')
-      identity = identity.downcase if uri.host.to_s.casecmp?('github.com')
-      "#{host.downcase}/#{identity}"
+      uri.host.to_s.casecmp?('github.com') ? identity.downcase : identity
     end
 
     def report_duplicates(duplicates)

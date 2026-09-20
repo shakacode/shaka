@@ -43,8 +43,12 @@ class GitOriginTest < Minitest::Test
     assert_equal 'acme/repo', Shaka::GitOrigin.identity('ssh://git@ghe.example:2222/acme/repo.git')
   end
 
-  def test_identity_from_scp_url
-    assert_equal 'acme/agent-workflows', Shaka::GitOrigin.identity('git@github.com:acme/agent-workflows.git')
+  def test_identity_from_scp_url_without_a_username
+    assert_equal 'acme/repo', Shaka::GitOrigin.identity('ghe.example:acme/repo.git')
+    assert_equal 'ssh://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('ghe.example:acme/repo.git')
+    assert_equal 'https://github.com/acme/repo',
+                 Shaka::GitOrigin.canonical_url('github.com:acme/repo.git')
   end
 
   def test_canonical_url_discards_query_and_fragment
@@ -91,5 +95,13 @@ class GitOriginTest < Minitest::Test
 
     assert_includes error.message, 'ghe.example:group/sub/repo.git'
     refute_includes error.message, 'TOKEN'
+  end
+
+  def test_identity_rejects_an_invalid_percent_escape
+    error = assert_raises(Shaka::Error) do
+      Shaka::GitOrigin.identity('https://ghe.example/acme/repo%ZZ.git')
+    end
+
+    assert_includes error.message, 'ghe.example'
   end
 end

@@ -269,4 +269,17 @@ class ReposCatalogOriginTest < Minitest::Test
       assert_empty catalog.fetch('duplicate_prefixes')
     end
   end
+
+  def test_refresh_skips_an_origin_with_an_invalid_percent_escape
+    with_home do |home|
+      kept = registered_repository(home, name: 'alpha', prefix: 'ALP')
+      broken = registered_repository(home, name: 'broken', prefix: 'BRK',
+                                           origin: 'https://ghe.example/acme/repo%ZZ.git')
+      catalog, error, status = refresh_result(home)
+
+      refute_predicate status, :success?
+      assert_includes error, broken
+      assert_equal [expected_row('alpha', kept, prefix: 'ALP', source: 'seam')], catalog.fetch('repositories')
+    end
+  end
 end
