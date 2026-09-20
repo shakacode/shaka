@@ -2,6 +2,11 @@
 
 Give your agent a task. Get a verified PR and a clear explanation.
 
+Shaka is the early `0.0.x` successor to [`shakacode/agent-workflows`](https://github.com/shakacode/agent-workflows).
+It is not “Shaka V2.” Seam YAML `version: 1` is the typed-contract version;
+the published gem identifier `0.1.0.pre.1` only reserves the RubyGems name.
+Install from this repository, not from the predecessor pack.
+
 ```text
 $shaka Fix the failing search test
 ```
@@ -45,7 +50,8 @@ Existing authority is reused; a review-only or PR-only request keeps that stoppi
 | Understand review findings or a blocked PR | [Review handling](docs/review.md) |
 | Evaluate code, UI, or documentation changes | [Verification and reader trials](docs/verification.md) |
 | Understand model, effort, and token reports | [Usage reporting](docs/usage-reporting.md) |
-| Track V2 test repositories and migrate a V1 seam | [V2 test fleet](docs/fleet.md) |
+| Track test repositories and migrate a predecessor seam | [Test fleet](docs/fleet.md) |
+| Follow predecessor retirement | [Retirement](docs/retirement.md) |
 | Check supported hosts and their limits | [Host support](docs/host-support.md) |
 | Upgrade or remove an installation | [Installation maintenance](docs/getting-started.md#upgrade) |
 | Publish a RubyGems prerelease | [Release process](docs/releasing.md) |

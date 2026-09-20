@@ -7,7 +7,7 @@ require_relative 'github_login'
 
 module Shaka
   module PublicComments
-    # Parses the compatible V1 YAML fields as data, with strict pilot bounds.
+    # Parses the compatible predecessor YAML fields as data, with strict pilot bounds.
     class TrustSettings
       LOGIN = GitHubLogin::PATTERN
       TEAM_SLUG = /\A[A-Za-z0-9](?:[A-Za-z0-9_-]{0,99})\z/

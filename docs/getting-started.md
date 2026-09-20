@@ -1,6 +1,10 @@
 # Install and complete your first task
 
 Shaka guides an agent from a task description to a tested, reviewed GitHub PR.
+It is the early `0.0.x` successor to `shakacode/agent-workflows`; clone this
+repository and follow the host recipes below. Do not install the predecessor pack
+or create a legacy seam in order to start.
+
 Start with a small change in a repository you trust, such as fixing a search test
 or correcting a broken link in a documentation site.
 
@@ -280,8 +284,9 @@ Start a fresh task after upgrading. `--with-rct` is for the Codex app's native t
 and project tools; Claude Code desktop uses `--with-claude-towers` instead. Omit both
 for a terminal install and pass your dedicated skills
 directory instead; for Claude Code, pass `$HOME/.claude/skills`; for Cursor, pass
-`$HOME/.cursor/skills`; for OpenCode, pass `$HOME/.config/opencode/skills`. Earlier installs used `agent-workflows-v2` or
-`shakacode-workflows` source directories: keep that location and use it above.
+`$HOME/.cursor/skills`; for OpenCode, pass `$HOME/.config/opencode/skills`. Historical predecessor
+checkouts used `agent-workflows-v2` or `shakacode-workflows` directory names: keep that location
+and use it as `shaka_source` above. Those names are not a current installer.
 Inspect old `sw` and `aw` symlinks and unlink only those belonging to this installation.
 Replace any old `sw/scripts` shell `PATH` entry with the `shaka/scripts` path above.
 

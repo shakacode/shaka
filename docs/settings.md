@@ -103,7 +103,7 @@ swift to thorough; a candidate YAML cannot lower a thorough trusted seam to swif
 authoritative for the native check list; the seam remains authoritative for Shaka's review choice.
 
 Repositories that use an action allowlist as input to a real security scanner should keep it
-in that scanner's supported policy file. Shaka V2 has no such consumer, so it does not accept
+in that scanner's supported policy file. Shaka has no such consumer, so it does not accept
 an inert `trusted_actions` field.
 
 ### When `version` changes

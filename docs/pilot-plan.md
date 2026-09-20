@@ -145,10 +145,13 @@ accepted changes; describe its uncertainty before making savings claims.
 
 Public source publication and reviewed, verified implementation PR merges are
 authorized. Runtime prerequisites are Ruby 3.4, Git, authenticated GitHub CLI,
-and GitHub PRs. The `0.1.0.pre.1` RubyGems prerelease reserves the project name;
-future registry releases and broader adoption require separate evidence and decisions.
+and GitHub PRs. Shaka's public product stage is `0.0.x`. The `0.1.0.pre.1` RubyGems
+prerelease only reserves the project name; stay on `0.1.0.pre.N` until a later
+approved release. Future registry releases and broader adoption require separate
+evidence and decisions.
 [Packaging](packaging.md) describes the tested gem.
-Prospective features and retirement choices are recorded in this plan; website work lives
+Prospective features and retirement choices are recorded in this plan and in
+[predecessor retirement](retirement.md); website work lives
 in its own repository and consumes these guides. No fleet coordination, policy engine,
 telemetry service, tracker synchronization, or release automation is part of this kernel.
 
@@ -159,7 +162,7 @@ existing master; it adds no coordination service or multi-repository owner. The
 `/mct-claude` and `/rct-claude` skills establish the same two roles on Claude Code
 desktop under the same limits, deriving the tower set from the host's live session list rather than
 from any new file, database, or scheduler. Each delivery
-retains one owner and the same repository gates. This does not restore V1 fleet
+retains one owner and the same repository gates. This does not restore predecessor fleet
 machinery; claim adoption only after a real tower-to-delivery trial.
 
 Rollback: remove the verified skill link or select a prior trusted source revision

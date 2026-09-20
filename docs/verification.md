@@ -5,7 +5,7 @@
 A useful PR proves the behavior and shows what changed. The agent uses the fixed
 `.agents/bin/test` and `.agents/bin/validate` entry points, plus app startup instructions
 and browser tools where needed. Keep executable routing in those scripts and human-only
-test context in `AGENTS.md`; V2 does not introduce a test framework or require a
+test context in `AGENTS.md`; Shaka does not introduce a test framework or require a
 particular screenshot service.
 
 ## Change one behavior at a time

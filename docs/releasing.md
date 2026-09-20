@@ -1,7 +1,10 @@
 # Releasing the Gem
 
 Shaka uses a small, explicit RubyGems release flow adapted from
-`shakacode/control-plane-flow`. A release starts from an approved version on `main`,
+`shakacode/control-plane-flow`. Public product stage is `0.0.x`; the gem identifier
+stays on `0.1.0.pre.N` because `0.1.0.pre.1` is already published. Do not publish a
+`0.0.x` gem: RubyGems would still treat `0.1.0.pre.1` as newer for `--pre` installs.
+A release starts from an approved version on `main`,
 validates the packaged artifact, tags the exact source commit, publishes the gem, and
 creates the matching GitHub release. Registry publication requires explicit maintainer
 approval because a published version cannot be replaced.
