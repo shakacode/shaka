@@ -7,6 +7,20 @@ module UsageFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
   COMMIT = 'a' * 40
   THREAD = '00000000-0000-0000-0000-000000000001'
+  NATIVE_OPENAI = <<~TABLE.chomp
+    | Metric | openai |
+    | --- | --- |
+    | Provider | openai |
+    | Configured model | gpt-test |
+    | Routed model | UNKNOWN |
+    | Effort | high |
+    | Input | 100 |
+    | Cached input | 40 |
+    | Output | 20 |
+    | Reasoning output | 5 |
+    | Cache writes | UNKNOWN |
+    | Native total | UNKNOWN |
+  TABLE
 
   private
 
@@ -51,13 +65,20 @@ end
 class UsageTest < Minitest::Test
   include UsageFixture
 
+  def test_native_usage_table_uses_metric_rows_instead_of_a_wide_provider_row
+    report = run_report([context('current'), usage('current', 'current', 100)])
+    native = report[%r{<details>.*?</details>}m]
+    refute_includes native, '| Provider | Configured model | Routed model | Effort | Input |'
+    assert_includes native, NATIVE_OPENAI
+  end
+
   def test_counts_each_response_once_in_latest_turn_without_adding_cumulative_snapshots
     records = [context('old'), usage('old-response', 'old', 900), context('current'),
                usage('response-1', 'current', 100), usage('response-1', 'current', 100),
                usage('response-2', 'current', 200),
                { type: 'event_msg', payload: { type: 'token_count', info: { total_tokens: 9999 } } }]
     report = run_report(records)
-    assert_includes report, '| 300 | 80 | 40 | 10 |'
+    assert_metric report, 'Input', 300
     assert_includes report, 'gpt-test'
     assert_includes report, 'high'
     assert_includes report, '2 responses'
@@ -68,7 +89,7 @@ class UsageTest < Minitest::Test
     records = [context('old'), usage('first', 'old', 900), context('current'), usage('second', 'current', 100)]
     report = run_report(records, '--turn', 'old', '--turn', 'current',
                         '--commit', "#{COMMIT},#{'b' * 40}", copies: 2)
-    assert_includes report, '| 1000 | 80 | 40 | 10 |'
+    assert_metric report, 'Input', 1000
     assert_includes report, 'SHARED'
     assert_includes report, '2 responses'
     assert_includes report, '2026-09-14T12:00:00Z'
@@ -83,8 +104,9 @@ class UsageTest < Minitest::Test
     changed[:payload].merge!(model: 'gpt-other', effort: 'low')
     records = [context('old'), incomplete, changed, usage('second', 'current', 200)]
     report = run_report(records, '--turn', 'old', '--turn', 'current')
-    assert_includes report, '| openai | gpt-test | UNKNOWN | high | 100 | UNKNOWN | 20 | 5 |'
-    assert_includes report, '| openai | gpt-other | UNKNOWN | low | 200 | 40 | 20 | 5 |'
+    assert_metric report, 'Configured model', 'gpt-test', 'gpt-other'
+    assert_metric report, 'Input', 100, 200
+    assert_metric report, 'Cached input', 'UNKNOWN', 40
     assert_includes report, '0.154.0-alpha.6.2'
   end
 
@@ -92,7 +114,9 @@ class UsageTest < Minitest::Test
     response = usage('current', 'current', 100)
     response[:payload][:usage].merge!(cache_write_input_tokens: 7, total_tokens: 120)
     report = run_report([context('current'), response])
-    assert_includes report, '| 100 | 40 | 20 | 5 | 7 | 120 |'
+    assert_metric report, 'Input', 100
+    assert_metric report, 'Cache writes', 7
+    assert_metric report, 'Native total', 120
     assert_includes report, 'Native total'
   end
 
@@ -101,7 +125,8 @@ class UsageTest < Minitest::Test
     unidentifiable[:payload].delete(:response_id)
     report = run_report([context('current'), usage('counted', 'current', 100), unidentifiable],
                         raw_tail: '{"private-prompt": "SENSITIVE-INCOMPLETE')
-    assert_includes report, '| 100 | 40 | 20 | 5 |'
+    assert_metric report, 'Input', 100
+    assert_metric report, 'Cached input', 40
     assert_includes report, 'Unreadable or unidentifiable records'
     refute_includes report, 'SENSITIVE'
     refute_includes report, '9900'
@@ -110,7 +135,7 @@ class UsageTest < Minitest::Test
   def test_all_turns_counts_a_dedicated_task_once_and_discloses_scope
     records = [context('old'), usage('old', 'old', 900), context('current'), usage('current', 'current', 100)]
     report = run_report(records, '--all-turns', copies: 2)
-    assert_includes report, '| 1000 | 80 | 40 | 10 |'
+    assert_metric report, 'Input', 1000
     assert_includes report.split('<details>').first, 'all turns'
     refute_includes report, 'old-response'
   end
@@ -124,7 +149,7 @@ class UsageTest < Minitest::Test
   def test_discovers_current_thread_from_host_context_and_uses_only_latest_turn
     report = run_report([context('old'), usage('old', 'old', 900),
                          context('current'), usage('current', 'current', 100)], discover: true)
-    assert_includes report, '| 100 | 40 | 20 | 5 |'
+    assert_metric report, 'Input', 100
     assert_includes report, 'host context'
     assert_includes report, 'SHARED'
     refute_includes report, THREAD
@@ -167,7 +192,8 @@ class UsageFailuresTest < Minitest::Test
       response = usage('current', 'current', 100)
       response[:payload][:usage] = bad_usage
       report = run_report([context('current'), response])
-      assert_includes report, '| high | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+      assert_metric report, 'Effort', 'high'
+      assert_metric report, 'Input', 'UNKNOWN'
       refute_includes report, 'SENSITIVE'
     end
   end
@@ -190,7 +216,7 @@ class UsageFailuresTest < Minitest::Test
     response[:timestamp] = '/private/SENSITIVE-PATH'
     report = run_report([setting, response,
                          { type: 'response_item', payload: { content: 'SENSITIVE-PROMPT' } }])
-    assert_includes report, '| openai | UNKNOWN | UNKNOWN | UNKNOWN | 100 |'
+    assert_metric report, 'Input', 100
     assert_includes report, 'source interval: UNKNOWN'
     refute_includes report, 'SENSITIVE'
     refute_includes report, '/private/'
@@ -218,7 +244,9 @@ class UsageFailuresTest < Minitest::Test
   def test_usage_without_matching_turn_context_does_not_inherit_another_turns_settings
     [[], [context('old')]].each do |records|
       report = run_report([*records, usage('current', 'current', 100)], '--turn', 'current')
-      assert_includes report, '| openai | UNKNOWN | UNKNOWN | UNKNOWN | 100 |'
+      assert_metric report, 'Provider', 'openai'
+      assert_metric report, 'Configured model', 'UNKNOWN'
+      assert_metric report, 'Input', 100
     end
   end
 

@@ -32,7 +32,8 @@ does not establish which agent performed every response.
 
 The Markdown contains the affected commits, contribution, observed response
 interval, source version, configured provider/model/effort, and native token
-categories. Cached input and reasoning output are subsets of input and output
+categories. Those fields appear as metric rows with one column per configuration
+so GitHub does not force horizontal scrolling. Cached input and reasoning output are subsets of input and output
 in the tested Codex records; do not add them again. Cache writes and the native
 total remain separate fields. Routed model stays UNKNOWN because these tested
 local records do not establish the model that executed each response.
@@ -56,7 +57,8 @@ turn together with the subagents started during it. Claude Code writes several l
 for one streamed response; the reader counts the last line, which carries the final
 usage, once.
 
-Rows report provider `anthropic`, the response's model as the routed model, the
+The native usage table lists metrics as rows and each configuration as a column.
+It reports provider `anthropic`, the response's model as the routed model, the
 recorded effort setting, and native token categories. Unlike Codex, Anthropic input
 excludes cache reads and cache writes, so the three are separate amounts; reasoning
 output is part of output. The configured model and native total stay UNKNOWN because
@@ -78,7 +80,7 @@ zero even when the host reports tokens on hooks.
 Cursor writes usable counters on `stop` and `afterAgentResponse` hook payloads. The
 installed `cursor-usage-hook` persists only the `stop` payload's allowlisted usage
 fields. Input includes cache reads and cache writes; the three remain separate
-columns as in Codex. Reasoning output and native total stay UNKNOWN. A turn is a
+metric rows as in Codex. Reasoning output and native total stay UNKNOWN. A turn is a
 `generation_id`. The default selects that source's latest generation. `stop` and
 `afterAgentResponse` for the same generation are one response. Subagent tokens are
 absent from these parent-agent events.

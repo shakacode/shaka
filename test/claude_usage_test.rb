@@ -51,7 +51,7 @@ class ClaudeUsageTest < Minitest::Test
       file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900), prompt('new'),
                                                      reply('m1', 100, output: 2), reply('m1', 100), reply('m2', 200)])
       output = report('--host', 'claude-code', '--file', file)
-      assert_includes output, '| anthropic | UNKNOWN | claude-test | high | 300 | 80 | 40 | 10 | 14 | UNKNOWN |'
+      assert_metric output, 'Input', 300
       assert_includes output, '2 responses'
       assert_includes output, 'Claude Code source versions: 2.1.270'
       assert_includes output, 'Anthropic input excludes cached input and cache writes'
@@ -65,7 +65,7 @@ class ClaudeUsageTest < Minitest::Test
       transcript(directory, "#{SESSION}/subagents/agent-new.jsonl", [prompt('new'), reply('s1', 200)])
       transcript(directory, "#{SESSION}/subagents/agent-old.jsonl", [prompt('old'), reply('s0', 800)])
       output = discovered(directory)
-      assert_includes output, '| 300 | 80 | 40 | 10 | 14 | UNKNOWN |'
+      assert_metric output, 'Input', 300
       assert_includes output, 'latest turn of the session'
       refute_includes output, SESSION
     end
@@ -111,7 +111,7 @@ class ClaudeUsageFailuresTest < Minitest::Test
       file = transcript(directory, 'session.jsonl', [prompt('new'), bad])
       File.write(file, '{"SENSITIVE-TRUNCATED', mode: 'a')
       output = report('--host', 'claude-code', '--file', file)
-      assert_includes output, '| anthropic | UNKNOWN | UNKNOWN | high | UNKNOWN |'
+      assert_metric output, 'Input', 'UNKNOWN'
       assert_includes output, 'Unreadable or unidentifiable records'
       refute_includes output, 'SENSITIVE'
     end

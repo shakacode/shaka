@@ -16,7 +16,48 @@ module CursorUsageFixture
   THIRD = '00000000-0000-4000-8000-000000000003'
   CLEAR = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil,
             'CURSOR_CONVERSATION_ID' => nil }.freeze
-  ROW = '| cursor | grok-4.6 | cursor-grok-4.6-medium | medium | 100 | 40 | 20 | UNKNOWN | 7 | UNKNOWN |'
+  ROW = <<~ROW.chomp
+    | Metric | cursor |
+    | --- | --- |
+    | Provider | cursor |
+    | Configured model | grok-4.6 |
+    | Routed model | cursor-grok-4.6-medium |
+    | Effort | medium |
+    | Input | 100 |
+    | Cached input | 40 |
+    | Output | 20 |
+    | Reasoning output | UNKNOWN |
+    | Cache writes | 7 |
+    | Native total | UNKNOWN |
+  ROW
+  EMPTY_ROW = <<~ROW.chomp
+    | Metric | cursor |
+    | --- | --- |
+    | Provider | cursor |
+    | Configured model | UNKNOWN |
+    | Routed model | UNKNOWN |
+    | Effort | UNKNOWN |
+    | Input | UNKNOWN |
+    | Cached input | UNKNOWN |
+    | Output | UNKNOWN |
+    | Reasoning output | UNKNOWN |
+    | Cache writes | UNKNOWN |
+    | Native total | UNKNOWN |
+  ROW
+  CONTEXT_ROW = <<~ROW.chomp
+    | Metric | cursor |
+    | --- | --- |
+    | Provider | cursor |
+    | Configured model | grok-4.6 |
+    | Routed model | cursor-grok-4.6-medium |
+    | Effort | medium |
+    | Input | UNKNOWN |
+    | Cached input | UNKNOWN |
+    | Output | UNKNOWN |
+    | Reasoning output | UNKNOWN |
+    | Cache writes | UNKNOWN |
+    | Native total | UNKNOWN |
+  ROW
 
   private
 
@@ -86,7 +127,9 @@ class CursorUsageTest < Minitest::Test
       write_records(directory, [stored(OLD, 900), stored(NEW, 100)])
       env = { 'CURSOR_CONVERSATION_ID' => SESSION, 'CURSOR_USAGE_DIR' => directory }
       discovered = report(environment: env)
-      assert_includes discovered, '| 100 | 40 | 20 | UNKNOWN | 7 | UNKNOWN |'
+      assert_metric discovered, 'Input', 100
+      assert_metric discovered, 'Cached input', 40
+      assert_metric discovered, 'Cache writes', 7
       refute_includes discovered, SESSION
     end
   end
@@ -104,7 +147,9 @@ class CursorUsageTest < Minitest::Test
       first = write_records(directory, [stored(OLD, 900), stored(NEW, 100)])
       second = write_records(directory, [stored(THIRD, 200)], name: "#{OTHER}.jsonl")
       output = report('--host', 'cursor', '--file', first, '--file', second)
-      assert_includes output, '| 300 | 80 | 40 | UNKNOWN | 14 | UNKNOWN |'
+      assert_metric output, 'Input', 300
+      assert_metric output, 'Cached input', 80
+      assert_metric output, 'Cache writes', 14
       refute_includes output, '| 900 |'
     end
   end
@@ -141,7 +186,7 @@ class CursorUsageFailuresTest < Minitest::Test
       file = write_records(directory, [payload('33333333-3333-4333-8333-333333333333', 9900, event: 'preToolUse'),
                                        incomplete])
       output = report('--host', 'cursor', '--file', file)
-      assert_includes output, '| medium | 100 | UNKNOWN | 20 | UNKNOWN | 7 | UNKNOWN |'
+      assert_metric output, 'Cached input', 'UNKNOWN'
       refute_includes output, '9900'
     end
   end
@@ -149,8 +194,7 @@ class CursorUsageFailuresTest < Minitest::Test
   def test_discovery_ignores_another_conversation
     Dir.mktmpdir do |directory|
       write_records(directory, [stored(NEW, 100)], name: "#{OTHER}.jsonl")
-      row = '| cursor | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
-      assert_cursor_unavailable(empty_cursor_report(directory), row)
+      assert_cursor_unavailable(empty_cursor_report(directory), EMPTY_ROW)
     end
   end
 
@@ -158,10 +202,8 @@ class CursorUsageFailuresTest < Minitest::Test
     Dir.mktmpdir do |directory|
       extra = { 'CURSOR_MODEL_ID' => 'grok-4.6', 'CURSOR_MODEL' => 'cursor-grok-4.6-medium',
                 'CURSOR_MODEL_EFFORT' => 'medium' }
-      row = '| cursor | grok-4.6 | cursor-grok-4.6-medium | medium | UNKNOWN | UNKNOWN | UNKNOWN | ' \
-            'UNKNOWN | UNKNOWN | UNKNOWN |'
       output = empty_cursor_report(directory, extra)
-      assert_cursor_unavailable(output, row)
+      assert_cursor_unavailable(output, CONTEXT_ROW)
       refute_includes output, '| 100 |'
     end
   end

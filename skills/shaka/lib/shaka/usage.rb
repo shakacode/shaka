@@ -14,16 +14,52 @@ module Shaka
     private
 
     def rows
-      grouped = @responses.group_by { |record| record['configuration'] }
-      grouped = { context_row => [] } if grouped.empty? && context_row
-      grouped.map do |configuration, group|
-        "| #{(configuration.map { |value| safe(value) } + totals(group)).join(' | ')} |"
-      end.join("\n")
+      groups = table_groups
+      return "| Metric |\n| --- |" if groups.empty?
+
+      headers = column_headers(groups.keys)
+      lines = [line(['Metric', *headers]), line(['---'] * (headers.size + 1))]
+      metric_cells(groups).each { |label, values| lines << line([label, *values]) }
+      lines.join("\n")
     end
 
-    def totals(group)
-      Usage::FIELDS.map { |field| total_field(group, field) }
+    def table_groups
+      grouped = @responses.group_by { |record| record['configuration'] }
+      grouped.empty? && context_row ? { context_row => [] } : grouped
     end
+
+    def column_headers(configurations)
+      labeled = configurations.map { |configuration| configuration.map { |value| safe(value) } }
+      unique_labels(labeled) || sequence_labels(labeled)
+    end
+
+    def unique_labels(labeled)
+      label_candidates(labeled).find { |names| names.uniq.size == names.size }
+    end
+
+    def label_candidates(labeled)
+      [0, 1].map { |index| labeled.map { |cells| cells[index] } } +
+        [[0, 1], [0, 1, 3]].map { |indexes| join_cells(labeled, indexes) }
+    end
+
+    def join_cells(labeled, indexes)
+      labeled.map { |cells| indexes.map { |index| cells[index] }.join(' ') }
+    end
+
+    def sequence_labels(labeled)
+      labeled.map.with_index { |cells, index| "#{cells[0]}-#{index + 1}" }
+    end
+
+    def metric_cells(groups)
+      configs = groups.keys.map { |configuration| configuration.map { |value| safe(value) } }
+      settings = Usage::SETTING_LABELS.zip(configs.transpose)
+      tokens = Usage::METRIC_FIELDS.map do |label, field|
+        [label, groups.values.map { |group| total_field(group, field) }]
+      end
+      settings + tokens
+    end
+
+    def line(cells) = "| #{cells.join(' | ')} |"
 
     def total_field(group, field)
       values = group.map { |record| record['usage'].is_a?(Hash) ? record['usage'][field] : nil }
@@ -51,8 +87,15 @@ module Shaka
   class Usage
     include UsageTable
 
-    FIELDS = %w[input_tokens cached_input_tokens output_tokens reasoning_output_tokens
-                cache_write_input_tokens total_tokens].freeze
+    SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
+    METRIC_FIELDS = [
+      ['Input', 'input_tokens'],
+      ['Cached input', 'cached_input_tokens'],
+      ['Output', 'output_tokens'],
+      ['Reasoning output', 'reasoning_output_tokens'],
+      ['Cache writes', 'cache_write_input_tokens'],
+      ['Native total', 'total_tokens']
+    ].freeze
     READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage, 'cursor' => CursorUsage,
                 'opencode' => OpencodeUsage, 'pi' => PiUsage }.freeze
     HOST_CONTEXT = { 'codex' => 'CODEX_THREAD_ID', 'claude-code' => 'CLAUDE_CODE_SESSION_ID',
@@ -129,8 +172,6 @@ module Shaka
         #{@source.class::HOST} source versions: #{versions}.
         #{@source.class::NOTE}
 
-        | Provider | Configured model | Routed model | Effort | Input | Cached input | Output | Reasoning output | Cache writes | Native total |
-        | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
         #{rows}
 
         </details>
