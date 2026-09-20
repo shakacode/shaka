@@ -81,6 +81,6 @@ people and agents. Keep shared rules in one place and follow the procedure's ref
 In Claude Code, send `/shaka`. In Cursor, install into `~/.cursor/skills` and
 confirm `/shaka` in a new chat. In OpenCode, install into `~/.config/opencode/skills`
 and send `/shaka` in a new session. Codex is the first reference host;
-[Claude Code, Cursor, and OpenCode consumer delivery remain unverified](docs/host-support.md). Public pilot: [progress](https://github.com/shakacode/shaka/issues/77).
+[Claude Code has one verified consumer delivery; Cursor and OpenCode remain unverified](docs/host-support.md). Public pilot: [progress](https://github.com/shakacode/shaka/issues/77).
 
 [MIT licensed](LICENSE). Copyright © 2026 ShakaCode.

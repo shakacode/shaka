@@ -4,9 +4,9 @@ Codex CLI is the reference host for this pilot and Claude Code the second host.
 OpenCode is the third host: its canonical install path, TUI launcher, and
 export-based usage reader are implemented. Pi runs the same Agent Skill and has a
 native persistent-session usage reader. Follow the [getting-started guide](getting-started.md)
-for installation and your first task. Neither Claude Code, Cursor, nor OpenCode
-has a verified complete V2 consumer delivery yet; this reader task is the first
-recorded Pi delivery trial, not broad Pi adoption evidence.
+for installation and your first task. Claude Code has one verified consumer
+delivery, recorded below. Neither Cursor nor OpenCode has one yet; this reader
+task is the first recorded Pi delivery trial, not broad Pi adoption evidence.
 
 The hosts share one `shaka` skill and the same Ruby helpers for GitHub
 operations. Control tower skills are host-specific because they drive native task
@@ -29,7 +29,7 @@ establish complete usage attribution.
 | --- | --- | --- | --- | --- | --- |
 | Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. | Shared Agent Skill loaded from a trusted external source; no Pi-specific copy or launcher. |
 | OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. | The user's Pi tool permissions apply; no separate boundary was probed. |
-| Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | Consumer delivery unverified. | Consumer delivery unverified. | Consumer delivery unverified. | This usage-reader implementation is the first recorded delivery trial; broader consumer evidence remains pending. |
+| Real workflow | Protected PR operations exercised in V2. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | One consumer PR delivered end to end on September 17, 2026: agent-workflows-com#62, branch through TDD, seam validation, five review rounds, helper-published description and walkthrough, helper merge in Ask mode. | Consumer delivery unverified. | Consumer delivery unverified. | This usage-reader implementation is the first recorded delivery trial; broader consumer evidence remains pending. |
 | Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader works against captured desktop `3.20.21` `grok-4.6` payloads, but has not produced records in a real delivery ([#111](https://github.com/shakacode/shaka/pull/111)); transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. | Reader matched an independent aggregate of selected active-branch responses, including reasoning and native nominal cost; abandoned branches were excluded. Compaction, branch-summary, and tool-nested model usage remain excluded. |
 
 The Codex write test establishes that particular local boundary. It does not
@@ -87,8 +87,28 @@ Claude Code runs a personal skill instead of a same-named skill in a repository'
 document; the September 15 trial confirmed this with a canary repository copy.
 There is no `shaka work` launcher for Claude Code. Start `claude` in the repository,
 keep the trusted source outside any `--add-dir` directory, and rely on the permission
-mode you already use. The next required evidence is a complete ordinary consumer PR
-delivered with `/shaka`.
+mode you already use.
+
+One ordinary consumer PR has been delivered this way: [agent-workflows-com#62](https://github.com/shakacode/agent-workflows-com/pull/62)
+on September 17, 2026, fixing link-checker edge cases. It ran the whole procedure —
+a failing fixture test first, the repository's own `.agents/bin` seam for validation,
+five review rounds with every finding answered on its thread, a description and
+walkthrough published by the helpers, and a helper merge after an explicit Ask-mode
+decision.
+
+Two differences from Codex showed up, neither host-specific:
+
+- The helper could not publish or merge until that repository's `main` was
+  protected, because it reads required-check evidence with `gh pr checks --required`
+  and cannot tell an unprotected branch from unreadable evidence. Shaka's own
+  repository is protected, so earlier deliveries never hit it. See
+  [#146](https://github.com/shakacode/shaka/issues/146).
+- There is no launcher, so the trust boundary rests on the permission mode already
+  in use and on keeping the trusted source outside the edited checkout. The delivery
+  used a separate worktree for that reason.
+
+Repeated consumer use, failed checks, and changed-head behavior across more
+deliveries are still required before claiming broad support.
 
 ### Control towers in Claude Code
 
