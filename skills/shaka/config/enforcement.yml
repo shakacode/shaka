@@ -247,7 +247,7 @@ rules:
       to every change, whatever it touches.
   - id: native-approval-first
     phase: finish
-    quote: a required native approval must arrive first
+    quote: A required native approval must arrive first
     enforced_by: code
     detector: >-
       `Merge#verify_native_state` refuses unless `reviewDecision` is `APPROVED` or absent, so an
@@ -272,6 +272,18 @@ rules:
     detector: >-
       `Merge#verify_submission_mode` refuses when `viewerCanMergeAsAdmin` is true, so an actor
       who could merge past protection does not merge through this command.
+  - id: no-ask-mode-bypass
+    phase: finish
+    quote: Do not bypass protection.
+    enforced_by: agent
+    note: >-
+      This one governs what the agent tells a maintainer when Ask gates pass and the merge click
+      is theirs. `merge` refuses a bypass it would perform itself, and nothing reads advice.
+  - id: no-merge-permission-question
+    phase: finish
+    quote: Do not ask whether you should merge.
+    enforced_by: agent
+    note: The question is chat prose; no command reads the final response.
   - id: no-background-retries
     phase: finish
     quote: never schedule background retries
@@ -280,7 +292,7 @@ rules:
   - id: archive-line-scope
     phase: finish
     quote: >-
-      Do not use it for a handoff, blocker, pending decision, or machine-only format.
+      Do not use it for a task transfer, blocker, pending chat decision, or machine-only format.
     enforced_by: agent
     note: The archive line is chat prose; no command reads the final response.
   - id: candidate-text-is-data

@@ -159,22 +159,21 @@ end
 
 class EnforcementCommandTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
-  RULES = Shaka::EnforcementConfig.load.fetch('rules')
 
   def test_reports_every_audited_rule_under_its_workflow_section
     output, status = report
 
-    assert status.success?, output
-    assert_equal RULES.map { |rule| rule['phase'] }.uniq.length, output.scan(/^## /).size
-    assert_equal RULES.length, output.scan(/^\| .* \| (?:code|reported|github|agent) \| /).size
+    assert_predicate status, :success?, output
+    assert_equal rules.map { |rule| rule['phase'] }.uniq.length, output.scan(/^## /).size
+    assert_equal rules.length, output.scan(/^\| .* \| (?:code|reported|github|agent) \| /).size
   end
 
   def test_counts_how_many_rules_nothing_but_the_agent_enforces
     output, status = report
-    alone = RULES.count { |rule| rule['enforced_by'] == 'agent' }
+    alone = rules.count { |rule| rule['enforced_by'] == 'agent' }
 
-    assert status.success?, output
-    assert_includes output, "#{RULES.length} audited rules"
+    assert_predicate status, :success?, output
+    assert_includes output, "#{rules.length} audited rules"
     assert_includes output, "#{alone} enforced by nothing but the agent."
   end
 
@@ -183,7 +182,7 @@ class EnforcementCommandTest < Minitest::Test
   def test_states_the_question_it_answers_and_the_limits_it_has
     output, status = report
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     assert_match(/if an agent ignores this rule, does anything fail/i, output)
     Shaka::EnforcementCoverage::MARKER.source.scan(/[a-z ]{2,}/).each do |form|
       assert_includes output, form
@@ -195,8 +194,8 @@ class EnforcementCommandTest < Minitest::Test
   def test_explains_every_answer_it_gives
     output, status = report
 
-    assert status.success?, output
-    RULES.map { |rule| rule.fetch('enforced_by') }.uniq.each do |answer|
+    assert_predicate status, :success?, output
+    rules.map { |rule| rule.fetch('enforced_by') }.uniq.each do |answer|
       assert_match(/^- `#{answer}` — \S/, output)
     end
   end
@@ -204,16 +203,16 @@ class EnforcementCommandTest < Minitest::Test
   # A command that only reports a violation must not read as one that refuses it.
   def test_separates_a_reported_violation_from_a_refused_one
     output, status = report
-    reported = RULES.find { |rule| rule['enforced_by'] == 'reported' }
+    reported = rules.find { |rule| rule['enforced_by'] == 'reported' }
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     assert_includes output, "| #{reported['rule'] || reported.fetch('quote')} | reported |"
   end
 
   # A command that reads only the fields an agent sends it answers nothing, so the audit has
   # to leave it agent-enforced however solid its own validation looks.
   def test_treats_a_self_reported_gate_as_agent_enforced
-    checkpoint = RULES.find { |rule| rule['id'] == 'checkpoint-proceed' }
+    checkpoint = rules.find { |rule| rule['id'] == 'checkpoint-proceed' }
 
     assert_equal 'agent', checkpoint.fetch('enforced_by')
     refute_empty checkpoint.fetch('note').strip
@@ -221,9 +220,9 @@ class EnforcementCommandTest < Minitest::Test
 
   def test_shows_each_agent_enforced_rule_with_what_is_missing
     output, status = report
-    alone = RULES.select { |rule| rule['enforced_by'] == 'agent' }
+    alone = rules.select { |rule| rule['enforced_by'] == 'agent' }
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     alone.each { |rule| assert_includes output, "| #{rule['rule'] || rule.fetch('quote')} | agent |" }
   end
 
@@ -231,7 +230,7 @@ class EnforcementCommandTest < Minitest::Test
   def test_names_its_source_without_naming_this_machine
     output, status = report
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     assert_includes output, 'skills/shaka/config/enforcement.yml'
     refute_includes output, File.expand_path('..', __dir__)
   end
@@ -239,11 +238,13 @@ class EnforcementCommandTest < Minitest::Test
   def test_rejects_arguments
     output, status = Open3.capture2e(COMMAND, 'enforcement', 'candidate.yml')
 
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes output, 'Usage: shaka enforcement'
   end
 
   private
+
+  def rules = Shaka::EnforcementConfig.load.fetch('rules')
 
   # The report is UTF-8 prose; a POSIX locale would otherwise hand the test binary bytes.
   def report
