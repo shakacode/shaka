@@ -48,21 +48,29 @@ module Shaka
 
     def uri_fields(origin)
       match = URI_HOST_PATH.match(origin)
-      return unless match && valid_host?(match[2])
+      host = host_from(match&.[](2))
+      return unless host
 
       path = repository_path(match[4], origin)
-      { origin:, scheme: match[1], host: match[2], port: match[3], identity: path, name: File.basename(path) }
+      { origin:, scheme: match[1], host:, port: match[3], identity: path, name: File.basename(path) }
     end
     private_class_method :uri_fields
 
     def scp_fields(origin)
       match = SCP_HOST_PATH.match(origin)
-      return unless match && valid_host?(match[1])
+      host = host_from(match&.[](1))
+      return unless host
 
       path = repository_path(match[2], origin)
-      { origin:, scheme: nil, host: match[1], port: nil, identity: path, name: File.basename(path) }
+      { origin:, scheme: nil, host:, port: nil, identity: path, name: File.basename(path) }
     end
     private_class_method :scp_fields
+
+    def host_from(raw)
+      host = raw.to_s.sub(/\.+\z/, '')
+      host if valid_host?(host)
+    end
+    private_class_method :host_from
 
     def valid_host?(host) = host.match?(/\A[A-Za-z0-9.-]+\z/)
     private_class_method :valid_host?

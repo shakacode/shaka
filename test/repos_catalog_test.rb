@@ -286,6 +286,16 @@ class ReposCatalogSkipTest < Minitest::Test
     end
   end
 
+  def test_refresh_treats_a_trailing_host_dot_as_the_same_repository
+    with_home do |home|
+      registered_repository(home, name: 'repo', prefix: 'SAME')
+      registered_repository(home, name: 'fqdn', prefix: 'SAME', origin: 'https://github.com./acme/repo.git')
+      catalog = refresh(home)
+
+      assert_empty catalog.fetch('duplicate_prefixes')
+    end
+  end
+
   def test_prefix_and_refresh_use_origin_main_without_origin_head
     with_home do |home|
       root = repository(name: 'solo', prefix: 'SOLO', remote_head: false)

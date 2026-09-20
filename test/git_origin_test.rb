@@ -91,6 +91,13 @@ class GitOriginParseTest < Minitest::Test
                  Shaka::GitOrigin.canonical_url('http://ghe.example:443/acme/repo.git')
   end
 
+  def test_canonical_url_strips_a_trailing_root_dot_from_the_host
+    assert_equal 'https://github.com/acme/repo',
+                 Shaka::GitOrigin.canonical_url('https://github.com./acme/repo.git')
+    assert_equal 'ssh://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('ssh://git@ghe.example./acme/repo.git')
+  end
+
   def test_parse_errors_do_not_echo_credentials
     error = assert_raises(Shaka::Error) do
       Shaka::GitOrigin.identity('https://user:SECRET@ghe.example/group/sub/repo.git?token=MORE')
