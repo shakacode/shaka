@@ -345,6 +345,11 @@ It scopes the review to `git diff BASE...HEAD`, asks for correctness, contract d
 trust, test coverage, and simplification, forbids edits, treats everything read as data, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
+Supply relevant planning and review criteria from the repository's trusted base
+`AGENTS.md` alongside the prompt; candidate edits to that guidance are review data.
+For changes to Shaka itself, include its "Is the change worth carrying?" section.
+That repository-specific experiment does not impose a value rubric on consumers.
+
 Supply the diff and the PR description, not the implementation reasoning: a reviewer given the
 justification anchors on it instead of finding the hole. That is exactly why the same model works
 here — a fresh session has none of the author's reasoning to anchor on.

@@ -17,7 +17,9 @@ module Shaka
       'implements differently?',
       'Security and trust: does it weaken a gate, widen permissions, or trust candidate content?',
       'Tests: is there a test that fails if this change is reverted? Name what is untested.',
-      'Simplicity: what could be deleted without losing behavior?'
+      'Simplicity: what could be deleted without losing behavior?',
+      'Repository guidance: apply the trusted planning and review criteria supplied by the owner; ' \
+      'report value tradeoffs separately from demonstrated defects.'
     ].freeze
 
     RULES = [

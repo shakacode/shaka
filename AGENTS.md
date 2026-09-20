@@ -25,6 +25,27 @@ Keep company strategy and private operational data out of product artifacts.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;
   for a new branch start from the freshly fetched base. Do not reset others' work.
 
+## Is the change worth carrying?
+
+For Shaka changes, evaluate value during planning when substantial complexity is
+proposed, and revisit it in the existing adversarial review when the diff grows.
+Name the observed problem, affected users or workflow, and evidence of frequency
+or impact; mark missing evidence as unknown. Compare that benefit with ongoing
+maintenance: dependencies, parsing, configuration, failure paths, compatibility,
+and tests. Line count is evidence, not a cutoff.
+
+Consider keeping current behavior, an instruction or workaround, a smaller fix,
+an existing library, or an optional extension. New kernel behavior should earn
+its maintenance cost through benefit to core delivery; evaluate customizable
+editorial preferences and speculative conveniences outside the kernel first.
+An issue, passing tests, or time already spent does not establish value.
+
+Report a brief recommendation: proceed, simplify, evaluate first, or defer,
+with evidence and the smallest useful alternative. Treat uncertain value as a
+maintainer decision, separate from demonstrated defects; preserve necessary
+security and correctness fixes even when they require complexity. This is part
+of planning and review, not a numerical score or an additional approval gate.
+
 ## Structure
 
 - `docs/pilot-plan.md` owns product requirements, design, acceptance, and scope.
