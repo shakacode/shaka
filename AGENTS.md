@@ -38,9 +38,10 @@ Keep company strategy and private operational data out of product artifacts.
   points live at fixed names under `.agents/bin/`.
 - `skills/shaka/config/enforcement.yml` records what enforces each rule `workflow.yml`
   states with never, must, do not, or only when, and `shaka enforcement` prints it.
-  Loading it fails when a quote leaves the workflow or when the workflow states a rule
-  in one of those forms that it does not classify, so a new rule has to declare whether
-  anything but the agent enforces it.
+  Loading it fails when a quote leaves the workflow, and when one of those forms appears
+  outside every classified quote, so a rule added in a new passage has to declare whether
+  anything but the agent enforces it. A rule added inside a passage an entry already
+  quotes is caught by review, not by the loader; the file's header says so.
 - `.agents/trusted-github-actors.yml` is the repository-level public-comment allowlist.
   The installed `skills/shaka/scripts/shaka comments` command combines it with the
   machine allowlist, reads only the current default-branch copy, and never trusts a
