@@ -105,7 +105,7 @@ class MergeNativeGateTest < Minitest::Test
   def test_allows_unstable_when_only_optional_checks_are_pending
     @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
 
-    assert_equal 'MERGED', @merge.call(head: HEAD, walkthrough: 17)['state']
+    assert_equal 'MERGED', @merge.call(head: HEAD, base: BASE, walkthrough: 17)['state']
   end
 
   # Production break: thorough pace waits for optional review jobs. Allowing
@@ -114,7 +114,7 @@ class MergeNativeGateTest < Minitest::Test
     merge = Shaka::Merge.new(@client, pace: 'thorough')
     @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
 
-    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, base: BASE, walkthrough: 17) }
     assert_match(/not CLEAN/, error.message)
     assert_empty @client.mutations
   end
@@ -124,7 +124,7 @@ class MergeNativeGateTest < Minitest::Test
     ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'UNSTABLE')
     @client.snapshots = [ready]
 
-    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, base: BASE, walkthrough: 17) }
     assert_match(/not CLEAN or BEHIND or BLOCKED/, error.message)
     assert_empty @client.mutations
   end
@@ -133,7 +133,7 @@ class MergeNativeGateTest < Minitest::Test
     merge = Shaka::Merge.new(@client, pace: 'swift', seam_pace: 'thorough')
     @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
 
-    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, base: BASE, walkthrough: 17) }
     assert_match(/not CLEAN/, error.message)
     assert_empty @client.mutations
   end
@@ -145,7 +145,7 @@ class MergeNativeGateTest < Minitest::Test
     @client.snapshots = [ready, ready, queued]
     @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
 
-    assert_equal 'merge_queue', @merge.call(head: HEAD, walkthrough: 17).fetch('submission')
+    assert_equal 'merge_queue', @merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('submission')
   end
 
   def test_refuses_bypass_capable_or_unknown_actor
