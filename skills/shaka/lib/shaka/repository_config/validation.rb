@@ -47,7 +47,7 @@ module Shaka
 
       def committed_file!(value, label)
         relative = string!(value, label)
-        if Pathname.new(relative).absolute? || relative.include?('..')
+        if Pathname.new(relative).absolute? || relative.split('/').include?('..')
           raise Error, "#{label} must stay inside the repository"
         end
 

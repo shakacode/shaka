@@ -259,4 +259,14 @@ class ReposCatalogOriginTest < Minitest::Test
       assert_equal %w[acme/repo acme/repo], identities(catalog)
     end
   end
+
+  def test_refresh_treats_github_owner_name_case_as_the_same_repository
+    with_home do |home|
+      registered_repository(home, name: 'repo', prefix: 'SAME')
+      registered_repository(home, name: 'cased', prefix: 'SAME', origin: 'https://github.com/Acme/Repo.git')
+      catalog = refresh(home)
+
+      assert_empty catalog.fetch('duplicate_prefixes')
+    end
+  end
 end

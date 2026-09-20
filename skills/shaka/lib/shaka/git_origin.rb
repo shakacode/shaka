@@ -101,7 +101,7 @@ module Shaka
     private_class_method :parse_error
 
     def redacted_origin(origin)
-      origin.to_s.split(/[?#]/, 2).first.sub(%r{\A((?:https?|ssh)://)[^/]*@}, '\1')
+      origin.to_s.split(/[?#]/, 2).first.sub(%r{\A((?:https?|ssh)://)[^/]*@}, '\1').sub(/\A[^@]+@/, '')
     end
     private_class_method :redacted_origin
   end

@@ -87,7 +87,9 @@ module Shaka
       uri = URI(row.fetch('url'))
       default = uri.scheme == 'ssh' ? 22 : uri.default_port
       host = uri.port && uri.port != default ? "#{uri.host}:#{uri.port}" : uri.host
-      "#{host.downcase}/#{row.fetch('identity')}"
+      identity = row.fetch('identity')
+      identity = identity.downcase if uri.host.to_s.casecmp?('github.com')
+      "#{host.downcase}/#{identity}"
     end
 
     def report_duplicates(duplicates)

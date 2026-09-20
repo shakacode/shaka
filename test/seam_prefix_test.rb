@@ -5,8 +5,51 @@ require 'fileutils'
 require 'json'
 require 'yaml'
 
-class SeamPrefixTest < Minitest::Test
+module SeamPrefixHelpers
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+
+  def with_repository(extra = {})
+    Dir.mktmpdir('shaka-prefix') do |root|
+      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+      %w[setup validate test].each do |name|
+        path = File.join(root, '.agents/bin', name)
+        File.write(path, "#!/bin/sh\nexit 0\n")
+        File.chmod(0o755, path)
+      end
+      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config.merge(extra)))
+      yield root
+    end
+  end
+
+  def config
+    {
+      'version' => 1, 'base_branch' => 'main',
+      'review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review' },
+      'merge' => { 'preference' => 'ask' }
+    }
+  end
+
+  def check_config(root, *)
+    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, *)
+    raise error unless status.success?
+
+    JSON.parse(output)
+  end
+
+  def commit_repository(root)
+    git!(root, 'init')
+    git!(root, 'add', '.')
+    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'trusted')
+  end
+
+  def git!(root, *)
+    output, status = Open3.capture2e('git', '-C', root, *)
+    raise output unless status.success?
+  end
+end
+
+class SeamPrefixTest < Minitest::Test
+  include SeamPrefixHelpers
 
   def test_check_accepts_a_valid_repo_prefix
     with_repository('repo_prefix' => 'CPF') do |root|
@@ -66,6 +109,18 @@ class SeamPrefixTest < Minitest::Test
     end
   end
 
+  def test_prefix_accepts_a_trusted_plan_filename_that_contains_dots
+    with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/v1..v2.md') do |root|
+      FileUtils.mkdir_p(File.join(root, 'docs'))
+      File.write(File.join(root, 'docs/v1..v2.md'), "plan\n")
+      commit_repository(root)
+      output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+
+      assert_predicate status, :success?, error
+      assert_equal({ 'prefix' => 'PLAN', 'source' => 'seam' }, JSON.parse(output))
+    end
+  end
+
   def test_prefix_rejects_a_trusted_plan_symlink_with_a_missing_target
     with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/plan.md') do |root|
       FileUtils.mkdir_p(File.join(root, 'docs'))
@@ -76,46 +131,5 @@ class SeamPrefixTest < Minitest::Test
       refute_predicate status, :success?
       assert_includes error, 'plan'
     end
-  end
-
-  private
-
-  def with_repository(extra = {})
-    Dir.mktmpdir('shaka-prefix') do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
-      %w[setup validate test].each do |name|
-        path = File.join(root, '.agents/bin', name)
-        File.write(path, "#!/bin/sh\nexit 0\n")
-        File.chmod(0o755, path)
-      end
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config.merge(extra)))
-      yield root
-    end
-  end
-
-  def config
-    {
-      'version' => 1, 'base_branch' => 'main',
-      'review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review' },
-      'merge' => { 'preference' => 'ask' }
-    }
-  end
-
-  def check_config(root, *)
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, *)
-    raise error unless status.success?
-
-    JSON.parse(output)
-  end
-
-  def commit_repository(root)
-    git!(root, 'init')
-    git!(root, 'add', '.')
-    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'trusted')
-  end
-
-  def git!(root, *)
-    output, status = Open3.capture2e('git', '-C', root, *)
-    raise output unless status.success?
   end
 end

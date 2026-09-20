@@ -83,4 +83,13 @@ class GitOriginTest < Minitest::Test
     refute_includes error.message, 'SECRET'
     refute_includes error.message, 'MORE'
   end
+
+  def test_parse_errors_do_not_echo_scp_userinfo
+    error = assert_raises(Shaka::Error) do
+      Shaka::GitOrigin.identity('TOKEN@ghe.example:group/sub/repo.git')
+    end
+
+    assert_includes error.message, 'ghe.example:group/sub/repo.git'
+    refute_includes error.message, 'TOKEN'
+  end
 end
