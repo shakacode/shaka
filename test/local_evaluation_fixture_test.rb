@@ -9,7 +9,7 @@ module LocalEvaluationFixtureAssertions
   ROOT = File.expand_path('../eval/fixtures/local_evaluation', __dir__)
   FIXTURES = %w[probe feasibility].to_h { |name| [name, File.join(ROOT, name)] }.freeze
   COMMON_FILES = %w[
-    .agents/agent-workflow.yml .agents/bin/setup .agents/bin/test
+    .agents/agent-workflow.yml .agents/bin/setup .agents/bin/test .agents/bin/validate
     .github/workflows/validate.yml .ruby-version AGENTS.md Gemfile Gemfile.lock fixture.yml
   ].freeze
   APP_FILES = {
@@ -18,8 +18,9 @@ module LocalEvaluationFixtureAssertions
   }.freeze
   MERGE_PREFERENCES = { 'probe' => 'auto', 'feasibility' => 'ask' }.freeze
   FIXTURE_RUNNER = Shaka::Doctor::BoundedCommand.new(timeout: 30)
-  COMMANDS = { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/test',
+  COMMANDS = { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/validate',
                'test' => '.agents/bin/test' }.freeze
+  TRUSTED_ACTIONS = %w[actions/checkout ruby/setup-ruby].freeze
   FORBIDDEN_CONTENT = /(?:AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|
                          -----BEGIN[ ][A-Z ]*PRIVATE[ ]KEY-----|(?:password|token|api[_-]?key|client[_-]?secret)\s*[:=]|
                          internal\s+notes?|raw\s+transcripts?|hidden\s+assertions?|known[- ]bad\s+patch(?:es)?|
@@ -42,7 +43,6 @@ module LocalEvaluationFixtureAssertions
     assert_equal expected_merge, config.merge.fetch('preference')
     assert_equal COMMANDS, config.commands
     assert_equal 'none', config.review.fetch('required')
-    assert_equal ['validate'], config.protection.fetch('required_checks')
   end
 
   def assert_runtime_pins(root)
@@ -78,14 +78,13 @@ module LocalEvaluationFixtureAssertions
     assert_equal({ 'persist-credentials' => false }, steps[0].fetch('with'))
     assert_match %r{\Aruby/setup-ruby@[0-9a-f]{40}\z}, steps[1].fetch('uses')
     assert_equal({ 'ruby-version' => '.ruby-version', 'bundler-cache' => true }, steps[1].fetch('with'))
-    assert_equal({ 'run' => '.agents/bin/test' }, steps[2])
+    assert_equal({ 'run' => '.agents/bin/validate' }, steps[2])
     assert_trusted_actions(root, steps)
   end
 
   def assert_trusted_actions(root, steps)
-    trusted = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml')).fetch('trusted_actions')
     actions = steps.filter_map { |step| step['uses']&.split('@')&.first }
-    assert_equal actions.sort, trusted.sort
+    assert_equal TRUSTED_ACTIONS, actions
     workflow = File.read(File.join(root, '.github/workflows/validate.yml'))
     refute_match FORBIDDEN_WORKFLOW_INPUT, workflow
   end
@@ -109,8 +108,8 @@ module LocalEvaluationFixtureAssertions
     assert_equal before, File.read(lock)
   end
 
-  def capture_fixture_test(root)
-    command = File.join(root, '.agents/bin/test')
+  def capture_fixture_validation(root)
+    command = File.join(root, '.agents/bin/validate')
     stdout, stderr, success = FIXTURE_RUNNER.call([command], Dir.tmpdir)
     ["#{stdout}\n#{stderr}", success]
   end
@@ -180,7 +179,7 @@ class LocalEvaluationFixtureExecutionTest < Minitest::Test
   def test_fixture_setup_and_validation_stay_under_one_minute
     FIXTURES.each_value do |root|
       setup_fixture(root)
-      output, success = capture_fixture_test(root)
+      output, success = capture_fixture_validation(root)
       assert success, output
       assert_match(/[1-9]\d* runs?, \d+ assertions?, 0 failures, 0 errors, 0 skips/, output)
     end

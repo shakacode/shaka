@@ -12,4 +12,4 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
-      - run: .agents/bin/test
+      - run: .agents/bin/validate
