@@ -41,6 +41,7 @@ class CodeqlWorkflowTest < Minitest::Test
 
     assert_equal 'write', permissions.fetch('security-events')
     assert_equal 'read', permissions.fetch('contents')
+    refute_includes permissions.keys, 'packages'
   end
 
   private
