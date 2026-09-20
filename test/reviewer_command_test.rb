@@ -116,9 +116,7 @@ class ReviewerCommandTest < Minitest::Test
                     'reviewers' => [{ 'provider' => 'anthropic', 'model_family' => 'claude' },
                                     { 'provider' => 'openai', 'model_family' => 'codex' },
                                     { 'provider' => 'xai', 'model_family' => 'grok' }] },
-      'merge' => { 'preference' => 'ask', 'method' => 'squash', 'release' => 'explicit_approval' },
-      'protection' => { 'required_checks' => ['validate'], 'direct_push' => false,
-                        'force_push' => false, 'branch_deletion' => false } }
+      'merge' => { 'preference' => 'ask' } }
   end
 
   def commit_repository(root)

@@ -24,7 +24,7 @@ module Shaka
       def keys!(mapping, required, optional, label)
         unknown = mapping.keys - required - optional
         missing = required - mapping.keys
-        raise Error, "unknown key: #{unknown.first}" unless unknown.empty?
+        raise Error, "unknown #{label} key: #{unknown.first}" unless unknown.empty?
         raise Error, "missing #{label} key: #{missing.first}" unless missing.empty?
       end
 

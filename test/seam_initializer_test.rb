@@ -34,9 +34,7 @@ module SeamInitializerTestHelpers
     [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
      '--setup-command', setup_command, '--validate-command', validate_command,
      '--test-command', test_command, '--review-policy', 'meaningful_changes',
-     '--review-check', 'claude-review',
-     '--required-check', 'validate', '--trusted-action', 'actions/checkout',
-     '--trusted-action', 'ruby/setup-ruby']
+     '--review-check', 'claude-review']
   end
 
   def generated_files(root)
@@ -54,8 +52,8 @@ module SeamInitializerTestHelpers
   def assert_complete_seam(root, output)
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
-    assert_equal ['validate'], config.dig('protection', 'required_checks')
-    assert_equal %w[actions/checkout ruby/setup-ruby], config.fetch('trusted_actions')
+    assert_equal %w[base_branch branches commands merge recovery review version], config.keys.sort
+    assert_equal ['preference'], config.fetch('merge').keys
     assert_includes File.read(File.join(root, '.agents/agent-workflow.yml')), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
   end
@@ -262,7 +260,7 @@ class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
   def test_rejects_missing_required_policy_before_writing
-    %w[--base-branch --review-policy --review-check --required-check].each do |flag|
+    %w[--base-branch --review-policy --review-check].each do |flag|
       with_repository do |root|
         arguments = init_arguments(root)
         arguments.slice!(arguments.index(flag), 2)
@@ -270,6 +268,18 @@ class SeamInitializerValidationTest < Minitest::Test
 
         refute status.success?
         assert_includes error, 'is required'
+        refute File.exist?(File.join(root, '.agents'))
+      end
+    end
+  end
+
+  def test_rejects_retired_github_fact_options
+    %w[--required-check --trusted-action].each do |flag|
+      with_repository do |root|
+        _output, error, status = Open3.capture3(*init_arguments(root), flag, 'value')
+
+        refute status.success?
+        assert_includes error, "invalid option: #{flag}"
         refute File.exist?(File.join(root, '.agents'))
       end
     end

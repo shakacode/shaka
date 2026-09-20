@@ -32,8 +32,9 @@ Keep company strategy and private operational data out of product artifacts.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` is the machine-readable repository contract. It
-  records review, merge, and protection policy. Standard executable entry points
-  live at fixed names under `.agents/bin/`.
+  records Shaka-specific review, merge-authority, branch-naming, and recovery
+  policy. Live GitHub settings remain authoritative. Standard executable entry
+  points live at fixed names under `.agents/bin/`.
 - `.agents/trusted-github-actors.yml` is the repository-level public-comment allowlist.
   The installed `skills/shaka/scripts/shaka comments` command combines it with the
   machine allowlist, reads only the current default-branch copy, and never trusts a

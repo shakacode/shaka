@@ -20,7 +20,7 @@ module Shaka
 
           | Path | What it is |
           | --- | --- |
-          | `agent-workflow.yml` | The typed contract for review, merge, and branch-protection policy. Shaka reads it from the trusted default branch, so a pull request cannot grant itself authority by editing its own copy. |
+          | `agent-workflow.yml` | The typed contract for Shaka-specific workflow policy. Shaka reads it from the trusted default branch, so a pull request cannot grant itself authority by editing its own copy. Live GitHub settings remain authoritative. |
           | `bin/` | Standard wrappers for this repository's setup, validation, and tests. Their fixed names form the portable command interface; they run from the checkout under review, so a pull request that edits one changes what validation executes. |
 
           Edit `agent-workflow.yml` by hand, then validate it with `shaka seam check --root .`.

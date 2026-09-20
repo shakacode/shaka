@@ -23,7 +23,7 @@ merges. A schema-valid file alone does not prove which Shaka release last review
 | Repository | Default branch | Target Shaka | Schema | State | Evidence or next action |
 | --- | --- | --- | ---: | --- | --- |
 | [`shakacode/shaka`](https://github.com/shakacode/shaka) | `main` | `0.1.0.pre.1` | 1 | Source | This repository defines and validates the current contract. |
-| [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial) | `master` | `0.1.0.pre.1` | 1 | PR open | [Adoption PR #838](https://github.com/shakacode/react-webpack-rails-tutorial/pull/838); preserve its validation split, exact required-check name, and trusted-action allowlist. |
+| [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial) | `master` | `0.1.0.pre.1` | 1 | Needs update | [Adoption PR #838](https://github.com/shakacode/react-webpack-rails-tutorial/pull/838) predates the slimmer seam and will not validate until its copied GitHub facts are removed; preserve its validation split during that update. |
 
 Add a repository here only when it is intentionally part of current Shaka testing.
 Record an exact Shaka version, not `latest`, and link the adoption or upgrade PR. Remove
@@ -97,8 +97,8 @@ lives; it does not mean deleting every V1 key and hoping the defaults are equiva
 | `review_gate`, `automation_reviewers` | `review` | Translate the actual required review and ordered available reviewers. Keep richer human conditions in `AGENTS.md`. |
 | `merge_submission`, `autonomous_merge`, `approval_exempt` | `merge` plus `AGENTS.md` | Choose `ask` or authorized `auto`. V2 supports immediate squash merge only; a merge-queue-only repository is not equivalent and must remain blocked or use a separately approved path. |
 | Branch naming and `repo_prefix` | `branches.name` | Record the real branch template. Do not carry a coordination prefix forward unless the repository still needs it. |
-| Live branch rules | `protection` | Read required checks and mutation rules from GitHub. Do not infer them from workflow filenames. |
-| `trusted_actions` | `trusted_actions` | Preserve the audited allowlist exactly, then review additions or removals separately. |
+| Live branch rules | GitHub | Read required checks and mutation rules from GitHub. Do not copy them into the V2 seam or infer them from workflow filenames. |
+| `trusted_actions` | Existing security tooling or workflow review | Preserve an operational allowlist where a repository actually consumes it. Do not copy it into V2 as inert metadata. |
 | `hosted_ci_trigger`, `ci_change_detector`, `ci_parity_environment` | `.agents/bin/validate-local`, `.agents/bin/trigger-hosted-ci`, other wrappers, and `AGENTS.md` | Keep executable routing in scripts and human decision rules in instructions. Do not reduce full validation to the fast local subset. |
 | Changelog, benchmark, release-QA, hosted-QA, security-preflight, contributor-intake, secret-redaction, trusted-actor, and QA-stress settings | Existing dedicated files or `AGENTS.md` | These remain repository policy. V2's narrower YAML does not retire the behavior. |
 | Coordination backend, claim labels, lane limits, follow-up prefixes, and V1 fleet controls | No V2 seam key | Retire them only when the repository no longer uses the V1 coordination system. Do not import that system into Shaka. |

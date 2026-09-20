@@ -49,8 +49,6 @@ module Shaka
           repository_file(@options[:plan], 'plan')
           config['plan'] = @options[:plan]
         end
-        actions = string_list(:trusted_actions, 'trusted_action')
-        config['trusted_actions'] = actions unless actions.empty?
         "# #{MARKER}\n#{YAML.dump(config)}"
       end
 
@@ -59,8 +57,7 @@ module Shaka
           'version' => 1,
           'base_branch' => base_branch,
           'review' => review_policy,
-          'merge' => merge_policy,
-          'protection' => protection_policy,
+          'merge' => { 'preference' => @options.fetch(:merge_preference, 'ask') },
           'branches' => { 'name' => '{login}-{host}/{issue}-{description}' }
         }
       end
@@ -74,16 +71,6 @@ module Shaka
         end
 
         { 'required' => required_policy, 'check' => required('review_check') }
-      end
-
-      def merge_policy
-        { 'preference' => @options.fetch(:merge_preference, 'ask'),
-          'method' => 'squash', 'release' => 'explicit_approval' }
-      end
-
-      def protection_policy
-        { 'required_checks' => required_list(:required_checks, 'required_check'),
-          'direct_push' => false, 'force_push' => false, 'branch_deletion' => false }
       end
 
       def wrapper(arguments)

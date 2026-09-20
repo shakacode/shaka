@@ -7,6 +7,12 @@ require 'shaka/repository_config'
 class RepositoryConfigTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
+  ROOT = File.expand_path('..', __dir__)
+
+  def test_this_repository_uses_a_valid_contract
+    assert_instance_of Shaka::RepositoryConfig, Shaka::RepositoryConfig.load(root: ROOT)
+  end
+
   def test_loads_the_repository_contract
     with_repository do |root|
       config = Shaka::RepositoryConfig.load(root:)
@@ -15,7 +21,6 @@ class RepositoryConfigTest < Minitest::Test
       assert_equal '.agents/bin/validate', config.command('validate')
       assert_equal %w[setup test validate], config.commands.keys.sort
       assert_equal 'auto', config.merge.fetch('preference')
-      assert_equal ['validate'], config.protection.fetch('required_checks')
     end
   end
 
@@ -23,7 +28,14 @@ class RepositoryConfigTest < Minitest::Test
     with_repository('surprise' => true) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'unknown key: surprise'
+      assert_includes error.message, 'unknown .agents/agent-workflow.yml key: surprise'
+    end
+  end
+
+  def test_rejects_an_unsupported_contract_version
+    with_repository('version' => 2) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+      assert_includes message, 'version must be 1'
     end
   end
 
@@ -35,14 +47,6 @@ class RepositoryConfigTest < Minitest::Test
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
       assert_includes error.message, 'duplicate key: base_branch'
-    end
-  end
-
-  def test_rejects_configurable_command_paths
-    with_repository('commands' => { 'validate' => '../validate' }) do |root|
-      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
-
-      assert_includes error.message, 'unknown key: commands'
     end
   end
 
@@ -112,18 +116,36 @@ class RepositoryConfigTest < Minitest::Test
       assert_includes message, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
     end
   end
+end
 
-  def test_rejects_a_merge_method_the_helper_cannot_honor
-    with_repository('merge' => merge_policy.merge('method' => 'rebase')) do |root|
-      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-      assert_includes message, 'merge.method must be squash'
+class RepositoryConfigRetiredSettingTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  def test_rejects_configurable_command_paths
+    with_repository('commands' => { 'validate' => '../validate' }) do |root|
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, 'unknown .agents/agent-workflow.yml key: commands'
     end
   end
 
-  def test_requires_at_least_one_native_check
-    with_repository('protection' => protection.merge('required_checks' => [])) do |root|
-      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-      assert_includes message, 'protection.required_checks must not be empty'
+  def test_rejects_retired_fixed_merge_fields
+    { 'method' => 'squash', 'release' => 'explicit_approval' }.each do |key, value|
+      with_repository('merge' => merge_policy.merge(key => value)) do |root|
+        message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+        assert_includes message, "merge.#{key} is no longer configurable"
+        assert_includes message, 'docs/settings.md'
+      end
+    end
+  end
+
+  def test_rejects_retired_github_fact_fields
+    { 'protection' => {}, 'trusted_actions' => ['actions/checkout'] }.each do |key, value|
+      with_repository(key => value) do |root|
+        message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+        assert_includes message, "#{key} moved out of the seam"
+        assert_includes message, 'docs/settings.md'
+      end
     end
   end
 end
@@ -213,7 +235,7 @@ class RepositoryConfigRecoveryTest < Minitest::Test
     with_repository('recovery' => { 'workspace' => false }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'unknown key: workspace'
+      assert_includes error.message, 'unknown recovery key: workspace'
     end
   end
 

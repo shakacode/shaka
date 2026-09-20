@@ -20,26 +20,9 @@ review:
       model_family: codex
     - provider: xai
       model_family: grok
-# Merge authority and method for a finished pull request.
+# Merge authority for a finished pull request.
 merge:
   preference: ask
-  method: squash
-  release: explicit_approval
 # Feature-branch layout. {login} is gh api user --jq .login; {host} is the tool.
 branches:
   name: '{login}-{host}/{issue}-{description}'
-# Branch protection Shaka expects GitHub to enforce; it never bypasses these.
-protection:
-  required_checks:
-    - validate
-  direct_push: false
-  force_push: false
-  branch_deletion: false
-# Recovery note policy for unfinished pull requests; defaults to true.
-recovery:
-  workspace_path: true
-# Optional allowlist of GitHub Actions used by trusted workflows.
-trusted_actions:
-  - actions/checkout
-  - anthropics/claude-code-action
-  - ruby/setup-ruby
