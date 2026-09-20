@@ -37,6 +37,18 @@ class EnforcementConfigTest < Minitest::Test
     end
   end
 
+  # A rule stated outside a phase still binds the agent, so every standing field is scanned.
+  def test_scans_every_standing_workflow_field
+    Shaka::EnforcementCoverage::STANDING.each do |field|
+      workflow = Shaka::WorkflowConfig.load
+      workflow[field] += ' Never state a rule here unaudited.'
+
+      error = assert_raises(Shaka::Error) { Shaka::EnforcementConfig.load(workflow:) }
+
+      assert_includes error.message, "classifies no rule for #{field}"
+    end
+  end
+
   # The scan misses restrictive "only ..." rules, so an entry has to be able to classify one
   # the scan never demands. Running candidate code outside its checkout is that kind of rule.
   def test_classifies_a_trust_rule_the_scan_does_not_find

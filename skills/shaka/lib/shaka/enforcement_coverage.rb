@@ -12,14 +12,15 @@ module Shaka
     # The four imperative and prohibitive forms workflow.yml uses to state a rule.
     MARKER = /\b(?:never|must|do not|only when)\b/i
 
-    # Phase bodies carry their completion condition, and the two standing sections state rules
-    # too. Fenced command listings are dropped: they are syntax, not prose stating a rule.
+    # Phase bodies carry their completion condition, and every standing field states rules too,
+    # `purpose` included. Fenced command listings are dropped: they are syntax, not prose.
+    STANDING = %w[purpose always code_quality].freeze
+
     def self.sections(workflow)
       sections = workflow.fetch('phases').to_h do |phase|
         [phase.fetch('id'), "#{phase.fetch('body')} #{phase.fetch('done_when')}"]
       end
-      sections['always'] = workflow.fetch('always')
-      sections['code_quality'] = workflow.fetch('code_quality')
+      STANDING.each { |field| sections[field] = workflow.fetch(field) }
       sections.transform_values { |text| normalize(text) }
     end
 
