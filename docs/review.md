@@ -356,18 +356,25 @@ review prose permitted by the public-prose rule above; retain withheld comments 
 than supplying their bodies.
 
 Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers. Each
-block below opens by setting `SHAKA_BASE_BRANCH` to this task's base branch, so the review
-reads the same diff the pull request will merge; change `main` when the seam or the task
-names another base, and keep the single quotes so a branch containing `$` or a backtick is
-not expanded by the shell. Keep that line in the block you run: a variable set in one shell
-does not reach the next. Verified flags, current for the versions named:
+block below reads this task's base branch from `SHAKA_BASE_BRANCH`, so the review sees the
+same diff the pull request will merge. Export it in the shell you run the block in:
+
+```bash
+export SHAKA_BASE_BRANCH=main   # this task's base branch
+```
+
+Exporting it, rather than editing a branch name into the block, keeps an arbitrary name out
+of shell source, where a `$`, a backtick, or an apostrophe would be expanded, executed, or
+left as invalid syntax. The `:?` in each block fails loudly when the variable is unset,
+instead of quietly resolving `origin/` and reviewing the wrong diff.
+
+Verified flags, current for the versions named:
 
 Codex 0.154.0:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-SHAKA_BASE_BRANCH='main'
-base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
+base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex \
   | codex exec -s read-only --ignore-rules --ignore-user-config --ephemeral -o "$report" -
@@ -384,8 +391,7 @@ Claude Code:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-SHAKA_BASE_BRANCH='main'
-base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
+base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
   | claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
@@ -404,8 +410,7 @@ Grok 1.0.30:
 
 ```bash
 prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-prompt.XXXXXX") || exit 1
-SHAKA_BASE_BRANCH='main'
-base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
+base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
 shaka review-prompt --head "$(git rev-parse HEAD)" --base "$base" --reviewer xai/grok \
   --effort high > "$prompt"
 grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format plain \
