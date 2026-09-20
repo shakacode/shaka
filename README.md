@@ -83,4 +83,11 @@ confirm `/shaka` in a new chat. In OpenCode, install into `~/.config/opencode/sk
 and send `/shaka` in a new session. Codex is the first reference host;
 [Claude Code has one verified consumer delivery; Cursor and OpenCode remain unverified](docs/host-support.md). Public pilot: [progress](https://github.com/shakacode/shaka/issues/77).
 
+Public GitHub.com repositories can run CodeQL without a paid Advanced Security
+license. This project's [CodeQL workflow](.github/workflows/codeql.yml) analyzes
+Ruby on pull requests and pushes to `main`. Org or repo settings must still allow
+GitHub Actions and code scanning, or the job cannot upload alerts. A private fork
+needs GitHub Advanced Security (or equivalent) enabled before the same workflow
+can publish results.
+
 [MIT licensed](LICENSE). Copyright © 2026 ShakaCode.
