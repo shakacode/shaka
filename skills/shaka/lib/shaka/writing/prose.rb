@@ -6,18 +6,19 @@ module Shaka
   module Writing
     # Reduces published Markdown to the prose a style check is allowed to read.
     module Prose
+      COMMENT = /<!--.*?-->/m
       TAG = %r{</?[A-Za-z][^<>]*>}
       LINK = /\[([^\]]*)\]\([^)]*\)/
       URL = %r{https?://\S+}
       WORD = /[[:alnum:]']+/
       IDENTITY = /\A\u{1F916}/
       HEADING = /\A\#{1,6}[ \t]/
-      FENCE = /\A(?<mark>`{3,}|~{3,})[^`~]*$/
+      FENCE = /\A {0,3}(?<mark>`{3,}|~{3,})[^`~]*$/
 
       module_function
 
-      # Only a real tag is stripped as HTML: an angle bracket followed by a space is a
-      # comparison in someone's prose, and removing through the next one would hide it.
+      # Only a real tag or comment is stripped as HTML: an angle bracket followed by a space
+      # is a comparison in someone's prose, and removing through the next one would hide it.
       # Code, HTML, link targets and bare URLs are not sentences the writer composed,
       # and two summaries citing the same commit would otherwise look like copied prose.
       # Indented code is left in: separating it from an indented paragraph inside a list
@@ -27,7 +28,8 @@ module Shaka
       # that nobody wrote. Copied headings go uncounted as a result; a shared label is not
       # the copied resolution the rule is about.
       def text(markdown)
-        bare = PublicationText.prose(unfenced(markdown.to_s)).gsub(LINK, '\1').gsub(TAG, ' ').gsub(URL, ' ')
+        stripped = PublicationText.prose(unfenced(markdown.to_s)).gsub(COMMENT, ' ')
+        bare = stripped.gsub(LINK, '\1').gsub(TAG, ' ').gsub(URL, ' ')
         lines = bare.lines
         lines.shift if lines.first&.match?(IDENTITY)
         lines.grep_v(HEADING).join

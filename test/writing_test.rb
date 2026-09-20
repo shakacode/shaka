@@ -86,6 +86,20 @@ class WritingDuplicationTest < Minitest::Test
     assert_includes error.message, 'This description repeats'
   end
 
+  # Markdown allows three spaces before a fence, and the closer is still a closer.
+  def test_a_fence_indented_up_to_three_spaces_still_delimits_its_block
+    copied = 'The loader now rejects an unknown review mode before the workflow starts.'
+    body = "```\ncode\n  ```\n\n#{copied}"
+    error = assert_raises(Shaka::Error) { check("Safe.\n\n#{body}", "Raises.\n\n#{body}") }
+    assert_includes error.message, 'This description repeats'
+  end
+
+  # A hidden note is HTML, and no reader is served the other document's copy of it.
+  def test_an_html_comment_repeated_in_both_is_not_counted
+    note = '<!-- the loader now rejects an unknown review mode before the workflow starts -->'
+    check("Merging is safe.\n#{note}", "It raises early.\n#{note}")
+  end
+
   # Only the leading identity line is the helper's; a robot emoji mid-body is prose.
   def test_a_robot_emoji_inside_the_body_does_not_exempt_the_line_it_opens
     line = '🤖 The loader now rejects an unknown review mode before the workflow starts.'
