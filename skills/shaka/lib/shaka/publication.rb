@@ -95,7 +95,10 @@ module Shaka
     end
 
     def walkthrough_ref
-      url = PublicationText.single_line(walkthrough_url, 'walkthrough')
+      url = @content['walkthrough']
+      return ["## Code Walkthrough\n\n_Not published yet._"] if unpublished_walkthrough?(url)
+
+      url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'walkthrough')
       unless url.match?(WALKTHROUGH_URL)
         raise Error, 'Publication walkthrough must be a GitHub pull request review URL.'
       end
@@ -103,12 +106,7 @@ module Shaka
       ["## Code Walkthrough\n\n[Code Walkthrough](#{url})"]
     end
 
-    def walkthrough_url
-      url = @content['walkthrough']
-      return url if url.is_a?(String) && !url.strip.empty?
-
-      raise Error, 'Publication description requires a walkthrough link.'
-    end
+    def unpublished_walkthrough?(url) = url.nil? || (url.is_a?(String) && url.strip.empty?)
 
     def table
       spec = @content['table']

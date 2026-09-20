@@ -236,9 +236,31 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     refute_match(/^# Code Walkthrough/, rendered)
   end
 
-  def test_a_description_without_a_walkthrough_link_is_refused
-    error = assert_raises(Shaka::Error) { render(walkthrough: nil) }
-    assert_includes error.message, 'walkthrough'
+  def test_the_walkthrough_heading_precedes_other_description_sections
+    rendered = render_with_section
+    walkthrough_at = rendered.index("## Code Walkthrough\n")
+    section_at = rendered.index("## Outcome\n")
+
+    refute_nil walkthrough_at
+    refute_nil section_at
+    assert_operator walkthrough_at, :<, section_at
+  end
+
+  def render_with_section
+    Shaka::Publication.description(
+      { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
+        'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
+        'details' => [PublicationRegressionTest::USAGE] }
+    )
+  end
+
+  def test_a_description_without_a_walkthrough_link_reserves_the_heading
+    rendered = render(walkthrough: nil)
+
+    assert_includes rendered, "## Code Walkthrough\n\n_Not published yet._"
+    refute_includes rendered, '[Code Walkthrough]('
   end
 
   def test_a_blob_pr_or_issue_comment_url_is_not_a_walkthrough_link
