@@ -171,6 +171,19 @@ class TrustedConfigSourceCommandEntryTest < Minitest::Test
     end
   end
 
+  def test_rejects_a_legacy_hosted_ci_path_missing_its_standard_entry_point_on_the_trusted_ref
+    with_repository do |root|
+      legacy = File.join(root, '.agents/bin/trigger_hosted_ci')
+      write_executable(root, '.agents/bin/trigger_hosted_ci')
+      commit_repository(root)
+      FileUtils.rm(legacy)
+
+      message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
+      assert_includes message, '.agents/bin/trigger_hosted_ci requires the standard entry point'
+      assert_includes message, '.agents/bin/trigger-hosted-ci at trusted ref'
+    end
+  end
+
   def test_rejects_a_directory_at_a_trusted_optional_path
     with_repository do |root|
       path = File.join(root, '.agents/bin/validate-local')
