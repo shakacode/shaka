@@ -30,8 +30,9 @@ module Shaka
     def canonical_url(url)
       parsed_url = parsed(url)
       identity = parsed_url.fetch(:identity)
-      origin = parsed_url.fetch(:origin)
-      parsed_url.fetch(:host) == 'github.com' ? "https://github.com/#{identity}" : origin.delete_suffix('.git')
+      return "https://github.com/#{identity}" if parsed_url.fetch(:host) == 'github.com'
+
+      parsed_url.fetch(:origin).sub(%r{\A(https?://)[^/@]+@}, '\1').delete_suffix('.git')
     end
 
     def parsed(url)

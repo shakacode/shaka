@@ -144,6 +144,20 @@ class ReposCatalogTest < Minitest::Test
     end
   end
 
+  def test_refresh_does_not_treat_two_checkouts_of_one_repo_as_a_collision
+    with_home do |home|
+      first = registered_repository(home, name: 'alpha', prefix: 'ALP')
+      second = File.join(@roots, 'alpha-checkout')
+      FileUtils.cp_r(first, second)
+      _output, error, status = Open3.capture3(env(home), COMMAND, 'repos', 'add', '--root', second)
+      raise error unless status.success?
+
+      catalog = refresh(home)
+      assert_empty catalog.fetch('duplicate_prefixes')
+      assert_equal %w[acme/alpha acme/alpha], identities(catalog)
+    end
+  end
+
   def test_refresh_reports_duplicate_prefixes_without_changing_identity
     with_home do |home|
       registered_repository(home, name: 'alpha', prefix: 'DUP')

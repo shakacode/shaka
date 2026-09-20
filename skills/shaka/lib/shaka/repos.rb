@@ -66,9 +66,10 @@ module Shaka
 
     def duplicates(repositories)
       repositories.group_by { |row| row.fetch('prefix') }.each_with_object({}) do |(prefix, rows), collected|
-        next unless rows.length > 1
+        identities = rows.map { |row| row.fetch('identity') }.uniq
+        next unless identities.length > 1
 
-        collected[prefix] = rows.map { |row| row.fetch('identity') }
+        collected[prefix] = identities
       end
     end
 
