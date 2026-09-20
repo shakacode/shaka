@@ -48,10 +48,11 @@ order:
 4. [`shakacode/react_on_rails-demo-octochangelog-on-rails-pro`](https://github.com/shakacode/react_on_rails-demo-octochangelog-on-rails-pro)
 5. [`shakacode/react-on-rails-demo-gumroad-rsc`](https://github.com/shakacode/react-on-rails-demo-gumroad-rsc)
 6. [`shakacode/react-on-rails-starter-tanstack`](https://github.com/shakacode/react-on-rails-starter-tanstack)
-7. [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial), which the page labels as the legacy tutorial
+7. [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial), which the page labels as the legacy tutorial and whose migration is already in progress in the active table above
 
-Being on that page makes a repository a priority candidate, not an active fleet member.
-Confirm that its migration is selected and record PR evidence before adding it to the
+Being on that page makes a repository a priority candidate or confirms the priority of
+an already-active member; it does not automatically add a repository to the fleet.
+Confirm that a new migration is selected and record PR evidence before adding it to the
 active table. Exclude archived repositories from both the active fleet and migration
 selection unless they are deliberately restored. Recheck the examples page and GitHub
 archive state when choosing each next repository rather than treating this dated list
@@ -71,11 +72,14 @@ table only when its migration is selected, and update it through its own PR.
 | `shakacode/cypress-playwright-on-rails` | `master` | Add or select a setup wrapper; preserve contributor intake and the existing review gate. |
 | `shakacode/react-on-rails-demo-flagship` | `main` | Confirm live protection and review policy before replacing the minimal V1 seam. |
 | `shakacode/react-on-rails-demo-hacker-news-rsc` | `main` | Preserve the review-app and current-head merge conditions documented by the repository. |
+| `shakacode/react-on-rails-demo-gumroad-rsc` | `main` | Preserve the full-check and resolved-thread merge gate, advisory-reviewer rule, and explicit absence of merge authority. |
 | `shakacode/react-on-rails-demo-marketplace-rsc` | `main` | Keep the large QA-stress contract and operational scripts in their dedicated configuration; V2 does not replace them. |
 | `shakacode/react-on-rails-demo-ssr-hmr` | `master` | Preserve the full-check and resolved-thread merge gate. |
+| `shakacode/react-on-rails-starter-tanstack` | `main` | Preserve the full-check and resolved-thread gate and the risk-based distinction between low-risk automation and maintainer-gated changes. |
 | `shakacode/react-on-rails-demos` | `main` | Preserve Lefthook, monorepo formatting, and review-app conditions that exceed the local validation wrapper. |
 | `shakacode/react-ppr-from-scratch` | `main` | Confirm live protection and review policy before replacing the minimal V1 seam. |
 | `shakacode/react_on_rails` | `main` | Do not migrate as an ordinary immediate-merge consumer: it requires a merge queue, hosted-CI routing, secret redaction, and a public-comment trust boundary. |
+| `shakacode/react_on_rails-demo-octochangelog-on-rails-pro` | `main` | Preserve the full-check and resolved-thread gate and CI parity across Ruby scanning, lint, PostgreSQL, and renderer tests. |
 | `shakacode/react_on_rails_rsc` | `main` | Preserve the full-check and resolved-thread merge gate and the existing hosted-CI behavior. |
 | `shakacode/shakapacker` | `main` | Preserve `merge-readiness-check` and its tests by composing it into validation or retaining the repository instruction explicitly. |
 | `shakacode/shakaperf` | `main` | Confirm live protection and review policy before replacing the minimal V1 seam. |
