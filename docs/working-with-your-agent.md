@@ -17,13 +17,13 @@ before the answer becomes expensive to change, rather than waiting for PR review
 | The checkout or task is unavailable | Asks for the repository path or task description; does not make you rewrite the workflow prompt. |
 | Open PRs or remote branches already cover this work item | Reports them and stops unless a comparison or override was already authorized. |
 | Required repository instructions are missing | Reads scripts and CI, offers a minimal `AGENTS.md` addition, and asks only about policy it cannot establish. Existing documented commands are sufficient; no new config framework is required. |
-| Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back for approval. Reuses existing authority; without an answer, prepares the PR and asks before merging. |
+| Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back for approval. Reuses existing authority; without an answer, prepares the PR and, when it is ready, points you to GitHub's merge control. |
 | The model and effort have been recommended for implementation | Proceeds without another response only when the intake explicitly named matching model and effort, clearly authorized starting now, and those settings are active and usable in the host. Otherwise it pauses with one next action. |
 | The goal or acceptable behavior is unclear | Reads the existing context, then asks the smallest question needed to proceed. |
 | Several routine, reversible approaches fit the request | Chooses one and continues; mentions the assumption if it affects your expectations. |
 | Implementation reveals a product tradeoff, wider scope, or risk | Explains the discovery, recommends a path, and asks before dependent work continues. |
 | An answer is pending | Continues useful independent work when safe, but does not begin implementation while the model/effort checkpoint is pending. Does not treat silence as approval. |
-| The PR is ready | In **Ask**, requests one merge decision unless already authorized. In **Auto**, merges after the required checks and approvals pass. |
+| The PR is ready | In **Ask**, when nothing else remains, points you to GitHub's merge control and this chat can be archived. In **Auto**, submits after the required checks and approvals pass. |
 
 For example, a question discovered while fixing an import could be:
 
@@ -37,7 +37,7 @@ Related questions can come together; a mandatory questionnaire is unnecessary.
 An answer remains part of the existing task or PR, subject to its privacy, so the
 agent can use it later without asking again. A merge choice applies to this task
 unless you explicitly give it broader scope. Choosing **Ask** at the start leaves
-the actual merge decision until you can see the finished change.
+the GitHub merge click until you can see the finished change.
 
 ## Choose a small execution context
 
