@@ -105,9 +105,7 @@ class SeamTest < Minitest::Test
       'version' => 1, 'base_branch' => 'main',
       'review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review',
                     'reviewers' => [{ 'provider' => 'anthropic', 'model_family' => 'claude' }] },
-      'merge' => { 'preference' => 'auto', 'method' => 'squash', 'release' => 'explicit_approval' },
-      'protection' => { 'required_checks' => ['validate'], 'direct_push' => false,
-                        'force_push' => false, 'branch_deletion' => false }
+      'merge' => { 'preference' => 'auto' }
     }
   end
 

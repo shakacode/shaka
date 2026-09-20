@@ -63,21 +63,6 @@ module Shaka
         value
       end
 
-      def required_list(key, flag)
-        values = string_list(key, flag)
-        raise Error, "--#{flag.tr('_', '-')} is required" if values.empty?
-
-        values
-      end
-
-      def string_list(key, flag)
-        values = @options.fetch(key, [])
-        valid = values.all? { |value| value.is_a?(String) && !value.strip.empty? && !value.match?(/[\0\r\n]/) }
-        raise Error, "--#{flag.tr('_', '-')} must be a non-empty single line" unless valid
-
-        values
-      end
-
       def repository_file(relative, label)
         path = File.expand_path(relative, @root)
         inside = !Pathname.new(relative).absolute? && path.start_with?("#{@root}/")

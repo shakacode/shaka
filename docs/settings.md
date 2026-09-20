@@ -1,10 +1,12 @@
 # Repository seam settings
 
 `.agents/agent-workflow.yml` is the machine-readable contract between a repository and
-the Shaka workflow. It records review, merge, and branch-protection policy. Executable
-commands use the fixed `.agents/bin/` interface described below. Shaka reads policy and
-optional-command availability from the trusted default branch, so
-a candidate pull request cannot grant itself authority by editing its own copy.
+the Shaka workflow. It records review, merge-authority, branch-naming, and recovery policy.
+Executable commands use the fixed `.agents/bin/` interface described below. Shaka reads
+policy and optional-command availability from the trusted default branch, so a candidate
+pull request cannot grant itself authority by editing its own copy. GitHub remains
+authoritative for live protection, required checks, allowed merge methods, and workflow
+action references.
 
 Create it with [`shaka seam init`](getting-started.md#initialize-a-repository-seam) and
 validate any change with `shaka seam check --root .`. Validation is strict and local:
@@ -34,22 +36,14 @@ review:
       model_family: grok
 merge:
   preference: ask
-  method: squash
-  release: explicit_approval
-protection:
-  required_checks:
-    - validate
-  direct_push: false
-  force_push: false
-  branch_deletion: false
-trusted_actions:
-  - actions/checkout
-  - anthropics/claude-code-action
-  - ruby/setup-ruby
+branches:
+  name: '{login}-{host}/{issue}-{description}'
+recovery:
+  workspace_path: false
 ```
 
-The smallest valid YAML seam drops every optional setting — `plan`, `trusted_actions`,
-`reviewers`, `branches`, and `recovery`:
+The smallest valid YAML seam drops every optional setting — `plan`, `reviewers`,
+`branches`, and `recovery` — and does not provide either optional command entry point:
 
 ```yaml
 ---
@@ -59,14 +53,6 @@ review:
   required: none
 merge:
   preference: ask
-  method: squash
-  release: explicit_approval
-protection:
-  required_checks:
-    - validate
-  direct_push: false
-  force_push: false
-  branch_deletion: false
 ```
 
 ## File rules
@@ -91,24 +77,46 @@ These apply to the whole document, whatever the settings are.
 | `base_branch` | yes | string | Non-empty string naming the branch work starts from. See the note below. |
 | `review` | yes | mapping | [Reviewer policy](#review). |
 | `merge` | yes | mapping | [Merge authority](#merge). |
-| `protection` | yes | mapping | [Expected branch protection](#protection). |
 | `plan` | no | string | Repository-relative path to an existing file. |
-| `trusted_actions` | no | list of strings | Non-empty when present. |
 | `branches` | no | mapping | [Feature-branch layout](#branches). |
 | `recovery` | no | mapping | [Recovery note policy](#recovery). |
+
+### What is intentionally absent
+
+Older seams must remove `protection` and `trusted_actions`; `merge.method` and
+`merge.release` are retired too.
+
+The seam does not copy GitHub's complete required-check list, direct-push, force-push,
+branch-deletion, allowed-merge-method, or workflow-action state. Shaka reads current
+mergeability, whether native protection binds the acting account, approvals, and required
+checks from GitHub before merging. Trusted workflow files carry their own pinned action
+references. A second unchecked copy in YAML would not enforce any boundary and could disagree
+with the service that does.
+
+`review.check` serves a different purpose: it selects the reviewer result that the Shaka
+workflow must wait for whenever repository policy requires review, even if GitHub branch
+protection does not require that check. GitHub remains authoritative for the native check list;
+the seam remains authoritative for Shaka's review choice.
+
+Repositories that use an action allowlist as input to a real security scanner should keep it
+in that scanner's supported policy file. Shaka V2 has no such consumer, so it does not accept
+an inert `trusted_actions` field.
 
 ### When `version` changes
 
 `version` stays `1` while the pilot revises this contract. A revision that removes or renames
 a key makes an older seam fail `seam check` loudly, with a non-zero exit and the offending key
-named, so nothing is silently misread and no version bump is needed to stay safe. The
-`review.reviewers` list replacing the earlier flat `model_family`, `provider`, and `draft`
-fields is such a revision.
+named and a migration pointer where one exists, so nothing is silently misread and no version
+bump is needed to stay safe. The `review.reviewers` list replacing the earlier flat
+`model_family`, `provider`, and `draft` fields and the retired GitHub-fact fields described
+above are such revisions.
 
 `version` becomes `2` on the first change that could let an existing seam be read as something
 it does not mean — a key whose meaning or default changes while its name and shape stay valid —
 or once repositories outside this pilot depend on the contract, whichever comes first. Until
 then a bump would force every consumer to edit a file for no behavioral difference.
+
+### Path and branch validation
 
 Repository-relative means exactly that: an absolute path, a path that escapes the
 repository, or a symlink resolving outside it is rejected.
@@ -287,36 +295,19 @@ reviewer's instructions.
 
 ## `merge`
 
-All three keys are required and no others are accepted.
+`preference` is the only accepted key.
 
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
 | `preference` | `ask`, `auto` | `ask` brings the ready PR back for a human merge decision. `auto` merges an eligible change once the same gates pass. |
-| `method` | `squash` | The only supported method. |
-| `release` | `explicit_approval` | Release changes always need a human decision. |
 
 `auto` is not a bypass. Required checks, required approvals, and branch protection still
 apply, and uncertain authority or consequential risk falls back to `ask`.
 
-## `protection`
-
-All four keys are required and no others are accepted. This section records what Shaka
-expects GitHub to enforce; Shaka never edits protection and never bypasses it.
-
-| Setting | Allowed values | Meaning |
-| --- | --- | --- |
-| `required_checks` | non-empty list of non-empty strings | Checks that must pass before merge. |
-| `direct_push` | `false` | Direct pushes to the base branch are not permitted. |
-| `force_push` | `false` | Force pushes are not permitted. |
-| `branch_deletion` | `false` | Branch deletion is not permitted. |
-
-The three booleans must each be `false`. They are present so the contract states the
-expectation explicitly rather than leaving it implied.
-
-## `trusted_actions`
-
-Optional allowlist of GitHub Actions used by the repository's trusted workflows, such as
-`actions/checkout`. When the key is present it must hold at least one non-empty string.
+The merge helper submits a squash merge, and release changes always need explicit human
+approval. Those are workflow invariants rather than configurable choices, so repeating them
+in every repository seam would create data that can only drift from the implementation.
+GitHub decides whether squash merge is currently allowed.
 
 ## `branches`
 
@@ -373,10 +364,10 @@ introduces, and lands with it.
 ## What `seam init` writes
 
 The initializer produces the smallest complete contract: the three required `.agents/bin/`
-wrappers plus YAML containing `version`, `base_branch`, `review`, `merge`, `protection`, and
+wrappers plus YAML containing `version`, `base_branch`, `review`, `merge`, and
 `branches.name` set to `{login}-{host}/{issue}-{description}` so the layout is visible in
-the seam instead of only in Ruby. It adds `plan` and `trusted_actions` only when you pass
-them. Edit `branches.name` afterward when the repository already uses a different layout.
+the seam instead of only in Ruby. It adds `plan` only when you pass it. Edit
+`branches.name` afterward when the repository already uses a different layout.
 
 The generated `review` section depends on the policy. With `always` or
 `meaningful_changes` it holds `required` and `check`, and `--review-check` is mandatory.

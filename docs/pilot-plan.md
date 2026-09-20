@@ -65,7 +65,8 @@ it, and Markdown explains decisions and human-only constraints.
 
 The **seam** is `.agents/agent-workflow.yml` plus the standard `.agents/bin/` interface.
 It supplies setup, full and optional pre-review validation, focused tests, an optional
-hosted-CI trigger, base branch, review, merge, and branch-protection policy. `AGENTS.md`
+hosted-CI trigger, base branch, review, merge authority, branch naming, and recovery policy.
+GitHub supplies live protection, required checks, and allowed merge methods. `AGENTS.md`
 supplies human-only context and boundaries.
 `shaka seam check` rejects unknown fields, duplicate keys, unsafe paths, missing scripts,
 and invalid values. Read authority from the trusted default-branch copy. Candidate policy

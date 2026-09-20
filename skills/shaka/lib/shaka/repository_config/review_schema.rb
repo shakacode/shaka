@@ -66,7 +66,7 @@ module Shaka
       def entry!(entry, index)
         label = "review.reviewers[#{index}]"
         mapping!(entry, label)
-        entry_keys!(entry, label)
+        keys!(entry, IDENTITY, [], label)
         IDENTITY.each { |key| component!(entry[key], "#{label}.#{key}") }
       end
 
@@ -77,15 +77,6 @@ module Shaka
         string!(value, label)
         raise Error, "#{label} must not contain '/'" if value.include?('/')
         raise Error, "#{label} must not start or end with whitespace" if value != value.strip
-      end
-
-      # Named apart from `Validation#keys!` rather than shadowing it: that helper reports
-      # `unknown key: X` without a label, which does not say which entry a typo is in.
-      def entry_keys!(entry, label)
-        unknown = entry.keys - IDENTITY
-        missing = IDENTITY - entry.keys
-        raise Error, "unknown #{label} key: #{unknown.first}" unless unknown.empty?
-        raise Error, "missing #{label} key: #{missing.first}" unless missing.empty?
       end
     end
   end

@@ -13,7 +13,7 @@ module Shaka
 
     DEFAULT_RECOVERY = { 'workspace_path' => true }.freeze
 
-    attr_reader :base_branch, :commands, :review, :merge, :protection, :recovery
+    attr_reader :base_branch, :commands, :review, :merge, :recovery
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil)
       new(root:, source:, available_commands:).load
@@ -57,7 +57,6 @@ module Shaka
       @base_branch = @data.fetch('base_branch')
       @review = @data.fetch('review')
       @merge = @data.fetch('merge')
-      @protection = @data.fetch('protection')
       @recovery = DEFAULT_RECOVERY.merge(@data.fetch('recovery', {}))
     end
   end

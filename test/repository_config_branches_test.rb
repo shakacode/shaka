@@ -25,4 +25,11 @@ class RepositoryConfigBranchesTest < Minitest::Test
       assert_includes message, 'branches.name'
     end
   end
+
+  def test_labels_an_unknown_branch_setting
+    with_repository('branches' => { 'name' => '{issue}', 'prefix' => 'feature' }) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+      assert_includes message, 'unknown branches key: prefix'
+    end
+  end
 end

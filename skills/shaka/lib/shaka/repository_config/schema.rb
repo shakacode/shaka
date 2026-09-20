@@ -13,8 +13,8 @@ module Shaka
     class Schema
       include Validation
 
-      REQUIRED = %w[version base_branch review merge protection].freeze
-      OPTIONAL = %w[plan trusted_actions branches recovery].freeze
+      REQUIRED = %w[version base_branch review merge].freeze
+      OPTIONAL = %w[plan branches recovery].freeze
 
       attr_reader :commands
 
@@ -26,25 +26,25 @@ module Shaka
 
       def validate
         mapping!(@data, PATH)
+        reject_retired_root_keys
         keys!(@data, REQUIRED, OPTIONAL, PATH)
         validate_header
         validate_commands
         validate_review
         validate_merge
-        validate_protection
         validate_optional
       end
 
       private
 
       def validate_header
-        equal!(@data['version'], 1, 'version must be 1')
+        raise Error, 'version must be 1' unless @data['version'] == 1
+
         string!(@data['base_branch'], 'base_branch')
         file!(@data['plan'], 'plan') if @data.key?('plan')
       end
 
       def validate_optional
-        validate_trusted_actions
         BranchSchema.new(@data['branches']).validate if @data.key?('branches')
         RecoverySchema.new(@data['recovery']).validate if @data.key?('recovery')
       end
@@ -63,38 +63,18 @@ module Shaka
 
       def validate_merge
         merge = mapping!(@data['merge'], 'merge')
-        keys!(merge, %w[preference method release], [], 'merge')
+        retired = %w[method release].find { |key| merge.key?(key) }
+        raise Error, "merge.#{retired} is no longer configurable; see docs/settings.md" if retired
+
+        keys!(merge, ['preference'], [], 'merge')
         enum!(merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
-        equal!(merge['method'], 'squash', 'merge.method must be squash')
-        equal!(merge['release'], 'explicit_approval', 'merge.release must be explicit_approval')
       end
 
-      def validate_protection
-        protection = mapping!(@data['protection'], 'protection')
-        fields = %w[required_checks direct_push force_push branch_deletion]
-        keys!(protection, fields, [], 'protection')
-        checks = strings!(protection['required_checks'], 'protection.required_checks')
-        raise Error, 'protection.required_checks must not be empty' if checks.empty?
+      def reject_retired_root_keys
+        retired = %w[protection trusted_actions].find { |key| @data.key?(key) }
+        return unless retired
 
-        fields.drop(1).each { |key| equal!(protection[key], false, "protection.#{key} must be false") }
-      end
-
-      def validate_trusted_actions
-        return unless @data.key?('trusted_actions')
-
-        actions = strings!(@data['trusted_actions'], 'trusted_actions')
-        raise Error, 'trusted_actions must not be empty' if actions.empty?
-      end
-
-      def strings!(value, label)
-        valid = value.is_a?(Array) && value.all? { |item| item.is_a?(String) && !item.strip.empty? }
-        raise Error, "#{label} must be a list of non-empty strings" unless valid
-
-        value
-      end
-
-      def equal!(actual, expected, message)
-        raise Error, message unless actual == expected
+        raise Error, "#{retired} moved out of the seam; see docs/settings.md"
       end
     end
   end

@@ -15,13 +15,8 @@ module RepositoryConfigTestHelpers
     end
   end
 
-  def protection
-    { 'required_checks' => ['validate'], 'direct_push' => false, 'force_push' => false,
-      'branch_deletion' => false }
-  end
-
   def merge_policy
-    { 'preference' => 'auto', 'method' => 'squash', 'release' => 'explicit_approval' }
+    { 'preference' => 'auto' }
   end
 
   def with_repository(overrides = {})
@@ -38,7 +33,7 @@ module RepositoryConfigTestHelpers
     {
       'version' => 1, 'base_branch' => 'main', 'plan' => 'PLAN.md',
       'review' => review_policy,
-      'merge' => merge_policy, 'protection' => protection, 'trusted_actions' => ['actions/checkout']
+      'merge' => merge_policy
     }
   end
 

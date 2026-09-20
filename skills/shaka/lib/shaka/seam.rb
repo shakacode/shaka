@@ -40,7 +40,7 @@ module Shaka
 
       if operation == 'check'
         init_keys = %i[base_branch setup_command validate_command test_command review_policy review_check
-                       merge_preference required_checks plan trusted_actions]
+                       merge_preference plan]
         raise OptionParser::InvalidArgument, 'init options do not apply to check' if @options.keys.intersect?(init_keys)
       elsif @options.key?(:ref)
         raise OptionParser::InvalidArgument, '--ref does not apply to init'
@@ -97,13 +97,7 @@ module Shaka
       flags.on('--merge-preference MODE', %w[ask auto], 'ask or auto (default: ask)') do |value|
         @options[:merge_preference] = value
       end
-      repeatable(flags, '--required-check NAME', :required_checks, 'Required native check; repeatable')
       flags.on('--plan PATH', 'Optional repository-relative plan path') { |value| @options[:plan] = value }
-      repeatable(flags, '--trusted-action ACTION', :trusted_actions, 'Trusted action identifier; repeatable')
-    end
-
-    def repeatable(flags, option, key, description)
-      flags.on(option, description) { |value| (@options[key] ||= []) << value }
     end
 
     def help(parser)

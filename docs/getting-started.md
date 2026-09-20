@@ -140,8 +140,8 @@ See [usage reporting](usage-reporting.md#what-the-opencode-reader-includes).
 ## Initialize a repository seam
 
 Installing the skill does not write policy into every repository. Initialize each
-repository explicitly after identifying its real scripts, checks, review provider,
-and merge preference:
+repository explicitly after identifying its real scripts, review policy, and merge
+preference:
 
 ```bash
 "$HOME/.agents/skills/shaka/scripts/shaka" seam init \
@@ -151,8 +151,7 @@ and merge preference:
   --validate-command "bin/validate" \
   --test-command "bundle exec rake test" \
   --review-policy meaningful_changes \
-  --review-check claude-review \
-  --required-check validate
+  --review-check claude-review
 ```
 
 The command creates `.agents/agent-workflow.yml`, small executable wrappers under
@@ -161,12 +160,11 @@ the directory is and links to the [seam settings reference](settings.md). Its de
 merge preference is **Ask**. Add
 `--merge-preference auto` only when that is the repository's established authority;
 choose `--review-policy always`, `meaningful_changes`, or `none`, and supply
-`--review-check` unless the policy is `none`. Also
-provide at least one `--required-check` and repeat it for every required GitHub check.
-Repeat `--trusted-action` as needed, and use `--plan` for an existing
-repository-relative plan. The initializer's `--setup-command`, `--validate-command`, and
-`--test-command` values are parsed as argument lists, so put shell pipelines or other compound
-behavior in a repository-owned script.
+`--review-check` unless the policy is `none`. Use `--plan` for an existing
+repository-relative plan. GitHub remains authoritative for required checks, branch rules,
+allowed merge methods, and workflow action references. The initializer's `--setup-command`,
+`--validate-command`, and `--test-command` values are parsed as argument lists, so put shell
+pipelines or other compound behavior in a repository-owned script.
 
 The wrapper names are fixed: `.agents/bin/setup`, `.agents/bin/validate`, and
 `.agents/bin/test`. This follows GitHub's
@@ -178,6 +176,9 @@ inside the repository and has identical invocation semantics. Keep `.agents` and
 as real tracked directories; only individual command entries may be symlinks. Add optional
 `.agents/bin/validate-local` and `.agents/bin/trigger-hosted-ci` by hand when the repository
 uses staged validation; the trigger requires the local-validation script.
+
+Before initializing, confirm that GitHub enforces at least one observable required check.
+The seam does not copy that list, and Shaka refuses to merge when GitHub reports none.
 
 Initialization validates every input before writing. It is safe to repeat when the
 generated files are unchanged and refuses to overwrite a repository-owned file or

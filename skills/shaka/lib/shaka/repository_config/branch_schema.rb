@@ -16,28 +16,13 @@ module Shaka
       end
 
       def validate
-        mapping = require_mapping
-        name = require_name(mapping)
+        mapping = mapping!(@data, 'branches')
+        keys!(mapping, ['name'], [], 'branches')
+        name = string!(mapping['name'], 'branches.name')
         raise Error, 'branches.name must include {issue}' unless name.include?('{issue}')
 
         leftover = name.scan(/\{([^{}]+)\}/).flatten - PLACEHOLDERS
         raise Error, "branches.name has unknown placeholder: #{leftover.first}" unless leftover.empty?
-      end
-
-      private
-
-      def require_mapping
-        raise Error, 'branches must be a mapping' unless @data.is_a?(Hash) && @data.keys.all?(String)
-
-        @data
-      end
-
-      def require_name(mapping)
-        extra = mapping.keys - ['name']
-        raise Error, "unknown key: #{extra.first}" unless extra.empty?
-        raise Error, 'missing branches key: name' unless mapping.key?('name')
-
-        string!(mapping['name'], 'branches.name')
       end
     end
   end
