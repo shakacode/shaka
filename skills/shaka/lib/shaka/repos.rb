@@ -2,6 +2,7 @@
 
 require 'json'
 require 'optparse'
+require 'uri'
 require_relative 'error'
 require_relative 'git_origin'
 require_relative 'prefix'
@@ -66,11 +67,15 @@ module Shaka
 
     def duplicates(repositories)
       repositories.group_by { |row| row.fetch('prefix') }.each_with_object({}) do |(prefix, rows), collected|
-        identities = rows.map { |row| row.fetch('identity') }.uniq
-        next unless identities.length > 1
+        keys = rows.map { |row| collision_key(row) }.uniq
+        next unless keys.length > 1
 
-        collected[prefix] = identities
+        collected[prefix] = keys
       end
+    end
+
+    def collision_key(row)
+      "#{URI(row.fetch('url')).host}/#{row.fetch('identity')}"
     end
 
     def report_duplicates(duplicates)

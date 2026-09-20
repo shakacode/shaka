@@ -56,11 +56,12 @@ Stdout and `catalog.json` use the same object:
 }
 ```
 
-`identity` is always `owner/name`. Duplicate prefixes across **distinct** identities
-are listed under `duplicate_prefixes` and printed on stderr; refresh still writes
-the catalog and exits non-zero so a collision cannot silently select the wrong
-repository. Two checkouts of the same identity with the same prefix are not a
-collision. Catalog `url` values never keep remote userinfo.
+`identity` is always `owner/name`. Duplicate prefixes across **distinct**
+`host/owner/name` keys are listed under `duplicate_prefixes` and printed on stderr;
+refresh still writes the catalog and exits non-zero so a collision cannot silently
+select the wrong repository. Two checkouts of the same host and identity with the
+same prefix are not a collision. The same `owner/name` on different hosts is a
+collision when the prefixes match. Catalog `url` values never keep remote userinfo.
 
 ## Direct operation
 

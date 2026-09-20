@@ -35,18 +35,18 @@ module ReposCatalogHelpers
     [output.empty? ? catalog : JSON.parse(output), error, status]
   end
 
-  def registered_repository(home, name:, prefix: nil)
-    root = repository(name:, prefix:)
+  def registered_repository(home, name:, prefix: nil, origin: nil)
+    root = repository(name:, prefix:, origin:)
     _output, error, status = Open3.capture3(env(home), COMMAND, 'repos', 'add', '--root', root)
     raise error unless status.success?
 
     root
   end
 
-  def repository(name:, prefix: nil)
+  def repository(name:, prefix: nil, origin: nil)
     root = File.join(@roots, name)
     write_seam(root, prefix)
-    git_origin!(root, name)
+    git_origin!(root, name, origin:)
     File.realpath(root)
   end
 
@@ -72,11 +72,11 @@ module ReposCatalogHelpers
     File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam_config.merge(extra)))
   end
 
-  def git_origin!(root, name)
+  def git_origin!(root, name, origin: nil)
     git!(root, 'init', '-b', 'main')
     git!(root, 'add', '.')
     git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'trusted')
-    git!(root, 'remote', 'add', 'origin', "https://github.com/acme/#{name}.git")
+    git!(root, 'remote', 'add', 'origin', origin || "https://github.com/acme/#{name}.git")
     git!(root, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
     git!(root, 'symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/main')
   end
@@ -166,8 +166,22 @@ class ReposCatalogTest < Minitest::Test
 
       refute_predicate status, :success?
       assert_includes error, 'DUP'
-      assert_equal %w[acme/alpha acme/beta], catalog.dig('duplicate_prefixes', 'DUP')
+      assert_equal %w[github.com/acme/alpha github.com/acme/beta], catalog.dig('duplicate_prefixes', 'DUP')
       assert_equal %w[acme/alpha acme/beta], identities(catalog)
+    end
+  end
+
+  def test_refresh_reports_the_same_owner_name_on_different_hosts_as_a_collision
+    with_home do |home|
+      registered_repository(home, name: 'repo', prefix: 'DUP')
+      registered_repository(home, name: 'ghe-repo', prefix: 'DUP', origin: 'https://ghe.example/acme/repo.git')
+      catalog, error, status = refresh_result(home)
+      keys = catalog.dig('duplicate_prefixes', 'DUP')
+
+      refute_predicate status, :success?
+      assert_equal %w[ghe.example/acme/repo github.com/acme/repo], keys.sort
+      assert_includes error, keys.first
+      assert_equal %w[acme/repo acme/repo], identities(catalog)
     end
   end
 end
