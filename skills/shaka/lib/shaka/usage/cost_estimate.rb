@@ -121,21 +121,11 @@ module Shaka
     private
 
     def markdown(columns, reasons)
-      <<~MARKDOWN
-
-        Cost estimates are not invoices. Actual charge: UNKNOWN.
-
-        <details>
-        <summary>Cost scenarios</summary>
-
-        #{intro(columns)}
-
-        #{cost_table(columns)}
-
-        #{footer(columns, reasons)}
-
-        </details>
-      MARKDOWN
+      parts = [cost_table(columns),
+               'Cost estimates are not invoices. Actual charge: UNKNOWN.',
+               intro(columns),
+               footer(columns, reasons)].compact.reject { |part| part.to_s.strip.empty? }
+      "#{parts.join("\n\n")}\n"
     end
 
     def intro(columns)

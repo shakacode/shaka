@@ -174,8 +174,10 @@ module Shaka
 
     def report
       <<~MARKDOWN
-        Native usage is PARTIAL. #{count}. Scope: #{turn_scope}.
+        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report.rstrip}
+
         #{reviewer_coverage}
+        Native usage is PARTIAL. #{count}. Scope: #{turn_scope}.
 
         <details>
         <summary>Token detail</summary>
@@ -189,7 +191,6 @@ module Shaka
         #{rows}
 
         </details>
-        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report}
       MARKDOWN
     end
 

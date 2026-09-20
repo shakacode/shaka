@@ -273,12 +273,11 @@ A PR description has to carry the report inside a `details` entry whose summary
 mentions usage; that much the renderer checks. It does not check the wording, and
 nothing but the agent keeps the rest of this section.
 
-Call that entry **Usage and cost**. It holds both halves of the report, the native
-token table and the priced scenario, so a summary naming either half alone
-misdescribes the other: calling it token usage drops the money, and calling it native
-usage claims Shaka copied a figure it calculated from a rate card. Inside it the
-helper names its own collapsed blocks, `Token detail` and `Cost scenarios`, so
-repeating either name in the outer summary nests a heading inside itself.
+Call that entry **Usage and cost**. Put the dollar table in the visible summary when
+the figures are known, for example `Usage and cost — $8.29 grok-4.6, $0.94 claude-opus-5`.
+The helper prints the USD estimate above its collapsed `Token detail` block so a reader
+does not open two nested details to see what the task cost. Rate-card notes and sources
+stay with that estimate; native token rows stay inside `Token detail`.
 
 ## PR execution provenance
 

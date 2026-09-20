@@ -60,6 +60,18 @@ module UsageFixture
     File.write(file, options.fetch(:raw_tail, ''), mode: 'a')
     file
   end
+
+  def priced_context(turn, model, effort: 'high')
+    context(turn).tap { |setting| setting[:payload].merge!(model: model, effort: effort) }
+  end
+
+  def priced_usage(id, turn, input, **tokens)
+    usage(id, turn, input).tap do |response|
+      response[:payload][:usage].merge!(cached_input_tokens: tokens.fetch(:cached, 0),
+                                        cache_write_input_tokens: tokens.fetch(:writes, 0),
+                                        output_tokens: tokens.fetch(:output, 20), reasoning_output_tokens: 0)
+    end
+  end
 end
 
 class UsageTest < Minitest::Test
