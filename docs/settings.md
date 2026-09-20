@@ -93,10 +93,10 @@ checks from GitHub before merging. Trusted workflow files carry their own pinned
 references. A second unchecked copy in YAML would not enforce any boundary and could disagree
 with the service that does.
 
-`review.check` serves a different purpose: it selects the reviewer result that the Shaka
-workflow must wait for whenever repository policy requires review, even if GitHub branch
-protection does not require that check. GitHub remains authoritative for the native check list;
-the seam remains authoritative for Shaka's review choice.
+`review.check` names the GitHub review job Shaka should read. That job is a backstop, not a
+GitHub required merge check. Wait for it only when no different-provider local review covers
+the current head, or when the user expressly made completed review a merge gate. GitHub remains
+authoritative for the native check list; the seam remains authoritative for Shaka's review choice.
 
 Repositories that use an action allowlist as input to a real security scanner should keep it
 in that scanner's supported policy file. Shaka V2 has no such consumer, so it does not accept

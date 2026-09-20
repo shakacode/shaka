@@ -264,7 +264,8 @@ phases:
         [invoke a reviewer locally](<{{package_root}}/docs/review.md#invoke-a-reviewer-locally>).
       - Independent review for this task is satisfied by a published local
         `REVIEWED SHA BY PROVIDER/FAMILY` attestation, or by a verified `review.check` report,
-        for a head of this PR. A later nit-only SHA does not reopen that wait. A user-requested
+        for the current head. A later nit-only or diagnostic-only SHA does not reopen that wait;
+        a SHA that changes runtime, trust, or tests does. A user-requested
         review gate still blocks until it completes. Keep status and gaps visible; put advisory
         reviewer history in details. Link the current review result from the PR summary and
         final response.
