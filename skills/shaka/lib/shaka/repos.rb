@@ -96,9 +96,8 @@ module Shaka
       raise Error, "Cannot parse catalog URL for #{row.fetch('identity')}"
     end
 
-    def collision_identity(uri, row)
-      identity = row.fetch('identity')
-      uri.host.to_s.casecmp?('github.com') ? identity.downcase : identity
+    def collision_identity(_uri, row)
+      row.fetch('identity').downcase
     end
 
     def report_duplicates(duplicates)

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'open3'
 require 'optparse'
 require_relative 'error'
 require_relative 'git_origin'
@@ -35,7 +36,9 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka prefix [--root DIR] [--ref REF]'
         flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
-        flags.on('--ref REF', 'Trusted Git commit or ref (default: origin/HEAD)') { |value| options[:ref] = value }
+        flags.on('--ref REF', 'Trusted Git commit or ref (default: origin/HEAD, then origin/main)') do |value|
+          options[:ref] = value
+        end
         flags.on('-h', '--help', 'Show usage') { options[:help] = true }
       end
     end
@@ -53,8 +56,22 @@ module Shaka
     end
 
     def call
-      config = TrustedConfigSource.load(root: @root, ref: @ref || 'origin/HEAD').to_h
+      config = TrustedConfigSource.load(root: @root, ref: @ref || default_ref).to_h
       RepoPrefix.display(configured: config['repo_prefix'], repository_name: GitOrigin.repository_name(root: @root))
+    end
+
+    private
+
+    def default_ref
+      %w[origin/HEAD origin/main origin/master].find { |ref| commit?(ref) } ||
+        raise(Error, 'Cannot resolve origin/HEAD or origin/main as a trusted commit')
+    end
+
+    def commit?(ref)
+      _output, _error, status = Open3.capture3(
+        'git', '-C', @root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}"
+      )
+      status.success?
     end
   end
 end

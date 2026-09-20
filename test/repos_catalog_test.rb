@@ -43,10 +43,10 @@ module ReposCatalogHelpers
     root
   end
 
-  def repository(name:, prefix: nil, origin: nil)
+  def repository(name:, prefix: nil, origin: nil, remote_head: true)
     root = File.join(@roots, name)
     write_seam(root, prefix)
-    git_origin!(root, name, origin:)
+    git_origin!(root, name, origin:, remote_head:)
     File.realpath(root)
   end
 
@@ -72,13 +72,13 @@ module ReposCatalogHelpers
     File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam_config.merge(extra)))
   end
 
-  def git_origin!(root, name, origin: nil)
+  def git_origin!(root, name, origin: nil, remote_head: true)
     git!(root, 'init', '-b', 'main')
     git!(root, 'add', '.')
     git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'trusted')
     git!(root, 'remote', 'add', 'origin', origin || "https://github.com/acme/#{name}.git")
     git!(root, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
-    git!(root, 'symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/main')
+    git!(root, 'symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/main') if remote_head
   end
 
   def seam_config
@@ -269,6 +269,35 @@ class ReposCatalogOriginTest < Minitest::Test
       catalog = refresh(home)
 
       assert_empty catalog.fetch('duplicate_prefixes')
+    end
+  end
+end
+
+class ReposCatalogSkipTest < Minitest::Test
+  include ReposCatalogHelpers
+
+  def test_refresh_treats_ghe_owner_name_case_as_the_same_repository
+    with_home do |home|
+      registered_repository(home, name: 'repo', prefix: 'SAME', origin: 'https://ghe.example/acme/repo.git')
+      registered_repository(home, name: 'cased', prefix: 'SAME', origin: 'https://ghe.example/Acme/Repo.git')
+      catalog = refresh(home)
+
+      assert_empty catalog.fetch('duplicate_prefixes')
+    end
+  end
+
+  def test_prefix_and_refresh_use_origin_main_without_origin_head
+    with_home do |home|
+      root = repository(name: 'solo', prefix: 'SOLO', remote_head: false)
+      output, error, status = Open3.capture3(env(home), COMMAND, 'prefix', '--root', root)
+
+      assert_predicate status, :success?, error
+      assert_equal({ 'prefix' => 'SOLO', 'source' => 'seam' }, JSON.parse(output))
+
+      _added, add_error, add_status = Open3.capture3(env(home), COMMAND, 'repos', 'add', '--root', root)
+      raise add_error unless add_status.success?
+
+      assert_equal ['acme/solo'], identities(refresh(home))
     end
   end
 
