@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'usage_test'
-require_relative '../skills/shaka/lib/shaka/cost_estimate'
+require_relative '../skills/shaka/lib/shaka/usage/cost_estimate'
 
 class UsageCostTest < Minitest::Test
   include UsageFixture

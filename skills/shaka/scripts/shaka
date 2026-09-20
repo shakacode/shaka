@@ -15,7 +15,7 @@ require_relative '../lib/shaka/review_prompt'
 require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
-require_relative '../lib/shaka/usage'
+require_relative '../lib/shaka/usage/usage'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
 
