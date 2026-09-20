@@ -83,9 +83,8 @@ module Shaka
     def default_port?(parsed_url)
       port = parsed_url[:port]
       return true if port.nil?
-      return port == '22' if parsed_url[:scheme] == 'ssh'
 
-      port == '443'
+      port == { 'ssh' => '22', 'http' => '80', 'https' => '443' }.fetch(parsed_url[:scheme], nil)
     end
     private_class_method :default_port?
 

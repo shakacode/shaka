@@ -38,8 +38,6 @@ class GitOriginTest < Minitest::Test
                  Shaka::GitOrigin.canonical_url('ssh://git@ghe.example/acme/repo.git')
     assert_equal 'ssh://ghe.example/acme/repo',
                  Shaka::GitOrigin.canonical_url('ssh://git@ghe.example:22/acme/repo.git')
-    assert_equal 'https://ghe.example/acme/repo',
-                 Shaka::GitOrigin.canonical_url('https://ghe.example:443/acme/repo.git')
   end
 
   def test_identity_from_urls_with_an_authority_port
@@ -80,6 +78,17 @@ class GitOriginTest < Minitest::Test
   def test_canonical_url_keeps_a_non_default_github_port
     assert_equal 'https://github.com:8443/acme/repo',
                  Shaka::GitOrigin.canonical_url('https://github.com:8443/acme/repo.git')
+  end
+end
+
+class GitOriginParseTest < Minitest::Test
+  def test_canonical_url_omits_scheme_default_ports
+    assert_equal 'https://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('https://ghe.example:443/acme/repo.git')
+    assert_equal 'http://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('http://ghe.example:80/acme/repo.git')
+    assert_equal 'http://ghe.example:443/acme/repo',
+                 Shaka::GitOrigin.canonical_url('http://ghe.example:443/acme/repo.git')
   end
 
   def test_parse_errors_do_not_echo_credentials
