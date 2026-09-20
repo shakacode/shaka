@@ -128,10 +128,10 @@ Refresh it at meaningful progress and at each stopping point. The helper replace
 whole managed region, so republish every section with only the note changed, and
 re-pin the walkthrough link, the check table, and usage to the head the note names
 rather than carrying older ones forward. Remove
-the entire disclosure only after GitHub confirms the PR reached its outcome; a failed
+the entire disclosure only after GitHub confirms the PR reached its outcome, except after an
+Ask GitHub merge click, which leaves the note in place on purpose. A failed
 merge attempt still needs it. An Ask GitHub merge click refreshes the note for the expected
-head in that same turn, records state as waiting for GitHub merge of that head, and does
-not spend another turn to strip it after merge. The note lists:
+head in that same turn and records state as waiting for GitHub merge of that head. The note lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
   the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`. The alias
