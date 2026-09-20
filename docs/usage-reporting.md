@@ -259,7 +259,9 @@ tool output. Recovery-note thread locators follow their separate [publication
 rule](working-with-your-agent.md#recover-an-unfinished-pr). The helper reads local files
 and prints allowlisted aggregate metadata; it neither modifies sessions nor publishes
 to GitHub. Review the report for task coverage before publishing it. The visible
-coverage note stays outside the expandable details; missing usage does not block a PR.
+coverage note stays outside the expandable details. For a `--contribution review`
+report it says whether countable local-reviewer tokens are included below; empty or
+conflicting review records stay UNKNOWN. Missing usage does not block a PR.
 
 ## Naming the published block
 

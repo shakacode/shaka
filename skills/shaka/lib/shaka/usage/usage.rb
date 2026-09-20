@@ -81,6 +81,22 @@ module Shaka
 
       [{ 'configuration' => context_row, 'usage' => {} }]
     end
+
+    def reviewer_coverage
+      local = local_review_included? ? 'included below' : 'UNKNOWN'
+      gaps = @source.gaps.uniq.join('; ')
+      "Local adversarial reviewer usage: #{local}. External reviewer/tool-model usage: UNKNOWN. #{gaps}"
+    end
+
+    def local_review_included?
+      @options[:contribution] == 'review' && @responses.any? { |record| countable_usage?(record['usage']) }
+    end
+
+    def countable_usage?(usage)
+      usage.is_a?(Hash) && Usage::METRIC_FIELDS.any? do |_label, field|
+        usage[field].is_a?(Integer) && usage[field] >= 0
+      end
+    end
   end
 
   # Read-only reporting of per-response usage records from a supported host.
@@ -180,12 +196,6 @@ module Shaka
     end
 
     private
-
-    def reviewer_coverage
-      local = @options[:contribution] == 'review' && @responses.any? ? 'included below' : 'UNKNOWN'
-      gaps = @source.gaps.uniq.join('; ')
-      "Local adversarial reviewer usage: #{local}. External reviewer/tool-model usage: UNKNOWN. #{gaps}"
-    end
 
     def turn_scope
       return 'all turns in selected sources' if @options[:all_turns]

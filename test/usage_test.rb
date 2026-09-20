@@ -154,6 +154,10 @@ class UsageTest < Minitest::Test
     assert_includes report, 'SHARED'
     refute_includes report, THREAD
   end
+end
+
+class UsageReviewCoverageTest < Minitest::Test
+  include UsageFixture
 
   # A review snapshot that counted tokens but still said only "external reviewer
   # UNKNOWN" hid the local adversarial pass that those numbers belong to.
@@ -172,6 +176,16 @@ class UsageTest < Minitest::Test
   def test_implementation_snapshot_does_not_count_as_local_review
     header = run_report([context('current'), usage('current', 'current', 100)]).split('<details>').first
     assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+  end
+
+  # Conflicting copies keep a response row whose usage is empty. Calling that
+  # "included below" would advertise reviewer tokens that every metric lists as UNKNOWN.
+  def test_review_contribution_with_uncountable_records_does_not_claim_inclusion
+    report = run_report([context('current'), usage('replayed', 'current', 100),
+                         usage('replayed', 'current', 200)], '--contribution', 'review')
+    header = report.split('<details>').first
+    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    refute_includes header, 'included below'
   end
 end
 
