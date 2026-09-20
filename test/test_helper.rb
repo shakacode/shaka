@@ -13,8 +13,19 @@ module MetricAssert
   end
 end
 
+module BooleanAssert
+  def assert_true(value, message = nil)
+    assert_instance_of(TrueClass, value, message)
+  end
+
+  def assert_false(value, message = nil)
+    assert_instance_of(FalseClass, value, message)
+  end
+end
+
 module Minitest
   class Test
     include MetricAssert
+    include BooleanAssert
   end
 end

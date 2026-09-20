@@ -185,7 +185,7 @@ module Shaka
     end
 
     def cursor_rated?(column)
-      model = column[:model].to_s.sub(/-fast\z/, '')
+      model = column[:model].to_s.delete_suffix('-fast')
       column[:provider] == 'cursor' && CursorCost::RATES.dig(model, column[:billing])
     end
 
@@ -290,7 +290,7 @@ module Shaka
       columns.filter_map do |column|
         next unless openai_rated?(column) || cursor_rated?(column)
 
-        MODEL_SOURCES[column[:model].to_s.sub(/-fast\z/, '')]
+        MODEL_SOURCES[column[:model].to_s.delete_suffix('-fast')]
       end.uniq
     end
 
@@ -390,7 +390,7 @@ module Shaka
 
     def total(group, mode)
       amounts = group.map { |record| price(record, mode) }
-      reason = amounts.map(&:last).compact.first
+      reason = amounts.filter_map(&:last).first
       [reason ? nil : amounts.sum { |amount, _| amount }, reason]
     end
 

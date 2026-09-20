@@ -48,7 +48,7 @@ reader of a human guide, so test that use when it is part of the product.
 | A person wants to control merging | Starting at the README, finds the merge choice and explains what Ask and Auto authorize, including required approvals. |
 | A person wants to install and complete a first task | Follows the guide in a fresh session through a PR; record missing steps, wrong turns, questions, and corrections. |
 | A maintainer needs help with review, usage, or upgrades | Finds the named guide from the entry page without knowing filenames or searching the repository. |
-| An agent follows the procedure | In an isolated trial, takes the correct actions for a bounded task: preserves review-only scope, waits for Ask approval, and respects Auto's required gates. |
+| An agent follows the procedure | In an isolated trial, takes the correct actions for a bounded task: preserves review-only scope, points an Ask-ready PR at GitHub merge, and respects Auto's required gates. |
 | An agent consumes a rewritten guide | Completes the same representative task with the old and new guide; compare omitted requirements, incorrect actions, interventions, and available usage. |
 
 Give a trial reader the document's normal entry point and task, without extra hints

@@ -176,8 +176,8 @@ delegation. Use supported host controls and the user's actual authorization.
 Use Shaka's **ask** and **auto** preferences. Preserve an existing decision's
 repository, task, revision, and risk scope; do not convert an old workflow's
 setting into broader Shaka authority. Unknown authority defaults to asking.
-Record the preference early; in Ask, prepare the reviewable result before seeking
-the actual merge decision. Reuse authority already granted for that scope.
+Record the preference early; in Ask, prepare the reviewable result, then point the
+human at GitHub's merge control. Reuse authority already granted for that scope.
 
 CI waits, missing reviews, and repairable conflicts remain with the delivery
 owner. Finish independent work while waiting. Send a decision to the human only
@@ -216,7 +216,7 @@ assigns work there. Their PRs and checks are not adoption dependencies.
    adoption is authorized. Reuse their commands, owners, and approval requirements.
 
 Check negative cases too: an owned target must reuse or wait for its owner;
-an Ask task must wait for its merge decision; a changed head needs fresh evidence;
+an Ask-ready task hands merge to GitHub rather than another agent turn; a changed head needs fresh evidence;
 a paused task must remain paused without a release decision; a retired repository
 must not receive new work from adopting Shaka. Apply a user's scope correction
 before continuing an earlier assignment. Record observed actions, not just a

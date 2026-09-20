@@ -72,7 +72,7 @@ module OpencodeUsageFixture
     args = [CLEAR.merge(environment), COMMAND, 'usage', '--commit', COMMIT, '--contribution', 'implementation',
             *arguments]
     output, error, status = Open3.capture3(*args)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     output
   end
 
@@ -228,7 +228,7 @@ class OpencodeUsageFailuresTest < Minitest::Test
       File.chmod(0o755, executable)
       output = report('--host', 'opencode', '--session', '../../etc/passwd', environment: stub_environment(directory))
       assert_includes output, 'Pass an OpenCode session with --session ID'
-      refute File.exist?(sentinel)
+      refute_path_exists sentinel
     end
   end
 

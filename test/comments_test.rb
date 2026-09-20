@@ -49,7 +49,7 @@ class CommentsTest < Minitest::Test
 
     assert_empty bodies(result, 'issue_comments')
     assert_equal 1, result['excluded_interactions'].length
-    assert_equal true, result['excluded_interactions'].first['verification_unavailable']
+    assert_true result['excluded_interactions'].first['verification_unavailable']
     refute_includes JSON.generate(result), outside['body']
   end
 
@@ -96,7 +96,7 @@ class CommentsTest < Minitest::Test
 
     assert_equal [{ 'thread_id' => 'T1', 'is_resolved' => false }], result['review_threads']
     assert_equal 'T1', result['inline_comments'].first['thread_id']
-    assert_equal false, result['inline_comments'].first['is_resolved']
+    assert_false result['inline_comments'].first['is_resolved']
   end
 
   def test_withheld_inline_comment_retains_thread_metadata_without_body
@@ -106,7 +106,7 @@ class CommentsTest < Minitest::Test
 
     excluded = result['excluded_interactions'].first
     assert_equal 'T2', excluded['thread_id']
-    assert_equal true, excluded['is_resolved']
+    assert_true excluded['is_resolved']
     refute_includes JSON.generate(result), withheld['body']
   end
 
@@ -119,7 +119,7 @@ class CommentsTest < Minitest::Test
                     permissions: [permission('maintainer', 'write')])
 
     assert_equal 'T1', result['inline_comments'].first['thread_id']
-    assert_equal true, result['inline_comments'].first['is_resolved']
+    assert_true result['inline_comments'].first['is_resolved']
   end
 
   def test_large_inline_id_joins_using_full_database_id

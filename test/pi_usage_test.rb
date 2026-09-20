@@ -16,6 +16,7 @@ module PiUsageFixture
   OLD_ROUTE = %w[observed-old configured-old routed-old].freeze
   ABANDONED_ROUTE = %w[observed-abandoned configured-abandoned routed-abandoned].freeze
   CURRENT_ROUTE = %w[observed-new configured-new routed-new].freeze
+  REDACTED_OUTPUT = /800|900|SENSITIVE|response-|private-call|#{Regexp.escape(SESSION)}/
 
   private
 
@@ -85,7 +86,7 @@ module PiUsageFixture
 
   def report(*, environment: {})
     output, error, status = capture_report(*, environment: environment)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     output
   end
 
@@ -175,7 +176,7 @@ class PiUsageTest < Minitest::Test
       assert_includes output, '2 responses'
       assert_includes output, 'Pi source versions: 3'
       assert_includes output, 'latest user turn on the active branch'
-      refute_match(/800|900|SENSITIVE|response-|private-call|#{Regexp.escape(SESSION)}/, output)
+      refute_match(REDACTED_OUTPUT, output)
     end
   end
 
@@ -185,7 +186,7 @@ class PiUsageTest < Minitest::Test
       environment = CLEAR.merge('PI_CODING_AGENT' => 'true', 'PI_SESSION_ID' => SESSION,
                                 'PI_SESSION_FILE' => file, 'CODEX_THREAD_ID' => 'nested-codex')
       output, error, status = capture_report(environment: environment)
-      refute status.success?
+      refute_predicate status, :success?
       assert_empty output
       assert_includes error, 'invalid options'
       assert_current_row(report('--host', 'pi', environment: environment))
@@ -279,7 +280,8 @@ class PiInvalidReasoningCostTest < Minitest::Test
   def openai_terra_invalid_reasoning
     records = Marshal.load(Marshal.dump(branched_session))
     message = records.last[:message]
-    message.merge!(provider: 'openai', model: 'gpt-5.6-terra')
+    message[:provider] = 'openai'
+    message[:model] = 'gpt-5.6-terra'
     message[:usage][:reasoning] = 21
     records
   end

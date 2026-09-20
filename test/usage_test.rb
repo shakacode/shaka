@@ -44,7 +44,7 @@ module UsageFixture
       sources = options[:discover] ? [] : ['--file', file] * options.fetch(:copies, 1)
       output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources,
                                              '--commit', COMMIT, '--contribution', 'implementation', *)
-      assert status.success?, error
+      assert_predicate status, :success?, error
       output
     end
   end
@@ -255,7 +255,7 @@ class UsageFailuresTest < Minitest::Test
      ['--commit', COMMIT, '--contribution', 'SENSITIVE'],
      ['--commit', COMMIT, '--contribution', 'implementation', '--all-turns', '--turn', 'old'], []].each do |arguments|
       output, error, status = Open3.capture3(COMMAND, 'usage', *arguments)
-      refute status.success?
+      refute_predicate status, :success?
       assert_empty output
       assert_includes error, 'shaka usage:'
       refute_includes error, 'SENSITIVE'

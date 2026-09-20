@@ -11,7 +11,7 @@ class SeamTest < Minitest::Test
   def test_help_succeeds
     output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--help')
 
-    assert status.success?, error
+    assert_predicate status, :success?, error
     assert_includes output, 'shaka seam check'
     assert_includes output, 'shaka seam init'
   end
@@ -19,7 +19,7 @@ class SeamTest < Minitest::Test
   def test_help_before_the_operation_succeeds
     output, error, status = Open3.capture3(COMMAND, 'seam', '--help')
 
-    assert status.success?, error
+    assert_predicate status, :success?, error
     assert_includes output, 'shaka seam check'
   end
 
@@ -51,7 +51,7 @@ class SeamTest < Minitest::Test
       FileUtils.rm(File.join(root, '.agents/bin/validate-local'))
 
       _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, '.agents/bin/validate-local does not exist'
     end
   end
@@ -74,7 +74,7 @@ class SeamTest < Minitest::Test
       commit_repository(root)
 
       _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
     end
   end

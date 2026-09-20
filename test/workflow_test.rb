@@ -85,7 +85,7 @@ class WorkflowCommandTest < Minitest::Test
   def test_workflow_command_renders_every_phase_and_boundary
     output, status = Open3.capture2e(COMMAND, 'workflow')
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     assert_equal 7, output.scan(/^## \d+\. /).size
     assert_includes output, '## Always'
     assert_includes output, '## Code quality'
@@ -95,7 +95,7 @@ class WorkflowCommandTest < Minitest::Test
   def test_workflow_command_rejects_arguments
     output, status = Open3.capture2e(COMMAND, 'workflow', 'candidate.yml')
 
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes output, 'Usage: shaka workflow'
   end
 
@@ -103,7 +103,7 @@ class WorkflowCommandTest < Minitest::Test
     output, status = Open3.capture2e(COMMAND, 'workflow')
     links = output.scan(GUIDE_LINK)
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     refute_empty links
     links.each do |path, anchor|
       assert File.file?(path), "#{path} is not a guide"

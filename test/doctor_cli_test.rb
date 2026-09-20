@@ -31,7 +31,7 @@ class DoctorCliTest < Minitest::Test
   def test_the_command_reports_every_check_and_exits_non_zero_when_something_blocks
     output, error, status = stub_gh { |path, root| capture_doctor(path, root) }
 
-    refute status.success?, 'a missing repository seam must block'
+    refute_predicate status, :success?, 'a missing repository seam must block'
     assert_includes output, 'Repository seam'
     assert_includes output, 'Machine alias'
     assert_empty error

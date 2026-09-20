@@ -28,8 +28,8 @@ class PackageTest < Minitest::Test
     source = install_skill
     %w[shaka rct mct-claude rct-claude].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
     run_gem('uninstall', 'shaka', '--all', '--executables', '--ignore-dependencies')
-    refute File.exist?(File.join(@home, 'bin', 'shaka'))
-    refute File.exist?(source)
+    refute_path_exists File.join(@home, 'bin', 'shaka')
+    refute_path_exists source
   end
 
   def test_built_gem_distributes_the_declared_license
@@ -121,7 +121,7 @@ class PackageTest < Minitest::Test
     output, status = Bundler.with_unbundled_env do
       Open3.capture2e(@environment, RbConfig.ruby, *, chdir: chdir)
     end
-    assert status.success?, output
+    assert_predicate status, :success?, output
     output
   end
 end

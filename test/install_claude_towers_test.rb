@@ -24,24 +24,24 @@ class InstallClaudeTowersTest < Minitest::Test
   def test_installs_both_tower_skills_beside_shaka
     output, status = install('--with-claude-towers')
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     %w[shaka mct-claude rct-claude].each { |name| assert_linked(name) }
   end
 
   # The Codex tower drives native tools Claude Code does not have, so one flag never implies the other.
   def test_claude_towers_do_not_install_the_codex_repository_tower
-    assert install('--with-claude-towers').last.success?
-    refute File.exist?(destination('rct'))
+    assert_predicate install('--with-claude-towers').last, :success?
+    refute_path_exists destination('rct')
   end
 
   def test_codex_tower_does_not_install_the_claude_towers
-    assert install('--with-rct').last.success?
-    %w[mct-claude rct-claude].each { |name| refute File.exist?(destination(name)), name }
+    assert_predicate install('--with-rct').last, :success?
+    %w[mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
   end
 
   def test_default_install_omits_every_tower
-    assert install.last.success?
-    %w[rct mct-claude rct-claude].each { |name| refute File.exist?(destination(name)), name }
+    assert_predicate install.last, :success?
+    %w[rct mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
   end
 
   # A partial install would leave one tower skill linked and the other silently missing.
@@ -50,8 +50,8 @@ class InstallClaudeTowersTest < Minitest::Test
     marker = File.join(destination('mct-claude'), 'keep')
     File.write(marker, 'user content')
 
-    refute install('--with-claude-towers').last.success?
-    refute File.exist?(destination('shaka'))
+    refute_predicate install('--with-claude-towers').last, :success?
+    refute_path_exists destination('shaka')
     assert_equal 'user content', File.read(marker)
   end
 
