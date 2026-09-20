@@ -263,15 +263,19 @@ rules:
     enforced_by: code
     detector: >-
       `Merge#verify_checks` refuses an empty required-check list and any check that is not
-      passing, and `Merge#verify_snapshot` refuses a head that moved since verification.
-      shakacode/shaka's "Protect main" ruleset supplies `required_status_checks` as well.
+      passing, and `Merge#verify_snapshot` refuses a head that moved since verification. That
+      covers the path where the helper submits the merge. In Ask mode the maintainer clicks
+      merge and the helper never runs, so the gate there is the repository's own protection:
+      shakacode/shaka's "Protect main" ruleset supplies `required_status_checks`, and a
+      repository without it has nothing in that path.
   - id: no-protection-bypass
     phase: finish
     quote: never bypass protection
     enforced_by: code
     detector: >-
       `Merge#verify_submission_mode` refuses when `viewerCanMergeAsAdmin` is true, so an actor
-      who could merge past protection does not merge through this command.
+      who could merge past protection does not merge through this command. It refuses only the
+      bypass the helper would perform; a maintainer clicking merge is GitHub's to refuse.
   - id: no-ask-mode-bypass
     phase: finish
     quote: Do not bypass protection.
