@@ -68,9 +68,12 @@ module Shaka
        tally(rules), QUESTION, LEGEND, SCOPE, *sections].join("\n\n")
     end
 
+    # Titled from the same list the coverage check scans, so a new standing field cannot be
+    # audited into a section this report would then leave out.
     def section_titles(workflow)
       titles = workflow.fetch('phases').to_h { |phase| [phase.fetch('id'), phase.fetch('title')] }
-      titles.merge('always' => 'Always', 'code_quality' => 'Code quality')
+      EnforcementCoverage::STANDING.each { |field| titles[field] = field.tr('_', ' ').capitalize }
+      titles
     end
 
     def tally(rules)

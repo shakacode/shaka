@@ -37,7 +37,20 @@ class EnforcementConfigTest < Minitest::Test
     end
   end
 
-  # A rule stated outside a phase still binds the agent, so every standing field is scanned.
+  # A rule stated outside a phase still binds the agent, so every standing field is scanned
+  # and every scanned section can be rendered.
+  def test_reports_a_rule_from_every_section_it_scans
+    command = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+    output = Open3.capture2e(command, 'enforcement').first.force_encoding(Encoding::UTF_8)
+    rules = Shaka::EnforcementConfig.load.fetch('rules')
+
+    Shaka::EnforcementCoverage.sections(Shaka::WorkflowConfig.load).each_key do |id|
+      next unless rules.any? { |rule| rule['phase'] == id }
+
+      assert_match(/^## #{Regexp.escape(id.tr('_', ' '))}$/i, output, "#{id} rules have no section")
+    end
+  end
+
   def test_scans_every_standing_workflow_field
     Shaka::EnforcementCoverage::STANDING.each do |field|
       workflow = Shaka::WorkflowConfig.load
@@ -156,7 +169,9 @@ class EnforcementCommandTest < Minitest::Test
 
     assert status.success?, output
     assert_match(/if an agent ignores this rule, does anything fail/i, output)
-    assert_match(/never.*must.*do not.*only when/, output)
+    Shaka::EnforcementCoverage::MARKER.source.scan(/[a-z ]{2,}/).each do |form|
+      assert_includes output, form
+    end
     assert_match(/github.*(?:still active|not.*recheck)/im, output)
   end
 
