@@ -428,7 +428,7 @@ grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format pl
 subagents. Narrow further with `--disallowed-tools TOOLS` or `--deny RULE` for tools your run
 should not reach. `--sandbox PROFILE` exists but help does not list its profile names.
 If this review is a fresh Cursor chat, report it with
-`shaka usage --host cursor --commit "$head" --contribution review` from that chat, or that
+`shaka usage --host cursor --commit "$(git rev-parse HEAD)" --contribution review` from that chat, or that
 command plus `--file` of its stop-hook jsonl. Parent-agent Cursor records exclude subagents.
 
 The Codex flags were exercised on a prior local review rather than read off `--help`. The
@@ -446,7 +446,7 @@ the model's own output reports it. Check `--help` before relying on any of these
 A local review is **UNVERIFIED** until the owner publishes its report, including that closing
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
 tests, and publishes a concise summary tied to the reviewed commit. Record available native
-model, effort, and usage with `shaka usage --commit "$head" --contribution review` on the
+model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
 reviewer's source; missing evidence is UNKNOWN. Do not publish raw sessions or private
 context. A recovery
 note's `Thread` field follows its [publication

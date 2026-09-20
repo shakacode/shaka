@@ -107,6 +107,16 @@ class ClaudeUsageTest < Minitest::Test
     end
   end
 
+  # first.strip on a binary first line raises before parse's EncodingError handler.
+  def test_invalid_utf8_file_is_unreadable_not_a_crash
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, 'review.json')
+      File.binwrite(path, "{\xFF\n")
+      output = report('--host', 'claude-code', '--file', path, '--contribution', 'review')
+      assert_includes output, 'Unreadable or unidentifiable records'
+    end
+  end
+
   def test_counts_the_final_streamed_usage_of_each_response_in_the_latest_turn
     Dir.mktmpdir do |directory|
       file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900), prompt('new'),

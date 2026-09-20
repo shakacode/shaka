@@ -49,7 +49,7 @@ module Shaka
 
         jsonl_from(record, io)
       end
-    rescue SystemCallError
+    rescue SystemCallError, EncodingError
       [unreadable, nil]
     end
 
