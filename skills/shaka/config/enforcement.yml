@@ -310,9 +310,11 @@ rules:
     rule: Never wait for an advisory bot
     enforced_by: agent
     note: >-
-      `merge` gates on the seam's required checks and the configured `review.check` only, so an
-      unnamed bot's job cannot hold a merge the agent submits. An agent that waits for one
-      anyway just does not submit, and nothing fails.
+      Under swift, `ReviewPace.allowed_merge_states` admits UNSTABLE, so an unnamed bot's
+      pending job does not hold a merge the agent submits. Under thorough it admits CLEAN
+      alone on a queue-disabled base, and a pending advisory check is what makes the state
+      UNSTABLE, so there the bot does hold the merge and the rule reads the other way. Either
+      way an agent that waits simply does not submit, and nothing fails.
   - id: nits-do-not-restart-the-cycle
     phase: review
     quote: After two repair rounds, remaining nits do not start another cycle.
