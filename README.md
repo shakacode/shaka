@@ -25,11 +25,11 @@ You steer the work. Shaka takes it through delivery:
 - Tests the behavior before fixing it, then runs your repository's checks.
 - Opens a pull request with a walkthrough of what changed and why.
 - Handles review findings and verifies the fixes.
-- Asks you to approve the merge, or merges when authorized and ready.
+- Asks you to merge on GitHub when the PR is ready, or merges when authorized.
 
 ## You choose who can merge
 
-**Ask:** the agent prepares the PR, then waits for your merge approval.
+**Ask:** when the PR is ready and nothing else remains, you merge it on GitHub and can archive the chat.
 **Auto:** you authorize the agent to merge once the verified revision passes required
 checks and approvals. Risky changes still need a human decision.
 Existing authority is reused; a review-only or PR-only request keeps that stopping point.

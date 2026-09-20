@@ -220,7 +220,7 @@ Doctor confirms a session source is an openable file; whether its records parse 
 Send this, replacing the example with your issue number, task URL, or description:
 
 ```text
-$shaka Fix the failing search test. Bring the finished PR back for my approval.
+$shaka Fix the failing search test. Bring the finished PR back so I can merge it on GitHub.
 ```
 
 An issue number uses the current repository. A URL can identify another one;
@@ -234,7 +234,7 @@ settings still require one user action. It implements on a branch, runs your rep
 checks, opens a PR with a walkthrough, and handles review findings. You get the PR
 link, validation result, and any blocker; detailed evidence is on the PR.
 
-The example chooses **Ask**: you make the merge decision after the PR is ready.
+The example chooses **Ask**: when the PR is ready and nothing else remains, you merge it on GitHub and can archive the chat.
 To choose **Auto**, say “Merge when checks and required approvals pass” instead.
 Existing merge authority is reused; review-only and PR-only requests stop there.
 Auto still waits for required approvals and raises risky decisions. If a task stops
