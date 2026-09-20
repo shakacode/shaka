@@ -82,10 +82,14 @@ module Shaka
 
     # The two cache-write rates differ, so an unsplit write total cannot be priced.
     def anthropic_subset_reason(writes, writes_1h, reasoning, output)
-      return 'Cache-write TTL split UNKNOWN' if writes.positive? && !writes_1h.is_a?(Integer)
-      return 'Inconsistent token subsets' if writes_1h.is_a?(Integer) && !(0..writes).cover?(writes_1h)
+      return 'Cache-write TTL split UNKNOWN' if writes_1h.nil? && writes.positive?
+      return 'Inconsistent token subsets' unless writes_1h.nil? || hourly_writes?(writes_1h, writes)
 
       'Inconsistent token subsets' if invalid_reasoning?(reasoning, output)
+    end
+
+    def hourly_writes?(writes_1h, writes)
+      writes_1h.is_a?(Integer) && (0..writes).cover?(writes_1h)
     end
   end
 
@@ -363,7 +367,8 @@ module Shaka
       [reason ? nil : amounts.sum { |amount, _| amount }, reason]
     end
 
-    # Every published rate here bills input inclusive of its cached and written subsets.
+    # The OpenAI and Cursor rates bill input inclusive of its cached and written subsets;
+    # the Anthropic rates bill those three separately and are priced on their own path.
     def price(record, mode)
       native_price(record, mode) || configured_price(record, mode)
     end

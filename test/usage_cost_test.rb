@@ -291,6 +291,19 @@ class UsageAnthropicCostTest < Minitest::Test
     refute_includes unsupported, '2026-09-19'
   end
 
+  def test_a_malformed_ttl_split_stays_unknown_instead_of_raising_or_discounting
+    ['x', 4.0, -1, nil].each do |split|
+      record = anthropic_record(writes: 0)
+      record['usage']['cache_write_1h_input_tokens'] = split
+      report = estimate(record)
+      next assert_metric(report, 'USD estimate', '$0.001020') if split.nil?
+
+      assert_metric report, 'USD estimate', 'UNKNOWN'
+      assert_includes report, 'Inconsistent token subsets'
+      refute_includes report, '$0.00'
+    end
+  end
+
   def test_a_source_whose_input_already_contains_its_subsets_is_not_priced_as_anthropic
     report = Shaka::CostEstimate.new([anthropic_record]).report
     assert_metric report, 'USD estimate', 'UNKNOWN'
