@@ -50,10 +50,7 @@ module Shaka
 
     def rate_intro(columns)
       bits = priced_rate_copy(columns)
-      return if bits.empty? && columns.any? { |column| column[:native] }
-
-      prefix = bits.empty? ? 'Configured-model estimates' : bits.join(', plus ')
-      "#{prefix}, verified #{VERIFIED}."
+      "#{bits.join(', plus ')}, verified #{VERIFIED}." unless bits.empty?
     end
 
     def priced_rate_copy(columns)

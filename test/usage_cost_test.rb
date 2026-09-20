@@ -84,6 +84,7 @@ class UsageCostTest < Minitest::Test
     refute_includes report, 'Credits estimate'
     refute_includes report, 'developers.openai.com'
     refute_includes report, 'cursor.com'
+    refute_includes report, '2026-09-16'
     assert_includes report, 'Unsupported provider or configured model'
   end
 
