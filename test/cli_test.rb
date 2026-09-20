@@ -9,9 +9,14 @@ class CliTest < Minitest::Test
   def test_help_explains_each_operation
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert_predicate status, :success?, error
+<<<<<<< HEAD
     operations = %w[pr comments description reply walkthrough merge recommendation checkpoint seam doctor
                     enforcement repos prefix]
     (operations + %w[--head --issue --content-file --key --comment --pace --ref]).each do |token|
+=======
+    operations = %w[pr comments description reply walkthrough merge recommendation checkpoint seam doctor repos prefix]
+    (operations + %w[--head --issue --content-file --key --comment]).each do |token|
+>>>>>>> a7554d3 (Remove leftover merge conflict markers from the CLI help test.)
       assert_includes output, token
     end
   end
