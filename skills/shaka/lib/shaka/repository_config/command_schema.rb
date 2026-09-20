@@ -29,7 +29,7 @@ module Shaka
       private
 
       def validate_names(names)
-        return trusted_commands(names) unless @candidate_commands
+        return trusted_names(names) unless @candidate_commands
 
         validate_interface_directory
         validate_legacy_optional_paths
@@ -39,6 +39,11 @@ module Shaka
           executable!(path, path)
           [name, path]
         end.freeze
+      end
+
+      def trusted_names(names)
+        validate_dependencies(names)
+        trusted_commands(names)
       end
 
       def trusted_commands(names)

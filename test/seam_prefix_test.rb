@@ -117,6 +117,19 @@ class SeamPrefixTest < Minitest::Test
     end
   end
 
+  def test_prefix_rejects_a_trusted_trigger_without_validate_local
+    with_repository('repo_prefix' => 'PLAN') do |root|
+      path = File.join(root, '.agents/bin/trigger-hosted-ci')
+      File.write(path, "#!/bin/sh\nexit 0\n")
+      File.chmod(0o755, path)
+      commit_repository(root)
+      _output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+
+      refute_predicate status, :success?
+      assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
+    end
+  end
+
   def test_prefix_follows_a_trusted_plan_symlink_inside_the_commit
     with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/plan.md') do |root|
       FileUtils.mkdir_p(File.join(root, 'docs'))
