@@ -8,6 +8,16 @@ class GitOriginTest < Minitest::Test
     assert_equal 'agent-workflows', Shaka::GitOrigin.repository_name_from('https://github.com/acme/agent-workflows.git')
     assert_equal 'agent-workflows', Shaka::GitOrigin.repository_name_from('git@github.com:acme/agent-workflows.git')
     assert_equal 'shaka', Shaka::GitOrigin.repository_name_from('ssh://git@github.com/shakacode/shaka.git')
+    assert_equal 'beta', Shaka::GitOrigin.repository_name_from('https://user:token@github.com/acme/beta.git')
+  end
+
+  def test_canonical_url_rewrites_only_the_github_host
+    assert_equal 'https://github.com/acme/alpha',
+                 Shaka::GitOrigin.canonical_url('git@github.com:acme/alpha.git')
+    assert_equal 'https://notgithub.com/acme/beta',
+                 Shaka::GitOrigin.canonical_url('https://notgithub.com/acme/beta.git')
+    assert_equal 'https://gist.github.com/acme/beta',
+                 Shaka::GitOrigin.canonical_url('https://gist.github.com/acme/beta.git')
   end
 
   def test_identity_from_scp_url

@@ -6,6 +6,8 @@ require_relative 'error'
 module Shaka
   # Parses a Git origin URL into owner/name without calling GitHub.
   module GitOrigin
+    HOST_AND_PATH = %r{\A(?:git@|ssh://git@|https://|http://)(?:[^/@]+@)?([^/:]+)[:/](.+)}
+
     module_function
 
     def from(root:)
@@ -29,15 +31,16 @@ module Shaka
       parsed_url = parsed(url)
       identity = parsed_url.fetch(:identity)
       origin = parsed_url.fetch(:origin)
-      origin.match?(%r{github\.com[:/]}) ? "https://github.com/#{identity}" : origin.sub(/\.git\z/, '')
+      parsed_url.fetch(:host) == 'github.com' ? "https://github.com/#{identity}" : origin.sub(/\.git\z/, '')
     end
 
     def parsed(url)
       origin = url.strip
-      path = origin.sub(%r{\A(?:git@|ssh://git@|https://|http://)[^/:]+[:/]}, '').sub(/\.git\z/, '')
-      raise Error, "Cannot parse owner/name from origin #{origin}" unless path.match?(%r{\A[^/]+/[^/]+\z})
+      match = HOST_AND_PATH.match(origin)
+      path = match && match[2].sub(/\.git\z/, '')
+      raise Error, "Cannot parse owner/name from origin #{origin}" unless path&.match?(%r{\A[^/]+/[^/]+\z})
 
-      { origin:, identity: path, name: File.basename(path) }
+      { origin:, host: match[1], identity: path, name: File.basename(path) }
     end
     private_class_method :parsed
   end
