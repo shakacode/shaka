@@ -32,6 +32,53 @@ class SeamTest < Minitest::Test
     end
   end
 
+  def test_candidate_cannot_activate_optional_commands_missing_from_the_trusted_ref
+    with_repository do |root|
+      commit_repository(root)
+      write_command(root, 'validate-local')
+      write_command(root, 'trigger-hosted-ci')
+
+      commands = check_config(root, '--ref', 'HEAD').fetch('commands')
+      refute commands.key?('validate_local')
+      refute commands.key?('trigger_hosted_ci')
+    end
+  end
+
+  def test_trusted_optional_command_must_remain_available_in_the_candidate
+    with_repository do |root|
+      write_command(root, 'validate-local')
+      commit_repository(root)
+      FileUtils.rm(File.join(root, '.agents/bin/validate-local'))
+
+      _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
+      refute status.success?
+      assert_includes error, '.agents/bin/validate-local does not exist'
+    end
+  end
+
+  def test_trusted_optional_commands_are_exposed_at_fixed_paths
+    with_repository do |root|
+      write_command(root, 'validate-local')
+      write_command(root, 'trigger-hosted-ci')
+      commit_repository(root)
+
+      commands = check_config(root, '--ref', 'HEAD').fetch('commands')
+      assert_equal '.agents/bin/validate-local', commands.fetch('validate_local')
+      assert_equal '.agents/bin/trigger-hosted-ci', commands.fetch('trigger_hosted_ci')
+    end
+  end
+
+  def test_a_trusted_hosted_ci_trigger_requires_trusted_local_validation
+    with_repository do |root|
+      write_command(root, 'trigger-hosted-ci')
+      commit_repository(root)
+
+      _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, '--ref', 'HEAD')
+      refute status.success?
+      assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
+    end
+  end
+
   private
 
   def with_repository
@@ -44,17 +91,18 @@ class SeamTest < Minitest::Test
   end
 
   def write_commands(root)
-    %w[setup validate test].each do |name|
-      path = File.join(root, '.agents/bin', name)
-      File.write(path, "#!/bin/sh\nexit 0\n")
-      File.chmod(0o755, path)
-    end
+    %w[setup validate test].each { |name| write_command(root, name) }
+  end
+
+  def write_command(root, name)
+    path = File.join(root, '.agents/bin', name)
+    File.write(path, "#!/bin/sh\nexit 0\n")
+    File.chmod(0o755, path)
   end
 
   def config
     {
       'version' => 1, 'base_branch' => 'main',
-      'commands' => %w[setup validate test].to_h { |name| [name, ".agents/bin/#{name}"] },
       'review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review',
                     'reviewers' => [{ 'provider' => 'anthropic', 'model_family' => 'claude' }] },
       'merge' => { 'preference' => 'auto', 'method' => 'squash', 'release' => 'explicit_approval' },

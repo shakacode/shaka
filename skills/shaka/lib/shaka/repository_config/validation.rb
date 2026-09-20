@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'pathname'
 require_relative '../error'
 
 module Shaka
@@ -29,6 +30,30 @@ module Shaka
 
       def enum!(value, allowed, message)
         raise Error, message unless allowed.include?(value)
+      end
+
+      def file!(value, label)
+        path = repository_path(value, label)
+        raise Error, "#{label} does not exist: #{value}" unless File.file?(path)
+
+        real_path = File.realpath(path)
+        raise Error, "#{label} must resolve inside the repository" unless real_path.start_with?("#{@root}/")
+
+        path
+      end
+
+      def executable!(value, label)
+        path = file!(value, label)
+        raise Error, "#{label} is not executable: #{value}" unless File.executable?(path)
+      end
+
+      def repository_path(value, label)
+        relative = string!(value, label)
+        expanded = File.expand_path(relative, @root)
+        inside = !Pathname.new(relative).absolute? && expanded.start_with?("#{@root}/")
+        raise Error, "#{label} must stay inside the repository" unless inside
+
+        expanded
       end
     end
   end

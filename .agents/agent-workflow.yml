@@ -6,11 +6,6 @@ version: 1
 base_branch: main
 # Optional repository-relative plan document.
 plan: docs/pilot-plan.md
-# Executable repository paths Shaka runs; keep compound logic inside these scripts.
-commands:
-  setup: .agents/bin/setup
-  validate: .agents/bin/validate
-  test: .agents/bin/test
 # Reviewer policy. A fresh context is what makes a review adversarial, so the implementation
 # model qualifies; a different provider is only preferred.
 review:

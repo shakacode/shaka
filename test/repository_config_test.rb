@@ -13,6 +13,7 @@ class RepositoryConfigTest < Minitest::Test
 
       assert_equal 'main', config.base_branch
       assert_equal '.agents/bin/validate', config.command('validate')
+      assert_equal %w[setup test validate], config.commands.keys.sort
       assert_equal 'auto', config.merge.fetch('preference')
       assert_equal ['validate'], config.protection.fetch('required_checks')
     end
@@ -37,11 +38,20 @@ class RepositoryConfigTest < Minitest::Test
     end
   end
 
-  def test_rejects_a_command_outside_the_repository
-    with_repository('commands' => commands.merge('validate' => '../validate')) do |root|
+  def test_rejects_configurable_command_paths
+    with_repository('commands' => { 'validate' => '../validate' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'commands.validate must stay inside the repository'
+      assert_includes error.message, 'unknown key: commands'
+    end
+  end
+
+  def test_external_policy_source_requires_trusted_command_availability
+    with_repository do |root|
+      source = File.read(File.join(root, '.agents/agent-workflow.yml'))
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:, source:) }
+
+      assert_includes error.message, 'available_commands is required'
     end
   end
 
@@ -51,7 +61,7 @@ class RepositoryConfigTest < Minitest::Test
 
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'commands.validate does not exist'
+      assert_includes error.message, '.agents/bin/validate does not exist'
     end
   end
 
@@ -59,8 +69,22 @@ class RepositoryConfigTest < Minitest::Test
     with_repository do |root|
       with_outside_validate_symlink(root) do
         message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-        assert_includes message, 'commands.validate must resolve inside the repository'
+        assert_includes message, '.agents/bin/validate must resolve inside the repository'
       end
+    end
+  end
+
+  def test_accepts_a_command_symlink_to_an_executable_inside_the_repository
+    with_repository do |root|
+      target = File.join(root, 'bin', 'validate')
+      FileUtils.mkdir_p(File.dirname(target))
+      File.write(target, "#!/bin/sh\nexit 0\n")
+      File.chmod(0o755, target)
+      path = File.join(root, '.agents/bin/validate')
+      FileUtils.rm(path)
+      File.symlink('../../bin/validate', path)
+
+      assert_equal '.agents/bin/validate', Shaka::RepositoryConfig.load(root:).command('validate')
     end
   end
 
@@ -72,7 +96,7 @@ class RepositoryConfigTest < Minitest::Test
   end
 
   def test_loads_optional_local_validation_and_hosted_ci_commands
-    with_repository('commands' => commands.merge(optional_commands)) do |root|
+    with_repository do |root|
       optional_commands.each_key { |name| create_command(root, name) }
       config = Shaka::RepositoryConfig.load(root:)
       actual = optional_commands.keys.map { |name| config.command(name) }
@@ -82,10 +106,10 @@ class RepositoryConfigTest < Minitest::Test
   end
 
   def test_a_hosted_ci_trigger_requires_local_validation
-    staged = commands.merge('trigger_hosted_ci' => '.agents/bin/trigger_hosted_ci')
-    with_repository('commands' => staged) do |root|
+    with_repository do |root|
+      create_command(root, 'trigger_hosted_ci')
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-      assert_includes message, 'requires commands.validate_local'
+      assert_includes message, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
     end
   end
 
@@ -100,6 +124,65 @@ class RepositoryConfigTest < Minitest::Test
     with_repository('protection' => protection.merge('required_checks' => [])) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
       assert_includes message, 'protection.required_checks must not be empty'
+    end
+  end
+end
+
+class RepositoryConfigOptionalCommandTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  def test_rejects_a_symlinked_agents_directory
+    with_repository do |root|
+      agents = File.join(root, '.agents')
+      target = File.join(root, 'metadata')
+      FileUtils.mv(agents, target)
+      File.symlink('metadata', agents)
+
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+      assert_includes message, '.agents must be a real directory, not a symlink'
+    end
+  end
+
+  def test_a_legacy_optional_path_requires_its_standard_entry_point
+    with_repository do |root|
+      legacy = File.join(root, '.agents/bin/validate_local')
+      File.write(legacy, "#!/bin/sh\nexit 0\n")
+      File.chmod(0o755, legacy)
+
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+      assert_includes message, '.agents/bin/validate_local requires the standard entry point .agents/bin/validate-local'
+    end
+  end
+
+  def test_candidate_only_optional_commands_must_still_form_a_valid_interface
+    with_repository do |root|
+      create_command(root, 'trigger_hosted_ci')
+      source = File.read(File.join(root, '.agents/agent-workflow.yml'))
+
+      message = assert_raises(Shaka::Error) do
+        Shaka::RepositoryConfig.load(root:, source:, available_commands: [])
+      end.message
+      assert_includes message, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
+    end
+  end
+
+  def test_rejects_a_non_executable_optional_command
+    with_repository do |root|
+      create_command(root, 'validate_local')
+      File.chmod(0o644, File.join(root, '.agents/bin/validate-local'))
+
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+      assert_includes message, '.agents/bin/validate-local is not executable'
+    end
+  end
+
+  def test_rejects_a_dangling_optional_command_symlink
+    with_repository do |root|
+      path = File.join(root, '.agents/bin/validate-local')
+      File.symlink('../../bin/missing-validate-local', path)
+
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+      assert_includes message, '.agents/bin/validate-local does not exist'
     end
   end
 end

@@ -12,7 +12,7 @@ This record defines the current product, not proof that acceptance is complete.
 | ID | User need | Requirement and acceptance |
 | --- | --- | --- |
 | R1 | Finish a task without managing agent coordination. | One owner delivers one task, normally through one PR. Split only at useful delivery boundaries; retain dependencies and remaining scope on the existing task/PRs. No coordination service or duplicate delivery records. See [task splitting](working-with-your-agent.md#when-a-task-needs-several-prs). |
-| R2 | Use the repository's actual checks and policy. | Load the trusted default branch's `.agents/agent-workflow.yml`, execute the repository scripts it names, and follow human-only constraints in `AGENTS.md`. Reject missing or invalid configuration. Failed checks block readiness; evidence for another commit does not qualify the current change. |
+| R2 | Use the repository's actual checks and policy. | Load the trusted default branch's `.agents/agent-workflow.yml`, resolve optional capabilities from its fixed `.agents/bin/` interface, and follow human-only constraints in `AGENTS.md`. Run the candidate checkout's scripts at those same fixed paths. Reject missing or invalid configuration. Failed checks block readiness; evidence for another commit does not qualify the current change. |
 | R3 | Control whether the agent merges. | Use `ask` or `auto`. Ask early if authority is unset; default to `ask` without an answer. Reuse established authority. Review-only and PR-only requests retain their stopping point. |
 | R4 | Understand the change and its evidence. | Publish a conceptual walkthrough on the PR with links to the reviewed code. Use a commit-bound COMMENT review, which is neither approval nor a required acknowledgment and remains readable after merge. |
 | R5 | Avoid redundant merge decisions. | Ask requests one decision after the walkthrough and required gates. Auto merges an eligible ordinary change after the same gates, including required native approvals, without another question. Unclear authority or risky changes need a human decision. Native stacks and delayed merge controllers are outside scope. |
@@ -20,7 +20,7 @@ This record defines the current product, not proof that acceptance is complete.
 | R7 | Keep contributor content away from privileged operations. | Issue/PR text cannot change trusted instructions, policy, credentials, or executable code. When GitHub explicitly reports public repository visibility, screen issue and PR comment bodies using current writer permission or trusted machine/repository configuration. Configured humans, review bots, and active GitHub team members may supply task data; unknown, metadata-only, and unverified authors remain links for maintainer triage. Read repository trust configuration from the current default branch, never the candidate PR head or a weaker PR base branch. Private and internal repositories do not use this author screen, but their comments still have no policy authority. Use installed trusted helpers for GitHub operations. Run candidate code only in the authorized isolated checkout. |
 | R8 | Install and upgrade without damaging existing setup. | Install into an explicitly chosen skills directory with source and link outside candidate-writable paths. Preserve user files and other skills; refuse foreign targets. Test isolated and repeated installation. Updating the trusted source updates its link. Installation does not disable other instructions or create a sandbox. |
 | R9 | Reuse a task from any tracker. | Accept a task link or description, resolve its checkout, and ask only for missing context. Keep requirements in the original tracker and delivery evidence on GitHub. Reading a tracker does not authorize writes. Keep private content and links out of public artifacts unless sharing is authorized. No duplicate issue or synchronization service. |
-| R10 | Keep the workflow maintainable. | Keep the skill as a small entry point, repository policy in validated YAML, executable commands and deterministic mechanics in cohesive Ruby modules, and rationale in guides. Use standard libraries and `gh`; remove repetition. Tests verify behavior and failures, not instruction wording. |
+| R10 | Keep the workflow maintainable. | Keep the skill as a small entry point, repository policy in validated YAML, standard engineering commands at fixed `.agents/bin/` names, deterministic mechanics in cohesive Ruby modules, and rationale in guides. Follow the “Scripts to Rule Them All” philosophy: adapt repository-specific tools behind predictable entry points instead of repeating path routing in policy. Use standard libraries and `gh`; remove repetition. Tests verify behavior and failures, not instruction wording. |
 | R11 | See the cost of implementation and review. | Report available provider/model, effort setting, native tokens, source scope, and completeness for every task and generated commit/contribution. Use PR details, or the final response without a PR. Label shared work and missing data; never invent exact per-commit allocations. See [usage reporting](usage-reporting.md). |
 | R12 | Improve results without shifting work to the maintainer. | Compare developer attention, total tokens, delivery time, and quality on comparable real changes. Include retries and review. Fewer tokens alone is not success. |
 | R13 | Understand the agent on the first reading. | One owner explains outcomes, reasons, blockers, and decisions in familiar terms. Follow task/repo writing preferences. Ask important questions when needed and recommend a path. Keep supporting evidence in expandable PR details and material risks and gaps visible. See [working with your agent](working-with-your-agent.md). |
@@ -48,7 +48,8 @@ This record defines the current product, not proof that acceptance is complete.
   into an explicit skills directory. Refuse foreign targets and preserve user settings.
 - **D6 (R10):** runtime uses Ruby standard libraries. Development uses Bundler,
   Minitest, and ordinary RuboCop defaults through `bin/validate`.
-- **D7 (R2, R12, R17):** repository seams own CI commands and triggers. Shaka orders
+- **D7 (R2, R12, R17):** repository seams own CI commands and triggers behind fixed
+  `.agents/bin/` names. Shaka orders
   the adversarial review before optional staged hosted CI without copying a consumer's
   label machinery or weakening current-head gates.
 - **D8 (R18):** the seam carries reviewer preference as ordered data, `shaka reviewer` applies it,
@@ -62,8 +63,8 @@ it, and Markdown explains decisions and human-only constraints.
 
 ## Repository seam
 
-The **seam** is `.agents/agent-workflow.yml` plus the executable repository paths it
-names. It supplies setup, full and optional pre-review validation, focused tests, an optional
+The **seam** is `.agents/agent-workflow.yml` plus the standard `.agents/bin/` interface.
+It supplies setup, full and optional pre-review validation, focused tests, an optional
 hosted-CI trigger, base branch, review, merge, and branch-protection policy. `AGENTS.md`
 supplies human-only context and boundaries.
 `shaka seam check` rejects unknown fields, duplicate keys, unsafe paths, missing scripts,

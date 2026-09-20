@@ -43,8 +43,9 @@ phases:
   - id: plan
     title: Plan
     body: |-
-      - Resolve commands, base branch, review, and merge authority from the validated YAML seam;
-        run its paths, not prose reconstructions. `AGENTS.md` adds constraints, not contract fields.
+      - Resolve the fixed `.agents/bin/` commands plus base branch, review, and merge authority
+        through the validated seam; run those scripts, not prose reconstructions. `AGENTS.md`
+        adds constraints, not contract fields.
         Read the seam's ordered reviewer list, then verify each listed reviewer's identity from
         metadata and trusted workflows, and whether it is reached on GitHub after a push or
         invoked locally with provider credentials.
@@ -110,9 +111,10 @@ phases:
   - id: verify
     title: Verify
     body: |-
-      - Before review run `commands.validate_local` when present, otherwise `commands.validate`,
-        plus focused checks. Defer full `validate` and `trigger_hosted_ci` when local validation
-        exists until the repair batch is complete. For an asynchronous check, wait for completion
+      - Before review run `.agents/bin/validate-local` when present in the trusted seam, otherwise
+        `.agents/bin/validate`, plus focused checks. Defer full validation and
+        `.agents/bin/trigger-hosted-ci` when local validation exists until the repair batch is
+        complete. For an asynchronous check, wait for completion
         and inspect its final exit status and output before reporting a pass; a running session or
         partial green output is not a completed check. Recover missing completion evidence or report
         it as unknown.
@@ -268,8 +270,8 @@ phases:
         walkthrough, and re-review changed heads. After two repair rounds on the same finding family,
         reassess the design or mechanism before patching again. Resolve consequential feedback before
         merging, following the packaged [review guide](<{{package_root}}/docs/review.md>).
-      - After repairs, run deferred `validate`, then `trigger_hosted_ci` when present. Later fixes need
-        fresh evidence.
+      - After repairs, run deferred `.agents/bin/validate`, then
+        `.agents/bin/trigger-hosted-ci` when present. Later fixes need fresh evidence.
       - When the user expressly asks to resolve PR comments, follow the packaged
         [settlement procedure](<{{package_root}}/docs/review.md#settle-comment-resolution-work>). Keep
         ownership until each known optional review settles or reaches its bounded handoff. Do not

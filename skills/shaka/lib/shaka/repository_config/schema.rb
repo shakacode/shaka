@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'pathname'
 require_relative '../error'
 require_relative 'branch_schema'
+require_relative 'command_schema'
 require_relative 'recovery_schema'
 require_relative 'review_schema'
 require_relative 'validation'
@@ -13,12 +13,15 @@ module Shaka
     class Schema
       include Validation
 
-      REQUIRED = %w[version base_branch commands review merge protection].freeze
+      REQUIRED = %w[version base_branch review merge protection].freeze
       OPTIONAL = %w[plan trusted_actions branches recovery].freeze
 
-      def initialize(root:, data:)
+      attr_reader :commands
+
+      def initialize(root:, data:, available_commands: nil)
         @root = root
         @data = data
+        @available_commands = available_commands
       end
 
       def validate
@@ -47,15 +50,7 @@ module Shaka
       end
 
       def validate_commands
-        commands = mapping!(@data['commands'], 'commands')
-        required = %w[setup validate test]
-        optional = %w[validate_local trigger_hosted_ci]
-        keys!(commands, required, optional, 'commands')
-        if commands.key?('trigger_hosted_ci') && !commands.key?('validate_local')
-          raise Error, 'commands.trigger_hosted_ci requires commands.validate_local'
-        end
-
-        commands.each { |name, path| executable!(path, "commands.#{name}") }
+        @commands = CommandSchema.new(root: @root, available_commands: @available_commands).validate
       end
 
       def validate_review
@@ -100,30 +95,6 @@ module Shaka
 
       def equal!(actual, expected, message)
         raise Error, message unless actual == expected
-      end
-
-      def file!(value, label)
-        path = repository_path(value, label)
-        raise Error, "#{label} does not exist: #{value}" unless File.file?(path)
-
-        real_path = File.realpath(path)
-        raise Error, "#{label} must resolve inside the repository" unless real_path.start_with?("#{@root}/")
-
-        path
-      end
-
-      def executable!(value, label)
-        path = file!(value, label)
-        raise Error, "#{label} is not executable: #{value}" unless File.executable?(path)
-      end
-
-      def repository_path(value, label)
-        relative = string!(value, label)
-        expanded = File.expand_path(relative, @root)
-        inside = !Pathname.new(relative).absolute? && expanded.start_with?("#{@root}/")
-        raise Error, "#{label} must stay inside the repository" unless inside
-
-        expanded
       end
     end
   end

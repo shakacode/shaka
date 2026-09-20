@@ -48,8 +48,7 @@ module Shaka
     end
 
     def config
-      source = TrustedConfigSource.new(root:).read(@options[:ref]) if @options[:ref]
-      RepositoryConfig.load(root:, source:)
+      TrustedConfigSource.load(root:, ref: @options[:ref])
     end
 
     def option_parser

@@ -93,30 +93,40 @@ lives; it does not mean deleting every V1 key and hoping the defaults are equiva
 | V1 setting | V2 destination | Migration rule |
 | --- | --- | --- |
 | `base_branch` | `base_branch` | Copy after verifying the live default branch. |
-| Command descriptions and `.agents/bin/*` | `commands` | Name executable repository paths for required `setup`, `validate`, and `test`; add optional `validate_local` and `trigger_hosted_ci` only when real wrappers exist. |
+| Command descriptions and `.agents/bin/*` | Fixed `.agents/bin/` interface | Provide executable `.agents/bin/setup`, `.agents/bin/validate`, and `.agents/bin/test`; add `.agents/bin/validate-local` and `.agents/bin/trigger-hosted-ci` only when those optional capabilities exist. Do not repeat these paths in YAML. |
 | `review_gate`, `automation_reviewers` | `review` | Translate the actual required review and ordered available reviewers. Keep richer human conditions in `AGENTS.md`. |
 | `merge_submission`, `autonomous_merge`, `approval_exempt` | `merge` plus `AGENTS.md` | Choose `ask` or authorized `auto`. V2 supports immediate squash merge only; a merge-queue-only repository is not equivalent and must remain blocked or use a separately approved path. |
 | Branch naming and `repo_prefix` | `branches.name` | Record the real branch template. Do not carry a coordination prefix forward unless the repository still needs it. |
 | Live branch rules | `protection` | Read required checks and mutation rules from GitHub. Do not infer them from workflow filenames. |
 | `trusted_actions` | `trusted_actions` | Preserve the audited allowlist exactly, then review additions or removals separately. |
-| `hosted_ci_trigger`, `ci_change_detector`, `ci_parity_environment` | `commands.validate_local`, `commands.trigger_hosted_ci`, wrappers, and `AGENTS.md` | Keep executable routing in scripts and human decision rules in instructions. Do not reduce full validation to the fast local subset. |
+| `hosted_ci_trigger`, `ci_change_detector`, `ci_parity_environment` | `.agents/bin/validate-local`, `.agents/bin/trigger-hosted-ci`, other wrappers, and `AGENTS.md` | Keep executable routing in scripts and human decision rules in instructions. Do not reduce full validation to the fast local subset. |
 | Changelog, benchmark, release-QA, hosted-QA, security-preflight, contributor-intake, secret-redaction, trusted-actor, and QA-stress settings | Existing dedicated files or `AGENTS.md` | These remain repository policy. V2's narrower YAML does not retire the behavior. |
 | Coordination backend, claim labels, lane limits, follow-up prefixes, and V1 fleet controls | No V2 seam key | Retire them only when the repository no longer uses the V1 coordination system. Do not import that system into Shaka. |
 
 ## Script differences
 
-V2 does not require every repository to use the same commands. It requires three
-semantic roles and executes the repository-owned wrappers named by the seam:
+V2 applies the “Scripts to Rule Them All” philosophy: every repository exposes the
+same small, predictable interface, while each script adapts that interface to the
+repository's own toolchain. The three required entry points are:
 
-- `setup`: prepare the checkout without inventing a new toolchain;
-- `validate`: run the complete local or CI-equivalent gate used before review;
-- `test`: run focused tests when the task supplies paths or arguments.
+- `.agents/bin/setup`: prepare the checkout without inventing a new toolchain;
+- `.agents/bin/validate`: run the complete local or CI-equivalent gate used before
+  review;
+- `.agents/bin/test`: run focused tests when the task supplies paths or arguments.
 
-`validate_local` is an optional faster subset. `trigger_hosted_ci` is an optional
-explicit hosted-CI entrance and requires `validate_local`. Existing `build`, `docs`,
-`lint`, `ci-detect`, database, server, and QA scripts may remain in `.agents/bin`; V2
-does not expose them as top-level contract keys. Compose them behind the three required
-roles when they are part of delivery.
+`.agents/bin/validate-local` is an optional faster subset.
+`.agents/bin/trigger-hosted-ci` is an optional explicit hosted-CI entrance and requires
+`validate-local`. Existing `build`, `docs`, `lint`, `ci-detect`, database, server, and
+QA scripts may remain in `.agents/bin`; V2 does not expose them as top-level contract
+keys. Compose them behind the standard entry points when they are part of delivery.
+
+Prefer a small wrapper script when adapting an existing command. A wrapper can anchor
+execution at the repository root, prepare the environment, compose multiple checks,
+forward arguments deliberately, and replace itself with the real command using `exec`.
+A symlink is acceptable when a stable, tracked executable already has exactly the
+required invocation semantics and lives inside the repository. Do not use a symlink to
+hide a semantic mismatch between the standard name and its target. Keep `.agents` and
+`.agents/bin` as real tracked directories; only individual command entries may be symlinks.
 
 Repository-specific script notes found during the V1 audit:
 
@@ -129,9 +139,15 @@ Repository-specific script notes found during the V1 audit:
   scripts. They stay repository-owned operational tools.
 - Several V1 consumers have no `.agents/bin/setup`; each needs a truthful no-op or real
   setup wrapper before its V2 seam can validate.
-- The tutorial intentionally maps V2 `validate` to its existing `.agents/bin/test`
-  because that wrapper owns the full CI-equivalent run. It maps `validate_local` to the
-  RuboCop-only `.agents/bin/validate`. Semantic roles matter more than filenames.
+- The tutorial must move its full CI-equivalent run behind `.agents/bin/validate`, its
+  RuboCop-only fast path behind `.agents/bin/validate-local`, and its test entry point
+  behind `.agents/bin/test`. Retain existing implementation scripts behind wrappers or
+  safe symlinks rather than inverting the standard interface names. Its old seam maps
+  full validation to `test` and fast validation to `validate`, so a literal compatibility
+  adapter cannot satisfy both contracts. During the seam PR, make both `.agents/bin/test`
+  and `.agents/bin/validate` run the full suite; the old fast step becomes slower but stays
+  safe. After the fixed interface is trusted, restore focused behavior to `test` and put
+  the RuboCop-only path at `validate-local`.
 
 ## Migration checklist
 
@@ -143,14 +159,21 @@ For each selected repository:
    the PR; preserve it in V2, `AGENTS.md`, or its dedicated config, or explain why it is
    intentionally retired.
 3. Do not run `shaka seam init` over the existing seam: the initializer is for a new
-   repository and refuses conflicting YAML or wrappers. Write the candidate V2 YAML by
-   hand from the [settings guide](settings.md), retain suitable wrappers, and add only
-   the missing executable roles. Record the target Shaka SemVer in the adoption PR and
-   fleet table; the current initializer has no in-place migration command.
-4. Validate the working tree with the trusted installed `shaka seam check --root ROOT`.
-   Commit the candidate, check out that revision in a clean worktree, and run
-   `shaka seam check --root ROOT --ref HEAD_SHA`. The ref pins the YAML; wrapper
-   existence and executable bits come from the checkout, so it must match `HEAD_SHA`.
-   Run the repository's focused checks and full validation in that worktree.
-5. Open one repository PR pinned to the tested head. Update this fleet table only from
+   repository and refuses conflicting YAML or wrappers. Follow the settings guide's
+   [ordered migration](settings.md#standard-command-scripts): write the mapping-free YAML
+   by hand, add the fixed scripts, and retain temporary adapters at old mapped paths.
+   Where old and new meanings collide, use the stricter behavior at both paths until the
+   new seam is trusted.
+   Record the target Shaka SemVer in the adoption PR and fleet table; the current
+   initializer has no in-place migration command.
+4. Before upgrading Shaka, use the previous trusted installation to check the candidate
+   worktree with `shaka seam check --root ROOT --ref OLD_DEFAULT_SHA`. The old trusted
+   mapping remains authoritative for this first PR, which is why its paths must remain
+   usable. Separately use the target Shaka version without `--ref` to parse the candidate's
+   mapping-free YAML and validate its fixed scripts; this local check grants no authority.
+   Run focused checks and full validation, then merge through normal gates.
+5. Upgrade the trusted Shaka installation only after the default branch has the new seam.
+   Check a clean worktree with `shaka seam check --root ROOT --ref NEW_DEFAULT_SHA`, then
+   remove obsolete compatibility adapters in a follow-up PR.
+6. Open each repository PR pinned to its tested head. Update this fleet table only from
    verified PR or merge evidence.

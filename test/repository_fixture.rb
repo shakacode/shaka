@@ -36,7 +36,7 @@ module RepositoryConfigTestHelpers
 
   def config
     {
-      'version' => 1, 'base_branch' => 'main', 'plan' => 'PLAN.md', 'commands' => commands,
+      'version' => 1, 'base_branch' => 'main', 'plan' => 'PLAN.md',
       'review' => review_policy,
       'merge' => merge_policy, 'protection' => protection, 'trusted_actions' => ['actions/checkout']
     }
@@ -47,13 +47,10 @@ module RepositoryConfigTestHelpers
   end
 
   def create_command(root, name)
-    path = File.join(root, '.agents/bin', name)
+    filename = optional_commands.fetch(name, name).delete_prefix('.agents/bin/')
+    path = File.join(root, '.agents/bin', filename)
     File.write(path, "#!/bin/sh\nexit 0\n")
     File.chmod(0o755, path)
-  end
-
-  def commands
-    %w[setup validate test].to_h { |name| [name, ".agents/bin/#{name}"] }
   end
 
   def review_policy(overrides = {})
@@ -67,7 +64,7 @@ module RepositoryConfigTestHelpers
   end
 
   def optional_commands
-    { 'validate_local' => '.agents/bin/validate_local',
-      'trigger_hosted_ci' => '.agents/bin/trigger_hosted_ci' }
+    { 'validate_local' => '.agents/bin/validate-local',
+      'trigger_hosted_ci' => '.agents/bin/trigger-hosted-ci' }
   end
 end
