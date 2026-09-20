@@ -34,12 +34,15 @@ class EnforcementConfigTest < Minitest::Test
   end
 
   def test_rejects_a_workflow_rule_no_entry_classifies
-    workflow = Shaka::WorkflowConfig.load
-    workflow['code_quality'] += ' Never leave a rule unclassified.'
+    ['Never leave a rule unclassified.', 'Classify a rule only when it is audited.',
+     'A new rule must be audited.', 'Do not skip a rule.'].each do |added|
+      workflow = Shaka::WorkflowConfig.load
+      workflow['code_quality'] += " #{added}"
 
-    error = assert_raises(Shaka::Error) { Shaka::EnforcementConfig.load(workflow:) }
+      error = assert_raises(Shaka::Error) { Shaka::EnforcementConfig.load(workflow:) }
 
-    assert_includes error.message, 'classifies no rule for code_quality'
+      assert_includes error.message, 'classifies no rule for code_quality'
+    end
   end
 
   def test_rejects_an_entry_that_quotes_no_rule
@@ -114,7 +117,7 @@ class EnforcementCommandTest < Minitest::Test
 
     assert status.success?, output
     assert_equal RULES.map { |rule| rule['phase'] }.uniq.length, output.scan(/^## /).size
-    assert_equal RULES.length, output.scan(/^\| .* \| (?:code|github|agent) \| /).size
+    assert_equal RULES.length, output.scan(/^\| .* \| (?:code|reported|github|agent) \| /).size
   end
 
   def test_counts_how_many_rules_nothing_but_the_agent_enforces
@@ -122,8 +125,28 @@ class EnforcementCommandTest < Minitest::Test
     alone = RULES.count { |rule| rule['enforced_by'] == 'agent' }
 
     assert status.success?, output
-    assert_includes output, "#{RULES.length} rules stated in workflow.yml"
-    assert_includes output, "#{alone} by the agent alone."
+    assert_includes output, "#{RULES.length} audited rules"
+    assert_includes output, "#{alone} enforced by nothing but the agent."
+  end
+
+  # The audit claims less than "every imperative rule", and it claims nothing about live
+  # GitHub settings. Both limits belong in the report a maintainer reads, not just here.
+  def test_states_what_it_does_not_cover
+    output, status = report
+
+    assert status.success?, output
+    assert_includes output, 'never, must, do not, or only when'
+    assert_includes output, 'outside it'
+    assert_includes output, 'nothing here confirms that a GitHub setting is still active'
+  end
+
+  # A command that only reports a violation must not read as one that refuses it.
+  def test_separates_a_reported_violation_from_a_refused_one
+    output, status = report
+
+    assert status.success?, output
+    assert_includes output, '`reported` — a command surfaces the violation; the agent can still proceed.'
+    assert_includes output, '| Do not open a second PR. | reported |'
   end
 
   def test_names_the_agent_as_the_only_enforcement_where_nothing_checks

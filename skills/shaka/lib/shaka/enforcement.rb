@@ -8,9 +8,14 @@ require_relative 'error'
 module Shaka
   # Reports what enforces each imperative rule in the packaged workflow.
   class Enforcement
-    LEGEND = "- `code` — a `shaka` command fails or reports the violation.\n" \
+    LEGEND = "- `code` — a `shaka` command refuses the action.\n" \
+             "- `reported` — a command surfaces the violation; the agent can still proceed.\n" \
              "- `github` — a repository setting refuses it.\n" \
              '- `agent` — nothing checks it; the note says what is missing.'
+    SCOPE = 'This audit covers the rules workflow.yml states with never, must, do not, or ' \
+            'only when. Its other imperative sentences, such as restrictive `only ...` ' \
+            'clauses, are outside it. It reads packaged text alone: nothing here confirms ' \
+            'that a GitHub setting is still active.'
     HEADER = "| Rule | Enforced by | What backs it |\n| --- | --- | --- |"
 
     def self.run(arguments)
@@ -57,7 +62,7 @@ module Shaka
         "## #{title}\n\n#{HEADER}\n#{listed.map { |rule| row(rule) }.join("\n")}" unless listed.empty?
       end
       ['# Workflow rule enforcement', "Audit source: `#{EnforcementConfig::PATH}`",
-       tally(rules), LEGEND, *sections].join("\n\n")
+       tally(rules), LEGEND, SCOPE, *sections].join("\n\n")
     end
 
     def section_titles(workflow)
@@ -67,8 +72,9 @@ module Shaka
 
     def tally(rules)
       counts = rules.group_by { |rule| rule.fetch('enforced_by') }.transform_values(&:length)
-      "#{rules.length} rules stated in workflow.yml: #{counts.fetch('code', 0)} backed by code, " \
-        "#{counts.fetch('github', 0)} by a GitHub setting, and #{counts.fetch('agent', 0)} by the agent alone."
+      "#{rules.length} audited rules: #{counts.fetch('code', 0)} refused by a command, " \
+        "#{counts.fetch('reported', 0)} reported by one, #{counts.fetch('github', 0)} refused by GitHub, " \
+        "and #{counts.fetch('agent', 0)} enforced by nothing but the agent."
     end
 
     def row(rule)

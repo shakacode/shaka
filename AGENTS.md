@@ -36,10 +36,11 @@ Keep company strategy and private operational data out of product artifacts.
   records Shaka-specific review, merge-authority, branch-naming, and recovery
   policy. Live GitHub settings remain authoritative. Standard executable entry
   points live at fixed names under `.agents/bin/`.
-- `skills/shaka/config/enforcement.yml` records what enforces each imperative rule
-  in `workflow.yml`, and `shaka enforcement` prints it. Loading it fails when a quote
-  leaves the workflow or when the workflow states a rule it does not classify, so a
-  new rule has to declare whether anything but the agent enforces it.
+- `skills/shaka/config/enforcement.yml` records what enforces each rule `workflow.yml`
+  states with never, must, do not, or only when, and `shaka enforcement` prints it.
+  Loading it fails when a quote leaves the workflow or when the workflow states a rule
+  in one of those forms that it does not classify, so a new rule has to declare whether
+  anything but the agent enforces it.
 - `.agents/trusted-github-actors.yml` is the repository-level public-comment allowlist.
   The installed `skills/shaka/scripts/shaka comments` command combines it with the
   machine allowlist, reads only the current default-branch copy, and never trusts a

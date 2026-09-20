@@ -1,11 +1,12 @@
 ---
 version: 1
-# What enforces each imperative rule in workflow.yml.
+# What enforces each rule workflow.yml states with never, must, do not, or only when.
 #
-# One entry per rule stated with never, must, do not, or only when. `code` means a command in
-# this repository fails or reports the violation; `github` means a repository setting refuses
-# it; `agent` means nothing checks it, and the note says what is missing. Loading validates
-# that every quote still appears in the workflow and that no stated rule is left out.
+# `code` means a command in this repository refuses the action; `reported` means a command
+# surfaces the violation and the agent can still proceed; `github` means a repository setting
+# refuses it; `agent` means nothing checks it, and the note says what is missing. A detector
+# names its own limit where it has one. Loading validates that every quote still appears in
+# the workflow and that no rule stated in those four forms is left out.
 rules:
   - id: trusted-seam-ref
     phase: intake
@@ -30,10 +31,10 @@ rules:
   - id: one-pr-per-work-item
     phase: intake
     quote: Do not open a second PR.
-    enforced_by: code
+    enforced_by: reported
     detector: >-
       `claim QUERY` reports every open pull request and remote branch matching the work item and
-      sets `collision`. It reports; it does not block the publication that would follow.
+      sets `collision`. Nothing then stops the second PR: acting on the collision is the agent's.
   - id: seam-branch-name
     phase: intake
     quote: do not invent a personal prefix
@@ -46,8 +47,9 @@ rules:
     quote: Never guess checks or grant merge authority.
     enforced_by: code
     detector: >-
-      `Seam::Initializer` requires at least one `--required-check` through `required_list`, and
-      `merge_policy` defaults `preference` to `ask` rather than to `auto`.
+      `Seam::Initializer` refuses to write a seam without at least one `--required-check`, and
+      `merge_policy` defaults `preference` to `ask` rather than to `auto`. It cannot tell a real
+      check name from an invented one, so it forces the agent to state checks, not to find them.
   - id: effort-justification
     phase: plan
     quote: waiting and tool failures do not by themselves justify more
@@ -64,7 +66,8 @@ rules:
     enforced_by: code
     detector: >-
       `checkpoint` answers `pause` with a reason unless every one of those conditions holds. It
-      decides from the fields the agent sends, so it checks the stated intake, not the real one.
+      decides from the fields the agent sends it, so it checks the stated intake, not the real
+      one, and matching fields an agent invented still produce `proceed`.
   - id: no-native-stacks
     phase: plan
     quote: do not create or merge them

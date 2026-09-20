@@ -12,7 +12,7 @@ module Shaka
     PATH = File.expand_path('../../config/enforcement.yml', __dir__)
     ROOT_KEYS = %w[version rules].freeze
     RULE_KEYS = %w[id phase quote enforced_by detector note].freeze
-    BACKED = %w[code github].freeze
+    BACKED = %w[code reported github].freeze
     ENFORCERS = [*BACKED, 'agent'].freeze
 
     def self.load(source: nil, workflow: nil)
@@ -67,8 +67,8 @@ module Shaka
       raise Error, "#{label} quote states no rule"
     end
 
-    # A rule backed by code or GitHub names what fails; an agent-enforced rule instead says so
-    # in as many words, which is the outcome this audit exists to make visible.
+    # A rule something other than the agent touches names that mechanism; an agent-enforced
+    # rule instead says so in as many words, the outcome this audit exists to make visible.
     def enforcement!(rule, label)
       by = rule['enforced_by']
       raise Error, "#{label} enforced_by must be #{ENFORCERS.join(', ')}" unless ENFORCERS.include?(by)
