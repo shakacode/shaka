@@ -38,8 +38,7 @@ module Shaka
       'claude-haiku-4-5' => %w[1 0.1 1.25 2 5]
     }.freeze
     # Web search bills $10 per 1,000 requests on top of tokens; web fetch adds no charge.
-    # A response that ran no search omits the counter, and an omitted key is
-    # indistinguishable from a recorded null here, so neither is read as a gap.
+    # Readers report no searches as zero, so a count that is absent here was never established.
     SEARCH_RATE = Rational(1, 100)
 
     private
@@ -83,7 +82,7 @@ module Shaka
 
       input, cached, writes, output = counters
       split = write_split(usage, writes)
-      searches = usage['web_search_requests'] || 0
+      searches = usage['web_search_requests']
       reason = anthropic_reason(usage, writes, split, [searches, output])
       reason ? [nil, reason] : [[[input, cached, *split, output], searches], nil]
     end
@@ -94,10 +93,10 @@ module Shaka
         ('Server tool usage UNKNOWN' unless valid_counters?([searches]))
     end
 
-    # A transcript that records no cache write need not break the total down.
+    # A zero write total already establishes both TTL categories, however few the transcript names.
     def write_split(usage, writes)
       split = %w[cache_write_5m_input_tokens cache_write_1h_input_tokens].map { |key| usage[key] }
-      writes.zero? && split.all?(&:nil?) ? [0, 0] : split
+      writes.zero? ? split.map { |count| count || 0 } : split
     end
 
     # The two cache-write rates differ, so only a split that accounts for the whole total is priced.
@@ -309,7 +308,8 @@ module Shaka
       configuration, billing = key
       provider, model, routed, effort = configuration
       credits, api = priced_totals(group, reasons, provider, model)
-      { provider: provider, model: billed_model(provider, billing, model), routed: routed, effort: effort,
+      { provider: provider, model: billed_model(provider, billing, model),
+        routed: billed_routed(provider, billing, routed), effort: effort,
         billing: billing, credits: credits, api: api, native: native_cost?(group),
         recorded_native: native_recorded?(group) }
     end
@@ -324,6 +324,11 @@ module Shaka
 
     def billed_model(provider, billing, model)
       provider == 'cursor' && billing == 'fast' && model.is_a?(String) ? "#{model}-fast" : model
+    end
+
+    # Anthropic names no configured model, so its fast column is distinguished on the routed one.
+    def billed_routed(provider, billing, routed)
+      provider == 'anthropic' && billing == 'fast' && routed.is_a?(String) ? "#{routed}-fast" : routed
     end
 
     def native_cost?(group)

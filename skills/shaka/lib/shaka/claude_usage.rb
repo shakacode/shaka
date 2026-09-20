@@ -87,7 +87,18 @@ module Shaka
         'cache_write_5m_input_tokens' => nested(usage, 'cache_creation', 'ephemeral_5m_input_tokens'),
         'cache_write_1h_input_tokens' => nested(usage, 'cache_creation', 'ephemeral_1h_input_tokens'),
         'reasoning_output_tokens' => nested(usage, 'output_tokens_details', 'thinking_tokens'),
-        'web_search_requests' => nested(usage, 'server_tool_use', 'web_search_requests') }
+        'web_search_requests' => server_tool_requests(usage, 'web_search_requests') }
+    end
+
+    # A response that used no server tool omits the group or the counter, which is no charge.
+    # A group that is present but unreadable is a gap, so it stays nil for the estimate to refuse.
+    def server_tool_requests(usage, field)
+      return 0 unless usage.key?('server_tool_use')
+
+      recorded = usage['server_tool_use']
+      return unless recorded.is_a?(Hash)
+
+      recorded.key?(field) ? recorded[field] : 0
     end
 
     def nested(usage, group, field)

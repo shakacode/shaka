@@ -179,6 +179,15 @@ end
 class ClaudeUsagePriceTest < Minitest::Test
   include ClaudeUsageFixture
 
+  # Reports one response whose recorded usage the block adjusts first.
+  def served
+    Dir.mktmpdir do |directory|
+      reply = priced_reply('m1', 100)
+      yield reply[:message][:usage]
+      report('--host', 'claude-code', '--file', transcript(directory, 'session.jsonl', [prompt('new'), reply]))
+    end
+  end
+
   def test_a_standard_speed_session_reports_a_dollar_estimate_from_published_rates
     Dir.mktmpdir do |directory|
       file = transcript(directory, 'session.jsonl', [prompt('new'), priced_reply('m1', 100)])
@@ -232,6 +241,16 @@ class ClaudeUsagePriceTest < Minitest::Test
       output = report('--host', 'claude-code', '--file', file)
       assert_metric output, 'USD estimate', '$0.001079'
     end
+  end
+
+  def test_an_absent_server_tool_group_is_no_charge
+    assert_metric served { |usage| usage.delete(:server_tool_use) }, 'USD estimate', '$0.001079'
+  end
+
+  def test_an_unreadable_server_tool_group_is_a_gap_not_a_zero
+    output = served { |usage| usage[:server_tool_use] = 'malformed' }
+    assert_metric output, 'USD estimate', 'UNKNOWN'
+    assert_includes output, 'Server tool usage UNKNOWN'
   end
 
   def test_fast_mode_is_not_priced_as_standard_speed

@@ -288,11 +288,12 @@ class UsageAnthropicCostTest < Minitest::Test
     assert_metric estimate(anthropic_record(searches: 0)), 'USD estimate', '$0.001110'
   end
 
-  def test_a_response_that_ran_no_search_omits_the_counter_and_is_still_priced
-    assert_metric estimate(without(anthropic_record, 'web_search_requests')), 'USD estimate', '$0.001110'
-    recorded_null = anthropic_record
-    recorded_null['usage']['web_search_requests'] = nil
-    assert_metric estimate(recorded_null), 'USD estimate', '$0.001110'
+  def test_a_zero_write_total_settles_both_ttl_categories_however_few_are_named
+    ['cache_write_5m_input_tokens', 'cache_write_1h_input_tokens', nil].each do |omitted|
+      record = anthropic_record(writes: 0, writes_1h: 0)
+      without(record, *[omitted].compact)
+      assert_metric estimate(record), 'USD estimate', '$0.001020'
+    end
   end
 
   def test_a_configured_model_prices_a_source_that_records_no_routed_model
@@ -372,14 +373,22 @@ class UsageAnthropicUnknownTest < Minitest::Test
     assert_includes report, 'Cache-write TTL split UNKNOWN'
   end
 
-  def test_a_malformed_server_tool_counter_stays_unknown
-    ['x', -1].each do |searches|
+  def test_a_search_count_the_reader_did_not_establish_stays_unknown
+    ['x', -1, nil].each do |searches|
       record = anthropic_record
       record['usage']['web_search_requests'] = searches
       report = estimate(record)
       assert_metric report, 'USD estimate', 'UNKNOWN'
       assert_includes report, 'Server tool usage UNKNOWN'
     end
+    assert_metric estimate(without(anthropic_record, 'web_search_requests')), 'USD estimate', 'UNKNOWN'
+  end
+
+  def test_fast_and_standard_responses_on_one_model_keep_distinguishable_columns
+    records = [anthropic_record, anthropic_record(billing: 'fast')]
+    report = Shaka::CostEstimate.new(records, inclusive_input: false).report
+    assert_metric report, 'Metric', 'claude-opus-5', 'claude-opus-5-fast'
+    refute_includes report, 'anthropic-1'
   end
 
   def test_a_source_whose_input_already_contains_its_subsets_is_not_priced_as_anthropic
