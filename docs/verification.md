@@ -38,7 +38,8 @@ A shorter page that hides an essential answer is a regression.
 Use separate entry points for people and agents, with one maintained source for each
 rule. Human guides explain the goal, choices, examples, and recovery. The agent skill
 specifies execution order, required references, authority, and stopping conditions;
-`AGENTS.md` supplies repository-specific commands and policy. An agent can also be a
+Fixed `.agents/bin/` scripts supply repository-specific commands, while `AGENTS.md`
+supplies human-only constraints and repository context. An agent can also be a
 reader of a human guide, so test that use when it is part of the product.
 
 | Reader and task | Useful evidence |

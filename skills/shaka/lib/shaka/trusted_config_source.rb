@@ -39,6 +39,7 @@ module Shaka
       validate_command_directory(sha)
       resolver = TrustedPathResolver.new(root: @root, sha:)
       entries = command_entries(resolver)
+      validate_legacy_command_entries(resolver, entries, sha)
       RepositoryConfig::CommandPaths::OPTIONAL.filter_map do |name, path|
         next unless entries.key?(path)
 
@@ -59,6 +60,15 @@ module Shaka
       RepositoryConfig::CommandPaths::OPTIONAL.values.to_h do |path|
         [path, resolver.entry(path)]
       end.compact
+    end
+
+    def validate_legacy_command_entries(resolver, entries, sha)
+      RepositoryConfig::CommandPaths::LEGACY_OPTIONAL.each do |name, legacy_path|
+        fixed_path = RepositoryConfig::CommandPaths::OPTIONAL.fetch(name)
+        next unless resolver.entry(legacy_path) && !entries.key?(fixed_path)
+
+        raise Error, "#{legacy_path} requires the standard entry point #{fixed_path} at trusted ref #{sha}"
+      end
     end
 
     def validate_command_entry(entry, path, sha, resolver)
