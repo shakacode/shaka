@@ -16,7 +16,9 @@ module Shaka
       end
 
       def validate
-        validate_names(CommandPaths::REQUIRED.keys + available_optional_commands)
+        commands = validate_names(CommandPaths::REQUIRED.keys + available_optional_commands)
+        validate_candidate_optional_commands
+        commands
       end
 
       def validate_available_optional_commands
@@ -48,6 +50,17 @@ module Shaka
 
         CommandPaths::OPTIONAL.keys.select do |name|
           command_entry?(CommandPaths::OPTIONAL.fetch(name))
+        end
+      end
+
+      def validate_candidate_optional_commands
+        return unless @available_commands
+
+        names = CommandPaths::OPTIONAL.filter_map { |name, path| name if command_entry?(path) }
+        validate_dependencies(names)
+        names.each do |name|
+          path = CommandPaths::OPTIONAL.fetch(name)
+          executable!(path, path)
         end
       end
 

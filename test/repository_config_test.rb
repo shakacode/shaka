@@ -154,6 +154,18 @@ class RepositoryConfigOptionalCommandTest < Minitest::Test
     end
   end
 
+  def test_candidate_only_optional_commands_must_still_form_a_valid_interface
+    with_repository do |root|
+      create_command(root, 'trigger_hosted_ci')
+      source = File.read(File.join(root, '.agents/agent-workflow.yml'))
+
+      message = assert_raises(Shaka::Error) do
+        Shaka::RepositoryConfig.load(root:, source:, available_commands: [])
+      end.message
+      assert_includes message, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
+    end
+  end
+
   def test_rejects_a_non_executable_optional_command
     with_repository do |root|
       create_command(root, 'validate_local')

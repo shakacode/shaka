@@ -139,6 +139,26 @@ class TrustedConfigSourceSymlinkTest < Minitest::Test
       assert_includes message, 'Trusted command symlink cycle'
     end
   end
+
+  def test_rejects_an_absolute_trusted_optional_symlink_target
+    with_repository do |root|
+      File.symlink('/tmp/validate', File.join(root, '.agents/bin/validate-local'))
+      commit_repository(root)
+
+      message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
+      assert_includes message, 'must target a file inside the repository'
+    end
+  end
+
+  def test_rejects_a_trusted_optional_symlink_target_above_the_repository
+    with_repository do |root|
+      File.symlink('../../../validate', File.join(root, '.agents/bin/validate-local'))
+      commit_repository(root)
+
+      message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
+      assert_includes message, 'must stay inside the repository'
+    end
+  end
 end
 
 class TrustedConfigSourceCommandEntryTest < Minitest::Test
