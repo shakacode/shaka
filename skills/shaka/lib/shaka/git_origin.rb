@@ -6,7 +6,8 @@ require_relative 'error'
 module Shaka
   # Parses a Git origin URL into owner/name without calling GitHub.
   module GitOrigin
-    HOST_AND_PATH = %r{\A(?:git@|ssh://git@|https://|http://)(?:[^/@]+@)?([^/:]+)[:/](.+)}
+    URI_HOST_PATH = %r{\A(?:https?|ssh)://(?:[^/@]+@)?([^/:]+)(?::\d+)?/(.+)}
+    SCP_HOST_PATH = /\Agit@([^:]+):(.+)/
 
     module_function
 
@@ -37,7 +38,7 @@ module Shaka
 
     def parsed(url)
       origin = url.strip
-      match = HOST_AND_PATH.match(origin)
+      match = URI_HOST_PATH.match(origin) || SCP_HOST_PATH.match(origin)
       path = match && match[2].delete_suffix('.git')
       raise Error, "Cannot parse owner/name from origin #{origin}" unless path&.match?(%r{\A[^/]+/[^/]+\z})
 
