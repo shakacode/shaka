@@ -21,7 +21,8 @@ module LocalEvaluationFixtureAssertions
                'test' => '.agents/bin/test' }.freeze
   FORBIDDEN_CONTENT = /(?:AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|
                          -----BEGIN[ ][A-Z ]*PRIVATE[ ]KEY-----|(?:password|token|api[_-]?key|client[_-]?secret)\s*[:=]|
-                         internal\s+notes?|raw\s+transcripts?|hidden\s+assertions?|reference\s+(?:solution|assets?))/ix
+                         internal\s+notes?|raw\s+transcripts?|hidden\s+assertions?|known[- ]bad\s+patch(?:es)?|
+                         reference\s+(?:solution|assets?))/ix
   FORBIDDEN_WORKFLOW_INPUT = /\bsecrets\b|github(?:\.token\b|\s*\[\s*['"]token['"]\s*\])/i
 
   def application_files(name)
@@ -140,7 +141,7 @@ class LocalEvaluationFixtureShapeTest < Minitest::Test
 
   def test_forbidden_content_detector_covers_each_material_type
     examples = ['-----BEGIN RSA PRIVATE KEY-----', 'internal notes', 'raw transcript', 'hidden assertion',
-                'reference solution', 'reference asset', 'AKIA1234567890ABCDEF', "ghp_#{'a' * 20}",
+                'reference solution', 'reference asset', 'known-bad patch', 'AKIA1234567890ABCDEF', "ghp_#{'a' * 20}",
                 "github_pat_#{'a' * 20}", 'token = placeholder']
     examples.each { |example| assert_match FORBIDDEN_CONTENT, example }
     ['SECRETS.MY_TOKEN', "secrets['MY_TOKEN']", 'toJSON(secrets)', "github['token']"].each do |example|
@@ -163,8 +164,8 @@ class LocalEvaluationFixtureShapeTest < Minitest::Test
       fixture = YAML.safe_load_file(File.join(root, 'fixture.yml'))
       assert_equal 1, fixture.fetch('version')
       assert_equal "slice_0_#{name}", fixture.fetch('purpose')
-      assert fixture.fetch('public_safe'), name
-      refute fixture.fetch('reusable_for_measured_cases'), name
+      assert_equal true, fixture.fetch('public_safe'), name
+      assert_equal false, fixture.fetch('reusable_for_measured_cases'), name
     end
   end
 end
