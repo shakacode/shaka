@@ -1,6 +1,13 @@
 # Model and token reporting
 
 Each task reports the available native usage for its commits and contributions.
+**Native** means copied from the host's own records, as against anything Shaka works
+out for itself: native token counts are read from the transcript, while an
+API-equivalent USD figure is a scenario Shaka prices from a published rate card. The
+opposite of a native number is a derived one, not a foreign one. Where a host records
+its own cost, as Pi does, Shaka publishes that recorded figure rather than recomputing
+it, and says which it is.
+
 `UNKNOWN` means the available records do not establish a value; it never means zero.
 The agent runs the trusted installed helper and includes its output in the PR,
 or the final response when there is no PR:
@@ -38,11 +45,17 @@ in the tested Codex records; do not add them again. Cache writes and the native
 total remain separate fields. Routed model stays UNKNOWN because these tested
 local records do not establish the model that executed each response.
 
-The report also shows **configured-model scenarios** for the providers and models
+The report also shows **rate-card scenarios** for the providers and models
 in that snapshot: Standard Codex credits and Standard API-equivalent USD for
-supported OpenAI models, and Cursor on-demand USD for Grok 4.6. Source links and
+supported OpenAI models, Cursor on-demand USD for Grok 4.6, and Anthropic list-price
+USD for supported Claude models. The first three price the configured model. The
+Anthropic scenario prices whichever of the routed or configured model it has a rate
+for, taking the routed one first, because Claude Code records no configured model.
+Source links and
 rate notes cover only priced provider and model pairs, not a model name on the
-wrong provider. The estimate prices each unique response
+wrong provider. They describe the rate card that applies to the pair, so they
+still appear beside an UNKNOWN estimate when that response's own counters are
+missing or contradictory; the reason line names why. The estimate prices each unique response
 before summing, so model switches and requests crossing the API context threshold
 are handled separately. Cached input is removed from ordinary input. For the API
 scenario, cache writes are removed too and priced at the published write rate;
@@ -66,6 +79,34 @@ excludes cache reads and cache writes, so the three are separate amounts; reason
 output is part of output. The configured model and native total stay UNKNOWN because
 the transcript does not record them. A turn is a prompt id, so `--turn` selects
 prompts, and every supplied file uses the first file's latest turn by default.
+
+The report also prices an **API-equivalent USD scenario** from Anthropic's published
+list prices, verified September 19, 2026. Uncached input, cache reads, and cache writes
+are billed separately at their own rates, and the reader reads the transcript's
+`cache_creation` split so a 1-hour cache write is priced at its higher rate rather than
+the 5-minute one; that split is priced but not published as its own table row. A write
+total the transcript does not split stays UNKNOWN instead of being priced at either
+rate. Codex credits are omitted because they do not price Anthropic usage. Only
+responses the transcript records at standard speed are priced: fast mode bills at its
+own rates, so a fast or unrecorded speed stays UNKNOWN and the report names which.
+Web search bills per request on top of tokens, so the reader keeps that counter and
+the estimate adds its published charge; web fetch adds none. A response that used no server tool omits the
+counter or the whole group, which the reader reports as no searches; a group that is
+present but unreadable, or a count that is not a non-negative whole number, stays
+UNKNOWN rather than being priced as though nothing was searched. A response recorded
+at fast speed is labelled apart from a standard one on the same model, so a report
+covering both still says which column is which. Server-side code execution is not priced here at all. Anthropic
+meters it by container time against a monthly allowance rather than per request, and
+waives it when the same request uses web search or fetch, so no per-response record
+establishes what it cost; none of these estimates include it. A response that pins inference to the US is billed at
+1.1 times every token rate, so the estimate applies that multiplier when the transcript
+records it; the multiplier covers tokens rather than the per-request search charge.
+Global routing is Anthropic's default, so a response that does not name US routing is
+priced at standard rates rather than refused. Anthropic publishes no context threshold,
+so no long-context multiplier applies. The
+cost table heads its column with the priced model, which for Claude Code is the routed
+model, because the configured model is UNKNOWN. Models outside the published rate table
+stay UNKNOWN and the report omits Anthropic rate copy and source links for them.
 
 Claude Code documents its transcript format as internal and version-dependent. The
 reader was exercised against desktop `2.1.270` and CLI `2.1.272` transcripts. It
@@ -124,10 +165,11 @@ for contributor or resumed-session snapshots instead of running the export.
 Rows report the export's provider, the session model as the configured model, the
 response's model as the routed model, and the per-response variant as effort.
 Unlike Codex, input excludes cache reads and writes, so the three are separate
-amounts that the native total sums with output and reasoning. Every rate the helper
-publishes bills input inclusive of those subsets, so OpenCode rows stay UNKNOWN with a
-cache-exclusive reason even when the response ran on a provider the helper otherwise
-prices. The configured model falls back to UNKNOWN when the export omits it.
+amounts that the native total sums with output and reasoning. The OpenAI and Cursor rates bill input
+inclusive of those subsets, so OpenCode rows stay UNKNOWN with a cache-exclusive reason
+even when the response ran on a provider the helper otherwise prices. An OpenCode
+response on a supported Anthropic model is not priced either, because the export records
+no billing speed. The configured model falls back to UNKNOWN when the export omits it.
 
 The reader was exercised against `opencode export` from 1.18.31. It matched an
 independent per-response aggregate for a real 49-response session: response count,
@@ -184,7 +226,9 @@ snapshots: active work, external reviewers, tool-model calls, and other agents
 may add usage that is absent from the selected sources. Routed model, billing mode,
 service tier, account terms, and actual provider charges are not established by
 these tokens. API-equivalent USD is a scenario or Pi's recorded native nominal cost,
-not a subscription invoice.
+not a subscription invoice. A published list price is not the amount charged: a
+subscription, negotiated terms, service tier, or data-residency routing can all differ
+from it.
 Human active time and total historical consumption are not inferred.
 
 When host discovery is unavailable or several turns/contributors belong to the
@@ -210,6 +254,19 @@ rule](working-with-your-agent.md#recover-an-unfinished-pr). The helper reads loc
 and prints allowlisted aggregate metadata; it neither modifies sessions nor publishes
 to GitHub. Review the report for task coverage before publishing it. The visible
 coverage note stays outside the expandable details; missing usage does not block a PR.
+
+## Naming the published block
+
+A PR description has to carry the report inside a `details` entry whose summary
+mentions usage; that much the renderer checks. It does not check the wording, and
+nothing but the agent keeps the rest of this section.
+
+Call that entry **Usage and cost**. It holds both halves of the report, the native
+token table and the priced scenario, so a summary naming either half alone
+misdescribes the other: calling it token usage drops the money, and calling it native
+usage claims Shaka copied a figure it calculated from a rate card. Inside it the
+helper names its own collapsed blocks, `Token detail` and `Cost scenarios`, so
+repeating either name in the outer summary nests a heading inside itself.
 
 ## PR execution provenance
 

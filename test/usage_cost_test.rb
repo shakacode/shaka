@@ -222,3 +222,197 @@ class UsageNativePiCostTest < Minitest::Test
     refute_includes report, 'developers.openai.com'
   end
 end
+
+module AnthropicCostFixture
+  ANTHROPIC_LINK = 'platform.claude.com/docs/en/about-claude/pricing'
+
+  private
+
+  def estimate(record)
+    Shaka::CostEstimate.new([record], inclusive_input: false).report
+  end
+
+  def without(record, *fields)
+    fields.each { |field| record['usage'].delete(field) }
+    record
+  end
+
+  def anthropic_record(configuration: %w[anthropic UNKNOWN claude-opus-5 xhigh], billing: 'standard',
+                       writes: 12, writes_1h: 4, searches: 0)
+    { 'configuration' => configuration, 'billing_mode' => billing,
+      'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40, 'cache_write_input_tokens' => writes,
+                   'cache_write_5m_input_tokens' => writes - writes_1h,
+                   'cache_write_1h_input_tokens' => writes_1h, 'output_tokens' => 20,
+                   'reasoning_output_tokens' => 5, 'web_search_requests' => searches } }
+  end
+end
+
+class UsageAnthropicCostTest < Minitest::Test
+  include AnthropicCostFixture
+
+  def test_standard_opus_prices_each_cache_write_at_its_own_ttl_rate
+    report = estimate(anthropic_record)
+    assert_metric report, 'USD estimate', '$0.001110'
+    assert_includes report, 'Anthropic API list prices, verified 2026-09-19'
+    assert_includes report, ANTHROPIC_LINK
+    refute_includes report, 'Credits estimate'
+    refute_includes report, 'Cache-exclusive input is unpriced'
+    refute_includes report, 'developers.openai.com'
+    refute_includes report, 'cursor.com'
+  end
+
+  def test_one_hour_writes_cost_more_than_five_minute_writes
+    hourly = estimate(anthropic_record(writes: 12, writes_1h: 12))
+    five_minute = estimate(anthropic_record(writes: 12, writes_1h: 0))
+    assert_metric hourly, 'USD estimate', '$0.001140'
+    assert_metric five_minute, 'USD estimate', '$0.001095'
+  end
+
+  def test_the_routed_model_heads_the_column_instead_of_the_unknown_configured_model
+    report = estimate(anthropic_record)
+    assert_metric report, 'Metric', 'claude-opus-5'
+    refute_includes report, '| Metric | UNKNOWN |'
+  end
+
+  def test_every_served_model_family_has_a_rate_including_the_cheaper_fable_cache_read
+    { 'claude-opus-4-5' => '$0.001110', 'claude-sonnet-4-5' => '$0.000666',
+      'claude-haiku-4-5' => '$0.000222', 'claude-fable-5-1' => '$0.002190',
+      'claude-fable-5' => '$0.002220' }.each do |model, expected|
+      report = estimate(anthropic_record(configuration: ['anthropic', 'UNKNOWN', model, 'xhigh']))
+      assert_metric report, 'USD estimate', expected
+    end
+  end
+
+  def test_web_search_requests_are_charged_on_top_of_the_token_estimate
+    assert_metric estimate(anthropic_record(searches: 3)), 'USD estimate', '$0.031110'
+    assert_metric estimate(anthropic_record(searches: 0)), 'USD estimate', '$0.001110'
+  end
+
+  def test_a_zero_write_total_settles_both_ttl_categories_however_few_are_named
+    ['cache_write_5m_input_tokens', 'cache_write_1h_input_tokens', nil].each do |omitted|
+      record = anthropic_record(writes: 0, writes_1h: 0)
+      without(record, *[omitted].compact)
+      assert_metric estimate(record), 'USD estimate', '$0.001020'
+    end
+  end
+
+  def test_us_pinned_inference_carries_its_published_multiplier
+    us = anthropic_record
+    us['usage']['inference_geo'] = 'us'
+    assert_metric estimate(us), 'USD estimate', '$0.001221'
+    ['global', 'not_available', nil].each do |geo|
+      record = anthropic_record
+      record['usage']['inference_geo'] = geo
+      assert_metric estimate(record), 'USD estimate', '$0.001110'
+    end
+  end
+
+  def test_the_geography_multiplier_applies_to_tokens_not_to_search_requests
+    us = anthropic_record(searches: 3)
+    us['usage']['inference_geo'] = 'us'
+    assert_metric estimate(us), 'USD estimate', '$0.031221'
+  end
+
+  def test_a_configured_model_prices_a_source_that_records_no_routed_model
+    report = estimate(anthropic_record(configuration: ['anthropic', 'claude-haiku-4-5', 'UNKNOWN', 'high']))
+    assert_metric report, 'USD estimate', '$0.000222'
+    assert_metric report, 'Metric', 'claude-haiku-4-5'
+  end
+
+  def test_absent_cache_writes_need_no_split_to_be_priced
+    none = without(anthropic_record(writes: 0, writes_1h: 0), 'cache_write_5m_input_tokens',
+                   'cache_write_1h_input_tokens')
+    assert_metric estimate(none), 'USD estimate', '$0.001020'
+  end
+end
+
+class UsageAnthropicUnknownTest < Minitest::Test
+  include AnthropicCostFixture
+
+  def test_fast_mode_and_unrecorded_speed_stay_unknown_rather_than_pricing_as_standard
+    fast = estimate(anthropic_record(billing: 'fast'))
+    assert_metric fast, 'USD estimate', 'UNKNOWN'
+    assert_includes fast, 'Anthropic fast-mode rates are not published here'
+    silent = estimate(anthropic_record(billing: 'UNKNOWN'))
+    assert_metric silent, 'USD estimate', 'UNKNOWN'
+    assert_includes silent, 'Billing speed UNKNOWN'
+    refute_includes silent, '$0.00'
+    [fast, silent].each { |report| refute_includes report, ANTHROPIC_LINK }
+  end
+
+  def test_a_half_reported_cache_write_split_stays_unknown
+    %w[cache_write_5m_input_tokens cache_write_1h_input_tokens].each do |field|
+      report = estimate(without(anthropic_record(writes: 12), field))
+      assert_metric report, 'USD estimate', 'UNKNOWN'
+      assert_includes report, 'Cache-write TTL split UNKNOWN'
+    end
+  end
+
+  def test_a_split_that_disagrees_with_the_published_write_total_is_not_priced
+    record = anthropic_record(writes: 12, writes_1h: 4)
+    record['usage']['cache_write_5m_input_tokens'] = 1
+    report = estimate(record)
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    assert_includes report, 'Inconsistent token subsets'
+    refute_includes report, '$0.00'
+  end
+
+  def test_impossible_subsets_and_unsupported_models_never_become_a_price
+    over = anthropic_record(writes: 12, writes_1h: 13)
+    over['usage']['cache_write_5m_input_tokens'] = 0
+    over = estimate(over)
+    assert_metric over, 'USD estimate', 'UNKNOWN'
+    assert_includes over, 'Inconsistent token subsets'
+
+    unsupported = estimate(anthropic_record(configuration: %w[anthropic UNKNOWN claude-test xhigh]))
+    assert_metric unsupported, 'USD estimate', 'UNKNOWN'
+    assert_includes unsupported, 'Unsupported provider or configured model'
+    refute_includes unsupported, ANTHROPIC_LINK
+    refute_includes unsupported, '2026-09-19'
+  end
+
+  def test_a_malformed_ttl_split_stays_unknown_instead_of_raising_or_discounting
+    ['x', 4.0, -1].each do |split|
+      record = anthropic_record(writes: 0, writes_1h: 0)
+      record['usage']['cache_write_1h_input_tokens'] = split
+      report = estimate(record)
+      assert_metric report, 'USD estimate', 'UNKNOWN'
+      assert_includes report, 'Inconsistent token subsets'
+      refute_includes report, '$0.00'
+    end
+  end
+
+  def test_rate_copy_describes_the_pair_so_it_survives_a_response_that_cannot_be_priced
+    report = estimate(without(anthropic_record(writes: 12), 'cache_write_5m_input_tokens'))
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    assert_includes report, 'Anthropic API list prices'
+    assert_includes report, ANTHROPIC_LINK
+    assert_includes report, 'Cache-write TTL split UNKNOWN'
+  end
+
+  def test_a_search_count_the_reader_did_not_establish_stays_unknown
+    ['x', -1, nil].each do |searches|
+      record = anthropic_record
+      record['usage']['web_search_requests'] = searches
+      report = estimate(record)
+      assert_metric report, 'USD estimate', 'UNKNOWN'
+      assert_includes report, 'Server tool usage UNKNOWN'
+    end
+    assert_metric estimate(without(anthropic_record, 'web_search_requests')), 'USD estimate', 'UNKNOWN'
+  end
+
+  def test_fast_and_standard_responses_on_one_model_keep_distinguishable_columns
+    records = [anthropic_record, anthropic_record(billing: 'fast')]
+    report = Shaka::CostEstimate.new(records, inclusive_input: false).report
+    assert_metric report, 'Metric', 'claude-opus-5', 'claude-opus-5-fast'
+    refute_includes report, 'anthropic-1'
+  end
+
+  def test_a_source_whose_input_already_contains_its_subsets_is_not_priced_as_anthropic
+    report = Shaka::CostEstimate.new([anthropic_record]).report
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    assert_includes report, 'Unsupported provider or configured model'
+    refute_includes report, ANTHROPIC_LINK
+    refute_includes report, '2026-09-19'
+  end
+end
