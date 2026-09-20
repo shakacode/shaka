@@ -17,7 +17,14 @@ module Shaka
     end
 
     def self.effective(seam:, override: nil)
-      [normalize(seam), normalize(override)].include?('thorough') ? 'thorough' : DEFAULT
+      [normalize(seam), normalize(override)].include?('thorough') ? 'thorough' : 'swift'
+    end
+
+    def self.seam_from_ref(root:, ref:)
+      return unless ref
+
+      require_relative 'trusted_config_source'
+      TrustedConfigSource.load(root:, ref:).review.fetch('pace')
     end
 
     def self.allowed_merge_states(pace, queue_enabled)

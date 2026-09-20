@@ -190,7 +190,7 @@ phases:
         description OWNER/REPO NUMBER --content-file PATH
         reply OWNER/REPO NUMBER --content-file PATH --key NAME [--comment ROOT_COMMENT_ID]
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH
-        merge OWNER/REPO NUMBER --head SHA --walkthrough REVIEW_ID
+        merge OWNER/REPO NUMBER --head SHA --walkthrough REVIEW_ID --root DIR --ref SHA [--pace PACE]
         usage --commit SHA --contribution CATEGORY
         ```
 

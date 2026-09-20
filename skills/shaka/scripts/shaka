@@ -15,7 +15,6 @@ require_relative '../lib/shaka/review_prompt'
 require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
-require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
@@ -82,9 +81,7 @@ rescue JSON::ParserError => e
 end
 
 def merge_seam_pace(options)
-  return unless options[:ref]
-
-  Shaka::TrustedConfigSource.load(root: options[:root] || Dir.pwd, ref: options[:ref]).review.fetch('pace')
+  Shaka::ReviewPace.seam_from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
 end
 
 def walkthrough_body(options)

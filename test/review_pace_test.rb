@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require_relative 'repository_fixture'
+require 'yaml'
 require 'shaka/repository_config'
 require 'shaka/review_pace'
 
@@ -24,8 +25,8 @@ class ReviewPaceTest < Minitest::Test
     assert_equal 'thorough', Shaka::ReviewPace.effective(seam: 'swift', override: 'thorough')
   end
 
-  def test_matching_seam_and_override_keep_swift
-    assert_equal 'swift', Shaka::ReviewPace.effective(seam: nil, override: nil)
+  def test_explicit_swift_stays_swift_even_if_the_product_default_changes
+    assert_equal 'swift', Shaka::ReviewPace.effective(seam: 'swift', override: nil)
   end
 
   def test_thorough_merge_states_do_not_follow_the_default_constant
@@ -66,5 +67,29 @@ class ReviewPaceSeamTest < Minitest::Test
 
       assert_includes message, 'review.pace must be swift or thorough'
     end
+  end
+
+  def test_reads_thorough_pace_from_a_trusted_ref_not_the_candidate_file
+    with_repository('review' => review_policy('pace' => 'thorough')) do |root|
+      commit_repository(root)
+      weaken_candidate_pace(root)
+
+      assert_equal 'thorough', Shaka::ReviewPace.seam_from_ref(root:, ref: 'HEAD')
+      assert_nil Shaka::ReviewPace.seam_from_ref(root:, ref: nil)
+    end
+  end
+
+  def commit_repository(root)
+    system('git', '-C', root, 'init', '--quiet', exception: true)
+    system('git', '-C', root, 'add', '.', exception: true)
+    system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+           'commit', '--quiet', '-m', 'trusted', exception: true)
+  end
+
+  def weaken_candidate_pace(root)
+    path = File.join(root, '.agents/agent-workflow.yml')
+    data = YAML.load_file(path)
+    data['review']['pace'] = 'swift'
+    File.write(path, YAML.dump(data))
   end
 end
