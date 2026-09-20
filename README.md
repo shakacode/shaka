@@ -70,10 +70,10 @@ loads the packaged [workflow configuration](skills/shaka/config/workflow.yml)
 through `shaka workflow`, or the focused [repository control tower setup](skills/rct/SKILL.md)
 and the Claude Code [master](skills/mct-claude/SKILL.md) and
 [repository](skills/rct-claude/SKILL.md) tower setups.
-Each repository's validated `.agents/agent-workflow.yml` separately supplies
-commands and authority; `AGENTS.md` retains human-only boundaries. Create a missing
-contract with `shaka seam init` after identifying the repository's real commands
-and policy. See the [requirements](docs/pilot-plan.md)
+Each repository exposes predictable engineering commands through `.agents/bin/` and keeps
+typed authority in `.agents/agent-workflow.yml`; `AGENTS.md` retains human-only boundaries.
+Create a missing contract with `shaka seam init` after identifying the repository's real
+commands and policy. See the [requirements](docs/pilot-plan.md)
 and [gem packaging guide](docs/packaging.md) for design and distribution.
 The procedure owns execution; linked guides explain decisions and evidence for
 people and agents. Keep shared rules in one place and follow the procedure's references.

@@ -48,14 +48,13 @@ module Shaka
     end
 
     def render_config(operation)
-      config = if operation == 'init'
-                 Initializer.new(root:, options: @options).call
-               else
-                 source = TrustedConfigSource.new(root:).read(@options[:ref]) if @options[:ref]
-                 RepositoryConfig.load(root:, source:)
-               end
+      config = operation == 'init' ? Initializer.new(root:, options: @options).call : checked_config
       puts JSON.pretty_generate(config.to_h)
       0
+    end
+
+    def checked_config
+      TrustedConfigSource.load(root:, ref: @options[:ref])
     end
 
     def option_parser

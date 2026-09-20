@@ -1,8 +1,9 @@
 # Repository seam settings
 
 `.agents/agent-workflow.yml` is the machine-readable contract between a repository and
-the Shaka workflow. It names the executable commands Shaka runs and records review,
-merge, and branch-protection policy. Shaka reads it from the trusted default branch, so
+the Shaka workflow. It records review, merge, and branch-protection policy. Executable
+commands use the fixed `.agents/bin/` interface described below. Shaka reads policy and
+optional-command availability from the trusted default branch, so
 a candidate pull request cannot grant itself authority by editing its own copy.
 
 Create it with [`shaka seam init`](getting-started.md#initialize-a-repository-seam) and
@@ -14,20 +15,13 @@ Keep human-only constraints in `AGENTS.md`. This file holds only typed policy.
 
 ## Every setting in one file
 
-This is a complete seam using every setting, including the two optional ones. Each section is
-explained below.
+This is a complete seam using every YAML setting. Each section is explained below.
 
 ```yaml
 ---
 version: 1
 base_branch: main
 plan: docs/pilot-plan.md
-commands:
-  setup: .agents/bin/setup
-  validate: .agents/bin/validate
-  test: .agents/bin/test
-  validate_local: .agents/bin/validate_local
-  trigger_hosted_ci: .agents/bin/trigger_hosted_ci
 review:
   required: meaningful_changes
   check: claude-review
@@ -54,17 +48,13 @@ trusted_actions:
   - ruby/setup-ruby
 ```
 
-The smallest valid seam drops every optional setting — `plan`, `trusted_actions`,
-`reviewers`, and the two optional commands:
+The smallest valid YAML seam drops every optional setting — `plan`, `trusted_actions`,
+`reviewers`, `branches`, and `recovery`:
 
 ```yaml
 ---
 version: 1
 base_branch: main
-commands:
-  setup: .agents/bin/setup
-  validate: .agents/bin/validate
-  test: .agents/bin/test
 review:
   required: none
 merge:
@@ -99,7 +89,6 @@ These apply to the whole document, whatever the settings are.
 | --- | --- | --- | --- |
 | `version` | yes | integer | Exactly `1`. |
 | `base_branch` | yes | string | Non-empty string naming the branch work starts from. See the note below. |
-| `commands` | yes | mapping | [Executable paths](#commands). |
 | `review` | yes | mapping | [Reviewer policy](#review). |
 | `merge` | yes | mapping | [Merge authority](#merge). |
 | `protection` | yes | mapping | [Expected branch protection](#protection). |
@@ -131,21 +120,72 @@ the branch. `shaka seam init` is stricter: it rejects any value that
 `git check-ref-format --branch` does not accept. Prefer initializing the seam, and check
 a hand-edited `base_branch` yourself.
 
-## `commands`
+## Standard command scripts
 
-Shaka executes these paths. It does not reconstruct their behavior from prose, so put
-pipelines, environment setup, and other compound logic inside the scripts themselves.
+Shaka follows GitHub's [Scripts to Rule Them All](https://github.blog/engineering/engineering-principles/scripts-to-rule-them-all/)
+philosophy: every repository exposes common engineering operations through predictable,
+language-independent names. A new contributor or portable tool should not have to parse a
+second routing table before it can set up, test, or validate a project.
 
-| Command | Required | Purpose |
+| Path | Required | Purpose |
 | --- | --- | --- |
-| `setup` | yes | Install dependencies for a fresh checkout. |
-| `validate` | yes | Full validation, as CI would run it. |
-| `test` | yes | Focused tests for the files being changed. |
-| `validate_local` | no | Faster pre-review subset. When present, the full `validate` is deferred until the repair batch is complete. |
-| `trigger_hosted_ci` | no | Starts hosted CI after repairs. Requires `validate_local`. |
+| `.agents/bin/setup` | yes | Install dependencies and prepare a fresh checkout. |
+| `.agents/bin/validate` | yes | Run full validation, as CI would. |
+| `.agents/bin/test` | yes | Run focused tests and forward selection arguments. |
+| `.agents/bin/validate-local` | no | Run a faster pre-review subset. Its presence defers full validation until the repair batch is complete. |
+| `.agents/bin/trigger-hosted-ci` | no | Start staged hosted CI after repairs. It requires `validate-local`. |
 
-Every value must be a repository-relative path to a file that exists and is
-**executable**. A readable-but-not-executable script fails validation.
+These names are the interface; repository-specific commands stay behind them. Prefer a small
+wrapper script that changes to the repository root, establishes any required environment,
+forwards arguments, and uses `exec` for a single underlying command. Wrappers remain clear when
+the operation later needs composition or setup. A symlink is acceptable when the target is a
+stable tracked executable inside the same repository and needs exactly the same working
+directory, environment, and arguments. Shaka rejects links that resolve outside the repository.
+The `.agents` and `.agents/bin` interface directories themselves must be real tracked
+directories; only individual command entries may be symlinks. The initializer always creates
+wrappers because that is the portable default.
+
+Required scripts must exist and be executable. When the workflow supplies `--ref`, as it must
+for trusted decisions, optional capability comes from the script's presence on that resolved
+default-branch commit, never merely from a candidate pull request. Shaka then validates and runs
+the candidate checkout's version at the same fixed path. A no-`--ref` check intentionally
+inspects the current checkout for local editing or initialization; it supplies no trusted policy
+authority. A readable but non-executable script fails validation.
+
+`shaka seam check` prints an effective JSON view that includes the derived `commands` map for
+workflow consumers. That output is diagnostic, not a YAML seam template; do not copy its
+`commands` key back into `.agents/agent-workflow.yml`.
+
+An optional command that exists on the trusted ref is intentionally sticky for the candidate:
+deleting it fails validation instead of silently removing the capability. This presence check
+does not attest to a candidate script's behavior; review and validation must still catch a
+wrapper that weakens or skips its work. Retiring an optional command is therefore a
+repository-policy migration, not an ordinary code change. Keep its executable wrapper until the
+repository has an explicitly authorized migration that changes the trusted default-branch
+capability; do not bypass protection or treat candidate absence as retirement authority. The
+pilot does not yet provide a self-service retirement marker.
+
+An older pilot seam with a YAML `commands` mapping now fails with `unknown key: commands`.
+This is an intentionally loud pilot-contract revision rather than a silent reinterpretation of
+existing policy. Migrate across that trust boundary in this order:
+
+1. While the previous Shaka version is still installed, prepare a seam PR that removes the
+   mapping and adds the fixed scripts. Keep temporary adapters at every old mapped path that
+   differs, including underscore-named optional scripts. If an old path collides with a new
+   standard role, temporarily make both entry points run the stricter superset; never preserve a
+   fast path by weakening full validation. The target Shaka fails when it finds an underscore-
+   named optional script without its hyphenated standard entry point, preventing silent loss of
+   staged validation or hosted CI.
+2. Validate that candidate checkout with the previous trusted Shaka and `--ref` set to the
+   pre-migration default-branch commit. It reads the old trusted mapping and proves those
+   temporary paths still work. Separately run the target Shaka version without `--ref` on the
+   candidate checkout; this parses the mapping-free YAML and fixed scripts but grants no policy
+   authority. Both checks must pass before the seam PR merges through the repository's normal
+   gates.
+3. Upgrade the installed Shaka only after the default branch contains the mapping-free seam.
+   Pin that new default-branch commit with `shaka seam check --ref`, then remove obsolete
+   compatibility adapters in a follow-up PR. The fixed hyphenated optional paths are now the
+   only ones Shaka recognizes.
 
 ## `review`
 
@@ -332,8 +372,8 @@ introduces, and lands with it.
 
 ## What `seam init` writes
 
-The initializer produces the smallest complete contract: `version`, `base_branch`, the
-three required commands as `.agents/bin/` wrappers, `review`, `merge`, `protection`, and
+The initializer produces the smallest complete contract: the three required `.agents/bin/`
+wrappers plus YAML containing `version`, `base_branch`, `review`, `merge`, `protection`, and
 `branches.name` set to `{login}-{host}/{issue}-{description}` so the layout is visible in
 the seam instead of only in Ruby. It adds `plan` and `trusted_actions` only when you pass
 them. Edit `branches.name` afterward when the repository already uses a different layout.
@@ -354,6 +394,8 @@ for reviewer entries yet. The generated merge preference is `ask` unless you pas
 | --- | --- |
 | Contract path, and the `safe_load` limits on aliases, classes, and symbols | `skills/shaka/lib/shaka/repository_config.rb` |
 | Top-level keys and section values | `skills/shaka/lib/shaka/repository_config/schema.rb` |
+| Fixed command names and optional-command dependencies | `skills/shaka/lib/shaka/repository_config/command_paths.rb` and `command_schema.rb` |
+| Trusted-ref optional-command and symlink-target authorization | `skills/shaka/lib/shaka/trusted_config_source.rb` |
 | Reviewer list shape | `skills/shaka/lib/shaka/repository_config/review_schema.rb` |
 | Reviewer choice | `skills/shaka/lib/shaka/reviewer_selection.rb` |
 | Feature-branch layout | `skills/shaka/lib/shaka/repository_config/branch_schema.rb` |

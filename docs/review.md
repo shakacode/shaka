@@ -86,9 +86,10 @@ entry you skipped and on what evidence.
 During planning, check whether each reviewer needed to satisfy the gate runs on draft pull
 requests, reading its trusted workflow rather than the seam: the standard reviewer workflow
 guards on `draft == false`, so the review-ready path is the usual one. Run
-`commands.validate_local` before review when present, otherwise `commands.validate`. A seam
-with `commands.trigger_hosted_ci` must define `validate_local`; after batching fixes, run the
-full `validate` command and then the trigger. This follows the React on Rails pattern: draft
+`.agents/bin/validate-local` before review when the trusted seam reports it present; otherwise
+run `.agents/bin/validate`.
+The optional `.agents/bin/trigger-hosted-ci` requires `validate-local`; after batching fixes,
+run the full `validate` script and then the trigger. This follows the React on Rails pattern: draft
 creation and review do not request its broad hosted matrix.
 
 This ordering applies only to optional staged suites. Never suppress an always-on

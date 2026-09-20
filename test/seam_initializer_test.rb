@@ -342,6 +342,56 @@ class SeamInitializerValidationTest < Minitest::Test
   end
 end
 
+class SeamInitializerCommandContractTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_exposes_fixed_commands_without_repeating_them_in_yaml
+    with_repository do |root|
+      output, error, status = init(root)
+
+      assert status.success?, error
+      assert_equal %w[setup test validate], JSON.parse(output).fetch('commands').keys.sort
+      refute_includes File.read(File.join(root, '.agents/agent-workflow.yml')), 'commands:'
+    end
+  end
+
+  def test_rejects_invalid_optional_command_dependencies_before_writing
+    with_repository do |root|
+      trigger = write_executable(root, '.agents/bin/trigger-hosted-ci')
+
+      _output, error, status = init(root)
+
+      refute status.success?
+      assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
+      refute(generated_files(root).any? { |path| File.exist?(path) })
+      assert File.exist?(trigger)
+    end
+  end
+
+  def test_accepts_a_valid_optional_command_pair_before_writing
+    with_repository do |root|
+      write_executable(root, '.agents/bin/validate-local')
+      write_executable(root, '.agents/bin/trigger-hosted-ci')
+
+      output, error, status = init(root)
+
+      assert status.success?, error
+      assert_equal %w[setup test trigger_hosted_ci validate validate_local],
+                   JSON.parse(output).fetch('commands').keys.sort
+    end
+  end
+
+  private
+
+  def write_executable(root, relative)
+    path = File.join(root, relative)
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, "#!/bin/sh\nexit 0\n")
+    File.chmod(0o755, path)
+    path
+  end
+end
+
 class SeamInitializerEnvironmentTest < Minitest::Test
   include SeamInitializerTestHelpers
 

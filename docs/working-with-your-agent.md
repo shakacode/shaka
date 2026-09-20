@@ -73,7 +73,8 @@ or a handoff needs thought; it returns the plan without an implementation checkp
 Its output should name the task, recommended model/effort, acceptance, affected paths,
 checks, merge authority, and stopping point. Do not copy the whole planning conversation.
 
-If the repository exposes `trigger_hosted_ci`, it must also provide `validate_local`. The agent
+If the repository exposes `.agents/bin/trigger-hosted-ci`, it must also provide
+`.agents/bin/validate-local`. The agent
 runs that cheaper validation and handles the first adversarial review before requesting suites for
 the stable candidate, whichever model that review runs. It uses the review-ready path unless a
 needed reviewer's trusted workflow shows it reviews drafts. Always-on required and security

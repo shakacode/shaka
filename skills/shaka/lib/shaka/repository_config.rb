@@ -2,6 +2,7 @@
 
 require 'yaml'
 require_relative 'error'
+require_relative 'repository_config/command_paths'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
 
@@ -14,20 +15,27 @@ module Shaka
 
     attr_reader :base_branch, :commands, :review, :merge, :protection, :recovery
 
-    def self.load(root: Dir.pwd, source: nil)
-      new(root:, source:).load
+    def self.load(root: Dir.pwd, source: nil, available_commands: nil)
+      new(root:, source:, available_commands:).load
     end
 
-    def initialize(root:, source: nil)
+    def initialize(root:, source: nil, available_commands: nil)
+      if source && available_commands.nil?
+        raise Error, 'available_commands is required when repository policy comes from another source'
+      end
+
       @root = File.realpath(root)
       @source = source
+      @available_commands = available_commands
     end
 
     def load
       source = @source || File.read(File.join(@root, PATH), encoding: 'UTF-8')
       DuplicateKeys.check(source, filename: PATH)
       @data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
-      Schema.new(root: @root, data: @data).validate
+      schema = Schema.new(root: @root, data: @data, available_commands: @available_commands)
+      schema.validate
+      @commands = schema.commands
       assign_sections
       self
     rescue Psych::Exception => e
@@ -40,14 +48,13 @@ module Shaka
 
     # Callers read this as the effective contract, so defaults belong in it.
     def to_h
-      @data.merge('recovery' => recovery)
+      @data.merge('commands' => commands, 'recovery' => recovery)
     end
 
     private
 
     def assign_sections
       @base_branch = @data.fetch('base_branch')
-      @commands = @data.fetch('commands')
       @review = @data.fetch('review')
       @merge = @data.fetch('merge')
       @protection = @data.fetch('protection')

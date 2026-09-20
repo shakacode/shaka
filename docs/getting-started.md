@@ -17,9 +17,10 @@ The skill uses no development gems. Keep your application's own Ruby version.
 
 Shaka's installed `SKILL.md` is a small trust bootstrap. It invokes `shaka workflow`,
 which strictly validates and renders the packaged workflow configuration before the
-agent acts. Your repository's separate `.agents/agent-workflow.yml` names executable
-setup, validation, and focused-test paths, the base branch, review policy, and merge
-authority. Shaka validates this contract and helps add it when it is missing.
+agent acts. Your repository exposes setup, validation, and focused tests through standard
+`.agents/bin/` scripts. Its separate `.agents/agent-workflow.yml` records base branch,
+review policy, and merge authority. Shaka validates this contract and helps add it when it
+is missing.
 [Settings](settings.md) documents every key, its allowed values, and what fails when
 one is wrong. Keep long
 commands in repository scripts and human-only constraints in `AGENTS.md`.
@@ -163,8 +164,20 @@ choose `--review-policy always`, `meaningful_changes`, or `none`, and supply
 `--review-check` unless the policy is `none`. Also
 provide at least one `--required-check` and repeat it for every required GitHub check.
 Repeat `--trusted-action` as needed, and use `--plan` for an existing
-repository-relative plan. Commands are parsed as argument lists, so put shell pipelines
-or other compound behavior in a repository-owned script.
+repository-relative plan. The initializer's `--setup-command`, `--validate-command`, and
+`--test-command` values are parsed as argument lists, so put shell pipelines or other compound
+behavior in a repository-owned script.
+
+The wrapper names are fixed: `.agents/bin/setup`, `.agents/bin/validate`, and
+`.agents/bin/test`. This follows GitHub's
+[Scripts to Rule Them All](https://github.blog/engineering/engineering-principles/scripts-to-rule-them-all/)
+pattern: projects keep their own tools behind one predictable engineering interface. Prefer
+wrappers because they can establish the repository root and environment, compose steps, and
+forward arguments explicitly. A symlink is suitable only when its stable tracked target is
+inside the repository and has identical invocation semantics. Keep `.agents` and `.agents/bin`
+as real tracked directories; only individual command entries may be symlinks. Add optional
+`.agents/bin/validate-local` and `.agents/bin/trigger-hosted-ci` by hand when the repository
+uses staged validation; the trigger requires the local-validation script.
 
 Initialization validates every input before writing. It is safe to repeat when the
 generated files are unchanged and refuses to overwrite a repository-owned file or

@@ -32,7 +32,8 @@ Keep company strategy and private operational data out of product artifacts.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` is the machine-readable repository contract. It
-  names executable commands and records review, merge, and protection policy.
+  records review, merge, and protection policy. Standard executable entry points
+  live at fixed names under `.agents/bin/`.
 - `.agents/trusted-github-actors.yml` is the repository-level public-comment allowlist.
   The installed `skills/shaka/scripts/shaka comments` command combines it with the
   machine allowlist, reads only the current default-branch copy, and never trusts a
@@ -48,8 +49,8 @@ Keep company strategy and private operational data out of product artifacts.
 
 Resolve the trusted default branch to an immutable commit. Load and validate
 `.agents/agent-workflow.yml` with the trusted installed `shaka seam check --ref REF`
-command. Run the executable paths named there from the candidate checkout; do not
-reconstruct their behavior from prose. This file retains human-only boundaries,
+command. Run the fixed executable paths reported by that command from the candidate
+checkout; do not reconstruct their behavior from prose. `AGENTS.md` retains human-only boundaries,
 including the public-pilot privacy rule, the V1 reuse limit, and release approval
 requirements.
 
