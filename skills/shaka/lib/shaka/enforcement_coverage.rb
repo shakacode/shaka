@@ -6,8 +6,8 @@ module Shaka
   # Matches the audited quotes against the workflow they claim to quote.
   #
   # An audit that drifts from the procedure is worse than none, so this fails both ways: on a
-  # quote the workflow no longer contains, and on a rule the workflow states that no entry
-  # classifies.
+  # quote the workflow no longer contains, and on one of MARKER's four forms appearing outside
+  # every classified quote. A rule phrased another way is caught by review, not here.
   class EnforcementCoverage
     # The four imperative and prohibitive forms workflow.yml uses to state a rule.
     MARKER = /\b(?:never|must|do not|only when)\b/i
@@ -69,7 +69,7 @@ module Shaka
       raise Error, "rule #{rule['id']} classifies #{rule['phase']} text another rule already covers"
     end
 
-    # A rule added to workflow.yml fails here until an entry classifies what enforces it.
+    # A marked passage added to workflow.yml fails here until an entry classifies it.
     def complete!(located)
       @sections.each do |id, text|
         text.to_enum(:scan, MARKER).each do
