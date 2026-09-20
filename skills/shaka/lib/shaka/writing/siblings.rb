@@ -1,19 +1,24 @@
 # frozen_string_literal: true
 
-require_relative '../error'
+require_relative '../public_comments/bounded_list'
 require_relative 'duplication'
 
 module Shaka
   module Writing
     # Reads the published counterpart a surface must not repeat. Neither renderer holds
     # both bodies, so each comparison fetches its sibling from the pull request itself.
+    # Both siblings come from GitHub rather than from the body being checked, so omitting
+    # or misdirecting a walkthrough link cannot excuse a description from the comparison.
     class Siblings
+      REVIEW_PAGES = 10
+      TITLE = '# Code Walkthrough'
+
       def initialize(github)
         @github = github
       end
 
       def check_description(body)
-        Duplication.new(body, linked_walkthrough(body)).check('description')
+        Duplication.new(body, published_walkthrough).check('description')
       end
 
       def check_walkthrough(body)
@@ -22,17 +27,16 @@ module Shaka
 
       private
 
-      # Before the first walkthrough exists the description links no review, and a review
-      # that cannot be read leaves the comparison unmade rather than blocking publication.
-      def linked_walkthrough(body)
-        prefix = Regexp.escape("https://github.com/#{@github.repository}/pull/#{@github.number}#pullrequestreview-")
-        id = body[/#{prefix}(\d+)\b/, 1]
-        return unless id
+      # The newest titled COMMENT review is the walkthrough a description now sits beside.
+      # None exists before the first one is published, which is the one case that skips.
+      def published_walkthrough
+        path = "repos/#{@github.repository}/pulls/#{@github.number}/reviews"
+        reviews = PublicComments::BoundedList.new(@github, max_pages: REVIEW_PAGES, label: 'Review listing').call(path)
+        reviews.reverse.find { |review| walkthrough?(review) }&.fetch('body')
+      end
 
-        @github.review(id)['body'].to_s
-      rescue Error
-        warn 'shaka: description duplication check skipped; the linked walkthrough could not be read.'
-        nil
+      def walkthrough?(review)
+        review['state'] == 'COMMENTED' && review['body'].to_s.include?(TITLE)
       end
     end
   end

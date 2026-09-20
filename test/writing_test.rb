@@ -36,6 +36,13 @@ class WritingDuplicationTest < Minitest::Test
     check(summary, detail)
   end
 
+  # Tokenizing ASCII only would hand any other script a silent exemption.
+  def test_copied_prose_outside_the_ascii_range_is_refused
+    copied = 'Загрузчик отклоняет неизвестный режим обзора до начала рабочего процесса.'
+    error = assert_raises(Shaka::Error) { check("#{copied} Мейнтейнеры сливают.", "#{copied} Схема поднимает.") }
+    assert_includes error.message, 'This description repeats'
+  end
+
   # A first walkthrough published before any description has nothing to compare.
   def test_an_absent_sibling_never_blocks_publication
     check(DESCRIPTION, nil)
@@ -80,6 +87,11 @@ class WritingAdvisoryTest < Minitest::Test
   def test_filler_openers_are_listed_and_absence_is_stated
     assert_includes lines('In order to merge, note that the gate runs.'), 'in order to, note that'
     assert_includes lines('The gate runs before publication.'), 'filler openers: none'
+  end
+
+  # The baseline names this opening in as many words and it is not a bare verb.
+  def test_the_documented_this_change_opening_is_named
+    assert_includes lines('This change adds an H1 to the walkthrough renderer.'), 'diff-shaped'
   end
 
   def test_an_advisory_never_raises_on_empty_prose

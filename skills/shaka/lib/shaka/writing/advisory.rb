@@ -17,6 +17,7 @@ module Shaka
                  'simply put', 'in summary', 'that being said'].freeze
       DIFF_VERBS = %w[adds makes updates fixes removes changes introduces implements refactors renames
                       moves bumps improves replaces enables allows ensures supports handles adjusts].freeze
+      DIFF_OPENERS = ['this change', 'this pr', 'this commit', 'this patch', 'this diff'].freeze
       EMPHASIS = /(\*\*|__)(?=\S)(?:(?!\1).)+\1/m
       SENTENCE_END = /(?<=[.!?])\s+/
 
@@ -64,11 +65,13 @@ module Shaka
       end
 
       def opening_note
-        verb = opening[/[A-Za-z']+/].to_s.downcase
+        start = opening.downcase
+        verb = start[/[a-z']+/].to_s
         return 'none found' if verb.empty?
         return "diff-shaped; it opens with the bare verb \"#{verb}\"" if DIFF_VERBS.include?(verb)
 
-        'opens with a subject'
+        filler = DIFF_OPENERS.find { |phrase| start.start_with?(phrase) }
+        filler ? "diff-shaped; it opens with \"#{filler}\" instead of the outcome" : 'opens with a subject'
       end
 
       def hedges = words.count { |word| HEDGES.include?(word) }

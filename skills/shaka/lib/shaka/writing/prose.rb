@@ -9,7 +9,7 @@ module Shaka
       TAG = /<[^>]+>/
       LINK = /\[([^\]]*)\]\([^)]*\)/
       URL = %r{https?://\S+}
-      WORD = /[a-z0-9']+/
+      WORD = /[[:alnum:]']+/
 
       module_function
 
@@ -19,6 +19,8 @@ module Shaka
         PublicationText.prose(markdown.to_s).gsub(LINK, '\1').gsub(TAG, ' ').gsub(URL, ' ')
       end
 
+      # Unicode-aware, so accented and non-Latin prose is compared rather than ignored.
+      # A script written without spaces still yields few, long tokens.
       def words(markdown) = text(markdown).downcase.scan(WORD)
 
       def shingles(markdown, size)

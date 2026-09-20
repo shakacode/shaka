@@ -18,8 +18,8 @@ module Shaka
 
     def description(body:)
       existing = pull['body'].to_s
-      Writing::Siblings.new(self).check_description(body)
       merged = merge(existing, publishable(body))
+      Writing::Siblings.new(self).check_description(body)
       verify_rendering(merged)
       check_unchanged(existing)
       confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
