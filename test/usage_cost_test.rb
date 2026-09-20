@@ -343,6 +343,14 @@ class UsageAnthropicUnknownTest < Minitest::Test
     end
   end
 
+  def test_rate_copy_describes_the_pair_so_it_survives_a_response_that_cannot_be_priced
+    report = estimate(without(anthropic_record(writes: 12), 'cache_write_5m_input_tokens'))
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    assert_includes report, 'Anthropic API list prices'
+    assert_includes report, ANTHROPIC_LINK
+    assert_includes report, 'Cache-write TTL split UNKNOWN'
+  end
+
   def test_a_source_whose_input_already_contains_its_subsets_is_not_priced_as_anthropic
     report = Shaka::CostEstimate.new([anthropic_record]).report
     assert_metric report, 'USD estimate', 'UNKNOWN'

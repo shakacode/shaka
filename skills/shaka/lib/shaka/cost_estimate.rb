@@ -170,7 +170,8 @@ module Shaka
       column[:provider] == 'cursor' && CursorCost::RATES.dig(model, column[:billing])
     end
 
-    # Rate-card copy belongs only to a column this estimator can actually price.
+    # Rate-card copy describes the provider and model pair's rate card, as it does for every
+    # other provider, so it stays beside an UNKNOWN a response's own counters caused.
     def anthropic_rated?(column)
       column[:provider] == 'anthropic' && !@inclusive_input && column[:billing] == 'standard' &&
         [column[:routed], column[:model]].any? { |name| AnthropicCost::RATES.key?(name.to_s) }
