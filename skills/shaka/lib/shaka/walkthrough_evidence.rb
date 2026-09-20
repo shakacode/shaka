@@ -3,9 +3,11 @@
 require 'uri'
 require_relative 'error'
 require_relative 'public_comments/bounded_list'
+require_relative 'writing/siblings'
 
 module Shaka
-  # Refuses a walkthrough that does not cite live diff and check evidence.
+  # Refuses a walkthrough that repeats the published description, or that does not cite
+  # live diff and check evidence.
   class WalkthroughEvidence
     FILE_PAGES = 10
     TERMINAL_BUCKETS = %w[pass fail skipping cancel].freeze
@@ -15,6 +17,7 @@ module Shaka
     end
 
     def verify(head, body)
+      Writing::Siblings.new(@github).check_walkthrough(body)
       verify_commit_pin(head, body)
       verify_gates(body)
     end

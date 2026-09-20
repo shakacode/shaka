@@ -18,6 +18,7 @@ require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/usage'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
+require_relative '../lib/shaka/writing'
 
 if ARGV.first == 'usage'
   ARGV.shift
@@ -126,12 +127,16 @@ begin
              Shaka::PublicComments::Reader.new(github).call(issue_only:,
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
-             github.description(body: Shaka::Publication.description(content(options.fetch(:content_file))))
+             body = Shaka::Publication.description(content(options.fetch(:content_file)))
+             Shaka::Writing.advise(body, 'description')
+             github.description(body: body)
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
                           key: options.fetch(:key), comment: options[:comment])
            when 'walkthrough'
-             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
+             body = walkthrough_body(options)
+             Shaka::Writing.advise(body, 'walkthrough')
+             github.walkthrough(head: options.fetch(:head), body: body)
            when 'merge'
              Shaka::Merge.new(github).call(head: options.fetch(:head),
                                            walkthrough: options.fetch(:walkthrough))

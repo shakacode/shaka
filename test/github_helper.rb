@@ -37,6 +37,9 @@ module GitHubHelper
     response({ 'id' => 123, 'state' => 'COMMENTED', 'commit_id' => HEAD, 'body' => body }.merge(changes))
   end
 
+  # The walkthrough reads the published description to compare their prose.
+  def described(body = '') = response({ 'body' => body })
+
   def files_response(names = [CHANGED_FILE])
     response(names.map { |name| { 'filename' => name } })
   end
@@ -51,7 +54,8 @@ module GitHubHelper
   end
 
   def publish_responses(*extra)
-    [snapshot_response, files_response, *gate_responses, html_response, review_response, review_response, *extra]
+    [snapshot_response, described, files_response, *gate_responses,
+     html_response, review_response, review_response, *extra]
   end
 
   def pending_review_gate_responses

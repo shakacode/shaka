@@ -182,6 +182,12 @@ phases:
         supplied, otherwise `_Not published yet._`. Do not bury that URL in the opening paragraph.
         It refuses literal escape sequences in prose, mismatched
         table rows, empty required content, and bodies GitHub does not render.
+      - The helper compares each summary with its published sibling and refuses a `description` or
+        `walkthrough` that repeats more than five percent of its own eight-word prose runs, naming
+        the runs to re-resolve. Code, HTML, link targets and a sibling that does not exist yet are
+        not counted. It also prints a reading grade, a diff-shaped opening sentence, hedging and
+        decorative-emphasis density, and filler openers; those only print. Passing every one of
+        them does not make a summary true, so keep the adversarial review.
 
         ```text
         pr OWNER/REPO NUMBER

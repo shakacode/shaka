@@ -4,6 +4,7 @@ require 'json'
 require_relative 'error'
 require_relative 'public_comments/bounded_list'
 require_relative 'publication'
+require_relative 'writing/siblings'
 
 module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written
@@ -17,6 +18,7 @@ module Shaka
 
     def description(body:)
       existing = pull['body'].to_s
+      Writing::Siblings.new(self).check_description(body)
       merged = merge(existing, publishable(body))
       verify_rendering(merged)
       check_unchanged(existing)
@@ -53,6 +55,12 @@ module Shaka
     def markdown(text)
       capture(['gh', 'api', 'markdown', '--method', 'POST', '--input', '-'],
               input: JSON.generate({ mode: 'gfm', text: text }))
+    end
+
+    # Only the managed region is the description this workflow wrote; the rest of the body
+    # belongs to a person or another bot and is not this writer's prose to answer for.
+    def managed_body
+      pull['body'].to_s[/#{Regexp.escape(OPEN_MARK)}\n(.*?)#{Regexp.escape(CLOSE_MARK)}/m, 1]
     end
 
     private

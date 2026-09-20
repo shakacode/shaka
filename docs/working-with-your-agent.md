@@ -390,6 +390,17 @@ Self-edit the content JSON, then let the helper render it. Do not rewrite the
 published GitHub body. A consumer repository may install its own prose-rewriting
 skill for blogs or docs; `$shaka` does not invoke one.
 
+Part of this is machine-checked. The helper refuses a description or
+walkthrough that repeats more than five percent of its own eight-word prose runs
+from its published sibling, because copied sentences are a spec violation rather
+than a matter of taste. It also prints a reading grade, whether the opening
+sentence is diff-shaped, hedging and decorative-emphasis density, and filler
+openers, and it never fails on any of them: a gated style metric teaches the
+writer to dodge the metric. Everything else on the list is a self-edit. A summary
+that passes both was still fluent slop in shakacode/shaka#128, four heads running,
+so passing does not make it true. Only an adversarial reader with repository
+access establishes that.
+
 ### PR summary
 
 This summary is accurate but hard to read. It joins two changes under one verb and
@@ -452,6 +463,7 @@ set of operations; they are not a complete security system.
 | --- | --- |
 | Pass GitHub arguments without constructing a shell command; parse JSON and check identifiers | The helpers. |
 | Bind the walkthrough and merge to the checked commit; reject missing checks, bypass-capable accounts, or unsupported merge conditions | The helpers, with native GitHub enforcement. |
+| Refuse a description or walkthrough that repeats its published sibling's prose, and report reading grade, diff-shaped openings, hedging, and filler without gating on them | The `description` and `walkthrough` helpers. They catch verbose slop, never fluent slop. |
 | Withhold public issue and PR comment bodies unless current writer permission or trusted actor configuration verifies the author; retain excluded links for maintainer triage | The `comments` helper. |
 | Decide whether a change is authorized, safe to run, and adequately verified | The owning agent following trusted user/repo instructions. The helpers do not prove these judgments. |
 | Restrict file/network access and credentials while running candidate code | Host permissions and the execution environment. The helpers do not create a sandbox or inspect code for malicious behavior. |
