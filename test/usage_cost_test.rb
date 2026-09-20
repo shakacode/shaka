@@ -19,6 +19,17 @@ class UsageCostTest < Minitest::Test
     refute_includes report, '272K'
   end
 
+  def test_cost_headers_prefer_model_when_effort_also_differs
+    records = [priced_context('first', 'gpt-5.6-terra', effort: 'high'),
+               priced_usage('first', 'first', 100, output: 0),
+               priced_context('second', 'gpt-6-astra', effort: 'low'),
+               priced_usage('second', 'second', 100, output: 0)]
+    report = run_report(records, '--turn', 'first', '--turn', 'second')
+    cost = report.split('Cost scenarios', 2).last
+    assert_metric cost, 'Metric', 'gpt-5.6-terra', 'gpt-6-astra'
+    refute_includes cost, '| Metric | high | low |'
+  end
+
   def test_api_estimate_prices_cache_writes_separately_and_credit_estimate_stays_unknown
     setting = priced_context('current', 'gpt-5.6-terra')
     response = priced_usage('priced', 'current', 200_000, cached: 40_000, writes: 20_000, output: 20_000)
@@ -91,7 +102,7 @@ class UsageCostTest < Minitest::Test
   end
 
   def assert_openai_sources(report, *models)
-    models.each { |model| assert_includes report, model }
+    models.each { |model| assert_includes report, "models/#{model}" }
     assert_includes report, 'learn.chatgpt.com/docs/pricing'
   end
 
@@ -105,8 +116,10 @@ end
 class UsageCursorCostTest < Minitest::Test
   def test_cursor_grok_keeps_unpriced_writes_in_ordinary_input
     report = Shaka::CostEstimate.new([cursor_record]).report
+    assert_metric report, 'Metric', 'grok-4.6'
     assert_metric report, 'USD estimate', '$0.000260'
     refute_openai_cost_copy report
+    refute_includes report, 'Cursor credit rates unpublished'
     assert_includes report, 'Cursor on-demand'
     assert_includes report, 'cursor.com/docs/models/grok-4-6'
   end

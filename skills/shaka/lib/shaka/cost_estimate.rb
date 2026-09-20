@@ -109,7 +109,7 @@ module Shaka
     end
 
     def header_candidates(labeled)
-      [3, 2, 1, 0].map { |index| labeled.map { |cells| cells[index] } } +
+      [1, 3, 2, 0].map { |index| labeled.map { |cells| cells[index] } } +
         [[1, 3], [0, 1, 3], [0, 1, 2, 3]].map do |indexes|
           labeled.map { |cells| indexes.map { |index| cells[index] }.join(' ') }
         end
@@ -179,7 +179,7 @@ module Shaka
     end
 
     def keep_credit_reason?(provider, credits)
-      %w[openai cursor].include?(provider) || credits
+      provider == 'openai' || credits
     end
 
     def blank_column
