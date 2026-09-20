@@ -432,10 +432,11 @@ When the key is absent, callers derive a prefix from the repository name: use th
 basename of the `origin` remote after stripping `.git`, or the repository root
 basename when `origin` is unavailable; for a multi-segment name take the first
 character of each of the first six `-`, `_`, or space-separated segments, and for a
-single-segment name take its first 4 characters or the whole name when shorter, then
-uppercase the result (`agent-workflows` → `AW`, `react_on_rails` → `ROR`,
-`shakapacker` → `SHAK`, `go` → `GO`, `web3` → `WEB3`, `3d-tiles` → `3T`). Print the
-resolved value with `shaka prefix --root DIR --ref REF`.
+single-segment name take its first 4 characters or the whole name when shorter.
+Other punctuation is dropped so the result is still 1–6 uppercase ASCII letters or
+digits (`agent-workflows` → `AW`, `react_on_rails` → `ROR`, `shakapacker` →
+`SHAK`, `go` → `GO`, `web3` → `WEB3`, `3d-tiles` → `3T`, `d3.js` → `D3JS`). Print
+the resolved value with `shaka prefix --root DIR --ref REF`.
 
 A rebuildable install-local catalog of known repositories is not seam policy. See
 [repository catalog](repository-catalog.md).

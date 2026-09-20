@@ -33,7 +33,7 @@ module Shaka
       identity = parsed_url.fetch(:identity)
       return "https://github.com/#{identity}" if parsed_url.fetch(:host) == 'github.com'
 
-      parsed_url.fetch(:origin).sub(%r{\A(https?://)[^/@]+@}, '\1').delete_suffix('.git')
+      parsed_url.fetch(:origin).sub(%r{\A((?:https?|ssh)://)[^/@]+@}, '\1').delete_suffix('.git')
     end
 
     def parsed(url)

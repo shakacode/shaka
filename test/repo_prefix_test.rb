@@ -16,6 +16,12 @@ class RepoPrefixTest < Minitest::Test
     assert_equal 'WEB3', Shaka::RepoPrefix.fallback('web3')
   end
 
+  def test_fallback_keeps_only_letters_and_digits
+    assert_equal 'D3JS', Shaka::RepoPrefix.fallback('d3.js')
+    assert_equal 'VUEJ', Shaka::RepoPrefix.fallback('vue.js')
+    assert_match Shaka::RepoPrefix::PATTERN, Shaka::RepoPrefix.fallback('d3.js')
+  end
+
   def test_display_uses_a_valid_configured_prefix
     assert_equal({ 'prefix' => 'CPF', 'source' => 'seam' },
                  Shaka::RepoPrefix.display(configured: 'CPF', repository_name: 'control-plane-flow'))

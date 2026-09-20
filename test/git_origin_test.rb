@@ -29,6 +29,15 @@ class GitOriginTest < Minitest::Test
                  Shaka::GitOrigin.canonical_url('https://user:token@ghe.example:8443/acme/repo.git')
   end
 
+  def test_canonical_url_strips_ssh_userinfo
+    assert_equal 'ssh://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('ssh://user:token@ghe.example/acme/repo.git')
+    assert_equal 'ssh://ghe.example:2222/acme/repo',
+                 Shaka::GitOrigin.canonical_url('ssh://user:token@ghe.example:2222/acme/repo.git')
+    assert_equal 'ssh://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('ssh://git@ghe.example/acme/repo.git')
+  end
+
   def test_identity_from_urls_with_an_authority_port
     assert_equal 'acme/repo', Shaka::GitOrigin.identity('https://ghe.example:8443/acme/repo.git')
     assert_equal 'acme/repo', Shaka::GitOrigin.identity('ssh://git@ghe.example:2222/acme/repo.git')

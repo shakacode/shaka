@@ -19,12 +19,17 @@ module Shaka
 
     def self.fallback(repository_name)
       name = repository_name.to_s.delete_suffix('.git')
-      segments = name.split(/[-_ ]/).reject(&:empty?).first(6)
+      segments = alphanumeric_segments(name)
       raise Error, 'repository name is missing for prefix fallback' if segments.empty?
 
       prefix = segments.length == 1 ? segments.first[0, 4] : segments.map { |segment| segment[0] }.join
-      prefix.upcase
+      validate!(prefix.upcase, label: 'prefix fallback')
     end
+
+    def self.alphanumeric_segments(name)
+      name.split(/[-_ ]/).map { |segment| segment.gsub(/[^A-Za-z0-9]/, '') }.reject(&:empty?).first(6)
+    end
+    private_class_method :alphanumeric_segments
 
     def self.display(configured:, repository_name:)
       if configured.nil?
