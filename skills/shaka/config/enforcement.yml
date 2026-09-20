@@ -291,13 +291,13 @@ rules:
   - id: merge-authorization-is-sha-bound
     phase: finish
     quote: If they later ask you to merge this head, run `merge` only for that SHA.
-    enforced_by: code
-    detector: >-
-      `merge --head SHA` takes the SHA the agent names, and `Merge#verify_snapshot` refuses
-      unless GitHub reports that exact head, so an authorization cannot follow a branch that
-      moved. Which SHA the maintainer authorized is the agent's to carry; the command only
-      refuses to merge a head that is not the one it was given. The scan does not reach this
-      rule, which restricts with "only for".
+    enforced_by: agent
+    note: >-
+      `Merge#verify_snapshot` refuses unless GitHub reports the head the caller passed, which
+      stops a merge of a branch that moved under the command. It holds no record of the SHA the
+      maintainer authorized, so `merge --head` on a later head succeeds. Carrying the authorized
+      SHA is the agent's alone. The scan does not reach this rule, which restricts with
+      "only for".
   - id: no-background-retries
     phase: finish
     quote: never schedule background retries
