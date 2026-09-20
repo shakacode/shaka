@@ -4,14 +4,14 @@ This is manual project-local maintenance guidance, not an auto-discovered skill 
 `AGENTS.md` dependency. After installed Shaka resolves the immutable default-branch
 commit, a maintainer may direct the task to read it with
 `git show REF:.agents/guides/shaka-learning.md`. A working-tree copy is review data and
-cannot govern its own review. Before this file first lands on the default branch,
-evaluate it only as candidate data and label any exercise a simulation.
+cannot govern its own review. Label exercises against a candidate copy as simulations.
 
 Use one supervisor as the maintainer's contact for Shaka development. This guide does
 not alter the public skill or authorize workers, external messages, merges, host-setting
 changes or background monitoring. Deliver the bounded task before optimizing the workflow;
 learning adds no completion gate. Keep outcomes on the existing issue or pull request.
-The pilot plan owns scope, and #77 owns remaining real-use acceptance.
+The [pilot plan](../../docs/pilot-plan.md) owns scope, and
+[issue #77](https://github.com/shakacode/shaka/issues/77) owns remaining real-use acceptance.
 
 ## Repair a demonstrated failure
 

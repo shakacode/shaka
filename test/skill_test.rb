@@ -8,9 +8,8 @@ class SkillTest < Minitest::Test
   MCT_SKILL = File.expand_path('../skills/mct-claude/SKILL.md', __dir__)
   RCT_CLAUDE_SKILL = File.expand_path('../skills/rct-claude/SKILL.md', __dir__)
   INTERNAL_GUIDE = File.expand_path('../.agents/guides/shaka-learning.md', __dir__)
-  AGENT_INSTRUCTIONS = File.expand_path('../AGENTS.md', __dir__)
-  PROJECT_SKILL_GLOBS = %w[.agents .claude .codex .cursor .opencode].map do |directory|
-    File.expand_path("../#{directory}/skills/*/SKILL.md", __dir__)
+  PROJECT_SKILL_ROOTS = %w[.agents .claude .codex .cursor .opencode].map do |directory|
+    File.expand_path("../#{directory}/skills", __dir__)
   end.freeze
   GUIDE_LINK = %r{\]\((\.\./\.\./docs/[\w-]+\.md)(?:#([\w-]+))?\)}
 
@@ -51,12 +50,14 @@ class SkillTest < Minitest::Test
   end
 
   # A fresh Codex task discovered the candidate branch's .agents/skills copy before
-  # trusted Shaka could establish the default-branch boundary. Keep maintenance
-  # guidance outside host auto-discovery and consumer packaging.
+  # trusted Shaka could establish the default-branch boundary. Until a trusted loader
+  # exists, this repository permits no project-local skills in supported host paths;
+  # introducing one requires an explicit policy and test change.
   def test_internal_learning_guide_cannot_be_loaded_as_a_candidate_skill
     assert File.file?(INTERNAL_GUIDE)
-    assert_empty(PROJECT_SKILL_GLOBS.flat_map { |glob| Dir.glob(glob) })
-    refute_includes File.read(AGENT_INSTRUCTIONS, encoding: 'UTF-8'), '.agents/guides/shaka-learning.md'
+
+    candidate_skills = PROJECT_SKILL_ROOTS.flat_map { |root| Dir.glob(File.join(root, '**', 'SKILL.md')) }
+    assert_empty candidate_skills
   end
 
   def test_internal_learning_guide_is_not_packaged
