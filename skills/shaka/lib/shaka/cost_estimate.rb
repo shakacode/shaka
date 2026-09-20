@@ -45,13 +45,27 @@ module Shaka
     end
 
     def intro(columns)
-      bits = []
-      providers = columns.map { |column| column[:provider] }
-      bits << 'Standard Codex credit and OpenAI API-equivalent rates' if providers.include?('openai')
-      bits << 'Cursor on-demand list prices' if providers.include?('cursor')
-      bits << 'Pi recorded native nominal USD' if columns.any? { |column| column[:native] }
+      [rate_intro(columns), (native_intro if columns.any? { |column| column[:native] })].compact.join(' ')
+    end
+
+    def rate_intro(columns)
+      bits = priced_rate_copy(columns)
+      return if bits.empty? && columns.any? { |column| column[:native] }
+
       prefix = bits.empty? ? 'Configured-model estimates' : bits.join(', plus ')
       "#{prefix}, verified #{VERIFIED}."
+    end
+
+    def priced_rate_copy(columns)
+      providers = columns.map { |column| column[:provider] }
+      [
+        ('Standard Codex credit and OpenAI API-equivalent rates' if providers.include?('openai')),
+        ('Cursor on-demand list prices' if providers.include?('cursor'))
+      ].compact
+    end
+
+    def native_intro
+      'Pi recorded native nominal USD.'
     end
 
     def footer(columns, reasons)

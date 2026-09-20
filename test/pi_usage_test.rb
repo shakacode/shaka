@@ -111,6 +111,7 @@ module PiUsageFixture
     assert_metric output, 'USD estimate', *amounts
     refute_includes output, 'Credits estimate'
     refute_includes output, 'cursor.com'
+    refute_includes output, '2026-09-16'
   end
 
   def assert_unavailable(file)
