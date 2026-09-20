@@ -38,10 +38,13 @@ in the tested Codex records; do not add them again. Cache writes and the native
 total remain separate fields. Routed model stays UNKNOWN because these tested
 local records do not establish the model that executed each response.
 
-The report also shows **configured-model scenarios** for the providers and models
+The report also shows **rate-card scenarios** for the providers and models
 in that snapshot: Standard Codex credits and Standard API-equivalent USD for
 supported OpenAI models, Cursor on-demand USD for Grok 4.6, and Anthropic list-price
-USD for supported Claude models. Source links and
+USD for supported Claude models. The first three price the configured model. The
+Anthropic scenario prices whichever of the routed or configured model it has a rate
+for, taking the routed one first, because Claude Code records no configured model.
+Source links and
 rate notes cover only priced provider and model pairs, not a model name on the
 wrong provider. They describe the rate card that applies to the pair, so they
 still appear beside an UNKNOWN estimate when that response's own counters are

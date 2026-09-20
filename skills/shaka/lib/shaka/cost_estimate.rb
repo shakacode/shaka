@@ -337,7 +337,8 @@ module Shaka
     end
   end
 
-  # Prices configured-model scenarios from disjoint per-response token categories.
+  # Prices rate-card scenarios from disjoint per-response token categories, on the configured
+  # model where a source records one and on the routed model where it does not.
   class CostEstimate
     include CursorCost
     include AnthropicCost
