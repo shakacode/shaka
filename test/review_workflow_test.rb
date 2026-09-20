@@ -29,7 +29,7 @@ class ReviewWorkflowTest < Minitest::Test
   def test_failed_action_is_visible_even_without_execution
     _output, status, summary = run_result(outcome: 'failure')
 
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes summary, 'UNAVAILABLE'
   end
 
@@ -37,7 +37,7 @@ class ReviewWorkflowTest < Minitest::Test
     [[], '{broken', [{ type: 'result' }], [result.merge(is_error: true)],
      [result.merge(subtype: 'error_max_turns')], [result.merge(num_turns: 0)]].each do |data|
       _output, status, summary = run_result(data)
-      refute status.success?, data.inspect
+      refute_predicate status, :success?, data.inspect
       assert_includes summary, 'UNAVAILABLE'
       refute_includes summary, 'COMPLETED'
     end
@@ -46,7 +46,7 @@ class ReviewWorkflowTest < Minitest::Test
   def test_successful_execution_stays_unverified_without_a_visible_review
     [[result], "#{JSON.generate(type: 'assistant')}\n#{JSON.generate(result)}\n"].each do |data|
       output, status, summary = run_result(data)
-      assert status.success?, output
+      assert_predicate status, :success?, output
       assert_includes summary, 'UNVERIFIED'
       refute_includes summary, 'COMPLETED'
       assert_includes summary, 'a' * 40

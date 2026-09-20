@@ -166,8 +166,8 @@ class LocalEvaluationFixtureShapeTest < Minitest::Test
       fixture = YAML.safe_load_file(File.join(root, 'fixture.yml'))
       assert_equal 1, fixture.fetch('version')
       assert_equal "slice_0_#{name}", fixture.fetch('purpose')
-      assert_equal true, fixture.fetch('public_safe'), name
-      assert_equal false, fixture.fetch('reusable_for_measured_cases'), name
+      assert_true fixture.fetch('public_safe'), name
+      assert_false fixture.fetch('reusable_for_measured_cases'), name
     end
   end
 end

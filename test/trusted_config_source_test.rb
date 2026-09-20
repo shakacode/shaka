@@ -17,7 +17,7 @@ class TrustedConfigSourceTest < Minitest::Test
 
     output, status = Open3.capture2e(RbConfig.ruby, '-I', library, '-e', script)
 
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes output, 'Shaka::Error'
     refute_includes output, 'uninitialized constant'
   end

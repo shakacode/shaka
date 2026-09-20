@@ -14,7 +14,7 @@ module WorkFixture
     FileUtils.mkdir_p([@nested, File.join(@directory, 'bin'), File.join(@directory, 'temp')])
     copy_source
     _output, error, status = Open3.capture3('git', 'init', '--quiet', @target)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     write_codex
   end
 
@@ -33,7 +33,7 @@ module WorkFixture
 
   def started(*)
     _output, error, status = launch(*)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     JSON.parse(File.read(@capture))
   end
 
@@ -87,7 +87,7 @@ class WorkTest < Minitest::Test
     argv = started(task).fetch('argv')
     assert_includes argv.last, File.realpath(File.join(@source, 'SKILL.md'))
     assert_equal task, JSON.parse(argv.last.lines.last)
-    refute File.exist?(marker)
+    refute_path_exists marker
   end
 
   def test_never_puts_a_trusted_skill_link_in_the_writable_session
@@ -109,7 +109,7 @@ class WorkTest < Minitest::Test
     alias_path = File.join(@directory, 'consumer alias')
     File.symlink(@target, alias_path)
     _output, error, status = launch('--repo', alias_path, 'Fix the test', directory: @directory)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     argv = JSON.parse(File.read(@capture)).fetch('argv')
     assert_equal File.realpath(@target), argv[argv.index('--add-dir') + 1]
   end
@@ -117,18 +117,18 @@ class WorkTest < Minitest::Test
   def test_requires_a_task_and_rejects_unknown_options_without_starting_codex
     [[], ['   '], ['--repo'], ['--unknown']].each do |arguments|
       _output, error, status = launch(*arguments)
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'shaka work:'
-      refute File.exist?(@capture)
+      refute_path_exists @capture
     end
   end
 
   def test_help_works_outside_a_repository_without_launching_codex
     output, error, status = launch('--help', directory: @directory)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     assert_includes output, 'shaka work'
     assert_includes output, '--repo'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
   end
 end
 
@@ -138,16 +138,16 @@ class WorkBoundaryTest < Minitest::Test
   def test_refuses_to_launch_when_the_target_contains_the_trusted_workflow
     Open3.capture3('git', 'init', '--quiet', @source)
     _output, error, status = launch('--repo', @source, 'Fix the workflow')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'trusted workflow'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
   end
 
   def test_refuses_session_scratch_inside_the_consumer_checkout
     _output, error, status = launch('Fix the test', temporary: @target)
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'outside the target checkout'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
     assert_empty Dir.glob(File.join(@target, 'shaka-work-*'))
   end
 
@@ -157,9 +157,9 @@ class WorkBoundaryTest < Minitest::Test
     link = File.join(parent, 'shaka')
     File.symlink(File.realpath(@source), link)
     _output, error, status = launch('Fix the test', command: File.join(link, 'scripts', 'shaka'))
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'trusted workflow'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
     assert File.symlink?(link)
   end
 
@@ -167,16 +167,16 @@ class WorkBoundaryTest < Minitest::Test
     alias_path = File.join(@source, 'consumer alias')
     File.symlink(@target, alias_path)
     _output, error, status = launch('--repo', alias_path, 'Fix the test')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'trusted workflow'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
   end
 
   def test_rejected_session_inside_the_trusted_source_is_removed_without_launching
     _output, error, status = launch('Fix the test', temporary: @source)
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'trusted workflow'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
     assert_empty Dir.glob(File.join(@source, 'shaka-work-*'))
   end
 
@@ -184,9 +184,9 @@ class WorkBoundaryTest < Minitest::Test
     alias_path = File.join(@source, 'temporary alias')
     File.symlink(File.join(@directory, 'temp'), alias_path)
     _output, error, status = launch('Fix the test', temporary: alias_path)
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'trusted workflow'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
     assert_empty Dir.glob(File.join(@directory, 'temp', 'shaka-work-*'))
   end
 end

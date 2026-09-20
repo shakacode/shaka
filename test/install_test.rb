@@ -36,7 +36,7 @@ class InstallTest < Minitest::Test
   def test_installs_into_an_explicit_directory_with_spaces
     output, status = install
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     assert_skill_link(@source, @destination, 'version one')
     assert_skill_link(@rct_source, @rct_destination, 'rct version one')
     executable = Shellwords.escape(File.join(@destination, 'scripts/shaka'))
@@ -48,16 +48,16 @@ class InstallTest < Minitest::Test
     original = File.lstat(@destination).ino
     output, status = install
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     assert_equal original, File.lstat(@destination).ino
   end
 
   def test_default_install_remains_portable_shaka_only
     output, status = run_installer('--skills-dir', @skills_dir)
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
     assert_skill_link(@source, @destination, 'version one')
-    refute File.exist?(@rct_destination)
+    refute_path_exists @rct_destination
   end
 
   def test_refuses_a_foreign_directory_and_preserves_its_contents
@@ -65,7 +65,7 @@ class InstallTest < Minitest::Test
     marker = File.join(@destination, 'keep')
     File.write(marker, 'user content')
 
-    refute install.last.success?
+    refute_predicate install.last, :success?
     assert_equal 'user content', File.read(marker)
   end
 
@@ -73,7 +73,7 @@ class InstallTest < Minitest::Test
     FileUtils.mkdir_p(@skills_dir)
     File.write(@destination, 'user file')
 
-    refute install.last.success?
+    refute_predicate install.last, :success?
     assert_equal 'user file', File.read(@destination)
   end
 
@@ -82,7 +82,7 @@ class InstallTest < Minitest::Test
     FileUtils.mkdir_p([foreign, @skills_dir])
     File.symlink(foreign, @destination)
 
-    refute install.last.success?
+    refute_predicate install.last, :success?
     assert_equal foreign, File.readlink(@destination)
     assert File.directory?(foreign)
   end
@@ -92,17 +92,17 @@ class InstallTest < Minitest::Test
     missing = File.join(@directory, 'missing')
     File.symlink(missing, @destination)
 
-    refute install.last.success?
+    refute_predicate install.last, :success?
     assert_equal missing, File.readlink(@destination)
-    refute File.exist?(missing)
+    refute_path_exists missing
   end
 
   def test_rejects_invalid_arguments_without_installing
     [[], ['--skills-dir'], ['--skills-dir', ''], ['--unknown'],
      ['--skills-dir', @skills_dir, 'extra']].each do |arguments|
       _output, status = run_installer(*arguments)
-      refute status.success?, arguments.inspect
-      refute File.exist?(@skills_dir)
+      refute_predicate status, :success?, arguments.inspect
+      refute_path_exists @skills_dir
     end
   end
 
@@ -118,8 +118,8 @@ class InstallTest < Minitest::Test
     marker = File.join(@rct_destination, 'keep')
     File.write(marker, 'user content')
 
-    refute install.last.success?
-    refute File.exist?(@destination)
+    refute_predicate install.last, :success?
+    refute_path_exists @destination
     assert_equal 'user content', File.read(marker)
   end
 

@@ -34,7 +34,7 @@ module ClaudeUsageFixture
   def report(*, environment: {})
     output, error, status = Open3.capture3(NO_HOST.merge(environment), COMMAND, 'usage', '--commit', COMMIT,
                                            '--contribution', 'implementation', *)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     output
   end
 
@@ -162,7 +162,7 @@ class ClaudeUsageFailuresTest < Minitest::Test
                     'CLAUDE_CODE_SESSION_ID' => SESSION }
     output, error, status = Open3.capture3(environment, COMMAND, 'usage', '--commit', COMMIT,
                                            '--contribution', 'implementation')
-    refute status.success?
+    refute_predicate status, :success?
     assert_empty output
     assert_includes error, 'shaka usage:'
   end

@@ -76,9 +76,9 @@ module SeamInitializerTestHelpers
     command = File.join(root, '.agents/bin/test')
     _output, status = Open3.capture2e(command, 'space value', runtime_argument)
     recorded = JSON.parse(File.read(File.join(root, 'arguments.json')))
-    assert status.success?
+    assert_predicate status, :success?
     assert_equal ['configured', 'space value', runtime_argument], recorded
-    refute File.exist?(File.join(root, 'should-not-exist'))
+    refute_path_exists File.join(root, 'should-not-exist')
   end
 
   def write_foreign_test_wrapper(root)
@@ -125,7 +125,7 @@ module SeamInitializerAssertions
     path = File.join(root, relative)
     File.chmod(mode, path)
     _output, error, status = init(root)
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, "Refusing existing destination: #{relative}"
     assert_equal mode, File.stat(path).mode & 0o777
   end
@@ -139,7 +139,7 @@ class SeamInitializerTest < Minitest::Test
     with_repository do |root|
       output, error, status = init(root)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_complete_seam(root, output)
       assert_equal '{login}-{host}/{issue}-{description}', JSON.parse(output).dig('branches', 'name')
     end
@@ -149,19 +149,19 @@ class SeamInitializerTest < Minitest::Test
     with_repository do |root|
       write_recorder(root)
       _output, error, status = init(root, test_command: 'ruby bin/record.rb configured')
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_forwarded_arguments(root)
     end
   end
 
   def test_repeat_init_is_idempotent
     with_repository do |root|
-      assert init(root).last.success?
+      assert_predicate init(root).last, :success?
       original = snapshot(root)
 
       output, error, status = init(root)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert JSON.parse(output)
       assert_equal original, snapshot(root)
     end
@@ -169,13 +169,13 @@ class SeamInitializerTest < Minitest::Test
 
   def test_refuses_a_generated_wrapper_with_changed_mode
     with_repository do |root|
-      assert init(root).last.success?
+      assert_predicate init(root).last, :success?
       setup = File.join(root, '.agents/bin/setup')
       File.chmod(0o644, setup)
 
       _output, error, status = init(root)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'Refusing existing destination: .agents/bin/setup'
       refute File.executable?(setup)
     end
@@ -183,14 +183,14 @@ class SeamInitializerTest < Minitest::Test
 
   def test_refuses_a_generated_wrapper_with_overly_permissive_mode
     with_repository do |root|
-      assert init(root).last.success?
+      assert_predicate init(root).last, :success?
       assert_refuses_changed_mode(root, '.agents/bin/setup', 0o777)
     end
   end
 
   def test_refuses_a_generated_config_with_overly_permissive_mode
     with_repository do |root|
-      assert init(root).last.success?
+      assert_predicate init(root).last, :success?
       assert_refuses_changed_mode(root, '.agents/agent-workflow.yml', 0o666)
     end
   end
@@ -203,10 +203,10 @@ class SeamInitializerTest < Minitest::Test
 
       _output, error, status = init(root)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'Refusing existing destination'
       assert_equal "owner: repository\n", File.read(config_path)
-      refute File.exist?(File.join(root, '.agents/bin'))
+      refute_path_exists File.join(root, '.agents/bin')
     end
   end
 
@@ -216,7 +216,7 @@ class SeamInitializerTest < Minitest::Test
 
       _output, error, status = init(root)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'Refusing existing destination'
       assert_equal "#!/bin/sh\necho repository-owned\n", File.read(test_path)
       untouched = %w[.agents/agent-workflow.yml .agents/bin/setup]
@@ -228,9 +228,9 @@ class SeamInitializerTest < Minitest::Test
     with_repository do |root|
       _output, error, status = init(root, validate_command: 'bin/validate && publish')
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'must be a simple argv command'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 
@@ -238,9 +238,9 @@ class SeamInitializerTest < Minitest::Test
     with_repository do |root|
       _output, error, status = init(root, setup_command: 'bin/missing')
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'setup command does not exist: bin/missing'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 
@@ -249,9 +249,9 @@ class SeamInitializerTest < Minitest::Test
       arguments = [*init_arguments(root), '--plan', 'docs/missing.md']
       _output, error, status = Open3.capture3(*arguments)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'plan does not exist: docs/missing.md'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 end
@@ -266,9 +266,9 @@ class SeamInitializerValidationTest < Minitest::Test
         arguments.slice!(arguments.index(flag), 2)
         _output, error, status = Open3.capture3(*arguments)
 
-        refute status.success?
+        refute_predicate status, :success?
         assert_includes error, 'is required'
-        refute File.exist?(File.join(root, '.agents'))
+        refute_path_exists File.join(root, '.agents')
       end
     end
   end
@@ -278,9 +278,9 @@ class SeamInitializerValidationTest < Minitest::Test
       with_repository do |root|
         _output, error, status = Open3.capture3(*init_arguments(root), flag, 'value')
 
-        refute status.success?
+        refute_predicate status, :success?
         assert_includes error, "invalid option: #{flag}"
-        refute File.exist?(File.join(root, '.agents'))
+        refute_path_exists File.join(root, '.agents')
       end
     end
   end
@@ -293,7 +293,7 @@ class SeamInitializerValidationTest < Minitest::Test
 
       output, error, status = Open3.capture3(*arguments)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_equal({ 'required' => 'none' }, JSON.parse(output).fetch('review'))
     end
   end
@@ -301,9 +301,9 @@ class SeamInitializerValidationTest < Minitest::Test
   def test_rejects_an_invalid_branch_before_writing
     with_repository do |root|
       _output, error, status = Open3.capture3(*init_arguments(root).tap { |args| args[args.index('main')] = '-bad' })
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'base branch must be a valid Git branch name'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 
@@ -315,9 +315,9 @@ class SeamInitializerValidationTest < Minitest::Test
 
       _output, error, status = Open3.capture3(*arguments)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'base branch must be an explicit branch name'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 
@@ -325,9 +325,9 @@ class SeamInitializerValidationTest < Minitest::Test
     with_repository do |root|
       File.write(File.join(root, 'bin/not-executable'), "#!/bin/sh\n")
       _output, error, status = init(root, setup_command: 'bin/not-executable')
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'setup command is not executable'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 
@@ -335,9 +335,9 @@ class SeamInitializerValidationTest < Minitest::Test
     with_repository do |root|
       _output, error, status = init(root, test_command: 'shaka-command-that-does-not-exist')
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'test command is not available on PATH'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 
@@ -345,9 +345,9 @@ class SeamInitializerValidationTest < Minitest::Test
     with_repository do |root|
       _output, error, status = init(root, test_command: '-report')
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'must be a simple argv command'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 end
@@ -359,7 +359,7 @@ class SeamInitializerCommandContractTest < Minitest::Test
     with_repository do |root|
       output, error, status = init(root)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_equal %w[setup test validate], JSON.parse(output).fetch('commands').keys.sort
       refute_includes File.read(File.join(root, '.agents/agent-workflow.yml')), 'commands:'
     end
@@ -371,10 +371,10 @@ class SeamInitializerCommandContractTest < Minitest::Test
 
       _output, error, status = init(root)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
       refute(generated_files(root).any? { |path| File.exist?(path) })
-      assert File.exist?(trigger)
+      assert_path_exists trigger
     end
   end
 
@@ -385,7 +385,7 @@ class SeamInitializerCommandContractTest < Minitest::Test
 
       output, error, status = init(root)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_equal %w[setup test trigger_hosted_ci validate validate_local],
                    JSON.parse(output).fetch('commands').keys.sort
     end
@@ -415,7 +415,7 @@ class SeamInitializerEnvironmentTest < Minitest::Test
 
       output, error, status = Open3.capture3(environment, *arguments)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_complete_seam(root, output)
     end
   end
@@ -424,7 +424,7 @@ class SeamInitializerEnvironmentTest < Minitest::Test
     with_repository do |root|
       with_noisy_git do |environment|
         output, error, status = Open3.capture3(environment, *init_arguments(root))
-        assert status.success?, error
+        assert_predicate status, :success?, error
         assert_complete_seam(root, output)
       end
     end
@@ -434,9 +434,9 @@ class SeamInitializerEnvironmentTest < Minitest::Test
     with_repository do |root|
       _output, error, status = Open3.capture3(*init_arguments(root), '--merge-preference', 'sometimes')
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'invalid argument'
-      refute File.exist?(File.join(root, '.agents'))
+      refute_path_exists File.join(root, '.agents')
     end
   end
 
@@ -447,7 +447,7 @@ class SeamInitializerEnvironmentTest < Minitest::Test
 
       _output, error, status = init(root)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'Refusing unsafe directory: .agents'
       assert_empty Dir.children(File.join(root, 'elsewhere'))
     end
@@ -460,9 +460,9 @@ class SeamInitializerEnvironmentTest < Minitest::Test
 
         _output, error, status = init(root, setup_command: 'bin/external-setup')
 
-        refute status.success?
+        refute_predicate status, :success?
         assert_includes error, 'setup command must resolve inside the repository'
-        refute File.exist?(File.join(root, '.agents'))
+        refute_path_exists File.join(root, '.agents')
       end
     end
   end
@@ -476,7 +476,7 @@ class SeamInitializerReadmeTest < Minitest::Test
     with_repository do |root|
       _output, error, status = init(root)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_pointer_readme(File.join(root, '.agents/README.md'))
     end
   end
@@ -487,7 +487,7 @@ class SeamInitializerReadmeTest < Minitest::Test
 
       _output, error, status = init(root)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'Refusing existing destination: .agents/README.md'
       assert_equal "owner: repository\n", File.read(path)
       assert_no_generated_seam(root)
@@ -496,21 +496,21 @@ class SeamInitializerReadmeTest < Minitest::Test
 
   def test_repeat_init_keeps_a_readme_generated_by_another_skill_version
     with_repository do |root|
-      assert init(root).last.success?
+      assert_predicate init(root).last, :success?
       path = File.join(root, '.agents/README.md')
       stale = File.read(path).sub('from Shaka ', 'from Shaka 0.0.1.pre.0 ')
       File.write(path, stale)
 
       _output, error, status = init(root)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_equal stale, File.read(path)
     end
   end
 
   def test_refuses_a_generated_readme_with_overly_permissive_mode
     with_repository do |root|
-      assert init(root).last.success?
+      assert_predicate init(root).last, :success?
       assert_refuses_changed_mode(root, '.agents/README.md', 0o666)
     end
   end
@@ -535,7 +535,7 @@ class SeamInitializerReadmeTest < Minitest::Test
   end
 
   def assert_no_generated_seam(root)
-    refute File.exist?(File.join(root, '.agents/agent-workflow.yml'))
-    refute File.exist?(File.join(root, '.agents/bin'))
+    refute_path_exists File.join(root, '.agents/agent-workflow.yml')
+    refute_path_exists File.join(root, '.agents/bin')
   end
 end

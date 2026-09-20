@@ -12,7 +12,7 @@ class AgentCommandsTest < Minitest::Test
       Open3.capture2e(environment, TEST_COMMAND, 'test/recommendation_test.rb')
     end
 
-    assert status.success?, output
+    assert_predicate status, :success?, output
   end
 
   def test_focused_tests_select_the_repository_bundle_from_an_outside_directory
@@ -23,7 +23,7 @@ class AgentCommandsTest < Minitest::Test
         Open3.capture2e(TEST_COMMAND, 'test/recommendation_test.rb', chdir: outside_root)
       end
 
-      assert status.success?, output
+      assert_predicate status, :success?, output
     end
   end
 end

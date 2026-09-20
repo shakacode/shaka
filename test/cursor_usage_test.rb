@@ -82,7 +82,7 @@ module CursorUsageFixture
   def report(*, environment: {})
     output, error, status = Open3.capture3(CLEAR.merge(environment), COMMAND, 'usage', '--commit', COMMIT,
                                            '--contribution', 'implementation', *)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     output
   end
 
@@ -158,7 +158,7 @@ class CursorUsageTest < Minitest::Test
     Dir.mktmpdir do |directory|
       env = CLEAR.merge('CURSOR_USAGE_DIR' => directory)
       _out, err, status = Open3.capture3(env, HOOK, stdin_data: JSON.generate(payload(NEW, 100)))
-      assert status.success?, err
+      assert_predicate status, :success?, err
       saved = File.read(File.join(directory, "#{SESSION}.jsonl"))
       refute_match(/SENSITIVE/, saved)
       assert_equal NEW, JSON.parse(saved.lines.first)['generation_id']
@@ -244,7 +244,7 @@ class CursorUsageFailuresTest < Minitest::Test
       env = CLEAR.merge('CURSOR_USAGE_DIR' => directory)
       Open3.capture3(env, HOOK, stdin_data: JSON.generate(payload(NEW, 1, event: 'preToolUse')))
       Open3.capture3(env, HOOK, stdin_data: '')
-      refute File.exist?(File.join(directory, "#{SESSION}.jsonl"))
+      refute_path_exists File.join(directory, "#{SESSION}.jsonl")
     end
   end
 end
