@@ -39,6 +39,9 @@ an existing library, or an optional extension. New kernel behavior should earn
 its maintenance cost through benefit to core delivery; evaluate customizable
 editorial preferences and speculative conveniences outside the kernel first.
 An issue, passing tests, or time already spent does not establish value.
+A smaller alternative should preserve demonstrated failure handling. Name any
+lost guarantees and the evidence that losing them is acceptable; fewer lines
+alone do not justify leaving failures, leaked resources, or weakened safeguards.
 
 Report a brief recommendation: proceed, simplify, evaluate first, or defer,
 with evidence and the smallest useful alternative. Treat uncertain value as a
