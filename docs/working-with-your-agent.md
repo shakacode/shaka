@@ -17,7 +17,7 @@ before the answer becomes expensive to change, rather than waiting for PR review
 | The checkout or task is unavailable | Asks for the repository path or task description; does not make you rewrite the workflow prompt. |
 | Open PRs or remote branches already cover this work item | Reports them and stops unless a comparison or override was already authorized. |
 | Required repository instructions are missing | Reads scripts and CI, offers a minimal `AGENTS.md` addition, and asks only about policy it cannot establish. Existing documented commands are sufficient; no new config framework is required. |
-| Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back for approval. Reuses existing authority; without an answer, prepares the PR and, when it is ready, points you to GitHub's merge control. |
+| Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back so you can merge it on GitHub. Reuses existing authority; without an answer, prepares the PR and, when it is ready, points you to GitHub's merge control. |
 | The model and effort have been recommended for implementation | Proceeds without another response only when the intake explicitly named matching model and effort, clearly authorized starting now, and those settings are active and usable in the host. Otherwise it pauses with one next action. |
 | The goal or acceptable behavior is unclear | Reads the existing context, then asks the smallest question needed to proceed. |
 | Several routine, reversible approaches fit the request | Chooses one and continues; mentions the assumption if it affects your expectations. |

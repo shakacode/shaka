@@ -220,7 +220,7 @@ Doctor confirms a session source is an openable file; whether its records parse 
 Send this, replacing the example with your issue number, task URL, or description:
 
 ```text
-$shaka Fix the failing search test. Bring the finished PR back for my approval.
+$shaka Fix the failing search test. Bring the finished PR back so I can merge it on GitHub.
 ```
 
 An issue number uses the current repository. A URL can identify another one;
