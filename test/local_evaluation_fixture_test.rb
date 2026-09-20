@@ -19,9 +19,7 @@ module LocalEvaluationFixtureAssertions
   MERGE_PREFERENCES = { 'probe' => 'auto', 'feasibility' => 'ask' }.freeze
   COMMANDS = { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/test',
                'test' => '.agents/bin/test' }.freeze
-  ROOT_WORKFLOW = YAML.safe_load_file(File.expand_path('../.github/workflows/validate.yml', __dir__))
-  PINNED_ACTIONS = ROOT_WORKFLOW.fetch('jobs').fetch('validate').fetch('steps')
-                                .filter_map { |step| step['uses'] }.freeze
+  ACTION_NAMES = %w[actions/checkout ruby/setup-ruby].freeze
   FORBIDDEN_CONTENT = /(?:AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|
                          -----BEGIN[ ][A-Z ]*PRIVATE[ ]KEY-----|(?:password|token|api[_-]?key|client[_-]?secret)\s*[:=]|
                          internal\s+notes?|raw\s+transcripts?|hidden\s+assertions?|reference\s+(?:solution|assets?))/ix
@@ -55,7 +53,7 @@ module LocalEvaluationFixtureAssertions
     workflow = YAML.safe_load_file(File.join(root, '.github/workflows/validate.yml'))
     assert_equal %w[jobs name on permissions], workflow.keys.sort
     job = assert_workflow_header(workflow)
-    assert_empty job.keys & %w[env permissions]
+    assert_equal %w[runs-on steps timeout-minutes], job.keys.sort
     assert_workflow_job(root, job)
   end
 
@@ -69,19 +67,22 @@ module LocalEvaluationFixtureAssertions
 
   def assert_workflow_job(root, job)
     assert_operator job.fetch('timeout-minutes'), :<=, 5
-    steps = job.fetch('steps')
-    expected = [
-      { 'uses' => PINNED_ACTIONS[0], 'with' => { 'persist-credentials' => false } },
-      { 'uses' => PINNED_ACTIONS[1], 'with' => { 'ruby-version' => '.ruby-version', 'bundler-cache' => true } },
-      { 'run' => '.agents/bin/test' }
-    ]
-    assert_equal expected, steps
+    assert_pinned_steps(job.fetch('steps'))
     assert_trusted_actions(root)
+  end
+
+  def assert_pinned_steps(steps)
+    assert_equal 3, steps.length
+    assert_match %r{\Aactions/checkout@[0-9a-f]{40}\z}, steps[0].fetch('uses')
+    assert_equal({ 'persist-credentials' => false }, steps[0].fetch('with'))
+    assert_match %r{\Aruby/setup-ruby@[0-9a-f]{40}\z}, steps[1].fetch('uses')
+    assert_equal({ 'ruby-version' => '.ruby-version', 'bundler-cache' => true }, steps[1].fetch('with'))
+    assert_equal({ 'run' => '.agents/bin/test' }, steps[2])
   end
 
   def assert_trusted_actions(root)
     trusted = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml')).fetch('trusted_actions')
-    assert_equal PINNED_ACTIONS.map { |action| action.split('@').first }.sort, trusted.sort
+    assert_equal ACTION_NAMES, trusted.sort
     workflow = File.read(File.join(root, '.github/workflows/validate.yml'))
     refute_match(/\$\{\{\s*(?:secrets\.|github\.token\b)/, workflow)
   end
