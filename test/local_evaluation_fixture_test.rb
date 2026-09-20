@@ -53,6 +53,7 @@ module LocalEvaluationFixtureAssertions
 
   def assert_minimal_workflow(root)
     workflow = YAML.safe_load_file(File.join(root, '.github/workflows/validate.yml'))
+    assert_equal %w[jobs name on permissions], workflow.keys.sort
     job = assert_workflow_header(workflow)
     assert_empty job.keys & %w[env permissions]
     assert_workflow_job(root, job)
@@ -106,6 +107,16 @@ module LocalEvaluationFixtureAssertions
     _, error, status = Open3.capture3(env, [setup, setup], '--local', chdir: Dir.tmpdir)
     assert status.success?, error
     assert_equal before, File.read(lock)
+  end
+
+  def capture_fixture_test(root)
+    command = File.join(root, '.agents/bin/test')
+    Open3.popen2e([command, command], chdir: Dir.tmpdir) do |_input, output, wait|
+      Timeout.timeout(60) { return [output.read, wait.value] }
+    rescue Timeout::Error
+      Process.kill('KILL', wait.pid)
+      raise
+    end
   end
 end
 
@@ -170,12 +181,9 @@ class LocalEvaluationFixtureExecutionTest < Minitest::Test
   def test_fixture_validation_stays_under_one_minute
     FIXTURES.each_value do |root|
       setup_fixture(root)
-      stdout, stderr, status = Timeout.timeout(60) do
-        command = File.join(root, '.agents/bin/test')
-        Open3.capture3([command, command], chdir: Dir.tmpdir)
-      end
-      assert status.success?, "#{stdout}\n#{stderr}"
-      assert_match(/[1-9]\d* runs?, \d+ assertions?, 0 failures, 0 errors, 0 skips/, stdout)
+      output, status = capture_fixture_test(root)
+      assert status.success?, output
+      assert_match(/[1-9]\d* runs?, \d+ assertions?, 0 failures, 0 errors, 0 skips/, output)
     end
   end
 end
