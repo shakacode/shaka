@@ -32,9 +32,10 @@ module Shaka
     def check(rules)
       located = @sections.transform_values { [] }
       rules.each do |rule|
+        taken = located.fetch(section(rule))
         span = locate(rule)
-        overlapping!(rule, located.fetch(section(rule)), span)
-        located.fetch(section(rule)) << span
+        overlapping!(rule, taken, span)
+        taken << span
       end
       complete!(located)
     end
@@ -50,7 +51,7 @@ module Shaka
 
     # One unambiguous span per quote, so the completeness check can trust its offsets.
     def locate(rule)
-      text = @sections.fetch(rule.fetch('phase'))
+      text = @sections.fetch(section(rule))
       quote = self.class.normalize(rule.fetch('quote'))
       at = text.index(quote)
       raise Error, "rule #{rule['id']} quotes text the #{rule['phase']} section does not contain" unless at

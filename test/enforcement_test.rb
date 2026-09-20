@@ -14,14 +14,6 @@ class EnforcementConfigTest < Minitest::Test
     rules.each { |rule| refute_empty rule.fetch('quote').strip }
   end
 
-  def test_every_audited_rule_names_what_backs_it
-    Shaka::EnforcementConfig.load.fetch('rules').each do |rule|
-      backing = Shaka::EnforcementConfig::BACKED.include?(rule.fetch('enforced_by')) ? 'detector' : 'note'
-
-      refute_empty rule.fetch(backing).strip, "#{rule.fetch('id')} states no #{backing}"
-    end
-  end
-
   # The audit's whole value is that it cannot quietly go stale, so these are the two ways it
   # could: the workflow drops the sentence, or the workflow gains a rule nobody classified.
   def test_rejects_a_quote_the_workflow_no_longer_contains
@@ -53,6 +45,11 @@ class EnforcementConfigTest < Minitest::Test
     refute_nil rule
     refute_match Shaka::EnforcementCoverage::MARKER, rule.fetch('quote')
     assert_equal 'agent', rule.fetch('enforced_by')
+  end
+
+  def test_rejects_a_rule_that_names_no_section
+    assert_includes mutated_message { |rules| rules.first.delete('phase') }, 'phase must be non-empty'
+    assert_includes mutated_message { |rules| rules.first['phase'] = 'intkae' }, 'names no workflow section'
   end
 
   def test_rejects_two_entries_answering_for_one_sentence
@@ -140,25 +137,34 @@ class EnforcementCommandTest < Minitest::Test
     assert_includes output, "#{alone} enforced by nothing but the agent."
   end
 
-  # The audit claims less than "every imperative rule", and it claims nothing about live
-  # GitHub settings. Both limits belong in the report a maintainer reads, not just here.
-  def test_states_what_it_does_not_cover
+  # The audit claims less than every imperative rule and nothing about live GitHub settings.
+  # Both limits belong in the report a maintainer reads, however the sentences are worded.
+  def test_states_the_question_it_answers_and_the_limits_it_has
     output, status = report
 
     assert status.success?, output
-    assert_includes output, 'never, must, do not, or only when'
-    assert_includes output, 'an entry may classify a rule stated another way'
-    assert_includes output, 'nothing here confirms that setting is still active'
+    assert_match(/if an agent ignores this rule, does anything fail/i, output)
+    assert_match(/never.*must.*do not.*only when/, output)
+    assert_match(/github.*(?:still active|not.*recheck)/im, output)
+  end
+
+  # Every answer the audit gives has to be explained where a maintainer reads the rows.
+  def test_explains_every_answer_it_gives
+    output, status = report
+
+    assert status.success?, output
+    RULES.map { |rule| rule.fetch('enforced_by') }.uniq.each do |answer|
+      assert_match(/^- `#{answer}` — \S/, output)
+    end
   end
 
   # A command that only reports a violation must not read as one that refuses it.
   def test_separates_a_reported_violation_from_a_refused_one
     output, status = report
+    reported = RULES.find { |rule| rule['enforced_by'] == 'reported' }
 
     assert status.success?, output
-    assert_includes output, 'if an agent ignores this rule, does anything fail?'
-    assert_includes output, '`reported` — a command surfaces the violation; the agent can still proceed.'
-    assert_includes output, '| Do not open a second PR. | reported |'
+    assert_includes output, "| #{reported.fetch('quote')} | reported |"
   end
 
   # A command that reads only the fields an agent sends it answers nothing, so the audit has

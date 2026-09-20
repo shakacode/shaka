@@ -57,6 +57,7 @@ module Shaka
       unknown = rule.keys - RULE_KEYS
       raise Error, "unknown #{label} key: #{unknown.first}" unless unknown.empty?
 
+      text!(rule['phase'], "#{label} phase")
       text!(rule['quote'], "#{label} quote")
       enforcement!(rule, label)
     end

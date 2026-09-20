@@ -118,6 +118,27 @@ rules:
     note: >-
       Whether a change needed a test rather than a screenshot is a judgment about the change;
       nothing reads the published evidence.
+  - id: publish-in-scope
+    phase: explain
+    quote: Publish only within the task's scope
+    enforced_by: agent
+    note: >-
+      Nothing reads a published body to tell in-scope work from a comment on something else,
+      and the scan does not reach this rule either, because it restricts with a bare "only".
+  - id: comments-is-the-only-reader
+    phase: explain
+    quote: Read public issue and PR feedback only with `comments`
+    enforced_by: agent
+    note: >-
+      `comments` screens what it returns and marks what it excluded, so using it satisfies the
+      rule. Nothing observes a read the agent makes through another route.
+  - id: aggregate-usage-only
+    phase: explain
+    quote: publish only aggregate metadata
+    enforced_by: agent
+    note: >-
+      `usage` renders aggregate rows and no per-response detail, so reporting through it
+      satisfies the rule. Nothing screens a body the agent writes by hand.
   - id: helper-owns-the-body
     phase: explain
     quote: >-
