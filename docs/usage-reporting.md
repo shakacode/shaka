@@ -40,7 +40,8 @@ local records do not establish the model that executed each response.
 
 The report also shows **configured-model scenarios** for the providers and models
 in that snapshot: Standard Codex credits and Standard API-equivalent USD for
-supported OpenAI models, and Cursor on-demand USD for Grok 4.6. Source links and
+supported OpenAI models, Cursor on-demand USD for Grok 4.6, and Anthropic list-price
+USD for supported Claude models. Source links and
 rate notes cover only priced provider and model pairs, not a model name on the
 wrong provider. The estimate prices each unique response
 before summing, so model switches and requests crossing the API context threshold
@@ -66,6 +67,20 @@ excludes cache reads and cache writes, so the three are separate amounts; reason
 output is part of output. The configured model and native total stay UNKNOWN because
 the transcript does not record them. A turn is a prompt id, so `--turn` selects
 prompts, and every supplied file uses the first file's latest turn by default.
+
+The report also prices an **API-equivalent USD scenario** from Anthropic's published
+list prices, verified September 19, 2026. Uncached input, cache reads, and cache writes
+are billed separately at their own rates, and the reader reads the transcript's
+`cache_creation` split so a 1-hour cache write is priced at its higher rate rather than
+the 5-minute one; that split is priced but not published as its own table row. A write
+total the transcript does not split stays UNKNOWN instead of being priced at either
+rate. Codex credits are omitted because they do not price Anthropic usage. Only
+responses the transcript records at standard speed are priced: fast mode bills at its
+own rates, so a fast or unrecorded speed stays UNKNOWN and the report names which.
+Anthropic publishes no context threshold, so no long-context multiplier applies. The
+cost table heads its column with the priced model, which for Claude Code is the routed
+model, because the configured model is UNKNOWN. Models outside the published rate table
+stay UNKNOWN and the report omits Anthropic rate copy and source links for them.
 
 Claude Code documents its transcript format as internal and version-dependent. The
 reader was exercised against desktop `2.1.270` and CLI `2.1.272` transcripts. It
@@ -124,10 +139,11 @@ for contributor or resumed-session snapshots instead of running the export.
 Rows report the export's provider, the session model as the configured model, the
 response's model as the routed model, and the per-response variant as effort.
 Unlike Codex, input excludes cache reads and writes, so the three are separate
-amounts that the native total sums with output and reasoning. Every rate the helper
-publishes bills input inclusive of those subsets, so OpenCode rows stay UNKNOWN with a
-cache-exclusive reason even when the response ran on a provider the helper otherwise
-prices. The configured model falls back to UNKNOWN when the export omits it.
+amounts that the native total sums with output and reasoning. The OpenAI and Cursor rates bill input
+inclusive of those subsets, so OpenCode rows stay UNKNOWN with a cache-exclusive reason
+even when the response ran on a provider the helper otherwise prices. An OpenCode
+response on a supported Anthropic model is not priced either, because the export records
+no billing speed. The configured model falls back to UNKNOWN when the export omits it.
 
 The reader was exercised against `opencode export` from 1.18.31. It matched an
 independent per-response aggregate for a real 49-response session: response count,
@@ -184,7 +200,9 @@ snapshots: active work, external reviewers, tool-model calls, and other agents
 may add usage that is absent from the selected sources. Routed model, billing mode,
 service tier, account terms, and actual provider charges are not established by
 these tokens. API-equivalent USD is a scenario or Pi's recorded native nominal cost,
-not a subscription invoice.
+not a subscription invoice. A published list price is not the amount charged: a
+subscription, negotiated terms, service tier, or data-residency routing can all differ
+from it.
 Human active time and total historical consumption are not inferred.
 
 When host discovery is unavailable or several turns/contributors belong to the

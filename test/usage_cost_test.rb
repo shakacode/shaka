@@ -222,3 +222,94 @@ class UsageNativePiCostTest < Minitest::Test
     refute_includes report, 'developers.openai.com'
   end
 end
+
+class UsageAnthropicCostTest < Minitest::Test
+  ANTHROPIC_LINK = 'platform.claude.com/docs/en/about-claude/pricing'
+
+  def test_standard_opus_prices_each_cache_write_at_its_own_ttl_rate
+    report = estimate(anthropic_record)
+    assert_metric report, 'USD estimate', '$0.001110'
+    assert_includes report, 'Anthropic API list prices, verified 2026-09-19'
+    assert_includes report, ANTHROPIC_LINK
+    refute_includes report, 'Credits estimate'
+    refute_includes report, 'Cache-exclusive input is unpriced'
+    refute_includes report, 'developers.openai.com'
+    refute_includes report, 'cursor.com'
+  end
+
+  def test_one_hour_writes_cost_more_than_five_minute_writes
+    hourly = estimate(anthropic_record(writes: 12, writes_1h: 12))
+    five_minute = estimate(anthropic_record(writes: 12, writes_1h: 0))
+    assert_metric hourly, 'USD estimate', '$0.001140'
+    assert_metric five_minute, 'USD estimate', '$0.001095'
+  end
+
+  def test_the_routed_model_heads_the_column_instead_of_the_unknown_configured_model
+    report = estimate(anthropic_record)
+    assert_metric report, 'Metric', 'claude-opus-5'
+    refute_includes report, '| Metric | UNKNOWN |'
+  end
+
+  def test_a_configured_model_prices_a_source_that_records_no_routed_model
+    report = estimate(anthropic_record(configuration: ['anthropic', 'claude-haiku-4-5', 'UNKNOWN', 'high']))
+    assert_metric report, 'USD estimate', '$0.000222'
+    assert_metric report, 'Metric', 'claude-haiku-4-5'
+  end
+
+  def test_fast_mode_and_unrecorded_speed_stay_unknown_rather_than_pricing_as_standard
+    fast = estimate(anthropic_record(billing: 'fast'))
+    assert_metric fast, 'USD estimate', 'UNKNOWN'
+    assert_includes fast, 'Anthropic fast-mode rates are not published here'
+    silent = estimate(anthropic_record(billing: 'UNKNOWN'))
+    assert_metric silent, 'USD estimate', 'UNKNOWN'
+    assert_includes silent, 'Billing speed UNKNOWN'
+    refute_includes silent, '$0.00'
+    [fast, silent].each { |report| refute_includes report, ANTHROPIC_LINK }
+  end
+
+  def test_unsplit_cache_writes_stay_unknown_but_absent_writes_still_price
+    record = anthropic_record(writes: 12)
+    record['usage'].delete('cache_write_1h_input_tokens')
+    report = estimate(record)
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    assert_includes report, 'Cache-write TTL split UNKNOWN'
+
+    none = anthropic_record(writes: 0)
+    none['usage'].delete('cache_write_1h_input_tokens')
+    assert_metric estimate(none), 'USD estimate', '$0.001020'
+  end
+
+  def test_impossible_subsets_and_unsupported_models_never_become_a_price
+    over = estimate(anthropic_record(writes: 12, writes_1h: 13))
+    assert_metric over, 'USD estimate', 'UNKNOWN'
+    assert_includes over, 'Inconsistent token subsets'
+
+    unsupported = estimate(anthropic_record(configuration: %w[anthropic UNKNOWN claude-test xhigh]))
+    assert_metric unsupported, 'USD estimate', 'UNKNOWN'
+    assert_includes unsupported, 'Unsupported provider or configured model'
+    refute_includes unsupported, ANTHROPIC_LINK
+    refute_includes unsupported, '2026-09-19'
+  end
+
+  def test_a_source_whose_input_already_contains_its_subsets_is_not_priced_as_anthropic
+    report = Shaka::CostEstimate.new([anthropic_record]).report
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    assert_includes report, 'Unsupported provider or configured model'
+    refute_includes report, ANTHROPIC_LINK
+    refute_includes report, '2026-09-19'
+  end
+
+  private
+
+  def estimate(record)
+    Shaka::CostEstimate.new([record], inclusive_input: false).report
+  end
+
+  def anthropic_record(configuration: %w[anthropic UNKNOWN claude-opus-5 xhigh], billing: 'standard',
+                       writes: 12, writes_1h: 4)
+    { 'configuration' => configuration, 'billing_mode' => billing,
+      'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40, 'cache_write_input_tokens' => writes,
+                   'cache_write_1h_input_tokens' => writes_1h, 'output_tokens' => 20,
+                   'reasoning_output_tokens' => 5 } }
+  end
+end

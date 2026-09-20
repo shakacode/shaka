@@ -17,11 +17,18 @@ module ClaudeUsageFixture
     { type: 'user', sessionId: SESSION, promptId: turn, message: { role: 'user', content: text } }
   end
 
-  def reply(id, input, output: 20, model: 'claude-test')
+  def reply(id, input, output: 20, model: 'claude-test', usage: {})
     { type: 'assistant', sessionId: SESSION, version: '2.1.270', effort: 'high', timestamp: '2026-09-14T12:00:00Z',
       message: { id: id, model: model, content: [{ type: 'text', text: 'SENSITIVE-OUTPUT' }],
                  usage: { input_tokens: input, cache_read_input_tokens: 40, cache_creation_input_tokens: 7,
-                          output_tokens: output, output_tokens_details: { thinking_tokens: 5 } } } }
+                          output_tokens: output,
+                          output_tokens_details: { thinking_tokens: 5 } }.merge(usage) } }
+  end
+
+  def priced_reply(id, input, **overrides)
+    reply(id, input, model: 'claude-opus-5',
+                     usage: { speed: 'standard', cache_creation: { ephemeral_5m_input_tokens: 3,
+                                                                   ephemeral_1h_input_tokens: 4 } }, **overrides)
   end
 
   def transcript(directory, name, records)
@@ -165,5 +172,43 @@ class ClaudeUsageFailuresTest < Minitest::Test
     refute status.success?
     assert_empty output
     assert_includes error, 'shaka usage:'
+  end
+end
+
+class ClaudeUsagePriceTest < Minitest::Test
+  include ClaudeUsageFixture
+
+  def test_a_standard_speed_session_reports_a_dollar_estimate_from_published_rates
+    Dir.mktmpdir do |directory|
+      file = transcript(directory, 'session.jsonl', [prompt('new'), priced_reply('m1', 100)])
+      output = report('--host', 'claude-code', '--file', file)
+      assert_metric output, 'USD estimate', '$0.001079'
+      assert_metric output, 'Metric', 'claude-opus-5'
+      assert_includes output, 'Anthropic API list prices'
+      refute_includes output, 'Cache-exclusive input is unpriced'
+    end
+  end
+
+  def test_the_token_table_keeps_its_published_columns_and_its_own_summary
+    Dir.mktmpdir do |directory|
+      file = transcript(directory, 'session.jsonl', [prompt('new'), priced_reply('m1', 100)])
+      output = report('--host', 'claude-code', '--file', file)
+      assert_metric output, 'Cache writes', 7
+      refute_includes output, 'cache_write_1h'
+      assert_includes output, '<summary>Token detail</summary>'
+      refute_includes output, '<summary>Native usage</summary>'
+      assert_includes output, 'Native usage is PARTIAL'
+    end
+  end
+
+  def test_fast_mode_is_not_priced_as_standard_speed
+    Dir.mktmpdir do |directory|
+      fast = priced_reply('m1', 100)
+      fast[:message][:usage][:speed] = 'fast'
+      file = transcript(directory, 'session.jsonl', [prompt('new'), fast])
+      output = report('--host', 'claude-code', '--file', file)
+      assert_metric output, 'USD estimate', 'UNKNOWN'
+      assert_includes output, 'Anthropic fast-mode rates are not published here'
+    end
   end
 end

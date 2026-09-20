@@ -69,15 +69,24 @@ module Shaka
       @versions << record['version'] if record['version'].is_a?(String)
       { message['id'] => { 'response_id' => message['id'], 'turn_id' => turn, 'timestamp' => record['timestamp'],
                            'configuration' => ['anthropic', 'UNKNOWN', message['model'], record['effort']],
+                           'billing_mode' => speed(message['usage']),
                            'usage' => tokens(message['usage']) } }
+    end
+
+    # Fast mode is billed at its own rates, so an unrecognized speed must not price as standard.
+    def speed(usage)
+      recorded = usage['speed'] if usage.is_a?(Hash)
+      %w[standard fast].include?(recorded) ? recorded : 'UNKNOWN'
     end
 
     def tokens(usage)
       return {} unless usage.is_a?(Hash)
 
       details = usage['output_tokens_details']
+      creation = usage['cache_creation']
       { 'input_tokens' => usage['input_tokens'], 'cached_input_tokens' => usage['cache_read_input_tokens'],
         'output_tokens' => usage['output_tokens'], 'cache_write_input_tokens' => usage['cache_creation_input_tokens'],
+        'cache_write_1h_input_tokens' => (creation['ephemeral_1h_input_tokens'] if creation.is_a?(Hash)),
         'reasoning_output_tokens' => (details['thinking_tokens'] if details.is_a?(Hash)) }
     end
 
