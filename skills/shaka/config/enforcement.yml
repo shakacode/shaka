@@ -52,15 +52,21 @@ rules:
     note: >-
       `claim` returns the seam's `branches.name`, but nothing compares the branch actually
       created against that template, including its `{host}` slug.
-  - id: seam-init-explicit
+  - id: never-guess-checks
     phase: plan
-    quote: Never guess checks or grant merge authority.
+    quote: Never guess checks
     enforced_by: agent
     note: >-
-      `Seam::Initializer` refuses to write a seam without at least one `--required-check`, and
-      defaults `merge.preference` to `ask` rather than to `auto`, so neither is reached by
-      omission. It cannot tell a real check name from an invented one, and an agent that passes
-      `--required-check` with a guess and `--merge-preference auto` gets the seam it asked for.
+      `Seam::Initializer` refuses to write a seam without at least one `--required-check`, so a
+      check cannot be reached by omission. It cannot tell a real check name from an invented
+      one, and a guess passed on that flag becomes the seam's required check.
+  - id: never-grant-merge-authority
+    phase: plan
+    quote: grant merge authority
+    enforced_by: agent
+    note: >-
+      `Seam::Initializer` defaults `merge.preference` to `ask`, so `auto` is never reached by
+      omission. An agent that passes `--merge-preference auto` gets the seam it asked for.
   - id: effort-justification
     phase: plan
     quote: waiting and tool failures do not by themselves justify more
