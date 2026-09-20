@@ -164,7 +164,7 @@ module Shaka
         External reviewer/tool-model usage: UNKNOWN. #{@source.gaps.uniq.join('; ')}
 
         <details>
-        <summary>Native usage</summary>
+        <summary>Token detail</summary>
 
         #{@options[:commit]} / #{@options[:contribution]}
         SHARED source interval: #{interval}. Snapshot through the last observed response.

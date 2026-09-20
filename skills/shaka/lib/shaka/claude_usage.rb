@@ -69,16 +69,42 @@ module Shaka
       @versions << record['version'] if record['version'].is_a?(String)
       { message['id'] => { 'response_id' => message['id'], 'turn_id' => turn, 'timestamp' => record['timestamp'],
                            'configuration' => ['anthropic', 'UNKNOWN', message['model'], record['effort']],
+                           'billing_mode' => speed(message['usage']),
                            'usage' => tokens(message['usage']) } }
+    end
+
+    # Fast mode is billed at its own rates, so an unrecognized speed must not price as standard.
+    def speed(usage)
+      recorded = usage['speed'] if usage.is_a?(Hash)
+      %w[standard fast].include?(recorded) ? recorded : 'UNKNOWN'
     end
 
     def tokens(usage)
       return {} unless usage.is_a?(Hash)
 
-      details = usage['output_tokens_details']
       { 'input_tokens' => usage['input_tokens'], 'cached_input_tokens' => usage['cache_read_input_tokens'],
         'output_tokens' => usage['output_tokens'], 'cache_write_input_tokens' => usage['cache_creation_input_tokens'],
-        'reasoning_output_tokens' => (details['thinking_tokens'] if details.is_a?(Hash)) }
+        'cache_write_5m_input_tokens' => nested(usage, 'cache_creation', 'ephemeral_5m_input_tokens'),
+        'cache_write_1h_input_tokens' => nested(usage, 'cache_creation', 'ephemeral_1h_input_tokens'),
+        'reasoning_output_tokens' => nested(usage, 'output_tokens_details', 'thinking_tokens'),
+        'web_search_requests' => server_tool_requests(usage, 'web_search_requests'),
+        'inference_geo' => usage['inference_geo'] }
+    end
+
+    # A response that used no server tool omits the group or the counter, which is no charge.
+    # A group that is present but unreadable is a gap, so it stays nil for the estimate to refuse.
+    def server_tool_requests(usage, field)
+      return 0 unless usage.key?('server_tool_use')
+
+      recorded = usage['server_tool_use']
+      return unless recorded.is_a?(Hash)
+
+      recorded.key?(field) ? recorded[field] : 0
+    end
+
+    def nested(usage, group, field)
+      recorded = usage[group]
+      recorded[field] if recorded.is_a?(Hash)
     end
 
     def parse(line)

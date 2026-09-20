@@ -19,9 +19,103 @@ module Shaka
     end
   end
 
-  # Report copy for configured-model cost scenarios.
+  # Anthropic list prices, which bill uncached input, cache reads and cache writes separately.
+  module AnthropicCost
+    # Per million tokens: input, cache read, 5-minute cache write, 1-hour cache write, output.
+    # Every model Anthropic still serves outside limited-availability programs; retired models
+    # are omitted because no current session routes to one.
+    RATES = {
+      'claude-fable-5-1' => %w[10 0.25 12.5 20 50],
+      'claude-fable-5' => %w[10 1 12.5 20 50],
+      'claude-opus-5' => %w[5 0.5 6.25 10 25],
+      'claude-opus-4-8' => %w[5 0.5 6.25 10 25],
+      'claude-opus-4-7' => %w[5 0.5 6.25 10 25],
+      'claude-opus-4-6' => %w[5 0.5 6.25 10 25],
+      'claude-opus-4-5' => %w[5 0.5 6.25 10 25],
+      'claude-sonnet-5' => %w[2 0.2 2.5 4 10],
+      'claude-sonnet-4-6' => %w[3 0.3 3.75 6 15],
+      'claude-sonnet-4-5' => %w[3 0.3 3.75 6 15],
+      'claude-haiku-4-5' => %w[1 0.1 1.25 2 5]
+    }.freeze
+    # Web search bills $10 per 1,000 requests on top of tokens; web fetch adds no charge.
+    # Readers report no searches as zero, so a count that is absent here was never established.
+    SEARCH_RATE = Rational(1, 100)
+    # Pinning inference to the US multiplies every token category. Global is the default, so a
+    # record that does not name US routing is priced at standard rates rather than refused.
+    US_GEO_RATE = Rational(11, 10)
+
+    private
+
+    # Claude Code records only the routed model; exports that name a configured model use that.
+    def anthropic_rate(configuration)
+      return unless configuration.is_a?(Array)
+
+      _provider, model, routed = configuration
+      RATES[[routed, model].find { |name| RATES.key?(name) }]
+    end
+
+    def anthropic_price(record, mode)
+      return [nil, 'Codex credits do not price Anthropic'] if mode == :credits
+
+      rate = anthropic_rate(record['configuration'])
+      return [nil, 'Unsupported provider or configured model'] unless rate
+
+      speed = record['billing_mode']
+      return [nil, speed_reason(speed)] unless speed == 'standard'
+
+      priced, reason = anthropic_categories(record['usage'])
+      reason ? [nil, reason] : [anthropic_bill(priced, rate), nil]
+    end
+
+    # Fast mode bills at its own rates, and a source that records no speed establishes neither.
+    def speed_reason(speed)
+      speed == 'fast' ? 'Anthropic fast-mode rates are not published here' : 'Billing speed UNKNOWN'
+    end
+
+    def anthropic_bill(priced, rate)
+      tokens, searches, geo = priced
+      billed = tokens.zip(rate).sum { |count, price| count * Rational(price) } / 1_000_000
+      (billed * (geo == 'us' ? US_GEO_RATE : 1)) + (searches * SEARCH_RATE)
+    end
+
+    def anthropic_categories(usage)
+      return [nil, 'Incomplete billable token categories'] unless usage.is_a?(Hash)
+
+      counters = %w[input_tokens cached_input_tokens cache_write_input_tokens output_tokens].map { |key| usage[key] }
+      return [nil, 'Incomplete billable token categories'] unless valid_counters?(counters)
+
+      input, cached, writes, output = counters
+      split = write_split(usage, writes)
+      searches = usage['web_search_requests']
+      reason = anthropic_reason(usage, writes, split, [searches, output])
+      reason ? [nil, reason] : [[[input, cached, *split, output], searches, usage['inference_geo']], nil]
+    end
+
+    def anthropic_reason(usage, writes, split, tools)
+      searches, output = tools
+      anthropic_subset_reason(writes, split, usage['reasoning_output_tokens'], output) ||
+        ('Server tool usage UNKNOWN' unless valid_counters?([searches]))
+    end
+
+    # A zero write total already establishes both TTL categories, however few the transcript names.
+    def write_split(usage, writes)
+      split = %w[cache_write_5m_input_tokens cache_write_1h_input_tokens].map { |key| usage[key] }
+      writes.zero? ? split.map { |count| count || 0 } : split
+    end
+
+    # The two cache-write rates differ, so only a split that accounts for the whole total is priced.
+    def anthropic_subset_reason(writes, split, reasoning, output)
+      return 'Cache-write TTL split UNKNOWN' if split.any?(&:nil?)
+      return 'Inconsistent token subsets' unless valid_counters?(split) && split.sum == writes
+
+      'Inconsistent token subsets' if invalid_reasoning?(reasoning, output)
+    end
+  end
+
+  # Report copy for the rate-card cost scenarios.
   module CostCopy
     VERIFIED = '2026-09-16'
+    ANTHROPIC_VERIFIED = '2026-09-19'
     THRESHOLD_NOTE = 'OpenAI API estimates apply the 272K context threshold.'
 
     private
@@ -49,17 +143,34 @@ module Shaka
     end
 
     def rate_intro(columns)
+      sentences = [rate_card_intro(columns), anthropic_intro(columns)].compact
+      sentences.join(' ') unless sentences.empty?
+    end
+
+    def rate_card_intro(columns)
       bits = priced_rate_copy(columns)
       "#{bits.join(', plus ')}, verified #{VERIFIED}." unless bits.empty?
+    end
+
+    def anthropic_intro(columns)
+      return unless anthropic_priced?(priced_columns(columns))
+
+      "Anthropic API list prices, verified #{ANTHROPIC_VERIFIED}. Uncached input, cache reads and " \
+        'cache writes are separate charges, and a 1-hour cache write costs more than a 5-minute one. ' \
+        'Only responses recorded at standard speed are priced.'
     end
 
     def priced_rate_copy(columns)
       priced = priced_columns(columns)
       [
-        ('Standard Codex credit and OpenAI API-equivalent rates' if priced.any? { |column| openai_rated?(column) }),
-        ('Cursor on-demand list prices' if priced.any? { |column| cursor_rated?(column) })
+        ('Standard Codex credit and OpenAI API-equivalent rates' if openai_priced?(priced)),
+        ('Cursor on-demand list prices' if cursor_priced?(priced))
       ].compact
     end
+
+    def openai_priced?(priced) = priced.any? { |column| openai_rated?(column) }
+    def cursor_priced?(priced) = priced.any? { |column| cursor_rated?(column) }
+    def anthropic_priced?(priced) = priced.any? { |column| anthropic_rated?(column) }
 
     def native_intro
       'Pi recorded native nominal USD.'
@@ -76,6 +187,13 @@ module Shaka
     def cursor_rated?(column)
       model = column[:model].to_s.delete_suffix('-fast')
       column[:provider] == 'cursor' && CursorCost::RATES.dig(model, column[:billing])
+    end
+
+    # Rate-card copy describes the provider and model pair's rate card, as it does for every
+    # other provider, so it stays beside an UNKNOWN a response's own counters caused.
+    def anthropic_rated?(column)
+      column[:provider] == 'anthropic' && !@inclusive_input && column[:billing] == 'standard' &&
+        [column[:routed], column[:model]].any? { |name| AnthropicCost::RATES.key?(name.to_s) }
     end
 
     def footer(columns, reasons)
@@ -106,6 +224,7 @@ module Shaka
     CREDIT_SOURCE = '[Codex credit rates](https://learn.chatgpt.com/docs/pricing#token-rates)'
     CACHE_SOURCE = '[prompt-cache accounting](https://developers.openai.com/api/docs/guides/prompt-caching)'
     CURSOR_PRICING = '[Cursor model pricing](https://cursor.com/docs/models-and-pricing)'
+    ANTHROPIC_PRICING = '[Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing)'
 
     private
 
@@ -124,8 +243,13 @@ module Shaka
 
     def cost_headers(columns)
       labeled = columns.map { |column| setting_cells(column) }
-      header_candidates(labeled).find { |names| names.uniq.size == names.size } ||
+      candidates = header_candidates(labeled)
+      distinct(candidates.reject { |names| names.include?('UNKNOWN') }) || distinct(candidates) ||
         labeled.map.with_index { |cells, index| "#{cells[0]}-#{index + 1}" }
+    end
+
+    def distinct(candidates)
+      candidates.find { |names| names.uniq.size == names.size }
     end
 
     def setting_cells(column)
@@ -133,7 +257,7 @@ module Shaka
     end
 
     def header_candidates(labeled)
-      [1, 3, 2, 0].map { |index| labeled.map { |cells| cells[index] } } +
+      [1, 2, 3, 0].map { |index| labeled.map { |cells| cells[index] } } +
         [[1, 3], [0, 1, 3], [0, 1, 2, 3]].map do |indexes|
           labeled.map { |cells| indexes.map { |index| cells[index] }.join(' ') }
         end
@@ -152,12 +276,14 @@ module Shaka
 
     def source_links(columns)
       priced = priced_columns(columns)
-      [
-        (CREDIT_SOURCE if priced.any? { |column| openai_rated?(column) }),
-        *model_source_links(priced),
-        (CACHE_SOURCE if priced.any? { |column| openai_rated?(column) }),
-        (CURSOR_PRICING if priced.any? { |column| cursor_rated?(column) })
-      ].compact
+      [*rate_card_links(priced), (CURSOR_PRICING if cursor_priced?(priced)),
+       (ANTHROPIC_PRICING if anthropic_priced?(priced))].compact
+    end
+
+    def rate_card_links(priced)
+      return model_source_links(priced) unless openai_priced?(priced)
+
+      [CREDIT_SOURCE, *model_source_links(priced), CACHE_SOURCE]
     end
 
     def model_source_links(columns)
@@ -186,7 +312,8 @@ module Shaka
       configuration, billing = key
       provider, model, routed, effort = configuration
       credits, api = priced_totals(group, reasons, provider, model)
-      { provider: provider, model: billed_model(provider, billing, model), routed: routed, effort: effort,
+      { provider: provider, model: billed_model(provider, billing, model),
+        routed: billed_routed(provider, billing, routed), effort: effort,
         billing: billing, credits: credits, api: api, native: native_cost?(group),
         recorded_native: native_recorded?(group) }
     end
@@ -201,6 +328,11 @@ module Shaka
 
     def billed_model(provider, billing, model)
       provider == 'cursor' && billing == 'fast' && model.is_a?(String) ? "#{model}-fast" : model
+    end
+
+    # Anthropic names no configured model, so its fast column is distinguished on the routed one.
+    def billed_routed(provider, billing, routed)
+      provider == 'anthropic' && billing == 'fast' && routed.is_a?(String) ? "#{routed}-fast" : routed
     end
 
     def native_cost?(group)
@@ -224,9 +356,11 @@ module Shaka
     end
   end
 
-  # Prices configured-model scenarios from disjoint per-response token categories.
+  # Prices rate-card scenarios from disjoint per-response token categories, on the configured
+  # model where a source records one and on the routed model where it does not.
   class CostEstimate
     include CursorCost
+    include AnthropicCost
     include CostCopy
     include CostTable
     include CostColumns
@@ -260,7 +394,8 @@ module Shaka
       [reason ? nil : amounts.sum { |amount, _| amount }, reason]
     end
 
-    # Every published rate here bills input inclusive of its cached and written subsets.
+    # The OpenAI and Cursor rates bill input inclusive of its cached and written subsets;
+    # the Anthropic rates bill those three separately and are priced on their own path.
     def price(record, mode)
       native_price(record, mode) || configured_price(record, mode)
     end
@@ -277,9 +412,9 @@ module Shaka
     end
 
     def configured_price(record, mode)
-      return [nil, 'Cache-exclusive input is unpriced'] unless @inclusive_input
-
       provider, model = record['configuration']
+      return anthropic_price(record, mode) if provider == 'anthropic' && !@inclusive_input
+      return [nil, 'Cache-exclusive input is unpriced'] unless @inclusive_input
       return [nil, 'Unsupported provider or configured model'] unless %w[openai cursor].include?(provider)
 
       tokens, reason = categories(record['usage'])
