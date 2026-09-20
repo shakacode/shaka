@@ -18,17 +18,18 @@ module Shaka
       def call
         return incomplete('the host is ambiguous') if @host.nil?
 
-        inspect
+        locate
       rescue KeyError, SystemCallError => e
-        shortfall(first_line(e.message), unopened: false)
+        shortfall(first_line(e.message), unopened: true)
       end
 
       private
 
-      def inspect
+      def locate
         located = @system.usage_source.call(@host)
         unopened = located.reject { |entry| openable?(entry) }
         return shortfall(gap(located, unopened), unopened: unopened.any?) if located.empty? || unopened.any?
+        return missing("#{located.length} openable #{@host} source(s)") if @host == 'cursor' && !hook?
 
         check('Usage source', 'healthy', "#{located.length} openable #{@host} source(s); " \
                                          'doctor does not parse them')

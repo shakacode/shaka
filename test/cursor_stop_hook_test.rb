@@ -24,6 +24,16 @@ class CursorStopHookTest < Minitest::Test
     end
   end
 
+  # Break: a numeric command kept by filter_map makes include? raise NoMethodError out of doctor.
+  def test_a_non_string_stop_command_is_not_installed
+    with_hooks('stop' => [{ 'command' => 1 }]) { |path| refute installed?(path) }
+  end
+
+  # Break: include? treats `echo cursor-usage-hook` as the persistence script.
+  def test_a_command_that_only_mentions_the_hook_name_is_not_installed
+    with_hooks('stop' => [{ 'command' => 'echo cursor-usage-hook' }]) { |path| refute installed?(path) }
+  end
+
   private
 
   def installed?(path)

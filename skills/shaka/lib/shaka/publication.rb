@@ -45,7 +45,7 @@ module Shaka
     def usage_cost_summary(summary, body)
       return summary unless summary.match?(/usage/i)
 
-      totals = usd_estimate_cells(body)
+      totals = usd_estimate_cells(body).map { |cell| summary_text(cell, 'usage cost cell') }
       return summary if totals.empty? || totals.all? { |cell| summary.include?(cell) }
 
       "#{summary} · #{totals.join(' · ')}"

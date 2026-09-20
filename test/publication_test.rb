@@ -115,6 +115,16 @@ class PublicationRegressionTest < Minitest::Test
     assert_includes rendered, '<summary>Usage and cost · $0.758116</summary>'
     refute_includes rendered, '$0.758116 · $0.758116'
   end
+
+  # Break: appending a raw USD cell after summary_text lets markup close the disclosure.
+  def test_usage_and_cost_summary_escapes_usd_cells
+    body = "#{USAGE.fetch('body')}\n\n| Metric | x |\n| --- | --- |\n| USD estimate | </summary><h1> |\n"
+    rendered = Shaka::Publication.description(
+      description_content('details' => [{ 'summary' => 'Usage and cost', 'body' => body }])
+    )
+    assert_includes rendered, '<summary>Usage and cost · &lt;/summary&gt;&lt;h1&gt;</summary>'
+    refute_match(%r{<summary>Usage and cost · </summary>}, rendered)
+  end
 end
 
 # Structure the renderer owns so models cannot vary it.
