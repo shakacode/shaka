@@ -377,11 +377,14 @@ report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
 base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex \
-  | codex exec -s read-only --ignore-rules --ignore-user-config --ephemeral -o "$report" -
+  | codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" -
 ```
 
-`-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, `--ignore-user-config`
-skips `$CODEX_HOME/config.toml`, and `--ephemeral` persists no session. Keep `-o` outside the
+`-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, and `--ignore-user-config`
+skips `$CODEX_HOME/config.toml`. Do not add `--ephemeral`: that flag persists no session, so
+`shaka usage` cannot read the review. After the run, pass that session's jsonl with
+`shaka usage --host codex --file PATH --commit "$head" --contribution review --all-turns`.
+Keep `-o` outside the
 repository, since it overwrites whatever it names, and give `mktemp` an explicit `XXXXXX` template:
 GNU `mktemp` rejects a template with fewer than three `X` characters, and a failed substitution
 would silently leave `-o .md` pointing inside the worktree. `codex exec review --base REF` has its
@@ -391,14 +394,18 @@ Claude Code:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
+usage=$(mktemp "${TMPDIR:-/tmp}/shaka-review-usage.XXXXXX") || exit 1
 base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
   | claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
-    --strict-mcp-config --effort medium --output-format text - > "$report"
+    --strict-mcp-config --effort medium --output-format json - > "$usage"
+ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["result"]' "$usage" > "$report"
+shaka usage --host claude-code --file "$usage" --commit "$head" --contribution review
 ```
 
-`-p` prints and exits. `--permission-mode plan` with `--permission-prompts none` withholds edits
+`-p` prints and exits. `--output-format json` writes one result object the usage reader can
+price; `result` is the review text and is not published in the usage report. `--permission-mode plan` with `--permission-prompts none` withholds edits
 and denies anything that would prompt. `--restricted` removes command-running tools.
 `--safe-mode` disables project CLAUDE.md, skills, plugins, hooks, and MCP while **keeping
 Claude.ai OAuth**. `--strict-mcp-config` with no config drops MCP servers. Do **not** add
@@ -420,6 +427,9 @@ grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format pl
 `--permission-mode plan` withholds edit approval, and the other two remove web access and
 subagents. Narrow further with `--disallowed-tools TOOLS` or `--deny RULE` for tools your run
 should not reach. `--sandbox PROFILE` exists but help does not list its profile names.
+If this review is a fresh Cursor chat, report it with `shaka usage --host cursor --contribution
+review` from that chat, or `--file` of its stop-hook jsonl. Parent-agent Cursor records exclude
+subagents.
 
 The Codex flags were exercised on a prior local review rather than read off `--help`. The
 Claude and Grok flags come from each CLI's `--help`. Note what they do not cover: these
@@ -436,7 +446,8 @@ the model's own output reports it. Check `--help` before relying on any of these
 A local review is **UNVERIFIED** until the owner publishes its report, including that closing
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
 tests, and publishes a concise summary tied to the reviewed commit. Record available native
-model, effort, and usage; missing evidence is UNKNOWN. Do not publish raw sessions or private
+model, effort, and usage with `shaka usage --commit HEAD --contribution review` on the
+reviewer's source; missing evidence is UNKNOWN. Do not publish raw sessions or private
 context. A recovery
 note's `Thread` field follows its [publication
 rule](working-with-your-agent.md#recover-an-unfinished-pr).

@@ -154,6 +154,25 @@ class UsageTest < Minitest::Test
     assert_includes report, 'SHARED'
     refute_includes report, THREAD
   end
+
+  # A review snapshot that counted tokens but still said only "external reviewer
+  # UNKNOWN" hid the local adversarial pass that those numbers belong to.
+  def test_review_contribution_with_records_includes_local_adversarial_usage
+    report = run_report([context('current'), usage('current', 'current', 100)], '--contribution', 'review')
+    header = report.split('<details>').first
+    assert_includes report, "#{COMMIT} / review"
+    assert_includes header, 'Local adversarial reviewer usage: included below'
+    assert_includes header, 'External reviewer/tool-model usage: UNKNOWN'
+    refute_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    assert_metric report, 'Input', 100
+  end
+
+  # Implementation tokens are not the adversarial pass. Claiming they are would
+  # hide a missing review snapshot behind a green usage table.
+  def test_implementation_snapshot_does_not_count_as_local_review
+    header = run_report([context('current'), usage('current', 'current', 100)]).split('<details>').first
+    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+  end
 end
 
 class UsageFailuresTest < Minitest::Test

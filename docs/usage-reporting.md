@@ -22,7 +22,10 @@ more than one host context is present, pass `--host codex`, `--host claude-code`
 that child inherits Pi's process marker. Selecting Pi never falls back to unrelated Codex records.
 
 Contribution categories are `implementation`, `review`, `integration`, and
-`shared-planning`. Supply several affected commit SHAs separated by commas when
+`shared-planning`. The local adversarial review is its own `review` report, from
+that run's native source, not the implementation session. Hosted GitHub reviewers
+and other agents stay UNKNOWN unless their native records are supplied. Supply
+several affected commit SHAs separated by commas when
 the same work spans them. A report maps the whole selected interval to those
 commits as **SHARED**; it never divides usage into invented per-commit amounts.
 Retain that original mapping after squash merge and associate the merged SHA
@@ -70,7 +73,9 @@ The reader uses `CLAUDE_CODE_SESSION_ID` to find that session's transcript benea
 adds the session's subagent transcripts. The default selects the session's latest
 turn together with the subagents started during it. Claude Code writes several lines
 for one streamed response; the reader counts the last line, which carries the final
-usage, once.
+usage, once. A Claude CLI `-p --output-format json` file is one `result` object: the
+reader copies its `usage` and routed `model`, and does not publish `result` text.
+An `is_error` result is UNKNOWN.
 
 The native usage table lists metrics as rows and each configuration as a column.
 It reports provider `anthropic`, the response's model as the routed model, the
@@ -126,7 +131,8 @@ fields. Input includes cache reads and cache writes; the three remain separate
 metric rows as in Codex. Reasoning output and native total stay UNKNOWN. A turn is a
 `generation_id`. The default selects that source's latest generation. `stop` and
 `afterAgentResponse` for the same generation are one response. Subagent tokens are
-absent from these parent-agent events.
+absent from these parent-agent events. A Cursor adversarial review is a different
+conversation: report it with `--contribution review` and that chat's stop-hook file.
 
 The reader was exercised against desktop `3.20.21` hook payloads for `grok-4.6`.
 Install the hook as described in [getting started](getting-started.md#use-shaka-in-cursor).

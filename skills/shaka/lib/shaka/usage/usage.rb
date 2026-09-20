@@ -161,7 +161,7 @@ module Shaka
     def report
       <<~MARKDOWN
         Native usage is PARTIAL. #{count}. Scope: #{turn_scope}.
-        External reviewer/tool-model usage: UNKNOWN. #{@source.gaps.uniq.join('; ')}
+        #{reviewer_coverage}
 
         <details>
         <summary>Token detail</summary>
@@ -180,6 +180,12 @@ module Shaka
     end
 
     private
+
+    def reviewer_coverage
+      local = @options[:contribution] == 'review' && @responses.any? ? 'included below' : 'UNKNOWN'
+      gaps = @source.gaps.uniq.join('; ')
+      "Local adversarial reviewer usage: #{local}. External reviewer/tool-model usage: UNKNOWN. #{gaps}"
+    end
 
     def turn_scope
       return 'all turns in selected sources' if @options[:all_turns]

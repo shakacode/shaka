@@ -39,6 +39,16 @@ module ClaudeUsageFixture
     path
   end
 
+  def print_result_file(directory, extra = {})
+    path = File.join(directory, 'review.json')
+    payload = { type: 'result', subtype: 'success', is_error: false, session_id: SESSION,
+                result: 'SENSITIVE-REVIEW-PROSE', model: 'claude-opus-5',
+                usage: { input_tokens: 100, cache_read_input_tokens: 40, cache_creation_input_tokens: 7,
+                         output_tokens: 20, output_tokens_details: { thinking_tokens: 5 } } }
+    File.write(path, JSON.generate(payload.merge(extra)))
+    path
+  end
+
   def report(*, environment: {})
     output, error, status = Open3.capture3(NO_HOST.merge(environment), COMMAND, 'usage', '--commit', COMMIT,
                                            '--contribution', 'implementation', *)
@@ -53,6 +63,19 @@ end
 
 class ClaudeUsageTest < Minitest::Test
   include ClaudeUsageFixture
+
+  # Local Claude review is invoked with -p JSON, not a session transcript.
+  # If that file is ignored, the adversarial pass cannot be priced.
+  def test_print_mode_result_json_counts_as_one_review_response
+    Dir.mktmpdir do |directory|
+      output = report('--host', 'claude-code', '--file', print_result_file(directory),
+                      '--contribution', 'review')
+      assert_includes output, "#{COMMIT} / review"
+      assert_metric output, 'Input', 100
+      assert_includes output.split('<details>').first, 'Local adversarial reviewer usage: included below'
+      refute_includes output, 'SENSITIVE'
+    end
+  end
 
   def test_counts_the_final_streamed_usage_of_each_response_in_the_latest_turn
     Dir.mktmpdir do |directory|

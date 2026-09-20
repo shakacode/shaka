@@ -4,9 +4,32 @@ require 'json'
 require_relative 'response_count'
 
 module Shaka
+  # Claude CLI `-p --output-format json` writes one result object instead of JSONL.
+  module ClaudePrintResult
+    private
+
+    def print_result(file)
+      record = JSON.parse(File.read(file, encoding: 'UTF-8'))
+      return unless record.is_a?(Hash) && record['type'] == 'result'
+      return [unreadable, nil] if record['is_error'] || !turn?(record['session_id'])
+
+      identity = record['session_id']
+      [print_snapshot(identity, record), identity]
+    rescue JSON::ParserError, EncodingError
+      nil
+    end
+
+    def print_snapshot(identity, record)
+      { identity => { 'response_id' => identity, 'turn_id' => identity, 'timestamp' => record['timestamp'],
+                      'configuration' => ['anthropic', 'UNKNOWN', record['model'], record['effort']],
+                      'billing_mode' => speed(record['usage']), 'usage' => tokens(record['usage']) } }
+    end
+  end
+
   # Reads Claude Code session transcripts (tested with 2.1.270 and 2.1.272), keeping only usage metadata.
   class ClaudeUsage
     include ResponseCount
+    include ClaudePrintResult
 
     HOST = 'Claude Code'
     NOTE = 'Anthropic input excludes cached input and cache writes; reasoning output is part of output.'
@@ -52,6 +75,12 @@ module Shaka
 
     # Streamed lines repeat a response; the last line carries its final usage.
     def read(file)
+      print_result(file) || jsonl(file)
+    rescue SystemCallError
+      [unreadable, nil]
+    end
+
+    def jsonl(file)
       records = {}
       turn = nil
       File.foreach(file, encoding: 'UTF-8') do |line|
@@ -60,8 +89,6 @@ module Shaka
         records.merge!(response(record, turn)) if record['type'] == 'assistant'
       end
       [records, turn]
-    rescue SystemCallError
-      [unreadable, nil]
     end
 
     def response(record, turn)
