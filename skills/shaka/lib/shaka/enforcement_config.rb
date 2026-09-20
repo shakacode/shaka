@@ -4,15 +4,18 @@ require 'yaml'
 require_relative 'enforcement_coverage'
 require_relative 'error'
 require_relative 'repository_config/duplicate_keys'
+require_relative 'repository_config/validation'
 require_relative 'workflow_config'
 
 module Shaka
   # Loads the audit that records what enforces each rule workflow.yml states with never,
   # must, do not, or only when.
   class EnforcementConfig
+    include RepositoryConfig::Validation
+
     PATH = File.expand_path('../../config/enforcement.yml', __dir__)
     ROOT_KEYS = %w[version rules].freeze
-    RULE_KEYS = %w[id phase quote enforced_by detector note].freeze
+    RULE_KEYS = %w[id phase quote enforced_by].freeze
     BACKED = %w[code reported github].freeze
     ENFORCERS = [*BACKED, 'agent'].freeze
 
@@ -39,8 +42,8 @@ module Shaka
 
     def validate(data)
       mapping!(data, 'enforcement')
-      exact_keys!(data, ROOT_KEYS, 'enforcement')
-      raise Error, 'enforcement version must be 1' unless data['version'] == 1
+      keys!(data, ROOT_KEYS, [], 'enforcement')
+      enum!(data['version'], [1], 'enforcement version must be 1')
 
       rules = data['rules']
       raise Error, 'enforcement rules must be a non-empty list' unless rules.is_a?(Array) && !rules.empty?
@@ -52,13 +55,10 @@ module Shaka
 
     def rule!(rule)
       mapping!(rule, 'rule')
-      text!(rule['id'], 'rule id')
+      string!(rule['id'], 'rule id')
       label = "rule #{rule['id']}"
-      unknown = rule.keys - RULE_KEYS
-      raise Error, "unknown #{label} key: #{unknown.first}" unless unknown.empty?
-
-      text!(rule['phase'], "#{label} phase")
-      text!(rule['quote'], "#{label} quote")
+      keys!(rule, RULE_KEYS, %w[detector note], label)
+      RULE_KEYS.each { |key| string!(rule[key], "#{label} #{key}") }
       enforcement!(rule, label)
     end
 
@@ -66,32 +66,16 @@ module Shaka
     # rule instead says so in as many words, the outcome this audit exists to make visible.
     def enforcement!(rule, label)
       by = rule['enforced_by']
-      raise Error, "#{label} enforced_by must be #{ENFORCERS.join(', ')}" unless ENFORCERS.include?(by)
+      enum!(by, ENFORCERS, "#{label} enforced_by must be #{ENFORCERS.join(', ')}")
 
       expected, unexpected = BACKED.include?(by) ? %w[detector note] : %w[note detector]
-      text!(rule[expected], "#{label} #{expected}")
+      string!(rule[expected], "#{label} #{expected}")
       raise Error, "#{label} is #{by}-enforced, so it takes no #{unexpected}" if rule.key?(unexpected)
     end
 
     def unique_ids!(rules)
       repeated = rules.map { |rule| rule['id'] }.tally.find { |_, count| count > 1 }
       raise Error, "duplicate rule id: #{repeated.first}" if repeated
-    end
-
-    def mapping!(value, label)
-      valid = value.is_a?(Hash) && value.keys.all?(String)
-      raise Error, "#{label} must be a mapping with string keys" unless valid
-    end
-
-    def exact_keys!(mapping, expected, label)
-      unknown = mapping.keys - expected
-      missing = expected - mapping.keys
-      raise Error, "unknown #{label} key: #{unknown.first}" unless unknown.empty?
-      raise Error, "missing #{label} key: #{missing.first}" unless missing.empty?
-    end
-
-    def text!(value, label)
-      raise Error, "#{label} must be non-empty text" unless value.is_a?(String) && !value.strip.empty?
     end
   end
 end

@@ -73,7 +73,7 @@ class EnforcementConfigTest < Minitest::Test
   end
 
   def test_rejects_a_rule_that_names_no_section
-    assert_includes mutated_message { |rules| rules.first.delete('phase') }, 'phase must be non-empty'
+    assert_includes mutated_message { |rules| rules.first.delete('phase') }, 'missing rule'
     assert_includes mutated_message { |rules| rules.first['phase'] = 'intkae' }, 'names no workflow section'
   end
 
@@ -99,7 +99,7 @@ class EnforcementConfigTest < Minitest::Test
   def test_requires_a_detector_from_a_rule_claiming_code_backs_it
     message = mutated_message { |rules| rules.find { |rule| rule['enforced_by'] == 'code' }.delete('detector') }
 
-    assert_includes message, 'detector must be non-empty'
+    assert_includes message, 'detector must be a non-empty string'
   end
 
   def test_refuses_a_detector_on_an_agent_enforced_rule
