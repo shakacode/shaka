@@ -24,7 +24,7 @@ class SeamPrefixTest < Minitest::Test
     %w[cpf TOO_LONG A-B].each do |value|
       with_repository('repo_prefix' => value) do |root|
         _output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root)
-        refute status.success?, value
+        refute_predicate status, :success?, value
         assert_includes error, 'repo_prefix'
       end
     end

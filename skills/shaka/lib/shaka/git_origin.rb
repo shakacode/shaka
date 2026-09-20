@@ -31,13 +31,13 @@ module Shaka
       parsed_url = parsed(url)
       identity = parsed_url.fetch(:identity)
       origin = parsed_url.fetch(:origin)
-      parsed_url.fetch(:host) == 'github.com' ? "https://github.com/#{identity}" : origin.sub(/\.git\z/, '')
+      parsed_url.fetch(:host) == 'github.com' ? "https://github.com/#{identity}" : origin.delete_suffix('.git')
     end
 
     def parsed(url)
       origin = url.strip
       match = HOST_AND_PATH.match(origin)
-      path = match && match[2].sub(/\.git\z/, '')
+      path = match && match[2].delete_suffix('.git')
       raise Error, "Cannot parse owner/name from origin #{origin}" unless path&.match?(%r{\A[^/]+/[^/]+\z})
 
       { origin:, host: match[1], identity: path, name: File.basename(path) }

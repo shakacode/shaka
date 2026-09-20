@@ -126,9 +126,9 @@ class ReposCatalogTest < Minitest::Test
       root = repository(name: 'solo', prefix: 'SOLO')
       output, error, status = Open3.capture3(env(home), COMMAND, 'prefix', '--root', root)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_equal({ 'prefix' => 'SOLO', 'source' => 'seam' }, JSON.parse(output))
-      refute File.exist?(File.join(home, 'catalog.json'))
+      refute_path_exists File.join(home, 'catalog.json')
     end
   end
 
@@ -150,7 +150,7 @@ class ReposCatalogTest < Minitest::Test
       registered_repository(home, name: 'beta', prefix: 'DUP')
       catalog, error, status = refresh_result(home)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'DUP'
       assert_equal %w[acme/alpha acme/beta], catalog.dig('duplicate_prefixes', 'DUP')
       assert_equal %w[acme/alpha acme/beta], identities(catalog)

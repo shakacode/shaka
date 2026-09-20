@@ -18,7 +18,7 @@ module Shaka
     end
 
     def self.fallback(repository_name)
-      name = repository_name.to_s.sub(/\.git\z/, '')
+      name = repository_name.to_s.delete_suffix('.git')
       segments = name.split(/[-_ ]/).reject(&:empty?).first(6)
       raise Error, 'repository name is missing for prefix fallback' if segments.empty?
 
