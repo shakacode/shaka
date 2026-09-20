@@ -8,7 +8,7 @@ class SkillTest < Minitest::Test
   MCT_SKILL = File.expand_path('../skills/mct-claude/SKILL.md', __dir__)
   RCT_CLAUDE_SKILL = File.expand_path('../skills/rct-claude/SKILL.md', __dir__)
   INTERNAL_GUIDE = File.expand_path('../.agents/guides/shaka-learning.md', __dir__)
-  PROJECT_SKILL_ROOTS = %w[.agents .claude .codex .cursor .opencode].map do |directory|
+  PROJECT_SKILL_ROOTS = %w[.agents .claude .codex .cursor .opencode .pi].map do |directory|
     File.expand_path("../#{directory}/skills", __dir__)
   end.freeze
   GUIDE_LINK = %r{\]\((\.\./\.\./docs/[\w-]+\.md)(?:#([\w-]+))?\)}
