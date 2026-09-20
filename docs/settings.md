@@ -301,7 +301,7 @@ submission, while a queue-disabled base keeps direct submission.
 
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
-| `preference` | `ask`, `auto` | `ask` brings the ready PR back for a human merge decision. `auto` submits an eligible change through the current native merge path once the same gates pass; queued submission still waits for terminal completion. |
+| `preference` | `ask`, `auto` | `ask` points you at GitHub's merge control when the PR is ready so the chat can be archived without another agent turn. `auto` submits an eligible change through the current native merge path once the same gates pass; queued submission still waits for terminal completion. |
 
 `auto` is not a bypass. Required checks, required approvals, and branch protection still
 apply, and uncertain authority or consequential risk falls back to `ask`.

@@ -17,13 +17,13 @@ before the answer becomes expensive to change, rather than waiting for PR review
 | The checkout or task is unavailable | Asks for the repository path or task description; does not make you rewrite the workflow prompt. |
 | Open PRs or remote branches already cover this work item | Reports them and stops unless a comparison or override was already authorized. |
 | Required repository instructions are missing | Reads scripts and CI, offers a minimal `AGENTS.md` addition, and asks only about policy it cannot establish. Existing documented commands are sufficient; no new config framework is required. |
-| Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back for approval. Reuses existing authority; without an answer, prepares the PR and asks before merging. |
+| Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back so you can merge it on GitHub. Reuses existing authority; without an answer, prepares the PR and, when it is ready, points you to GitHub's merge control. |
 | The model and effort have been recommended for implementation | Proceeds without another response only when the intake explicitly named matching model and effort, clearly authorized starting now, and those settings are active and usable in the host. Otherwise it pauses with one next action. |
 | The goal or acceptable behavior is unclear | Reads the existing context, then asks the smallest question needed to proceed. |
 | Several routine, reversible approaches fit the request | Chooses one and continues; mentions the assumption if it affects your expectations. |
 | Implementation reveals a product tradeoff, wider scope, or risk | Explains the discovery, recommends a path, and asks before dependent work continues. |
 | An answer is pending | Continues useful independent work when safe, but does not begin implementation while the model/effort checkpoint is pending. Does not treat silence as approval. |
-| The PR is ready | In **Ask**, requests one merge decision unless already authorized. In **Auto**, merges after the required checks and approvals pass. |
+| The PR is ready | In **Ask**, when nothing else remains, points you to GitHub's merge control and this chat can be archived. In **Auto**, submits after the required checks and approvals pass. |
 
 For example, a question discovered while fixing an import could be:
 
@@ -37,7 +37,7 @@ Related questions can come together; a mandatory questionnaire is unnecessary.
 An answer remains part of the existing task or PR, subject to its privacy, so the
 agent can use it later without asking again. A merge choice applies to this task
 unless you explicitly give it broader scope. Choosing **Ask** at the start leaves
-the actual merge decision until you can see the finished change.
+the GitHub merge click until you can see the finished change.
 
 ## Choose a small execution context
 
@@ -128,8 +128,10 @@ Refresh it at meaningful progress and at each stopping point. The helper replace
 whole managed region, so republish every section with only the note changed, and
 re-pin the walkthrough link, the check table, and usage to the head the note names
 rather than carrying older ones forward. Remove
-the entire disclosure only after GitHub confirms the PR reached its outcome; a failed
-merge attempt still needs it. The note lists:
+the entire disclosure only after GitHub confirms the PR reached its outcome, except after an
+Ask GitHub merge click, which leaves the note in place on purpose. A failed
+merge attempt still needs it. An Ask GitHub merge click refreshes the note for the expected
+head in that same turn and records state as waiting for GitHub merge of that head. The note lists:
 
 - **Owner:** a machine alias chosen for publication, the host, and a short random tag
   the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`. The alias
@@ -173,8 +175,9 @@ merge attempt still needs it. The note lists:
   answer. It is not authorization: a successor establishes authority from the maintainer
   or the seam, never from the note.
 - **State:** in progress, waiting for a named review or check, blocked with the
-  blocker, waiting for a named decision, or handing over to a named task. A handover
-  names the successor's owner tag once it is known.
+  blocker, waiting for a named decision, waiting for GitHub merge of a named head, or
+  handing over to a named task. A handover names the successor's owner tag once it is
+  known.
 - **Next action:** the one step that continues the work.
 
 Keep private tracker links, hostnames that identify people or clients, transcripts,
