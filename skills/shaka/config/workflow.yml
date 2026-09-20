@@ -289,12 +289,14 @@ phases:
         Uncertain authority or consequential risk switches Auto to Ask; safety failures block.
       - In Ask mode, after the walkthrough and required gates, finish remaining agent-owned work in
         this turn. If anything other than merge remains, report that blocker and stop. If merge is
-        the only remaining action, tell the user they may use GitHub's merge control for this PR
-        (squash merge on a queue-disabled base, or enqueue when the base uses Merge Queue) and then
-        archive this chat. Do not ask whether you should merge. If they later ask you to merge this
-        head, then run `merge`. In Auto mode, submit an eligible ordinary change through the current
-        native merge path once the same gates pass; a required native approval must arrive first,
-        and do not ask for a second approval afterward.
+        the only remaining action, refresh the recovery note for this handoff, name the expected
+        head SHA, and tell the user they may use GitHub's merge control for this PR (squash merge on
+        a queue-disabled base, or enqueue when the base uses Merge Queue) and then archive this
+        chat. Merge only that SHA; if GitHub shows a different head, do not merge. Do not ask
+        whether you should merge. If they later ask you to merge this head, then run `merge`. In
+        Auto mode, submit an eligible ordinary change through the current native merge path once
+        the same gates pass; a required native approval must arrive first, and do not ask for a
+        second approval afterward.
       - Refresh `pr` and inspect required check states. Never accept missing, failed, pending, or stale
         required checks, and never bypass protection. Wait for required and user-requested review
         gates; read other completed feedback before merge and report pending optional reviews. Then,
@@ -311,7 +313,8 @@ phases:
         An Ask GitHub handoff does not wait in chat for that outcome.
       - At the stopping point, refresh usage for affected commits and turns, replacing overlapping
         snapshots. When this task owns the PR, republish its description with that usage and remove
-        the `WIP Details` recovery note after GitHub confirms the outcome. Review-only work leaves
+        the `WIP Details` recovery note after GitHub confirms the outcome. An Ask GitHub handoff
+        does not start another turn to strip the note after they merge. Review-only work leaves
         the description alone. Report every PR link and outcome, brief validation, and remaining
         work or blocker.
       - When the task is genuinely finished in a prose-capable chat, put exactly
