@@ -2,12 +2,14 @@
 
 require_relative 'error'
 require_relative 'merge_submission'
+require_relative 'review_pace'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
   class Merge
-    def initialize(github)
+    def initialize(github, pace: nil)
       @github = github
+      @pace = ReviewPace.normalize(pace)
       @submission = MergeSubmission.new(github)
     end
 
@@ -87,11 +89,9 @@ module Shaka
       raise Error, 'Merge queue state is inconsistent'
     end
 
-    # UNSTABLE is optional-check noise; required checks are verified separately.
     def verify_native_state(pull)
       unless pull['isInMergeQueue']
-        allowed = pull['isMergeQueueEnabled'] ? %w[CLEAN BEHIND BLOCKED UNSTABLE] : %w[CLEAN UNSTABLE]
-        verify_merge_state(pull, allowed)
+        verify_merge_state(pull, ReviewPace.allowed_merge_states(@pace, pull['isMergeQueueEnabled']))
       end
 
       verify_review_state(pull)

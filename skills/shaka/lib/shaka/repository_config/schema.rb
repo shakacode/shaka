@@ -56,7 +56,7 @@ module Shaka
       def validate_review
         review = mapping!(@data['review'], 'review')
         ReviewSchema.retired!(review)
-        optional = %w[check reviewers]
+        optional = %w[check reviewers pace]
         keys!(review, ['required'], optional, 'review')
         ReviewSchema.new(review).validate
       end

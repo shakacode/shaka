@@ -7,9 +7,11 @@ valid reviewer in a fresh context, and saying so is the point — it means a rev
 available.
 
 Review locally first and fix what it finds, so the pushed branch costs fewer CI runs and fewer
-review rounds on GitHub. The GitHub reviews still run on the pushed branch as a backstop. They
-do not have to finish before merge when a different-provider local review already covers the
-current head. Findings that arrive afterward follow [reviews after merge](#reviews-after-merge).
+review rounds on GitHub. The GitHub reviews still run on the pushed branch as a backstop. Under
+`review.pace: swift` they do not have to finish before merge when a different-provider local
+review already covers the current head. Findings that arrive afterward follow
+[reviews after merge](#reviews-after-merge). `thorough` waits for the named GitHub review on
+the current head. See [review pace](#review-pace).
 
 Prefer a provider that did not implement the change, because different providers notice different
 things. That is a preference, never a requirement. `shaka reviewer` applies it, and
@@ -40,48 +42,62 @@ not required. A skipped, failed, missing, or stale review is never a successful 
 If the user or repository requires it, keep the PR unready for merge until that
 review completes or the authority that set it explicitly changes the requirement:
 the requesting user controls their request; maintainers control repository policy. Do not
-silently substitute a different reviewer. A published different-provider local review for the
-current head satisfies the independent-review requirement without waiting for `review.check`.
+silently substitute a different reviewer. Under `swift`, a published different-provider local
+review for the current head satisfies the independent-review requirement without waiting for
+`review.check`. Under `thorough`, wait for that named check on the current head anyway.
 Put optional reviewer history and gaps in
 details; required or requested review gaps stay visible. Avoid copying the review
 timeline into the PR description.
 
-## Faster merge while optional reviews run
+## Review pace
 
-This is a 2026-09-20 delivery-time experiment. Keep it only while it reduces wait without
-dropping demonstrated defects. To revert:
+`review.pace` is `swift` or `thorough`. Omit it and the effective value is `swift`.
 
-1. In `Shaka::Merge#verify_native_state`, drop `UNSTABLE` from the allowed merge-state
-   lists (queue-disabled: `CLEAN` only; queue-enabled: `CLEAN BEHIND BLOCKED`) and restore
-   the tests that treat `UNSTABLE` as blocked.
-2. Restore the review and finish bullets in `skills/shaka/config/workflow.yml` that waited for
-   `review.check` and for every finding on the current head.
-3. Delete this section and restore the earlier “wait for the named GitHub review before merge”
-   wording in this file and `docs/settings.md`.
+| Mode | Wait | `shaka merge` native state |
+| --- | --- | --- |
+| `swift` | Independent review for the task, plus any user-requested gate. Do not wait for optional jobs. | Allows `UNSTABLE` once required checks pass. |
+| `thorough` | Also wait for a verified `review.check` on the current head. | Refuses `UNSTABLE`. Queue-disabled: `CLEAN` only. Queue-enabled: `CLEAN`, `BEHIND`, or `BLOCKED`. |
+
+Project default lives on the trusted seam. Record a this-task override on the PR when the
+user asks for the other mode. Thorough wins: a candidate YAML or a swift this-task request
+cannot weaken a thorough trusted seam. Pass the effective value as `shaka merge --pace`;
+omitting `--pace` is swift, so a thorough seam or override must pass `--pace thorough`.
+
+`swift` is the 2026-09-20 delivery-time experiment. Keep it as the product default only while
+it reduces wait without dropping demonstrated defects. To revert to waiting for optional
+review everywhere:
+
+1. Set this repository's seam `review.pace` to `thorough`, or change `ReviewPace::DEFAULT`
+   to `thorough` and treat omitted YAML as thorough.
+2. Restore review and finish bullets that always wait for `review.check` if you remove the
+   key entirely.
+3. Delete the quality-drop notes that apply only to `swift`.
 
 Independent review is one of:
 
 - a published local attestation `REVIEWED <sha> BY <provider>/<family>` for the current head
 - a verified `review.check` report for that SHA
 
-When the local reviewer is a different provider than every implementer, merge after required
-checks (`validate` here) pass, unless the user expressly made another review a merge gate.
-Leave GitHub Claude, hosted Codex, and CodeRabbit running. Read
-whatever they have already posted; do not wait for jobs still in progress.
+Under `swift`, when the local reviewer is a different provider than every implementer, merge
+after required checks (`validate` here) pass, unless the user expressly made another review a
+merge gate. Leave GitHub Claude, hosted Codex, and CodeRabbit running. Read whatever they have
+already posted; do not wait for jobs still in progress. When no different-provider local review
+ran, wait for **one** verified `review.check` report on the first ready-for-review push of the
+task. Do not wait for that check again after a nit-only or diagnostic-only follow-up SHA.
 
-When no different-provider local review ran, wait for **one** verified `review.check` report on
-the first ready-for-review push of the task. Do not wait for that check again after a nit-only
-or diagnostic-only follow-up SHA.
+Under `thorough`, wait for a verified `review.check` report on the current head, even after a
+different-provider local review.
 
 After two repair rounds, remaining nits do not start another cycle. Remaining demonstrated
 defects still block until fixed, declined with evidence, or the maintainer decides.
 Post-merge comments are expected. Evaluate each one: fix a demonstrated defect in a small PR,
 or decline it. Do not stay in a nit loop.
 
-`shaka merge` accepts GitHub `mergeStateStatus` `UNSTABLE` because that state means only
-non-required checks are pending or failing. On a queue-disabled base, `BLOCKED`, `BEHIND`,
+In `swift`, `shaka merge` accepts GitHub `mergeStateStatus` `UNSTABLE` because that state means
+only non-required checks are pending or failing. On a queue-disabled base, `BLOCKED`, `BEHIND`,
 `DIRTY`, and missing required checks still refuse the merge. On a queue-enabled base,
-`UNSTABLE` is allowed along with `CLEAN`, `BEHIND`, and `BLOCKED`.
+`UNSTABLE` is allowed along with `CLEAN`, `BEHIND`, and `BLOCKED`. `thorough` refuses
+`UNSTABLE`.
 
 A published `shaka reply` identity line names the **owner who posted**, not the reviewer.
 The reviewer's identity is the closing `REVIEWED <sha> BY <provider>/<family>` line. Mixing
@@ -90,8 +106,8 @@ actually reviewed.
 
 ### How quality can drop
 
-This experiment trades wait time for a later, cheaper look at leftover comments. Quality can
-fall in these specific ways:
+This experiment trades wait time for a later, cheaper look at leftover comments. Under
+`swift`, quality can fall in these specific ways:
 
 - A follow-up labeled nit-only can still change behavior. The exemption is only for
   diagnostic or message-only SHAs; anything that changes runtime, trust, or tests still
@@ -291,9 +307,8 @@ Green validation at A never proves that a required backstop settled.
 
 ## Reviews after merge
 
-Wait for independent review only as
-[Faster merge while optional reviews run](#faster-merge-while-optional-reviews-run)
-describes. If that review fails or becomes unavailable, use the blocker-or-decision rule in
+Wait for independent review only as [review pace](#review-pace) describes. If that review fails
+or becomes unavailable, use the blocker-or-decision rule in
 Handle review findings rather than the optional-review handoff; that decision path
 cannot clear a user-requested gate unless the authority that set it changes the requirement.
 Check other

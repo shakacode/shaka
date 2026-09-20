@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../review_pace'
 require_relative '../reviewer_selection'
 require_relative 'validation'
 
@@ -32,6 +33,7 @@ module Shaka
       def validate
         enum!(@review['required'])
         validate_check
+        ReviewPace.normalize(@review['pace']) if @review.key?('pace')
         reviewers!(@review['reviewers']) if @review.key?('reviewers')
       end
 

@@ -103,6 +103,9 @@ parser = OptionParser.new do |flags|
     options[:comment] = value
   end
   flags.on('--walkthrough ID', 'Published COMMENT review ID') { |value| options[:walkthrough] = value }
+  flags.on('--pace PACE', Shaka::ReviewPace::VALUES, 'Review wait mode: swift or thorough') do |value|
+    options[:pace] = value
+  end
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('-h', '--help', 'Show usage') do
     puts flags
@@ -133,8 +136,8 @@ begin
            when 'walkthrough'
              github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
            when 'merge'
-             Shaka::Merge.new(github).call(head: options.fetch(:head),
-                                           walkthrough: options.fetch(:walkthrough))
+             Shaka::Merge.new(github, pace: options[:pace]).call(head: options.fetch(:head),
+                                                                 walkthrough: options.fetch(:walkthrough))
            end
   puts JSON.pretty_generate(result)
 rescue OptionParser::ParseError, KeyError, SystemCallError, Shaka::Error => e

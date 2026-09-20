@@ -106,6 +106,27 @@ class MergeNativeGateTest < Minitest::Test
     assert_equal 'MERGED', @merge.call(head: HEAD, walkthrough: 17)['state']
   end
 
+  # Production break: thorough pace waits for optional review jobs. Allowing
+  # UNSTABLE here would merge while claude-review is still pending or red.
+  def test_thorough_pace_refuses_unstable_optional_checks
+    merge = Shaka::Merge.new(@client, pace: 'thorough')
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    assert_match(/not CLEAN/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_queue_enabled_thorough_pace_refuses_unstable_enqueue
+    merge = Shaka::Merge.new(@client, pace: 'thorough')
+    ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'UNSTABLE')
+    @client.snapshots = [ready]
+
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, walkthrough: 17) }
+    assert_match(/not CLEAN or BEHIND or BLOCKED/, error.message)
+    assert_empty @client.mutations
+  end
+
   def test_queue_enabled_pull_request_can_enqueue_when_optional_checks_are_pending
     entry = queue_entry
     ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'UNSTABLE')
