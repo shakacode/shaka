@@ -102,7 +102,7 @@ on-demand USD scenario for `grok-4.6` and `grok-4.6-fast` using Cursor's publish
 list prices verified September 16, 2026. Cursor-only reports omit the unused Codex
 credits row. Cache writes have no published Cursor rate, so they remain inside
 ordinary input. Missing Fast/standard billing mode or an unsupported Cursor model
-keeps the scenario UNKNOWN. The dollar amount is that list-price scenario, not an
+keeps the scenario UNKNOWN and omits Cursor rate-card copy. The dollar amount is that list-price scenario, not an
 invoice: included quota, actual charges, and other account terms remain UNKNOWN.
 
 ## What the OpenCode reader includes

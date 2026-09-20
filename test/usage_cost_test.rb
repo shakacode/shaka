@@ -131,6 +131,9 @@ class UsageCursorCostTest < Minitest::Test
     report = Shaka::CostEstimate.new([cursor_record(billing: nil)]).report
     assert_metric report, 'USD estimate', 'UNKNOWN'
     assert_includes report, 'Unsupported provider or configured model'
+    refute_includes report, 'Cursor on-demand'
+    refute_includes report, 'cursor.com'
+    refute_includes report, '2026-09-16'
   end
 
   def test_cursor_named_openai_model_omits_openai_source_links

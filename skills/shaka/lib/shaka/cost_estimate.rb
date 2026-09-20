@@ -75,7 +75,7 @@ module Shaka
 
     def cursor_rated?(column)
       model = column[:model].to_s.sub(/-fast\z/, '')
-      column[:provider] == 'cursor' && CursorCost::RATES.key?(model)
+      column[:provider] == 'cursor' && CursorCost::RATES.dig(model, column[:billing])
     end
 
     def footer(columns, reasons)
@@ -187,7 +187,8 @@ module Shaka
       provider, model, routed, effort = configuration
       credits, api = priced_totals(group, reasons, provider, model)
       { provider: provider, model: billed_model(provider, billing, model), routed: routed, effort: effort,
-        credits: credits, api: api, native: native_cost?(group), recorded_native: native_recorded?(group) }
+        billing: billing, credits: credits, api: api, native: native_cost?(group),
+        recorded_native: native_recorded?(group) }
     end
 
     def priced_totals(group, reasons, provider, model)
@@ -218,7 +219,7 @@ module Shaka
     end
 
     def blank_column
-      { provider: nil, model: nil, routed: nil, effort: nil, credits: nil, api: nil, native: false,
+      { provider: nil, model: nil, routed: nil, effort: nil, billing: nil, credits: nil, api: nil, native: false,
         recorded_native: false }
     end
   end
