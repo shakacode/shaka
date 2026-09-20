@@ -45,6 +45,7 @@ Existing authority is reused; a review-only or PR-only request keeps that stoppi
 | Understand review findings or a blocked PR | [Review handling](docs/review.md) |
 | Evaluate code, UI, or documentation changes | [Verification and reader trials](docs/verification.md) |
 | Understand model, effort, and token reports | [Usage reporting](docs/usage-reporting.md) |
+| Track V2 test repositories and migrate a V1 seam | [V2 test fleet](docs/fleet.md) |
 | Check supported hosts and their limits | [Host support](docs/host-support.md) |
 | Upgrade or remove an installation | [Installation maintenance](docs/getting-started.md#upgrade) |
 | Publish a RubyGems prerelease | [Release process](docs/releasing.md) |
