@@ -38,11 +38,12 @@ in the tested Codex records; do not add them again. Cache writes and the native
 total remain separate fields. Routed model stays UNKNOWN because these tested
 local records do not establish the model that executed each response.
 
-The report also shows two **configured-model scenarios** for supported OpenAI
-models: Standard Codex credits and Standard API-equivalent USD. Rates and source
-dates appear with each report. Cursor Grok 4.6 has a parallel on-demand USD scenario. The estimate prices each unique response before
-summing, so model switches and requests crossing the API context threshold are
-handled separately. Cached input is removed from ordinary input. For the API
+The report also shows **configured-model scenarios** for the providers and models
+in that snapshot: Standard Codex credits and Standard API-equivalent USD for
+supported OpenAI models, and Cursor on-demand USD for Grok 4.6. Source links and
+rate notes cover only those models. The estimate prices each unique response
+before summing, so model switches and requests crossing the API context threshold
+are handled separately. Cached input is removed from ordinary input. For the API
 scenario, cache writes are removed too and priced at the published write rate;
 the Codex credit estimate is UNKNOWN when writes are present because the credit
 rate card does not publish their price. Missing counters or unsupported models
@@ -97,11 +98,11 @@ Missing usage still does not block an otherwise authorized merge.
 
 When the `fast` model param is present, the cost table also shows a configured-model
 on-demand USD scenario for `grok-4.6` and `grok-4.6-fast` using Cursor's published
-list prices verified September 16, 2026. Codex credits stay UNKNOWN. Cache writes
-have no published Cursor rate, so they remain inside ordinary input. Missing
-Fast/standard billing mode or an unsupported Cursor model keeps the scenario UNKNOWN.
-The dollar amount is that list-price scenario, not an invoice: included quota, actual
-charges, and other account terms remain UNKNOWN.
+list prices verified September 16, 2026. Cursor-only reports omit the unused Codex
+credits row. Cache writes have no published Cursor rate, so they remain inside
+ordinary input. Missing Fast/standard billing mode or an unsupported Cursor model
+keeps the scenario UNKNOWN. The dollar amount is that list-price scenario, not an
+invoice: included quota, actual charges, and other account terms remain UNKNOWN.
 
 ## What the OpenCode reader includes
 
@@ -157,9 +158,9 @@ reasoning as a subset of output. When reasoning is absent, it stays UNKNOWN unle
 proves zero reasoning. A present invalid value or one that exceeds output makes that response's
 usage contradictory and therefore UNKNOWN.
 
-Pi's recorded `usage.cost.total` appears in the existing API-equivalent USD column as native
-nominal cost. It is not recalculated from tokens. Codex credits, subscription treatment, discounts,
-service tier, account terms, and the actual invoice remain UNKNOWN.
+Pi's recorded `usage.cost.total` appears as the USD estimate: native nominal cost,
+not a token recalculation. Codex credits are omitted. Subscription treatment,
+discounts, service tier, account terms, and the actual invoice remain UNKNOWN.
 
 The reader was exercised against Pi 0.85.1 in a real delivery session. Its selected active-branch
 responses matched an independent aggregate for input, output, reasoning, cache reads, cache writes,

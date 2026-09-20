@@ -107,7 +107,7 @@ class OpencodeUsageTest < Minitest::Test
       output = report('--host', 'opencode', '--file', write_export(directory, latest_fixture))
       assert_includes output, 'OpenCode source versions: 1.18.31'
       assert_includes output, 'Input excludes cache reads and writes'
-      assert_includes output, '| opencode | session-model | medium | UNKNOWN | UNKNOWN |'
+      assert_metric output, 'USD estimate', 'UNKNOWN'
       assert_includes output, 'Cache-exclusive input is unpriced'
       assert_includes output, '2026-'
     end
@@ -150,7 +150,7 @@ class OpencodeUsageTest < Minitest::Test
       priced['info'].merge!('providerID' => 'openai', 'modelID' => 'gpt-5.6-sol')
       document = single_fixture(priced).tap { |export| export['info']['model']['id'] = 'gpt-5.6-sol' }
       output = report('--host', 'opencode', '--file', write_export(directory, document))
-      assert_includes output, '| openai | gpt-5.6-sol | medium | UNKNOWN | UNKNOWN |'
+      assert_metric output, 'USD estimate', 'UNKNOWN'
       assert_includes output, 'Cache-exclusive input is unpriced'
       refute_includes output, '$0.384000'
     end

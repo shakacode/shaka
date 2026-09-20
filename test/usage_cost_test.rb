@@ -11,17 +11,20 @@ class UsageCostTest < Minitest::Test
     response = priced_usage('priced', 'current', 200_000, cached: 40_000, output: 20_000)
     response[:payload][:usage][:reasoning_output_tokens] = 4_000
     report = run_report([setting, response, response])
-    assert_includes report, '| openai | gpt-5.6-terra | medium | 14.200000 credits | $0.568000 |'
+    assert_metric report, 'Credits estimate', '14.200000'
+    assert_metric report, 'USD estimate', '$0.568000'
     assert_includes report, '1 responses'
-    assert_includes report, 'Actual charge: UNKNOWN'
-    assert_includes report, 'configured-model scenarios'
+    assert_openai_sources report, 'gpt-5.6-terra'
+    refute_unrelated_cost_copy report, 'gpt-5.6-sol', 'gpt-6-astra'
+    refute_includes report, '272K'
   end
 
   def test_api_estimate_prices_cache_writes_separately_and_credit_estimate_stays_unknown
     setting = priced_context('current', 'gpt-5.6-terra')
     response = priced_usage('priced', 'current', 200_000, cached: 40_000, writes: 20_000, output: 20_000)
     report = run_report([setting, response])
-    assert_includes report, '| openai | gpt-5.6-terra | high | UNKNOWN | $0.578000 |'
+    assert_metric report, 'Credits estimate', 'UNKNOWN'
+    assert_metric report, 'USD estimate', '$0.578000'
     assert_includes report, 'Credit cache-write rate UNKNOWN'
   end
 
@@ -31,19 +34,22 @@ class UsageCostTest < Minitest::Test
                priced_context('second', 'gpt-6-astra'),
                priced_usage('second', 'second', 272_001, output: 1_000_000)]
     report = run_report(records, '--turn', 'first', '--turn', 'second')
-    assert_includes report, '| openai | gpt-5.6-terra | high | 0.005000 credits | $0.000200 |'
-    assert_includes report, '| openai | gpt-6-astra | high | 1318.000250 credits | $80.440020 |'
+    assert_metric report, 'Credits estimate', '0.005000', '1318.000250'
+    assert_metric report, 'USD estimate', '$0.000200', '$80.440020'
     assert_includes report, '272K context threshold'
+    assert_openai_sources report, 'gpt-5.6-terra', 'gpt-6-astra'
+    refute_unrelated_cost_copy report, 'gpt-5.6-sol'
   end
 
   def test_unsupported_model_and_partial_counters_never_become_zero_cost
     missing = priced_usage('missing', 'current', 100)
     missing[:payload][:usage].delete(:cached_input_tokens)
     report = run_report([context('current'), missing])
-    assert_includes report, '| openai | gpt-test | high | UNKNOWN | UNKNOWN |'
-    refute_includes report, '0.000000 credits'
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    refute_includes report, '0.000000'
     report = run_report([priced_context('current', 'gpt-5.6-terra'), missing])
-    assert_includes report, '| openai | gpt-5.6-terra | high | UNKNOWN | UNKNOWN |'
+    assert_metric report, 'Credits estimate', 'UNKNOWN'
+    assert_metric report, 'USD estimate', 'UNKNOWN'
     assert_includes report, 'Incomplete billable token categories'
   end
 
@@ -51,7 +57,7 @@ class UsageCostTest < Minitest::Test
     setting = priced_context('current', 'gpt-5.6-terra')
     unreported = usage('first', 'current', 100)
     report = run_report([setting, unreported])
-    assert_includes report, '| openai | gpt-5.6-terra | high | UNKNOWN | UNKNOWN |'
+    assert_metric report, 'USD estimate', 'UNKNOWN'
     impossible = priced_usage('second', 'current', 100, cached: 90, writes: 20)
     report = run_report([setting, impossible])
     assert_includes report, 'Inconsistent token subsets'
@@ -63,33 +69,11 @@ class UsageCostTest < Minitest::Test
                'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40,
                             'cache_write_input_tokens' => 7, 'output_tokens' => 20 } }
     report = Shaka::CostEstimate.new([record]).report
-    assert_includes report, '| anthropic | UNKNOWN | high | UNKNOWN | UNKNOWN |'
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    refute_includes report, 'Credits estimate'
+    refute_includes report, 'developers.openai.com'
+    refute_includes report, 'cursor.com'
     assert_includes report, 'Unsupported provider or configured model'
-  end
-
-  def test_cursor_grok_keeps_unpriced_writes_in_ordinary_input
-    report = Shaka::CostEstimate.new([cursor_record]).report
-    assert_includes report, '| cursor | grok-4.6 | medium | UNKNOWN | $0.000260 |'
-    assert_includes report, 'Actual charge: UNKNOWN'
-    assert_includes report, 'Cursor on-demand'
-    refute_includes report, '0.000000'
-  end
-
-  def test_cursor_grok_fast_and_missing_billing_mode
-    report = Shaka::CostEstimate.new([cursor_record(billing: 'fast')]).report
-    assert_includes report, '| cursor | grok-4.6-fast | medium | UNKNOWN | $0.000520 |'
-    unknown = cursor_record(billing: nil)
-    report = Shaka::CostEstimate.new([unknown]).report
-    assert_includes report, '| cursor | grok-4.6 | medium | UNKNOWN | UNKNOWN |'
-    assert_includes report, 'Unsupported provider or configured model'
-  end
-
-  def test_cursor_long_context_does_not_invent_a_threshold
-    record = cursor_record(usage: { 'input_tokens' => 200_000, 'cached_input_tokens' => 0,
-                                    'cache_write_input_tokens' => 0, 'output_tokens' => 0 })
-    report = Shaka::CostEstimate.new([record]).report
-    assert_includes report, '| cursor | grok-4.6 | medium | UNKNOWN | $0.400000 |'
-    refute_includes report, '$0.800000'
   end
 
   private
@@ -106,10 +90,57 @@ class UsageCostTest < Minitest::Test
     end
   end
 
+  def assert_openai_sources(report, *models)
+    models.each { |model| assert_includes report, model }
+    assert_includes report, 'learn.chatgpt.com/docs/pricing'
+  end
+
+  def refute_unrelated_cost_copy(report, *models)
+    models.each { |model| refute_includes report, model }
+    refute_includes report, 'cursor.com'
+    refute_includes report, 'Pi recorded'
+  end
+end
+
+class UsageCursorCostTest < Minitest::Test
+  def test_cursor_grok_keeps_unpriced_writes_in_ordinary_input
+    report = Shaka::CostEstimate.new([cursor_record]).report
+    assert_metric report, 'USD estimate', '$0.000260'
+    refute_openai_cost_copy report
+    assert_includes report, 'Cursor on-demand'
+    assert_includes report, 'cursor.com/docs/models/grok-4-6'
+  end
+
+  def test_cursor_grok_fast_and_missing_billing_mode
+    report = Shaka::CostEstimate.new([cursor_record(billing: 'fast')]).report
+    assert_metric report, 'USD estimate', '$0.000520'
+    report = Shaka::CostEstimate.new([cursor_record(billing: nil)]).report
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    assert_includes report, 'Unsupported provider or configured model'
+  end
+
+  def test_cursor_long_context_does_not_invent_a_threshold
+    record = cursor_record(usage: { 'input_tokens' => 200_000, 'cached_input_tokens' => 0,
+                                    'cache_write_input_tokens' => 0, 'output_tokens' => 0 })
+    report = Shaka::CostEstimate.new([record]).report
+    assert_metric report, 'USD estimate', '$0.400000'
+    refute_includes report, '$0.800000'
+    refute_includes report, '272K'
+  end
+
+  private
+
   def cursor_record(billing: 'standard', usage: {})
     { 'configuration' => %w[cursor grok-4.6 cursor-grok-4.6-medium medium],
       'billing_mode' => billing,
       'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40,
                    'cache_write_input_tokens' => 7, 'output_tokens' => 20 }.merge(usage) }
+  end
+
+  def refute_openai_cost_copy(report)
+    refute_includes report, 'Credits estimate'
+    ['developers.openai.com', 'learn.chatgpt.com', 'Pi recorded', '0.000000'].each do |snippet|
+      refute_includes report, snippet
+    end
   end
 end

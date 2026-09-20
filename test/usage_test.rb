@@ -224,7 +224,7 @@ class UsageFailuresTest < Minitest::Test
 
   def test_conflicting_copies_of_a_response_mark_counts_unknown
     report = run_report([context('current'), usage('replayed', 'current', 100), usage('replayed', 'current', 200)])
-    assert_includes report, '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+    assert_metric report, 'USD estimate', 'UNKNOWN'
     assert_includes report, 'Conflicting response copies'
     refute_includes report, '| 100 |'
   end
@@ -237,7 +237,7 @@ class UsageFailuresTest < Minitest::Test
       run_report([first, usage('same', 'current', 100), second, usage('same', 'current', 100)])
     end
     assert_equal reports.first, reports.last
-    assert_includes reports.first, '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+    assert_metric reports.first, 'USD estimate', 'UNKNOWN'
     assert_includes reports.first, 'Conflicting response copies'
   end
 

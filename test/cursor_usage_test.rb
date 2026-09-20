@@ -114,7 +114,7 @@ class CursorUsageTest < Minitest::Test
     Dir.mktmpdir do |directory|
       output = report('--host', 'cursor', '--file', latest_and_duplicate(directory))
       assert_includes output, ROW
-      assert_includes output, '| cursor | grok-4.6 | medium | UNKNOWN | $0.000260 |'
+      assert_metric output, 'USD estimate', '$0.000260'
       assert_includes output, '1 responses'
       assert_includes output, 'Cursor source versions: 3.20.21'
       assert_includes output.split('<details>').first, 'latest generation only'

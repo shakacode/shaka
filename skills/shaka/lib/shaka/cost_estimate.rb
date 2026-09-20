@@ -22,50 +22,48 @@ module Shaka
   # Report copy for configured-model cost scenarios.
   module CostCopy
     VERIFIED = '2026-09-16'
+    THRESHOLD_NOTE = 'OpenAI API estimates apply the 272K context threshold.'
 
     private
 
-    def markdown(rows, reasons)
+    def markdown(columns, reasons)
       <<~MARKDOWN
 
-        Cost evidence is PARTIAL: configured-model scenarios and recorded native nominal cost
-        cover only the selected responses. Actual charge: UNKNOWN (routed model, billing mode,
-        service tier, account terms, discounts, and external work unavailable).
+        Cost estimates are not invoices. Actual charge: UNKNOWN.
 
         <details>
         <summary>Cost scenarios</summary>
 
-        Standard Codex credit and Standard OpenAI API-equivalent rates, plus Cursor on-demand
-        Grok 4.6 list prices, verified #{VERIFIED}; historical rates and account-specific terms
-        may differ. Effort has no price multiplier. Cached input and reasoning output are
-        subsets, not extra charges. Pi rows use Pi's recorded native nominal USD rather than a
-        Shaka recalculation; their Codex credit estimate stays UNKNOWN. OpenAI API cache writes
-        are included in input and priced separately; Codex credit cache-write pricing is unavailable.
-        Cursor cache writes have no published separate rate and stay in ordinary input. The OpenAI
-        API scenario applies each request's 272K context threshold before summing; Cursor reports apply none.
+        #{intro(columns)}
 
-        | Provider | Configured model | Effort | Codex credits estimate | API-equivalent USD estimate |
-        | --- | --- | --- | ---: | ---: |
-        #{rows}
+        #{cost_table(columns)}
 
-        #{reasons.uniq.join('; ')}
-        Sources: [Codex credit rates](https://learn.chatgpt.com/docs/pricing#token-rates),
-        API prices for [Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra),
-        [Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol), and
-        [Astra](https://developers.openai.com/api/docs/models/gpt-6-astra),
-        [prompt-cache accounting](https://developers.openai.com/api/docs/guides/prompt-caching),
-        [Cursor Grok 4.6](https://cursor.com/docs/models/grok-4-6), and
-        [Cursor model pricing](https://cursor.com/docs/models-and-pricing).
+        #{footer(columns, reasons)}
 
         </details>
       MARKDOWN
+    end
+
+    def intro(columns)
+      bits = []
+      providers = columns.map { |column| column[:provider] }
+      bits << 'Standard Codex credit and OpenAI API-equivalent rates' if providers.include?('openai')
+      bits << 'Cursor on-demand list prices' if providers.include?('cursor')
+      bits << 'Pi recorded native nominal USD' if columns.any? { |column| column[:native] }
+      prefix = bits.empty? ? 'Configured-model estimates' : bits.join(', plus ')
+      "#{prefix}, verified #{VERIFIED}."
+    end
+
+    def footer(columns, reasons)
+      [reasons.uniq.join('; '), source_line(columns), (@threshold ? THRESHOLD_NOTE : nil)]
+        .compact.reject(&:empty?).join("\n")
     end
 
     def show(amount, unit)
       return 'UNKNOWN' unless amount
 
       formatted = format('%.6f', amount)
-      unit == '$' ? "#{unit}#{formatted}" : "#{formatted} #{unit}"
+      unit == '$' ? "$#{formatted}" : formatted
     end
 
     def safe(value)
@@ -73,10 +71,128 @@ module Shaka
     end
   end
 
+  # Metric-row cost table and source links for the models actually priced.
+  module CostTable
+    MODEL_SOURCES = {
+      'gpt-5.6-terra' => '[Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra)',
+      'gpt-5.6-sol' => '[Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol)',
+      'gpt-6-astra' => '[Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)',
+      'grok-4.6' => '[Cursor Grok 4.6](https://cursor.com/docs/models/grok-4-6)'
+    }.freeze
+    CREDIT_SOURCE = '[Codex credit rates](https://learn.chatgpt.com/docs/pricing#token-rates)'
+    CACHE_SOURCE = '[prompt-cache accounting](https://developers.openai.com/api/docs/guides/prompt-caching)'
+    CURSOR_PRICING = '[Cursor model pricing](https://cursor.com/docs/models-and-pricing)'
+
+    private
+
+    def cost_table(columns)
+      headers = cost_headers(columns)
+      [line(['Metric', *headers]), line(['---'] * (headers.size + 1)), *estimate_rows(columns)].join("\n")
+    end
+
+    def estimate_rows(columns)
+      rows = []
+      if credits_row?(columns)
+        rows << line(['Credits estimate', *columns.map { |column| show(column[:credits], 'credits') }])
+      end
+      rows << line(['USD estimate', *columns.map { |column| show(column[:api], '$') }])
+    end
+
+    def cost_headers(columns)
+      labeled = columns.map { |column| setting_cells(column) }
+      header_candidates(labeled).find { |names| names.uniq.size == names.size } ||
+        labeled.map.with_index { |cells, index| "#{cells[0]}-#{index + 1}" }
+    end
+
+    def setting_cells(column)
+      [column[:provider], column[:model], column[:routed], column[:effort]].map { |value| safe(value) }
+    end
+
+    def header_candidates(labeled)
+      [3, 2, 1, 0].map { |index| labeled.map { |cells| cells[index] } } +
+        [[1, 3], [0, 1, 3], [0, 1, 2, 3]].map do |indexes|
+          labeled.map { |cells| indexes.map { |index| cells[index] }.join(' ') }
+        end
+    end
+
+    def credits_row?(columns)
+      columns.any? { |column| column[:provider] == 'openai' || column[:credits] }
+    end
+
+    def source_line(columns)
+      links = source_links(columns)
+      return if links.empty?
+
+      "Sources: #{join_english(links)}."
+    end
+
+    def source_links(columns)
+      providers = columns.map { |column| column[:provider] }
+      [
+        (CREDIT_SOURCE if providers.include?('openai')),
+        *model_source_links(columns),
+        (CACHE_SOURCE if providers.include?('openai')),
+        (CURSOR_PRICING if providers.include?('cursor'))
+      ].compact
+    end
+
+    def model_source_links(columns)
+      columns.map { |column| MODEL_SOURCES[column[:model].to_s.sub(/-fast\z/, '')] }.uniq
+    end
+
+    def join_english(items)
+      return items.first if items.size == 1
+      return items.join(' and ') if items.size == 2
+
+      "#{items[0..-2].join(', ')}, and #{items.last}"
+    end
+
+    def line(cells) = "| #{cells.join(' | ')} |"
+  end
+
+  # One cost column per configuration and billing mode.
+  module CostColumns
+    private
+
+    def column(key, group, reasons)
+      configuration, billing = key
+      provider, model, routed, effort = configuration
+      credits, api = priced_totals(group, reasons, provider)
+      { provider: provider, model: billed_model(provider, billing, model), routed: routed, effort: effort,
+        credits: credits, api: api, native: native_cost?(group) }
+    end
+
+    def priced_totals(group, reasons, provider)
+      credits, credit_reason = total(group, :credits)
+      api, api_reason = total(group, :api)
+      reasons << credit_reason if credit_reason && keep_credit_reason?(provider, credits)
+      reasons << api_reason if api_reason
+      [credits, api]
+    end
+
+    def billed_model(provider, billing, model)
+      provider == 'cursor' && billing == 'fast' && model.is_a?(String) ? "#{model}-fast" : model
+    end
+
+    def native_cost?(group)
+      group.any? { |record| record['usage'].is_a?(Hash) && record['usage'].key?('native_cost_usd') }
+    end
+
+    def keep_credit_reason?(provider, credits)
+      %w[openai cursor].include?(provider) || credits
+    end
+
+    def blank_column
+      { provider: nil, model: nil, routed: nil, effort: nil, credits: nil, api: nil, native: false }
+    end
+  end
+
   # Prices configured-model scenarios from disjoint per-response token categories.
   class CostEstimate
     include CursorCost
     include CostCopy
+    include CostTable
+    include CostColumns
 
     THRESHOLD = 272_000
     RATES = {
@@ -91,25 +207,15 @@ module Shaka
     end
 
     def report
+      @threshold = false
       reasons = []
-      rows = @responses.group_by { |record| [record['configuration'], record['billing_mode']] }.map do |key, group|
-        row(key, group, reasons)
-      end.join("\n")
-      rows = '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |' if rows.empty?
-      markdown(rows, reasons)
+      groups = @responses.group_by { |record| [record['configuration'], record['billing_mode']] }
+      columns = groups.map { |key, group| column(key, group, reasons) }
+      columns = [blank_column] if columns.empty?
+      markdown(columns, reasons)
     end
 
     private
-
-    def row(key, group, reasons)
-      configuration, billing = key
-      credits, credit_reason = total(group, :credits)
-      api, api_reason = total(group, :api)
-      reasons.concat([credit_reason, api_reason].compact)
-      provider, model, _, effort = configuration
-      model = "#{model}-fast" if provider == 'cursor' && billing == 'fast' && model.is_a?(String)
-      "| #{[safe(provider), safe(model), safe(effort), show(credits, 'credits'), show(api, '$')].join(' | ')} |"
-    end
 
     def total(group, mode)
       amounts = group.map { |record| price(record, mode) }
@@ -170,6 +276,7 @@ module Shaka
 
     def bill(tokens, rate, mode)
       large = mode == :api && tokens[0] > THRESHOLD
+      @threshold = true if large
       (input_bill(tokens, rate, mode) * (large ? 2 : 1)) +
         (tokens[3] * Rational(rate[2]) * (large ? Rational(3, 2) : 1))
     end

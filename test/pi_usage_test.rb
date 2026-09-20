@@ -107,6 +107,12 @@ module PiUsageFixture
     assert_metric output, 'Native total', 434
   end
 
+  def assert_pi_cost(output, *amounts)
+    assert_metric output, 'USD estimate', *amounts
+    refute_includes output, 'Credits estimate'
+    refute_includes output, 'cursor.com'
+  end
+
   def assert_unavailable(file)
     output = report('--host', 'pi', '--file', file, '--all-turns')
     assert_includes output, 'Responses: UNKNOWN'
@@ -163,7 +169,8 @@ class PiUsageTest < Minitest::Test
     Dir.mktmpdir do |directory|
       output = discovered(write_session(directory, branched_session))
       assert_current_row(output)
-      assert_includes output, '| observed-new | configured-new | low | UNKNOWN | $0.000300 |'
+      assert_pi_cost output, '$0.000300'
+      assert_includes output, 'Pi recorded native nominal USD'
       assert_includes output, '2 responses'
       assert_includes output, 'Pi source versions: 3'
       assert_includes output, 'latest user turn on the active branch'
@@ -200,7 +207,7 @@ class PiUsageTest < Minitest::Test
         assert_includes output, '3 responses'
         assert_metric output, 'Input', 900, 300
         assert_metric output, 'Native total', 967, 434
-        assert_includes output, '| observed-new | configured-new | low | UNKNOWN | $0.000300 |'
+        assert_pi_cost output, '$0.000900', '$0.000300'
       end
     end
   end
@@ -301,7 +308,7 @@ class PiUsageFailuresTest < Minitest::Test
       output = report('--host', 'pi', '--file', first, '--file', second)
       assert_includes output, 'Conflicting response copies'
       assert_metric output, 'Input', 100, 'UNKNOWN'
-      assert_includes output, '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+      assert_metric output, 'USD estimate', '$0.000100', 'UNKNOWN'
     end
   end
 
@@ -325,7 +332,7 @@ class PiUsageFailuresTest < Minitest::Test
         set_native_cost(records, cost)
         output = report('--host', 'pi', '--file', write_session(directory, records))
         assert_current_row(output)
-        assert_includes output, '| observed-new | configured-new | low | UNKNOWN | UNKNOWN |'
+        assert_metric output, 'USD estimate', 'UNKNOWN'
         refute_includes output, 'SENSITIVE'
       end
     end
