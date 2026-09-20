@@ -51,7 +51,7 @@ class ReviewPromptTest < Minitest::Test
       'review-prompt', '--base', 'main', '--reviewer', 'openai/codex'
     )
 
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes err, '--head is required'
     refute_includes err, 'KeyError'
   end
@@ -70,7 +70,7 @@ class ReviewPromptTest < Minitest::Test
       'review-prompt', '--base', 'main', '--head', '', '--reviewer', 'openai/codex'
     )
 
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes err, '--head is required'
   end
 
@@ -80,7 +80,7 @@ class ReviewPromptTest < Minitest::Test
       'review-prompt', '--base', 'main', '--head', 'abc1234', '--reviewer', 'openai'
     )
 
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes err, 'PROVIDER/MODEL_FAMILY'
   end
 end

@@ -40,7 +40,7 @@ class CommentTeamAuthorTest < Minitest::Test
                     permissions: [permission('outsider', 'read'), missing, response([])])
 
     assert_empty result['issue_comments']
-    assert_equal false, result['excluded_interactions'].first['verification_unavailable']
+    refute result['excluded_interactions'].first['verification_unavailable']
     refute_includes JSON.generate(result), outsider['body']
   end
 
@@ -66,7 +66,7 @@ class CommentTeamAuthorTest < Minitest::Test
   def assert_unavailable_member(result, member)
     assert_empty result['issue_comments']
     excluded = result['excluded_interactions'].find { |row| row['author'] == 'member' }
-    assert_equal true, excluded['verification_unavailable']
+    assert excluded['verification_unavailable']
     refute_includes JSON.generate(result), member['body']
   end
 end

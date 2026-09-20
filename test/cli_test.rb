@@ -8,7 +8,7 @@ class CliTest < Minitest::Test
 
   def test_help_explains_each_operation
     output, error, status = Open3.capture3(COMMAND, '--help')
-    assert status.success?, error
+    assert_predicate status, :success?, error
     operations = %w[pr comments description reply walkthrough merge recommendation checkpoint seam doctor]
     (operations + %w[--head --issue --content-file --key --comment]).each do |token|
       assert_includes output, token
@@ -18,7 +18,7 @@ class CliTest < Minitest::Test
   def test_missing_content_file_is_a_clear_error
     _output, error, status = Open3.capture3(COMMAND, 'description', 'owner/repo', '1',
                                             '--content-file', '/missing/shaka-content.json')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'shaka-content.json'
   end
 
@@ -27,10 +27,10 @@ class CliTest < Minitest::Test
       body = JSON.generate(value: 'Slow search.', scope: 'Small.', risk: 'Policy.',
                            model: 'gpt-example', effort: 'medium', reason: 'Fit.')
       output, error, status = run_offline(dir, body, 'recommendation')
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_equal "Value: Slow search.\nScope: Small.\nRisk: Policy.\n" \
                    "Model: gpt-example\nEffort: medium\nReason: Fit.\n", output
-      refute File.exist?(sentinel)
+      refute_path_exists sentinel
     end
   end
 
@@ -41,9 +41,9 @@ class CliTest < Minitest::Test
                            active_model: 'gpt-5.6-terra', active_effort: 'medium',
                            immediate_start: true, settings_available: true)
       output, error, status = run_offline(dir, body, 'checkpoint')
-      assert status.success?, error
+      assert_predicate status, :success?, error
       assert_equal({ 'status' => 'proceed' }, JSON.parse(output))
-      refute File.exist?(sentinel)
+      refute_path_exists sentinel
     end
   end
 
@@ -67,9 +67,9 @@ class CliTest < Minitest::Test
     without_github do |dir, sentinel|
       body = JSON.generate({ 'identity' => { 'agent' => 'Codex' }, 'summary' => 'Done.' })
       _output, error, status = run_offline(dir, body, 'reply', 'owner/repo', '1')
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'key'
-      refute File.exist?(sentinel), 'the reply attempted a GitHub request without a key'
+      refute_path_exists sentinel, 'the reply attempted a GitHub request without a key'
     end
   end
 
@@ -77,36 +77,36 @@ class CliTest < Minitest::Test
     without_github do |dir, sentinel|
       _output, error, status = run_offline(dir, '[1, 2, 3]', 'walkthrough', 'owner/repo', '1',
                                            '--head', 'a' * 40)
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'shaka: '
       refute_includes error, 'NoMethodError'
-      refute File.exist?(sentinel)
+      refute_path_exists sentinel
     end
   end
 
   def test_invalid_operation_exits_without_a_github_call
     _output, error, status = Open3.capture3(COMMAND, 'unexpected', 'owner/repo', '1')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'Usage:'
   end
 
   def test_missing_walkthrough_file_is_a_clear_error
     _output, error, status = Open3.capture3(COMMAND, 'walkthrough', 'owner/repo', '1',
                                             '--head', 'a' * 40, '--body-file', '/missing/shaka-body.md')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'shaka:'
     assert_includes error, 'shaka-body.md'
   end
 
   def test_merge_without_head_does_not_call_github
     _output, error, status = Open3.capture3(COMMAND, 'merge', 'owner/repo', '1')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'head'
   end
 
   def test_pr_comment_reader_requires_an_expected_head
     _output, error, status = Open3.capture3(COMMAND, 'comments', 'owner/repo', '1')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'Expected a full PR head'
   end
 end

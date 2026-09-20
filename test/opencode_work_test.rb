@@ -13,7 +13,7 @@ module OpencodeWorkFixture
     FileUtils.mkdir_p([@target, File.join(@directory, 'bin'), File.join(@directory, 'temp')])
     copy_source
     _output, error, status = Open3.capture3('git', 'init', '--quiet', @target)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     write_opencode
   end
 
@@ -32,7 +32,7 @@ module OpencodeWorkFixture
 
   def started(*)
     _output, error, status = launch(*)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     JSON.parse(File.read(@capture))
   end
 
@@ -71,7 +71,7 @@ class OpencodeWorkTest < Minitest::Test
     prompt = started(task)['argv'].last
     assert_includes prompt, File.realpath(File.join(@source, 'SKILL.md'))
     assert_equal task, JSON.parse(prompt.lines.last)
-    refute File.exist?(marker)
+    refute_path_exists marker
   end
 
   def test_refuses_project_local_components_from_the_target_checkout
@@ -93,30 +93,30 @@ class OpencodeWorkTest < Minitest::Test
   def test_help_names_the_host_option
     output, error, status = Open3.capture3({ 'PATH' => "#{@directory}/bin:#{ENV.fetch('PATH')}" },
                                            @command, 'work', '--help')
-    assert status.success?, error
+    assert_predicate status, :success?, error
     assert_includes output, '--host'
     assert_includes output, 'opencode'
   end
 
   def test_rejects_an_unknown_host_without_starting_opencode
     _output, error, status = launch('--host', 'pi', 'Fix the test')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'shaka work:'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
   end
 
   def test_requires_a_task_without_starting_opencode
     _output, error, status = launch
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'shaka work:'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
   end
 
   def test_refuses_to_launch_when_the_target_contains_the_trusted_workflow
     Open3.capture3('git', 'init', '--quiet', @source)
     _output, error, status = launch('--repo', @source, 'Fix the workflow')
-    refute status.success?
+    refute_predicate status, :success?
     assert_includes error, 'trusted workflow'
-    refute File.exist?(@capture)
+    refute_path_exists @capture
   end
 end

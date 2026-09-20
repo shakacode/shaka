@@ -86,7 +86,7 @@ module PiUsageFixture
 
   def report(*, environment: {})
     output, error, status = capture_report(*, environment: environment)
-    assert status.success?, error
+    assert_predicate status, :success?, error
     output
   end
 
@@ -186,7 +186,7 @@ class PiUsageTest < Minitest::Test
       environment = CLEAR.merge('PI_CODING_AGENT' => 'true', 'PI_SESSION_ID' => SESSION,
                                 'PI_SESSION_FILE' => file, 'CODEX_THREAD_ID' => 'nested-codex')
       output, error, status = capture_report(environment: environment)
-      refute status.success?
+      refute_predicate status, :success?
       assert_empty output
       assert_includes error, 'invalid options'
       assert_current_row(report('--host', 'pi', environment: environment))

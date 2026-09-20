@@ -7,8 +7,11 @@ AllCops:
   SuggestExtensions: false
   TargetRubyVersion: 3.4
 
-# Default Minitest cops flag hundreds of existing assertions. Keep the plugin loaded
-# so new cops remain visible; apply them to tests in a later PR.
-Minitest:
-  Exclude:
-    - test/**/*
+# Blank-line-before-assert and a 3-assert cap rewrite the existing suite.
+# Remaining Minitest and Performance cops stay at plugin defaults.
+Minitest/EmptyLineBeforeAssertionMethods:
+  Enabled: false
+Minitest/MultipleAssertions:
+  Enabled: false
+Minitest/AssertWithExpectedArgument:
+  Enabled: false

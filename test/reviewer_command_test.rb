@@ -58,7 +58,7 @@ class ReviewerCommandTest < Minitest::Test
     with_repository do |root|
       _, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root)
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, '--implementer is required'
     end
   end
@@ -68,7 +68,7 @@ class ReviewerCommandTest < Minitest::Test
       _, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root,
                                         '--implementer', 'anthropic')
 
-      refute status.success?
+      refute_predicate status, :success?
       assert_includes error, 'PROVIDER/MODEL_FAMILY'
     end
   end

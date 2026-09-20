@@ -20,7 +20,7 @@ class CommentWritersTest < Minitest::Test
     outside = (1..9).map { |id| comment(id: id, author: "outside#{id}", body: 'Noise') }
     result = packet(issue: outside, writers: [])
 
-    assert_equal true, result['excluded_interactions'].first['prefiltered']
+    assert result['excluded_interactions'].first['prefiltered']
     assert_empty result['issue_comments']
   end
 
@@ -35,16 +35,16 @@ class CommentWritersTest < Minitest::Test
     outside = comment(id: 33, author: 'outside', body: 'Feedback')
     result = packet(issue: [outside], permissions: [permission('outside', 'read')])
 
-    assert_equal false, result['excluded_interactions'].first['verification_unavailable']
-    assert_equal false, result['excluded_interactions'].first['prefiltered']
+    refute result['excluded_interactions'].first['verification_unavailable']
+    refute result['excluded_interactions'].first['prefiltered']
   end
 
   def test_unknown_direct_permission_is_marked_unavailable
     outside = comment(id: 34, author: 'outside', body: 'Feedback')
     result = packet(issue: [outside], permissions: [permission('outside', 'future_role')])
 
-    assert_equal true, result['excluded_interactions'].first['verification_unavailable']
-    assert_equal false, result['excluded_interactions'].first['prefiltered']
+    assert result['excluded_interactions'].first['verification_unavailable']
+    refute result['excluded_interactions'].first['prefiltered']
   end
 
   def test_unknown_batched_permission_stops_instead_of_prefiltering_author

@@ -28,12 +28,6 @@ class CommentTeamsTest < Minitest::Test
     assert_batched_team_calls
   end
 
-  def assert_batched_team_calls
-    assert_equal 2, @calls.length
-    assert_equal 'orgs/owner/teams/maintainers/members?per_page=100&page=1', @calls.first.first[2]
-    assert_equal 'member', @calls.last.first[2].split('/').last
-  end
-
   def test_mismatched_list_login_never_reaches_membership_api
     github = client(response([{ 'login' => 'stranger', 'type' => 'User' }]))
     result = Shaka::PublicComments::Teams.new(github).trusted((1..33).map { |id| "person#{id}" },
@@ -106,5 +100,13 @@ class CommentTeamsTest < Minitest::Test
 
     assert_raises(Shaka::Error) { Shaka::PublicComments::Teams.new(github).trusted(['person'], teams) }
     assert_empty @calls
+  end
+
+  private
+
+  def assert_batched_team_calls
+    assert_equal 2, @calls.length
+    assert_equal 'orgs/owner/teams/maintainers/members?per_page=100&page=1', @calls.first.first[2]
+    assert_equal 'member', @calls.last.first[2].split('/').last
   end
 end
