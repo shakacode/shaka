@@ -17,11 +17,11 @@ module Shaka
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
     attr_reader :base_branch, :commands, :review, :merge, :recovery
 
-    def self.load(root: Dir.pwd, source: nil, available_commands: nil)
-      new(root:, source:, available_commands:).load
+    def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil)
+      new(root:, source:, available_commands:, sha:).load
     end
 
-    def initialize(root:, source: nil, available_commands: nil)
+    def initialize(root:, source: nil, available_commands: nil, sha: nil)
       if source && available_commands.nil?
         raise Error, 'available_commands is required when repository policy comes from another source'
       end
@@ -29,13 +29,14 @@ module Shaka
       @root = File.realpath(root)
       @source = source
       @available_commands = available_commands
+      @sha = sha
     end
 
     def load
       source = @source || File.read(File.join(@root, PATH), encoding: 'UTF-8')
       DuplicateKeys.check(source, filename: PATH)
       @data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
-      schema = Schema.new(root: @root, data: @data, available_commands: @available_commands)
+      schema = Schema.new(root: @root, data: @data, available_commands: @available_commands, sha: @sha)
       schema.validate
       @commands = schema.commands
       assign_sections

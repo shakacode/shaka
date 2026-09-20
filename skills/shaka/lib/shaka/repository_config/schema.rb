@@ -20,10 +20,11 @@ module Shaka
 
       attr_reader :commands
 
-      def initialize(root:, data:, available_commands: nil)
+      def initialize(root:, data:, available_commands: nil, sha: nil)
         @root = root
         @data = data
         @available_commands = available_commands
+        @sha = sha
       end
 
       def validate

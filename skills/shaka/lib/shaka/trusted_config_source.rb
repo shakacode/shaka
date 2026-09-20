@@ -22,7 +22,7 @@ module Shaka
       source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
       raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?
 
-      RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha))
+      RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:)
     end
 
     private

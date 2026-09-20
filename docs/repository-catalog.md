@@ -61,7 +61,8 @@ Stdout and `catalog.json` use the same object:
 refresh still writes the catalog and exits non-zero so a collision cannot silently
 select the wrong repository. Two checkouts of the same host and identity with the
 same prefix are not a collision. The same `owner/name` on different hosts is a
-collision when the prefixes match. Catalog `url` values never keep remote userinfo,
+collision when the prefixes match. Distinct non-default ports on the same host are
+distinct repositories. Catalog `url` values never keep remote userinfo,
 query strings, or fragments; userinfo ends at the last `@` in the authority, and
 SCP remotes catalog as `ssh://host/owner/name`. A missing or unreadable registered
 root is skipped with a stderr warning; refresh still writes the remaining rows and

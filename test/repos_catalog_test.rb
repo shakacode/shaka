@@ -184,6 +184,10 @@ class ReposCatalogTest < Minitest::Test
       assert_equal %w[acme/repo acme/repo], identities(catalog)
     end
   end
+end
+
+class ReposCatalogOriginTest < Minitest::Test
+  include ReposCatalogHelpers
 
   def test_refresh_catalogs_scp_enterprise_origins
     with_home do |home|
@@ -192,6 +196,19 @@ class ReposCatalogTest < Minitest::Test
 
       assert_equal [expected_row('repo', root, prefix: 'GHE', source: 'seam', url: 'ssh://ghe.example/acme/repo')],
                    catalog.fetch('repositories')
+    end
+  end
+
+  def test_refresh_reports_the_same_host_on_different_ports_as_a_collision
+    with_home do |home|
+      registered_repository(home, name: 'one', prefix: 'DUP', origin: 'https://ghe.example:8443/acme/repo.git')
+      registered_repository(home, name: 'two', prefix: 'DUP', origin: 'https://ghe.example:9443/acme/repo.git')
+      catalog, error, status = refresh_result(home)
+      keys = catalog.dig('duplicate_prefixes', 'DUP')
+
+      refute_predicate status, :success?
+      assert_equal ['ghe.example:8443/acme/repo', 'ghe.example:9443/acme/repo'], keys.sort
+      assert_includes error, keys.first
     end
   end
 

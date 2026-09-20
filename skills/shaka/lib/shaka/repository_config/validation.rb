@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'open3'
 require 'pathname'
 require_relative '../error'
 
@@ -33,6 +34,8 @@ module Shaka
       end
 
       def file!(value, label)
+        return committed_file!(value, label) if @sha
+
         path = repository_path(value, label)
         raise Error, "#{label} does not exist: #{value}" unless File.file?(path)
 
@@ -40,6 +43,19 @@ module Shaka
         raise Error, "#{label} must resolve inside the repository" unless real_path.start_with?("#{@root}/")
 
         path
+      end
+
+      def committed_file!(value, label)
+        relative = string!(value, label)
+        if Pathname.new(relative).absolute? || relative.include?('..')
+          raise Error, "#{label} must stay inside the repository"
+        end
+
+        type, error, status = Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{@sha}:#{relative}")
+        return relative if status.success? && type.strip == 'blob'
+
+        detail = error.strip.empty? ? '' : " (#{error.strip})"
+        raise Error, "#{label} does not exist at #{@sha}: #{value}#{detail}"
       end
 
       def executable!(value, label)

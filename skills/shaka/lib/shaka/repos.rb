@@ -83,7 +83,9 @@ module Shaka
     end
 
     def collision_key(row)
-      "#{URI(row.fetch('url')).host}/#{row.fetch('identity')}"
+      uri = URI(row.fetch('url'))
+      host = uri.port && uri.port != uri.default_port ? "#{uri.host}:#{uri.port}" : uri.host
+      "#{host}/#{row.fetch('identity')}"
     end
 
     def report_duplicates(duplicates)

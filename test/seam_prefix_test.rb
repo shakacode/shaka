@@ -39,6 +39,19 @@ class SeamPrefixTest < Minitest::Test
     end
   end
 
+  def test_prefix_reads_a_trusted_plan_when_the_working_tree_deleted_it
+    with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/pilot-plan.md') do |root|
+      FileUtils.mkdir_p(File.join(root, 'docs'))
+      File.write(File.join(root, 'docs/pilot-plan.md'), "plan\n")
+      commit_repository(root)
+      FileUtils.rm(File.join(root, 'docs/pilot-plan.md'))
+      output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+
+      assert_predicate status, :success?, error
+      assert_equal({ 'prefix' => 'PLAN', 'source' => 'seam' }, JSON.parse(output))
+    end
+  end
+
   private
 
   def with_repository(extra = {})
