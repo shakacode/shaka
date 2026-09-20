@@ -87,16 +87,10 @@ module Shaka
       raise Error, 'Merge queue state is inconsistent'
     end
 
+    # UNSTABLE is optional-check noise; required checks are verified separately.
     def verify_native_state(pull)
-      # UNSTABLE means only non-required checks are pending or failing.
-      # Required checks are still verified separately.
-      # See docs/review.md#faster-merge-while-optional-reviews-run.
       unless pull['isInMergeQueue']
-        allowed = if pull['isMergeQueueEnabled']
-                    %w[CLEAN BEHIND BLOCKED UNSTABLE]
-                  else
-                    %w[CLEAN UNSTABLE]
-                  end
+        allowed = pull['isMergeQueueEnabled'] ? %w[CLEAN BEHIND BLOCKED UNSTABLE] : %w[CLEAN UNSTABLE]
         verify_merge_state(pull, allowed)
       end
 

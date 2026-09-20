@@ -106,6 +106,16 @@ class MergeNativeGateTest < Minitest::Test
     assert_equal 'MERGED', @merge.call(head: HEAD, walkthrough: 17)['state']
   end
 
+  def test_queue_enabled_pull_request_can_enqueue_when_optional_checks_are_pending
+    entry = queue_entry
+    ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'UNSTABLE')
+    queued = ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => entry)
+    @client.snapshots = [ready, ready, queued]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
+
+    assert_equal 'merge_queue', @merge.call(head: HEAD, walkthrough: 17).fetch('submission')
+  end
+
   def test_refuses_bypass_capable_or_unknown_actor
     [true, nil].each do |value|
       @client.snapshots = [snapshot.merge('viewerCanMergeAsAdmin' => value)]
@@ -260,7 +270,7 @@ class MergeQueueSubmissionTest < Minitest::Test
   def test_queue_enabled_pull_request_rejects_conflicting_or_unknown_state
     %w[DIRTY DRAFT HAS_HOOKS UNKNOWN].each do |state|
       @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => state)]
-      assert_blocked(/not CLEAN or BEHIND or BLOCKED/)
+      assert_blocked(/not CLEAN or BEHIND or BLOCKED or UNSTABLE/)
     end
   end
 

@@ -51,8 +51,9 @@ timeline into the PR description.
 This is a 2026-09-20 delivery-time experiment. Keep it only while it reduces wait without
 dropping demonstrated defects. To revert:
 
-1. In `Shaka::Merge#verify_native_state`, accept only `CLEAN` and restore the test that
-   `UNSTABLE` blocks.
+1. In `Shaka::Merge#verify_native_state`, drop `UNSTABLE` from the allowed merge-state
+   lists (queue-disabled: `CLEAN` only; queue-enabled: `CLEAN BEHIND BLOCKED`) and restore
+   the tests that treat `UNSTABLE` as blocked.
 2. Restore the review and finish bullets in `skills/shaka/config/workflow.yml` that waited for
    `review.check` and for every finding on the current head.
 3. Delete this section and restore the earlier “wait for the named GitHub review before merge”
@@ -78,8 +79,35 @@ Post-merge comments are expected. Evaluate each one: fix a demonstrated defect i
 or decline it. Do not stay in a nit loop.
 
 `shaka merge` accepts GitHub `mergeStateStatus` `UNSTABLE` because that state means only
-non-required checks are pending or failing. `BLOCKED`, `BEHIND`, `DIRTY`, and missing required
-checks still refuse the merge.
+non-required checks are pending or failing. On a queue-disabled base, `BLOCKED`, `BEHIND`,
+`DIRTY`, and missing required checks still refuse the merge. On a queue-enabled base,
+`UNSTABLE` is allowed along with `CLEAN`, `BEHIND`, and `BLOCKED`.
+
+A published `shaka reply` identity line names the **owner who posted**, not the reviewer.
+The reviewer's identity is the closing `REVIEWED <sha> BY <provider>/<family>` line. Mixing
+those two is how a Cursor host can look like it reviewed a change that Codex or Claude
+actually reviewed.
+
+### How quality can drop
+
+This experiment trades wait time for a later, cheaper look at leftover comments. Quality can
+fall in these specific ways:
+
+- A follow-up labeled nit-only can still change behavior. The exemption is only for
+  diagnostic or message-only SHAs; anything that changes runtime, trust, or tests still
+  needs a fresh review of that head.
+- `UNSTABLE` includes **failed** optional jobs, not only pending ones. A red `claude-review`
+  does not block `shaka merge` once required checks pass. Read a completed optional report
+  if it arrived before merge; treat a later one as post-merge feedback.
+- Merging before GitHub Claude finishes means a different-provider finding can land on
+  `main`. Fix demonstrated defects in a small PR; do not treat merge as dismissal.
+- Calling Claude `--unavailable` because `--bare` printed `Not logged in` skips the
+  preferred reviewer even when Claude.ai OAuth is working. `--bare` never reads keychain
+  or OAuth; it only accepts `ANTHROPIC_API_KEY`. Do not treat that message as quota
+  exhaustion.
+- Two repair rounds only end the **nit** loop. Counting a correctness or security finding
+  as a nit, or stopping after one shallow pass, is a quality failure of the owner, not of
+  GitHub.
 
 The GitHub action intentionally skips changes to its own workflow. Its job summary
 must say **UNAVAILABLE**, with a warning; that runner result is not a completed
@@ -339,14 +367,17 @@ report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
 base=$(git merge-base origin/main HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
-  | claude -p --permission-mode plan --permission-prompts none --restricted --bare \
+  | claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
     --strict-mcp-config --effort medium --output-format text - > "$report"
 ```
 
 `-p` prints and exits. `--permission-mode plan` with `--permission-prompts none` withholds edits
-and denies anything that would prompt. `--restricted` removes command-running tools, `--bare`
-skips project instructions and plugins, and `--strict-mcp-config` with no config drops MCP
-servers. `--effort` is recorded in the attestation. Check `--help` before relying on these flags.
+and denies anything that would prompt. `--restricted` removes command-running tools.
+`--safe-mode` disables project CLAUDE.md, skills, plugins, hooks, and MCP while **keeping
+Claude.ai OAuth**. `--strict-mcp-config` with no config drops MCP servers. Do **not** add
+`--bare`: that flag skips keychain and OAuth (`Not logged in · Please run /login`) and only
+accepts `ANTHROPIC_API_KEY`, so a logged-in Max/claude.ai session looks unavailable.
+`--effort` is recorded in the attestation. Check `--help` before relying on these flags.
 
 Grok 1.0.30:
 
