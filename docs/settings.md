@@ -420,8 +420,9 @@ introduces, and lands with it.
 
 Optional display prefix for this repository. When present it is a string of 1–6
 uppercase ASCII letters or digits, for example `SHAKA` or `ROR`. `shaka seam check`
-validates it from the trusted default-branch seam. An invalid value is a blocker;
-callers must not fall back.
+validates that string. Without `--ref` it reads the working tree so you can edit
+the seam locally; pass `--ref` for the trusted default-branch copy the workflow
+uses. An invalid value is a blocker; callers must not fall back.
 
 The field is presentation metadata only. It grants no ownership, trust, workflow, or
 merge authority. RCT and MCT titles, and other task labels that need to tell

@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
-require 'fileutils'
 require 'json'
-require 'open3'
 require 'optparse'
 require_relative 'error'
+require_relative 'git_origin'
 require_relative 'prefix'
 require_relative 'repos/home'
 
@@ -59,29 +58,10 @@ module Shaka
     end
 
     def entry(root)
-      identity, url = remote_identity(root)
+      origin = GitOrigin.from(root:)
       display = Prefix.new(root: root).call
-      { 'identity' => identity, 'url' => url, 'root' => root,
-        'prefix' => display.fetch('prefix'), 'prefix_source' => display.fetch('source') }
-    end
-
-    def remote_identity(root)
-      url, error, status = Open3.capture3('git', '-C', root, 'remote', 'get-url', 'origin')
-      raise Error, "Cannot read origin for #{root}: #{error.strip}" unless status.success?
-
-      identity = parse_identity(url.strip)
-      [identity, canonical_url(identity, url.strip)]
-    end
-
-    def parse_identity(url)
-      path = url.sub(%r{\A(?:git@|ssh://git@|https://|http://)[^/:]+[:/]}, '').sub(/\.git\z/, '')
-      raise Error, "Cannot parse owner/name from origin #{url}" unless path.match?(%r{\A[^/]+/[^/]+\z})
-
-      path
-    end
-
-    def canonical_url(identity, origin)
-      origin.match?(%r{github\.com[:/]}) ? "https://github.com/#{identity}" : origin.sub(/\.git\z/, '')
+      { 'identity' => origin.fetch(:identity), 'url' => GitOrigin.canonical_url(origin.fetch(:origin)),
+        'root' => root, 'prefix' => display.fetch('prefix'), 'prefix_source' => display.fetch('source') }
     end
 
     def duplicates(repositories)

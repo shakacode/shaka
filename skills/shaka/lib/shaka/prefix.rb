@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'open3'
 require 'optparse'
 require_relative 'error'
+require_relative 'git_origin'
 require_relative 'repo_prefix'
 require_relative 'trusted_config_source'
 
@@ -54,19 +54,7 @@ module Shaka
 
     def call
       config = TrustedConfigSource.load(root: @root, ref: @ref || 'origin/HEAD').to_h
-      RepoPrefix.display(configured: config['repo_prefix'], repository_name: RepositoryName.from(root: @root))
-    end
-  end
-
-  # Basename used when a seam omits repo_prefix.
-  module RepositoryName
-    module_function
-
-    def from(root:)
-      url, _error, status = Open3.capture3('git', '-C', root, 'remote', 'get-url', 'origin')
-      return File.basename(File.realpath(root)) unless status.success?
-
-      File.basename(url.strip.sub(/\.git\z/, ''))
+      RepoPrefix.display(configured: config['repo_prefix'], repository_name: GitOrigin.repository_name(root: @root))
     end
   end
 end
