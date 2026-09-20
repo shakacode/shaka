@@ -1,110 +1,63 @@
 # frozen_string_literal: true
 
-require 'json'
 require 'optparse'
 require_relative 'claude_usage'
-require_relative 'response_count'
+require_relative 'codex_usage'
+require_relative 'cost_estimate'
+require_relative 'cursor_usage'
+require_relative 'opencode_usage'
+require_relative 'pi_usage'
 
 module Shaka
-  # Retains only usage metadata; transcripts and cumulative counters are discarded.
-  class CodexUsage
-    include ResponseCount
-
-    HOST = 'Codex'
-    NOTE = 'Cached input is part of input; reasoning output is part of output.'
-    LATEST_SCOPE = 'latest turn only per source; earlier turns excluded'
-
-    attr_reader :responses, :versions, :gaps
-
-    def initialize(files, turns, all_turns: false)
-      @responses = {}
-      @all_turns = all_turns
-      @versions = []
-      @gaps = []
-      files.each { |file| read(file, turns) }
-    end
-
-    def self.discover
-      identity = ENV.fetch('CODEX_THREAD_ID', nil)
-      return [] unless identity&.match?(/\A[0-9a-f-]{36}\z/)
-
-      home = ENV.fetch('CODEX_HOME', File.expand_path('~/.codex'))
-      files = Dir.glob(File.join(home, 'sessions', '*', '*', '*', "*#{identity}.jsonl"))
-      return [] unless files.one?
-
-      metadata = JSON.parse(File.open(files.first, &:readline))
-      matching_source?(metadata, identity) ? files : []
-    rescue JSON::ParserError, SystemCallError, EOFError
-      []
-    end
-
-    def self.matching_source?(metadata, identity)
-      metadata.is_a?(Hash) && metadata['type'] == 'session_meta' &&
-        metadata['payload'].is_a?(Hash) && metadata['payload']['id'] == identity
-    end
-
-    private_class_method :matching_source?
-
+  # Host-context fallback rows when a reader has no per-response records.
+  module UsageTable
     private
 
-    def read(file, turns)
-      @context = {}
-      @provider = nil
-      @records = []
-      File.foreach(file) { |line| consume(parse(line)) }
-      selected = selected_turns(turns)
-      @gaps << 'Unreadable or unidentifiable records' if @all_turns && selected.size != @records.size
-      @records.select { |record| selected.include?(record['turn_id']) }.each { |record| count(record) }
-    rescue SystemCallError
-      @gaps << 'Unreadable or unidentifiable records'
+    def rows
+      grouped = @responses.group_by { |record| record['configuration'] }
+      grouped = { context_row => [] } if grouped.empty? && context_row
+      grouped.map do |configuration, group|
+        "| #{(configuration.map { |value| safe(value) } + totals(group)).join(' | ')} |"
+      end.join("\n")
     end
 
-    def selected_turns(turns)
-      turns = @records.map { |record| record['turn_id'] } if @all_turns
-      selected = turns.empty? ? [@context['turn_id']] : turns
-      selected.grep(String).reject { |turn| turn.strip.empty? }
+    def totals(group)
+      Usage::FIELDS.map { |field| total_field(group, field) }
     end
 
-    def consume(record)
-      return unless record
-
-      payload = record['payload']
-      case record['type']
-      when 'session_meta'
-        @provider = payload['model_provider']
-        @versions << payload['cli_version']
-      when 'turn_context' then @context = payload.slice('turn_id', 'model', 'effort')
-      when 'token_usage_record' then @records << response(record)
-      end
+    def total_field(group, field)
+      values = group.map { |record| record['usage'].is_a?(Hash) ? record['usage'][field] : nil }
+      countable?(values) ? values.sum : 'UNKNOWN'
     end
 
-    def response(record)
-      payload = record['payload']
-      settings = payload['turn_id'] == @context['turn_id'] ? @context : {}
-      payload.slice('response_id', 'turn_id', 'usage').merge(
-        'timestamp' => record['timestamp'],
-        'configuration' => [@provider, settings['model'], 'UNKNOWN', settings['effort']]
-      )
+    def countable?(values)
+      values.any? && values.all? { |value| value.is_a?(Integer) && value >= 0 }
     end
 
-    def parse(line)
-      record = JSON.parse(line)
-      return record if record.is_a?(Hash) && record['payload'].is_a?(Hash)
+    def context_row
+      return unless @inferred && @options[:turns].empty?
 
-      @gaps << 'Unreadable or unidentifiable records'
-      nil
-    rescue JSON::ParserError
-      @gaps << 'Unreadable or unidentifiable records'
-      nil
+      @source.context_configuration if @source.respond_to?(:context_configuration)
+    end
+
+    def cost_responses
+      return @responses unless @responses.empty? && context_row
+
+      [{ 'configuration' => context_row, 'usage' => {} }]
     end
   end
 
   # Read-only reporting of per-response usage records from a supported host.
   class Usage
+    include UsageTable
+
     FIELDS = %w[input_tokens cached_input_tokens output_tokens reasoning_output_tokens
                 cache_write_input_tokens total_tokens].freeze
-    READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage }.freeze
-    HOST_CONTEXT = { 'codex' => 'CODEX_THREAD_ID', 'claude-code' => 'CLAUDE_CODE_SESSION_ID' }.freeze
+    READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage, 'cursor' => CursorUsage,
+                'opencode' => OpencodeUsage, 'pi' => PiUsage }.freeze
+    HOST_CONTEXT = { 'codex' => 'CODEX_THREAD_ID', 'claude-code' => 'CLAUDE_CODE_SESSION_ID',
+                     'cursor' => 'CURSOR_CONVERSATION_ID', 'opencode' => 'OPENCODE_SESSION_ID',
+                     'pi' => 'PI_CODING_AGENT' }.freeze
 
     def self.run(arguments)
       options = { files: [], turns: [], host: detected_host }
@@ -132,17 +85,18 @@ module Shaka
     end
 
     def self.source_options(flags, options)
-      flags.on('--host NAME', READERS.keys, 'codex or claude-code') { |v| options[:host] = v }
-      flags.on('--file PATH', 'Native JSONL; repeat for contributors/resumes') { |v| options[:files] << v }
+      flags.on('--host NAME', READERS.keys, 'codex, claude-code, cursor, opencode, or pi') { |v| options[:host] = v }
+      flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |v|
+        options[:files] << v
+      end
+      flags.on('--session ID', 'OpenCode session; needs --host opencode') { |v| options[:files] << "session:#{v}" }
       flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
       flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |v| options[:turns] << v }
     end
 
     def self.detected_host
-      found = HOST_CONTEXT.select { |_, variable| ENV.key?(variable) }.keys
-      return if found.size > 1
-
-      found.first || 'codex'
+      found = HOST_CONTEXT.select { |host, variable| host == 'pi' ? ENV[variable] == 'true' : ENV.key?(variable) }.keys
+      found.size > 1 ? nil : found.first || 'codex'
     end
 
     def self.valid_mapping?(options)
@@ -157,7 +111,7 @@ module Shaka
       reader = READERS.fetch(options[:host])
       @inferred = options[:files].empty?
       @options[:files] = reader.discover if @inferred
-      @source = reader.new(@options[:files], @options[:turns], all_turns: options[:all_turns])
+      @source = reader.new(@options[:files], @options[:turns], all_turns: @options[:all_turns])
       @responses = @source.responses.values
     end
 
@@ -180,6 +134,7 @@ module Shaka
         #{rows}
 
         </details>
+        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report}
       MARKDOWN
     end
 
@@ -189,19 +144,6 @@ module Shaka
       return 'all turns in selected sources' if @options[:all_turns]
 
       @options[:turns].empty? ? @source.class::LATEST_SCOPE : 'explicitly selected turns'
-    end
-
-    def rows
-      @responses.group_by { |record| record['configuration'] }.map do |configuration, group|
-        "| #{(configuration.map { |value| safe(value) } + totals(group)).join(' | ')} |"
-      end.join("\n")
-    end
-
-    def totals(group)
-      FIELDS.map do |field|
-        values = group.map { |record| record['usage'].is_a?(Hash) ? record['usage'][field] : nil }
-        values.all? { |value| value.is_a?(Integer) && value >= 0 } ? values.sum : 'UNKNOWN'
-      end
     end
 
     def count

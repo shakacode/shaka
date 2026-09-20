@@ -1,0 +1,15 @@
+# GitHub actors whose public issue/PR/review comments may be acted on by Shaka.
+trusted_users:
+  - justin808
+  - claude
+
+# Bot entries are base bot names. GitHub API logins usually include the
+# `[bot]` suffix; humans with the same base login are not trusted by this list.
+trusted_bots:
+  - coderabbitai
+  - claude
+  - chatgpt-codex-connector
+  - cursor
+
+trusted_metadata_bots: []
+trusted_teams: []

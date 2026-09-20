@@ -1,8 +1,13 @@
 # Build and test the pilot gem
 
-The gem packages the same skill, installer, and Ruby helpers as the source checkout.
-It adds no runtime gems and does not install a global agent profile. This is a local
-prerelease package; nothing has been published to RubyGems.org.
+The gem packages the same skills, workflow configuration, installer, and Ruby helpers
+as the source checkout. The `shaka` skill is a small trust bootstrap: `shaka workflow`
+strictly validates and renders its packaged `skills/shaka/config/workflow.yml` before
+an agent follows the procedure.
+It adds no runtime gems and does not install a global agent profile. Version
+`0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name. The source
+installation remains the verified pilot path; registry publication does not establish
+broader host compatibility.
 
 Build from the trusted source directory; RubyGems reads package files relative
 to the working directory. With the source installation from the first-use guide:
@@ -20,6 +25,7 @@ individual commands:
 shaka_gem_home=$(mktemp -d)
 GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" gem install --local --no-document ./shaka-0.1.0.pre.1.gem
 GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" "$shaka_gem_home/bin/shaka" --help
+GEM_HOME="$shaka_gem_home" GEM_PATH="$shaka_gem_home" "$shaka_gem_home/bin/shaka" workflow
 ```
 
 Keep this temporary home for packaging checks only. A real pilot installation must
@@ -27,11 +33,17 @@ keep its trusted source outside the agent's writable directories, including any
 temporary directories the host allows. Do not export the test gem environment into
 your application's shell or add the pilot to its Gemfile.
 
+Applications that only need the experimental public-comment screen can load
+`shaka/public_comments` from this package without the skill; see
+[screen public comments from Ruby](public-comments.md).
+
 The package also contains `shaka-install --skills-dir DIR`, which calls
-the existing explicit-directory installer. Use it only when you want a link in a
-chosen skill directory. It preserves existing content and refuses to replace a
-different source. The [first-use guide](getting-started.md) explains the trusted
-source and host startup boundaries.
+the existing explicit-directory installer. It installs the portable `shaka` skill
+by default; add `--with-rct` only for a Codex app skills directory, or
+`--with-claude-towers` only for a Claude Code desktop skills directory. It preserves
+existing content and refuses to replace a different source. The
+[first-use guide](getting-started.md) explains the trusted source and host startup
+boundaries.
 
 ## Upgrade, rollback, and removal
 
@@ -41,7 +53,8 @@ destination, remove only the known pilot symlinks, then run the new version's
 installer. Do not remove a foreign directory or silently repoint another skill.
 You can retain the prior gem version and relink it for rollback.
 
-Remove the pilot `shaka` skill link before uninstalling the version it points to. For the
+Remove the pilot `shaka`, `rct`, `mct-claude`, and `rct-claude` skill links before uninstalling the
+version they point to. For the
 isolated packaging check above:
 
 ```bash
@@ -55,7 +68,8 @@ the package. Existing installer tests cover repeat installation, collisions, and
 source updates. These checks validate the artifact; they do not establish host
 compatibility or authorize a registry release.
 
-The provisional name is `shaka`, with version `0.1.0.pre.1`. License
-and registry release approval remain outstanding. The gemspec does not invent a
-license grant, so RubyGems currently warns that a license is unspecified. Packaging
-uses [standard RubyGems tooling](https://guides.rubygems.org/make-your-own-gem/).
+The prerelease package is `shaka` version `0.1.0.pre.1`, distributed under the
+[MIT license](../LICENSE). The gem includes the license and declares it in its metadata.
+Future registry publication still requires separate maintainer approval and follows
+the [release process](releasing.md). Packaging uses
+[standard RubyGems tooling](https://guides.rubygems.org/make-your-own-gem/).

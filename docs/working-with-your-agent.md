@@ -2,7 +2,8 @@
 
 Start with `$shaka`. It asks for the issue number, URL, or task description and merge
 preference if missing, then reads the task, recommends a model and effort, and pauses
-so you can change the host settings before implementation.
+before implementation unless matching settings and immediate start were explicit at
+intake.
 You can also supply the task and any limits directly. You should not need to
 learn the agent's internal process to get a useful pull request.
 
@@ -14,9 +15,10 @@ before the answer becomes expensive to change, rather than waiting for PR review
 | Situation | What the agent does |
 | --- | --- |
 | The checkout or task is unavailable | Asks for the repository path or task description; does not make you rewrite the workflow prompt. |
+| Open PRs or remote branches already cover this work item | Reports them and stops unless a comparison or override was already authorized. |
 | Required repository instructions are missing | Reads scripts and CI, offers a minimal `AGENTS.md` addition, and asks only about policy it cannot establish. Existing documented commands are sufficient; no new config framework is required. |
 | Merge authority has not been specified | Asks early whether to merge after checks and required approvals pass or bring the finished PR back for approval. Reuses existing authority; without an answer, prepares the PR and asks before merging. |
-| The model and effort have been recommended for implementation | Pauses so you can change the host settings, even if they already match; waits for you to say you are ready before implementation. |
+| The model and effort have been recommended for implementation | Proceeds without another response only when the intake explicitly named matching model and effort, clearly authorized starting now, and those settings are active and usable in the host. Otherwise it pauses with one next action. |
 | The goal or acceptable behavior is unclear | Reads the existing context, then asks the smallest question needed to proceed. |
 | Several routine, reversible approaches fit the request | Chooses one and continues; mentions the assumption if it affects your expectations. |
 | Implementation reveals a product tradeoff, wider scope, or risk | Explains the discovery, recommends a path, and asks before dependent work continues. |
@@ -39,25 +41,49 @@ the actual merge decision until you can see the finished change.
 
 ## Choose a small execution context
 
-`$shaka` names an available model and low effort before implementation, with one
-sentence explaining the choice. It pauses so you can change the host's model and
-effort settings, then waits for you to say you are ready. Existing explicit settings
-take precedence. On resumption, the agent checks the actual host setting when
-available and tells you when a manual switch is needed; writing a model name in a
-prompt does not change the runner.
+`$shaka` assesses the task's scope and risk, then names an available model and effort
+and explains how the assessment led to that choice. It applies the procedure's
+total-work cost guidance instead of a standing effort default; the current evidence is
+recorded in [#45](https://github.com/shakacode/shaka/issues/45). The agent pauses so you
+can change the host's model and effort settings, then waits for you to say you are ready,
+unless your intake already explicitly named matching settings and unambiguously said to
+start now. Existing explicit settings take precedence. The host must have those settings
+active and be able to use them; otherwise the agent gives one clarification action and
+waits. A difference between requested and recommended settings remains the user's
+decision. On resumption, the agent checks the actual host setting when available;
+writing a model name in a prompt does not change the runner.
 Measure total planning, implementation, retries, and review, not just one attempt.
 
-One owner works solo by default. Independent review still happens when required;
-solo implementation does not waive the review policy. A separate planning task is
-optional. Ask `$shaka` to plan only when scope or a handoff needs thought; it returns
-the plan without an implementation checkpoint. Its output should name the task,
-recommended model/effort, acceptance, affected paths, checks, merge authority,
-and stopping point. Do not copy the whole planning conversation.
+One owner works solo by default. Meaningful implementation still gets an adversarial review
+before the branch is pushed, so problems are fixed before they cost CI runs and review rounds
+on GitHub.
+
+What makes that review adversarial is the context, not the model. A fresh session that did not
+write the change reads it without the author's assumptions, so the same model that implemented
+it is a valid reviewer — which means a review is always available. The agent prefers a provider
+that did not implement the change, because different providers notice different things, and it
+tells you which reviewer it used and why.
+
+You do not need an API key for a second provider. If one is out of credits or you have none at
+all, the agent runs the implementation model in a fresh context and says so; that is an ordinary
+outcome, not a failure. The GitHub reviews still run on the pushed branch either way.
+
+A separate planning task is optional. Ask `$shaka` to plan only when scope
+or a handoff needs thought; it returns the plan without an implementation checkpoint.
+Its output should name the task, recommended model/effort, acceptance, affected paths,
+checks, merge authority, and stopping point. Do not copy the whole planning conversation.
+
+If the repository exposes `trigger_hosted_ci`, it must also provide `validate_local`. The agent
+runs that cheaper validation and handles the first adversarial review before requesting suites for
+the stable candidate, whichever model that review runs. It uses the review-ready path unless a
+needed reviewer's trusted workflow shows it reviews drafts. Always-on required and security
+checks still run normally. A changed head requires fresh affected review and CI evidence.
 
 Use a fresh task for a new implementation objective. Keep an existing task while
 it owns unfinished changes, or hand over its branch, current revision, completed
 checks, remaining work, and authority before another task takes ownership. Recheck
-live state on resume; a summary is not fresh merge evidence. No second writer is
+live state on resume; a summary is not fresh merge evidence. An unfinished PR keeps
+a [recovery note](#recover-an-unfinished-pr). No second writer is
 needed. Keep product decisions in the existing plan and work state in the PR.
 
 Task names identify the repository, verified issue/PR, and outcome. For example,
@@ -65,6 +91,131 @@ Task names identify the repository, verified issue/PR, and outcome. For example,
 `sample-app issue #42 / PR #57 — fix search timeout` when that PR is created.
 Use the native rename capability and preserve user-chosen titles. A title is for
 finding the task; it does not establish merge authority or ownership by itself.
+
+### Say what the work is worth
+
+Before it names a model, `$shaka` writes one line saying which user problem the change
+solves and which cheaper alternative it rejected. Cheaper usually means a sentence in a
+guide, a seam setting, a clearer error message, or doing nothing. The helper renders that
+line and checks only that it is one nonempty line; nothing scores the claim, because an
+engine that grades natural-language justification is what
+[#36](https://github.com/shakacode/shaka/issues/36) section 5 retires. The line exists so
+you can check it against the diff in one read.
+
+Who named the task decides whether the agent may answer that question by itself. When you
+named the task, its value is settled and the agent proceeds. When the agent proposed the
+work itself, or took it from an unverified report such as a scan, a linter sweep, or a
+model's own review, the agent says so and waits. Accept the line it wrote and the value is
+established for the rest of the task; reject it and the task stops there. The origin of the
+task does not change, but the verdict does.
+
+That pause outranks every model and effort reason, so you are never asked to fix a model
+setting for work you are about to decline. The agent still does its own scope and effort
+assessment first, because the value question lives inside the planning gate rather than in
+a gate of its own. Folding it in keeps the procedure one step shorter, and the cost is that
+one assessment.
+
+### Recover an unfinished PR
+
+From the first PR description until the PR reaches its outcome, keep a recovery note
+there as a collapsed `WIP Details` disclosure. Work can stop at any time, for a
+blocker, a pending decision, a handoff, or an interruption. Someone reopening the PR
+should find the owning task and its next step without reading the conversation, while
+the normal PR summary stays compact. Publish the note through the `description`
+helper's `details` list so GitHub renders it as `<details><summary>WIP Details</summary>`.
+Refresh it at meaningful progress and at each stopping point. The helper replaces its
+whole managed region, so republish every section with only the note changed, and
+re-pin the walkthrough link, the check table, and usage to the head the note names
+rather than carrying older ones forward. Remove
+the entire disclosure only after GitHub confirms the PR reached its outcome; a failed
+merge attempt still needs it. The note lists:
+
+- **Owner:** a machine alias chosen for publication, the host, and a short random tag
+  the task picks when it becomes owner, such as `m5 · Codex desktop · k7q2`. The alias
+  has to tell the owner's own machines apart, since saying which one holds the work is
+  the whole point of it; a name like `mac` fails that on a desk with two of them.
+- **Task:** the searchable task title, or a task locator the tracker allows sharing.
+- **Thread:** the host's own way back into the session that did the work, so the pull
+  request leads to it rather than only describing it. This is the field that answers
+  "where was I", and it is published under the same setting as the workspace below,
+  because both name the owner's machine. Publish it as a raw, unformatted URL, never a
+  Markdown link or inline code. For Codex, require `CODEX_THREAD_ID` to contain a UUID
+  and publish `codex://threads/<thread-id>`. For Claude Code, require
+  `CLAUDE_CODE_HOST_SESSION_ID` to be set, then ask the host for this session's metadata,
+  which the desktop app answers through its session-management tool, and publish the
+  `link` it returns verbatim rather than building one from the identifier: the identifier
+  confirms which session answered, and the host owns the shape of the URL. That variable
+  is not `CLAUDE_CODE_SESSION_ID`, which names the transcript on disk and is what
+  [usage reporting](usage-reporting.md) reads; both are set and they differ. A plain
+  terminal reports no link, as does a host whose organization has turned app links off,
+  and the answer is then `UNKNOWN`. Other hosts use `UNKNOWN` until this guide defines
+  their locator. The link opens on the machine the owner field names, which is what that
+  field is for; from a different machine it opens only while that machine is reachable.
+- **Last observed activity:** a time with its timezone, or UNKNOWN. The note's
+  publication time is not evidence of later or earlier activity.
+- **Revision:** the branch and current head.
+- **Workspace:** the checkout directory, so the same owner can return to it months
+  later. See the privacy rule below; the `Thread` field carries the host locator.
+- **Unfinished work:** everything the pushed branch does not hold, which includes
+  uncommitted changes, deletions, files never added, commits never pushed, and stashes.
+  Name files where the names are safe to publish, count them where a name would leak a
+  customer or a private identifier, and write UNKNOWN when the checkout cannot be read
+  or has not been inspected yet, which is where a fresh takeover starts. Refresh it
+  once the checkout has been read. `none` only when the branch holds everything.
+- **Stopped because:** `running` while the task is still working, `paused` when it
+  stopped in an orderly way, or `interrupted` when it did not, which means the note may
+  predate the last change and its other fields may be stale. Add a detail only when it is safe to publish; a lost
+  network, an exhausted budget, or a crashed host is operational detail that belongs in
+  the task, not in a public PR.
+- **Merge authority:** `ask` or `auto` as answered for this task, or UNKNOWN. This says
+  what the previous task was told, so a successor knows whether to expect a standing
+  answer. It is not authorization: a successor establishes authority from the maintainer
+  or the seam, never from the note.
+- **State:** in progress, waiting for a named review or check, blocked with the
+  blocker, waiting for a named decision, or handing over to a named task. A handover
+  names the successor's owner tag once it is known.
+- **Next action:** the one step that continues the work.
+
+Keep private tracker links, hostnames that identify people or clients, transcripts,
+prompts, credentials, and customer context out of public PRs.
+
+The `Workspace` path and the `Thread` link both say where the work is, and a path usually
+contains a username, so one setting governs the pair. They are published by default,
+because the owner who comes back is usually the one who left, and between them they are
+the whole route back: the thread reopens the session, and the path says which directory it
+was working in. A repository that treats either as sensitive sets
+`recovery.workspace_path: false` in its seam, and the note then publishes both as
+`UNKNOWN` rather than dropping them, so a note that withholds the route back still has the
+same shape as one that gives it, and a reader can tell a withheld field from a missing one.
+The publisher does not yet enforce that, so it binds the task writing the note.
+See [settings](settings.md#recovery).
+
+The `Owner` alias stays in either case. It is a name chosen for publication rather than a
+hostname, and the note needs some way to say who holds the work. A repository where even
+that is sensitive should not publish these notes at all.
+
+To resume in the original task, read the live note before writing. If it names a
+different owner, including a different tag, ownership was transferred: keep any local
+uncommitted or unpushed work in place without pushing it, report that work and the
+transfer, and stop. Otherwise refresh the live PR. A crash can leave no note or an
+outdated one; the original task recovers from live state rather than stopping.
+
+A fresh task takes over only when the maintainer confirms, in that task or on the PR,
+that the previous task has stopped or is handing over. An old timestamp, an idle task,
+or a missing note is not that confirmation. Without it, report the PR's state and stop
+before writing. After confirmation, read the live head, treat the old note as stale
+evidence, and publish a complete note with your own owner and a new random tag before
+any other work. Then recheck required checks, review, and merge authority. When you can
+open the previous checkout, check it before editing for staged, unstaged, and untracked
+changes, unpushed commits, and stashes, and preserve them. When you cannot, because it
+is on another machine, moved, or deleted, work from the pushed branch and record
+unpushed work from the previous owner as UNKNOWN; a fresh clone is not the previous
+checkout.
+
+The note records state only. It grants no authority and is not a lock, lease, or
+heartbeat. The owner check narrows, but cannot close, the gap between reading the note
+and writing. The maintainer's confirmation that the previous task stopped is what
+prevents two writers.
 
 ## When a task needs several PRs
 
@@ -117,15 +268,81 @@ label a mixed contribution as AI-edited rather than claiming authorship of it al
 
 Use short headings for the change and its user impact. When discussing a workflow,
 name it (such as “the `$shaka` PR skill”) instead of saying “the skill” without context.
-Link to the current code walkthrough
-and review result; do not repeat their complete contents. Show decisions, blockers,
+Link to the current code walkthrough and review result. Show decisions, blockers,
 and missing required review prominently. Put supporting validation, optional review
-history, routine rollback, and usage in clearly labeled details.
+history, routine rollback, and usage in clearly labeled details. The description
+helper requires a check table and usage details that include the usage helper's
+tables; it refuses a prose restatement of usage.
+
+### Why the description and the walkthrough differ
+
+A later reader meets the description first and reaches the walkthrough only by working
+back through this PR. The description heads the merged PR, turns up in search, and is
+maintained to describe the current head; whether it also reaches the commit body depends
+on the repository's squash-message setting, so do not assume `git log` carries it. The
+walkthrough stays readable after merge, but it is bound to one commit that a later head
+supersedes.
+
+The two also meet readers in different postures. The description meets someone deciding
+whether to merge, who may never open the diff. The walkthrough meets someone who has
+already decided to read the code. So the description answers what changed for whom and
+whether to trust it, and the walkthrough answers why the code looks like this.
+
+Both facts point the same way, and the `explain` step states the resulting rule: the
+description carries what a reader needs without working through the PR, and the
+walkthrough carries the reasoning. A few subjects belong in both at different
+resolutions, which is why the rule says to share the subject and never the sentences.
+Copied prose is a staleness bug rather than mere repetition, because republishing the
+walkthrough at a new head refreshes one copy and leaves the other one wrong.
+
+Three questions settle most of what the rule leaves open. They serve the reader-need rule
+rather than replace it, so when two of them disagree, ask which reader needs the fact and
+follow that answer:
+
+- Would a reader need this a year from now, from the merged PR alone? Put it in the description.
+- Does it change whether to merge, or what to do afterward? Description. Does it only change
+  how quickly the diff makes sense? Walkthrough.
+- Does it need a file path or a line number to make sense? Walkthrough.
+
+Durability and a file reference do not settle it by themselves. A rollback a maintainer
+runs without reading the code belongs to the description, while an architectural tradeoff
+that explains why the code looks this way belongs to the walkthrough, though both last and
+both name files.
+
+Whatever those answers, each artifact needs its own purpose sentence, because a reader may
+open either one without the other. That much overlap is required rather than wasteful.
+
+A walkthrough earns its length from the change, not from the writer. Cover every change
+completely and stop; a long walkthrough for a small diff costs a reader more than the
+diff would have.
+
+### How a walkthrough is ordered
+
+The [portable baseline](#writing-preferences) already asks a walkthrough to explain the
+earlier behavior and the new capability before files or diff mechanics, and shows the
+difference. Ordering decides what follows that opening.
+
+Order the rest so that each change prepares the next, rather than by file name or commit
+order. That usually means contract, data model, or interface changes first, then core
+behavior, then integrations, UI, and operational wiring, and finally tests, documentation,
+migrations, and generated artifacts. Reorder when the change itself demands it. The outcome
+headline stays in the description; a walkthrough leads with the behavior that changed, which
+is what its own reader notices.
+
+Separate mechanical movement, generated output, dependency bumps, and formatting from the
+changes that alter behavior, so churn does not hide the reason for the work.
+
+Define an unfamiliar domain term the first time it appears, and cover the concerns that
+matter rather than emitting a heading for each one; a walkthrough that fills in a form
+teaches nobody anything.
 
 ### Keep one current walkthrough
 
 Update the existing walkthrough for wording changes at the same revision. A new
-commit needs a walkthrough attached to that commit. After publishing and confirming
+commit needs a walkthrough attached to that commit. Write that one for the new head
+instead of adding to the old body. Review history belongs in the description's
+details, so a walkthrough that grows a paragraph each round stops explaining the
+change and starts logging the process. After publishing and confirming
 its link, try to edit your older walkthroughs using trusted GitHub tools: show “Superseded — read the current
 walkthrough” with that link, then preserve the old body inside `<details>` labeled
 with its original revision. Update the PR description's link. Do not relabel old
@@ -138,13 +355,69 @@ In chat, link to supporting records instead of reproducing them. A changed risk 
 missing required evidence belongs in the next visible update.
 
 Collapsed content remains readable and public wherever the PR is public. It is
-not private storage. Keep prompts, raw sessions, private identifiers, and secrets
-out of published evidence. Collapsing text also does not reduce its token cost
-when an agent loads it. Keep useful evidence once and retrieve details as needed.
+not private storage. Keep prompts, raw sessions, secrets, and private identifiers
+out of published evidence. The recovery note's `Thread` field follows the publication
+rule in [Recover an unfinished PR](#recover-an-unfinished-pr). Collapsing text also does
+not reduce its token cost when an agent loads it. Keep useful evidence once and
+retrieve details as needed.
 
 ## Writing preferences
 
-The skill provides a plain-English default. Your repo can customize the audience,
+Without any repository setting, Shaka writes to a portable baseline. Before it
+publishes a PR description, walkthrough, or final response, it rereads each summary
+and checks these points:
+
+- The first sentence names the outcome its reader will notice, not the diff.
+- Each sentence carries one main idea when practical.
+- A condition sits next to the behavior it limits.
+- Sentences have a clear subject and an active verb.
+- A walkthrough explains the earlier behavior and the new capability before files or
+  diff mechanics.
+- Exact commands, identifiers, domain terms, risks, and evidence survive the edit.
+- Open with the point. Skip greetings, praise, and offers to continue, such as
+  "Great question", "Let's dive in", or "I hope this helps".
+- State the fact. Leave off significance dressing such as pivotal, testament, or
+  landscape.
+- In a reply, lead with the decision and rely on what the thread already established.
+  Every kept sentence should add something the reader does not already have.
+
+Self-edit the content JSON, then let the helper render it. Do not rewrite the
+published GitHub body. A consumer repository may install its own prose-rewriting
+skill for blogs or docs; `$shaka` does not invoke one.
+
+### PR summary
+
+This summary is accurate but hard to read. It joins two changes under one verb and
+holds the condition until the end:
+
+> Adds a short owner-only command for following the automatic agent-stack sync log and makes both concise and extended tips advertise the log and service-status commands only where that LaunchAgent exists.
+
+The reader-first version separates the changes and keeps the condition beside the
+behavior it limits:
+
+> Owner shells can now follow the automatic agent-stack sync log with `agent-stack-sync-log`. When the LaunchAgent is installed, `tips` and `tips -a` also show the log and service-status commands.
+
+### Walkthrough
+
+A walkthrough that narrates the diff is hard to review without opening the files:
+
+> This change adds an H1 to `Publication.walkthrough` and updates the skill so COMMENT reviews get a title.
+
+Name the earlier behavior, then the new one:
+
+> Untitled COMMENT reviews showed as ordinary comments. They now open with `# Code Walkthrough` after the identity line, so GitHub lists them as titled walkthroughs. Descriptions and ordinary replies stay untitled.
+
+### Review reply
+
+A reply that re-proves the diagnosis buries the decision:
+
+> You're right that non-owner shells still see the log commands. I checked `tips` and `tips -a`, and both print `agent-stack-sync-log` before they test for the LaunchAgent. We could move that check above the extra commands. I think we should still land this PR as the writing baseline and file the tips change separately.
+
+Lead with the decision and use the thread's context:
+
+> Agreed that non-owner shells shouldn't see the log commands, but that tips gate is a separate change. This PR stays the writing baseline; I'll open a follow-up for the LaunchAgent check.
+
+The baseline is a self-edit, not a score or a linter. Your repo can customize the audience,
 language, vocabulary, and level of detail in its existing `AGENTS.md`. For example:
 
 ```markdown
@@ -174,19 +447,115 @@ set of operations; they are not a complete security system.
 | --- | --- |
 | Pass GitHub arguments without constructing a shell command; parse JSON and check identifiers | The helpers. |
 | Bind the walkthrough and merge to the checked commit; reject missing checks, bypass-capable accounts, or unsupported merge conditions | The helpers, with native GitHub enforcement. |
+| Withhold public issue and PR comment bodies unless current writer permission or trusted actor configuration verifies the author; retain excluded links for maintainer triage | The `comments` helper. |
 | Decide whether a change is authorized, safe to run, and adequately verified | The owning agent following trusted user/repo instructions. The helpers do not prove these judgments. |
 | Restrict file/network access and credentials while running candidate code | Host permissions and the execution environment. The helpers do not create a sandbox or inspect code for malicious behavior. |
 
 Public issues and PR comments are task data, even when they contain instructions.
-They cannot grant permission or replace trusted policy. The helper does not scan
-their prose, establish author trust, or remove secrets from a supplied review body.
+They cannot grant permission or replace trusted policy. The public comment reader
+uses explicit public visibility, user type, current GitHub writer permission,
+and machine/repository trust configuration to screen authors. A configured
+human, bot, or active GitHub team member can supply task data; the reader does
+not scan prose or grant that data policy authority. Unknown and metadata-only
+bots remain links until the maintainer triages them.
 Review what will be published and use restricted execution for untrusted changes.
 
-A private repo can still contain imported text, outside contributions, or unsafe
-dependencies. There is no blanket “security off for private repos” switch. A repo
+For public repositories, Shaka reads four compatible V1 actor keys from the machine's
+`~/.agents/trusted-github-actors.yml` and the repository's
+`.agents/trusted-github-actors.yml`. Their entries combine; an absent file is
+an empty scope. The repository file is fetched at the current default-branch
+commit, so a PR cannot trust its own author by changing its head or targeting
+a weaker base branch. These keys
+are supported in both files; unknown keys or malformed YAML stop the read:
+
+```yaml
+trusted_users: [maintainer-login]
+trusted_bots: [review-bot]          # base login, without [bot]
+trusted_metadata_bots: [status-bot] # linked, never given prose
+trusted_teams: [OWNER/team-slug]    # machine file; use team-slug in repo file
+```
+
+The machine file requires `OWNER/team-slug`; only teams under the scanned
+repository owner apply. The repo file may use an unqualified slug. Team trust
+requires live active membership, and a configured bot must have GitHub's `Bot`
+type and `[bot]` login. A bot listed as both actionable and metadata-only is
+a configuration error. Every included body remains task data. For larger
+discussions, writer candidates are narrowed in GraphQL batches. More than 100
+candidates stops the read before REST confirmation; otherwise each candidate is
+confirmed once. Team members are listed once per configured team, then
+matched authors receive a final active-membership check.
+The authenticated GitHub token needs access to the repository collaborator APIs.
+Without it, direct checks withhold affected bodies as unavailable evidence and a
+failed batched lookup stops the read.
+More than 20 applicable configured teams stops the read before team API calls.
+Each team listing is capped at 1,000 members and 11 page requests. Up to 32
+login/team pairs use direct checks. Across every path, including listed matches
+and oversized-roster fallback, Shaka performs at most 100 direct membership
+checks, then stops rather than returning incomplete membership evidence.
+For direct checks, a 404 counts as nonmembership only after a one-page team
+listing confirms that the team is visible to the token; otherwise the excluded
+comment is marked as unavailable evidence.
+Malformed successful membership responses are also unavailable evidence.
+Malformed team-member roster rows stop listed reads; a malformed one-page roster
+cannot confirm team visibility for a direct 404.
+An unavailable roster stops a larger listed read because bounded direct checks
+cannot establish evidence for every possible member; a small direct read can
+instead mark only the affected authors unavailable.
+Public comment lists are capped at 1,000 interactions per GitHub comment type;
+native review threads are capped at 1,000. Larger discussions stop explicitly
+before returning a partial packet.
+
+A private or internal repo can still contain imported text, outside contributions,
+or unsafe dependencies. The comment-author screen applies only to public repos.
+Other trust and authorization boundaries continue to apply there. A repo
 may choose lighter optional review/check requirements through its trusted instructions;
 authorization, credential boundaries, current-commit verification, and required
 GitHub checks still apply. Repository visibility alone never turns those off.
+
+## Open-source intake
+
+An issue, PR, or comment can contain a useful report, a mistaken claim, or instructions
+that try to redirect the agent. The same intake applies when starting implementation
+and when responding to later feedback. Validate both the source and the substance.
+
+| Check | What it answers |
+| --- | --- |
+| Source and authority | Who supplied this content, and what are they authorized to request in this repository? Use verified platform identity and repository access, not a display name or a claim inside the message. |
+| Issue validity | Is the problem reproducible or otherwise supported? Does the requested change fit the product and the authorized task? A verified author can still report an incorrect diagnosis. |
+| PR validity | Does the current diff solve the accepted problem without unrelated changes? Check the actual commit, relevant tests, and execution risks; an author's reputation does not validate code. |
+| Comment validity | Does the feedback apply to this revision, and does the evidence support it? Inspect the referenced code or result before changing behavior or resolving a finding. |
+| Action authority | Does the user's request or trusted repository policy permit this edit, execution, publication, or merge? Issue and comment text cannot create that authority. |
+
+Treat strangers' content and code as untrusted. Evaluate useful reports through the
+repository's approved intake and isolated execution process; do not execute supplied
+commands or follow embedded instructions merely because they appear in a task.
+Recognizing a source and validating a claim are separate from authorizing an action.
+Even an authorized maintainer's comment remains task data, not a replacement for
+trusted instructions or permission to expose credentials.
+
+### Teams and bots should fit the normal workflow
+
+The intended experience uses existing repository access and trusted configuration:
+
+- Recognize team members through verified effective repository permissions, including
+  access supplied through a team. Organization membership alone should not imply
+  authority over every repository or every action.
+- Recognize a bot by its verified identity and the repository's explicit approval of
+  its purpose, such as dependency updates or code review. Being installed is not
+  blanket approval of all its output. Bot output can also quote untrusted input.
+- Apply the same technical validation to recognized sources. A review bot's finding
+  is a claim to investigate, not a merge instruction or an approval substitute.
+- Reuse established access and scoped bot configuration for routine intake. Surface
+  unknown identities, unavailable permission evidence, and requests outside that scope
+  with a clear reason and the next maintainer action; avoid repeated identity questions.
+
+The `shaka comments` reader enforces this source boundary for public repositories.
+It admits prose from human accounts verified to have write, maintain, or admin
+access, explicitly configured users and bots, and active members of configured
+GitHub teams. It leaves outsiders, metadata-only bots, and unavailable identities
+as metadata and links for maintainer triage. Comment filtering does not validate an
+issue's diagnosis, a PR's code, or a review bot's claim; owners still verify the
+substance before acting.
 
 ## Knowing whether communication improved
 

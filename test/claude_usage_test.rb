@@ -8,7 +8,8 @@ module ClaudeUsageFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
   COMMIT = 'a' * 40
   SESSION = '00000000-0000-4000-8000-000000000002'
-  NO_HOST = { 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil }.freeze
+  NO_HOST = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil,
+              'CURSOR_CONVERSATION_ID' => nil }.freeze
 
   private
 
@@ -146,8 +147,10 @@ class ClaudeUsageFailuresTest < Minitest::Test
   end
 
   def test_both_host_contexts_require_an_explicit_host
-    output, error, status = Open3.capture3({ 'CODEX_THREAD_ID' => SESSION, 'CLAUDE_CODE_SESSION_ID' => SESSION },
-                                           COMMAND, 'usage', '--commit', COMMIT, '--contribution', 'implementation')
+    environment = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => SESSION,
+                    'CLAUDE_CODE_SESSION_ID' => SESSION }
+    output, error, status = Open3.capture3(environment, COMMAND, 'usage', '--commit', COMMIT,
+                                           '--contribution', 'implementation')
     refute status.success?
     assert_empty output
     assert_includes error, 'shaka usage:'

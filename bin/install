@@ -3,11 +3,16 @@
 
 require 'fileutils'
 require 'optparse'
+require 'shellwords'
 
 skills_dir = nil
+with_rct = false
+with_claude_towers = false
 parser = OptionParser.new do |options|
-  options.banner = 'Usage: bin/install --skills-dir DIR'
+  options.banner = 'Usage: bin/install --skills-dir DIR [--with-rct] [--with-claude-towers]'
   options.on('--skills-dir DIR', 'Explicit destination for the isolated skill') { |value| skills_dir = value }
+  options.on('--with-rct', 'Also install the Codex-only repository control tower skill') { with_rct = true }
+  options.on('--with-claude-towers', 'Also install the Claude Code control tower skills') { with_claude_towers = true }
   options.on('-h', '--help', 'Show this help') do
     puts options
     exit
@@ -20,7 +25,10 @@ begin
   raise OptionParser::InvalidArgument, 'DIR must not be empty' if skills_dir.strip.empty?
   raise OptionParser::InvalidArgument, ARGV.join(' ') unless ARGV.empty?
 
-  links = %w[shaka].map do |name|
+  names = ['shaka']
+  names << 'rct' if with_rct
+  names.push('mct-claude', 'rct-claude') if with_claude_towers
+  links = names.map do |name|
     [File.realpath("../skills/#{name}", __dir__), File.join(File.expand_path(skills_dir), name)]
   end
   conflict = links.find do |source, destination|
@@ -38,6 +46,8 @@ begin
       puts "Installed: #{destination} -> #{source}"
     end
   end
+  executable = File.join(File.expand_path(skills_dir), 'shaka/scripts/shaka')
+  puts "Next: #{Shellwords.escape(executable)} seam init --help"
 rescue OptionParser::ParseError, SystemCallError => e
   warn e.message
   exit 1
