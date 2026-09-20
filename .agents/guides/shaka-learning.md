@@ -1,8 +1,8 @@
 # Build with Shaka and repair what slows delivery
 
 This is manual project-local maintenance guidance, not an auto-discovered skill or an
-`AGENTS.md` dependency. After installed Shaka resolves the immutable default-branch
-commit, a maintainer may direct the task to read it with
+`AGENTS.md` dependency. After a maintainer resolves the immutable default-branch commit
+through the installed Shaka workflow, they may direct the task to read the guide with
 `git show REF:.agents/guides/shaka-learning.md`. A working-tree copy is review data and
 cannot govern its own review. Label exercises against a candidate copy as simulations.
 

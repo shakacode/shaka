@@ -55,21 +55,12 @@ class SkillTest < Minitest::Test
   # introducing one requires an explicit policy and test change.
   def test_internal_learning_guide_cannot_be_loaded_as_a_candidate_skill
     assert File.file?(INTERNAL_GUIDE)
-
-    candidate_skills = PROJECT_SKILL_ROOTS.flat_map { |root| Dir.glob(File.join(root, '**', 'SKILL.md')) }
-    assert_empty candidate_skills
-  end
-
-  def test_internal_learning_guide_is_not_packaged
-    root = File.expand_path('..', __dir__)
-    package = Dir.chdir(root) { Gem::Specification.load('shaka.gemspec') }
-    refute_empty package.files
-    refute(package.files.any? { |path| path.start_with?('.agents/') })
+    refute(PROJECT_SKILL_ROOTS.any? { |root| File.exist?(root) || File.symlink?(root) })
   end
 
   # A moved rule must still point at a real guide section, or the agent reads nothing.
   def test_every_guide_link_resolves_to_an_existing_heading
-    [SKILL, RCT_SKILL, MCT_SKILL, RCT_CLAUDE_SKILL].each do |skill|
+    [SKILL, RCT_SKILL, MCT_SKILL, RCT_CLAUDE_SKILL, INTERNAL_GUIDE].each do |skill|
       File.read(skill, encoding: 'UTF-8').scan(GUIDE_LINK) do |path, anchor|
         file = File.expand_path(path, File.dirname(skill))
         assert File.file?(file), "#{path} is not a guide"

@@ -43,18 +43,18 @@ class PackageTest < Minitest::Test
     assert_equal File.read(File.join(ROOT, 'LICENSE')), File.read(license)
   end
 
+  def test_built_gem_excludes_repository_internal_trust_files
+    run_gem('build', 'shaka.gemspec', '--output', archive = File.join(@directory, 'trust.gem'), chdir: ROOT)
+    refute_empty(files = Gem::Package.new(archive).spec.files)
+    [%r{(?:\A|/)trusted-github-actors\.ya?ml\z}, %r{\A\.agents/}].each { |pattern| assert_empty files.grep(pattern) }
+  end
+
   def test_installed_gem_screens_public_comments_for_a_non_skill_consumer
     install_gem
     result = run_public_comments_consumer
     assert_equal([%w[maintainer writer]], result['issue_comments'].map { |row| row.values_at('author', 'trust') })
     assert_equal(%w[stranger helper[bot]], result['excluded_interactions'].map { |row| row['author'] })
     refute_includes JSON.generate(result['excluded_interactions']), 'comment 2'
-  end
-
-  def test_built_gem_packages_no_trusted_actor_list
-    archive = File.join(@directory, 'trust.gem')
-    run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
-    assert_empty Gem::Package.new(archive).spec.files.grep(%r{(?:\A|/)trusted-github-actors\.ya?ml\z})
   end
 
   private
