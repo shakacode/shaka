@@ -15,8 +15,9 @@ things. That is a preference, never a requirement. `shaka reviewer` applies it, 
 [invoke a reviewer locally](#invoke-a-reviewer-locally) creates the fresh context.
 Run the identity it returns. Do not keep the implementation host and pick a sibling model
 there: an OpenAI Sol implementation lists Claude first, and reviewing it with GPT-6 Astra
-is both the same provider and a more expensive model ($10/$50 per 1M input/output versus
-Sol's $4/$20 on the standard API tier). Missing Claude credentials are `--unavailable
+is both the same provider and a more expensive model. OpenAI standard list prices were
+$10/$50 per 1M input/output for Astra versus $4/$20 for Sol on 2026-09-19; see
+[OpenAI pricing](https://developers.openai.com/api/docs/pricing). Missing Claude credentials are `--unavailable
 anthropic/claude`, after which the helper may select the next listed provider.
 
 `review.reviewers` in the repository's trusted `.agents/agent-workflow.yml` lists the local
