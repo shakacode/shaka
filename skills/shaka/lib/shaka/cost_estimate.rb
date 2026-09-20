@@ -22,13 +22,19 @@ module Shaka
   # Anthropic list prices, which bill uncached input, cache reads and cache writes separately.
   module AnthropicCost
     # Per million tokens: input, cache read, 5-minute cache write, 1-hour cache write, output.
+    # Every model Anthropic still serves outside limited-availability programs; retired models
+    # are omitted because no current session routes to one.
     RATES = {
+      'claude-fable-5-1' => %w[10 0.25 12.5 20 50],
+      'claude-fable-5' => %w[10 1 12.5 20 50],
       'claude-opus-5' => %w[5 0.5 6.25 10 25],
       'claude-opus-4-8' => %w[5 0.5 6.25 10 25],
       'claude-opus-4-7' => %w[5 0.5 6.25 10 25],
       'claude-opus-4-6' => %w[5 0.5 6.25 10 25],
+      'claude-opus-4-5' => %w[5 0.5 6.25 10 25],
       'claude-sonnet-5' => %w[2 0.2 2.5 4 10],
       'claude-sonnet-4-6' => %w[3 0.3 3.75 6 15],
+      'claude-sonnet-4-5' => %w[3 0.3 3.75 6 15],
       'claude-haiku-4-5' => %w[1 0.1 1.25 2 5]
     }.freeze
 

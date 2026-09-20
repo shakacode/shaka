@@ -274,6 +274,15 @@ class UsageAnthropicCostTest < Minitest::Test
     refute_includes report, '| Metric | UNKNOWN |'
   end
 
+  def test_every_served_model_family_has_a_rate_including_the_cheaper_fable_cache_read
+    { 'claude-opus-4-5' => '$0.001110', 'claude-sonnet-4-5' => '$0.000666',
+      'claude-haiku-4-5' => '$0.000222', 'claude-fable-5-1' => '$0.002190',
+      'claude-fable-5' => '$0.002220' }.each do |model, expected|
+      report = estimate(anthropic_record(configuration: ['anthropic', 'UNKNOWN', model, 'xhigh']))
+      assert_metric report, 'USD estimate', expected
+    end
+  end
+
   def test_a_configured_model_prices_a_source_that_records_no_routed_model
     report = estimate(anthropic_record(configuration: ['anthropic', 'claude-haiku-4-5', 'UNKNOWN', 'high']))
     assert_metric report, 'USD estimate', '$0.000222'
