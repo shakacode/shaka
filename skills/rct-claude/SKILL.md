@@ -107,7 +107,8 @@ master from here.
 Resolve the sibling installed `shaka` skill to a trusted `scripts/shaka` path outside
 every candidate checkout; stop if it is inside the checkout. Rename this session with
 `set_session_title` to `<PREFIX> RCT — Shaka`, using that helper as `prefix --root ROOT
---ref REF`, and pin it with `set_pinned`. Preserve a more specific user-chosen title
+--ref REF` and its JSON `prefix` field, and pin it with `set_pinned`. Preserve a more
+specific user-chosen title
 when it already identifies the repository and role. Read both back with `get_session`.
 If either call fails, report the tool error and do not tell the master that setup
 succeeded.

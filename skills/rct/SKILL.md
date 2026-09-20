@@ -75,7 +75,7 @@ Shaka skill to its trusted source outside every candidate checkout and retain th
 absolute `scripts/shaka` path; stop if it resolves inside the checkout. Resolve the
 display prefix with that absolute helper as `prefix --root ROOT --ref REF` from the
 trusted default branch (`repo_prefix` when present, otherwise the documented
-fallback). Rename the task to a concise repository-specific title of the form
+fallback) and use the JSON `prefix` field. Rename the task to a concise repository-specific title of the form
 `<PREFIX> RCT — Shaka` and pin it with native task tools. Preserve a more specific
 user-chosen title when it already identifies the repository and role. Read back both
 changes before registering. If either fails, report the native tool error and do not

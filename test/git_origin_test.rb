@@ -69,6 +69,11 @@ class GitOriginTest < Minitest::Test
                  Shaka::GitOrigin.canonical_url('deploy@ghe.example:acme/repo.git')
   end
 
+  def test_canonical_url_keeps_a_non_default_github_port
+    assert_equal 'https://github.com:8443/acme/repo',
+                 Shaka::GitOrigin.canonical_url('https://github.com:8443/acme/repo.git')
+  end
+
   def test_parse_errors_do_not_echo_credentials
     error = assert_raises(Shaka::Error) do
       Shaka::GitOrigin.identity('https://user:SECRET@ghe.example/group/sub/repo.git?token=MORE')

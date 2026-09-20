@@ -31,7 +31,7 @@ module Shaka
     def canonical_url(url)
       parsed_url = parsed(url)
       identity = parsed_url.fetch(:identity)
-      return "https://github.com/#{identity}" if parsed_url.fetch(:host).casecmp?('github.com')
+      return "https://github.com/#{identity}" if github_https?(parsed_url)
 
       scheme = parsed_url[:scheme]
       host = authority(parsed_url)
@@ -48,7 +48,7 @@ module Shaka
 
     def uri_fields(origin)
       match = URI_HOST_PATH.match(origin)
-      return unless match
+      return unless match && valid_host?(match[2])
 
       path = repository_path(match[4], origin)
       { origin:, scheme: match[1], host: match[2], port: match[3], identity: path, name: File.basename(path) }
@@ -57,12 +57,15 @@ module Shaka
 
     def scp_fields(origin)
       match = SCP_HOST_PATH.match(origin)
-      return unless match
+      return unless match && valid_host?(match[1])
 
       path = repository_path(match[2], origin)
       { origin:, scheme: nil, host: match[1], port: nil, identity: path, name: File.basename(path) }
     end
     private_class_method :scp_fields
+
+    def valid_host?(host) = host.match?(/\A[A-Za-z0-9.-]+\z/)
+    private_class_method :valid_host?
 
     def repository_path(raw, origin)
       path = raw.split(/[?#]/, 2).first&.delete_suffix('.git')
@@ -71,6 +74,20 @@ module Shaka
       parse_error(origin)
     end
     private_class_method :repository_path
+
+    def github_https?(parsed_url)
+      parsed_url.fetch(:host).casecmp?('github.com') && default_port?(parsed_url)
+    end
+    private_class_method :github_https?
+
+    def default_port?(parsed_url)
+      port = parsed_url[:port]
+      return true if port.nil?
+      return port == '22' if parsed_url[:scheme] == 'ssh'
+
+      port == '443'
+    end
+    private_class_method :default_port?
 
     def authority(parsed_url)
       host = parsed_url.fetch(:host).downcase

@@ -239,6 +239,16 @@ class ReposCatalogOriginTest < Minitest::Test
     end
   end
 
+  def test_refresh_treats_ssh_port_22_as_the_same_repository
+    with_home do |home|
+      registered_repository(home, name: 'scp', prefix: 'GHE', origin: 'git@ghe.example:acme/repo.git')
+      registered_repository(home, name: 'ssh', prefix: 'GHE', origin: 'ssh://git@ghe.example:22/acme/repo.git')
+      catalog = refresh(home)
+
+      assert_empty catalog.fetch('duplicate_prefixes')
+    end
+  end
+
   def test_refresh_treats_host_case_as_the_same_repository
     with_home do |home|
       registered_repository(home, name: 'repo', prefix: 'SAME')

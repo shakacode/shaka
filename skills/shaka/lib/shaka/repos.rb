@@ -85,7 +85,8 @@ module Shaka
 
     def collision_key(row)
       uri = URI(row.fetch('url'))
-      host = uri.port && uri.port != uri.default_port ? "#{uri.host}:#{uri.port}" : uri.host
+      default = uri.scheme == 'ssh' ? 22 : uri.default_port
+      host = uri.port && uri.port != default ? "#{uri.host}:#{uri.port}" : uri.host
       "#{host.downcase}/#{row.fetch('identity')}"
     end
 
