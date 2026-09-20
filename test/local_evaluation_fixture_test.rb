@@ -8,7 +8,10 @@ require 'shaka/repository_config'
 
 module LocalEvaluationFixtureAssertions
   ROOT = File.expand_path('../eval/fixtures/local_evaluation', __dir__)
-  FIXTURES = %w[probe feasibility].to_h { |name| [name, File.join(ROOT, name)] }.freeze
+  FIXTURES = Dir.children(ROOT).sort.filter_map do |name|
+    path = File.join(ROOT, name)
+    [name, path] if File.directory?(path)
+  end.to_h.freeze
   COMMON_FILES = %w[
     .agents/agent-workflow.yml .agents/bin/setup .agents/bin/test .agents/bin/validate
     .github/workflows/validate.yml .ruby-version AGENTS.md Gemfile Gemfile.lock fixture.yml
@@ -35,9 +38,7 @@ module LocalEvaluationFixtureAssertions
                          reference\s+(?:solution|assets?))/ix
   FORBIDDEN_WORKFLOW_INPUT = /\bsecrets\b|github(?:\.token\b|\s*\[\s*['"]token['"]\s*\])/i
 
-  def application_files(name)
-    APP_FILES.fetch(name).map { |path| File.join(FIXTURES.fetch(name), path) }
-  end
+  def application_files(name) = APP_FILES.fetch(name).map { |path| File.join(FIXTURES.fetch(name), path) }
 
   def assert_minimal_seam(root)
     config = Shaka::RepositoryConfig.load(root:)
@@ -181,7 +182,7 @@ class LocalEvaluationFixtureExecutionTest < Minitest::Test
     end
   end
 
-  def test_fixture_setup_is_offline_and_leaves_the_tree_unchanged
+  def test_fixture_setup_can_run_offline_and_leaves_the_tree_unchanged
     FIXTURES.each_value { |root| setup_fixture(root) }
   end
 
@@ -198,7 +199,7 @@ class LocalEvaluationFixtureExecutionTest < Minitest::Test
       path = APP_FILES.fetch(name).find { |candidate| candidate.start_with?('test/') }
       output, success = capture_fixture_test(root, path)
       assert success, output
-      assert_match(/1 runs?, \d+ assertions?, 0 failures, 0 errors, 0 skips/, output)
+      assert_match(/\b1 runs?\b, \d+ assertions?, 0 failures, 0 errors, 0 skips/, output)
     end
   end
 end
