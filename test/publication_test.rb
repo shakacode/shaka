@@ -96,6 +96,25 @@ class PublicationRegressionTest < Minitest::Test
     )
     assert_includes rendered, '| openai | 1 |'
   end
+
+  # Break: Usage and cost as a collapsed summary without the USD total forces a second expand
+  # to learn the scenario price that is already in the body table.
+  def test_usage_and_cost_summary_includes_usd_totals_from_the_body
+    body = "#{USAGE.fetch('body')}\n\n| Metric | grok-4.6 |\n| --- | --- |\n| USD estimate | $0.758116 |\n"
+    rendered = Shaka::Publication.description(
+      description_content('details' => [{ 'summary' => 'Usage and cost', 'body' => body }])
+    )
+    assert_includes rendered, '<summary>Usage and cost · $0.758116</summary>'
+  end
+
+  def test_usage_and_cost_summary_does_not_repeat_totals_already_in_the_summary
+    body = "#{USAGE.fetch('body')}\n\n| Metric | grok-4.6 |\n| --- | --- |\n| USD estimate | $0.758116 |\n"
+    rendered = Shaka::Publication.description(
+      description_content('details' => [{ 'summary' => 'Usage and cost · $0.758116', 'body' => body }])
+    )
+    assert_includes rendered, '<summary>Usage and cost · $0.758116</summary>'
+    refute_includes rendered, '$0.758116 · $0.758116'
+  end
 end
 
 # Structure the renderer owns so models cannot vary it.

@@ -279,7 +279,9 @@ Call that entry **Usage and cost**. Put the dollar table in the visible summary 
 the figures are known, for example `Usage and cost — $8.29 grok-4.6, $0.94 claude-opus-5`.
 The helper prints the USD estimate above its collapsed `Token detail` block so a reader
 does not open two nested details to see what the task cost. Rate-card notes and sources
-stay with that estimate; native token rows stay inside `Token detail`.
+stay with that estimate; native token rows stay inside `Token detail`. The renderer
+also copies `USD estimate` cells onto that summary when the body has them and the
+summary does not already include each occurrence.
 
 ## PR execution provenance
 

@@ -41,6 +41,23 @@ module Shaka
       text
     end
 
+    # A collapsed Usage and cost summary that omits the USD cells hides the total behind a click.
+    def usage_cost_summary(summary, body)
+      return summary unless summary.match?(/usage/i)
+
+      totals = usd_estimate_cells(body)
+      return summary if totals.empty? || totals.all? { |cell| summary.include?(cell) }
+
+      "#{summary} · #{totals.join(' · ')}"
+    end
+
+    def usd_estimate_cells(body)
+      line = body.each_line.map(&:rstrip).find { |row| row.match?(/\A\s*\|\s*USD estimate\s*\|/) }
+      return [] unless line
+
+      line.strip.delete_prefix('|').delete_suffix('|').split('|').map(&:strip).drop(1).reject(&:empty?)
+    end
+
     def checked(value, field)
       return value unless prose(value).match?(ESCAPE)
 
@@ -162,6 +179,7 @@ module Shaka
     def details_block(detail)
       summary = PublicationText.summary_text(detail['summary'], 'details summary')
       body = PublicationText.required(detail['body'], "details #{summary}")
+      summary = PublicationText.usage_cost_summary(summary, body)
       "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
     end
 
