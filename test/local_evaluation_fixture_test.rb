@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'timeout'
 require 'yaml'
+require 'shaka/doctor/bounded_command'
 require 'shaka/repository_config'
 
 module LocalEvaluationFixtureAssertions
@@ -17,6 +17,7 @@ module LocalEvaluationFixtureAssertions
     'feasibility' => %w[lib/trail_marker.rb test/trail_marker_test.rb]
   }.freeze
   MERGE_PREFERENCES = { 'probe' => 'auto', 'feasibility' => 'ask' }.freeze
+  FIXTURE_RUNNER = Shaka::Doctor::BoundedCommand.new(timeout: 60)
   COMMANDS = { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/test',
                'test' => '.agents/bin/test' }.freeze
   FORBIDDEN_CONTENT = /(?:AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|
@@ -110,12 +111,8 @@ module LocalEvaluationFixtureAssertions
 
   def capture_fixture_test(root)
     command = File.join(root, '.agents/bin/test')
-    Open3.popen2e([command, command], chdir: Dir.tmpdir) do |_input, output, wait|
-      Timeout.timeout(60) { return [output.read, wait.value] }
-    rescue Timeout::Error
-      Process.kill('KILL', wait.pid)
-      raise
-    end
+    stdout, stderr, success = FIXTURE_RUNNER.call([command], Dir.tmpdir)
+    ["#{stdout}\n#{stderr}", success]
   end
 end
 
@@ -183,8 +180,8 @@ class LocalEvaluationFixtureExecutionTest < Minitest::Test
   def test_fixture_validation_stays_under_one_minute
     FIXTURES.each_value do |root|
       setup_fixture(root)
-      output, status = capture_fixture_test(root)
-      assert status.success?, output
+      output, success = capture_fixture_test(root)
+      assert success, output
       assert_match(/[1-9]\d* runs?, \d+ assertions?, 0 failures, 0 errors, 0 skips/, output)
     end
   end
