@@ -293,13 +293,8 @@ class SeamInitializerValidationTest < Minitest::Test
 
       output, error, status = Open3.capture3(*arguments)
 
-<<<<<<< HEAD
       assert_predicate status, :success?, error
-      assert_equal({ 'required' => 'none' }, JSON.parse(output).fetch('review'))
-=======
-      assert status.success?, error
       assert_equal({ 'required' => 'none', 'pace' => 'swift' }, JSON.parse(output).fetch('review'))
->>>>>>> 2237d97 (Add review.pace so swift merges on required checks and thorough waits.)
     end
   end
 
