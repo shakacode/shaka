@@ -11,6 +11,10 @@ version: 1
 # so its rule is agent-enforced and the note names the command. Loading validates that every
 # quote still appears in the workflow and that no rule stated in those four forms is left out.
 # An entry may also classify a rule the scan does not find, as isolated-checkout does.
+#
+# One row answers for one rule. Nothing enforces that: no check can tell two rules in a
+# sentence from one, so a quote wide enough to cover two is caught by review or not at all.
+# Quote the narrowest span that states the rule, and give a second rule its own entry.
 rules:
   - id: trusted-seam-ref
     phase: intake
@@ -143,12 +147,16 @@ rules:
       satisfies the rule. Nothing screens a body the agent writes by hand.
   - id: helper-owns-the-body
     phase: explain
-    quote: >-
-      Do not rewrite the rendered GitHub body, and do not invoke a separate rewrite skill.
+    quote: Do not rewrite the rendered GitHub body
     enforced_by: agent
     note: >-
       `description` replaces only its marked region, so the helper's own writes stay bounded.
-      Nothing detects a body edited through raw `gh` or by another skill.
+      Nothing detects a body edited through raw `gh`.
+  - id: no-rewrite-skill
+    phase: explain
+    quote: do not invoke a separate rewrite skill
+    enforced_by: agent
+    note: Nothing records which skills ran, so a rewritten summary is indistinguishable from a written one.
   - id: walkthrough-link-placement
     phase: explain
     quote: Do not bury that URL in the opening paragraph.
@@ -203,13 +211,14 @@ rules:
       report, so a green check named for a reviewer can still be mistaken for one.
   - id: settled-resolution
     phase: review
-    quote: >-
-      Do not claim resolution while the procedure says review is unsettled, and never create a
-      monitor or follow-up issue for the handoff.
+    quote: Do not claim resolution while the procedure says review is unsettled
     enforced_by: agent
-    note: >-
-      Nothing detects a premature resolution claim, and nothing prevents the follow-up issue the
-      rule forbids.
+    note: Nothing compares a resolution claim against the state of the reviews it claims to settle.
+  - id: no-handoff-monitor
+    phase: review
+    quote: never create a monitor or follow-up issue for the handoff
+    enforced_by: agent
+    note: Nothing reads the tracker, so the forbidden follow-up issue would be created without complaint.
   - id: human-review-surfaces
     phase: finish
     quote: >-
@@ -231,17 +240,21 @@ rules:
     quote: do not ask for a second approval afterward
     enforced_by: agent
     note: Asking again is chat prose; no command reads the final response.
-  - id: required-checks-and-protection
+  - id: required-checks
     phase: finish
-    quote: >-
-      Never accept missing, failed, pending, or stale required checks, and never bypass
-      protection.
+    quote: Never accept missing, failed, pending, or stale required checks
     enforced_by: code
     detector: >-
-      `Merge#verify_checks` refuses an empty or non-passing required-check list,
-      `Merge#verify_snapshot` refuses a head that moved, and `Merge#verify_submission_mode`
-      refuses when `viewerCanMergeAsAdmin` is true. shakacode/shaka's "Protect main" ruleset
-      supplies `required_status_checks` on GitHub as well.
+      `Merge#verify_checks` refuses an empty required-check list and any check that is not
+      passing, and `Merge#verify_snapshot` refuses a head that moved since verification.
+      shakacode/shaka's "Protect main" ruleset supplies `required_status_checks` as well.
+  - id: no-protection-bypass
+    phase: finish
+    quote: never bypass protection
+    enforced_by: code
+    detector: >-
+      `Merge#verify_submission_mode` refuses when `viewerCanMergeAsAdmin` is true, so an actor
+      who could merge past protection does not merge through this command.
   - id: no-background-retries
     phase: finish
     quote: never schedule background retries
