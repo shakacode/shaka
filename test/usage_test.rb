@@ -187,6 +187,18 @@ class UsageReviewCoverageTest < Minitest::Test
     assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
     refute_includes header, 'included below'
   end
+
+  # The table needs every record in a group to carry a field. A header that looks
+  # only at per-record fields can say "included below" over a table of UNKNOWN cells.
+  def test_review_header_follows_printed_metric_cells
+    first = usage('a', 'current', 100)
+    first[:payload][:usage] = { input_tokens: 100 }
+    second = usage('b', 'current', 20)
+    second[:payload][:usage] = { output_tokens: 20 }
+    header = run_report([context('current'), first, second], '--contribution', 'review').split('<details>').first
+    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    refute_includes header, 'included below'
+  end
 end
 
 class UsageFailuresTest < Minitest::Test

@@ -89,12 +89,10 @@ module Shaka
     end
 
     def local_review_included?
-      @options[:contribution] == 'review' && @responses.any? { |record| countable_usage?(record['usage']) }
-    end
+      return false unless @options[:contribution] == 'review'
 
-    def countable_usage?(usage)
-      usage.is_a?(Hash) && Usage::METRIC_FIELDS.any? do |_label, field|
-        usage[field].is_a?(Integer) && usage[field] >= 0
+      table_groups.any? do |_configuration, group|
+        Usage::METRIC_FIELDS.any? { |_label, field| total_field(group, field).is_a?(Integer) }
       end
     end
   end
