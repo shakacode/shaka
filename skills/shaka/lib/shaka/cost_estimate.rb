@@ -38,7 +38,8 @@ module Shaka
       'claude-haiku-4-5' => %w[1 0.1 1.25 2 5]
     }.freeze
     # Web search bills $10 per 1,000 requests on top of tokens; web fetch adds no charge.
-    # A response that ran no search omits the counter, so its absence reads as none.
+    # A response that ran no search omits the counter, and an omitted key is
+    # indistinguishable from a recorded null here, so neither is read as a gap.
     SEARCH_RATE = Rational(1, 100)
 
     private

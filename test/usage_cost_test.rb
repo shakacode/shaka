@@ -290,6 +290,9 @@ class UsageAnthropicCostTest < Minitest::Test
 
   def test_a_response_that_ran_no_search_omits_the_counter_and_is_still_priced
     assert_metric estimate(without(anthropic_record, 'web_search_requests')), 'USD estimate', '$0.001110'
+    recorded_null = anthropic_record
+    recorded_null['usage']['web_search_requests'] = nil
+    assert_metric estimate(recorded_null), 'USD estimate', '$0.001110'
   end
 
   def test_a_configured_model_prices_a_source_that_records_no_routed_model
