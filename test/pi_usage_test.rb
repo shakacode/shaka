@@ -251,6 +251,29 @@ class PiUsageTest < Minitest::Test
   end
 end
 
+class PiInvalidReasoningCostTest < Minitest::Test
+  include PiUsageFixture
+
+  def test_invalid_reasoning_on_openai_pi_does_not_restore_rate_cards
+    Dir.mktmpdir do |directory|
+      output = report('--host', 'pi', '--file', write_session(directory, openai_terra_invalid_reasoning))
+      assert_pi_cost output, '$0.000100', 'UNKNOWN'
+      refute_includes output, 'learn.chatgpt.com'
+      refute_includes output, 'developers.openai.com'
+    end
+  end
+
+  private
+
+  def openai_terra_invalid_reasoning
+    records = Marshal.load(Marshal.dump(branched_session))
+    message = records.last[:message]
+    message.merge!(provider: 'openai', model: 'gpt-5.6-terra')
+    message[:usage][:reasoning] = 21
+    records
+  end
+end
+
 class PiUsageFailuresTest < Minitest::Test
   include PiUsageFixture
   include PiUsageMutationFixture

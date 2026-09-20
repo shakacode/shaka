@@ -17,7 +17,10 @@ module Shaka
                  'output_tokens' => usage['output'], 'reasoning_output_tokens' => reasoning(usage),
                  'cache_write_input_tokens' => usage['cacheWrite'], 'total_tokens' => usage['totalTokens'],
                  'native_cost_usd' => native_cost(usage['cost']) }
-      return unreadable if invalid_reasoning?(tokens) || contradictory_total?(tokens)
+      if invalid_reasoning?(tokens) || contradictory_total?(tokens)
+        unreadable
+        return { 'native_cost_usd' => nil }
+      end
 
       tokens
     end
