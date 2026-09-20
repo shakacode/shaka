@@ -57,7 +57,8 @@ module Shaka
       mapping!(rule, 'rule')
       string!(rule['id'], 'rule id')
       label = "rule #{rule['id']}"
-      keys!(rule, RULE_KEYS, %w[detector note], label)
+      keys!(rule, RULE_KEYS, %w[rule detector note], label)
+      string!(rule['rule'], "#{label} rule") if rule.key?('rule')
       RULE_KEYS.each { |key| string!(rule[key], "#{label} #{key}") }
       enforcement!(rule, label)
     end

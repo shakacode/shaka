@@ -83,9 +83,12 @@ module Shaka
         "and #{counts.fetch('agent', 0)} enforced by nothing but the agent."
     end
 
+    # A quote locates the rule in the workflow; where a span is not a readable sentence on
+    # its own, `rule` states it. Without that, half of "Never A or B" would read as do B.
     def row(rule)
       backing = rule['detector'] || rule.fetch('note')
-      "| #{cell(rule.fetch('quote'))} | #{rule.fetch('enforced_by')} | #{cell(backing)} |"
+      stated = rule['rule'] || rule.fetch('quote')
+      "| #{cell(stated)} | #{rule.fetch('enforced_by')} | #{cell(backing)} |"
     end
 
     # Folded YAML carries newlines, and a stray pipe would split the row it belongs in.

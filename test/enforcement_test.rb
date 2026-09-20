@@ -6,14 +6,6 @@ require 'shaka/enforcement_config'
 require 'shaka/enforcement_coverage'
 
 class EnforcementConfigTest < Minitest::Test
-  def test_the_packaged_audit_classifies_every_rule_the_packaged_workflow_states
-    rules = Shaka::EnforcementConfig.load.fetch('rules')
-
-    refute_empty rules
-    assert_equal rules.length, rules.map { |rule| rule.fetch('id') }.uniq.length
-    rules.each { |rule| refute_empty rule.fetch('quote').strip }
-  end
-
   # The audit's whole value is that it cannot quietly go stale, so these are the two ways it
   # could: the workflow drops the sentence, or the workflow gains a rule nobody classified.
   def test_rejects_a_quote_the_workflow_no_longer_contains
@@ -60,16 +52,6 @@ class EnforcementConfigTest < Minitest::Test
 
       assert_includes error.message, "classifies no rule for #{field}"
     end
-  end
-
-  # The scan misses restrictive "only ..." rules, so an entry has to be able to classify one
-  # the scan never demands. Running candidate code outside its checkout is that kind of rule.
-  def test_classifies_a_trust_rule_the_scan_does_not_find
-    rule = Shaka::EnforcementConfig.load.fetch('rules').find { |entry| entry['id'] == 'isolated-checkout' }
-
-    refute_nil rule
-    refute_match Shaka::EnforcementCoverage::MARKER, rule.fetch('quote')
-    assert_equal 'agent', rule.fetch('enforced_by')
   end
 
   def test_rejects_a_rule_that_names_no_section
@@ -141,6 +123,40 @@ class EnforcementConfigTest < Minitest::Test
   end
 end
 
+# The packaged audit is the artifact; these read it rather than a fixture.
+class PackagedAuditTest < Minitest::Test
+  def test_the_packaged_audit_classifies_every_rule_the_packaged_workflow_states
+    rules = Shaka::EnforcementConfig.load.fetch('rules')
+
+    refute_empty rules
+    assert_equal rules.length, rules.map { |rule| rule.fetch('id') }.uniq.length
+    rules.each { |rule| refute_empty rule.fetch('quote').strip }
+  end
+
+  # The scan misses restrictive "only ..." rules, so an entry has to be able to classify one
+  # the scan never demands. Running candidate code outside its checkout is that kind of rule.
+  def test_classifies_a_trust_rule_the_scan_does_not_find
+    rule = Shaka::EnforcementConfig.load.fetch('rules').find { |entry| entry['id'] == 'isolated-checkout' }
+
+    refute_nil rule
+    refute_match Shaka::EnforcementCoverage::MARKER, rule.fetch('quote')
+    assert_equal 'agent', rule.fetch('enforced_by')
+  end
+
+  # Half of "Never A or B" is not a rule on its own, so a row states it instead of quoting it.
+  def test_states_a_rule_whose_quote_is_not_a_sentence
+    stated = Shaka::EnforcementConfig.load.fetch('rules').select { |rule| rule['rule'] }
+
+    refute_empty stated
+    stated.each do |rule|
+      refute_equal rule.fetch('rule'), rule.fetch('quote')
+      assert_includes Shaka::EnforcementCoverage.sections(Shaka::WorkflowConfig.load)
+                                                .fetch(rule.fetch('phase')),
+                      Shaka::EnforcementCoverage.normalize(rule.fetch('quote'))
+    end
+  end
+end
+
 class EnforcementCommandTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
   RULES = Shaka::EnforcementConfig.load.fetch('rules')
@@ -191,7 +207,7 @@ class EnforcementCommandTest < Minitest::Test
     reported = RULES.find { |rule| rule['enforced_by'] == 'reported' }
 
     assert status.success?, output
-    assert_includes output, "| #{reported.fetch('quote')} | reported |"
+    assert_includes output, "| #{reported['rule'] || reported.fetch('quote')} | reported |"
   end
 
   # A command that reads only the fields an agent sends it answers nothing, so the audit has
@@ -208,7 +224,7 @@ class EnforcementCommandTest < Minitest::Test
     alone = RULES.select { |rule| rule['enforced_by'] == 'agent' }
 
     assert status.success?, output
-    alone.each { |rule| assert_includes output, "| #{rule.fetch('quote')} | agent |" }
+    alone.each { |rule| assert_includes output, "| #{rule['rule'] || rule.fetch('quote')} | agent |" }
   end
 
   def test_rejects_arguments
