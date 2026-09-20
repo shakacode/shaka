@@ -277,8 +277,18 @@ class RepositoryConfigRecoveryTest < Minitest::Test
     end
   end
 
+  def test_rejects_control_characters_before_spawning_git
+    ["main\0evil", "main\revil"].each do |value|
+      with_repository('base_branch' => value) do |root|
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+        assert_includes error.message, 'base_branch must not contain control characters'
+      end
+    end
+  end
+
   def test_rejects_a_base_branch_git_would_reject
-    ['-not-a-branch', 'has space', 'ends.lock', 'a..b', "new\nline"].each do |value|
+    ['-not-a-branch', 'has space', 'ends.lock', 'a..b'].each do |value|
       with_repository('base_branch' => value) do |root|
         error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 

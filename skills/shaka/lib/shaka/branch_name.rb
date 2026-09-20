@@ -17,13 +17,14 @@ module Shaka
   # and whatever Git adds next without a list to keep current. The cost is a top-level branch
   # named `RELEASE`, which is ambiguous for the same reason.
   module BranchName
+    # A NUL reaches here from a hand-edited seam through YAML, and Open3 answers it with an
+    # ArgumentError the callers do not rescue, so it is refused before Git is spawned.
+    CONTROL = /[[:cntrl:]]/
     QUALIFIED = %r{\Arefs/}
     ROOT_REF = /\A(?:@|[A-Z][A-Z0-9_]*)\z/
 
     def self.explicit!(value, label:, root:)
-      raise Error, "#{label} must be a non-empty string" unless value.is_a?(String) && !value.strip.empty?
-      raise Error, "#{label} must be a branch name, not a qualified ref" if value.match?(QUALIFIED)
-      raise Error, "#{label} must be a branch name, not a Git root ref" if value.match?(ROOT_REF)
+      spawnable!(value, label)
 
       output, _error, status = Open3.capture3('git', '-C', root, 'check-ref-format', '--branch', value)
       raise Error, "#{label} must be a valid Git branch name" unless status.success?
@@ -31,5 +32,13 @@ module Shaka
 
       output.strip
     end
+
+    def self.spawnable!(value, label)
+      raise Error, "#{label} must be a non-empty string" unless value.is_a?(String) && !value.strip.empty?
+      raise Error, "#{label} must not contain control characters" if value.match?(CONTROL)
+      raise Error, "#{label} must be a branch name, not a qualified ref" if value.match?(QUALIFIED)
+      raise Error, "#{label} must be a branch name, not a Git root ref" if value.match?(ROOT_REF)
+    end
+    private_class_method :spawnable!
   end
 end

@@ -150,9 +150,11 @@ them unambiguously names a branch: shorthand such as `@{-1}`, which resolves to 
 qualified ref such as `refs/heads/main`; and a name shaped like one of Git's own root refs,
 meaning `@` or an unslashed all-uppercase name such as `FETCH_HEAD` or `MERGE_AUTOSTASH`,
 which Git resolves to that root ref wherever a revision is expected. Uppercase below the top
-level, as in `release/RC1`, is unambiguous and accepted. Whether the branch *exists* is the stronger check; it needs a fetched remote and
-belongs in `shaka doctor`. Validating the name shells out to `git`, which is the one
-subprocess plain `seam check` runs.
+level, as in `release/RC1`, is unambiguous and accepted.
+
+Whether the branch *exists* is the stronger check; it needs a fetched remote and belongs in
+`shaka doctor`. Validating the name shells out to `git`, which is the one subprocess plain
+`seam check` runs.
 
 ## Standard command scripts
 
