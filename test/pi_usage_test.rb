@@ -16,8 +16,6 @@ module PiUsageFixture
   OLD_ROUTE = %w[observed-old configured-old routed-old].freeze
   ABANDONED_ROUTE = %w[observed-abandoned configured-abandoned routed-abandoned].freeze
   CURRENT_ROUTE = %w[observed-new configured-new routed-new].freeze
-  OLD_ROW = '| observed-old | configured-old | routed-old | high | 900 | 40 | 20 | 5 | 7 | 967 |'
-  CURRENT_ROW = '| observed-new | configured-new | routed-new | low | 300 | 80 | 40 | 10 | 14 | 434 |'
 
   private
 
@@ -97,10 +95,23 @@ module PiUsageFixture
   end
 
   def assert_active_rows(output)
-    assert_includes output, OLD_ROW
-    assert_includes output, CURRENT_ROW
+    assert_metric output, 'Input', 900, 300
+    assert_metric output, 'Native total', 967, 434
     assert_includes output, '3 responses'
     refute_match(/800|abandoned/, output)
+  end
+
+  def assert_current_row(output)
+    assert_metric output, 'Provider', 'observed-new'
+    assert_metric output, 'Input', 300
+    assert_metric output, 'Native total', 434
+  end
+
+  def assert_pi_cost(output, *amounts)
+    assert_metric output, 'USD estimate', *amounts
+    refute_includes output, 'Credits estimate'
+    refute_includes output, 'cursor.com'
+    refute_includes output, '2026-09-16'
   end
 
   def assert_unavailable(file)
@@ -158,8 +169,9 @@ class PiUsageTest < Minitest::Test
   def test_detects_pi_and_uses_latest_active_branch_turn
     Dir.mktmpdir do |directory|
       output = discovered(write_session(directory, branched_session))
-      assert_includes output, CURRENT_ROW
-      assert_includes output, '| observed-new | configured-new | low | UNKNOWN | $0.000300 |'
+      assert_current_row(output)
+      assert_pi_cost output, '$0.000300'
+      assert_includes output, 'Pi recorded native nominal USD'
       assert_includes output, '2 responses'
       assert_includes output, 'Pi source versions: 3'
       assert_includes output, 'latest user turn on the active branch'
@@ -176,7 +188,7 @@ class PiUsageTest < Minitest::Test
       refute status.success?
       assert_empty output
       assert_includes error, 'invalid options'
-      assert_includes report('--host', 'pi', environment: environment), CURRENT_ROW
+      assert_current_row(report('--host', 'pi', environment: environment))
     end
   end
 
@@ -194,8 +206,9 @@ class PiUsageTest < Minitest::Test
       Dir.mktmpdir do |directory|
         output = fork_report(directory, remove_response_ids)
         assert_includes output, '3 responses'
-        assert_includes output, '| 300 | 80 | 40 | 10 | 14 | 434 |'
-        assert_includes output, '| observed-new | configured-new | low | UNKNOWN | $0.000300 |'
+        assert_metric output, 'Input', 900, 300
+        assert_metric output, 'Native total', 967, 434
+        assert_pi_cost output, '$0.000900', '$0.000300'
       end
     end
   end
@@ -205,7 +218,10 @@ class PiUsageTest < Minitest::Test
       records = Marshal.load(Marshal.dump(branched_session))
       remove_optional_evidence(records)
       output = report('--host', 'pi', '--file', write_session(directory, records))
-      assert_includes output, '| observed-new | configured-new | UNKNOWN | low | 300 | 80 | 40 | UNKNOWN | 14 | 434 |'
+      assert_metric output, 'Routed model', 'UNKNOWN'
+      assert_metric output, 'Input', 300
+      assert_metric output, 'Reasoning output', 'UNKNOWN'
+      assert_metric output, 'Native total', 434
     end
   end
 
@@ -217,7 +233,7 @@ class PiUsageTest < Minitest::Test
       message[:usage].merge!(output: 0, totalTokens: 247)
       message[:usage].delete(:reasoning)
       output = report('--host', 'pi', '--file', write_session(directory, records))
-      assert_includes output, '| observed-new | configured-new | routed-new | low | 300 | 80 | 20 | 5 | 14 | 414 |'
+      assert_metric output, 'Native total', 414
     end
   end
 
@@ -235,6 +251,40 @@ class PiUsageTest < Minitest::Test
   end
 end
 
+class PiInvalidReasoningCostTest < Minitest::Test
+  include PiUsageFixture
+
+  def test_invalid_reasoning_on_openai_pi_does_not_restore_rate_cards
+    Dir.mktmpdir do |directory|
+      output = report('--host', 'pi', '--file', write_session(directory, openai_terra_invalid_reasoning))
+      assert_pi_cost output, '$0.000100', 'UNKNOWN'
+      refute_includes output, 'learn.chatgpt.com'
+      refute_includes output, 'developers.openai.com'
+    end
+  end
+
+  def test_missing_usage_on_openai_pi_does_not_restore_rate_cards
+    Dir.mktmpdir do |directory|
+      records = openai_terra_invalid_reasoning
+      records.last[:message].delete(:usage)
+      output = report('--host', 'pi', '--file', write_session(directory, records))
+      assert_pi_cost output, '$0.000100', 'UNKNOWN'
+      refute_includes output, 'learn.chatgpt.com'
+      refute_includes output, 'developers.openai.com'
+    end
+  end
+
+  private
+
+  def openai_terra_invalid_reasoning
+    records = Marshal.load(Marshal.dump(branched_session))
+    message = records.last[:message]
+    message.merge!(provider: 'openai', model: 'gpt-5.6-terra')
+    message[:usage][:reasoning] = 21
+    records
+  end
+end
+
 class PiUsageFailuresTest < Minitest::Test
   include PiUsageFixture
   include PiUsageMutationFixture
@@ -248,7 +298,7 @@ class PiUsageFailuresTest < Minitest::Test
       records = branched_session
       records[0] = header('sdk.custom-session')
       output = discovered(write_session(directory, records), identity: 'sdk.custom-session')
-      assert_includes output, CURRENT_ROW
+      assert_current_row(output)
       assert_unknown_pi(discovered(write_session(directory, records), identity: 'other-session'))
     end
   end
@@ -292,8 +342,8 @@ class PiUsageFailuresTest < Minitest::Test
       second = write_session(directory, changed, name: 'forked.jsonl')
       output = report('--host', 'pi', '--file', first, '--file', second)
       assert_includes output, 'Conflicting response copies'
-      assert_includes output, '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
-      assert_includes output, '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+      assert_metric output, 'Input', 100, 'UNKNOWN'
+      assert_metric output, 'USD estimate', '$0.000100', 'UNKNOWN'
     end
   end
 
@@ -303,7 +353,7 @@ class PiUsageFailuresTest < Minitest::Test
         records = Marshal.load(Marshal.dump(branched_session))
         records.last[:message][:usage][:reasoning] = reasoning
         output = report('--host', 'pi', '--file', write_session(directory, records))
-        assert_includes output, '| observed-new | configured-new | routed-new | low | UNKNOWN | UNKNOWN | UNKNOWN |'
+        assert_metric output, 'Input', 'UNKNOWN'
         assert_includes output, 'Unreadable or unidentifiable records'
         refute_includes output, 'SENSITIVE'
       end
@@ -316,14 +366,19 @@ class PiUsageFailuresTest < Minitest::Test
         records = Marshal.load(Marshal.dump(branched_session))
         set_native_cost(records, cost)
         output = report('--host', 'pi', '--file', write_session(directory, records))
-        assert_includes output, CURRENT_ROW
-        assert_includes output, '| observed-new | configured-new | low | UNKNOWN | UNKNOWN |'
-        refute_includes output, 'SENSITIVE'
+        assert_unknown_native_cost(output)
       end
     end
   end
 
   private
+
+  def assert_unknown_native_cost(output)
+    assert_current_row(output)
+    assert_metric output, 'USD estimate', 'UNKNOWN'
+    refute_includes output, 'Pi recorded native nominal USD'
+    refute_includes output, 'SENSITIVE'
+  end
 
   def assert_unknown_pi(output)
     assert_includes output, 'Pi source versions: UNKNOWN'

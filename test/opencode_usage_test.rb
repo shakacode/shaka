@@ -12,7 +12,20 @@ module OpencodeUsageFixture
             'CURSOR_CONVERSATION_ID' => nil, 'OPENCODE_SESSION_ID' => nil }.freeze
   OLD_USER = 'msg-old-user'
   NEW_USER = 'msg-new-user'
-  ROW = '| opencode | session-model | routed-model | medium | 475 | 9201 | 314 | 5 | 0 | 9995 |'
+  ROW = <<~ROW.chomp
+    | Metric | opencode |
+    | --- | --- |
+    | Provider | opencode |
+    | Configured model | session-model |
+    | Routed model | routed-model |
+    | Effort | medium |
+    | Input | 475 |
+    | Cached input | 9201 |
+    | Output | 314 |
+    | Reasoning output | 5 |
+    | Cache writes | 0 |
+    | Native total | 9995 |
+  ROW
 
   private
 
@@ -94,7 +107,7 @@ class OpencodeUsageTest < Minitest::Test
       output = report('--host', 'opencode', '--file', write_export(directory, latest_fixture))
       assert_includes output, 'OpenCode source versions: 1.18.31'
       assert_includes output, 'Input excludes cache reads and writes'
-      assert_includes output, '| opencode | session-model | medium | UNKNOWN | UNKNOWN |'
+      assert_metric output, 'USD estimate', 'UNKNOWN'
       assert_includes output, 'Cache-exclusive input is unpriced'
       assert_includes output, '2026-'
     end
@@ -103,8 +116,8 @@ class OpencodeUsageTest < Minitest::Test
   def test_selects_all_or_explicit_turns
     Dir.mktmpdir do |directory|
       file = write_export(directory, latest_fixture)
-      assert_includes report('--host', 'opencode', '--file', file, '--all-turns'), '| 1375 | 9201 | 334 | 5 | 0 |'
-      assert_includes report('--host', 'opencode', '--file', file, '--turn', OLD_USER), '| 900 | 0 | 20 |'
+      assert_includes report('--host', 'opencode', '--file', file, '--all-turns'), '| Input | 1375 |'
+      assert_includes report('--host', 'opencode', '--file', file, '--turn', OLD_USER), '| Input | 900 |'
       assert_includes report('--host', 'opencode', '--file', file, '--turn', NEW_USER), ROW
     end
   end
@@ -137,7 +150,7 @@ class OpencodeUsageTest < Minitest::Test
       priced['info'].merge!('providerID' => 'openai', 'modelID' => 'gpt-5.6-sol')
       document = single_fixture(priced).tap { |export| export['info']['model']['id'] = 'gpt-5.6-sol' }
       output = report('--host', 'opencode', '--file', write_export(directory, document))
-      assert_includes output, '| openai | gpt-5.6-sol | medium | UNKNOWN | UNKNOWN |'
+      assert_metric output, 'USD estimate', 'UNKNOWN'
       assert_includes output, 'Cache-exclusive input is unpriced'
       refute_includes output, '$0.384000'
     end
@@ -148,7 +161,9 @@ class OpencodeUsageTest < Minitest::Test
       document = latest_fixture
       document['info'].delete('model')
       output = report('--host', 'opencode', '--file', write_export(directory, document))
-      assert_includes output, '| opencode | UNKNOWN | routed-model | medium | 475 |'
+      assert_metric output, 'Configured model', 'UNKNOWN'
+      assert_metric output, 'Routed model', 'routed-model'
+      assert_metric output, 'Input', 475
     end
   end
 end
@@ -162,7 +177,9 @@ class OpencodeUsageFailuresTest < Minitest::Test
       broken['cache'].delete('read')
       message = assistant_message('resp-new', NEW_USER, 1_789_660_287_053, 1_789_660_292_357, broken)
       output = report('--host', 'opencode', '--file', write_export(directory, single_fixture(message)))
-      assert_includes output, '| 100 | UNKNOWN | 20 | 0 | 0 | 160 |'
+      assert_metric output, 'Input', 100
+      assert_metric output, 'Cached input', 'UNKNOWN'
+      assert_metric output, 'Native total', 160
       refute_includes output, 'SENSITIVE'
     end
   end
@@ -174,7 +191,7 @@ class OpencodeUsageFailuresTest < Minitest::Test
       args = ['--host', 'opencode', '--file', write_export(directory, single_fixture(first)),
               '--file', write_export(directory, single_fixture(second), name: 'second.json')]
       output = report(*args)
-      assert_includes output, '| UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN |'
+      assert_metric output, 'Input', 'UNKNOWN'
       assert_includes output, 'Conflicting response copies'
       refute_includes output, '| 475 |'
     end

@@ -11,13 +11,16 @@ module Shaka
     private
 
     def token_usage(usage)
-      return {} unless usage.is_a?(Hash)
+      return unpriced_native unless usage.is_a?(Hash)
 
       tokens = { 'input_tokens' => usage['input'], 'cached_input_tokens' => usage['cacheRead'],
                  'output_tokens' => usage['output'], 'reasoning_output_tokens' => reasoning(usage),
                  'cache_write_input_tokens' => usage['cacheWrite'], 'total_tokens' => usage['totalTokens'],
                  'native_cost_usd' => native_cost(usage['cost']) }
-      return unreadable if invalid_reasoning?(tokens) || contradictory_total?(tokens)
+      if invalid_reasoning?(tokens) || contradictory_total?(tokens)
+        unreadable
+        return unpriced_native
+      end
 
       tokens
     end
@@ -45,6 +48,10 @@ module Shaka
       value = cost['total'] if cost.is_a?(Hash)
       is_number = value.is_a?(Integer) || (value.is_a?(Float) && value.finite?)
       value if is_number && value >= 0
+    end
+
+    def unpriced_native
+      { 'native_cost_usd' => nil }
     end
   end
 
