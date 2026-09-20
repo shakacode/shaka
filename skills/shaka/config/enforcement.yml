@@ -345,7 +345,8 @@ rules:
     enforced_by: code
     detector: >-
       `Merge#verify_native_state` refuses unless `reviewDecision` is `APPROVED` or absent, so an
-      unsatisfied required review stops the merge.
+      unsatisfied required review stops a merge the helper submits. Where the maintainer clicks
+      merge instead, GitHub's own required-review setting is what holds.
   - id: no-second-approval
     phase: finish
     quote: do not ask for a second approval afterward
@@ -406,7 +407,8 @@ rules:
     enforced_by: code
     detector: >-
       Under thorough, `ReviewPace.allowed_merge_states` returns CLEAN alone on a queue-disabled
-      base, so `merge` refuses an UNSTABLE state rather than leaving it to the agent.
+      base, so `merge` refuses an UNSTABLE state rather than leaving it to the agent. A
+      maintainer clicking merge is outside it; GitHub does not know about the pace.
   - id: no-background-retries
     phase: finish
     quote: never schedule background retries

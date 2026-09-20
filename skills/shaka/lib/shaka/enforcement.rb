@@ -10,10 +10,13 @@ module Shaka
   # or only when. Whether an entry's answer is true is for a human to review; this renders it.
   class Enforcement
     QUESTION = 'Each row answers one question: if an agent ignores this rule, does anything fail?'
-    LEGEND = "- `code` — a `shaka` command refuses the action after checking the state it governs.\n" \
+    CODE_LEGEND = '- `code` — a `shaka` command refuses the action when it runs. A merge can be ' \
+                  "the maintainer's own GitHub click, which no command sees, so each row says " \
+                  'what holds there.'
+    LEGEND = "#{CODE_LEGEND}\n" \
              "- `reported` — a command surfaces the violation; the agent can still proceed.\n" \
              "- `github` — a repository setting refuses it.\n" \
-             '- `agent` — nothing checks it; the note says what is missing.'
+             '- `agent` — nothing checks it; the note says what is missing.'.freeze
     SCOPE = 'The scan behind this audit finds the rules workflow.yml states with never, ' \
             'must, do not, or only when; an entry may classify a rule stated another way, ' \
             'but nothing requires one. It reads packaged text alone, so a `github` row ' \
@@ -95,9 +98,7 @@ module Shaka
     def row(rule)
       backing = rule['detector'] || rule.fetch('note')
       stated = rule['rule'] || rule.fetch('quote')
-      "| #{cell(stated)} | #{rule.fetch('enforced_by')} | #{cell(backing)} |"
+      "| #{self.class.cell(stated)} | #{rule.fetch('enforced_by')} | #{self.class.cell(backing)} |"
     end
-
-    def cell(text) = self.class.cell(text)
   end
 end
