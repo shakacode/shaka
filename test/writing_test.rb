@@ -107,8 +107,19 @@ class WritingAdvisoryTest < Minitest::Test
   end
 
   def test_filler_openers_are_listed_and_absence_is_stated
-    assert_includes lines('In order to merge, note that the gate runs.'), 'in order to, note that'
+    assert_includes lines('In order to merge, the gate runs. Note that it prints.'), 'in order to, note that'
     assert_includes lines('The gate runs before publication.'), 'filler openers: none'
+  end
+
+  # The signal is an opener, so the same phrase inside a sentence is not one.
+  def test_a_filler_phrase_used_mid_sentence_is_not_reported
+    assert_includes lines('The helper caches the listing in order to avoid a second request.'),
+                    'filler openers: none'
+  end
+
+  # The list is the repository's own, so it has to carry more than one verb.
+  def test_other_bare_third_person_verbs_are_named
+    assert_includes lines('Rejects duplicated prose before publication.'), 'diff-shaped'
   end
 
   # The baseline names this opening in as many words and it is not a bare verb.

@@ -66,10 +66,13 @@ class GitHubWritingTest < Minitest::Test
     assert_includes error.message, 'This description repeats'
   end
 
-  # A body carrying two managed regions names no single description to compare.
-  def test_an_ambiguous_description_region_is_not_compared
+  # A body carrying two managed regions names no single description, and publishing
+  # into it is already refused, so reading it stops the walkthrough rather than skipping.
+  def test_an_ambiguous_description_region_stops_the_walkthrough
     doubled = "<!-- shaka:begin -->\n#{SUMMARY}<!-- shaka:end -->\n<!-- shaka:begin -->\nB\n<!-- shaka:end -->"
-    assert_equal 123, publishes(pull_body(doubled))
+    github = client(snapshot_response, pull_body(doubled))
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: walkthrough_body) }
+    assert_includes error.message, 'ambiguous'
   end
 
   def publishes_description(*siblings)

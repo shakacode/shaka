@@ -16,7 +16,9 @@ module Shaka
                  'needless to say', 'at the end of the day', 'it is important to', 'as mentioned',
                  'simply put', 'in summary', 'that being said'].freeze
       DIFF_VERBS = %w[adds makes updates fixes removes changes introduces implements refactors renames
-                      moves bumps improves replaces enables allows ensures supports handles adjusts].freeze
+                      moves bumps improves replaces enables allows ensures supports handles adjusts
+                      rejects refuses prevents prints reports returns reads writes checks drops skips
+                      stops keeps sets teaches extends corrects restores].freeze
       DIFF_OPENERS = ['this change', 'this pr', 'this commit', 'this patch', 'this diff'].freeze
       EMPHASIS = /(\*\*|__)(?=\S)(?:(?!\1).)+\1/m
       SENTENCE_END = /(?<=[.!?])\s+/
@@ -74,9 +76,10 @@ module Shaka
 
       def emphasis = text.scan(EMPHASIS).size
 
+      # These are openers, so a phrase used inside a sentence is not one.
       def fillers
-        opener = text.downcase
-        FILLERS.select { |phrase| opener.include?(phrase) }
+        openings = sentences.map(&:downcase)
+        FILLERS.select { |phrase| openings.any? { |sentence| sentence.start_with?(phrase) } }
       end
 
       def per_hundred(count)
