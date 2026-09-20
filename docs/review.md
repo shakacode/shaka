@@ -358,14 +358,15 @@ than supplying their bodies.
 Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers. Each
 block below opens by setting `SHAKA_BASE_BRANCH` to this task's base branch, so the review
 reads the same diff the pull request will merge; change `main` when the seam or the task
-names another base. Keep that line in the block you run: a variable set in one shell does not
-reach the next. Verified flags, current for the versions named:
+names another base, and keep the single quotes so a branch containing `$` or a backtick is
+not expanded by the shell. Keep that line in the block you run: a variable set in one shell
+does not reach the next. Verified flags, current for the versions named:
 
 Codex 0.154.0:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-SHAKA_BASE_BRANCH=main
+SHAKA_BASE_BRANCH='main'
 base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex \
@@ -383,7 +384,7 @@ Claude Code:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-SHAKA_BASE_BRANCH=main
+SHAKA_BASE_BRANCH='main'
 base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
 head=$(git rev-parse HEAD)
 shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
@@ -403,7 +404,7 @@ Grok 1.0.30:
 
 ```bash
 prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-prompt.XXXXXX") || exit 1
-SHAKA_BASE_BRANCH=main
+SHAKA_BASE_BRANCH='main'
 base=$(git merge-base "origin/$SHAKA_BASE_BRANCH" HEAD)
 shaka review-prompt --head "$(git rev-parse HEAD)" --base "$base" --reviewer xai/grok \
   --effort high > "$prompt"
