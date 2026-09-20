@@ -7,14 +7,15 @@ require_relative 'trusted_path_resolver'
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
   class TrustedConfigSource
-    def self.load(root:, ref: nil)
+    def self.load(root:, ref: nil, candidate_commands: true)
       return RepositoryConfig.load(root:) unless ref
 
-      new(root:).load(ref)
+      new(root:, candidate_commands:).load(ref)
     end
 
-    def initialize(root:)
+    def initialize(root:, candidate_commands: true)
       @root = root
+      @candidate_commands = candidate_commands
     end
 
     def load(ref)
@@ -22,7 +23,8 @@ module Shaka
       source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
       raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?
 
-      RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:)
+      RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
+                            candidate_commands: @candidate_commands)
     end
 
     private

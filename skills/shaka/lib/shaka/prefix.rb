@@ -56,7 +56,7 @@ module Shaka
     end
 
     def call
-      config = TrustedConfigSource.load(root: @root, ref: @ref || default_ref).to_h
+      config = TrustedConfigSource.load(root: @root, ref: @ref || default_ref, candidate_commands: false).to_h
       RepoPrefix.display(configured: config['repo_prefix'], repository_name: GitOrigin.repository_name(root: @root))
     end
 

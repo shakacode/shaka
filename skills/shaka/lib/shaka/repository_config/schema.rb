@@ -20,11 +20,12 @@ module Shaka
 
       attr_reader :commands
 
-      def initialize(root:, data:, available_commands: nil, sha: nil)
+      def initialize(root:, data:, available_commands: nil, sha: nil, candidate_commands: true)
         @root = root
         @data = data
         @available_commands = available_commands
         @sha = sha
+        @candidate_commands = candidate_commands
       end
 
       def validate
@@ -56,7 +57,8 @@ module Shaka
       end
 
       def validate_commands
-        @commands = CommandSchema.new(root: @root, available_commands: @available_commands).validate
+        @commands = CommandSchema.new(root: @root, available_commands: @available_commands,
+                                      candidate_commands: @candidate_commands).validate
       end
 
       def validate_review

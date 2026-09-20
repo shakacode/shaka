@@ -17,11 +17,11 @@ module Shaka
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
     attr_reader :base_branch, :commands, :review, :merge, :recovery
 
-    def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil)
-      new(root:, source:, available_commands:, sha:).load
+    def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
+      new(root:, source:, available_commands:, sha:, candidate_commands:).load
     end
 
-    def initialize(root:, source: nil, available_commands: nil, sha: nil)
+    def initialize(root:, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
       if source && available_commands.nil?
         raise Error, 'available_commands is required when repository policy comes from another source'
       end
@@ -30,16 +30,14 @@ module Shaka
       @source = source
       @available_commands = available_commands
       @sha = sha
+      @candidate_commands = candidate_commands
     end
 
     def load
       source = @source || File.read(File.join(@root, PATH), encoding: 'UTF-8')
       DuplicateKeys.check(source, filename: PATH)
       @data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
-      schema = Schema.new(root: @root, data: @data, available_commands: @available_commands, sha: @sha)
-      schema.validate
-      @commands = schema.commands
-      assign_sections
+      apply_schema
       self
     rescue Psych::Exception => e
       raise Error, "Invalid #{PATH}: #{e.message}"
@@ -55,6 +53,14 @@ module Shaka
     end
 
     private
+
+    def apply_schema
+      schema = Schema.new(root: @root, data: @data, available_commands: @available_commands, sha: @sha,
+                          candidate_commands: @candidate_commands)
+      schema.validate
+      @commands = schema.commands
+      assign_sections
+    end
 
     def assign_sections
       @base_branch = @data['base_branch']
