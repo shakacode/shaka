@@ -149,6 +149,7 @@ class LocalEvaluationFixtureShapeTest < Minitest::Test
   def test_fixtures_explicitly_forbid_measured_case_reuse
     FIXTURES.each do |name, root|
       fixture = YAML.safe_load_file(File.join(root, 'fixture.yml'))
+      assert_equal 1, fixture.fetch('version')
       assert_equal "slice_0_#{name}", fixture.fetch('purpose')
       assert fixture.fetch('public_safe'), name
       refute fixture.fetch('reusable_for_measured_cases'), name
