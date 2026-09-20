@@ -68,7 +68,7 @@ module Shaka
 
     def usage
       "Usage: shaka seam check [--root DIR] [--ref REF]\n       " \
-        'shaka seam init --root DIR --base-branch BRANCH [options]'
+        'shaka seam init --root DIR [options]'
     end
 
     def add_common_options(flags)
@@ -77,7 +77,9 @@ module Shaka
     end
 
     def add_init_options(flags)
-      flags.on('--base-branch BRANCH', 'Base branch for a new seam') { |value| @options[:base_branch] = value }
+      flags.on('--base-branch BRANCH', 'Base branch when it is not the default branch') do |value|
+        @options[:base_branch] = value
+      end
       add_command_options(flags)
       add_policy_options(flags)
     end

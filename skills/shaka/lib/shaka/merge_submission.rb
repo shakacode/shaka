@@ -8,7 +8,7 @@ module Shaka
     MERGE_MUTATION = <<~GRAPHQL
       mutation($id: ID!, $head: GitObjectID!) {
         mergePullRequest(input: {pullRequestId: $id, expectedHeadOid: $head, mergeMethod: SQUASH}) {
-          pullRequest { state headRefOid merged mergeCommit { oid } }
+          pullRequest { state headRefOid baseRefName merged mergeCommit { oid } }
         }
       }
     GRAPHQL

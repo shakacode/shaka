@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'merge_target'
 require_relative 'merge_submission'
 require_relative 'review_pace'
 
@@ -13,18 +14,17 @@ module Shaka
       @submission = MergeSubmission.new(github)
     end
 
-    def call(head:, walkthrough:)
-      raise Error, 'Expected a full commit SHA' unless head.is_a?(String) && head.match?(/\A[0-9a-f]{40}\z/)
-
+    def call(head:, base:, walkthrough:)
+      @target = MergeTarget.required!(head, base)
       initial = @github.snapshot
-      verify_snapshot(initial, head)
+      verify_snapshot(initial, head, @target)
       verify_checks(@github.required_checks)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
       current = @github.snapshot
       return reconcile_queued_replay(initial, current, head) if initial['isInMergeQueue']
 
       verify_snapshot(current, head)
-      verify_same_base(initial, current)
+      @target.unchanged!(initial, current)
       @submission.call(current, head)
     end
 
@@ -33,14 +33,15 @@ module Shaka
     def reconcile_queued_replay(initial, current, head)
       unless current['state'] == 'MERGED'
         verify_snapshot(current, head)
-        verify_same_base(initial, current)
+        @target.unchanged!(initial, current)
       end
 
       @submission.reconcile_queued(initial, current, head)
     end
 
-    def verify_snapshot(pull, head)
+    def verify_snapshot(pull, head, target = nil)
       verify_identity(pull, head)
+      target&.validated!(pull)
       verify_submission_mode(pull)
       verify_native_state(pull)
     end
@@ -55,12 +56,6 @@ module Shaka
     def verify_pull_fields(pull)
       raise Error, 'GitHub PR identity is missing' unless pull['id'].is_a?(String) && !pull['id'].empty?
       raise Error, 'GitHub PR base is missing' unless pull['baseRefName'].is_a?(String) && !pull['baseRefName'].empty?
-    end
-
-    def verify_same_base(initial, current)
-      return if current['baseRefName'] == initial['baseRefName']
-
-      raise Error, 'PR base changed; refresh verification and walkthrough'
     end
 
     def verify_submission_mode(pull)

@@ -2,8 +2,8 @@
 # Validate any change with: shaka seam check --root .
 ---
 version: 1
-# Branch that new work starts from and merges into.
-base_branch: main
+# base_branch is omitted, so it resolves to this repository's default branch, main.
+# A task may still name a different base for itself; that never changes where policy is read from.
 # Optional repository-relative plan document.
 plan: docs/pilot-plan.md
 # Reviewer policy. A fresh context is what makes a review adversarial, so the implementation

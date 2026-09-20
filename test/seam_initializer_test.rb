@@ -260,7 +260,7 @@ class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
   def test_rejects_missing_required_policy_before_writing
-    %w[--base-branch --review-policy --review-check].each do |flag|
+    %w[--review-policy --review-check].each do |flag|
       with_repository do |root|
         arguments = init_arguments(root)
         arguments.slice!(arguments.index(flag), 2)
@@ -295,6 +295,18 @@ class SeamInitializerValidationTest < Minitest::Test
 
       assert_predicate status, :success?, error
       assert_equal({ 'required' => 'none', 'pace' => 'swift' }, JSON.parse(output).fetch('review'))
+    end
+  end
+
+  def test_an_omitted_base_branch_leaves_the_key_out_of_the_seam
+    with_repository do |root|
+      arguments = init_arguments(root)
+      arguments.slice!(arguments.index('--base-branch'), 2)
+
+      output, error, status = Open3.capture3(*arguments)
+
+      assert_predicate status, :success?, error
+      refute JSON.parse(output).key?('base_branch')
     end
   end
 

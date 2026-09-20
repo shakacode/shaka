@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'open3'
 require 'pathname'
 require 'shellwords'
+require_relative '../branch_name'
 require_relative '../error'
 
 module Shaka
@@ -48,12 +48,10 @@ module Shaka
       end
 
       def base_branch
-        value = required('base_branch')
-        output, _error, status = Open3.capture3('git', '-C', @root, 'check-ref-format', '--branch', value)
-        raise Error, 'base branch must be a valid Git branch name' unless status.success?
-        raise Error, 'base branch must be an explicit branch name' unless output.strip == value
+        value = @options[:base_branch]
+        return if value.nil?
 
-        output.strip
+        BranchName.explicit!(value, label: 'base branch', root: @root)
       end
 
       def required(name)

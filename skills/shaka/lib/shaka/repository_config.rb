@@ -14,6 +14,7 @@ module Shaka
 
     DEFAULT_RECOVERY = { 'workspace_path' => true }.freeze
 
+    # base_branch is nil when the seam omits it, meaning the repository's default branch.
     attr_reader :base_branch, :commands, :review, :merge, :recovery
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil)
@@ -55,7 +56,7 @@ module Shaka
     private
 
     def assign_sections
-      @base_branch = @data.fetch('base_branch')
+      @base_branch = @data['base_branch']
       @review = with_default_pace(@data.fetch('review'))
       @merge = @data.fetch('merge')
       @recovery = DEFAULT_RECOVERY.merge(@data.fetch('recovery', {}))

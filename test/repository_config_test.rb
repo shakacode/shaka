@@ -246,4 +246,54 @@ class RepositoryConfigRecoveryTest < Minitest::Test
       assert_includes error.message, 'recovery.workspace_path must be true or false'
     end
   end
+
+  def test_an_absent_base_branch_means_the_repository_default_branch
+    with_repository('base_branch' => nil) do |root|
+      assert_nil Shaka::RepositoryConfig.load(root:).base_branch
+    end
+  end
+
+  def test_rejects_a_qualified_ref_git_alone_would_accept
+    with_repository('base_branch' => 'refs/heads/main') do |root|
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, 'base_branch must be a branch name, not a qualified ref'
+    end
+  end
+
+  def test_rejects_a_root_ref_name_git_alone_would_accept
+    %w[@ FETCH_HEAD ORIG_HEAD MERGE_AUTOSTASH BISECT_EXPECTED_REV].each do |value|
+      with_repository('base_branch' => value) do |root|
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+        assert_includes error.message, 'base_branch must be a branch name, not a Git root ref'
+      end
+    end
+  end
+
+  def test_accepts_uppercase_below_the_top_level
+    with_repository('base_branch' => 'release/RC1') do |root|
+      assert_equal 'release/RC1', Shaka::RepositoryConfig.load(root:).base_branch
+    end
+  end
+
+  def test_rejects_control_characters_before_spawning_git
+    ["main\0evil", "main\revil"].each do |value|
+      with_repository('base_branch' => value) do |root|
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+        assert_includes error.message, 'base_branch must not contain control characters'
+      end
+    end
+  end
+
+  def test_rejects_a_base_branch_git_would_reject
+    ['-not-a-branch', 'has space', 'ends.lock', 'a..b'].each do |value|
+      with_repository('base_branch' => value) do |root|
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+        assert_includes error.message, 'base_branch must be a valid Git branch name'
+      end
+    end
+  end
 end
