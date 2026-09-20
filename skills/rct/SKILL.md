@@ -70,8 +70,10 @@ summary, idle state, or old message is insufficient.
 - If more than one qualifies, stop with `RCT setup error: Master Control Tower is
   ambiguous` and list the candidates for the user to resolve.
 
-Once the MCT is unambiguous, make this task the RCT. Rename it to a concise
-repository-specific title ending in `RCT — Shaka` and pin it with native task
+Once the MCT is unambiguous, make this task the RCT. Resolve the display prefix with
+`shaka prefix --root ROOT --ref REF` from the trusted default branch (`repo_prefix` when
+present, otherwise the documented fallback). Rename the task to a concise
+repository-specific title of the form `<PREFIX> RCT — Shaka` and pin it with native task
 tools. Preserve a more specific user-chosen title when it already identifies the
 repository and role. Read back both changes before registering. If either fails,
 report the native tool error and do not tell the MCT that setup succeeded.

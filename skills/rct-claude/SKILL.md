@@ -105,7 +105,8 @@ master from here.
 ## Stamp the role and record it
 
 Rename this session with `set_session_title` to a concise repository-specific title
-ending in `RCT — Shaka`, and pin it with `set_pinned`. Preserve a more specific
+of the form `<PREFIX> RCT — Shaka`, using `shaka prefix --root ROOT --ref REF` for
+`<PREFIX>`, and pin it with `set_pinned`. Preserve a more specific
 user-chosen title when it already identifies the repository and role. Read both back
 with `get_session`. If either call fails, report the tool error with the state you
 observed and do not tell the master that setup succeeded.

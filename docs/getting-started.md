@@ -22,7 +22,8 @@ agent acts. Your repository exposes setup, validation, and focused tests through
 review policy, and merge authority. Shaka validates this contract and helps add it when it
 is missing.
 [Settings](settings.md) documents every key, its allowed values, and what fails when
-one is wrong. Keep long
+one is wrong. The optional [repository catalog](repository-catalog.md) is an
+install-local index of those prefixes, not a fleet registry. Keep long
 commands in repository scripts and human-only constraints in `AGENTS.md`.
 To merge, GitHub must enforce required checks for the acting account and satisfy required
 approvals. A queue-disabled base must allow squash merges; a queue-enabled base uses its

@@ -10,8 +10,10 @@ require_relative '../lib/shaka/claim'
 require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
+require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
+require_relative '../lib/shaka/repos'
 require_relative '../lib/shaka/review_prompt'
 require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
@@ -75,6 +77,16 @@ if ARGV.first == 'claim'
   exit Shaka::Claim.run(ARGV)
 end
 
+if ARGV.first == 'repos'
+  ARGV.shift
+  exit Shaka::Repos.run(ARGV)
+end
+
+if ARGV.first == 'prefix'
+  ARGV.shift
+  exit Shaka::Prefix.run(ARGV)
+end
+
 COMMANDS = %w[pr comments description reply walkthrough merge].freeze
 
 def content(path)
@@ -100,7 +112,8 @@ def usage_banner
   ["Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; ",
    'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help',
    '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka seam check --help',
-   '; shaka workflow --help', '; shaka enforcement --help', '; shaka doctor --help'].join
+   '; shaka workflow --help', '; shaka enforcement --help', '; shaka doctor --help',
+   '; shaka repos --help; shaka prefix --help'].join
 end
 
 options = {}

@@ -2,6 +2,7 @@
 
 require_relative '../branch_name'
 require_relative '../error'
+require_relative '../repo_prefix'
 require_relative 'branch_schema'
 require_relative 'command_schema'
 require_relative 'recovery_schema'
@@ -15,7 +16,7 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch plan branches recovery].freeze
+      OPTIONAL = %w[base_branch plan branches recovery repo_prefix].freeze
 
       attr_reader :commands
 
@@ -50,6 +51,7 @@ module Shaka
       def validate_optional
         BranchSchema.new(@data['branches']).validate if @data.key?('branches')
         RecoverySchema.new(@data['recovery']).validate if @data.key?('recovery')
+        RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
       end
 
       def validate_commands
