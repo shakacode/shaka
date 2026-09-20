@@ -10,6 +10,10 @@ module ClaudeUsageFixture
   SESSION = '00000000-0000-4000-8000-000000000002'
   NO_HOST = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => nil, 'CLAUDE_CODE_SESSION_ID' => nil,
               'CURSOR_CONVERSATION_ID' => nil }.freeze
+  PRINT_USAGE = { input_tokens: 100, cache_read_input_tokens: 40, cache_creation_input_tokens: 7,
+                  output_tokens: 20, output_tokens_details: { thinking_tokens: 5 }, speed: 'standard',
+                  server_tool_use: { web_search_requests: 0 },
+                  cache_creation: { ephemeral_5m_input_tokens: 3, ephemeral_1h_input_tokens: 4 } }.freeze
 
   private
 
@@ -42,9 +46,8 @@ module ClaudeUsageFixture
   def print_result_file(directory, extra = {})
     path = File.join(directory, 'review.json')
     payload = { type: 'result', subtype: 'success', is_error: false, session_id: SESSION,
-                result: 'SENSITIVE-REVIEW-PROSE', model: 'claude-opus-5',
-                usage: { input_tokens: 100, cache_read_input_tokens: 40, cache_creation_input_tokens: 7,
-                         output_tokens: 20, output_tokens_details: { thinking_tokens: 5 } } }
+                result: 'SENSITIVE-REVIEW-PROSE', usage: PRINT_USAGE,
+                modelUsage: { 'claude-opus-5[1m]' => { 'canonicalModel' => 'claude-opus-5' } } }
     File.write(path, JSON.generate(payload.merge(extra)))
     path
   end
@@ -72,6 +75,8 @@ class ClaudeUsageTest < Minitest::Test
                       '--contribution', 'review')
       assert_includes output, "#{COMMIT} / review"
       assert_metric output, 'Input', 100
+      assert_metric output, 'Routed model', 'claude-opus-5'
+      assert_metric output, 'USD estimate', '$0.001079'
       assert_includes output.split('<details>').first, 'Local adversarial reviewer usage: included below'
       refute_includes output, 'SENSITIVE'
     end

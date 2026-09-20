@@ -8,21 +8,73 @@ module Shaka
   module ClaudePrintResult
     private
 
-    def print_result(file)
-      record = JSON.parse(File.read(file, encoding: 'UTF-8'))
+    def print_object(record)
       return unless record.is_a?(Hash) && record['type'] == 'result'
       return [unreadable, nil] if record['is_error'] || !turn?(record['session_id'])
 
       identity = record['session_id']
       [print_snapshot(identity, record), identity]
-    rescue JSON::ParserError, EncodingError
-      nil
     end
 
     def print_snapshot(identity, record)
       { identity => { 'response_id' => identity, 'turn_id' => identity, 'timestamp' => record['timestamp'],
-                      'configuration' => ['anthropic', 'UNKNOWN', record['model'], record['effort']],
+                      'configuration' => ['anthropic', 'UNKNOWN', print_model(record), record['effort']],
                       'billing_mode' => speed(record['usage']), 'usage' => tokens(record['usage']) } }
+    end
+
+    # Real `-p` JSON has no top-level model; the routed name is modelUsage.*.canonicalModel.
+    def print_model(record)
+      present_name(record['model']) || present_name(canonical_model(record['modelUsage']))
+    end
+
+    def canonical_model(usage)
+      entry = usage.values.find { |item| item.is_a?(Hash) } if usage.is_a?(Hash)
+      entry['canonicalModel'] if entry
+    end
+
+    def present_name(value)
+      value if value.is_a?(String) && !value.strip.empty?
+    end
+
+    def read(file)
+      File.open(file, encoding: 'UTF-8') do |io|
+        first = io.gets
+        return [unreadable, nil] unless first
+        return print_pretty(first, io) if first.strip == '{'
+
+        record = parse(first)
+        return finish_print(record, first, io) if record['type'] == 'result'
+
+        jsonl_from(record, io)
+      end
+    rescue SystemCallError
+      [unreadable, nil]
+    end
+
+    def print_pretty(first, io)
+      print_object(JSON.parse(first + io.read.to_s)) || [unreadable, nil]
+    rescue JSON::ParserError, EncodingError
+      [unreadable, nil]
+    end
+
+    def finish_print(record, first, io)
+      rest = io.read.to_s
+      record = JSON.parse(first + rest) unless rest.strip.empty?
+      print_object(record) || [unreadable, nil]
+    rescue JSON::ParserError, EncodingError
+      [unreadable, nil]
+    end
+
+    def jsonl_from(record, io)
+      records = {}
+      turn = nil
+      ingest = lambda do |item|
+        turn = item['promptId'] if item['type'] == 'user'
+        records.merge!(response(item, turn)) if item['type'] == 'assistant'
+      end
+      ingest.call(record)
+      io.each { |line| ingest.call(parse(line)) }
+      [records, turn]
     end
   end
 
@@ -72,24 +124,6 @@ module Shaka
     end
 
     private
-
-    # Streamed lines repeat a response; the last line carries its final usage.
-    def read(file)
-      print_result(file) || jsonl(file)
-    rescue SystemCallError
-      [unreadable, nil]
-    end
-
-    def jsonl(file)
-      records = {}
-      turn = nil
-      File.foreach(file, encoding: 'UTF-8') do |line|
-        record = parse(line)
-        turn = record['promptId'] if record['type'] == 'user'
-        records.merge!(response(record, turn)) if record['type'] == 'assistant'
-      end
-      [records, turn]
-    end
 
     def response(record, turn)
       message = record['message'].is_a?(Hash) ? record['message'] : {}

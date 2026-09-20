@@ -74,8 +74,9 @@ adds the session's subagent transcripts. The default selects the session's lates
 turn together with the subagents started during it. Claude Code writes several lines
 for one streamed response; the reader counts the last line, which carries the final
 usage, once. A Claude CLI `-p --output-format json` file is one `result` object: the
-reader copies its `usage` and routed `model`, and does not publish `result` text.
-An `is_error` result is UNKNOWN.
+reader copies its `usage` and routed model from `modelUsage.*.canonicalModel`, and does not
+publish `result` text. An `is_error` result is UNKNOWN. The CLI object has no top-level
+`model` or `effort`; effort stays UNKNOWN unless the object records it.
 
 The native usage table lists metrics as rows and each configuration as a column.
 It reports provider `anthropic`, the response's model as the routed model, the
