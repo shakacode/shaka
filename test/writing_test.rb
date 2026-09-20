@@ -70,6 +70,22 @@ class WritingDuplicationTest < Minitest::Test
     check("Merging is safe.\n\n#{shared}", "The loader raises early.\n\n#{shared}")
   end
 
+  # A tilde line inside a backtick block does not close it, and the lines after it
+  # are still code rather than prose that quietly leaves the comparison.
+  def test_a_fence_closes_only_on_its_own_delimiter_character
+    copied = 'The loader now rejects an unknown review mode before the workflow starts.'
+    fenced = "```\ncode\n~~~\nstill code\n```\n\n#{copied}"
+    error = assert_raises(Shaka::Error) { check("Merging is safe.\n\n#{fenced}", "It raises.\n\n#{fenced}") }
+    assert_includes error.message, 'This description repeats'
+  end
+
+  # An angle bracket followed by a space is a comparison, not a tag.
+  def test_a_comparison_written_with_angle_brackets_stays_in_the_comparison
+    copied = 'rejects values < the configured minimum and documented threshold > before startup'
+    error = assert_raises(Shaka::Error) { check("The loader #{copied} today.", "It #{copied} now.") }
+    assert_includes error.message, 'This description repeats'
+  end
+
   # Only the leading identity line is the helper's; a robot emoji mid-body is prose.
   def test_a_robot_emoji_inside_the_body_does_not_exempt_the_line_it_opens
     line = '🤖 The loader now rejects an unknown review mode before the workflow starts.'

@@ -6,7 +6,7 @@ module Shaka
   module Writing
     # Reduces published Markdown to the prose a style check is allowed to read.
     module Prose
-      TAG = /<[^>]+>/
+      TAG = %r{</?[A-Za-z][^<>]*>}
       LINK = /\[([^\]]*)\]\([^)]*\)/
       URL = %r{https?://\S+}
       WORD = /[[:alnum:]']+/
@@ -16,6 +16,8 @@ module Shaka
 
       module_function
 
+      # Only a real tag is stripped as HTML: an angle bracket followed by a space is a
+      # comparison in someone's prose, and removing through the next one would hide it.
       # Code, HTML, link targets and bare URLs are not sentences the writer composed,
       # and two summaries citing the same commit would otherwise look like copied prose.
       # Indented code is left in: separating it from an indented paragraph inside a list
@@ -46,11 +48,13 @@ module Shaka
         end.join
       end
 
+      # A fence closes only on its own character, so a tilde line inside a backtick block
+      # leaves it open, and dropping the wrong lines would take real prose out of the count.
       def fence_state(open_mark, mark)
         return open_mark if mark.nil?
         return mark if open_mark.nil?
 
-        mark.length >= open_mark.length ? nil : open_mark
+        mark[0] == open_mark[0] && mark.length >= open_mark.length ? nil : open_mark
       end
 
       def words(markdown) = text(markdown).downcase.scan(WORD)
