@@ -52,6 +52,32 @@ class SeamPrefixTest < Minitest::Test
     end
   end
 
+  def test_prefix_follows_a_trusted_plan_symlink_inside_the_commit
+    with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/plan.md') do |root|
+      FileUtils.mkdir_p(File.join(root, 'docs'))
+      File.write(File.join(root, 'docs/pilot-plan.md'), "plan\n")
+      File.symlink('pilot-plan.md', File.join(root, 'docs/plan.md'))
+      commit_repository(root)
+      FileUtils.rm(File.join(root, 'docs/plan.md'))
+      output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+
+      assert_predicate status, :success?, error
+      assert_equal({ 'prefix' => 'PLAN', 'source' => 'seam' }, JSON.parse(output))
+    end
+  end
+
+  def test_prefix_rejects_a_trusted_plan_symlink_with_a_missing_target
+    with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/plan.md') do |root|
+      FileUtils.mkdir_p(File.join(root, 'docs'))
+      File.symlink('missing.md', File.join(root, 'docs/plan.md'))
+      commit_repository(root)
+      _output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
+
+      refute_predicate status, :success?
+      assert_includes error, 'plan'
+    end
+  end
+
   private
 
   def with_repository(extra = {})

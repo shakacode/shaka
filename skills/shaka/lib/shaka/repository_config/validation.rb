@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'open3'
 require 'pathname'
 require_relative '../error'
+require_relative '../trusted_path_resolver'
 
 module Shaka
   class RepositoryConfig
@@ -51,11 +51,11 @@ module Shaka
           raise Error, "#{label} must stay inside the repository"
         end
 
-        type, error, status = Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{@sha}:#{relative}")
-        return relative if status.success? && type.strip == 'blob'
+        _resolved, entry = TrustedPathResolver.new(root: @root, sha: @sha).resolve(relative)
+        mode, type = entry || []
+        return relative if type == 'blob' && mode != '120000'
 
-        detail = error.strip.empty? ? '' : " (#{error.strip})"
-        raise Error, "#{label} does not exist at #{@sha}: #{value}#{detail}"
+        raise Error, "#{label} does not exist at #{@sha}: #{value}"
       end
 
       def executable!(value, label)
