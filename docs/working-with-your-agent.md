@@ -398,7 +398,8 @@ dropping the walkthrough link does not excuse a description from it. Code, HTML,
 link targets, and the identity line and headings the helper itself renders are not
 counted, and a copied heading is a shared label rather than a copied resolution.
 Code indented rather than fenced does count, because separating it from an indented
-paragraph inside a list needs a Markdown parser. Prose in a script written without
+paragraph inside a list needs a Markdown parser, and the reducer approximates
+GitHub's Markdown rather than implementing them. Prose in a script written without
 spaces, such as Chinese or Japanese, produces too few tokens to form a run, so the
 check does not reach it.
 

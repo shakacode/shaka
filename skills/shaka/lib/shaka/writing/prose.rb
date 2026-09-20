@@ -7,13 +7,14 @@ module Shaka
     # Reduces published Markdown to the prose a style check is allowed to read.
     module Prose
       COMMENT = /<!--.*?-->/m
+      OPEN_COMMENT = /<!--(?:(?!-->).)*\z/m
       TAG = %r{</?[A-Za-z][^<>]*>}
       LINK = /\[([^\]]*)\]\([^)]*\)/
       URL = %r{https?://\S+}
       WORD = /[[:alnum:]']+/
       IDENTITY = /\A\u{1F916}/
       HEADING = /\A\#{1,6}[ \t]/
-      FENCE = /\A {0,3}(?<mark>`{3,}|~{3,})[^`~]*$/
+      FENCE = /\A {0,3}(?<mark>`{3,}|~{3,})(?<info>.*)$/
 
       module_function
 
@@ -28,7 +29,7 @@ module Shaka
       # that nobody wrote. Copied headings go uncounted as a result; a shared label is not
       # the copied resolution the rule is about.
       def text(markdown)
-        stripped = PublicationText.prose(unfenced(markdown.to_s)).gsub(COMMENT, ' ')
+        stripped = PublicationText.prose(unfenced(markdown.to_s)).gsub(COMMENT, ' ').sub(OPEN_COMMENT, ' ')
         bare = stripped.gsub(LINK, '\1').gsub(TAG, ' ').gsub(URL, ' ')
         lines = bare.lines
         lines.shift if lines.first&.match?(IDENTITY)
@@ -44,7 +45,7 @@ module Shaka
       def unfenced(markdown)
         open_mark = nil
         markdown.lines.reject do |line|
-          mark = line[FENCE, :mark]
+          mark = fence_mark(line)
           open_mark = fence_state(open_mark, mark)
           !open_mark.nil? || !mark.nil?
         end.join
@@ -52,6 +53,14 @@ module Shaka
 
       # A fence closes only on its own character, so a tilde line inside a backtick block
       # leaves it open, and dropping the wrong lines would take real prose out of the count.
+      # A backtick fence carries no backtick in its info string; a tilde fence may.
+      def fence_mark(line)
+        match = line.match(FENCE)
+        return unless match
+
+        match[:mark].start_with?('~') || !match[:info].include?('`') ? match[:mark] : nil
+      end
+
       def fence_state(open_mark, mark)
         return open_mark if mark.nil?
         return mark if open_mark.nil?

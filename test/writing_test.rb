@@ -100,6 +100,19 @@ class WritingDuplicationTest < Minitest::Test
     check("Merging is safe.\n#{note}", "It raises early.\n#{note}")
   end
 
+  # A tilde fence may carry a backtick in its info string; a backtick fence may not.
+  def test_a_tilde_fence_with_a_backtick_in_its_info_string_still_opens
+    copied = 'The loader now rejects an unknown review mode before the workflow starts.'
+    body = "~~~ example with a ` tick\nhidden code\n~~~\n\n#{copied}"
+    error = assert_raises(Shaka::Error) { check("Safe.\n\n#{body}", "Raises.\n\n#{body}") }
+    assert_includes error.message, 'This description repeats'
+  end
+
+  def test_a_comment_left_unterminated_takes_the_rest_of_the_body_with_it
+    note = '<!-- the loader now rejects an unknown review mode before the workflow starts'
+    check("Merging is safe.\n#{note}", "It raises early.\n#{note}")
+  end
+
   # Only the leading identity line is the helper's; a robot emoji mid-body is prose.
   def test_a_robot_emoji_inside_the_body_does_not_exempt_the_line_it_opens
     line = '🤖 The loader now rejects an unknown review mode before the workflow starts.'
