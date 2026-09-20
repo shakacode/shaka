@@ -263,6 +263,17 @@ class PiInvalidReasoningCostTest < Minitest::Test
     end
   end
 
+  def test_missing_usage_on_openai_pi_does_not_restore_rate_cards
+    Dir.mktmpdir do |directory|
+      records = openai_terra_invalid_reasoning
+      records.last[:message].delete(:usage)
+      output = report('--host', 'pi', '--file', write_session(directory, records))
+      assert_pi_cost output, '$0.000100', 'UNKNOWN'
+      refute_includes output, 'learn.chatgpt.com'
+      refute_includes output, 'developers.openai.com'
+    end
+  end
+
   private
 
   def openai_terra_invalid_reasoning
