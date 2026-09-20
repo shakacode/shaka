@@ -3,7 +3,7 @@
 require_relative 'test_helper'
 require 'json'
 require 'open3'
-require 'shaka/cursor_usage'
+require 'shaka/usage/cursor_usage'
 
 module CursorUsageFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)

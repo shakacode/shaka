@@ -3,7 +3,7 @@
 require 'open3'
 require 'optparse'
 require_relative 'error'
-require_relative 'usage'
+require_relative 'usage/usage'
 require_relative 'doctor/bounded_command'
 require_relative 'doctor/checks'
 
