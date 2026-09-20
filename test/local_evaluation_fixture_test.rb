@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require 'fileutils'
 require 'yaml'
 require 'shaka/doctor/bounded_command'
 require 'shaka/repository_config'
@@ -20,10 +21,17 @@ module LocalEvaluationFixtureAssertions
   FIXTURE_RUNNER = Shaka::Doctor::BoundedCommand.new(timeout: 30)
   COMMANDS = { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/validate',
                'test' => '.agents/bin/test' }.freeze
-  TRUSTED_ACTIONS = %w[actions/checkout ruby/setup-ruby].freeze
+  EXPECTED_STEPS = [
+    { 'uses' => 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',
+      'with' => { 'persist-credentials' => false } },
+    { 'uses' => 'ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b',
+      'with' => { 'ruby-version' => '.ruby-version', 'bundler-cache' => true } },
+    { 'run' => '.agents/bin/validate' }
+  ].freeze
   FORBIDDEN_CONTENT = /(?:AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|
                          -----BEGIN[ ][A-Z ]*PRIVATE[ ]KEY-----|(?:password|token|api[_-]?key|client[_-]?secret)\s*[:=]|
-                         internal\s+notes?|raw\s+transcripts?|hidden\s+assertions?|known[- ]bad\s+patch(?:es)?|
+                         (?:internal|private)\s+notes?|raw\s+transcripts?|
+                         hidden\s+assertions?|known[- ]bad\s+patch(?:es)?|
                          reference\s+(?:solution|assets?))/ix
   FORBIDDEN_WORKFLOW_INPUT = /\bsecrets\b|github(?:\.token\b|\s*\[\s*['"]token['"]\s*\])/i
 
@@ -71,22 +79,7 @@ module LocalEvaluationFixtureAssertions
 
   def assert_workflow_job(root, job)
     assert_operator job.fetch('timeout-minutes'), :<=, 5
-    assert_pinned_steps(root, job.fetch('steps'))
-  end
-
-  def assert_pinned_steps(root, steps)
-    assert_equal 3, steps.length
-    assert_match %r{\Aactions/checkout@[0-9a-f]{40}\z}, steps[0].fetch('uses')
-    assert_equal({ 'persist-credentials' => false }, steps[0].fetch('with'))
-    assert_match %r{\Aruby/setup-ruby@[0-9a-f]{40}\z}, steps[1].fetch('uses')
-    assert_equal({ 'ruby-version' => '.ruby-version', 'bundler-cache' => true }, steps[1].fetch('with'))
-    assert_equal({ 'run' => '.agents/bin/validate' }, steps[2])
-    assert_trusted_actions(root, steps)
-  end
-
-  def assert_trusted_actions(root, steps)
-    actions = steps.filter_map { |step| step['uses']&.split('@')&.first }
-    assert_equal TRUSTED_ACTIONS, actions
+    assert_equal EXPECTED_STEPS, job.fetch('steps')
     workflow = File.read(File.join(root, '.github/workflows/validate.yml'))
     refute_match FORBIDDEN_WORKFLOW_INPUT, workflow
   end
@@ -102,19 +95,26 @@ module LocalEvaluationFixtureAssertions
   end
 
   def setup_fixture(root)
-    lock = File.join(root, 'Gemfile.lock')
-    before = File.read(lock)
-    before_files = files(root)
-    setup = File.join(root, '.agents/bin/setup')
-    stdout, stderr, success = FIXTURE_RUNNER.call([setup, '--local'], Dir.tmpdir)
-    assert success, "#{stdout}\n#{stderr}"
-    assert_equal before, File.read(lock)
-    assert_equal before_files, files(root)
+    Dir.mktmpdir('shaka-fixture') do |directory|
+      FileUtils.cp_r(root, directory)
+      copy = File.join(directory, File.basename(root))
+      lock = File.join(copy, 'Gemfile.lock')
+      before = [File.read(lock), files(copy)]
+      stdout, stderr, success = FIXTURE_RUNNER.call([File.join(copy, '.agents/bin/setup'), '--local'], Dir.tmpdir)
+      assert success, "#{stdout}\n#{stderr}"
+      assert_equal before, [File.read(lock), files(copy)]
+    end
   end
 
   def capture_fixture_validation(root)
     command = File.join(root, '.agents/bin/validate')
     stdout, stderr, success = FIXTURE_RUNNER.call([command], Dir.tmpdir)
+    ["#{stdout}\n#{stderr}", success]
+  end
+
+  def capture_fixture_test(root, path)
+    command = File.join(root, '.agents/bin/test')
+    stdout, stderr, success = FIXTURE_RUNNER.call([command, path], Dir.tmpdir)
     ["#{stdout}\n#{stderr}", success]
   end
 end
@@ -140,7 +140,8 @@ class LocalEvaluationFixtureShapeTest < Minitest::Test
   end
 
   def test_forbidden_content_detector_covers_each_material_type
-    examples = ['-----BEGIN RSA PRIVATE KEY-----', 'internal notes', 'raw transcript', 'hidden assertion',
+    examples = ['-----BEGIN RSA PRIVATE KEY-----', 'internal notes', 'private notes',
+                'raw transcript', 'hidden assertion',
                 'reference solution', 'reference asset', 'known-bad patch', 'AKIA1234567890ABCDEF', "ghp_#{'a' * 20}",
                 "github_pat_#{'a' * 20}", 'token = placeholder']
     examples.each { |example| assert_match FORBIDDEN_CONTENT, example }
@@ -180,12 +181,24 @@ class LocalEvaluationFixtureExecutionTest < Minitest::Test
     end
   end
 
-  def test_fixture_setup_and_validation_stay_under_one_minute
+  def test_fixture_setup_is_offline_and_leaves_the_tree_unchanged
+    FIXTURES.each_value { |root| setup_fixture(root) }
+  end
+
+  def test_fixture_validation_stays_within_the_small_fixture_boundary
     FIXTURES.each_value do |root|
-      setup_fixture(root)
       output, success = capture_fixture_validation(root)
       assert success, output
       assert_match(/[1-9]\d* runs?, \d+ assertions?, 0 failures, 0 errors, 0 skips/, output)
+    end
+  end
+
+  def test_fixture_test_commands_accept_focused_paths
+    FIXTURES.each do |name, root|
+      path = APP_FILES.fetch(name).find { |candidate| candidate.start_with?('test/') }
+      output, success = capture_fixture_test(root, path)
+      assert success, output
+      assert_match(/1 runs?, \d+ assertions?, 0 failures, 0 errors, 0 skips/, output)
     end
   end
 end
