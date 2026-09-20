@@ -48,7 +48,9 @@ module LocalEvaluationFixtureAssertions
   def assert_runtime_pins(root)
     assert_equal "3.4.6\n", File.read(File.join(root, '.ruby-version'))
     assert_equal ["source 'https://rubygems.org'", "gem 'minitest', '5.27.0'"], gemfile_lines(root)
-    assert_match(/^    minitest \(5\.27\.0\)$/, File.read(File.join(root, 'Gemfile.lock')))
+    lock = File.read(File.join(root, 'Gemfile.lock'))
+    assert_match(/^    minitest \(5\.27\.0\)$/, lock)
+    assert_match(/^  minitest \(5\.27\.0\) sha256=[0-9a-f]{64}$/, lock)
   end
 
   def assert_minimal_workflow(root)
@@ -102,10 +104,12 @@ module LocalEvaluationFixtureAssertions
   def setup_fixture(root)
     lock = File.join(root, 'Gemfile.lock')
     before = File.read(lock)
+    before_files = files(root)
     setup = File.join(root, '.agents/bin/setup')
     stdout, stderr, success = FIXTURE_RUNNER.call([setup, '--local'], Dir.tmpdir)
     assert success, "#{stdout}\n#{stderr}"
     assert_equal before, File.read(lock)
+    assert_equal before_files, files(root)
   end
 
   def capture_fixture_validation(root)
