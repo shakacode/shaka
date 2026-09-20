@@ -1,6 +1,13 @@
 # Model and token reporting
 
 Each task reports the available native usage for its commits and contributions.
+**Native** means copied from the host's own records, as against anything Shaka works
+out for itself: native token counts are read from the transcript, while an
+API-equivalent USD figure is a scenario Shaka prices from a published rate card. The
+opposite of a native number is a derived one, not a foreign one. Where a host records
+its own cost, as Pi does, Shaka publishes that recorded figure rather than recomputing
+it, and says which it is.
+
 `UNKNOWN` means the available records do not establish a value; it never means zero.
 The agent runs the trusted installed helper and includes its output in the PR,
 or the final response when there is no PR:
@@ -243,6 +250,16 @@ rule](working-with-your-agent.md#recover-an-unfinished-pr). The helper reads loc
 and prints allowlisted aggregate metadata; it neither modifies sessions nor publishes
 to GitHub. Review the report for task coverage before publishing it. The visible
 coverage note stays outside the expandable details; missing usage does not block a PR.
+
+## Naming the published block
+
+A PR description has to carry the report inside a `details` entry whose summary
+mentions usage. Name that entry **Usage and cost**. It holds both halves of the
+report, the native token table and the priced scenario, so a summary naming either
+half alone misdescribes the other: calling it token usage drops the money, and
+calling it native usage claims Shaka copied a figure it calculated. Inside it the
+helper names its own collapsed blocks, `Token detail` and `Cost scenarios`, which is
+why the outer summary should not repeat either name.
 
 ## PR execution provenance
 
