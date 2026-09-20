@@ -63,9 +63,7 @@ module Shaka
     end
 
     def anthropic_bill(tokens, rate)
-      input, cached, writes, writes_1h, output = tokens
-      [input, cached, writes - writes_1h, writes_1h, output]
-        .zip(rate).sum { |count, price| count * Rational(price) }
+      tokens.zip(rate).sum { |count, price| count * Rational(price) }
     end
 
     def anthropic_categories(usage)
@@ -75,21 +73,23 @@ module Shaka
       return [nil, 'Incomplete billable token categories'] unless valid_counters?(counters)
 
       input, cached, writes, output = counters
-      writes_1h = usage['cache_write_1h_input_tokens']
-      reason = anthropic_subset_reason(writes, writes_1h, usage['reasoning_output_tokens'], output)
-      reason ? [nil, reason] : [[input, cached, writes, writes_1h || 0, output], nil]
+      split = write_split(usage, writes)
+      reason = anthropic_subset_reason(writes, split, usage['reasoning_output_tokens'], output)
+      reason ? [nil, reason] : [[input, cached, *split, output], nil]
     end
 
-    # The two cache-write rates differ, so an unsplit write total cannot be priced.
-    def anthropic_subset_reason(writes, writes_1h, reasoning, output)
-      return 'Cache-write TTL split UNKNOWN' if writes_1h.nil? && writes.positive?
-      return 'Inconsistent token subsets' unless writes_1h.nil? || hourly_writes?(writes_1h, writes)
+    # A transcript that records no cache write need not break the total down.
+    def write_split(usage, writes)
+      split = %w[cache_write_5m_input_tokens cache_write_1h_input_tokens].map { |key| usage[key] }
+      writes.zero? && split.all?(&:nil?) ? [0, 0] : split
+    end
+
+    # The two cache-write rates differ, so only a split that accounts for the whole total is priced.
+    def anthropic_subset_reason(writes, split, reasoning, output)
+      return 'Cache-write TTL split UNKNOWN' if split.any?(&:nil?)
+      return 'Inconsistent token subsets' unless valid_counters?(split) && split.sum == writes
 
       'Inconsistent token subsets' if invalid_reasoning?(reasoning, output)
-    end
-
-    def hourly_writes?(writes_1h, writes)
-      writes_1h.is_a?(Integer) && (0..writes).cover?(writes_1h)
     end
   end
 

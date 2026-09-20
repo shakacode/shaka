@@ -86,6 +86,7 @@ module Shaka
       creation = usage['cache_creation']
       { 'input_tokens' => usage['input_tokens'], 'cached_input_tokens' => usage['cache_read_input_tokens'],
         'output_tokens' => usage['output_tokens'], 'cache_write_input_tokens' => usage['cache_creation_input_tokens'],
+        'cache_write_5m_input_tokens' => (creation['ephemeral_5m_input_tokens'] if creation.is_a?(Hash)),
         'cache_write_1h_input_tokens' => (creation['ephemeral_1h_input_tokens'] if creation.is_a?(Hash)),
         'reasoning_output_tokens' => (details['thinking_tokens'] if details.is_a?(Hash)) }
     end

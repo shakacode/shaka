@@ -201,6 +201,18 @@ class ClaudeUsagePriceTest < Minitest::Test
     end
   end
 
+  def test_a_cache_creation_split_that_contradicts_the_total_is_not_priced
+    Dir.mktmpdir do |directory|
+      contradictory = priced_reply('m1', 100)
+      contradictory[:message][:usage][:cache_creation][:ephemeral_5m_input_tokens] = 1
+      file = transcript(directory, 'session.jsonl', [prompt('new'), contradictory])
+      output = report('--host', 'claude-code', '--file', file)
+      assert_metric output, 'USD estimate', 'UNKNOWN'
+      assert_includes output, 'Inconsistent token subsets'
+      assert_metric output, 'Cache writes', 7
+    end
+  end
+
   def test_fast_mode_is_not_priced_as_standard_speed
     Dir.mktmpdir do |directory|
       fast = priced_reply('m1', 100)

@@ -43,7 +43,9 @@ in that snapshot: Standard Codex credits and Standard API-equivalent USD for
 supported OpenAI models, Cursor on-demand USD for Grok 4.6, and Anthropic list-price
 USD for supported Claude models. Source links and
 rate notes cover only priced provider and model pairs, not a model name on the
-wrong provider. The estimate prices each unique response
+wrong provider. They describe the rate card that applies to the pair, so they
+still appear beside an UNKNOWN estimate when that response's own counters are
+missing or contradictory; the reason line names why. The estimate prices each unique response
 before summing, so model switches and requests crossing the API context threshold
 are handled separately. Cached input is removed from ordinary input. For the API
 scenario, cache writes are removed too and priced at the published write rate;
