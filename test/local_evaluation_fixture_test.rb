@@ -101,9 +101,8 @@ module LocalEvaluationFixtureAssertions
   def setup_fixture(root)
     lock = File.join(root, 'Gemfile.lock')
     before = File.read(lock)
-    env = { 'BUNDLE_ALLOW_OFFLINE_INSTALL' => 'true' }
     setup = File.join(root, '.agents/bin/setup')
-    _, error, status = Open3.capture3(env, [setup, setup], '--local', chdir: Dir.tmpdir)
+    _, error, status = Open3.capture3([setup, setup], '--local', chdir: Dir.tmpdir)
     assert status.success?, error
     assert_equal before, File.read(lock)
   end
