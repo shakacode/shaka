@@ -98,8 +98,12 @@ at fast speed is labelled apart from a standard one on the same model, so a repo
 covering both still says which column is which. Server-side code execution is not priced here at all. Anthropic
 meters it by container time against a monthly allowance rather than per request, and
 waives it when the same request uses web search or fetch, so no per-response record
-establishes what it cost; none of these estimates include it. Anthropic publishes no context threshold, so no
-long-context multiplier applies. The
+establishes what it cost; none of these estimates include it. A response that pins inference to the US is billed at
+1.1 times every token rate, so the estimate applies that multiplier when the transcript
+records it; the multiplier covers tokens rather than the per-request search charge.
+Global routing is Anthropic's default, so a response that does not name US routing is
+priced at standard rates rather than refused. Anthropic publishes no context threshold,
+so no long-context multiplier applies. The
 cost table heads its column with the priced model, which for Claude Code is the routed
 model, because the configured model is UNKNOWN. Models outside the published rate table
 stay UNKNOWN and the report omits Anthropic rate copy and source links for them.

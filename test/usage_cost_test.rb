@@ -296,6 +296,23 @@ class UsageAnthropicCostTest < Minitest::Test
     end
   end
 
+  def test_us_pinned_inference_carries_its_published_multiplier
+    us = anthropic_record
+    us['usage']['inference_geo'] = 'us'
+    assert_metric estimate(us), 'USD estimate', '$0.001221'
+    ['global', 'not_available', nil].each do |geo|
+      record = anthropic_record
+      record['usage']['inference_geo'] = geo
+      assert_metric estimate(record), 'USD estimate', '$0.001110'
+    end
+  end
+
+  def test_the_geography_multiplier_applies_to_tokens_not_to_search_requests
+    us = anthropic_record(searches: 3)
+    us['usage']['inference_geo'] = 'us'
+    assert_metric estimate(us), 'USD estimate', '$0.031221'
+  end
+
   def test_a_configured_model_prices_a_source_that_records_no_routed_model
     report = estimate(anthropic_record(configuration: ['anthropic', 'claude-haiku-4-5', 'UNKNOWN', 'high']))
     assert_metric report, 'USD estimate', '$0.000222'

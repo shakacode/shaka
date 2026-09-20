@@ -87,7 +87,8 @@ module Shaka
         'cache_write_5m_input_tokens' => nested(usage, 'cache_creation', 'ephemeral_5m_input_tokens'),
         'cache_write_1h_input_tokens' => nested(usage, 'cache_creation', 'ephemeral_1h_input_tokens'),
         'reasoning_output_tokens' => nested(usage, 'output_tokens_details', 'thinking_tokens'),
-        'web_search_requests' => server_tool_requests(usage, 'web_search_requests') }
+        'web_search_requests' => server_tool_requests(usage, 'web_search_requests'),
+        'inference_geo' => usage['inference_geo'] }
     end
 
     # A response that used no server tool omits the group or the counter, which is no charge.

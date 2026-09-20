@@ -40,6 +40,9 @@ module Shaka
     # Web search bills $10 per 1,000 requests on top of tokens; web fetch adds no charge.
     # Readers report no searches as zero, so a count that is absent here was never established.
     SEARCH_RATE = Rational(1, 100)
+    # Pinning inference to the US multiplies every token category. Global is the default, so a
+    # record that does not name US routing is priced at standard rates rather than refused.
+    US_GEO_RATE = Rational(11, 10)
 
     private
 
@@ -70,8 +73,9 @@ module Shaka
     end
 
     def anthropic_bill(priced, rate)
-      tokens, searches = priced
-      (tokens.zip(rate).sum { |count, price| count * Rational(price) } / 1_000_000) + (searches * SEARCH_RATE)
+      tokens, searches, geo = priced
+      billed = tokens.zip(rate).sum { |count, price| count * Rational(price) } / 1_000_000
+      (billed * (geo == 'us' ? US_GEO_RATE : 1)) + (searches * SEARCH_RATE)
     end
 
     def anthropic_categories(usage)
@@ -84,7 +88,7 @@ module Shaka
       split = write_split(usage, writes)
       searches = usage['web_search_requests']
       reason = anthropic_reason(usage, writes, split, [searches, output])
-      reason ? [nil, reason] : [[[input, cached, *split, output], searches], nil]
+      reason ? [nil, reason] : [[[input, cached, *split, output], searches, usage['inference_geo']], nil]
     end
 
     def anthropic_reason(usage, writes, split, tools)
