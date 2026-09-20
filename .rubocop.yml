@@ -13,7 +13,8 @@ AllCops:
   Exclude:
     - 'eval/fixtures/local_evaluation/**/*'
 
-# Blank-line-before-assert and a 3-assert cap rewrite the existing suite.
+# These three cops rewrite the existing suite: blank lines before asserts,
+# a 3-assert cap, and treating assert(condition, diagnostic) as expected/actual.
 # Remaining Minitest and Performance cops stay at plugin defaults.
 Minitest/EmptyLineBeforeAssertionMethods:
   Enabled: false
