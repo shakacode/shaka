@@ -262,14 +262,25 @@ phases:
         disable candidate instructions, hooks, plugins, and MCP servers. A local review is
         UNVERIFIED until you publish its report, with its closing attestation line, to the PR. See
         [invoke a reviewer locally](<{{package_root}}/docs/review.md#invoke-a-reviewer-locally>).
-      - Required review, or a user-requested review gate, that is unavailable, failed, or stale blocks
-        readiness and merge. Keep status and gaps visible; put optional reviewer history in details.
-        Link the current review result from the PR summary and final response.
-      - Collect every current-head finding into one repair batch. Fix demonstrated defects, decline
-        the rest with a reason, and answer on the original threads. Reverify, republish the
-        walkthrough, and re-review changed heads. After two repair rounds on the same finding family,
-        reassess the design or mechanism before patching again. Resolve consequential feedback before
-        merging, following the packaged [review guide](<{{package_root}}/docs/review.md>).
+      - Independent review for this task is satisfied by a published local
+        `REVIEWED SHA BY PROVIDER/FAMILY` attestation, or by a verified `review.check` report,
+        for a head of this PR. A later nit-only SHA does not reopen that wait. A user-requested
+        review gate still blocks until it completes. Keep status and gaps visible; put advisory
+        reviewer history in details. Link the current review result from the PR summary and
+        final response.
+      - When the local reviewer is a different provider than every implementer, do not wait for
+        GitHub `review.check`. Leave that job running; findings that arrive after merge follow
+        [reviews after merge](<{{package_root}}/docs/review.md#reviews-after-merge>).
+      - When no different-provider local review ran, wait for one verified `review.check` report
+        on the first ready-for-review push. Do not wait for that check again after a nit-only or
+        diagnostic-only follow-up SHA. CodeRabbit, hosted Codex, and other unnamed bots are
+        advisory: read completed findings, never wait for them.
+      - Collect every current-head finding into one repair batch. Fix demonstrated defects
+        (correctness, failing tests, security, contract or data-loss). Decline nits with a reason
+        on the original thread. After two repair rounds, remaining nits do not start another cycle.
+        Remaining demonstrated defects still block until fixed, declined with evidence, or the
+        maintainer decides. Follow the packaged
+        [review guide](<{{package_root}}/docs/review.md>).
       - After repairs, run deferred `.agents/bin/validate`, then
         `.agents/bin/trigger-hosted-ci` when present. Later fixes need fresh evidence.
       - When the user expressly asks to resolve PR comments, follow the packaged
@@ -277,7 +288,9 @@ phases:
         ownership until each known optional review settles or reaches its bounded handoff. Do not
         claim resolution while the procedure says review is unsettled, and never create a monitor or
         follow-up issue for the handoff.
-    done_when: Required and user-requested reviews are complete for the current head and every finding is fixed or declined on its thread.
+    done_when: >-
+      Required validation and one independent review for this task are complete, material
+      findings are fixed or declined, and remaining nits are recorded for post-merge evaluation.
   - id: finish
     title: Finish
     body: |-
@@ -288,8 +301,11 @@ phases:
         and merge-guard changes require explicit human review. Small diffs do not prove low risk.
         Uncertain authority or consequential risk switches Auto to Ask; safety failures block.
       - Refresh `pr` and inspect required check states. Never accept missing, failed, pending, or stale
-        required checks, and never bypass protection. Wait for required and user-requested review
-        gates; read other completed feedback before merge and report pending optional reviews.
+        required checks, and never bypass protection. Wait when independent review is not yet
+        satisfied (the same-provider GitHub backstop). Wait for any user-requested review gate
+        whether or not a local review already ran. Do not wait for optional checks to make merge
+        state CLEAN; `merge` accepts UNSTABLE once required checks pass. Read completed feedback
+        before merge and report pending optional reviews.
       - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the recovery note for this GitHub merge

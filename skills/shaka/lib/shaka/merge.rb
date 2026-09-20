@@ -89,7 +89,11 @@ module Shaka
 
     def verify_native_state(pull)
       unless pull['isInMergeQueue']
-        allowed = pull['isMergeQueueEnabled'] ? %w[CLEAN BEHIND BLOCKED] : ['CLEAN']
+        allowed = if pull['isMergeQueueEnabled']
+                    %w[CLEAN BEHIND BLOCKED UNSTABLE]
+                  else
+                    %w[CLEAN UNSTABLE]
+                  end
         verify_merge_state(pull, allowed)
       end
 

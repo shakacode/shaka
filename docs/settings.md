@@ -197,11 +197,18 @@ existing policy. Migrate across that trust boundary in this order:
 
 ## `review`
 
-`required` is the only mandatory key. `check` names the reviewer's status check.
+`required` is the only mandatory key. `check` names the reviewer's GitHub status check.
 
-The three `required` values record when the gate named by `check` should apply, and `check` is
+That named check is a review source to read, not a GitHub required merge check. Branch
+protection in this repository requires `validate` only. `shaka merge` accepts GitHub
+`UNSTABLE` so a still-running `claude-review` does not hold a PR whose required checks
+passed. See [faster merge while optional reviews run](review.md#faster-merge-while-optional-reviews-run).
+
+The three `required` values record when the named GitHub review job is the independent-review
+backstop, and `check` is
 bound to them: validation requires it for `always` and `meaningful_changes`, and rejects it for
-`none`. Choosing `none` therefore leaves no named gate to satisfy.
+`none`. Choosing `none` therefore leaves no named GitHub review job. When a different-provider
+local review already covers the current head, do not wait for that job before merge.
 
 `always` is the exception. The workflow's review phase lets trivial prose or no-op work omit
 review with a recorded reason whatever is set here, and nothing consumes this value to withdraw
@@ -262,7 +269,7 @@ requests is decided by its own trigger — the standard reviewer workflow guards
 `draft == false` — so read the trusted workflow rather than a copy in the seam that can drift
 from it. Identity is compared through review metadata or a trusted workflow, never a check name,
 so a per-entry check name would have no job to do. The top-level `review.check` still names the
-required native gate, and that gate need not belong to any listed reviewer.
+GitHub review job to read, and that job need not belong to any listed reviewer.
 
 #### Sizing the list
 

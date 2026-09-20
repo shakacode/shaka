@@ -91,10 +91,19 @@ class MergeNativeGateTest < Minitest::Test
   end
 
   def test_refuses_stale_or_unknown_merge_state
-    %w[BEHIND BLOCKED DIRTY DRAFT HAS_HOOKS UNKNOWN UNSTABLE].each do |state|
+    %w[BEHIND BLOCKED DIRTY DRAFT HAS_HOOKS UNKNOWN].each do |state|
       @client.snapshots = [snapshot.merge('mergeStateStatus' => state)]
-      assert_blocked(/not CLEAN/)
+      assert_blocked(/not CLEAN or UNSTABLE/)
     end
+  end
+
+  # Production break: GitHub reports UNSTABLE when only non-required checks are
+  # pending or failing. Requiring CLEAN here holds merge while claude-review or
+  # CodeRabbit is still running after validate has passed.
+  def test_allows_unstable_when_only_optional_checks_are_pending
+    @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+
+    assert_equal 'MERGED', @merge.call(head: HEAD, walkthrough: 17)['state']
   end
 
   def test_refuses_bypass_capable_or_unknown_actor

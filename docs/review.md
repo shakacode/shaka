@@ -7,8 +7,9 @@ valid reviewer in a fresh context, and saying so is the point — it means a rev
 available.
 
 Review locally first and fix what it finds, so the pushed branch costs fewer CI runs and fewer
-review rounds on GitHub. The GitHub reviews still run on the pushed branch; they are the backstop,
-not the first pass.
+review rounds on GitHub. The GitHub reviews still run on the pushed branch as a backstop. They
+do not have to finish before merge when a different-provider local review already covers the
+current head. Findings that arrive afterward follow [reviews after merge](#reviews-after-merge).
 
 Prefer a provider that did not implement the change, because different providers notice different
 things. That is a preference, never a requirement. `shaka reviewer` applies it, and
@@ -23,7 +24,8 @@ anthropic/claude`, after which the helper may select the next listed provider.
 `review.reviewers` in the repository's trusted `.agents/agent-workflow.yml` lists the local
 reviewers to try, in preference order. Each entry names a `provider` and `model_family` and nothing
 else. A seam may omit the list; the implementation model in a fresh context still reviews. The
-top-level `review.check` names the required native gate, separately from this list. Trivial
+top-level `review.check` names the GitHub review job to read, separately from this list. That job
+is a review source, not a GitHub required merge check. Trivial
 prose-only and no-op changes may omit review when the PR records why, and the user may request
 deeper review.
 Installing the skill does not install a GitHub Action or its credentials. This V2
@@ -38,9 +40,44 @@ not required. A skipped, failed, missing, or stale review is never a successful 
 If the user or repository requires it, keep the PR unready for merge until that
 review completes or the authority that set it explicitly changes the requirement:
 the requesting user controls their request; maintainers control repository policy. Do not
-silently substitute a different reviewer. Put optional reviewer history and gaps in
+silently substitute a different reviewer. A published different-provider local review for the
+current head satisfies the independent-review requirement without waiting for `review.check`.
+Put optional reviewer history and gaps in
 details; required or requested review gaps stay visible. Avoid copying the review
 timeline into the PR description.
+
+## Faster merge while optional reviews run
+
+This is a 2026-09-20 delivery-time experiment. Keep it only while it reduces wait without
+dropping demonstrated defects. To revert:
+
+1. In `Shaka::Merge#verify_native_state`, accept only `CLEAN` and restore the test that
+   `UNSTABLE` blocks.
+2. Restore the review and finish bullets in `skills/shaka/config/workflow.yml` that waited for
+   `review.check` and for every finding on the current head.
+3. Delete this section and restore the earlier “wait for the named GitHub review before merge”
+   wording in this file and `docs/settings.md`.
+
+Independent review is one of:
+
+- a published local attestation `REVIEWED <sha> BY <provider>/<family>` for the current head
+- a verified `review.check` report for that SHA
+
+When the local reviewer is a different provider than every implementer, merge after required
+checks (`validate` here) pass. Leave GitHub Claude, hosted Codex, and CodeRabbit running. Read
+whatever they have already posted; do not wait for jobs still in progress.
+
+When no different-provider local review ran, wait for **one** verified `review.check` report on
+the first ready-for-review push of the task. Do not wait for that check again after a nit-only
+or diagnostic-only follow-up SHA.
+
+After two repair rounds, or when remaining findings are nits on an otherwise small head, merge.
+Post-merge comments are expected. Evaluate each one: fix a demonstrated defect in a small PR,
+or decline it. Do not stay in a nit loop.
+
+`shaka merge` accepts GitHub `mergeStateStatus` `UNSTABLE` because that state means only
+non-required checks are pending or failing. `BLOCKED`, `BEHIND`, `DIRTY`, and missing required
+checks still refuse the merge.
 
 The GitHub action intentionally skips changes to its own workflow. Its job summary
 must say **UNAVAILABLE**, with a warning; that runner result is not a completed
@@ -195,11 +232,10 @@ required or user-requested review gate depends on withheld prose, retain its lin
 route it to a trusted maintainer for screening and handling; readiness remains blocked
 until that happens or the authority that set the gate changes it.
 
-For example, revision A can have green required validation and no current threads
-while a known review is still running. If that review then publishes a material
-finding, the owner triages it, responds on the original thread, and verifies the
-fix at revision B before completing the task. Green validation at A never proves
-that the review settled or that B is ready.
+For example, revision A can have green required validation while GitHub Claude is still running.
+If a different-provider local review already covers A, merge A and treat the later report as
+post-merge feedback. If independent review is not yet satisfied, keep the PR unready until it is.
+Green validation at A never proves that a required backstop settled.
 
 ## Handle review findings
 
@@ -216,18 +252,20 @@ that the review settled or that B is ready.
    of the fix and affected behavior on the new commit, using the existing workflow
    or its documented re-review mechanism. A stale finding may still apply; check it
    before resolving the thread. Do not call an unreviewed fix independently reviewed.
-4. Stop when material findings are addressed and the required review has
-   completed for the current change. Refresh GitHub checks and required approvals,
-   update the walkthrough, and follow the task's existing merge authority. If a
+4. Stop when material findings are addressed and independent review for this task has
+   completed. Refresh GitHub required checks and required approvals,
+   update the walkthrough, and follow the task's existing merge authority. After two repair
+   rounds, remaining nits do not start another cycle. If a
    reviewer fails or repeats the same unresolved concern without new evidence,
    report the blocker or concrete decision; do not loop or schedule retries.
 
 ## Reviews after merge
 
-Wait for required review or user-requested review gates of the current head before
-merging. If one fails or becomes unavailable, use the blocker-or-decision rule in
+Wait for independent review only as
+[Faster merge while optional reviews run](#faster-merge-while-optional-reviews-run)
+describes. If that review fails or becomes unavailable, use the blocker-or-decision rule in
 Handle review findings rather than the optional-review handoff; that decision path
-cannot clear the gate unless the authority that set it changes the requirement.
+cannot clear a user-requested gate unless the authority that set it changes the requirement.
 Check other
 running reviews again before merge under the public-prose rule above: read completed
 findings and disclose pending optional reviews without making them a merge gate.
