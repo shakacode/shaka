@@ -27,8 +27,8 @@ establish complete usage attribution.
 
 | Capability | Codex CLI 0.154.0 | Claude Code desktop 2.1.270, CLI 2.1.272 | Cursor CLI 2026.09.10-fd3934a | OpenCode 1.18.31 | Pi 0.85.1 |
 | --- | --- | --- | --- | --- | --- |
-| Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; V2 instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. | Shared Agent Skill loaded from a trusted external source; no Pi-specific copy or launcher. |
-| OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native V2 sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. | The user's Pi tool permissions apply; no separate boundary was probed. |
+| Installation and startup | Dedicated skill installation and explicit trusted-file startup checked. | A symlinked personal skill loaded in the desktop app and in `claude -p`; `/shaka` asked for the task and merge preference and stopped before edits. A same-named repository skill did not replace it. | Dedicated CLI package version/help checked; Cursor skill instruction activation unverified. | Canonical `~/.config/opencode/skills` install documented; TUI activation trial pending. | Shared Agent Skill loaded from a trusted external source; no Pi-specific copy or launcher. |
+| OS write boundary | A native workspace sandbox denied writes to the separate trusted source, installed link, and link directory while allowing the session and target checkout. | No launcher or sandbox; the user's permission mode applies. Not separately probed. | Native Cursor sandbox boundary unverified. | No launcher sandbox; the user's permission mode applies. The launcher disables project-local discovery so the target's `.opencode` plugins, config and instructions never load. Not separately probed. | The user's Pi tool permissions apply; no separate boundary was probed. |
 | Real workflow | Protected PR operations exercised with Shaka. A fresh CLI task implemented and verified the Astro website guides using its repository instructions; the owning task handled publication. | One consumer PR delivered end to end on September 17, 2026: agent-workflows-com#62, branch through TDD, seam validation, five review rounds, helper-published description and walkthrough, helper merge in Ask mode. | Consumer delivery unverified. | Consumer delivery unverified. | This usage-reader implementation is the first recorded delivery trial; broader consumer evidence remains pending. |
 | Usage | Reader matched 14 real CLI responses and repeated-source input without double counting; attribution remains partial. | Reader matched an independent per-response aggregate for a desktop session with a subagent and two models, and Claude Code's own totals for two CLI runs. | Stop-hook reader works against captured desktop `3.20.21` `grok-4.6` payloads, but has not produced records in a real delivery ([#111](https://github.com/shakacode/shaka/pull/111)); transcripts and bubble `tokenCount` remain unused. | Export reader matched an independent per-response aggregate for a real 49-response session (all counters, interval, version); the session must be named with `--session` and attribution remains partial. | Reader matched an independent aggregate of selected active-branch responses, including reasoning and native nominal cost; abandoned branches were excluded. Compaction, branch-summary, and tool-nested model usage remain excluded. |
 
@@ -49,7 +49,7 @@ when the user's existing configuration grants broader access. Temporary writable
 directories also count: placing the trusted skill in a system temporary directory
 can undermine an otherwise separate installation. See the
 [Codex permissions documentation](https://learn.chatgpt.com/docs/permissions)
-for the host's controls; the getting-started guide owns the tested V2 recipe.
+for the host's controls; the getting-started guide owns the tested Codex launch recipe.
 
 ## Startup boundary and current validation
 
@@ -170,7 +170,7 @@ titles, and the trial returned nothing for a title stamp. Find towers by title w
 Keep an existing, authenticated host configuration in place when preparing a
 compatibility trial. Check its version and available controls before starting.
 Native `SKILL.md` support is [documented for Cursor](https://cursor.com/docs/skills),
-but shared file format alone does not prove V2 activation or safe execution.
+but shared file format alone does not prove Shaka skill activation or safe execution.
 
 Cursor user skills can be installed at `~/.cursor/skills` with the standard
 installer. A September 14 trial did not find the skill through `~/.agents/skills`,
@@ -179,7 +179,7 @@ The trial did not establish a complete Cursor workflow or a supported launch rec
 
 The checked Cursor CLI exposes `--workspace`, `--add-dir`, `--sandbox`, and
 `--plugin-dir`. Its public help has no direct skill-file option. The native sandbox
-and V2 delivery have not been exercised, so these flags are not sufficient grounds
+and Shaka delivery have not been exercised, so these flags are not sufficient grounds
 for a supported launch recipe.
 
 Inspect the targets in the [official Cursor installation instructions](https://cursor.com/docs/cli/installation)

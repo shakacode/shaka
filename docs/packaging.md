@@ -7,8 +7,9 @@ an agent follows the procedure.
 It adds no runtime gems and does not install a global agent profile. Public product
 stage is `0.0.x`. Version
 `0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name;
-later registry artifacts stay on `0.1.0.pre.N` so `gem install shaka --pre` cannot
-prefer the reservation over a newer `0.0.x` gem. The source
+later registry artifacts stay on `0.1.0.pre.N`. Do not publish a `0.0.x` gem:
+`gem install shaka --pre` would still prefer `0.1.0.pre.1` over any `0.0.x`
+version. The source
 installation remains the verified pilot path; registry publication does not establish
 broader host compatibility.
 
