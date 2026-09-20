@@ -145,8 +145,10 @@ Without persisted stop records, token counters stay UNKNOWN, the report names
 host-context row still uses provider `cursor` plus `CURSOR_MODEL_ID`,
 `CURSOR_MODEL`, and `CURSOR_MODEL_EFFORT` when those host values are present.
 Explicit `--file` or `--turn` reports do not copy the current chat's model environment.
-`shaka doctor` fails on Cursor until a readable stop-hook file exists.
-Missing usage still does not block an otherwise authorized merge.
+`shaka doctor` fails on Cursor when `~/.cursor/hooks.json` has no
+`cursor-usage-hook` stop command. A missing file for this conversation only
+degrades: that is expected until the first `stop` event. Missing usage still
+does not block an otherwise authorized merge.
 
 When the `fast` model param is present, the cost table also shows a configured-model
 on-demand USD scenario for `grok-4.6` and `grok-4.6-fast` using Cursor's published

@@ -22,8 +22,19 @@ class DoctorUsageTest < Minitest::Test
     assert_includes report, 'getting-started'
   end
 
+  # Break: treating a missing this-chat jsonl as a missing hook fails every new Cursor chat
+  # before stop has run, including when hooks.json already lists cursor-usage-hook.
+  def test_a_missing_cursor_conversation_file_with_the_hook_installed_degrades
+    report, blocked = doctor(host: 'cursor', usage_files: [], cursor_stop_hook: true)
+    assert_includes report, 'DEGRADED'
+    refute_includes report, 'FAILED'
+    refute blocked
+    assert_includes report, 'not readable yet'
+  end
+
   def test_an_unreadable_cursor_stop_hook_source_blocks
-    report, blocked = doctor(host: 'cursor', usage_files: ['/definitely/missing/transcript.jsonl'])
+    report, blocked = doctor(host: 'cursor', usage_files: ['/definitely/missing/transcript.jsonl'],
+                             cursor_stop_hook: true)
     assert_includes report, 'FAILED'
     assert blocked
   end
