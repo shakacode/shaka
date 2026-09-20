@@ -83,9 +83,8 @@ rate. Codex credits are omitted because they do not price Anthropic usage. Only
 responses the transcript records at standard speed are priced: fast mode bills at its
 own rates, so a fast or unrecorded speed stays UNKNOWN and the report names which.
 Web search bills per request on top of tokens, so the reader keeps that counter and
-the estimate adds its published charge; web fetch adds none. A response whose
-server-tool counter is missing or unreadable stays UNKNOWN rather than being priced
-as though it ran no searches. Anthropic publishes no context threshold, so no
+the estimate adds its published charge; web fetch adds none. A response that ran no search omits that counter,
+so its absence is read as none; a counter present but unreadable stays UNKNOWN. Anthropic publishes no context threshold, so no
 long-context multiplier applies. The
 cost table heads its column with the priced model, which for Claude Code is the routed
 model, because the configured model is UNKNOWN. Models outside the published rate table

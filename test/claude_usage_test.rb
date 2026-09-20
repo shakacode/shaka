@@ -224,6 +224,16 @@ class ClaudeUsagePriceTest < Minitest::Test
     end
   end
 
+  def test_a_response_that_only_fetched_is_priced_on_its_tokens
+    Dir.mktmpdir do |directory|
+      fetched = priced_reply('m1', 100)
+      fetched[:message][:usage][:server_tool_use] = { web_fetch_requests: 1 }
+      file = transcript(directory, 'session.jsonl', [prompt('new'), fetched])
+      output = report('--host', 'claude-code', '--file', file)
+      assert_metric output, 'USD estimate', '$0.001079'
+    end
+  end
+
   def test_fast_mode_is_not_priced_as_standard_speed
     Dir.mktmpdir do |directory|
       fast = priced_reply('m1', 100)

@@ -38,6 +38,7 @@ module Shaka
       'claude-haiku-4-5' => %w[1 0.1 1.25 2 5]
     }.freeze
     # Web search bills $10 per 1,000 requests on top of tokens; web fetch adds no charge.
+    # A response that ran no search omits the counter, so its absence reads as none.
     SEARCH_RATE = Rational(1, 100)
 
     private
@@ -81,10 +82,15 @@ module Shaka
 
       input, cached, writes, output = counters
       split = write_split(usage, writes)
-      searches = usage['web_search_requests']
-      reason = anthropic_subset_reason(writes, split, usage['reasoning_output_tokens'], output) ||
-               ('Server tool usage UNKNOWN' unless valid_counters?([searches]))
+      searches = usage['web_search_requests'] || 0
+      reason = anthropic_reason(usage, writes, split, [searches, output])
       reason ? [nil, reason] : [[[input, cached, *split, output], searches], nil]
+    end
+
+    def anthropic_reason(usage, writes, split, tools)
+      searches, output = tools
+      anthropic_subset_reason(writes, split, usage['reasoning_output_tokens'], output) ||
+        ('Server tool usage UNKNOWN' unless valid_counters?([searches]))
     end
 
     # A transcript that records no cache write need not break the total down.

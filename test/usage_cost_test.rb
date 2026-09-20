@@ -288,6 +288,10 @@ class UsageAnthropicCostTest < Minitest::Test
     assert_metric estimate(anthropic_record(searches: 0)), 'USD estimate', '$0.001110'
   end
 
+  def test_a_response_that_ran_no_search_omits_the_counter_and_is_still_priced
+    assert_metric estimate(without(anthropic_record, 'web_search_requests')), 'USD estimate', '$0.001110'
+  end
+
   def test_a_configured_model_prices_a_source_that_records_no_routed_model
     report = estimate(anthropic_record(configuration: ['anthropic', 'claude-haiku-4-5', 'UNKNOWN', 'high']))
     assert_metric report, 'USD estimate', '$0.000222'
@@ -365,8 +369,8 @@ class UsageAnthropicUnknownTest < Minitest::Test
     assert_includes report, 'Cache-write TTL split UNKNOWN'
   end
 
-  def test_unreported_server_tool_usage_stays_unknown_rather_than_assuming_no_searches
-    [nil, 'x', -1].each do |searches|
+  def test_a_malformed_server_tool_counter_stays_unknown
+    ['x', -1].each do |searches|
       record = anthropic_record
       record['usage']['web_search_requests'] = searches
       report = estimate(record)
