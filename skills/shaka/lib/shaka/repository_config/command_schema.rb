@@ -10,9 +10,10 @@ module Shaka
     class CommandSchema
       include Validation
 
-      def initialize(root:, available_commands: nil)
+      def initialize(root:, available_commands: nil, candidate_commands: true)
         @root = root
         @available_commands = available_commands
+        @candidate_commands = candidate_commands
       end
 
       def validate
@@ -28,6 +29,8 @@ module Shaka
       private
 
       def validate_names(names)
+        return trusted_names(names) unless @candidate_commands
+
         validate_interface_directory
         validate_legacy_optional_paths
         validate_dependencies(names)
@@ -36,6 +39,15 @@ module Shaka
           executable!(path, path)
           [name, path]
         end.freeze
+      end
+
+      def trusted_names(names)
+        validate_dependencies(names)
+        trusted_commands(names)
+      end
+
+      def trusted_commands(names)
+        names.to_h { |name| [name, CommandPaths::ALL.fetch(name)] }.freeze
       end
 
       def validate_interface_directory
@@ -54,7 +66,7 @@ module Shaka
       end
 
       def validate_candidate_optional_commands
-        return unless @available_commands
+        return unless @candidate_commands && @available_commands
 
         names = CommandPaths::OPTIONAL.filter_map { |name, path| name if command_entry?(path) }
         validate_dependencies(names)

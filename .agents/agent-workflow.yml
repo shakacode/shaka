@@ -4,6 +4,8 @@
 version: 1
 # base_branch is omitted, so it resolves to this repository's default branch, main.
 # A task may still name a different base for itself; that never changes where policy is read from.
+# Short display prefix for RCT/MCT titles. Presentation only.
+repo_prefix: SHAKA
 # Optional repository-relative plan document.
 plan: docs/pilot-plan.md
 # Reviewer policy. A fresh context is what makes a review adversarial, so the implementation

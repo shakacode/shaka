@@ -93,7 +93,8 @@ is refused rather than guessed at. Missing or ambiguous repository identity, an
 existing tower for the same repository, and a missing or ambiguous master are errors
 rather than guesses.
 
-The skill renames the session to end in `RCT — Shaka`, pins it, and then states the
+The skill resolves the display prefix with `shaka prefix`, renames the session to
+`<PREFIX> RCT — Shaka`, pins it, and then states the
 completed setup in the session itself: the repository, session, default branch, and
 one-repository scope. That written record, not the title, is what makes the role
 durable — the master establishes ownership by reading the tower's session, and towers

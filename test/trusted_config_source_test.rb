@@ -165,6 +165,16 @@ class TrustedConfigSourceCommandEntryTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include TrustedConfigSourceRepositoryHelpers
 
+  def test_rejects_a_trusted_ref_that_omits_a_required_command
+    with_repository do |root|
+      FileUtils.rm(File.join(root, '.agents/bin/setup'))
+      commit_repository(root)
+
+      message = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.new(root:).load('HEAD') }.message
+      assert_includes message, '.agents/bin/setup is missing at trusted ref'
+    end
+  end
+
   def test_rejects_a_non_executable_trusted_optional_entry
     with_repository do |root|
       path = File.join(root, '.agents/bin/validate-local')
