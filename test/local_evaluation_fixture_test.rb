@@ -19,10 +19,10 @@ module LocalEvaluationFixtureAssertions
   MERGE_PREFERENCES = { 'probe' => 'auto', 'feasibility' => 'ask' }.freeze
   COMMANDS = { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/test',
                'test' => '.agents/bin/test' }.freeze
-  ACTION_NAMES = %w[actions/checkout ruby/setup-ruby].freeze
   FORBIDDEN_CONTENT = /(?:AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|
                          -----BEGIN[ ][A-Z ]*PRIVATE[ ]KEY-----|(?:password|token|api[_-]?key|client[_-]?secret)\s*[:=]|
                          internal\s+notes?|raw\s+transcripts?|hidden\s+assertions?|reference\s+(?:solution|assets?))/ix
+  FORBIDDEN_WORKFLOW_INPUT = /\bsecrets\b|github(?:\.token\b|\s*\[\s*['"]token['"]\s*\])/i
 
   def application_files(name)
     APP_FILES.fetch(name).map { |path| File.join(FIXTURES.fetch(name), path) }
@@ -67,32 +67,30 @@ module LocalEvaluationFixtureAssertions
 
   def assert_workflow_job(root, job)
     assert_operator job.fetch('timeout-minutes'), :<=, 5
-    assert_pinned_steps(job.fetch('steps'))
-    assert_trusted_actions(root)
+    assert_pinned_steps(root, job.fetch('steps'))
   end
 
-  def assert_pinned_steps(steps)
+  def assert_pinned_steps(root, steps)
     assert_equal 3, steps.length
     assert_match %r{\Aactions/checkout@[0-9a-f]{40}\z}, steps[0].fetch('uses')
     assert_equal({ 'persist-credentials' => false }, steps[0].fetch('with'))
     assert_match %r{\Aruby/setup-ruby@[0-9a-f]{40}\z}, steps[1].fetch('uses')
     assert_equal({ 'ruby-version' => '.ruby-version', 'bundler-cache' => true }, steps[1].fetch('with'))
     assert_equal({ 'run' => '.agents/bin/test' }, steps[2])
+    assert_trusted_actions(root, steps)
   end
 
-  def assert_trusted_actions(root)
+  def assert_trusted_actions(root, steps)
     trusted = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml')).fetch('trusted_actions')
-    assert_equal ACTION_NAMES, trusted.sort
+    actions = steps.filter_map { |step| step['uses']&.split('@')&.first }
+    assert_equal actions.sort, trusted.sort
     workflow = File.read(File.join(root, '.github/workflows/validate.yml'))
-    refute_match(/\$\{\{\s*(?:secrets\.|github\.token\b)/, workflow)
+    refute_match FORBIDDEN_WORKFLOW_INPUT, workflow
   end
 
   def files(root)
     Dir.glob('**/*', File::FNM_DOTMATCH, base: root)
-       .reject do |path|
-         full_path = File.join(root, path)
-         %w[. ..].include?(File.basename(path)) || (File.directory?(full_path) && !File.symlink?(full_path))
-       end
+       .reject { |path| File.directory?(File.join(root, path)) && !File.symlink?(File.join(root, path)) }
        .sort
   end
 
@@ -146,6 +144,9 @@ class LocalEvaluationFixtureShapeTest < Minitest::Test
                 'reference solution', 'reference asset', 'AKIA1234567890ABCDEF', "ghp_#{'a' * 20}",
                 "github_pat_#{'a' * 20}", 'token = placeholder']
     examples.each { |example| assert_match FORBIDDEN_CONTENT, example }
+    ['SECRETS.MY_TOKEN', "secrets['MY_TOKEN']", 'toJSON(secrets)', "github['token']"].each do |example|
+      assert_match FORBIDDEN_WORKFLOW_INPUT, example
+    end
   end
 
   def test_fixtures_contain_no_private_evaluation_material_or_credentials
