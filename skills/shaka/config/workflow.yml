@@ -293,13 +293,13 @@ phases:
       - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the recovery note for this GitHub merge
-        click, name the expected head SHA, and tell the user they may use GitHub's merge control for
-        this PR (squash merge on a queue-disabled base, or enqueue when the base uses Merge Queue)
-        and then archive this chat. Merge only that SHA; if GitHub shows a different head, do not
-        merge. Do not ask whether you should merge. Ask does not treat that GitHub click
-        instruction as authorization to run `merge`. If they later ask you to merge this head,
-        then run `merge`. In Auto mode, run `merge` with the current head and walkthrough ID. A
-        required native approval must arrive first, and do not ask for a second approval afterward.
+        click, name the expected head SHA, and tell the user they may use GitHub's currently offered
+        merge control for this PR and then archive this chat. Merge only that SHA; if GitHub shows a
+        different head or offers no allowed merge method, do not merge. Do not bypass protection.
+        Do not ask whether you should merge. Ask does not treat that GitHub click instruction as
+        authorization to run `merge`. If they later ask you to merge this head, then run `merge`.
+        In Auto mode, run `merge` with the current head and walkthrough ID. A required native
+        approval must arrive first, and do not ask for a second approval afterward.
       - Leave repository queue settings and delayed auto-merge unchanged. In Auto, on a
         queue-disabled base, merge immediately while the task is active. On a queue-enabled base,
         enqueue the expected reviewed head, then wait for GitHub's current-base checks and terminal
