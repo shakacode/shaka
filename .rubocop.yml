@@ -1,3 +1,7 @@
+inherit_mode:
+  merge:
+    - Exclude
+
 plugins:
   - rubocop-minitest
   - rubocop-performance
@@ -6,6 +10,8 @@ AllCops:
   NewCops: enable
   SuggestExtensions: false
   TargetRubyVersion: 3.4
+  Exclude:
+    - 'eval/fixtures/local_evaluation/**/*'
 
 # Blank-line-before-assert and a 3-assert cap rewrite the existing suite.
 # Remaining Minitest and Performance cops stay at plugin defaults.

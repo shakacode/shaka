@@ -28,6 +28,7 @@ Keep company strategy and private operational data out of product artifacts.
 ## Structure
 
 - `docs/pilot-plan.md` owns product requirements, design, acceptance, and scope.
+- `eval/fixtures/local_evaluation/` holds the two public-safe Slice 0 fixture trees.
 - `skills/shaka/SKILL.md` is the public workflow entry point.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
