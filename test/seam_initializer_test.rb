@@ -305,7 +305,7 @@ class SeamInitializerValidationTest < Minitest::Test
 
       output, error, status = Open3.capture3(*arguments)
 
-      assert status.success?, error
+      assert_predicate status, :success?, error
       refute JSON.parse(output).key?('base_branch')
     end
   end
