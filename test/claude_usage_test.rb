@@ -82,6 +82,19 @@ class ClaudeUsageTest < Minitest::Test
     end
   end
 
+  # Aggregate tokens billed at whichever modelUsage key JSON listed first would
+  # silently underprice an Opus+Haiku review.
+  def test_print_mode_with_two_models_does_not_guess_a_rate
+    Dir.mktmpdir do |directory|
+      extra = { modelUsage: { 'claude-haiku-4-5' => { 'canonicalModel' => 'claude-haiku-4-5' },
+                              'claude-opus-5[1m]' => { 'canonicalModel' => 'claude-opus-5' } } }
+      output = report('--host', 'claude-code', '--file', print_result_file(directory, extra),
+                      '--contribution', 'review')
+      assert_metric output, 'Routed model', 'UNKNOWN'
+      assert_metric output, 'USD estimate', 'UNKNOWN'
+    end
+  end
+
   def test_counts_the_final_streamed_usage_of_each_response_in_the_latest_turn
     Dir.mktmpdir do |directory|
       file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900), prompt('new'),

@@ -22,14 +22,16 @@ module Shaka
                       'billing_mode' => speed(record['usage']), 'usage' => tokens(record['usage']) } }
     end
 
-    # Real `-p` JSON has no top-level model; the routed name is modelUsage.*.canonicalModel.
+    # Prefer a top-level model when a CLI writes one; otherwise one modelUsage canonical name.
     def print_model(record)
       present_name(record['model']) || present_name(canonical_model(record['modelUsage']))
     end
 
     def canonical_model(usage)
-      entry = usage.values.find { |item| item.is_a?(Hash) } if usage.is_a?(Hash)
-      entry['canonicalModel'] if entry
+      return unless usage.is_a?(Hash)
+
+      entries = usage.values.grep(Hash)
+      entries.first['canonicalModel'] if entries.one?
     end
 
     def present_name(value)
@@ -57,12 +59,11 @@ module Shaka
       [unreadable, nil]
     end
 
-    def finish_print(record, first, io)
+    def finish_print(record, _first, io)
       rest = io.read.to_s
-      record = JSON.parse(first + rest) unless rest.strip.empty?
+      return [unreadable, nil] unless rest.strip.empty?
+
       print_object(record) || [unreadable, nil]
-    rescue JSON::ParserError, EncodingError
-      [unreadable, nil]
     end
 
     def jsonl_from(record, io)
