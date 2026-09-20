@@ -17,7 +17,7 @@ module LocalEvaluationFixtureAssertions
     'feasibility' => %w[lib/trail_marker.rb test/trail_marker_test.rb]
   }.freeze
   MERGE_PREFERENCES = { 'probe' => 'auto', 'feasibility' => 'ask' }.freeze
-  FIXTURE_RUNNER = Shaka::Doctor::BoundedCommand.new(timeout: 60)
+  FIXTURE_RUNNER = Shaka::Doctor::BoundedCommand.new(timeout: 30)
   COMMANDS = { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/test',
                'test' => '.agents/bin/test' }.freeze
   FORBIDDEN_CONTENT = /(?:AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|
@@ -104,8 +104,8 @@ module LocalEvaluationFixtureAssertions
     lock = File.join(root, 'Gemfile.lock')
     before = File.read(lock)
     setup = File.join(root, '.agents/bin/setup')
-    _, error, status = Open3.capture3([setup, setup], '--local', chdir: Dir.tmpdir)
-    assert status.success?, error
+    stdout, stderr, success = FIXTURE_RUNNER.call([setup, '--local'], Dir.tmpdir)
+    assert success, "#{stdout}\n#{stderr}"
     assert_equal before, File.read(lock)
   end
 
@@ -177,7 +177,7 @@ class LocalEvaluationFixtureExecutionTest < Minitest::Test
     end
   end
 
-  def test_fixture_validation_stays_under_one_minute
+  def test_fixture_setup_and_validation_stay_under_one_minute
     FIXTURES.each_value do |root|
       setup_fixture(root)
       output, success = capture_fixture_test(root)
