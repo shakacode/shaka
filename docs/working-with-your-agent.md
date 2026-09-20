@@ -393,7 +393,13 @@ skill for blogs or docs; `$shaka` does not invoke one.
 Part of this is machine-checked. The helper refuses a description or
 walkthrough that repeats more than five percent of its own eight-word prose runs
 from its published sibling, because copied sentences are a spec violation rather
-than a matter of taste. It also prints a reading grade, whether the opening
+than a matter of taste. The comparison reads the published sibling from GitHub, so
+dropping the walkthrough link does not excuse a description from it. Code, HTML,
+link targets, and the identity line and headings the helper itself renders are not
+counted. Prose in a script written without spaces, such as Chinese or Japanese,
+produces too few tokens to form a run, so the check does not reach it.
+
+It also prints a reading grade, whether the opening
 sentence is diff-shaped, hedging and decorative-emphasis density, and filler
 openers, and it never fails on any of them: a gated style metric teaches the
 writer to dodge the metric. Everything else on the list is a self-edit. A summary

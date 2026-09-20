@@ -43,6 +43,14 @@ class WritingDuplicationTest < Minitest::Test
     assert_includes error.message, 'This description repeats'
   end
 
+  # Every pair the helper renders carries the same identity line and the same
+  # walkthrough heading, so counting them reports copying that nobody wrote.
+  def test_the_helper_s_own_identity_line_and_headings_are_not_counted
+    identity = '🤖 Claude · Anthropic · claude-opus-5 · medium'
+    check("#{identity}\n\n## Code Walkthrough\n\nMaintainers can merge without opening the diff today.",
+          "#{identity}\n\n# Code Walkthrough\n\nMaintainers can read why the loader raises early.")
+  end
+
   # A first walkthrough published before any description has nothing to compare.
   def test_an_absent_sibling_never_blocks_publication
     check(DESCRIPTION, nil)

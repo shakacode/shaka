@@ -27,8 +27,10 @@ module Shaka
 
       private
 
-      # The newest titled COMMENT review is the walkthrough a description now sits beside.
-      # None exists before the first one is published, which is the one case that skips.
+      # The newest titled COMMENT review this account wrote is the walkthrough a description
+      # sits beside. Anyone may review a public pull request, so a review by another author
+      # is never the sibling however it is titled. None exists before the first walkthrough
+      # is published, which is the one case that skips.
       def published_walkthrough
         path = "repos/#{@github.repository}/pulls/#{@github.number}/reviews"
         reviews = PublicComments::BoundedList.new(@github, max_pages: REVIEW_PAGES, label: 'Review listing').call(path)
@@ -36,7 +38,8 @@ module Shaka
       end
 
       def walkthrough?(review)
-        review['state'] == 'COMMENTED' && review['body'].to_s.include?(TITLE)
+        review['state'] == 'COMMENTED' && review['body'].to_s.include?(TITLE) &&
+          review.dig('user', 'login') == @github.viewer
       end
     end
   end

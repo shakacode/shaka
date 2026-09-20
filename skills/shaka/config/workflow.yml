@@ -184,8 +184,9 @@ phases:
         table rows, empty required content, and bodies GitHub does not render.
       - The helper compares each summary with its published sibling and refuses a `description` or
         `walkthrough` that repeats more than five percent of its own eight-word prose runs, naming
-        the runs to re-resolve. Code, HTML, link targets and a sibling that does not exist yet are
-        not counted. It also prints a reading grade, a diff-shaped opening sentence, hedging and
+        the runs to re-resolve. Code, HTML, link targets, the helper's own identity line and
+        headings, and a sibling that does not exist yet are not counted, and neither is prose in
+        a script written without spaces. It also prints a reading grade, a diff-shaped opening sentence, hedging and
         decorative-emphasis density, and filler openers; those only print. Passing every one of
         them does not make a summary true, so keep the adversarial review.
 

@@ -58,11 +58,7 @@ module Shaka
         [stem.scan(/[aeiouy]+/).size, 1].max
       end
 
-      # The identity line and headings are the helper's own text, not the writer's summary.
-      def opening
-        @opening ||= split(text.lines.reject { |line| line.strip.empty? || line.start_with?('🤖', '#') }.join)
-                     .first.to_s
-      end
+      def opening = @opening ||= sentences.first.to_s
 
       def opening_note
         start = opening.downcase

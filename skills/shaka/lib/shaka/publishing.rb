@@ -63,6 +63,9 @@ module Shaka
       pull['body'].to_s[/#{Regexp.escape(OPEN_MARK)}\n(.*?)#{Regexp.escape(CLOSE_MARK)}/m, 1]
     end
 
+    # The account this workflow publishes as; only its own reviews are its walkthroughs.
+    def viewer = @viewer ||= api('user')['login']
+
     private
 
     # Escapes GitHub preserved inside a code element were written on purpose.
@@ -72,8 +75,6 @@ module Shaka
     def ours?(comment, mark, account)
       comment['body'].to_s.start_with?(mark) && comment.dig('user', 'login') == account
     end
-
-    def viewer = @viewer ||= api('user')['login']
 
     # Only the marked region is ours; anything a person or another bot added stays.
     def merge(existing, body)

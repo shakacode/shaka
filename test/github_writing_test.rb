@@ -17,20 +17,24 @@ class GitHubWritingTest < Minitest::Test
 
   def walkthrough_body = "#{IDENTITY}\n\n# Code Walkthrough\n\n#{COPIED}\n\n#{WALKTHROUGH}"
 
-  def reviews(*bodies)
-    response(bodies.map { |body| { 'id' => 9, 'state' => 'COMMENTED', 'body' => body } })
+  def reviews(*bodies, login: 'shaka-bot')
+    response(bodies.map do |body|
+      { 'id' => 9, 'state' => 'COMMENTED', 'body' => body, 'user' => { 'login' => login } }
+    end)
   end
 
+  def viewer_response = response({ 'login' => 'shaka-bot' })
+
   def test_description_repeating_the_published_walkthrough_is_refused_before_any_write
-    github = client(pull_body('old'), reviews(walkthrough_body))
+    github = client(pull_body('old'), reviews(walkthrough_body), viewer_response)
     error = assert_raises(Shaka::Error) { github.description(body: "#{SUMMARY}\n#{LINK}\n") }
     assert_includes error.message, 'This description repeats'
-    assert_equal 2, @calls.size
+    assert_equal 3, @calls.size
   end
 
   # The sibling comes from GitHub, so dropping the link cannot excuse the comparison.
   def test_a_description_that_omits_its_walkthrough_link_is_still_compared
-    github = client(pull_body('old'), reviews(walkthrough_body))
+    github = client(pull_body('old'), reviews(walkthrough_body), viewer_response)
     error = assert_raises(Shaka::Error) { github.description(body: SUMMARY) }
     assert_includes error.message, 'This description repeats'
   end
@@ -45,11 +49,22 @@ class GitHubWritingTest < Minitest::Test
 
   # An ordinary approval or a human comment is not the walkthrough.
   def test_an_untitled_review_is_not_treated_as_the_walkthrough
-    plain = response([{ 'id' => 9, 'state' => 'APPROVED', 'body' => walkthrough_body },
-                      { 'id' => 8, 'state' => 'COMMENTED', 'body' => COPIED }])
+    plain = response([{ 'id' => 9, 'state' => 'APPROVED', 'body' => walkthrough_body,
+                        'user' => { 'login' => 'shaka-bot' } },
+                      { 'id' => 8, 'state' => 'COMMENTED', 'body' => COPIED,
+                        'user' => { 'login' => 'shaka-bot' } }])
+    publishes_description(plain)
+  end
+
+  # Anyone may review a public pull request, so a titled review is not authority.
+  def test_a_titled_review_by_another_author_is_not_treated_as_the_walkthrough
+    publishes_description(reviews(walkthrough_body, login: 'outsider'), viewer_response)
+  end
+
+  def publishes_description(*siblings)
     body = "#{SUMMARY}\n#{LINK}\n"
     merged = "<!-- shaka:begin -->\n#{body}<!-- shaka:end -->"
-    github = client(pull_body(''), plain, html_response('<p>ok</p>'), pull_body(''), pull_body(merged))
+    github = client(pull_body(''), *siblings, html_response('<p>ok</p>'), pull_body(''), pull_body(merged))
     assert_equal merged, github.description(body: body)['body']
   end
 
