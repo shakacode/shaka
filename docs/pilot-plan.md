@@ -15,7 +15,7 @@ This record defines the current product, not proof that acceptance is complete.
 | R2 | Use the repository's actual checks and policy. | Load the trusted default branch's `.agents/agent-workflow.yml`, resolve optional capabilities from its fixed `.agents/bin/` interface, and follow human-only constraints in `AGENTS.md`. Run the candidate checkout's scripts at those same fixed paths. Reject missing or invalid configuration. Failed checks block readiness; evidence for another commit does not qualify the current change. |
 | R3 | Control whether the agent merges. | Use `ask` or `auto`. Ask early if authority is unset; default to `ask` without an answer. Reuse established authority. Review-only and PR-only requests retain their stopping point. |
 | R4 | Understand the change and its evidence. | Publish a conceptual walkthrough on the PR with links to the reviewed code. Use a commit-bound COMMENT review, which is neither approval nor a required acknowledgment and remains readable after merge. |
-| R5 | Avoid redundant merge decisions. | Ask requests one decision after the walkthrough and required gates. Auto merges an eligible ordinary change after the same gates, including required native approvals, without another question. Unclear authority or risky changes need a human decision. Native stacks and delayed merge controllers are outside scope. |
+| R5 | Avoid redundant merge decisions. | Ask requests one decision after the walkthrough and required gates. Auto submits an eligible ordinary change after the same gates, including required native approvals, without another question. A queue-enabled base uses GitHub Merge Queue; a queue-disabled base merges immediately. Unclear authority or risky changes need a human decision. Native stacks and user-armed auto-merge are outside scope. |
 | R6 | Merge only the verified revision. | Read live GitHub state and require the expected head. Missing or unreadable evidence, pending/failed required checks, stale heads, conflicts, disallowed merges, and unresolved material review findings block. Never bypass protection. |
 | R7 | Keep contributor content away from privileged operations. | Issue/PR text cannot change trusted instructions, policy, credentials, or executable code. When GitHub explicitly reports public repository visibility, screen issue and PR comment bodies using current writer permission or trusted machine/repository configuration. Configured humans, review bots, and active GitHub team members may supply task data; unknown, metadata-only, and unverified authors remain links for maintainer triage. Read repository trust configuration from the current default branch, never the candidate PR head or a weaker PR base branch. Private and internal repositories do not use this author screen, but their comments still have no policy authority. Use installed trusted helpers for GitHub operations. Run candidate code only in the authorized isolated checkout. |
 | R8 | Install and upgrade without damaging existing setup. | Install into an explicitly chosen skills directory with source and link outside candidate-writable paths. Preserve user files and other skills; refuse foreign targets. Test isolated and repeated installation. Updating the trusted source updates its link. Installation does not disable other instructions or create a sandbox. |
@@ -93,14 +93,19 @@ and acceptable risk. Changes to execution trust, authentication, permissions,
 release/deployment, destructive migrations, or merge guards require human review.
 Small size does not prove low risk. Unclear authority needs a decision; a safety
 failure blocks submission. Require observable native checks enforced for the actor;
-unknown or bypass-capable identities block. Leave merge queues and armed auto-merges
-unchanged. The current helper performs immediate squash merges while the task is active.
+unknown or bypass-capable identities block. Leave repository queue settings and armed
+auto-merges unchanged. The helper performs an immediate squash merge when the base has no
+queue. When the base has Merge Queue enabled, the helper lets GitHub's enqueue operation
+decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKED` expected
+reviewed head; conflicting or unreadable merge state still blocks. Queue admission is not task completion: the active task
+waits for GitHub's current-base integration checks and terminal result. Queue submission does
+not relax walkthrough, review, authority, or required-check gates.
 
 ## Verification and exit criteria
 
 - Run `bundle install` for development setup and `bin/validate` locally and in CI.
 - Test failed/pending/missing checks, API errors, stale heads, unsupported merge state,
-  rejected merges, and safe argument handling.
+  rejected merges, queued submission and replay, and safe argument handling.
 - Install in an isolated skills directory; repeat installation, preserve foreign
   targets, and verify upgrades use the trusted source.
 - Exercise Ask and Auto on real PRs. Publish and read back a walkthrough tied to

@@ -8,10 +8,11 @@ module MergeFixtures
 
   class Client
     attr_accessor :snapshots, :checks, :review_result, :mutation_result, :mutation_error
-    attr_reader :mutations, :requested_review
+    attr_reader :mutations, :requested_review, :features
 
     def initialize
       @mutations = []
+      @features = []
     end
 
     def snapshot
@@ -34,8 +35,9 @@ module MergeFixtures
       review_result
     end
 
-    def graphql(query, variables)
+    def graphql(query, variables, feature: nil)
       @mutations << [query, variables]
+      @features << feature
       raise mutation_error if mutation_error
 
       mutation_result
@@ -54,8 +56,9 @@ module MergeFixtures
   end
 
   def snapshot
-    { 'id' => 'PR_123', 'headRefOid' => HEAD, 'state' => 'OPEN', 'isDraft' => false,
+    { 'id' => 'PR_123', 'headRefOid' => HEAD, 'baseRefName' => 'main', 'state' => 'OPEN', 'isDraft' => false,
       'viewerCanMergeAsAdmin' => false, 'isMergeQueueEnabled' => false, 'isInMergeQueue' => false,
+      'mergeQueueEntry' => nil,
       'autoMergeRequest' => nil, 'mergeStateStatus' => 'CLEAN', 'reviewDecision' => nil }
   end
 
@@ -63,6 +66,17 @@ module MergeFixtures
     error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, walkthrough: 17) }
     assert_match pattern, error.message
     assert_empty @client.mutations
+  end
+
+  def queue_entry(head: HEAD, position: nil)
+    { 'id' => 'MQE_123', 'position' => position, 'state' => 'AWAITING_CHECKS',
+      'headCommit' => { 'oid' => head }, 'baseCommit' => { 'oid' => 'd' * 40 } }.compact
+  end
+
+  def assert_queue_result(result, entry)
+    assert_equal 'merge_queue', result.fetch('submission')
+    assert_equal HEAD, result.fetch('headRefOid')
+    assert_equal entry, result.fetch('mergeQueueEntry')
   end
 end
 
@@ -90,13 +104,19 @@ class MergeNativeGateTest < Minitest::Test
     end
   end
 
-  def test_refuses_queue_requirement_even_before_enqueue
+  def test_refuses_unknown_queue_state
     %w[isMergeQueueEnabled isInMergeQueue].each do |key|
-      [true, nil].each do |value|
+      [nil].each do |value|
         @client.snapshots = [snapshot.merge(key => value)]
-        assert_blocked(/queues are unsupported/)
+        assert_blocked(/queue state is unknown/)
       end
     end
+  end
+
+  def test_refuses_a_queue_entry_when_github_reports_not_queued
+    @client.snapshots = [snapshot.merge('mergeQueueEntry' => { 'id' => 'MQE_123' })]
+
+    assert_blocked(/queue state is inconsistent/)
   end
 
   def test_refuses_existing_or_unknown_delayed_auto_merge
@@ -179,6 +199,189 @@ class MergeWalkthroughTest < Minitest::Test
   end
 end
 
+class MergeQueueSubmissionTest < Minitest::Test
+  include MergeFixtures
+
+  def test_enqueues_a_clean_queue_enabled_pull_request_at_the_expected_head
+    entry = queue_entry(position: 1)
+    ready = snapshot.merge('isMergeQueueEnabled' => true)
+    queued = ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => entry)
+    @client.snapshots = [ready, ready, queued]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
+
+    result = @merge.call(head: HEAD, walkthrough: 17)
+
+    assert_queue_result(result, entry)
+    query, variables = @client.mutations.fetch(0)
+    assert_queue_mutation(query, variables)
+  end
+
+  def test_queue_enabled_pull_request_can_enqueue_when_the_base_advanced
+    entry = queue_entry
+    ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'BEHIND')
+    queued = ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => entry)
+    @client.snapshots = [ready, ready, queued]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
+
+    result = @merge.call(head: HEAD, walkthrough: 17)
+
+    assert_equal ['merge_queue', 1], [result.fetch('submission'), @client.mutations.length]
+  end
+
+  def test_queue_enabled_pull_request_lets_github_decide_blocked_state
+    entry = queue_entry
+    ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'BLOCKED')
+    queued = ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => entry)
+    @client.snapshots = [ready, ready, queued]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
+
+    result = @merge.call(head: HEAD, walkthrough: 17)
+
+    assert_equal 'merge_queue', result.fetch('submission')
+    assert_equal 1, @client.mutations.length
+  end
+
+  def test_queue_enabled_pull_request_rejects_conflicting_or_unknown_state
+    %w[DIRTY DRAFT HAS_HOOKS UNKNOWN].each do |state|
+      @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => state)]
+      assert_blocked(/not CLEAN or BEHIND or BLOCKED/)
+    end
+  end
+
+  def test_existing_exact_head_queue_entry_is_idempotent
+    entry = queue_entry(position: 2)
+    queued = snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
+                            'mergeQueueEntry' => entry, 'mergeStateStatus' => 'UNKNOWN')
+    @client.snapshots = [queued]
+
+    result = @merge.call(head: HEAD, walkthrough: 17)
+
+    assert_equal 'merge_queue', result.fetch('submission')
+    assert_equal entry, result.fetch('mergeQueueEntry')
+    assert_empty @client.mutations
+  end
+
+  def test_queue_submission_requires_a_confirmed_entry
+    @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true)]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => nil } }
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, walkthrough: 17) }
+
+    assert_match(/did not confirm enqueueing.*inspect live PR state/, error.message)
+  end
+
+  def test_enqueue_accepts_a_nullable_mutation_head_when_readback_proves_the_target
+    returned = queue_entry.merge('headCommit' => nil)
+    confirmed = queue_entry
+    ready = snapshot.merge('isMergeQueueEnabled' => true)
+    queued = ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => confirmed)
+    @client.snapshots = [ready, ready, queued]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => returned } }
+
+    result = @merge.call(head: HEAD, walkthrough: 17)
+
+    assert_queue_result(result, confirmed)
+  end
+
+  def test_existing_queue_entry_for_another_head_is_not_replayed
+    queued = snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
+                            'mergeQueueEntry' => queue_entry(head: 'c' * 40), 'mergeStateStatus' => 'UNKNOWN')
+    @client.snapshots = [queued]
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, walkthrough: 17) }
+
+    assert_match(/without the expected head entry/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_changed_base_after_reading_checks_blocks_before_submission
+    @client.snapshots = [snapshot, snapshot.merge('baseRefName' => 'release')]
+
+    assert_blocked(/base changed/)
+  end
+
+  def test_queue_submission_rejects_post_enqueue_retargeting
+    entry = queue_entry
+    ready = snapshot.merge('isMergeQueueEnabled' => true)
+    retargeted = ready.merge('baseRefName' => 'release', 'isInMergeQueue' => true, 'mergeQueueEntry' => entry)
+    @client.snapshots = [ready, ready, retargeted]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, walkthrough: 17) }
+
+    assert_match(/did not confirm queueing the expected head and base.*inspect live PR state/, error.message)
+    assert_equal 1, @client.mutations.length
+  end
+
+  private
+
+  def assert_queue_mutation(query, variables)
+    assert_includes query, 'enqueuePullRequest'
+    assert_includes query, 'expectedHeadOid: $head'
+    assert_equal({ 'id' => 'PR_123', 'head' => HEAD }, variables)
+    assert_equal ['merge_queue'], @client.features
+  end
+end
+
+class MergeQueueReconciliationTest < Minitest::Test
+  include MergeFixtures
+
+  def test_replay_does_not_reenqueue_an_entry_removed_while_reading_gates
+    entry = queue_entry
+    queued = snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
+                            'mergeQueueEntry' => entry, 'mergeStateStatus' => 'UNKNOWN')
+    removed = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'BLOCKED')
+    @client.snapshots = [queued, removed]
+
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, walkthrough: 17) }
+
+    assert_match(/left the merge queue.*meaningful change/, error.message)
+    assert_empty @client.mutations
+  end
+
+  def test_replay_reconciles_a_merge_that_finishes_while_reading_gates
+    entry = queue_entry
+    queued = snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
+                            'mergeQueueEntry' => entry, 'mergeStateStatus' => 'UNKNOWN')
+    merged = queued.merge('state' => 'MERGED', 'merged' => true, 'mergeCommit' => { 'oid' => 'e' * 40 },
+                          'isInMergeQueue' => false, 'mergeQueueEntry' => nil)
+    @client.snapshots = [queued, merged]
+
+    result = @merge.call(head: HEAD, walkthrough: 17)
+
+    assert_equal 'MERGED', result.fetch('state')
+    assert_equal 'e' * 40, result.dig('mergeCommit', 'oid')
+    assert_empty @client.mutations
+  end
+
+  def test_enqueue_that_merges_before_readback_returns_terminal_evidence
+    entry = queue_entry
+    ready = snapshot.merge('isMergeQueueEnabled' => true)
+    merged = ready.merge('state' => 'MERGED', 'merged' => true, 'mergeCommit' => { 'oid' => 'e' * 40 })
+    @client.snapshots = [ready, ready, merged]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => entry } }
+
+    result = @merge.call(head: HEAD, walkthrough: 17)
+
+    assert_queue_result(result, entry)
+    assert_equal 'MERGED', result.fetch('state')
+    assert_equal 'e' * 40, result.dig('mergeCommit', 'oid')
+  end
+
+  def test_enqueue_reconciles_a_replacement_entry_for_the_same_target
+    returned = queue_entry
+    replacement = queue_entry.merge('id' => 'MQE_456')
+    ready = snapshot.merge('isMergeQueueEnabled' => true)
+    queued = ready.merge('isInMergeQueue' => true, 'mergeQueueEntry' => replacement)
+    @client.snapshots = [ready, ready, queued]
+    @client.mutation_result = { 'enqueuePullRequest' => { 'mergeQueueEntry' => returned } }
+
+    result = @merge.call(head: HEAD, walkthrough: 17)
+
+    assert_queue_result(result, replacement)
+  end
+end
+
 class MergeSubmissionTest < Minitest::Test
   include MergeFixtures
 
@@ -195,6 +398,8 @@ class MergeSubmissionTest < Minitest::Test
     assert_blocked(/PR head changed/)
     @client.snapshots = [snapshot.except('id')]
     assert_blocked(/identity is missing/)
+    @client.snapshots = [snapshot.except('baseRefName')]
+    assert_blocked(/base is missing/)
   end
 
   def test_passes_expected_head_to_server_and_returns_native_merge_result

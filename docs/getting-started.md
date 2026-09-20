@@ -24,8 +24,9 @@ is missing.
 [Settings](settings.md) documents every key, its allowed values, and what fails when
 one is wrong. Keep long
 commands in repository scripts and human-only constraints in `AGENTS.md`.
-To merge, GitHub must enforce required checks for the acting account, allow squash
-merges, and satisfy required approvals. Otherwise, Shaka explains the blocker on the PR.
+To merge, GitHub must enforce required checks for the acting account and satisfy required
+approvals. A queue-disabled base must allow squash merges; a queue-enabled base uses its
+repository-configured merge method. Otherwise, Shaka explains the blocker on the PR.
 
 ## Install in the Codex app
 

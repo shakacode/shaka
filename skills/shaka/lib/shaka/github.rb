@@ -12,18 +12,37 @@ module Shaka
     query($owner: String!, $name: String!, $number: Int!) {
       repository(owner: $owner, name: $name) {
         pullRequest(number: $number) {
-          id number url state isDraft headRefOid baseRefName
+          id number url state isDraft headRefOid baseRefName merged mergeCommit { oid }
           mergeStateStatus reviewDecision viewerCanMergeAsAdmin
           isInMergeQueue isMergeQueueEnabled autoMergeRequest { enabledAt }
+          mergeQueueEntry {
+            id position state estimatedTimeToMerge
+            headCommit { oid }
+            baseCommit { oid }
+          }
           headRepository { nameWithOwner } baseRepository { nameWithOwner }
         }
       }
     }
   GRAPHQL
+  MERGE_QUEUE_FEATURE = 'merge_queue'
+
+  # Adds feature-aware GraphQL requests while preserving keyword-variable callers.
+  module GraphqlTransport
+    def graphql(query, variables = {}, feature: nil, **keyword_variables)
+      variables = keyword_variables unless keyword_variables.empty?
+      headers = feature ? ["GraphQL-Features: #{feature}"] : []
+      response = api('graphql', method: 'POST', fields: { query: query, variables: variables }, headers: headers)
+      raise Error, 'GraphQL failed or returned missing data.' if response['errors'] || !response['data'].is_a?(Hash)
+
+      response['data']
+    end
+  end
 
   # Reads native PR evidence and publishes reviews bound to its current commit.
   class GitHub
     include Publishing
+    include GraphqlTransport
 
     attr_reader :repository, :number
 
@@ -40,7 +59,8 @@ module Shaka
 
     def snapshot
       owner, name = @repository.split('/')
-      repository = graphql(SNAPSHOT_QUERY, owner: owner, name: name, number: @number)['repository']
+      repository = graphql(SNAPSHOT_QUERY, { owner: owner, name: name, number: @number },
+                           feature: MERGE_QUEUE_FEATURE)['repository']
       result = repository['pullRequest'] if repository.is_a?(Hash)
       raise Error, 'GitHub did not return the requested pull request.' unless result.is_a?(Hash)
 
@@ -74,21 +94,17 @@ module Shaka
       record_walkthrough(head, body)
     end
 
-    def api(path, method: 'GET', fields: {}, expected: Hash)
-      result = execute(['gh', 'api', path, '--method', method, '--input', '-'], input: JSON.generate(fields))
+    def api(path, method: 'GET', fields: {}, expected: Hash, headers: [])
+      argv = ['gh', 'api', path]
+      headers.each { |header| argv.push('-H', header) }
+      argv.push('--method', method, '--input', '-')
+      result = execute(argv, input: JSON.generate(fields))
       raise Error, 'GitHub API response has an unexpected type.' unless result.is_a?(expected)
 
       result
     end
 
     def api_list(path) = api(path, expected: Array)
-
-    def graphql(query, variables = {})
-      response = api('graphql', method: 'POST', fields: { query: query, variables: variables })
-      raise Error, 'GraphQL failed or returned missing data.' if response['errors'] || !response['data'].is_a?(Hash)
-
-      response['data']
-    end
 
     private
 
