@@ -54,8 +54,8 @@ module ReposCatalogHelpers
     catalog.fetch('repositories').map { |row| row.fetch('identity') }
   end
 
-  def expected_row(name, root, prefix:, source:)
-    { 'identity' => "acme/#{name}", 'url' => "https://github.com/acme/#{name}",
+  def expected_row(name, root, prefix:, source:, url: nil)
+    { 'identity' => "acme/#{name}", 'url' => url || "https://github.com/acme/#{name}",
       'root' => root, 'prefix' => prefix, 'prefix_source' => source }
   end
 
@@ -182,6 +182,29 @@ class ReposCatalogTest < Minitest::Test
       assert_equal %w[ghe.example/acme/repo github.com/acme/repo], keys.sort
       assert_includes error, keys.first
       assert_equal %w[acme/repo acme/repo], identities(catalog)
+    end
+  end
+
+  def test_refresh_catalogs_scp_enterprise_origins
+    with_home do |home|
+      root = registered_repository(home, name: 'repo', prefix: 'GHE', origin: 'git@ghe.example:acme/repo.git')
+      catalog = refresh(home)
+
+      assert_equal [expected_row('repo', root, prefix: 'GHE', source: 'seam', url: 'ssh://ghe.example/acme/repo')],
+                   catalog.fetch('repositories')
+    end
+  end
+
+  def test_refresh_skips_a_missing_root_and_still_writes_other_rows
+    with_home do |home|
+      kept = registered_repository(home, name: 'alpha', prefix: 'ALP')
+      gone = registered_repository(home, name: 'beta', prefix: 'BETA')
+      FileUtils.rm_rf(gone)
+      catalog, error, status = refresh_result(home)
+
+      refute_predicate status, :success?
+      assert_includes error, gone
+      assert_equal [expected_row('alpha', kept, prefix: 'ALP', source: 'seam')], catalog.fetch('repositories')
     end
   end
 end

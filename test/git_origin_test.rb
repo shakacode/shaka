@@ -56,4 +56,16 @@ class GitOriginTest < Minitest::Test
     assert_equal 'https://ghe.example/acme/repo',
                  Shaka::GitOrigin.canonical_url('https://ghe.example/acme/repo.git#ignored')
   end
+
+  def test_canonical_url_uses_the_host_after_the_last_userinfo_at
+    doubled = 'https://user@evil@github.com/acme/repo.git'
+    assert_equal 'acme/repo', Shaka::GitOrigin.identity(doubled)
+    assert_equal 'https://github.com/acme/repo', Shaka::GitOrigin.canonical_url(doubled)
+  end
+
+  def test_identity_from_scp_url_with_a_non_git_user
+    assert_equal 'acme/repo', Shaka::GitOrigin.identity('deploy@ghe.example:acme/repo.git')
+    assert_equal 'ssh://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('deploy@ghe.example:acme/repo.git')
+  end
 end

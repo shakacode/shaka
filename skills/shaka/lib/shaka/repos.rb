@@ -47,15 +47,23 @@ module Shaka
     end
 
     def refresh
-      catalog = catalog_payload
+      catalog, skipped = catalog_payload
       home.write_catalog(catalog)
       puts JSON.pretty_generate(catalog)
-      report_duplicates(catalog.fetch('duplicate_prefixes'))
+      skipped || report_duplicates(catalog.fetch('duplicate_prefixes')).nonzero? ? 1 : 0
     end
 
     def catalog_payload
-      repositories = home.roots_list.map { |root| entry(root) }.sort_by { |row| row.fetch('identity') }
-      { 'version' => 1, 'repositories' => repositories, 'duplicate_prefixes' => duplicates(repositories) }
+      skipped = false
+      repositories = []
+      home.roots_list.each do |configured|
+        repositories << entry(home.resolve(configured))
+      rescue SystemCallError, Shaka::Error => e
+        warn "shaka: skipping #{configured}: #{e.message}"
+        skipped = true
+      end
+      repositories.sort_by! { |row| row.fetch('identity') }
+      [{ 'version' => 1, 'repositories' => repositories, 'duplicate_prefixes' => duplicates(repositories) }, skipped]
     end
 
     def entry(root)

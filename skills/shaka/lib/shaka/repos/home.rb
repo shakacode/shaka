@@ -36,7 +36,11 @@ module Shaka
         roots = data.is_a?(Hash) ? data['roots'] : nil
         raise Error, "#{CONFIG_NAME} roots must be a list of directories" unless roots.is_a?(Array)
 
-        roots.map { |root| File.realpath(root) }
+        roots.map(&:to_s)
+      end
+
+      def resolve(root)
+        File.realpath(root)
       end
 
       def config_path = File.join(@path, CONFIG_NAME)

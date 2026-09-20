@@ -6,8 +6,8 @@ require_relative 'error'
 module Shaka
   # Parses a Git origin URL into owner/name without calling GitHub.
   module GitOrigin
-    URI_HOST_PATH = %r{\A(https?|ssh)://(?:[^/@]+@)?([^/:]+)(?::(\d+))?/(.+)}
-    SCP_HOST_PATH = /\Agit@([^:]+):(.+)/
+    URI_HOST_PATH = %r{\A(https?|ssh)://(?:[^/]*@)?([^/:@]+)(?::(\d+))?/(.+)}
+    SCP_HOST_PATH = /\A[^@]+@([^:]+):(.+)/
 
     module_function
 
@@ -34,9 +34,10 @@ module Shaka
       return "https://github.com/#{identity}" if parsed_url.fetch(:host) == 'github.com'
 
       scheme = parsed_url[:scheme]
-      return scp_url(parsed_url) unless scheme
+      host = authority(parsed_url)
+      return "ssh://#{host}/#{identity}" unless scheme
 
-      "#{scheme}://#{authority(parsed_url)}/#{identity}"
+      "#{scheme}://#{host}/#{identity}"
     end
 
     def parsed(url)
@@ -76,11 +77,6 @@ module Shaka
       parsed_url[:port] ? "#{host}:#{parsed_url[:port]}" : host
     end
     private_class_method :authority
-
-    def scp_url(parsed_url)
-      "git@#{parsed_url.fetch(:host)}:#{parsed_url.fetch(:identity)}"
-    end
-    private_class_method :scp_url
 
     def parse_error(origin)
       raise Error, "Cannot parse owner/name from origin #{origin}"
