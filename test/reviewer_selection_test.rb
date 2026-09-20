@@ -25,6 +25,14 @@ class ReviewerSelectionTest < Minitest::Test
     assert_equal 'openai/codex', result.fetch('reviewer')
   end
 
+  # https://github.com/shakacode/shaka/pull/137 reviewed a Sol implementation with Astra.
+  def test_openai_implementation_prefers_claude
+    result = select(['openai/codex'])
+
+    assert_equal 'different_provider', result.fetch('outcome')
+    assert_equal 'anthropic/claude', result.fetch('reviewer')
+  end
+
   def test_skips_an_unavailable_reviewer_for_the_next_provider
     result = select(['anthropic/claude'], unavailable: ['openai/codex'])
 

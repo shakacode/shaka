@@ -15,9 +15,10 @@ class PublicationRegressionTest < Minitest::Test
   TABLE = { 'columns' => %w[Check Commit Result], 'rows' => [%w[bin/validate abc123 pass]] }.freeze
   USAGE = { 'summary' => 'Usage',
             'body' => "| Provider | Native total |\n| --- | ---: |\n| openai | 1 |" }.freeze
+  WALKTHROUGH = 'https://github.com/shakacode/shaka/pull/137#pullrequestreview-5258565629'
 
   def description_content(**changes)
-    { 'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE,
+    { 'identity' => IDENTITY, 'summary' => 'A summary.', 'walkthrough' => WALKTHROUGH, 'table' => TABLE,
       'provenance' => PUBLIC_PROVENANCE, 'details' => [USAGE] }.merge(changes)
   end
 
@@ -104,6 +105,7 @@ class PublicationStructureTest < Minitest::Test
   def render(**changes)
     Shaka::Publication.description(
       { 'identity' => IDENTITY, 'summary' => 'A summary.',
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
         'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE,
         'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
@@ -163,11 +165,11 @@ class PublicationStructureTest < Minitest::Test
                  rendered)
     refute_includes Shaka::Publication.comment({ 'identity' => IDENTITY, 'summary' => 'Fixed.' }),
                     '# Code Walkthrough'
-    refute_includes render, '# Code Walkthrough'
   end
 
   def test_a_real_newline_in_a_cell_cannot_split_the_row
     content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
                 'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] },
                 'provenance' => PUBLIC_PROVENANCE }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
@@ -214,11 +216,77 @@ class PublicationStructureTest < Minitest::Test
   end
 end
 
+# https://github.com/shakacode/shaka/pull/137 buried the walkthrough in the opening
+# sentence, so GitHub's outline had no Code Walkthrough heading to click.
+class PublicationWalkthroughLinkTest < Minitest::Test
+  def render(walkthrough: PublicationRegressionTest::WALKTHROUGH)
+    Shaka::Publication.description(
+      { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
+        'walkthrough' => walkthrough, 'table' => PublicationRegressionTest::TABLE,
+        'provenance' => PUBLIC_PROVENANCE, 'details' => [PublicationRegressionTest::USAGE] }
+    )
+  end
+
+  def test_descriptions_lead_with_a_code_walkthrough_heading_and_review_link
+    link = PublicationRegressionTest::WALKTHROUGH
+    rendered = render
+
+    assert_includes rendered, "A summary.\n\n## Code Walkthrough\n\n[Code Walkthrough](#{link})\n"
+    refute_match(/^# Code Walkthrough/, rendered)
+  end
+
+  def test_the_walkthrough_heading_precedes_other_description_sections
+    rendered = render_with_section
+    walkthrough_at = rendered.index("## Code Walkthrough\n")
+    section_at = rendered.index("## Outcome\n")
+
+    refute_nil walkthrough_at
+    refute_nil section_at
+    assert_operator walkthrough_at, :<, section_at
+  end
+
+  def render_with_section
+    Shaka::Publication.description(
+      { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
+        'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
+        'details' => [PublicationRegressionTest::USAGE] }
+    )
+  end
+
+  def test_a_description_without_a_walkthrough_link_reserves_the_heading
+    rendered = render(walkthrough: nil)
+
+    assert_includes rendered, "## Code Walkthrough\n\n_Not published yet._"
+    refute_includes rendered, '[Code Walkthrough]('
+  end
+
+  def test_a_blank_walkthrough_link_reserves_the_heading
+    rendered = render(walkthrough: '  ')
+
+    assert_includes rendered, "## Code Walkthrough\n\n_Not published yet._"
+    refute_includes rendered, '[Code Walkthrough]('
+  end
+
+  def test_a_blob_pr_or_issue_comment_url_is_not_a_walkthrough_link
+    %w[
+      https://github.com/shakacode/shaka/blob/abc/README.md
+      https://github.com/shakacode/shaka/pull/137
+      https://github.com/shakacode/shaka/pull/137#issuecomment-5746446012
+    ].each do |url|
+      error = assert_raises(Shaka::Error) { render(walkthrough: url) }
+      assert_includes error.message, 'walkthrough'
+    end
+  end
+end
+
 class PublicationProvenanceRequirementTest < Minitest::Test
   # Catches a renderer that accepts the structured metadata but silently drops it,
   # leaving a PR without the route evidence needed for later comparison.
   def test_description_renders_public_safe_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
                 'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
                 'details' => [PublicationRegressionTest::USAGE] }
     rendered = Shaka::Publication.description(content)
@@ -232,6 +300,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
 
   def test_description_refuses_missing_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
                 'table' => PublicationRegressionTest::TABLE,
                 'details' => [PublicationRegressionTest::USAGE] }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }

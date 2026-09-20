@@ -61,8 +61,12 @@ module Shaka
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
     TABLE_SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
+    WALKTHROUGH_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#pullrequestreview-\d+\z}
 
-    def self.description(content) = new(content, require_tables: true).render(%i[sections table provenance details])
+    def self.description(content)
+      new(content, require_tables: true).render(%i[walkthrough_ref sections table provenance details])
+    end
+
     def self.comment(content) = new(content).render([])
     def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
 
@@ -89,6 +93,20 @@ module Shaka
         "## #{heading}\n\n#{PublicationText.required(section['body'], "section #{heading}")}"
       end
     end
+
+    def walkthrough_ref
+      url = @content['walkthrough']
+      return ["## Code Walkthrough\n\n_Not published yet._"] if unpublished_walkthrough?(url)
+
+      url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'walkthrough')
+      unless url.match?(WALKTHROUGH_URL)
+        raise Error, 'Publication walkthrough must be a GitHub pull request review URL.'
+      end
+
+      ["## Code Walkthrough\n\n[Code Walkthrough](#{url})"]
+    end
+
+    def unpublished_walkthrough?(url) = url.nil? || (url.is_a?(String) && url.strip.empty?)
 
     def table
       spec = @content['table']
