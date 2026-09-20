@@ -17,7 +17,9 @@ module Shaka
     end
 
     def self.effective(seam:, override: nil)
-      [normalize(seam), normalize(override)].include?('thorough') ? 'thorough' : 'swift'
+      paces = [normalize(seam)]
+      paces << normalize(override) unless override.nil?
+      paces.include?('thorough') ? 'thorough' : 'swift'
     end
 
     def self.seam_from_ref(root:, ref:)

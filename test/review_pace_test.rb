@@ -26,7 +26,14 @@ class ReviewPaceTest < Minitest::Test
   end
 
   def test_explicit_swift_stays_swift_even_if_the_product_default_changes
+    original = Shaka::ReviewPace::DEFAULT
+    Shaka::ReviewPace.send(:remove_const, :DEFAULT)
+    Shaka::ReviewPace.const_set(:DEFAULT, 'thorough')
+
     assert_equal 'swift', Shaka::ReviewPace.effective(seam: 'swift', override: nil)
+  ensure
+    Shaka::ReviewPace.send(:remove_const, :DEFAULT)
+    Shaka::ReviewPace.const_set(:DEFAULT, original)
   end
 
   def test_thorough_merge_states_do_not_follow_the_default_constant
