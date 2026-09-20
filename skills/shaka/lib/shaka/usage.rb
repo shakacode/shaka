@@ -38,7 +38,7 @@ module Shaka
     end
 
     def label_candidates(labeled)
-      [0, 1].map { |index| labeled.map { |cells| cells[index] } } +
+      [0, 1, 2].map { |index| labeled.map { |cells| cells[index] } } +
         [[0, 1], [0, 1, 3]].map { |indexes| join_cells(labeled, indexes) }
     end
 

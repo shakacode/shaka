@@ -71,6 +71,17 @@ class ClaudeUsageTest < Minitest::Test
     end
   end
 
+  def test_column_headers_use_routed_model_when_provider_and_configured_model_match
+    Dir.mktmpdir do |directory|
+      file = transcript(directory, 'session.jsonl', [prompt('new'),
+                                                     reply('m1', 100, model: 'claude-sonnet-5'),
+                                                     reply('m2', 200, model: 'claude-opus-5')])
+      output = report('--host', 'claude-code', '--file', file)
+      assert_metric output, 'Metric', 'claude-sonnet-5', 'claude-opus-5'
+      refute_includes output, 'anthropic-1'
+    end
+  end
+
   def test_selects_all_turns_or_explicit_turns
     Dir.mktmpdir do |directory|
       file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900), prompt('new'), reply('m1', 100)])
