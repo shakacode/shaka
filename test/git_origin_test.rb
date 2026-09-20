@@ -46,4 +46,14 @@ class GitOriginTest < Minitest::Test
   def test_identity_from_scp_url
     assert_equal 'acme/agent-workflows', Shaka::GitOrigin.identity('git@github.com:acme/agent-workflows.git')
   end
+
+  def test_canonical_url_discards_query_and_fragment
+    secret = 'https://ghe.example/acme/repo.git?access_token=SECRET'
+    assert_equal 'acme/repo', Shaka::GitOrigin.identity(secret)
+    assert_equal 'https://ghe.example/acme/repo', Shaka::GitOrigin.canonical_url(secret)
+    assert_equal 'https://github.com/acme/repo',
+                 Shaka::GitOrigin.canonical_url('https://github.com/acme/repo.git?access_token=SECRET')
+    assert_equal 'https://ghe.example/acme/repo',
+                 Shaka::GitOrigin.canonical_url('https://ghe.example/acme/repo.git#ignored')
+  end
 end

@@ -6,7 +6,7 @@ require_relative 'error'
 module Shaka
   # Parses a Git origin URL into owner/name without calling GitHub.
   module GitOrigin
-    URI_HOST_PATH = %r{\A(?:https?|ssh)://(?:[^/@]+@)?([^/:]+)(?::\d+)?/(.+)}
+    URI_HOST_PATH = %r{\A(https?|ssh)://(?:[^/@]+@)?([^/:]+)(?::(\d+))?/(.+)}
     SCP_HOST_PATH = /\Agit@([^:]+):(.+)/
 
     module_function
@@ -33,17 +33,58 @@ module Shaka
       identity = parsed_url.fetch(:identity)
       return "https://github.com/#{identity}" if parsed_url.fetch(:host) == 'github.com'
 
-      parsed_url.fetch(:origin).sub(%r{\A((?:https?|ssh)://)[^/@]+@}, '\1').delete_suffix('.git')
+      scheme = parsed_url[:scheme]
+      return scp_url(parsed_url) unless scheme
+
+      "#{scheme}://#{authority(parsed_url)}/#{identity}"
     end
 
     def parsed(url)
       origin = url.strip
-      match = URI_HOST_PATH.match(origin) || SCP_HOST_PATH.match(origin)
-      path = match && match[2].delete_suffix('.git')
-      raise Error, "Cannot parse owner/name from origin #{origin}" unless path&.match?(%r{\A[^/]+/[^/]+\z})
-
-      { origin:, host: match[1], identity: path, name: File.basename(path) }
+      uri_fields(origin) || scp_fields(origin) || parse_error(origin)
     end
     private_class_method :parsed
+
+    def uri_fields(origin)
+      match = URI_HOST_PATH.match(origin)
+      return unless match
+
+      path = repository_path(match[4], origin)
+      { origin:, scheme: match[1], host: match[2], port: match[3], identity: path, name: File.basename(path) }
+    end
+    private_class_method :uri_fields
+
+    def scp_fields(origin)
+      match = SCP_HOST_PATH.match(origin)
+      return unless match
+
+      path = repository_path(match[2], origin)
+      { origin:, scheme: nil, host: match[1], port: nil, identity: path, name: File.basename(path) }
+    end
+    private_class_method :scp_fields
+
+    def repository_path(raw, origin)
+      path = raw.split(/[?#]/, 2).first&.delete_suffix('.git')
+      return path if path&.match?(%r{\A[^/]+/[^/]+\z})
+
+      parse_error(origin)
+    end
+    private_class_method :repository_path
+
+    def authority(parsed_url)
+      host = parsed_url.fetch(:host)
+      parsed_url[:port] ? "#{host}:#{parsed_url[:port]}" : host
+    end
+    private_class_method :authority
+
+    def scp_url(parsed_url)
+      "git@#{parsed_url.fetch(:host)}:#{parsed_url.fetch(:identity)}"
+    end
+    private_class_method :scp_url
+
+    def parse_error(origin)
+      raise Error, "Cannot parse owner/name from origin #{origin}"
+    end
+    private_class_method :parse_error
   end
 end
