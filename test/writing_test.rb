@@ -58,6 +58,12 @@ class WritingDuplicationTest < Minitest::Test
           "#{identity}\n\n# Code Walkthrough\n\nMaintainers can read why the loader raises early.")
   end
 
+  # GitHub renders an unclosed fence as code to the end of the body, so it is not prose.
+  def test_an_unclosed_fence_takes_the_rest_of_the_body_with_it
+    shared = "```\nbundle exec rubocop --only Metrics and the rest of this command\n"
+    check("Merging is safe.\n\n#{shared}", "The loader raises early.\n\n#{shared}")
+  end
+
   # Only the leading identity line is the helper's; a robot emoji mid-body is prose.
   def test_a_robot_emoji_inside_the_body_does_not_exempt_the_line_it_opens
     line = '🤖 The loader now rejects an unknown review mode before the workflow starts.'

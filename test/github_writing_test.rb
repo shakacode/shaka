@@ -97,6 +97,14 @@ class GitHubWritingTest < Minitest::Test
     assert_raises(Shaka::Error) { github.description(body: "#{SUMMARY}\n#{LINK}\n") }
   end
 
+  # A body whose line endings changed still holds the region the marker check accepted.
+  def test_a_region_with_carriage_returns_is_still_compared
+    body = "<!-- shaka:begin -->\r\n#{SUMMARY}\r\n<!-- shaka:end -->"
+    github = client(snapshot_response, pull_body(body))
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: walkthrough_body) }
+    assert_includes error.message, 'This walkthrough repeats'
+  end
+
   def test_walkthrough_repeating_the_published_description_is_refused_before_its_evidence
     github = client(snapshot_response, managed(SUMMARY))
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: walkthrough_body) }

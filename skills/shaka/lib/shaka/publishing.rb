@@ -62,10 +62,12 @@ module Shaka
     # An ambiguous body names no single description. That is a body this workflow cannot
     # have written and already refuses to publish into, so reading it stops here as well.
     # Either marker on its own is enough to ask, since an edit can delete just one.
+    # What follows the opening marker is taken as written, so a body whose line endings
+    # changed still reads as the region a passing ambiguity check said it is.
     def managed_body
       body = pull['body'].to_s
       check_region(body, body.scan(OPEN_MARK).size, body.scan(CLOSE_MARK).size) if body.match?(/shaka:(begin|end)/)
-      body[/#{Regexp.escape(OPEN_MARK)}\n(.*?)#{Regexp.escape(CLOSE_MARK)}/m, 1]
+      body[/#{Regexp.escape(OPEN_MARK)}(.*?)#{Regexp.escape(CLOSE_MARK)}/m, 1]
     end
 
     # The account this workflow publishes as; only its own reviews are its walkthroughs.
