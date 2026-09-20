@@ -295,19 +295,23 @@ reviewer's instructions.
 
 ## `merge`
 
-`preference` is the only accepted key.
+`preference` is the only accepted key. Merge Queue is live repository state rather than a
+second seam setting: enabling it on the protected base opts the repository into queued
+submission, while a queue-disabled base keeps direct submission.
 
 | Setting | Allowed values | Meaning |
 | --- | --- | --- |
-| `preference` | `ask`, `auto` | `ask` brings the ready PR back for a human merge decision. `auto` merges an eligible change once the same gates pass. |
+| `preference` | `ask`, `auto` | `ask` brings the ready PR back for a human merge decision. `auto` submits an eligible change through the current native merge path once the same gates pass; queued submission still waits for terminal completion. |
 
 `auto` is not a bypass. Required checks, required approvals, and branch protection still
 apply, and uncertain authority or consequential risk falls back to `ask`.
 
-The merge helper submits a squash merge, and release changes always need explicit human
-approval. Those are workflow invariants rather than configurable choices, so repeating them
-in every repository seam would create data that can only drift from the implementation.
-GitHub decides whether squash merge is currently allowed.
+On a queue-disabled base, the merge helper submits a squash merge. On a queue-enabled base,
+it enqueues the exact reviewed head and GitHub uses the repository-configured merge method.
+The helper does not enable the queue or arm auto-merge. Release changes always need explicit
+human approval. Those are workflow invariants rather than configurable choices, so repeating
+them in every repository seam would create data that can only drift from the implementation.
+GitHub decides whether direct squash merge and queued submission are currently allowed.
 
 ## `branches`
 

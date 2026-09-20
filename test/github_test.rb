@@ -8,7 +8,8 @@ class GitHubTest < Minitest::Test
   def test_snapshot_uses_native_graphql_variables
     result = client(snapshot_response).snapshot
     assert_equal HEAD, result['headRefOid']
-    assert_equal %w[gh api graphql --method POST --input -], @calls.first.first
+    assert_equal ['gh', 'api', 'graphql', '-H', 'GraphQL-Features: merge_queue', '--method', 'POST', '--input', '-'],
+                 @calls.first.first
     assert_equal({ 'owner' => 'owner', 'name' => 'repo', 'number' => 42 }, JSON.parse(@calls.first.last)['variables'])
   end
 
