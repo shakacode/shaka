@@ -262,3 +262,10 @@ class UsageFailuresTest < Minitest::Test
     end
   end
 end
+
+class MetricAssertTest < Minitest::Test
+  def test_rejects_extra_trailing_cells
+    assert_raises(Minitest::Assertion) { assert_metric("| Input | 300 | 999 |\n", 'Input', 300) }
+    assert_metric("| Input | 300 |\n", 'Input', 300)
+  end
+end

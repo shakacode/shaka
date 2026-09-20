@@ -8,7 +8,8 @@ $LOAD_PATH.unshift File.expand_path('../skills/shaka/lib', __dir__)
 
 module MetricAssert
   def assert_metric(haystack, label, *values)
-    assert_includes haystack, "| #{label} | #{values.join(' | ')} |"
+    row = "| #{label} | #{values.join(' | ')} |"
+    assert_match(/(?:^|\n)#{Regexp.escape(row)}(?:\n|\z)/, haystack)
   end
 end
 

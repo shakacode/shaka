@@ -189,7 +189,10 @@ module Shaka
     end
 
     def native_cost?(group)
-      group.any? { |record| record['usage'].is_a?(Hash) && record['usage'].key?('native_cost_usd') }
+      group.any? && group.all? do |record|
+        value = record['usage'].is_a?(Hash) ? record['usage']['native_cost_usd'] : nil
+        value.is_a?(Numeric) && value.finite? && value >= 0
+      end
     end
 
     def keep_credit_reason?(provider, credits)

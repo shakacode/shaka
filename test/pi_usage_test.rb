@@ -332,14 +332,19 @@ class PiUsageFailuresTest < Minitest::Test
         records = Marshal.load(Marshal.dump(branched_session))
         set_native_cost(records, cost)
         output = report('--host', 'pi', '--file', write_session(directory, records))
-        assert_current_row(output)
-        assert_metric output, 'USD estimate', 'UNKNOWN'
-        refute_includes output, 'SENSITIVE'
+        assert_unknown_native_cost(output)
       end
     end
   end
 
   private
+
+  def assert_unknown_native_cost(output)
+    assert_current_row(output)
+    assert_metric output, 'USD estimate', 'UNKNOWN'
+    refute_includes output, 'Pi recorded native nominal USD'
+    refute_includes output, 'SENSITIVE'
+  end
 
   def assert_unknown_pi(output)
     assert_includes output, 'Pi source versions: UNKNOWN'
