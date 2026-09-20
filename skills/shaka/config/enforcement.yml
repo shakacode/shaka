@@ -95,18 +95,20 @@ rules:
       `baseRefName` to it before merging. They differ when the PR was retargeted after planning,
       or when a stated base was never applied to an adopted PR
     rule: The PR must target the base this task validated against
-    enforced_by: code
-    detector: >-
-      `merge --base` is required, `MergeTarget#validated!` refuses when the PR's live
-      `baseRefName` differs from it, and `unchanged!` rechecks immediately before submitting.
-      Which base the task actually validated against is the agent's to pass.
+    enforced_by: agent
+    note: >-
+      `MergeTarget#validated!` refuses when the PR's live `baseRefName` differs from the base
+      passed on `merge --base`, and `unchanged!` rechecks before submitting. It compares against
+      the base the agent says it validated: validate `main`, pass `--base release` against a PR
+      targeting `release`, and the comparison succeeds.
   - id: no-merge-across-a-base-mismatch
     phase: plan
     quote: Never merge across the mismatch
-    enforced_by: code
-    detector: >-
-      The same `MergeTarget` comparison refuses the merge rather than reporting it, so a
-      mismatch stops the submission.
+    enforced_by: agent
+    note: >-
+      The same `MergeTarget` comparison refuses a merge rather than reporting it, so an honestly
+      passed base cannot merge across a mismatch. A mismatch the agent does not pass on is a
+      mismatch the command never sees.
   - id: no-preferring-the-established-branch
     phase: plan
     quote: never resolve it by preferring whichever branch is established
@@ -284,11 +286,11 @@ rules:
   - id: swift-skips-the-hosted-review-wait
     phase: review
     quote: do not wait for GitHub `review.check`
-    enforced_by: code
-    detector: >-
-      `ReviewPace.allowed_merge_states` admits UNSTABLE under swift, so `merge` submits while
-      that job is still running rather than refusing. Whether a different-provider local review
-      actually ran is the agent's to establish; the command reads the pace it is passed.
+    enforced_by: agent
+    note: >-
+      `ReviewPace.allowed_merge_states` admits UNSTABLE under swift, so the command permits the
+      merge while that job runs. Permitting is not enforcing: an agent that waits anyway simply
+      never calls `merge`, and nothing fails.
   - id: no-second-wait-after-a-nit-sha
     phase: review
     quote: Do not wait for that check again after a nit-only or diagnostic-only follow-up SHA.
@@ -296,15 +298,21 @@ rules:
     note: >-
       Nothing classifies a SHA as nit-only. The distinction is a judgment about what the commit
       changed, which is the kind of call #36 section 5 retires the engine for.
+  - id: advisory-bot-findings-are-read
+    phase: review
+    quote: read completed findings
+    rule: Read an advisory bot's completed findings
+    enforced_by: agent
+    note: Nothing observes what the agent read, so an unread CodeRabbit finding costs nothing.
   - id: advisory-bots-never-block
     phase: review
-    quote: >-
-      CodeRabbit, hosted Codex, and other unnamed bots are advisory: read completed findings,
-      never wait for them.
-    enforced_by: code
-    detector: >-
-      `merge` waits on the seam's required checks and the configured `review.check` only, so an
-      unnamed bot's job never holds the merge. Reading their completed findings is the agent's.
+    quote: never wait for them
+    rule: Never wait for an advisory bot
+    enforced_by: agent
+    note: >-
+      `merge` gates on the seam's required checks and the configured `review.check` only, so an
+      unnamed bot's job cannot hold a merge the agent submits. An agent that waits for one
+      anyway just does not submit, and nothing fails.
   - id: nits-do-not-restart-the-cycle
     phase: review
     quote: After two repair rounds, remaining nits do not start another cycle.
@@ -388,10 +396,10 @@ rules:
     phase: finish
     quote: >-
       In swift, do not wait for optional checks to make merge state CLEAN
-    enforced_by: code
-    detector: >-
-      `ReviewPace.allowed_merge_states` returns UNSTABLE among the swift states, so `merge`
-      submits once the required checks pass instead of waiting for an optional job.
+    enforced_by: agent
+    note: >-
+      `ReviewPace.allowed_merge_states` returns UNSTABLE among the swift states, so the command
+      accepts the merge once required checks pass. It cannot make an agent stop waiting.
   - id: thorough-refuses-unstable
     phase: finish
     quote: do not merge while the state is UNSTABLE
