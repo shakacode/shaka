@@ -145,8 +145,18 @@ class EnforcementCommandTest < Minitest::Test
     output, status = report
 
     assert status.success?, output
+    assert_includes output, 'if an agent ignores this rule, does anything fail?'
     assert_includes output, '`reported` — a command surfaces the violation; the agent can still proceed.'
     assert_includes output, '| Do not open a second PR. | reported |'
+  end
+
+  # A command that reads only the fields an agent sends it answers nothing, so the audit has
+  # to leave it agent-enforced however solid its own validation looks.
+  def test_treats_a_self_reported_gate_as_agent_enforced
+    checkpoint = RULES.fetch(RULES.index { |rule| rule['id'] == 'checkpoint-proceed' })
+
+    assert_equal 'agent', checkpoint.fetch('enforced_by')
+    assert_includes checkpoint.fetch('note'), 'only the fields the agent sends it'
   end
 
   def test_names_the_agent_as_the_only_enforcement_where_nothing_checks

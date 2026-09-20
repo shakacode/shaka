@@ -6,9 +6,11 @@ require_relative 'enforcement_coverage'
 require_relative 'error'
 
 module Shaka
-  # Reports what enforces each imperative rule in the packaged workflow.
+  # Reports what enforces each rule the packaged workflow states with never, must, do not,
+  # or only when. Whether an entry's answer is true is for a human to review; this renders it.
   class Enforcement
-    LEGEND = "- `code` — a `shaka` command refuses the action.\n" \
+    QUESTION = 'Each row answers one question: if an agent ignores this rule, does anything fail?'
+    LEGEND = "- `code` — a `shaka` command refuses the action after checking the state it governs.\n" \
              "- `reported` — a command surfaces the violation; the agent can still proceed.\n" \
              "- `github` — a repository setting refuses it.\n" \
              '- `agent` — nothing checks it; the note says what is missing.'
@@ -62,7 +64,7 @@ module Shaka
         "## #{title}\n\n#{HEADER}\n#{listed.map { |rule| row(rule) }.join("\n")}" unless listed.empty?
       end
       ['# Workflow rule enforcement', "Audit source: `#{EnforcementConfig::PATH}`",
-       tally(rules), LEGEND, SCOPE, *sections].join("\n\n")
+       tally(rules), QUESTION, LEGEND, SCOPE, *sections].join("\n\n")
     end
 
     def section_titles(workflow)

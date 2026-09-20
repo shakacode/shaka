@@ -2,11 +2,14 @@
 version: 1
 # What enforces each rule workflow.yml states with never, must, do not, or only when.
 #
-# `code` means a command in this repository refuses the action; `reported` means a command
-# surfaces the violation and the agent can still proceed; `github` means a repository setting
-# refuses it; `agent` means nothing checks it, and the note says what is missing. A detector
-# names its own limit where it has one. Loading validates that every quote still appears in
-# the workflow and that no rule stated in those four forms is left out.
+# Each entry answers one question: if an agent ignores this rule, does anything fail?
+#
+# `code` means a command refuses the action after checking the state it governs; `reported`
+# means a command surfaces the violation and the agent can still proceed; `github` means a
+# repository setting refuses it; `agent` means nothing fails, and the note says what is
+# missing. A command that only inspects what the agent told it does not answer the question,
+# so its rule is agent-enforced and the note names the command. Loading validates that every
+# quote still appears in the workflow and that no rule stated in those four forms is left out.
 rules:
   - id: trusted-seam-ref
     phase: intake
@@ -45,11 +48,12 @@ rules:
   - id: seam-init-explicit
     phase: plan
     quote: Never guess checks or grant merge authority.
-    enforced_by: code
-    detector: >-
+    enforced_by: agent
+    note: >-
       `Seam::Initializer` refuses to write a seam without at least one `--required-check`, and
-      `merge_policy` defaults `preference` to `ask` rather than to `auto`. It cannot tell a real
-      check name from an invented one, so it forces the agent to state checks, not to find them.
+      defaults `merge.preference` to `ask` rather than to `auto`, so neither is reached by
+      omission. It cannot tell a real check name from an invented one, and an agent that passes
+      `--required-check` with a guess and `--merge-preference auto` gets the seam it asked for.
   - id: effort-justification
     phase: plan
     quote: waiting and tool failures do not by themselves justify more
@@ -63,11 +67,11 @@ rules:
       Proceed without another response only when the user explicitly supplied both settings,
       they match the recommendation, they are active and usable in the host, and immediate start
       is unambiguous.
-    enforced_by: code
-    detector: >-
-      `checkpoint` answers `pause` with a reason unless every one of those conditions holds. It
-      decides from the fields the agent sends it, so it checks the stated intake, not the real
-      one, and matching fields an agent invented still produce `proceed`.
+    enforced_by: agent
+    note: >-
+      `checkpoint` answers `pause` with a reason unless every one of those conditions holds, so
+      an honestly reported intake cannot skip the turn. It reads only the fields the agent sends
+      it: invented settings that agree with each other still produce `proceed`.
   - id: no-native-stacks
     phase: plan
     quote: do not create or merge them

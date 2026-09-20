@@ -7,7 +7,8 @@ require_relative 'repository_config/duplicate_keys'
 require_relative 'workflow_config'
 
 module Shaka
-  # Loads the audit that records what enforces each imperative rule in workflow.yml.
+  # Loads the audit that records what enforces each rule workflow.yml states with never,
+  # must, do not, or only when.
   class EnforcementConfig
     PATH = File.expand_path('../../config/enforcement.yml', __dir__)
     ROOT_KEYS = %w[version rules].freeze
