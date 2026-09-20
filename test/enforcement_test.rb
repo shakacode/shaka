@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require 'yaml'
 require 'shaka/enforcement_config'
+require 'shaka/enforcement'
 require 'shaka/enforcement_coverage'
 
 class EnforcementConfigTest < Minitest::Test
@@ -233,6 +234,14 @@ class EnforcementCommandTest < Minitest::Test
     assert_predicate status, :success?, output
     assert_includes output, 'skills/shaka/config/enforcement.yml'
     refute_includes output, File.expand_path('..', __dir__)
+  end
+
+  # A cell that escaped its pipe but not its backslash would let text ending in one split the
+  # row and move a column's content into the next. CodeQL found it; this keeps it found.
+  def test_a_cell_cannot_break_out_of_its_column
+    assert_equal 'a\\|b', Shaka::Enforcement.cell('a|b')
+    assert_equal 'c\\\\d', Shaka::Enforcement.cell('c\\d')
+    assert_equal 'e\\\\\\|f', Shaka::Enforcement.cell('e\\|f')
   end
 
   def test_rejects_arguments

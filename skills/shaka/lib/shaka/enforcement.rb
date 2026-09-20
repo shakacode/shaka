@@ -23,6 +23,11 @@ module Shaka
     # Package-relative: the report is pasted into issues, and an absolute path names a machine.
     SOURCE = 'skills/shaka/config/enforcement.yml'
 
+    # Folded YAML carries newlines, and a stray pipe would split the row it belongs in. One
+    # pass over both characters, so a backslash cannot arrive already escaped and slip a pipe
+    # through behind it.
+    def self.cell(text) = EnforcementCoverage.normalize(text).gsub(/[\\|]/) { |char| "\\#{char}" }
+
     def self.run(arguments)
       new(arguments).run
     rescue OptionParser::ParseError, Shaka::Error => e
@@ -93,9 +98,6 @@ module Shaka
       "| #{cell(stated)} | #{rule.fetch('enforced_by')} | #{cell(backing)} |"
     end
 
-    # Folded YAML carries newlines, and a stray pipe would split the row it belongs in. One
-    # pass over both characters, so a backslash cannot arrive already escaped and slip a pipe
-    # through behind it.
-    def cell(text) = EnforcementCoverage.normalize(text).gsub(/[\\|]/) { |char| "\\#{char}" }
+    def cell(text) = self.class.cell(text)
   end
 end
