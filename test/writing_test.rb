@@ -58,9 +58,15 @@ class WritingDuplicationTest < Minitest::Test
           "#{identity}\n\n# Code Walkthrough\n\nMaintainers can read why the loader raises early.")
   end
 
-  # GitHub renders an unclosed fence as code to the end of the body, so it is not prose.
+  # GitHub renders a fence left open as code to the end of the body, so it is not prose.
   def test_an_unclosed_fence_takes_the_rest_of_the_body_with_it
     shared = "```\nbundle exec rubocop --only Metrics and the rest of this command\n"
+    check("Merging is safe.\n\n#{shared}", "The loader raises early.\n\n#{shared}")
+  end
+
+  # A longer fence holds shorter backtick runs without them closing it.
+  def test_a_fence_is_closed_only_by_a_delimiter_at_least_as_long
+    shared = "````\n```\nbundle exec rubocop --only Metrics and the rest of it\n````"
     check("Merging is safe.\n\n#{shared}", "The loader raises early.\n\n#{shared}")
   end
 

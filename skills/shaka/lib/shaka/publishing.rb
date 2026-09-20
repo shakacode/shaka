@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative 'error'
+require_relative 'managed_region'
 require_relative 'public_comments/bounded_list'
 require_relative 'publication'
 require_relative 'writing/siblings'
@@ -10,8 +11,8 @@ module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written
   # and confirming the stored bytes afterwards.
   module Publishing
-    OPEN_MARK = '<!-- shaka:begin -->'
-    CLOSE_MARK = '<!-- shaka:end -->'
+    OPEN_MARK = ManagedRegion::OPEN
+    CLOSE_MARK = ManagedRegion::CLOSE
     ESCAPE = /\\[nrt]/
     REPLY_PAGES = 20
     SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
@@ -59,16 +60,7 @@ module Shaka
 
     # Only the managed region is the description this workflow wrote; the rest of the body
     # belongs to a person or another bot and is not this writer's prose to answer for.
-    # An ambiguous body names no single description. That is a body this workflow cannot
-    # have written and already refuses to publish into, so reading it stops here as well.
-    # Either marker on its own is enough to ask, since an edit can delete just one.
-    # What follows the opening marker is taken as written, so a body whose line endings
-    # changed still reads as the region a passing ambiguity check said it is.
-    def managed_body
-      body = pull['body'].to_s
-      check_region(body, body.scan(OPEN_MARK).size, body.scan(CLOSE_MARK).size) if body.match?(/shaka:(begin|end)/)
-      body[/#{Regexp.escape(OPEN_MARK)}(.*?)#{Regexp.escape(CLOSE_MARK)}/m, 1]
-    end
+    def managed_body = ManagedRegion.new(pull['body'].to_s).text
 
     # The account this workflow publishes as; only its own reviews are its walkthroughs.
     def viewer = @viewer ||= api('user')['login']
@@ -88,11 +80,10 @@ module Shaka
       managed = "#{OPEN_MARK}\n#{body}#{CLOSE_MARK}"
       return managed if existing.strip.empty?
 
-      opens = existing.scan(OPEN_MARK).size
-      closes = existing.scan(CLOSE_MARK).size
-      return "#{managed}\n\n#{existing}" if opens.zero? && closes.zero?
+      region = ManagedRegion.new(existing)
+      return "#{managed}\n\n#{existing}" if region.absent?
 
-      check_region(existing, opens, closes)
+      region.check
       prefix, rest = existing.split(OPEN_MARK, 2)
       "#{prefix}#{managed}#{rest.split(CLOSE_MARK, 2).last}"
     end
@@ -104,13 +95,6 @@ module Shaka
       return if pull['body'].to_s == existing
 
       raise Error, 'The description changed while this update was prepared; publish again from the current body.'
-    end
-
-    # Rewriting an ambiguous region would delete whatever sits between the wrong markers.
-    def check_region(existing, opens, closes)
-      return if opens == 1 && closes == 1 && existing.index(OPEN_MARK) < existing.index(CLOSE_MARK)
-
-      raise Error, 'The description has an ambiguous or malformed managed region; repair it before publishing.'
     end
 
     def write_reply(existing, content, target)

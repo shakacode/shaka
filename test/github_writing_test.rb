@@ -105,6 +105,11 @@ class GitHubWritingTest < Minitest::Test
     assert_includes error.message, 'This walkthrough repeats'
   end
 
+  # Prose naming a marker is not a marker, and the docs quote both names.
+  def test_a_body_that_merely_mentions_the_marker_names_is_not_called_ambiguous
+    assert_equal 123, publishes(pull_body('The markers are shaka:begin and shaka:end in prose.'))
+  end
+
   def test_walkthrough_repeating_the_published_description_is_refused_before_its_evidence
     github = client(snapshot_response, managed(SUMMARY))
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: walkthrough_body) }
