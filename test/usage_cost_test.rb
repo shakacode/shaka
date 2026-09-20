@@ -162,20 +162,37 @@ end
 class UsageNativePiCostTest < Minitest::Test
   def test_openai_provider_native_cost_does_not_use_rate_cards
     report = Shaka::CostEstimate.new([native_openai_record]).report
+    assert_no_rate_card_copy report
     assert_metric report, 'USD estimate', '$0.000300'
-    refute_includes report, 'Credits estimate'
-    refute_includes report, '2026-09-16'
-    refute_includes report, 'learn.chatgpt.com'
-    refute_includes report, 'developers.openai.com'
     assert_includes report, 'Pi recorded native nominal USD'
+  end
+
+  def test_unavailable_native_cost_keeps_pi_provenance_not_rate_cards
+    report = Shaka::CostEstimate.new([native_openai_record(cost: nil)]).report
+    assert_no_rate_card_copy report
+    assert_metric report, 'USD estimate', 'UNKNOWN'
+    refute_includes report, 'Pi recorded native nominal USD'
+  end
+
+  def test_unsupported_openai_model_omits_rate_card_copy
+    report = Shaka::CostEstimate.new([native_openai_record(cost: :omit, model: 'gpt-new')]).report
+    assert_no_rate_card_copy report
+    assert_metric report, 'USD estimate', 'UNKNOWN'
   end
 
   private
 
-  def native_openai_record
-    { 'configuration' => %w[openai gpt-5.6-terra UNKNOWN high],
-      'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 0,
-                   'cache_write_input_tokens' => 0, 'output_tokens' => 20,
-                   'native_cost_usd' => 0.0003 } }
+  def native_openai_record(cost: 0.0003, model: 'gpt-5.6-terra')
+    usage = { 'input_tokens' => 100, 'cached_input_tokens' => 0,
+              'cache_write_input_tokens' => 0, 'output_tokens' => 20 }
+    usage['native_cost_usd'] = cost unless cost == :omit
+    { 'configuration' => ['openai', model, 'UNKNOWN', 'high'], 'usage' => usage }
+  end
+
+  def assert_no_rate_card_copy(report)
+    refute_includes report, 'Credits estimate'
+    refute_includes report, '2026-09-16'
+    refute_includes report, 'learn.chatgpt.com'
+    refute_includes report, 'developers.openai.com'
   end
 end

@@ -54,10 +54,10 @@ module Shaka
     end
 
     def priced_rate_copy(columns)
-      providers = priced_columns(columns).map { |column| column[:provider] }
+      priced = priced_columns(columns)
       [
-        ('Standard Codex credit and OpenAI API-equivalent rates' if providers.include?('openai')),
-        ('Cursor on-demand list prices' if providers.include?('cursor'))
+        ('Standard Codex credit and OpenAI API-equivalent rates' if priced.any? { |column| openai_rated?(column) }),
+        ('Cursor on-demand list prices' if priced.any? { |column| cursor_rated?(column) })
       ].compact
     end
 
@@ -66,7 +66,16 @@ module Shaka
     end
 
     def priced_columns(columns)
-      columns.reject { |column| column[:native] }
+      columns.reject { |column| column[:recorded_native] }
+    end
+
+    def openai_rated?(column)
+      column[:provider] == 'openai' && CostEstimate::RATES.key?(column[:model].to_s)
+    end
+
+    def cursor_rated?(column)
+      model = column[:model].to_s.sub(/-fast\z/, '')
+      column[:provider] == 'cursor' && CursorCost::RATES.key?(model)
     end
 
     def footer(columns, reasons)
@@ -131,7 +140,7 @@ module Shaka
     end
 
     def credits_row?(columns)
-      priced_columns(columns).any? { |column| column[:provider] == 'openai' || column[:credits] }
+      priced_columns(columns).any? { |column| openai_rated?(column) || column[:credits] }
     end
 
     def source_line(columns)
@@ -143,12 +152,11 @@ module Shaka
 
     def source_links(columns)
       priced = priced_columns(columns)
-      providers = priced.map { |column| column[:provider] }
       [
-        (CREDIT_SOURCE if providers.include?('openai')),
+        (CREDIT_SOURCE if priced.any? { |column| openai_rated?(column) }),
         *model_source_links(priced),
-        (CACHE_SOURCE if providers.include?('openai')),
-        (CURSOR_PRICING if providers.include?('cursor'))
+        (CACHE_SOURCE if priced.any? { |column| openai_rated?(column) }),
+        (CURSOR_PRICING if priced.any? { |column| cursor_rated?(column) })
       ].compact
     end
 
@@ -173,15 +181,15 @@ module Shaka
     def column(key, group, reasons)
       configuration, billing = key
       provider, model, routed, effort = configuration
-      credits, api = priced_totals(group, reasons, provider)
+      credits, api = priced_totals(group, reasons, model)
       { provider: provider, model: billed_model(provider, billing, model), routed: routed, effort: effort,
-        credits: credits, api: api, native: native_cost?(group) }
+        credits: credits, api: api, native: native_cost?(group), recorded_native: native_recorded?(group) }
     end
 
-    def priced_totals(group, reasons, provider)
+    def priced_totals(group, reasons, model)
       credits, credit_reason = total(group, :credits)
       api, api_reason = total(group, :api)
-      reasons << credit_reason if credit_reason && keep_credit_reason?(provider, credits, group)
+      reasons << credit_reason if credit_reason && keep_credit_reason?(model, credits, group)
       reasons << api_reason if api_reason
       [credits, api]
     end
@@ -197,12 +205,17 @@ module Shaka
       end
     end
 
-    def keep_credit_reason?(provider, credits, group)
-      credits || (provider == 'openai' && !native_cost?(group))
+    def native_recorded?(group)
+      group.any? { |record| record['usage'].is_a?(Hash) && record['usage'].key?('native_cost_usd') }
+    end
+
+    def keep_credit_reason?(model, credits, group)
+      credits || (CostEstimate::RATES.key?(model.to_s) && !native_recorded?(group))
     end
 
     def blank_column
-      { provider: nil, model: nil, routed: nil, effort: nil, credits: nil, api: nil, native: false }
+      { provider: nil, model: nil, routed: nil, effort: nil, credits: nil, api: nil, native: false,
+        recorded_native: false }
     end
   end
 
