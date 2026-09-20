@@ -82,13 +82,17 @@ module Shaka
     def tokens(usage)
       return {} unless usage.is_a?(Hash)
 
-      details = usage['output_tokens_details']
-      creation = usage['cache_creation']
       { 'input_tokens' => usage['input_tokens'], 'cached_input_tokens' => usage['cache_read_input_tokens'],
         'output_tokens' => usage['output_tokens'], 'cache_write_input_tokens' => usage['cache_creation_input_tokens'],
-        'cache_write_5m_input_tokens' => (creation['ephemeral_5m_input_tokens'] if creation.is_a?(Hash)),
-        'cache_write_1h_input_tokens' => (creation['ephemeral_1h_input_tokens'] if creation.is_a?(Hash)),
-        'reasoning_output_tokens' => (details['thinking_tokens'] if details.is_a?(Hash)) }
+        'cache_write_5m_input_tokens' => nested(usage, 'cache_creation', 'ephemeral_5m_input_tokens'),
+        'cache_write_1h_input_tokens' => nested(usage, 'cache_creation', 'ephemeral_1h_input_tokens'),
+        'reasoning_output_tokens' => nested(usage, 'output_tokens_details', 'thinking_tokens'),
+        'web_search_requests' => nested(usage, 'server_tool_use', 'web_search_requests') }
+    end
+
+    def nested(usage, group, field)
+      recorded = usage[group]
+      recorded[field] if recorded.is_a?(Hash)
     end
 
     def parse(line)

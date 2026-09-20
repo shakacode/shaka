@@ -37,6 +37,8 @@ module Shaka
       'claude-sonnet-4-5' => %w[3 0.3 3.75 6 15],
       'claude-haiku-4-5' => %w[1 0.1 1.25 2 5]
     }.freeze
+    # Web search bills $10 per 1,000 requests on top of tokens; web fetch adds no charge.
+    SEARCH_RATE = Rational(1, 100)
 
     private
 
@@ -57,10 +59,8 @@ module Shaka
       speed = record['billing_mode']
       return [nil, speed_reason(speed)] unless speed == 'standard'
 
-      tokens, reason = anthropic_categories(record['usage'])
-      return [nil, reason] if reason
-
-      [anthropic_bill(tokens, rate) / 1_000_000, nil]
+      priced, reason = anthropic_categories(record['usage'])
+      reason ? [nil, reason] : [anthropic_bill(priced, rate), nil]
     end
 
     # Fast mode bills at its own rates, and a source that records no speed establishes neither.
@@ -68,8 +68,9 @@ module Shaka
       speed == 'fast' ? 'Anthropic fast-mode rates are not published here' : 'Billing speed UNKNOWN'
     end
 
-    def anthropic_bill(tokens, rate)
-      tokens.zip(rate).sum { |count, price| count * Rational(price) }
+    def anthropic_bill(priced, rate)
+      tokens, searches = priced
+      (tokens.zip(rate).sum { |count, price| count * Rational(price) } / 1_000_000) + (searches * SEARCH_RATE)
     end
 
     def anthropic_categories(usage)
@@ -80,8 +81,10 @@ module Shaka
 
       input, cached, writes, output = counters
       split = write_split(usage, writes)
-      reason = anthropic_subset_reason(writes, split, usage['reasoning_output_tokens'], output)
-      reason ? [nil, reason] : [[input, cached, *split, output], nil]
+      searches = usage['web_search_requests']
+      reason = anthropic_subset_reason(writes, split, usage['reasoning_output_tokens'], output) ||
+               ('Server tool usage UNKNOWN' unless valid_counters?([searches]))
+      reason ? [nil, reason] : [[[input, cached, *split, output], searches], nil]
     end
 
     # A transcript that records no cache write need not break the total down.
@@ -99,7 +102,7 @@ module Shaka
     end
   end
 
-  # Report copy for configured-model cost scenarios.
+  # Report copy for the rate-card cost scenarios.
   module CostCopy
     VERIFIED = '2026-09-16'
     ANTHROPIC_VERIFIED = '2026-09-19'

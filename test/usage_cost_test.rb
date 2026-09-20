@@ -238,12 +238,12 @@ module AnthropicCostFixture
   end
 
   def anthropic_record(configuration: %w[anthropic UNKNOWN claude-opus-5 xhigh], billing: 'standard',
-                       writes: 12, writes_1h: 4)
+                       writes: 12, writes_1h: 4, searches: 0)
     { 'configuration' => configuration, 'billing_mode' => billing,
       'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40, 'cache_write_input_tokens' => writes,
                    'cache_write_5m_input_tokens' => writes - writes_1h,
                    'cache_write_1h_input_tokens' => writes_1h, 'output_tokens' => 20,
-                   'reasoning_output_tokens' => 5 } }
+                   'reasoning_output_tokens' => 5, 'web_search_requests' => searches } }
   end
 end
 
@@ -281,6 +281,11 @@ class UsageAnthropicCostTest < Minitest::Test
       report = estimate(anthropic_record(configuration: ['anthropic', 'UNKNOWN', model, 'xhigh']))
       assert_metric report, 'USD estimate', expected
     end
+  end
+
+  def test_web_search_requests_are_charged_on_top_of_the_token_estimate
+    assert_metric estimate(anthropic_record(searches: 3)), 'USD estimate', '$0.031110'
+    assert_metric estimate(anthropic_record(searches: 0)), 'USD estimate', '$0.001110'
   end
 
   def test_a_configured_model_prices_a_source_that_records_no_routed_model
@@ -358,6 +363,16 @@ class UsageAnthropicUnknownTest < Minitest::Test
     assert_includes report, 'Anthropic API list prices'
     assert_includes report, ANTHROPIC_LINK
     assert_includes report, 'Cache-write TTL split UNKNOWN'
+  end
+
+  def test_unreported_server_tool_usage_stays_unknown_rather_than_assuming_no_searches
+    [nil, 'x', -1].each do |searches|
+      record = anthropic_record
+      record['usage']['web_search_requests'] = searches
+      report = estimate(record)
+      assert_metric report, 'USD estimate', 'UNKNOWN'
+      assert_includes report, 'Server tool usage UNKNOWN'
+    end
   end
 
   def test_a_source_whose_input_already_contains_its_subsets_is_not_priced_as_anthropic

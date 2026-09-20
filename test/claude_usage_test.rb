@@ -27,8 +27,9 @@ module ClaudeUsageFixture
 
   def priced_reply(id, input, **overrides)
     reply(id, input, model: 'claude-opus-5',
-                     usage: { speed: 'standard', cache_creation: { ephemeral_5m_input_tokens: 3,
-                                                                   ephemeral_1h_input_tokens: 4 } }, **overrides)
+                     usage: { speed: 'standard', server_tool_use: { web_search_requests: 0 },
+                              cache_creation: { ephemeral_5m_input_tokens: 3,
+                                                ephemeral_1h_input_tokens: 4 } }, **overrides)
   end
 
   def transcript(directory, name, records)
@@ -210,6 +211,16 @@ class ClaudeUsagePriceTest < Minitest::Test
       assert_metric output, 'USD estimate', 'UNKNOWN'
       assert_includes output, 'Inconsistent token subsets'
       assert_metric output, 'Cache writes', 7
+    end
+  end
+
+  def test_a_web_search_adds_its_published_per_request_charge
+    Dir.mktmpdir do |directory|
+      searched = priced_reply('m1', 100)
+      searched[:message][:usage][:server_tool_use][:web_search_requests] = 2
+      file = transcript(directory, 'session.jsonl', [prompt('new'), searched])
+      output = report('--host', 'claude-code', '--file', file)
+      assert_metric output, 'USD estimate', '$0.021079'
     end
   end
 
