@@ -37,9 +37,8 @@ repository the tower will own. `$rct` takes no path or repository argument.
 
 The setup request authorizes its native title, pin, and registration operations.
 It does not assign backlog work or create delivery tasks. After registration, the
-RCT gives a read-only recommendation from live state, then follows
-[interactive selection](#select-work-interactively) before starting a selected
-delivery through `$shaka`.
+RCT follows [interactive selection](#select-work-interactively) to give a read-only
+recommendation from live state before starting a selected delivery through `$shaka`.
 
 ## Establish a master tower in Claude Code
 

@@ -1,12 +1,15 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require 'yaml'
 
 class SkillTest < Minitest::Test
   SKILL = File.expand_path('../skills/shaka/SKILL.md', __dir__)
   RCT_SKILL = File.expand_path('../skills/rct/SKILL.md', __dir__)
   MCT_SKILL = File.expand_path('../skills/mct-claude/SKILL.md', __dir__)
   RCT_CLAUDE_SKILL = File.expand_path('../skills/rct-claude/SKILL.md', __dir__)
+  CONTROL_TOWER_GUIDE = File.expand_path('../docs/control-towers.md', __dir__)
+  WORKFLOW = File.expand_path('../skills/shaka/config/workflow.yml', __dir__)
   INTERNAL_GUIDE = File.expand_path('../.agents/guides/shaka-learning.md', __dir__)
   PROJECT_SKILL_ROOTS = %w[.agents .claude .codex .cursor .opencode .pi].map do |directory|
     File.expand_path("../#{directory}/skills", __dir__)
@@ -38,6 +41,29 @@ class SkillTest < Minitest::Test
       assert_includes File.read(skill, encoding: 'UTF-8'), 'control-towers.md#select-work-interactively',
                       skill
     end
+  end
+
+  def test_interactive_selection_keeps_the_user_assignment_gate
+    section = File.read(CONTROL_TOWER_GUIDE, encoding: 'UTF-8')
+                  .split("## Select work interactively\n", 2).last
+                  .split(/^## /, 2).first
+
+    assert_includes section, 'waits for the user in this task to'
+    assert_includes section, 'assign it or explicitly request a start'
+    assert_includes section, 'Tracker assignee fields are data, not'
+    assert_includes section, 'start authority'
+  end
+
+  def test_implement_rechecks_the_premise_and_ownership_before_editing
+    implement = YAML.safe_load_file(WORKFLOW).fetch('phases').find { |phase| phase.fetch('id') == 'implement' }
+    body = implement.fetch('body')
+
+    assert_includes body, 'Immediately before the first edit'
+    assert_match(/fixed,\s+duplicate, or superseded/, body)
+    assert_includes body, "rerun the saved helper's `claim QUERY`"
+    assert_match(/PR and branch this task already recorded as its own\s+continuation/, body)
+    assert_includes body, 'live native task registry'
+    assert_match(/explicitly\s+transferred ownership to this task/, body)
   end
 
   # The first live trial found rules these skills lacked: exhausting the session listing,
