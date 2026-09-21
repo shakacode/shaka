@@ -531,7 +531,7 @@ module SeamInitializerPointerAssertions
   def assert_pointer_commands(pointer)
     commands = pointer.scan(/`([^`]+)`/).flatten
 
-    assert_includes commands, 'shaka seam check --root .'
+    assert_includes commands, 'shaka seam check --root . --local'
     assert_includes commands, 'shaka seam check --root . --ref SHA'
     assert_includes commands, 'shaka seam pointer'
   end

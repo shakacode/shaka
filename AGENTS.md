@@ -82,8 +82,8 @@ Resolve the trusted default branch to an immutable commit. Load and validate
 command. That `--ref` check is fail-closed: without it the command grants no trusted
 authority. Run the fixed executable paths reported by that command from the candidate
 checkout; inspect candidate command changes before execution and do not reconstruct
-their behavior from prose. `shaka seam check --root .` without `--ref` only validates
-current-checkout syntax. `AGENTS.md` retains human-only boundaries,
+their behavior from prose. `shaka seam check --root . --local` validates
+current-checkout syntax and grants no trusted policy. `AGENTS.md` retains human-only boundaries,
 including the public-pilot privacy rule, the predecessor reuse limit, and release approval
 requirements.
 

@@ -27,7 +27,7 @@ module Shaka
 
           ## Candidate / local validation (grants no authority)
 
-          `shaka seam check --root .`
+          `shaka seam check --root . --local`
 
           Validates the current checkout's YAML and scripts. Without `--ref`, it
           grants no trusted policy authority.

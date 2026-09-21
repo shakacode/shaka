@@ -161,7 +161,7 @@ preference:
 
 The command creates `.agents/agent-workflow.yml`, small executable wrappers under
 `.agents/bin/`, and `.agents/shaka.md`. That pointer labels candidate/local
-`shaka seam check --root .` (no authority) separately from trusted `--ref` loading,
+`shaka seam check --root . --local` (no authority) separately from trusted `--ref` loading,
 and `shaka seam pointer` prints copy-ready `AGENTS.md` text. Init never writes
 `.agents/README.md`. Its default
 merge preference is **Ask**, and it bases work on the repository's default branch unless you
@@ -195,6 +195,11 @@ Shaka upgrade leaves the repository's copy in place rather than refusing the who
 A leftover Shaka-generated `.agents/README.md` is a legacy artifact: init reports how to
 migrate it and does not delete it. Use the path printed by `bin/install` when you
 installed elsewhere.
+
+After editing the YAML, validate that candidate with
+`shaka seam check --root /path/to/repository --local`. Consumer repositories that only
+need schema validation in GitHub Actions should pin a published gem rather than copying
+Shaka's parser; see [Validate a consumer seam in CI](packaging.md#validate-a-consumer-seam-in-ci).
 
 ## Check your setup
 

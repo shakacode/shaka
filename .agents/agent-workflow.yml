@@ -1,5 +1,5 @@
 # Shaka repository contract. Every setting is documented in docs/settings.md.
-# Candidate/local validation (no authority): shaka seam check --root .
+# Candidate/local validation (no authority): shaka seam check --root . --local
 # Trusted policy: shaka seam check --root . --ref SHA after resolving the default branch.
 ---
 version: 1
