@@ -147,13 +147,13 @@ If another owner now holds the candidate, continue through that owner instead of
 starting a second writer. Each selected delivery continues through the installed
 `$shaka` skill with one accountable owner.
 
-A completed or newly opened PR invalidates the previous recommendation. Reconstruct
-the repository's essential backlog from GitHub or the selected project tracker. A
-fresh authorized task should not need a private workflow database, old tower
-transcript, or external coordination ledger to understand that backlog.
+Reconstruct the repository's essential backlog from GitHub or the selected project
+tracker. A fresh authorized task should not need a private workflow database, old
+tower transcript, or external coordination ledger to understand that backlog.
 
-Classify each relevant candidate as deliver next; design or investigation first;
-blocked; defer; or close / no action. Order admitted work by verified customer or
+Classify each relevant candidate as deliver next; repair, through its existing owner
+when one exists; design or investigation first; blocked; defer with reason;
+superseded / close; or no action. Order admitted work by verified customer or
 maintainer impact, security and correctness, release needs, and native dependency
 relationships. Shared files are an integration concern, not by themselves a
 semantic dependency. Recommend one bounded next delivery and why it precedes the
@@ -169,10 +169,9 @@ implementation, or merge. An unchanged scan stays quiet.
 
 ## Account for Dependabot
 
-Every triage refresh lists open Dependabot PRs and gives each an explicit
-disposition: deliver, repair, defer with reason, superseded/close, or blocked.
-Addressing Dependabot does not mean blindly merging it. No bot PR may disappear
-from the recommendation without a disposition.
+Every triage refresh lists open Dependabot PRs and gives each an explicit disposition
+from those categories. Addressing Dependabot does not mean blindly merging it. No
+bot PR may disappear from the recommendation without a disposition.
 
 ## Keep work state in the tracker
 
