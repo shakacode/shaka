@@ -2,7 +2,6 @@
 
 require_relative 'test_helper'
 require 'json'
-require 'minitest/mock'
 require 'shaka/doctor/cursor_stop_hook'
 
 # Doctor must fail a missing stop command, not a missing this-chat usage file.
@@ -43,8 +42,13 @@ class CursorStopHookTest < Minitest::Test
   # Break: expanding ~/hooks.json at load or as a default argument raises ArgumentError
   # when HOME cannot be resolved, and Doctor.run does not rescue that for other hosts.
   def test_an_unresolvable_home_is_not_installed
-    explode = ->(*) { raise ArgumentError, "couldn't find HOME environment" }
-    File.stub(:expand_path, explode) { refute_predicate(Shaka::Doctor::CursorStopHook, :installed?) }
+    original = File.method(:expand_path)
+    File.define_singleton_method(:expand_path) do |*|
+      raise ArgumentError, "couldn't find HOME environment"
+    end
+    refute_predicate(Shaka::Doctor::CursorStopHook, :installed?)
+  ensure
+    File.define_singleton_method(:expand_path, original)
   end
 
   private
