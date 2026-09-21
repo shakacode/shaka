@@ -133,8 +133,9 @@ proof of ownership, authorization, or completion.
 After `$rct` or `/rct-claude` registration completes, recommend from a fresh
 read of live issues, PRs, tracker relationships, and native task ownership, not
 from the setup-time inventory. Reread this section before that first
-recommendation and before every later one: after a delivery finishes or blocks,
-and when the user reports a material priority change.
+recommendation and before every later one, including after a delivery finishes
+or blocks, after a PR completes or opens, and when the user reports a material
+priority change.
 
 Triage recommends one bounded delivery and waits for assignment. It does not
 create workers, start implementation, or change merge authority because it found
