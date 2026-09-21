@@ -8,10 +8,9 @@ require_relative '../eval/lib/shaka/evaluation/probe_container'
 module LocalEvaluationProbeHelpers
   ROOT = File.expand_path('..', __dir__)
   FIXTURE = File.join(ROOT, 'eval/fixtures/local_evaluation/probe')
-  TRUSTED_SKILL = '/opt/trusted/shaka'
 
-  def new_container
-    Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: TRUSTED_SKILL)
+  def new_container(trusted_skill:)
+    Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill:)
   end
 
   def fixture_files(root)
@@ -36,7 +35,14 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
   include LocalEvaluationProbeHelpers
 
   def setup
-    @container = new_container
+    @trusted_skill = File.realpath(Dir.mktmpdir('trusted-shaka'))
+    FileUtils.mkdir_p(File.join(@trusted_skill, 'scripts'))
+    write_executable(File.join(@trusted_skill, 'scripts'), 'shaka', "#!/bin/sh\nexit 0\n")
+    @container = new_container(trusted_skill: @trusted_skill)
+  end
+
+  def teardown
+    FileUtils.remove_entry(@trusted_skill)
   end
 
   def test_create_plan_exposes_only_the_fixture_helper_and_disposable_workspace
@@ -84,6 +90,10 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
     assert_raises(ArgumentError) { @container.owner_repository_command('shakacode/one/two') }
     assert_raises(ArgumentError) { @container.owner_repository_command('../..') }
   end
+end
+
+class LocalEvaluationTrustedSkillTest < Minitest::Test
+  include LocalEvaluationProbeHelpers
 
   def test_candidate_checkout_cannot_supply_the_trusted_helper
     candidate_skill = File.join(ROOT, 'skills/shaka')
@@ -91,11 +101,71 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
 
     error = assert_raises(ArgumentError) { container.create_command('shaka-slice0-probe-test') }
     assert_match(/outside the candidate checkout/, error.message)
-
-    ancestor = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: File.dirname(ROOT))
-    assert_raises(ArgumentError) { ancestor.create_command('shaka-slice0-probe-test') }
   end
 
+  def test_trusted_helper_cannot_be_an_ancestor_or_an_unrelated_directory
+    ancestor = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: File.dirname(ROOT))
+    assert_raises(ArgumentError) { ancestor.create_command('shaka-slice0-probe-test') }
+
+    root_mount = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: '/')
+    assert_raises(ArgumentError) { root_mount.create_command('shaka-slice0-probe-test') }
+
+    Dir.mktmpdir('not-a-skill') do |directory|
+      unrelated = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: directory)
+      assert_raises(ArgumentError) { unrelated.create_command('shaka-slice0-probe-test') }
+    end
+  end
+
+  def test_trusted_helper_rejects_symlinks_into_the_checkout
+    Dir.mktmpdir('trusted-links') do |directory|
+      link = File.join(directory, 'shaka')
+      File.symlink(File.join(ROOT, 'skills/shaka'), link)
+      linked = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: link)
+      assert_raises(ArgumentError) { linked.create_command('shaka-slice0-probe-test') }
+    end
+  end
+
+  def test_trusted_helper_mounts_an_external_symlink_by_its_canonical_target
+    Dir.mktmpdir('trusted-target') do |target|
+      FileUtils.mkdir_p(File.join(target, 'scripts'))
+      write_executable(File.join(target, 'scripts'), 'shaka', "#!/bin/sh\nexit 0\n")
+      Dir.mktmpdir('trusted-link') do |directory|
+        File.symlink(target, link = File.join(directory, 'shaka'))
+        command = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: link)
+                                                   .create_command('shaka-slice0-probe-test')
+        assert_includes command, "type=bind,src=#{File.realpath(target)},dst=/opt/shaka,readonly"
+      end
+    end
+  end
+
+  def test_trusted_helper_rejects_a_symlinked_entrypoint
+    Dir.mktmpdir('trusted-entrypoint') do |directory|
+      FileUtils.mkdir_p(File.join(directory, 'scripts'))
+      File.symlink(File.join(ROOT, 'skills/shaka/scripts/shaka'), File.join(directory, 'scripts/shaka'))
+      container = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: directory)
+      assert_raises(ArgumentError) { container.create_command('shaka-slice0-probe-test') }
+    end
+  end
+
+  def test_trusted_helper_rejects_a_symlinked_scripts_directory
+    Dir.mktmpdir('trusted-scripts') do |directory|
+      File.symlink(File.join(ROOT, 'skills/shaka/scripts'), File.join(directory, 'scripts'))
+      container = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: directory)
+      assert_raises(ArgumentError) { container.create_command('shaka-slice0-probe-test') }
+    end
+  end
+
+  def test_trusted_helper_rejects_unsafe_mount_paths
+    Dir.mktmpdir('trusted,shaka') do |directory|
+      FileUtils.mkdir_p(File.join(directory, 'scripts'))
+      write_executable(File.join(directory, 'scripts'), 'shaka', "#!/bin/sh\nexit 0\n")
+      unsafe = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: directory)
+      assert_raises(ArgumentError) { unsafe.create_command('shaka-slice0-probe-test') }
+    end
+  end
+end
+
+class LocalEvaluationProbeContainerPlanTest < Minitest::Test
   def test_preflight_command_rejects_an_invalid_login
     assert_raises(ArgumentError) do
       @container.preflight_command('shaka-slice0-probe-test', target: 'shakacode/probe', login: '../owner')
@@ -115,7 +185,7 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
 
   def expected_mounts
     ["type=bind,src=#{FIXTURE},dst=/seed/probe,readonly",
-     "type=bind,src=#{TRUSTED_SKILL},dst=/opt/shaka,readonly",
+     "type=bind,src=#{@trusted_skill},dst=/opt/shaka,readonly",
      'type=volume,dst=/workspace']
   end
 end

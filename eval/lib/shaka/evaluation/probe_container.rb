@@ -22,9 +22,10 @@ module Shaka
 
       def create_command(name)
         validate_name!(name)
-        validate_trusted_skill!
+        validate_mount_path!(fixture)
+        trusted_skill = validate_trusted_skill!
         ['docker', 'create', '--name', name, '--hostname', 'slice0-probe',
-         *security_options, *mount_options,
+         *security_options, *mount_options(trusted_skill),
          '--env', 'HOME=/home/shaka', '--env', 'GIT_TERMINAL_PROMPT=0',
          IMAGE, 'sleep', 'infinity']
       end
@@ -71,9 +72,9 @@ module Shaka
          '--tmpfs', '/tmp:rw,noexec,nosuid,nodev']
       end
 
-      def mount_options
+      def mount_options(trusted_skill)
         ['--mount', "type=bind,src=#{fixture},dst=/seed/probe,readonly",
-         '--mount', "type=bind,src=#{@trusted_skill},dst=/opt/shaka,readonly",
+         '--mount', "type=bind,src=#{trusted_skill},dst=/opt/shaka,readonly",
          '--mount', 'type=volume,dst=/workspace']
       end
 
@@ -88,9 +89,15 @@ module Shaka
 
         root = canonical(@root)
         trusted = canonical(@trusted_skill)
-        return unless trusted == root || trusted.start_with?("#{root}/") || root.start_with?("#{trusted}/")
+        validate_mount_path!(trusted)
+        validate_nonoverlap!(root, trusted)
 
-        raise ArgumentError, 'Trusted Shaka helper must resolve outside the candidate checkout'
+        helper = File.join(trusted, 'scripts/shaka')
+        valid_helper = File.file?(helper) && File.executable?(helper) && !File.symlink?(helper)
+        valid_helper &&= contains?(trusted, File.realpath(helper))
+        raise ArgumentError, 'Trusted Shaka helper must contain executable scripts/shaka' unless valid_helper
+
+        trusted
       end
 
       def validate_repository!(repository)
@@ -108,6 +115,22 @@ module Shaka
       end
 
       def canonical(path) = File.exist?(path) ? File.realpath(path) : path
+
+      def validate_mount_path!(path)
+        return unless path.match?(/[,"\r\n]/)
+
+        raise ArgumentError, 'Docker mount source contains an unsupported character'
+      end
+
+      def validate_nonoverlap!(root, trusted)
+        return unless contains?(root, trusted) || contains?(trusted, root)
+
+        raise ArgumentError, 'Trusted Shaka helper must resolve outside the candidate checkout'
+      end
+
+      def contains?(parent, child)
+        parent == File::SEPARATOR || child == parent || child.start_with?("#{parent}/")
+      end
     end
   end
 end
