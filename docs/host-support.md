@@ -98,11 +98,13 @@ decision.
 
 Two differences from Codex showed up, neither host-specific:
 
-- The helper could not publish or merge until that repository's `main` was
-  protected, because it reads required-check evidence with `gh pr checks --required`
-  and cannot tell an unprotected branch from unreadable evidence. Shaka's own
-  repository is protected, so earlier deliveries never hit it. See
-  [#146](https://github.com/shakacode/shaka/issues/146).
+- The helper used to fail walkthrough and merge on an unprotected `main`, because
+  `gh pr checks --required` prints a plain-text empty-set diagnostic that was
+  treated as unreadable evidence. [#146](https://github.com/shakacode/shaka/issues/146)
+  now distinguishes that empty set from a fetch failure: walkthrough can cite
+  gates that did run, and merge still refuses the empty required set with a
+  message that names the unprotected state. Shaka's own repository is protected,
+  so earlier deliveries never hit it.
 - There is no launcher, so the trust boundary rests on the permission mode already
   in use and on keeping the trusted source outside the edited checkout. The delivery
   used a separate worktree for that reason.

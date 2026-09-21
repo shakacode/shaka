@@ -205,6 +205,7 @@ class MergeCheckTest < Minitest::Test
   def test_empty_required_checks_name_an_unprotected_repository
     @client.checks = []
     error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
+    assert_match(/no required checks/, error.message)
     assert_match(/unprotected/, error.message)
     refute_match(/unavailable|unreadable|unknown/, error.message)
     assert_match(/branch protection|opt-in/i, error.message)

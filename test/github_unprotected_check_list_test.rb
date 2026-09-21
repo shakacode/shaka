@@ -10,9 +10,20 @@ class GitHubUnprotectedCheckListTest < Minitest::Test
     assert_empty client(['', message, STATUS.new(1)]).required_checks
   end
 
+  def test_required_checks_treat_a_repo_with_no_checks_as_an_empty_list
+    message = "no checks reported on the 'main' branch\n"
+    assert_empty client(['', message, STATUS.new(1)]).required_checks
+  end
+
   def test_checks_treat_the_no_checks_diagnostic_as_an_empty_list
     message = "no checks reported on the 'main' branch\n"
     assert_empty client(['', message, STATUS.new(1)]).checks
+  end
+
+  def test_checks_do_not_treat_the_required_diagnostic_as_an_empty_list
+    message = "no required checks reported on the 'main' branch\n"
+    error = assert_raises(Shaka::Error) { client(['', message, STATUS.new(1)]).checks }
+    assert_match(/invalid JSON/, error.message)
   end
 
   def test_required_checks_keep_a_truncated_diagnostic_as_unavailable

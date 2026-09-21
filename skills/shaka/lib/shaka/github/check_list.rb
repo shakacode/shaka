@@ -5,11 +5,12 @@ module Shaka
     # Reads `gh pr checks`, including the unprotected empty-list diagnostic.
     module CheckList
       CHECK_EXITS = [0, 1, 8].freeze
-      EMPTY_DIAGNOSTIC = /\Ano (?:required )?checks reported on the '[^\r\n]+' branch(?:\r?\n)?\z/
+      NO_CHECKS = /\Ano checks reported on the '[^\r\n]+' branch(?:\r?\n)?\z/
+      NO_REQUIRED_CHECKS = /\Ano required checks reported on the '[^\r\n]+' branch(?:\r?\n)?\z/
 
       def checks(required: false)
         stdout, stderr = fetch_check_streams(required)
-        return [] if stdout.strip.empty? && stderr.match?(EMPTY_DIAGNOSTIC)
+        return [] if stdout.strip.empty? && empty_check_list?(stderr, required)
 
         result = parse_json(stdout)
         raise Error, 'GitHub checks response must be an array.' unless result.is_a?(Array)
@@ -37,6 +38,13 @@ module Shaka
         [utf8(stdout), utf8(stderr)]
       rescue Errno::ENOENT
         raise Error, 'GitHub CLI is unavailable; install gh and authenticate.'
+      end
+
+      def empty_check_list?(stderr, required)
+        return true if stderr.match?(NO_CHECKS)
+        return true if required && stderr.match?(NO_REQUIRED_CHECKS)
+
+        false
       end
     end
   end
