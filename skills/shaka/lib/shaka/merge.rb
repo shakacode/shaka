@@ -105,8 +105,11 @@ module Shaka
     end
 
     def verify_checks(checks)
-      unless checks.is_a?(Array) && !checks.empty?
-        raise Error, 'No observable required checks; native readiness is unknown'
+      raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
+      if checks.empty?
+        raise Error, 'GitHub reported no required checks on this branch. Merge refuses that empty ' \
+                     'set. If the branch is unprotected, enable branch protection; if required ' \
+                     'checks have not registered yet, wait and retry. This is not unread evidence.'
       end
 
       checks.each do |check|
