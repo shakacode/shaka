@@ -131,10 +131,11 @@ proof of ownership, authorization, or completion.
 
 ## Select work interactively
 
-`$rct` setup performs the initial read-only inventory and recommendation. That
-snapshot is not durable truth. Refresh live issues, PRs, tracker relationships,
-and native task ownership, then triage again before selecting work, after a
-delivery finishes or blocks, and when the user reports a material priority change.
+`$rct` and `/rct-claude` setup each perform an initial read-only inventory and
+recommendation. That snapshot is not durable truth. Refresh live issues, PRs,
+tracker relationships, and native task ownership, then triage again before selecting
+work, after a delivery finishes or blocks, and when the user reports a material
+priority change.
 
 Triage recommends one bounded delivery and waits for assignment. It does not
 create workers, start implementation, or change merge authority because it found
