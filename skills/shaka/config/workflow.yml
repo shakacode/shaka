@@ -127,8 +127,9 @@ phases:
     title: Implement
     body: |-
       - Immediately before any edit for issue or PR work, rerun the saved helper's `claim QUERY`.
-        On a hit, report the collision and stop for a decision unless the user already authorized
-        a comparison or override.
+        Treat the PR and branch this task already recorded as its own continuation. On any other
+        hit, report the collision and stop for a decision unless the user already authorized a
+        comparison or override.
       - Confirm destination and branch. Name the feature branch from the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
         `{host}`, `{issue}`, and `{description}`. If the seam omits `branches`, use
