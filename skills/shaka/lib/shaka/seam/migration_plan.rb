@@ -3,11 +3,14 @@
 require 'open3'
 require_relative '../repository_config'
 require_relative 'field_classifier'
+require_relative 'migration_policy'
 
 module Shaka
   class Seam
     # Deterministic migrate report from a predecessor YAML document.
     module MigrationPlan
+      include MigrationPolicy
+
       private
 
       def build_report
@@ -40,28 +43,9 @@ module Shaka
       def validation_report
         {
           'validation' => validation_notes,
-          'rollback' => "Restore predecessor files with git checkout #{@sha} -- #{RepositoryConfig::PATH} .agents/bin"
+          'rollback' => "Restore predecessor files with git checkout #{@sha} -- " \
+                        "#{RepositoryConfig::PATH} .agents/shaka.md .agents/bin"
         }
-      end
-
-      def overlay_explicit_policy(classified)
-        overlay_review(classified) if @options[:review_policy]
-        overlay_merge(classified) if @options[:merge_preference]
-        classified.blocking.delete('review.required') if classified.established.dig('review', 'required')
-        classified.blocking.delete('merge.preference') if classified.established.dig('merge', 'preference')
-      end
-
-      def overlay_review(classified)
-        none = @options[:review_policy] == 'none'
-        raise Error, '--review-check must be omitted when review policy is none' if none && @options.key?(:review_check)
-        raise Error, '--review-check is required' if !none && !@options[:review_check]
-
-        classified.established['review'] = { 'required' => @options[:review_policy] }
-        classified.established['review']['check'] = @options[:review_check] if @options[:review_check]
-      end
-
-      def overlay_merge(classified)
-        classified.established['merge'] = { 'preference' => @options[:merge_preference] }
       end
 
       def command_inventory

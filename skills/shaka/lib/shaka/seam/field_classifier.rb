@@ -57,9 +57,13 @@ module Shaka
       end
 
       def retain(key, value)
+        if %w[branches recovery].include?(key) && !value.is_a?(Hash)
+          @blocking << key
+          return
+        end
+
         @retained << key
-        @established[key] = value if %w[base_branch repo_prefix version plan].include?(key)
-        @established[key] = value if %w[branches recovery].include?(key) && value.is_a?(Hash)
+        @established[key] = value if %w[base_branch repo_prefix version plan branches recovery].include?(key)
       end
 
       def classify_review(value)

@@ -114,6 +114,8 @@ module Shaka
 
       def shaka_command = File.expand_path('../../../scripts/shaka', __dir__)
 
+      def generated_by = 'shaka seam migrate'
+
       def rollback_created(created)
         created.each { |path| File.delete(path) if File.file?(path) }
       end
