@@ -37,6 +37,33 @@ keep its trusted source outside the agent's writable directories, including any
 temporary directories the host allows. Do not export the test gem environment into
 your application's shell or add the pilot to its Gemfile.
 
+## Validate a consumer seam in CI
+
+Do not copy Shaka's Ruby modules or schema rules into the consumer repository. Pin one
+published `0.1.0.pre.N` release that includes `seam check --local` and validate the
+candidate checkout only. Public product stage remains `0.0.x`. The already-published
+`0.1.0.pre.1` artifact only reserved the RubyGems name and does not provide this CI
+mode; wait for a later `0.1.0.pre.N` that documents `--local`, then pin that exact
+version. Never install mutable `main`.
+
+```bash
+gem install shaka --version "$SHAKA_VERSION" --no-document
+shaka seam check --root "$GITHUB_WORKSPACE" --local
+```
+
+That command uses the same `RepositoryConfig` implementation as the installed skill.
+A passing payload includes `"mode": "local/candidate"` with `grants_policy` and
+`grants_merge_authority` both `false`. Treat it as structure evidence: unknown keys,
+duplicate keys, invalid nested values, unsafe paths, missing scripts, and
+non-executable scripts fail with a non-zero exit. It is not trusted policy and cannot
+authorize a merge. Agents still load merge and review policy with
+`shaka seam check --ref SHA` against an immutable default-branch commit.
+
+Omitting both `--local` and `--ref` keeps the historical candidate check and prints the
+same no-authority diagnostic on stderr. Prefer `--local` in CI so the mode is explicit.
+Once a `--local` release is published, delete consumer-owned Shaka schema clones such as
+a `shaka_contract?` helper or a copied seam-contract test.
+
 Applications that only need the experimental public-comment screen can load
 `shaka/public_comments` from this package without the skill; see
 [screen public comments from Ruby](public-comments.md).

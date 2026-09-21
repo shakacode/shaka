@@ -15,7 +15,7 @@ module Shaka
     DEFAULT_RECOVERY = { 'workspace_path' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :recovery
+    attr_reader :base_branch, :commands, :review, :merge, :recovery, :sha
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
       new(root:, source:, available_commands:, sha:, candidate_commands:).load

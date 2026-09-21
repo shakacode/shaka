@@ -4,6 +4,7 @@ require 'json'
 require 'optparse'
 require_relative 'error'
 require_relative 'repository_config'
+require_relative 'seam/check_report'
 require_relative 'seam/initializer'
 require_relative 'trusted_config_source'
 
@@ -38,24 +39,43 @@ module Shaka
       valid = %w[check init].include?(operation) && @arguments.empty?
       raise OptionParser::InvalidArgument, parser.to_s unless valid
 
-      if operation == 'check'
-        init_keys = %i[base_branch setup_command validate_command test_command review_policy review_check
-                       merge_preference plan]
-        raise OptionParser::InvalidArgument, 'init options do not apply to check' if @options.keys.intersect?(init_keys)
-      elsif @options.key?(:ref)
-        raise OptionParser::InvalidArgument, '--ref does not apply to init'
-      end
+      operation == 'check' ? validate_check_options : validate_init_options
+    end
+
+    def validate_check_options
+      init_keys = %i[base_branch setup_command validate_command test_command review_policy review_check
+                     merge_preference plan]
+      raise OptionParser::InvalidArgument, 'init options do not apply to check' if @options.keys.intersect?(init_keys)
+      raise OptionParser::InvalidArgument, '--local cannot be combined with --ref' if local? && @options.key?(:ref)
+    end
+
+    def validate_init_options
+      raise OptionParser::InvalidArgument, '--ref does not apply to init' if @options.key?(:ref)
+      raise OptionParser::InvalidArgument, '--local does not apply to init' if local?
     end
 
     def render_config(operation)
-      config = operation == 'init' ? Initializer.new(root:, options: @options).call : checked_config
-      puts JSON.pretty_generate(config.to_h)
+      return emit(Initializer.new(root:, options: @options).call.to_h) if operation == 'init'
+
+      warn "shaka: #{CheckReport::IMPLICIT_DIAGNOSTIC}" if implicit_local?
+      emit(check_report.to_h)
+    end
+
+    def emit(payload)
+      puts JSON.pretty_generate(payload)
       0
     end
 
-    def checked_config
-      TrustedConfigSource.load(root:, ref: @options[:ref])
+    def check_report
+      config = TrustedConfigSource.load(root:, ref: @options[:ref])
+      return CheckReport.trusted(config, ref: @options[:ref]) if @options.key?(:ref)
+
+      CheckReport.local(config)
     end
+
+    def local? = @options[:local] == true
+
+    def implicit_local? = !local? && !@options.key?(:ref)
 
     def option_parser
       OptionParser.new do |flags|
@@ -67,12 +87,15 @@ module Shaka
     end
 
     def usage
-      "Usage: shaka seam check [--root DIR] [--ref REF]\n       " \
+      "Usage: shaka seam check [--root DIR] [--local | --ref REF]\n       " \
         'shaka seam init --root DIR [options]'
     end
 
     def add_common_options(flags)
       flags.on('--root DIR', 'Repository root (default: current directory)') { |value| @options[:root] = value }
+      flags.on('--local', 'Validate the candidate checkout; grants no policy or merge authority') do
+        @options[:local] = true
+      end
       flags.on('--ref REF', 'Read policy from this trusted Git commit') { |value| @options[:ref] = value }
     end
 
