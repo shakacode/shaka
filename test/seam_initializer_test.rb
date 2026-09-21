@@ -618,4 +618,19 @@ class SeamInitializerReadmeCoexistenceTest < Minitest::Test
       assert_legacy_readme_report(error)
     end
   end
+
+  def test_first_init_keeps_a_legacy_generated_readme
+    with_repository do |root|
+      FileUtils.mkdir_p(File.join(root, '.agents'))
+      path, original = plant_legacy_readme(root)
+
+      output, error, status = init(root)
+
+      assert_predicate status, :success?, error
+      assert_equal original, File.read(path)
+      assert_legacy_readme_report(error)
+      assert_path_exists File.join(root, '.agents/shaka.md')
+      assert_complete_seam(root, output)
+    end
+  end
 end
