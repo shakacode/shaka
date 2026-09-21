@@ -32,6 +32,7 @@ module Shaka
       end
 
       def replace_contract(path, content)
+        @contract_mode ||= File.stat(path).mode & 0o777
         tmp = "#{path}.migrate-#{Process.pid}"
         File.open(tmp, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
           file.write(content)
@@ -43,7 +44,9 @@ module Shaka
       end
 
       def restore_contract
-        replace_contract(File.join(root, Migrator::CONTRACT), @source)
+        path = File.join(root, Migrator::CONTRACT)
+        replace_contract(path, @source)
+        File.chmod(@contract_mode, path) if @contract_mode
       end
     end
 

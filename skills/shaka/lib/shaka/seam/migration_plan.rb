@@ -8,31 +8,9 @@ require_relative 'migration_policy'
 
 module Shaka
   class Seam
-    # Deterministic migrate report from a predecessor YAML document.
-    module MigrationPlan
-      include MigrationPolicy
-
+    # Command inventory, collisions, and leftover adapters for a migrate report.
+    module MigrationCommands
       private
-
-      def build_report
-        classified = FieldClassifier.new(@data).call
-        overlay_explicit_policy(classified)
-        require_optional_entry_points(classified)
-        report_body(classified)
-      end
-
-      def report_body(classified)
-        {
-          'mode' => @options[:apply] ? 'apply' : 'plan',
-          'from_ref' => @sha,
-          'retained' => classified.retained,
-          'moved_to_agents' => classified.moved_to_agents,
-          'moved_to_operational_config' => classified.moved_to_operational_config,
-          'retired' => classified.retired,
-          'blocking' => classified.blocking,
-          'established' => classified.established
-        }.merge(command_report, validation_report)
-      end
 
       def command_report
         {
@@ -40,20 +18,6 @@ module Shaka
           'command_collisions' => command_collisions,
           'adapters_eligible_for_removal' => adapters_eligible_for_removal
         }
-      end
-
-      def validation_report
-        {
-          'validation' => validation_notes,
-          'rollback' => rollback_recipe
-        }
-      end
-
-      def rollback_recipe
-        restore = "git -C #{Shellwords.escape(root)} checkout #{@sha} -- #{RepositoryConfig::PATH}"
-        return "#{restore} .agents/shaka.md" if command_present?('.agents/shaka.md')
-
-        "#{restore} && rm -f #{Shellwords.escape(File.join(root, '.agents/shaka.md'))}"
       end
 
       def command_inventory
@@ -114,10 +78,62 @@ module Shaka
 
         RepositoryConfig::CommandPaths::OPTIONAL.each do |role, path|
           next unless mapping.key?(role)
-          next if command_present?(path)
+          next if command_present?(path) || File.file?(File.join(root, path))
 
           classified.blocking << path
         end
+      end
+
+      def adapters_eligible_for_removal
+        mapping = command_mapping
+        return [] unless mapping
+
+        RepositoryConfig::CommandPaths::ALL.filter_map do |role, expected|
+          actual = mapping[role]
+          actual if actual.is_a?(String) && actual != expected
+        end
+      end
+    end
+
+    # Deterministic migrate report from a predecessor YAML document.
+    module MigrationPlan
+      include MigrationPolicy
+      include MigrationCommands
+
+      private
+
+      def build_report
+        classified = FieldClassifier.new(@data).call
+        overlay_explicit_policy(classified)
+        require_optional_entry_points(classified)
+        report_body(classified)
+      end
+
+      def report_body(classified)
+        {
+          'mode' => @options[:apply] ? 'apply' : 'plan',
+          'from_ref' => @sha,
+          'retained' => classified.retained,
+          'moved_to_agents' => classified.moved_to_agents,
+          'moved_to_operational_config' => classified.moved_to_operational_config,
+          'retired' => classified.retired,
+          'blocking' => classified.blocking,
+          'established' => classified.established
+        }.merge(command_report, validation_report)
+      end
+
+      def validation_report
+        {
+          'validation' => validation_notes,
+          'rollback' => rollback_recipe
+        }
+      end
+
+      def rollback_recipe
+        restore = "git -C #{Shellwords.escape(root)} checkout #{@sha} -- #{RepositoryConfig::PATH}"
+        return "#{restore} .agents/shaka.md" if command_present?('.agents/shaka.md')
+
+        "#{restore} && rm -f #{Shellwords.escape(File.join(root, '.agents/shaka.md'))}"
       end
 
       def validation_notes
@@ -127,13 +143,6 @@ module Shaka
           'candidate_local' =>
             "target Shaka candidate check (grants no authority): shaka seam check --root #{root} --local"
         }
-      end
-
-      def adapters_eligible_for_removal
-        mapping = command_mapping
-        return [] unless mapping
-
-        mapping.values.grep(String).reject { |path| RepositoryConfig::CommandPaths::ALL.value?(path) }
       end
     end
   end

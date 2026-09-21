@@ -198,6 +198,17 @@ class SeamMigrateApplyTest < Minitest::Test
     end
   end
 
+  def test_apply_restores_original_contract_mode
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+      yaml = File.join(root, '.agents/agent-workflow.yml')
+      File.chmod(0o600, yaml)
+      File.chmod(0o644, File.join(root, '.agents/bin/validate'))
+      migrate(root, sha, '--apply')
+
+      assert_equal 0o600, File.stat(yaml).mode & 0o777
+    end
+  end
+
   def test_apply_writes_a_typed_seam_and_keeps_repository_wrappers
     with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
       wrapper = File.read(File.join(root, '.agents/bin/validate'))
@@ -369,6 +380,25 @@ class SeamMigrateOptionalCommandTest < Minitest::Test
     end
   end
 
+  def test_worktree_optional_entry_clears_blocking
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('commands' => optional_collision_commands) }
+      install_optional_wrapper(root)
+      report = migrate_report(root, sha)
+
+      refute_includes report.fetch('blocking'), '.agents/bin/validate-local'
+      assert_equal 'apply', migrate_report(root, sha, '--apply').fetch('mode')
+    end
+  end
+
+  def test_operational_command_paths_are_not_removable
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('commands' => operational_commands) }
+
+      refute_includes migrate_report(root, sha).fetch('adapters_eligible_for_removal'), '.agents/bin/docs'
+    end
+  end
+
   def optional_collision_commands
     {
       'setup' => '.agents/bin/setup',
@@ -376,5 +406,15 @@ class SeamMigrateOptionalCommandTest < Minitest::Test
       'test' => '.agents/bin/test',
       'validate_local' => 'script/fast'
     }
+  end
+
+  def operational_commands
+    optional_collision_commands.merge('docs' => '.agents/bin/docs')
+  end
+
+  def install_optional_wrapper(root)
+    path = File.join(root, '.agents/bin/validate-local')
+    File.write(path, "#!/bin/sh\nexit 0\n")
+    File.chmod(0o755, path)
   end
 end
