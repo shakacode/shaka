@@ -12,7 +12,13 @@ module Shaka
         overlay_review(classified) if @options[:review_policy]
         overlay_merge(classified) if @options[:merge_preference]
         classified.blocking.delete('review.required') if classified.established.dig('review', 'required')
+        classified.blocking.delete('review.check') if review_check_resolved?(classified)
         classified.blocking.delete('merge.preference') if classified.established.dig('merge', 'preference')
+      end
+
+      def review_check_resolved?(classified)
+        review = classified.established['review'] || {}
+        review['required'] == 'none' || review['check']
       end
 
       def overlay_review(classified)

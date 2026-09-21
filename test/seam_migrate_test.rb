@@ -274,6 +274,27 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
     end
   end
 
+  def test_review_check_flag_clears_blocking
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => always_review_without_check(data)) }
+      report = migrate_report(root, sha, *review_check_flags)
+
+      refute_includes report.fetch('blocking'), 'review.check'
+      assert_equal 'example-review', report.dig('established', 'review', 'check')
+    end
+  end
+
+  def test_review_check_flag_applies_the_named_check
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => always_review_without_check(data)) }
+      applied = migrate_report(root, sha, '--apply', *review_check_flags)
+      config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+
+      assert_equal 'apply', applied.fetch('mode')
+      assert_equal 'example-review', config.dig('review', 'check')
+    end
+  end
+
   def test_setup_collision_names_the_setup_adapter
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => setup_collision_commands) }
@@ -298,5 +319,13 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
 
   def setup_collision_commands
     { 'setup' => 'bin/bootstrap', 'validate' => '.agents/bin/validate', 'test' => '.agents/bin/test' }
+  end
+
+  def always_review_without_check(data)
+    { 'required' => 'always', 'reviewers' => data.dig('review', 'reviewers') }
+  end
+
+  def review_check_flags
+    ['--review-policy', 'always', '--review-check', 'example-review']
   end
 end
