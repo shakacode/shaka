@@ -108,8 +108,8 @@ module Shaka
       raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
       if checks.empty?
         raise Error, 'GitHub reported no required checks on this branch. Merge refuses that empty ' \
-                     'set. Enable branch protection if the repository is unprotected, or provide ' \
-                     'an explicit merge opt-in; this is not unread evidence.'
+                     'set. If the branch is unprotected, enable branch protection; if required ' \
+                     'checks have not registered yet, wait and retry. This is not unread evidence.'
       end
 
       checks.each do |check|

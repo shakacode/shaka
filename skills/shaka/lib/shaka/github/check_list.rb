@@ -41,10 +41,7 @@ module Shaka
       end
 
       def empty_check_list?(stderr, required)
-        return true if stderr.match?(NO_CHECKS)
-        return true if required && stderr.match?(NO_REQUIRED_CHECKS)
-
-        false
+        stderr.match?(NO_CHECKS) || (required && stderr.match?(NO_REQUIRED_CHECKS))
       end
     end
   end

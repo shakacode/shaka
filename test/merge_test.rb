@@ -208,7 +208,8 @@ class MergeCheckTest < Minitest::Test
     assert_match(/no required checks/, error.message)
     assert_match(/unprotected/, error.message)
     refute_match(/unavailable|unreadable|unknown/, error.message)
-    assert_match(/branch protection|opt-in/i, error.message)
+    assert_match(/branch protection/, error.message)
+    assert_match(/wait and retry/, error.message)
     assert_empty @client.mutations
   end
 
