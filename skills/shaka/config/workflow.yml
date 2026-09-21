@@ -131,9 +131,9 @@ phases:
         hit, report the collision and stop for a decision unless the user already authorized a
         comparison or override. Where the host has a live native task registry, also refresh
         that ownership; if another owner now holds the work and the user has not explicitly
-        transferred ownership to this task, continue through that owner instead of starting a
-        second writer. On hosts without that facility, the claim result remains the portable
-        collision check.
+        transferred ownership to this task, report it and stop for the user's decision instead
+        of starting a second writer. On hosts without that facility, the claim result remains the
+        portable collision check.
       - Confirm destination and branch. Name the feature branch from the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
         `{host}`, `{issue}`, and `{description}`. If the seam omits `branches`, use

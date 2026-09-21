@@ -5,9 +5,10 @@ repositories. A **Repository Control Tower (RCT)** keeps one repository's work
 moving. Each implementation or PR repair has one owner who uses the installed
 `$shaka` skill through the requested outcome.
 
-These are optional roles in your existing tasks. They need no new service,
-workflow database, or scheduler. Start with one repository and one real delivery.
-Keep using Shaka directly when a tower would add no value.
+These are optional roles in your existing tasks. Basic tower operation needs no new
+service, workflow database, or scheduler; a later user-requested attention scan uses
+the host's automation. Start with one repository and one real delivery. Keep using
+Shaka directly when a tower would add no value.
 
 ## Establish a repository tower
 
@@ -148,9 +149,9 @@ existing owners, explicit pauses, and active PRs before admitting new work.
 When that assignment or request arrives, refresh live ownership again where the
 host exposes it before starting `$shaka`.
 If another owner now holds the candidate and the user has not explicitly transferred
-ownership to this task, continue through that owner instead of starting a second
-writer. Each selected delivery continues through the installed `$shaka` skill with
-one accountable owner.
+ownership to this task, report it and wait for the user's decision instead of starting
+a second writer. Each selected delivery continues through the installed `$shaka`
+skill with one accountable owner.
 
 Reconstruct the repository's essential backlog from GitHub or the selected project
 tracker. A fresh authorized task should not need a private workflow database, old
