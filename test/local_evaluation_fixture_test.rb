@@ -56,10 +56,10 @@ module LocalEvaluationFixtureAssertions
 
   def assert_runtime_pins(root)
     assert_equal "3.4.6\n", File.read(File.join(root, '.ruby-version'))
-    assert_equal ["source 'https://rubygems.org'", "gem 'minitest', '5.27.0'"], gemfile_lines(root)
+    assert_equal ["source 'https://rubygems.org'", "gem 'minitest', '6.0.6'"], gemfile_lines(root)
     lock = File.read(File.join(root, 'Gemfile.lock'))
-    assert_match(/^    minitest \(5\.27\.0\)$/, lock)
-    assert_match(/^  minitest \(5\.27\.0\) sha256=[0-9a-f]{64}$/, lock)
+    assert_match(/^    minitest \(6\.0\.6\)$/, lock)
+    assert_match(/^  minitest \(6\.0\.6\) sha256=[0-9a-f]{64}$/, lock)
   end
 
   def assert_minimal_workflow(root)
