@@ -5,6 +5,7 @@ require 'open3'
 require_relative 'error'
 require_relative 'publishing'
 require_relative 'walkthrough_evidence'
+require_relative 'github/check_list'
 
 module Shaka
   # The native pull-request evidence a publication decision depends on.
@@ -43,6 +44,7 @@ module Shaka
   class GitHub
     include Publishing
     include GraphqlTransport
+    include CheckList
 
     attr_reader :repository, :number
 
@@ -65,22 +67,6 @@ module Shaka
       raise Error, 'GitHub did not return the requested pull request.' unless result.is_a?(Hash)
 
       result
-    end
-
-    def checks(required: false)
-      argv = ['gh', 'pr', 'checks', @number.to_s, '--repo', @repository]
-      argv << '--required' if required
-      argv.push('--json', 'name,state,bucket,link')
-      result = execute(argv, accepted: [0, 1, 8])
-      raise Error, 'GitHub checks response must be an array.' unless result.is_a?(Array)
-
-      result
-    end
-
-    def required_checks
-      checks(required: true)
-    rescue Error
-      raise Error, 'Required-check evidence is unavailable; confirm native required checks and GitHub access.'
     end
 
     def review(id)

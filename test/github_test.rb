@@ -84,13 +84,6 @@ class GitHubTest < Minitest::Test
     refute_match(/request failed/, error.message)
   end
 
-  def test_checks_with_empty_failed_output_report_unavailable_evidence
-    error = assert_raises(Shaka::Error) do
-      client(['', 'no required checks reported', STATUS.new(1)]).required_checks
-    end
-    assert_match(/Required-check evidence is unavailable/, error.message)
-  end
-
   def test_repository_and_identifier_are_validated_before_execution
     ['owner/repo;whoami', '--repo', 'owner/..', 'https://github.com/owner/repo', "\xff", nil].each do |repository|
       assert_raises(Shaka::Error) { Shaka::GitHub.new(repository, 42) }

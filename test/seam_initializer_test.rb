@@ -543,7 +543,7 @@ class SeamInitializerReadmeTest < Minitest::Test
     assert_includes readme, SeamInitializerTestHelpers::GENERATED_MARKER
     assert_includes readme, "from Shaka #{Shaka::VERSION}."
     assert_includes readme, 'https://github.com/shakacode/shaka/blob/main/docs/settings.md'
-    assert_includes readme, 'shaka seam check --root .'
+    assert_includes readme, 'shaka seam check --root . --local'
   end
 
   def assert_no_generated_seam(root)
