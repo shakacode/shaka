@@ -54,6 +54,13 @@ rules:
     note: >-
       `claim` returns the seam's `branches.name`, but nothing compares the branch actually
       created against that template, including its `{host}` slug.
+  - id: no-invented-edits
+    phase: intake
+    quote: do not invent edits when that check fails
+    enforced_by: agent
+    note: >-
+      Nothing compares the live tracker state to the selected work item, so an agent can still
+      edit after a failed premise check.
   - id: never-guess-checks
     phase: plan
     quote: Never guess checks

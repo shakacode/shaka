@@ -131,8 +131,10 @@ stops with a setup error rather than guessing.
 The missing bounded wait changes one step rather than blocking the role.
 Registration is acknowledged by a reply that arrives as an ordinary labelled user
 turn, so a tower reports `awaiting acknowledgment`, ends its turn, and completes
-setup when the reply lands. Towers do not poll or start a monitor, and neither a
-`queued` nor a `delivered` result is acknowledgment.
+setup when the reply lands. Registration does not poll or start a monitor, and
+neither a `queued` nor a `delivered` result is acknowledgment. A later read-only
+attention scan is separate and exists only when the user explicitly requests it
+under the control-tower guide.
 
 Sidebar groups are deliberately unused: `move_sessions` unpins a pinned session, so
 the title suffix is the only role stamp and the live session list is the only
