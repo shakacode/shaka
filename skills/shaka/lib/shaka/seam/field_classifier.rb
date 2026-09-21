@@ -103,7 +103,9 @@ module Shaka
       end
 
       def require_review_and_merge
-        @blocking << 'review.required' unless @established.dig('review', 'required')
+        required = @established.dig('review', 'required')
+        @blocking << 'review.required' unless required
+        @blocking << 'review.check' if required && required != 'none' && !@established.dig('review', 'check')
         @blocking << 'merge.preference' unless @established.dig('merge', 'preference')
       end
 

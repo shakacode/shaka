@@ -66,23 +66,34 @@ module Shaka
       end
 
       def command_collisions
-        mapping = @data['commands']
-        return [] unless mapping.is_a?(Hash)
+        mapping = command_mapping
+        return [] unless mapping
 
         %w[setup validate test].filter_map { |role| collision_for(role, mapping) }
       end
 
-      def collision_for(role, mapping)
-        actual = mapping[role]
-        return if actual.nil? || actual == ".agents/bin/#{role}"
-
-        { 'role' => role, 'mapped_path' => actual, 'temporary_behavior' => stricter_collision_behavior(mapping) }
+      def command_mapping
+        @data['commands'] if @data.is_a?(Hash) && @data['commands'].is_a?(Hash)
       end
 
-      def stricter_collision_behavior(mapping)
+      def collision_for(role, mapping)
+        expected = RepositoryConfig::CommandPaths::REQUIRED.fetch(role)
+        actual = mapping[role]
+        return if actual.nil? || actual == expected
+
+        { 'role' => role, 'mapped_path' => actual, 'temporary_behavior' => collision_behavior(role, mapping) }
+      end
+
+      def collision_behavior(role, mapping)
+        return setup_collision_behavior(mapping.fetch(role)) if role == 'setup'
+
         targets = [mapping['validate'], mapping['test']].compact.uniq.join(' and ')
         'Until the new seam is trusted, use the stricter superset: both .agents/bin/validate and ' \
           ".agents/bin/test must execute #{targets}"
+      end
+
+      def setup_collision_behavior(actual)
+        "Keep #{actual} reachable from .agents/bin/setup until the new seam is trusted"
       end
 
       def validation_notes
@@ -95,12 +106,10 @@ module Shaka
       end
 
       def adapters_eligible_for_removal
-        note = ['temporary command adapters']
-        mapping = @data['commands']
-        return note unless mapping.is_a?(Hash)
+        mapping = command_mapping
+        return [] unless mapping
 
-        extras = mapping.values.grep(String).reject { |path| RepositoryConfig::CommandPaths::ALL.value?(path) }
-        note + extras
+        mapping.values.grep(String).reject { |path| RepositoryConfig::CommandPaths::ALL.value?(path) }
       end
     end
   end

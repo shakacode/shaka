@@ -8,10 +8,48 @@ require_relative 'initializer_readme'
 
 module Shaka
   class Seam
+    # Replaces the predecessor contract with a sibling tempfile, then rename.
+    module MigrationApplyWrite
+      private
+
+      def persist(path, content, created)
+        if contract_replaceable?(path)
+          replace_contract(path, content)
+          yield
+          return
+        end
+        return if File.file?(path)
+
+        create_pointer(path, content, created)
+      end
+
+      def create_pointer(path, content, created)
+        write_new_file(path, content)
+      ensure
+        created << path if File.file?(path) && !created.include?(path)
+      end
+
+      def replace_contract(path, content)
+        tmp = "#{path}.migrate-#{Process.pid}"
+        File.open(tmp, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
+          file.write(content)
+          file.chmod(destination_mode(path))
+        end
+        File.rename(tmp, path)
+      ensure
+        File.delete(tmp) if tmp && File.file?(tmp)
+      end
+
+      def restore_contract
+        replace_contract(File.join(root, Migrator::CONTRACT), @source)
+      end
+    end
+
     # Writes migrate destinations only after every preflight succeeds.
     module MigrationApply
       include InitializerDestination
       include InitializerReadme
+      include MigrationApplyWrite
 
       private
 
@@ -76,23 +114,6 @@ module Shaka
         raise
       end
 
-      def persist(path, content, created)
-        if contract_replaceable?(path)
-          replace_contract(path, content)
-          yield
-          return
-        end
-        return if File.file?(path)
-
-        write_new_file(path, content)
-        created << path
-      end
-
-      def replace_contract(path, content)
-        File.open(path, File::WRONLY | File::TRUNC) { |file| file.write(content) }
-        File.chmod(destination_mode(path), path)
-      end
-
       def verify_candidate(created)
         output, error, status = Open3.capture3(shaka_command, 'seam', 'check', '--root', root, '--local')
         return if status.success?
@@ -118,10 +139,6 @@ module Shaka
 
       def rollback_created(created)
         created.each { |path| File.delete(path) if File.file?(path) }
-      end
-
-      def restore_contract
-        File.open(File.join(root, Migrator::CONTRACT), File::WRONLY | File::TRUNC) { |file| file.write(@source) }
       end
     end
   end
