@@ -126,7 +126,7 @@ phases:
   - id: implement
     title: Implement
     body: |-
-      - Immediately before any edit for issue or PR work, rerun the saved helper's `claim QUERY`.
+      - Immediately before the first edit for issue or PR work, rerun the saved helper's `claim QUERY`.
         Treat the PR and branch this task already recorded as its own continuation. On any other
         hit, report the collision and stop for a decision unless the user already authorized a
         comparison or override.
