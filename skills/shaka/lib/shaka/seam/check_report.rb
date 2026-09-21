@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module Shaka
   class Seam
     # Labels seam-check JSON so candidate output cannot be cited as trusted policy.
@@ -16,6 +18,11 @@ module Shaka
 
       def self.trusted(config, ref:)
         new(config:, mode: TRUSTED_MODE, ref:)
+      end
+
+      def self.emit(payload)
+        puts JSON.pretty_generate(payload)
+        0
       end
 
       def initialize(config:, mode:, ref: nil)

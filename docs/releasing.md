@@ -13,7 +13,7 @@ approval because a published version cannot be replaced.
 
 1. Change `Shaka::VERSION` in `skills/shaka/lib/shaka/version.rb` through a reviewed pull
    request and merge it. The gemspec reads that constant, and `shaka seam init` stamps it
-   into the `.agents/README.md` it generates.
+   into the `.agents/shaka.md` it generates.
 2. Start from a clean, current `main` checkout.
 3. Install dependencies and run the repository validation:
 

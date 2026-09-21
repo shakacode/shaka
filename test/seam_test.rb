@@ -14,6 +14,7 @@ class SeamTest < Minitest::Test
     assert_predicate status, :success?, error
     assert_includes output, 'shaka seam check'
     assert_includes output, 'shaka seam init'
+    assert_includes output, 'shaka seam pointer'
   end
 
   def test_help_before_the_operation_succeeds
@@ -21,6 +22,7 @@ class SeamTest < Minitest::Test
 
     assert_predicate status, :success?, error
     assert_includes output, 'shaka seam check'
+    assert_includes output, 'shaka seam pointer'
   end
 
   def test_check_can_read_policy_from_a_trusted_git_ref
@@ -77,5 +79,39 @@ class SeamTest < Minitest::Test
       refute_predicate status, :success?
       assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
     end
+  end
+end
+
+class SeamPointerTest < Minitest::Test
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+
+  # Break: a copy-ready AGENTS.md pointer that omits --ref would be pasted as
+  # trusted policy loading, which is the Control Plane Flow failure mode.
+  def test_pointer_renders_trust_safe_agents_guidance
+    output, error, status = Open3.capture3(COMMAND, 'seam', 'pointer')
+
+    assert_predicate status, :success?, error
+    assert_empty error
+    assert_trust_safe_pointer(output)
+  end
+
+  def test_pointer_refuses_check_and_init_options
+    _output, error, status = Open3.capture3(COMMAND, 'seam', 'pointer', '--ref', 'HEAD')
+
+    refute_predicate status, :success?
+    assert_includes error, 'pointer'
+  end
+
+  private
+
+  def assert_trust_safe_pointer(output)
+    commands = output.scan(/`([^`]+)`/).flatten
+
+    assert_includes output, '## Agent Workflow Configuration'
+    assert_includes commands, 'gh repo view --json owner,visibility,defaultBranchRef'
+    refute_includes commands, 'gh repo view OWNER/REPO --json owner,visibility,defaultBranchRef'
+    assert_includes commands, 'shaka seam check --root . --ref SHA'
+    assert_includes commands, 'shaka seam check --root . --local'
+    refute_includes output, 'Shaka V2'
   end
 end

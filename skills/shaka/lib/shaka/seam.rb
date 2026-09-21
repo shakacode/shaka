@@ -6,6 +6,7 @@ require_relative 'error'
 require_relative 'repository_config'
 require_relative 'seam/check_report'
 require_relative 'seam/initializer'
+require_relative 'seam/pointer'
 require_relative 'trusted_config_source'
 
 module Shaka
@@ -36,11 +37,13 @@ module Shaka
     private
 
     def validate_operation(operation, parser)
-      valid = %w[check init].include?(operation) && @arguments.empty?
-      raise OptionParser::InvalidArgument, parser.to_s unless valid
+      raise OptionParser::InvalidArgument, parser.to_s unless known_operation?(operation)
+      return Pointer.refuse_foreign_options(@options) if operation == 'pointer'
 
       operation == 'check' ? validate_check_options : validate_init_options
     end
+
+    def known_operation?(operation) = %w[check init pointer].include?(operation) && @arguments.empty?
 
     def validate_check_options
       init_keys = %i[base_branch setup_command validate_command test_command review_policy review_check
@@ -55,15 +58,11 @@ module Shaka
     end
 
     def render_config(operation)
-      return emit(Initializer.new(root:, options: @options).call.to_h) if operation == 'init'
+      return Pointer.emit if operation == 'pointer'
+      return CheckReport.emit(Initializer.new(root:, options: @options).call.to_h) if operation == 'init'
 
       warn "shaka: #{CheckReport::IMPLICIT_DIAGNOSTIC}" if implicit_local?
-      emit(check_report.to_h)
-    end
-
-    def emit(payload)
-      puts JSON.pretty_generate(payload)
-      0
+      CheckReport.emit(check_report.to_h)
     end
 
     def check_report
@@ -88,7 +87,8 @@ module Shaka
 
     def usage
       "Usage: shaka seam check [--root DIR] [--local | --ref REF]\n       " \
-        'shaka seam init --root DIR [options]'
+        "shaka seam init --root DIR [options]\n       " \
+        'shaka seam pointer'
     end
 
     def add_common_options(flags)
