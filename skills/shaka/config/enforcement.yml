@@ -156,7 +156,7 @@ rules:
     enforced_by: agent
     note: >-
       A delegated worker runs with the same credentials as its owner, so nothing distinguishes
-        its publication from the owning task's.
+      its publication from the owning task's.
   - id: no-invented-edits
     phase: implement
     quote: do not invent edits when that check fails
