@@ -145,8 +145,10 @@ Without persisted stop records, token counters stay UNKNOWN, the report names
 host-context row still uses provider `cursor` plus `CURSOR_MODEL_ID`,
 `CURSOR_MODEL`, and `CURSOR_MODEL_EFFORT` when those host values are present.
 Explicit `--file` or `--turn` reports do not copy the current chat's model environment.
-`shaka doctor` fails on Cursor until a readable stop-hook file exists.
-Missing usage still does not block an otherwise authorized merge.
+`shaka doctor` fails on Cursor when `~/.cursor/hooks.json` has no
+`cursor-usage-hook` stop command. A missing file for this conversation only
+degrades: that is expected until the first `stop` event. Missing usage still
+does not block an otherwise authorized merge.
 
 When the `fast` model param is present, the cost table also shows a configured-model
 on-demand USD scenario for `grok-4.6` and `grok-4.6-fast` using Cursor's published
@@ -277,7 +279,9 @@ Call that entry **Usage and cost**. Put the dollar table in the visible summary 
 the figures are known, for example `Usage and cost — $8.29 grok-4.6, $0.94 claude-opus-5`.
 The helper prints the USD estimate above its collapsed `Token detail` block so a reader
 does not open two nested details to see what the task cost. Rate-card notes and sources
-stay with that estimate; native token rows stay inside `Token detail`.
+stay with that estimate; native token rows stay inside `Token detail`. The renderer
+also copies `USD estimate` cells onto that summary when the body has them and the
+summary does not already include each occurrence.
 
 ## PR execution provenance
 

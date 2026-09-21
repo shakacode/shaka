@@ -117,7 +117,9 @@ reaches the skill installed into `~/.cursor/skills`.
 
 The hook writes allowlisted usage metadata only. Start a new Agent chat after
 changing hooks. `shaka usage` then reads `CURSOR_CONVERSATION_ID` against
-`~/.cursor/shaka-usage`. See [usage reporting](usage-reporting.md#what-the-cursor-reader-includes).
+`~/.cursor/shaka-usage`. The first planning turn in a new chat has no stop
+record yet; doctor degrades until that file exists and fails only when the
+stop command is missing. See [usage reporting](usage-reporting.md#what-the-cursor-reader-includes).
 
 <a id="use-shaka-in-opencode"></a>
 
@@ -228,7 +230,8 @@ Doctor names the host it checked usage sources for, and says when it only detect
 rather than being told. Detection falls back to Codex when a host exposes no session
 identifier, and answers nothing when several are present, so pass `--host` to state it.
 Doctor confirms a session source is an openable file; whether its records parse is what
-`shaka usage` itself reports.
+`shaka usage` itself reports. On Cursor it also checks that `~/.cursor/hooks.json` lists
+the stop hook; it does not fail merely because this chat has not stopped yet.
 
 ## Complete your first task
 

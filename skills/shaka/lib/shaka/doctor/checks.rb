@@ -6,6 +6,7 @@ require_relative '../error'
 require_relative '../repository_config'
 require_relative 'check'
 require_relative 'machine_alias'
+require_relative 'usage_source'
 
 module Shaka
   class Doctor
@@ -24,7 +25,10 @@ module Shaka
         @system = system
       end
 
-      def call = [ruby_runtime, github_cli, repository_access, repository_seam, alias_check, usage_source]
+      def call
+        [ruby_runtime, github_cli, repository_access, repository_seam, alias_check,
+         UsageSourceCheck.new(host: @host, system: @system).call]
+      end
 
       private
 
@@ -101,55 +105,6 @@ module Shaka
       def missing_seam
         check('Repository seam', 'failed', "this root has no #{SEAM} regular file",
               guidance: 'Run `shaka seam init` here, or point `--root` at the repository you meant.')
-      end
-
-      # discover locates sources; it never opens them. Only a file this command can read is
-      # evidence, so a session handle it cannot open is reported as located, not as ready.
-      def usage_source
-        return no_usage_source('the host is ambiguous') if @host.nil?
-
-        inspect_usage_source
-      rescue KeyError, SystemCallError => e
-        usage_shortfall(first_line(e.message))
-      end
-
-      def inspect_usage_source
-        located = @system.usage_source.call(@host)
-        unopened = located.reject { |entry| openable?(entry) }
-        return usage_shortfall(shortfall(located, unopened)) if located.empty? || unopened.any?
-
-        check('Usage source', 'healthy', "#{located.length} openable #{@host} source(s); " \
-                                         'doctor does not parse them')
-      end
-
-      # A readable directory, FIFO, or device is not a transcript, and an empty file carries
-      # no responses, so neither is evidence that usage will have anything to report.
-      def openable?(entry)
-        path = entry.to_s
-        File.file?(path) && File.readable?(path) && !File.empty?(path)
-      end
-
-      def shortfall(located, unopened)
-        return "no #{@host} session source" if located.empty?
-
-        "#{unopened.length} of #{located.length} #{@host} sources cannot be opened here"
-      end
-
-      def usage_shortfall(reason)
-        @host == 'cursor' ? missing_cursor_usage(reason) : no_usage_source(reason)
-      end
-
-      def missing_cursor_usage(reason)
-        check('Usage source', 'failed', "#{reason}; Cursor stop-hook usage is not readable",
-              guidance: 'Install the Cursor stop hook from the getting-started guide, start a new ' \
-                        'Agent chat, and confirm `shaka usage` can open a stop-hook file for this ' \
-                        'conversation.')
-      end
-
-      def no_usage_source(reason)
-        check('Usage source', 'degraded', "#{reason}; usage may be incomplete",
-              guidance: 'Pass `--host` to name the host, and `--file` to `shaka usage` when its ' \
-                        'session source is not a file this command can read.')
       end
 
       # A command that cannot even launch is this check's answer, never an aborted report.
