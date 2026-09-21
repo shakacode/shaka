@@ -26,9 +26,10 @@ phases:
         a duplicate issue. Link the work item from the PR only when sharing is authorized, and
         keep private task content and links out of public artifacts.
       - Before planning or making any edit, verify the selected problem still exists and is not
-        already fixed, duplicate, superseded, or disproportionate. An evidence-backed no-change
+        already fixed, duplicate, or superseded. An evidence-backed no-change
         outcome is allowed: report it and stop before Plan; do not invent edits when that check
-        fails.
+        fails. If the problem is still valid but looks disproportionate, continue to Plan and the
+        value checkpoint instead of stopping here.
       - For the issue, PR, or review thread the task answers, run the saved helper's `claim QUERY`
         with that number. On a hit, report the open pull requests and remote branches and stop for
         a decision unless the user already authorized a comparison or override. Do not open a
