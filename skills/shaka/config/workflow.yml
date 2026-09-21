@@ -255,7 +255,9 @@ phases:
         a walkthrough is the behavior that changed. Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/docs/working-with-your-agent.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
-        or `shared-planning`. Use `--all-turns` only when the session holds solely this task. Include
+        or `shared-planning`. Publish the local adversarial review as `--contribution review` from
+        that run's `--file` or host context, rather than from the implementation session. Use
+        `--all-turns` only when the session holds solely this task. Include
         available retry and contributor records, label shared intervals and UNKNOWN fields, and
         publish only aggregate metadata. Read the packaged
         [usage guide](<{{package_root}}/docs/usage-reporting.md>) for selection and overlap rules.

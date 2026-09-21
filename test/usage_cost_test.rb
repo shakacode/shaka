@@ -25,9 +25,8 @@ class UsageCostTest < Minitest::Test
                priced_context('second', 'gpt-6-astra', effort: 'low'),
                priced_usage('second', 'second', 100, output: 0)]
     report = run_report(records, '--turn', 'first', '--turn', 'second')
-    cost = report.split('Cost scenarios', 2).last
-    assert_metric cost, 'Metric', 'gpt-5.6-terra', 'gpt-6-astra'
-    refute_includes cost, '| Metric | high | low |'
+    assert_metric report, 'Metric', 'gpt-5.6-terra', 'gpt-6-astra'
+    refute_includes report, '| Metric | high | low |'
   end
 
   def test_api_estimate_prices_cache_writes_separately_and_credit_estimate_stays_unknown
@@ -89,18 +88,6 @@ class UsageCostTest < Minitest::Test
   end
 
   private
-
-  def priced_context(turn, model, effort: 'high')
-    context(turn).tap { |setting| setting[:payload].merge!(model: model, effort: effort) }
-  end
-
-  def priced_usage(id, turn, input, **tokens)
-    usage(id, turn, input).tap do |response|
-      response[:payload][:usage].merge!(cached_input_tokens: tokens.fetch(:cached, 0),
-                                        cache_write_input_tokens: tokens.fetch(:writes, 0),
-                                        output_tokens: tokens.fetch(:output, 20), reasoning_output_tokens: 0)
-    end
-  end
 
   def assert_openai_sources(report, *models)
     models.each { |model| assert_includes report, "models/#{model}" }
@@ -414,5 +401,20 @@ class UsageAnthropicUnknownTest < Minitest::Test
     assert_includes report, 'Unsupported provider or configured model'
     refute_includes report, ANTHROPIC_LINK
     refute_includes report, '2026-09-19'
+  end
+end
+
+class UsageCostLayoutTest < Minitest::Test
+  include UsageFixture
+
+  # Nested Cost scenarios hid the dollar figure behind two expansions.
+  def test_usd_estimate_is_visible_without_expanding_details
+    setting = priced_context('current', 'gpt-5.6-terra', effort: 'medium')
+    response = priced_usage('priced', 'current', 200_000, cached: 40_000, output: 20_000)
+    response[:payload][:usage][:reasoning_output_tokens] = 4_000
+    report = run_report([setting, response, response])
+    header = report.split('<details>').first
+    assert_includes header, '| USD estimate | $0.568000 |'
+    refute_includes report, '<summary>Cost scenarios</summary>'
   end
 end

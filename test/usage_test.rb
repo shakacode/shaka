@@ -60,6 +60,18 @@ module UsageFixture
     File.write(file, options.fetch(:raw_tail, ''), mode: 'a')
     file
   end
+
+  def priced_context(turn, model, effort: 'high')
+    context(turn).tap { |setting| setting[:payload].merge!(model: model, effort: effort) }
+  end
+
+  def priced_usage(id, turn, input, **tokens)
+    usage(id, turn, input).tap do |response|
+      response[:payload][:usage].merge!(cached_input_tokens: tokens.fetch(:cached, 0),
+                                        cache_write_input_tokens: tokens.fetch(:writes, 0),
+                                        output_tokens: tokens.fetch(:output, 20), reasoning_output_tokens: 0)
+    end
+  end
 end
 
 class UsageTest < Minitest::Test
@@ -153,6 +165,51 @@ class UsageTest < Minitest::Test
     assert_includes report, 'host context'
     assert_includes report, 'SHARED'
     refute_includes report, THREAD
+  end
+end
+
+class UsageReviewCoverageTest < Minitest::Test
+  include UsageFixture
+
+  # A review snapshot that counted tokens but still said only "external reviewer
+  # UNKNOWN" hid the local adversarial pass that those numbers belong to.
+  def test_review_contribution_with_records_includes_local_adversarial_usage
+    report = run_report([context('current'), usage('current', 'current', 100)], '--contribution', 'review')
+    header = report.split('<details>').first
+    assert_includes report, "#{COMMIT} / review"
+    assert_includes header, 'Local adversarial reviewer usage: included below'
+    assert_includes header, 'External reviewer/tool-model usage: UNKNOWN'
+    refute_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    assert_metric report, 'Input', 100
+  end
+
+  # Implementation tokens are not the adversarial pass. Claiming they are would
+  # hide a missing review snapshot behind a green usage table.
+  def test_implementation_snapshot_does_not_count_as_local_review
+    header = run_report([context('current'), usage('current', 'current', 100)]).split('<details>').first
+    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+  end
+
+  # Conflicting copies keep a response row whose usage is empty. Calling that
+  # "included below" would advertise reviewer tokens that every metric lists as UNKNOWN.
+  def test_review_contribution_with_uncountable_records_does_not_claim_inclusion
+    report = run_report([context('current'), usage('replayed', 'current', 100),
+                         usage('replayed', 'current', 200)], '--contribution', 'review')
+    header = report.split('<details>').first
+    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    refute_includes header, 'included below'
+  end
+
+  # The table needs every record in a group to carry a field. A header that looks
+  # only at per-record fields can say "included below" over a table of UNKNOWN cells.
+  def test_review_header_follows_printed_metric_cells
+    first = usage('a', 'current', 100)
+    first[:payload][:usage] = { input_tokens: 100 }
+    second = usage('b', 'current', 20)
+    second[:payload][:usage] = { output_tokens: 20 }
+    header = run_report([context('current'), first, second], '--contribution', 'review').split('<details>').first
+    assert_includes header, 'Local adversarial reviewer usage: UNKNOWN'
+    refute_includes header, 'included below'
   end
 end
 
