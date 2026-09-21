@@ -36,8 +36,9 @@ repository the tower will own. `$rct` takes no path or repository argument.
 
 The setup request authorizes its native title, pin, and registration operations.
 It does not assign backlog work or create delivery tasks. After registration, the
-RCT recommends from live state, as [interactive selection](#select-work-interactively)
-describes, then starts an assigned delivery through `$shaka`.
+RCT gives a read-only recommendation from live state, as
+[interactive selection](#select-work-interactively) describes, then starts an
+assigned delivery through `$shaka`.
 
 ## Establish a master tower in Claude Code
 
@@ -130,16 +131,16 @@ proof of ownership, authorization, or completion.
 
 ## Select work interactively
 
-After `$rct` or `/rct-claude` registration completes, recommend from a fresh
-read of live issues, PRs, tracker relationships, and native task ownership, not
-from the setup-time inventory. Reread this section before that first
-recommendation and before every later one, including after a delivery finishes
-or blocks, after a PR completes or opens, and when the user reports a material
-priority change.
+After `$rct` or `/rct-claude` registration completes, give a read-only
+recommendation from a fresh read of live issues, PRs, tracker relationships, and
+native task ownership, not from the setup-time inventory. Reread this section
+before that first recommendation and before every later one, including after a
+delivery finishes or blocks, after a PR completes or opens, and when the user
+reports a material priority change.
 
-Triage recommends one bounded delivery and waits for assignment. It does not
-create workers, start implementation, or change merge authority because it found
-work. Reconcile existing owners, explicit pauses, and active PRs before admitting
+Triage recommends one bounded delivery and waits for assignment. The
+recommendation does not mutate tracker state, create workers, start
+implementation, or change merge authority because it found work. Reconcile existing owners, explicit pauses, and active PRs before admitting
 new work. Each selected delivery continues through the installed `$shaka` skill
 with one accountable owner.
 
