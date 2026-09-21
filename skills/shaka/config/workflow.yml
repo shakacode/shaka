@@ -129,8 +129,11 @@ phases:
       - Immediately before the first edit for issue or PR work, rerun the saved helper's `claim QUERY`.
         Treat the PR and branch this task already recorded as its own continuation. On any other
         hit, report the collision and stop for a decision unless the user already authorized a
-        comparison or override. Also refresh live native task ownership; if another owner now
-        holds the work, continue through that owner instead of starting a second writer.
+        comparison or override. Where the host has a live native task registry, also refresh
+        that ownership; if another owner now holds the work and the user has not explicitly
+        transferred ownership to this task, continue through that owner instead of starting a
+        second writer. On hosts without that facility, the claim result remains the portable
+        collision check.
       - Confirm destination and branch. Name the feature branch from the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
         `{host}`, `{issue}`, and `{description}`. If the seam omits `branches`, use

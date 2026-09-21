@@ -146,9 +146,10 @@ implementation, or change merge authority because it found work. Reconcile
 existing owners, explicit pauses, and active PRs before admitting new work.
 When that assignment or request arrives, refresh live ownership again before
 starting `$shaka`.
-If another owner now holds the candidate, continue through that owner instead of
-starting a second writer. Each selected delivery continues through the installed
-`$shaka` skill with one accountable owner.
+If another owner now holds the candidate and the user has not explicitly transferred
+ownership to this task, continue through that owner instead of starting a second
+writer. Each selected delivery continues through the installed `$shaka` skill with
+one accountable owner.
 
 Reconstruct the repository's essential backlog from GitHub or the selected project
 tracker. A fresh authorized task should not need a private workflow database, old
