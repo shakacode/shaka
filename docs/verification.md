@@ -22,8 +22,10 @@ wording do not prove that users will get the right result.
 
 If an automated test is impractical, the agent explains the limitation and records
 the closest useful before/after verification. Documentation-only wording changes
-do not need invented failing tests. Before publishing, the agent runs the repo's
-validation entry point and the relevant focused checks.
+do not need invented failing tests. The validation entry point runs no test or lint suites
+only when it proves every change is a regular, non-executable `README.md` or
+`docs/**/*.md` file. Ambiguous cases run the full gate, whitespace checks still
+apply, and always-on security checks remain. Before publishing, the agent runs that entry point.
 
 ## Evaluate documentation by its reader's task
 

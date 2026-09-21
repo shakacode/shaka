@@ -113,8 +113,10 @@ same small, predictable interface, while each script adapts that interface to th
 repository's own toolchain. The three required entry points are:
 
 - `.agents/bin/setup`: prepare the checkout without inventing a new toolchain;
-- `.agents/bin/validate`: run the complete local or CI-equivalent gate used before
-  review;
+- `.agents/bin/validate`: run the local or CI-equivalent gate used before review.
+  It runs no test or lint suites when a fail-closed classifier proves every change is a regular,
+  non-executable `README.md` or `docs/**/*.md` file; ambiguous cases run the full gate,
+  whitespace checks still apply, and always-on security checks remain;
 - `.agents/bin/test`: run focused tests when the task supplies paths or arguments.
 
 `.agents/bin/validate-local` is an optional faster subset.

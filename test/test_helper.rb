@@ -4,6 +4,10 @@ require 'minitest/autorun'
 require 'tmpdir'
 require 'open3'
 
+TEST_GIT = ENV.fetch('PATH').split(File::PATH_SEPARATOR).map { |dir| File.join(dir, 'git') }.find do |path|
+  File.file?(path) && File.executable?(path)
+end or raise 'git executable not found'
+
 $LOAD_PATH.unshift File.expand_path('../skills/shaka/lib', __dir__)
 
 module MetricAssert
