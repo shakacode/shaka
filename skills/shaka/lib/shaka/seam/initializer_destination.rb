@@ -35,11 +35,11 @@ module Shaka
         existing == content || previously_generated_readme?(path, existing)
       end
 
-      # The README records the generating skill version, so an upgrade changes its text while
+      # The pointer records the generating skill version, so an upgrade changes its text while
       # the repository's copy stays correct. Recognizing our own marker keeps a plain repeat of
       # `seam init` from aborting over a file nobody edited. Everything else stays byte-exact.
       def previously_generated_readme?(path, existing)
-        path == File.join(@root, Initializer::README_PATH) && existing.start_with?(readme_marker)
+        path == File.join(@root, Initializer::POINTER_PATH) && existing.start_with?(readme_marker)
       end
 
       def write_files(files)

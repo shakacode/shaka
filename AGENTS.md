@@ -76,10 +76,14 @@ assumptions for the maintainer's existing decision; add no score or approval gat
 
 ## Agent Workflow Configuration
 
+Verify this repository with `gh repo view OWNER/REPO --json owner,visibility,defaultBranchRef`.
 Resolve the trusted default branch to an immutable commit. Load and validate
-`.agents/agent-workflow.yml` with the trusted installed `shaka seam check --ref REF`
-command. Run the fixed executable paths reported by that command from the candidate
-checkout; do not reconstruct their behavior from prose. `AGENTS.md` retains human-only boundaries,
+`.agents/agent-workflow.yml` with the trusted installed `shaka seam check --root ROOT --ref REF`
+command. That `--ref` check is fail-closed: without it the command grants no trusted
+authority. Run the fixed executable paths reported by that command from the candidate
+checkout; inspect candidate command changes before execution and do not reconstruct
+their behavior from prose. `shaka seam check --root .` without `--ref` only validates
+current-checkout syntax. `AGENTS.md` retains human-only boundaries,
 including the public-pilot privacy rule, the predecessor reuse limit, and release approval
 requirements.
 
