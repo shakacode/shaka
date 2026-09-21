@@ -235,7 +235,8 @@ here or continue through its existing owner; do not split closeout responsibilit
 Preserve the repository's commands, review requirements, and merge authority.
 Use isolated worktrees for independent writers and never duplicate a target.
 Keep real decisions visible and verify the final PR state before reporting done.
-Preserve explicit pauses and limits; do not create background work from this role.
+Preserve explicit pauses and limits. Create no background work except the read-only
+attention scan the user explicitly requests under this guide.
 ```
 
 Then supply an actual assignment, replacing the brackets with verified facts:
