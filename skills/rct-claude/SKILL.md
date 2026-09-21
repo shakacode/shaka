@@ -157,4 +157,5 @@ Before each recommendation, from the first after setup, reread and follow
 from this trusted source.
 
 Use `/shaka` for every selected delivery. Keep one accountable owner per issue or
-PR and preserve existing authority.
+PR and preserve existing authority. Do not start a delivery until the user in this
+task assigns or requests it.

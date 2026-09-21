@@ -38,8 +38,10 @@ class SkillTest < Minitest::Test
   # guide rather than embedding a second triage procedure.
   def test_rct_skills_reread_interactive_selection_before_recommending
     [RCT_SKILL, RCT_CLAUDE_SKILL].each do |skill|
-      assert_includes File.read(skill, encoding: 'UTF-8'), 'control-towers.md#select-work-interactively',
-                      skill
+      source = File.read(skill, encoding: 'UTF-8')
+
+      assert_includes source, 'control-towers.md#select-work-interactively', skill
+      assert_match(/Do not start a delivery until the user in this\s+task assigns or requests it/, source, skill)
     end
   end
 
@@ -64,6 +66,16 @@ class SkillTest < Minitest::Test
     assert_match(/PR and branch this task already recorded as its own\s+continuation/, body)
     assert_includes body, 'live native task registry'
     assert_match(/explicitly\s+transferred ownership to this task/, body)
+  end
+
+  def test_intake_no_change_outcome_stops_before_plan
+    intake = YAML.safe_load_file(WORKFLOW).fetch('phases').find { |phase| phase.fetch('id') == 'intake' }
+    body = intake.fetch('body')
+
+    assert_match(/Before planning or making any edit.*selected problem still exists/m, body)
+    assert_match(/report it, skip the rest of Intake, and stop before Plan/, body)
+    assert_match(/valid but looks\s+disproportionate, continue to Plan and the value checkpoint/, body)
+    assert_match(/no-change outcome was reported and the task stopped before Plan/, intake.fetch('done_when'))
   end
 
   # The first live trial found rules these skills lacked: exhausting the session listing,

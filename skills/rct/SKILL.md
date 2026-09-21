@@ -110,4 +110,4 @@ from this trusted source.
 
 Use the installed `$shaka` skill for every selected delivery. Keep one accountable
 owner per issue or PR and preserve existing task, review, validation, and merge
-authority.
+authority. Do not start a delivery until the user in this task assigns or requests it.
