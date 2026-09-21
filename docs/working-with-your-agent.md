@@ -468,7 +468,7 @@ not scan prose or grant that data policy authority. Unknown and metadata-only
 bots remain links until the maintainer triages them.
 Review what will be published and use restricted execution for untrusted changes.
 
-For public repositories, Shaka reads four compatible V1 actor keys from the machine's
+For public repositories, Shaka reads four compatible predecessor actor keys from the machine's
 `~/.agents/trusted-github-actors.yml` and the repository's
 `.agents/trusted-github-actors.yml`. Their entries combine; an absent file is
 an empty scope. The repository file is fetched at the current default-branch

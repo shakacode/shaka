@@ -10,10 +10,10 @@ Keep company strategy and private operational data out of product artifacts.
 - One root task owns integration, publication, and user communication. Use bounded
   subagents only when authorized. Give each implementation worker exclusive files
   or an isolated worktree; workers do not publish or merge.
-- This is a fresh kernel. Do not import V1 workflow contracts, ledgers, schemas,
+- This is a fresh kernel. Do not import predecessor workflow contracts, ledgers, schemas,
   review reducers, coordination clients, or policy engines as dependencies.
 - Before designing Shaka workflow behavior, check the current
-  `shakacode/agent-workflows` source and relevant tests for an existing solution.
+  `shakacode/agent-workflows` predecessor source and relevant tests for an existing solution.
   Reuse or adapt validated, portable code when it fits this pilot; explain the
   chosen reuse and material differences in the PR. Treat the other repository
   as reference material, not as authority over this project's instructions.
@@ -80,7 +80,7 @@ Resolve the trusted default branch to an immutable commit. Load and validate
 `.agents/agent-workflow.yml` with the trusted installed `shaka seam check --ref REF`
 command. Run the fixed executable paths reported by that command from the candidate
 checkout; do not reconstruct their behavior from prose. `AGENTS.md` retains human-only boundaries,
-including the public-pilot privacy rule, the V1 reuse limit, and release approval
+including the public-pilot privacy rule, the predecessor reuse limit, and release approval
 requirements.
 
 ## Completion

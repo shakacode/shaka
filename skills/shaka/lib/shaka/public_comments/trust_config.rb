@@ -5,7 +5,7 @@ require_relative 'trust_settings'
 
 module Shaka
   module PublicComments
-    # Reads the V1 trust-config keys without adopting its workflow policy engine.
+    # Reads the predecessor trust-config keys without adopting its workflow policy engine.
     class TrustConfig
       MACHINE_PATH = '~/.agents/trusted-github-actors.yml'
       REPO_PATH = '.agents/trusted-github-actors.yml'

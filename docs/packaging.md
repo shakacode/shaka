@@ -4,8 +4,12 @@ The gem packages the same skills, workflow configuration, installer, and Ruby he
 as the source checkout. The `shaka` skill is a small trust bootstrap: `shaka workflow`
 strictly validates and renders its packaged `skills/shaka/config/workflow.yml` before
 an agent follows the procedure.
-It adds no runtime gems and does not install a global agent profile. Version
-`0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name. The source
+It adds no runtime gems and does not install a global agent profile. Public product
+stage is `0.0.x`. Version
+`0.1.0.pre.1` is [published on RubyGems.org](https://rubygems.org/gems/shaka) to reserve the `shaka` name;
+later registry artifacts stay on `0.1.0.pre.N`. Do not publish a `0.0.x` gem:
+`gem install shaka --pre` would still prefer `0.1.0.pre.1` over any `0.0.x`
+version. The source
 installation remains the verified pilot path; registry publication does not establish
 broader host compatibility.
 
