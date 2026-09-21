@@ -24,9 +24,11 @@ module Shaka
       end
 
       def create_pointer(path, content, created)
-        write_new_file(path, content)
-      ensure
-        created << path if File.file?(path) && !created.include?(path)
+        File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
+          created << path
+          file.write(content)
+          file.chmod(destination_mode(path))
+        end
       end
 
       def replace_contract(path, content)

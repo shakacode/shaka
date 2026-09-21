@@ -266,6 +266,14 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
     end
   end
 
+  def test_unsupported_predecessor_version_blocks
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('version' => 2) }
+
+      assert_includes migrate_report(root, sha).fetch('blocking'), 'version'
+    end
+  end
+
   def test_missing_review_check_blocks_before_apply
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) do |data|

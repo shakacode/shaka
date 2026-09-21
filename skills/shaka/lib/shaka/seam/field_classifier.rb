@@ -61,6 +61,10 @@ module Shaka
           @blocking << key
           return
         end
+        if key == 'version' && value != 1
+          @blocking << 'version'
+          return
+        end
 
         @retained << key
         @established[key] = value if %w[base_branch repo_prefix version plan branches recovery].include?(key)
