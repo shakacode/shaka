@@ -112,7 +112,7 @@ class UsageCursorCostTest < Minitest::Test
     assert_includes report, 'cursor.com/docs/models/grok-4-6'
   end
 
-    def test_cursor_grok_fast_and_missing_billing_mode
+  def test_cursor_grok_fast_and_missing_billing_mode
     report = Shaka::CostEstimate.new([cursor_record(billing: 'fast')]).report
     assert_metric report, 'USD estimate', '$0.000520'
     report = Shaka::CostEstimate.new([cursor_record(billing: nil)]).report
