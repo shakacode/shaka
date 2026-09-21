@@ -154,7 +154,8 @@ class SeamPointerTest < Minitest::Test
 
   def assert_trust_safe_pointer(output)
     assert_includes output, '## Agent Workflow Configuration'
-    assert_includes output, 'gh repo view'
+    assert_includes output, 'gh repo view --json owner,visibility,defaultBranchRef'
+    refute_includes output, 'OWNER/REPO'
     assert_includes output, 'immutable'
     assert_includes output, 'trusted installed'
     assert_includes output, '--ref'
