@@ -81,6 +81,20 @@ module Shaka
 
       [{ 'configuration' => context_row, 'usage' => {} }]
     end
+
+    def reviewer_coverage
+      local = local_review_included? ? 'included below' : 'UNKNOWN'
+      gaps = @source.gaps.uniq.join('; ')
+      "Local adversarial reviewer usage: #{local}. External reviewer/tool-model usage: UNKNOWN. #{gaps}"
+    end
+
+    def local_review_included?
+      return false unless @options[:contribution] == 'review'
+
+      table_groups.any? do |_configuration, group|
+        Usage::METRIC_FIELDS.any? { |_label, field| total_field(group, field).is_a?(Integer) }
+      end
+    end
   end
 
   # Read-only reporting of per-response usage records from a supported host.
@@ -160,8 +174,10 @@ module Shaka
 
     def report
       <<~MARKDOWN
+        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report.rstrip}
+
+        #{reviewer_coverage}
         Native usage is PARTIAL. #{count}. Scope: #{turn_scope}.
-        External reviewer/tool-model usage: UNKNOWN. #{@source.gaps.uniq.join('; ')}
 
         <details>
         <summary>Token detail</summary>
@@ -175,7 +191,6 @@ module Shaka
         #{rows}
 
         </details>
-        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report}
       MARKDOWN
     end
 
