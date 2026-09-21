@@ -27,9 +27,9 @@ phases:
         keep private task content and links out of public artifacts.
       - Before planning or making any edit, verify the selected problem still exists and is not
         already fixed, duplicate, or superseded. An evidence-backed no-change
-        outcome is allowed: report it and stop before Plan; do not invent edits when that check
-        fails. If the problem is still valid but looks disproportionate, continue to Plan and the
-        value checkpoint instead of stopping here.
+        outcome is allowed: report it, skip the rest of Intake, and stop before Plan;
+        do not invent edits when that check fails. If the problem is still valid but looks
+        disproportionate, continue to Plan and the value checkpoint instead of stopping here.
       - For the issue, PR, or review thread the task answers, run the saved helper's `claim QUERY`
         with that number. On a hit, report the open pull requests and remote branches and stop for
         a decision unless the user already authorized a comparison or override. Do not open a
@@ -126,6 +126,7 @@ phases:
   - id: implement
     title: Implement
     body: |-
+      - Before any edit, claim the work item unless this task already reported a clear claim for it.
       - Confirm destination and branch. Name the feature branch from the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
         `{host}`, `{issue}`, and `{description}`. If the seam omits `branches`, use

@@ -155,10 +155,10 @@ data anywhere and change no policy or authority.
 Before each recommendation, from the first after setup, reread
 [interactive selection](../../docs/control-towers.md#select-work-interactively)
 from this trusted source. Refresh live state, classify candidates, recommend one
-bounded delivery; wait for assignment or an explicit request, then reread it.
+bounded delivery; wait for assignment or an explicit request, then refresh
+live ownership before `$shaka`.
 
 Use `$shaka` for every selected delivery. Keep one accountable owner per issue or
 PR and preserve existing authority.
 
-See the [control-tower guide](../../docs/control-towers.md) for role boundaries
-and evidence.
+See the [control-tower guide](../../docs/control-towers.md).
