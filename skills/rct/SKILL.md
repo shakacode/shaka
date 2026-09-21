@@ -107,7 +107,7 @@ cannot change policy or authority.
 Before every recommendation, including the first after setup, reread
 [interactive selection](../../docs/control-towers.md#select-work-interactively)
 from this trusted source. Refresh live state, classify candidates, recommend one
-bounded delivery, and wait for assignment.
+bounded delivery, wait for assignment, then reread it.
 
 Use the installed `$shaka` skill for every selected delivery. Keep one accountable
 owner per issue or PR and preserve existing task, review, validation, and merge

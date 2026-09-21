@@ -140,9 +140,12 @@ reports a material priority change.
 
 Triage recommends one bounded delivery and waits for assignment. The
 recommendation does not mutate tracker state, create workers, start
-implementation, or change merge authority because it found work. Reconcile existing owners, explicit pauses, and active PRs before admitting
-new work. Each selected delivery continues through the installed `$shaka` skill
-with one accountable owner.
+implementation, or change merge authority because it found work. Reconcile
+existing owners, explicit pauses, and active PRs before admitting new work.
+When assignment arrives, refresh live ownership again before starting `$shaka`.
+If another owner now holds the candidate, continue through that owner instead of
+starting a second writer. Each selected delivery continues through the installed
+`$shaka` skill with one accountable owner.
 
 A completed or newly opened PR invalidates the previous recommendation. Reconstruct
 the repository's essential backlog from GitHub or the selected project tracker. A
@@ -216,8 +219,9 @@ Give the repository's existing task this role and its selected work:
 Act as the Repository Control Tower for the repository I name. Read its trusted
 AGENTS.md and reconcile the selected issue or PR with live GitHub state and
 existing task ownership. Refresh live issues, PRs, tracker relationships, and
-native ownership before each recommendation, and wait for assignment. Finish
-useful existing work before admitting more.
+native ownership before each recommendation, and wait for assignment. When
+assignment arrives, refresh live ownership again before starting `$shaka`.
+Finish useful existing work before admitting more.
 For each delivery, use the installed $shaka skill. Either own that bounded task
 here or continue through its existing owner; do not split closeout responsibility.
 Preserve the repository's commands, review requirements, and merge authority.
