@@ -8,8 +8,11 @@ pull request cannot grant itself authority by editing its own copy. GitHub remai
 authoritative for live protection, required checks, allowed merge methods, and workflow
 action references.
 
-Create it with [`shaka seam init`](getting-started.md#initialize-a-repository-seam) and
-validate any candidate change with `shaka seam check --root . --local`. Validation is strict and local:
+Create it with [`shaka seam init`](getting-started.md#initialize-a-repository-seam).
+Candidate/local validation is `shaka seam check --root . --local`; it grants no trusted
+authority. Load trusted policy only with `shaka seam check --root . --ref SHA` after
+resolving the default branch to an immutable commit. That `--ref` check is fail-closed.
+Copy-ready `AGENTS.md` guidance: `shaka seam pointer`. Validation is strict and local:
 unknown keys, duplicate keys, unsafe paths, missing or non-executable scripts, and
 out-of-range values all fail rather than being ignored.
 

@@ -16,7 +16,7 @@ Three different identifiers appear in this work. They are not interchangeable:
 
 Predecessor seams have no schema version and use a different set of keys.
 
-`shaka seam init` records the Shaka SemVer in `.agents/README.md`. The fleet table
+`shaka seam init` records the Shaka SemVer in `.agents/shaka.md`. The fleet table
 records the same value so that a repository remains visible even before its migration
 merges. A schema-valid file alone does not prove which Shaka release last reviewed it.
 

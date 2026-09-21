@@ -1,5 +1,6 @@
 # Shaka repository contract. Every setting is documented in docs/settings.md.
-# Validate any change with: shaka seam check --root .
+# Candidate/local validation (no authority): shaka seam check --root . --local
+# Trusted policy: shaka seam check --root . --ref SHA after resolving the default branch.
 ---
 version: 1
 # base_branch is omitted, so it resolves to this repository's default branch, main.
