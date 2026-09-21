@@ -25,6 +25,10 @@ phases:
         delivery state on GitHub. Reading a tracker does not authorize updating it; do not create
         a duplicate issue. Link the work item from the PR only when sharing is authorized, and
         keep private task content and links out of public artifacts.
+      - Before planning or making any edit, verify the selected problem still exists and is not
+        already fixed, duplicate, superseded, or disproportionate. An evidence-backed no-change
+        outcome is allowed: report it and stop before Plan; do not invent edits when that check
+        fails.
       - For the issue, PR, or review thread the task answers, run the saved helper's `claim QUERY`
         with that number. On a hit, report the open pull requests and remote branches and stop for
         a decision unless the user already authorized a comparison or override. Do not open a
@@ -40,7 +44,9 @@ phases:
         preserve user-chosen titles. Without that tool, suggest the title once.
       - Before writing to an unfinished PR, whether resuming or adopting it, follow the
         [recovery note](<{{package_root}}/docs/working-with-your-agent.md#recover-an-unfinished-pr>).
-    done_when: The task, its checkout, trusted instructions, and merge preference are known.
+    done_when: >-
+      The task, its checkout, trusted instructions, and merge preference are known, or an
+      evidence-backed no-change outcome was reported and the task stopped before Plan.
   - id: plan
     title: Plan
     body: |-
@@ -119,10 +125,6 @@ phases:
   - id: implement
     title: Implement
     body: |-
-      - Before editing, verify the selected problem still exists and is not already fixed,
-        duplicate, superseded, or disproportionate. An evidence-backed no-change outcome is
-        allowed: report it and stop before Verify; do not invent edits when that check fails.
-      - Before any edit, claim the work item unless this task already reported a clear claim for it.
       - Confirm destination and branch. Name the feature branch from the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
         `{host}`, `{issue}`, and `{description}`. If the seam omits `branches`, use
@@ -139,9 +141,7 @@ phases:
         passes, then simplify while green. Test behavior, not implementation wording. If automation
         is impractical, explain why and capture before and after behavior. Use the repo's existing
         test and browser tools. Keep executable logic in code, not in Markdown.
-    done_when: >-
-      The change and its tests exist on the branch, or an evidence-backed no-change outcome was
-      reported and the task stopped before Verify.
+    done_when: The change and its tests exist on the branch.
   - id: verify
     title: Verify
     body: |-

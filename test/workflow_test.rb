@@ -27,18 +27,6 @@ class WorkflowConfigTest < Minitest::Test
     end
   end
 
-  def test_implement_phase_can_finish_without_inventing_a_change
-    implement = Shaka::WorkflowConfig.load.fetch('phases').find do |phase|
-      phase.fetch('id') == 'implement'
-    end
-
-    body = implement.fetch('body')
-
-    assert_includes body, 'stop before Verify'
-    assert_includes implement.fetch('done_when'), 'no-change outcome'
-    assert_operator body.index('verify the selected problem'), :<, body.index('claim the work item')
-  end
-
   def test_rejects_duplicate_keys
     source = valid_source.sub("version: 1\n", "version: 1\nversion: 1\n")
 

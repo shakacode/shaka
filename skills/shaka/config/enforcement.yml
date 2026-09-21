@@ -158,11 +158,11 @@ rules:
       A delegated worker runs with the same credentials as its owner, so nothing distinguishes
       its publication from the owning task's.
   - id: no-invented-edits
-    phase: implement
+    phase: intake
     quote: do not invent edits when that check fails
     enforced_by: agent
     note: >-
-      Nothing compares the live tracker state to the claimed work item, so an agent can still
+      Nothing compares the live tracker state to the selected work item, so an agent can still
       edit after a failed premise check.
   - id: no-deferred-required-checks
     phase: verify

@@ -36,9 +36,9 @@ repository the tower will own. `$rct` takes no path or repository argument.
 
 The setup request authorizes its native title, pin, and registration operations.
 It does not assign backlog work or create delivery tasks. After registration, the
-RCT gives a read-only recommendation from live state, as
-[interactive selection](#select-work-interactively) describes, then starts an
-assigned delivery through `$shaka`.
+RCT gives a read-only recommendation from live state, then follows
+[interactive selection](#select-work-interactively) before starting a selected
+delivery through `$shaka`.
 
 ## Establish a master tower in Claude Code
 
@@ -172,8 +172,9 @@ implementation, or merge. An unchanged scan stays quiet.
 ## Account for Dependabot
 
 Every triage refresh lists open Dependabot PRs and gives each an explicit disposition
-from those categories. Addressing Dependabot does not mean blindly merging it. No
-bot PR may disappear from the recommendation without a disposition.
+from the classification categories under [interactive selection](#select-work-interactively).
+Addressing Dependabot does not mean blindly merging it. No bot PR may disappear from
+the recommendation without a disposition.
 
 ## Keep work state in the tracker
 
