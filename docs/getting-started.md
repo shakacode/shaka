@@ -191,6 +191,11 @@ generated files are unchanged and refuses to overwrite a repository-owned file o
 symlink. The README carries the skill version that wrote it, so a repeat after a Shaka
 upgrade leaves the repository's copy in place rather than refusing the whole run. Use the path printed by `bin/install` when you installed elsewhere.
 
+After editing the YAML, validate that candidate with
+`shaka seam check --root /path/to/repository --local`. Consumer repositories that only
+need schema validation in GitHub Actions should pin a published gem rather than copying
+Shaka's parser; see [Validate a consumer seam in CI](packaging.md#validate-a-consumer-seam-in-ci).
+
 ## Check your setup
 
 `shaka doctor` reports, in one pass, whether this machine can run the workflow and

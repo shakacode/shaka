@@ -1,24 +1,9 @@
 # frozen_string_literal: true
 
-require_relative 'test_helper'
-require 'fileutils'
-require 'json'
-require 'rbconfig'
-require 'bundler'
-require 'rubygems/package'
+require_relative 'package_test_helpers'
 
 class PackageTest < Minitest::Test
-  ROOT = File.expand_path('..', __dir__)
-
-  def setup
-    @directory = Dir.mktmpdir('workflows-package')
-    @home = File.join(@directory, 'gem home')
-    @environment = { 'GEM_HOME' => @home, 'GEM_PATH' => @home }
-  end
-
-  def teardown
-    FileUtils.remove_entry(@directory)
-  end
+  include PackageTestHelpers
 
   def test_built_gem_runs_and_installs_its_skill_without_the_source_checkout
     archive = File.join(@directory, 'pilot.gem')
@@ -69,12 +54,6 @@ class PackageTest < Minitest::Test
     result
   end
 
-  def install_gem
-    archive = File.join(@directory, 'consumer.gem')
-    run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
-    run_gem('install', '--local', '--no-document', archive)
-  end
-
   def check_commands
     assert_includes run_executable('shaka', '--help'), 'Usage: shaka'
     workflow = run_executable('shaka', 'workflow')
@@ -111,17 +90,5 @@ class PackageTest < Minitest::Test
 
   def run_executable(name, *)
     run_command(File.join(@home, 'bin', name), *)
-  end
-
-  def run_gem(*, chdir: @directory)
-    run_command('-S', 'gem', *, chdir: chdir)
-  end
-
-  def run_command(*, chdir: @directory)
-    output, status = Bundler.with_unbundled_env do
-      Open3.capture2e(@environment, RbConfig.ruby, *, chdir: chdir)
-    end
-    assert_predicate status, :success?, output
-    output
   end
 end

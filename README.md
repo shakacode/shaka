@@ -83,7 +83,8 @@ Each repository exposes predictable engineering commands through `.agents/bin/` 
 typed authority in `.agents/agent-workflow.yml`; `AGENTS.md` retains human-only boundaries.
 Create a missing contract with `shaka seam init` after identifying the repository's real
 commands and policy. See the [requirements](docs/pilot-plan.md)
-and [gem packaging guide](docs/packaging.md) for design and distribution.
+and [gem packaging guide](docs/packaging.md) for design, distribution, and the
+version-pinned CI seam check.
 The procedure owns execution; linked guides explain decisions and evidence for
 people and agents. Keep shared rules in one place and follow the procedure's references.
 
