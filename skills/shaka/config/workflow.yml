@@ -120,6 +120,9 @@ phases:
     title: Implement
     body: |-
       - Before any edit, claim the work item unless this task already reported a clear claim for it.
+      - Before editing, verify the selected problem still exists and is not already fixed,
+        duplicate, superseded, or disproportionate. An evidence-backed no-change outcome is
+        allowed; do not invent edits when that check fails.
       - Confirm destination and branch. Name the feature branch from the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
         `{host}`, `{issue}`, and `{description}`. If the seam omits `branches`, use

@@ -36,8 +36,9 @@ repository the tower will own. `$rct` takes no path or repository argument.
 
 The setup request authorizes its native title, pin, and registration operations.
 It does not assign backlog work or create delivery tasks. After registration, the
-RCT gives a read-only backlog recommendation; start a selected delivery through
-`$shaka`.
+RCT gives a read-only backlog recommendation. Refresh live state before selecting
+work, as [interactive selection](#select-work-interactively) describes, then start
+an assigned delivery through `$shaka`.
 
 ## Establish a master tower in Claude Code
 
@@ -128,6 +129,70 @@ GitHub. A private portfolio page may link to them; do not copy private prioritie
 task links, or customer context into a public PR. A dashboard is a view, not
 proof of ownership, authorization, or completion.
 
+## Select work interactively
+
+`$rct` setup performs the initial read-only inventory and recommendation. That
+snapshot is not durable truth. Refresh live issues, PRs, tracker relationships,
+and native task ownership, then triage again before selecting work, after a
+delivery finishes or blocks, and when the user reports a material priority change.
+
+Triage recommends one bounded delivery and waits for assignment. It does not
+create workers, start implementation, or change merge authority because it found
+work. Reconcile existing owners, explicit pauses, and active PRs before admitting
+new work. Each selected delivery continues through the installed `$shaka` skill
+with one accountable owner.
+
+A completed or newly opened PR invalidates the previous recommendation. Reconstruct
+the repository's essential backlog from GitHub or the selected project tracker. A
+fresh authorized task should not need a private workflow database, old tower
+transcript, or external coordination ledger to understand that backlog.
+
+Classify each relevant candidate as deliver next; design or investigation first;
+blocked; defer; or close / no action. Order admitted work by verified customer or
+maintainer impact, security and correctness, release needs, and native dependency
+relationships. Shared files are an integration concern, not by themselves a
+semantic dependency. Recommend one bounded next delivery and why it precedes the
+alternatives.
+
+## Scan for attention only when asked
+
+RCT setup creates no schedule or monitor. When the user explicitly requests it, a
+weekly read-only attention scan may identify new, stale, failing, blocked, or
+ownerless issues and PRs and wake the RCT for interactive triage. The scheduled
+scan does not make product dispositions, mutate tracker state, assign work, launch
+implementation, or merge. An unchanged scan stays quiet.
+
+## Account for Dependabot
+
+Every triage refresh lists open Dependabot PRs and gives each an explicit
+disposition: deliver, repair, defer with reason, superseded/close, or blocked.
+Addressing Dependabot does not mean blindly merging it. No bot PR may disappear
+from the recommendation without a disposition.
+
+## Keep work state in the tracker
+
+Requirements, priority, status, decisions, and task dependencies live in the
+original issue tracker. On GitHub, use native issue dependencies (`blocked by` /
+`blocking`) rather than a Markdown dependency schema
+(https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies).
+On Linear, use native blocked/blocking issue relations
+(https://linear.app/docs/issue-relations). Use structured prose only for facts the tracker
+cannot represent, and keep it human-readable. GitHub PRs hold implementation,
+validation, review, walkthrough, usage, and final-state evidence. Link them to
+their source issue when sharing is authorized. RCT and delivery transcripts are
+working views, not canonical portfolio state. Cross-repository priority belongs
+to the MCT; each repository's issue and PR facts remain in that repository or its
+selected project tracker.
+
+## Choose models for tower work
+
+Keep model selection advisory and portable. Ordinary RCT triage uses a balanced
+flagship model with medium reasoning; consequential product, security, migration,
+or dependency decisions justify higher reasoning. Mechanical inventory may use a
+faster route. On current Codex, the ordinary mapping is GPT-5.6 Sol / medium.
+Every selected Shaka delivery assesses its own model and effort independently;
+the RCT's route grants no authority and does not become the delivery route.
+
 ## Role prompts
 
 Give an existing portfolio task this role and a bounded outcome:
@@ -148,7 +213,9 @@ Give the repository's existing task this role and its selected work:
 ```text
 Act as the Repository Control Tower for the repository I name. Read its trusted
 AGENTS.md and reconcile the selected issue or PR with live GitHub state and
-existing task ownership. Finish useful existing work before admitting more.
+existing task ownership. Refresh live issues, PRs, tracker relationships, and
+native ownership before each recommendation, and wait for assignment. Finish
+useful existing work before admitting more.
 For each delivery, use the installed $shaka skill. Either own that bounded task
 here or continue through its existing owner; do not split closeout responsibility.
 Preserve the repository's commands, review requirements, and merge authority.

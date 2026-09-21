@@ -31,6 +31,15 @@ class SkillTest < Minitest::Test
     assert_operator File.size(RCT_SKILL), :<=, 8 * 1024
   end
 
+  # Issue #132 keeps the tower skills as pointers into the interactive-selection
+  # guide rather than embedding a second triage procedure.
+  def test_rct_skills_reread_interactive_selection_before_recommending
+    [RCT_SKILL, RCT_CLAUDE_SKILL].each do |skill|
+      assert_includes File.read(skill, encoding: 'UTF-8'), 'control-towers.md#select-work-interactively',
+                      skill
+    end
+  end
+
   # The first live trial found rules these skills lacked: exhausting the session listing,
   # and a repository check that wrongly assumed a session's origin directory is a repository.
   # Like PR #38 did for the procedure, the budget moves by content rather than by cutting
