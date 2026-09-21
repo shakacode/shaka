@@ -36,9 +36,8 @@ repository the tower will own. `$rct` takes no path or repository argument.
 
 The setup request authorizes its native title, pin, and registration operations.
 It does not assign backlog work or create delivery tasks. After registration, the
-RCT gives a read-only backlog recommendation. Refresh live state before selecting
-work, as [interactive selection](#select-work-interactively) describes, then start
-an assigned delivery through `$shaka`.
+RCT recommends from live state, as [interactive selection](#select-work-interactively)
+describes, then starts an assigned delivery through `$shaka`.
 
 ## Establish a master tower in Claude Code
 
@@ -131,11 +130,11 @@ proof of ownership, authorization, or completion.
 
 ## Select work interactively
 
-`$rct` and `/rct-claude` setup each perform an initial read-only inventory and
-recommendation. That snapshot is not durable truth. Refresh live issues, PRs,
-tracker relationships, and native task ownership, then triage again before selecting
-work, after a delivery finishes or blocks, and when the user reports a material
-priority change.
+After `$rct` or `/rct-claude` registration completes, recommend from a fresh
+read of live issues, PRs, tracker relationships, and native task ownership, not
+from the setup-time inventory. Reread this section before that first
+recommendation and before every later one: after a delivery finishes or blocks,
+and when the user reports a material priority change.
 
 Triage recommends one bounded delivery and waits for assignment. It does not
 create workers, start implementation, or change merge authority because it found
