@@ -44,6 +44,14 @@ class CodeqlWorkflowTest < Minitest::Test
     refute_includes permissions.keys, 'packages'
   end
 
+  def test_cancels_only_obsolete_pull_request_analysis
+    concurrency = @workflow.fetch('concurrency')
+    expected_group = '${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}'
+
+    assert_equal expected_group, concurrency.fetch('group')
+    assert_equal "${{ github.event_name == 'pull_request' }}", concurrency.fetch('cancel-in-progress')
+  end
+
   private
 
   def matrix
