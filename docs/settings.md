@@ -8,12 +8,17 @@ pull request cannot grant itself authority by editing its own copy. GitHub remai
 authoritative for live protection, required checks, allowed merge methods, and workflow
 action references.
 
-Create it with [`shaka seam init`](getting-started.md#initialize-a-repository-seam) and
-validate any change with `shaka seam check --root .`. Validation is strict and local:
+Create it with [`shaka seam init`](getting-started.md#initialize-a-repository-seam).
+Candidate/local validation is `shaka seam check --root . --local`; it grants no trusted
+authority. Load trusted policy only with `shaka seam check --root . --ref SHA` after
+resolving the default branch to an immutable commit. That `--ref` check is fail-closed.
+Copy-ready `AGENTS.md` guidance: `shaka seam pointer`. Validation is strict and local:
 unknown keys, duplicate keys, unsafe paths, missing or non-executable scripts, and
 out-of-range values all fail rather than being ignored.
 
 Keep human-only constraints in `AGENTS.md`. This file holds only typed policy.
+Consumer CI should pin a published gem and run `--local` rather than copying this
+schema; see [Validate a consumer seam in CI](packaging.md#validate-a-consumer-seam-in-ci).
 
 ## Every setting in one file
 
@@ -186,13 +191,21 @@ wrappers because that is the portable default.
 Required scripts must exist and be executable. When the workflow supplies `--ref`, as it must
 for trusted decisions, optional capability comes from the script's presence on that resolved
 default-branch commit, never merely from a candidate pull request. Shaka then validates and runs
-the candidate checkout's version at the same fixed path. A no-`--ref` check intentionally
-inspects the current checkout for local editing or initialization; it supplies no trusted policy
-authority. A readable but non-executable script fails validation.
+the candidate checkout's version at the same fixed path. `shaka seam check --local` inspects the
+current checkout for editing, initialization, or consumer CI; it supplies no trusted policy
+authority. Omitting both `--local` and `--ref` is the same candidate check, with an explicit
+stderr diagnostic that the result grants no policy or merge authority. Combining `--local` with
+`--ref` is an error.
 
 `shaka seam check` prints an effective JSON view that includes the derived `commands` map for
-workflow consumers. That output is diagnostic, not a YAML seam template; do not copy its
-`commands` key back into `.agents/agent-workflow.yml`.
+workflow consumers and a `validation` object that labels the mode. Local output sets
+`mode` to `local/candidate` and both `grants_policy` and `grants_merge_authority` to `false`.
+Trusted `--ref` output sets `mode` to `trusted/ref` and `grants_policy` to `true`; it still sets
+`grants_merge_authority` to `false`, because GitHub remains authoritative for merge permission.
+That output is diagnostic, not a YAML seam template; do not copy its `commands` or `validation`
+keys back into `.agents/agent-workflow.yml`. Consumer repositories should pin a published gem
+and call `--local` rather than cloning this schema; see
+[Validate a consumer seam in CI](packaging.md#validate-a-consumer-seam-in-ci).
 
 An optional command that exists on the trusted ref is intentionally sticky for the candidate:
 deleting it fails validation instead of silently removing the capability. This presence check

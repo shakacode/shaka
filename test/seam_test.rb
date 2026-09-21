@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'fileutils'
-require 'json'
-require 'yaml'
+require_relative 'seam_check_helpers'
 
 class SeamTest < Minitest::Test
-  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  include SeamCheckHelpers
+
+  COMMAND = SeamCheckHelpers::COMMAND
 
   def test_help_succeeds
     output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--help')
@@ -14,6 +14,7 @@ class SeamTest < Minitest::Test
     assert_predicate status, :success?, error
     assert_includes output, 'shaka seam check'
     assert_includes output, 'shaka seam init'
+    assert_includes output, 'shaka seam pointer'
   end
 
   def test_help_before_the_operation_succeeds
@@ -21,6 +22,7 @@ class SeamTest < Minitest::Test
 
     assert_predicate status, :success?, error
     assert_includes output, 'shaka seam check'
+    assert_includes output, 'shaka seam pointer'
   end
 
   def test_check_can_read_policy_from_a_trusted_git_ref
@@ -78,52 +80,38 @@ class SeamTest < Minitest::Test
       assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
     end
   end
+end
+
+class SeamPointerTest < Minitest::Test
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+
+  # Break: a copy-ready AGENTS.md pointer that omits --ref would be pasted as
+  # trusted policy loading, which is the Control Plane Flow failure mode.
+  def test_pointer_renders_trust_safe_agents_guidance
+    output, error, status = Open3.capture3(COMMAND, 'seam', 'pointer')
+
+    assert_predicate status, :success?, error
+    assert_empty error
+    assert_trust_safe_pointer(output)
+  end
+
+  def test_pointer_refuses_check_and_init_options
+    _output, error, status = Open3.capture3(COMMAND, 'seam', 'pointer', '--ref', 'HEAD')
+
+    refute_predicate status, :success?
+    assert_includes error, 'pointer'
+  end
 
   private
 
-  def with_repository
-    Dir.mktmpdir('shaka-seam') do |root|
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
-      write_commands(root)
-      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
-      yield root
-    end
-  end
+  def assert_trust_safe_pointer(output)
+    commands = output.scan(/`([^`]+)`/).flatten
 
-  def write_commands(root)
-    %w[setup validate test].each { |name| write_command(root, name) }
-  end
-
-  def write_command(root, name)
-    path = File.join(root, '.agents/bin', name)
-    File.write(path, "#!/bin/sh\nexit 0\n")
-    File.chmod(0o755, path)
-  end
-
-  def config
-    {
-      'version' => 1, 'base_branch' => 'main',
-      'review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review',
-                    'reviewers' => [{ 'provider' => 'anthropic', 'model_family' => 'claude' }] },
-      'merge' => { 'preference' => 'auto' }
-    }
-  end
-
-  def check_config(root, *)
-    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--root', root, *)
-    raise error unless status.success?
-
-    JSON.parse(output)
-  end
-
-  def commit_repository(root)
-    git!(root, 'init')
-    git!(root, 'add', '.')
-    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'trusted')
-  end
-
-  def git!(root, *)
-    output, status = Open3.capture2e('git', '-C', root, *)
-    raise output unless status.success?
+    assert_includes output, '## Agent Workflow Configuration'
+    assert_includes commands, 'gh repo view --json owner,visibility,defaultBranchRef'
+    refute_includes commands, 'gh repo view OWNER/REPO --json owner,visibility,defaultBranchRef'
+    assert_includes commands, 'shaka seam check --root . --ref SHA'
+    assert_includes commands, 'shaka seam check --root . --local'
+    refute_includes output, 'Shaka V2'
   end
 end

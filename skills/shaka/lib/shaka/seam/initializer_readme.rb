@@ -8,25 +8,38 @@ module Shaka
     module InitializerReadme
       HOME = 'https://github.com/shakacode/shaka'
       DOCS = "#{HOME}/blob/main/docs".freeze
+      LEGACY_README = '.agents/README.md'
 
       private
 
       def readme_source
         <<~MARKDOWN
           #{readme_marker}
-          # `.agents`
+          # `.agents/shaka.md`
 
-          This directory is this repository's contract with the [Shaka](#{HOME}) workflow.
+          Shaka skill #{Shaka::VERSION} (product stage #{Shaka::PRODUCT_STAGE}) owns this pointer.
+          The seam contract is `version: 1`. This file is not repository policy.
 
           | Path | What it is |
           | --- | --- |
           | `agent-workflow.yml` | The typed contract for Shaka-specific workflow policy. Shaka reads it from the trusted default branch, so a pull request cannot grant itself authority by editing its own copy. Live GitHub settings remain authoritative. |
           | `bin/` | Standard wrappers for this repository's setup, validation, and tests. Their fixed names form the portable command interface; they run from the checkout under review, so a pull request that edits one changes what validation executes. |
 
-          Edit `agent-workflow.yml` by hand, then validate it with `shaka seam check --root .`.
-          Validation is strict: unknown keys, unsafe paths, and missing or non-executable
-          scripts fail rather than being ignored. Keep human-only constraints in `AGENTS.md`;
-          this directory holds only typed policy.
+          ## Candidate / local validation (grants no authority)
+
+          `shaka seam check --root . --local`
+
+          Validates the current checkout's YAML and scripts. Without `--ref`, it
+          grants no trusted policy authority.
+
+          ## Trusted policy loading
+
+          Resolve this repository's default branch to an immutable commit SHA, then:
+
+          `shaka seam check --root . --ref SHA`
+
+          That command is fail-closed: omit `--ref` and it cannot load trusted policy.
+          Copy-ready `AGENTS.md` guidance: `shaka seam pointer`.
 
           - [Seam settings](#{DOCS}/settings.md) — every key, its type, and what it controls.
           - [Getting started](#{DOCS}/getting-started.md#initialize-a-repository-seam) — how this directory was created.
@@ -37,6 +50,22 @@ module Shaka
       end
 
       def readme_marker = "<!-- #{Initializer::MARKER} -->"
+
+      def report_legacy_readme
+        path = File.join(@root, LEGACY_README)
+        return unless File.file?(path) && !File.symlink?(path)
+        return unless legacy_generated_readme?(path)
+
+        warn 'shaka: .agents/README.md is a legacy Shaka-generated pointer. Keep it, or ' \
+             'copy useful notes into .agents/shaka.md; seam init will not delete it. ' \
+             'A later explicit migration command may move it after ownership checks.'
+      end
+
+      def legacy_generated_readme?(path)
+        File.read(path, encoding: 'UTF-8').start_with?(readme_marker)
+      rescue Errno::EACCES, Errno::EPERM
+        false
+      end
     end
   end
 end

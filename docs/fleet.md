@@ -16,7 +16,7 @@ Three different identifiers appear in this work. They are not interchangeable:
 
 Predecessor seams have no schema version and use a different set of keys.
 
-`shaka seam init` records the Shaka SemVer in `.agents/README.md`. The fleet table
+`shaka seam init` records the Shaka SemVer in `.agents/shaka.md`. The fleet table
 records the same value so that a repository remains visible even before its migration
 merges. A schema-valid file alone does not prove which Shaka release last reviewed it.
 
@@ -172,7 +172,7 @@ For each selected repository:
 4. Before upgrading Shaka, use the previous trusted installation to check the candidate
    worktree with `shaka seam check --root ROOT --ref OLD_DEFAULT_SHA`. The old trusted
    mapping remains authoritative for this first PR, which is why its paths must remain
-   usable. Separately use the target Shaka version without `--ref` to parse the candidate's
+   usable. Separately use the target Shaka version with `--local` to parse the candidate's
    mapping-free YAML and validate its fixed scripts; this local check grants no authority.
    Run focused checks and full validation, then merge through normal gates.
 5. Upgrade the trusted Shaka installation only after the default branch has the new seam.
