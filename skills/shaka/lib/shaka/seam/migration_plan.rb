@@ -78,7 +78,7 @@ module Shaka
 
         RepositoryConfig::CommandPaths::OPTIONAL.each do |role, path|
           next unless mapping.key?(role)
-          next if command_present?(path) || File.file?(File.join(root, path))
+          next if File.file?(File.join(root, path))
 
           classified.blocking << path
         end

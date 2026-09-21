@@ -391,6 +391,16 @@ class SeamMigrateOptionalCommandTest < Minitest::Test
     end
   end
 
+  def test_from_ref_optional_entry_does_not_replace_the_worktree
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      install_optional_wrapper(root)
+      sha = rewrite_yaml(root) { |data| data.merge('commands' => optional_collision_commands) }
+      File.delete(File.join(root, '.agents/bin/validate-local'))
+
+      assert_includes migrate_report(root, sha).fetch('blocking'), '.agents/bin/validate-local'
+    end
+  end
+
   def test_operational_command_paths_are_not_removable
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => operational_commands) }
