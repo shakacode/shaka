@@ -240,13 +240,12 @@ bound to them: validation requires it for `always` and `meaningful_changes`, and
 different-provider local review already covers the current head, do not wait for that job
 before merge. `thorough` still waits for the named check.
 
-`always` is the exception. The workflow's review phase lets trivial prose or no-op work omit
-review with a recorded reason whatever is set here, and nothing consumes this value to withdraw
-that exemption, so `always` currently behaves exactly like `meaningful_changes`.
+Under `meaningful_changes`, the Verify phase lets trivial prose or no-op work omit review
+with a recorded reason. `always` withdraws that exemption.
 
 | Value | Trigger for the named gate |
 | --- | --- |
-| `always` | Every pull request, with no exemption for trivial work. Not yet distinguished from `meaningful_changes`. |
+| `always` | Every pull request, with no exemption for trivial work. |
 | `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. |
 | `none` | Never. Validation rejects `check`, so the repository declares no named gate. |
 

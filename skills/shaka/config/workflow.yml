@@ -158,7 +158,8 @@ phases:
         fixed first, so the pushed branch costs fewer CI runs and review rounds. What makes the
         review adversarial is the context, not the model: a fresh session that did not produce the
         change is a valid reviewer, including one running the implementation model. Trivial prose
-        or no-op work may omit review with a recorded reason. Fixing a finding changes the head, so
+        or no-op work may omit review with a recorded reason, unless the trusted seam sets
+        `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
