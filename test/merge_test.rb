@@ -196,10 +196,19 @@ class MergeCheckTest < Minitest::Test
   end
 
   def test_empty_or_unknown_check_list_blocks
-    [[], nil, {}].each do |checks|
+    [nil, {}].each do |checks|
       @client.checks = checks
       assert_blocked(/No observable required checks/)
     end
+  end
+
+  def test_empty_required_checks_name_an_unprotected_repository
+    @client.checks = []
+    error = assert_raises(Shaka::Error) { @merge.call(head: HEAD, base: BASE, walkthrough: 17) }
+    assert_match(/unprotected/, error.message)
+    refute_match(/unavailable|unreadable|unknown/, error.message)
+    assert_match(/branch protection|opt-in/i, error.message)
+    assert_empty @client.mutations
   end
 
   def test_failed_pending_cancelled_or_unknown_checks_block
