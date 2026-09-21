@@ -113,6 +113,3 @@ live ownership before `$shaka`.
 Use the installed `$shaka` skill for every selected delivery. Keep one accountable
 owner per issue or PR and preserve existing task, review, validation, and merge
 authority.
-
-See the [control-tower guide](../../docs/control-towers.md) for role boundaries
-and evidence.

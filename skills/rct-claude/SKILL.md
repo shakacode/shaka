@@ -160,5 +160,3 @@ live ownership before `$shaka`.
 
 Use `$shaka` for every selected delivery. Keep one accountable owner per issue or
 PR and preserve existing authority.
-
-See the [control-tower guide](../../docs/control-towers.md).
