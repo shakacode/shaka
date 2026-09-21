@@ -290,8 +290,8 @@ and project tools; Claude Code desktop uses `--with-claude-towers` instead. Omit
 for a terminal install and pass your dedicated skills
 directory instead; for Claude Code, pass `$HOME/.claude/skills`; for Cursor, pass
 `$HOME/.cursor/skills`; for OpenCode, pass `$HOME/.config/opencode/skills`. Historical predecessor
-checkouts used `agent-workflows-v2` or `shakacode-workflows` directory names: keep that location
-and use it as `shaka_source` above. Those names are not a current installer.
+directory names included `agent-workflows-v2` and `shakacode-workflows`. Reuse either location as
+`shaka_source` only after it contains a trusted `shakacode/shaka` checkout. Those names are not a current installer.
 Inspect old `sw` and `aw` symlinks and unlink only those belonging to this installation.
 Replace any old `sw/scripts` shell `PATH` entry with the `shaka/scripts` path above.
 

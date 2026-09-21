@@ -13,6 +13,7 @@ class VersionTest < Minitest::Test
     version = Gem::Version.new(Shaka::VERSION)
 
     assert_predicate version, :prerelease?
+    assert_match(/\A0\.1\.0\.pre\.\d+\z/, version.to_s)
     assert_equal [0, 1, 0], version.segments.take(3)
     assert_operator version, :>, Gem::Version.new('0.0.999')
     refute_operator Gem::Version.new('0.0.1'), :>=, version
