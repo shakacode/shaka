@@ -7,10 +7,12 @@ module Shaka
     # Reads user-level Cursor hooks.json for the stop-hook command; never reads usage payloads.
     class CursorStopHook
       NAME = 'cursor-usage-hook'
-      DEFAULT = File.expand_path('~/.cursor/hooks.json')
+      HOOKS = '~/.cursor/hooks.json'
 
-      def self.installed?(path = DEFAULT)
-        new(path).installed?
+      def self.installed?(path = nil)
+        new(path || File.expand_path(HOOKS)).installed?
+      rescue ArgumentError
+        false
       end
 
       def initialize(path)

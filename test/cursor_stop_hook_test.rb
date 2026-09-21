@@ -39,6 +39,13 @@ class CursorStopHookTest < Minitest::Test
     with_hooks('stop' => [{ 'command' => "\0cursor-usage-hook" }]) { |path| refute installed?(path) }
   end
 
+  # Break: expanding ~/hooks.json at load or as a default argument raises ArgumentError
+  # when HOME cannot be resolved, and Doctor.run does not rescue that for other hosts.
+  def test_an_unresolvable_home_is_not_installed
+    explode = ->(*) { raise ArgumentError, "couldn't find HOME environment" }
+    File.stub(:expand_path, explode) { refute_predicate(Shaka::Doctor::CursorStopHook, :installed?) }
+  end
+
   private
 
   def installed?(path)
