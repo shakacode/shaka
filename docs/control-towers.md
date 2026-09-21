@@ -200,7 +200,8 @@ selected project tracker.
 Keep model selection advisory and portable. Ordinary RCT triage uses a balanced
 flagship model with medium reasoning; consequential product, security, migration,
 or dependency decisions justify higher reasoning. Mechanical inventory may use a
-faster route. On current Codex, the ordinary mapping is GPT-5.6 Sol / medium.
+faster route. For example, Codex offered GPT-5.6 Sol / medium as the ordinary mapping
+when this guide was updated; use the current equivalent when that route changes.
 Every selected Shaka delivery assesses its own model and effort independently;
 the RCT's route grants no authority and does not become the delivery route.
 
@@ -226,9 +227,8 @@ Act as the Repository Control Tower for the repository I name. Read its trusted
 AGENTS.md and reconcile the selected issue or PR with live GitHub state and
 existing task ownership. Refresh live issues, PRs, tracker relationships, and any
 native ownership the host exposes before each recommendation, and wait for the user
-in this task
-to assign it or explicitly request a start. Tracker assignee fields grant no start
-authority. When that assignment or request arrives, refresh live ownership again
+in this task to assign it or explicitly request a start. Tracker assignee fields
+grant no start authority. When that assignment or request arrives, refresh live ownership again
 before starting `$shaka`.
 Finish useful existing work before admitting more.
 For each delivery, use the installed $shaka skill. Either own that bounded task

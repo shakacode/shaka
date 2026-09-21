@@ -126,11 +126,13 @@ phases:
   - id: implement
     title: Implement
     body: |-
-      - Immediately before the first edit for issue or PR work, rerun the saved helper's `claim QUERY`.
+      - Immediately before the first edit, verify again that the selected problem is not fixed,
+        duplicate, or superseded. If it is, report an evidence-backed no-change outcome and stop.
+        For issue or PR work, then rerun the saved helper's `claim QUERY`.
         Treat the PR and branch this task already recorded as its own continuation. On any other
-        hit, report the collision and stop for a decision unless the user already authorized a
-        comparison or override. Where the host has a live native task registry, also refresh
-        that ownership; if another owner now holds the work and the user has not explicitly
+        hit, report the collision and stop for a decision unless the user already authorized
+        proceeding with that specific hit. Where the host has a live native task registry, also
+        refresh that ownership; if another owner now holds the work and the user has not explicitly
         transferred ownership to this task, report it and stop for the user's decision instead
         of starting a second writer. On hosts without that facility, the claim result remains the
         portable collision check.
