@@ -215,7 +215,9 @@ class SeamMigrateApplyTest < Minitest::Test
     assert_retired_keys_removed(config)
     assert_equal 'ask', config.dig('merge', 'preference')
     assert_pointer_and_wrappers(root, wrapper)
-    assert_includes report.fetch('rollback'), 'rm -f .agents/shaka.md'
+    resolved = File.realpath(root)
+    assert_includes report.fetch('rollback'), "git -C #{resolved}"
+    assert_includes report.fetch('rollback'), "rm -f #{File.join(resolved, '.agents/shaka.md')}"
   end
 
   def assert_retired_keys_removed(config)
@@ -327,5 +329,44 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
 
   def review_check_flags
     ['--review-policy', 'always', '--review-check', 'example-review']
+  end
+end
+
+class SeamMigrateOptionalCommandTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  def test_optional_command_collision_names_the_hyphenated_entry
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('commands' => optional_collision_commands) }
+      collisions = migrate_report(root, sha).fetch('command_collisions')
+      collision = collisions.find { |item| item.fetch('role') == 'validate_local' }
+
+      refute_nil collision
+      assert_includes collision.fetch('temporary_behavior'), 'script/fast'
+      assert_includes collision.fetch('temporary_behavior'), '.agents/bin/validate-local'
+    end
+  end
+
+  def test_missing_optional_entry_point_blocks_apply
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('commands' => optional_collision_commands) }
+      before = snapshot(root)
+      report = migrate_report(root, sha)
+
+      assert_includes report.fetch('blocking'), '.agents/bin/validate-local'
+      _output, error, status = migrate(root, sha, '--apply')
+      refute_predicate status, :success?
+      assert_includes error, 'validate-local'
+      assert_equal before, snapshot(root)
+    end
+  end
+
+  def optional_collision_commands
+    {
+      'setup' => '.agents/bin/setup',
+      'validate' => '.agents/bin/validate',
+      'test' => '.agents/bin/test',
+      'validate_local' => 'script/fast'
+    }
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'shellwords'
 require_relative '../repository_config'
 require_relative 'field_classifier'
 require_relative 'migration_policy'
@@ -16,6 +17,7 @@ module Shaka
       def build_report
         classified = FieldClassifier.new(@data).call
         overlay_explicit_policy(classified)
+        require_optional_entry_points(classified)
         report_body(classified)
       end
 
@@ -48,10 +50,10 @@ module Shaka
       end
 
       def rollback_recipe
-        restore = "git checkout #{@sha} -- #{RepositoryConfig::PATH}"
+        restore = "git -C #{Shellwords.escape(root)} checkout #{@sha} -- #{RepositoryConfig::PATH}"
         return "#{restore} .agents/shaka.md" if command_present?('.agents/shaka.md')
 
-        "#{restore} && rm -f .agents/shaka.md"
+        "#{restore} && rm -f #{Shellwords.escape(File.join(root, '.agents/shaka.md'))}"
       end
 
       def command_inventory
@@ -69,7 +71,7 @@ module Shaka
         mapping = command_mapping
         return [] unless mapping
 
-        %w[setup validate test].filter_map { |role| collision_for(role, mapping) }
+        RepositoryConfig::CommandPaths::ALL.keys.filter_map { |role| collision_for(role, mapping) }
       end
 
       def command_mapping
@@ -77,7 +79,7 @@ module Shaka
       end
 
       def collision_for(role, mapping)
-        expected = RepositoryConfig::CommandPaths::REQUIRED.fetch(role)
+        expected = RepositoryConfig::CommandPaths::ALL.fetch(role)
         actual = mapping[role]
         return if actual.nil? || actual == expected
 
@@ -86,14 +88,36 @@ module Shaka
 
       def collision_behavior(role, mapping)
         return setup_collision_behavior(mapping.fetch(role)) if role == 'setup'
+        return optional_collision_behavior(role, mapping.fetch(role)) if optional_role?(role)
 
         targets = [mapping['validate'], mapping['test']].compact.uniq.join(' and ')
         'Until the new seam is trusted, use the stricter superset: both .agents/bin/validate and ' \
           ".agents/bin/test must execute #{targets}"
       end
 
+      def optional_role?(role)
+        RepositoryConfig::CommandPaths::OPTIONAL.key?(role)
+      end
+
       def setup_collision_behavior(actual)
         "Keep #{actual} reachable from .agents/bin/setup until the new seam is trusted"
+      end
+
+      def optional_collision_behavior(role, actual)
+        expected = RepositoryConfig::CommandPaths::OPTIONAL.fetch(role)
+        "Keep #{actual} reachable from #{expected} until the new seam is trusted"
+      end
+
+      def require_optional_entry_points(classified)
+        mapping = command_mapping
+        return unless mapping
+
+        RepositoryConfig::CommandPaths::OPTIONAL.each do |role, path|
+          next unless mapping.key?(role)
+          next if command_present?(path)
+
+          classified.blocking << path
+        end
       end
 
       def validation_notes
