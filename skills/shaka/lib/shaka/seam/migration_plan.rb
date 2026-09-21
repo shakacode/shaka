@@ -43,9 +43,15 @@ module Shaka
       def validation_report
         {
           'validation' => validation_notes,
-          'rollback' => "Restore predecessor files with git checkout #{@sha} -- " \
-                        "#{RepositoryConfig::PATH} .agents/shaka.md .agents/bin"
+          'rollback' => rollback_recipe
         }
+      end
+
+      def rollback_recipe
+        restore = "git checkout #{@sha} -- #{RepositoryConfig::PATH}"
+        return "#{restore} .agents/shaka.md" if command_present?('.agents/shaka.md')
+
+        "#{restore} && rm -f .agents/shaka.md"
       end
 
       def command_inventory

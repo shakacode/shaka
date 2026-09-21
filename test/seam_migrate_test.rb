@@ -215,7 +215,7 @@ class SeamMigrateApplyTest < Minitest::Test
     assert_retired_keys_removed(config)
     assert_equal 'ask', config.dig('merge', 'preference')
     assert_pointer_and_wrappers(root, wrapper)
-    assert_includes report.fetch('rollback'), '.agents/shaka.md'
+    assert_includes report.fetch('rollback'), 'rm -f .agents/shaka.md'
   end
 
   def assert_retired_keys_removed(config)
