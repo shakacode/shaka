@@ -133,7 +133,8 @@ proof of ownership, authorization, or completion.
 
 After `$rct` or `/rct-claude` registration completes, give a read-only
 recommendation from a fresh read of live issues, PRs, tracker relationships, and
-native task ownership, not from the setup-time inventory. Reread this section
+any native task ownership the host exposes, not from the setup-time inventory.
+Reread this section
 before that first recommendation and before every later one, including after a
 delivery finishes or blocks, after a PR completes or opens, and when the user
 reports a material priority change.
@@ -144,8 +145,8 @@ start authority. The
 recommendation does not mutate tracker state, create workers, start
 implementation, or change merge authority because it found work. Reconcile
 existing owners, explicit pauses, and active PRs before admitting new work.
-When that assignment or request arrives, refresh live ownership again before
-starting `$shaka`.
+When that assignment or request arrives, refresh live ownership again where the
+host exposes it before starting `$shaka`.
 If another owner now holds the candidate and the user has not explicitly transferred
 ownership to this task, continue through that owner instead of starting a second
 writer. Each selected delivery continues through the installed `$shaka` skill with
@@ -222,8 +223,9 @@ Give the repository's existing task this role and its selected work:
 ```text
 Act as the Repository Control Tower for the repository I name. Read its trusted
 AGENTS.md and reconcile the selected issue or PR with live GitHub state and
-existing task ownership. Refresh live issues, PRs, tracker relationships, and
-native ownership before each recommendation, and wait for the user in this task
+existing task ownership. Refresh live issues, PRs, tracker relationships, and any
+native ownership the host exposes before each recommendation, and wait for the user
+in this task
 to assign it or explicitly request a start. Tracker assignee fields grant no start
 authority. When that assignment or request arrives, refresh live ownership again
 before starting `$shaka`.
