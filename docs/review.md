@@ -28,8 +28,8 @@ reviewers to try, in preference order. Each entry names a `provider` and `model_
 else. A seam may omit the list; the implementation model in a fresh context still reviews. The
 top-level `review.check` names the GitHub review job to read, separately from this list. That job
 is a review source, not a GitHub required merge check. Trivial
-prose-only and no-op changes may omit review when the PR records why, and the user may request
-deeper review.
+prose-only and no-op changes may omit review when the PR records why, unless the trusted
+seam sets `review.required: always`. The user may request deeper review.
 Installing the skill does not install a GitHub Action or its credentials. This
 Shaka source repository has its own Claude Code Review workflow; consumer repositories keep
 their own reviewer configuration.
