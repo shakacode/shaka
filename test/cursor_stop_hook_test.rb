@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'minitest/mock'
 require 'shaka/doctor/cursor_stop_hook'
 
 # Doctor must fail a missing stop command, not a missing this-chat usage file.
