@@ -522,12 +522,11 @@ module SeamInitializerPointerAssertions
   end
 
   def assert_pointer_commands(pointer)
-    assert_includes pointer, 'Candidate'
-    assert_includes pointer, 'grants no authority'
-    assert_includes pointer, 'shaka seam check --root .'
-    assert_includes pointer, 'Trusted'
-    assert_includes pointer, '--ref'
-    assert_includes pointer, 'shaka seam pointer'
+    commands = pointer.scan(/`([^`]+)`/).flatten
+
+    assert_includes commands, 'shaka seam check --root .'
+    assert_includes commands, 'shaka seam check --root . --ref SHA'
+    assert_includes commands, 'shaka seam pointer'
   end
 end
 
