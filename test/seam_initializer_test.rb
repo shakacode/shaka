@@ -488,6 +488,13 @@ module SeamInitializerPointerAssertions
     path
   end
 
+  def with_unreadable(path)
+    File.chmod(0o000, path)
+    yield
+  ensure
+    File.chmod(0o644, path)
+  end
+
   def plant_legacy_readme(root)
     path = File.join(root, '.agents/README.md')
     original = "#{readme_marker_line}\nlegacy pointer from Shaka 0.0.1.pre.0\n"
@@ -630,6 +637,19 @@ class SeamInitializerReadmeCoexistenceTest < Minitest::Test
       assert_legacy_readme_report(error)
       assert_path_exists File.join(root, '.agents/shaka.md')
       assert_complete_seam(root, output)
+    end
+  end
+
+  # Break: an unreadable leftover README raises during the post-write advisory
+  # and leaves a complete seam behind a failed init.
+  def test_init_succeeds_when_an_existing_readme_is_unreadable
+    with_repository do |root|
+      with_unreadable(write_foreign_readme(root)) do
+        output, error, status = init(root)
+
+        assert_predicate status, :success?, error
+        assert_complete_seam(root, output)
+      end
     end
   end
 end

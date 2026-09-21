@@ -54,11 +54,17 @@ module Shaka
       def report_legacy_readme
         path = File.join(@root, LEGACY_README)
         return unless File.file?(path) && !File.symlink?(path)
-        return unless File.read(path, encoding: 'UTF-8').start_with?(readme_marker)
+        return unless legacy_generated_readme?(path)
 
         warn 'shaka: .agents/README.md is a legacy Shaka-generated pointer. Keep it, or ' \
              'copy useful notes into .agents/shaka.md; seam init will not delete it. ' \
              'A later explicit migration command may move it after ownership checks.'
+      end
+
+      def legacy_generated_readme?(path)
+        File.read(path, encoding: 'UTF-8').start_with?(readme_marker)
+      rescue Errno::EACCES, Errno::EPERM
+        false
       end
     end
   end
