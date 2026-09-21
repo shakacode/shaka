@@ -1,0 +1,233 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'fileutils'
+require 'json'
+require 'yaml'
+
+module SeamMigrateHelpers
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  FIXTURES = File.expand_path('fixtures/seam_migrate', __dir__)
+
+  private
+
+  def migrate(root, sha, *flags)
+    Open3.capture3(COMMAND, 'seam', 'migrate', '--root', root, '--from-ref', sha, *flags)
+  end
+
+  def migrate_report(root, sha, *flags)
+    output, error, status = migrate(root, sha, *flags)
+    assert_predicate status, :success?, error
+    JSON.parse(output)
+  end
+
+  def with_legacy_repository(fixture)
+    Dir.mktmpdir('shaka-seam-migrate') do |root|
+      install_wrappers(root)
+      File.write(File.join(root, '.agents/agent-workflow.yml'), File.read(File.join(FIXTURES, fixture)))
+      sha = commit_repository(root)
+      yield root, sha, snapshot(root)
+    end
+  end
+
+  def install_wrappers(root)
+    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    %w[setup validate test].each do |name|
+      path = File.join(root, '.agents/bin', name)
+      File.write(path, "#!/bin/sh\nexit 0\n")
+      File.chmod(0o755, path)
+    end
+  end
+
+  def rewrite_yaml(root)
+    path = File.join(root, '.agents/agent-workflow.yml')
+    data = YAML.safe_load_file(path)
+    File.write(path, YAML.dump(yield(data)))
+    commit_repository(root)
+  end
+
+  def snapshot(root)
+    paths = Dir.glob(File.join(root, '**/*'), File::FNM_DOTMATCH)
+    paths.reject { |path| File.directory?(path) || path.include?('/.git/') }.to_h do |path|
+      [path, [File.read(path), File.stat(path).mode & 0o777]]
+    end
+  end
+
+  def commit_repository(root)
+    git!(root, 'init') unless File.directory?(File.join(root, '.git'))
+    git!(root, 'add', '.')
+    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'trusted')
+    sha, status = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD')
+    raise 'rev-parse failed' unless status.success?
+
+    sha.strip
+  end
+
+  def git!(root, *)
+    output, status = Open3.capture2e('git', '-C', root, *)
+    raise output unless status.success?
+  end
+end
+
+class SeamMigrateHelpTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  def test_help_lists_migrate
+    output, error, status = Open3.capture3(COMMAND, 'seam', 'check', '--help')
+
+    assert_predicate status, :success?, error
+    assert_includes output, 'shaka seam migrate'
+  end
+
+  def test_plan_and_apply_cannot_be_combined
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+      _output, error, status = migrate(root, sha, '--plan', '--apply')
+
+      refute_predicate status, :success?
+      assert_includes error, '--apply'
+    end
+  end
+end
+
+class SeamMigratePlanTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  def test_plan_is_the_default_and_writes_nothing
+    with_legacy_repository('react_on_rails_shape.yml') do |root, sha, before|
+      report = migrate_report(root, sha)
+      validation = report.fetch('validation')
+
+      assert_equal 'plan', report.fetch('mode')
+      assert_equal before, snapshot(root)
+      refute_empty validation.fetch('previous_trusted_ref')
+      refute_empty validation.fetch('candidate_local')
+      refute_equal validation.fetch('previous_trusted_ref'), validation.fetch('candidate_local')
+    end
+  end
+
+  def test_react_on_rails_shape_classifies_fields_without_inferring_review_or_merge
+    with_legacy_repository('react_on_rails_shape.yml') do |root, sha|
+      report = migrate_report(root, sha)
+
+      assert_ror_classification(report)
+      refute report.fetch('established').key?('review')
+      refute report.fetch('established').key?('merge')
+    end
+  end
+
+  def test_control_plane_flow_shape_retires_github_facts_and_keeps_typed_policy
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+      report = migrate_report(root, sha)
+
+      assert_cpf_classification(report)
+      assert_equal 'none', report.dig('established', 'review', 'required')
+      assert_equal 'ask', report.dig('established', 'merge', 'preference')
+    end
+  end
+
+  def test_command_role_collision_chooses_the_stricter_temporary_behavior
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('commands' => swapped_commands) }
+      collision = migrate_report(root, sha).fetch('command_collisions').find { |item| item.fetch('role') == 'test' }
+
+      refute_nil collision
+      assert_includes collision.fetch('temporary_behavior'), 'stricter'
+      assert_includes collision.fetch('temporary_behavior'), '.agents/bin/validate'
+    end
+  end
+
+  private
+
+  def assert_ror_classification(report)
+    assert_includes report.fetch('retained'), 'base_branch'
+    assert_includes report.fetch('moved_to_agents'), 'review_gate'
+    assert_includes report.fetch('moved_to_operational_config'), 'hosted_ci_trigger'
+    assert_includes report.fetch('retired'), 'coordination_backend'
+    assert_includes report.fetch('blocking'), 'review.required'
+    assert_includes report.fetch('blocking'), 'merge.preference'
+  end
+
+  def assert_cpf_classification(report)
+    assert_includes report.fetch('retained'), 'review.required'
+    assert_includes report.fetch('retired'), 'commands'
+    assert_includes report.fetch('retired'), 'protection'
+    assert_includes report.fetch('retired'), 'merge.method'
+    assert_includes report.fetch('moved_to_operational_config'), 'trusted_actions'
+    assert_empty report.fetch('blocking')
+  end
+
+  def swapped_commands
+    { 'setup' => '.agents/bin/setup', 'validate' => '.agents/bin/test', 'test' => '.agents/bin/validate' }
+  end
+end
+
+class SeamMigrateApplyTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  def test_unknown_keys_block_rather_than_guess
+    with_legacy_repository('react_on_rails_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('mystery_policy' => 'do-not-guess') }
+
+      assert_includes migrate_report(root, sha).fetch('blocking'), 'mystery_policy'
+      _output, error, status = migrate(root, sha, '--apply', '--review-policy', 'none', '--merge-preference', 'ask')
+      refute_predicate status, :success?
+      assert_includes error, 'mystery_policy'
+    end
+  end
+
+  def test_apply_refuses_when_review_or_merge_cannot_be_established
+    with_legacy_repository('react_on_rails_shape.yml') do |root, sha, before|
+      _output, error, status = migrate(root, sha, '--apply')
+
+      refute_predicate status, :success?
+      assert_includes error, 'review.required'
+      assert_equal before, snapshot(root)
+    end
+  end
+
+  def test_apply_is_atomic_when_a_destination_already_exists
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+      yaml = File.read(File.join(root, '.agents/agent-workflow.yml'))
+      File.write(File.join(root, '.agents/shaka.md'), "repository owned pointer\n")
+      _output, error, status = migrate(root, sha, '--apply')
+
+      refute_predicate status, :success?
+      assert_includes error, '.agents/shaka.md'
+      assert_equal "repository owned pointer\n", File.read(File.join(root, '.agents/shaka.md'))
+      assert_equal yaml, File.read(File.join(root, '.agents/agent-workflow.yml'))
+    end
+  end
+
+  def test_apply_writes_a_typed_seam_and_keeps_repository_wrappers
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+      wrapper = File.read(File.join(root, '.agents/bin/validate'))
+      report = migrate_report(root, sha, '--apply')
+      config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+
+      assert_typed_apply(root, report, config, wrapper)
+    end
+  end
+
+  private
+
+  def assert_typed_apply(root, report, config, wrapper)
+    assert_equal 'apply', report.fetch('mode')
+    assert_retired_keys_removed(config)
+    assert_equal 'ask', config.dig('merge', 'preference')
+    assert_pointer_and_wrappers(root, wrapper)
+    assert_includes report.fetch('rollback'), 'git checkout'
+  end
+
+  def assert_retired_keys_removed(config)
+    assert_equal 1, config.fetch('version')
+    refute config.key?('commands')
+    refute config.key?('protection')
+    refute config.dig('merge', 'method')
+  end
+
+  def assert_pointer_and_wrappers(root, wrapper)
+    assert_includes File.read(File.join(root, '.agents/shaka.md')), '0.1.0.pre.1'
+    refute_includes File.read(File.join(root, '.agents/shaka.md')), '.agents/README.md'
+    assert_equal wrapper, File.read(File.join(root, '.agents/bin/validate'))
+  end
+end
