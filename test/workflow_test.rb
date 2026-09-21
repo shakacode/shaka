@@ -32,8 +32,11 @@ class WorkflowConfigTest < Minitest::Test
       phase.fetch('id') == 'implement'
     end
 
-    assert_includes implement.fetch('body'), 'stop before Verify'
+    body = implement.fetch('body')
+
+    assert_includes body, 'stop before Verify'
     assert_includes implement.fetch('done_when'), 'no-change outcome'
+    assert_operator body.index('verify the selected problem'), :<, body.index('claim the work item')
   end
 
   def test_rejects_duplicate_keys
