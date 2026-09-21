@@ -24,4 +24,12 @@ class ReviewerIdentityTest < Minitest::Test
     assert_equal({ 'provider' => 'openai', 'model_family' => 'codex' },
                  Shaka::ReviewerSelection.parse('openai/codex'))
   end
+
+  def test_rejects_an_identity_with_embedded_control_whitespace
+    ["openai/co\ndex", "openai/co\rdex", "openai/co\tdex"].each do |text|
+      error = assert_raises(Shaka::Error) { Shaka::ReviewerSelection.parse(text) }
+
+      assert_includes error.message, 'PROVIDER/MODEL_FAMILY'
+    end
+  end
 end
