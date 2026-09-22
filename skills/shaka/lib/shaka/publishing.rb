@@ -38,7 +38,7 @@ module Shaka
     def prepared_reply(target, mark, trust_config, machine_path)
       account = viewer
       listed = replies(target)
-      PublicComments::ReplyGuard.new(self, trust_config:, machine_path:).check(listed, target)
+      PublicComments::ReplyGuard.new(self, trust_config:, machine_path:).check(listed, target, account)
       listed.find { |reply| ours?(reply, mark, account) && (!target || reply['in_reply_to_id'] == target) }
     end
 

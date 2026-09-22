@@ -138,7 +138,7 @@ class GitHubReplyTest < Minitest::Test
                 thread_comment(id: 4_031_740_163, author: 'reviewer', body: 'finding')]
     github = public_reply_client(comments, posted)
     github.reply(body: BODY, key: 'fix-1', comment: 4_031_740_163,
-                 trust_config: trusted_authors('reviewer', 'shaka-bot'))
+                 trust_config: trusted_authors('reviewer'))
     assert_equal ['PATCH', true], [sent_method(5), call_text(5).include?('pulls/comments/7')]
   end
 

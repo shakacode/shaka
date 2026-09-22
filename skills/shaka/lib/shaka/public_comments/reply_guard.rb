@@ -17,14 +17,13 @@ module Shaka
         @machine_path = machine_path
       end
 
-      def check(listed, target)
+      def check(listed, target, account)
         return unless target
+        return unless public?
 
         participants = participants_for(listed, target)
         require_root(participants, target)
-        return unless public?
-
-        refuse(excluded(participants, target))
+        refuse(excluded(participants, target, account))
       end
 
       private
@@ -52,10 +51,18 @@ module Shaka
         visibility == 'public'
       end
 
-      def excluded(participants, target)
+      def excluded(participants, target, account)
+        others = participants.reject { |item| own_comment?(item, account) }
+        return [] if others.empty?
+
         Authors.new(@github, public_repo: true, trust_config: config).screen(
-          { 'inline_comments' => participants }, thread_index: index(participants, target)
+          { 'inline_comments' => others }, thread_index: index(others, target)
         ).fetch('excluded_interactions')
+      end
+
+      def own_comment?(item, account)
+        user = item['user']
+        user.is_a?(Hash) && user['login'] == account
       end
 
       def config
