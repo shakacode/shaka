@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require_relative '../lib/shaka/public_comments/fetch_guard'
+
+begin
+  payload = JSON.parse($stdin.read)
+  command = payload['command'] if payload.is_a?(Hash)
+  decision = if command.is_a?(String) && !Shaka::PublicComments::FetchGuard.denied?(command)
+               { 'permission' => 'allow' }
+             else
+               Shaka::PublicComments::FetchGuard.denial
+             end
+rescue JSON::ParserError
+  decision = Shaka::PublicComments::FetchGuard.denial
+end
+puts JSON.generate(decision)

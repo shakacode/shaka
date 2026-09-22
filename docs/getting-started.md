@@ -121,6 +121,22 @@ changing hooks. `shaka usage` then reads `CURSOR_CONVERSATION_ID` against
 record yet; doctor degrades until that file exists and fails only when the
 stop command is missing. See [usage reporting](usage-reporting.md#what-the-cursor-reader-includes).
 
+To keep excluded comment bodies out of a shell command, add this to the
+`beforeShellExecution` array in the same file, without removing other hooks:
+
+```json
+{
+  "command": "skills/shaka/scripts/cursor-comment-hook",
+  "matcher": "\\bgh\\b|\\bcurl\\b|\\bwget\\b",
+  "failClosed": true
+}
+```
+
+The hook denies `gh`, `curl`, and `wget` reads of issue comments, pull-request
+reviews, and inline review comments. `shaka comments` remains the read that
+withholds excluded bodies. Start a new Agent chat after adding it. A command
+the guard does not recognize still runs.
+
 <a id="use-shaka-in-opencode"></a>
 
 ## Install in OpenCode
