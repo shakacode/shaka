@@ -38,9 +38,11 @@ module Shaka
       end
 
       def require_root(participants, target)
-        return if participants.any? { |item| item['id'] == target }
+        root = participants.find { |item| item['id'] == target }
+        raise Error, 'Inline thread root is not in the comment list. No comment was posted.' unless root
+        return if root['in_reply_to_id'].nil?
 
-        raise Error, 'Inline thread root is not in the comment list. No comment was posted.'
+        raise Error, 'Inline reply target must be the thread root. No comment was posted.'
       end
 
       def public?
