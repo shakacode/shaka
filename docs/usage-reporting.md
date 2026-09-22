@@ -50,7 +50,7 @@ local records do not establish the model that executed each response.
 
 The report also shows **rate-card scenarios** for the providers and models
 in that snapshot: Standard Codex credits and Standard API-equivalent USD for
-supported OpenAI models, Cursor on-demand USD for Grok 4.6, and Anthropic list-price
+supported OpenAI models, Cursor on-demand USD for Grok 4.6 and Grok 4.7, and Anthropic list-price
 USD for supported Claude models. The first three price the configured model. The
 Anthropic scenario prices whichever of the routed or configured model it has a rate
 for, taking the routed one first, because Claude Code records no configured model.
@@ -139,6 +139,10 @@ absent from these parent-agent events. A Cursor adversarial review is a differen
 conversation: report it with `--contribution review` and that chat's stop-hook file.
 
 The reader was exercised against desktop `3.20.21` hook payloads for `grok-4.6`.
+Desktop `3.21.16` `grok-4.7` stop payloads use model id `grok-4.7` and record effort as
+`reasoning_effort`, which the reader accepts when `effort` is absent. They also include
+a `context` param. That value is not a price. Cursor Agent Skills are selected by the
+host for both models; both model pages list the full agent tool set.
 Install the hook as described in [getting started](getting-started.md#use-shaka-in-cursor).
 Without persisted stop records, token counters stay UNKNOWN, the report names
 `usage reader unavailable: no readable Cursor stop-hook records`, and an inferred
@@ -151,8 +155,11 @@ degrades: that is expected until the first `stop` event. Missing usage still
 does not block an otherwise authorized merge.
 
 When the `fast` model param is present, the cost table also shows a configured-model
-on-demand USD scenario for `grok-4.6` and `grok-4.6-fast` using Cursor's published
-list prices verified September 16, 2026. Cursor-only reports omit the unused Codex
+on-demand USD scenario for `grok-4.6`, `grok-4.6-fast`, `grok-4.7`, and `grok-4.7-fast`
+using Cursor's published list prices verified September 21, 2026. Grok 4.7 input above
+256k tokens uses twice the standard rates, and Fast Grok 4.7 at that length uses three
+times the standard rates. The threshold uses that generation's reported input total.
+Grok 4.6 has no long-context multiplier. Cursor-only reports omit the unused Codex
 credits row. Cache writes have no published Cursor rate, so they remain inside
 ordinary input. Missing Fast/standard billing mode or an unsupported Cursor model
 keeps the scenario UNKNOWN and omits Cursor rate-card copy. The dollar amount is that list-price scenario, not an

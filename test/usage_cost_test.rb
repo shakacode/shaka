@@ -153,12 +153,45 @@ class UsageCursorCostTest < Minitest::Test
     assert_metric report, 'USD estimate', '$0.400000'
     refute_includes report, '$0.800000'
     refute_includes report, '272K'
+    refute_includes report, '256K'
+  end
+
+  def test_cursor_grok_47_prices_the_standard_card_below_256k
+    report = Shaka::CostEstimate.new([cursor_record(model: 'grok-4.7')]).report
+    assert_metric report, 'Metric', 'grok-4.7'
+    assert_metric report, 'USD estimate', '$0.000260'
+    assert_includes report, 'cursor.com/docs/models/grok-4-7'
+    assert_includes report, '2026-09-21'
+    refute_includes report, 'grok-4-6'
+    refute_includes report, '256K'
+  end
+
+  def test_cursor_grok_47_keeps_the_base_rate_at_256k_and_prices_fast
+    report = Shaka::CostEstimate.new([cursor_record(model: 'grok-4.7', usage: zero_usage(256_000))]).report
+    assert_metric report, 'USD estimate', '$0.512000'
+    refute_includes report, '256K'
+    report = Shaka::CostEstimate.new([cursor_record(model: 'grok-4.7', billing: 'fast')]).report
+    assert_metric report, 'USD estimate', '$0.000520'
+  end
+
+  def test_cursor_grok_47_long_context_scales_standard_and_fast_from_the_standard_card
+    usage = zero_usage(256_001).merge('cached_input_tokens' => 1_000)
+    report = Shaka::CostEstimate.new([cursor_record(model: 'grok-4.7', usage: usage)]).report
+    assert_metric report, 'USD estimate', '$1.021004'
+    assert_includes report, '256K context threshold'
+    report = Shaka::CostEstimate.new([cursor_record(model: 'grok-4.7', billing: 'fast', usage: usage)]).report
+    assert_metric report, 'USD estimate', '$1.531506'
+    refute_includes report, '272K'
   end
 
   private
 
-  def cursor_record(billing: 'standard', usage: {})
-    { 'configuration' => %w[cursor grok-4.6 cursor-grok-4.6-medium medium],
+  def zero_usage(input)
+    { 'input_tokens' => input, 'cached_input_tokens' => 0, 'cache_write_input_tokens' => 0, 'output_tokens' => 0 }
+  end
+
+  def cursor_record(billing: 'standard', model: 'grok-4.6', usage: {})
+    { 'configuration' => ['cursor', model, "cursor-#{model}-medium", 'medium'],
       'billing_mode' => billing,
       'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 40,
                    'cache_write_input_tokens' => 7, 'output_tokens' => 20 }.merge(usage) }
