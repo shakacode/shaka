@@ -203,6 +203,32 @@ After editing the YAML, validate that candidate with
 need schema validation in GitHub Actions should pin a published gem rather than copying
 Shaka's parser; see [Validate a consumer seam in CI](packaging.md#validate-a-consumer-seam-in-ci).
 
+## Migrate an existing seam
+
+`shaka seam init` refuses an established repository. Plan a conversion from an immutable
+predecessor commit, then apply only when the report has no blocking fields:
+
+```bash
+"$HOME/.agents/skills/shaka/scripts/shaka" seam migrate \
+  --root /path/to/repository \
+  --from-ref OLD_DEFAULT_SHA
+"$HOME/.agents/skills/shaka/scripts/shaka" seam migrate \
+  --root /path/to/repository \
+  --from-ref OLD_DEFAULT_SHA \
+  --apply
+```
+
+Planning writes nothing. It classifies every predecessor key as retained, moved to
+`AGENTS.md`, moved to operational config, retired as a live GitHub fact, or blocking.
+Unknown keys and missing review or merge policy block apply rather than guessing; pass
+`--review-policy`, `--review-check`, and `--merge-preference` only when the old file
+cannot establish those values. Apply replaces `.agents/agent-workflow.yml` when it still
+matches the from-ref bytes, writes `.agents/shaka.md` when absent, and leaves
+repository-owned wrappers and docs in place. A conflict rolls every write back. The
+report keeps previous-version `seam check --ref` distinct from target-version
+`seam check --local`. Use the previous Shaka installation for that `--ref` check before
+merge, as the [fleet checklist](fleet.md#migration-checklist) requires.
+
 ## Check your setup
 
 `shaka doctor` reports, in one pass, whether this machine can run the workflow and

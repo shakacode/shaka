@@ -164,13 +164,18 @@ For each selected repository:
    the PR; preserve it in the typed seam, `AGENTS.md`, or its dedicated config, or explain why it is
    intentionally retired.
 3. Do not run `shaka seam init` over the existing seam: the initializer is for a new
-   repository and refuses conflicting YAML or wrappers. Follow the settings guide's
-   [ordered migration](settings.md#standard-command-scripts): write the mapping-free YAML
-   by hand, add the fixed scripts, and retain temporary adapters at old mapped paths.
+   repository and refuses conflicting YAML or wrappers. Plan the conversion with
+   `shaka seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA`, then apply only with
+   `--apply` after the report names every retained, moved, retired, and blocking field.
+   The planner never infers merge authority, review policy, or missing commands. Follow
+   the settings guide's
+   [ordered migration](settings.md#standard-command-scripts): keep repository-owned
+   wrappers, add missing fixed scripts only when the report says they are absent, and
+   retain temporary adapters at old mapped paths.
    Where old and new meanings collide, use the stricter behavior at both paths until the
    new seam is trusted.
-   Record the target Shaka SemVer in the adoption PR and fleet table; the current
-   initializer has no in-place migration command.
+   Record the target Shaka SemVer in `.agents/shaka.md`, the adoption PR, and this fleet
+   table. Do not write `.agents/README.md`.
 4. Before upgrading Shaka, use the previous trusted installation to check the candidate
    worktree with `shaka seam check --root ROOT --ref OLD_DEFAULT_SHA`. The old trusted
    mapping remains authoritative for this first PR, which is why its paths must remain
