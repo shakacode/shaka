@@ -351,6 +351,13 @@ class LocalEvaluationProbePreflightTest < Minitest::Test
     end
   end
 
+  def test_preflight_rejects_a_repository_with_a_backslash
+    with_preflight(denied_ssh, stdin_data: 'shakacode/private\\sibling') do |_out, err, status|
+      refute_predicate status, :success?
+      assert_match(%r{private sibling repository must be OWNER/REPOSITORY}, err)
+    end
+  end
+
   def test_preflight_requires_a_sibling_in_the_target_owner
     with_preflight(denied_ssh, stdin_data: 'other/private-sibling') do |_out, err, status|
       refute_predicate status, :success?

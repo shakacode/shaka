@@ -54,14 +54,17 @@ rescue StandardError => e
   warn e.message
 end
 
-def read_secret
-  if $stdin.tty?
+def read_terminal_secret
+  value = $stdin.noecho do |input|
     $stderr.print 'Scoped PAT: '
-    value = $stdin.noecho(&:gets)
-    $stderr.puts
-  else
-    value = $stdin.read
+    input.gets
   end
+  $stderr.puts
+  value
+end
+
+def read_secret
+  value = $stdin.tty? ? read_terminal_secret : $stdin.read
   value = value.to_s.strip
   raise 'Scoped PAT is required on stdin' if value.empty?
 
