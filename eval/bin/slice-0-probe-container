@@ -75,6 +75,13 @@ def exists?(*command)
   system(*command, out: File::NULL, err: File::NULL)
 end
 
+def owns_container?(container, name, ownership)
+  stdout, _stderr, status = Open3.capture3(*container.container_owner_command(name))
+  status.success? && stdout.strip == ownership
+rescue StandardError
+  false
+end
+
 begin
   parser.parse!(ARGV)
   command, name, target, login = ARGV
@@ -92,12 +99,18 @@ begin
     owned = false
     operation_error = nil
     begin
-      create_command = container.create_command(name)
+      ownership = Process.pid.to_s
+      create_command = container.create_command(name, ownership:)
       raise 'Refusing to replace an existing probe container' if exists?(*container.container_inspect_command(name))
 
       run!(*container.build_command)
-      run!(*create_command)
-      owned = true
+      begin
+        run!(*create_command)
+        owned = true
+      rescue StandardError, Interrupt
+        owned = owns_container?(container, name, ownership)
+        raise
+      end
       run!(*container.start_command(name))
       run!(*container.prepare_command(name))
       warn 'probe container ready; authenticate and preflight from a second terminal'
@@ -126,6 +139,9 @@ begin
     visibility = capture!(*container.owner_repository_command(private_repository))
     raise 'Owner-side GitHub identity must differ from the machine identity' if owner_login.casecmp?(login)
     raise 'Owner could not verify that the sibling repository is private' unless visibility == 'private'
+    unless exists?(*container.owner_membership_command(target:, login:))
+      raise 'Owner could not verify active organization membership for the machine identity'
+    end
 
     run_with_stdin!("#{private_repository}\n", *container.preflight_command(name, target:, login:))
   when 'cleanup'

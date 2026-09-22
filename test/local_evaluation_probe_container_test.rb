@@ -92,6 +92,9 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
     assert_equal %w[gh api user --jq .login], @container.owner_identity_command
     assert_equal %w[gh api repos/shakacode/private-sibling --jq .visibility],
                  @container.owner_repository_command('shakacode/private-sibling')
+    assert_equal %w[gh api orgs/shakacode/members/shaka-eval-machine --silent],
+                 @container.owner_membership_command(target: 'shakacode/public-probe',
+                                                     login: 'shaka-eval-machine')
     assert_raises(ArgumentError) { @container.owner_repository_command('shakacode/one/two') }
     assert_raises(ArgumentError) { @container.owner_repository_command('../..') }
   end
@@ -492,6 +495,17 @@ module LocalEvaluationProbeCliHelpers
     Open3.capture3(clean_environment(directory, fake_bin), *command)
   end
 
+  def run_ambiguous_create_session(directory)
+    fake_bin = File.join(directory, 'bin')
+    FileUtils.mkdir_p(fake_bin)
+    write_executable(fake_bin, 'docker', ambiguous_create_docker(directory))
+    FileUtils.mkdir_p(File.join(directory, 'scripts'))
+    write_executable(File.join(directory, 'scripts'), 'shaka', "#!/bin/sh\nexit 0\n")
+    command = [File.join(LocalEvaluationProbeHelpers::ROOT, 'eval/bin/slice-0-probe-container'),
+               'session', 'shaka-slice0-probe-test', '--trusted-skill', directory]
+    Open3.capture3(clean_environment(directory, fake_bin), *command)
+  end
+
   def capture_pty(environment, command, secret)
     output = +''
     reader, writer, pid = PTY.spawn(environment, *command)
@@ -535,6 +549,27 @@ module LocalEvaluationProbeCliHelpers
       esac
     SH
   end
+
+  def ambiguous_create_docker(directory)
+    <<~SH
+      #!/bin/sh
+      owner_file=#{File.join(directory, 'owner')}
+      case "$1 $2" in
+        'container inspect')
+          [ "${3:-}" = --format ] && cat "$owner_file" && exit 0
+          exit 1 ;;
+        'build --tag') exit 0 ;;
+        'create --name')
+          while [ "$#" -gt 0 ]; do
+            [ "$1" = --label ] && shift && printf '%s\n' "${1#*=}" > "$owner_file" && exit 1
+            shift
+          done
+          exit 2 ;;
+        'rm --force') touch #{File.join(directory, 'cleaned')}; exit 0 ;;
+        *) exit 2 ;;
+      esac
+    SH
+  end
 end
 
 class LocalEvaluationProbeCliTest < Minitest::Test
@@ -557,6 +592,14 @@ class LocalEvaluationProbeCliTest < Minitest::Test
         refute_predicate status, :success?
         assert_match(/must differ|could not verify/, stderr)
       end
+    end
+  end
+
+  def test_preflight_wrapper_refuses_an_outside_collaborator
+    Dir.mktmpdir('probe-cli') do |directory|
+      _stdout, stderr, status = run_preflight_wrapper(directory, environment: { 'FAKE_MEMBERSHIP' => 'outside' })
+      refute_predicate status, :success?
+      assert_match(/organization membership/, stderr)
     end
   end
 
@@ -593,6 +636,15 @@ class LocalEvaluationProbeCliTest < Minitest::Test
     end
   end
 
+  def test_session_cleans_a_container_created_before_an_ambiguous_client_failure
+    Dir.mktmpdir('probe-session') do |directory|
+      _output, error, status = run_ambiguous_create_session(directory)
+      refute_predicate status, :success?
+      assert_match(/Command failed: docker create/, error)
+      assert_path_exists File.join(directory, 'cleaned')
+    end
+  end
+
   private
 
   def run_preflight_wrapper(directory, environment: {})
@@ -611,6 +663,7 @@ class LocalEvaluationProbeCliTest < Minitest::Test
       #!/bin/sh
       [ "$*" = 'api user --jq .login' ] && echo "${FAKE_OWNER_LOGIN:-justin808}" && exit 0
       [ "$*" = 'api repos/shakacode/private-sibling --jq .visibility' ] && echo "${FAKE_VISIBILITY:-private}" && exit 0
+      [ "$*" = 'api orgs/shakacode/members/shaka-eval-machine --silent' ] && [ "${FAKE_MEMBERSHIP:-member}" = member ] && exit 0
       exit 2
     SH
   end

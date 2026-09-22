@@ -2,9 +2,28 @@
 
 module Shaka
   module Evaluation
+    # Builds owner-side commands that verify the machine account topology.
+    module ProbeOwnerCommands
+      def owner_identity_command = %w[gh api user --jq .login]
+
+      def owner_repository_command(repository)
+        validate_repository!(repository)
+        ['gh', 'api', "repos/#{repository}", '--jq', '.visibility']
+      end
+
+      def owner_membership_command(target:, login:)
+        validate_repository!(target)
+        validate_login!(login)
+        ['gh', 'api', "orgs/#{target.split('/').first}/members/#{login}", '--silent']
+      end
+    end
+
     # Builds commands for the disposable, credential-isolated Slice 0 probe container.
     class ProbeContainer
+      include ProbeOwnerCommands
+
       IMAGE = 'shaka-slice0-probe:local'
+      OWNER_LABEL = 'shaka.slice0.owner'
       NAME = /\Ashaka-slice0-probe-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\z/
 
       def initialize(root:, trusted_skill:)
@@ -20,11 +39,18 @@ module Shaka
       def shell_command(name) = ['docker', 'exec', '-it', validate_name!(name), 'sh']
       def container_inspect_command(name) = ['docker', 'container', 'inspect', validate_name!(name)]
 
-      def create_command(name)
+      def container_owner_command(name)
+        ['docker', 'container', 'inspect', '--format', "{{ index .Config.Labels \"#{OWNER_LABEL}\" }}",
+         validate_name!(name)]
+      end
+
+      def create_command(name, ownership: Process.pid.to_s)
         validate_name!(name)
+        raise ArgumentError, 'Expected a numeric probe ownership marker' unless /\A\d+\z/.match?(ownership)
+
         validate_mount_path!(fixture)
         trusted_skill = validate_trusted_skill!
-        ['docker', 'create', '--name', name, '--hostname', 'slice0-probe',
+        ['docker', 'create', '--name', name, '--hostname', 'slice0-probe', '--label', "#{OWNER_LABEL}=#{ownership}",
          *security_options, *mount_options(trusted_skill),
          '--env', 'HOME=/home/shaka', '--env', 'TMPDIR=/workspace/tmp',
          '--env', 'GIT_TERMINAL_PROMPT=0',
@@ -41,13 +67,6 @@ module Shaka
       def git_auth_command(name)
         validate_name!(name)
         %W[docker exec #{name} gh auth setup-git]
-      end
-
-      def owner_identity_command = %w[gh api user --jq .login]
-
-      def owner_repository_command(repository)
-        validate_repository!(repository)
-        ['gh', 'api', "repos/#{repository}", '--jq', '.visibility']
       end
 
       def preflight_command(name, target:, login:)
