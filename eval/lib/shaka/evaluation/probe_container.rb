@@ -26,7 +26,8 @@ module Shaka
         trusted_skill = validate_trusted_skill!
         ['docker', 'create', '--name', name, '--hostname', 'slice0-probe',
          *security_options, *mount_options(trusted_skill),
-         '--env', 'HOME=/home/shaka', '--env', 'GIT_TERMINAL_PROMPT=0',
+         '--env', 'HOME=/home/shaka', '--env', 'TMPDIR=/workspace/tmp',
+         '--env', 'GIT_TERMINAL_PROMPT=0',
          IMAGE, 'sleep', 'infinity']
       end
 
@@ -69,6 +70,7 @@ module Shaka
         ['--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
          '--network', 'bridge', '--pids-limit', '256', '--memory', '1g', '--cpus', '2',
          '--tmpfs', '/home/shaka:rw,noexec,nosuid,nodev,mode=0700,uid=100,gid=101',
+         '--tmpfs', '/usr/local/bundle:rw,exec,nosuid,nodev,mode=0700,uid=100,gid=101',
          '--tmpfs', '/tmp:rw,noexec,nosuid,nodev']
       end
 

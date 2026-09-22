@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require 'English'
 require 'fileutils'
+require 'pty'
 require 'socket'
+require 'timeout'
 require_relative '../eval/lib/shaka/evaluation/probe_container'
 
 module LocalEvaluationProbeHelpers
@@ -65,7 +68,9 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
     command = @container.create_command('shaka-slice0-probe-test')
 
     assert_includes command, 'HOME=/home/shaka'
+    assert_includes command, 'TMPDIR=/workspace/tmp'
     assert_includes command, '/home/shaka:rw,noexec,nosuid,nodev,mode=0700,uid=100,gid=101'
+    assert_includes command, '/usr/local/bundle:rw,exec,nosuid,nodev,mode=0700,uid=100,gid=101'
     refute(command.any? { |argument| argument.match?(/token|github_pat_|ssh_auth_sock/i) })
   end
 
@@ -90,6 +95,29 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
     assert_raises(ArgumentError) { @container.owner_repository_command('shakacode/one/two') }
     assert_raises(ArgumentError) { @container.owner_repository_command('../..') }
   end
+
+  def test_preflight_command_rejects_an_invalid_login
+    assert_raises(ArgumentError) do
+      @container.preflight_command('shaka-slice0-probe-test', target: 'shakacode/probe', login: '../owner')
+    end
+  end
+
+  def test_cleanup_plan_can_target_only_a_slice_zero_probe_container
+    assert_equal [
+      %w[docker rm --force --volumes shaka-slice0-probe-test]
+    ], @container.cleanup_commands('shaka-slice0-probe-test')
+
+    error = assert_raises(ArgumentError) { @container.cleanup_commands('shared-development') }
+    assert_match(/disposable Slice 0 probe name/, error.message)
+  end
+
+  private
+
+  def expected_mounts
+    ["type=bind,src=#{FIXTURE},dst=/seed/probe,readonly",
+     "type=bind,src=#{@trusted_skill},dst=/opt/shaka,readonly",
+     'type=volume,dst=/workspace']
+  end
 end
 
 class LocalEvaluationTrustedSkillTest < Minitest::Test
@@ -113,6 +141,19 @@ class LocalEvaluationTrustedSkillTest < Minitest::Test
     Dir.mktmpdir('not-a-skill') do |directory|
       unrelated = Shaka::Evaluation::ProbeContainer.new(root: ROOT, trusted_skill: directory)
       assert_raises(ArgumentError) { unrelated.create_command('shaka-slice0-probe-test') }
+    end
+  end
+
+  def test_trusted_helper_rejects_a_valid_skill_that_is_an_ancestor_of_the_checkout
+    Dir.mktmpdir('trusted-parent') do |parent|
+      root = File.join(parent, 'candidate')
+      FileUtils.mkdir_p(File.join(parent, 'scripts'))
+      FileUtils.mkdir_p(File.join(root, 'eval/fixtures/local_evaluation/probe'))
+      write_executable(File.join(parent, 'scripts'), 'shaka', "#!/bin/sh\nexit 0\n")
+      container = Shaka::Evaluation::ProbeContainer.new(root:, trusted_skill: parent)
+
+      error = assert_raises(ArgumentError) { container.create_command('shaka-slice0-probe-test') }
+      assert_match(/outside the candidate checkout/, error.message)
     end
   end
 
@@ -165,31 +206,6 @@ class LocalEvaluationTrustedSkillTest < Minitest::Test
   end
 end
 
-class LocalEvaluationProbeContainerPlanTest < Minitest::Test
-  def test_preflight_command_rejects_an_invalid_login
-    assert_raises(ArgumentError) do
-      @container.preflight_command('shaka-slice0-probe-test', target: 'shakacode/probe', login: '../owner')
-    end
-  end
-
-  def test_cleanup_plan_can_target_only_a_slice_zero_probe_container
-    assert_equal [
-      %w[docker rm --force --volumes shaka-slice0-probe-test]
-    ], @container.cleanup_commands('shaka-slice0-probe-test')
-
-    error = assert_raises(ArgumentError) { @container.cleanup_commands('shared-development') }
-    assert_match(/disposable Slice 0 probe name/, error.message)
-  end
-
-  private
-
-  def expected_mounts
-    ["type=bind,src=#{FIXTURE},dst=/seed/probe,readonly",
-     "type=bind,src=#{@trusted_skill},dst=/opt/shaka,readonly",
-     'type=volume,dst=/workspace']
-  end
-end
-
 class LocalEvaluationProbeResetTest < Minitest::Test
   include LocalEvaluationProbeHelpers
 
@@ -202,6 +218,7 @@ class LocalEvaluationProbeResetTest < Minitest::Test
       assert_predicate status, :success?, "#{stdout}\n#{stderr}"
       assert_equal %w[.ruby-version lib/color.rb], fixture_files(destination)
       assert_equal "3.4.6\n", File.read(File.join(destination, '.ruby-version'))
+      assert_path_exists File.join(directory, 'tmp')
     end
   end
 
@@ -222,9 +239,11 @@ end
 module LocalEvaluationPreflightHelpers
   private
 
-  def with_preflight(ssh_body, stdin_data: "shakacode/private-sibling\n", environment: {}, docker_socket: nil)
+  def with_preflight(ssh_body, stdin_data: "shakacode/private-sibling\n", environment: {}, docker_socket: nil,
+                     ssh_home: false)
     Dir.mktmpdir('probe-preflight') do |directory|
       fake_bin = create_fake_tools(directory, ssh_body)
+      FileUtils.mkdir_p(File.join(directory, '.ssh')) if ssh_home
       env = clean_environment(directory, fake_bin).merge(environment)
       yield(*Open3.capture3(env, *preflight_command(directory, docker_socket), stdin_data:))
     end
@@ -249,8 +268,8 @@ module LocalEvaluationPreflightHelpers
     <<~SH
       #!/bin/sh
       case "$*" in
-        'api user --jq .login') echo shaka-eval-machine ;;
-        'api repos/shakacode/public-probe') exit 0 ;;
+        'api user --jq .login') echo "${FAKE_MACHINE_LOGIN:-shaka-eval-machine}" ;;
+        'api repos/shakacode/public-probe') [ "${FAKE_TARGET_API:-ok}" = ok ] ;;
         'api repos/shakacode/private-sibling')
           [ "${FAKE_PRIVATE_API:-deny}" = allow ] && exit 0
           [ "${FAKE_PRIVATE_API:-deny}" = outage ] && echo 'gh: service unavailable (HTTP 503)' >&2 && exit 1
@@ -265,9 +284,10 @@ module LocalEvaluationPreflightHelpers
     <<~SH
       #!/bin/sh
       case "$*" in
-        *shakacode/public-probe.git*) exit 0 ;;
+        *shakacode/public-probe.git*) [ "${FAKE_TARGET_GIT:-ok}" = ok ] ;;
         *shakacode/private-sibling.git*)
           [ "${FAKE_PRIVATE_GIT:-deny}" = allow ] && exit 0
+          [ "${FAKE_PRIVATE_GIT:-deny}" = outage ] && echo 'fatal: unable to access: TLS failed' >&2 && exit 1
           echo 'remote: Repository not found.' >&2
           exit 1 ;;
         *) exit 1 ;;
@@ -388,8 +408,97 @@ class LocalEvaluationProbePreflightTest < Minitest::Test
   end
 end
 
+class LocalEvaluationProbePreflightRefusalTest < Minitest::Test
+  include LocalEvaluationProbeHelpers
+  include LocalEvaluationPreflightHelpers
+
+  def test_preflight_refuses_inconclusive_private_https_failures
+    with_preflight("#!/bin/sh\nexit 255\n", environment: { 'FAKE_PRIVATE_GIT' => 'outage' }) do |_out, err, status|
+      refute_predicate status, :success?
+      assert_match(/private sibling HTTPS denial was inconclusive/, err)
+    end
+  end
+
+  def test_preflight_rejects_an_ssh_home
+    with_preflight("#!/bin/sh\nexit 255\n", ssh_home: true) do |_out, err, status|
+      refute_predicate status, :success?
+      assert_match(/SSH home is available/, err)
+    end
+  end
+
+  def test_preflight_rejects_the_wrong_machine_identity
+    environment = { 'FAKE_MACHINE_LOGIN' => 'other-machine' }
+    with_preflight("#!/bin/sh\nexit 255\n", environment:) do |_out, err, status|
+      refute_predicate status, :success?
+      assert_match(/not the designated machine/, err)
+    end
+  end
+
+  def test_preflight_rejects_an_unavailable_target
+    [{ 'FAKE_TARGET_API' => 'down' }, { 'FAKE_TARGET_GIT' => 'down' }].each do |environment|
+      with_preflight("#!/bin/sh\nexit 255\n", environment:) do |_out, err, status|
+        refute_predicate status, :success?
+        assert_match(/target repository is unavailable/, err)
+      end
+    end
+  end
+end
+
+module LocalEvaluationProbeCliHelpers
+  private
+
+  def run_cleanup_wrapper(directory, docker_error)
+    fake_bin = File.join(directory, 'bin')
+    FileUtils.mkdir_p(fake_bin)
+    write_executable(fake_bin, 'docker', "#!/bin/sh\necho \"$FAKE_DOCKER_ERROR\" >&2\nexit 1\n")
+    command = [File.join(LocalEvaluationProbeHelpers::ROOT, 'eval/bin/slice-0-probe-container'),
+               'cleanup', 'shaka-slice0-probe-test']
+    Open3.capture3(clean_environment(directory, fake_bin).merge('FAKE_DOCKER_ERROR' => docker_error), *command)
+  end
+
+  def run_terminal_auth(directory)
+    fake_bin = File.join(directory, 'bin')
+    FileUtils.mkdir_p(fake_bin)
+    write_executable(fake_bin, 'docker', fake_auth_docker)
+    command = [File.join(LocalEvaluationProbeHelpers::ROOT, 'eval/bin/slice-0-probe-container'),
+               'auth', 'shaka-slice0-probe-test']
+    capture_pty(clean_environment(directory, fake_bin), command, 'placeholder-secret')
+  end
+
+  def capture_pty(environment, command, secret)
+    output = +''
+    reader, writer, pid = PTY.spawn(environment, *command)
+    Timeout.timeout(5) { output << reader.readpartial(1024) until output.include?('Scoped PAT: ') }
+    writer.puts(secret)
+    writer.close
+    read_remaining_pty(reader, output)
+    Process.wait(pid)
+    [output, $CHILD_STATUS]
+  end
+
+  def read_remaining_pty(reader, output)
+    output << reader.read
+  rescue Errno::EIO
+    nil
+  end
+
+  def fake_auth_docker
+    <<~SH
+      #!/bin/sh
+      if [ "$*" = 'exec -i shaka-slice0-probe-test gh auth login --hostname github.com --with-token' ]; then
+        IFS= read -r token
+        [ "$token" = placeholder-secret ] || exit 3
+        echo auth=PASS
+        exit 0
+      fi
+      [ "$*" = 'exec shaka-slice0-probe-test gh auth setup-git' ]
+    SH
+  end
+end
+
 class LocalEvaluationProbeCliTest < Minitest::Test
   include LocalEvaluationProbeHelpers
+  include LocalEvaluationProbeCliHelpers
 
   def test_preflight_wrapper_accepts_rest_private_visibility_and_streams_the_sibling
     Dir.mktmpdir('probe-cli') do |directory|
@@ -400,12 +509,37 @@ class LocalEvaluationProbeCliTest < Minitest::Test
   end
 
   def test_preflight_wrapper_refuses_machine_owner_or_nonprivate_sibling
-    [{ 'FAKE_OWNER_LOGIN' => 'shaka-eval-machine' }, { 'FAKE_VISIBILITY' => 'public' }].each do |environment|
+    [{ 'FAKE_OWNER_LOGIN' => 'shaka-eval-machine' }, { 'FAKE_OWNER_LOGIN' => 'SHAKA-EVAL-MACHINE' },
+     { 'FAKE_VISIBILITY' => 'public' }].each do |environment|
       Dir.mktmpdir('probe-cli') do |directory|
         _stdout, stderr, status = run_preflight_wrapper(directory, environment:)
         refute_predicate status, :success?
         assert_match(/must differ|could not verify/, stderr)
       end
+    end
+  end
+
+  def test_cleanup_reports_removal_failure
+    Dir.mktmpdir('probe-cleanup') do |directory|
+      _out, error, failed = run_cleanup_wrapper(directory, 'daemon unavailable')
+      refute_predicate failed, :success?
+      assert_match(/cleanup failed/, error)
+    end
+  end
+
+  def test_cleanup_accepts_an_absent_container
+    Dir.mktmpdir('probe-cleanup') do |directory|
+      _out, error, absent = run_cleanup_wrapper(directory, 'No such container: test')
+      assert_predicate absent, :success?, error
+    end
+  end
+
+  def test_auth_hides_a_pat_typed_at_a_terminal
+    Dir.mktmpdir('probe-auth') do |directory|
+      output, status = run_terminal_auth(directory)
+      assert_predicate status, :success?, output
+      assert_includes output, 'auth=PASS'
+      refute_includes output, 'placeholder-secret'
     end
   end
 

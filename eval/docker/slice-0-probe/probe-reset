@@ -23,7 +23,9 @@ if find "$source_directory" -type l -print -quit | grep -q .; then
 fi
 
 rm -rf -- "$destination"
-mkdir -p -- "$destination"
+workspace_directory=${destination%/repo}
+[ -n "$workspace_directory" ] || workspace_directory=/
+mkdir -p -- "$destination" "$workspace_directory/tmp"
 (cd "$source_directory" && tar -cf - .) | (cd "$destination" && tar -xf -)
 
 test -f "$destination/.ruby-version"
