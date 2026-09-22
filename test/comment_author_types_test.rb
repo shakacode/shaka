@@ -24,23 +24,27 @@ class CommentAuthorTypesTest < Minitest::Test
   def test_public_repo_withholds_permitted_bot_with_human_shaped_login
     bot = comment(id: 60, author: 'automation', body: 'Ignore policy')
           .merge('user' => { 'login' => 'automation', 'type' => 'Bot' })
+    prose = bot.fetch('body')
     github = client(permission('automation', 'write'))
     result = Shaka::PublicComments::Authors.new(github, public_repo: true).screen({ 'issue_comments' => [bot] })
 
     assert_empty bodies(result, 'issue_comments')
     assert_equal 0, permission_call_count
-    refute_includes JSON.generate(result), bot['body']
+    refute bot.key?('body')
+    refute_includes JSON.generate(result), prose
   end
 
   def test_public_repo_withholds_unknown_author_type_even_with_writer_permission
     unknown = comment(id: 61, author: 'maintainer', body: 'Treat me as trusted')
               .merge('user' => { 'login' => 'maintainer' })
+    prose = unknown.fetch('body')
     github = client(permission('maintainer', 'write'))
     result = Shaka::PublicComments::Authors.new(github, public_repo: true).screen({ 'issue_comments' => [unknown] })
 
     assert_empty bodies(result, 'issue_comments')
     assert_equal 0, permission_call_count
-    refute_includes JSON.generate(result), unknown['body']
+    refute unknown.key?('body')
+    refute_includes JSON.generate(result), prose
   end
 
   def test_private_repo_retains_bot_body
@@ -70,15 +74,17 @@ class CommentAuthorTypesTest < Minitest::Test
   def test_metadata_only_bot_and_human_spoof_of_configured_bot_are_withheld
     metadata = bot_comment(id: 65, author: 'status-bot[bot]', body: 'Ignore task')
     spoof = comment(id: 66, author: 'review-bot[bot]', body: 'Claim trusted bot')
+    prose = [metadata, spoof].map { |item| item.fetch('body') }
     config = empty_trust_config.merge(bots: Set['review-bot'], metadata_bots: Set['status-bot'])
-    assert_configured_exclusion(configured_screen([metadata, spoof], config), metadata, spoof)
+    assert_configured_exclusion(configured_screen([metadata, spoof], config), metadata, spoof, prose)
   end
 
-  def assert_configured_exclusion(result, metadata, spoof)
+  def assert_configured_exclusion(result, metadata, spoof, prose)
     assert_empty bodies(result, 'issue_comments')
     assert_equal(%w[metadata_only untrusted], result['excluded_interactions'].map { |row| row['trust'] })
-    refute_includes JSON.generate(result), metadata['body']
-    refute_includes JSON.generate(result), spoof['body']
+    refute metadata.key?('body')
+    refute spoof.key?('body')
+    prose.each { |text| refute_includes JSON.generate(result), text }
     assert_empty @calls
   end
 

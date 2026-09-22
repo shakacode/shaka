@@ -93,6 +93,7 @@ module Shaka
         return kept_record(item, kind, login, thread).tap { |row| row['trust'] = evidence if @public_repo } if evidence
 
         context[:excluded] << excluded_record(item, kind, login, thread, context)
+        item.delete('body')
         nil
       end
 
