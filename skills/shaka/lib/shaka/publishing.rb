@@ -3,6 +3,7 @@
 require 'json'
 require_relative 'error'
 require_relative 'public_comments/bounded_list'
+require_relative 'public_comments/reply_guard'
 require_relative 'publication'
 
 module Shaka
@@ -23,17 +24,22 @@ module Shaka
       confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
     end
 
-    def reply(body:, key:, comment: nil)
+    def reply(body:, key:, comment: nil, trust_config: nil,
+              machine_path: PublicComments::TrustConfig::MACHINE_PATH)
       mark = reply_mark(key)
       content = "#{mark}\n#{publishable(body)}"
       target = positive_integer(comment) if comment
       pull
-      account = viewer
-      existing = replies(target).find do |reply|
-        ours?(reply, mark, account) && (!target || reply['in_reply_to_id'] == target)
-      end
+      existing = prepared_reply(target, mark, trust_config, machine_path)
       verify_rendering(content)
       confirmed(write_reply(existing, content, target), content)
+    end
+
+    def prepared_reply(target, mark, trust_config, machine_path)
+      account = viewer
+      listed = replies(target)
+      PublicComments::ReplyGuard.new(self, trust_config:, machine_path:).check(listed, target)
+      listed.find { |reply| ours?(reply, mark, account) && (!target || reply['in_reply_to_id'] == target) }
     end
 
     # A body GitHub will not render correctly must never reach the pull request.
