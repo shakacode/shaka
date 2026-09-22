@@ -40,7 +40,9 @@ actual_login=$(gh api user --jq .login) || fail 'machine identity is unreadable'
 [ "$actual_login" = "$expected_login" ] || fail 'authenticated GitHub identity is not the designated machine'
 echo 'identity=PASS'
 
-gh api "repos/$target_repository" >/dev/null 2>&1 || fail 'target repository is unavailable'
+target_visibility=$(gh api "repos/$target_repository" --jq .visibility 2>/dev/null) || \
+  fail 'target repository is unavailable'
+[ "$target_visibility" = public ] || fail 'target repository is not public'
 echo 'target=PASS'
 
 GIT_TERMINAL_PROMPT=0 git ls-remote "https://github.com/$target_repository.git" >/dev/null 2>&1 || \

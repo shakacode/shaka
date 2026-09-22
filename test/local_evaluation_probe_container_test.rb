@@ -269,7 +269,8 @@ module LocalEvaluationPreflightHelpers
       #!/bin/sh
       case "$*" in
         'api user --jq .login') echo "${FAKE_MACHINE_LOGIN:-shaka-eval-machine}" ;;
-        'api repos/shakacode/public-probe') [ "${FAKE_TARGET_API:-ok}" = ok ] ;;
+        'api repos/shakacode/public-probe --jq .visibility')
+          [ "${FAKE_TARGET_API:-ok}" = ok ] && echo "${FAKE_TARGET_VISIBILITY:-public}" ;;
         'api repos/shakacode/private-sibling')
           [ "${FAKE_PRIVATE_API:-deny}" = allow ] && exit 0
           [ "${FAKE_PRIVATE_API:-deny}" = outage ] && echo 'gh: service unavailable (HTTP 503)' >&2 && exit 1
@@ -442,6 +443,14 @@ class LocalEvaluationProbePreflightRefusalTest < Minitest::Test
       end
     end
   end
+
+  def test_preflight_rejects_a_nonpublic_target
+    environment = { 'FAKE_TARGET_VISIBILITY' => 'private' }
+    with_preflight("#!/bin/sh\nexit 255\n", environment:) do |_out, err, status|
+      refute_predicate status, :success?
+      assert_match(/target repository is not public/, err)
+    end
+  end
 end
 
 module LocalEvaluationProbeCliHelpers
@@ -463,6 +472,17 @@ module LocalEvaluationProbeCliHelpers
     command = [File.join(LocalEvaluationProbeHelpers::ROOT, 'eval/bin/slice-0-probe-container'),
                'auth', 'shaka-slice0-probe-test']
     capture_pty(clean_environment(directory, fake_bin), command, 'placeholder-secret')
+  end
+
+  def run_failed_session(directory)
+    fake_bin = File.join(directory, 'bin')
+    FileUtils.mkdir_p(fake_bin)
+    write_executable(fake_bin, 'docker', failed_session_docker)
+    command = [File.join(LocalEvaluationProbeHelpers::ROOT, 'eval/bin/slice-0-probe-container'),
+               'session', 'shaka-slice0-probe-test', '--trusted-skill', directory]
+    FileUtils.mkdir_p(File.join(directory, 'scripts'))
+    write_executable(File.join(directory, 'scripts'), 'shaka', "#!/bin/sh\nexit 0\n")
+    Open3.capture3(clean_environment(directory, fake_bin), *command)
   end
 
   def capture_pty(environment, command, secret)
@@ -494,6 +514,18 @@ module LocalEvaluationProbeCliHelpers
         exit 0
       fi
       [ "$*" = 'exec shaka-slice0-probe-test gh auth setup-git' ]
+    SH
+  end
+
+  def failed_session_docker
+    <<~SH
+      #!/bin/sh
+      case "$*" in
+        'container inspect '*) exit 1 ;;
+        'start '*) echo 'start failed' >&2; exit 1 ;;
+        'rm --force --volumes '*) echo 'cleanup failed too' >&2; exit 1 ;;
+        *) exit 0 ;;
+      esac
     SH
   end
 end
@@ -542,6 +574,15 @@ class LocalEvaluationProbeCliTest < Minitest::Test
       assert_predicate status, :success?, output
       assert_includes output, 'auth=PASS'
       refute_includes output, 'placeholder-secret'
+    end
+  end
+
+  def test_session_reports_operation_and_cleanup_failures
+    Dir.mktmpdir('probe-session') do |directory|
+      _output, error, status = run_failed_session(directory)
+      refute_predicate status, :success?
+      assert_match(/Container cleanup failed: cleanup failed too/, error)
+      assert_match(/Command failed: docker start/, error)
     end
   end
 
