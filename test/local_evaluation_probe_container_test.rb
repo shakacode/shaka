@@ -470,15 +470,17 @@ module LocalEvaluationProbeCliHelpers
     reader, writer, pid = PTY.spawn(environment, *command)
     Timeout.timeout(5) { output << reader.readpartial(1024) until output.include?('Scoped PAT: ') }
     writer.puts(secret)
-    writer.close
     read_remaining_pty(reader, output)
     Process.wait(pid)
     [output, $CHILD_STATUS]
+  ensure
+    writer&.close
+    reader&.close
   end
 
   def read_remaining_pty(reader, output)
-    output << reader.read
-  rescue Errno::EIO
+    loop { output << reader.readpartial(1024) }
+  rescue EOFError, Errno::EIO
     nil
   end
 
