@@ -75,11 +75,21 @@ def exists?(*command)
   system(*command, out: File::NULL, err: File::NULL)
 end
 
-def owns_container?(container, name, ownership)
+def observed_container_owner(container, name)
   stdout, _stderr, status = Open3.capture3(*container.container_owner_command(name))
-  status.success? && stdout.strip == ownership
+  stdout.strip if status.success?
 rescue StandardError
-  false
+  nil
+end
+
+def reconcile_container_ownership(container, name, ownership)
+  3.times do |attempt|
+    observed = observed_container_owner(container, name)
+    return observed == ownership unless observed.nil?
+
+    sleep 0.1 if attempt < 2
+  end
+  nil
 end
 
 begin
@@ -108,14 +118,16 @@ begin
         run!(*create_command)
         owned = true
       rescue StandardError, Interrupt
-        owned = owns_container?(container, name, ownership)
+        ownership_match = reconcile_container_ownership(container, name, ownership)
+        owned = ownership_match == true
+        warn 'Container ownership could not be reconciled; manual cleanup may be required' if ownership_match.nil?
         raise
       end
       run!(*container.start_command(name))
       run!(*container.prepare_command(name))
       warn 'probe container ready; authenticate and preflight from a second terminal'
       run!(*container.shell_command(name))
-    rescue StandardError => e
+    rescue StandardError, Interrupt => e
       operation_error = e
       raise
     ensure

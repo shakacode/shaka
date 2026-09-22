@@ -37,6 +37,8 @@ done
 [ ! -S "$docker_socket" ] || fail 'the Docker socket is available'
 
 actual_login=$(gh api user --jq .login) || fail 'machine identity is unreadable'
+actual_login=$(printf '%s' "$actual_login" | tr '[:upper:]' '[:lower:]')
+expected_login=$(printf '%s' "$expected_login" | tr '[:upper:]' '[:lower:]')
 [ "$actual_login" = "$expected_login" ] || fail 'authenticated GitHub identity is not the designated machine'
 echo 'identity=PASS'
 

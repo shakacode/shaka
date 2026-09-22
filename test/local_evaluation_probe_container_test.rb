@@ -445,6 +445,13 @@ class LocalEvaluationProbePreflightRefusalTest < Minitest::Test
     end
   end
 
+  def test_preflight_accepts_the_designated_machine_with_different_login_casing
+    environment = { 'FAKE_MACHINE_LOGIN' => 'SHAKA-EVAL-MACHINE' }
+    with_preflight(denied_ssh, environment:) do |_out, err, status|
+      assert_predicate status, :success?, err
+    end
+  end
+
   def test_preflight_rejects_an_unavailable_target
     [{ 'FAKE_TARGET_API' => 'down' }, { 'FAKE_TARGET_GIT' => 'down' }].each do |environment|
       with_preflight("#!/bin/sh\nexit 255\n", environment:) do |_out, err, status|
@@ -495,10 +502,21 @@ module LocalEvaluationProbeCliHelpers
     Open3.capture3(clean_environment(directory, fake_bin), *command)
   end
 
-  def run_ambiguous_create_session(directory)
+  def run_interrupted_session(directory)
     fake_bin = File.join(directory, 'bin')
     FileUtils.mkdir_p(fake_bin)
-    write_executable(fake_bin, 'docker', ambiguous_create_docker(directory))
+    write_executable(fake_bin, 'docker', interrupted_session_docker)
+    FileUtils.mkdir_p(File.join(directory, 'scripts'))
+    write_executable(File.join(directory, 'scripts'), 'shaka', "#!/bin/sh\nexit 0\n")
+    command = [File.join(LocalEvaluationProbeHelpers::ROOT, 'eval/bin/slice-0-probe-container'),
+               'session', 'shaka-slice0-probe-test', '--trusted-skill', directory]
+    Open3.capture3(clean_environment(directory, fake_bin), *command)
+  end
+
+  def run_ambiguous_create_session(directory, owner_failures: 0)
+    fake_bin = File.join(directory, 'bin')
+    FileUtils.mkdir_p(fake_bin)
+    write_executable(fake_bin, 'docker', ambiguous_create_docker(directory, owner_failures:))
     FileUtils.mkdir_p(File.join(directory, 'scripts'))
     write_executable(File.join(directory, 'scripts'), 'shaka', "#!/bin/sh\nexit 0\n")
     command = [File.join(LocalEvaluationProbeHelpers::ROOT, 'eval/bin/slice-0-probe-container'),
@@ -550,13 +568,38 @@ module LocalEvaluationProbeCliHelpers
     SH
   end
 
-  def ambiguous_create_docker(directory)
+  def interrupted_session_docker
+    <<~SH
+      #!/bin/sh
+      case "$*" in
+        'container inspect '*) exit 1 ;;
+        'start '*) kill -INT "$PPID"; sleep 0.1; exit 1 ;;
+        'rm --force --volumes '*) echo 'cleanup failed too' >&2; exit 1 ;;
+        *) exit 0 ;;
+      esac
+    SH
+  end
+end
+
+module LocalEvaluationAmbiguousCreateHelpers
+  private
+
+  def ambiguous_create_docker(directory, owner_failures:)
     <<~SH
       #!/bin/sh
       owner_file=#{File.join(directory, 'owner')}
+      attempts_file=#{File.join(directory, 'attempts')}
       case "$1 $2" in
         'container inspect')
-          [ "${3:-}" = --format ] && cat "$owner_file" && exit 0
+          if [ "${3:-}" = --format ]; then
+            attempts=0
+            [ ! -f "$attempts_file" ] || attempts=$(cat "$attempts_file")
+            attempts=$((attempts + 1))
+            printf '%s\n' "$attempts" > "$attempts_file"
+            [ "$attempts" -le #{owner_failures} ] && exit 1
+            cat "$owner_file"
+            exit 0
+          fi
           exit 1 ;;
         'build --tag') exit 0 ;;
         'create --name')
@@ -575,6 +618,7 @@ end
 class LocalEvaluationProbeCliTest < Minitest::Test
   include LocalEvaluationProbeHelpers
   include LocalEvaluationProbeCliHelpers
+  include LocalEvaluationAmbiguousCreateHelpers
 
   def test_preflight_wrapper_accepts_rest_private_visibility_and_streams_the_sibling
     Dir.mktmpdir('probe-cli') do |directory|
@@ -627,24 +671,6 @@ class LocalEvaluationProbeCliTest < Minitest::Test
     end
   end
 
-  def test_session_reports_operation_and_cleanup_failures
-    Dir.mktmpdir('probe-session') do |directory|
-      _output, error, status = run_failed_session(directory)
-      refute_predicate status, :success?
-      assert_match(/Container cleanup failed: cleanup failed too/, error)
-      assert_match(/Command failed: docker start/, error)
-    end
-  end
-
-  def test_session_cleans_a_container_created_before_an_ambiguous_client_failure
-    Dir.mktmpdir('probe-session') do |directory|
-      _output, error, status = run_ambiguous_create_session(directory)
-      refute_predicate status, :success?
-      assert_match(/Command failed: docker create/, error)
-      assert_path_exists File.join(directory, 'cleaned')
-    end
-  end
-
   private
 
   def run_preflight_wrapper(directory, environment: {})
@@ -676,5 +702,47 @@ class LocalEvaluationProbeCliTest < Minitest::Test
       [ "$repository" = shakacode/private-sibling ] || exit 3
       echo wrapper=PASS
     SH
+  end
+end
+
+class LocalEvaluationProbeSessionCliTest < Minitest::Test
+  include LocalEvaluationProbeHelpers
+  include LocalEvaluationProbeCliHelpers
+  include LocalEvaluationAmbiguousCreateHelpers
+
+  def test_session_reports_operation_and_cleanup_failures
+    Dir.mktmpdir('probe-session') do |directory|
+      _output, error, status = run_failed_session(directory)
+      refute_predicate status, :success?
+      assert_match(/Container cleanup failed: cleanup failed too/, error)
+      assert_match(/Command failed: docker start/, error)
+    end
+  end
+
+  def test_session_preserves_an_interrupt_when_cleanup_fails
+    Dir.mktmpdir('probe-session') do |directory|
+      _output, error, status = run_interrupted_session(directory)
+      refute_predicate status, :success?
+      assert_match(/Container cleanup failed: cleanup failed too/, error)
+      assert_match(/Interrupt/, error)
+    end
+  end
+
+  def test_session_cleans_a_container_created_before_an_ambiguous_client_failure
+    Dir.mktmpdir('probe-session') do |directory|
+      _output, error, status = run_ambiguous_create_session(directory, owner_failures: 1)
+      refute_predicate status, :success?
+      assert_match(/Command failed: docker create/, error)
+      assert_path_exists File.join(directory, 'cleaned')
+    end
+  end
+
+  def test_session_reports_when_ownership_cannot_be_reconciled
+    Dir.mktmpdir('probe-session') do |directory|
+      _output, error, status = run_ambiguous_create_session(directory, owner_failures: 3)
+      refute_predicate status, :success?
+      assert_match(/ownership could not be reconciled; manual cleanup may be required/, error)
+      refute_path_exists File.join(directory, 'cleaned')
+    end
   end
 end
