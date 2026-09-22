@@ -243,18 +243,17 @@ existing policy. Migrate across that trust boundary in this order:
 
 ## `review`
 
-`required` is the only mandatory key. `check` names the reviewer's GitHub status check.
+`required` is the only mandatory key. `github_action_check` names the GitHub Actions job Shaka reads.
 
-That named check is a review source to read, not a GitHub required merge check. Branch
+That job is a review source to read, not a GitHub required merge check. Branch
 protection in this repository requires `validate` only. See
 [review pace](review.md#review-pace).
 
-The three `required` values record when the named GitHub review job is the independent-review
-backstop, and `check` is
-bound to them: validation requires it for `always` and `meaningful_changes`, and rejects it for
-`none`. Choosing `none` therefore leaves no named GitHub review job. Under `swift`, when a
-different-provider local review already covers the current head, do not wait for that job
-before merge. `thorough` still waits for the named check.
+The three `required` values record when that GitHub Actions job is the independent-review
+backstop, and `github_action_check` is bound to them: validation requires it for `always` and
+`meaningful_changes`, and rejects it for `none`. Choosing `none` therefore leaves no named
+GitHub Actions job. Under `swift`, when a different-provider local review already covers the
+current head, do not wait for that job before merge. `thorough` still waits for the named job.
 
 Under `meaningful_changes`, the Verify phase lets trivial prose or no-op work omit review
 with a recorded reason. `always` withdraws that exemption.
