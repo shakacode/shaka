@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../repository_config/review_schema'
+
 module Shaka
   class Seam
     # Maps predecessor seam keys onto typed destinations without guessing policy.
@@ -15,7 +17,7 @@ module Shaka
       ].freeze
       RETIRED = %w[protection commands coordination_backend].freeze
       RETAINED = %w[base_branch repo_prefix version plan branches recovery].freeze
-      REVIEW_KEYS = %w[required check reviewers pace].freeze
+      REVIEW_KEYS = (['required'] + RepositoryConfig::ReviewSchema::RENAMED.values + ['pace']).freeze
       MERGE_RETAINED = %w[preference].freeze
       MERGE_RETIRED = %w[method release].freeze
 
@@ -73,15 +75,16 @@ module Shaka
       def classify_review(value)
         return @blocking << 'review' unless value.is_a?(Hash) && value.keys.all?(String)
 
-        value.each do |key, nested|
-          unless REVIEW_KEYS.include?(key)
-            @blocking << "review.#{key}"
-            next
-          end
+        value.each { |key, nested| classify_review_entry(key, nested) }
+      end
 
-          @retained << "review.#{key}"
-          store_review(key, nested)
-        end
+      def classify_review_entry(source, nested)
+        key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
+        available = REVIEW_KEYS.include?(key) && !@established.fetch('review', {}).key?(key)
+        return @blocking << "review.#{source}" unless available
+
+        @retained << "review.#{key}"
+        store_review(key, nested)
       end
 
       def classify_merge(value)
@@ -109,7 +112,8 @@ module Shaka
       def require_review_and_merge
         required = @established.dig('review', 'required')
         @blocking << 'review.required' unless required
-        @blocking << 'review.check' if required && required != 'none' && !@established.dig('review', 'check')
+        check = RepositoryConfig::ReviewSchema::GITHUB_ACTION_CHECK
+        @blocking << "review.#{check}" if required && required != 'none' && !@established.dig('review', check)
         @blocking << 'merge.preference' unless @established.dig('merge', 'preference')
       end
 

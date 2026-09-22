@@ -158,7 +158,7 @@ preference:
   --validate-command "bin/validate" \
   --test-command "bundle exec rake test" \
   --review-policy meaningful_changes \
-  --review-check claude-review
+  --github-action-check claude-review
 ```
 
 The command creates `.agents/agent-workflow.yml`, small executable wrappers under
@@ -170,7 +170,7 @@ merge preference is **Ask**, and it bases work on the repository's default branc
 pass `--base-branch` to name another one, such as `develop`. Add
 `--merge-preference auto` only when that is the repository's established authority;
 choose `--review-policy always`, `meaningful_changes`, or `none`, and supply
-`--review-check` unless the policy is `none`. Use `--plan` for an existing
+`--github-action-check` unless the policy is `none`. Use `--plan` for an existing
 repository-relative plan. GitHub remains authoritative for required checks, branch rules,
 allowed merge methods, and workflow action references. The initializer's `--setup-command`,
 `--validate-command`, and `--test-command` values are parsed as argument lists, so put shell
@@ -221,7 +221,7 @@ predecessor commit, then apply only when the report has no blocking fields:
 Planning writes nothing. It classifies every predecessor key as retained, moved to
 `AGENTS.md`, moved to operational config, retired as a live GitHub fact, or blocking.
 Unknown keys and missing review or merge policy block apply rather than guessing; pass
-`--review-policy`, `--review-check`, and `--merge-preference` only when the old file
+`--review-policy`, `--github-action-check`, and `--merge-preference` only when the old file
 cannot establish those values. Apply replaces `.agents/agent-workflow.yml` when it still
 matches the from-ref bytes, writes `.agents/shaka.md` when absent, and leaves
 repository-owned wrappers and docs in place. A conflict rolls every write back. The

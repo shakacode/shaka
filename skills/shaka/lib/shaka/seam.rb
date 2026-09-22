@@ -8,11 +8,14 @@ require_relative 'seam/check_report'
 require_relative 'seam/initializer'
 require_relative 'seam/migrator'
 require_relative 'seam/pointer'
+require_relative 'seam/policy_options'
 require_relative 'trusted_config_source'
 
 module Shaka
   # Validates the machine-readable repository boundary.
   class Seam
+    include PolicyOptions
+
     def self.run(arguments)
       new(arguments).run
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
@@ -49,7 +52,7 @@ module Shaka
     def known_operation?(operation) = %w[check init pointer].include?(operation) && @arguments.empty?
 
     def validate_check_options
-      init_keys = %i[base_branch setup_command validate_command test_command review_policy review_check
+      init_keys = %i[base_branch setup_command validate_command test_command review_policy github_action_check
                      merge_preference plan]
       raise OptionParser::InvalidArgument, 'init options do not apply to check' if @options.keys.intersect?(init_keys)
       raise OptionParser::InvalidArgument, '--local cannot be combined with --ref' if local? && @options.key?(:ref)
@@ -117,16 +120,6 @@ module Shaka
           @options[:"#{name}_command"] = value
         end
       end
-    end
-
-    def add_policy_options(flags)
-      flags.on('--review-policy MODE', %w[always meaningful_changes none],
-               'always, meaningful_changes, or none') { |value| @options[:review_policy] = value }
-      flags.on('--review-check NAME', 'Independent review check name') { |value| @options[:review_check] = value }
-      flags.on('--merge-preference MODE', %w[ask auto], 'ask or auto (default: ask)') do |value|
-        @options[:merge_preference] = value
-      end
-      flags.on('--plan PATH', 'Optional repository-relative plan path') { |value| @options[:plan] = value }
     end
 
     def help(parser)

@@ -252,7 +252,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   def test_matching_policy_flags_keep_established_reviewers
     with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
       report = migrate_report(root, sha, '--review-policy', 'none', '--merge-preference', 'ask')
-      reviewers = report.dig('established', 'review', 'reviewers')
+      reviewers = report.dig('established', 'review', 'local_reviewers')
 
       assert_equal 'none', report.dig('established', 'review', 'required')
       assert_equal 'anthropic', reviewers.dig(0, 'provider')
@@ -291,7 +291,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
         data.merge('review' => { 'required' => 'always' })
       end
 
-      assert_includes migrate_report(root, sha).fetch('blocking'), 'review.check'
+      assert_includes migrate_report(root, sha).fetch('blocking'), 'review.github_action_check'
     end
   end
 
@@ -300,8 +300,8 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => always_review_without_check(data)) }
       report = migrate_report(root, sha, *review_check_flags)
 
-      refute_includes report.fetch('blocking'), 'review.check'
-      assert_equal 'example-review', report.dig('established', 'review', 'check')
+      refute_includes report.fetch('blocking'), 'review.github_action_check'
+      assert_equal 'example-review', report.dig('established', 'review', 'github_action_check')
     end
   end
 
@@ -312,7 +312,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
       config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
 
       assert_equal 'apply', applied.fetch('mode')
-      assert_equal 'example-review', config.dig('review', 'check')
+      assert_equal 'example-review', config.dig('review', 'github_action_check')
     end
   end
 
@@ -347,7 +347,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def review_check_flags
-    ['--review-policy', 'always', '--review-check', 'example-review']
+    ['--review-policy', 'always', '--github-action-check', 'example-review']
   end
 end
 

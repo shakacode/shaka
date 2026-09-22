@@ -68,12 +68,15 @@ module Shaka
       def review_policy
         required_policy = required('review_policy')
         if required_policy == 'none'
-          raise Error, '--review-check must be omitted when review policy is none' if @options.key?(:review_check)
+          if @options.key?(:github_action_check)
+            raise Error, '--github-action-check must be omitted when review policy is none'
+          end
 
           return { 'required' => required_policy }
         end
 
-        { 'required' => required_policy, 'check' => required('review_check') }
+        { 'required' => required_policy,
+          RepositoryConfig::ReviewSchema::GITHUB_ACTION_CHECK => required('github_action_check') }
       end
 
       def wrapper(arguments)

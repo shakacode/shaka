@@ -13,12 +13,12 @@ plan: docs/pilot-plan.md
 # model qualifies; a different provider is only preferred.
 review:
   required: meaningful_changes
-  check: claude-review
+  # GitHub Actions job Shaka reads. This is not the local reviewer list below.
+  github_action_check: claude-review
   # Product default is swift: merge after required checks without waiting for optional review jobs.
   pace: swift
-  # Ordered reviewer preference. `shaka reviewer` chooses from this list; the rule lives in
-  # docs/settings.md#reviewreviewers, so do not restate it here.
-  reviewers:
+  # Local reviewers, in preference order. Distinct from github_action_check.
+  local_reviewers:
     - provider: anthropic
       model_family: claude
     - provider: openai

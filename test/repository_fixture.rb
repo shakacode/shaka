@@ -54,8 +54,8 @@ module RepositoryConfigTestHelpers
   end
 
   def review_policy(overrides = {})
-    { 'required' => 'meaningful_changes', 'check' => 'claude-review',
-      'reviewers' => reviewers }.merge(overrides)
+    { 'required' => 'meaningful_changes', 'github_action_check' => 'claude-review',
+      'local_reviewers' => reviewers }.merge(overrides)
   end
 
   def reviewers

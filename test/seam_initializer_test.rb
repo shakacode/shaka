@@ -34,7 +34,7 @@ module SeamInitializerTestHelpers
     [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
      '--setup-command', setup_command, '--validate-command', validate_command,
      '--test-command', test_command, '--review-policy', 'meaningful_changes',
-     '--review-check', 'claude-review']
+     '--github-action-check', 'claude-review']
   end
 
   def generated_files(root)
@@ -260,7 +260,7 @@ class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
   def test_rejects_missing_required_policy_before_writing
-    %w[--review-policy --review-check].each do |flag|
+    %w[--review-policy --github-action-check].each do |flag|
       with_repository do |root|
         arguments = init_arguments(root)
         arguments.slice!(arguments.index(flag), 2)
@@ -289,7 +289,7 @@ class SeamInitializerValidationTest < Minitest::Test
     with_repository do |root|
       arguments = init_arguments(root)
       arguments[arguments.index('meaningful_changes')] = 'none'
-      arguments.slice!(arguments.index('--review-check'), 2)
+      arguments.slice!(arguments.index('--github-action-check'), 2)
 
       output, error, status = Open3.capture3(*arguments)
 

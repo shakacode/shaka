@@ -64,7 +64,8 @@ module Shaka
       def validate_review
         review = mapping!(@data['review'], 'review')
         ReviewSchema.retired!(review)
-        optional = %w[check reviewers pace]
+        ReviewSchema.renamed!(review)
+        optional = [ReviewSchema::GITHUB_ACTION_CHECK, ReviewSchema::LOCAL_REVIEWERS, 'pace']
         keys!(review, ['required'], optional, 'review')
         ReviewSchema.new(review).validate
       end

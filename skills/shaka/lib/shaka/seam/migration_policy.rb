@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../repository_config/review_schema'
 
 module Shaka
   class Seam
@@ -12,32 +13,38 @@ module Shaka
         overlay_review(classified) if @options[:review_policy]
         overlay_merge(classified) if @options[:merge_preference]
         classified.blocking.delete('review.required') if classified.established.dig('review', 'required')
-        classified.blocking.delete('review.check') if review_check_resolved?(classified)
+        check = RepositoryConfig::ReviewSchema::GITHUB_ACTION_CHECK
+        classified.blocking.delete("review.#{check}") if github_action_check_resolved?(classified)
         classified.blocking.delete('merge.preference') if classified.established.dig('merge', 'preference')
       end
 
-      def review_check_resolved?(classified)
+      def github_action_check_resolved?(classified)
         review = classified.established['review'] || {}
-        review['required'] == 'none' || review['check']
+        check = RepositoryConfig::ReviewSchema::GITHUB_ACTION_CHECK
+        review['required'] == 'none' || review[check]
       end
 
       def overlay_review(classified)
         require_review_flags!
         existing = classified.established['review'] || {}
+        check = RepositoryConfig::ReviewSchema::GITHUB_ACTION_CHECK
         refuse_policy_override('--review-policy', 'review.required', existing['required'], @options[:review_policy])
-        refuse_policy_override('--review-check', 'review.check', existing['check'], @options[:review_check])
+        refuse_policy_override('--github-action-check', "review.#{check}", existing[check],
+                               @options[:github_action_check])
         classified.established['review'] = existing.merge(review_overlay)
       end
 
       def require_review_flags!
         none = @options[:review_policy] == 'none'
-        raise Error, '--review-check must be omitted when review policy is none' if none && @options.key?(:review_check)
-        raise Error, '--review-check is required' if !none && !@options[:review_check]
+        supplied = @options.key?(:github_action_check)
+        raise Error, '--github-action-check must be omitted when review policy is none' if none && supplied
+        raise Error, '--github-action-check is required' if !none && !@options[:github_action_check]
       end
 
       def review_overlay
         overlay = { 'required' => @options[:review_policy] }
-        overlay['check'] = @options[:review_check] if @options[:review_check]
+        check = RepositoryConfig::ReviewSchema::GITHUB_ACTION_CHECK
+        overlay[check] = @options[:github_action_check] if @options[:github_action_check]
         overlay
       end
 

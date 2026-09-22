@@ -13,6 +13,9 @@ module Shaka
 
       # The validator enforces exactly what selection consumes, so both read one definition.
       IDENTITY = ReviewerSelection::IDENTITY
+      GITHUB_ACTION_CHECK = 'github_action_check'
+      LOCAL_REVIEWERS = 'local_reviewers'
+      RENAMED = { 'check' => GITHUB_ACTION_CHECK, 'reviewers' => LOCAL_REVIEWERS }.freeze
       RETIRED = %w[model_family provider draft].freeze
 
       # The flat metadata group became an ordered list, so name the migration rather than
@@ -21,7 +24,15 @@ module Shaka
         found = RETIRED & review.keys
         return if found.empty?
 
-        raise Error, "review.#{found.first} moved into review.reviewers; see docs/settings.md"
+        raise Error, "review.#{found.first} moved into review.#{LOCAL_REVIEWERS}; see docs/settings.md"
+      end
+
+      # `check` and `reviewers` did not say which list was the GitHub Action and which was local.
+      def self.renamed!(review)
+        old = RENAMED.keys.find { |key| review.key?(key) }
+        return unless old
+
+        raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see docs/settings.md"
       end
 
       def initialize(review)
@@ -34,7 +45,7 @@ module Shaka
         enum!(@review['required'])
         validate_check
         validate_pace
-        reviewers!(@review['reviewers']) if @review.key?('reviewers')
+        local_reviewers!(@review[LOCAL_REVIEWERS]) if @review.key?(LOCAL_REVIEWERS)
       end
 
       private
@@ -45,8 +56,11 @@ module Shaka
       end
 
       def validate_check
-        return string!(@review['check'], 'review.check') unless @review['required'] == 'none'
-        raise Error, 'review.check must be omitted when review.required is none' if @review.key?('check')
+        key = GITHUB_ACTION_CHECK
+        return string!(@review[key], "review.#{key}") unless @review['required'] == 'none'
+        return unless @review.key?(key)
+
+        raise Error, "review.#{key} must be omitted when review.required is none"
       end
 
       def validate_pace
@@ -54,9 +68,10 @@ module Shaka
         raise Error, 'review.pace must be swift or thorough' unless ReviewPace::VALUES.include?(@review['pace'])
       end
 
-      def reviewers!(reviewers)
-        raise Error, 'review.reviewers must be a list' unless reviewers.is_a?(Array)
-        raise Error, 'review.reviewers must not be empty' if reviewers.empty?
+      def local_reviewers!(reviewers)
+        label = "review.#{LOCAL_REVIEWERS}"
+        raise Error, "#{label} must be a list" unless reviewers.is_a?(Array)
+        raise Error, "#{label} must not be empty" if reviewers.empty?
 
         reviewers.each_with_index { |entry, index| entry!(entry, index) }
         repeated!(reviewers)
@@ -67,11 +82,11 @@ module Shaka
       def repeated!(reviewers)
         identities = reviewers.map { |entry| entry.values_at(*IDENTITY).map(&:downcase) }
         repeated = identities.tally.find { |_, count| count > 1 }
-        raise Error, "review.reviewers repeats #{repeated.first.join('/')}" if repeated
+        raise Error, "review.#{LOCAL_REVIEWERS} repeats #{repeated.first.join('/')}" if repeated
       end
 
       def entry!(entry, index)
-        label = "review.reviewers[#{index}]"
+        label = "review.#{LOCAL_REVIEWERS}[#{index}]"
         mapping!(entry, label)
         keys!(entry, IDENTITY, [], label)
         IDENTITY.each { |key| component!(entry[key], "#{label}.#{key}") }

@@ -46,8 +46,11 @@ module Shaka
                  'Explicit review.required when the predecessor cannot establish it') do |value|
           @options[:review_policy] = value
         end
-        flags.on('--review-check NAME', 'Explicit review.check when required') do |value|
-          @options[:review_check] = value
+        flags.on('--github-action-check NAME', 'Explicit review.github_action_check when required') do |value|
+          @options[:github_action_check] = value
+        end
+        flags.on('--review-check NAME', 'Renamed to --github-action-check') do
+          raise Error, '--review-check moved to --github-action-check'
         end
       end
 
