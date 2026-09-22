@@ -69,6 +69,16 @@ module CursorUsageFixture
       user_email: 'SENSITIVE@example.com', transcript_path: '/private/SENSITIVE.jsonl' }
   end
 
+  def grok47_record
+    params = [{ id: 'context', value: '256k' }, { id: 'reasoning_effort', value: 'high' },
+              { id: 'fast', value: 'false' }]
+    stored(NEW, 100).merge(model: 'grok-4.7-high', model_id: 'grok-4.7', model_params: params)
+  end
+
+  def cursor_file_report(record)
+    Dir.mktmpdir { |directory| report('--host', 'cursor', '--file', write_records(directory, [record])) }
+  end
+
   def stored(generation, input, event: 'stop', timestamp: '2026-09-16T12:00:00Z')
     payload(generation, input, event: event).except(:text, :user_email, :transcript_path).merge(timestamp: timestamp)
   end
@@ -163,6 +173,22 @@ class CursorUsageTest < Minitest::Test
       refute_match(/SENSITIVE/, saved)
       assert_equal NEW, JSON.parse(saved.lines.first)['generation_id']
     end
+  end
+
+  def test_grok_47_reasoning_effort_is_priced_without_a_context_surcharge
+    output = cursor_file_report(grok47_record)
+    assert_includes output, '| Configured model | grok-4.7 |'
+    assert_includes output, '| Routed model | grok-4.7-high |'
+    assert_includes output, '| Effort | high |'
+    assert_includes output, '| USD estimate | $0.000260 |'
+    refute_includes output, '256K context threshold'
+  end
+
+  def test_named_effort_wins_over_reasoning_effort
+    params = [{ id: 'effort', value: 'medium' }, { id: 'reasoning_effort', value: 'high' },
+              { id: 'fast', value: 'false' }]
+    output = cursor_file_report(stored(NEW, 100).merge(model_params: params))
+    assert_includes output, '| Effort | medium |'
   end
 
   def test_hook_records_are_readable_by_the_usage_command

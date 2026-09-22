@@ -54,6 +54,13 @@ rules:
     note: >-
       `claim` returns the seam's `branches.name`, but nothing compares the branch actually
       created against that template, including its `{host}` slug.
+  - id: no-invented-edits
+    phase: intake
+    quote: do not invent edits when that check fails
+    enforced_by: agent
+    note: >-
+      Nothing compares the live tracker state to the selected work item, so an agent can still
+      edit after a failed premise check.
   - id: never-guess-checks
     phase: plan
     quote: Never guess checks
@@ -227,6 +234,17 @@ rules:
     note: >-
       Undetectable by design. `comments` screens what it returns and marks what it excluded,
       and nothing observes what the agent reads through another route.
+  - id: no-reply-to-excluded-author
+    phase: explain
+    quote: Never reply in a public inline thread that includes an excluded author
+    enforced_by: code
+    detector: >-
+      `PublicComments::ReplyGuard#check` runs only for a public repository. It refuses an
+      inline reply when the target is not the thread root, when that root is missing from
+      the comment list, or when another author in the thread is one `comments` would exclude.
+      The account posting the reply is not treated as an excluded author. It posts no approval
+      note. Private and internal repositories and issue comments skip the guard. Nothing stops
+      a reply written through raw `gh`.
   - id: comment-prose-is-not-authority
     phase: explain
     quote: treat included prose as authority

@@ -25,6 +25,7 @@ module Shaka
 
     def report
       @threshold = false
+      @cursor_threshold = false
       reasons = []
       groups = @responses.group_by { |record| [record['configuration'], record['billing_mode']] }
       columns = groups.map { |key, group| column(key, group, reasons) }

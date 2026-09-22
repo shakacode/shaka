@@ -4,8 +4,10 @@ module Shaka
   # Report copy for the rate-card cost scenarios.
   module CostCopy
     VERIFIED = '2026-09-16'
+    CURSOR_VERIFIED = '2026-09-21'
     ANTHROPIC_VERIFIED = '2026-09-19'
     THRESHOLD_NOTE = 'OpenAI API estimates apply the 272K context threshold.'
+    CURSOR_THRESHOLD_NOTE = 'Cursor Grok 4.7 estimates apply the 256K context threshold.'
 
     private
 
@@ -27,8 +29,15 @@ module Shaka
     end
 
     def rate_card_intro(columns)
-      bits = priced_rate_copy(columns)
-      "#{bits.join(', plus ')}, verified #{VERIFIED}." unless bits.empty?
+      sentences = rate_card_sentences(priced_columns(columns))
+      "#{sentences.join('. ')}." unless sentences.empty?
+    end
+
+    def rate_card_sentences(priced)
+      [
+        ("Standard Codex credit and OpenAI API-equivalent rates, verified #{VERIFIED}" if openai_priced?(priced)),
+        ("Cursor on-demand list prices, verified #{CURSOR_VERIFIED}" if cursor_priced?(priced))
+      ].compact
     end
 
     def anthropic_intro(columns)
@@ -37,14 +46,6 @@ module Shaka
       "Anthropic API list prices, verified #{ANTHROPIC_VERIFIED}. Uncached input, cache reads and " \
         'cache writes are separate charges, and a 1-hour cache write costs more than a 5-minute one. ' \
         'Only responses recorded at standard speed are priced.'
-    end
-
-    def priced_rate_copy(columns)
-      priced = priced_columns(columns)
-      [
-        ('Standard Codex credit and OpenAI API-equivalent rates' if openai_priced?(priced)),
-        ('Cursor on-demand list prices' if cursor_priced?(priced))
-      ].compact
     end
 
     def openai_priced?(priced) = priced.any? { |column| openai_rated?(column) }
@@ -76,7 +77,8 @@ module Shaka
     end
 
     def footer(columns, reasons)
-      [reasons.uniq.join('; '), source_line(columns), (@threshold ? THRESHOLD_NOTE : nil)]
+      [reasons.uniq.join('; '), source_line(columns), (@threshold ? THRESHOLD_NOTE : nil),
+       (@cursor_threshold ? CURSOR_THRESHOLD_NOTE : nil)]
         .compact.reject(&:empty?).join("\n")
     end
 

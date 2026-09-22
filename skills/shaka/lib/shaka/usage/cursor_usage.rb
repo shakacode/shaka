@@ -10,7 +10,7 @@ module Shaka
     private
 
     def effort(params)
-      param(params, 'effort')
+      param(params, 'effort') || param(params, 'reasoning_effort')
     end
 
     def billing_mode(params)

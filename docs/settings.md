@@ -175,7 +175,7 @@ second routing table before it can set up, test, or validate a project.
 | Path | Required | Purpose |
 | --- | --- | --- |
 | `.agents/bin/setup` | yes | Install dependencies and prepare a fresh checkout. |
-| `.agents/bin/validate` | yes | Run full validation, as CI would. |
+| `.agents/bin/validate` | yes | Run CI-equivalent validation. It runs no test or lint suites only when a fail-closed classifier proves every change is a regular, non-executable `README.md` or `docs/**/*.md` file. Ambiguous cases run the full gate; whitespace checks still apply, and always-on security checks remain. |
 | `.agents/bin/test` | yes | Run focused tests and forward selection arguments. |
 | `.agents/bin/validate-local` | no | Run a faster pre-review subset. Its presence defers full validation until the repair batch is complete. |
 | `.agents/bin/trigger-hosted-ci` | no | Start staged hosted CI after repairs. It requires `validate-local`. |
