@@ -402,6 +402,11 @@ shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex \
   | codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" -
 ```
 
+A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
+reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
+Use that flag only after `codex` is missing from `PATH` or this documented invocation
+fails, and record the failure.
+
 `-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, and `--ignore-user-config`
 skips `$CODEX_HOME/config.toml`. Do not add `--ephemeral`: that flag persists no session, so
 `shaka usage` cannot read the review. After the run, pass that session's jsonl with
@@ -425,6 +430,11 @@ shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --
 ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["result"]' "$usage" > "$report"
 shaka usage --host claude-code --file "$usage" --commit "$head" --contribution review
 ```
+
+A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
+reviewer and cannot replace `claude -p`. It also is not evidence for `--unavailable`.
+Use that flag only after `claude` is missing from `PATH` or this documented invocation
+fails, and record the failure.
 
 `-p` prints and exits. `--output-format json` writes one result object the usage reader can
 price; `result` is the review text and is not published in the usage report. `--permission-mode plan` with `--permission-prompts none` withholds edits
