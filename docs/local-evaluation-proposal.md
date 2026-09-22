@@ -304,6 +304,9 @@ it. Measured campaigns instead use a private probe and private cell
 repositories. Check each cell credential before launch; never expose probe history to
 a measured cell. A missing capability
 is `HARNESS_ERROR`; never relax the helper, protection, or token scope to pass.
+Container qualification evidence must include the mounted fixture completing its trusted
+setup, test, and validate commands inside the built image; image-hardening, reset, and
+cleanup smoke checks alone are insufficient.
 GitHub's PAT guide and [Checks endpoint documentation](https://docs.github.com/en/rest/checks/runs#list-check-runs-for-a-git-reference)
 differ on fine-grained Checks support, so the proposed minimal token is a
 qualification target, not a demonstrated working credential recipe.
