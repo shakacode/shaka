@@ -28,7 +28,9 @@ valid_repository "$private_repository" || fail 'private sibling repository must 
   fail 'private sibling repository must have the same owner as the target repository'
 [ -n "$expected_login" ] || fail 'expected machine login is required'
 
-for variable in GH_TOKEN GITHUB_TOKEN SSH_AUTH_SOCK; do
+for variable in GH_TOKEN GITHUB_TOKEN SSH_AUTH_SOCK \
+  HTTP_PROXY HTTPS_PROXY FTP_PROXY NO_PROXY ALL_PROXY \
+  http_proxy https_proxy ftp_proxy no_proxy all_proxy; do
   eval "value=\${$variable-}"
   [ -z "$value" ] || fail "$variable must not be inherited"
 done

@@ -24,7 +24,9 @@ module LocalEvaluationProbeHelpers
 
   def clean_environment(home, fake_bin)
     { 'HOME' => home, 'PATH' => "#{fake_bin}:#{ENV.fetch('PATH')}", 'GH_TOKEN' => nil,
-      'GITHUB_TOKEN' => nil, 'SSH_AUTH_SOCK' => nil }
+      'GITHUB_TOKEN' => nil, 'SSH_AUTH_SOCK' => nil }.merge(
+        Shaka::Evaluation::PROXY_VARIABLES.to_h { |variable| [variable, nil] }
+      )
   end
 
   def write_executable(directory, name, body)
@@ -71,6 +73,9 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
     assert_includes command, 'TMPDIR=/workspace/tmp'
     assert_includes command, '/home/shaka:rw,noexec,nosuid,nodev,mode=0700,uid=100,gid=101'
     assert_includes command, '/usr/local/bundle:rw,exec,nosuid,nodev,mode=0700,uid=100,gid=101'
+    Shaka::Evaluation::PROXY_VARIABLES.each do |variable|
+      assert_includes command.each_cons(2).to_a, ['--env', "#{variable}="]
+    end
     refute(command.any? { |argument| argument.match?(/token|github_pat_|ssh_auth_sock/i) })
   end
 
@@ -399,7 +404,8 @@ class LocalEvaluationProbePreflightTest < Minitest::Test
   end
 
   def test_preflight_rejects_inherited_credentials
-    %w[GH_TOKEN GITHUB_TOKEN SSH_AUTH_SOCK].each do |variable|
+    (%w[GH_TOKEN GITHUB_TOKEN SSH_AUTH_SOCK] +
+      Shaka::Evaluation::PROXY_VARIABLES).each do |variable|
       with_preflight("#!/bin/sh\nexit 255\n", environment: { variable => 'present' }) do |_out, err, status|
         refute_predicate status, :success?
         assert_match(/must not be inherited/, err)

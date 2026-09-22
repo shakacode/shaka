@@ -2,6 +2,10 @@
 
 module Shaka
   module Evaluation
+    OWNER_LABEL = 'shaka.slice0.owner'
+    PROXY_VARIABLES = %w[HTTP_PROXY HTTPS_PROXY FTP_PROXY NO_PROXY ALL_PROXY
+                         http_proxy https_proxy ftp_proxy no_proxy all_proxy].freeze
+
     # Builds owner-side commands that verify the machine account topology.
     module ProbeOwnerCommands
       def owner_identity_command = %w[gh api user --jq .login]
@@ -23,7 +27,6 @@ module Shaka
       include ProbeOwnerCommands
 
       IMAGE = 'shaka-slice0-probe:local'
-      OWNER_LABEL = 'shaka.slice0.owner'
       NAME = /\Ashaka-slice0-probe-[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\z/
 
       def initialize(root:, trusted_skill:)
@@ -53,6 +56,7 @@ module Shaka
         ['docker', 'create', '--name', name, '--hostname', 'slice0-probe', '--label', "#{OWNER_LABEL}=#{ownership}",
          *security_options, *mount_options(trusted_skill),
          '--env', 'HOME=/home/shaka', '--env', 'TMPDIR=/workspace/tmp',
+         *Shaka::Evaluation::PROXY_VARIABLES.flat_map { |variable| ['--env', "#{variable}="] },
          '--env', 'GIT_TERMINAL_PROMPT=0',
          IMAGE, 'sleep', 'infinity']
       end
