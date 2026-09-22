@@ -183,7 +183,8 @@ rules:
   - id: reviewer-unavailability-evidence
     phase: verify
     quote: >-
-      A setup failure before the reviewer launches is not availability evidence.
+      Added or removed flags do not establish unavailability. A setup failure before the reviewer
+      launches is not availability evidence.
     enforced_by: agent
     note: >-
       Nothing verifies why the owner passed `--unavailable`; review checks the published record.

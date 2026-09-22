@@ -149,9 +149,10 @@ a delegated worker. Pass `--ref` with the immutable commit that intake resolved 
 preference order comes from that snapshot rather than from the branch under review or a ref that
 has since moved. Pass `--unavailable` only with recorded evidence that the selected local path
 cannot run. For `anthropic/claude` and `openai/codex`, the only qualifying evidence is that the
-documented CLI is missing from `PATH`, or that its reviewer process launched and itself reported a
-failure such as missing credentials, exhausted quota, or a provider outage. A setup failure before
-the reviewer process launches and a current-host Task or subagent do not qualify.
+documented CLI is missing from `PATH`, or that the documented reviewer command ran with its shown
+flags and itself reported a failure such as missing credentials, exhausted quota, or a provider
+outage. Added or removed flags do not establish unavailability. A setup failure before the reviewer
+process launches and a current-host Task or subagent do not qualify.
 
 Four outcomes, none of them an error:
 
@@ -399,17 +400,18 @@ Codex 0.154.0:
 
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
-head=$(git rev-parse HEAD)
-shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex \
-  | codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" -
+prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX") || exit 1
+base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD) || exit 1
+head=$(git rev-parse HEAD) || exit 1
+shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex > "$prompt" || exit 1
+codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" - < "$prompt"
 ```
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
-Use that flag only after `codex` is missing from `PATH`, or the `codex exec` reviewer
-process launches and itself reports a failure. Record that CLI failure; a failed setup step
-such as `mktemp`, `git merge-base`, or `shaka review-prompt` does not qualify.
+Use that flag only after `codex` is missing from `PATH`, or the documented `codex exec`
+command runs with its shown flags and itself reports a failure. Record that CLI failure;
+a failed setup step such as `mktemp`, `git merge-base`, or `shaka review-prompt` does not qualify.
 
 `-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, and `--ignore-user-config`
 skips `$CODEX_HOME/config.toml`. Do not add `--ephemeral`: that flag persists no session, so
@@ -426,20 +428,22 @@ Claude Code:
 ```bash
 report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
 usage=$(mktemp "${TMPDIR:-/tmp}/shaka-review-usage.XXXXXX") || exit 1
-base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
-head=$(git rev-parse HEAD)
+prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX") || exit 1
+base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD) || exit 1
+head=$(git rev-parse HEAD) || exit 1
 shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
-  | claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
-    --strict-mcp-config --effort medium --output-format json - > "$usage"
+  > "$prompt" || exit 1
+claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
+  --strict-mcp-config --effort medium --output-format json - < "$prompt" > "$usage" || exit 1
 ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["result"]' "$usage" > "$report"
 shaka usage --host claude-code --file "$usage" --commit "$head" --contribution review
 ```
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
 reviewer and cannot replace `claude -p`. It also is not evidence for `--unavailable`.
-Use that flag only after `claude` is missing from `PATH`, or the `claude -p` reviewer
-process launches and itself reports a failure. Record that CLI failure; a failed setup step
-such as `mktemp`, `git merge-base`, or `shaka review-prompt` does not qualify.
+Use that flag only after `claude` is missing from `PATH`, or the documented `claude -p`
+command runs with its shown flags and itself reports a failure. Record that CLI failure;
+a failed setup step such as `mktemp`, `git merge-base`, or `shaka review-prompt` does not qualify.
 
 `-p` prints and exits. `--output-format json` writes one result object the usage reader can
 price; `result` is the review text and is not published in the usage report. `--permission-mode plan` with `--permission-prompts none` withholds edits

@@ -180,9 +180,10 @@ phases:
         produced part of the change, counting a delegated worker, and `--unavailable
         PROVIDER/FAMILY` only with recorded evidence that the selected local path cannot run. For
         `anthropic/claude` and `openai/codex`, the evidence is either the documented CLI missing
-        from `PATH`, or its reviewer process launching and itself reporting a failure such as
-        missing credentials, exhausted quota, or a provider outage. A setup failure before the
-        reviewer launches is not availability evidence. It returns `different_provider`,
+        from `PATH`, or the documented reviewer command running with its shown flags and itself
+        reporting a failure such as missing credentials, exhausted quota, or a provider outage.
+        Added or removed flags do not establish unavailability. A setup failure before the reviewer
+        launches is not availability evidence. It returns `different_provider`,
         `same_provider`, `same_model`, or `hosted_only`, with a note to copy into the record. None is an error: with
         nothing listed available, run the implementation model in a fresh context; with nothing able
         to run locally at all, `hosted_only` says so, and either way the GitHub reviews still run
