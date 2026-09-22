@@ -399,12 +399,16 @@ Verified flags, current for the versions named:
 Codex 0.154.0:
 
 ```bash
-report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX") || exit 1
-base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD) || exit 1
-head=$(git rev-parse HEAD) || exit 1
-shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex > "$prompt" || exit 1
-codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" - < "$prompt"
+(
+  set -euo pipefail
+  report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX")
+  prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX")
+  base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
+  head=$(git rev-parse HEAD)
+  shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex > "$prompt"
+  codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" - < "$prompt"
+  printf 'Review report: %s\nReviewed head: %s\n' "$report" "$head"
+)
 ```
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
@@ -416,7 +420,8 @@ a failed setup step such as `mktemp`, `git merge-base`, or `shaka review-prompt`
 `-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, and `--ignore-user-config`
 skips `$CODEX_HOME/config.toml`. Do not add `--ephemeral`: that flag persists no session, so
 `shaka usage` cannot read the review. After the run, pass that session's jsonl with
-`shaka usage --host codex --file PATH --commit "$head" --contribution review --all-turns`.
+`shaka usage --host codex --file PATH --commit COMMIT --contribution review --all-turns`, using
+the `Reviewed head` printed by the block.
 Keep `-o` outside the
 repository, since it overwrites whatever it names, and give `mktemp` an explicit `XXXXXX` template:
 GNU `mktemp` rejects a template with fewer than three `X` characters, and a failed substitution
@@ -426,17 +431,24 @@ own instructions and refuses a custom prompt, so use plain `exec` for these.
 Claude Code:
 
 ```bash
-report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX") || exit 1
-usage=$(mktemp "${TMPDIR:-/tmp}/shaka-review-usage.XXXXXX") || exit 1
-prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX") || exit 1
-base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD) || exit 1
-head=$(git rev-parse HEAD) || exit 1
-shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
-  > "$prompt" || exit 1
-claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
-  --strict-mcp-config --effort medium --output-format json - < "$prompt" > "$usage" || exit 1
-ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["result"]' "$usage" > "$report"
-shaka usage --host claude-code --file "$usage" --commit "$head" --contribution review
+(
+  set -euo pipefail
+  report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX")
+  usage=$(mktemp "${TMPDIR:-/tmp}/shaka-review-usage.XXXXXX")
+  prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX")
+  base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
+  head=$(git rev-parse HEAD)
+  shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
+    > "$prompt"
+  if ! claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
+    --strict-mcp-config --effort medium --output-format json - < "$prompt" > "$usage"; then
+    printf 'Claude reviewer failed; inspect %s\n' "$usage" >&2
+    exit 1
+  fi
+  ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["result"]' "$usage" > "$report"
+  shaka usage --host claude-code --file "$usage" --commit "$head" --contribution review
+  printf 'Review report: %s\nUsage evidence: %s\n' "$report" "$usage"
+)
 ```
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
