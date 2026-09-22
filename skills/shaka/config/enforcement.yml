@@ -180,6 +180,13 @@ rules:
     note: >-
       `reviewer` computes the preferred reviewer, but nothing compares the reviewer that
       actually ran against the one it returned.
+  - id: reviewer-unavailability-evidence
+    phase: verify
+    quote: >-
+      A setup failure before the reviewer launches is not availability evidence.
+    enforced_by: agent
+    note: >-
+      Nothing verifies why the owner passed `--unavailable`; review checks the published record.
   - id: captures-do-not-replace-tests
     phase: verify
     quote: Captures complement tests; they do not replace them.

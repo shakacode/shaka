@@ -20,8 +20,9 @@ Run the identity it returns. Do not keep the implementation host and pick a sibl
 there: an OpenAI Sol implementation lists Claude first, and reviewing it with GPT-6 Astra
 is both the same provider and a more expensive model. OpenAI standard list prices were
 $10/$50 per 1M input/output for Astra versus $4/$20 for Sol on 2026-09-19; see
-[OpenAI pricing](https://developers.openai.com/api/docs/pricing). Missing Claude credentials are `--unavailable
-anthropic/claude`, after which the helper may select the next listed provider.
+[OpenAI pricing](https://developers.openai.com/api/docs/pricing). Mark Claude unavailable only
+with the CLI evidence defined under [invoke a reviewer locally](#invoke-a-reviewer-locally),
+after which the helper may select the next listed provider.
 
 `review.local_review_agents` in the repository's trusted `.agents/agent-workflow.yml` lists the local
 review agents to try, in preference order. Each entry names a `provider` and `model_family` and nothing
@@ -146,9 +147,11 @@ shaka reviewer [--root DIR] [--ref REF] --implementer PROVIDER/FAMILY [--impleme
 Pass `--implementer` once per provider and model family that produced part of the change, counting
 a delegated worker. Pass `--ref` with the immutable commit that intake resolved and that `seam check` used, so the
 preference order comes from that snapshot rather than from the branch under review or a ref that
-has since moved. Pass `--unavailable` for
-anything you have evidence cannot run: exhausted credits or quota, a provider outage, or no
-runnable job.
+has since moved. Pass `--unavailable` only with recorded evidence that the selected local path
+cannot run. For `anthropic/claude` and `openai/codex`, the only qualifying evidence is that the
+documented CLI is missing from `PATH`, or that its reviewer process launched and itself reported a
+failure such as missing credentials, exhausted quota, or a provider outage. A setup failure before
+the reviewer process launches and a current-host Task or subagent do not qualify.
 
 Four outcomes, none of them an error:
 
@@ -404,8 +407,9 @@ shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex \
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
-Use that flag only after `codex` is missing from `PATH` or this documented invocation
-fails, and record the failure.
+Use that flag only after `codex` is missing from `PATH`, or the `codex exec` reviewer
+process launches and itself reports a failure. Record that CLI failure; a failed setup step
+such as `mktemp`, `git merge-base`, or `shaka review-prompt` does not qualify.
 
 `-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, and `--ignore-user-config`
 skips `$CODEX_HOME/config.toml`. Do not add `--ephemeral`: that flag persists no session, so
@@ -433,8 +437,9 @@ shaka usage --host claude-code --file "$usage" --commit "$head" --contribution r
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
 reviewer and cannot replace `claude -p`. It also is not evidence for `--unavailable`.
-Use that flag only after `claude` is missing from `PATH` or this documented invocation
-fails, and record the failure.
+Use that flag only after `claude` is missing from `PATH`, or the `claude -p` reviewer
+process launches and itself reports a failure. Record that CLI failure; a failed setup step
+such as `mktemp`, `git merge-base`, or `shaka review-prompt` does not qualify.
 
 `-p` prints and exits. `--output-format json` writes one result object the usage reader can
 price; `result` is the review text and is not published in the usage report. `--permission-mode plan` with `--permission-prompts none` withholds edits
