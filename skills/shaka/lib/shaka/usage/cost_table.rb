@@ -7,7 +7,8 @@ module Shaka
       'gpt-5.6-terra' => '[Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra)',
       'gpt-5.6-sol' => '[Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol)',
       'gpt-6-astra' => '[Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)',
-      'grok-4.6' => '[Cursor Grok 4.6](https://cursor.com/docs/models/grok-4-6)'
+      'grok-4.6' => '[Cursor Grok 4.6](https://cursor.com/docs/models/grok-4-6)',
+      'grok-4.7' => '[Cursor Grok 4.7](https://cursor.com/docs/models/grok-4-7)'
     }.freeze
     CREDIT_SOURCE = '[Codex credit rates](https://learn.chatgpt.com/docs/pricing#token-rates)'
     CACHE_SOURCE = '[prompt-cache accounting](https://developers.openai.com/api/docs/guides/prompt-caching)'
