@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require_relative 'policy_options'
 
 module Shaka
   class Seam
     # CLI flags for seam migrate. Planning is default; apply is explicit.
     module MigratorParser
+      include PolicyOptions
+
       private
 
       def parse!
@@ -51,21 +54,6 @@ module Shaka
         flags.on('--review-policy MODE', %w[always meaningful_changes none],
                  'Explicit review.required when the predecessor cannot establish it') do |value|
           @options[:review_policy] = value
-        end
-      end
-
-      def add_ci_review_agent_flag(flags)
-        flags.on('--ci-review-agent NAME', 'CI review job name; repeat for another job') do |value|
-          (@options[:ci_review_agents] ||= []) << value
-        end
-      end
-
-      def reject_retired_review_flags(flags)
-        flags.on('--github-action-check NAME', 'Renamed to --ci-review-agent') do
-          raise Error, '--github-action-check moved to --ci-review-agent'
-        end
-        flags.on('--review-check NAME', 'Renamed to --ci-review-agent') do
-          raise Error, '--review-check moved to --ci-review-agent'
         end
       end
 

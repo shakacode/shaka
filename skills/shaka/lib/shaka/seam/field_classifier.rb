@@ -20,18 +20,24 @@ module Shaka
         key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
         return @blocking << "review.#{source}" unless REVIEW_KEYS.include?(key)
         return @blocking << collision(source, key) if @established.fetch('review', {}).key?(key)
+        return @blocking << "review.#{source}" if bare_ci_name?(source, nested)
 
         @retained << "review.#{key}"
-        store_review(key, job_list(key, nested))
+        store_review(key, job_list(source, nested))
       end
 
       def collision(source, key)
         "review.#{source} (collides with review.#{key})"
       end
 
-      # A predecessor records one CI job name as a string. The current key is a list.
-      def job_list(key, nested)
-        return [nested] if key == RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS && nested.is_a?(String)
+      # The current key is already a list. Only a retired singular key arrives as one job name.
+      def bare_ci_name?(source, nested)
+        source == RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS && !nested.is_a?(Array)
+      end
+
+      def job_list(source, nested)
+        legacy = RepositoryConfig::ReviewSchema::RENAMED[source]
+        return [nested] if legacy == RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS && nested.is_a?(String)
 
         nested
       end

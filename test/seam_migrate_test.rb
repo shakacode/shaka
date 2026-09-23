@@ -367,6 +367,49 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 end
 
+class SeamMigrateCiJobListTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  def test_a_string_under_the_current_ci_key_blocks
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => scalar_current_review(data)) }
+      report = migrate_report(root, sha)
+
+      assert_includes report.fetch('blocking'), 'review.ci_review_agents'
+      assert_nil report.dig('established', 'review', 'ci_review_agents')
+    end
+  end
+
+  def test_a_legacy_check_string_becomes_one_list_entry
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_check_review(data, 'check')) }
+      report = migrate_report(root, sha)
+
+      refute_includes report.fetch('blocking'), 'review.ci_review_agents'
+      assert_equal ['claude-review'], report.dig('established', 'review', 'ci_review_agents')
+    end
+  end
+
+  def test_a_legacy_github_action_check_string_becomes_one_list_entry
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_check_review(data, 'github_action_check')) }
+      report = migrate_report(root, sha)
+
+      refute_includes report.fetch('blocking'), 'review.ci_review_agents'
+      assert_equal ['claude-review'], report.dig('established', 'review', 'ci_review_agents')
+    end
+  end
+
+  def scalar_current_review(data)
+    { 'required' => 'always', 'ci_review_agents' => 'claude-review',
+      'reviewers' => data.dig('review', 'reviewers') }
+  end
+
+  def legacy_check_review(data, key)
+    { 'required' => 'always', key => 'claude-review', 'reviewers' => data.dig('review', 'reviewers') }
+  end
+end
+
 class SeamMigrateOptionalCommandTest < Minitest::Test
   include SeamMigrateHelpers
 

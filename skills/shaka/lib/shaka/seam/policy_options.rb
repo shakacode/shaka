@@ -19,10 +19,14 @@ module Shaka
       def add_review_policy_options(flags)
         flags.on('--review-policy MODE', %w[always meaningful_changes none],
                  'always, meaningful_changes, or none') { |value| @options[:review_policy] = value }
+        add_ci_review_agent_flag(flags)
+        reject_retired_review_flags(flags)
+      end
+
+      def add_ci_review_agent_flag(flags)
         flags.on('--ci-review-agent NAME', 'CI review job name; repeat for another job') do |value|
           (@options[:ci_review_agents] ||= []) << value
         end
-        reject_retired_review_flags(flags)
       end
 
       def reject_retired_review_flags(flags)

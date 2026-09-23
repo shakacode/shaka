@@ -157,3 +157,40 @@ class RetiredReviewKeyTest < Minitest::Test
     end
   end
 end
+
+class CiReviewAgentsTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  def test_rejects_a_ci_review_agent_name_that_is_not_a_list
+    with_repository('review' => review_policy('ci_review_agents' => 'claude-review')) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.ci_review_agents must be a list of CI job names'
+    end
+  end
+
+  def test_rejects_an_empty_ci_review_agent_list
+    with_repository('review' => review_policy('ci_review_agents' => [])) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.ci_review_agents must not be empty'
+    end
+  end
+
+  def test_rejects_a_blank_ci_review_agent_name
+    with_repository('review' => review_policy('ci_review_agents' => [''])) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.ci_review_agents[0] must be a non-empty string'
+    end
+  end
+
+  def test_rejects_a_repeated_ci_review_agent_name_differing_only_by_casing
+    names = %w[Claude-Review claude-review]
+    with_repository('review' => review_policy('ci_review_agents' => names)) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.ci_review_agents repeats claude-review'
+    end
+  end
+end
