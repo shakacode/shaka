@@ -178,9 +178,9 @@ start request. An unchanged scan stays quiet.
 Requirements, priority, status, decisions, and task dependencies live in the
 original issue tracker. On GitHub, use native issue dependencies (`blocked by` /
 `blocking`) rather than a Markdown dependency schema
-(https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies).
+([GitHub guidance](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies)).
 On Linear, use native blocked/blocking issue relations
-(https://linear.app/docs/issue-relations). Use structured prose only for facts the tracker
+([Linear guidance](https://linear.app/docs/issue-relations)). Use structured prose only for facts the tracker
 cannot represent, and keep it human-readable. GitHub PRs hold implementation,
 validation, review, walkthrough, usage, and final-state evidence. Link them to
 their source issue when sharing is authorized. RCT and delivery transcripts are

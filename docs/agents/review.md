@@ -24,15 +24,17 @@ when appropriate; a green job alone is not a completed review.
 Read the [CI review waiting setting](../reference/configuration.md#reviewwait_for_all_ci_reviewers)
 from the trusted default-branch contract. That shared reference owns the values,
 default, and waiting rules; use it when deciding which reports must complete.
-Pass the trusted SHA to `merge --ref`; use `--wait-for-all-ci-reviewers` only for a recorded task override.
+Pass the trusted SHA to `merge --ref`; use `--wait-for-all-ci-reviewers` only
+for a recorded task override.
 
-The local reviewer must be independent of **every** implementing provider to qualify
-to satisfy the different-provider exception. Independent review evidence is either a published
+The local reviewer must be independent of **every** implementing provider to
+satisfy the different-provider exception. Independent review evidence is either a published
 `REVIEWED <sha> BY <provider>/<family>` attestation or a verified named CI report
 for that head. The identity line on a `shaka reply` names the publisher; the closing
 attestation names the reviewer.
 
-Runtime, trust, and test changes need fresh affected review. Classify follow-ups against the diff before applying the reference's waiting rules.
+Runtime, trust, and test changes need fresh affected review. Classify follow-ups
+against the diff before applying the reference's waiting rules.
 
 | Native merge state | Wait for all: `false` | Wait for all: `true` |
 | --- | --- | --- |

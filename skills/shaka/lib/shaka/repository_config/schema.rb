@@ -73,7 +73,7 @@ module Shaka
       def validate_merge
         merge = mapping!(@data['merge'], 'merge')
         retired = %w[method release].find { |key| merge.key?(key) }
-        raise Error, "merge.#{retired} is no longer configurable; see docs/configuration.md" if retired
+        raise Error, "merge.#{retired} is no longer configurable; see docs/agents/migration.md" if retired
 
         keys!(merge, ['preference'], [], 'merge')
         enum!(merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
@@ -83,7 +83,7 @@ module Shaka
         retired = %w[protection trusted_actions].find { |key| @data.key?(key) }
         return unless retired
 
-        raise Error, "#{retired} moved out of the seam; see docs/configuration.md"
+        raise Error, "#{retired} moved out of the seam; see docs/agents/migration.md"
       end
     end
   end

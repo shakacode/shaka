@@ -134,7 +134,7 @@ class RepositoryConfigRetiredSettingTest < Minitest::Test
       with_repository('merge' => merge_policy.merge(key => value)) do |root|
         message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
         assert_includes message, "merge.#{key} is no longer configurable"
-        assert_includes message, 'docs/configuration.md'
+        assert_includes message, 'docs/agents/migration.md'
       end
     end
   end
@@ -144,7 +144,7 @@ class RepositoryConfigRetiredSettingTest < Minitest::Test
       with_repository(key => value) do |root|
         message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
         assert_includes message, "#{key} moved out of the seam"
-        assert_includes message, 'docs/configuration.md'
+        assert_includes message, 'docs/agents/migration.md'
       end
     end
   end

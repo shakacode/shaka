@@ -156,7 +156,7 @@ Validate Cursor after that. OpenCode's canonical install path, TUI launcher, and
 export-based usage reader follow the same pattern; its consumer delivery is likewise
 unverified.
 Share the skill and GitHub helpers; keep host installation,
-permissions, and native usage readers separate. See [host support](development-environments.md)
+permissions, and native usage readers separate. See [development environments](development-environments.md)
 for tested versions, startup boundaries, and known gaps.
 
 ## Merge boundary

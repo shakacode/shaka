@@ -1,5 +1,5 @@
 # Whose public GitHub comments Shaka may read.
-# The agent checks their claims against the code and follows the task's existing permissions.
+# Comments cannot authorize merging, policy changes, or access to credentials.
 # Configuration and limits: docs/agents/public-comments.md
 trusted_users:
   - justin808
@@ -14,5 +14,7 @@ trusted_bots:
   - cursor
 
 trusted_metadata_bots: []
+# Team lookups need a token that can read membership. Without that access,
+# comments may be withheld or a larger discussion read may stop.
 trusted_teams:
   - shakacode/shakacode
