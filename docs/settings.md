@@ -1,7 +1,7 @@
 # Settings reference
 
 This is the shared reference for `.agents/agent-workflow.yml` and `.agents/bin/`.
-For setup, [ask your agent to configure the repository](../configure-repository.md).
+For setup, [ask your agent to configure the repository](configure-repository.md).
 
 ## Standard command scripts
 
@@ -85,7 +85,7 @@ ci_review_jobs:
 ```
 
 A successful job is insufficient; the agent verifies a visible report for the
-reviewed commit. [Review rules](../agents/review.md) define that evidence.
+reviewed commit. [Review rules](agents/review.md) define that evidence.
 
 ### `review.ci_review_wait`
 
@@ -123,7 +123,7 @@ Omitting the list is valid, including with `required: none`.
 instructions. `shaka review run` invokes the supported CLI and checks its result;
 `shaka review check` validates a fresh host report without claiming CLI execution.
 Prefer a second provider when available. There is no configurable wrapper hook.
-See [reviewer selection](../agents/review.md#choose-a-local-reviewer).
+See [reviewer selection](agents/review.md#choose-a-local-reviewer).
 
 Draft support belongs to each reviewer's trusted workflow. Read its triggers;
 there is no per-reviewer `draft` or `check` field here.
@@ -209,7 +209,7 @@ recovery:
 note. Set it to `false` to publish `UNKNOWN` for both fields. The public owner
 alias remains visible.
 
-See [recovery notes](../agents/delivery.md#recover-an-unfinished-pr) for the agent procedure.
+See [recovery notes](agents/delivery.md#recover-an-unfinished-pr) for the agent procedure.
 
 ## `repo_prefix`
 
@@ -226,5 +226,5 @@ result is uppercase: `react_on_rails` → `ROR`, `shakapacker` → `SHAK`.
 shaka prefix --root DIR --ref FULL_DEFAULT_BRANCH_SHA
 ```
 
-The optional [local repository catalog](../agents/repository-catalog.md) caches
+The optional [local repository catalog](agents/repository-catalog.md) caches
 known repositories; it is separate from policy.

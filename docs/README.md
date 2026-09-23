@@ -8,7 +8,7 @@
 
 ## Reference
 
-[Settings and scripts](reference/settings.md) ·
+[Settings and scripts](settings.md) ·
 [Review procedure](agents/review.md) · [Usage reporting](agents/usage-reporting.md)
 
 ## Advanced pilot features

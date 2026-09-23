@@ -30,7 +30,7 @@ $shaka Configure this repository to wait for all configured CI reviewers
 before merging. Keep merge approval with me.
 ```
 
-All settings and defaults are defined once in the [configuration reference](reference/settings.md).
+All settings and defaults are defined once in the [configuration reference](settings.md).
 Shaka's own [configuration](../.agents/agent-workflow.yml) and
 [scripts](../.agents/bin/) provide working examples. For an older installation,
 see [upgrading](migration.md). Agents use the [setup procedure](agents/repository-setup.md).

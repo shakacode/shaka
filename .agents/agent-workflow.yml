@@ -1,4 +1,4 @@
-# Shaka settings for this repository. See docs/reference/settings.md.
+# Shaka settings for this repository. See docs/settings.md.
 ---
 version: 1 # Configuration format, independent of the Shaka release version.
 repo_prefix: SHAKA

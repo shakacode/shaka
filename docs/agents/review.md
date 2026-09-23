@@ -23,7 +23,7 @@ when appropriate; a green job alone is not a completed review.
 
 ## Waiting for CI reviews
 
-Read the [CI review waiting setting](../reference/settings.md#reviewci_review_wait)
+Read the [CI review waiting setting](../settings.md#reviewci_review_wait)
 from the trusted default-branch contract. That shared reference owns the values,
 default, and waiting rules; use it when deciding which reports must complete.
 Pass the trusted SHA to `merge --ref`; use `--ci-review-wait MODE` only

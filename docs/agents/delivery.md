@@ -105,7 +105,7 @@ When false, publish `UNKNOWN` for both Workspace and Thread. The publishing comm
 does not read this setting; check the content before submitting it. Retain the fields and
 public owner alias. The publisher does not enforce this setting; the agent must.
 A repository where even the owner alias is sensitive should not publish these notes.
-See [configuration](../reference/settings.md#recovery).
+See [configuration](../settings.md#recovery).
 
 **Resume as the original owner:** read the live note before writing. If it names
 another owner or tag, preserve local work without pushing, report the transfer,

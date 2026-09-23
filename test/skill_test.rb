@@ -10,7 +10,7 @@ class SkillTest < Minitest::Test
   RCT_CLAUDE_SKILL = File.expand_path('../skills/rct-claude/SKILL.md', __dir__)
   CONTROL_TOWER_GUIDE = File.expand_path('../docs/agents/control-towers.md', __dir__)
   WORKFLOW = File.expand_path('../skills/shaka/config/workflow.yml', __dir__)
-  INTERNAL_GUIDE = File.expand_path('../.agents/guides/shaka-learning.md', __dir__)
+  MAINTENANCE_GUIDE = File.expand_path('../docs/contributing/improving-shaka.md', __dir__)
   PROJECT_SKILL_ROOTS = %w[.agents .claude .codex .cursor .opencode .pi].map do |directory|
     File.expand_path("../#{directory}/skills", __dir__)
   end.freeze
@@ -111,14 +111,14 @@ class SkillTest < Minitest::Test
   # trusted Shaka could establish the default-branch boundary. Until a trusted loader
   # exists, this repository permits no project-local skills in supported host paths;
   # introducing one requires an explicit policy and test change.
-  def test_internal_learning_guide_cannot_be_loaded_as_a_candidate_skill
-    assert File.file?(INTERNAL_GUIDE)
+  def test_maintenance_guide_cannot_be_loaded_as_a_candidate_skill
+    assert File.file?(MAINTENANCE_GUIDE)
     refute(PROJECT_SKILL_ROOTS.any? { |root| File.exist?(root) || File.symlink?(root) })
   end
 
   # A moved rule must still point at a real guide section, or the agent reads nothing.
   def test_every_guide_link_resolves_to_an_existing_heading
-    [SKILL, RCT_SKILL, MCT_SKILL, RCT_CLAUDE_SKILL, INTERNAL_GUIDE].each do |skill|
+    [SKILL, RCT_SKILL, MCT_SKILL, RCT_CLAUDE_SKILL, MAINTENANCE_GUIDE].each do |skill|
       File.read(skill, encoding: 'UTF-8').scan(GUIDE_LINK) do |path, anchor|
         file = File.expand_path(path, File.dirname(skill))
         assert File.file?(file), "#{path} is not a guide"

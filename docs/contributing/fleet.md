@@ -170,7 +170,7 @@ For each selected repository:
    `--apply` after the report names every retained, moved, retired, and blocking field.
    The planner never infers merge authority, review policy, or missing commands. Follow
    the settings guide's
-   [ordered migration](../reference/settings.md#standard-command-scripts): keep repository-owned
+   [ordered migration](../settings.md#standard-command-scripts): keep repository-owned
    wrappers, add missing fixed scripts only when the report says they are absent, and
    retain temporary adapters at old mapped paths.
    Where old and new meanings collide, use the stricter behavior at both paths until the

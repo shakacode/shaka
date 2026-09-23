@@ -12,7 +12,7 @@ the workflow reaches that decision:
 | Task | Reference |
 | --- | --- |
 | Install, upgrade, or remove Shaka | [Installation](installation.md) |
-| Configure or inspect a repository | [Setup](repository-setup.md) and shared [settings reference](../reference/settings.md) |
+| Configure or inspect a repository | [Setup](repository-setup.md) and shared [settings reference](../settings.md) |
 | Migrate existing settings | [Migration](migration.md) |
 | Plan, split PRs, write updates, or recover work | [Delivery and communication](delivery.md) |
 | Select reviewers and handle findings | [Review](review.md) |

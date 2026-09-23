@@ -65,7 +65,7 @@ or a successful review job alone cannot establish merge readiness.
 
 - `README.md` explains the product and its benefits.
 - `docs/` contains installation, usage, and configuration guides.
-- `docs/reference/` defines settings and defaults for both readers and agents.
+- `docs/settings.md` defines settings and defaults for both readers and agents.
 - `docs/agents/` supports the installed skills in any repository.
 - `docs/contributing/` contains development guidance, dated evidence, and proposals.
 - `docs/pilot-plan.md` owns requirements and acceptance.
