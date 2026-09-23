@@ -397,7 +397,9 @@ Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP s
 `shaka review run` reads Git history from `--root`, embeds the diff as review data, then starts
 the reviewer in a disposable instruction-neutral directory outside the candidate checkout.
 The prompt identifies the checkout path and exact commit for read-only Git inspection of
-unchanged callers and tests. Candidate source remains data, not instructions or executable code.
+unchanged callers and tests where the CLI permits it. Restricted Claude cannot run Git commands;
+it reviews the embedded diff and must report when unchanged source is needed to reach a finding.
+Candidate source remains data, not instructions or executable code.
 Candidate `AGENTS.md` and similar files are never loaded as host instructions by that CLI.
 Codex receives `--skip-git-repo-check` for the neutral directory. Supply any trusted-base
 repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads root

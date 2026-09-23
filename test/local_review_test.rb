@@ -182,6 +182,7 @@ class LocalReviewOtherCliTest < Minitest::Test
     invocation = JSON.parse(File.read(trace))
     assert_includes invocation.fetch('args'), '--safe-mode'
     assert_includes invocation.fetch('prompt'), '+after'
+    assert_includes invocation.fetch('prompt'), 'Restricted Claude cannot run Git commands'
   end
 
   def assert_grok_invocation(trace)
@@ -488,6 +489,19 @@ class LocalReviewRelativePathTest < Minitest::Test
       path = "#{candidate_bin}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
       output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => path })
       assert_unsafe_executable_rejected(output, status)
+    end
+  end
+
+  def test_empty_path_entry_resolves_external_current_directory
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'empty-path-trace.json')
+      fake_codex(bin, head)
+      path = ":#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
+      output, error, status = run_review(root, base, head, bin,
+                                         cwd: bin, env: { 'PATH' => path, 'REVIEW_TRACE' => trace })
+      result = assert_successful_review(output, error, status, head, 'openai/codex')
+    ensure
+      cleanup_artifacts(result)
     end
   end
 
