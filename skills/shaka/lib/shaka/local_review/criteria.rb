@@ -9,20 +9,21 @@ module Shaka
       ref = @options[:criteria_ref]
       return '' unless ref
 
-      _stdout, _stderr, status = Open3.capture3('git', '-C', root, 'merge-base', '--is-ancestor', ref, @options[:base])
+      _stdout, _stderr, status = Open3.capture3(git_executable, '-C', root, 'merge-base', '--is-ancestor', ref,
+                                                @options[:base])
       raise Shaka::Error, '--criteria-ref must be an ancestor of --base' unless status.success?
 
       applicable_criteria(ref).map do |path|
-        source = capture('git', '-C', root, 'show', "#{ref}:#{path}")
+        source = capture(git_executable, '-C', root, 'show', "#{ref}:#{path}")
         label = "TRUSTED CRITERIA #{marker}"
         "--- BEGIN #{label} FROM #{ref}:#{path} ---\n#{source}\n--- END #{label} ---\n\n"
       end.join
     end
 
     def applicable_criteria(ref)
-      paths = capture('git', '-C', root, 'diff', '--no-renames', '--name-only', '-z',
+      paths = capture(git_executable, '-C', root, 'diff', '--no-renames', '--name-only', '-z',
                       "#{@options[:base]}...#{head}", '--').split("\0")
-      files = capture('git', '-C', root, 'ls-tree', '-r', '--name-only', '-z', ref, '--').split("\0")
+      files = capture(git_executable, '-C', root, 'ls-tree', '-r', '--name-only', '-z', ref, '--').split("\0")
       files.select { |file| applicable_agents_file?(file, paths) }.sort_by { |file| [file.count('/'), file] }
     end
 

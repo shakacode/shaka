@@ -45,15 +45,45 @@ module Shaka
     def root = @root ||= File.realpath(@options.fetch(:root, Dir.pwd))
   end
 
+  # Refuses candidate-controlled PATH entries before any external command runs.
+  module LocalReviewPathGuard
+    private
+
+    def validate_path!
+      ENV.fetch('PATH', '').split(File::PATH_SEPARATOR, -1).each do |entry|
+        directory = File.expand_path(entry.empty? ? '.' : entry)
+        next unless File.directory?(directory)
+
+        target = File.realpath(directory)
+        raise Shaka::Error, 'PATH entry resolves inside candidate checkout' if
+          LocalReviewExecutable.candidate_owned?(target, root)
+      end
+    end
+
+    def git_executable
+      @git_executable ||= LocalReviewExecutable.resolve('git', candidate_root: root) ||
+                          (raise Shaka::Error, 'git is not on PATH')
+    end
+
+    def validate_tempdir!
+      directory = File.realpath(Dir.tmpdir)
+      raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout' if
+        directory == root || directory.start_with?("#{root}/")
+    end
+  end
+
   # Checks the exact revision, launches a reviewer, and validates its report.
   class LocalReviewRunner
     include LocalReviewSourceContext
+    include LocalReviewPathGuard
     include LocalReviewCriteria
 
     def initialize(options) = @options = options
 
     def run
       @attempted = false
+      validate_path!
+      git_executable
       validate!
       validate_tempdir!
       run_report(review_prompt)
@@ -122,14 +152,8 @@ module Shaka
     end
 
     def validate_checkout!
-      actual = capture('git', '-C', root, 'rev-parse', 'HEAD').strip
+      actual = capture(git_executable, '-C', root, 'rev-parse', 'HEAD').strip
       raise Shaka::Error, "Checkout HEAD is #{actual}, not #{head}" unless actual == head
-    end
-
-    def validate_tempdir!
-      directory = File.realpath(Dir.tmpdir)
-      raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout' if
-        directory == root || directory.start_with?("#{root}/")
     end
 
     def validate_report(path)
@@ -145,7 +169,8 @@ module Shaka
       script = File.expand_path('../../../scripts/shaka', __dir__)
       output = capture(RbConfig.ruby, script, 'review-prompt', '--head', head,
                        '--base', @options[:base], '--reviewer', reviewer, '--effort', effort)
-      diff = capture('git', '-C', root, 'diff', '--no-ext-diff', '--no-textconv', "#{@options[:base]}...#{head}", '--')
+      diff = capture(git_executable, '-C', root, 'diff', '--no-ext-diff', '--no-textconv',
+                     "#{@options[:base]}...#{head}", '--')
       marker = SecureRandom.hex(16)
       "#{output}\n\n#{source_context(marker)}#{trusted_criteria(marker)}" \
         "--- BEGIN DIFF DATA #{marker} ---\n#{diff}\n--- END DIFF DATA #{marker} ---\n"

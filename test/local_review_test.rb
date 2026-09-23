@@ -485,10 +485,12 @@ class LocalReviewRelativePathTest < Minitest::Test
     with_repository do |root, base, head, bin|
       candidate_bin = File.join(root, 'bin')
       FileUtils.mkdir_p(candidate_bin)
-      write_executable(candidate_bin, 'codex', "#!/bin/sh\nexit 0\n")
+      marker = File.join(root, 'candidate-git-ran')
+      write_executable(candidate_bin, 'git', "#!/usr/bin/env ruby\nFile.write(ENV.fetch('MARKER'), 'ran')\n")
       path = "#{candidate_bin}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
-      output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => path })
+      output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => path, 'MARKER' => marker })
       assert_unsafe_executable_rejected(output, status)
+      refute_path_exists marker
     end
   end
 
