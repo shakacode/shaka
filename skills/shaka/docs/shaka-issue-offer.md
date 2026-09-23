@@ -59,18 +59,17 @@ and explicitly authorizes creation. Reverify the repository identity, then repea
 with the exact approved query. If it fails or reaches the result limit, do not file. Compare the
 returned candidate metadata with the results the user reviewed. If any candidate is new or its
 metadata changed, share the updated metadata and wait for the user's inspection and renewed explicit
-approval. After that approval, repeat the search; file only when its candidate metadata still matches
-what the user reviewed. Otherwise, stop and repeat this review step. Populate `ISSUE_TITLE` and
-`ISSUE_BODY_FILE` from the accepted text without changing either value or evaluating the text as
-shell syntax. Read the single-line title with `IFS= read -r` from a quoted here-document, choosing
-a delimiter absent from the title, or use another literal-safe argument builder. Create the body file
-with `mktemp` outside the working tree and private file permissions. For a quoted here-document,
-choose and verify a delimiter that appears nowhere in the complete approved body, then use that
-literal delimiter to write the exact body. Then run:
+approval before filing. If no candidate metadata changed, the existing filing approval remains
+sufficient. File only after the latest candidates are reviewed and the user confirms none covers the
+gap. Do not repeat the search after renewed approval; a candidate opened after the final recheck is a
+narrow race the procedure cannot eliminate.
 
-```sh
-GH_HOST=github.com gh issue create --repo shakacode/shaka --title "$ISSUE_TITLE" --body-file "$ISSUE_BODY_FILE"
-```
-
-After the command returns, remove the temporary body file whether creation succeeded or failed.
-Confirm creation succeeded, then share the resulting issue link.
+Pass the exact approved text to the installed Shaka CLI's `issue-create` subcommand. Put the
+single-line title first and the approved body on the remaining lines of a quoted here-document.
+Choose a delimiter that appears nowhere in either value; the quoted delimiter keeps the draft
+literal. The command rechecks the fixed public repository identity on GitHub.com, streams the exact
+body to `gh`, and prints the resulting public issue URL. Send a quoted here-document to
+`shaka issue-create`, with the approved title on its first line and body on the remaining lines.
+The command removes the one final newline the here-document uses to terminate input. To preserve an
+approved body that ends with a newline, include one extra blank line before the delimiter. If the
+command does not return the issue URL, stop and inspect live repository state before any retry.
