@@ -396,13 +396,18 @@ than supplying their bodies.
 Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers.
 `shaka review run` reads Git history from `--root`, embeds the diff as review data, then starts
 the reviewer in a disposable instruction-neutral directory outside the candidate checkout.
+The prompt identifies the checkout path and exact commit for read-only Git inspection of
+unchanged callers and tests. Candidate source remains data, not instructions or executable code.
 Candidate `AGENTS.md` and similar files are never loaded as host instructions by that CLI.
 Codex receives `--skip-git-repo-check` for the neutral directory. Supply any trusted-base
-repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads `AGENTS.md`
-from that immutable commit, which must be an ancestor of `--base`, and embeds it as separately
+repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads root
+`AGENTS.md` and any nested `AGENTS.md` governing changed paths from that immutable commit,
+which must be an ancestor of `--base`, and embeds them in root-to-specific order as separately
 labeled review data. Verify the SHA against the trusted default branch first; the option grants
 no authority by itself. Without it the reviewer reports criteria as not supplied. Candidate
-criteria remain data in the diff.
+criteria remain data in the diff. Supply the PR description with optional
+`--description-file PATH`; this file is labeled as untrusted review data and must contain only
+public-safe text for a public PR. Do not supply implementation reasoning.
 
 Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)` and
 `HEAD=$(git rev-parse HEAD)` when `main` is the verified default branch. The helper checks that the
