@@ -157,7 +157,7 @@ module Shaka
     def validate_reviewer!
       raise Shaka::Error, '--reviewer is required' if @options[:reviewer].to_s.empty?
 
-      @options[:reviewer] = ReviewerSelection.parse(@options.fetch(:reviewer)).values.join('/')
+      @options[:reviewer] = ReviewerSelection.parse(@options.fetch(:reviewer)).values.map(&:downcase).join('/')
       unless %w[openai/codex anthropic/claude xai/grok].include?(reviewer)
         raise Shaka::Error, 'Unsupported local reviewer'
       end

@@ -628,6 +628,22 @@ class LocalReviewRelativePathTest < Minitest::Test
   end
 end
 
+class LocalReviewCaseIdentityTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_mixed_case_reviewer_identity_uses_documented_cli
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'mixed-case-trace.json')
+      fake_codex(bin, head)
+      output, error, status = run_review(root, base, head, bin,
+                                         reviewer: 'OpenAI/Codex', env: { 'REVIEW_TRACE' => trace })
+      result = assert_successful_review(output, error, status, head, 'openai/codex')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+end
+
 class LocalReviewEmptyReportTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -808,7 +824,7 @@ module LocalReviewFixture
   def review_arguments(root, base, head, reviewer, options)
     arguments = [self.class::COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
                  '--reviewer', reviewer]
-    default_effort = reviewer == 'openai/codex' ? nil : 'medium'
+    default_effort = reviewer.downcase == 'openai/codex' ? nil : 'medium'
     arguments.push('--effort', options.fetch(:effort, default_effort)) if options.fetch(:effort, default_effort)
     arguments.push('--model', options[:model]) if options[:model]
     arguments.push('--criteria-ref', options[:criteria_ref]) if options[:criteria_ref]
@@ -858,5 +874,6 @@ LocalReviewEvidenceTest.include(LocalReviewFixture)
 LocalReviewStdoutFailureTest.include(LocalReviewFixture)
 LocalReviewContextTest.include(LocalReviewFixture)
 LocalReviewRelativePathTest.include(LocalReviewFixture)
+LocalReviewCaseIdentityTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)

@@ -26,9 +26,11 @@ after which the helper may select the next listed provider.
 
 `review.local_review_agents` in the repository's trusted `.agents/agent-workflow.yml` lists the local
 review agents to try, in preference order. Each entry names a `provider` and `model_family` and nothing
-else. A seam may omit the list; the implementation model in a fresh context still reviews. Shaka does
-not choose a `grok`, `agent`, or `cursor-agent` binary for an entry. `shaka review-prompt` prints the
-prompt, and the signed-in host runs it. `review.ci_review_agents` is a separate list of CI job names
+else. A seam may omit the list; the implementation model in a fresh context still reviews. Reviewer
+selection chooses an identity, not a binary. `shaka review run` maps known families to their
+documented CLI binaries; it never substitutes a generic `agent` or `cursor-agent` Task.
+`shaka review-prompt` prints the prompt for a signed-in host. `review.ci_review_agents` is a
+separate list of CI job names
 to read. Those jobs are review sources, not required merge checks. Listing several means thorough
 pace waits for every name, and swift pace waits for one verified report from the list when no
 different-provider local review already ran. Trivial
