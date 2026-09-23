@@ -24,10 +24,11 @@ module Shaka
   class LocalReviewCli
     include LocalReviewDiagnostic
 
-    def initialize(options, root:, report:)
+    def initialize(options, root:, report:, candidate_root:)
       @options = options
       @root = root
       @report = report
+      @candidate_root = candidate_root
     end
 
     def run(prompt)
@@ -41,7 +42,7 @@ module Shaka
     private
 
     def codex(prompt)
-      executable = LocalReviewExecutable.resolve('codex')
+      executable = LocalReviewExecutable.resolve('codex', candidate_root: @candidate_root)
       return missing('codex') unless executable
 
       stdout, stderr, status = Open3.capture3(executable, 'exec', '-s', 'read-only', '--ignore-rules',
@@ -53,7 +54,7 @@ module Shaka
     end
 
     def claude(prompt)
-      executable = LocalReviewExecutable.resolve('claude')
+      executable = LocalReviewExecutable.resolve('claude', candidate_root: @candidate_root)
       return missing('claude') unless executable
 
       output, stderr, status = claude_process(executable, prompt)
@@ -88,7 +89,7 @@ module Shaka
     def valid_claude_result?(result) = result['result'].is_a?(String) && !result['result'].strip.empty?
 
     def grok(prompt)
-      executable = LocalReviewExecutable.resolve('grok')
+      executable = LocalReviewExecutable.resolve('grok', candidate_root: @candidate_root)
       return missing('grok') unless executable
 
       file = prompt_file(prompt)

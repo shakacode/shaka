@@ -49,16 +49,23 @@ module Shaka
       @attempted = false
       validate!
       validate_tempdir!
-      prompt = review_prompt
-      report = Tempfile.create(['shaka-review-', '.md'])
-      report.close
-      result = launch_neutral(prompt, report.path)
-      result || validate_report(report.path)
+      run_report(review_prompt)
     rescue Shaka::Error, SystemCallError => e
       setup_failure(e)
     end
 
     private
+
+    def run_report(prompt)
+      report = Tempfile.create(['shaka-review-', '.md'])
+      report.close
+      report_path = report.path
+      result = launch_neutral(prompt, report_path)
+      result || validate_report(report_path)
+    rescue Shaka::Error, SystemCallError
+      File.unlink(report_path) if report_path && File.exist?(report_path)
+      raise
+    end
 
     def setup_failure(error)
       { 'status' => 'not_completed', 'head' => head, 'reviewer' => @options[:reviewer],
@@ -72,7 +79,7 @@ module Shaka
           File.realpath(neutral).start_with?("#{root}/")
 
         @attempted = true
-        LocalReviewCli.new(@options, root: neutral, report: report).run(prompt)
+        LocalReviewCli.new(@options, root: neutral, report: report, candidate_root: root).run(prompt)
       end
     end
 

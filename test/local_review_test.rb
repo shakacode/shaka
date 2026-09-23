@@ -471,13 +471,44 @@ class LocalReviewRelativePathTest < Minitest::Test
     with_repository do |root, base, head, bin|
       trace = File.join(root, 'relative-path-trace.json')
       fake_codex(bin, head)
-      path = "./bin:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
+      path = "./#{File.basename(bin)}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
       output, error, status = run_review(root, base, head, bin,
-                                         cwd: root, env: { 'PATH' => path, 'REVIEW_TRACE' => trace })
+                                         cwd: File.dirname(bin), env: { 'PATH' => path, 'REVIEW_TRACE' => trace })
       result = assert_successful_review(output, error, status, head, 'openai/codex')
     ensure
       cleanup_artifacts(result)
     end
+  end
+
+  def test_candidate_owned_executable_is_rejected_not_marked_unavailable
+    with_repository do |root, base, head, bin|
+      candidate_bin = File.join(root, 'bin')
+      FileUtils.mkdir_p(candidate_bin)
+      write_executable(candidate_bin, 'codex', "#!/bin/sh\nexit 0\n")
+      path = "#{candidate_bin}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
+      output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => path })
+      assert_unsafe_executable_rejected(output, status)
+    end
+  end
+
+  def test_external_symlink_to_candidate_executable_is_rejected
+    with_repository do |root, base, head, bin|
+      candidate = File.join(root, 'codex')
+      write_executable(root, 'codex', "#!/bin/sh\nexit 0\n")
+      File.symlink(candidate, File.join(bin, 'codex'))
+      output, _error, status = run_review(root, base, head, bin)
+      assert_unsafe_executable_rejected(output, status)
+    end
+  end
+
+  private
+
+  def assert_unsafe_executable_rejected(output, status)
+    refute_predicate status, :success?
+    result = JSON.parse(output)
+    assert_equal 'setup_failure', result.fetch('failure_stage')
+    assert_equal 'not_eligible', result.fetch('skip_evidence')
+    assert_includes result.fetch('reason'), 'inside candidate checkout'
   end
 end
 
@@ -670,14 +701,14 @@ module LocalReviewFixture
 
   def with_repository
     Dir.mktmpdir('shaka-local-review') do |root|
-      bin = File.join(root, 'bin')
-      FileUtils.mkdir_p(bin)
-      git!(root, 'init')
-      File.write(File.join(root, 'AGENTS.md'), "Trusted test criteria\n")
-      commit!(root, 'before', 'base')
-      base = git!(root, 'rev-parse', 'HEAD').strip
-      commit!(root, 'after', 'change')
-      yield root, base, git!(root, 'rev-parse', 'HEAD').strip, bin
+      Dir.mktmpdir('shaka-review-cli') do |bin|
+        git!(root, 'init')
+        File.write(File.join(root, 'AGENTS.md'), "Trusted test criteria\n")
+        commit!(root, 'before', 'base')
+        base = git!(root, 'rev-parse', 'HEAD').strip
+        commit!(root, 'after', 'change')
+        yield root, base, git!(root, 'rev-parse', 'HEAD').strip, bin
+      end
     end
   end
 
