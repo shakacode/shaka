@@ -279,6 +279,18 @@ end
 class LocalReviewClaudeProtocolTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
+  def test_stale_claude_attestation_retains_usage_path
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'stale-claude-trace.json')
+      fake_claude(bin, base)
+      output, _error, status = run_review(root, base, head, bin,
+                                          reviewer: 'anthropic/claude', env: { 'REVIEW_TRACE' => trace })
+      result = assert_stale_claude_result(output, status)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   def test_nonzero_claude_json_stdout_is_preserved_as_private_diagnostic
     with_repository do |root, base, head, bin|
       write_executable(bin, 'claude', "#!/bin/sh\nprintf '{\"error\":\"quota exhausted\"}'\nexit 2\n")
@@ -303,6 +315,16 @@ class LocalReviewClaudeProtocolTest < Minitest::Test
     ensure
       cleanup_artifacts(result)
     end
+  end
+
+  private
+
+  def assert_stale_claude_result(output, status)
+    refute_predicate status, :success?
+    result = JSON.parse(output)
+    assert_equal 'report_validation', result.fetch('failure_stage')
+    assert File.file?(result.fetch('usage'))
+    result
   end
 end
 

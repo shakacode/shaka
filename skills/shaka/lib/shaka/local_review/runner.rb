@@ -199,7 +199,7 @@ module Shaka
     def incomplete(reason, report)
       { 'status' => 'not_completed', 'head' => head, 'reviewer' => reviewer,
         'attempted' => true, 'failure_stage' => 'report_validation', 'skip_evidence' => 'not_eligible',
-        'reason' => reason, 'report' => report }
+        'reason' => reason, 'report' => report, 'usage' => @options[:usage] }.compact
     end
 
     def head = @options[:head]
