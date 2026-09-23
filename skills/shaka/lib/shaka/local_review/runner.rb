@@ -37,9 +37,8 @@ module Shaka
 
     def launch_neutral(prompt, report)
       Dir.mktmpdir('shaka-review-neutral-') do |neutral|
-        candidate = "#{root}/"
         raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout' if
-          File.realpath(neutral).start_with?(candidate)
+          File.realpath(neutral).start_with?("#{root}/")
 
         @attempted = true
         LocalReviewCli.new(@options, root: neutral, report: report).run(prompt)
@@ -52,6 +51,10 @@ module Shaka
           raise Shaka::Error, "--#{key} must be a full commit SHA"
         end
       end
+      if @options[:criteria_ref] && !@options[:criteria_ref].match?(LocalReviewEvidence::SHA)
+        raise Shaka::Error, '--criteria-ref must be a full commit SHA'
+      end
+
       validate_reviewer!
       validate_checkout!
     end
@@ -80,9 +83,8 @@ module Shaka
 
     def validate_tempdir!
       directory = File.realpath(Dir.tmpdir)
-      return unless directory == root || directory.start_with?("#{root}/")
-
-      raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout'
+      raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout' if
+        directory == root || directory.start_with?("#{root}/")
     end
 
     def validate_report(path)
@@ -100,7 +102,20 @@ module Shaka
                        '--base', @options[:base], '--reviewer', reviewer, '--effort', effort)
       diff = capture('git', '-C', root, 'diff', '--no-ext-diff', '--no-textconv', "#{@options[:base]}...#{head}", '--')
       marker = SecureRandom.hex(16)
-      "#{output}\n\n--- BEGIN DIFF DATA #{marker} ---\n#{diff}\n--- END DIFF DATA #{marker} ---\n"
+      "#{output}\n\n#{trusted_criteria(marker)}" \
+        "--- BEGIN DIFF DATA #{marker} ---\n#{diff}\n--- END DIFF DATA #{marker} ---\n"
+    end
+
+    def trusted_criteria(marker)
+      ref = @options[:criteria_ref]
+      return '' unless ref
+
+      _stdout, _stderr, status = Open3.capture3('git', '-C', root, 'merge-base', '--is-ancestor', ref, @options[:base])
+      raise Shaka::Error, '--criteria-ref must be an ancestor of --base' unless status.success?
+
+      source = capture('git', '-C', root, 'show', "#{ref}:AGENTS.md")
+      label = "TRUSTED CRITERIA #{marker}"
+      "--- BEGIN #{label} FROM #{ref}:AGENTS.md ---\n#{source}\n--- END #{label} ---\n\n"
     end
 
     def capture(*arguments)

@@ -305,6 +305,52 @@ class LocalReviewClaudeProtocolTest < Minitest::Test
   end
 end
 
+class LocalReviewEvidenceTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_immutable_trusted_criteria_are_supplied_as_prompt_data
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'criteria-invocation.json')
+      fake_codex(bin, head)
+      output, error, status = run_review(root, base, head, bin,
+                                         criteria_ref: base, env: { 'REVIEW_TRACE' => trace })
+      result = assert_successful_review(output, error, status, head, 'openai/codex')
+      assert_criteria_prompt(trace, base)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_invalid_utf8_host_report_is_structured_noncompletion
+    with_repository do |root, _base, head, _bin|
+      report = File.join(root, 'invalid-review.md')
+      File.binwrite(report, "\xFF")
+      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+                                              '--reviewer', 'openai/codex', '--report', report)
+      refute_predicate status, :success?
+      assert_equal 'not_completed', JSON.parse(output).fetch('status')
+    end
+  end
+
+  def test_candidate_criteria_commit_is_rejected
+    with_repository do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin, criteria_ref: head)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '--criteria-ref must be an ancestor of --base'
+    end
+  end
+
+  private
+
+  def assert_criteria_prompt(trace, base)
+    prompt = JSON.parse(File.read(trace)).fetch('prompt')
+    assert_includes prompt, "FROM #{base}:AGENTS.md"
+    assert_includes prompt, 'Trusted test criteria'
+  end
+end
+
 class LocalReviewStatusTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -447,6 +493,7 @@ module LocalReviewFixture
     default_effort = reviewer == 'openai/codex' ? nil : 'medium'
     arguments.push('--effort', options.fetch(:effort, default_effort)) if options.fetch(:effort, default_effort)
     arguments.push('--model', options[:model]) if options[:model]
+    arguments.push('--criteria-ref', options[:criteria_ref]) if options[:criteria_ref]
     Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" }.merge(options.fetch(:env, {})), *arguments)
   end
 
@@ -455,6 +502,7 @@ module LocalReviewFixture
       bin = File.join(root, 'bin')
       FileUtils.mkdir_p(bin)
       git!(root, 'init')
+      File.write(File.join(root, 'AGENTS.md'), "Trusted test criteria\n")
       commit!(root, 'before', 'base')
       base = git!(root, 'rev-parse', 'HEAD').strip
       commit!(root, 'after', 'change')
@@ -486,4 +534,5 @@ LocalReviewCodexTest.include(LocalReviewFixture)
 LocalReviewOtherCliTest.include(LocalReviewFixture)
 LocalReviewProviderFailureTest.include(LocalReviewFixture)
 LocalReviewClaudeProtocolTest.include(LocalReviewFixture)
+LocalReviewEvidenceTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)

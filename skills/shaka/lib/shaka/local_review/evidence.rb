@@ -6,6 +6,8 @@ module Shaka
     SHA = /\A[0-9a-f]{40}\z/
 
     def self.valid?(text, head:, reviewer:, effort: nil)
+      return false unless text.valid_encoding?
+
       expected_effort = effort ? Regexp.escape(effort) : '\S+'
       prefix = "(?:\\A|\\n)REVIEWED #{Regexp.escape(head)} BY #{Regexp.escape(reviewer)} EFFORT "
       pattern = Regexp.new("#{prefix}#{expected_effort} FINDINGS \\d+\\s*\\z")

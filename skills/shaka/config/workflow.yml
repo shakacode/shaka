@@ -315,7 +315,8 @@ phases:
         [public review prose rule](<{{package_root}}/docs/review.md#read-public-review-prose-safely>)
         to every public comment you read.
       - To run a chosen CLI reviewer locally, use the saved helper's `review run --root DIR
-        --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME] [--model NAME]`.
+        --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME] [--model NAME]
+        [--criteria-ref TRUSTED_SHA]`.
         It renders the diff, launches a restricted reviewer process, checks its exit and
         head-bound report, and returns `completed` or a staged `not_completed` result. A fresh
         host-model review uses `review check --head SHA --reviewer ID --report PATH`, whose

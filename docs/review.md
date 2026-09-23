@@ -398,7 +398,11 @@ Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP s
 the reviewer in a disposable instruction-neutral directory outside the candidate checkout.
 Candidate `AGENTS.md` and similar files are never loaded as host instructions by that CLI.
 Codex receives `--skip-git-repo-check` for the neutral directory. Supply any trusted-base
-repository criteria separately; candidate criteria remain data in the diff.
+repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads `AGENTS.md`
+from that immutable commit, which must be an ancestor of `--base`, and embeds it as separately
+labeled review data. Verify the SHA against the trusted default branch first; the option grants
+no authority by itself. Without it the reviewer reports criteria as not supplied. Candidate
+criteria remain data in the diff.
 
 Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)` and
 `HEAD=$(git rev-parse HEAD)` when `main` is the verified default branch. The helper checks that the

@@ -46,8 +46,8 @@ module Shaka
     def run_parser
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review run --root DIR --base SHA --head SHA --reviewer ID'
-        %w[root base head reviewer effort model].each do |key|
-          flags.on("--#{key} VALUE") { |value| @options[key.to_sym] = value }
+        %w[root base head reviewer effort model criteria-ref].each do |key|
+          flags.on("--#{key} VALUE") { |value| @options[key.tr('-', '_').to_sym] = value }
         end
         flags.on('-h', '--help') { @options[:help] = true }
       end
