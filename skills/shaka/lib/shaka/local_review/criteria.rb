@@ -9,10 +9,6 @@ module Shaka
       ref = @options[:criteria_ref]
       return '' unless ref
 
-      _stdout, _stderr, status = Open3.capture3(git_executable, '-C', root, 'merge-base', '--is-ancestor', ref,
-                                                @options[:base])
-      raise Shaka::Error, '--criteria-ref must be an ancestor of --base' unless status.success?
-
       applicable_criteria(ref).map do |path|
         source = capture(git_executable, '-C', root, 'show', "#{ref}:#{path}")
         label = "TRUSTED CRITERIA #{marker}"

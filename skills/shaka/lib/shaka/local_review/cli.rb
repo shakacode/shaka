@@ -11,12 +11,17 @@ module Shaka
     private
 
     def save_diagnostic(text)
-      return nil if text.to_s.empty?
+      return nil if text.to_s.strip.empty?
 
       file = Tempfile.create(['shaka-review-diagnostic-', '.txt'])
       file.write(text)
       file.close
       file.path
+    end
+
+    def process_failure(command, status, stderr, stdout)
+      exit_reason = status.signaled? ? "killed by signal #{status.termsig}" : "exited #{status.exitstatus}"
+      failure("#{command} #{exit_reason}", [stderr, stdout].reject(&:empty?).join("\n"))
     end
   end
 
@@ -48,7 +53,7 @@ module Shaka
       stdout, stderr, status = Open3.capture3(executable, 'exec', '-s', 'read-only', '--ignore-rules',
                                               '--ignore-user-config', '--skip-git-repo-check', '-o', @report, '-',
                                               stdin_data: prompt, chdir: @root)
-      return failure("codex exec exited #{status.exitstatus}", [stderr, stdout].join("\n")) unless status.success?
+      return process_failure('codex exec', status, stderr, stdout) unless status.success?
 
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
@@ -58,7 +63,7 @@ module Shaka
       return missing('claude') unless executable
 
       output, stderr, status = claude_process(executable, prompt)
-      return failure("claude -p exited #{status.exitstatus}", [stderr, output].join("\n")) unless status.success?
+      return process_failure('claude -p', status, stderr, output) unless status.success?
 
       claude_result(output)
     rescue JSON::ParserError
@@ -114,7 +119,7 @@ module Shaka
       args.push('--reasoning-effort', effort) if effort
       args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
       output, stderr, status = Open3.capture3(*args, chdir: @root)
-      status.success? ? output : failure("grok exited #{status.exitstatus}", [stderr, output].join("\n"))
+      status.success? ? output : process_failure('grok', status, stderr, output)
     end
 
     def save_usage(output)
@@ -127,7 +132,7 @@ module Shaka
     def missing(name) = outcome("#{name} is not on PATH", 'executable_missing', false)
 
     def failure(reason, diagnostic = nil)
-      outcome(reason, 'cli_failure', true).merge('diagnostic_path' => save_diagnostic(diagnostic))
+      outcome(reason, 'cli_failure', true).merge('diagnostic_path' => save_diagnostic(diagnostic)).compact
     end
 
     def invalid(reason, diagnostic = nil)

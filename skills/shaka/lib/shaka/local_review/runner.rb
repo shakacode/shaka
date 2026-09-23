@@ -80,6 +80,16 @@ module Shaka
       raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout' if
         directory == root || directory.start_with?("#{root}/")
     end
+
+    def capture(*arguments)
+      stdout, _stderr, status = Open3.capture3(*arguments)
+      unless status.success?
+        exit_reason = status.signaled? ? "signal #{status.termsig}" : "exit #{status.exitstatus}"
+        raise Shaka::Error, "#{arguments.first} failed (#{exit_reason})"
+      end
+
+      stdout
+    end
   end
 
   # Checks the exact revision, launches a reviewer, and validates its report.
@@ -187,13 +197,6 @@ module Shaka
       marker = SecureRandom.hex(16)
       "#{output}\n\n#{source_context(marker)}#{trusted_criteria(marker)}" \
         "--- BEGIN DIFF DATA #{marker} ---\n#{diff}\n--- END DIFF DATA #{marker} ---\n"
-    end
-
-    def capture(*arguments)
-      stdout, _stderr, status = Open3.capture3(*arguments)
-      raise Shaka::Error, "#{arguments.first} failed (exit #{status.exitstatus})" unless status.success?
-
-      stdout
     end
 
     def incomplete(reason, report)

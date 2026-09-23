@@ -355,13 +355,12 @@ class LocalReviewEvidenceTest < Minitest::Test
     end
   end
 
-  def test_candidate_criteria_commit_is_rejected
+  def test_new_trusted_default_commit_can_diverge_from_diff_base
     with_repository do |root, base, head, bin|
-      output, _error, status = run_review(root, base, head, bin, criteria_ref: head)
-      refute_predicate status, :success?
-      result = JSON.parse(output)
-      assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), '--criteria-ref must be an ancestor of --base'
+      criteria_ref = diverged_criteria(root, base, head)
+      result = review_diverged_criteria(root, base, head, bin, criteria_ref)
+    ensure
+      cleanup_artifacts(result)
     end
   end
 
@@ -372,10 +371,57 @@ class LocalReviewEvidenceTest < Minitest::Test
     assert_includes prompt, "FROM #{base}:AGENTS.md"
     assert_includes prompt, 'Trusted test criteria'
   end
+
+  def assert_diverged_criteria(root, ref)
+    trace = File.join(root, 'diverged-criteria-trace.json')
+    assert_includes JSON.parse(File.read(trace)).fetch('prompt'), "FROM #{ref}:AGENTS.md"
+  end
+
+  def review_diverged_criteria(root, base, head, bin, ref)
+    trace = File.join(root, 'diverged-criteria-trace.json')
+    fake_codex(bin, head)
+    output, error, status = run_review(root, base, head, bin,
+                                       criteria_ref: ref, env: { 'REVIEW_TRACE' => trace })
+    result = assert_successful_review(output, error, status, head, 'openai/codex')
+    assert_diverged_criteria(root, ref)
+    result
+  end
+
+  def diverged_criteria(root, base, head)
+    git!(root, 'switch', '-c', 'trusted-default', base)
+    File.write(File.join(root, 'AGENTS.md'), "Updated default criteria\n")
+    git!(root, 'add', 'AGENTS.md')
+    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'default criteria')
+    criteria_ref = git!(root, 'rev-parse', 'HEAD').strip
+    git!(root, 'switch', '--detach', head)
+    criteria_ref
+  end
 end
 
 class LocalReviewStdoutFailureTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_signaled_reviewer_has_explicit_noncompletion_reason
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!/bin/sh\nkill -TERM $$\n")
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_includes result.fetch('reason'), 'killed by signal 15'
+      assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+    end
+  end
+
+  def test_silent_reviewer_failure_has_no_empty_diagnostic_artifact
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!/bin/sh\nexit 3\n")
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'codex exec exited 3', result.fetch('reason')
+      refute result.key?('diagnostic_path')
+    end
+  end
 
   def test_codex_stdout_only_failure_retains_diagnostic
     with_repository do |root, base, head, bin|
