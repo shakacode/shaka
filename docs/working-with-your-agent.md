@@ -39,6 +39,28 @@ agent can use it later without asking again. A merge choice applies to this task
 unless you explicitly give it broader scope. Choosing **Ask** at the start leaves
 the GitHub merge click until you can see the finished change.
 
+## Offer an issue for a Shaka gap
+
+When Shaka independently confirms a product gap outside your active request, the root task owner
+will offer an issue at any workflow stage. A gap that is already part of the active request stays
+in that task. You can ask Shaka to skip offers in the current task.
+
+The agent drafts an exact title and body from public sources, verifies the Shaka gap in public Shaka
+materials, and shows you the draft, source links, and search terms. After you authorize the search,
+it verifies the fixed public Shaka repository, `shakacode/shaka`. Consent and the content checks are
+agent-enforced; no Shaka command reads chat consent or verifies issue-body provenance. Declining
+stops the search. If the accepted text or terms change, the agent shows the full revision and asks
+again.
+
+After approval, the agent checks for possible duplicates. It requests only record number, URL, issue
+or pull-request type, and state, then shares candidate links for you to inspect. This field restriction
+is agent-enforced; no command prevents another issue or PR read. Search is best-effort, so no result
+does not prove there is no duplicate. An unsafe query, search failure, or result limit stops filing.
+When results exist, the agent asks whether any candidate covers the gap; unresolved candidates stop
+filing. With no results, it shows the query and caveat before asking for creation approval. It files
+only the exact approved draft after rechecking repository identity. A repository identity mismatch
+stops the offer until a maintainer updates the pinned identity through Shaka review.
+
 ## Choose a small execution context
 
 `$shaka` assesses the task's scope and risk, then names an available model and effort
