@@ -30,7 +30,7 @@ module Shaka
       stdout, stderr, status = Open3.capture3('codex', 'exec', '-s', 'read-only', '--ignore-rules',
                                               '--ignore-user-config', '--skip-git-repo-check', '-o', @report, '-',
                                               stdin_data: prompt, chdir: @root)
-      return failure("codex exec exited #{status.exitstatus}", stderr) unless status.success?
+      return failure("codex exec exited #{status.exitstatus}", [stderr, stdout].join("\n")) unless status.success?
 
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
@@ -73,11 +73,11 @@ module Shaka
       return missing('grok') unless LocalReviewExecutable.available?('grok')
 
       file = prompt_file(prompt)
-      output, stderr, status = grok_process(file.path)
-      return failure("grok exited #{status.exitstatus}", stderr) unless status.success?
+      output = grok_process(file.path)
+      return output if output.is_a?(Hash)
 
       File.write(@report, output)
-      invalid('grok returned no review') unless File.size?(@report)
+      invalid('grok returned no review') if output.empty?
     ensure
       File.unlink(file.path) if file && File.exist?(file.path)
     end
@@ -94,7 +94,7 @@ module Shaka
       args.push('--reasoning-effort', effort) if effort
       args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
       output, stderr, status = Open3.capture3(*args, chdir: @root)
-      [output, stderr, status]
+      status.success? ? output : failure("grok exited #{status.exitstatus}", [stderr, output].join("\n"))
     end
 
     def save_usage(output)
@@ -115,7 +115,7 @@ module Shaka
     end
 
     def outcome(reason, stage, attempted)
-      File.unlink(@report) if stage != 'report_validation' && File.exist?(@report)
+      File.unlink(@report) if File.exist?(@report) && (stage != 'report_validation' || !File.size?(@report))
       { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
         'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason,
         'report' => stage == 'report_validation' && File.size?(@report) ? @report : nil,

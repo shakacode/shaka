@@ -351,6 +351,65 @@ class LocalReviewEvidenceTest < Minitest::Test
   end
 end
 
+class LocalReviewStdoutFailureTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_codex_stdout_only_failure_retains_diagnostic
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!/bin/sh\necho quota-exhausted\nexit 2\n")
+      output, _error, status = run_review(root, base, head, bin)
+      result = assert_stdout_failure(output, status)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_grok_stdout_only_failure_retains_diagnostic
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'grok', "#!/bin/sh\necho quota-exhausted\nexit 2\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'xai/grok', model: 'grok-4')
+      result = assert_stdout_failure(output, status)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  private
+
+  def assert_stdout_failure(output, status)
+    refute_predicate status, :success?
+    result = JSON.parse(output)
+    assert_equal 'cli_failure', result.fetch('failure_stage')
+    assert_includes File.read(result.fetch('diagnostic_path')), 'quota-exhausted'
+    result
+  end
+end
+
+class LocalReviewEmptyReportTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_empty_report_is_removed_and_explained
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!/bin/sh\nexit 0\n")
+      Dir.mktmpdir('shaka-report-cleanup') do |temp|
+        output, _error, status = run_review(root, base, head, bin, env: { 'TMPDIR' => temp })
+        assert_empty_report(output, status, temp)
+      end
+    end
+  end
+
+  private
+
+  def assert_empty_report(output, status, temp)
+    refute_predicate status, :success?
+    result = JSON.parse(output)
+    assert_equal 'report_validation', result.fetch('failure_stage')
+    assert_equal 'not_eligible', result.fetch('skip_evidence')
+    refute result.key?('report')
+    assert_empty Dir.children(temp)
+  end
+end
+
 class LocalReviewStatusTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -535,4 +594,6 @@ LocalReviewOtherCliTest.include(LocalReviewFixture)
 LocalReviewProviderFailureTest.include(LocalReviewFixture)
 LocalReviewClaudeProtocolTest.include(LocalReviewFixture)
 LocalReviewEvidenceTest.include(LocalReviewFixture)
+LocalReviewStdoutFailureTest.include(LocalReviewFixture)
+LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
