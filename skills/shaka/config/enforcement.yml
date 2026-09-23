@@ -174,12 +174,22 @@ rules:
   - id: reviewer-selection-binding
     phase: verify
     quote: >-
-      do not substitute the current host or a more expensive same-provider model when a listed
-      different provider is available
+      do not substitute a current-host Cursor Task, subagent, or more expensive same-provider model
+      when a listed different provider is available
     enforced_by: agent
     note: >-
       `reviewer` computes the preferred reviewer, but nothing compares the reviewer that
       actually ran against the one it returned.
+  - id: reviewer-unavailability-evidence
+    phase: verify
+    quote: >-
+      Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
+      failure is not availability evidence, even when `attempted` is true.
+    enforced_by: agent
+    note: >-
+      `review run` classifies an actual CLI attempt and its failure, but `reviewer --unavailable`
+      does not consume that result. The owner must use and publish the helper evidence; review
+      checks the record.
   - id: captures-do-not-replace-tests
     phase: verify
     quote: Captures complement tests; they do not replace them.

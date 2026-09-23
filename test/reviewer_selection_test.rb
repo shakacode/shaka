@@ -88,14 +88,14 @@ class ReviewerSelectionTest < Minitest::Test
     assert_equal 'available', reasons.fetch('xai/grok')
   end
 
-  # An implementer marked unavailable cannot review either, so no local review runs.
-  def test_reports_hosted_only_when_even_the_implementer_is_unavailable
+  # A fresh implementation-model context remains the fallback when every CLI path fails.
+  def test_uses_same_model_when_even_the_implementer_cli_is_unavailable
     result = select(['anthropic/claude'],
                     unavailable: %w[anthropic/claude openai/codex xai/grok])
 
-    assert_equal 'hosted_only', result.fetch('outcome')
-    assert_nil result.fetch('reviewer')
-    assert_includes result.fetch('note'), 'no local review ran'
+    assert_equal 'same_model', result.fetch('outcome')
+    assert_equal 'anthropic/claude', result.fetch('reviewer')
+    assert_includes result.fetch('note'), 'fresh context'
   end
 
   # With several implementers, the fallback must name one that can actually run.
