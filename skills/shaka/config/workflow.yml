@@ -426,9 +426,18 @@ always: |-
   to offer an issue. Workers must report possible issue-offer gaps to the root task owner and keep
   the current task moving.
   For issue offers, do not search or file outside this procedure.
+  Before search and filing, the root task owner must verify the fixed public repository identity
+  and stop on mismatch.
+  Do not search unless the user approves the exact query. Do not file unless the user separately
+  approves the exact issue text after inspecting candidates or accepting the zero-result caveat;
+  do not change that text before filing.
+  Do not file after a search failure, a result limit, unresolved candidates, or repository identity
+  mismatch.
   Do not search with punctuation, symbols, or the standalone words AND or OR in query terms; use
   two to four alphanumeric terms. The `--` separator stops CLI option parsing, not GitHub query
   parsing.
+  The root task owner must pass the accepted issue text literally through a private temporary body
+  file outside the worktree and remove it after the create attempt.
   During an offer's duplicate check, do not fetch candidate issue or PR titles, descriptions, or
   comments; let the user inspect candidate links.
 code_quality: |-
