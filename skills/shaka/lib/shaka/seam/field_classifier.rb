@@ -20,7 +20,7 @@ module Shaka
         key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
         return @blocking << "review.#{source}" unless REVIEW_KEYS.include?(key)
         return @blocking << collision(source, key) if @established.fetch('review', {}).key?(key)
-        return @blocking << "review.#{source}" if unacceptable_ci_value?(source, nested)
+        return @blocking << ci_value_block(source) if unacceptable_ci_value?(source, nested)
 
         @retained << "review.#{key}"
         store_review(source, key, job_list(source, nested))
@@ -30,6 +30,14 @@ module Shaka
         names = [source, @review_sources.fetch(key)]
         legacy = names.find { |name| name != key } || source
         "review.#{legacy} (collides with review.#{key})"
+      end
+
+      # The none-policy cleanup removes the bare field name. A bad value needs a message that stays.
+      def ci_value_block(source)
+        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
+        return "review.#{agents} must be a list of CI job names" if source == agents
+
+        "review.#{source}"
       end
 
       # A retired check is one job name. The current key is a list. Anything else blocks.

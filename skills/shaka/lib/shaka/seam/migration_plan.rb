@@ -114,8 +114,6 @@ module Shaka
         review = classified.established['review']
         return unless review.is_a?(Hash)
 
-        RepositoryConfig::ReviewSchema.retired!(review)
-        RepositoryConfig::ReviewSchema.renamed!(review)
         RepositoryConfig::ReviewSchema.new(review).validate
       rescue Error => e
         classified.blocking << e.message
