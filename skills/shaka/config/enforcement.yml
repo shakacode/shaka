@@ -187,7 +187,9 @@ rules:
       launches is not availability evidence.
     enforced_by: agent
     note: >-
-      Nothing verifies why the owner passed `--unavailable`; review checks the published record.
+      `review run` classifies an actual CLI attempt and its failure, but `reviewer --unavailable`
+      does not consume that result. The owner must use and publish the helper evidence; review
+      checks the record.
   - id: captures-do-not-replace-tests
     phase: verify
     quote: Captures complement tests; they do not replace them.

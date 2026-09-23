@@ -154,22 +154,30 @@ flags and itself reported a failure such as missing credentials, exhausted quota
 outage. Added or removed flags do not establish unavailability. A setup failure before the reviewer
 process launches and a current-host Task or subagent do not qualify.
 
-Four outcomes, none of them an error:
+Three outcomes, none of them an error:
 
 | Outcome | Meaning |
 | --- | --- |
 | `different_provider` | Run this reviewer. Its provider did not implement the change. |
 | `same_provider` | Run this reviewer. No other provider is available, and its context is still fresh. |
-| `same_model` | Nothing listed is available. Run the implementation model in a fresh context, which is a valid review. |
-| `hosted_only` | Nothing can review locally, including the implementation model. Push and let the GitHub reviews review the branch, and say that no local review ran. |
+| `same_model` | Nothing listed is available. Run the implementation model in a fresh context, which is a valid review even if its CLI path failed. |
 
 Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked
 provider. Missing local credentials for a provider are not a problem to solve here — if you have no
 second provider at all, `same_model` is the answer, and the GitHub reviews still run once you push.
 
-Record which reviewer ran, at which revision, in the chat as you go and in the PR review status
-line, because the chat does not outlive the task. A substitution is worth a sentence: say which
-entry you skipped and on what evidence.
+`shaka review run` invokes a listed CLI and returns `completed` only after a successful process
+and a nonempty report attesting to the requested commit and reviewer. A nonzero result says
+`not_completed` with an explicit `failure_stage` and reason; only `executable_missing` or
+`cli_failure` supports skipping that CLI. `report_validation` does not. If every CLI path fails,
+run the implementation model in a fresh host context and use `shaka review check` on its report.
+That check labels the evidence `host_report`: it checks the attestation, not the host's launch
+transcript. If no review completed, run `shaka review check --head SHA --not-run-reason TEXT` so
+the failure stays visible; it exits nonzero and never presents a missing review as ready.
+
+Record which reviewer ran, at which revision, in the chat and the PR review status line. If a
+reviewer was skipped, record the helper's failure stage and reason rather than calling a Task or
+subagent a CLI attempt.
 
 ## Review before staged hosted CI
 
@@ -394,88 +402,45 @@ Do not run these checkout-local examples in that case: prompt wording cannot dem
 candidate instructions a host has already loaded. For Codex outside a repository,
 `--skip-git-repo-check` permits that neutral working directory.
 
-Verified flags, current for the versions named:
+Use full, immutable `BASE` and `HEAD` commit SHAs. The helper checks that the checkout is at
+`HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
+JSON with the report path or a concrete failure. Its process result, not a copied shell block,
+is the evidence that the CLI actually ran.
 
 Codex 0.154.0:
 
 ```bash
-(
-  set -euo pipefail
-  report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX")
-  prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX")
-  trap 'rm -f "$prompt"' EXIT
-  base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
-  head=$(git rev-parse HEAD)
-  shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex > "$prompt"
-  if ! codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" - < "$prompt"; then
-    printf 'Codex reviewer failed; inspect CLI output and %s\n' "$report" >&2
-    exit 1
-  fi
-  if ! test -s "$report"; then
-    printf 'Codex returned no review; inspect CLI output and %s\n' "$report" >&2
-    exit 1
-  fi
-  printf 'Review report: %s\nReviewed head: %s\n' "$report" "$head"
-)
+shaka review run --root . --base BASE --head HEAD --reviewer openai/codex --effort medium
 ```
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
-Use that flag only after `codex` is missing from `PATH`, or the documented `codex exec`
-command runs with its shown flags and itself reports a failure. Record that CLI failure;
-a failed setup step such as `mktemp`, `git merge-base`, or `shaka review-prompt` does not qualify.
+Use that flag only when `shaka review run` reports `executable_missing` or `cli_failure` for
+`codex`. A setup or report-validation failure does not qualify.
 
-`-s read-only` confines it, `--ignore-rules` skips user and project `.rules`, and `--ignore-user-config`
-skips `$CODEX_HOME/config.toml`. Do not add `--ephemeral`: that flag persists no session, so
-`shaka usage` cannot read the review. After the run, pass that session's jsonl with
-`shaka usage --host codex --file PATH --commit COMMIT --contribution review --all-turns`, using
-the `Reviewed head` printed by the block.
-Keep `-o` outside the
-repository, since it overwrites whatever it names, and give `mktemp` an explicit `XXXXXX` template:
-GNU `mktemp` rejects a template with fewer than three `X` characters, and a failed substitution
-would silently leave `-o .md` pointing inside the worktree. `codex exec review --base REF` has its
-own instructions and refuses a custom prompt, so use plain `exec` for these.
+The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config -o REPORT -`.
+`-s read-only` confines it, the ignore flags skip user/project rules and config, and the report
+is created outside the checkout. It does not use `--ephemeral`, so the session remains available
+for `shaka usage --host codex --file PATH --commit HEAD --contribution review --all-turns`.
+`codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
 
 Claude Code:
 
 ```bash
-(
-  set -euo pipefail
-  report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX")
-  usage=$(mktemp "${TMPDIR:-/tmp}/shaka-review-usage.XXXXXX")
-  prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX")
-  trap 'rm -f "$prompt"' EXIT
-  base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
-  head=$(git rev-parse HEAD)
-  shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
-    > "$prompt"
-  if ! claude -p --permission-mode plan --permission-prompts none --restricted --safe-mode \
-    --strict-mcp-config --effort medium --output-format json - < "$prompt" > "$usage"; then
-    printf 'Claude reviewer failed; inspect %s\n' "$usage" >&2
-    exit 1
-  fi
-  if ! shaka usage --host claude-code --file "$usage" --commit "$head" --contribution review; then
-    printf 'Usage accounting failed; inspect %s\n' "$usage" >&2
-    exit 1
-  fi
-  if ! ruby -rjson -e 'data = JSON.parse(File.read(ARGV[0])); result = data["result"];
-    abort "Claude reported an error or returned no review" if data["is_error"] || !result.is_a?(String) || result.strip.empty?;
-    puts result' "$usage" > "$report"; then
-    printf 'Claude result extraction failed; inspect %s\n' "$usage" >&2
-    exit 1
-  fi
-  printf 'Review report: %s\nUsage evidence: %s\n' "$report" "$usage"
-)
+shaka review run --root . --base BASE --head HEAD --reviewer anthropic/claude --effort medium
 ```
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
 reviewer and cannot replace `claude -p`. It also is not evidence for `--unavailable`.
-Use that flag only after `claude` is missing from `PATH`, or the documented `claude -p`
-command runs with its shown flags and itself reports a failure. Record that CLI failure;
-a failed setup step such as `mktemp`, `git merge-base`, or `shaka review-prompt` does not qualify.
+Use that flag only when `shaka review run` reports `executable_missing` or `cli_failure` for
+`claude`. A setup or report-validation failure does not qualify.
 
-`-p` prints and exits. `--output-format json` writes one result object the usage reader can
-price; `result` is the review text and is not published in the usage report. `--permission-mode plan` with `--permission-prompts none` withholds edits
+The helper runs `claude -p --permission-mode plan --permission-prompts none --restricted
+--safe-mode --strict-mcp-config --effort EFFORT --output-format json -`. It rejects an error,
+empty result, or wrong-head attestation. `-p` prints and exits; JSON holds the review text and
+native token counters. Run `shaka usage --host claude-code --file PATH --commit HEAD
+--contribution review` on the corresponding Claude session. `--permission-mode plan` with
+`--permission-prompts none` withholds edits
 and denies anything that would prompt. `--restricted` removes command-running tools.
 `--safe-mode` disables project CLAUDE.md, skills, plugins, hooks, and MCP while **keeping
 Claude.ai OAuth**. `--strict-mcp-config` with no config drops MCP servers. Do **not** add
@@ -486,24 +451,19 @@ accepts `ANTHROPIC_API_KEY`, so a logged-in Max/claude.ai session looks unavaila
 Grok 1.0.30:
 
 ```bash
-(
-  set -euo pipefail
-  prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-prompt.XXXXXX")
-  trap 'rm -f "$prompt"' EXIT
-  base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
-  shaka review-prompt --head "$(git rev-parse HEAD)" --base "$base" --reviewer xai/grok \
-    --effort high > "$prompt"
-  grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format plain \
-    --permission-mode plan --disable-web-search --no-subagents
-)
+shaka review run --root . --base BASE --head HEAD --reviewer xai/grok \
+  --model MODEL --effort high
 ```
 
-`--permission-mode plan` withholds edit approval, and the other two remove web access and
-subagents. Narrow further with `--disallowed-tools TOOLS` or `--deny RULE` for tools your run
-should not reach. `--sandbox PROFILE` exists but help does not list its profile names.
+The helper runs `grok --prompt-file PROMPT -m MODEL --reasoning-effort high --output-format plain
+--permission-mode plan --disable-web-search --no-subagents`, removes `PROMPT` afterward, and
+checks the report attestation. `--permission-mode plan` withholds edit approval; the other two
+remove web access and subagents.
 If this review is a fresh Cursor chat, report it with
 `shaka usage --host cursor --commit "$(git rev-parse HEAD)" --contribution review` from that chat, or that
-command plus `--file` of its stop-hook jsonl. Parent-agent Cursor records exclude subagents.
+command plus `--file` of its stop-hook jsonl. Pass its report to
+`shaka review check --head HEAD --reviewer xai/grok --report PATH`; the result is `reported`,
+not a claim that the Grok CLI launched. Parent-agent Cursor records exclude subagents.
 
 The Codex flags were exercised on a prior local review rather than read off `--help`. The
 Claude and Grok flags come from each CLI's `--help`. Note what they do not cover: these

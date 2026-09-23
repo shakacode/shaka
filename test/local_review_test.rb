@@ -1,0 +1,281 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'fileutils'
+require 'json'
+require 'rbconfig'
+
+class LocalReviewCodexTest < Minitest::Test
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+
+  # Break caught: the agent can claim a completed local review without launching the CLI.
+  def test_codex_run_invokes_the_cli_and_reports_the_reviewed_commit
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'invocation.json')
+      fake_codex(bin, head)
+
+      output, error, status = run_review(root, base, head, bin, env: { 'REVIEW_TRACE' => trace })
+
+      assert_predicate status, :success?, error
+      result = assert_completed(output, head, 'openai/codex')
+      assert_codex_invocation(trace, head)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  # Break caught: a failed CLI can be mistaken for a completed local review or left unexplained.
+  def test_codex_failure_reports_that_no_review_completed_and_why
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!/bin/sh\necho quota-exhausted >&2\nexit 42\n")
+
+      output, _error, status = run_review(root, base, head, bin)
+
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'not_completed', result.fetch('status')
+      assert result.fetch('attempted')
+      assert_equal 'cli_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'codex exec exited 42'
+    end
+  end
+
+  # Break caught: a missing CLI leaves no machine-readable account of why review did not run.
+  def test_missing_codex_reports_no_attempt_and_a_reason
+    with_repository do |root, base, head, bin|
+      path = [bin, File.dirname(RbConfig.ruby), File.dirname(TEST_GIT), '/usr/bin', '/bin'].uniq.join(':')
+      output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => path })
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_missing_codex(result)
+    end
+  end
+
+  def test_wrong_checkout_head_is_a_setup_failure_without_cli_attempt
+    with_repository do |root, base, _head, bin|
+      output, _error, status = run_review(root, base, base, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      refute result.fetch('attempted')
+      assert_includes result.fetch('reason'), 'Checkout HEAD is'
+    end
+  end
+
+  private
+
+  def assert_codex_invocation(trace, head)
+    invocation = JSON.parse(File.read(trace))
+    assert_equal %w[exec -s read-only --ignore-rules --ignore-user-config], invocation.fetch('args').first(5)
+    assert_includes invocation.fetch('prompt'), '+after'
+    assert_includes invocation.fetch('prompt'), "REVIEWED #{head} BY openai/codex"
+  end
+
+  def assert_missing_codex(result)
+    assert_equal 'not_completed', result.fetch('status')
+    refute result.fetch('attempted')
+    assert_equal 'executable_missing', result.fetch('failure_stage')
+    assert_includes result.fetch('reason'), 'codex is not on PATH'
+  end
+end
+
+class LocalReviewOtherCliTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: a Claude process is skipped while the helper claims that its review ran.
+  def test_claude_run_invokes_the_cli_and_checks_its_result
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'claude-invocation.json')
+      fake_claude(bin, head)
+
+      output, error, status = run_review(root, base, head, bin,
+                                         env: { 'REVIEW_TRACE' => trace }, reviewer: 'anthropic/claude')
+
+      result = assert_successful_review(output, error, status, head, 'anthropic/claude')
+      assert_claude_artifacts(result, trace, head)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  # Break caught: same-model Grok fallback is selected but cannot produce a checked local review.
+  def test_grok_run_invokes_the_cli_and_cleans_its_prompt
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'grok-invocation.json')
+      fake_grok(bin, head)
+
+      output, error, status = run_review(root, base, head, bin,
+                                         env: { 'REVIEW_TRACE' => trace }, reviewer: 'xai/grok', model: 'grok-4')
+
+      result = assert_successful_review(output, error, status, head, 'xai/grok')
+      assert_grok_invocation(trace)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  private
+
+  def assert_claude_artifacts(result, trace, head)
+    assert_includes File.read(result.fetch('report')), "REVIEWED #{head} BY anthropic/claude"
+    refute JSON.parse(File.read(result.fetch('usage')))['is_error']
+    invocation = JSON.parse(File.read(trace))
+    assert_includes invocation.fetch('args'), '--safe-mode'
+    assert_includes invocation.fetch('prompt'), '+after'
+  end
+
+  def assert_grok_invocation(trace)
+    invocation = JSON.parse(File.read(trace))
+    assert_includes invocation.fetch('args'), 'grok-4'
+    assert_includes invocation.fetch('prompt'), '+after'
+    refute_path_exists invocation.fetch('path')
+  end
+end
+
+class LocalReviewStatusTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: a fresh-host same-model report is silently treated as a verified CLI launch.
+  def test_host_report_is_checked_but_keeps_its_weaker_evidence_kind
+    with_repository do |root, _base, head, _bin|
+      report = File.join(root, 'host-review.md')
+      File.write(report, "no findings\nREVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 0\n")
+
+      output, error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+                                             '--reviewer', 'anthropic/claude', '--report', report)
+
+      assert_predicate status, :success?, error
+      result = JSON.parse(output)
+      assert_host_report(result)
+    end
+  end
+
+  # Break caught: no local review silently appears ready without a concrete explanation.
+  def test_missing_review_reports_reason_and_same_model_fallback
+    with_repository do |_root, _base, head, _bin|
+      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+                                              '--not-run-reason', 'Fresh host review was not started')
+
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'not_completed', result.fetch('status')
+      assert_equal 'Fresh host review was not started', result.fetch('reason')
+      assert result.fetch('same_model_fallback_available')
+    end
+  end
+
+  def test_stale_host_report_is_not_completed
+    with_repository do |root, _base, head, _bin|
+      report = File.join(root, 'stale-review.md')
+      File.write(report, "REVIEWED #{'0' * 40} BY anthropic/claude EFFORT medium FINDINGS 0\n")
+      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+                                              '--reviewer', 'anthropic/claude', '--report', report)
+      refute_predicate status, :success?
+      assert_equal 'not_completed', JSON.parse(output).fetch('status')
+    end
+  end
+end
+
+module LocalReviewFixture
+  private
+
+  def fake_codex(bin, head)
+    write_executable(bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'json'
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
+      report = ARGV.fetch(ARGV.index('-o') + 1)
+      File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT medium FINDINGS 0\\n")
+    RUBY
+  end
+
+  def fake_claude(bin, head)
+    write_executable(bin, 'claude', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'json'
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
+      puts JSON.generate({ is_error: false, result: "no findings\\nREVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 0" })
+    RUBY
+  end
+
+  def fake_grok(bin, head)
+    write_executable(bin, 'grok', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'json'
+      prompt = ARGV.fetch(ARGV.index('--prompt-file') + 1)
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: File.read(prompt), path: prompt }))
+      puts "no findings\\nREVIEWED #{head} BY xai/grok EFFORT medium FINDINGS 0"
+    RUBY
+  end
+
+  def assert_completed(output, head, reviewer)
+    result = JSON.parse(output)
+    assert_equal 'completed', result.fetch('status')
+    assert_equal head, result.fetch('head')
+    assert_equal reviewer, result.fetch('reviewer')
+    assert File.file?(result.fetch('report'))
+    result
+  end
+
+  def assert_successful_review(output, error, status, head, reviewer)
+    assert_predicate status, :success?, error
+    assert_completed(output, head, reviewer)
+  end
+
+  def assert_host_report(result)
+    assert_equal 'reported', result.fetch('status')
+    assert_equal 'host_report', result.fetch('evidence')
+    refute result.fetch('cli_invocation_verified')
+  end
+
+  def cleanup_artifacts(result)
+    return unless result
+
+    %w[report usage].each do |key|
+      path = result[key]
+      File.unlink(path) if path && File.file?(path)
+    end
+  end
+
+  def run_review(root, base, head, bin, options = {})
+    arguments = [self.class::COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
+                 '--reviewer', options.fetch(:reviewer, 'openai/codex'), '--effort', 'medium']
+    arguments.push('--model', options[:model]) if options[:model]
+    Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" }.merge(options.fetch(:env, {})), *arguments)
+  end
+
+  def with_repository
+    Dir.mktmpdir('shaka-local-review') do |root|
+      bin = File.join(root, 'bin')
+      FileUtils.mkdir_p(bin)
+      git!(root, 'init')
+      commit!(root, 'before', 'base')
+      base = git!(root, 'rev-parse', 'HEAD').strip
+      commit!(root, 'after', 'change')
+      yield root, base, git!(root, 'rev-parse', 'HEAD').strip, bin
+    end
+  end
+
+  def commit!(root, contents, message)
+    File.write(File.join(root, 'example.txt'), "#{contents}\n")
+    git!(root, 'add', '.')
+    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', message)
+  end
+
+  def write_executable(bin, name, script)
+    path = File.join(bin, name)
+    File.write(path, script)
+    File.chmod(0o755, path)
+  end
+
+  def git!(root, *)
+    output, status = Open3.capture2e(TEST_GIT, '-C', root, *)
+    raise output unless status.success?
+
+    output
+  end
+end
+
+LocalReviewCodexTest.include(LocalReviewFixture)
+LocalReviewOtherCliTest.include(LocalReviewFixture)
+LocalReviewStatusTest.include(LocalReviewFixture)
