@@ -42,7 +42,17 @@ module Shaka
       "--- BEGIN PR DESCRIPTION DATA #{marker} ---\n#{content}\n--- END PR DESCRIPTION DATA #{marker} ---\n\n"
     end
 
-    def root = @root ||= File.realpath(@options.fetch(:root, Dir.pwd))
+    def root
+      @root ||= begin
+        directory = File.realpath(@options.fetch(:root, Dir.pwd))
+        directory = File.dirname(directory) until checkout_marker?(directory) || directory == File.dirname(directory)
+        raise Shaka::Error, '--root is not inside a Git checkout' unless checkout_marker?(directory)
+
+        directory
+      end
+    end
+
+    def checkout_marker?(directory) = File.exist?(File.join(directory, '.git'))
   end
 
   # Refuses candidate-controlled PATH entries before any external command runs.
@@ -152,6 +162,9 @@ module Shaka
     end
 
     def validate_checkout!
+      top = capture(git_executable, '-C', root, 'rev-parse', '--show-toplevel').strip
+      raise Shaka::Error, 'Resolved Git checkout differs from --root' unless File.realpath(top) == root
+
       actual = capture(git_executable, '-C', root, 'rev-parse', 'HEAD').strip
       raise Shaka::Error, "Checkout HEAD is #{actual}, not #{head}" unless actual == head
     end

@@ -517,6 +517,18 @@ class LocalReviewRelativePathTest < Minitest::Test
     end
   end
 
+  def test_subdirectory_root_rejects_sibling_candidate_executable
+    with_repository do |root, base, head, bin|
+      subdirectory = File.join(root, 'nested')
+      candidate_bin = File.join(root, 'bin')
+      FileUtils.mkdir_p([subdirectory, candidate_bin])
+      write_executable(candidate_bin, 'codex', "#!/bin/sh\nexit 0\n")
+      path = "#{candidate_bin}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
+      output, _error, status = run_review(subdirectory, base, head, bin, env: { 'PATH' => path })
+      assert_unsafe_executable_rejected(output, status)
+    end
+  end
+
   private
 
   def assert_unsafe_executable_rejected(output, status)
