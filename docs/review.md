@@ -23,11 +23,14 @@ $10/$50 per 1M input/output for Astra versus $4/$20 for Sol on 2026-09-19; see
 [OpenAI pricing](https://developers.openai.com/api/docs/pricing). Missing Claude credentials are `--unavailable
 anthropic/claude`, after which the helper may select the next listed provider.
 
-`review.reviewers` in the repository's trusted `.agents/agent-workflow.yml` lists the local
-reviewers to try, in preference order. Each entry names a `provider` and `model_family` and nothing
-else. A seam may omit the list; the implementation model in a fresh context still reviews. The
-top-level `review.check` names the GitHub review job to read, separately from this list. That job
-is a review source, not a GitHub required merge check. Trivial
+`review.local_review_agents` in the repository's trusted `.agents/agent-workflow.yml` lists the local
+review agents to try, in preference order. Each entry names a `provider` and `model_family` and nothing
+else. A seam may omit the list; the implementation model in a fresh context still reviews. Shaka does
+not choose a `grok`, `agent`, or `cursor-agent` binary for an entry. `shaka review-prompt` prints the
+prompt, and the signed-in host runs it. `review.ci_review_agents` is a separate list of CI job names
+to read. Those jobs are review sources, not required merge checks. Listing several means thorough
+pace waits for every name, and swift pace waits for one verified report from the list when no
+different-provider local review already ran. Trivial
 prose-only and no-op changes may omit review when the PR records why, unless the trusted
 seam sets `review.required: always`. The user may request deeper review.
 Installing the skill does not install a GitHub Action or its credentials. This
@@ -44,7 +47,7 @@ review completes or the authority that set it explicitly changes the requirement
 the requesting user controls their request; maintainers control repository policy. Do not
 silently substitute a different reviewer. Under `swift`, a published different-provider local
 review for the current head satisfies the independent-review requirement without waiting for
-`review.check`. Under `thorough`, wait for that named check on the current head anyway.
+`review.ci_review_agents`. Under `thorough`, wait for that named check on the current head anyway.
 Put optional reviewer history and gaps in
 details; required or requested review gaps stay visible. Avoid copying the review
 timeline into the PR description.
@@ -56,7 +59,7 @@ timeline into the PR description.
 | Mode | Wait | `shaka merge` native state |
 | --- | --- | --- |
 | `swift` | Independent review for the task, plus any user-requested gate. Do not wait for optional jobs. | Allows `UNSTABLE` once required checks pass. |
-| `thorough` | Also wait for a verified `review.check` on the current head. | Refuses `UNSTABLE`. Queue-disabled: `CLEAN` only. Queue-enabled: `CLEAN`, `BEHIND`, or `BLOCKED`. |
+| `thorough` | Also wait for a verified `review.ci_review_agents` on the current head. | Refuses `UNSTABLE`. Queue-disabled: `CLEAN` only. Queue-enabled: `CLEAN`, `BEHIND`, or `BLOCKED`. |
 
 Project default lives on the trusted seam. Record a this-task override on the PR when the
 user asks for the other mode. Thorough wins: a candidate YAML or a swift this-task request
@@ -69,23 +72,23 @@ review everywhere:
 
 1. Set this repository's seam `review.pace` to `thorough`, or change `ReviewPace::DEFAULT`
    to `thorough` and treat omitted YAML as thorough.
-2. Restore review and finish bullets that always wait for `review.check` if you remove the
+2. Restore review and finish bullets that always wait for `review.ci_review_agents` if you remove the
    key entirely.
 3. Delete the quality-drop notes that apply only to `swift`.
 
 Independent review is one of:
 
 - a published local attestation `REVIEWED <sha> BY <provider>/<family>` for the current head
-- a verified `review.check` report for that SHA
+- a verified `review.ci_review_agents` report for that SHA
 
 Under `swift`, when the local reviewer is a different provider than every implementer, merge
 after required checks (`validate` here) pass, unless the user expressly made another review a
 merge gate. Leave GitHub Claude, hosted Codex, and CodeRabbit running. Read whatever they have
 already posted; do not wait for jobs still in progress. When no different-provider local review
-ran, wait for **one** verified `review.check` report on the first ready-for-review push of the
+ran, wait for **one** verified `review.ci_review_agents` report on the first ready-for-review push of the
 task. Do not wait for that check again after a nit-only or diagnostic-only follow-up SHA.
 
-Under `thorough`, wait for a verified `review.check` report on the current head, even after a
+Under `thorough`, wait for a verified `review.ci_review_agents` report on the current head, even after a
 different-provider local review.
 
 After two repair rounds, remaining nits do not start another cycle. Remaining demonstrated

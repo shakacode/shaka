@@ -34,7 +34,7 @@ module SeamInitializerTestHelpers
     [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
      '--setup-command', setup_command, '--validate-command', validate_command,
      '--test-command', test_command, '--review-policy', 'meaningful_changes',
-     '--review-check', 'claude-review']
+     '--ci-review-agent', 'claude-review']
   end
 
   def generated_files(root)
@@ -259,8 +259,19 @@ end
 class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
+  def test_rejects_a_repeated_ci_review_agent_before_writing
+    with_repository do |root|
+      arguments = init_arguments(root) + ['--ci-review-agent', 'Claude-Review']
+      _output, error, status = Open3.capture3(*arguments)
+
+      refute_predicate status, :success?
+      assert_includes error, 'review.ci_review_agents repeats claude-review'
+      refute_path_exists File.join(root, '.agents')
+    end
+  end
+
   def test_rejects_missing_required_policy_before_writing
-    %w[--review-policy --review-check].each do |flag|
+    %w[--review-policy --ci-review-agent].each do |flag|
       with_repository do |root|
         arguments = init_arguments(root)
         arguments.slice!(arguments.index(flag), 2)
@@ -289,7 +300,7 @@ class SeamInitializerValidationTest < Minitest::Test
     with_repository do |root|
       arguments = init_arguments(root)
       arguments[arguments.index('meaningful_changes')] = 'none'
-      arguments.slice!(arguments.index('--review-check'), 2)
+      arguments.slice!(arguments.index('--ci-review-agent'), 2)
 
       output, error, status = Open3.capture3(*arguments)
 

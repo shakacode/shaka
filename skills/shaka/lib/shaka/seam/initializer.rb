@@ -25,6 +25,7 @@ module Shaka
 
       def call
         files = generated_files
+        RepositoryConfig::ReviewSchema.new(review_policy).validate
         preflight_directories
         RepositoryConfig::CommandSchema.new(root: @root).validate_available_optional_commands
         preflight_files(files)
@@ -67,13 +68,15 @@ module Shaka
 
       def review_policy
         required_policy = required('review_policy')
+        names = @options[:ci_review_agents]
         if required_policy == 'none'
-          raise Error, '--review-check must be omitted when review policy is none' if @options.key?(:review_check)
+          raise Error, '--ci-review-agent must be omitted when review policy is none' if names
 
           return { 'required' => required_policy }
         end
+        raise Error, '--ci-review-agent is required' if names.nil? || names.empty?
 
-        { 'required' => required_policy, 'check' => required('review_check') }
+        { 'required' => required_policy, RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS => names }
       end
 
       def wrapper(arguments)

@@ -34,9 +34,10 @@ base_branch: main
 plan: docs/pilot-plan.md
 review:
   required: meaningful_changes
-  check: claude-review
+  ci_review_agents:
+    - claude-review
   pace: swift
-  reviewers:
+  local_review_agents:
     - provider: anthropic
       model_family: claude
     - provider: openai
@@ -52,7 +53,7 @@ recovery:
 ```
 
 The smallest valid YAML seam drops every optional setting — `base_branch`, `plan`,
-`review.pace`, `reviewers`, `branches`, `recovery`, and `repo_prefix` — and does not
+`review.pace`, `local_review_agents`, `branches`, `recovery`, and `repo_prefix` — and does not
 provide either optional command entry point:
 
 ```yaml
@@ -103,9 +104,9 @@ checks from GitHub before merging. Trusted workflow files carry their own pinned
 references. A second unchecked copy in YAML would not enforce any boundary and could disagree
 with the service that does.
 
-`review.check` names the GitHub review job Shaka should read. That job is a backstop, not a
-GitHub required merge check. `review.pace` (`swift` by default, or `thorough`) controls whether
-Shaka waits for that job and for GitHub `CLEAN` before merge. A this-task override may raise
+`review.ci_review_agents` lists the CI job names Shaka should read. Those jobs are a backstop, not
+GitHub required merge checks. `review.pace` (`swift` by default, or `thorough`) controls whether
+Shaka waits for those jobs and for GitHub `CLEAN` before merge. A this-task override may raise
 swift to thorough; a candidate YAML cannot lower a thorough trusted seam to swift. GitHub remains
 authoritative for the native check list; the seam remains authoritative for Shaka's review choice.
 
@@ -118,9 +119,11 @@ an inert `trusted_actions` field.
 `version` stays `1` while the pilot revises this contract. A revision that removes or renames
 a key makes an older seam fail `seam check` loudly, with a non-zero exit and the offending key
 named and a migration pointer where one exists, so nothing is silently misread and no version
-bump is needed to stay safe. The `review.reviewers` list replacing the earlier flat
-`model_family`, `provider`, and `draft` fields and the retired GitHub-fact fields described
-above are such revisions.
+bump is needed to stay safe. `review.check` and `review.github_action_check` moving to
+`review.ci_review_agents`, and `review.reviewers` and `review.local_reviewers` moving to
+`review.local_review_agents`, are such revisions, as are the
+`review.local_review_agents` list replacing the earlier flat `model_family`, `provider`, and
+`draft` fields and the retired GitHub-fact fields described above.
 
 `version` becomes `2` on the first change that could let an existing seam be read as something
 it does not mean — a key whose meaning or default changes while its name and shape stay valid —
@@ -242,46 +245,64 @@ existing policy. Migrate across that trust boundary in this order:
 
 ## `review`
 
-`required` is the only mandatory key. `check` names the reviewer's GitHub status check.
-
-That named check is a review source to read, not a GitHub required merge check. Branch
-protection in this repository requires `validate` only. See
+`required` is the only mandatory key. The other keys are documented under their own headings
+below. Branch protection in this repository requires `validate` only. See
 [review pace](review.md#review-pace).
-
-The three `required` values record when the named GitHub review job is the independent-review
-backstop, and `check` is
-bound to them: validation requires it for `always` and `meaningful_changes`, and rejects it for
-`none`. Choosing `none` therefore leaves no named GitHub review job. Under `swift`, when a
-different-provider local review already covers the current head, do not wait for that job
-before merge. `thorough` still waits for the named check.
-
-Under `meaningful_changes`, the Verify phase lets trivial prose or no-op work omit review
-with a recorded reason. `always` withdraws that exemption.
-
-| Value | Trigger for the named gate |
-| --- | --- |
-| `always` | Every pull request, with no exemption for trivial work. |
-| `meaningful_changes` | Meaningful implementation only. Trivial prose or no-op work may omit the named gate when the reason is recorded on the pull request. |
-| `none` | Never. Validation rejects `check`, so the repository declares no named gate. |
-
-One rule holds whatever this value says: meaningful implementation gets an adversarial review
-before the branch is pushed, and `none` does not switch that off. What makes the review
-adversarial is the context rather than the model, so a fresh session of the implementation model
-qualifies; a different provider is preferred, not required.
-[Review](review.md) defines the baseline and the rest of the review procedure.
 
 | Setting | Required | Allowed values |
 | --- | --- | --- |
 | `required` | yes | `always`, `meaningful_changes`, `none` |
-| `check` | when `required` is not `none` | Non-empty string |
-| `pace` | no | `swift` (default when omitted) or `thorough` |
-| `reviewers` | no | Ordered non-empty list of reviewer entries |
+| `ci_review_agents` | when `required` is not `none` | List of CI job names. One name is enough. |
+| `pace` | no | `swift` (default when omitted), `thorough` |
+| `local_review_agents` | no | Ordered list of `{provider, model_family}` entries |
+
+`check`, `github_action_check`, `reviewers`, and `local_reviewers` fail `seam check`. The
+messages name `ci_review_agents` or `local_review_agents`. `shaka seam migrate` renames them
+when it rewrites a predecessor seam.
+
+### `review.required`
+
+Allowed values: `always`, `meaningful_changes`, `none`.
+
+| Value | When the CI jobs are the backstop |
+| --- | --- |
+| `always` | Every pull request. Trivial work does not skip them. |
+| `meaningful_changes` | Meaningful implementation. Trivial prose or no-op work may omit them when the reason is recorded on the pull request. |
+| `none` | Never. `ci_review_agents` must be omitted. |
+
+Meaningful implementation still gets an adversarial review before the branch is pushed.
+`none` does not switch that off. A fresh session of the implementation model qualifies; a
+different provider is preferred, not required. [Review](review.md) defines the rest.
+
+### `review.ci_review_agents`
+
+A list of CI job names to read. The names are whatever the CI system reports. They are not
+tied to GitHub, and they are not required merge checks.
+
+```yaml
+ci_review_agents:
+  - claude-review
+  - another-review
+```
+
+One name is enough. Each extra name is another job to read:
+
+- `thorough` waits for every named job on the current head.
+- `swift` waits for one verified report from the list on the first ready-for-review push,
+  when no different-provider local review already ran.
+- `swift` does not wait for the list when a different-provider local review already ran.
+  Those jobs can still finish after merge.
+
+When `required` is `none`, omit the key. An empty list fails validation. Repeat a flag to
+add a name: `--ci-review-agent claude-review --ci-review-agent another-review`.
 
 ### `review.pace`
 
+Allowed values: `swift`, `thorough`. Omitted means `swift`.
+
 Product default is `swift`: merge after required checks and independent review for the
-task, without waiting for optional jobs to make GitHub `CLEAN`. `thorough` waits for the
-named `review.check` on the current head and refuses `UNSTABLE`.
+task, without waiting for optional jobs to make GitHub `CLEAN`. `thorough` waits for every
+named job in `review.ci_review_agents` on the current head and refuses `UNSTABLE`.
 
 Read the value from the trusted default-branch seam (`shaka seam check --ref` and
 `shaka merge --ref`), not from the candidate PR copy. Record a this-task override on the PR
@@ -289,27 +310,31 @@ when the user asks for the other mode. Combine them with thorough winning: a swi
 cannot weaken a thorough seam. `merge --pace` is only the this-task override; omitting `--ref`
 and `--pace` is swift.
 
-When `required` is `none`, `check` must be **omitted**; leaving it behind fails validation.
-`reviewers` stays valid there, because `none` drops the repository's named check and not the
-alternate-review baseline. Declaring it is not enforced — a seam with `required: none` and no
-`reviewers` loads — but it is the only way that seam expresses reviewer order, and the baseline
-applies either way.
+`local_review_agents` stays valid when `required` is `none`, because `none` drops the CI job
+list and not the local agents. A seam with `required: none` and no `local_review_agents`
+loads. The list is the only way that seam expresses local agent order.
 
-### `review.reviewers`
+### `review.local_review_agents`
 
-`reviewers` is an ordered preference list. Each entry is one reviewer identity and nothing else:
+The ordered list of local review agents. It is not `ci_review_agents`. Each entry is one
+identity and nothing else:
 
 | Setting | Required | Allowed values |
 | --- | --- | --- |
 | `provider` | yes | Non-empty string, such as `anthropic`, `openai`, `xai` |
 | `model_family` | yes | Non-empty string, such as `claude`, `codex`, `grok` |
 
+Shaka does not map an entry to a `grok`, `agent`, or `cursor-agent` binary. `shaka reviewer`
+picks an identity. `shaka review-prompt` prints the prompt for that identity. The host that
+is already signed in runs the prompt.
+
 ```yaml
 review:
   required: meaningful_changes
-  check: claude-review
+  ci_review_agents:
+    - claude-review
   pace: swift
-  reviewers:
+  local_review_agents:
     - provider: anthropic
       model_family: claude
     - provider: openai
@@ -326,8 +351,8 @@ An entry carries no `draft` flag and no per-entry `check`. Whether a reviewer ru
 requests is decided by its own trigger — the standard reviewer workflow guards on
 `draft == false` — so read the trusted workflow rather than a copy in the seam that can drift
 from it. Identity is compared through review metadata or a trusted workflow, never a check name,
-so a per-entry check name would have no job to do. The top-level `review.check` still names the
-GitHub review job to read, and that job need not belong to any listed reviewer.
+so a per-entry check name would have no job to do. `review.ci_review_agents` names the CI jobs
+to read, and those jobs need not belong to any listed local agent.
 
 #### Sizing the list
 
@@ -466,11 +491,13 @@ bases work on its default branch writes no `base_branch` at all. It does not wri
 `branches.name` afterward when the repository already uses a different layout.
 
 The generated `review` section depends on the policy. With `always` or
-`meaningful_changes` it holds `required` and `check`, and `--review-check` is mandatory.
-With `--review-policy none` it holds `required` alone, and passing `--review-check` is
-rejected — matching the rule above that the other review keys must be absent.
+`meaningful_changes` it holds `required` and a one-item `ci_review_agents` list, and
+`--ci-review-agent` is mandatory. Repeat the flag to add another job. With
+`--review-policy none` it holds `required` alone, and passing `--ci-review-agent` is
+rejected. `--review-check` and `--github-action-check` are rejected; they moved to
+`--ci-review-agent`.
 
-It omits `reviewers`, which is valid — the list is optional. Add it by hand when you want
+It omits `local_review_agents`, which is valid — the list is optional. Add it by hand when you want
 Shaka to choose a reviewer and substitute an exhausted provider; the initializer has no flags
 for reviewer entries yet. The generated merge preference is `ask` unless you pass
 `--merge-preference auto`.

@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require_relative 'policy_options'
 
 module Shaka
   class Seam
     # CLI flags for seam migrate. Planning is default; apply is explicit.
     module MigratorParser
+      include PolicyOptions
+
       private
 
       def parse!
@@ -42,12 +45,15 @@ module Shaka
       end
 
       def add_review_flags(flags)
+        add_review_policy_flag(flags)
+        add_ci_review_agent_flag(flags)
+        reject_retired_review_flags(flags)
+      end
+
+      def add_review_policy_flag(flags)
         flags.on('--review-policy MODE', %w[always meaningful_changes none],
                  'Explicit review.required when the predecessor cannot establish it') do |value|
           @options[:review_policy] = value
-        end
-        flags.on('--review-check NAME', 'Explicit review.check when required') do |value|
-          @options[:review_check] = value
         end
       end
 

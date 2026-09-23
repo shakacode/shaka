@@ -313,7 +313,7 @@ phases:
         UNVERIFIED until you publish its report, with its closing attestation line, to the PR. See
         [invoke a reviewer locally](<{{package_root}}/docs/review.md#invoke-a-reviewer-locally>).
       - Independent review for this task is satisfied by a published local
-        `REVIEWED SHA BY PROVIDER/FAMILY` attestation, or by a verified `review.check` report,
+        `REVIEWED SHA BY PROVIDER/FAMILY` attestation, or by a verified report from `review.ci_review_agents`,
         for the current head. A later nit-only or diagnostic-only SHA does not reopen that wait;
         a SHA that changes runtime, trust, or tests does. A user-requested
         review gate still blocks until it completes. Keep status and gaps visible; put advisory
@@ -326,14 +326,14 @@ phases:
         effective wait with `merge --ref` from intake plus `--pace` only for a this-task override.
         Omitting both is swift. A thorough trusted seam still wins if `--pace swift` is passed.
       - In swift, when the local reviewer is a different provider than every implementer, do not
-        wait for GitHub `review.check`. Leave that job running; findings that arrive after merge
+        wait for `review.ci_review_agents`. Leave those jobs running; findings that arrive after merge
         follow
         [reviews after merge](<{{package_root}}/docs/review.md#reviews-after-merge>).
       - In swift, when no different-provider local review ran, wait for one verified
-        `review.check` report on the first ready-for-review push. Do not wait for that check again
+        report from `review.ci_review_agents` on the first ready-for-review push. Do not wait for that check again
         after a nit-only or diagnostic-only follow-up SHA. CodeRabbit, hosted Codex, and other
         unnamed bots are advisory: read completed findings, never wait for them.
-      - In thorough, wait for a verified `review.check` report on the current head even after a
+      - In thorough, wait for every named job in `review.ci_review_agents` on the current head even after a
         different-provider local review. User-requested review gates still block in both modes.
       - Collect every current-head finding into one repair batch. Fix demonstrated defects
         (correctness, failing tests, security, contract or data-loss). Decline nits with a reason
@@ -369,7 +369,7 @@ phases:
         satisfied (the same-provider GitHub backstop). Wait for any user-requested review gate
         whether or not a local review already ran. In swift, do not wait for optional checks to make
         merge state CLEAN; `merge` accepts UNSTABLE once required checks pass. In thorough, wait
-        for a verified `review.check` on the current head and do not merge while the state is
+        for every named job in `review.ci_review_agents` on the current head and do not merge while the state is
         UNSTABLE. Pass `merge --ref` from intake and `--pace` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
       - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
