@@ -75,14 +75,11 @@ module Shaka
       return false unless column[:provider] == 'anthropic' && !@inclusive_input
 
       model = anthropic_rate_model(column)
-      return false unless model
-
-      column[:billing] == 'standard' ||
-        (column[:billing] == 'fast' && AnthropicCost::FAST_MODELS.include?(model))
+      AnthropicCost.rated_speed?(model, column[:billing])
     end
 
     def anthropic_rate_model(column)
-      [column[:routed], column[:model]].find { |name| AnthropicCost::RATES.key?(name.to_s) }&.to_s
+      AnthropicCost.rate_model(column[:routed], column[:model])
     end
 
     def footer(columns, reasons)

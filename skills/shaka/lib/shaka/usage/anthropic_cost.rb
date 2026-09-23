@@ -23,6 +23,19 @@ module Shaka
     # Fast mode is published for these Opus versions at 2x standard rates. Cache
     # multipliers stack on top, so the same multiplier applies to every token category.
     FAST_MODELS = %w[claude-opus-5-5 claude-opus-5 claude-opus-4-8].freeze
+
+    def self.rate_model(routed, configured)
+      [routed, configured].find do |name|
+        RATES.key?(name.to_s.delete_suffix('-fast'))
+      end&.to_s&.delete_suffix('-fast')
+    end
+
+    def self.rated_speed?(model, speed)
+      return false unless model && RATES.key?(model)
+
+      speed == 'standard' || (speed == 'fast' && FAST_MODELS.include?(model))
+    end
+
     # Web search bills $10 per 1,000 requests on top of tokens; web fetch adds no charge.
     # Readers report no searches as zero, so a count that is absent here was never established.
     SEARCH_RATE = Rational(1, 100)
@@ -37,7 +50,7 @@ module Shaka
       return unless configuration.is_a?(Array)
 
       _provider, model, routed = configuration
-      [routed, model].find { |name| RATES.key?(name) }
+      AnthropicCost.rate_model(routed, model)
     end
 
     def anthropic_price(record, mode)
@@ -54,11 +67,11 @@ module Shaka
       model = anthropic_model(configuration)
       return [nil, 'Unsupported provider or configured model'] unless model
 
-      rates = RATES.fetch(model).map { |price| Rational(price) }
-      return [rates, nil] if speed == 'standard'
-      return [nil, speed_reason(speed, model)] unless speed == 'fast' && FAST_MODELS.include?(model)
+      return [nil, speed_reason(speed, model)] unless AnthropicCost.rated_speed?(model, speed)
 
-      [rates.map { |price| price * 2 }, nil]
+      rates = RATES.fetch(model).map { |price| Rational(price) }
+      rates = rates.map { |price| price * 2 } if speed == 'fast'
+      [rates, nil]
     end
 
     # Claude model rates apply only where the provider publishes the corresponding speed.
