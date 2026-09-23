@@ -40,7 +40,7 @@ module Shaka
     def report_result(path, head)
       return missing_reviewer(head) if @options[:reviewer].to_s.empty?
 
-      reviewer = ReviewerSelection.parse(@options.fetch(:reviewer)).values.join('/')
+      reviewer = ReviewerSelection.parse(@options.fetch(:reviewer)).values.map(&:downcase).join('/')
       text = File.read(path, encoding: 'UTF-8')
       unless LocalReviewEvidence.valid?(text, head:, reviewer:)
         return { 'status' => 'not_completed', 'head' => head,

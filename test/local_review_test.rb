@@ -696,6 +696,13 @@ class LocalReviewTimeoutTest < Minitest::Test
                                                           Process.clock_gettime(Process::CLOCK_MONOTONIC) - 1)
   end
 
+  def test_process_exit_is_not_misreported_as_timeout_when_pipe_drain_expires
+    command = ['/bin/sh', '-c', 'sleep 10 &']
+    _output, _error, result = Shaka::LocalReviewProcess.capture(command, stdin_data: nil, chdir: Dir.pwd, timeout: 1)
+    assert_instance_of Shaka::LocalReviewProcess::DrainTimeout, result
+    assert_predicate result.process_status, :success?
+  end
+
   private
 
   def assert_timeout(output, status, started)
@@ -748,6 +755,19 @@ class LocalReviewStatusTest < Minitest::Test
       assert_predicate status, :success?, error
       result = JSON.parse(output)
       assert_host_report(result)
+    end
+  end
+
+  def test_host_report_normalizes_reviewer_case
+    with_repository do |root, _base, head, _bin|
+      report = File.join(root, 'host-review.md')
+      File.write(report, "no findings\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n")
+      output, error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+                                             '--reviewer', 'OpenAI/Codex', '--report', report)
+      assert_predicate status, :success?, error
+      result = JSON.parse(output)
+      assert_equal 'reported', result.fetch('status')
+      assert_equal 'openai/codex', result.fetch('reviewer')
     end
   end
 

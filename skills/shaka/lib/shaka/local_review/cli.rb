@@ -23,6 +23,8 @@ module Shaka
     def process_failure(command, status, stderr, stdout)
       exit_reason = if status.nil?
                       "timed out after #{@options.fetch(:timeout_seconds)}s"
+                    elsif status.is_a?(LocalReviewProcess::DrainTimeout)
+                      "output drain timed out after 2s (process exited #{status.process_status.exitstatus})"
                     elsif status.signaled?
                       "killed by signal #{status.termsig}"
                     else

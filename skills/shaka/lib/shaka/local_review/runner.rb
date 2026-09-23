@@ -104,6 +104,8 @@ module Shaka
       timeout = @options.fetch(:timeout_seconds)
       stdout, _stderr, status = LocalReviewProcess.capture(arguments, stdin_data: nil, chdir: root, timeout: timeout)
       raise Shaka::Error, "#{arguments.first} timed out after #{timeout}s" unless status
+      raise Shaka::Error, "#{arguments.first} output drain timed out after 2s" if
+        status.is_a?(LocalReviewProcess::DrainTimeout)
 
       unless status.success?
         exit_reason = status.signaled? ? "signal #{status.termsig}" : "exit #{status.exitstatus}"

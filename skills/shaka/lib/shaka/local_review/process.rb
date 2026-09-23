@@ -5,6 +5,10 @@ require 'open3'
 module Shaka
   # Captures a reviewer process with a deadline and terminates its process group on timeout.
   module LocalReviewProcess
+    DrainTimeout = Struct.new(:process_status) do
+      def success? = false
+    end
+
     def self.capture(arguments, stdin_data:, chdir:, timeout:)
       Open3.popen3(*arguments, chdir: chdir, pgroup: true) do |stdin, stdout, stderr, waiter|
         capture_streams([stdin, stdout, stderr], waiter, stdin_data, timeout)
@@ -23,10 +27,17 @@ module Shaka
     def self.wait_or_terminate(waiter, threads, timeout)
       # Give pipes a separate bounded drain period after the process exits.
       # Reusing the process deadline would reject already-finished readers at its edge.
-      finished = waiter.join(timeout) &&
-                 join_before_deadline(threads, Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2)
-      terminate(waiter) unless finished
-      finished ? waiter.value : nil
+      exited = waiter.join(timeout)
+      unless exited
+        terminate(waiter)
+        return nil
+      end
+
+      drained = join_before_deadline(threads, Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2)
+      return waiter.value if drained
+
+      terminate(waiter)
+      DrainTimeout.new(waiter.value)
     end
 
     def self.write_input(stdin, data)
