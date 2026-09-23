@@ -39,8 +39,18 @@ require 'shaka/public_comments'
 github = MyGitHubAdapter.new('OWNER/REPO', 42) # see "GitHub adapter"
 reader = Shaka::PublicComments::Reader.new(github, machine_path: '/etc/my-cli/trusted-github-actors.yml')
 
+```
+
+Choose the call that matches the discussion. For a pull request:
+
+```ruby
 pull_request = reader.call(expected_head: '0123456789abcdef0123456789abcdef01234567')
-issue = reader.call(issue_only: true) # when 42 is an issue
+```
+
+For an issue instead:
+
+```ruby
+issue = reader.call(issue_only: true)
 ```
 
 You supply:
