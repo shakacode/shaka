@@ -403,10 +403,18 @@ Codex 0.154.0:
   set -euo pipefail
   report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX")
   prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX")
+  trap 'rm -f "$prompt"' EXIT
   base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
   head=$(git rev-parse HEAD)
   shaka review-prompt --head "$head" --base "$base" --reviewer openai/codex > "$prompt"
-  codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" - < "$prompt"
+  if ! codex exec -s read-only --ignore-rules --ignore-user-config -o "$report" - < "$prompt"; then
+    printf 'Codex reviewer failed; inspect CLI output and %s\n' "$report" >&2
+    exit 1
+  fi
+  if ! test -s "$report"; then
+    printf 'Codex returned no review; inspect CLI output and %s\n' "$report" >&2
+    exit 1
+  fi
   printf 'Review report: %s\nReviewed head: %s\n' "$report" "$head"
 )
 ```
@@ -436,6 +444,7 @@ Claude Code:
   report=$(mktemp "${TMPDIR:-/tmp}/shaka-review.XXXXXX")
   usage=$(mktemp "${TMPDIR:-/tmp}/shaka-review-usage.XXXXXX")
   prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-review-prompt.XXXXXX")
+  trap 'rm -f "$prompt"' EXIT
   base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
   head=$(git rev-parse HEAD)
   shaka review-prompt --head "$head" --base "$base" --reviewer anthropic/claude --effort medium \
@@ -445,8 +454,16 @@ Claude Code:
     printf 'Claude reviewer failed; inspect %s\n' "$usage" >&2
     exit 1
   fi
-  ruby -rjson -e 'puts JSON.parse(File.read(ARGV[0]))["result"]' "$usage" > "$report"
-  shaka usage --host claude-code --file "$usage" --commit "$head" --contribution review
+  if ! shaka usage --host claude-code --file "$usage" --commit "$head" --contribution review; then
+    printf 'Usage accounting failed; inspect %s\n' "$usage" >&2
+    exit 1
+  fi
+  if ! ruby -rjson -e 'data = JSON.parse(File.read(ARGV[0])); result = data["result"];
+    abort "Claude reported an error or returned no review" if data["is_error"] || !result.is_a?(String) || result.strip.empty?;
+    puts result' "$usage" > "$report"; then
+    printf 'Claude result extraction failed; inspect %s\n' "$usage" >&2
+    exit 1
+  fi
   printf 'Review report: %s\nUsage evidence: %s\n' "$report" "$usage"
 )
 ```
@@ -469,12 +486,16 @@ accepts `ANTHROPIC_API_KEY`, so a logged-in Max/claude.ai session looks unavaila
 Grok 1.0.30:
 
 ```bash
-prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-prompt.XXXXXX") || exit 1
-base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
-shaka review-prompt --head "$(git rev-parse HEAD)" --base "$base" --reviewer xai/grok \
-  --effort high > "$prompt"
-grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format plain \
-  --permission-mode plan --disable-web-search --no-subagents
+(
+  set -euo pipefail
+  prompt=$(mktemp "${TMPDIR:-/tmp}/shaka-prompt.XXXXXX")
+  trap 'rm -f "$prompt"' EXIT
+  base=$(git merge-base "origin/${SHAKA_BASE_BRANCH:?export the base branch for this task}" HEAD)
+  shaka review-prompt --head "$(git rev-parse HEAD)" --base "$base" --reviewer xai/grok \
+    --effort high > "$prompt"
+  grok --prompt-file "$prompt" -m MODEL --reasoning-effort high --output-format plain \
+    --permission-mode plan --disable-web-search --no-subagents
+)
 ```
 
 `--permission-mode plan` withholds edit approval, and the other two remove web access and
