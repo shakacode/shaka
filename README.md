@@ -1,31 +1,50 @@
 # Shaka
 
-Give your coding agent a task. Get a tested pull request, a plain English walkthrough, and a clear merge decision.
+**Take a coding task all the way to a reviewed pull request.**
+
+Shaka gives your coding agent a repeatable workflow for implementing a change,
+testing it, getting an independent review, and handling the findings. You get a PR
+that explains what changed, why, and what was checked.
 
 ```text
-$shaka Fix the failing search test. Bring the PR back for me to merge.
+$shaka Fix search when the query contains an apostrophe.
+Add a regression test and bring the PR back for me to merge.
 ```
 
-Shaka is useful when a task needs more than a patch. It guides one agent through the repository's instructions, a failing test when behavior changes, validation, an independent review, and fixes to review findings. The PR records what changed, which commit was checked, and what still needs attention. If a session stops midway, its recovery note helps you resume or hand off after confirming the previous owner has stopped.
+For that task, Shaka guides the agent to reproduce the failure, fix it, run your
+repository's checks, and have a fresh agent review the change. It then publishes
+the PR and a code walkthrough, handles review feedback, and tells you when the
+reviewed commit is ready to merge.
 
-For example, if a search test fails, Shaka checks the failure, changes the code, runs the repository's validation, opens a PR with a code walkthrough, and handles review feedback. You see the result and the evidence on that PR instead of reconstructing the agent's work from chat history.
+## Why use it?
 
-## Who merges?
+- **Spend less time directing the process.** Give the agent an outcome; Shaka
+  supplies the steps through testing, review, and PR delivery.
+- **Understand the result.** The PR explains the change and links to its checks
+  and review. A code walkthrough explains the implementation choices.
+- **Keep control of merging.** Choose **Ask** to make the final GitHub merge
+  click, or **Auto** to let the agent merge after required checks and approvals.
+- **Resume unfinished work.** A note on the PR records the owning task, where
+  it stopped, and what comes next.
+- **Use your existing tools.** Shaka runs inside your coding agent, uses your
+  repository's scripts, and publishes to GitHub.
 
-**Ask** means you merge the ready PR on GitHub. **Auto** lets the agent merge after required checks and approvals pass. Risky changes still come back to you. You can request review only or a PR without a merge.
+## Get started
 
-## Start here
+[Install Shaka](docs/getting-started.md), then open a task in your repository and
+invoke `$shaka` in Codex or `/shaka` in Claude Code, Cursor, or OpenCode. Supply an
+issue number, task link, or description.
 
-1. [Install Shaka and run a first task](docs/people/getting-started.md).
-2. [See how to steer a task](docs/people/working-with-shaka.md).
-3. [Check current host support](docs/people/host-support.md).
+Shaka needs Ruby 3.4, Git, an authenticated GitHub CLI, and a
+[configured repository](docs/configuration.md). It is an early pilot: Codex and
+Claude Code have recorded delivery trials; coverage for other hosts is still
+limited. See [host support](docs/host-support.md) before choosing an installation.
 
-[All user guides](docs/people/README.md).
+## Documentation
 
-Shaka is an early public pilot. Codex is the reference host; Claude Code has one verified consumer delivery. Cursor and OpenCode have no verified consumer delivery; [host support](docs/people/host-support.md) records the current evidence for each host, including Pi.
+- [Getting started](docs/getting-started.md) — install and run your first task.
+- [Working with Shaka](docs/working-with-shaka.md) — write a task, choose a stopping point, and give feedback.
+- [Configuration](docs/configuration.md) — repository settings and scripts.
+- [Control towers](docs/control-towers.md) — organize work across repositories.
 
-## For agents and maintainers
-
-The [agent documentation](docs/agents/README.md) explains the workflow, repository settings, standard scripts, review, and evidence. The [project documents](docs/project/README.md) hold packaging, release, and pilot history. The [requirements](docs/pilot-plan.md) define the pilot's scope.
-
-[MIT licensed](LICENSE). Copyright © 2026 ShakaCode.
+[Agent instructions](docs/agents/README.md) · [Development and project records](docs/project/README.md) · [MIT license](LICENSE)

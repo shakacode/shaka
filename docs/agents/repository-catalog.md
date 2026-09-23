@@ -37,7 +37,7 @@ For each registered root, refresh reads `origin` for identity and canonical URL,
 then loads the trusted default-branch seam from `origin/HEAD`, falling back to
 `origin/main` or `origin/master` when that symbolic ref is missing. It does not trust
 a candidate working tree. The effective prefix is the seam `repo_prefix` when
-present, otherwise the [documented fallback](settings.md#repo_prefix).
+present, otherwise the [documented fallback](../configuration.md#repo_prefix).
 
 Stdout and `catalog.json` use the same object:
 

@@ -587,3 +587,37 @@ class SeamMigrateOptionalCommandTest < Minitest::Test
     File.chmod(0o755, path)
   end
 end
+
+class SeamMigrateRecoveryLocationsTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  def test_previous_privacy_choice_survives_the_rename
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('recovery' => { 'workspace_path' => false }) }
+      report = migrate_report(root, sha)
+
+      assert_empty report.fetch('blocking')
+      assert_equal({ 'publish_locations' => false }, report.dig('established', 'recovery'))
+    end
+  end
+
+  def test_applied_migration_keeps_locations_private
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+      migrate_report(root, sha, '--apply')
+      config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+
+      assert_equal({ 'publish_locations' => false }, config.fetch('recovery'))
+    end
+  end
+
+  def test_conflicting_location_keys_block_instead_of_selecting_a_value
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) do |data|
+        data.merge('recovery' => { 'workspace_path' => false, 'publish_locations' => true })
+      end
+
+      assert_includes migrate_report(root, sha).fetch('blocking'),
+                      'recovery.workspace_path (collides with recovery.publish_locations)'
+    end
+  end
+end

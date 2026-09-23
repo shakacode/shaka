@@ -30,7 +30,7 @@ module Shaka
         found = RETIRED & review.keys
         return if found.empty?
 
-        raise Error, "review.#{found.first} moved into review.#{LOCAL_REVIEW_AGENTS}; see docs/agents/settings.md"
+        raise Error, "review.#{found.first} moved into review.#{LOCAL_REVIEW_AGENTS}; see docs/configuration.md"
       end
 
       # `check` and `reviewers` did not say which list was the GitHub Action and which was local.
@@ -38,7 +38,7 @@ module Shaka
         old = RENAMED.keys.find { |key| review.key?(key) }
         return unless old
 
-        raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see docs/agents/settings.md"
+        raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see docs/configuration.md"
       end
 
       def initialize(review)

@@ -9,7 +9,7 @@ module Shaka
     class RecoverySchema
       include Validation
 
-      KEYS = %w[workspace_path].freeze
+      KEYS = %w[publish_locations].freeze
 
       def initialize(recovery)
         @recovery = recovery
@@ -17,6 +17,10 @@ module Shaka
 
       def validate
         mapping!(@recovery, 'recovery')
+        if @recovery.key?('workspace_path')
+          raise Error, 'recovery.workspace_path was renamed to recovery.publish_locations; keep its boolean value'
+        end
+
         keys!(@recovery, [], KEYS, 'recovery')
         @recovery.each do |key, value|
           enum!(value, [true, false], "recovery.#{key} must be true or false")

@@ -44,7 +44,7 @@ phases:
         identifier, and short outcome. Update the same task when its PR is created or adopted;
         preserve user-chosen titles. Without that tool, suggest the title once.
       - Before writing to an unfinished PR, whether resuming or adopting it, follow the
-        [recovery note](<{{package_root}}/docs/agents/working-with-your-agent.md#recover-an-unfinished-pr>).
+        [recovery note](<{{package_root}}/docs/agents/delivery.md#recover-an-unfinished-pr>).
     done_when: >-
       The task, its checkout, trusted instructions, and merge preference are known, or an
       evidence-backed no-change outcome was reported and the task stopped before Plan.
@@ -60,7 +60,7 @@ phases:
       - If the seam is missing, inspect existing scripts and CI, determine the trusted base branch,
         obtain every missing policy choice, then run the saved helper's `seam init` with the
         complete explicit command and policy flags documented in the packaged
-        [settings reference](<{{package_root}}/docs/agents/settings.md#what-seam-init-writes>). Never guess checks or
+        [settings reference](<{{package_root}}/docs/configuration.md#what-seam-init-writes>). Never guess checks or
         grant merge authority. The initializer validates the generated
         contract, repeats safely, and refuses repository-owned destinations. Candidate changes stay
         subject to the previously trusted boundary, and settings for another workflow grant this
@@ -101,7 +101,7 @@ phases:
         settings. Render the checkpoint with `recommendation --content-file PATH`,
         supplying one-line `value`, `scope`, `risk`, `model`, `effort`, and `reason`; the helper
         chooses no settings and judges no claim. `value` follows the packaged
-        [planning guide](<{{package_root}}/docs/agents/working-with-your-agent.md#say-what-the-work-is-worth>).
+        [planning guide](<{{package_root}}/docs/agents/delivery.md#say-what-the-work-is-worth>).
       - For a planning-only request, include the rendered recommendation in a compact execution
         prompt with the usage report, then stop before edits and skip the implementation checkpoint.
       - For implementation, run `checkpoint --content-file PATH` with `requested_model`,
@@ -118,7 +118,7 @@ phases:
         settings need the user's confirmation; unavailable settings need the user to select
         available ones and reply ready.
       - Default to one PR. For larger tasks, read only the
-        [task-splitting section](<{{package_root}}/docs/agents/working-with-your-agent.md#when-a-task-needs-several-prs>).
+        [task-splitting section](<{{package_root}}/docs/agents/delivery.md#when-a-task-needs-several-prs>).
         Keep one owner and each PR's own tests, review, and authority; every split PR repeats phases
         3 through 7. Use sequential ordinary PRs for dependencies; native stacks are outside this
         pilot, so do not create or merge them.
@@ -212,7 +212,7 @@ phases:
         review history, rollback, and usage in `details`. Avoid repeated status updates. Store useful
         evidence once and retrieve it as needed; collapsing does not save tokens.
       - Before publishing the PR description, walkthrough, or final response, self-edit each summary
-        against the [portable baseline](<{{package_root}}/docs/agents/working-with-your-agent.md#writing-preferences>):
+        against the [portable baseline](<{{package_root}}/docs/agents/delivery.md#writing-preferences>):
         lead with the outcome its reader notices, keep one main idea per sentence, put each condition
         beside the behavior it limits, and prefer a clear subject and active verb over diff-shaped
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
@@ -254,7 +254,7 @@ phases:
         changes, the new behavior, key choices, validation, risks, rollback consequence, and
         commit-pinned code links. Treat those as concerns to cover rather than headings to emit, and
         order the walkthrough so each change prepares the next, following the packaged
-        [walkthrough order](<{{package_root}}/docs/agents/working-with-your-agent.md#how-a-walkthrough-is-ordered>).
+        [walkthrough order](<{{package_root}}/docs/agents/delivery.md#how-a-walkthrough-is-ordered>).
         Cover every change completely and stop; length comes from the change, never from the writer.
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
         until then the helper prints `_Not published yet._`. Link the current
@@ -271,7 +271,7 @@ phases:
         risk, rollback, and validation do, give each the resolution its reader needs: share the
         subject, never the sentences. Every summary leads with what its own reader notices, which for
         a walkthrough is the behavior that changed. Read the packaged
-        [reasoning and tie-breakers](<{{package_root}}/docs/agents/working-with-your-agent.md#why-the-description-and-the-walkthrough-differ>).
+        [reasoning and tie-breakers](<{{package_root}}/docs/agents/delivery.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
         or `shared-planning`. Publish the local adversarial review as `--contribution review` from
         that run's `--file` or host context, rather than from the implementation session. Use
@@ -280,10 +280,10 @@ phases:
         publish only aggregate metadata. Read the packaged
         [usage guide](<{{package_root}}/docs/agents/usage-reporting.md>) for selection and overlap rules.
       - Every PR description published before outcome includes its current
-        [recovery note](<{{package_root}}/docs/agents/working-with-your-agent.md#recover-an-unfinished-pr>)
+        [recovery note](<{{package_root}}/docs/agents/delivery.md#recover-an-unfinished-pr>)
         as a collapsed `WIP Details` disclosure. Its workspace field carries the checkout path
         and its thread field the host's link back to this session, unless the seam sets
-        `recovery.workspace_path` to `false`, which publishes both as UNKNOWN rather than
+        `recovery.publish_locations` to `false`, which publishes both as UNKNOWN rather than
         dropping the fields; nothing but this step enforces
         that. The thread link follows the guide's rule for the host: Codex builds it from
         `CODEX_THREAD_ID`, Claude Code asks the host for this session's metadata and publishes

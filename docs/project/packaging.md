@@ -1,11 +1,5 @@
 # Build and test the pilot gem
 
-This repository's CodeQL workflow scans Ruby on pull requests and pushes to
-`main`. Public GitHub.com repositories can run it without a paid Advanced Security
-license. A private fork needs GitHub Advanced Security or equivalent code scanning
-enabled before the workflow can upload alerts; GitHub Actions and code scanning
-must also be allowed in the repository settings.
-
 The gem packages the same skills, workflow configuration, installer, and Ruby helpers
 as the source checkout. The `shaka` skill is a small trust bootstrap: `shaka workflow`
 strictly validates and renders its packaged `skills/shaka/config/workflow.yml` before
@@ -72,15 +66,23 @@ a `shaka_contract?` helper or a copied seam-contract test.
 
 Applications that only need the experimental public-comment screen can load
 `shaka/public_comments` from this package without the skill; see
-[screen public comments from Ruby](../agents/public-comments.md).
+[screen public comments from Ruby](public-comments-api.md).
 
 The package also contains `shaka-install --skills-dir DIR`, which calls
 the existing explicit-directory installer. It installs the portable `shaka` skill
 by default; add `--with-rct` only for a Codex app skills directory, or
 `--with-claude-towers` only for a Claude Code desktop skills directory. It preserves
 existing content and refuses to replace a different source. The
-[first-use guide](../people/getting-started.md) explains the trusted source and host startup
+[first-use guide](../getting-started.md) explains the trusted source and host startup
 boundaries.
+
+## Code scanning
+
+This repository's CodeQL workflow scans Ruby on pull requests and pushes to
+`main`. Public GitHub.com repositories can run it without a paid Advanced Security
+license. A private fork needs GitHub Advanced Security or equivalent code scanning
+enabled before the workflow can upload alerts; GitHub Actions and code scanning
+must also be allowed in the repository settings.
 
 ## Upgrade, rollback, and removal
 

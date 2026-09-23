@@ -550,7 +550,7 @@ module SeamInitializerPointerAssertions
     assert_includes pointer, 'version: 1'
     refute_includes pointer, 'Shaka V2'
     refute_includes pointer, 'Shaka V1'
-    assert_includes pointer, 'https://github.com/shakacode/shaka/blob/main/docs/agents/settings.md'
+    assert_includes pointer, 'https://github.com/shakacode/shaka/blob/main/docs/configuration.md'
   end
 
   def assert_pointer_commands(pointer)

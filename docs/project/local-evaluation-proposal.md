@@ -1,11 +1,23 @@
 # Proposal: deterministic delivery checks and locally driven GitHub evaluations
 
-Status: approved for the bounded Slice 0 spike after Fable 5.1 review, with a
-two-public-repository qualification exception that cannot qualify measured cells.
-No runtime implementation or paid benchmark has started. Updated September 17, 2026,
-against then-current `main` (the exact base remains in PR metadata), under
-[pilot acceptance issue #77](https://github.com/shakacode/shaka/issues/77).
-Existing acceptance and merge gates remain in effect.
+This proposal tests whether a workflow rewrite preserves correct delivery while
+reducing time or token use. A local driver would run the same bounded task with
+the baseline and candidate, then check the resulting GitHub evidence.
+
+**Decision recorded September 17, 2026:** the bounded Slice 0 feasibility spike
+was approved after Fable 5.1 review. Its two disposable public repositories may
+qualify mechanics only; measured comparisons require private repositories.
+Approval alone provisions no credentials, resources, or paid runs.
+
+This is an experiment design, not a product feature or proof of completed pilot
+acceptance. [Issue #77](https://github.com/shakacode/shaka/issues/77) tracks the
+remaining real-use evidence. Status statements and cost assumptions below describe
+that proposal revision; recheck them before execution.
+
+Read [scope](#1-decision-and-explicit-reduction-in-scope) and
+[implementation limits](#11-bounded-implementation-and-stopping-conditions) first.
+The intervening sections specify fixtures, isolation, grading, and interpretation
+for whoever implements the experiment.
 
 ## 1. Decision and explicit reduction in scope
 

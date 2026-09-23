@@ -12,7 +12,7 @@ module Shaka
   class RepositoryConfig
     PATH = '.agents/agent-workflow.yml'
 
-    DEFAULT_RECOVERY = { 'workspace_path' => true }.freeze
+    DEFAULT_RECOVERY = { 'publish_locations' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
     attr_reader :base_branch, :commands, :review, :merge, :recovery, :sha

@@ -1,140 +1,72 @@
 # Review and handle findings
 
-Meaningful implementation changes get an adversarial review before they are pushed. What makes
-that review adversarial is the context, not the model: a fresh session that did not produce the
-change reads it without the author's assumptions. The same model that implemented the change is a
-valid reviewer in a fresh context, and saying so is the point — it means a review is always
-available.
+Review meaningful implementation in a fresh context before pushing. Fix demonstrated
+problems locally, then let the repository's GitHub reviewers examine the published
+branch. A fresh session of the implementation model is a valid reviewer; prefer
+another provider when available.
 
-Review locally first and fix what it finds, so the pushed branch costs fewer CI runs and fewer
-review rounds on GitHub. The GitHub reviews still run on the pushed branch as a backstop. Under
-`review.pace: swift` they do not have to finish before merge when a different-provider local
-review already covers the current head. Findings that arrive afterward follow
-[reviews after merge](#reviews-after-merge). `thorough` waits for the named GitHub review on
-the current head. See [review pace](#review-pace).
+Use `shaka reviewer` to select an identity and follow [local invocation](#invoke-a-reviewer-locally).
+Run the selected reviewer. Do not substitute a more expensive model on the current
+host when a listed different provider is available. Record genuine credential,
+quota, or service failures as unavailable, then select again.
 
-Prefer a provider that did not implement the change, because different providers notice different
-things. That is a preference, never a requirement. `shaka reviewer` applies it, and
-[invoke a reviewer locally](#invoke-a-reviewer-locally) creates the fresh context.
-Run the identity it returns. Do not keep the implementation host and pick a sibling model
-there: an OpenAI Sol implementation lists Claude first, and reviewing it with GPT-6 Astra
-is both the same provider and a more expensive model. OpenAI standard list prices were
-$10/$50 per 1M input/output for Astra versus $4/$20 for Sol on 2026-09-19; see
-[OpenAI pricing](https://developers.openai.com/api/docs/pricing). Missing Claude credentials are `--unavailable
-anthropic/claude`, after which the helper may select the next listed provider.
+`review.local_review_agents` lists local identities; `review.ci_review_jobs` lists
+GitHub review jobs. Installing Shaka does not install those jobs or credentials.
+Trivial prose and no-op changes may omit review with a recorded reason, unless
+trusted policy says `review.required: always`.
 
-`review.local_review_agents` in the repository's trusted `.agents/agent-workflow.yml` lists the local
-review agents to try, in preference order. Each entry names a `provider` and `model_family` and nothing
-else. A seam may omit the list; the implementation model in a fresh context still reviews. Shaka does
-not choose a `grok`, `agent`, or `cursor-agent` binary for an entry. `shaka review-prompt` prints the
-prompt, and the signed-in host runs it. `review.ci_review_jobs` is a separate list of CI job names
-to read. Those jobs are review sources, not required merge checks. Listing several means thorough
-pace waits for every name, and swift pace waits for one verified report from the list when no
-different-provider local review already ran. Trivial
-prose-only and no-op changes may omit review when the PR records why, unless the trusted
-seam sets `review.required: always`. The user may request deeper review.
-Installing the skill does not install a GitHub Action or its credentials. This
-Shaka source repository has its own Claude Code Review workflow; consumer repositories keep
-their own reviewer configuration.
-
-Link the current review result from the PR summary and final response. One short
-status is enough: name the reviewer and revision, with details at the result link.
-For example: **Adversarial review: unavailable — Claude CLI could not authenticate.**
-Say **pending** while running, and **not requested** with the reason when review is
-not required. A skipped, failed, missing, or stale review is never a successful one.
-If the user or repository requires it, keep the PR unready for merge until that
-review completes or the authority that set it explicitly changes the requirement:
-the requesting user controls their request; maintainers control repository policy. Do not
-silently substitute a different reviewer. Under `swift`, a published different-provider local
-review for the current head satisfies the independent-review requirement without waiting for
-`review.ci_review_jobs`. Under `thorough`, wait for that named check on the current head anyway.
-Put optional reviewer history and gaps in
-details; required or requested review gaps stay visible. Avoid copying the review
-timeline into the PR description.
+Link the report from the PR summary and final response. Name its reviewer and
+revision. Use **pending**, **unavailable**, or **not requested** with a reason
+when appropriate; a green job alone is not a completed review.
 
 ## Review pace
 
-`review.pace` is `swift` or `thorough`. Omit it and the effective value is `swift`.
+Read `review.pace` from the trusted default-branch contract. It defaults to `swift`.
+A task may request thorough review, but cannot weaken a thorough repository policy.
+Pass the trusted SHA to `merge --ref`; use `--pace` only for a recorded task override.
 
-| Mode | Wait | `shaka merge` native state |
+| Mode | Review to wait for |
+| --- | --- |
+| `swift`, different-provider local review completed | Required checks and any user-requested review gate. Read completed optional reports; leave pending jobs running. |
+| `swift`, no different-provider local review | One verified report from the named CI jobs on the first ready-for-review push. |
+| `thorough` | Every named CI review on the current head, even after local review, plus user-requested gates. |
+
+The local reviewer must be independent of **every** implementing provider to qualify
+for swift's first row. Independent review evidence is either a published
+`REVIEWED <sha> BY <provider>/<family>` attestation or a verified named CI report
+for that head. The identity line on a `shaka reply` names the publisher; the closing
+attestation names the reviewer.
+
+Runtime, trust, and test changes need fresh affected review. A nit-only or
+diagnostic-only follow-up does not restart swift's hosted-review wait. Verify
+that classification against the diff.
+
+| Native merge state | Swift | Thorough |
 | --- | --- | --- |
-| `swift` | Independent review for the task, plus any user-requested gate. Do not wait for optional jobs. | Allows `UNSTABLE` once required checks pass. |
-| `thorough` | Also wait for a verified `review.ci_review_jobs` on the current head. | Refuses `UNSTABLE`. Queue-disabled: `CLEAN` only. Queue-enabled: `CLEAN`, `BEHIND`, or `BLOCKED`. |
+| Queue disabled | `CLEAN` or `UNSTABLE` | `CLEAN` |
+| Queue enabled | `CLEAN`, `BEHIND`, `BLOCKED`, or `UNSTABLE` | `CLEAN`, `BEHIND`, or `BLOCKED` |
 
-Project default lives on the trusted seam. Record a this-task override on the PR when the
-user asks for the other mode. Thorough wins: a candidate YAML or a swift this-task request
-cannot weaken a thorough trusted seam. Pass `shaka merge --ref` from intake so the helper
-reads that trusted floor; `--pace` is only a this-task override. Omitting both is swift.
+Required checks and approvals still apply. `UNSTABLE` may include a **failed**
+optional job. Read any completed report before merging and handle later findings
+under [reviews after merge](#reviews-after-merge).
 
-`swift` is the 2026-09-20 delivery-time experiment. Keep it as the product default only while
-it reduces wait without dropping demonstrated defects. To revert to waiting for optional
-review everywhere:
+### Review limits and failure states
 
-1. Set this repository's seam `review.pace` to `thorough`, or change `ReviewPace::DEFAULT`
-   to `thorough` and treat omitted YAML as thorough.
-2. Restore review and finish bullets that always wait for `review.ci_review_jobs` if you remove the
-   key entirely.
-3. Delete the quality-drop notes that apply only to `swift`.
+- Two repair rounds end the nit cycle. Demonstrated correctness, security,
+  contract, and data-loss defects still need a fix, an evidence-backed decline,
+  or a maintainer decision.
+- A skipped, failed, missing, or stale review cannot satisfy a required gate.
+  Only the authority that set a requirement may change it.
+- The Shaka repository's Claude Action skips changes to its own workflow and
+  reports **UNAVAILABLE**. A successful model run remains **UNVERIFIED** until
+  the owner reads its visible report for the reviewed commit.
+- Claude `--bare` ignores keychain/OAuth credentials. Its “Not logged in” message
+  does not prove the normal signed-in CLI is unavailable.
 
-Independent review is one of:
-
-- a published local attestation `REVIEWED <sha> BY <provider>/<family>` for the current head
-- a verified `review.ci_review_jobs` report for that SHA
-
-Under `swift`, when the local reviewer is a different provider than every implementer, merge
-after required checks (`validate` here) pass, unless the user expressly made another review a
-merge gate. Leave GitHub Claude, hosted Codex, and CodeRabbit running. Read whatever they have
-already posted; do not wait for jobs still in progress. When no different-provider local review
-ran, wait for **one** verified `review.ci_review_jobs` report on the first ready-for-review push of the
-task. Do not wait for that check again after a nit-only or diagnostic-only follow-up SHA.
-
-Under `thorough`, wait for a verified `review.ci_review_jobs` report on the current head, even after a
-different-provider local review.
-
-After two repair rounds, remaining nits do not start another cycle. Remaining demonstrated
-defects still block until fixed, declined with evidence, or the maintainer decides.
-Post-merge comments are expected. Evaluate each one: fix a demonstrated defect in a small PR,
-or decline it. Do not stay in a nit loop.
-
-In `swift`, `shaka merge` accepts GitHub `mergeStateStatus` `UNSTABLE` because that state means
-only non-required checks are pending or failing. On a queue-disabled base, `BLOCKED`, `BEHIND`,
-`DIRTY`, and missing required checks still refuse the merge. On a queue-enabled base,
-`UNSTABLE` is allowed along with `CLEAN`, `BEHIND`, and `BLOCKED`. `thorough` refuses
-`UNSTABLE`.
-
-A published `shaka reply` identity line names the **owner who posted**, not the reviewer.
-The reviewer's identity is the closing `REVIEWED <sha> BY <provider>/<family>` line. Mixing
-those two is how a Cursor host can look like it reviewed a change that Codex or Claude
-actually reviewed.
-
-### How quality can drop
-
-This experiment trades wait time for a later, cheaper look at leftover comments. Under
-`swift`, quality can fall in these specific ways:
-
-- A follow-up labeled nit-only can still change behavior. The exemption is only for
-  diagnostic or message-only SHAs; anything that changes runtime, trust, or tests still
-  needs a fresh review of that head.
-- `UNSTABLE` includes **failed** optional jobs, not only pending ones. A red `claude-review`
-  does not block `shaka merge` once required checks pass. Read a completed optional report
-  if it arrived before merge; treat a later one as post-merge feedback.
-- Merging before GitHub Claude finishes means a different-provider finding can land on
-  `main`. Fix demonstrated defects in a small PR; do not treat merge as dismissal.
-- Calling Claude `--unavailable` because `--bare` printed `Not logged in` skips the
-  preferred reviewer even when Claude.ai OAuth is working. `--bare` never reads keychain
-  or OAuth; it only accepts `ANTHROPIC_API_KEY`. Do not treat that message as quota
-  exhaustion.
-- Two repair rounds only end the **nit** loop. Counting a correctness or security finding
-  as a nit, or stopping after one shallow pass, is a quality failure of the owner, not of
-  GitHub.
-
-The GitHub action intentionally skips changes to its own workflow. Its job summary
-must say **UNAVAILABLE**, with a warning; that runner result is not a completed
-review. Confirm the reason and use an authorized independent review if required.
-Failed or malformed execution evidence fails the job. A successful model run is
-**UNVERIFIED** until the owner reads a visible PR report for the reviewed revision.
-The owner then records the completed review and link in the PR summary and handles
-its findings. Runner success alone does not establish review or merge readiness.
+Swift was introduced as a delivery-time experiment on September 20, 2026. Retain
+it only while it saves waiting without losing demonstrated defects. A repository
+can choose thorough through its trusted contract. Changing the product default
+requires updating `ReviewPace::DEFAULT` and the workflow together.
 
 ## Choose a local reviewer
 
@@ -334,9 +266,7 @@ coverage. Do not add a monitor, extra audit, or tracker for this handoff.
 
 ## Invoke a reviewer locally
 
-This is where the fresh context comes from. The prompt is the same whichever model runs it, because
-the context is what makes the review adversarial:
-
+Render the prompt for the selected reviewer:
 ```text
 shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]
 ```
@@ -460,7 +390,7 @@ similar instruction files, which the CLI still loads from the checkout it runs i
 safe only when those instruction files are trusted; owning the branch does not make
 changes to its instructions safe to load. Use the neutral-directory path above for such
 changes and restricted execution for untrusted contributions, under
-[what the helpers protect](working-with-your-agent.md#what-the-helpers-protect). Codex's
+[what the helpers protect](delivery.md#what-the-helpers-protect). Codex's
 `--ignore-user-config` drops config-defined MCP servers, Grok manages them through
 `grok mcp`, and Claude's `--strict-mcp-config` without a config file loads none. Codex
 exposes no reasoning-effort flag on `exec review`, so record its effort as UNKNOWN unless
@@ -473,7 +403,7 @@ model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --co
 reviewer's source; missing evidence is UNKNOWN. Do not publish raw sessions or private
 context. A recovery
 note's `Thread` field follows its [publication
-rule](working-with-your-agent.md#recover-an-unfinished-pr).
+rule](delivery.md#recover-an-unfinished-pr).
 
 Automated review comments are advice, not merge permission. Required GitHub
 approvals and checks remain gates. The merge helper checks native readiness and

@@ -15,7 +15,7 @@ repository.
 **Host.** This skill uses Claude Code's desktop session tools
 (`mcp__ccd_session_mgmt__*` and `mcp__ccd_sidebar__*`). If they are unavailable,
 stop with `MCT setup error: host session tools are unavailable` and name the
-[master role prompt](../../docs/people/control-towers.md#role-prompts) instead. That
+[master role prompt](../../docs/control-towers.md#role-prompts) instead. That
 prompt, not `$rct`, establishes a master on any host: `$rct` sets up a repository
 tower and stops when no master exists. Do not mix host installations.
 
@@ -39,7 +39,7 @@ The listing below leaves this session out, so every branch needs its title from 
 Reject invocation arguments; the current session is the only accepted subject.
 
 Search active sessions for the `MCT — Shaka` suffix with `list_sessions`, read
-completely as the [host guide](../../docs/people/host-support.md#read-the-session-listing-completely)
+completely as the [host guide](../../docs/agents/host-operations.md#read-the-session-listing-completely)
 describes. A master sitting past an unread page is invisible here, and this session
 would wrongly appoint itself a second master. Read the candidates with `list_events`.
 A title says a session was set up or attempted setup; its own recorded result says the
@@ -86,7 +86,7 @@ establish each fact from your own reads rather than from the message:
   not proof of the role;
 - no other live session's transcript records a completed registration for that same
   `OWNER/REPOSITORY`. List sessions completely for this check too, as the
-  [host guide](../../docs/people/host-support.md#read-the-session-listing-completely)
+  [host guide](../../docs/agents/host-operations.md#read-the-session-listing-completely)
   describes: a first page that hides an older tower is how a duplicate gets
   acknowledged; and
 - the named default branch matches live GitHub metadata.
@@ -146,5 +146,5 @@ of them.
 Report material results and the next decision or blocker. Read-only inspection needs
 no new session. Do not create background work, schedules, or monitors from this role.
 
-See the public [control-tower guide](../../docs/people/control-towers.md) for role
+See the [control-tower operating reference](../../docs/agents/control-towers.md) for role
 boundaries and adoption evidence.

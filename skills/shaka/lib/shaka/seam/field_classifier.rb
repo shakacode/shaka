@@ -122,18 +122,27 @@ module Shaka
         RETIRED.include?(key) ? record(@retired, key) : @blocking << key
       end
 
+      def recovery_value(value)
+        return value unless value.is_a?(Hash) && value.key?('workspace_path')
+
+        if value.key?('publish_locations')
+          @blocking << 'recovery.workspace_path (collides with recovery.publish_locations)'
+          return value
+        end
+
+        value.except('workspace_path').merge('publish_locations' => value.fetch('workspace_path'))
+      end
+
       def retain(key, value)
+        value = recovery_value(value) if key == 'recovery'
         if %w[branches recovery].include?(key) && !value.is_a?(Hash)
           @blocking << key
           return
         end
-        if key == 'version' && value != 1
-          @blocking << 'version'
-          return
-        end
+        return @blocking << 'version' if key == 'version' && value != 1
 
         @retained << key
-        @established[key] = value if %w[base_branch repo_prefix version plan branches recovery].include?(key)
+        @established[key] = value
       end
 
       def classify_merge(value)

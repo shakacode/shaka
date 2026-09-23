@@ -1,25 +1,45 @@
-# Configuration and command map
+# Configuration implementation map
 
-Shaka has two kinds of repository input: **policy** loaded from the trusted default branch, and **commands** run from the checkout being changed. This distinction matters when a PR edits its own configuration or scripts.
+For settings and examples, read [Configuration](../configuration.md). This map
+shows where Shaka reads and enforces them.
 
-| File | Who uses it | Purpose |
+| Input | Consumer | Authority |
 | --- | --- | --- |
-| `AGENTS.md` | Agent | Human-readable repository boundaries that do not fit the typed contract. |
-| `.agents/agent-workflow.yml` | `shaka seam check` | Base branch, review policy, merge preference, branch naming, and recovery settings. The trusted default-branch copy grants policy; a candidate copy can only be syntax-checked. |
-| `.agents/trusted-github-actors.yml` | `shaka comments` | Repository allowlist for public issue, PR, and review prose. Shaka reads the current default-branch copy, never a PR's proposed copy. |
-| `.agents/bin/setup` | Agent | Prepare a checkout. |
-| `.agents/bin/test` | Agent | Run focused tests; forward test selections. |
-| `.agents/bin/validate` | Agent and CI | Run the full validation gate. |
-| `.agents/bin/validate-local` | Agent, if present on the trusted branch | Run a faster pre-review check. |
-| `.agents/bin/trigger-hosted-ci` | Agent, if present with `validate-local` | Start hosted CI after repairs. |
+| `.agents/agent-workflow.yml` | `shaka seam check --ref SHA` | Policy from the resolved default-branch commit |
+| `.agents/bin/*` | Agent and CI | Optional capability from the trusted commit; executable code from the candidate checkout |
+| `.agents/trusted-github-actors.yml` | `shaka comments` | Current default-branch allowlist, combined with the machine allowlist |
+| `AGENTS.md` | Agent | Trusted repository instructions; candidate edits are review data |
 
-The fixed script names are intentional: the agent can call the same operations in every repository without a path-routing table. The scripts themselves are repository-owned, so review changes to a script before executing that checkout's version. [Settings](settings.md) defines every YAML key and script validation rule. [Public comments](public-comments.md) explains the actor allowlist.
+Inspect candidate script changes before execution. `--local` checks the candidate
+contract and grants no authority.
 
-Shaka's own package has two different configuration files:
+## Packaged workflow
 
-| File | Purpose |
+| File | Command | Purpose |
+| --- | --- | --- |
+| [`workflow.yml`](../../skills/shaka/config/workflow.yml) | `shaka workflow` | Validate and render the ordered agent procedure |
+| [`enforcement.yml`](../../skills/shaka/config/enforcement.yml) | `shaka enforcement` | Report which rules are enforced by code, GitHub, or the agent |
+
+The enforcement loader checks that quoted rules still exist and that strong-rule
+phrases are classified. It cannot detect a new clause inside an already quoted
+passage or judge whether a classification is true. Review those changes manually.
+
+## Ruby implementation
+
+Paths below are relative to `skills/shaka/lib/shaka/`.
+
+| Concern | Source |
 | --- | --- |
-| [`skills/shaka/config/workflow.yml`](../../skills/shaka/config/workflow.yml) | The ordered agent procedure rendered by `shaka workflow`. |
-| [`skills/shaka/config/enforcement.yml`](../../skills/shaka/config/enforcement.yml) | Classifies what enforces each strong rule in that procedure. `shaka enforcement` prints the classification and fails if a quoted rule disappears or a new strong-rule phrase is unclassified. |
+| YAML loading and effective defaults | `repository_config.rb` |
+| Root keys and values | `repository_config/schema.rb` |
+| Fixed scripts and optional dependencies | `repository_config/command_paths.rb`, `command_schema.rb` |
+| Trusted refs and symlink authorization | `trusted_config_source.rb` |
+| Review settings and selection | `repository_config/review_schema.rb`, `reviewer_selection.rb` |
+| Branch template | `repository_config/branch_schema.rb` |
+| Recovery publication setting | `repository_config/recovery_schema.rb` |
+| Duplicate keys and document count | `repository_config/duplicate_keys.rb` |
+| Initial configuration | `seam/initializer.rb` |
+| Migration classification | `seam/field_classifier.rb` |
 
-`workflow.yml` tells the agent what to do; `enforcement.yml` records whether a command, GitHub, or only the agent prevents a violation. A passing enforcement check does not prove every sentence is enforceable: a new clause inside an already quoted passage still needs human review.
+See [development](../project/development.md) for the repository's other config
+files, executable entry points, and checks.

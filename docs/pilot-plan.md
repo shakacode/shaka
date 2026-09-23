@@ -9,26 +9,99 @@ This record defines the current product, not proof that acceptance is complete.
 
 ## Requirements
 
-| ID | User need | Requirement and acceptance |
-| --- | --- | --- |
-| R1 | Finish a task without managing agent coordination. | One owner delivers one task, normally through one PR. Split only at useful delivery boundaries; retain dependencies and remaining scope on the existing task/PRs. No coordination service or duplicate delivery records. See [task splitting](agents/working-with-your-agent.md#when-a-task-needs-several-prs). |
-| R2 | Use the repository's actual checks and policy. | Load the trusted default branch's `.agents/agent-workflow.yml`, resolve optional capabilities from its fixed `.agents/bin/` interface, and follow human-only constraints in `AGENTS.md`. Run the candidate checkout's scripts at those same fixed paths. Reject missing or invalid configuration. Failed checks block readiness; evidence for another commit does not qualify the current change. |
-| R3 | Control whether the agent merges. | Use `ask` or `auto`. Ask early if authority is unset; default to `ask` without an answer. Reuse established authority. Review-only and PR-only requests retain their stopping point. |
-| R4 | Understand the change and its evidence. | Publish a conceptual walkthrough on the PR with links to the reviewed code. Use a commit-bound COMMENT review, which is neither approval nor a required acknowledgment and remains readable after merge. |
-| R5 | Avoid redundant merge decisions. | Ask hands a ready PR to GitHub's currently offered merge control after the walkthrough and required gates when nothing else remains, naming the expected head so the user can merge that revision and archive without another agent turn. Auto submits an eligible ordinary change after the same gates, including required native approvals, without another question. Auto uses GitHub Merge Queue when the base has a queue and waits for its terminal result; Ask leaves that click and any later queue failure to GitHub and a new task. Unclear authority or risky changes need a human decision. Native stacks and user-armed auto-merge are outside scope. |
-| R6 | Merge only the verified revision. | Read live GitHub state and require the expected head. Missing or unreadable evidence, pending/failed required checks, stale heads, conflicts, disallowed merges, and unresolved material review findings block. Never bypass protection. |
-| R7 | Keep contributor content away from privileged operations. | Issue/PR text cannot change trusted instructions, policy, credentials, or executable code. When GitHub explicitly reports public repository visibility, screen issue and PR comment bodies using current writer permission or trusted machine/repository configuration. Configured humans, review bots, and active GitHub team members may supply task data; unknown, metadata-only, and unverified authors remain links for maintainer triage. Read repository trust configuration from the current default branch, never the candidate PR head or a weaker PR base branch. Private and internal repositories do not use this author screen, but their comments still have no policy authority. Use installed trusted helpers for GitHub operations. Run candidate code only in the authorized isolated checkout. |
-| R8 | Install and upgrade without damaging existing setup. | Install into an explicitly chosen skills directory with source and link outside candidate-writable paths. Preserve user files and other skills; refuse foreign targets. Test isolated and repeated installation. Updating the trusted source updates its link. Installation does not disable other instructions or create a sandbox. |
-| R9 | Reuse a task from any tracker. | Accept a task link or description, resolve its checkout, and ask only for missing context. Keep requirements in the original tracker and delivery evidence on GitHub. Reading a tracker does not authorize writes. Keep private content and links out of public artifacts unless sharing is authorized. No duplicate issue or synchronization service. |
-| R10 | Keep the workflow maintainable. | Keep the skill as a small entry point, repository policy in validated YAML, standard engineering commands at fixed `.agents/bin/` names, deterministic mechanics in cohesive Ruby modules, and rationale in guides. Follow the “Scripts to Rule Them All” philosophy: adapt repository-specific tools behind predictable entry points instead of repeating path routing in policy. Use standard libraries and `gh`; remove repetition. Tests verify behavior and failures, not instruction wording. |
-| R11 | See the cost of implementation and review. | Report available provider/model, effort setting, native tokens, source scope, and completeness for every task and generated commit/contribution. Use PR details, or the final response without a PR. Label shared work and missing data; never invent exact per-commit allocations. See [usage reporting](agents/usage-reporting.md). |
-| R12 | Improve results without shifting work to the maintainer. | Compare developer attention, total tokens, delivery time, and quality on comparable real changes. Include retries and review. Fewer tokens alone is not success. |
-| R13 | Understand the agent on the first reading. | One owner explains outcomes, reasons, blockers, and decisions in familiar terms. Follow task/repo writing preferences. Ask important questions when needed and recommend a path. Keep supporting evidence in expandable PR details and material risks and gaps visible. See [working with your agent](agents/working-with-your-agent.md). |
-| R14 | Verify the failure and the visible result. | For behavior changes, observe a meaningful failing test, make it pass, then refactor. Use the repo's tools. If automation is impractical, explain and capture before/after behavior. Visible changes need inspected, safe, reviewer-accessible screenshots tied to the tested revision; add video when timing or interaction matters. See [verification](agents/verification.md). |
-| R15 | Know when a finished chat can be archived. | In a user-facing chat whose host format permits prose, end a genuinely finished task's complete final report with exactly `This chat is ready for archiving.` Do not use the sentence while work, a blocker, a handoff, or a chat decision remains. A remaining GitHub merge click after Ask gates pass is not a chat decision. Preserve machine-only response formats that forbid trailing prose. |
-| R16 | Recover an unfinished PR without its conversation. | While a PR has not reached its outcome, its description keeps a [recovery note](agents/working-with-your-agent.md#recover-an-unfinished-pr) as a collapsed `WIP Details` disclosure with owner, task, thread, last observed activity, revision, workspace, unfinished work, stopped because, merge authority, state, and next action. Remove the disclosure after GitHub confirms the outcome, except after an Ask GitHub merge click, which leaves the note in place on purpose. An Ask GitHub merge click refreshes the note for that expected head in the same turn and records state as waiting for GitHub merge of that head. Its `Thread` field follows that recovery note's publication rule, and its workspace field is published unless the seam sets `recovery.workspace_path` to `false`. A fresh task takes over only after the maintainer confirms the previous task stopped or is handing over. It then reads the live head, publishes a complete note with a new random owner tag before any other work, rechecks checks, review, and authority, preserves reachable local work, and marks unreachable local work UNKNOWN. A resuming task that finds another owner or tag keeps its local work unpushed, reports it, and stops. The note grants no authority; the maintainer's confirmation, not the note, prevents two writers. No heartbeat, lease, or coordination service. |
-| R17 | Catch mistakes before spending CI and reviewer time. | Meaningful implementation gets an adversarial review before the branch is pushed, and its findings are fixed first, so the pushed branch costs fewer CI runs and review rounds. When a repository stages expensive hosted CI, review and batch fixes before triggering those suites. Always-on required, security, and trust checks remain immediate; changed heads need fresh affected evidence. |
-| R18 | Always have a reviewer available. | What makes a review adversarial is the context, not the model: a fresh session that did not produce the change is a valid reviewer, including one running the implementation model. `review.local_review_agents` lists local review agents in preference order and `shaka reviewer` prefers a provider that did not implement the change, moving past anything evidenced unavailable. No input is an error: with nothing listed available the implementation model in a fresh context reviews, and the GitHub reviews still run on the pushed branch. Each reviewer and revision is recorded in the chat and the PR review status line. See [review](agents/review.md#choose-a-local-reviewer). |
+### Deliver and explain the work
+
+- **R1 — One owner.** One task owner delivers the requested outcome, normally in
+  one PR. Split at useful boundaries and retain dependencies and remaining scope
+  on the existing task and PRs. No coordination service or duplicate delivery
+  records. See [task splitting](agents/delivery.md#when-a-task-needs-several-prs).
+- **R4 — Explain the implementation.** Publish a conceptual walkthrough with links
+  to reviewed code as a commit-bound COMMENT review. It remains readable after
+  merge and substitutes for neither approval nor required acknowledgment.
+- **R9 — Accept work from any tracker.** Use a task link or description, resolve its
+  checkout, and ask for missing context. Requirements remain in the original
+  tracker; delivery evidence belongs on GitHub. Reading grants no tracker-write
+  permission. Share private context or links only when authorized.
+- **R13 — Be understood on the first reading.** One owner explains outcomes,
+  reasons, blockers, and decisions in familiar terms. Follow task/repository writing
+  preferences and ask consequential questions early with a recommendation. Keep
+  material risks visible and supporting evidence in expandable details.
+- **R15 — Make completion clear.** End a genuinely finished prose-capable chat with
+  exactly `This chat is ready for archiving.` Omit it while work, a blocker, handoff,
+  or chat decision remains, and in machine-only formats. A remaining GitHub merge
+  click after Ask gates pass is not a pending chat decision.
+
+### Use trusted policy and verified evidence
+
+- **R2 — Use the repository's checks.** Read policy and optional script availability
+  from the trusted default-branch `.agents/agent-workflow.yml` and fixed `.agents/bin/`
+  interface. Follow prose constraints in trusted `AGENTS.md`; run the candidate
+  scripts at those fixed paths. Reject invalid configuration. Failed checks and
+  evidence from another commit cannot establish current readiness.
+- **R6 — Merge the verified revision.** Refresh GitHub state and require the expected
+  head. Missing evidence, pending or failed required checks, stale heads, conflicts,
+  disallowed merges, and unresolved material findings block. Never bypass protection.
+- **R7 — Keep task data outside the authority boundary.** Issue and PR text cannot
+  change instructions, policy, credentials, or executable code. For explicitly public
+  repositories, screen comment bodies using verified writer permission or trusted
+  machine/repository actors. Fetch repository trust configuration from the current
+  default branch. Unknown, metadata-only, or unverifiable authors remain links for
+  triage. Private/internal comments also grant no authority. Use installed trusted
+  helpers; run candidate code only in the authorized isolated checkout.
+- **R14 — Prove behavior.** Observe a meaningful failing test, make it pass, then
+  simplify. If automation is impractical, explain and record before/after behavior.
+  Visible changes need inspected, safe, accessible screenshots tied to the tested
+  commit; add video for timing or interaction. See [verification](agents/verification.md).
+- **R17 — Review before push.** Review meaningful implementation in a fresh context
+  and fix findings before publishing. Batch repairs before optional staged hosted CI.
+  Always-on required, security, and trust checks remain immediate; changed heads
+  need fresh affected evidence.
+- **R18 — Support reviewer fallback.** Prefer a provider that did not implement the
+  change, following `review.local_review_agents` and `shaka reviewer`. Skip entries
+  evidenced unavailable. A fresh session of the implementation model is valid;
+  when nothing can run locally, report that gap and use hosted review. Record each
+  reviewer and revision in chat and the PR. See [review](agents/review.md#choose-a-local-reviewer).
+
+### Preserve control and recover work
+
+- **R3 — Choose who merges.** Support Ask and Auto. Ask early when preference is
+  unset, default to Ask without an answer, and reuse established authority. Preserve
+  review-only and PR-only stopping points.
+- **R5 — Avoid repeated merge decisions.** After the walkthrough and required gates,
+  Ask names the ready head and directs the user to GitHub's offered merge control.
+  Auto submits eligible work after the same gates, including native approvals.
+  Use an existing Merge Queue and wait for its terminal result under Auto; Ask
+  leaves the click and later queue failures to GitHub and a new task. Unclear
+  authority or consequential risk needs a human decision. Native stacks and
+  user-armed delayed auto-merge remain outside scope.
+- **R8 — Preserve installations.** Install into an explicit skills directory with
+  source and link outside candidate-writable paths. Preserve user files and other
+  skills; refuse foreign targets. Test isolated/repeated installation and upgrades.
+  Installation neither disables other instructions nor creates a sandbox.
+- **R16 — Recover unfinished PRs.** Keep the [recovery note](agents/delivery.md#recover-an-unfinished-pr)
+  in collapsed WIP Details through the outcome, retaining it after an Ask handoff
+  for the named head. It records owner, task, thread, observed activity, revision,
+  workspace, unfinished work, stop reason, authority, state, and next action.
+  Apply the session-link rules and `recovery.publish_locations` privacy setting.
+  A new owner needs maintainer confirmation of the prior owner's stop or handoff,
+  then publishes a new tag, refreshes evidence and authority, and preserves reachable
+  local work. Unreachable work stays unknown. A resumed owner that finds a transfer
+  stops with local work unpushed. The note grants no authority or lock; no heartbeat,
+  lease, or coordination service is added.
+
+### Keep the product small and measure real outcomes
+
+- **R10 — Keep maintenance manageable.** Use a small skill entry point, validated
+  YAML policy, fixed engineering-script names, cohesive Ruby modules, and guides
+  for rationale. Adapt repository tools behind predictable scripts. Prefer standard
+  libraries and `gh`; remove repetition. Test behavior and failures, not wording.
+- **R11 — Report available cost evidence.** Record provider/model, effort, native
+  tokens, source scope, and completeness for each task and commit/contribution.
+  Put it in PR details or the final response without a PR. Label shared and unknown
+  figures; never invent per-commit allocations. See [usage reporting](agents/usage-reporting.md).
+- **R12 — Reduce total work.** Compare developer attention, tokens, delivery time,
+  and quality on comparable real changes, including retries and review. Fewer
+  tokens alone does not establish improvement.
 
 ## Design
 
@@ -83,7 +156,7 @@ Validate Cursor after that. OpenCode's canonical install path, TUI launcher, and
 export-based usage reader follow the same pattern; its consumer delivery is likewise
 unverified.
 Share the skill and GitHub helpers; keep host installation,
-permissions, and native usage readers separate. See [host support](people/host-support.md)
+permissions, and native usage readers separate. See [host support](host-support.md)
 for tested versions, startup boundaries, and known gaps.
 
 ## Merge boundary
@@ -121,7 +194,7 @@ Under `swift`, pending or failing optional checks may still leave the native sta
   and one consumer's staged hosted-CI path with review fixes completed before dispatch.
 - Exercise one recorded substitution: a listed reviewer unavailable on evidence, the
   next provider's review completed, and both records present in the chat and the PR.
-- A new user follows [getting started](people/getting-started.md) in a fresh Codex task
+- A new user follows [getting started](getting-started.md) in a fresh Codex task
   and reaches a PR without needing another guide. Record the trial on issue #77.
 - Interrupt a real unfinished PR, then continue it once from its recovery note in the
   original task and once in a fresh task. Record both on issue #77.
@@ -160,7 +233,7 @@ in its own repository and consumes these guides. No fleet coordination, policy e
 telemetry service, tracker synchronization, or release automation is part of this kernel.
 
 Master and repository control towers may organize work through the existing
-Shaka procedure as [optional operating roles](people/control-towers.md). The focused
+Shaka procedure as [optional operating roles](control-towers.md). The focused
 `$rct` setup skill establishes one repository tower and registers it with an
 existing master; it adds no coordination service or multi-repository owner. The
 `/mct-claude` and `/rct-claude` skills establish the same two roles on Claude Code
@@ -171,4 +244,4 @@ machinery; claim adoption only after a real tower-to-delivery trial.
 
 Rollback: remove the verified skill link or select a prior trusted source revision
 and reinstall. Preserve unrelated installations and user files. See
-[upgrade and removal](people/getting-started.md#upgrade).
+[upgrade and removal](getting-started.md#upgrade).

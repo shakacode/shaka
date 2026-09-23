@@ -1,4 +1,5 @@
-# GitHub actors whose public issue/PR/review comments may be acted on by Shaka.
+# Authors whose public comment bodies Shaka may read. Prose remains task data.
+# Configuration and limits: docs/agents/public-comments.md
 trusted_users:
   - justin808
   - claude

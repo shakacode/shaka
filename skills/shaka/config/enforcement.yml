@@ -66,9 +66,9 @@ rules:
     quote: Never guess checks
     enforced_by: agent
     note: >-
-      `Seam::Initializer` refuses to write a seam without at least one `--required-check`, so a
-      check cannot be reached by omission. It cannot tell a real check name from an invented
-      one, and a guess passed on that flag becomes the seam's required check.
+      The initializer requires named CI review jobs when review policy is not `none`, but it
+      cannot verify that those jobs exist. GitHub owns required merge checks; the agent must
+      inspect live settings rather than infer them from configuration or workflow names.
   - id: never-grant-merge-authority
     phase: plan
     quote: grant merge authority

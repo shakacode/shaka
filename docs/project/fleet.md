@@ -99,6 +99,7 @@ the defaults are equivalent.
 | Command descriptions and `.agents/bin/*` | Fixed `.agents/bin/` interface | Provide executable `.agents/bin/setup`, `.agents/bin/validate`, and `.agents/bin/test`; add `.agents/bin/validate-local` and `.agents/bin/trigger-hosted-ci` only when those optional capabilities exist. Do not repeat these paths in YAML. |
 | `review_gate`, `automation_reviewers` | `review` | Translate the actual required review and ordered available reviewers. Keep richer human conditions in `AGENTS.md`. |
 | `merge_submission`, `autonomous_merge`, `approval_exempt` | `merge` plus `AGENTS.md` | Choose `ask` or authorized `auto`. Shaka follows live native state: it submits an immediate squash on a queue-disabled base or enqueues the reviewed head when Merge Queue is already enabled. Repository-specific autonomous or approval-exempt paths remain outside the portable seam. |
+| `recovery.workspace_path` | `recovery.publish_locations` | Preserve the existing boolean. It controls publication of both the checkout path and session link. |
 | Branch naming and `repo_prefix` | `branches.name` | Record the real branch template. Do not carry a coordination prefix forward unless the repository still needs it. |
 | Live branch rules | GitHub | Read required checks and mutation rules from GitHub. Do not copy them into the typed seam or infer them from workflow filenames. |
 | `trusted_actions` | Existing security tooling or workflow review | Preserve an operational allowlist where a repository actually consumes it. Do not copy it into the typed seam as inert metadata. |
@@ -169,7 +170,7 @@ For each selected repository:
    `--apply` after the report names every retained, moved, retired, and blocking field.
    The planner never infers merge authority, review policy, or missing commands. Follow
    the settings guide's
-   [ordered migration](../agents/settings.md#standard-command-scripts): keep repository-owned
+   [ordered migration](../configuration.md#standard-command-scripts): keep repository-owned
    wrappers, add missing fixed scripts only when the report says they are absent, and
    retain temporary adapters at old mapped paths.
    Where old and new meanings collide, use the stricter behavior at both paths until the
