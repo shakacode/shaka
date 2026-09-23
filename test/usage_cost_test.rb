@@ -273,7 +273,7 @@ class UsageAnthropicCostTest < Minitest::Test
   def test_standard_opus_prices_each_cache_write_at_its_own_ttl_rate
     report = estimate(anthropic_record)
     assert_metric report, 'USD estimate', '$0.001110'
-    assert_includes report, 'Anthropic API list prices, verified 2026-09-19'
+    assert_includes report, 'Anthropic API list prices, verified 2026-09-23'
     assert_includes report, ANTHROPIC_LINK
     refute_includes report, 'Credits estimate'
     refute_includes report, 'Cache-exclusive input is unpriced'
@@ -349,15 +349,16 @@ end
 class UsageAnthropicUnknownTest < Minitest::Test
   include AnthropicCostFixture
 
-  def test_fast_mode_and_unrecorded_speed_stay_unknown_rather_than_pricing_as_standard
+  def test_published_fast_mode_is_priced_and_unrecorded_speed_stays_unknown
     fast = estimate(anthropic_record(billing: 'fast'))
-    assert_metric fast, 'USD estimate', 'UNKNOWN'
-    assert_includes fast, 'Anthropic fast-mode rates are not published here'
+    assert_metric fast, 'USD estimate', '$0.002220'
+    assert_includes fast, ANTHROPIC_LINK
+    assert_includes fast, 'fast mode is priced for Opus models with a published rate'
     silent = estimate(anthropic_record(billing: 'UNKNOWN'))
     assert_metric silent, 'USD estimate', 'UNKNOWN'
     assert_includes silent, 'Billing speed UNKNOWN'
     refute_includes silent, '$0.00'
-    [fast, silent].each { |report| refute_includes report, ANTHROPIC_LINK }
+    refute_includes silent, ANTHROPIC_LINK
   end
 
   def test_a_half_reported_cache_write_split_stays_unknown

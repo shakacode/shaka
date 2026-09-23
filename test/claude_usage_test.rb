@@ -316,14 +316,14 @@ class ClaudeUsagePriceTest < Minitest::Test
     assert_includes output, 'Server tool usage UNKNOWN'
   end
 
-  def test_fast_mode_is_not_priced_as_standard_speed
+  def test_published_fast_mode_is_priced_at_its_dedicated_rate
     Dir.mktmpdir do |directory|
       fast = priced_reply('m1', 100)
       fast[:message][:usage][:speed] = 'fast'
       file = transcript(directory, 'session.jsonl', [prompt('new'), fast])
       output = report('--host', 'claude-code', '--file', file)
-      assert_metric output, 'USD estimate', 'UNKNOWN'
-      assert_includes output, 'Anthropic fast-mode rates are not published here'
+      assert_metric output, 'USD estimate', '$0.002158'
+      assert_includes output, 'fast mode is priced for Opus models with a published rate'
     end
   end
 end
