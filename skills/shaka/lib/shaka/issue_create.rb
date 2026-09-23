@@ -23,9 +23,6 @@ module Shaka
 
       puts create(input.read)
       0
-    rescue EncodingError => e
-      warn "shaka: Issue request must be valid UTF-8 text: #{e.message}"
-      1
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
       warn "shaka: #{e.message}"
       1
@@ -40,18 +37,20 @@ module Shaka
       validate_text(title, body)
       verify_repository!
       create_issue(title, body)
+    rescue EncodingError
+      raise Shaka::Error, 'Issue request must be valid UTF-8 text.'
     end
 
     def self.validate_text(title, body)
       unless valid_text?(title) && valid_text?(body)
-        raise Shaka::Error, 'Issue title and body must be nonempty valid text.'
+        raise Shaka::Error, 'Issue title and body must be nonempty valid UTF-8 text.'
       end
 
       validate_title(title)
       validate_body(body)
     end
 
-    def self.valid_text?(text) = text.is_a?(String) && text.valid_encoding? && !text.strip.empty?
+    def self.valid_text?(text) = text.valid_encoding? && !text.strip.empty?
 
     def self.validate_title(title)
       return unless title.match?(/[\r\n\0]/) || title != title.strip

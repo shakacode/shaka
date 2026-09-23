@@ -41,8 +41,9 @@ the GitHub merge click until you can see the finished change.
 
 ## Offer an issue for a Shaka gap
 
-When Shaka independently confirms a product gap outside your active request, the root task owner
-will offer a cited issue draft and continue the active task. You can skip offers in the current task.
+When Shaka independently confirms a worthwhile product gap outside your active
+request, the root task owner will offer a cited issue draft and continue the
+active task. You can skip offers in the current task.
 Shaka asks before searching for duplicates and again before filing. It shares possible matches for
 you to inspect; before filing it repeats the metadata-only search, and new or changed candidates
 need your review and renewed approval. No results do not prove there is no duplicate. Only public

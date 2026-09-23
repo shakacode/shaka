@@ -1,13 +1,18 @@
 # Shaka issue-offer procedure
 
 Follow this procedure when the Shaka workflow's **Always** guidance says to offer an issue for a
-verified product gap. Only the root task owner runs it; workers report possible gaps to that owner.
+worthwhile, verified product gap. Only the root task owner runs it; workers report possible gaps to
+that owner.
 Respect a user request to skip offers for the current task. Keep the current task moving while the
 user considers the offer.
 
 ## Offer before searching
 
-Draft a concise title and body from public sources. Verify the gap in current public Shaka materials
+Offer a clear, actionable gap worth tracking, not every idea set aside by the active task. For an
+AI-found gap or uncertain value, use the Shaka
+[value checkpoint](../../../docs/working-with-your-agent.md#say-what-the-work-is-worth); keep missing
+impact and frequency UNKNOWN, and skip offers that remain speculative or low-value. Draft a concise
+title and body from public sources. Verify the gap in current public Shaka materials
 and cite that source in the draft; cite public sources for other factual claims. Exclude details
 learned only from the active task or a private repository, as well as private repository names,
 branches, file paths, and links. Choose two to four distinctive alphanumeric terms from the public

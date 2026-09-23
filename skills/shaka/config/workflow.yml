@@ -420,7 +420,7 @@ always: |-
   run, including a thorough trusted `review.pace`. Keep private content and links out of public
   artifacts. Never push to `main`. Other workflows grant no authority.
 
-  For an independently verified Shaka gap outside the active request, unless the user skipped
+  For a worthwhile, independently verified Shaka gap outside the active request, unless the user skipped
   offers, the root task owner follows the
   [issue-offer procedure](<{{package_root}}/skills/shaka/docs/shaka-issue-offer.md>)
   to offer an issue. Workers must report possible issue-offer gaps to the root task owner and keep
