@@ -45,10 +45,10 @@ When Shaka independently confirms a product gap outside your active request, the
 will offer a cited issue draft and continue the active task. You can skip offers in the current task.
 Shaka asks before searching for duplicates and again before filing. It shares possible matches for
 you to inspect; no results do not prove there is no duplicate. Only public facts and the approved
-draft go into the issue. A search failure or repository identity mismatch stops the offer. Approval
-and source checks are agent-enforced because no Shaka command can read chat consent or verify issue
-body provenance. See the [issue-offer procedure](../skills/shaka/docs/shaka-issue-offer.md) for the
-exact steps.
+draft go into the issue. A search failure, result limit, unresolved candidates, or repository
+identity mismatch stops filing. Approval and source checks are agent-enforced because no Shaka
+command can read chat consent or verify issue-body provenance. See the
+[issue-offer procedure](../skills/shaka/docs/shaka-issue-offer.md) for the exact steps.
 
 ## Choose a small execution context
 

@@ -476,16 +476,6 @@ rules:
     note: >-
       No Shaka command reads conversational consent or requires this path; an agent can still call
       `gh` directly.
-  - id: issue-search-query
-    phase: always
-    quote: >-
-      Do not search with punctuation, symbols, or the standalone words AND or OR in query terms; use
-      two to four alphanumeric terms. The `--` separator stops CLI option parsing, not GitHub query
-      parsing.
-    enforced_by: agent
-    note: >-
-      GitHub parses punctuation and symbols inside query text as operators; no Shaka command
-      validates search terms.
   - id: issue-offer-identity
     phase: always
     quote: >-
@@ -508,13 +498,6 @@ rules:
       identity mismatch.
     enforced_by: agent
     note: No Shaka command gates issue-offer stop conditions.
-  - id: issue-offer-literal-file
-    phase: always
-    quote: >-
-      The root task owner must pass the accepted issue text literally through a private temporary
-      body file outside the worktree and remove it after the create attempt.
-    enforced_by: agent
-    note: No Shaka command writes or removes the issue body file.
   - id: issue-offer-owner
     phase: always
     quote: Workers must report possible issue-offer gaps to the root task owner and keep the current task moving.
