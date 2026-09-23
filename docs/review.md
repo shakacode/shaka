@@ -409,7 +409,7 @@ is the evidence that the CLI actually ran.
 Codex 0.154.0:
 
 ```bash
-shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex --effort medium
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex
 ```
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
@@ -420,6 +420,8 @@ report-validation failure does not qualify.
 
 The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config
 --skip-git-repo-check -o REPORT -` from its neutral directory.
+Codex has no documented effort flag in this invocation, so the helper rejects `--effort` for
+`openai/codex` and records `EFFORT UNKNOWN` rather than asserting an unverified setting.
 `-s read-only` confines it, the ignore flags skip user/project rules and config, and the report
 is created outside the checkout. It does not use `--ephemeral`, so the session remains available
 for `shaka usage --host codex --file PATH --commit HEAD --contribution review --all-turns`.

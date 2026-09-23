@@ -70,6 +70,7 @@ module Shaka
     def validate_model!
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
       raise Shaka::Error, '--model is only supported for xai/grok' if reviewer != 'xai/grok' && @options[:model]
+      raise Shaka::Error, '--effort is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:effort]
     end
 
     def validate_checkout!
@@ -87,7 +88,7 @@ module Shaka
     def validate_report(path)
       text = File.read(path, encoding: 'UTF-8')
       return incomplete('Reviewer returned no matching review attestation', path) unless
-        LocalReviewEvidence.valid?(text, head: head, reviewer: reviewer)
+        LocalReviewEvidence.valid?(text, head: head, reviewer: reviewer, effort: effort)
 
       { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer,
         'report' => path, 'usage' => @options[:usage] }.compact

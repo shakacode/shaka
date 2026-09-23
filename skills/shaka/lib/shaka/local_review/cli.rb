@@ -27,12 +27,12 @@ module Shaka
     def codex(prompt)
       return missing('codex') unless LocalReviewExecutable.available?('codex')
 
-      _stdout, stderr, status = Open3.capture3('codex', 'exec', '-s', 'read-only', '--ignore-rules',
-                                               '--ignore-user-config', '--skip-git-repo-check', '-o', @report, '-',
-                                               stdin_data: prompt, chdir: @root)
+      stdout, stderr, status = Open3.capture3('codex', 'exec', '-s', 'read-only', '--ignore-rules',
+                                              '--ignore-user-config', '--skip-git-repo-check', '-o', @report, '-',
+                                              stdin_data: prompt, chdir: @root)
       return failure("codex exec exited #{status.exitstatus}", stderr) unless status.success?
 
-      invalid('codex exec returned no review') unless File.size?(@report)
+      invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
 
     def claude(prompt)
@@ -43,7 +43,7 @@ module Shaka
 
       claude_result(output)
     rescue JSON::ParserError
-      invalid('claude -p returned malformed JSON')
+      invalid('claude -p returned malformed JSON', output)
     end
 
     def claude_process(prompt)
@@ -58,16 +58,14 @@ module Shaka
     def claude_result(output)
       result = JSON.parse(output)
       return failure('claude -p reported an error', output) if result['is_error']
-      return invalid('claude -p returned no review') unless valid_claude_result?(result)
+      return invalid('claude -p returned no review', output) unless valid_claude_result?(result)
 
       @options[:usage] = save_usage(output)
       File.write(@report, result.fetch('result'))
       nil
     end
 
-    def valid_claude_result?(result)
-      result['result'].is_a?(String) && !result['result'].strip.empty?
-    end
+    def valid_claude_result?(result) = result['result'].is_a?(String) && !result['result'].strip.empty?
 
     def grok(prompt)
       return missing('grok') unless LocalReviewExecutable.available?('grok')
@@ -110,13 +108,15 @@ module Shaka
       outcome(reason, 'cli_failure', true).merge('diagnostic_path' => save_diagnostic(diagnostic))
     end
 
-    def invalid(reason) = outcome(reason, 'report_validation', true)
+    def invalid(reason, diagnostic = nil)
+      outcome(reason, 'report_validation', true).merge('diagnostic_path' => save_diagnostic(diagnostic)).compact
+    end
 
     def outcome(reason, stage, attempted)
       File.unlink(@report) if stage != 'report_validation' && File.exist?(@report)
       { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
         'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason,
-        'report' => stage == 'report_validation' ? @report : nil,
+        'report' => stage == 'report_validation' && File.size?(@report) ? @report : nil,
         'skip_evidence' => { 'executable_missing' => 'confirmed',
                              'cli_failure' => 'requires_cause_review' }.fetch(stage, 'not_eligible'),
         'usage' => @options[:usage] }.compact

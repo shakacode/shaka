@@ -18,7 +18,7 @@ class LocalReviewCodexTest < Minitest::Test
 
       assert_predicate status, :success?, error
       result = assert_completed(output, head, 'openai/codex')
-      assert_codex_invocation(trace, head)
+      assert_codex_invocation(trace)
     ensure
       cleanup_artifacts(result)
     end
@@ -98,13 +98,13 @@ class LocalReviewCodexTest < Minitest::Test
 
   private
 
-  def assert_codex_invocation(trace, head)
+  def assert_codex_invocation(trace)
     invocation = JSON.parse(File.read(trace))
     assert_equal %w[exec -s read-only --ignore-rules --ignore-user-config], invocation.fetch('args').first(5)
     assert_includes invocation.fetch('args'), '--skip-git-repo-check'
     assert_includes invocation.fetch('prompt'), '+after'
     assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
-    assert_includes invocation.fetch('prompt'), "REVIEWED #{head} BY openai/codex"
+    assert_includes invocation.fetch('prompt'), 'EFFORT UNKNOWN'
     refute_path_exists invocation.fetch('cwd')
   end
 
@@ -164,7 +164,7 @@ class LocalReviewOtherCliTest < Minitest::Test
   def test_omitted_effort_does_not_pass_placeholder_to_claude
     with_repository do |root, base, head, bin|
       trace = File.join(root, 'claude-invocation.json')
-      fake_claude(bin, head)
+      fake_claude(bin, head, effort: 'UNKNOWN')
       output, error, status = run_review(root, base, head, bin,
                                          env: { 'REVIEW_TRACE' => trace }, reviewer: 'anthropic/claude', effort: nil)
       result = assert_successful_review(output, error, status, head, 'anthropic/claude')
@@ -242,12 +242,24 @@ class LocalReviewProviderFailureTest < Minitest::Test
     end
   end
 
+  def test_explicit_codex_effort_is_rejected_before_launch
+    with_repository do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin, effort: 'medium')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '--effort is unsupported for openai/codex'
+    end
+  end
+
   private
 
   def assert_malformed_claude(result)
     assert_equal 'report_validation', result.fetch('failure_stage')
     assert_equal 'not_eligible', result.fetch('skip_evidence')
     refute result.key?('usage')
+    refute result.key?('report')
+    assert_equal 'not-json', File.read(result.fetch('diagnostic_path'))
   end
 
   def assert_claude_error(result)
@@ -338,7 +350,7 @@ module LocalReviewFixture
       require 'json'
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, cwd: Dir.pwd }))
       report = ARGV.fetch(ARGV.index('-o') + 1)
-      File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT medium FINDINGS 0\\n")
+      File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
     RUBY
   end
 
@@ -350,12 +362,12 @@ module LocalReviewFixture
     RUBY
   end
 
-  def fake_claude(bin, head)
+  def fake_claude(bin, head, effort: 'medium')
     write_executable(bin, 'claude', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
-      puts JSON.generate({ is_error: false, result: "no findings\\nREVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 0" })
+      puts JSON.generate({ is_error: false, result: "no findings\\nREVIEWED #{head} BY anthropic/claude EFFORT #{effort} FINDINGS 0" })
     RUBY
   end
 
@@ -399,9 +411,11 @@ module LocalReviewFixture
   end
 
   def run_review(root, base, head, bin, options = {})
+    reviewer = options.fetch(:reviewer, 'openai/codex')
     arguments = [self.class::COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
-                 '--reviewer', options.fetch(:reviewer, 'openai/codex')]
-    arguments.push('--effort', options.fetch(:effort, 'medium')) if options.fetch(:effort, 'medium')
+                 '--reviewer', reviewer]
+    default_effort = reviewer == 'openai/codex' ? nil : 'medium'
+    arguments.push('--effort', options.fetch(:effort, default_effort)) if options.fetch(:effort, default_effort)
     arguments.push('--model', options[:model]) if options[:model]
     Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" }.merge(options.fetch(:env, {})), *arguments)
   end
