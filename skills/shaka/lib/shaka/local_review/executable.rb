@@ -13,7 +13,7 @@ module Shaka
         raise Shaka::Error, "#{name} executable resolves inside candidate checkout" if
           candidate_owned?(target, candidate_root)
 
-        return target
+        return path
       end
       nil
     end

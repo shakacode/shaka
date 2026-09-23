@@ -529,7 +529,27 @@ class LocalReviewRelativePathTest < Minitest::Test
     end
   end
 
+  def test_external_dispatcher_symlink_keeps_reviewer_name
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'dispatcher-trace.json')
+      dispatcher_link(bin, head)
+      output, error, status = run_review(root, base, head, bin,
+                                         env: { 'REVIEW_TRACE' => trace, 'REVIEW_EXPECT_NAME' => 'codex' })
+      result = assert_successful_review(output, error, status, head, 'openai/codex')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   private
+
+  def dispatcher_link(bin, head)
+    fake_codex(bin, head)
+    codex = File.join(bin, 'codex')
+    dispatcher = File.join(bin, 'dispatcher')
+    File.rename(codex, dispatcher)
+    File.symlink(dispatcher, codex)
+  end
 
   def assert_unsafe_executable_rejected(output, status)
     refute_predicate status, :success?
@@ -647,6 +667,7 @@ module LocalReviewFixture
     write_executable(bin, 'codex', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
+      abort 'wrong executable name' if ENV['REVIEW_EXPECT_NAME'] && File.basename($PROGRAM_NAME) != ENV['REVIEW_EXPECT_NAME']
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, cwd: Dir.pwd }))
       report = ARGV.fetch(ARGV.index('-o') + 1)
       File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
