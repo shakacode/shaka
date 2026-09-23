@@ -275,6 +275,36 @@ class LocalReviewProviderFailureTest < Minitest::Test
   end
 end
 
+class LocalReviewClaudeProtocolTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_nonzero_claude_json_stdout_is_preserved_as_private_diagnostic
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'claude', "#!/bin/sh\nprintf '{\"error\":\"quota exhausted\"}'\nexit 2\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'cli_failure', result.fetch('failure_stage')
+      assert_includes File.read(result.fetch('diagnostic_path')), 'quota exhausted'
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_non_object_claude_json_is_report_validation
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'claude', "#!/bin/sh\nprintf 'null'\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'report_validation', result.fetch('failure_stage')
+      assert_equal 'not_eligible', result.fetch('skip_evidence')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+end
+
 class LocalReviewStatusTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -455,4 +485,5 @@ end
 LocalReviewCodexTest.include(LocalReviewFixture)
 LocalReviewOtherCliTest.include(LocalReviewFixture)
 LocalReviewProviderFailureTest.include(LocalReviewFixture)
+LocalReviewClaudeProtocolTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)

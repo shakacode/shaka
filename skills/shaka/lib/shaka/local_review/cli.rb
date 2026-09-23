@@ -39,7 +39,7 @@ module Shaka
       return missing('claude') unless LocalReviewExecutable.available?('claude')
 
       output, stderr, status = claude_process(prompt)
-      return failure("claude -p exited #{status.exitstatus}", stderr) unless status.success?
+      return failure("claude -p exited #{status.exitstatus}", [stderr, output].join("\n")) unless status.success?
 
       claude_result(output)
     rescue JSON::ParserError
@@ -57,6 +57,8 @@ module Shaka
 
     def claude_result(output)
       result = JSON.parse(output)
+      return invalid('claude -p returned non-object JSON', output) unless result.is_a?(Hash)
+
       return failure('claude -p reported an error', output) if result['is_error']
       return invalid('claude -p returned no review', output) unless valid_claude_result?(result)
 
