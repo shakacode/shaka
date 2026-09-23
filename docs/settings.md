@@ -328,11 +328,6 @@ Shaka does not map an entry to a `grok`, `agent`, or `cursor-agent` binary. `sha
 picks an identity. `shaka review-prompt` prints the prompt for that identity. The host that
 is already signed in runs the prompt.
 
-| Setting | Required | Allowed values |
-| --- | --- | --- |
-| `provider` | yes | Non-empty string, such as `anthropic`, `openai`, `xai` |
-| `model_family` | yes | Non-empty string, such as `claude`, `codex`, `grok` |
-
 ```yaml
 review:
   required: meaningful_changes

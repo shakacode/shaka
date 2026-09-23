@@ -105,8 +105,20 @@ module Shaka
       def build_report
         classified = FieldClassifier.new(@data).call
         overlay_explicit_policy(classified)
+        reject_invalid_review(classified)
         require_optional_entry_points(classified)
         report_body(classified)
+      end
+
+      def reject_invalid_review(classified)
+        review = classified.established['review']
+        return unless review.is_a?(Hash)
+
+        RepositoryConfig::ReviewSchema.retired!(review)
+        RepositoryConfig::ReviewSchema.renamed!(review)
+        RepositoryConfig::ReviewSchema.new(review).validate
+      rescue Error => e
+        classified.blocking << e.message
       end
 
       def report_body(classified)

@@ -390,6 +390,24 @@ class SeamMigrateCiJobListTest < Minitest::Test
     end
   end
 
+  def test_a_blank_ci_job_name_blocks_the_plan
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => blank_ci_review(data)) }
+      blocking = migrate_report(root, sha).fetch('blocking')
+
+      assert_includes blocking, 'review.ci_review_agents[0] must be a non-empty string'
+    end
+  end
+
+  def test_ci_review_agents_block_when_review_is_not_required
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => unrequired_ci_review(data)) }
+      blocking = migrate_report(root, sha).fetch('blocking')
+
+      assert_includes blocking, 'review.ci_review_agents must be omitted when review.required is none'
+    end
+  end
+
   def test_an_array_under_a_legacy_check_key_blocks
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_array_review(data)) }
@@ -422,6 +440,15 @@ class SeamMigrateCiJobListTest < Minitest::Test
 
   def scalar_current_review(data)
     { 'required' => 'always', 'ci_review_agents' => 'claude-review',
+      'reviewers' => data.dig('review', 'reviewers') }
+  end
+
+  def blank_ci_review(data)
+    { 'required' => 'always', 'ci_review_agents' => [''], 'reviewers' => data.dig('review', 'reviewers') }
+  end
+
+  def unrequired_ci_review(data)
+    { 'required' => 'none', 'ci_review_agents' => ['claude-review'],
       'reviewers' => data.dig('review', 'reviewers') }
   end
 

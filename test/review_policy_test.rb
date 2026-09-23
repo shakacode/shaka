@@ -149,6 +149,14 @@ class RetiredReviewKeyTest < Minitest::Test
     end
   end
 
+  def test_rejects_a_retired_local_reviewers_key
+    with_repository('review' => { 'required' => 'meaningful_changes', 'local_reviewers' => reviewers }) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.local_reviewers moved to review.local_review_agents'
+    end
+  end
+
   def test_rejects_a_retired_reviewers_key
     with_repository('review' => { 'required' => 'meaningful_changes', 'reviewers' => reviewers }) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
