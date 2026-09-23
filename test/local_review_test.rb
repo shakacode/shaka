@@ -114,10 +114,10 @@ class LocalReviewCodexTest < Minitest::Test
     assert_equal 'executable_missing', result.fetch('failure_stage')
     assert_equal 'confirmed', result.fetch('skip_evidence')
     assert_includes result.fetch('reason'), 'codex is not on PATH'
+    refute result.key?('report')
   end
 
   def assert_codex_failure(result)
-    assert_equal 'not_completed', result.fetch('status')
     assert result.fetch('attempted')
     assert_equal 'cli_failure', result.fetch('failure_stage')
     assert_equal 'requires_cause_review', result.fetch('skip_evidence')
@@ -228,6 +228,17 @@ class LocalReviewProviderFailureTest < Minitest::Test
       assert_malformed_claude(result)
     ensure
       cleanup_artifacts(result)
+    end
+  end
+
+  def test_model_option_for_claude_is_a_setup_failure_not_silently_ignored
+    with_repository do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin,
+                                          reviewer: 'anthropic/claude', model: 'requested-model')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '--model is only supported for xai/grok'
     end
   end
 

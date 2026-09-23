@@ -69,6 +69,7 @@ module Shaka
 
     def validate_model!
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
+      raise Shaka::Error, '--model is only supported for xai/grok' if reviewer != 'xai/grok' && @options[:model]
     end
 
     def validate_checkout!

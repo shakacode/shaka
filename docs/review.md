@@ -165,6 +165,10 @@ Three outcomes, none of them an error:
 Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked
 provider. Missing local credentials for a provider are not a problem to solve here — if you have no
 second provider at all, `same_model` is the answer, and the GitHub reviews still run once you push.
+For that fallback, start a new host chat with the implementation model, with no implementation
+conversation or Task/subagent context. Supply the diff and review prompt as data, save its report,
+then use `shaka review check --head SHA --reviewer ID --report PATH`. That result confirms the
+report's exact-head attestation, not a CLI launch; name this weaker evidence in the PR.
 
 `shaka review run` invokes a listed CLI and returns `completed` only after a successful process
 and a nonempty report attesting to the requested commit and reviewer. A nonzero result says

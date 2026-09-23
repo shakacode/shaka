@@ -113,8 +113,10 @@ module Shaka
     def invalid(reason) = outcome(reason, 'report_validation', true)
 
     def outcome(reason, stage, attempted)
+      File.unlink(@report) if stage != 'report_validation' && File.exist?(@report)
       { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
-        'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason, 'report' => @report,
+        'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason,
+        'report' => stage == 'report_validation' ? @report : nil,
         'skip_evidence' => { 'executable_missing' => 'confirmed',
                              'cli_failure' => 'requires_cause_review' }.fetch(stage, 'not_eligible'),
         'usage' => @options[:usage] }.compact
