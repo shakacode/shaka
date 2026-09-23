@@ -179,6 +179,10 @@ That check labels the evidence `host_report`: it checks the attestation, not the
 transcript. If no review completed, run `shaka review check --head SHA --not-run-reason TEXT` so
 the failure stays visible; it exits nonzero and never presents a missing review as ready.
 
+An omitted `--effort` records `EFFORT UNKNOWN` in the report while omitting the CLI effort flag.
+Report, usage, and diagnostic tempfiles are private local evidence; inspect them as needed and
+remove them when the PR record no longer needs them.
+
 Record which reviewer ran, at which revision, in the chat and the PR review status line. If a
 reviewer was skipped, record the helper's failure stage and reason rather than calling a Task or
 subagent a CLI attempt.

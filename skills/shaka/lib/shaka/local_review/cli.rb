@@ -3,6 +3,7 @@
 require 'json'
 require 'open3'
 require 'tempfile'
+require_relative 'executable'
 
 module Shaka
   # The only path that may claim a local review process was actually launched.
@@ -24,24 +25,24 @@ module Shaka
     private
 
     def codex(prompt)
+      return missing('codex') unless LocalReviewExecutable.available?('codex')
+
       _stdout, stderr, status = Open3.capture3('codex', 'exec', '-s', 'read-only', '--ignore-rules',
                                                '--ignore-user-config', '--skip-git-repo-check', '-o', @report, '-',
                                                stdin_data: prompt, chdir: @root)
       return failure("codex exec exited #{status.exitstatus}", stderr) unless status.success?
 
       invalid('codex exec returned no review') unless File.size?(@report)
-    rescue Errno::ENOENT
-      missing('codex')
     end
 
     def claude(prompt)
+      return missing('claude') unless LocalReviewExecutable.available?('claude')
+
       output, stderr, status = claude_process(prompt)
       @options[:usage] = save_usage(output)
       return failure("claude -p exited #{status.exitstatus}", stderr) unless status.success?
 
       claude_result(output)
-    rescue Errno::ENOENT
-      missing('claude')
     rescue JSON::ParserError
       invalid('claude -p returned malformed JSON')
     end
@@ -57,7 +58,7 @@ module Shaka
 
     def claude_result(output)
       result = JSON.parse(output)
-      return failure('claude -p reported an error') if result['is_error']
+      return failure('claude -p reported an error', output) if result['is_error']
       return invalid('claude -p returned no review') unless valid_claude_result?(result)
 
       File.write(@report, result.fetch('result'))
@@ -69,14 +70,14 @@ module Shaka
     end
 
     def grok(prompt)
+      return missing('grok') unless LocalReviewExecutable.available?('grok')
+
       file = prompt_file(prompt)
       output, stderr, status = grok_process(file.path)
       return failure("grok exited #{status.exitstatus}", stderr) unless status.success?
 
       File.write(@report, output)
       invalid('grok returned no review') unless File.size?(@report)
-    rescue Errno::ENOENT
-      missing('grok')
     ensure
       File.unlink(file.path) if file && File.exist?(file.path)
     end

@@ -10,7 +10,7 @@ module Shaka
 
     def run
       head = @options[:head]
-      raise Shaka::Error, '--head must be a full commit SHA' unless head.to_s.match?(LocalReviewEvidence::SHA)
+      validate_head!(head)
 
       report = @options[:report]
       reason = @options[:not_run_reason]
@@ -18,13 +18,24 @@ module Shaka
 
       return report_result(report, head) if report
 
+      unreported_result(head, reason)
+    rescue Shaka::Error, SystemCallError, KeyError => e
+      { 'status' => 'not_completed', 'head' => @options[:head], 'reason' => e.message,
+        'same_model_fallback_available' => true }
+    end
+
+    private
+
+    def validate_head!(head)
+      raise Shaka::Error, '--head must be a full commit SHA' unless head.to_s.match?(LocalReviewEvidence::SHA)
+    end
+
+    def unreported_result(head, reason)
       raise Shaka::Error, '--not-run-reason is required when no report exists' if reason.to_s.strip.empty?
 
       { 'status' => 'not_completed', 'head' => head, 'reason' => reason.strip,
         'same_model_fallback_available' => true }
     end
-
-    private
 
     def report_result(path, head)
       return missing_reviewer(head) if @options[:reviewer].to_s.empty?

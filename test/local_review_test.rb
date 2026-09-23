@@ -200,8 +200,7 @@ class LocalReviewProviderFailureTest < Minitest::Test
       output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
       refute_predicate status, :success?
       result = JSON.parse(output)
-      assert_equal 'cli_failure', result.fetch('failure_stage')
-      assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+      assert_claude_error(result)
     ensure
       cleanup_artifacts(result)
     end
@@ -233,6 +232,12 @@ class LocalReviewProviderFailureTest < Minitest::Test
   end
 
   private
+
+  def assert_claude_error(result)
+    assert_equal 'cli_failure', result.fetch('failure_stage')
+    assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+    assert File.file?(result.fetch('diagnostic_path'))
+  end
 
   def assert_grok_model_failure(result)
     assert_equal 'cli_failure', result.fetch('failure_stage')
@@ -291,6 +296,18 @@ class LocalReviewStatusTest < Minitest::Test
       output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head, '--report', report)
       refute_predicate status, :success?
       assert_equal 'not_completed', JSON.parse(output).fetch('status')
+    end
+  end
+
+  def test_missing_host_report_path_returns_structured_noncompletion
+    with_repository do |root, _base, head, _bin|
+      report = File.join(root, 'missing-review.md')
+      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+                                              '--reviewer', 'anthropic/claude', '--report', report)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'not_completed', result.fetch('status')
+      assert_includes result.fetch('reason'), 'missing-review.md'
     end
   end
 end
