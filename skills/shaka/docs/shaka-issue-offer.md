@@ -10,8 +10,9 @@ user considers the offer.
 Draft a concise title and body from public sources. Verify the gap in current public Shaka materials
 and cite that source in the draft; cite public sources for other factual claims. Exclude details
 learned only from the active task or a private repository, as well as private repository names,
-branches, file paths, and links. Choose two to four distinctive plain terms from the public draft;
-do not use quotes or GitHub search qualifiers. If no safe query can be formed, explain why; do not
+branches, file paths, and links. Choose two to four distinctive plain terms from the public draft.
+Reject any query with a colon or quotation mark: `--` stops CLI option parsing, but GitHub still
+parses search qualifiers inside the query. If no safe query can be formed, explain why; do not
 search or file, and continue the active task. Show the exact title, body, source links, and query.
 Ask whether the user authorizes that search; tell them you will ask again before filing. Continue
 the active task while waiting. Do not search if the user declines or has not accepted. If the
@@ -37,8 +38,10 @@ gh search issues --repo shakacode/shaka --include-prs --match title,body --limit
   --json number,url,isPullRequest,state -- "$QUERY"
 ```
 
-Pass `QUERY` after `--` as one safely quoted argument. This best-effort search can miss duplicates
-when GitHub has no matching indexed text; no results is not proof no issue exists. A result is a
+Pass `QUERY` after `--` as one safely quoted argument. The separator prevents a leading hyphen from
+becoming a CLI option; the colon check above prevents GitHub from treating query text as a qualifier.
+This best-effort search can miss duplicates when GitHub has no matching indexed text; no results is
+not proof no issue exists. A result is a
 possible duplicate, not a confirmed match: share its returned URL, number, `isPullRequest`, and
 state, and wait for the user to inspect it. Do not request or fetch
 titles, issue or pull-request descriptions, or comments. If search fails or returns 1,000 results,

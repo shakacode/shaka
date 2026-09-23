@@ -51,6 +51,7 @@ assumptions for the maintainer's existing decision; add no score or approval gat
 - `docs/pilot-plan.md` owns product requirements, design, acceptance, and scope.
 - `eval/fixtures/local_evaluation/` holds the two public-safe Slice 0 fixture trees.
 - `skills/shaka/SKILL.md` is the public workflow entry point.
+- `skills/shaka/docs/` holds companion procedures referenced by the workflow.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` is the machine-readable repository contract. It
