@@ -29,7 +29,9 @@ module Shaka
     end
 
     def self.create(request)
-      request = request.encode(Encoding::UTF_8)
+      request = request.dup.force_encoding(Encoding::UTF_8)
+      raise Shaka::Error, 'Issue request must be valid UTF-8 text.' unless request.valid_encoding?
+
       title, separator, body = request.partition("\n")
       raise Shaka::Error, 'Issue request must contain a title line and a body.' if separator.empty?
 
@@ -53,7 +55,7 @@ module Shaka
     def self.valid_text?(text) = text.valid_encoding? && !text.strip.empty?
 
     def self.validate_title(title)
-      return unless title.match?(/[\r\n\0]/) || title != title.strip
+      return unless title.match?(/[\r\0]/) || title != title.strip
 
       raise Shaka::Error, 'Issue title must be one line without surrounding whitespace.'
     end
