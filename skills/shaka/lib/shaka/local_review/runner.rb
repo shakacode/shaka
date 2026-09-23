@@ -60,14 +60,18 @@ module Shaka
     private
 
     def validate_path!
-      ENV.fetch('PATH', '').split(File::PATH_SEPARATOR, -1).each do |entry|
-        directory = File.expand_path(entry.empty? ? '.' : entry)
-        next unless File.directory?(directory)
+      entries = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR, -1)
+      ENV['PATH'] = entries.map { |entry| normalized_path_entry(entry) }.join(File::PATH_SEPARATOR)
+    end
 
+    def normalized_path_entry(entry)
+      directory = File.expand_path(entry.empty? ? '.' : entry)
+      if File.directory?(directory)
         target = File.realpath(directory)
         raise Shaka::Error, 'PATH entry resolves inside candidate checkout' if
           LocalReviewExecutable.candidate_owned?(target, root)
       end
+      directory
     end
 
     def git_executable

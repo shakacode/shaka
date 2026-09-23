@@ -538,12 +538,7 @@ class LocalReviewRelativePathTest < Minitest::Test
 
   def test_relative_path_executable_is_resolved_before_neutral_launch
     with_repository do |root, base, head, bin|
-      trace = File.join(root, 'relative-path-trace.json')
-      fake_codex(bin, head)
-      path = "./#{File.basename(bin)}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
-      output, error, status = run_review(root, base, head, bin,
-                                         cwd: File.dirname(bin), env: { 'PATH' => path, 'REVIEW_TRACE' => trace })
-      result = assert_successful_review(output, error, status, head, 'openai/codex')
+      result = assert_relative_path_review(root, base, head, bin)
     ensure
       cleanup_artifacts(result)
     end
@@ -610,6 +605,30 @@ class LocalReviewRelativePathTest < Minitest::Test
   end
 
   private
+
+  def assert_relative_path_review(root, base, head, bin)
+    fake_codex(bin, head)
+    write_ruby_wrapper(bin)
+    env = relative_path_env(root, bin)
+    output, error, status = run_review(root, base, head, bin, cwd: File.dirname(bin), env: env)
+    result = assert_successful_review(output, error, status, head, 'openai/codex')
+    assert_includes File.read(env.fetch('RUBY_MARKER')), 'shaka-review-neutral-'
+    result
+  end
+
+  def relative_path_env(root, bin)
+    path = "./#{File.basename(bin)}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
+    { 'PATH' => path, 'REVIEW_TRACE' => File.join(root, 'relative-path-trace.json'),
+      'RUBY_MARKER' => File.join(root, 'ruby-path-trace.txt') }
+  end
+
+  def write_ruby_wrapper(bin)
+    write_executable(bin, 'ruby', <<~SH)
+      #!/bin/sh
+      printf '%s\\n' "$PWD" >> "$RUBY_MARKER"
+      exec #{RbConfig.ruby.inspect} "$@"
+    SH
+  end
 
   def dispatcher_link(bin, head)
     fake_codex(bin, head)
