@@ -20,7 +20,8 @@ module Shaka
     end
 
     def applicable_criteria(ref)
-      paths = capture('git', '-C', root, 'diff', '--name-only', '-z', "#{@options[:base]}...#{head}", '--').split("\0")
+      paths = capture('git', '-C', root, 'diff', '--no-renames', '--name-only', '-z',
+                      "#{@options[:base]}...#{head}", '--').split("\0")
       files = capture('git', '-C', root, 'ls-tree', '-r', '--name-only', '-z', ref, '--').split("\0")
       files.select { |file| applicable_agents_file?(file, paths) }.sort_by { |file| [file.count('/'), file] }
     end

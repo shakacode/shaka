@@ -410,6 +410,16 @@ class LocalReviewContextTest < Minitest::Test
     end
   end
 
+  def test_rename_keeps_source_directory_criteria
+    with_repository do |root, _base, _head, bin|
+      base, head = renamed_history(root)
+      result, prompt = captured_review(root, base, head, bin, criteria_ref: base)
+      assert_includes prompt, "FROM #{base}:nested/AGENTS.md"
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   private
 
   def nested_history(root)
@@ -419,6 +429,18 @@ class LocalReviewContextTest < Minitest::Test
     base = git!(root, 'rev-parse', 'HEAD').strip
     File.write(File.join(root, 'nested', 'example.txt'), "changed\n")
     commit_files(root, 'nested change')
+    [base, git!(root, 'rev-parse', 'HEAD').strip]
+  end
+
+  def renamed_history(root)
+    FileUtils.mkdir_p(File.join(root, 'nested'))
+    FileUtils.mkdir_p(File.join(root, 'other'))
+    File.write(File.join(root, 'nested', 'AGENTS.md'), "Nested trusted criteria\n")
+    File.write(File.join(root, 'nested', 'example.txt'), "changed\n")
+    commit_files(root, 'nested source')
+    base = git!(root, 'rev-parse', 'HEAD').strip
+    git!(root, 'mv', 'nested/example.txt', 'other/example.txt')
+    commit_files(root, 'move source')
     [base, git!(root, 'rev-parse', 'HEAD').strip]
   end
 
