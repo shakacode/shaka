@@ -3,9 +3,9 @@
 module Shaka
   # Report copy for the rate-card cost scenarios.
   module CostCopy
-    VERIFIED = '2026-09-16'
+    VERIFIED = '2026-09-23'
     CURSOR_VERIFIED = '2026-09-21'
-    ANTHROPIC_VERIFIED = '2026-09-19'
+    ANTHROPIC_VERIFIED = '2026-09-23'
     THRESHOLD_NOTE = 'OpenAI API estimates apply the 272K context threshold.'
     CURSOR_THRESHOLD_NOTE = 'Cursor Grok 4.7 estimates apply the 256K context threshold.'
 
@@ -45,7 +45,7 @@ module Shaka
 
       "Anthropic API list prices, verified #{ANTHROPIC_VERIFIED}. Uncached input, cache reads and " \
         'cache writes are separate charges, and a 1-hour cache write costs more than a 5-minute one. ' \
-        'Only responses recorded at standard speed are priced.'
+        'Standard-speed responses are priced; fast mode is priced for Opus models with a published rate.'
     end
 
     def openai_priced?(priced) = priced.any? { |column| openai_rated?(column) }
@@ -72,8 +72,17 @@ module Shaka
     # Rate-card copy describes the provider and model pair's rate card, as it does for every
     # other provider, so it stays beside an UNKNOWN a response's own counters caused.
     def anthropic_rated?(column)
-      column[:provider] == 'anthropic' && !@inclusive_input && column[:billing] == 'standard' &&
-        [column[:routed], column[:model]].any? { |name| AnthropicCost::RATES.key?(name.to_s) }
+      return false unless column[:provider] == 'anthropic' && !@inclusive_input
+
+      model = anthropic_rate_model(column)
+      return false unless model
+
+      column[:billing] == 'standard' ||
+        (column[:billing] == 'fast' && AnthropicCost::FAST_MODELS.include?(model))
+    end
+
+    def anthropic_rate_model(column)
+      [column[:routed], column[:model]].find { |name| AnthropicCost::RATES.key?(name.to_s) }&.to_s
     end
 
     def footer(columns, reasons)

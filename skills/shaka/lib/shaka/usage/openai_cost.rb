@@ -1,13 +1,15 @@
 # frozen_string_literal: true
 
 module Shaka
-  # OpenAI API-equivalent and Codex credit rates, including the 272K context threshold.
+  # OpenAI API-equivalent and Codex credit rates, including the 272K API context threshold.
   module OpenAICost
     THRESHOLD = 272_000
     RATES = {
       'gpt-5.6-terra' => { credits: %w[50 5 300], api: %w[2 0.2 12] },
       'gpt-5.6-sol' => { credits: %w[100 10 500], api: %w[4 0.4 20] },
-      'gpt-6-astra' => { credits: %w[250 25 1250], api: %w[10 1 50] }
+      'gpt-6-astra' => { credits: %w[250 25 1250], api: %w[10 1 50] },
+      'gpt-6-sol' => { credits: %w[50 5 250], api: %w[2 0.2 10] },
+      'gpt-6-luna' => { credits: %w[2.5 0.25 12.5], api: %w[0.1 0.01 0.5] }
     }.freeze
 
     private
