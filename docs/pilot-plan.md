@@ -59,7 +59,9 @@ This record defines the current product, not proof that acceptance is complete.
 - **R18 — Support reviewer fallback.** Prefer a provider that did not implement the
   change, following `review.local_review_agents` and `shaka reviewer`. Skip entries
   evidenced unavailable. A fresh session of the implementation model is valid;
-  when nothing can run locally, report that gap and use hosted review. Record each
+  a failed CLI still leaves a fresh host context as an option. `shaka review run`
+  checks CLI execution and its report; `shaka review check` labels a fresh host report
+  or records a missing review with a nonzero result. Record each
   reviewer and revision in chat and the PR. See [review](agents/review.md#choose-a-local-reviewer).
 
 ### Preserve control and recover work
@@ -126,8 +128,10 @@ This record defines the current product, not proof that acceptance is complete.
   the adversarial review before optional staged hosted CI without copying a consumer's
   label machinery or weakening current-head gates.
 - **D8 (R18):** the seam carries reviewer preference as ordered data, `shaka reviewer` applies it,
-  and `shaka review-prompt` creates the fresh context that makes a review adversarial. No scheduler,
-  retry queue, or provider credit ledger enters this pilot.
+  and `shaka review-prompt` creates the fresh context that makes a review adversarial. `shaka review
+  run` invokes documented CLIs and checks their result; `shaka review check` distinguishes a
+  fresh-host report from verified CLI execution and makes missing-review reasons explicit. No
+  scheduler, retry queue, or provider credit ledger enters this pilot.
 
 The skill is `skills/shaka/SKILL.md`; CLI dispatch is `skills/shaka/scripts/shaka`.
 Small modules live in `skills/shaka/lib/shaka/`, behavioral tests in `test/`,
@@ -170,12 +174,12 @@ unknown or bypass-capable identities block. Leave repository queue settings and 
 auto-merges unchanged. The helper performs an immediate squash merge when the base has no
 queue. When the base has Merge Queue enabled, the helper lets GitHub's enqueue operation
 decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKED` expected
-reviewed head, and also `UNSTABLE` when effective `review.wait_for_all_ci_reviewers` is `false`; conflicting or
+reviewed head, and also `UNSTABLE` when effective `review.ci_review_wait` is `none` or `one`; conflicting or
 unreadable merge state still blocks. Queue admission is not Auto
 task completion: the active Auto task waits for GitHub's current-base integration checks and
 terminal result. Ask archives after the GitHub click; a later queue failure is a new task.
 Queue submission does not relax walkthrough, review, authority, or required-check gates.
-Under `swift`, pending or failing optional checks may still leave the native state `UNSTABLE`.
+With `ci_review_wait: none` or `one`, pending or failing optional checks may still leave the native state `UNSTABLE`.
 
 ## Verification and exit criteria
 

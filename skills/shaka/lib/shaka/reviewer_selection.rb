@@ -19,9 +19,7 @@ module Shaka
       'different_provider' => 'Run %s: a provider that did not implement this.',
       'same_provider' => 'Run %s: no other provider is available, and its context is still fresh.',
       'same_model' => 'No listed reviewer is available. Run %s in a fresh context, which is a ' \
-                      'valid review, and the GitHub reviews still run on the pushed branch.',
-      'hosted_only' => 'Nothing can review locally, including the implementation model. Push and ' \
-                       'let the GitHub reviews review the branch; say that no local review ran.'
+                      'valid review, and the GitHub reviews still run on the pushed branch.'
     }.freeze
 
     def self.parse(text)
@@ -80,11 +78,9 @@ module Shaka
 
     def outcome_for(selected, reasons)
       return reasons.assoc(selected).last == AVAILABLE ? 'different_provider' : 'same_provider' if selected
-      # The implementation model in a fresh context is the last local option, unless it is itself
-      # unavailable; then no local review runs and the GitHub reviews are the review.
-      return 'same_model' if available_implementer
 
-      'hosted_only'
+      # A failed implementation-model CLI does not rule out a fresh host context.
+      'same_model'
     end
 
     def reviewer_for(outcome, selected)
@@ -94,7 +90,7 @@ module Shaka
       nil
     end
 
-    # The fallback must name an implementer that can actually run, not just the first one listed.
+    # Prefer an implementer with a working CLI; any implementer can still review in a fresh host context.
     def available_implementer = @implementers.find { |entry| !unavailable?(entry) }
 
     def note(outcome, selected)

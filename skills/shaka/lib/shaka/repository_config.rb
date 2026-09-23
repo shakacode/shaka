@@ -69,7 +69,7 @@ module Shaka
     end
 
     def with_default_review_wait(review)
-      { 'wait_for_all_ci_reviewers' => false }.merge(review)
+      { 'ci_review_wait' => 'one' }.merge(review)
     end
   end
 end

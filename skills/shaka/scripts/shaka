@@ -15,6 +15,7 @@ require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/repos'
 require_relative '../lib/shaka/review_prompt'
+require_relative '../lib/shaka/local_review'
 require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
@@ -45,6 +46,11 @@ end
 if ARGV.first == 'review-prompt'
   ARGV.shift
   exit Shaka::ReviewPrompt.run(ARGV)
+end
+
+if ARGV.first == 'review'
+  ARGV.shift
+  exit Shaka::LocalReview.run(ARGV)
 end
 
 if ARGV.first == 'reviewer'
@@ -98,8 +104,8 @@ rescue JSON::ParserError => e
   raise Shaka::Error, "Content file is not valid JSON: #{e.message}"
 end
 
-def merge_seam_pace(options)
-  Shaka::ReviewPace.seam_from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
+def merge_seam_wait(options)
+  Shaka::CiReviewWait.seam_from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
 end
 
 def walkthrough_body(options)
@@ -111,7 +117,8 @@ end
 def usage_banner
   ["Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; ",
    'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help',
-   '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka seam check --help',
+   '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka review run --help',
+   '; shaka review check --help', '; shaka seam check --help',
    '; shaka workflow --help', '; shaka enforcement --help', '; shaka doctor --help',
    '; shaka repos --help; shaka prefix --help'].join
 end
@@ -127,11 +134,8 @@ parser = OptionParser.new do |flags|
     options[:comment] = value
   end
   flags.on('--walkthrough ID', 'Published COMMENT review ID') { |value| options[:walkthrough] = value }
-  flags.on('--[no-]wait-for-all-ci-reviewers', 'Wait for every configured CI review') do |value|
-    options[:pace] = value ? 'thorough' : 'swift'
-  end
-  flags.on('--pace PACE', 'Removed; use --wait-for-all-ci-reviewers') do |_value|
-    raise OptionParser::InvalidArgument, '--pace was replaced by --[no-]wait-for-all-ci-reviewers'
+  flags.on('--ci-review-wait MODE', Shaka::CiReviewWait::VALUES, 'CI reviews to await: none, one, all') do |value|
+    options[:ci_review_wait] = value
   end
   flags.on('--root DIR', 'Repository root for trusted review settings') { |value| options[:root] = value }
   flags.on('--ref REF', 'Trusted commit for review settings') { |value| options[:ref] = value }
@@ -166,8 +170,8 @@ begin
            when 'walkthrough'
              github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
            when 'merge'
-             Shaka::Merge.new(github, pace: options[:pace],
-                                      seam_pace: merge_seam_pace(options)).call(
+             Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],
+                                      seam_wait: merge_seam_wait(options)).call(
                                         head: options.fetch(:head),
                                         base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough)

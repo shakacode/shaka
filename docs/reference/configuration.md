@@ -57,7 +57,7 @@ accepted; an alias referring to it is not.
 | --- | --- | --- |
 | `required` | `always`, `meaningful_changes`, or `none` | Required |
 | `ci_review_jobs` | Nonempty list of CI review job names | Required unless `required: none`; omit it for `none` |
-| `wait_for_all_ci_reviewers` | Boolean | `false` |
+| `ci_review_wait` | `none`, `one`, or `all` | `one` |
 | `local_review_agents` | Ordered `{provider, model_family}` entries | Omitted |
 
 ### `review.required`
@@ -87,20 +87,30 @@ ci_review_jobs:
 A successful job is insufficient; the agent verifies a visible report for the
 reviewed commit. [Review rules](../agents/review.md) define that evidence.
 
-### `review.wait_for_all_ci_reviewers`
+### `review.ci_review_wait`
+
+How many configured CI review reports to wait for when `review.required` calls
+for review:
 
 | Value | Waiting behavior |
 | --- | --- |
-| `false` | After a different-provider local review, proceed when required gates pass. Otherwise wait for one verified named CI review on the first ready-for-review push. |
-| `true` | Wait for every named CI review on the current head, even after local review. |
+| `none` | Do not wait for CI reviews. Complete the independent review locally. |
+| `one` (default) | Wait for at least one verified report for the current commit, even after local review. |
+| `all` | Wait for every configured CI review report for the current commit, even after local review. |
 
-User-requested review gates apply with either value. With `false`, GitHub's
-`UNSTABLE` state is allowed when only optional checks remain; `true` refuses it. Runtime,
-trust, or test changes need fresh review. A nit-only or diagnostic-only follow-up
-does not restart the CI review wait when this setting is `false`.
+Only jobs in `ci_review_jobs` count. With `required: none`, that list is omitted
+and there is no CI review wait. Required GitHub checks, approvals, and explicit
+user requirements apply in every mode. A successful job without a visible review
+report does not count.
 
-Use the trusted default-branch setting. A task may request `true`; it cannot
-override a trusted `true` with `false`. Record a task override on the PR.
+Read completed findings before merging. `none` and `one` permit GitHub's
+`UNSTABLE` state when only optional checks remain; `all` refuses it.
+The agent verifies reports and applies the waiting rule; the merge command checks
+native GitHub gates and allowed merge states, but does not count review reports.
+
+Use the trusted default-branch setting. A task override may increase the wait
+(`none` → `one` → `all`), but cannot lower it. Record an override on the PR and
+pass `merge --ci-review-wait MODE` with the trusted `--ref`.
 
 ### `review.local_review_agents`
 
@@ -110,8 +120,9 @@ unknown fields, malformed entries, and an explicitly empty list are rejected.
 Omitting the list is valid, including with `required: none`.
 
 `shaka reviewer` chooses an identity, and `shaka review-prompt` produces its
-instructions. The signed-in host runs the reviewer; the configuration does not
-map identities to executable names. Prefer a second provider when available.
+instructions. `shaka review run` invokes the supported CLI and checks its result;
+`shaka review check` validates a fresh host report without claiming CLI execution.
+Prefer a second provider when available. There is no configurable wrapper hook.
 See [reviewer selection](../agents/review.md#choose-a-local-reviewer).
 
 Draft support belongs to each reviewer's trusted workflow. Read its triggers;

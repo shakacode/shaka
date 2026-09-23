@@ -12,8 +12,8 @@ Older keys are deliberately rejected during this pilot:
 | `review.ci_review_agents`, `review.check`, `review.github_action_check` | `review.ci_review_jobs` |
 | `review.reviewers`, `review.local_reviewers` | `review.local_review_agents` |
 | `--ci-review-agent`, `--review-check`, `--github-action-check` | `--ci-review-job` |
-| `review.pace` | `review.wait_for_all_ci_reviewers`; `swift` becomes `false`, `thorough` becomes `true` |
-| `--pace swift` / `--pace thorough` | `--no-wait-for-all-ci-reviewers` / `--wait-for-all-ci-reviewers` |
+| `review.pace` | `review.ci_review_wait`; `swift` becomes `one`, `thorough` becomes `all` |
+| `--pace swift` / `--pace thorough` | `--ci-review-wait one` / `--ci-review-wait all` |
 | `recovery.workspace_path` | `recovery.publish_locations`; migration preserves the boolean value |
 | YAML `commands` mapping | Fixed `.agents/bin/` scripts |
 | `protection`, `trusted_actions`, `merge.method`, `merge.release` | Live GitHub settings, workflow files, or the repository's actual security tooling |
@@ -43,3 +43,7 @@ new meaning.
 Finish by checking the new installation against the merged default-branch commit.
 Report the installed revision, configuration changes, and any active tasks still
 using the previous installation.
+
+The old `swift` setting skipped CI review after a different-provider local review.
+Migration uses `one` to preserve its CI backstop; choose `none` explicitly if you
+want local review alone to satisfy review, regardless of provider.

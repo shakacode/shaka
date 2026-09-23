@@ -62,7 +62,7 @@ module Shaka
       end
 
       def review_value(source, nested)
-        return nested == 'thorough' if source == 'pace'
+        return nested == 'thorough' ? 'all' : 'one' if source == 'pace'
 
         legacy = RepositoryConfig::ReviewSchema::RENAMED[source]
         return [nested] if legacy == RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS && nested.is_a?(String)

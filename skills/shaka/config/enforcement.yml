@@ -174,12 +174,22 @@ rules:
   - id: reviewer-selection-binding
     phase: verify
     quote: >-
-      do not substitute the current host or a more expensive same-provider model when a listed
-      different provider is available
+      do not substitute a current-host Cursor Task, subagent, or more expensive same-provider model
+      when a listed different provider is available
     enforced_by: agent
     note: >-
       `reviewer` computes the preferred reviewer, but nothing compares the reviewer that
       actually ran against the one it returned.
+  - id: reviewer-unavailability-evidence
+    phase: verify
+    quote: >-
+      Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
+      failure is not availability evidence, even when `attempted` is true.
+    enforced_by: agent
+    note: >-
+      `review run` classifies an actual CLI attempt and its failure, but `reviewer --unavailable`
+      does not consume that result. The owner must use and publish the helper evidence; review
+      checks the record.
   - id: captures-do-not-replace-tests
     phase: verify
     quote: Captures complement tests; they do not replace them.
@@ -291,31 +301,24 @@ rules:
     note: >-
       Nothing reads review metadata on the agent's behalf to confirm which reviewer produced a
       report, so a green check named for a reviewer can still be mistaken for one.
-  - id: pace-from-the-trusted-ref
+  - id: ci-wait-from-the-trusted-ref
     phase: review
     quote: >-
-      Read `review.wait_for_all_ci_reviewers` from `shaka seam check --ref`, never from candidate YAML.
+      Read `review.ci_review_wait` from `shaka seam check --ref`, never from candidate YAML.
     enforced_by: agent
     note: >-
-      `ReviewPace.seam_from_ref` reads the pace through `TrustedConfigSource` at the ref it is
-      given, and `ReviewPace.effective` keeps thorough when either input is thorough, so a swift
-      candidate cannot weaken a thorough trusted seam. Nothing checks where the agent read the
+      `CiReviewWait.seam_from_ref` reads the wait through `TrustedConfigSource` at the ref it is
+      given, and `CiReviewWait.effective` keeps the stricter of the trusted setting and task override, so a
+      candidate cannot lower a trusted minimum. Nothing checks where the agent read the
       value it passes, which is the same gap the trusted-seam-ref row above describes.
-  - id: swift-skips-the-hosted-review-wait
+  - id: none-skips-the-hosted-review-wait
     phase: review
     quote: do not wait for `review.ci_review_jobs`
     enforced_by: agent
     note: >-
-      `ReviewPace.allowed_merge_states` admits UNSTABLE under swift, so the command permits the
+      `CiReviewWait.allowed_merge_states` admits UNSTABLE under none and one, so the command permits the
       merge while that job runs. Permitting is not enforcing: an agent that waits anyway simply
       never calls `merge`, and nothing fails.
-  - id: no-second-wait-after-a-nit-sha
-    phase: review
-    quote: Do not wait for that check again after a nit-only or diagnostic-only follow-up SHA.
-    enforced_by: agent
-    note: >-
-      Nothing classifies a SHA as nit-only. The distinction is a judgment about what the commit
-      changed, which is the kind of call #36 section 5 retires the engine for.
   - id: advisory-bot-findings-are-read
     phase: review
     quote: read completed findings
@@ -328,8 +331,8 @@ rules:
     rule: Never wait for an advisory bot
     enforced_by: agent
     note: >-
-      Under swift, `ReviewPace.allowed_merge_states` admits UNSTABLE, so an unnamed bot's
-      pending job does not hold a merge the agent submits. Under thorough it admits CLEAN
+      Under none and one, `CiReviewWait.allowed_merge_states` admits UNSTABLE, so an unnamed bot's
+      pending job does not hold a merge the agent submits. Under all it admits CLEAN
       alone on a queue-disabled base, and a pending advisory check is what makes the state
       UNSTABLE, so there the bot does hold the merge and the rule reads the other way. Either
       way an agent that waits simply does not submit, and nothing fails.
@@ -413,22 +416,22 @@ rules:
       maintainer authorized, so `merge --head` on a later head succeeds. Carrying the authorized
       SHA is the agent's alone. The scan does not reach this rule, which restricts with
       "only for".
-  - id: swift-does-not-wait-for-optional-checks
+  - id: none-or-one-allows-optional-checks
     phase: finish
     quote: >-
-      With `wait_for_all_ci_reviewers: false`, do not wait for optional checks to make merge state CLEAN
+      With `ci_review_wait: none` or `one`, do not wait for optional checks to make merge state CLEAN
     enforced_by: agent
     note: >-
-      `ReviewPace.allowed_merge_states` returns UNSTABLE among the swift states, so the command
+      `CiReviewWait.allowed_merge_states` returns UNSTABLE among the none and one states, so the command
       accepts the merge once required checks pass. It cannot make an agent stop waiting.
-  - id: thorough-refuses-unstable
+  - id: all-refuses-unstable
     phase: finish
     quote: do not merge while the state is UNSTABLE
     enforced_by: code
     detector: >-
-      Under thorough, `ReviewPace.allowed_merge_states` returns CLEAN alone on a queue-disabled
+      Under all, `CiReviewWait.allowed_merge_states` returns CLEAN alone on a queue-disabled
       base, so `merge` refuses an UNSTABLE state rather than leaving it to the agent. A
-      maintainer clicking merge is outside it; GitHub does not know about the pace.
+      maintainer clicking merge is outside it; GitHub does not know about the wait.
   - id: no-background-retries
     phase: finish
     quote: never schedule background retries

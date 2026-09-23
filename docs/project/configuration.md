@@ -37,7 +37,7 @@ Paths below are relative to `skills/shaka/lib/shaka/`.
 | Root keys and values | `repository_config/schema.rb` |
 | Fixed scripts and optional dependencies | `repository_config/command_paths.rb`, `command_schema.rb` |
 | Trusted refs and symlink authorization | `trusted_config_source.rb` |
-| Review settings and selection | `repository_config/review_schema.rb`, `reviewer_selection.rb` |
+| Review settings and selection | `repository_config/review_schema.rb`, `reviewer_selection.rb`, `ci_review_wait.rb` |
 | Branch template | `repository_config/branch_schema.rb` |
 | Recovery publication setting | `repository_config/recovery_schema.rb` |
 | Duplicate keys and document count | `repository_config/duplicate_keys.rb` |

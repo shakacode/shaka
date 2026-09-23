@@ -15,7 +15,7 @@ module Shaka
       CI_REVIEW_JOBS = 'ci_review_jobs'
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
       RENAMED = {
-        'pace' => 'wait_for_all_ci_reviewers',
+        'pace' => 'ci_review_wait',
         'ci_review_agents' => CI_REVIEW_JOBS,
         'check' => CI_REVIEW_JOBS,
         'github_action_check' => CI_REVIEW_JOBS,
@@ -88,10 +88,10 @@ module Shaka
       end
 
       def validate_review_wait
-        return unless @review.key?('wait_for_all_ci_reviewers')
-        return if [true, false].include?(@review['wait_for_all_ci_reviewers'])
+        return unless @review.key?('ci_review_wait')
+        return if %w[none one all].include?(@review['ci_review_wait'])
 
-        raise Error, 'review.wait_for_all_ci_reviewers must be true or false'
+        raise Error, 'review.ci_review_wait must be none, one, or all'
       end
 
       def local_review_agents!(reviewers)

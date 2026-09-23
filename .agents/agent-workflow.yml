@@ -7,7 +7,7 @@ review:
   required: meaningful_changes
   ci_review_jobs:
     - claude-review
-  wait_for_all_ci_reviewers: false
+  ci_review_wait: one
   # Local reviewer identities, in preference order.
   local_review_agents:
     - provider: anthropic
