@@ -45,7 +45,7 @@ recommends settings and waits for your choice.
 Shaka implements the change, runs checks, obtains review, addresses findings,
 and publishes a PR with an explanation of the code. You make the final merge click.
 
-Next: [working with Shaka](working-with-shaka.md), [configuration](configuration.md),
+Next: [working with Shaka](working-with-shaka.md), [configuration](configure-repository.md),
 or [upgrading an existing installation](migration.md).
 
 Manual commands and installation details are in the [agent installation reference](agents/installation.md).

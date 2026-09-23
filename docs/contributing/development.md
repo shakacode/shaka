@@ -67,7 +67,7 @@ or a successful review job alone cannot establish merge readiness.
 - `docs/` contains installation, usage, and configuration guides.
 - `docs/reference/` defines settings and defaults for both readers and agents.
 - `docs/agents/` supports the installed skills in any repository.
-- `docs/project/` contains development guidance, dated evidence, and proposals.
+- `docs/contributing/` contains development guidance, dated evidence, and proposals.
 - `docs/pilot-plan.md` owns requirements and acceptance.
 
 Keep one maintained source for each detailed rule and link to it. Test code and

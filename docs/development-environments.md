@@ -13,5 +13,5 @@ permissions, and tools; Shaka guides the work through a reviewed pull request.
 
 Use the [installation prompt](getting-started.md) in your chosen environment.
 The [installation reference](agents/installation.md) has directory paths,
-terminal commands, and usage-hook setup. The [validation record](project/host-validation.md)
+terminal commands, and usage-hook setup. The [validation record](contributing/coding-environment-trials.md)
 lists tested versions and trial limits.

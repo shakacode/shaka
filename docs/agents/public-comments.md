@@ -82,5 +82,5 @@ and review requirements in the trusted repository contract and GitHub settings.
 A source can be recognized and still be wrong. Repository visibility also does
 not establish that contributed code or dependencies are safe to execute.
 
-The [Ruby API reference](../project/public-comments-api.md) describes using this
+The [Ruby API reference](../contributing/public-comments-api.md) describes using this
 reader outside the Shaka workflow.

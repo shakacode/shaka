@@ -3,7 +3,7 @@
 Use `shaka seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA` to preview a
 migration. Inspect every retained, moved, retired, and blocking field before
 adding `--apply`. It does not infer missing commands, review policy, or merge
-authority. See the [migration checklist](../project/fleet.md#migration-checklist).
+authority. See the [migration checklist](../contributing/fleet.md#migration-checklist).
 
 Older keys are deliberately rejected during this pilot:
 

@@ -23,6 +23,8 @@ reviewed commit is ready to merge.
   supplies the steps through testing, review, and PR delivery.
 - **Understand the result.** The PR explains the change and links to its checks
   and review. A code walkthrough explains the implementation choices.
+- **See what a PR cost.** The PR reports available token usage and estimated
+  dollar cost, including local review. Missing usage is marked unknown.
 - **Keep control of merging.** Choose **Ask** to make the final GitHub merge
   click, or **Auto** to let the agent merge after required checks and approvals.
 - **Resume unfinished work.** A note on the PR records the owning task, where
@@ -37,7 +39,7 @@ invoke `$shaka` in Codex or `/shaka` in Claude Code, Cursor, or OpenCode. Supply
 issue number, task link, or description.
 
 Shaka needs Ruby 3.4, Git, an authenticated GitHub CLI, and a
-[configured repository](docs/configuration.md). It is an early pilot: Codex and
+[configured repository](docs/configure-repository.md). It is an early pilot: Codex and
 Claude Code have recorded delivery trials; coverage for other coding environments is still
 limited. See [development environments](docs/development-environments.md) before choosing an installation.
 
@@ -45,7 +47,7 @@ limited. See [development environments](docs/development-environments.md) before
 
 - [Getting started](docs/getting-started.md) — install and run your first task.
 - [Working with Shaka](docs/working-with-shaka.md) — write a task, choose a stopping point, and give feedback.
-- [Configuration](docs/configuration.md) — repository settings and scripts.
+- [Repository setup](docs/configure-repository.md) — repository settings and scripts.
 - [Documentation index](docs/README.md) — references and advanced topics.
 
-[Agent instructions](docs/agents/README.md) · [Development and project records](docs/project/README.md) · [MIT license](LICENSE)
+[Agent instructions](docs/agents/README.md) · [Contributor documentation](docs/contributing/README.md) · [MIT license](LICENSE)

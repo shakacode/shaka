@@ -1,8 +1,8 @@
-# Host operations
+# Launchers and agent sessions
 
 Use this reference for launcher boundaries and Claude Code tower discovery.
 Installation belongs in [the installation reference](installation.md); dated trial results
-belong in the [validation record](../project/host-validation.md).
+belong in the [validation record](../contributing/coding-environment-trials.md).
 
 ## Codex launcher boundary
 
@@ -16,7 +16,7 @@ extra writable roots and excludes ambient temporary directories. Shell `TMPDIR`
 and zsh `TMPPREFIX` point inside the session's temporary directory. Session
 scratch remains after exit; no background process remains.
 
-Establish these permissions even when existing host configuration grants broader
+Establish these permissions even when existing coding-agent configuration grants broader
 access. A trusted installation in a writable temporary directory breaks the
 boundary. Native approval prompts still apply; do not approve an escape merely
 to make a check pass. This boundary does not establish dependency trust or screen
@@ -30,7 +30,7 @@ launcher creates no separate session directory.
 
 The launcher sets `OPENCODE_DISABLE_PROJECT_CONFIG` to prevent loading candidate
 `.opencode` plugins, `opencode.json`, and instructions. Trusted global configuration
-still loads. Account, model, and permission settings remain the host's responsibility.
+still loads. Account, model, and permission settings remain the coding agent's responsibility.
 
 ## Claude Code tower messages
 
@@ -51,7 +51,7 @@ is acknowledgment. Do not poll or start a monitor.
 the limit until the listing is exhausted; otherwise an older tower can be missed
 and a duplicate created. Apply this to every setup and ownership refresh.
 
-If the result is too large, read the file path returned by the host. Retrying with
+If the result is too large, read the file path returned by the coding agent. Retrying with
 a smaller limit loses sessions. A September 18 trial needed 413 sessions and
 produced roughly 210 KB, so this is a normal case to handle.
 

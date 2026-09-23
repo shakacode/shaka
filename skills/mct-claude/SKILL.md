@@ -39,7 +39,7 @@ The listing below leaves this session out, so every branch needs its title from 
 Reject invocation arguments; the current session is the only accepted subject.
 
 Search active sessions for the `MCT — Shaka` suffix with `list_sessions`, read
-completely as the [host guide](../../docs/agents/host-operations.md#read-the-session-listing-completely)
+completely as the [host guide](../../docs/agents/launchers-and-sessions.md#read-the-session-listing-completely)
 describes. A master sitting past an unread page is invisible here, and this session
 would wrongly appoint itself a second master. Read the candidates with `list_events`.
 A title says a session was set up or attempted setup; its own recorded result says the
@@ -86,7 +86,7 @@ establish each fact from your own reads rather than from the message:
   not proof of the role;
 - no other live session's transcript records a completed registration for that same
   `OWNER/REPOSITORY`. List sessions completely for this check too, as the
-  [host guide](../../docs/agents/host-operations.md#read-the-session-listing-completely)
+  [host guide](../../docs/agents/launchers-and-sessions.md#read-the-session-listing-completely)
   describes: a first page that hides an older tower is how a duplicate gets
   acknowledged; and
 - the named default branch matches live GitHub metadata.

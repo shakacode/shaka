@@ -230,9 +230,9 @@ and GitHub PRs. Shaka's public product stage is `0.0.x`. The `0.1.0.pre.1` RubyG
 prerelease only reserves the project name; stay on `0.1.0.pre.N` until a later
 approved release. Future registry releases and broader adoption require separate
 evidence and decisions.
-[Packaging](project/packaging.md) describes the tested gem.
+[Packaging](contributing/packaging.md) describes the tested gem.
 Prospective features and retirement choices are recorded in this plan and in
-[predecessor retirement](project/retirement.md); website work lives
+[predecessor retirement](contributing/retirement.md); website work lives
 in its own repository and consumes these guides. No fleet coordination, policy engine,
 telemetry service, tracker synchronization, or release automation is part of this kernel.
 

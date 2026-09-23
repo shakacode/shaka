@@ -176,6 +176,6 @@ records produce `UNKNOWN`.
 
 ## Operating details
 
-Agents should read [host operations](host-operations.md) when launching
+Agents should read [launchers and agent sessions](launchers-and-sessions.md) when launching
 Codex/OpenCode or enumerating Claude Code tower sessions. [Usage reporting](usage-reporting.md)
 covers session selection, token categories, and attribution limits for each host.

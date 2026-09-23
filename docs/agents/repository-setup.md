@@ -1,7 +1,7 @@
 # Configure a repository for Shaka
 
 Use this procedure when asked to set up Shaka in a repository. The
-[configuration reference](../reference/configuration.md) defines every setting
+[configuration reference](../reference/settings.md) defines every setting
 and standard script; keep those definitions there.
 
 1. Verify the repository identity, visibility, default branch, and `AGENTS.md`.

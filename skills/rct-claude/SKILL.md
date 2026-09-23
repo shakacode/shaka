@@ -65,7 +65,7 @@ carry private context into a public repository.
 ## Reconcile with existing towers
 
 List active sessions once with `list_sessions`, read completely as the
-[host guide](../../docs/agents/host-operations.md#read-the-session-listing-completely)
+[host guide](../../docs/agents/launchers-and-sessions.md#read-the-session-listing-completely)
 describes, and keep both the `RCT — Shaka` and `MCT — Shaka` suffixes from that single
 pass: the master search below reuses it rather than paging the account twice. A tower
 past an unread page reads as no tower. Read the candidates with `list_events`.

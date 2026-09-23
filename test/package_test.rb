@@ -33,7 +33,7 @@ class PackageTest < Minitest::Test
     run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
     files = Gem::Package.new(archive).spec.files
 
-    %w[docs/getting-started.md docs/agents/review.md docs/project/packaging.md].each do |path|
+    %w[docs/getting-started.md docs/agents/review.md docs/contributing/packaging.md].each do |path|
       assert_includes files, path
     end
   end

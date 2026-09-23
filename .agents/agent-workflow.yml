@@ -1,8 +1,7 @@
-# Shaka settings for this repository. See docs/reference/configuration.md.
+# Shaka settings for this repository. See docs/reference/settings.md.
 ---
 version: 1 # Configuration format, independent of the Shaka release version.
 repo_prefix: SHAKA
-plan: docs/pilot-plan.md # Product requirements to read when planning work.
 review:
   required: meaningful_changes
   ci_review_jobs:

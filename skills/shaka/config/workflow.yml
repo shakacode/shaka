@@ -331,7 +331,7 @@ phases:
         reviewer history in details. Link the current review result from the PR summary and
         final response.
       - Read `review.ci_review_wait` from `shaka seam check --ref`, never from candidate YAML.
-        Its [shared reference](<{{package_root}}/docs/reference/configuration.md#reviewci_review_wait>)
+        Its [shared reference](<{{package_root}}/docs/reference/settings.md#reviewci_review_wait>)
         defines the default and waiting rules. A task override may increase the wait, but cannot
         lower the trusted setting. Pass `merge --ref` from intake and add
         `--ci-review-wait MODE` only for a recorded task override.

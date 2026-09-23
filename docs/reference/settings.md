@@ -1,7 +1,7 @@
-# Configuration reference
+# Settings reference
 
 This is the shared reference for `.agents/agent-workflow.yml` and `.agents/bin/`.
-For setup, [ask your agent to configure the repository](../configuration.md).
+For setup, [ask your agent to configure the repository](../configure-repository.md).
 
 ## Standard command scripts
 
@@ -165,10 +165,18 @@ ambiguous shorthand (`@{-1}`), qualified refs (`refs/heads/main`), `@`, and
 unslashed all-uppercase root-ref names such as `FETCH_HEAD`. `release/RC1` is valid.
 `shaka doctor` checks whether the remote branch exists.
 
-`plan` identifies the product requirements or implementation plan the agent should read during planning. For Shaka itself, it points to `docs/pilot-plan.md`, which defines pilot scope and acceptance. `AGENTS.md` supplies standing repository instructions; `plan` supplies the work's requirements. Omit it if the repository has no shared plan.
+### Optional `plan` pointer
 
-The path must name an existing file inside the repository. Absolute paths, escaping
-paths, and symlinks outside the repository are rejected.
+Most repositories can name their requirements document in `AGENTS.md`:
+
+```markdown
+Read docs/product-plan.md before planning work. It defines scope and acceptance.
+```
+
+Use `plan` only if you also want that path in `shaka seam check` output. Shaka
+validates that the file exists inside the repository; the field adds no planning
+behavior. Omit it when the `AGENTS.md` instruction is enough. Shaka's own repository
+uses `AGENTS.md` for this purpose.
 
 ## `branches`
 
@@ -201,8 +209,7 @@ recovery:
 note. Set it to `false` to publish `UNKNOWN` for both fields. The public owner
 alias remains visible.
 
-The agent applies this privacy setting; the publisher does not currently enforce
-it. See [recovery notes](../agents/delivery.md#recover-an-unfinished-pr).
+See [recovery notes](../agents/delivery.md#recover-an-unfinished-pr) for the agent procedure.
 
 ## `repo_prefix`
 

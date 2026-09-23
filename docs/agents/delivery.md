@@ -3,7 +3,7 @@
 This is an operational reference used by the installed Shaka skill in any
 repository. Read it when the workflow calls for planning, communication, PR
 publication, or recovery guidance. Shaka contributor instructions live in
-[project documentation](../project/README.md).
+[contributor documentation](../contributing/README.md).
 
 Follow the installed Shaka workflow for execution order. Use this reference when
 planning a task, splitting PRs, writing delivery updates, or recovering unfinished
@@ -101,10 +101,11 @@ disabled app links, and other hosts use `UNKNOWN` until a supported locator exis
 A link's availability depends on the owner's machine being reachable.
 
 **Privacy:** the trusted `recovery.publish_locations` setting defaults to `true`.
-When false, publish `UNKNOWN` for both Workspace and Thread. Retain the fields and
+When false, publish `UNKNOWN` for both Workspace and Thread. The publishing command
+does not read this setting; check the content before submitting it. Retain the fields and
 public owner alias. The publisher does not enforce this setting; the agent must.
 A repository where even the owner alias is sensitive should not publish these notes.
-See [configuration](../reference/configuration.md#recovery).
+See [configuration](../reference/settings.md#recovery).
 
 **Resume as the original owner:** read the live note before writing. If it names
 another owner or tag, preserve local work without pushing, report the transfer,

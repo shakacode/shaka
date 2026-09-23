@@ -3,7 +3,7 @@
 For contributors changing Shaka's configuration loader. Agents using Shaka
 should follow [repository setup](../agents/repository-setup.md).
 
-For settings and examples, read [Configuration](../reference/configuration.md). This map
+For settings and examples, read [Configuration](../reference/settings.md). This map
 shows where Shaka reads and enforces them.
 
 | Input | Consumer | Authority |
