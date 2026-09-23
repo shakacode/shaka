@@ -24,7 +24,7 @@ module SeamPrefixHelpers
   def config
     {
       'version' => 1, 'base_branch' => 'main',
-      'review' => { 'required' => 'meaningful_changes', 'ci_review_agents' => ['claude-review'] },
+      'review' => { 'required' => 'meaningful_changes', 'ci_review_jobs' => ['claude-review'] },
       'merge' => { 'preference' => 'ask' }
     }
   end

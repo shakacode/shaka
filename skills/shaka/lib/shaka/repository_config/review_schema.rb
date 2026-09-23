@@ -13,11 +13,12 @@ module Shaka
 
       # The validator enforces exactly what selection consumes, so both read one definition.
       IDENTITY = ReviewerSelection::IDENTITY
-      CI_REVIEW_AGENTS = 'ci_review_agents'
+      CI_REVIEW_JOBS = 'ci_review_jobs'
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
       RENAMED = {
-        'check' => CI_REVIEW_AGENTS,
-        'github_action_check' => CI_REVIEW_AGENTS,
+        'ci_review_agents' => CI_REVIEW_JOBS,
+        'check' => CI_REVIEW_JOBS,
+        'github_action_check' => CI_REVIEW_JOBS,
         'reviewers' => LOCAL_REVIEW_AGENTS,
         'local_reviewers' => LOCAL_REVIEW_AGENTS
       }.freeze
@@ -29,7 +30,7 @@ module Shaka
         found = RETIRED & review.keys
         return if found.empty?
 
-        raise Error, "review.#{found.first} moved into review.#{LOCAL_REVIEW_AGENTS}; see docs/settings.md"
+        raise Error, "review.#{found.first} moved into review.#{LOCAL_REVIEW_AGENTS}; see docs/agents/settings.md"
       end
 
       # `check` and `reviewers` did not say which list was the GitHub Action and which was local.
@@ -37,7 +38,7 @@ module Shaka
         old = RENAMED.keys.find { |key| review.key?(key) }
         return unless old
 
-        raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see docs/settings.md"
+        raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see docs/agents/settings.md"
       end
 
       def initialize(review)
@@ -61,14 +62,14 @@ module Shaka
       end
 
       def validate_check
-        label = "review.#{CI_REVIEW_AGENTS}"
+        label = "review.#{CI_REVIEW_JOBS}"
         return omitted_check!(label) if @review['required'] == 'none'
 
-        job_names!(@review[CI_REVIEW_AGENTS], label)
+        job_names!(@review[CI_REVIEW_JOBS], label)
       end
 
       def omitted_check!(label)
-        return unless @review.key?(CI_REVIEW_AGENTS)
+        return unless @review.key?(CI_REVIEW_JOBS)
 
         raise Error, "#{label} must be omitted when review.required is none"
       end

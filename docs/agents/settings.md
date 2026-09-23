@@ -1,6 +1,6 @@
-# Repository seam settings
+# Repository workflow settings
 
-`.agents/agent-workflow.yml` is the machine-readable contract between a repository and
+`.agents/agent-workflow.yml` (the **seam**) is the machine-readable contract between a repository and
 the Shaka workflow. It records review, merge-authority, branch-naming, and recovery policy.
 Executable commands use the fixed `.agents/bin/` interface described below. Shaka reads
 policy and optional-command availability from the trusted default branch, so a candidate
@@ -8,9 +8,9 @@ pull request cannot grant itself authority by editing its own copy. GitHub remai
 authoritative for live protection, required checks, allowed merge methods, and workflow
 action references.
 
-Create it with [`shaka seam init`](getting-started.md#initialize-a-repository-seam) in a
+Create it with [`shaka seam init`](../people/getting-started.md#initialize-a-repository-seam) in a
 fresh repository. For an existing predecessor seam, plan first with
-[`shaka seam migrate`](getting-started.md#migrate-an-existing-seam); apply is a separate
+[`shaka seam migrate`](../people/getting-started.md#migrate-an-existing-seam); apply is a separate
 explicit flag. Candidate/local validation is `shaka seam check --root . --local`; it grants no trusted
 authority. Load trusted policy only with `shaka seam check --root . --ref SHA` after
 resolving the default branch to an immutable commit. That `--ref` check is fail-closed.
@@ -20,7 +20,7 @@ out-of-range values all fail rather than being ignored.
 
 Keep human-only constraints in `AGENTS.md`. This file holds only typed policy.
 Consumer CI should pin a published gem and run `--local` rather than copying this
-schema; see [Validate a consumer seam in CI](packaging.md#validate-a-consumer-seam-in-ci).
+schema; see [Validate a consumer seam in CI](../project/packaging.md#validate-a-consumer-seam-in-ci).
 
 ## Every setting in one file
 
@@ -34,7 +34,7 @@ base_branch: main
 plan: docs/pilot-plan.md
 review:
   required: meaningful_changes
-  ci_review_agents:
+  ci_review_jobs:
     - claude-review
   pace: swift
   local_review_agents:
@@ -104,7 +104,7 @@ checks from GitHub before merging. Trusted workflow files carry their own pinned
 references. A second unchecked copy in YAML would not enforce any boundary and could disagree
 with the service that does.
 
-`review.ci_review_agents` lists the CI job names Shaka should read. Those jobs are a backstop, not
+`review.ci_review_jobs` lists the CI job names Shaka should read. Those jobs are a backstop, not
 GitHub required merge checks. `review.pace` (`swift` by default, or `thorough`) controls whether
 Shaka waits for those jobs and for GitHub `CLEAN` before merge. A this-task override may raise
 swift to thorough; a candidate YAML cannot lower a thorough trusted seam to swift. GitHub remains
@@ -120,7 +120,7 @@ an inert `trusted_actions` field.
 a key makes an older seam fail `seam check` loudly, with a non-zero exit and the offending key
 named and a migration pointer where one exists, so nothing is silently misread and no version
 bump is needed to stay safe. `review.check` and `review.github_action_check` moving to
-`review.ci_review_agents`, and `review.reviewers` and `review.local_reviewers` moving to
+`review.ci_review_jobs`, and `review.reviewers` and `review.local_reviewers` moving to
 `review.local_review_agents`, are such revisions, as are the
 `review.local_review_agents` list replacing the earlier flat `model_family`, `provider`, and
 `draft` fields and the retired GitHub-fact fields described above.
@@ -210,7 +210,7 @@ Trusted `--ref` output sets `mode` to `trusted/ref` and `grants_policy` to `true
 That output is diagnostic, not a YAML seam template; do not copy its `commands` or `validation`
 keys back into `.agents/agent-workflow.yml`. Consumer repositories should pin a published gem
 and call `--local` rather than cloning this schema; see
-[Validate a consumer seam in CI](packaging.md#validate-a-consumer-seam-in-ci).
+[Validate a consumer seam in CI](../project/packaging.md#validate-a-consumer-seam-in-ci).
 
 An optional command that exists on the trusted ref is intentionally sticky for the candidate:
 deleting it fails validation instead of silently removing the capability. This presence check
@@ -252,12 +252,12 @@ below. Branch protection in this repository requires `validate` only. See
 | Setting | Required | Allowed values |
 | --- | --- | --- |
 | `required` | yes | `always`, `meaningful_changes`, `none` |
-| `ci_review_agents` | when `required` is not `none` | List of CI job names. One name is enough. |
+| `ci_review_jobs` | when `required` is not `none` | List of CI job names. One name is enough. |
 | `pace` | no | `swift` (default when omitted), `thorough` |
 | `local_review_agents` | no | Ordered list of `{provider, model_family}` entries |
 
 `check`, `github_action_check`, `reviewers`, and `local_reviewers` fail `seam check`. The
-messages name `ci_review_agents` or `local_review_agents`. `shaka seam migrate` renames them
+messages name `ci_review_jobs` or `local_review_agents`. `shaka seam migrate` renames them
 when it rewrites a predecessor seam.
 
 ### `review.required`
@@ -268,19 +268,18 @@ Allowed values: `always`, `meaningful_changes`, `none`.
 | --- | --- |
 | `always` | Every pull request. Trivial work does not skip them. |
 | `meaningful_changes` | Meaningful implementation. Trivial prose or no-op work may omit them when the reason is recorded on the pull request. |
-| `none` | Never. `ci_review_agents` must be omitted. |
+| `none` | Never. `ci_review_jobs` must be omitted. |
 
 Meaningful implementation still gets an adversarial review before the branch is pushed.
 `none` does not switch that off. A fresh session of the implementation model qualifies; a
 different provider is preferred, not required. [Review](review.md) defines the rest.
 
-### `review.ci_review_agents`
+### `review.ci_review_jobs`
 
-A list of CI job names to read. The names are whatever the CI system reports. They are not
-tied to GitHub, and they are not required merge checks.
+A list of CI job names to read. Use the job names GitHub reports for the CI review workflow. These are review jobs to read, not necessarily GitHub required merge checks.
 
 ```yaml
-ci_review_agents:
+ci_review_jobs:
   - claude-review
   - another-review
 ```
@@ -294,7 +293,7 @@ One name is enough. Each extra name is another job to read:
   Those jobs can still finish after merge.
 
 When `required` is `none`, omit the key. An empty list fails validation. Repeat a flag to
-add a name: `--ci-review-agent claude-review --ci-review-agent another-review`.
+add a name: `--ci-review-job claude-review --ci-review-job another-review`.
 
 ### `review.pace`
 
@@ -302,7 +301,7 @@ Allowed values: `swift`, `thorough`. Omitted means `swift`.
 
 Product default is `swift`: merge after required checks and independent review for the
 task, without waiting for optional jobs to make GitHub `CLEAN`. `thorough` waits for every
-named job in `review.ci_review_agents` on the current head and refuses `UNSTABLE`.
+named job in `review.ci_review_jobs` on the current head and refuses `UNSTABLE`.
 
 Read the value from the trusted default-branch seam (`shaka seam check --ref` and
 `shaka merge --ref`), not from the candidate PR copy. Record a this-task override on the PR
@@ -316,7 +315,7 @@ loads. The list is the only way that seam expresses local agent order.
 
 ### `review.local_review_agents`
 
-The ordered list of local review agents. It is not `ci_review_agents`. Each entry is one
+The ordered list of local review agents. It is not `ci_review_jobs`. Each entry is one
 identity and nothing else:
 
 | Setting | Required | Allowed values |
@@ -331,7 +330,7 @@ is already signed in runs the prompt.
 ```yaml
 review:
   required: meaningful_changes
-  ci_review_agents:
+  ci_review_jobs:
     - claude-review
   pace: swift
   local_review_agents:
@@ -351,7 +350,7 @@ An entry carries no `draft` flag and no per-entry `check`. Whether a reviewer ru
 requests is decided by its own trigger — the standard reviewer workflow guards on
 `draft == false` — so read the trusted workflow rather than a copy in the seam that can drift
 from it. Identity is compared through review metadata or a trusted workflow, never a check name,
-so a per-entry check name would have no job to do. `review.ci_review_agents` names the CI jobs
+so a per-entry check name would have no job to do. `review.ci_review_jobs` names the CI jobs
 to read, and those jobs need not belong to any listed local agent.
 
 #### Sizing the list
@@ -491,11 +490,11 @@ bases work on its default branch writes no `base_branch` at all. It does not wri
 `branches.name` afterward when the repository already uses a different layout.
 
 The generated `review` section depends on the policy. With `always` or
-`meaningful_changes` it holds `required` and a one-item `ci_review_agents` list, and
-`--ci-review-agent` is mandatory. Repeat the flag to add another job. With
-`--review-policy none` it holds `required` alone, and passing `--ci-review-agent` is
+`meaningful_changes` it holds `required` and a one-item `ci_review_jobs` list, and
+`--ci-review-job` is mandatory. Repeat the flag to add another job. With
+`--review-policy none` it holds `required` alone, and passing `--ci-review-job` is
 rejected. `--review-check` and `--github-action-check` are rejected; they moved to
-`--ci-review-agent`.
+`--ci-review-job`.
 
 It omits `local_review_agents`, which is valid — the list is optional. Add it by hand when you want
 Shaka to choose a reviewer and substitute an exhausted provider; the initializer has no flags

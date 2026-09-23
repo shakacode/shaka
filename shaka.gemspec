@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = '>= 3.4'
   spec.metadata['source_code_uri'] = spec.homepage
   spec.metadata['rubygems_mfa_required'] = 'true'
-  spec.metadata['documentation_uri'] = "#{spec.homepage}/blob/main/docs/getting-started.md"
+  spec.metadata['documentation_uri'] = "#{spec.homepage}/blob/main/docs/people/getting-started.md"
   spec.files = Dir['skills/rct/SKILL.md', 'skills/mct-claude/SKILL.md', 'skills/rct-claude/SKILL.md',
                    'skills/shaka/SKILL.md',
                    'skills/shaka/config/*.yml', 'skills/shaka/lib/**/*.rb',

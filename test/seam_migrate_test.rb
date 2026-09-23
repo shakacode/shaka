@@ -291,7 +291,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
         data.merge('review' => { 'required' => 'always' })
       end
 
-      assert_includes migrate_report(root, sha).fetch('blocking'), 'review.ci_review_agents'
+      assert_includes migrate_report(root, sha).fetch('blocking'), 'review.ci_review_jobs'
     end
   end
 
@@ -300,8 +300,8 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => always_review_without_check(data)) }
       report = migrate_report(root, sha, *review_check_flags)
 
-      refute_includes report.fetch('blocking'), 'review.ci_review_agents'
-      assert_equal ['example-review'], report.dig('established', 'review', 'ci_review_agents')
+      refute_includes report.fetch('blocking'), 'review.ci_review_jobs'
+      assert_equal ['example-review'], report.dig('established', 'review', 'ci_review_jobs')
     end
   end
 
@@ -312,7 +312,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
       config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
 
       assert_equal 'apply', applied.fetch('mode')
-      assert_equal ['example-review'], config.dig('review', 'ci_review_agents')
+      assert_equal ['example-review'], config.dig('review', 'ci_review_jobs')
     end
   end
 
@@ -321,7 +321,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => colliding_review(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
-      assert_includes blocking, 'review.check (collides with review.ci_review_agents)'
+      assert_includes blocking, 'review.check (collides with review.ci_review_jobs)'
       assert_includes blocking, 'review.reviewers (collides with review.local_review_agents)'
     end
   end
@@ -354,7 +354,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
 
   def colliding_review(data)
     reviewers = data.dig('review', 'reviewers').map(&:dup)
-    { 'required' => 'always', 'ci_review_agents' => ['claude-review'], 'check' => 'claude-review',
+    { 'required' => 'always', 'ci_review_jobs' => ['claude-review'], 'check' => 'claude-review',
       'local_review_agents' => reviewers, 'reviewers' => reviewers.map(&:dup) }
   end
 
@@ -363,7 +363,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 
   def review_check_flags
-    ['--review-policy', 'always', '--ci-review-agent', 'example-review']
+    ['--review-policy', 'always', '--ci-review-job', 'example-review']
   end
 end
 
@@ -375,8 +375,8 @@ class SeamMigrateCiJobListTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => scalar_current_review(data)) }
       report = migrate_report(root, sha)
 
-      assert_includes report.fetch('blocking'), 'review.ci_review_agents'
-      assert_nil report.dig('established', 'review', 'ci_review_agents')
+      assert_includes report.fetch('blocking'), 'review.ci_review_jobs'
+      assert_nil report.dig('established', 'review', 'ci_review_jobs')
     end
   end
 
@@ -385,8 +385,8 @@ class SeamMigrateCiJobListTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_check_review(data, 'check')) }
       report = migrate_report(root, sha)
 
-      refute_includes report.fetch('blocking'), 'review.ci_review_agents'
-      assert_equal ['claude-review'], report.dig('established', 'review', 'ci_review_agents')
+      refute_includes report.fetch('blocking'), 'review.ci_review_jobs'
+      assert_equal ['claude-review'], report.dig('established', 'review', 'ci_review_jobs')
     end
   end
 
@@ -395,7 +395,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => unrequired_scalar_review(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
-      assert_includes blocking, 'review.ci_review_agents must be a list of CI job names'
+      assert_includes blocking, 'review.ci_review_jobs must be a list of CI job names'
     end
   end
 
@@ -404,16 +404,16 @@ class SeamMigrateCiJobListTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => blank_ci_review(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
-      assert_includes blocking, 'review.ci_review_agents[0] must be a non-empty string'
+      assert_includes blocking, 'review.ci_review_jobs[0] must be a non-empty string'
     end
   end
 
-  def test_ci_review_agents_block_when_review_is_not_required
+  def test_ci_review_jobs_block_when_review_is_not_required
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => unrequired_ci_review(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
-      assert_includes blocking, 'review.ci_review_agents must be omitted when review.required is none'
+      assert_includes blocking, 'review.ci_review_jobs must be omitted when review.required is none'
     end
   end
 
@@ -423,7 +423,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
       report = migrate_report(root, sha)
 
       assert_includes report.fetch('blocking'), 'review.check'
-      assert_nil report.dig('established', 'review', 'ci_review_agents')
+      assert_nil report.dig('established', 'review', 'ci_review_jobs')
     end
   end
 
@@ -432,8 +432,8 @@ class SeamMigrateCiJobListTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_first_collision(data)) }
       blocking = migrate_report(root, sha).fetch('blocking')
 
-      assert_includes blocking, 'review.check (collides with review.ci_review_agents)'
-      refute_includes blocking, 'review.ci_review_agents (collides with review.ci_review_agents)'
+      assert_includes blocking, 'review.check (collides with review.ci_review_jobs)'
+      refute_includes blocking, 'review.ci_review_jobs (collides with review.ci_review_jobs)'
     end
   end
 
@@ -442,26 +442,26 @@ class SeamMigrateCiJobListTest < Minitest::Test
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_check_review(data, 'github_action_check')) }
       report = migrate_report(root, sha)
 
-      refute_includes report.fetch('blocking'), 'review.ci_review_agents'
-      assert_equal ['claude-review'], report.dig('established', 'review', 'ci_review_agents')
+      refute_includes report.fetch('blocking'), 'review.ci_review_jobs'
+      assert_equal ['claude-review'], report.dig('established', 'review', 'ci_review_jobs')
     end
   end
 
   def scalar_current_review(data)
-    { 'required' => 'always', 'ci_review_agents' => 'claude-review',
+    { 'required' => 'always', 'ci_review_jobs' => 'claude-review',
       'reviewers' => data.dig('review', 'reviewers') }
   end
 
   def blank_ci_review(data)
-    { 'required' => 'always', 'ci_review_agents' => [''], 'reviewers' => data.dig('review', 'reviewers') }
+    { 'required' => 'always', 'ci_review_jobs' => [''], 'reviewers' => data.dig('review', 'reviewers') }
   end
 
   def unrequired_scalar_review(data)
-    { 'required' => 'none', 'ci_review_agents' => 'claude-review', 'reviewers' => data.dig('review', 'reviewers') }
+    { 'required' => 'none', 'ci_review_jobs' => 'claude-review', 'reviewers' => data.dig('review', 'reviewers') }
   end
 
   def unrequired_ci_review(data)
-    { 'required' => 'none', 'ci_review_agents' => ['claude-review'],
+    { 'required' => 'none', 'ci_review_jobs' => ['claude-review'],
       'reviewers' => data.dig('review', 'reviewers') }
   end
 
@@ -471,7 +471,7 @@ class SeamMigrateCiJobListTest < Minitest::Test
 
   def legacy_first_collision(data)
     reviewers = data.dig('review', 'reviewers').map(&:dup)
-    { 'required' => 'always', 'check' => 'claude-review', 'ci_review_agents' => ['claude-review'],
+    { 'required' => 'always', 'check' => 'claude-review', 'ci_review_jobs' => ['claude-review'],
       'reviewers' => reviewers }
   end
 

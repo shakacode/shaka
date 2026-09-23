@@ -575,5 +575,5 @@ needs a human estimate; elapsed timestamps cannot establish it.
 Check that the outcome is understandable without expanding evidence, that needed
 questions arrived in time, and that available model/token records can still be
 found. Compare similar accepted changes using the
-[pilot's success criteria](pilot-plan.md#success-evidence-and-commit-attribution).
+[pilot's success criteria](../pilot-plan.md#success-evidence-and-commit-attribution).
 No new survey, communication score, or reporting gate is required.

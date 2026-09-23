@@ -8,13 +8,13 @@ class SkillTest < Minitest::Test
   RCT_SKILL = File.expand_path('../skills/rct/SKILL.md', __dir__)
   MCT_SKILL = File.expand_path('../skills/mct-claude/SKILL.md', __dir__)
   RCT_CLAUDE_SKILL = File.expand_path('../skills/rct-claude/SKILL.md', __dir__)
-  CONTROL_TOWER_GUIDE = File.expand_path('../docs/control-towers.md', __dir__)
+  CONTROL_TOWER_GUIDE = File.expand_path('../docs/people/control-towers.md', __dir__)
   WORKFLOW = File.expand_path('../skills/shaka/config/workflow.yml', __dir__)
   INTERNAL_GUIDE = File.expand_path('../.agents/guides/shaka-learning.md', __dir__)
   PROJECT_SKILL_ROOTS = %w[.agents .claude .codex .cursor .opencode .pi].map do |directory|
     File.expand_path("../#{directory}/skills", __dir__)
   end.freeze
-  GUIDE_LINK = %r{\]\((\.\./\.\./docs/[\w-]+\.md)(?:#([\w-]+))?\)}
+  GUIDE_LINK = %r{\]\((\.\./\.\./docs/(?:[\w-]+/)?[\w-]+\.md)(?:#([\w-]+))?\)}
 
   def test_public_skill_stays_within_the_context_budget
     # Issue #33 asks for a deliberate growth decision; PR #38 review set the budget by

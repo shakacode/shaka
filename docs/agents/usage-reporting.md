@@ -143,7 +143,7 @@ Desktop `3.21.16` `grok-4.7` stop payloads use model id `grok-4.7` and record ef
 `reasoning_effort`, which the reader accepts when `effort` is absent. They also include
 a `context` param. That value is not a price. Cursor Agent Skills are selected by the
 host for both models; both model pages list the full agent tool set.
-Install the hook as described in [getting started](getting-started.md#use-shaka-in-cursor).
+Install the hook as described in [getting started](../people/host-support.md#cursor).
 Without persisted stop records, token counters stay UNKNOWN, the report names
 `usage reader unavailable: no readable Cursor stop-hook records`, and an inferred
 host-context row still uses provider `cursor` plus `CURSOR_MODEL_ID`,

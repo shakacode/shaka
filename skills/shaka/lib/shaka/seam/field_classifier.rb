@@ -34,7 +34,7 @@ module Shaka
 
       # The none-policy cleanup removes the bare field name. A bad value needs a message that stays.
       def ci_value_block(source)
-        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
+        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
         return "review.#{agents} must be a list of CI job names" if source == agents
 
         "review.#{source}"
@@ -42,7 +42,7 @@ module Shaka
 
       # A retired check is one job name. The current key is a list. Anything else blocks.
       def unacceptable_ci_value?(source, nested)
-        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
+        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
         return !nested.is_a?(Array) if source == agents
 
         RepositoryConfig::ReviewSchema::RENAMED[source] == agents && !nested.is_a?(String)
@@ -50,7 +50,7 @@ module Shaka
 
       def job_list(source, nested)
         legacy = RepositoryConfig::ReviewSchema::RENAMED[source]
-        return [nested] if legacy == RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS && nested.is_a?(String)
+        return [nested] if legacy == RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS && nested.is_a?(String)
 
         nested
       end
@@ -152,7 +152,7 @@ module Shaka
       def require_review_and_merge
         required = @established.dig('review', 'required')
         @blocking << 'review.required' unless required
-        check = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
+        check = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
         @blocking << "review.#{check}" if required && required != 'none' && !@established.dig('review', check)
         @blocking << 'merge.preference' unless @established.dig('merge', 'preference')
       end

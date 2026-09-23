@@ -33,7 +33,7 @@ repository names stay out of this public file.
 
 ## Messaging
 
-- New adopters follow [getting started](getting-started.md) and never need
+- New adopters follow [getting started](../people/getting-started.md) and never need
   `agent-workflows`.
 - Predecessor README and install paths must say Shaka is the successor and that
   a legacy seam is transitional.

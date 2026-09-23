@@ -535,7 +535,7 @@ commits or silently exclude failures. No dashboard or accounting service is adde
 
 ## 10. Advice on whether a PR needs a paid benchmark
 
-Add concise guidance to `docs/verification.md` and the existing task guide only
+Add concise guidance to `docs/agents/verification.md` and the existing task guide only
 after plan approval. There is **no Benchmark note on every PR**. A skill/helper
 change records the owner's recommendation when behavior/usage is in question;
 an obvious deterministic-only change needs at most a sentence in existing validation.

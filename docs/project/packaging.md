@@ -66,14 +66,14 @@ a `shaka_contract?` helper or a copied seam-contract test.
 
 Applications that only need the experimental public-comment screen can load
 `shaka/public_comments` from this package without the skill; see
-[screen public comments from Ruby](public-comments.md).
+[screen public comments from Ruby](../agents/public-comments.md).
 
 The package also contains `shaka-install --skills-dir DIR`, which calls
 the existing explicit-directory installer. It installs the portable `shaka` skill
 by default; add `--with-rct` only for a Codex app skills directory, or
 `--with-claude-towers` only for a Claude Code desktop skills directory. It preserves
 existing content and refuses to replace a different source. The
-[first-use guide](getting-started.md) explains the trusted source and host startup
+[first-use guide](../people/getting-started.md) explains the trusted source and host startup
 boundaries.
 
 ## Upgrade, rollback, and removal
@@ -100,7 +100,7 @@ source updates. These checks validate the artifact; they do not establish host
 compatibility or authorize a registry release.
 
 The prerelease package is `shaka` version `0.1.0.pre.1`, distributed under the
-[MIT license](../LICENSE). The gem includes the license and declares it in its metadata.
+[MIT license](../../LICENSE). The gem includes the license and declares it in its metadata.
 Future registry publication still requires separate maintainer approval and follows
 the [release process](releasing.md). Packaging uses
 [standard RubyGems tooling](https://guides.rubygems.org/make-your-own-gem/).

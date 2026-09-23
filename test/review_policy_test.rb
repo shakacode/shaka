@@ -8,16 +8,16 @@ require 'shaka/repository_config'
 class ReviewPolicyTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
-  def test_names_the_ci_review_agents_and_the_local_review_agents
+  def test_names_the_ci_review_jobs_and_the_local_review_agents
     policy = {
       'required' => 'meaningful_changes',
-      'ci_review_agents' => ['claude-review'],
+      'ci_review_jobs' => ['claude-review'],
       'local_review_agents' => reviewers
     }
     with_repository('review' => policy) do |root|
       review = Shaka::RepositoryConfig.load(root:).review
 
-      assert_equal ['claude-review'], review.fetch('ci_review_agents')
+      assert_equal ['claude-review'], review.fetch('ci_review_jobs')
       assert_equal 'openai', review.fetch('local_review_agents').first.fetch('provider')
     end
   end
@@ -128,12 +128,12 @@ class ReviewPolicyTest < Minitest::Test
     end
   end
 
-  def test_rejects_ci_review_agents_when_review_is_not_required
-    policy = { 'required' => 'none', 'ci_review_agents' => ['claude-review'] }
+  def test_rejects_ci_review_jobs_when_review_is_not_required
+    policy = { 'required' => 'none', 'ci_review_jobs' => ['claude-review'] }
     with_repository('review' => policy) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.ci_review_agents must be omitted when review.required is none'
+      assert_includes message, 'review.ci_review_jobs must be omitted when review.required is none'
     end
   end
 end
@@ -141,11 +141,20 @@ end
 class RetiredReviewKeyTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
+  def test_points_the_old_ci_agent_key_at_job_names
+    with_repository('review' => { 'required' => 'meaningful_changes',
+                                  'ci_review_agents' => ['claude-review'] }) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.ci_review_agents moved to review.ci_review_jobs'
+    end
+  end
+
   def test_rejects_a_retired_check_key
     with_repository('review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review' }) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.check moved to review.ci_review_agents'
+      assert_includes message, 'review.check moved to review.ci_review_jobs'
     end
   end
 
@@ -166,39 +175,39 @@ class RetiredReviewKeyTest < Minitest::Test
   end
 end
 
-class CiReviewAgentsTest < Minitest::Test
+class CiReviewJobsTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
-  def test_rejects_a_ci_review_agent_name_that_is_not_a_list
-    with_repository('review' => review_policy('ci_review_agents' => 'claude-review')) do |root|
+  def test_rejects_a_ci_review_job_name_that_is_not_a_list
+    with_repository('review' => review_policy('ci_review_jobs' => 'claude-review')) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.ci_review_agents must be a list of CI job names'
+      assert_includes message, 'review.ci_review_jobs must be a list of CI job names'
     end
   end
 
-  def test_rejects_an_empty_ci_review_agent_list
-    with_repository('review' => review_policy('ci_review_agents' => [])) do |root|
+  def test_rejects_an_empty_ci_review_job_list
+    with_repository('review' => review_policy('ci_review_jobs' => [])) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.ci_review_agents must not be empty'
+      assert_includes message, 'review.ci_review_jobs must not be empty'
     end
   end
 
-  def test_rejects_a_blank_ci_review_agent_name
-    with_repository('review' => review_policy('ci_review_agents' => [''])) do |root|
+  def test_rejects_a_blank_ci_review_job_name
+    with_repository('review' => review_policy('ci_review_jobs' => [''])) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.ci_review_agents[0] must be a non-empty string'
+      assert_includes message, 'review.ci_review_jobs[0] must be a non-empty string'
     end
   end
 
-  def test_rejects_a_repeated_ci_review_agent_name_differing_only_by_casing
+  def test_rejects_a_repeated_ci_review_job_name_differing_only_by_casing
     names = %w[Claude-Review claude-review]
-    with_repository('review' => review_policy('ci_review_agents' => names)) do |root|
+    with_repository('review' => review_policy('ci_review_jobs' => names)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.ci_review_agents repeats claude-review'
+      assert_includes message, 'review.ci_review_jobs repeats claude-review'
     end
   end
 end

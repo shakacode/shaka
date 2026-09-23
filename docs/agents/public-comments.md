@@ -25,7 +25,7 @@ gem 'shaka', git: 'https://github.com/shakacode/shaka.git', ref: 'FULL_COMMIT_SH
 
 After a registry prerelease includes `shaka/public_comments`, pin that exact
 version instead. To try a locally built package without Bundler, follow the
-[packaging guide](packaging.md).
+[packaging guide](../project/packaging.md).
 
 The gem also contains the skill files and the `shaka` and `shaka-install`
 executables. Requiring the library does not install a skill, run an agent, or
@@ -56,7 +56,7 @@ You supply:
 Both files use the keys in
 [working with your agent](working-with-your-agent.md#what-the-helpers-protect). A read that
 cannot be verified raises `Shaka::Error` and returns no partial result.
-[`test/fixtures/public_comments_consumer.rb`](../test/fixtures/public_comments_consumer.rb)
+[`test/fixtures/public_comments_consumer.rb`](../../test/fixtures/public_comments_consumer.rb)
 is a complete consumer, which the package test runs against the installed gem.
 
 ## GitHub adapter

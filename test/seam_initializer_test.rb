@@ -34,7 +34,7 @@ module SeamInitializerTestHelpers
     [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
      '--setup-command', setup_command, '--validate-command', validate_command,
      '--test-command', test_command, '--review-policy', 'meaningful_changes',
-     '--ci-review-agent', 'claude-review']
+     '--ci-review-job', 'claude-review']
   end
 
   def generated_files(root)
@@ -261,17 +261,17 @@ class SeamInitializerValidationTest < Minitest::Test
 
   def test_rejects_a_repeated_ci_review_agent_before_writing
     with_repository do |root|
-      arguments = init_arguments(root) + ['--ci-review-agent', 'Claude-Review']
+      arguments = init_arguments(root) + ['--ci-review-job', 'Claude-Review']
       _output, error, status = Open3.capture3(*arguments)
 
       refute_predicate status, :success?
-      assert_includes error, 'review.ci_review_agents repeats claude-review'
+      assert_includes error, 'review.ci_review_jobs repeats claude-review'
       refute_path_exists File.join(root, '.agents')
     end
   end
 
   def test_rejects_missing_required_policy_before_writing
-    %w[--review-policy --ci-review-agent].each do |flag|
+    %w[--review-policy --ci-review-job].each do |flag|
       with_repository do |root|
         arguments = init_arguments(root)
         arguments.slice!(arguments.index(flag), 2)
@@ -300,7 +300,7 @@ class SeamInitializerValidationTest < Minitest::Test
     with_repository do |root|
       arguments = init_arguments(root)
       arguments[arguments.index('meaningful_changes')] = 'none'
-      arguments.slice!(arguments.index('--ci-review-agent'), 2)
+      arguments.slice!(arguments.index('--ci-review-job'), 2)
 
       output, error, status = Open3.capture3(*arguments)
 
@@ -536,7 +536,7 @@ module SeamInitializerPointerAssertions
     assert_includes pointer, 'version: 1'
     refute_includes pointer, 'Shaka V2'
     refute_includes pointer, 'Shaka V1'
-    assert_includes pointer, 'https://github.com/shakacode/shaka/blob/main/docs/settings.md'
+    assert_includes pointer, 'https://github.com/shakacode/shaka/blob/main/docs/agents/settings.md'
   end
 
   def assert_pointer_commands(pointer)

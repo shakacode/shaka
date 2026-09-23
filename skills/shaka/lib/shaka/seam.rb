@@ -52,7 +52,7 @@ module Shaka
     def known_operation?(operation) = %w[check init pointer].include?(operation) && @arguments.empty?
 
     def validate_check_options
-      init_keys = %i[base_branch setup_command validate_command test_command review_policy ci_review_agents
+      init_keys = %i[base_branch setup_command validate_command test_command review_policy ci_review_jobs
                      merge_preference plan]
       raise OptionParser::InvalidArgument, 'init options do not apply to check' if @options.keys.intersect?(init_keys)
       raise OptionParser::InvalidArgument, '--local cannot be combined with --ref' if local? && @options.key?(:ref)

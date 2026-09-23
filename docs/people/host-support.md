@@ -195,7 +195,7 @@ did not change global command links or establish a general installation method.
 
 ## OpenCode
 
-Use the [OpenCode install recipe](getting-started.md#use-shaka-in-opencode).
+Use the [OpenCode install recipe](getting-started.md#other-hosts).
 The canonical global directory is `~/.config/opencode/skills`; the
 `~/.claude/skills` and `~/.agents/skills` compatibility directories also load,
 so prefer the canonical path to avoid shadowing. Do not copy the skill into a
@@ -227,7 +227,7 @@ Pi exposes the current persistent session through `PI_SESSION_FILE` and
 the active JSONL tree branch, and does not search other session files. Missing,
 ephemeral, mismatched, older, or malformed evidence stays UNKNOWN instead of falling
 back to Codex. Mixed Pi and nested-host markers require explicit `--host` selection.
-The reader publishes only aggregate metadata; [usage reporting](usage-reporting.md)
+The reader publishes only aggregate metadata; [usage reporting](../agents/usage-reporting.md)
 documents turn selection, optional reasoning, nominal native cost, and excluded
 summary/tool-model usage.
 
@@ -236,7 +236,7 @@ behavior. Pi continues to use the shared skill and the user's existing tool perm
 
 ## Usage is a separate capability
 
-Follow [usage reporting](usage-reporting.md) for the supported reader, available
+Follow [usage reporting](../agents/usage-reporting.md) for the supported reader, available
 fields, and attribution limits. Record host/version separately from provider/model.
 Preserve native reasoning settings and cache categories; similarly named settings
 across hosts are not equivalent measurements.

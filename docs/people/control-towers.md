@@ -272,7 +272,7 @@ the requested action completed. A queued message proves neither consumption
 nor completion.
 
 An Auto preference cannot compensate for missing protection or checks. The
-[merge boundary](pilot-plan.md#merge-boundary) requires observable native checks
+[merge boundary](../pilot-plan.md#merge-boundary) requires observable native checks
 enforced for the acting account. If GitHub cannot expose that protection, retain
 the prepared PR and report the limitation; do not switch submission paths to
 evade the guard. A tower does not grant deployment or other consequential authority.

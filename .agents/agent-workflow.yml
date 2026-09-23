@@ -1,4 +1,4 @@
-# Shaka repository contract. Every setting is documented in docs/settings.md.
+# Shaka repository contract. Every setting is documented in docs/agents/settings.md.
 # Candidate/local validation (no authority): shaka seam check --root . --local
 # Trusted policy: shaka seam check --root . --ref SHA after resolving the default branch.
 ---
@@ -9,14 +9,14 @@ version: 1
 repo_prefix: SHAKA
 # Optional repository-relative plan document.
 plan: docs/pilot-plan.md
-# Reviewer policy. Each key is documented in docs/settings.md#review.
+# Reviewer policy. Each key is documented in docs/agents/settings.md#review.
 # A fresh context is what makes a review adversarial, so the implementation
 # model qualifies; a different provider is only preferred.
 review:
   # always, meaningful_changes, or none
   required: meaningful_changes
   # CI job names to read. Not required merge checks. Repeat an entry for another job.
-  ci_review_agents:
+  ci_review_jobs:
     - claude-review
   # swift or thorough. Omitted means swift.
   pace: swift

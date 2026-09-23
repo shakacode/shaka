@@ -1,0 +1,16 @@
+# For agents and repository maintainers
+
+Start with the [Shaka skill](../../skills/shaka/SKILL.md). It loads the executable [workflow](../../skills/shaka/config/workflow.yml), which owns task order and publication. These guides explain decisions and commands used by that workflow.
+
+| Need | Reference |
+| --- | --- |
+| See which file or command owns each setting | [Configuration map](configuration.md) |
+| Set repository policy and standard scripts | [Settings reference](settings.md) |
+| Handle review and reviewer evidence | [Review](review.md) |
+| Verify behavior and visible changes | [Verification](verification.md) |
+| Report model and token usage | [Usage reporting](usage-reporting.md) |
+| Recover a PR, split work, and write walkthroughs | [Workflow guidance](working-with-your-agent.md) |
+| Read public comments safely | [Public comments](public-comments.md) |
+| Use an install-local repository catalog | [Repository catalog](repository-catalog.md) |
+
+The fixed repository scripts are `.agents/bin/setup`, `.agents/bin/test`, and `.agents/bin/validate`. Optional scripts are `.agents/bin/validate-local` and `.agents/bin/trigger-hosted-ci`. The YAML contract is `.agents/agent-workflow.yml`; human-only boundaries belong in `AGENTS.md`. [Configuration](settings.md) defines each key and the trust boundary.

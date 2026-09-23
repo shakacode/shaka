@@ -27,7 +27,7 @@ Keep company strategy and private operational data out of product artifacts.
 
 ## Is the change worth carrying?
 
-For Shaka changes, use the existing [value checkpoint](docs/working-with-your-agent.md#say-what-the-work-is-worth)
+For Shaka changes, use the existing [value checkpoint](docs/agents/working-with-your-agent.md#say-what-the-work-is-worth)
 and respect settled maintainer scope. When planning proposes substantial complexity,
 or the implementation materially increases the expected cost, assess the tradeoff
 in that checkpoint or the existing adversarial review.
