@@ -94,7 +94,7 @@ for review:
 
 | Value | Waiting behavior |
 | --- | --- |
-| `none` | Do not wait for CI reviews. Complete the independent review locally. |
+| `none` | Do not wait for CI reviews. Review in a fresh local session; the implementation model is allowed. |
 | `one` (default) | Wait for at least one verified report for the current commit, even after local review. |
 | `all` | Wait for every configured CI review report for the current commit, even after local review. |
 

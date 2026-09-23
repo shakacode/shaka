@@ -327,15 +327,17 @@ rules:
     note: Nothing observes what the agent read, so an unread CodeRabbit finding costs nothing.
   - id: advisory-bots-never-block
     phase: review
-    quote: never wait for them
-    rule: Never wait for an advisory bot
+    quote: >-
+      never wait for them except under the explicit comment-resolution settlement procedure below.
+    rule: Advisory reviewers add a bounded wait when resolving comments
     enforced_by: agent
     note: >-
       Under none and one, `CiReviewWait.allowed_merge_states` admits UNSTABLE, so an unnamed bot's
       pending job does not hold a merge the agent submits. Under all it admits CLEAN
       alone on a queue-disabled base, and a pending advisory check is what makes the state
       UNSTABLE, so there the bot does hold the merge and the rule reads the other way. Either
-      way an agent that waits simply does not submit, and nothing fails.
+      way an agent that waits simply does not submit, and nothing fails. The explicit
+      comment-resolution procedure adds an agent-owned bounded wait; no code times or enforces it.
   - id: nits-do-not-restart-the-cycle
     phase: review
     quote: After two repair rounds, remaining nits do not start another cycle.
