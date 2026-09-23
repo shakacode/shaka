@@ -131,6 +131,11 @@ it does not mean — a key whose meaning or default changes while its name and s
 or once repositories outside this pilot depend on the contract, whichever comes first. Until
 then a bump would force every consumer to edit a file for no behavioral difference.
 
+When a new seam key lands, an older installed Shaka may reject that trusted default-branch
+file. Upgrade the trusted installation to a revision that understands the new key before
+starting another task. This rename needs that ordering for `ci_review_jobs`; the old
+`ci_review_agents` key fails with a pointer when the new loader reads it.
+
 ### Path and branch validation
 
 Repository-relative means exactly that: an absolute path, a path that escapes the

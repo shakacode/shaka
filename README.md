@@ -6,7 +6,7 @@ Give your coding agent a task. Get a tested pull request, a plain English walkth
 $shaka Fix the failing search test. Bring the PR back for me to merge.
 ```
 
-Shaka is useful when a task needs more than a patch. It guides one agent through the repository's instructions, a failing test when behavior changes, validation, an independent review, and fixes to review findings. The PR records what changed, which commit was checked, and what still needs attention. If a session stops midway, the PR carries a recovery note so another session can continue.
+Shaka is useful when a task needs more than a patch. It guides one agent through the repository's instructions, a failing test when behavior changes, validation, an independent review, and fixes to review findings. The PR records what changed, which commit was checked, and what still needs attention. If a session stops midway, its recovery note helps you resume or hand off after confirming the previous owner has stopped.
 
 For example, if a search test fails, Shaka checks the failure, changes the code, runs the repository's validation, opens a PR with a code walkthrough, and handles review feedback. You see the result and the evidence on that PR instead of reconstructing the agent's work from chat history.
 
@@ -20,7 +20,9 @@ For example, if a search test fails, Shaka checks the failure, changes the code,
 2. [See how to steer a task](docs/people/working-with-shaka.md).
 3. [Check current host support](docs/people/host-support.md).
 
-Shaka is an early public pilot. Codex is the reference host; Claude Code has one verified consumer delivery. Cursor, OpenCode, and Pi have narrower evidence recorded in [host support](docs/people/host-support.md).
+[All user guides](docs/people/README.md).
+
+Shaka is an early public pilot. Codex is the reference host; Claude Code has one verified consumer delivery. Cursor and OpenCode have no verified consumer delivery; [host support](docs/people/host-support.md) records the current evidence for each host, including Pi.
 
 ## For agents and maintainers
 

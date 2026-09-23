@@ -18,7 +18,7 @@ If you already chose a merge preference for the repository or task, Shaka reuses
 
 ## Read the result
 
-Start with the PR summary for the outcome, decision, blockers, and check results. Use its code walkthrough to see why the implementation changed. A recovery note on an unfinished PR records where the task stopped so the same task or a new one can continue. Shaka removes that note after a confirmed outcome, except when you make the final Ask-mode merge click.
+Start with the PR summary for the outcome, decision, blockers, and check results. Use its code walkthrough to see why the implementation changed. A recovery note on an unfinished PR records where the task stopped. Before a new task takes over, confirm that the previous owner stopped or is handing over. Shaka removes the note after a confirmed outcome, except when you make the final Ask-mode merge click.
 
 If a check fails or a reviewer finds a defect, Shaka repairs and verifies the new commit. The final response links the PR and says what remains. Token and model figures are estimates or partial records when the host cannot attribute every contribution; [usage reporting](../agents/usage-reporting.md) explains the labels.
 

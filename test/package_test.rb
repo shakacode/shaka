@@ -28,6 +28,16 @@ class PackageTest < Minitest::Test
     assert_equal File.read(File.join(ROOT, 'LICENSE')), File.read(license)
   end
 
+  def test_built_gem_contains_the_guides_its_workflow_links_to
+    archive = File.join(@directory, 'guides.gem')
+    run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
+    files = Gem::Package.new(archive).spec.files
+
+    %w[docs/people/getting-started.md docs/agents/review.md docs/project/packaging.md].each do |path|
+      assert_includes files, path
+    end
+  end
+
   def test_built_gem_excludes_repository_internal_trust_files
     run_gem('build', 'shaka.gemspec', '--output', archive = File.join(@directory, 'trust.gem'), chdir: ROOT)
     refute_empty(files = Gem::Package.new(archive).spec.files)

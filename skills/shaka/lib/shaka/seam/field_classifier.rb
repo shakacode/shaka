@@ -7,6 +7,7 @@ module Shaka
     # Review-key half of seam classification, including renamed keys and collisions.
     module ReviewFields
       REVIEW_KEYS = (%w[required pace] + RepositoryConfig::ReviewSchema::RENAMED.values).uniq.freeze
+      PREVIOUS_CI_KEY = 'ci_review_agents'
 
       private
 
@@ -35,7 +36,10 @@ module Shaka
       # The none-policy cleanup removes the bare field name. A bad value needs a message that stays.
       def ci_value_block(source)
         jobs = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
-        return "review.#{source} must be a list of CI job names" if [jobs, 'ci_review_agents'].include?(source)
+        if source == PREVIOUS_CI_KEY
+          return "review.#{source} must be a list of CI job names before moving to review.#{jobs}"
+        end
+        return "review.#{jobs} must be a list of CI job names" if source == jobs
 
         "review.#{source}"
       end
@@ -43,7 +47,7 @@ module Shaka
       # The current and immediately previous keys are lists. Older check fields are scalars.
       def unacceptable_ci_value?(source, nested)
         jobs = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
-        return !nested.is_a?(Array) if [jobs, 'ci_review_agents'].include?(source)
+        return !nested.is_a?(Array) if [jobs, PREVIOUS_CI_KEY].include?(source)
 
         RepositoryConfig::ReviewSchema::RENAMED[source] == jobs && !nested.is_a?(String)
       end

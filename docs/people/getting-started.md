@@ -85,6 +85,7 @@ An existing repository contract needs [migration planning](../project/fleet.md#m
 ```
 
 Doctor reports what is healthy, degraded, or failed and gives a next step. A failed check blocks publication. It does not edit the repository.
+Set `SHAKA_MACHINE_ALIAS` to a short public label such as `m5` if you want it in PR provenance. An unset alias appears as `UNKNOWN`; using your machine's actual name could publish private information.
 
 ## Upgrade
 

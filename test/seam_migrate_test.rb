@@ -391,7 +391,8 @@ class SeamMigratePreviousCiJobKeyTest < Minitest::Test
       end
       report = migrate_report(root, sha)
 
-      assert_includes report.fetch('blocking'), 'review.ci_review_agents must be a list of CI job names'
+      assert_includes report.fetch('blocking'),
+                      'review.ci_review_agents must be a list of CI job names before moving to review.ci_review_jobs'
     end
   end
 end
