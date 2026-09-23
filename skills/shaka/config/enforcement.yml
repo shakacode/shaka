@@ -498,6 +498,18 @@ rules:
       identity mismatch.
     enforced_by: agent
     note: No Shaka command gates issue-offer stop conditions.
+  - id: issue-offer-public-host
+    phase: always
+    quote: Prefix every GitHub CLI request in this procedure with `GH_HOST=github.com`.
+    enforced_by: agent
+    note: No Shaka command pins these GitHub CLI requests to github.com.
+  - id: issue-offer-repeat-search
+    phase: always
+    quote: >-
+      After separate filing approval, repeat the same metadata-only search; if candidate metadata is
+      new or changed, share it and ask again before filing.
+    enforced_by: agent
+    note: No Shaka command repeats the approved search or compares its candidate metadata.
   - id: issue-offer-owner
     phase: always
     quote: Workers must report possible issue-offer gaps to the root task owner and keep the current task moving.

@@ -11,18 +11,20 @@ Draft a concise title and body from public sources. Verify the gap in current pu
 and cite that source in the draft; cite public sources for other factual claims. Exclude details
 learned only from the active task or a private repository, as well as private repository names,
 branches, file paths, and links. Choose two to four distinctive alphanumeric terms from the public
-draft, separated by spaces. Do not include punctuation, symbols, or the standalone words `AND` and
-`OR` in any case; `--` stops CLI option parsing, but GitHub still parses query operators. If no safe
-query can be formed, explain why; do not search or file, and continue the active task. Show the exact title,
-body, source links, and query.
+draft, separated by spaces. Do not include punctuation, symbols, or the standalone words `AND`,
+`OR`, or `NOT` in any case; GitHub documents `NOT` as an exclusion operator in its
+[search syntax](https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax).
+The `--` separator stops CLI option parsing, but GitHub still parses query operators. If no safe
+query can be formed, explain why; do not search or file, and continue the active task. When a safe
+query is available, show the exact title, body, source links, and query.
 Ask whether the user authorizes that search; tell them you will ask again before filing. Continue
 the active task while waiting. Do not search if the user declines or has not accepted. If the
 accepted text or query changes, show the full revision and ask again.
 
 ## Verify the target and search
 
-After acceptance, verify the target is the fixed public Shaka repository,
-`shakacode/shaka`. Run `gh repo view shakacode/shaka --json id,nameWithOwner,visibility` and
+After acceptance, verify the target is the fixed public Shaka repository on GitHub.com,
+`github.com/shakacode/shaka`. Run `GH_HOST=github.com gh repo view shakacode/shaka --json id,nameWithOwner,visibility` and
 require live values to match node ID `R_kgDOUZzTGw`, canonical name `shakacode/shaka`, and public
 visibility `PUBLIC`. Stop and report any command failure or mismatch before searching.
 If the live identity no longer matches because Shaka has legitimately moved or been recreated,
@@ -35,7 +37,7 @@ Search every issue and pull-request state; omit `--state`. Ask GitHub to match t
 but return only numeric and state metadata:
 
 ```sh
-gh search issues --repo shakacode/shaka --include-prs --match title,body --limit 1000 \
+GH_HOST=github.com gh search issues --repo shakacode/shaka --include-prs --match title,body --limit 1000 \
   --json number,url,isPullRequest,state -- "$QUERY"
 ```
 
@@ -53,7 +55,12 @@ zero-result outcome, then ask whether the user authorizes creating the exact iss
 
 If there were no candidates, file only after the user accepts the zero-result caveat and explicitly
 authorizes creation. If there were candidates, file only after the user confirms none covers the gap
-and explicitly authorizes creation. Reverify the repository identity. Populate `ISSUE_TITLE` and
+and explicitly authorizes creation. Reverify the repository identity, then repeat the same search
+with the exact approved query. If it fails or reaches the result limit, do not file. Compare the
+returned candidate metadata with the results the user reviewed. If any candidate is new or its
+metadata changed, share the updated metadata and wait for the user's inspection and renewed explicit
+approval. After that approval, repeat the search; file only when its candidate metadata still matches
+what the user reviewed. Otherwise, stop and repeat this review step. Populate `ISSUE_TITLE` and
 `ISSUE_BODY_FILE` from the accepted text without changing either value or evaluating the text as
 shell syntax. Read the single-line title with `IFS= read -r` from a quoted here-document, choosing
 a delimiter absent from the title, or use another literal-safe argument builder. Create the body file
@@ -62,7 +69,7 @@ choose and verify a delimiter that appears nowhere in the complete approved body
 literal delimiter to write the exact body. Then run:
 
 ```sh
-gh issue create --repo shakacode/shaka --title "$ISSUE_TITLE" --body-file "$ISSUE_BODY_FILE"
+GH_HOST=github.com gh issue create --repo shakacode/shaka --title "$ISSUE_TITLE" --body-file "$ISSUE_BODY_FILE"
 ```
 
 After the command returns, remove the temporary body file whether creation succeeded or failed.

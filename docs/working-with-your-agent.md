@@ -44,10 +44,11 @@ the GitHub merge click until you can see the finished change.
 When Shaka independently confirms a product gap outside your active request, the root task owner
 will offer a cited issue draft and continue the active task. You can skip offers in the current task.
 Shaka asks before searching for duplicates and again before filing. It shares possible matches for
-you to inspect; no results do not prove there is no duplicate. Only public facts and the approved
-draft go into the issue. A search failure, result limit, unresolved candidates, or repository
-identity mismatch stops filing. Approval and source checks are agent-enforced because no Shaka
-command can read chat consent or verify issue-body provenance. See the
+you to inspect; before filing it repeats the metadata-only search, and new or changed candidates
+need your review and renewed approval. No results do not prove there is no duplicate. Only public
+facts and the approved draft go into the issue. A search failure, result limit, unresolved
+candidates, or repository identity mismatch stops filing. Approval and source checks are
+agent-enforced because no Shaka command can read chat consent or verify issue-body provenance. See the
 [issue-offer procedure](../skills/shaka/docs/shaka-issue-offer.md) for the exact steps.
 
 ## Choose a small execution context
