@@ -1,5 +1,11 @@
 # Build and test the pilot gem
 
+This repository's CodeQL workflow scans Ruby on pull requests and pushes to
+`main`. Public GitHub.com repositories can run it without a paid Advanced Security
+license. A private fork needs GitHub Advanced Security or equivalent code scanning
+enabled before the workflow can upload alerts; GitHub Actions and code scanning
+must also be allowed in the repository settings.
+
 The gem packages the same skills, workflow configuration, installer, and Ruby helpers
 as the source checkout. The `shaka` skill is a small trust bootstrap: `shaka workflow`
 strictly validates and renders its packaged `skills/shaka/config/workflow.yml` before

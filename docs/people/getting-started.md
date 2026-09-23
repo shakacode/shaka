@@ -1,6 +1,7 @@
 # Install Shaka and complete a first task
 
 Shaka is a skill for coding agents. Install it from a trusted source checkout outside the repository the agent will edit.
+If you used the predecessor `shakacode/agent-workflows`, install Shaka from this repository; a new repository does not need the predecessor pack or its configuration.
 
 ## Before you start
 

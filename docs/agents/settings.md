@@ -135,6 +135,8 @@ When a new seam key lands, an older installed Shaka may reject that trusted defa
 file. Upgrade the trusted installation to a revision that understands the new key before
 starting another task. This rename needs that ordering for `ci_review_jobs`; the old
 `ci_review_agents` key fails with a pointer when the new loader reads it.
+An in-flight task that reloads policy after the merge also needs the updated
+installation before it can continue.
 
 ### Path and branch validation
 
