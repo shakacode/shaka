@@ -183,8 +183,8 @@ rules:
   - id: reviewer-unavailability-evidence
     phase: verify
     quote: >-
-      Added or removed flags do not establish unavailability. A setup failure before the reviewer
-      launches is not availability evidence.
+      Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
+      failure is not availability evidence, even when `attempted` is true.
     enforced_by: agent
     note: >-
       `review run` classifies an actual CLI attempt and its failure, but `reviewer --unavailable`

@@ -148,11 +148,11 @@ Pass `--implementer` once per provider and model family that produced part of th
 a delegated worker. Pass `--ref` with the immutable commit that intake resolved and that `seam check` used, so the
 preference order comes from that snapshot rather than from the branch under review or a ref that
 has since moved. Pass `--unavailable` only with recorded evidence that the selected local path
-cannot run. For `anthropic/claude` and `openai/codex`, the only qualifying evidence is that the
+cannot run. For every listed CLI (`anthropic/claude`, `openai/codex`, and `xai/grok`), the only qualifying evidence is that the
 documented CLI is missing from `PATH`, or that the documented reviewer command ran with its shown
 flags and itself reported a failure such as missing credentials, exhausted quota, or a provider
-outage. Added or removed flags do not establish unavailability. A setup failure before the reviewer
-process launches and a current-host Task or subagent do not qualify.
+outage. Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
+failure does not qualify, even when `attempted` is true; neither does a current-host Task or subagent.
 
 Three outcomes, none of them an error:
 

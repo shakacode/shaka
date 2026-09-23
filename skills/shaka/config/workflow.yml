@@ -182,8 +182,8 @@ phases:
         from `PATH` (`executable_missing`), or a `cli_failure` whose local diagnostic establishes
         missing credentials, exhausted quota, or a provider outage. A nonzero exit alone, an invalid
         flag or model, and a report-validation failure are not availability evidence.
-        Added or removed flags do not establish unavailability. A setup failure before the reviewer
-        launches is not availability evidence. It returns `different_provider`,
+        Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
+        failure is not availability evidence, even when `attempted` is true. It returns `different_provider`,
         `same_provider`, or `same_model`, with a note to copy into the record. None is an error:
         when all listed paths fail, start a new host chat with the implementation model and no
         implementation conversation or Task/subagent context; its own failed CLI does not remove
