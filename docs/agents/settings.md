@@ -120,7 +120,8 @@ an inert `trusted_actions` field.
 a key makes an older seam fail `seam check` loudly, with a non-zero exit and the offending key
 named and a migration pointer where one exists, so nothing is silently misread and no version
 bump is needed to stay safe. `review.check` and `review.github_action_check` moving to
-`review.ci_review_jobs`, and `review.reviewers` and `review.local_reviewers` moving to
+`review.ci_review_jobs`, `review.ci_review_agents` moving to `review.ci_review_jobs`,
+and `review.reviewers` and `review.local_reviewers` moving to
 `review.local_review_agents`, are such revisions, as are the
 `review.local_review_agents` list replacing the earlier flat `model_family`, `provider`, and
 `draft` fields and the retired GitHub-fact fields described above.
@@ -256,7 +257,7 @@ below. Branch protection in this repository requires `validate` only. See
 | `pace` | no | `swift` (default when omitted), `thorough` |
 | `local_review_agents` | no | Ordered list of `{provider, model_family}` entries |
 
-`check`, `github_action_check`, `reviewers`, and `local_reviewers` fail `seam check`. The
+`ci_review_agents`, `check`, `github_action_check`, `reviewers`, and `local_reviewers` fail `seam check`. The
 messages name `ci_review_jobs` or `local_review_agents`. `shaka seam migrate` renames them
 when it rewrites a predecessor seam.
 
@@ -276,7 +277,7 @@ different provider is preferred, not required. [Review](review.md) defines the r
 
 ### `review.ci_review_jobs`
 
-A list of CI job names to read. Use the job names GitHub reports for the CI review workflow. These are review jobs to read, not necessarily GitHub required merge checks.
+A list of review job names to read from the PR's CI checks. These jobs need not be GitHub required merge checks.
 
 ```yaml
 ci_review_jobs:
@@ -481,6 +482,17 @@ A rebuildable install-local catalog of known repositories is not seam policy. Se
 
 ## What `seam init` writes
 
+Use `--root DIR`, `--setup-command CMD`, `--test-command CMD`,
+`--validate-command CMD`, and `--review-policy MODE` for every initialization.
+Add `--ci-review-job NAME` for a real review job unless the policy is `none`.
+Use `--base-branch NAME` when work starts from a branch other than the default,
+`--plan PATH` for an existing repository plan, and `--merge-preference auto`
+only when that authority is established. Command values are parsed as argument
+lists; put pipelines and other compound behavior in repository-owned scripts.
+Confirm GitHub enforces at least one observable required check before
+initialization. [Getting started](../people/getting-started.md#initialize-a-repository-seam)
+has a runnable example.
+
 The initializer produces the smallest complete contract: the three required `.agents/bin/`
 wrappers plus YAML containing `version`, `review`, `merge`, and `branches.name` set to
 `{login}-{host}/{issue}-{description}` so the layout is visible in the seam instead of only
@@ -494,7 +506,8 @@ The generated `review` section depends on the policy. With `always` or
 `--ci-review-job` is mandatory. Repeat the flag to add another job. With
 `--review-policy none` it holds `required` alone, and passing `--ci-review-job` is
 rejected. `--review-check` and `--github-action-check` are rejected; they moved to
-`--ci-review-job`.
+`--ci-review-job`. The old `--ci-review-agent` flag fails with a pointer to
+`--ci-review-job`; it is not an alias.
 
 It omits `local_review_agents`, which is valid — the list is optional. Add it by hand when you want
 Shaka to choose a reviewer and substitute an exhausted provider; the initializer has no flags

@@ -370,6 +370,19 @@ end
 class SeamMigrateCiJobListTest < Minitest::Test
   include SeamMigrateHelpers
 
+  def test_previous_ci_agent_list_becomes_ci_jobs
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) do |data|
+        data.merge('review' => { 'required' => 'always', 'ci_review_agents' => ['claude-review'],
+                                 'reviewers' => data.dig('review', 'reviewers') })
+      end
+      report = migrate_report(root, sha)
+
+      assert_empty report.fetch('blocking')
+      assert_equal ['claude-review'], report.dig('established', 'review', 'ci_review_jobs')
+    end
+  end
+
   def test_a_string_under_the_current_ci_key_blocks
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => scalar_current_review(data)) }

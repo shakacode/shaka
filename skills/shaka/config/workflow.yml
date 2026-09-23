@@ -60,7 +60,7 @@ phases:
       - If the seam is missing, inspect existing scripts and CI, determine the trusted base branch,
         obtain every missing policy choice, then run the saved helper's `seam init` with the
         complete explicit command and policy flags documented in the packaged
-        [getting-started guide](<{{package_root}}/docs/people/getting-started.md>). Never guess checks or
+        [settings reference](<{{package_root}}/docs/agents/settings.md#what-seam-init-writes>). Never guess checks or
         grant merge authority. The initializer validates the generated
         contract, repeats safely, and refuses repository-owned destinations. Candidate changes stay
         subject to the previously trusted boundary, and settings for another workflow grant this

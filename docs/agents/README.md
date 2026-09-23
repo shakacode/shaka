@@ -12,5 +12,3 @@ Start with the [Shaka skill](../../skills/shaka/SKILL.md). It loads the executab
 | Recover a PR, split work, and write walkthroughs | [Workflow guidance](working-with-your-agent.md) |
 | Read public comments safely | [Public comments](public-comments.md) |
 | Use an install-local repository catalog | [Repository catalog](repository-catalog.md) |
-
-The fixed repository scripts are `.agents/bin/setup`, `.agents/bin/test`, and `.agents/bin/validate`. Optional scripts are `.agents/bin/validate-local` and `.agents/bin/trigger-hosted-ci`. The YAML contract is `.agents/agent-workflow.yml`; human-only boundaries belong in `AGENTS.md`. [Configuration](settings.md) defines each key and the trust boundary.

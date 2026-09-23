@@ -182,6 +182,20 @@ installer. A September 14 trial did not find the skill through `~/.agents/skills
 so use the Cursor-specific directory and still confirm discovery in a new Agent chat.
 The trial did not establish a complete Cursor workflow or a supported launch recipe.
 
+To record native token usage, add this command to the `stop` array in
+`~/.cursor/hooks.json` without removing other hooks:
+
+```json
+{
+  "command": "skills/shaka/scripts/cursor-usage-hook"
+}
+```
+
+User-level hooks run from `~/.cursor`, so this path reaches the installed skill.
+Start a new Agent chat after changing hooks. The hook saves allowlisted usage
+metadata; [usage reporting](../agents/usage-reporting.md#what-the-cursor-reader-includes)
+explains how Shaka reads it.
+
 The checked Cursor CLI exposes `--workspace`, `--add-dir`, `--sandbox`, and
 `--plugin-dir`. Its public help has no direct skill-file option. The native sandbox
 and Shaka delivery have not been exercised, so these flags are not sufficient grounds

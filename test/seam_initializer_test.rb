@@ -259,7 +259,7 @@ end
 class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
-  def test_rejects_a_repeated_ci_review_agent_before_writing
+  def test_rejects_a_repeated_ci_review_job_before_writing
     with_repository do |root|
       arguments = init_arguments(root) + ['--ci-review-job', 'Claude-Review']
       _output, error, status = Open3.capture3(*arguments)
@@ -370,6 +370,20 @@ class SeamInitializerValidationTest < Minitest::Test
 
       refute_predicate status, :success?
       assert_includes error, 'must be a simple argv command'
+      refute_path_exists File.join(root, '.agents')
+    end
+  end
+end
+
+class SeamInitializerRetiredFlagTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_old_ci_review_agent_flag_names_replacement
+    with_repository do |root|
+      _output, error, status = Open3.capture3(*init_arguments(root), '--ci-review-agent', 'old-job')
+
+      refute_predicate status, :success?
+      assert_includes error, '--ci-review-agent moved to --ci-review-job'
       refute_path_exists File.join(root, '.agents')
     end
   end

@@ -90,10 +90,11 @@ Inspect local changes in the trusted source checkout, then fast-forward it and s
 
 ```bash
 git -C "$HOME/agent-tools/shaka" status --short
+git -C "$HOME/agent-tools/shaka" switch main
 git -C "$HOME/agent-tools/shaka" pull --ff-only
 ```
 
-The installer creates links to that checkout, so the new code is available through the existing links. If you use another skills directory, keep using that directory. [Host support](host-support.md) explains host-specific setup.
+The installer creates links to that checkout, so existing skills use the new code. Run `bin/install` again with your original `--skills-dir` and options if the release adds a skill you want. [Host support](host-support.md) explains host-specific setup.
 
 ## Remove
 

@@ -40,12 +40,12 @@ module Shaka
         "review.#{source}"
       end
 
-      # A retired check is one job name. The current key is a list. Anything else blocks.
+      # The current and immediately previous keys are lists. Older check fields are scalars.
       def unacceptable_ci_value?(source, nested)
-        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
-        return !nested.is_a?(Array) if source == agents
+        jobs = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
+        return !nested.is_a?(Array) if [jobs, 'ci_review_agents'].include?(source)
 
-        RepositoryConfig::ReviewSchema::RENAMED[source] == agents && !nested.is_a?(String)
+        RepositoryConfig::ReviewSchema::RENAMED[source] == jobs && !nested.is_a?(String)
       end
 
       def job_list(source, nested)
