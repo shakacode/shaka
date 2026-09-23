@@ -97,8 +97,10 @@ Doctor reports healthy, degraded, and failed checks with next steps. Resolve
 failures before publication; it does not edit the repository.
 
 Other guides abbreviate the installed command to `shaka`. For a source
-installation, use the full `skills/shaka/scripts/shaka` path shown above. The gem
-also provides a `shaka` executable.
+installation, use the full `skills/shaka/scripts/shaka` path shown above. Use this
+source-install recipe for the pilot; the published name-reservation prerelease
+predates the current workflow. See [packaging](project/packaging.md) before choosing
+a gem installation.
 
 ## Run your first task
 
