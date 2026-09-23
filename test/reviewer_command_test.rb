@@ -28,7 +28,7 @@ class ReviewerCommandTest < Minitest::Test
     end
   end
 
-  # A candidate that rewrites review.local_reviewers must not be able to nominate its own family.
+  # A candidate that rewrites review.local_review_agents must not be able to nominate its own family.
   def test_reads_the_reviewer_list_from_the_trusted_ref
     with_repository do |root|
       commit_repository(root)
@@ -91,7 +91,7 @@ class ReviewerCommandTest < Minitest::Test
   def rewrite_reviewers(root, reviewers)
     path = File.join(root, '.agents/agent-workflow.yml')
     config = YAML.safe_load_file(path)
-    config['review']['local_reviewers'] = reviewers
+    config['review']['local_review_agents'] = reviewers
     File.write(path, YAML.dump(config))
   end
 
@@ -112,10 +112,10 @@ class ReviewerCommandTest < Minitest::Test
 
   def config
     { 'version' => 1, 'base_branch' => 'main',
-      'review' => { 'required' => 'meaningful_changes', 'github_action_check' => 'claude-review',
-                    'local_reviewers' => [{ 'provider' => 'anthropic', 'model_family' => 'claude' },
-                                          { 'provider' => 'openai', 'model_family' => 'codex' },
-                                          { 'provider' => 'xai', 'model_family' => 'grok' }] },
+      'review' => { 'required' => 'meaningful_changes', 'ci_review_agents' => ['claude-review'],
+                    'local_review_agents' => [{ 'provider' => 'anthropic', 'model_family' => 'claude' },
+                                              { 'provider' => 'openai', 'model_family' => 'codex' },
+                                              { 'provider' => 'xai', 'model_family' => 'grok' }] },
       'merge' => { 'preference' => 'ask' } }
   end
 

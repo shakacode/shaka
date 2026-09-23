@@ -67,16 +67,15 @@ module Shaka
 
       def review_policy
         required_policy = required('review_policy')
+        names = @options[:ci_review_agents]
         if required_policy == 'none'
-          if @options.key?(:github_action_check)
-            raise Error, '--github-action-check must be omitted when review policy is none'
-          end
+          raise Error, '--ci-review-agent must be omitted when review policy is none' if names
 
           return { 'required' => required_policy }
         end
+        raise Error, '--ci-review-agent is required' if names.nil? || names.empty?
 
-        { 'required' => required_policy,
-          RepositoryConfig::ReviewSchema::GITHUB_ACTION_CHECK => required('github_action_check') }
+        { 'required' => required_policy, RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS => names }
       end
 
       def wrapper(arguments)

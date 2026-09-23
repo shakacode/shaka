@@ -8,24 +8,24 @@ require 'shaka/repository_config'
 class ReviewPolicyTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
-  def test_names_the_github_action_check_and_the_local_reviewers
+  def test_names_the_ci_review_agents_and_the_local_review_agents
     policy = {
       'required' => 'meaningful_changes',
-      'github_action_check' => 'claude-review',
-      'local_reviewers' => reviewers
+      'ci_review_agents' => ['claude-review'],
+      'local_review_agents' => reviewers
     }
     with_repository('review' => policy) do |root|
       review = Shaka::RepositoryConfig.load(root:).review
 
-      assert_equal 'claude-review', review.fetch('github_action_check')
-      assert_equal 'openai', review.fetch('local_reviewers').first.fetch('provider')
+      assert_equal ['claude-review'], review.fetch('ci_review_agents')
+      assert_equal 'openai', review.fetch('local_review_agents').first.fetch('provider')
     end
   end
 
   def test_loads_the_reviewer_preference_list_in_order
     with_repository do |root|
       review = Shaka::RepositoryConfig.load(root:).review
-      providers = review.fetch('local_reviewers').map { |entry| entry.fetch('provider') }
+      providers = review.fetch('local_review_agents').map { |entry| entry.fetch('provider') }
 
       assert_equal 'meaningful_changes', review.fetch('required')
       assert_equal %w[openai anthropic], providers
@@ -34,27 +34,27 @@ class ReviewPolicyTest < Minitest::Test
 
   def test_requires_each_reviewer_to_name_its_provider
     incomplete = [{ 'model_family' => 'claude' }]
-    with_repository('review' => review_policy('local_reviewers' => incomplete)) do |root|
+    with_repository('review' => review_policy('local_review_agents' => incomplete)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'missing review.local_reviewers[0] key: provider'
+      assert_includes message, 'missing review.local_review_agents[0] key: provider'
     end
   end
 
   def test_rejects_an_empty_reviewer_preference_list
-    with_repository('review' => review_policy('local_reviewers' => [])) do |root|
+    with_repository('review' => review_policy('local_review_agents' => [])) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.local_reviewers must not be empty'
+      assert_includes message, 'review.local_review_agents must not be empty'
     end
   end
 
   def test_rejects_a_repeated_reviewer_identity
     twice = reviewers + [reviewers.first]
-    with_repository('review' => review_policy('local_reviewers' => twice)) do |root|
+    with_repository('review' => review_policy('local_review_agents' => twice)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.local_reviewers repeats openai/codex'
+      assert_includes message, 'review.local_review_agents repeats openai/codex'
     end
   end
 
@@ -62,9 +62,9 @@ class ReviewPolicyTest < Minitest::Test
   def test_keeps_identities_whose_components_join_alike_distinct
     shifted = [{ 'provider' => 'a b', 'model_family' => 'c' },
                { 'provider' => 'a', 'model_family' => 'b c' }]
-    with_repository('review' => review_policy('local_reviewers' => shifted)) do |root|
+    with_repository('review' => review_policy('local_review_agents' => shifted)) do |root|
       review = Shaka::RepositoryConfig.load(root:).review
-      providers = review.fetch('local_reviewers').map { |entry| entry.fetch('provider') }
+      providers = review.fetch('local_review_agents').map { |entry| entry.fetch('provider') }
 
       assert_equal ['a b', 'a'], providers
     end
@@ -72,10 +72,10 @@ class ReviewPolicyTest < Minitest::Test
 
   def test_names_the_entry_behind_an_unknown_reviewer_key
     typo = [reviewers.first, { 'provider' => 'xai', 'model_family' => 'grok', 'draft' => false }]
-    with_repository('review' => review_policy('local_reviewers' => typo)) do |root|
+    with_repository('review' => review_policy('local_review_agents' => typo)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'unknown review.local_reviewers[1] key: draft'
+      assert_includes message, 'unknown review.local_review_agents[1] key: draft'
     end
   end
 
@@ -84,16 +84,16 @@ class ReviewPolicyTest < Minitest::Test
   # Selection folds case, so two spellings of one identity must not both validate.
   def test_rejects_a_repeated_reviewer_identity_differing_only_by_casing
     cased = reviewers + [{ 'provider' => 'OpenAI', 'model_family' => 'Codex' }]
-    with_repository('review' => review_policy('local_reviewers' => cased)) do |root|
+    with_repository('review' => review_policy('local_review_agents' => cased)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.local_reviewers repeats openai/codex'
+      assert_includes message, 'review.local_review_agents repeats openai/codex'
     end
   end
 
   def test_rejects_an_identity_component_padded_with_whitespace
     padded = [{ 'provider' => 'bedrock', 'model_family' => 'claude ' }]
-    with_repository('review' => review_policy('local_reviewers' => padded)) do |root|
+    with_repository('review' => review_policy('local_review_agents' => padded)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
       assert_includes message, 'model_family must not start or end with whitespace'
@@ -102,7 +102,7 @@ class ReviewPolicyTest < Minitest::Test
 
   def test_rejects_an_identity_component_containing_a_slash
     slashed = [{ 'provider' => 'openai/foo', 'model_family' => 'codex' }]
-    with_repository('review' => review_policy('local_reviewers' => slashed)) do |root|
+    with_repository('review' => review_policy('local_review_agents' => slashed)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
       assert_includes message, "provider must not contain '/'"
@@ -115,25 +115,25 @@ class ReviewPolicyTest < Minitest::Test
     with_repository('review' => retired) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.model_family moved into review.local_reviewers'
+      assert_includes message, 'review.model_family moved into review.local_review_agents'
     end
   end
 
   def test_keeps_reviewer_preferences_when_no_native_gate_is_required
-    with_repository('review' => { 'required' => 'none', 'local_reviewers' => reviewers }) do |root|
+    with_repository('review' => { 'required' => 'none', 'local_review_agents' => reviewers }) do |root|
       review = Shaka::RepositoryConfig.load(root:).review
-      providers = review.fetch('local_reviewers').map { |entry| entry.fetch('provider') }
+      providers = review.fetch('local_review_agents').map { |entry| entry.fetch('provider') }
 
       assert_equal %w[openai anthropic], providers
     end
   end
 
-  def test_rejects_a_github_action_check_when_review_is_not_required
-    policy = { 'required' => 'none', 'github_action_check' => 'claude-review' }
+  def test_rejects_ci_review_agents_when_review_is_not_required
+    policy = { 'required' => 'none', 'ci_review_agents' => ['claude-review'] }
     with_repository('review' => policy) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.github_action_check must be omitted when review.required is none'
+      assert_includes message, 'review.ci_review_agents must be omitted when review.required is none'
     end
   end
 end
@@ -145,7 +145,7 @@ class RetiredReviewKeyTest < Minitest::Test
     with_repository('review' => { 'required' => 'meaningful_changes', 'check' => 'claude-review' }) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.check moved to review.github_action_check'
+      assert_includes message, 'review.check moved to review.ci_review_agents'
     end
   end
 
@@ -153,7 +153,7 @@ class RetiredReviewKeyTest < Minitest::Test
     with_repository('review' => { 'required' => 'meaningful_changes', 'reviewers' => reviewers }) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.reviewers moved to review.local_reviewers'
+      assert_includes message, 'review.reviewers moved to review.local_review_agents'
     end
   end
 end

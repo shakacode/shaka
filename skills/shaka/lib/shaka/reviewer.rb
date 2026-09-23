@@ -35,7 +35,7 @@ module Shaka
     private
 
     def selection
-      ReviewerSelection.new(reviewers: config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEWERS],
+      ReviewerSelection.new(reviewers: config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS],
                             implementers: identities(:implementers, required: true),
                             unavailable: identities(:unavailable)).call
     end

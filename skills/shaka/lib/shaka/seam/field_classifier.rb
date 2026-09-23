@@ -4,8 +4,48 @@ require_relative '../repository_config/review_schema'
 
 module Shaka
   class Seam
+    # Review-key half of seam classification, including renamed keys and collisions.
+    module ReviewFields
+      REVIEW_KEYS = (%w[required pace] + RepositoryConfig::ReviewSchema::RENAMED.values).uniq.freeze
+
+      private
+
+      def classify_review(value)
+        return @blocking << 'review' unless value.is_a?(Hash) && value.keys.all?(String)
+
+        value.each { |key, nested| classify_review_entry(key, nested) }
+      end
+
+      def classify_review_entry(source, nested)
+        key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
+        return @blocking << "review.#{source}" unless REVIEW_KEYS.include?(key)
+        return @blocking << collision(source, key) if @established.fetch('review', {}).key?(key)
+
+        @retained << "review.#{key}"
+        store_review(key, job_list(key, nested))
+      end
+
+      def collision(source, key)
+        "review.#{source} (collides with review.#{key})"
+      end
+
+      # A predecessor records one CI job name as a string. The current key is a list.
+      def job_list(key, nested)
+        return [nested] if key == RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS && nested.is_a?(String)
+
+        nested
+      end
+
+      def store_review(key, value)
+        @established['review'] ||= {}
+        @established['review'][key] = value
+      end
+    end
+
     # Maps predecessor seam keys onto typed destinations without guessing policy.
     class FieldClassifier
+      include ReviewFields
+
       MOVED_TO_AGENTS = %w[
         review_gate approval_exempt changelog benchmark_labels merge_ledger follow_up_prefix
         writing_style untrusted_contributor_intake secret_redaction_patterns
@@ -17,7 +57,6 @@ module Shaka
       ].freeze
       RETIRED = %w[protection commands coordination_backend].freeze
       RETAINED = %w[base_branch repo_prefix version plan branches recovery].freeze
-      REVIEW_KEYS = (['required'] + RepositoryConfig::ReviewSchema::RENAMED.values + ['pace']).freeze
       MERGE_RETAINED = %w[preference].freeze
       MERGE_RETIRED = %w[method release].freeze
 
@@ -72,21 +111,6 @@ module Shaka
         @established[key] = value if %w[base_branch repo_prefix version plan branches recovery].include?(key)
       end
 
-      def classify_review(value)
-        return @blocking << 'review' unless value.is_a?(Hash) && value.keys.all?(String)
-
-        value.each { |key, nested| classify_review_entry(key, nested) }
-      end
-
-      def classify_review_entry(source, nested)
-        key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
-        available = REVIEW_KEYS.include?(key) && !@established.fetch('review', {}).key?(key)
-        return @blocking << "review.#{source}" unless available
-
-        @retained << "review.#{key}"
-        store_review(key, nested)
-      end
-
       def classify_merge(value)
         return @blocking << 'merge' unless value.is_a?(Hash) && value.keys.all?(String)
 
@@ -98,11 +122,6 @@ module Shaka
         end
       end
 
-      def store_review(key, value)
-        @established['review'] ||= {}
-        @established['review'][key] = value
-      end
-
       def store_merge(key, value)
         record(@retained, "merge.#{key}")
         @established['merge'] ||= {}
@@ -112,7 +131,7 @@ module Shaka
       def require_review_and_merge
         required = @established.dig('review', 'required')
         @blocking << 'review.required' unless required
-        check = RepositoryConfig::ReviewSchema::GITHUB_ACTION_CHECK
+        check = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
         @blocking << "review.#{check}" if required && required != 'none' && !@established.dig('review', check)
         @blocking << 'merge.preference' unless @established.dig('merge', 'preference')
       end

@@ -303,7 +303,7 @@ rules:
       value it passes, which is the same gap the trusted-seam-ref row above describes.
   - id: swift-skips-the-hosted-review-wait
     phase: review
-    quote: do not wait for GitHub `review.github_action_check`
+    quote: do not wait for `review.ci_review_agents`
     enforced_by: agent
     note: >-
       `ReviewPace.allowed_merge_states` admits UNSTABLE under swift, so the command permits the

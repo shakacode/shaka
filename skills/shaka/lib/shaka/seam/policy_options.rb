@@ -19,11 +19,18 @@ module Shaka
       def add_review_policy_options(flags)
         flags.on('--review-policy MODE', %w[always meaningful_changes none],
                  'always, meaningful_changes, or none') { |value| @options[:review_policy] = value }
-        flags.on('--github-action-check NAME', 'GitHub Actions job Shaka reads') do |value|
-          @options[:github_action_check] = value
+        flags.on('--ci-review-agent NAME', 'CI review job name; repeat for another job') do |value|
+          (@options[:ci_review_agents] ||= []) << value
         end
-        flags.on('--review-check NAME', 'Renamed to --github-action-check') do
-          raise Error, '--review-check moved to --github-action-check'
+        reject_retired_review_flags(flags)
+      end
+
+      def reject_retired_review_flags(flags)
+        flags.on('--github-action-check NAME', 'Renamed to --ci-review-agent') do
+          raise Error, '--github-action-check moved to --ci-review-agent'
+        end
+        flags.on('--review-check NAME', 'Renamed to --ci-review-agent') do
+          raise Error, '--review-check moved to --ci-review-agent'
         end
       end
     end

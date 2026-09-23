@@ -9,16 +9,19 @@ version: 1
 repo_prefix: SHAKA
 # Optional repository-relative plan document.
 plan: docs/pilot-plan.md
-# Reviewer policy. A fresh context is what makes a review adversarial, so the implementation
+# Reviewer policy. Each key is documented in docs/settings.md#review.
+# A fresh context is what makes a review adversarial, so the implementation
 # model qualifies; a different provider is only preferred.
 review:
+  # always, meaningful_changes, or none
   required: meaningful_changes
-  # GitHub Actions job Shaka reads. This is not the local reviewer list below.
-  github_action_check: claude-review
-  # Product default is swift: merge after required checks without waiting for optional review jobs.
+  # CI job names to read. Not required merge checks. Repeat an entry for another job.
+  ci_review_agents:
+    - claude-review
+  # swift or thorough. Omitted means swift.
   pace: swift
-  # Local reviewers, in preference order. Distinct from github_action_check.
-  local_reviewers:
+  # Local review agents, in preference order. Not the CI jobs above.
+  local_review_agents:
     - provider: anthropic
       model_family: claude
     - provider: openai
