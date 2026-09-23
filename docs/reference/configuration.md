@@ -210,4 +210,3 @@ shaka prefix --root DIR --ref FULL_DEFAULT_BRANCH_SHA
 
 The optional [local repository catalog](../agents/repository-catalog.md) caches
 known repositories; it is separate from policy.
-

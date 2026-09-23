@@ -78,4 +78,3 @@ The JSON output includes derived `commands` and `validation` fields. They descri
 the result; do not copy them into the YAML. Even trusted output reports
 `grants_merge_authority: false`: the agent still establishes authority and checks
 live GitHub state.
-
