@@ -92,6 +92,7 @@ class LocalReviewCodexTest < Minitest::Test
       result = JSON.parse(output)
       assert_equal 'setup_failure', result.fetch('failure_stage')
       refute result.fetch('attempted')
+      assert_empty Dir.glob(File.join(root, 'shaka-review-*'))
     end
   end
 
@@ -102,8 +103,8 @@ class LocalReviewCodexTest < Minitest::Test
     assert_equal %w[exec -s read-only --ignore-rules --ignore-user-config], invocation.fetch('args').first(5)
     assert_includes invocation.fetch('args'), '--skip-git-repo-check'
     assert_includes invocation.fetch('prompt'), '+after'
+    assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
     assert_includes invocation.fetch('prompt'), "REVIEWED #{head} BY openai/codex"
-    refute_equal File.dirname(trace), invocation.fetch('cwd')
     refute_path_exists invocation.fetch('cwd')
   end
 
@@ -224,14 +225,19 @@ class LocalReviewProviderFailureTest < Minitest::Test
       output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
       refute_predicate status, :success?
       result = JSON.parse(output)
-      assert_equal 'report_validation', result.fetch('failure_stage')
-      assert_equal 'not_eligible', result.fetch('skip_evidence')
+      assert_malformed_claude(result)
     ensure
       cleanup_artifacts(result)
     end
   end
 
   private
+
+  def assert_malformed_claude(result)
+    assert_equal 'report_validation', result.fetch('failure_stage')
+    assert_equal 'not_eligible', result.fetch('skip_evidence')
+    refute result.key?('usage')
+  end
 
   def assert_claude_error(result)
     assert_equal 'cli_failure', result.fetch('failure_stage')

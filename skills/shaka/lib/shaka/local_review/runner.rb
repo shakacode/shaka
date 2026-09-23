@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'rbconfig'
+require 'securerandom'
 require 'tempfile'
 require 'tmpdir'
 require_relative '../reviewer_selection'
@@ -16,6 +17,7 @@ module Shaka
     def run
       @attempted = false
       validate!
+      validate_tempdir!
       prompt = review_prompt
       report = Tempfile.create(['shaka-review-', '.md'])
       report.close
@@ -74,6 +76,13 @@ module Shaka
       raise Shaka::Error, "Checkout HEAD is #{actual}, not #{head}" unless actual == head
     end
 
+    def validate_tempdir!
+      directory = File.realpath(Dir.tmpdir)
+      return unless directory == root || directory.start_with?("#{root}/")
+
+      raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout'
+    end
+
     def validate_report(path)
       text = File.read(path, encoding: 'UTF-8')
       return incomplete('Reviewer returned no matching review attestation', path) unless
@@ -88,12 +97,13 @@ module Shaka
       output = capture(RbConfig.ruby, script, 'review-prompt', '--head', head,
                        '--base', @options[:base], '--reviewer', reviewer, '--effort', effort)
       diff = capture('git', '-C', root, 'diff', '--no-ext-diff', '--no-textconv', "#{@options[:base]}...#{head}", '--')
-      "#{output}\n\n--- BEGIN DIFF DATA ---\n#{diff}\n--- END DIFF DATA ---\n"
+      marker = SecureRandom.hex(16)
+      "#{output}\n\n--- BEGIN DIFF DATA #{marker} ---\n#{diff}\n--- END DIFF DATA #{marker} ---\n"
     end
 
     def capture(*arguments)
-      stdout, stderr, status = Open3.capture3(*arguments)
-      raise Shaka::Error, "#{arguments.first} failed: #{stderr.strip}" unless status.success?
+      stdout, _stderr, status = Open3.capture3(*arguments)
+      raise Shaka::Error, "#{arguments.first} failed (exit #{status.exitstatus})" unless status.success?
 
       stdout
     end

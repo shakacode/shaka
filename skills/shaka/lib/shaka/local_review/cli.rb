@@ -39,7 +39,6 @@ module Shaka
       return missing('claude') unless LocalReviewExecutable.available?('claude')
 
       output, stderr, status = claude_process(prompt)
-      @options[:usage] = save_usage(output)
       return failure("claude -p exited #{status.exitstatus}", stderr) unless status.success?
 
       claude_result(output)
@@ -61,6 +60,7 @@ module Shaka
       return failure('claude -p reported an error', output) if result['is_error']
       return invalid('claude -p returned no review') unless valid_claude_result?(result)
 
+      @options[:usage] = save_usage(output)
       File.write(@report, result.fetch('result'))
       nil
     end
