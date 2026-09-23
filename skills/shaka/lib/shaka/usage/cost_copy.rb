@@ -79,7 +79,7 @@ module Shaka
     end
 
     def anthropic_rate_model(column)
-      AnthropicCost.rate_model(column[:routed], column[:model])
+      AnthropicCost.rate_model(column[:routed], column[:model], column[:billing])
     end
 
     def footer(columns, reasons)

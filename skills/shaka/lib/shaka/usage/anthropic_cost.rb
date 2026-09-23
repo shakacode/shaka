@@ -24,14 +24,14 @@ module Shaka
     # multipliers stack on top, so the same multiplier applies to every token category.
     FAST_MODELS = %w[claude-opus-5-5 claude-opus-5 claude-opus-4-8].freeze
 
-    def self.rate_model(routed, configured)
-      [routed, configured].find do |name|
-        RATES.key?(name.to_s.delete_suffix('-fast'))
-      end&.to_s&.delete_suffix('-fast')
+    def self.rate_model(routed, configured, speed)
+      names = [routed, configured].map(&:to_s)
+      names.map! { |name| name.delete_suffix('-fast') } if speed == 'fast'
+      names.find { |name| RATES.key?(name) }
     end
 
     def self.rated_speed?(model, speed)
-      return false unless model && RATES.key?(model)
+      return false unless model
 
       speed == 'standard' || (speed == 'fast' && FAST_MODELS.include?(model))
     end
@@ -46,13 +46,6 @@ module Shaka
     private
 
     # Claude Code records only the routed model; exports that name a configured model use that.
-    def anthropic_model(configuration)
-      return unless configuration.is_a?(Array)
-
-      _provider, model, routed = configuration
-      AnthropicCost.rate_model(routed, model)
-    end
-
     def anthropic_price(record, mode)
       return [nil, 'Codex credits do not price Anthropic'] if mode == :credits
 
@@ -64,7 +57,10 @@ module Shaka
     end
 
     def anthropic_rate_for(configuration, speed)
-      model = anthropic_model(configuration)
+      return [nil, 'Unsupported provider or configured model'] unless configuration.is_a?(Array)
+
+      _provider, configured, routed = configuration
+      model = AnthropicCost.rate_model(routed, configured, speed)
       return [nil, 'Unsupported provider or configured model'] unless model
 
       return [nil, speed_reason(speed, model)] unless AnthropicCost.rated_speed?(model, speed)
