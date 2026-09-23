@@ -6,8 +6,24 @@ require 'tempfile'
 require_relative 'executable'
 
 module Shaka
+  # Keeps process diagnostics outside the candidate checkout.
+  module LocalReviewDiagnostic
+    private
+
+    def save_diagnostic(text)
+      return nil if text.to_s.empty?
+
+      file = Tempfile.create(['shaka-review-diagnostic-', '.txt'])
+      file.write(text)
+      file.close
+      file.path
+    end
+  end
+
   # The only path that may claim a local review process was actually launched.
   class LocalReviewCli
+    include LocalReviewDiagnostic
+
     def initialize(options, root:, report:)
       @options = options
       @root = root
@@ -25,9 +41,10 @@ module Shaka
     private
 
     def codex(prompt)
-      return missing('codex') unless LocalReviewExecutable.available?('codex')
+      executable = LocalReviewExecutable.resolve('codex')
+      return missing('codex') unless executable
 
-      stdout, stderr, status = Open3.capture3('codex', 'exec', '-s', 'read-only', '--ignore-rules',
+      stdout, stderr, status = Open3.capture3(executable, 'exec', '-s', 'read-only', '--ignore-rules',
                                               '--ignore-user-config', '--skip-git-repo-check', '-o', @report, '-',
                                               stdin_data: prompt, chdir: @root)
       return failure("codex exec exited #{status.exitstatus}", [stderr, stdout].join("\n")) unless status.success?
@@ -36,9 +53,10 @@ module Shaka
     end
 
     def claude(prompt)
-      return missing('claude') unless LocalReviewExecutable.available?('claude')
+      executable = LocalReviewExecutable.resolve('claude')
+      return missing('claude') unless executable
 
-      output, stderr, status = claude_process(prompt)
+      output, stderr, status = claude_process(executable, prompt)
       return failure("claude -p exited #{status.exitstatus}", [stderr, output].join("\n")) unless status.success?
 
       claude_result(output)
@@ -46,8 +64,8 @@ module Shaka
       invalid('claude -p returned malformed JSON', output)
     end
 
-    def claude_process(prompt)
-      args = ['claude', '-p', '--permission-mode', 'plan', '--permission-prompts', 'none', '--restricted',
+    def claude_process(executable, prompt)
+      args = [executable, '-p', '--permission-mode', 'plan', '--permission-prompts', 'none', '--restricted',
               '--safe-mode', '--strict-mcp-config']
       args.push('--effort', effort) if effort
       args.push('--output-format', 'json', '-')
@@ -70,10 +88,11 @@ module Shaka
     def valid_claude_result?(result) = result['result'].is_a?(String) && !result['result'].strip.empty?
 
     def grok(prompt)
-      return missing('grok') unless LocalReviewExecutable.available?('grok')
+      executable = LocalReviewExecutable.resolve('grok')
+      return missing('grok') unless executable
 
       file = prompt_file(prompt)
-      output = grok_process(file.path)
+      output = grok_process(executable, file.path)
       return output if output.is_a?(Hash)
 
       File.write(@report, output)
@@ -89,8 +108,8 @@ module Shaka
       file
     end
 
-    def grok_process(prompt_path)
-      args = ['grok', '--prompt-file', prompt_path, '-m', @options[:model]]
+    def grok_process(executable, prompt_path)
+      args = [executable, '--prompt-file', prompt_path, '-m', @options[:model]]
       args.push('--reasoning-effort', effort) if effort
       args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
       output, stderr, status = Open3.capture3(*args, chdir: @root)
@@ -122,15 +141,6 @@ module Shaka
         'skip_evidence' => { 'executable_missing' => 'confirmed',
                              'cli_failure' => 'requires_cause_review' }.fetch(stage, 'not_eligible'),
         'usage' => @options[:usage] }.compact
-    end
-
-    def save_diagnostic(text)
-      return nil if text.to_s.empty?
-
-      file = Tempfile.create(['shaka-review-diagnostic-', '.txt'])
-      file.write(text)
-      file.close
-      file.path
     end
 
     def effort = @options[:effort]

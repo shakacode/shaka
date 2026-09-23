@@ -442,6 +442,23 @@ class LocalReviewContextTest < Minitest::Test
   end
 end
 
+class LocalReviewRelativePathTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_relative_path_executable_is_resolved_before_neutral_launch
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'relative-path-trace.json')
+      fake_codex(bin, head)
+      path = "./bin:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
+      output, error, status = run_review(root, base, head, bin,
+                                         cwd: root, env: { 'PATH' => path, 'REVIEW_TRACE' => trace })
+      result = assert_successful_review(output, error, status, head, 'openai/codex')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+end
+
 class LocalReviewEmptyReportTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -614,7 +631,8 @@ module LocalReviewFixture
   def run_review(root, base, head, bin, options = {})
     reviewer = options.fetch(:reviewer, 'openai/codex')
     arguments = review_arguments(root, base, head, reviewer, options)
-    Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" }.merge(options.fetch(:env, {})), *arguments)
+    Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" }.merge(options.fetch(:env, {})), *arguments,
+                   chdir: options.fetch(:cwd, Dir.pwd))
   end
 
   def review_arguments(root, base, head, reviewer, options)
@@ -669,5 +687,6 @@ LocalReviewClaudeProtocolTest.include(LocalReviewFixture)
 LocalReviewEvidenceTest.include(LocalReviewFixture)
 LocalReviewStdoutFailureTest.include(LocalReviewFixture)
 LocalReviewContextTest.include(LocalReviewFixture)
+LocalReviewRelativePathTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
