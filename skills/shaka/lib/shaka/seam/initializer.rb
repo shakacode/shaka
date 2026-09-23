@@ -25,6 +25,7 @@ module Shaka
 
       def call
         files = generated_files
+        RepositoryConfig::ReviewSchema.new(review_policy).validate
         preflight_directories
         RepositoryConfig::CommandSchema.new(root: @root).validate_available_optional_commands
         preflight_files(files)

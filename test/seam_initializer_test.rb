@@ -259,6 +259,17 @@ end
 class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
+  def test_rejects_a_repeated_ci_review_agent_before_writing
+    with_repository do |root|
+      arguments = init_arguments(root) + ['--ci-review-agent', 'Claude-Review']
+      _output, error, status = Open3.capture3(*arguments)
+
+      refute_predicate status, :success?
+      assert_includes error, 'review.ci_review_agents repeats claude-review'
+      refute_path_exists File.join(root, '.agents')
+    end
+  end
+
   def test_rejects_missing_required_policy_before_writing
     %w[--review-policy --ci-review-agent].each do |flag|
       with_repository do |root|

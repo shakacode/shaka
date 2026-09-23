@@ -20,19 +20,24 @@ module Shaka
         key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
         return @blocking << "review.#{source}" unless REVIEW_KEYS.include?(key)
         return @blocking << collision(source, key) if @established.fetch('review', {}).key?(key)
-        return @blocking << "review.#{source}" if bare_ci_name?(source, nested)
+        return @blocking << "review.#{source}" if unacceptable_ci_value?(source, nested)
 
         @retained << "review.#{key}"
-        store_review(key, job_list(source, nested))
+        store_review(source, key, job_list(source, nested))
       end
 
       def collision(source, key)
-        "review.#{source} (collides with review.#{key})"
+        names = [source, @review_sources.fetch(key)]
+        legacy = names.find { |name| name != key } || source
+        "review.#{legacy} (collides with review.#{key})"
       end
 
-      # The current key is already a list. Only a retired singular key arrives as one job name.
-      def bare_ci_name?(source, nested)
-        source == RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS && !nested.is_a?(Array)
+      # A retired check is one job name. The current key is a list. Anything else blocks.
+      def unacceptable_ci_value?(source, nested)
+        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
+        return !nested.is_a?(Array) if source == agents
+
+        RepositoryConfig::ReviewSchema::RENAMED[source] == agents && !nested.is_a?(String)
       end
 
       def job_list(source, nested)
@@ -42,7 +47,8 @@ module Shaka
         nested
       end
 
-      def store_review(key, value)
+      def store_review(source, key, value)
+        @review_sources[key] = source
         @established['review'] ||= {}
         @established['review'][key] = value
       end
@@ -77,6 +83,7 @@ module Shaka
         @retired = []
         @blocking = []
         @established = {}
+        @review_sources = {}
       end
 
       def call

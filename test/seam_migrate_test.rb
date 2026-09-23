@@ -390,6 +390,26 @@ class SeamMigrateCiJobListTest < Minitest::Test
     end
   end
 
+  def test_an_array_under_a_legacy_check_key_blocks
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_array_review(data)) }
+      report = migrate_report(root, sha)
+
+      assert_includes report.fetch('blocking'), 'review.check'
+      assert_nil report.dig('established', 'review', 'ci_review_agents')
+    end
+  end
+
+  def test_a_legacy_key_listed_first_names_that_key_in_the_collision
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_first_collision(data)) }
+      blocking = migrate_report(root, sha).fetch('blocking')
+
+      assert_includes blocking, 'review.check (collides with review.ci_review_agents)'
+      refute_includes blocking, 'review.ci_review_agents (collides with review.ci_review_agents)'
+    end
+  end
+
   def test_a_legacy_github_action_check_string_becomes_one_list_entry
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('review' => legacy_check_review(data, 'github_action_check')) }
@@ -403,6 +423,16 @@ class SeamMigrateCiJobListTest < Minitest::Test
   def scalar_current_review(data)
     { 'required' => 'always', 'ci_review_agents' => 'claude-review',
       'reviewers' => data.dig('review', 'reviewers') }
+  end
+
+  def legacy_array_review(data)
+    { 'required' => 'always', 'check' => ['claude-review'], 'reviewers' => data.dig('review', 'reviewers') }
+  end
+
+  def legacy_first_collision(data)
+    reviewers = data.dig('review', 'reviewers').map(&:dup)
+    { 'required' => 'always', 'check' => 'claude-review', 'ci_review_agents' => ['claude-review'],
+      'reviewers' => reviewers }
   end
 
   def legacy_check_review(data, key)
