@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 require 'tempfile'
 require_relative 'executable'
+require_relative 'process'
 
 module Shaka
   # Keeps process diagnostics outside the candidate checkout.
@@ -20,8 +21,19 @@ module Shaka
     end
 
     def process_failure(command, status, stderr, stdout)
-      exit_reason = status.signaled? ? "killed by signal #{status.termsig}" : "exited #{status.exitstatus}"
+      exit_reason = if status.nil?
+                      "timed out after #{@options.fetch(:timeout_seconds)}s"
+                    elsif status.signaled?
+                      "killed by signal #{status.termsig}"
+                    else
+                      "exited #{status.exitstatus}"
+                    end
       failure("#{command} #{exit_reason}", [stderr, stdout].reject(&:empty?).join("\n"))
+    end
+
+    def reviewer_process(args, input = nil)
+      LocalReviewProcess.capture(args, stdin_data: input, chdir: @root,
+                                       timeout: @options.fetch(:timeout_seconds))
     end
   end
 
@@ -50,10 +62,10 @@ module Shaka
       executable = LocalReviewExecutable.resolve('codex', candidate_root: @candidate_root)
       return missing('codex') unless executable
 
-      stdout, stderr, status = Open3.capture3(executable, 'exec', '-s', 'read-only', '--ignore-rules',
-                                              '--ignore-user-config', '--skip-git-repo-check', '-o', @report, '-',
-                                              stdin_data: prompt, chdir: @root)
-      return process_failure('codex exec', status, stderr, stdout) unless status.success?
+      args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
+              '--skip-git-repo-check', '-o', @report, '-']
+      stdout, stderr, status = reviewer_process(args, prompt)
+      return process_failure('codex exec', status, stderr, stdout) unless status&.success?
 
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
@@ -63,7 +75,7 @@ module Shaka
       return missing('claude') unless executable
 
       output, stderr, status = claude_process(executable, prompt)
-      return process_failure('claude -p', status, stderr, output) unless status.success?
+      return process_failure('claude -p', status, stderr, output) unless status&.success?
 
       claude_result(output)
     rescue JSON::ParserError
@@ -75,8 +87,7 @@ module Shaka
               '--safe-mode', '--strict-mcp-config']
       args.push('--effort', effort) if effort
       args.push('--output-format', 'json', '-')
-      output, stderr, status = Open3.capture3(*args, stdin_data: prompt, chdir: @root)
-      [output, stderr, status]
+      reviewer_process(args, prompt)
     end
 
     def claude_result(output)
@@ -118,8 +129,8 @@ module Shaka
       args = [executable, '--prompt-file', prompt_path, '-m', @options[:model]]
       args.push('--reasoning-effort', effort) if effort
       args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
-      output, stderr, status = Open3.capture3(*args, chdir: @root)
-      status.success? ? output : process_failure('grok', status, stderr, output)
+      output, stderr, status = reviewer_process(args)
+      status&.success? ? output : process_failure('grok', status, stderr, output)
     end
 
     def save_usage(output)

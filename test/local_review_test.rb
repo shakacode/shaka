@@ -644,6 +644,30 @@ class LocalReviewCaseIdentityTest < Minitest::Test
   end
 end
 
+class LocalReviewTimeoutTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_stalled_reviewer_returns_structured_noncompletion
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!/bin/sh\nsleep 10\n")
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      output, _error, status = run_review(root, base, head, bin, timeout_seconds: 1)
+      assert_timeout(output, status, started)
+    end
+  end
+
+  private
+
+  def assert_timeout(output, status, started)
+    refute_predicate status, :success?
+    result = JSON.parse(output)
+    assert_equal 'cli_failure', result.fetch('failure_stage')
+    assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+    assert_includes result.fetch('reason'), 'timed out after 1s'
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 6
+  end
+end
+
 class LocalReviewEmptyReportTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -744,7 +768,29 @@ module LocalReviewContextAssertion
   end
 end
 
+module LocalReviewArguments
+  private
+
+  def review_arguments(root, base, head, reviewer, options)
+    arguments = [self.class::COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
+                 '--reviewer', reviewer]
+    append_review_options(arguments, reviewer, options)
+  end
+
+  def append_review_options(arguments, reviewer, options)
+    default_effort = reviewer.downcase == 'openai/codex' ? nil : 'medium'
+    arguments.push('--effort', options.fetch(:effort, default_effort)) if options.fetch(:effort, default_effort)
+    %w[model criteria-ref description-file timeout-seconds].each do |key|
+      value = options[key.tr('-', '_').to_sym]
+      arguments.push("--#{key}", value.to_s) if value
+    end
+    arguments
+  end
+end
+
 module LocalReviewFixture
+  include LocalReviewArguments
+
   private
 
   def fake_codex(bin, head)
@@ -821,17 +867,6 @@ module LocalReviewFixture
                    chdir: options.fetch(:cwd, Dir.pwd))
   end
 
-  def review_arguments(root, base, head, reviewer, options)
-    arguments = [self.class::COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
-                 '--reviewer', reviewer]
-    default_effort = reviewer.downcase == 'openai/codex' ? nil : 'medium'
-    arguments.push('--effort', options.fetch(:effort, default_effort)) if options.fetch(:effort, default_effort)
-    arguments.push('--model', options[:model]) if options[:model]
-    arguments.push('--criteria-ref', options[:criteria_ref]) if options[:criteria_ref]
-    arguments.push('--description-file', options[:description_file]) if options[:description_file]
-    arguments
-  end
-
   def with_repository
     Dir.mktmpdir('shaka-local-review') do |root|
       Dir.mktmpdir('shaka-review-cli') do |bin|
@@ -875,5 +910,6 @@ LocalReviewStdoutFailureTest.include(LocalReviewFixture)
 LocalReviewContextTest.include(LocalReviewFixture)
 LocalReviewRelativePathTest.include(LocalReviewFixture)
 LocalReviewCaseIdentityTest.include(LocalReviewFixture)
+LocalReviewTimeoutTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)

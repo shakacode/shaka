@@ -81,6 +81,21 @@ module Shaka
         directory == root || directory.start_with?("#{root}/")
     end
 
+    def validate_timeout!
+      timeout = @options.fetch(:timeout_seconds, '300').to_s
+      valid = timeout.match?(/\A[1-9]\d*\z/) && timeout.to_i <= 3600
+      raise Shaka::Error, '--timeout-seconds must be 1..3600' unless valid
+
+      @options[:timeout_seconds] = timeout.to_i
+    end
+
+    def validate_criteria_ref!
+      return unless @options[:criteria_ref]
+
+      raise Shaka::Error, '--criteria-ref must be a full commit SHA' unless
+        @options[:criteria_ref].match?(LocalReviewEvidence::SHA)
+    end
+
     def capture(*arguments)
       stdout, _stderr, status = Open3.capture3(*arguments)
       unless status.success?
@@ -146,10 +161,8 @@ module Shaka
           raise Shaka::Error, "--#{key} must be a full commit SHA"
         end
       end
-      if @options[:criteria_ref] && !@options[:criteria_ref].match?(LocalReviewEvidence::SHA)
-        raise Shaka::Error, '--criteria-ref must be a full commit SHA'
-      end
-
+      validate_criteria_ref!
+      validate_timeout!
       validate_reviewer!
       validate_checkout!
     end
