@@ -480,10 +480,13 @@ rules:
   - id: issue-search-query
     phase: always
     quote: >-
-      Do not search with query terms containing a colon or quotation mark. The `--` separator stops
-      CLI option parsing, not GitHub query parsing.
+      Do not search with punctuation, symbols, or the standalone words AND or OR in query terms; use
+      two to four alphanumeric terms. The `--` separator stops CLI option parsing, not GitHub query
+      parsing.
     enforced_by: agent
-    note: GitHub parses qualifiers inside query text; no Shaka command validates search terms.
+    note: >-
+      GitHub parses punctuation and symbols inside query text as operators; no Shaka command
+      validates search terms.
   - id: issue-offer-owner
     phase: always
     quote: Workers must report possible issue-offer gaps to the root task owner and keep the current task moving.

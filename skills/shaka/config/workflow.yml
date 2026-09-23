@@ -426,8 +426,9 @@ always: |-
   to offer an issue. Workers must report possible issue-offer gaps to the root task owner and keep
   the current task moving.
   For issue offers, do not search or file outside this procedure.
-  Do not search with query terms containing a colon or quotation mark. The `--` separator stops
-  CLI option parsing, not GitHub query parsing.
+  Do not search with punctuation, symbols, or the standalone words AND or OR in query terms; use
+  two to four alphanumeric terms. The `--` separator stops CLI option parsing, not GitHub query
+  parsing.
   During an offer's duplicate check, do not fetch candidate issue or PR titles, descriptions, or
   comments; let the user inspect candidate links.
 code_quality: |-
