@@ -179,8 +179,9 @@ phases:
         comes from the default branch. Pass `--implementer` once per provider and model family that
         produced part of the change, counting a delegated worker, and `--unavailable
         PROVIDER/FAMILY` only with `shaka review run` evidence that the documented CLI is missing
-        from `PATH` (`executable_missing`) or that the CLI itself failed (`cli_failure`). A CLI
-        report-validation failure is not availability evidence.
+        from `PATH` (`executable_missing`), or a `cli_failure` whose local diagnostic establishes
+        missing credentials, exhausted quota, or a provider outage. A nonzero exit alone, an invalid
+        flag or model, and a report-validation failure are not availability evidence.
         Added or removed flags do not establish unavailability. A setup failure before the reviewer
         launches is not availability evidence. It returns `different_provider`,
         `same_provider`, or `same_model`, with a note to copy into the record. None is an error:

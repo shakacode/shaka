@@ -3,6 +3,7 @@
 require 'open3'
 require 'rbconfig'
 require 'tempfile'
+require 'tmpdir'
 require_relative '../reviewer_selection'
 require_relative 'cli'
 require_relative 'evidence'
@@ -13,18 +14,35 @@ module Shaka
     def initialize(options) = @options = options
 
     def run
+      @attempted = false
       validate!
       prompt = review_prompt
       report = Tempfile.create(['shaka-review-', '.md'])
       report.close
-      result = LocalReviewCli.new(@options, root:, report: report.path).run(prompt)
+      result = launch_neutral(prompt, report.path)
       result || validate_report(report.path)
     rescue Shaka::Error, SystemCallError => e
-      { 'status' => 'not_completed', 'head' => head, 'reviewer' => @options[:reviewer],
-        'attempted' => false, 'failure_stage' => 'setup_failure', 'reason' => e.message }
+      setup_failure(e)
     end
 
     private
+
+    def setup_failure(error)
+      { 'status' => 'not_completed', 'head' => head, 'reviewer' => @options[:reviewer],
+        'attempted' => @attempted || false, 'failure_stage' => 'setup_failure',
+        'skip_evidence' => 'not_eligible', 'reason' => error.message }
+    end
+
+    def launch_neutral(prompt, report)
+      Dir.mktmpdir('shaka-review-neutral-') do |neutral|
+        candidate = "#{root}/"
+        raise Shaka::Error, 'Temporary reviewer directory is inside the candidate checkout' if
+          File.realpath(neutral).start_with?(candidate)
+
+        @attempted = true
+        LocalReviewCli.new(@options, root: neutral, report: report).run(prompt)
+      end
+    end
 
     def validate!
       %i[base head].each do |key|
@@ -82,7 +100,8 @@ module Shaka
 
     def incomplete(reason, report)
       { 'status' => 'not_completed', 'head' => head, 'reviewer' => reviewer,
-        'attempted' => true, 'failure_stage' => 'report_validation', 'reason' => reason, 'report' => report }
+        'attempted' => true, 'failure_stage' => 'report_validation', 'skip_evidence' => 'not_eligible',
+        'reason' => reason, 'report' => report }
     end
 
     def root = @root ||= File.realpath(@options.fetch(:root, Dir.pwd))

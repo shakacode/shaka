@@ -33,10 +33,9 @@ class LocalReviewCodexTest < Minitest::Test
 
       refute_predicate status, :success?
       result = JSON.parse(output)
-      assert_equal 'not_completed', result.fetch('status')
-      assert result.fetch('attempted')
-      assert_equal 'cli_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), 'codex exec exited 42'
+      assert_codex_failure(result)
+    ensure
+      cleanup_artifacts(result)
     end
   end
 
@@ -48,6 +47,8 @@ class LocalReviewCodexTest < Minitest::Test
       refute_predicate status, :success?
       result = JSON.parse(output)
       assert_missing_codex(result)
+    ensure
+      cleanup_artifacts(result)
     end
   end
 
@@ -57,6 +58,7 @@ class LocalReviewCodexTest < Minitest::Test
       refute_predicate status, :success?
       result = JSON.parse(output)
       assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_equal 'not_eligible', result.fetch('skip_evidence')
       refute result.fetch('attempted')
       assert_includes result.fetch('reason'), 'Checkout HEAD is'
     end
@@ -69,6 +71,7 @@ class LocalReviewCodexTest < Minitest::Test
       refute_predicate status, :success?
       result = JSON.parse(output)
       assert_equal 'report_validation', result.fetch('failure_stage')
+      assert_equal 'not_eligible', result.fetch('skip_evidence')
       assert result.fetch('attempted')
     end
   end
@@ -82,20 +85,43 @@ class LocalReviewCodexTest < Minitest::Test
     end
   end
 
+  def test_temp_directory_inside_candidate_fails_before_reviewer_launch
+    with_repository do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin, env: { 'TMPDIR' => root })
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      refute result.fetch('attempted')
+    end
+  end
+
   private
 
   def assert_codex_invocation(trace, head)
     invocation = JSON.parse(File.read(trace))
     assert_equal %w[exec -s read-only --ignore-rules --ignore-user-config], invocation.fetch('args').first(5)
+    assert_includes invocation.fetch('args'), '--skip-git-repo-check'
     assert_includes invocation.fetch('prompt'), '+after'
     assert_includes invocation.fetch('prompt'), "REVIEWED #{head} BY openai/codex"
+    refute_equal File.dirname(trace), invocation.fetch('cwd')
+    refute_path_exists invocation.fetch('cwd')
   end
 
   def assert_missing_codex(result)
     assert_equal 'not_completed', result.fetch('status')
     refute result.fetch('attempted')
     assert_equal 'executable_missing', result.fetch('failure_stage')
+    assert_equal 'confirmed', result.fetch('skip_evidence')
     assert_includes result.fetch('reason'), 'codex is not on PATH'
+  end
+
+  def assert_codex_failure(result)
+    assert_equal 'not_completed', result.fetch('status')
+    assert result.fetch('attempted')
+    assert_equal 'cli_failure', result.fetch('failure_stage')
+    assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+    assert File.file?(result.fetch('diagnostic_path'))
+    assert_includes result.fetch('reason'), 'codex exec exited 42'
   end
 end
 
@@ -165,6 +191,56 @@ class LocalReviewOtherCliTest < Minitest::Test
   end
 end
 
+class LocalReviewProviderFailureTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_claude_error_json_is_a_cli_failure_but_not_an_automatic_skip
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'claude', "#!/bin/sh\nprintf '{\"is_error\":true}'\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'cli_failure', result.fetch('failure_stage')
+      assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_grok_nonzero_exit_is_not_an_automatic_skip
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'grok', "#!/bin/sh\necho invalid-model >&2\nexit 2\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'xai/grok', model: 'typo-4')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_grok_model_failure(result)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_malformed_claude_json_is_report_validation
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'claude', "#!/bin/sh\nprintf 'not-json'\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'report_validation', result.fetch('failure_stage')
+      assert_equal 'not_eligible', result.fetch('skip_evidence')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  private
+
+  def assert_grok_model_failure(result)
+    assert_equal 'cli_failure', result.fetch('failure_stage')
+    assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+    assert_includes File.read(result.fetch('diagnostic_path')), 'invalid-model'
+  end
+end
+
 class LocalReviewStatusTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -226,7 +302,7 @@ module LocalReviewFixture
     write_executable(bin, 'codex', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
-      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, cwd: Dir.pwd }))
       report = ARGV.fetch(ARGV.index('-o') + 1)
       File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT medium FINDINGS 0\\n")
     RUBY
@@ -282,7 +358,7 @@ module LocalReviewFixture
   def cleanup_artifacts(result)
     return unless result
 
-    %w[report usage].each do |key|
+    %w[report usage diagnostic_path].each do |key|
       path = result[key]
       File.unlink(path) if path && File.file?(path)
     end
@@ -330,4 +406,5 @@ end
 
 LocalReviewCodexTest.include(LocalReviewFixture)
 LocalReviewOtherCliTest.include(LocalReviewFixture)
+LocalReviewProviderFailureTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)

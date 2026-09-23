@@ -168,9 +168,13 @@ second provider at all, `same_model` is the answer, and the GitHub reviews still
 
 `shaka review run` invokes a listed CLI and returns `completed` only after a successful process
 and a nonempty report attesting to the requested commit and reviewer. A nonzero result says
-`not_completed` with an explicit `failure_stage` and reason; only `executable_missing` or
-`cli_failure` supports skipping that CLI. `report_validation` does not. If every CLI path fails,
-run the implementation model in a fresh host context and use `shaka review check` on its report.
+`not_completed` with an explicit `failure_stage` and reason. `executable_missing` permits a skip;
+`cli_failure` permits one only after inspecting the local diagnostic and establishing a credential,
+quota, or provider failure rather than an invalid flag/model. Neither `report_validation` nor
+`setup_failure` permits a skip. The `skip_evidence` field says `confirmed`,
+`requires_cause_review`, or `not_eligible` accordingly. Do not publish raw diagnostics, which may
+contain secrets. If every CLI path fails, run the implementation model in a fresh host context and
+use `shaka review check` on its report.
 That check labels the evidence `host_report`: it checks the attestation, not the host's launch
 transcript. If no review completed, run `shaka review check --head SHA --not-run-reason TEXT` so
 the failure stays visible; it exits nonzero and never presents a missing review as ready.
@@ -375,51 +379,39 @@ Supply the diff and the PR description, not the implementation reasoning: a revi
 justification anchors on it instead of finding the hole. That is exactly why the same model works
 here — a fresh session has none of the author's reasoning to anchor on.
 
-A local CLI differs from a hosted reviewer in three ways, all because it runs in your worktree with
-your credentials and can write files: it must not edit, you publish its report rather than it
-posting its own, and the report names the revision and model so the record stands on its own. On a public repository, include only
+A local CLI differs from a hosted reviewer in three ways: it uses your credentials, must not edit,
+and leaves report publication to you. The report names the revision and model so the record stands
+on its own. On a public repository, include only
 review prose permitted by the public-prose rule above; retain withheld comments as links rather
 than supplying their bodies.
 
-Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers. Each
-block below reads this task's base branch from `SHAKA_BASE_BRANCH`, so the review sees the
-same diff the pull request will merge. Export it in the shell you run the block in:
-
-```bash
-export SHAKA_BASE_BRANCH=main   # this task's base branch
-```
-
-Exporting it, rather than editing a branch name into the block, keeps an arbitrary name out
-of shell source, where a `$`, a backtick, or an apostrophe would be expanded, executed, or
-left as invalid syntax. The `:?` in each block fails loudly when the variable is unset,
-instead of quietly resolving `origin/` and reviewing the wrong diff.
-
-The checkout-local examples below are for trusted instruction files. When the candidate
-changes `AGENTS.md` or other host instruction files, first export the diff and relevant
-source as review data. Start the reviewer in an instruction-neutral directory outside
-candidate trees, with a prompt containing that data and the owner-supplied trusted criteria.
-Do not run these checkout-local examples in that case: prompt wording cannot demote
-candidate instructions a host has already loaded. For Codex outside a repository,
-`--skip-git-repo-check` permits that neutral working directory.
+Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers.
+`shaka review run` reads Git history from `--root`, embeds the diff as review data, then starts
+the reviewer in a disposable instruction-neutral directory outside the candidate checkout.
+Candidate `AGENTS.md` and similar files are never loaded as host instructions by that CLI.
+Codex receives `--skip-git-repo-check` for the neutral directory. Supply any trusted-base
+repository criteria separately; candidate criteria remain data in the diff.
 
 Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)` and
-`HEAD=$(git rev-parse HEAD)` when `main` is the verified default branch. The helper checks that the checkout is at
-`HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
+`HEAD=$(git rev-parse HEAD)` when `main` is the verified default branch. The helper checks that the
+checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.
 
 Codex 0.154.0:
 
 ```bash
-shaka review run --root . --base BASE --head HEAD --reviewer openai/codex --effort medium
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex --effort medium
 ```
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
-Use that flag only when `shaka review run` reports `executable_missing` or `cli_failure` for
-`codex`. A setup or report-validation failure does not qualify.
+Use that flag only when `shaka review run` reports `executable_missing`, or after a `cli_failure`
+whose local diagnostic establishes a real reviewer outage. A bad argument, setup failure, or
+report-validation failure does not qualify.
 
-The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config -o REPORT -`.
+The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config
+--skip-git-repo-check -o REPORT -` from its neutral directory.
 `-s read-only` confines it, the ignore flags skip user/project rules and config, and the report
 is created outside the checkout. It does not use `--ephemeral`, so the session remains available
 for `shaka usage --host codex --file PATH --commit HEAD --contribution review --all-turns`.
@@ -428,13 +420,12 @@ for `shaka usage --host codex --file PATH --commit HEAD --contribution review --
 Claude Code:
 
 ```bash
-shaka review run --root . --base BASE --head HEAD --reviewer anthropic/claude --effort medium
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude --effort medium
 ```
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
 reviewer and cannot replace `claude -p`. It also is not evidence for `--unavailable`.
-Use that flag only when `shaka review run` reports `executable_missing` or `cli_failure` for
-`claude`. A setup or report-validation failure does not qualify.
+Apply the same failure-cause check before marking `claude` unavailable.
 
 The helper runs `claude -p --permission-mode plan --permission-prompts none --restricted
 --safe-mode --strict-mcp-config --effort EFFORT --output-format json -`. It rejects an error,
@@ -451,9 +442,11 @@ accepts `ANTHROPIC_API_KEY`, so a logged-in Max/claude.ai session looks unavaila
 
 Grok 1.0.30:
 
+Set `MODEL` to a model the installed Grok CLI accepts before running:
+
 ```bash
-shaka review run --root . --base BASE --head HEAD --reviewer xai/grok \
-  --model MODEL --effort high
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer xai/grok \
+  --model "$MODEL" --effort high
 ```
 
 The helper runs `grok --prompt-file PROMPT -m MODEL --reasoning-effort high --output-format plain
@@ -463,16 +456,13 @@ remove web access and subagents.
 If this review is a fresh Cursor chat, report it with
 `shaka usage --host cursor --commit "$(git rev-parse HEAD)" --contribution review` from that chat, or that
 command plus `--file` of its stop-hook jsonl. Pass its report to
-`shaka review check --head HEAD --reviewer xai/grok --report PATH`; the result is `reported`,
+`shaka review check --head "$HEAD" --reviewer xai/grok --report PATH`; the result is `reported`,
 not a claim that the Grok CLI launched. Parent-agent Cursor records exclude subagents.
 
 The Codex flags were exercised on a prior local review rather than read off `--help`. The
-Claude and Grok flags come from each CLI's `--help`. Note what they do not cover: these
-flags skip user configuration and execpolicy rules, not a repository's own `AGENTS.md` or
-similar instruction files, which the CLI still loads from the checkout it runs in. That is
-safe only when those instruction files are trusted; owning the branch does not make
-changes to its instructions safe to load. Use the neutral-directory path above for such
-changes and restricted execution for untrusted contributions, under
+Claude and Grok flags come from each CLI's `--help`. The helper's neutral directory prevents
+the reviewer host from loading candidate `AGENTS.md` and similar instructions; the candidate
+diff remains untrusted review data. Restrict execution for untrusted contributions under
 [what the helpers protect](working-with-your-agent.md#what-the-helpers-protect). Codex's
 `--ignore-user-config` drops config-defined MCP servers, Grok manages them through
 `grok mcp`, and Claude's `--strict-mcp-config` without a config file loads none. Codex

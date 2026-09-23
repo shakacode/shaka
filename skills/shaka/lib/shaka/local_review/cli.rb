@@ -24,10 +24,10 @@ module Shaka
     private
 
     def codex(prompt)
-      _stdout, _stderr, status = Open3.capture3('codex', 'exec', '-s', 'read-only', '--ignore-rules',
-                                                '--ignore-user-config', '-o', @report, '-',
-                                                stdin_data: prompt, chdir: @root)
-      return failure("codex exec exited #{status.exitstatus}") unless status.success?
+      _stdout, stderr, status = Open3.capture3('codex', 'exec', '-s', 'read-only', '--ignore-rules',
+                                               '--ignore-user-config', '--skip-git-repo-check', '-o', @report, '-',
+                                               stdin_data: prompt, chdir: @root)
+      return failure("codex exec exited #{status.exitstatus}", stderr) unless status.success?
 
       invalid('codex exec returned no review') unless File.size?(@report)
     rescue Errno::ENOENT
@@ -35,9 +35,9 @@ module Shaka
     end
 
     def claude(prompt)
-      output, status = claude_process(prompt)
+      output, stderr, status = claude_process(prompt)
       @options[:usage] = save_usage(output)
-      return failure("claude -p exited #{status.exitstatus}") unless status.success?
+      return failure("claude -p exited #{status.exitstatus}", stderr) unless status.success?
 
       claude_result(output)
     rescue Errno::ENOENT
@@ -51,8 +51,8 @@ module Shaka
               '--safe-mode', '--strict-mcp-config']
       args.push('--effort', effort) if effort
       args.push('--output-format', 'json', '-')
-      output, _stderr, status = Open3.capture3(*args, stdin_data: prompt, chdir: @root)
-      [output, status]
+      output, stderr, status = Open3.capture3(*args, stdin_data: prompt, chdir: @root)
+      [output, stderr, status]
     end
 
     def claude_result(output)
@@ -70,8 +70,8 @@ module Shaka
 
     def grok(prompt)
       file = prompt_file(prompt)
-      output, status = grok_process(file.path)
-      return failure("grok exited #{status.exitstatus}") unless status.success?
+      output, stderr, status = grok_process(file.path)
+      return failure("grok exited #{status.exitstatus}", stderr) unless status.success?
 
       File.write(@report, output)
       invalid('grok returned no review') unless File.size?(@report)
@@ -92,8 +92,8 @@ module Shaka
       args = ['grok', '--prompt-file', prompt_path, '-m', @options[:model]]
       args.push('--reasoning-effort', effort) if effort
       args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
-      output, _stderr, status = Open3.capture3(*args, chdir: @root)
-      [output, status]
+      output, stderr, status = Open3.capture3(*args, chdir: @root)
+      [output, stderr, status]
     end
 
     def save_usage(output)
@@ -105,14 +105,27 @@ module Shaka
 
     def missing(name) = outcome("#{name} is not on PATH", 'executable_missing', false)
 
-    def failure(reason) = outcome(reason, 'cli_failure', true)
+    def failure(reason, diagnostic = nil)
+      outcome(reason, 'cli_failure', true).merge('diagnostic_path' => save_diagnostic(diagnostic))
+    end
 
     def invalid(reason) = outcome(reason, 'report_validation', true)
 
     def outcome(reason, stage, attempted)
       { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
         'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason, 'report' => @report,
+        'skip_evidence' => { 'executable_missing' => 'confirmed',
+                             'cli_failure' => 'requires_cause_review' }.fetch(stage, 'not_eligible'),
         'usage' => @options[:usage] }.compact
+    end
+
+    def save_diagnostic(text)
+      return nil if text.to_s.empty?
+
+      file = Tempfile.create(['shaka-review-diagnostic-', '.txt'])
+      file.write(text)
+      file.close
+      file.path
     end
 
     def effort = @options[:effort]
