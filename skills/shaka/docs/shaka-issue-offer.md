@@ -10,8 +10,8 @@ user considers the offer.
 
 Offer a clear, actionable gap worth tracking, not every idea set aside by the active task. For an
 AI-found gap or uncertain value, use the Shaka
-[value checkpoint](../../../docs/working-with-your-agent.md#say-what-the-work-is-worth); keep missing
-impact and frequency UNKNOWN, and skip offers that remain speculative or low-value. Draft a concise
+[value checkpoint](https://github.com/shakacode/shaka/blob/main/docs/working-with-your-agent.md#say-what-the-work-is-worth);
+keep missing impact and frequency UNKNOWN, and skip offers that remain speculative or low-value. Draft a concise
 title and body from public sources. Verify the gap in current public Shaka materials
 and cite that source in the draft; cite public sources for other factual claims. Exclude details
 learned only from the active task or a private repository, as well as private repository names,
@@ -69,12 +69,12 @@ sufficient. File only after the latest candidates are reviewed and the user conf
 gap. Do not repeat the search after renewed approval; a candidate opened after the final recheck is a
 narrow race the procedure cannot eliminate.
 
-Pass the exact approved text to the installed Shaka CLI's `issue-create` subcommand. Put the
-single-line title first and the approved body on the remaining lines of a quoted here-document.
-Choose a delimiter that appears nowhere in either value; the quoted delimiter keeps the draft
-literal. The command rechecks the fixed public repository identity on GitHub.com, streams the exact
-body to `gh`, and prints the resulting public issue URL. Send a quoted here-document to
-`shaka issue-create`, with the approved title on its first line and body on the remaining lines.
-The command removes the one final newline the here-document uses to terminate input. To preserve an
-approved body that ends with a newline, include one extra blank line before the delimiter. If the
-command does not return the issue URL, stop and inspect live repository state before any retry.
+Pass the exact approved text to the installed Shaka CLI's `issue-create` subcommand in a quoted
+here-document: put the single-line title first and the approved body on the remaining lines, and
+choose a delimiter that appears nowhere in either value. Use the executable path established by
+installation; the gem exposes `shaka`, and the source installer prints the installed
+`skills/shaka/scripts/shaka` path. The command rechecks the fixed public repository identity on
+GitHub.com, streams the exact body to `gh`, and prints the resulting public issue URL. It removes
+the one final newline used to terminate the here-document. To preserve an approved body that ends
+with a newline, include one extra blank line before the delimiter. If the command does not return
+the issue URL, stop and inspect live repository state before any retry.

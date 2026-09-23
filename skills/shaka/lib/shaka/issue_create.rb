@@ -43,26 +43,11 @@ module Shaka
     end
 
     def self.validate_text(title, body)
-      unless valid_text?(title) && valid_text?(body)
-        raise Shaka::Error, 'Issue title and body must be nonempty valid UTF-8 text.'
+      if title.strip.empty? || title.match?(/[\r\0]/) || title != title.strip
+        raise Shaka::Error, 'Issue title must be a nonempty line without surrounding whitespace.'
       end
-
-      validate_title(title)
-      validate_body(body)
-    end
-
-    def self.valid_text?(text) = !text.strip.empty?
-
-    def self.validate_title(title)
-      return unless title.match?(/[\r\0]/) || title != title.strip
-
-      raise Shaka::Error, 'Issue title must be one line without surrounding whitespace.'
-    end
-
-    def self.validate_body(body)
-      return unless body.include?("\0")
-
-      raise Shaka::Error, 'Issue body cannot contain NUL bytes.'
+      raise Shaka::Error, 'Issue body must be nonempty valid UTF-8 text.' if body.strip.empty?
+      raise Shaka::Error, 'Issue body cannot contain NUL bytes.' if body.include?("\0")
     end
 
     def self.verify_repository!
@@ -113,7 +98,7 @@ module Shaka
       0
     end
 
-    private_class_method :create, :validate_text, :valid_text?, :validate_title, :validate_body,
-                         :verify_repository!, :create_issue, :require_success!, :issue_url, :gh, :help
+    private_class_method :create, :validate_text, :verify_repository!, :create_issue, :require_success!,
+                         :issue_url, :gh, :help
   end
 end
