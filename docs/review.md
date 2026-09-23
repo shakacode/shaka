@@ -402,7 +402,8 @@ Do not run these checkout-local examples in that case: prompt wording cannot dem
 candidate instructions a host has already loaded. For Codex outside a repository,
 `--skip-git-repo-check` permits that neutral working directory.
 
-Use full, immutable `BASE` and `HEAD` commit SHAs. The helper checks that the checkout is at
+Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)` and
+`HEAD=$(git rev-parse HEAD)` when `main` is the verified default branch. The helper checks that the checkout is at
 `HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.

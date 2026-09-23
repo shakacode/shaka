@@ -5,6 +5,7 @@ require 'rbconfig'
 require 'tempfile'
 require_relative '../reviewer_selection'
 require_relative 'cli'
+require_relative 'evidence'
 
 module Shaka
   # Checks the exact revision, launches a reviewer, and validates its report.
@@ -27,17 +28,26 @@ module Shaka
 
     def validate!
       %i[base head].each do |key|
-        raise Shaka::Error, "--#{key} must be a full commit SHA" unless @options[key].to_s.match?(LocalReview::SHA)
+        unless @options[key].to_s.match?(LocalReviewEvidence::SHA)
+          raise Shaka::Error, "--#{key} must be a full commit SHA"
+        end
       end
       validate_reviewer!
       validate_checkout!
     end
 
     def validate_reviewer!
+      raise Shaka::Error, '--reviewer is required' if @options[:reviewer].to_s.empty?
+
       @options[:reviewer] = ReviewerSelection.parse(@options.fetch(:reviewer)).values.join('/')
       unless %w[openai/codex anthropic/claude xai/grok].include?(reviewer)
         raise Shaka::Error, 'Unsupported local reviewer'
       end
+
+      validate_model!
+    end
+
+    def validate_model!
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
     end
 
@@ -49,7 +59,7 @@ module Shaka
     def validate_report(path)
       text = File.read(path, encoding: 'UTF-8')
       return incomplete('Reviewer returned no matching review attestation', path) unless
-        LocalReviewAttestation.valid?(text, head: head, reviewer: reviewer)
+        LocalReviewEvidence.valid?(text, head: head, reviewer: reviewer)
 
       { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer,
         'report' => path, 'usage' => @options[:usage] }.compact

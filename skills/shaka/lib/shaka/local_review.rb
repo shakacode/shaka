@@ -9,8 +9,6 @@ require_relative 'local_review/report_check'
 module Shaka
   # Entry point for process-verified reviews and explicitly weaker host reports.
   class LocalReview
-    SHA = /\A[0-9a-f]{40}\z/
-
     def self.run(arguments)
       new(arguments).run
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e

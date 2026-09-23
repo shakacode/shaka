@@ -48,7 +48,9 @@ module Shaka
 
     def claude_process(prompt)
       args = ['claude', '-p', '--permission-mode', 'plan', '--permission-prompts', 'none', '--restricted',
-              '--safe-mode', '--strict-mcp-config', '--effort', effort, '--output-format', 'json', '-']
+              '--safe-mode', '--strict-mcp-config']
+      args.push('--effort', effort) if effort
+      args.push('--output-format', 'json', '-')
       output, _stderr, status = Open3.capture3(*args, stdin_data: prompt, chdir: @root)
       [output, status]
     end
@@ -87,10 +89,10 @@ module Shaka
     end
 
     def grok_process(prompt_path)
-      output, _stderr, status = Open3.capture3('grok', '--prompt-file', prompt_path, '-m', @options[:model],
-                                               '--reasoning-effort', effort, '--output-format', 'plain',
-                                               '--permission-mode', 'plan', '--disable-web-search', '--no-subagents',
-                                               chdir: @root)
+      args = ['grok', '--prompt-file', prompt_path, '-m', @options[:model]]
+      args.push('--reasoning-effort', effort) if effort
+      args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
+      output, _stderr, status = Open3.capture3(*args, chdir: @root)
       [output, status]
     end
 
@@ -113,6 +115,6 @@ module Shaka
         'usage' => @options[:usage] }.compact
     end
 
-    def effort = @options.fetch(:effort, 'UNKNOWN')
+    def effort = @options[:effort]
   end
 end

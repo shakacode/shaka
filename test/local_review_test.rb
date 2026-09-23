@@ -62,6 +62,26 @@ class LocalReviewCodexTest < Minitest::Test
     end
   end
 
+  def test_successful_cli_with_unattested_report_cannot_be_marked_unavailable
+    with_repository do |root, base, head, bin|
+      fake_unattested_codex(bin)
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'report_validation', result.fetch('failure_stage')
+      assert result.fetch('attempted')
+    end
+  end
+
+  def test_missing_reviewer_returns_structured_setup_failure
+    with_repository do |root, base, head, _bin|
+      output, _error, status = Open3.capture3(COMMAND, 'review', 'run', '--root', root,
+                                              '--base', base, '--head', head)
+      refute_predicate status, :success?
+      assert_equal 'setup_failure', JSON.parse(output).fetch('failure_stage')
+    end
+  end
+
   private
 
   def assert_codex_invocation(trace, head)
@@ -109,6 +129,19 @@ class LocalReviewOtherCliTest < Minitest::Test
 
       result = assert_successful_review(output, error, status, head, 'xai/grok')
       assert_grok_invocation(trace)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_omitted_effort_does_not_pass_placeholder_to_claude
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'claude-invocation.json')
+      fake_claude(bin, head)
+      output, error, status = run_review(root, base, head, bin,
+                                         env: { 'REVIEW_TRACE' => trace }, reviewer: 'anthropic/claude', effort: nil)
+      result = assert_successful_review(output, error, status, head, 'anthropic/claude')
+      refute_includes JSON.parse(File.read(trace)).fetch('args'), '--effort'
     ensure
       cleanup_artifacts(result)
     end
@@ -174,6 +207,16 @@ class LocalReviewStatusTest < Minitest::Test
       assert_equal 'not_completed', JSON.parse(output).fetch('status')
     end
   end
+
+  def test_host_report_requires_reviewer_as_structured_result
+    with_repository do |root, _base, head, _bin|
+      report = File.join(root, 'review.md')
+      File.write(report, "REVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 0\n")
+      output, _error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head, '--report', report)
+      refute_predicate status, :success?
+      assert_equal 'not_completed', JSON.parse(output).fetch('status')
+    end
+  end
 end
 
 module LocalReviewFixture
@@ -186,6 +229,14 @@ module LocalReviewFixture
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
       report = ARGV.fetch(ARGV.index('-o') + 1)
       File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT medium FINDINGS 0\\n")
+    RUBY
+  end
+
+  def fake_unattested_codex(bin)
+    write_executable(bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      report = ARGV.fetch(ARGV.index('-o') + 1)
+      File.write(report, 'no attestation')
     RUBY
   end
 
@@ -239,7 +290,8 @@ module LocalReviewFixture
 
   def run_review(root, base, head, bin, options = {})
     arguments = [self.class::COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
-                 '--reviewer', options.fetch(:reviewer, 'openai/codex'), '--effort', 'medium']
+                 '--reviewer', options.fetch(:reviewer, 'openai/codex')]
+    arguments.push('--effort', options.fetch(:effort, 'medium')) if options.fetch(:effort, 'medium')
     arguments.push('--model', options[:model]) if options[:model]
     Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}" }.merge(options.fetch(:env, {})), *arguments)
   end

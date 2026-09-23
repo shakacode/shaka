@@ -117,7 +117,8 @@ end
 def usage_banner
   ["Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; ",
    'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help',
-   '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka seam check --help',
+   '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka review run --help',
+   '; shaka review check --help', '; shaka seam check --help',
    '; shaka workflow --help', '; shaka enforcement --help', '; shaka doctor --help',
    '; shaka repos --help; shaka prefix --help'].join
 end
