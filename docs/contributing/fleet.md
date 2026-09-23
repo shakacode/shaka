@@ -169,8 +169,8 @@ For each selected repository:
    `shaka seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA`, then apply only with
    `--apply` after the report names every retained, moved, retired, and blocking field.
    The planner never infers merge authority, review policy, or missing commands. Follow
-   the settings guide's
-   [ordered migration](../settings.md#standard-command-scripts): keep repository-owned
+   the agent guide's
+   [ordered migration](../agents/migration.md): keep repository-owned
    wrappers, add missing fixed scripts only when the report says they are absent, and
    retain temporary adapters at old mapped paths.
    Where old and new meanings collide, use the stricter behavior at both paths until the
