@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'open3'
 require 'rbconfig'
 require 'securerandom'
 require 'tempfile'
@@ -10,6 +9,7 @@ require_relative '../reviewer_selection'
 require_relative 'cli'
 require_relative 'criteria'
 require_relative 'evidence'
+require_relative 'process'
 
 module Shaka
   # Supplies exact-commit source lookup as data to a neutral reviewer.
@@ -101,7 +101,10 @@ module Shaka
     end
 
     def capture(*arguments)
-      stdout, _stderr, status = Open3.capture3(*arguments)
+      timeout = @options.fetch(:timeout_seconds)
+      stdout, _stderr, status = LocalReviewProcess.capture(arguments, stdin_data: nil, chdir: root, timeout: timeout)
+      raise Shaka::Error, "#{arguments.first} timed out after #{timeout}s" unless status
+
       unless status.success?
         exit_reason = status.signaled? ? "signal #{status.termsig}" : "exit #{status.exitstatus}"
         raise Shaka::Error, "#{arguments.first} failed (#{exit_reason})"

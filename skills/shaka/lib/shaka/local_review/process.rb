@@ -21,8 +21,10 @@ module Shaka
     end
 
     def self.wait_or_terminate(waiter, threads, timeout)
-      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
-      finished = waiter.join(timeout) && join_before_deadline(threads, deadline)
+      # Give pipes a separate bounded drain period after the process exits.
+      # Reusing the process deadline would reject already-finished readers at its edge.
+      finished = waiter.join(timeout) &&
+                 join_before_deadline(threads, Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2)
       terminate(waiter) unless finished
       finished ? waiter.value : nil
     end
@@ -38,7 +40,7 @@ module Shaka
     def self.join_before_deadline(threads, deadline)
       threads.all? do |thread|
         remaining = deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        remaining.positive? && thread.join(remaining)
+        !thread.alive? || (remaining.positive? && thread.join(remaining))
       end
     end
 

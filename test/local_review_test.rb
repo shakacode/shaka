@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'json'
 require 'rbconfig'
+require_relative '../skills/shaka/lib/shaka/local_review/process'
 
 class LocalReviewCodexTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -673,6 +674,26 @@ class LocalReviewTimeoutTest < Minitest::Test
       output, _error, status = run_review(root, base, head, bin, timeout_seconds: 1)
       assert_timeout(output, status, started)
     end
+  end
+
+  def test_stalled_setup_command_returns_structured_noncompletion
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'git', "#!/bin/sh\nsleep 10\n")
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      output, _error, status = run_review(root, base, head, bin, timeout_seconds: 1)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'timed out after 1s'
+      assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 6
+    end
+  end
+
+  def test_finished_reader_is_accepted_at_deadline
+    reader = Thread.new { 'done' }
+    reader.join
+    assert Shaka::LocalReviewProcess.join_before_deadline([reader],
+                                                          Process.clock_gettime(Process::CLOCK_MONOTONIC) - 1)
   end
 
   private
