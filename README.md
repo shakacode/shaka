@@ -21,6 +21,9 @@ reviewed commit is ready to merge.
 
 - **Spend less time directing the process.** Give the agent an outcome; Shaka
   supplies the steps through testing, review, and PR delivery.
+- **Avoid unnecessary CI runs.** Run tests and adversarial reviews locally, and
+  inspect before-and-after screenshots for UI changes. Fix problems before
+  pushing to reduce CI runs and review rounds.
 - **Understand the result.** The PR explains the change and links to its checks
   and review. A code walkthrough explains the implementation choices.
 - **See what a PR cost.** The PR reports available token usage and estimated
