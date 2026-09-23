@@ -2,7 +2,6 @@
 
 require 'yaml'
 require_relative 'error'
-require_relative 'review_pace'
 require_relative 'repository_config/command_paths'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
@@ -64,13 +63,13 @@ module Shaka
 
     def assign_sections
       @base_branch = @data['base_branch']
-      @review = with_default_pace(@data.fetch('review'))
+      @review = with_default_review_wait(@data.fetch('review'))
       @merge = @data.fetch('merge')
       @recovery = DEFAULT_RECOVERY.merge(@data.fetch('recovery', {}))
     end
 
-    def with_default_pace(review)
-      review.merge('pace' => ReviewPace.normalize(review['pace']))
+    def with_default_review_wait(review)
+      { 'wait_for_all_ci_reviewers' => false }.merge(review)
     end
   end
 end

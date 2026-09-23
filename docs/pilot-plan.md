@@ -156,7 +156,7 @@ Validate Cursor after that. OpenCode's canonical install path, TUI launcher, and
 export-based usage reader follow the same pattern; its consumer delivery is likewise
 unverified.
 Share the skill and GitHub helpers; keep host installation,
-permissions, and native usage readers separate. See [host support](host-support.md)
+permissions, and native usage readers separate. See [host support](development-environments.md)
 for tested versions, startup boundaries, and known gaps.
 
 ## Merge boundary
@@ -170,7 +170,7 @@ unknown or bypass-capable identities block. Leave repository queue settings and 
 auto-merges unchanged. The helper performs an immediate squash merge when the base has no
 queue. When the base has Merge Queue enabled, the helper lets GitHub's enqueue operation
 decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKED` expected
-reviewed head, and also `UNSTABLE` when effective `review.pace` is `swift`; conflicting or
+reviewed head, and also `UNSTABLE` when effective `review.wait_for_all_ci_reviewers` is `false`; conflicting or
 unreadable merge state still blocks. Queue admission is not Auto
 task completion: the active Auto task waits for GitHub's current-base integration checks and
 terminal result. Ask archives after the GitHub click; a later queue failure is a new task.
@@ -244,4 +244,4 @@ machinery; claim adoption only after a real tower-to-delivery trial.
 
 Rollback: remove the verified skill link or select a prior trusted source revision
 and reinstall. Preserve unrelated installations and user files. See
-[upgrade and removal](getting-started.md#upgrade).
+[upgrade and removal](agents/installation.md#upgrade).

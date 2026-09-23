@@ -11,7 +11,7 @@ class CliTest < Minitest::Test
     assert_predicate status, :success?, error
     operations = %w[pr comments description reply walkthrough merge recommendation checkpoint seam doctor
                     enforcement repos prefix]
-    (operations + %w[--head --issue --content-file --key --comment --pace --ref]).each do |token|
+    (operations + %w[--head --issue --content-file --key --comment --wait-for-all-ci-reviewers --ref]).each do |token|
       assert_includes output, token
     end
   end

@@ -1,16 +1,13 @@
-# Repository settings: docs/configuration.md
-# Check edits with: shaka seam check --root . --local
-# Load trusted policy with --ref and an immutable default-branch commit.
+# Shaka settings for this repository. See docs/reference/configuration.md.
 ---
-version: 1
+version: 1 # Configuration format, independent of the Shaka release version.
 repo_prefix: SHAKA
-plan: docs/pilot-plan.md
-# base_branch is omitted: use the repository's default branch.
+plan: docs/pilot-plan.md # Product requirements to read when planning work.
 review:
   required: meaningful_changes
   ci_review_jobs:
     - claude-review
-  pace: swift
+  wait_for_all_ci_reviewers: false
   # Local reviewer identities, in preference order.
   local_review_agents:
     - provider: anthropic

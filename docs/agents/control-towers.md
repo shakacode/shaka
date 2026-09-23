@@ -1,13 +1,109 @@
 # Operate control towers
 
-Use this reference after a tower's setup skill establishes its role. The
-[control-tower guide](../control-towers.md) contains installation and role prompts.
-The setup skills own host-specific registration and error handling.
+This reference is part of the installed tower skills. Read it for setup,
+registration, triage, assignments, handoffs, and adoption trials. Control towers
+are advanced pilot features; establish basic Shaka delivery first.
 
-An MCT coordinates repositories; an RCT owns one repository's selection and
-follow-through. Every delivery has one Shaka owner. Registration completes only
-when the master acknowledges the same repository and task. A title, idle state,
-or queued message does not prove ownership or completion.
+## Establish a repository tower
+
+Create a Codex task in the saved project for the intended repository, then send:
+
+```text
+$rct
+```
+
+This setup entry point requires the Codex app's native project and task tools.
+Claude Code desktop establishes its towers with its own skills, described below.
+Cursor, OpenCode, and terminal-only installs receive `$shaka` and use the
+[role prompts](#role-prompts).
+
+The installed RCT skill verifies the task's project, current Git root, remotes,
+and live GitHub identity. It makes the current task the one RCT for that repository,
+pins it, and registers it with the existing MCT. Setup is incomplete until the MCT
+acknowledges the same repository and task. Missing or ambiguous repository identity,
+an existing different RCT, and missing or ambiguous MCT ownership are errors rather
+than guesses.
+
+One RCT owns one repository. Closely related repositories still use separate RCTs;
+the MCT coordinates their ordering and dependencies. If a saved project contains
+several repositories, start the task with its current checkout rooted in the one
+repository the tower will own. `$rct` takes no path or repository argument.
+
+The setup request authorizes its native title, pin, and registration operations.
+It does not assign backlog work or create delivery tasks. After registration, the
+RCT follows [interactive selection](#select-work-interactively) to give a read-only
+recommendation from live state before starting a selected delivery through `$shaka`.
+
+## Establish a master tower in Claude Code
+
+Install the tower skills with `--with-claude-towers`, open the Claude Code desktop
+session you want to hold the master role, and send:
+
+```text
+/mct-claude
+```
+
+The skill searches your active sessions for one already holding the role and stops
+with `MCT setup error: master control tower already exists` when it finds one, or
+`master control tower is ambiguous` when several carry the title. Otherwise it
+renames the session to end in `MCT — Shaka`, pins it, reads both changes back, and
+reports the result.
+
+One master per installation is a rule you keep, not something the skill enforces.
+Searching the session list and renaming a session are separate calls, so two setups
+started at the same moment can both succeed. The skill reports that on its next read
+and asks you to resolve it; it never picks a winner, and it never renames, unpins,
+or ends another session. A title left behind by an abandoned setup is a stale hint
+you can clear, not a corrupt registry.
+
+Repository towers find the master by that suffix, so keep it while the session holds
+the role. Each registration lives in its own tower's transcript, and the master
+derives the current tower set by reading live sessions, so the role adds no file,
+database, or scheduler, and towers survive replacing the master itself. This skill
+needs the desktop app's session tools; a terminal `claude` stops with `MCT setup
+error: host session tools are unavailable`, and the role prompt below remains the
+supported fallback.
+
+Establishing the master authorizes its own title, pin, and acknowledgment
+operations. It assigns no backlog, creates no worker session, and grants no merge
+authority. A repository tower registers by message; the master verifies the
+repository, session, and default branch from its own reads before acknowledging,
+and refuses a repository that already has a tower. A delivered or queued message is
+not acknowledgment in either direction.
+
+## Establish a repository tower in Claude Code
+
+With a master established, open a Claude Code desktop session in the repository you
+want the tower to own, and send:
+
+```text
+/rct-claude
+```
+
+It takes no arguments: the session's own checkout selects the repository. The skill
+confirms the Git root containing the session's working directory, the remotes, and live
+GitHub identity. That working directory alone selects the repository, and a linked
+worktree is valid wherever it lives. A session opened somewhere Git knows nothing about
+is refused rather than guessed at. Missing or ambiguous repository identity, an
+existing tower for the same repository, and a missing or ambiguous master are errors
+rather than guesses.
+
+The skill resolves the display prefix with `shaka prefix`, renames the session to
+`<PREFIX> RCT — Shaka`, pins it, and then states the
+completed setup in the session itself: the repository, session, default branch, and
+one-repository scope. That written record, not the title, is what makes the role
+durable — the master establishes ownership by reading the tower's session, and towers
+outlive the master that acknowledged them.
+
+Registration is a message, and this host has no bounded wait for another session, so
+the tower reports `awaiting acknowledgment` and ends its turn. The master's answer
+arrives as an ordinary labelled turn. Setup is complete only when that answer names
+the same repository and session; a delivered or queued message is not acknowledgment,
+and a refusal comes back the same way rather than leaving the tower waiting.
+
+The two hosts cannot see each other's sessions, so a Claude master coordinates Claude
+repository towers and a Codex master coordinates Codex ones. Do not mix hosts within
+one tower set.
 
 ## Who owns what
 
@@ -82,9 +178,9 @@ start request. An unchanged scan stays quiet.
 Requirements, priority, status, decisions, and task dependencies live in the
 original issue tracker. On GitHub, use native issue dependencies (`blocked by` /
 `blocking`) rather than a Markdown dependency schema
-([GitHub guidance](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies)).
+(https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies).
 On Linear, use native blocked/blocking issue relations
-([Linear guidance](https://linear.app/docs/issue-relations)). Use structured prose only for facts the tracker
+(https://linear.app/docs/issue-relations). Use structured prose only for facts the tracker
 cannot represent, and keep it human-readable. GitHub PRs hold implementation,
 validation, review, walkthrough, usage, and final-state evidence. Link them to
 their source issue when sharing is authorized. RCT and delivery transcripts are
@@ -97,8 +193,60 @@ selected project tracker.
 Keep model selection advisory and portable. Ordinary RCT triage uses a balanced
 flagship model with medium reasoning; consequential product, security, migration,
 or dependency decisions justify higher reasoning. Mechanical inventory may use a
-faster route. Every selected Shaka delivery assesses its own model and effort independently;
+faster route. For example, Codex offered GPT-5.6 Sol / medium as the ordinary mapping
+when this guide was updated; use the current equivalent when that route changes.
+Every selected Shaka delivery assesses its own model and effort independently;
 the RCT's route grants no authority and does not become the delivery route.
+
+## Role prompts
+
+Give an existing portfolio task this role and a bounded outcome:
+
+```text
+Act as the Master Control Tower for the repositories and outcome I name.
+Keep priorities, cross-repository dependencies, and decisions clear. Reuse
+existing repository towers and delivery owners. Route each implementation or
+PR repair through the installed $shaka skill in the verified target checkout.
+Keep one delivery owner per task. Follow verified PR outcomes; do not become
+a second writer or merge executor for an owned PR. Preserve existing authority,
+pauses, work limits, and private context. Report material results and the next
+decision or blocker. This role does not authorize new tasks or scheduled work.
+```
+
+Give the repository's existing task this role and its selected work:
+
+```text
+Act as the Repository Control Tower for the repository I name. Read its trusted
+AGENTS.md and reconcile the selected issue or PR with live GitHub state and
+existing task ownership. Refresh live issues, PRs, tracker relationships, and any
+native ownership the host exposes before each recommendation, and wait for the user
+in this task to assign it or explicitly request a start. Tracker assignee fields
+grant no start authority. When that assignment or request arrives, refresh live ownership again
+before starting `$shaka`.
+Finish useful existing work before admitting more.
+For each delivery, use the installed $shaka skill. Either own that bounded task
+here or continue through its existing owner; do not split closeout responsibility.
+Preserve the repository's commands, review requirements, and merge authority.
+Use isolated worktrees for independent writers and never duplicate a target.
+Keep real decisions visible and verify the final PR state before reporting done.
+Preserve explicit pauses and limits. Create no background work except the read-only
+attention scan the user explicitly requests under this guide.
+```
+
+Then supply an actual assignment, replacing the brackets with verified facts:
+
+```text
+$shaka Complete [issue/PR URL or task description] in [owner/repository].
+Checkout: [verified local path]. Success means [observable result].
+Existing owner: [task reference, or confirmed unowned].
+Merge authority: [existing decision and scope, or ask if unset].
+Dependencies and limits: [known prerequisites, pauses, and stopping point].
+```
+
+The installed Shaka procedure owns model selection, intake, verification, review,
+and merge handling. Reuse answers already given for the same task. A tower prompt
+does not change the host's model, replace the installed skill, or authorize
+delegation. Use supported host controls and the user's actual authorization.
 
 ## Keep decisions and waits accurate
 

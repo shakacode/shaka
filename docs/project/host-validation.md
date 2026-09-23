@@ -1,7 +1,7 @@
 # Host validation record
 
 These are dated observations, not a claim of support for every later version.
-For installation, see [host support](../host-support.md).
+For installation, see [host support](../development-environments.md).
 
 ## September 2026 trials
 

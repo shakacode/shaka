@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative '../error'
-require_relative '../review_pace'
 require_relative '../reviewer_selection'
 require_relative 'validation'
 
@@ -16,6 +15,7 @@ module Shaka
       CI_REVIEW_JOBS = 'ci_review_jobs'
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
       RENAMED = {
+        'pace' => 'wait_for_all_ci_reviewers',
         'ci_review_agents' => CI_REVIEW_JOBS,
         'check' => CI_REVIEW_JOBS,
         'github_action_check' => CI_REVIEW_JOBS,
@@ -50,7 +50,7 @@ module Shaka
       def validate
         enum!(@review['required'])
         validate_check
-        validate_pace
+        validate_review_wait
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
       end
 
@@ -87,9 +87,11 @@ module Shaka
         raise Error, "#{label} repeats #{repeated.first}" if repeated
       end
 
-      def validate_pace
-        return unless @review.key?('pace')
-        raise Error, 'review.pace must be swift or thorough' unless ReviewPace::VALUES.include?(@review['pace'])
+      def validate_review_wait
+        return unless @review.key?('wait_for_all_ci_reviewers')
+        return if [true, false].include?(@review['wait_for_all_ci_reviewers'])
+
+        raise Error, 'review.wait_for_all_ci_reviewers must be true or false'
       end
 
       def local_review_agents!(reviewers)

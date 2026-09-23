@@ -15,7 +15,7 @@ repository.
 **Host.** This skill uses Claude Code's desktop session tools
 (`mcp__ccd_session_mgmt__*` and `mcp__ccd_sidebar__*`). If they are unavailable,
 stop with `MCT setup error: host session tools are unavailable` and name the
-[master role prompt](../../docs/control-towers.md#role-prompts) instead. That
+[master role prompt](../../docs/agents/control-towers.md#role-prompts) instead. That
 prompt, not `$rct`, establishes a master on any host: `$rct` sets up a repository
 tower and stops when no master exists. Do not mix host installations.
 

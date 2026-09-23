@@ -1,6 +1,9 @@
 # Configuration implementation map
 
-For settings and examples, read [Configuration](../configuration.md). This map
+For contributors changing Shaka's configuration loader. Agents using Shaka
+should follow [repository setup](../agents/repository-setup.md).
+
+For settings and examples, read [Configuration](../reference/configuration.md). This map
 shows where Shaka reads and enforces them.
 
 | Input | Consumer | Authority |
@@ -41,5 +44,5 @@ Paths below are relative to `skills/shaka/lib/shaka/`.
 | Initial configuration | `seam/initializer.rb` |
 | Migration classification | `seam/field_classifier.rb` |
 
-See [development](../project/development.md) for the repository's other config
+See [development](development.md) for the repository's other config
 files, executable entry points, and checks.

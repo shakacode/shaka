@@ -127,11 +127,14 @@ parser = OptionParser.new do |flags|
     options[:comment] = value
   end
   flags.on('--walkthrough ID', 'Published COMMENT review ID') { |value| options[:walkthrough] = value }
-  flags.on('--pace PACE', Shaka::ReviewPace::VALUES, 'Review wait mode: swift or thorough') do |value|
-    options[:pace] = value
+  flags.on('--[no-]wait-for-all-ci-reviewers', 'Wait for every configured CI review') do |value|
+    options[:pace] = value ? 'thorough' : 'swift'
   end
-  flags.on('--root DIR', 'Repository root for trusted merge pace') { |value| options[:root] = value }
-  flags.on('--ref REF', 'Trusted commit for merge pace') { |value| options[:ref] = value }
+  flags.on('--pace PACE', 'Removed; use --wait-for-all-ci-reviewers') do |_value|
+    raise OptionParser::InvalidArgument, '--pace was replaced by --[no-]wait-for-all-ci-reviewers'
+  end
+  flags.on('--root DIR', 'Repository root for trusted review settings') { |value| options[:root] = value }
+  flags.on('--ref REF', 'Trusted commit for review settings') { |value| options[:ref] = value }
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('-h', '--help', 'Show usage') do

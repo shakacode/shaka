@@ -6,7 +6,7 @@ module Shaka
   class Seam
     # Review-key half of seam classification, including renamed keys and collisions.
     module ReviewFields
-      REVIEW_KEYS = (%w[required pace] + RepositoryConfig::ReviewSchema::RENAMED.values).uniq.freeze
+      REVIEW_KEYS = (%w[required] + RepositoryConfig::ReviewSchema::RENAMED.values).uniq.freeze
       PREVIOUS_CI_KEY = 'ci_review_agents'
 
       private
@@ -21,10 +21,19 @@ module Shaka
         key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
         return @blocking << "review.#{source}" unless REVIEW_KEYS.include?(key)
         return @blocking << collision(source, key) if @established.fetch('review', {}).key?(key)
-        return @blocking << ci_value_block(source) if unacceptable_ci_value?(source, nested)
+
+        error = review_value_error(source, nested)
+        return @blocking << error if error
 
         @retained << "review.#{key}"
-        store_review(source, key, job_list(source, nested))
+        store_review(source, key, review_value(source, nested))
+      end
+
+      def review_value_error(source, value)
+        return ci_value_block(source) if unacceptable_ci_value?(source, value)
+        return unless source == 'pace' && !%w[swift thorough].include?(value)
+
+        'review.pace must be swift or thorough'
       end
 
       def collision(source, key)
@@ -52,7 +61,9 @@ module Shaka
         RepositoryConfig::ReviewSchema::RENAMED[source] == jobs && !nested.is_a?(String)
       end
 
-      def job_list(source, nested)
+      def review_value(source, nested)
+        return nested == 'thorough' if source == 'pace'
+
         legacy = RepositoryConfig::ReviewSchema::RENAMED[source]
         return [nested] if legacy == RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS && nested.is_a?(String)
 

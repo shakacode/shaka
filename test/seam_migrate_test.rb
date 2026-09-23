@@ -621,3 +621,40 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
     end
   end
 end
+
+class SeamMigrateReviewWaitTest < Minitest::Test
+  include SeamMigrateHelpers
+
+  def test_migration_preserves_both_waiting_choices
+    { 'swift' => false, 'thorough' => true }.each do |pace, expected|
+      with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+        sha = rewrite_yaml(root) { |data| data.merge('review' => data.fetch('review').merge('pace' => pace)) }
+        migrate_report(root, sha, '--apply')
+        config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+
+        assert_equal expected, config.dig('review', 'wait_for_all_ci_reviewers')
+        refute config.fetch('review').key?('pace')
+      end
+    end
+  end
+
+  def test_conflicting_wait_keys_block_in_either_order
+    [{ 'pace' => 'thorough', 'wait_for_all_ci_reviewers' => false },
+     { 'wait_for_all_ci_reviewers' => false, 'pace' => 'thorough' }].each do |settings|
+      with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+        sha = rewrite_yaml(root) { |data| data.merge('review' => data.fetch('review').merge(settings)) }
+
+        assert_includes migrate_report(root, sha).fetch('blocking'),
+                        'review.pace (collides with review.wait_for_all_ci_reviewers)'
+      end
+    end
+  end
+
+  def test_unknown_pace_blocks_instead_of_disabling_the_wait
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('review' => data.fetch('review').merge('pace' => 'fast')) }
+
+      assert_includes migrate_report(root, sha).fetch('blocking'), 'review.pace must be swift or thorough'
+    end
+  end
+end

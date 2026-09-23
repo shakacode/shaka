@@ -9,6 +9,7 @@ that explains what changed, why, and what was checked.
 ```text
 $shaka Fix search when the query contains an apostrophe.
 Add a regression test and bring the PR back for me to merge.
+Use Astra, medium effort. Go.
 ```
 
 For that task, Shaka guides the agent to reproduce the failure, fix it, run your
@@ -37,14 +38,14 @@ issue number, task link, or description.
 
 Shaka needs Ruby 3.4, Git, an authenticated GitHub CLI, and a
 [configured repository](docs/configuration.md). It is an early pilot: Codex and
-Claude Code have recorded delivery trials; coverage for other hosts is still
-limited. See [host support](docs/host-support.md) before choosing an installation.
+Claude Code have recorded delivery trials; coverage for other coding environments is still
+limited. See [development environments](docs/development-environments.md) before choosing an installation.
 
 ## Documentation
 
 - [Getting started](docs/getting-started.md) — install and run your first task.
 - [Working with Shaka](docs/working-with-shaka.md) — write a task, choose a stopping point, and give feedback.
 - [Configuration](docs/configuration.md) — repository settings and scripts.
-- [Control towers](docs/control-towers.md) — organize work across repositories.
+- [Documentation index](docs/README.md) — references and advanced topics.
 
 [Agent instructions](docs/agents/README.md) · [Development and project records](docs/project/README.md) · [MIT license](LICENSE)

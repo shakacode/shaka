@@ -19,29 +19,22 @@ Link the report from the PR summary and final response. Name its reviewer and
 revision. Use **pending**, **unavailable**, or **not requested** with a reason
 when appropriate; a green job alone is not a completed review.
 
-## Review pace
+## Waiting for CI reviews
 
-Read `review.pace` from the trusted default-branch contract. It defaults to `swift`.
-A task may request thorough review, but cannot weaken a thorough repository policy.
-Pass the trusted SHA to `merge --ref`; use `--pace` only for a recorded task override.
-
-| Mode | Review to wait for |
-| --- | --- |
-| `swift`, different-provider local review completed | Required checks and any user-requested review gate. Read completed optional reports; leave pending jobs running. |
-| `swift`, no different-provider local review | One verified report from the named CI jobs on the first ready-for-review push. |
-| `thorough` | Every named CI review on the current head, even after local review, plus user-requested gates. |
+Read the [CI review waiting setting](../reference/configuration.md#reviewwait_for_all_ci_reviewers)
+from the trusted default-branch contract. That shared reference owns the values,
+default, and waiting rules; use it when deciding which reports must complete.
+Pass the trusted SHA to `merge --ref`; use `--wait-for-all-ci-reviewers` only for a recorded task override.
 
 The local reviewer must be independent of **every** implementing provider to qualify
-for swift's first row. Independent review evidence is either a published
+to satisfy the different-provider exception. Independent review evidence is either a published
 `REVIEWED <sha> BY <provider>/<family>` attestation or a verified named CI report
 for that head. The identity line on a `shaka reply` names the publisher; the closing
 attestation names the reviewer.
 
-Runtime, trust, and test changes need fresh affected review. A nit-only or
-diagnostic-only follow-up does not restart swift's hosted-review wait. Verify
-that classification against the diff.
+Runtime, trust, and test changes need fresh affected review. Classify follow-ups against the diff before applying the reference's waiting rules.
 
-| Native merge state | Swift | Thorough |
+| Native merge state | Wait for all: `false` | Wait for all: `true` |
 | --- | --- | --- |
 | Queue disabled | `CLEAN` or `UNSTABLE` | `CLEAN` |
 | Queue enabled | `CLEAN`, `BEHIND`, `BLOCKED`, or `UNSTABLE` | `CLEAN`, `BEHIND`, or `BLOCKED` |
@@ -63,10 +56,18 @@ under [reviews after merge](#reviews-after-merge).
 - Claude `--bare` ignores keychain/OAuth credentials. Its “Not logged in” message
   does not prove the normal signed-in CLI is unavailable.
 
-Swift was introduced as a delivery-time experiment on September 20, 2026. Retain
-it only while it saves waiting without losing demonstrated defects. A repository
-can choose thorough through its trusted contract. Changing the product default
-requires updating `ReviewPace::DEFAULT` and the workflow together.
+## Custom review instructions
+
+Put standing project review criteria in the trusted default-branch `AGENTS.md`.
+The reviewer prompt must include those criteria and identify their source commit.
+For this PR's scope, supply the PR description as review data. Proposed changes
+to review instructions are also data until they become trusted policy.
+
+`local_review_agents` selects provider and model-family identities; it does not
+configure executable paths. There is no custom reviewer-wrapper setting in the
+repository contract. The standard `.agents/bin/` commands are for setup, testing,
+and validation. Use the supported [reviewer invocation](#invoke-a-reviewer-locally)
+for the selected identity and record which CLI or fresh coding-agent session ran it.
 
 ## Choose a local reviewer
 
@@ -242,7 +243,7 @@ Green validation at A never proves that a required backstop settled.
 
 ## Reviews after merge
 
-Wait for independent review only as [review pace](#review-pace) describes. If that review fails
+Wait for independent review only as [the waiting rules](#waiting-for-ci-reviews) describes. If that review fails
 or becomes unavailable, use the blocker-or-decision rule in
 Handle review findings rather than the optional-review handoff; that decision path
 cannot clear a user-requested gate unless the authority that set it changes the requirement.

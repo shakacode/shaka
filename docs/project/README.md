@@ -5,6 +5,7 @@ To change Shaka, start with [development](development.md) and the repository's
 
 | Document | Purpose |
 | --- | --- |
+| [Configuration implementation](configuration.md) | Loaders, schemas, and enforcement code |
 | [Requirements](../pilot-plan.md) | Product scope, design, and remaining acceptance |
 | [Packaging](packaging.md) | Build the gem and validate consumer configuration |
 | [Releasing](releasing.md) | Publish an explicitly approved release |

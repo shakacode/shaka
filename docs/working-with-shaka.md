@@ -6,12 +6,16 @@ limits. You can start with a description, an issue number, or a task link.
 ```text
 $shaka Fix search when the query contains an apostrophe.
 Add a regression test. Keep the existing search syntax.
-Bring the finished PR back for me to merge.
+Bring the finished PR back for me to merge. Use Astra, medium effort. Go.
 ```
 
 Use `/shaka` in Claude Code, Cursor, or OpenCode. Open the task in the repository
 where the work belongs. If a task link points elsewhere, provide that checkout
 when the agent asks.
+
+Specify a model available in your coding environment, its reasoning effort, and
+“Go” when you are ready. Shaka proceeds once those settings are active. If you
+omit them, it recommends settings and waits for your choice.
 
 ## Choose who merges
 
@@ -26,10 +30,9 @@ an existing choice for its agreed scope. You can also ask for **planning only**,
 
 ## What happens during a task
 
-The agent reads the repository's instructions, checks for work already covering
-the task, and recommends a model and reasoning effort. It may pause so you can
-select those settings in your host. If you already specified matching settings
-and asked it to start, it can proceed once they are active.
+The agent reads the repository's instructions and checks whether another task
+already owns the work. Your model and effort choice above handles the initial
+checkpoint when the active settings match.
 
 For a behavior change, the agent tries to reproduce the failure before fixing it.
 It runs the repository's checks, obtains an independent review, and addresses
@@ -51,9 +54,10 @@ the report and checks which commit it reviewed. See the [review reference](agent
 for waiting rules, and [usage reporting](agents/usage-reporting.md) for partial or
 unknown cost figures.
 
-## Give feedback in chat or in your editor
+## Give feedback
 
-Continue in the same task while it owns the work. Describe what feels wrong,
+Comment on the pull request, continue in the owning task, or edit files locally.
+Ask the task to address your PR comments when they are ready. Describe what feels wrong,
 supply an example, or edit the files directly and tell the agent to read the diff.
 Rough notes are useful: “Explain why this helps,” “Too much detail,” or a rewritten
 sentence can give the agent enough direction to finish the edit.
@@ -72,5 +76,4 @@ alone does not establish that.
 
 For a larger task, ask for a useful PR split. Each PR needs its own validation and
 review, and the original task stays open until the whole requested outcome is
-complete. [Control towers](control-towers.md) can help when you are organizing
-work across several repositories.
+complete.

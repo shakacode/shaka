@@ -49,40 +49,48 @@ class ReviewPaceSeamTest < Minitest::Test
     with_repository('review' => review_policy) do |root|
       config = Shaka::RepositoryConfig.load(root:)
 
-      assert_equal 'swift', config.review.fetch('pace')
-      assert_equal 'swift', config.to_h.dig('review', 'pace')
+      refute config.review.fetch('wait_for_all_ci_reviewers')
+      refute config.to_h.fetch('review').fetch('wait_for_all_ci_reviewers')
     end
   end
 
   def test_loads_an_explicit_thorough_review_pace
-    with_repository('review' => review_policy('pace' => 'thorough')) do |root|
-      assert_equal 'thorough', Shaka::RepositoryConfig.load(root:).review.fetch('pace')
+    with_repository('review' => review_policy('wait_for_all_ci_reviewers' => true)) do |root|
+      assert Shaka::RepositoryConfig.load(root:).review.fetch('wait_for_all_ci_reviewers')
     end
   end
 
   def test_rejects_an_unknown_review_pace
-    with_repository('review' => review_policy('pace' => 'fast')) do |root|
+    with_repository('review' => review_policy('wait_for_all_ci_reviewers' => 'false')) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.pace must be swift or thorough'
+      assert_includes message, 'review.wait_for_all_ci_reviewers must be true or false'
     end
   end
 
   def test_rejects_a_null_review_pace
-    with_repository('review' => review_policy('pace' => nil)) do |root|
+    with_repository('review' => review_policy('wait_for_all_ci_reviewers' => nil)) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
 
-      assert_includes message, 'review.pace must be swift or thorough'
+      assert_includes message, 'review.wait_for_all_ci_reviewers must be true or false'
     end
   end
 
   def test_reads_thorough_pace_from_a_trusted_ref_not_the_candidate_file
-    with_repository('review' => review_policy('pace' => 'thorough')) do |root|
+    with_repository('review' => review_policy('wait_for_all_ci_reviewers' => true)) do |root|
       commit_repository(root)
       weaken_candidate_pace(root)
 
       assert_equal 'thorough', Shaka::ReviewPace.seam_from_ref(root:, ref: 'HEAD')
       assert_nil Shaka::ReviewPace.seam_from_ref(root:, ref: nil)
+    end
+  end
+
+  def test_legacy_key_requires_migration
+    with_repository('review' => review_policy('pace' => 'thorough')) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.wait_for_all_ci_reviewers'
     end
   end
 
@@ -96,7 +104,7 @@ class ReviewPaceSeamTest < Minitest::Test
   def weaken_candidate_pace(root)
     path = File.join(root, '.agents/agent-workflow.yml')
     data = YAML.load_file(path)
-    data['review']['pace'] = 'swift'
+    data['review']['wait_for_all_ci_reviewers'] = false
     File.write(path, YAML.dump(data))
   end
 end

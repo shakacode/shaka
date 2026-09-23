@@ -1,7 +1,7 @@
 # Host operations
 
 Use this reference for launcher boundaries and Claude Code tower discovery.
-Installation belongs in [host support](../host-support.md); dated trial results
+Installation belongs in [the installation reference](installation.md); dated trial results
 belong in the [validation record](../project/host-validation.md).
 
 ## Codex launcher boundary

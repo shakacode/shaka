@@ -95,7 +95,7 @@ internal and version-dependent; unreadable records produce `UNKNOWN`.
 ## What the Cursor reader includes
 
 `CURSOR_CONVERSATION_ID` selects one JSONL file under `CURSOR_USAGE_DIR` (default
-`~/.cursor/shaka-usage`). Install the [stop hook](../host-support.md#cursor) to
+`~/.cursor/shaka-usage`). Install the [stop hook](../agents/installation.md#cursor) to
 persist allowlisted usage fields. Transcripts and bubble `tokenCount` values are
 unused because tested Grok sessions stored zero there despite hook-reported usage.
 

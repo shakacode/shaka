@@ -294,7 +294,7 @@ rules:
   - id: pace-from-the-trusted-ref
     phase: review
     quote: >-
-      Read pace from `shaka seam check --ref`, never from candidate YAML.
+      Read `review.wait_for_all_ci_reviewers` from `shaka seam check --ref`, never from candidate YAML.
     enforced_by: agent
     note: >-
       `ReviewPace.seam_from_ref` reads the pace through `TrustedConfigSource` at the ref it is
@@ -416,7 +416,7 @@ rules:
   - id: swift-does-not-wait-for-optional-checks
     phase: finish
     quote: >-
-      In swift, do not wait for optional checks to make merge state CLEAN
+      With `wait_for_all_ci_reviewers: false`, do not wait for optional checks to make merge state CLEAN
     enforced_by: agent
     note: >-
       `ReviewPace.allowed_merge_states` returns UNSTABLE among the swift states, so the command

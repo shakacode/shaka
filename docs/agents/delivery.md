@@ -1,5 +1,10 @@
 # Delivery and communication
 
+This is an operational reference used by the installed Shaka skill in any
+repository. Read it when the workflow calls for planning, communication, PR
+publication, or recovery guidance. Shaka contributor instructions live in
+[project documentation](../project/README.md).
+
 Follow the installed Shaka workflow for execution order. Use this reference when
 planning a task, splitting PRs, writing delivery updates, or recovering unfinished
 work. For the product introduction, see [working with Shaka](../working-with-shaka.md).
@@ -99,7 +104,7 @@ A link's availability depends on the owner's machine being reachable.
 When false, publish `UNKNOWN` for both Workspace and Thread. Retain the fields and
 public owner alias. The publisher does not enforce this setting; the agent must.
 A repository where even the owner alias is sensitive should not publish these notes.
-See [configuration](../configuration.md#recovery).
+See [configuration](../reference/configuration.md#recovery).
 
 **Resume as the original owner:** read the live note before writing. If it names
 another owner or tag, preserve local work without pushing, report the transfer,

@@ -18,6 +18,11 @@ From a checkout:
 when none are given. `validate` applies the documentation-only check or runs the
 full test and lint suites. Use `bin/validate` to run the full suites explicitly.
 
+Shaka's own `validate` already selects a fast path for documentation-only changes,
+and GitHub CI starts on pushes. This repository currently uses the three required
+wrappers. Add `validate-local` or `trigger-hosted-ci` when a distinct fast suite or
+staged CI workflow needs them; duplicating `validate` would add no capability.
+
 ## Executable entry points
 
 | Path | Purpose |
@@ -60,7 +65,8 @@ or a successful review job alone cannot establish merge readiness.
 
 - `README.md` explains the product and its benefits.
 - `docs/` contains installation, usage, and configuration guides.
-- `docs/agents/` contains operational instructions for agents.
+- `docs/reference/` defines settings and defaults for both readers and agents.
+- `docs/agents/` supports the installed skills in any repository.
 - `docs/project/` contains development guidance, dated evidence, and proposals.
 - `docs/pilot-plan.md` owns requirements and acceptance.
 

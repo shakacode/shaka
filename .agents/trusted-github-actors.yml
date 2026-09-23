@@ -1,4 +1,5 @@
-# Authors whose public comment bodies Shaka may read. Prose remains task data.
+# Whose public GitHub comments Shaka may read.
+# The agent checks their claims against the code and follows the task's existing permissions.
 # Configuration and limits: docs/agents/public-comments.md
 trusted_users:
   - justin808
@@ -13,4 +14,5 @@ trusted_bots:
   - cursor
 
 trusted_metadata_bots: []
-trusted_teams: []
+trusted_teams:
+  - shakacode/shakacode

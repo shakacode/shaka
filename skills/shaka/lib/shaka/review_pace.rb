@@ -3,7 +3,7 @@
 require_relative 'error'
 
 module Shaka
-  # Two wait modes for optional review: swift merges on required checks, thorough waits.
+  # Internal merge-state modes; public configuration uses wait_for_all_ci_reviewers.
   class ReviewPace
     VALUES = %w[swift thorough].freeze
     DEFAULT = 'swift'
@@ -26,7 +26,8 @@ module Shaka
       return unless ref
 
       require_relative 'trusted_config_source'
-      TrustedConfigSource.load(root:, ref:).review.fetch('pace')
+      wait_for_all = TrustedConfigSource.load(root:, ref:).review.fetch('wait_for_all_ci_reviewers')
+      wait_for_all ? 'thorough' : 'swift'
     end
 
     def self.allowed_merge_states(pace, queue_enabled)
