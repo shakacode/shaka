@@ -74,6 +74,7 @@ class PackageTest < Minitest::Test
   def check_shaka_skill(shaka, source)
     assert File.file?(File.join(shaka, 'SKILL.md'))
     assert File.file?(File.join(shaka, 'config', 'workflow.yml'))
+    assert File.file?(File.join(shaka, 'docs', 'shaka-issue-offer.md'))
     assert_equal source, shaka
   end
 
