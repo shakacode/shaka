@@ -34,8 +34,8 @@ module Shaka
 
       # The none-policy cleanup removes the bare field name. A bad value needs a message that stays.
       def ci_value_block(source)
-        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
-        return "review.#{agents} must be a list of CI job names" if source == agents
+        jobs = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
+        return "review.#{source} must be a list of CI job names" if [jobs, 'ci_review_agents'].include?(source)
 
         "review.#{source}"
       end

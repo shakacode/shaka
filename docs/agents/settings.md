@@ -9,9 +9,9 @@ authoritative for live protection, required checks, allowed merge methods, and w
 action references.
 
 Create it with [`shaka seam init`](../people/getting-started.md#initialize-a-repository-seam) in a
-fresh repository. For an existing predecessor seam, plan first with
-[`shaka seam migrate`](../people/getting-started.md#migrate-an-existing-seam); apply is a separate
-explicit flag. Candidate/local validation is `shaka seam check --root . --local`; it grants no trusted
+fresh repository. For an existing predecessor contract, use the
+[`shaka seam migrate` checklist](../project/fleet.md#migration-checklist); its `--apply` flag is a separate
+step. Candidate/local validation is `shaka seam check --root . --local`; it grants no trusted
 authority. Load trusted policy only with `shaka seam check --root . --ref SHA` after
 resolving the default branch to an immutable commit. That `--ref` check is fail-closed.
 Copy-ready `AGENTS.md` guidance: `shaka seam pointer`. Validation is strict and local:

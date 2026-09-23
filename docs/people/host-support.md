@@ -44,6 +44,18 @@ Keep the trusted workflow source and installed link outside both the writable
 session directory and target checkout. The guided startup names the trusted skill for the agent; do not add a discovery
 link inside the writable session.
 
+For a fresh Codex terminal session, install into a directory outside the target
+repository and run the launcher by its installed path:
+
+```bash
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/agent-tools/shaka-pilot/skills"
+"$HOME/agent-tools/shaka-pilot/skills/shaka/scripts/shaka" work \
+  --repo /path/to/repository "Fix the failing search test. Use Ask."
+```
+
+Replace the repository path and task. The launcher uses native Codex approval
+prompts. It does not change your account or model settings.
+
 The launcher or direct invocation must establish the intended permissions even
 when the user's existing configuration grants broader access. Temporary writable
 directories also count: placing the trusted skill in a system temporary directory

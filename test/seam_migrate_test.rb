@@ -367,7 +367,7 @@ class SeamMigratePolicyOverlayTest < Minitest::Test
   end
 end
 
-class SeamMigrateCiJobListTest < Minitest::Test
+class SeamMigratePreviousCiJobKeyTest < Minitest::Test
   include SeamMigrateHelpers
 
   def test_previous_ci_agent_list_becomes_ci_jobs
@@ -382,6 +382,22 @@ class SeamMigrateCiJobListTest < Minitest::Test
       assert_equal ['claude-review'], report.dig('established', 'review', 'ci_review_jobs')
     end
   end
+
+  def test_previous_ci_agent_scalar_names_the_required_list_shape
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) do |data|
+        data.merge('review' => { 'required' => 'always', 'ci_review_agents' => 'claude-review',
+                                 'reviewers' => data.dig('review', 'reviewers') })
+      end
+      report = migrate_report(root, sha)
+
+      assert_includes report.fetch('blocking'), 'review.ci_review_agents must be a list of CI job names'
+    end
+  end
+end
+
+class SeamMigrateCiJobListTest < Minitest::Test
+  include SeamMigrateHelpers
 
   def test_a_string_under_the_current_ci_key_blocks
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|

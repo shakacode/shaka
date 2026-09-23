@@ -11,4 +11,5 @@ Start with the [Shaka skill](../../skills/shaka/SKILL.md). It loads the executab
 | Report model and token usage | [Usage reporting](usage-reporting.md) |
 | Recover a PR, split work, and write walkthroughs | [Workflow guidance](working-with-your-agent.md) |
 | Read public comments safely | [Public comments](public-comments.md) |
+| Assess outside contributions | [Open-source intake](working-with-your-agent.md#open-source-intake) |
 | Use an install-local repository catalog | [Repository catalog](repository-catalog.md) |

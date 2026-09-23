@@ -25,6 +25,7 @@ git clone https://github.com/shakacode/shaka.git "$HOME/agent-tools/shaka"
 ```
 
 Open a new Codex task in the repository. The Shaka skill should appear on the next turn; restart Codex if it does not.
+Add `--with-rct` to the install command if you want the Codex app's repository control tower.
 
 <a id="use-shaka-in-claude-code"></a>
 ## Other hosts
@@ -38,6 +39,7 @@ Use the same trusted checkout and `bin/install`, changing only `--skills-dir`:
 | OpenCode | `$HOME/.config/opencode/skills` | `/shaka` in a new session |
 
 For Codex terminal use, Pi, control towers, Cursor usage hooks, and host limitations, see [host support](host-support.md). Keep the installed source outside candidate checkouts and other writable agent directories.
+Add `--with-claude-towers` when installing into Claude Code desktop if you want its master and repository control towers.
 
 <a id="use-shaka-in-cursor"></a>
 <a id="use-shaka-in-opencode"></a>
@@ -105,4 +107,4 @@ ls -l "$HOME/.agents/skills/shaka"
 test -L "$HOME/.agents/skills/shaka" && unlink "$HOME/.agents/skills/shaka"
 ```
 
-For other hosts, use the skills directory in the table above. Removing the link leaves your repository, GitHub PRs, and trusted source checkout intact.
+For other hosts, use the skills directory in the table above. If you installed tower skills, inspect and remove their links too: `rct` for Codex, or `mct-claude` and `rct-claude` for Claude Code. Remove only links created by this installation; a leftover link can block reinstalling that revision. Removing links leaves your repository and GitHub PRs intact.
