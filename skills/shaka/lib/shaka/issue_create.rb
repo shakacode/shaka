@@ -10,6 +10,7 @@ module Shaka
   class IssueCreate
     REPOSITORY = 'shakacode/shaka'
     REPOSITORY_ID = 'R_kgDOUZzTGw'
+    ISSUE_URL = %r{\Ahttps://github\.com/#{Regexp.escape(REPOSITORY)}/issues/\d+\z}
     USAGE = <<~TEXT
       Usage: shaka issue-create < request
 
@@ -29,7 +30,7 @@ module Shaka
     end
 
     def self.create(request)
-      request = request.dup.force_encoding(Encoding::UTF_8)
+      request.force_encoding(Encoding::UTF_8)
       raise Shaka::Error, 'Issue request must be valid UTF-8 text.' unless request.valid_encoding?
 
       title, separator, body = request.partition("\n")
@@ -39,8 +40,6 @@ module Shaka
       validate_text(title, body)
       verify_repository!
       create_issue(title, body)
-    rescue EncodingError
-      raise Shaka::Error, 'Issue request must be valid UTF-8 text.'
     end
 
     def self.validate_text(title, body)
@@ -52,7 +51,7 @@ module Shaka
       validate_body(body)
     end
 
-    def self.valid_text?(text) = text.valid_encoding? && !text.strip.empty?
+    def self.valid_text?(text) = !text.strip.empty?
 
     def self.validate_title(title)
       return unless title.match?(/[\r\0]/) || title != title.strip
@@ -96,7 +95,7 @@ module Shaka
 
     def self.issue_url(stdout)
       url = stdout.lines.map(&:strip).reject(&:empty?).last
-      return url if url&.match?(%r{\Ahttps://github\.com/shakacode/shaka/issues/\d+\z})
+      return url if url && ISSUE_URL.match?(url)
 
       raise Shaka::Error, 'GitHub issue creation returned success without a public Shaka issue URL; ' \
                           'inspect live repository state before retrying.'
