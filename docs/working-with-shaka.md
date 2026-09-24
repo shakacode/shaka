@@ -17,13 +17,13 @@ active. See the [workflow](workflow.md).
 
 | Policy | What happens |
 | --- | --- |
-| **Ask** (default) | The agent brings back a reviewed PR and identifies the commit you can merge on GitHub. |
+| **Ask** (default) | Review the ready PR, then merge it on GitHub or tell the agent to merge that commit. |
 | **Auto** | The agent merges after required checks, review, and approvals. |
 
 Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
 Repository restrictions and required approvals still apply. Trust, authentication,
 release, and other consequential changes need explicit human review. Put additional
-project restrictions in `AGENTS.md`; Shaka has no built-in file-count threshold.
+project restrictions in `AGENTS.md`; Shaka has no built-in file-count or commit-count limits.
 
 You can also request planning only, review only, or a PR without merging.
 

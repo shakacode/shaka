@@ -2,7 +2,8 @@
 
 Settings live in `.agents/agent-workflow.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
-The default branch supplies policy; a PR cannot weaken its own review rules.
+Policy comes from the default branch; settings changed in a PR do not govern
+that PR.
 
 ## `merge.preference`
 
@@ -13,24 +14,39 @@ merge:
   preference: ask
 ```
 
-With `ask`, you merge the ready PR on GitHub. With `auto`, the agent merges after
-required checks, reviews, and approvals. Set a task's preference with
-`Use merge policy auto`; repository restrictions still apply.
-See [merge policy](working-with-shaka.md#choose-a-merge-policy).
+With `ask`, merge the ready PR on GitHub or tell the agent to merge the reviewed
+commit. With `auto`, the agent merges after required checks, reviews, and approvals,
+subject to the repository's restrictions.
+
+Set a task's preference with `Use merge policy auto`. This is a task instruction;
+editing the PR's settings does not change its own merge authority. Required human
+approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-policy).
+
+Shaka has no built-in file-count or commit-count limits for Auto merging.
+Project-specific limits belong in `AGENTS.md` and are checked by the agent; the
+[enforcement reference](workflow.md#what-is-enforced) explains the boundary.
 
 ## `review.required`
 
 **Required.** Values: `meaningful_changes`, `always`, or `none`.
 
-When to require configured CI review reports:
+This controls when configured CI review reports are required. Options:
 
 - `meaningful_changes`: implementation changes; trivial prose can skip with a reason.
 - `always`: every PR, including trivial changes.
 - `none`: no configured CI review backstop. Omit `ci_review_jobs` with this setting.
 
-Meaningful implementation also gets a local adversarial review before push.
-The agent arranges it; Ruby does not verify it happened. A fresh review context
-can use the implementation model when another reviewer is unavailable.
+Meaningful implementation also gets a local adversarial review before push:
+
+- Use a separate session without the implementation conversation.
+- Prefer a different provider and model. If other reviewers are unavailable, the
+  current workflow allows the implementation model in a fresh session.
+- Address findings before pushing.
+
+`shaka review run` verifies the reviewer process completed and returned a report
+for the expected commit. `shaka review check` validates a supplied report but does
+not prove a reviewer process ran. The merge command does not currently require
+this local-review evidence; the agent remains responsible for that step.
 
 ## `review.ci_review_jobs`
 
@@ -153,8 +169,9 @@ wip:
 Include the checkout path and session link in **WIP Details**. With `false`,
 both appear as `UNKNOWN`; ownership, state, and next action remain visible.
 
-Locations can reveal local names or identifiers. The agent checks for private
-information; Ruby does not. Expandable sections on public PRs are public too.
+Locations can reveal local names or identifiers. The agent must inspect them for
+private information before publishing; Ruby does not check for it. Expandable
+sections on public PRs are public too.
 
 ## `repo_prefix`
 

@@ -24,7 +24,7 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | Which public comment bodies an agent reads | Ruby allowlist and provenance checks |
 | Reviewed commit and required GitHub merge conditions | Ruby merge helper and GitHub protection |
 | Adequate tests, useful screenshots, and independent review | Agent judgment and review |
-| Keeping private information out of publications | Agent inspection |
+| Keeping private information out of publications | Agent inspection; no automated privacy scan |
 
 `shaka enforcement` lists rules enforced by code and those that rely on the agent.
 Its [source map](../skills/shaka/config/enforcement.yml) describes enforcement;

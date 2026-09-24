@@ -34,12 +34,13 @@ can complete the intended task. See the agent's
 
 | Change | Useful evidence |
 | --- | --- |
-| Layout, styling, or visible output | Before/after screenshots; include a narrow viewport for layout changes. |
+| Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both. |
 | Interaction, animation, or timing | A short recording, with screenshots where they help comparison. |
 | Backend or command-line behavior | Focused tests and concise before/after output. |
 
-Inspect captures to confirm they show the intended state and interaction.
-Screenshots and video complement tests; capturing a file alone proves nothing.
+Inspect screenshots for the intended state, not an error page, blank screen, or
+loading placeholder. Review the relevant video frames to confirm the interaction
+is visible. Screenshots and video complement tests.
 
 Use safe test data. Before publishing, check for credentials, private task details,
 customer data, and unrelated screen content. Expandable sections on public PRs
