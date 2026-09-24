@@ -59,7 +59,7 @@ own YAML. Handle that one PR this way:
    from `shaka reviewer`.
 4. Without a trusted `review.ci_review_wait`, wait for the required checks and for
    each configured CI review job that runs on the PR. Read findings only through
-   `shaka comments`; the trusted actor list is not on the default branch yet, so
+   `shaka comments`; the default branch may not trust that CI reviewer yet, so
    name any withheld CI review for the maintainer instead of reading it another
    way. Advisory bots stay advisory.
 5. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
