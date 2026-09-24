@@ -407,9 +407,10 @@ phases:
         complete review for the new head, publish its walkthrough, and run `merge` for that head
         without asking again. When branch protection dismissed a native approval that it still
         requires, request a fresh one for the new head and merge once it arrives; that request
-        repeats the repository's gate, not the user's decision. If a conflict resolution changes behavior, run `attention` with
-        `--state none`, explain the resolution on the PR, and hand the new head back for approval.
-        Any other new commit ends the approval.
+        repeats the repository's gate, not the user's decision. If a conflict resolution changes
+        behavior, explain the resolution on the PR and hand the new head back for approval. Before
+        either request, run `attention` with `--state merge` so the PR stays in the approval queue
+        while it waits. Any other new commit ends the approval.
       - Leave repository queue settings and delayed auto-merge unchanged. When the helper submits
         merge, on a queue-disabled base merge immediately while the task is active. On a
         queue-enabled base, enqueue the expected reviewed head, then wait for GitHub's current-base

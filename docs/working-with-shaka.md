@@ -43,6 +43,7 @@ can act on the approval. If GitHub requires updating the branch first, the agent
 rebases, revalidates, and merges without asking again. When branch protection dismissed a required GitHub
 approval, it asks for that approval on the new commit. When resolving a conflict
 changes behavior, it explains the resolution and asks you to approve the new commit.
+While it waits for either approval, the PR keeps its `awaiting-merge-approval` label.
 
 A PR carries at most one of these labels. The agent removes it when work resumes.
 Search `is:open label:awaiting-answer` or `is:open label:awaiting-merge-approval`
