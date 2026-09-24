@@ -176,6 +176,16 @@ model switches and context thresholds without charging cached input twice.
 Effort has no price multiplier. Unsupported models, missing counters, and
 contradictory records leave the estimate unknown.
 
+Implementation estimates read `skills/shaka/config/model-rates.yml` from the
+git checkout of the current directory, including a command started in a
+subdirectory of that checkout. Pass `--rate-root DIR` to name a different
+checkout. Review estimates and every other contribution keep the installed card,
+including when that option is set. The installed command still applies its own
+pricing formulas. The report names the card it used. The verified date is the
+date written in that card, so an implementation estimate can show a date supplied
+by the candidate checkout. Actual charge stays UNKNOWN. A card the installed
+loader cannot check fails the report.
+
 | Scenario | Treatment |
 | --- | --- |
 | Standard Codex credits | Configured supported OpenAI model. Unknown when cache writes exist because their credit rate is unpublished. |
