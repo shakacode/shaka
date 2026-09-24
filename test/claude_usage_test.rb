@@ -228,6 +228,19 @@ class ClaudeUsageFailuresTest < Minitest::Test
     end
   end
 
+  # A user record's uuid looks like the turn ID but is not; an empty table would hide that.
+  def test_turn_that_matches_no_response_fails_and_names_the_expected_field
+    Dir.mktmpdir do |directory|
+      file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900)])
+      output, error, status = Open3.capture3(NO_HOST, COMMAND, 'usage', '--commit', COMMIT, '--contribution',
+                                             'implementation', '--host', 'claude-code', '--file', file,
+                                             '--turn', 'old', '--turn', 'user-uuid')
+      refute_predicate status, :success?
+      assert_empty output
+      assert_match(/user-uuid.*promptId/, error)
+    end
+  end
+
   def test_both_host_contexts_require_an_explicit_host
     environment = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => SESSION,
                     'CLAUDE_CODE_SESSION_ID' => SESSION }

@@ -97,9 +97,43 @@ module Shaka
     end
   end
 
+  # Refuses explicit turns that name nothing in a source that has readable turns.
+  module UsageTurns
+    FIELDS = { 'codex' => 'turn_id', 'claude-code' => 'promptId', 'cursor' => 'generation_id',
+               'opencode' => 'user message id', 'pi' => 'user entry id' }.freeze
+
+    # A mistyped turn would otherwise publish an empty table that reads as missing records.
+    # A source with no readable turns keeps its own unavailable-records report instead.
+    def print_report
+      missing = unmatched_turns
+      if missing.empty?
+        puts report
+        return 0
+      end
+
+      warn "shaka usage: --turn #{missing.join(', ')} matched no readable response; " \
+           "#{@options[:host]} turns use the #{FIELDS.fetch(@options[:host])} field"
+      1
+    end
+
+    private
+
+    def unmatched_turns
+      missing = @options[:turns].uniq - turn_ids(@responses)
+      missing.empty? || turn_ids(all_responses).empty? ? [] : missing
+    end
+
+    def turn_ids(responses) = responses.map { |record| record['turn_id'] }
+
+    def all_responses
+      Usage::READERS.fetch(@options[:host]).new(@options[:files], [], all_turns: true).responses.values
+    end
+  end
+
   # Read-only reporting of per-response usage records from a supported host.
   class Usage
     include UsageTable
+    include UsageTurns
 
     SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
     METRIC_FIELDS = [
@@ -124,8 +158,7 @@ module Shaka
 
       raise OptionParser::InvalidArgument unless arguments.empty? && valid_mapping?(options)
 
-      puts new(options).report
-      0
+      new(options).print_report
     rescue OptionParser::ParseError
       warn 'shaka usage: invalid options; use shaka usage --help'
       1
