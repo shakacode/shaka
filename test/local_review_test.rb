@@ -175,6 +175,20 @@ class LocalReviewOtherCliTest < Minitest::Test
     end
   end
 
+  # Break caught: a shell without a UTF-8 locale crashes on a non-ASCII Claude report.
+  def test_claude_report_with_non_ascii_text_completes_under_us_ascii_default_encoding
+    with_repository do |root, base, head, bin|
+      fake_claude(bin, head, findings: 'no findings – checked')
+      output, error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude',
+                                                                env: { 'REVIEW_TRACE' => File.join(root, 'trace.json'),
+                                                                       'RUBYOPT' => '-EUS-ASCII' })
+      result = assert_successful_review(output, error, status, head, 'anthropic/claude')
+      assert_includes File.read(result.fetch('report'), encoding: 'UTF-8'), 'no findings – checked'
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   private
 
   def assert_claude_artifacts(result, trace, head)
@@ -872,12 +886,12 @@ module LocalReviewFixture
     RUBY
   end
 
-  def fake_claude(bin, head, effort: 'medium')
+  def fake_claude(bin, head, effort: 'medium', findings: 'no findings')
     write_executable(bin, 'claude', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
-      puts JSON.generate({ is_error: false, result: "no findings\\nREVIEWED #{head} BY anthropic/claude EFFORT #{effort} FINDINGS 0" })
+      puts JSON.generate({ is_error: false, result: "#{findings}\\nREVIEWED #{head} BY anthropic/claude EFFORT #{effort} FINDINGS 0" })
     RUBY
   end
 
