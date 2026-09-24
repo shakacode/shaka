@@ -17,7 +17,7 @@ active. See the [workflow](workflow.md).
 
 | Policy | What happens |
 | --- | --- |
-| **Ask** (default) | Review the ready PR, then merge it on GitHub or tell the agent to merge that commit. |
+| **Ask** (default) | Review the ready PR, then merge it on GitHub or approve it so the agent merges. |
 | **Auto** | The agent merges after required checks, review, and approvals. |
 
 Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
@@ -34,7 +34,12 @@ The agent labels a PR when it stops for you:
 | Label | What it waits for |
 | --- | --- |
 | `awaiting-answer` | Your answer to a question the agent asked in chat |
-| `awaiting-merge-approval` | Your merge of the named commit; set only under **Ask** |
+| `awaiting-merge-approval` | Your merge or approval of the named commit; set only under **Ask** |
+
+To approve, tell the agent in chat or submit an **Approve** review on GitHub, then
+return to the chat so the agent can act on it. If the base branch moved, the agent
+rebases, revalidates, and merges without asking again. When resolving a conflict changes
+behavior, it explains the resolution and asks you to approve the new commit.
 
 A PR carries at most one of these labels. The agent removes it when work resumes.
 Search `is:open label:awaiting-answer` or `is:open label:awaiting-merge-approval`

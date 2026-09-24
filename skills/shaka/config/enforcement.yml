@@ -417,13 +417,13 @@ rules:
     note: The question is chat prose; no command reads the final response.
   - id: merge-authorization-is-sha-bound
     phase: finish
-    quote: If they later ask you to merge this head, run `merge` only for that SHA.
+    quote: run `merge` only for that SHA or a rebased head the next item allows
     enforced_by: agent
     note: >-
       `Merge#verify_snapshot` refuses unless GitHub reports the head the caller passed, which
       stops a merge of a branch that moved under the command. It holds no record of the SHA the
       maintainer authorized, so `merge --head` on a later head succeeds. Carrying the authorized
-      SHA is the agent's alone. The scan does not reach this rule, which restricts with
+      SHA, and judging whether a rebase changed behavior, is the agent's alone. The scan does not reach this rule, which restricts with
       "only for".
   - id: none-or-one-allows-optional-checks
     phase: finish
