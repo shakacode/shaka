@@ -4,6 +4,25 @@ require_relative 'error'
 require_relative 'public_comments/bounded_list'
 
 module Shaka
+  # Recognizes a review body this command itself rendered.
+  module WalkthroughText
+    HEADING = /^# Code Walkthrough$/
+    FOOTER = /_Walkthrough for commit `([0-9a-f]{40})`\. This is a COMMENT, not an approval\._/
+    FOOTER_LINE = /\A#{FOOTER}\z/
+
+    def self.walkthrough?(body, marker)
+      body.start_with?("#{marker} ") || rendered?(body)
+    end
+
+    # A quoted walkthrough inside a fence, or a report that continues after the
+    # footer, is not the review this command published.
+    def self.rendered?(body)
+      visible = body.gsub(/^```.*?^```/m, '')
+      last = visible.lines.map(&:strip).reject(&:empty?).last
+      visible.match?(HEADING) && last&.match?(FOOTER_LINE)
+    end
+  end
+
   # Collapses earlier Code Walkthrough reviews after a new one is confirmed.
   #
   # Only a COMMENT review by the authenticated author is rewritten. The previous
@@ -12,8 +31,7 @@ module Shaka
   class WalkthroughHistory
     MARKER = 'Superseded — read the current walkthrough:'
     POINTER = /\A#{Regexp.escape(MARKER)} (\S+)/
-    HEADING = /^# Code Walkthrough$/
-    FOOTER = /_Walkthrough for commit `([0-9a-f]{40})`\. This is a COMMENT, not an approval\._/
+    FOOTER = WalkthroughText::FOOTER
     UPDATE = <<~GRAPHQL
       mutation($id: ID!, $body: String!) {
         updatePullRequestReview(input: {pullRequestReviewId: $id, body: $body}) {
@@ -27,7 +45,7 @@ module Shaka
     def collapse(published)
       report = fresh_report
       url = review_url(published.fetch('id'))
-      reviews = earlier_walkthroughs(published['id'])
+      reviews = earlier_walkthroughs(published)
       return report if reviews.empty?
 
       account = authenticated_login
@@ -42,37 +60,47 @@ module Shaka
 
     def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'unavailable' => [] }
 
-    def earlier_walkthroughs(current_id)
-      list_reviews.select { |review| collapse_candidate?(review, current_id) }
+    def earlier_walkthroughs(published)
+      current = submission_time(published)
+      raise Error, 'Published walkthrough has no submission time.' unless current
+
+      list_reviews.select { |review| earlier_walkthrough?(review, published, current) }
     end
 
-    def collapse_candidate?(review, current_id)
-      review['id'] != current_id && review['state'] == 'COMMENTED' && walkthrough_body?(review['body'].to_s)
+    def earlier_walkthrough?(review, published, current)
+      review['id'] != published['id'] && review['state'] == 'COMMENTED' &&
+        WalkthroughText.walkthrough?(review['body'].to_s, MARKER) && earlier_submission?(review, current)
     end
 
-    def walkthrough_body?(body)
-      collapsed?(body) || (body.match?(HEADING) && body.match?(FOOTER))
+    def earlier_submission?(review, current)
+      prior = submission_time(review)
+      prior && prior < current
     end
 
-    def collapsed?(body) = body.start_with?("#{MARKER} ")
+    def submission_time(review)
+      value = review['submitted_at']
+      value if value.is_a?(String) && value.match?(/\A\d{4}-\d{2}-\d{2}T/)
+    end
 
     def fold_one(review, url, account, report)
       return report['left_intact'] << review['id'] unless review.dig('user', 'login') == account
 
-      apply_revision(review, revised_body(review['body'].to_s, url), report)
+      fresh = @github.review(review['id'])
+      source = fresh['body'].to_s
+      apply_revision(review.merge('body' => source), revised_body(source, url), source, report)
     rescue Error => e
       report['unavailable'] << "Review #{review['id']}: #{e.message}"
     end
 
-    def apply_revision(review, revised, report)
-      return if revised.nil? || revised == review['body']
+    def apply_revision(review, revised, source, report)
+      return if revised.nil? || revised == source
 
-      replace_review(review, revised)
+      replace_review(review, revised, source)
       report['collapsed'] << review['id']
     end
 
     def revised_body(body, url)
-      return retarget(body, url) if collapsed?(body)
+      return retarget(body, url) if body.start_with?("#{MARKER} ")
 
       wrap(body, url)
     end
@@ -91,16 +119,24 @@ module Shaka
       "#{MARKER} #{url}\n\n<details>\n#{summary}\n\n#{body.rstrip}\n\n</details>\n"
     end
 
-    def replace_review(review, body)
+    def replace_review(review, body, source)
       node = review['node_id']
       raise Error, 'Review has no GraphQL id.' unless node.is_a?(String) && !node.empty?
 
       @github.verify_rendering(body)
+      confirm_unchanged(review, source)
       @github.graphql(UPDATE, { id: node, body: body })
       stored = @github.review(review['id'])
       return if stored.is_a?(Hash) && stored['body'] == body
 
       raise Error, 'Stored review body did not match the collapsed walkthrough.'
+    end
+
+    def confirm_unchanged(review, source)
+      current = @github.review(review['id'])
+      return if current.is_a?(Hash) && current['body'] == source
+
+      raise Error, 'Review body changed before collapse.'
     end
 
     def list_reviews

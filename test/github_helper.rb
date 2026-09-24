@@ -34,7 +34,8 @@ module GitHubHelper
   end
 
   def review_response(body: WALKTHROUGH, **changes)
-    response({ 'id' => 123, 'state' => 'COMMENTED', 'commit_id' => HEAD, 'body' => body }.merge(changes))
+    response({ 'id' => 123, 'state' => 'COMMENTED', 'commit_id' => HEAD, 'body' => body,
+               'submitted_at' => '2026-09-24T08:00:00Z' }.merge(changes))
   end
 
   def files_response(names = [CHANGED_FILE])
