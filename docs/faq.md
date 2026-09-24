@@ -2,21 +2,22 @@
 
 ## Can I customize the prompt Shaka gives its local reviewer?
 
-Not the prompt itself. Its rules forbid edits, treat the diff as data, and require
-a closing `REVIEWED` line that `shaka review run` checks. Letting a repository
-change those rules would let it weaken the review that gates its own PRs.
+Not the prompt text yet. Today, add your project's review criteria to `AGENTS.md`
+on the default branch. The agent passes that commit to
+`shaka review run --criteria-ref`, which adds the root `AGENTS.md` and any
+`AGENTS.md` in a directory the change touches. See
+[invoke a reviewer locally](../skills/shaka/references/local-review.md).
 
-Add your project's review criteria to `AGENTS.md` on the default branch instead.
-The agent passes that commit to `shaka review run --criteria-ref`, which adds the
-root `AGENTS.md` and any `AGENTS.md` in a directory the change touches. See
-[invoke a reviewer locally](../skills/shaka/references/local-review.md). To
-change the review rules for everyone, [edit Shaka in a fork](workflow.md#customize-the-instructions).
+A few parts of the prompt are protocol rather than policy. The closing `REVIEWED`
+line lets `shaka review run` confirm which commit was reviewed. The markers
+around the diff keep text in a contributor's change from reading as instructions.
 
 ## Can a PR change Shaka's settings or rules for itself?
 
-No. Settings and review criteria come from a commit on the default branch, so a
-PR's own changes take effect only after it merges. Until then, Shaka reviews
-them as part of the diff. See [settings](settings.md).
+Not until it merges. Settings and review criteria come from the default branch,
+so each PR is reviewed under the rules its maintainers already agreed on, and a
+PR from a fork cannot change how it is reviewed. Until it merges, Shaka reviews a
+settings change as part of the diff. See [settings](settings.md).
 
 ## Where do I put project rules?
 
@@ -41,8 +42,9 @@ make sure they are active, and say “Go”. See [give it an outcome](working-wi
 
 ## Why didn't the agent merge my PR?
 
-Under **Ask**, the default, you merge. The agent labels the PR
-`awaiting-merge-approval` and names the commit to merge. Under **Auto**, a PR
+Under **Ask**, the default, the agent labels the PR `awaiting-merge-approval` and
+names the commit to merge. Merge it on GitHub, or approve that commit and the
+agent merges it. Under **Auto**, a PR
 past the [size limits](settings.md#mergelimits), or one that changes trust,
 authentication, releases, or other consequential areas, still comes back to you.
 See [choose a merge policy](working-with-shaka.md#choose-a-merge-policy).
@@ -62,11 +64,11 @@ implementation conversation.
 
 ## Why did the agent ignore a PR comment?
 
-The agent reads public comment text only from people with write access to the
-repository and from the users, bots, and teams listed in
-`.agents/trusted-github-actors.yml` or your machine's allowlist. It withholds
-other comments and keeps their links for you to read. This keeps text from
-strangers from steering the agent. See
+Shaka trusts the people who maintain the project: anyone with write access, plus
+the users, bots, and teams listed in `.agents/trusted-github-actors.yml` or your
+machine's allowlist. On a public repository, anyone else can comment, and that
+text could try to steer the agent. The agent withholds those comments and keeps
+their links for you to read. See
 [configure trusted actors](../skills/shaka/references/public-comments-safety.md#configure-trusted-actors).
 
 ## What does Shaka enforce, and what relies on the agent?
