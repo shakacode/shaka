@@ -229,15 +229,16 @@ class ClaudeUsageFailuresTest < Minitest::Test
   end
 
   # A user record's uuid looks like the turn ID but is not; an empty table would hide that.
+  # A turn whose only response lacks an ID has no readable response either.
   def test_turn_that_matches_no_response_fails_and_names_the_expected_field
     Dir.mktmpdir do |directory|
-      file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900)])
+      file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900), prompt('new'), reply(nil, 1)])
       output, error, status = Open3.capture3(NO_HOST, COMMAND, 'usage', '--commit', COMMIT, '--contribution',
                                              'implementation', '--host', 'claude-code', '--file', file,
-                                             '--turn', 'old', '--turn', 'user-uuid')
+                                             '--turn', 'old', '--turn', 'new', '--turn', 'user-uuid')
       refute_predicate status, :success?
       assert_empty output
-      assert_match(/user-uuid.*promptId/, error)
+      assert_match(/new, user-uuid .*promptId/, error)
     end
   end
 

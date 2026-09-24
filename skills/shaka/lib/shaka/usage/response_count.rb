@@ -14,9 +14,10 @@ module Shaka
     private
 
     def count(record)
-      (@matched_turns ||= []) << record['turn_id']
       identity = record['response_id']
       return @gaps << 'Unreadable or unidentifiable records' unless identity.is_a?(String) && !identity.empty?
+
+      (@matched_turns ||= []) << record['turn_id']
 
       previous = @responses[identity]
       if previous && previous != record
