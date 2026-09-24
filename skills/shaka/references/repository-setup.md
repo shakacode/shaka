@@ -13,9 +13,10 @@ and standard script; keep those definitions there.
    GitHub exposes required checks enforced for the account that will merge.
 4. Prepare the files with the trusted installed helper. For an existing
    configuration, use the [migration procedure](migration.md).
-5. Inspect the generated diff, run its checks, and commit it. Follow
-   [the first setup PR](#review-and-merge-the-first-setup-pr) path to review it
-   before publishing, then hand it to the maintainer before relying on its new policy.
+5. Inspect the generated diff, run its checks, and commit it. When the default
+   branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
+   path to review it before publishing and hand it to the maintainer. A migration
+   keeps the normal workflow gates. Merge before relying on the new policy.
 
 For a repository whose commands and review job match this example, the initializer
 is:
