@@ -13,9 +13,9 @@ and standard script; keep those definitions there.
    GitHub exposes required checks enforced for the account that will merge.
 4. Prepare the files with the trusted installed helper. For an existing
    configuration, use the [migration procedure](migration.md).
-5. Inspect the generated diff, run its checks, and publish a setup PR. Follow
-   [the first setup PR](#review-and-merge-the-first-setup-pr) path to review it and
-   hand it to the maintainer before relying on its new policy.
+5. Inspect the generated diff, run its checks, and commit it. Follow
+   [the first setup PR](#review-and-merge-the-first-setup-pr) path to review it
+   before publishing, then hand it to the maintainer before relying on its new policy.
 
 For a repository whose commands and review job match this example, the initializer
 is:
@@ -52,8 +52,9 @@ own YAML. Handle that one PR this way:
    reviewers `shaka review run` supports as the list, in this order:
    `anthropic/claude`, `openai/codex`, `xai/grok`. The same-provider and
    fresh-session fallbacks still apply. `shaka review run` needs no seam.
-3. Record in the PR that no trusted seam existed, so the reviewer came from this
-   fixed order rather than from `shaka reviewer`.
+3. Fix its findings, then push and open the setup PR. Record in the PR that no
+   trusted seam existed, so the reviewer came from this fixed order rather than
+   from `shaka reviewer`.
 4. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
    review pass, name the head SHA and hand the PR to the maintainer, who merges it
    on GitHub under the repository's existing protection.
