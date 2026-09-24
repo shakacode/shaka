@@ -3,9 +3,6 @@
 module Shaka
   # Report copy for the rate-card cost scenarios.
   module CostCopy
-    VERIFIED = '2026-09-23'
-    CURSOR_VERIFIED = '2026-09-21'
-    ANTHROPIC_VERIFIED = '2026-09-23'
     THRESHOLD_NOTE = 'OpenAI API estimates apply the 272K context threshold.'
     CURSOR_THRESHOLD_NOTE = 'Cursor Grok 4.7 estimates apply the 256K context threshold.'
 
@@ -13,7 +10,7 @@ module Shaka
 
     def markdown(columns, reasons)
       parts = [cost_table(columns),
-               'Cost estimates are not invoices. Actual charge: UNKNOWN.',
+               "Cost estimates are not invoices. Rate card: #{@rate_card.label}. Actual charge: UNKNOWN.",
                intro(columns),
                footer(columns, reasons)].compact.reject { |part| part.to_s.strip.empty? }
       "#{parts.join("\n\n")}\n"
@@ -35,15 +32,23 @@ module Shaka
 
     def rate_card_sentences(priced)
       [
-        ("Standard Codex credit and OpenAI API-equivalent rates, verified #{VERIFIED}" if openai_priced?(priced)),
-        ("Cursor on-demand list prices, verified #{CURSOR_VERIFIED}" if cursor_priced?(priced))
+        (openai_sentence if openai_priced?(priced)),
+        (cursor_sentence if cursor_priced?(priced))
       ].compact
+    end
+
+    def openai_sentence
+      "Standard Codex credit and OpenAI API-equivalent rates, verified #{@rate_card.openai_verified}"
+    end
+
+    def cursor_sentence
+      "Cursor on-demand list prices, verified #{@rate_card.cursor_verified}"
     end
 
     def anthropic_intro(columns)
       return unless anthropic_priced?(priced_columns(columns))
 
-      "Anthropic API list prices, verified #{ANTHROPIC_VERIFIED}. Uncached input, cache reads and " \
+      "Anthropic API list prices, verified #{@rate_card.anthropic_verified}. Uncached input, cache reads and " \
         'cache writes are separate charges, and a 1-hour cache write costs more than a 5-minute one. ' \
         'Standard-speed responses are priced; fast mode is priced for Opus models with a published rate.'
     end
@@ -61,12 +66,12 @@ module Shaka
     end
 
     def openai_rated?(column)
-      column[:provider] == 'openai' && OpenAICost::RATES.key?(column[:model].to_s)
+      column[:provider] == 'openai' && @rate_card.openai_model?(column[:model])
     end
 
     def cursor_rated?(column)
       model = column[:model].to_s.delete_suffix('-fast')
-      column[:provider] == 'cursor' && CursorCost::RATES.dig(model, column[:billing])
+      column[:provider] == 'cursor' && @rate_card.cursor_model?(model, column[:billing])
     end
 
     # Rate-card copy describes the provider and model pair's rate card, as it does for every
@@ -74,12 +79,8 @@ module Shaka
     def anthropic_rated?(column)
       return false unless column[:provider] == 'anthropic' && !@inclusive_input
 
-      model = anthropic_rate_model(column)
-      AnthropicCost.rated_speed?(model, column[:billing])
-    end
-
-    def anthropic_rate_model(column)
-      AnthropicCost.rate_model(column[:routed], column[:model], column[:billing])
+      model = @rate_card.anthropic_name(column[:routed], column[:model], column[:billing])
+      @rate_card.anthropic_speed?(model, column[:billing])
     end
 
     def footer(columns, reasons)

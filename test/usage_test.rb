@@ -42,8 +42,8 @@ module UsageFixture
       environment = { 'PI_CODING_AGENT' => nil, 'CODEX_HOME' => directory, 'CODEX_THREAD_ID' => THREAD,
                       'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }
       sources = options[:discover] ? [] : ['--file', file] * options.fetch(:copies, 1)
-      output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources,
-                                             '--commit', COMMIT, '--contribution', 'implementation', *)
+      output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources, '--commit', COMMIT,
+                                             '--contribution', options[:contribution] || 'implementation', *)
       assert_predicate status, :success?, error
       output
     end
