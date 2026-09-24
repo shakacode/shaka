@@ -10,8 +10,8 @@ Use one supervisor as the maintainer's contact for Shaka development. This guide
 not alter the public skill or authorize workers, external messages, merges, host-setting
 changes or background monitoring. Deliver the bounded task before optimizing the workflow;
 learning adds no completion gate. Keep outcomes on the existing issue or pull request.
-The [pilot plan](requirements.md) owns scope, and
-[issue #77](https://github.com/shakacode/shaka/issues/77) owns remaining real-use acceptance.
+The [requirements](requirements.md) own scope and remaining real-use acceptance.
+[Issue #206](https://github.com/shakacode/shaka/issues/206) tracks skill and plugin evaluation.
 
 ## Repair a demonstrated failure
 
