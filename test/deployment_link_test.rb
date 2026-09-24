@@ -62,6 +62,14 @@ class DeploymentLinkTest < Minitest::Test
     assert_equal 'none', resolve([{ 'id' => 1, 'created_at' => 'x' }], { 1 => [] })['deployment']
   end
 
+  def test_a_full_page_without_a_live_deployment_is_not_reported_as_none
+    deployments = Array.new(100) { |index| { 'id' => index + 1, 'created_at' => format('%03d', index) } }
+    statuses = deployments.to_h { |deployment| [deployment['id'], [status('failure')]] }
+
+    error = assert_raises(Shaka::Error) { resolve(deployments, statuses) }
+    assert_includes error.message, 'deployment: auto'
+  end
+
   def test_a_supplied_url_or_none_is_left_alone_without_reading_github
     github = RecordedGitHub.new([], {})
     %w[https://preview.example none].each do |value|
