@@ -320,6 +320,23 @@ class UsageFailuresTest < Minitest::Test
   end
 end
 
+class UsageTurnSelectionTest < Minitest::Test
+  include UsageFixture
+
+  # Codex selects turns in its own reader, so it needs its own unmatched-turn check.
+  def test_codex_turn_that_matches_no_response_fails_and_names_the_expected_field
+    Dir.mktmpdir do |directory|
+      file = write_records(directory, [context('old'), usage('first', 'old', 900)], {})
+      output, error, status = Open3.capture3({ 'CODEX_THREAD_ID' => nil }, COMMAND, 'usage', '--host', 'codex',
+                                             '--file', file, '--commit', COMMIT, '--contribution',
+                                             'implementation', '--turn', 'typo')
+      refute_predicate status, :success?
+      assert_empty output
+      assert_match(/typo.*turn_id/, error)
+    end
+  end
+end
+
 class MetricAssertTest < Minitest::Test
   def test_rejects_extra_trailing_cells
     assert_raises(Minitest::Assertion) { assert_metric("| Input | 300 | 999 |\n", 'Input', 300) }

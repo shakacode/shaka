@@ -50,6 +50,7 @@ module Shaka
       @provider = nil
       @records = []
       File.foreach(file) { |line| consume(parse(line)) }
+      note_readable(@records)
       selected = selected_turns(turns)
       @gaps << 'Unreadable or unidentifiable records' if @all_turns && selected.size != @records.size
       @records.select { |record| selected.include?(record['turn_id']) }.each { |record| count(record) }
