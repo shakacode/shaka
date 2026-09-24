@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require_relative '../error'
 require_relative 'claude_usage'
 require_relative 'codex_usage'
 require_relative 'cost_estimate'
@@ -9,6 +10,17 @@ require_relative 'opencode_usage'
 require_relative 'pi_usage'
 
 module Shaka
+  # Failure text for `shaka usage`, kept beside the command so the runner stays small.
+  module UsageErrors
+    module_function
+
+    def message(error)
+      return "shaka usage: #{error.message}" if error.is_a?(Error)
+
+      'shaka usage: invalid options; use shaka usage --help'
+    end
+  end
+
   # Host-context fallback rows when a reader has no per-response records.
   module UsageTable
     private
@@ -97,9 +109,36 @@ module Shaka
     end
   end
 
+  # Refuses explicit turns that name nothing in a source that has readable turns.
+  module UsageTurns
+    FIELDS = { 'codex' => 'turn_id', 'claude-code' => 'promptId (session_id for claude -p JSON)',
+               'cursor' => 'generation_id', 'opencode' => 'user message id', 'pi' => 'user entry id' }.freeze
+
+    # A mistyped turn would otherwise publish an empty table that reads as missing records.
+    # A source with no readable turns keeps its own unavailable-records report instead.
+    def print_report
+      missing = unmatched_turns
+      if missing.empty?
+        puts report
+        return 0
+      end
+
+      warn "shaka usage: --turn #{missing.join(', ')} matched no readable response; " \
+           "#{@options[:host]} turns use the #{FIELDS.fetch(@options[:host])} field"
+      1
+    end
+
+    private
+
+    def unmatched_turns
+      @source.readable_turns? ? @options[:turns].uniq - @source.matched_turns : []
+    end
+  end
+
   # Read-only reporting of per-response usage records from a supported host.
   class Usage
     include UsageTable
+    include UsageTurns
 
     SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
     METRIC_FIELDS = [
@@ -124,10 +163,9 @@ module Shaka
 
       raise OptionParser::InvalidArgument unless arguments.empty? && valid_mapping?(options)
 
-      puts new(options).report
-      0
-    rescue OptionParser::ParseError
-      warn 'shaka usage: invalid options; use shaka usage --help'
+      new(options).print_report
+    rescue OptionParser::ParseError, Error => e
+      warn UsageErrors.message(e)
       1
     end
 
@@ -137,6 +175,7 @@ module Shaka
         source_options(flags, options)
         flags.on('--commit SHA', 'Affected full commit SHAs, comma separated') { |v| options[:commit] = v }
         flags.on('--contribution NAME', 'Contribution category (see guide)') { |v| options[:contribution] = v }
+        flags.on('--rate-root DIR', 'Implementation rate-card checkout') { |value| options[:rate_root] = value }
         flags.on('-h', '--help') { options[:help] = true }
       end
     end
@@ -174,7 +213,8 @@ module Shaka
 
     def report
       <<~MARKDOWN
-        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report.rstrip}
+        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
+                                           rate_card: selected_rate_card).report.rstrip}
 
         #{reviewer_coverage}
         Native usage is PARTIAL. #{count}. Scope: #{turn_scope}.
@@ -195,6 +235,10 @@ module Shaka
     end
 
     private
+
+    def selected_rate_card
+      RateCard.select(contribution: @options[:contribution], explicit_root: @options[:rate_root])
+    end
 
     def turn_scope
       return 'all turns in selected sources' if @options[:all_turns]

@@ -66,6 +66,7 @@ module Shaka
       return missing('codex') unless executable
 
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
+              '-c', 'skills.include_instructions=false',
               '--skip-git-repo-check', '--json', '-o', @report, '-']
       stdout, stderr, status = reviewer_process(args, prompt)
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?
@@ -89,6 +90,7 @@ module Shaka
     def claude_process(executable, prompt)
       args = [executable, '-p', '--permission-mode', 'plan', '--permission-prompts', 'none', '--restricted',
               '--safe-mode', '--strict-mcp-config']
+      args.push('--model', @options[:model]) if @options[:model]
       args.push('--effort', effort) if effort
       args.push('--output-format', 'json', '-')
       reviewer_process(args, prompt)

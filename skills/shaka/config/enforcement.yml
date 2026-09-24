@@ -244,6 +244,23 @@ rules:
     note: >-
       Undetectable by design. `comments` screens what it returns and marks what it excluded,
       and nothing observes what the agent reads through another route.
+  - id: resolve-after-reply
+    phase: explain
+    quote: Do not resolve a thread before this account has replied on it.
+    enforced_by: code
+    detector: >-
+      `ReviewThread#check_reply` ignores the thread's opening comment and refuses the
+      mutation until a later comment is from the authenticated account. A truncated
+      comment page that does not already show that reply fails closed.
+  - id: resolve-only-when-settled
+    phase: explain
+    quote: >-
+      Do not resolve a thread while its concern is open, its body was withheld, or the user
+      asked to leave it open.
+    enforced_by: agent
+    note: >-
+      `resolve` checks thread membership, reply authorship, and the stored resolved state.
+      It cannot tell an open concern, a withheld body, or a request to leave the thread open.
   - id: no-reply-to-excluded-author
     phase: explain
     quote: Never reply in a public inline thread that includes an excluded author
@@ -377,6 +394,13 @@ rules:
     quote: do not ask for a second approval afterward
     enforced_by: agent
     note: Asking again is chat prose; no command reads the final response.
+  - id: merge-approval-label-ask-only
+    phase: finish
+    quote: Never set `awaiting-merge-approval` in Auto mode.
+    enforced_by: agent
+    note: >-
+      `attention` does not read the merge preference, so it labels a PR in Auto mode as readily
+      as in Ask mode.
   - id: required-checks
     phase: finish
     quote: Never accept missing, failed, pending, or stale required checks
@@ -410,14 +434,22 @@ rules:
     note: The question is chat prose; no command reads the final response.
   - id: merge-authorization-is-sha-bound
     phase: finish
-    quote: If they later ask you to merge this head, run `merge` only for that SHA.
+    quote: run `merge` only for that SHA or a rebased head the Ask approval item allows
     enforced_by: agent
     note: >-
       `Merge#verify_snapshot` refuses unless GitHub reports the head the caller passed, which
       stops a merge of a branch that moved under the command. It holds no record of the SHA the
       maintainer authorized, so `merge --head` on a later head succeeds. Carrying the authorized
-      SHA is the agent's alone. The scan does not reach this rule, which restricts with
+      SHA, and judging whether a rebase changed behavior, is the agent's alone. The scan does not reach this rule, which restricts with
       "only for".
+  - id: named-merge-approver
+    phase: finish
+    quote: Comment trust alone grants no approval.
+    enforced_by: agent
+    note: >-
+      `comments` reports each trusted review's state and commit but not whether its author is a
+      merge approver the user named, and `merge` reads no approval record. The scan does not reach
+      this rule, which restricts without a never, must, do not, or only when form.
   - id: none-or-one-allows-optional-checks
     phase: finish
     quote: >-
