@@ -134,6 +134,14 @@ class CandidateRateCardTest < Minitest::Test
     end
   end
 
+  def test_a_missing_candidate_card_fails_the_report
+    Dir.mktmpdir do |root|
+      _output, error, status = capture_usage([candidate_context, candidate_usage], '--rate-root', root)
+      refute_predicate status, :success?
+      assert_includes error, 'Candidate rate card is missing'
+    end
+  end
+
   def test_a_card_the_loader_cannot_check_fails_the_report
     with_card('formula' => 'candidate') do |root|
       output, error, status = capture_usage([candidate_context, candidate_usage], '--rate-root', root)

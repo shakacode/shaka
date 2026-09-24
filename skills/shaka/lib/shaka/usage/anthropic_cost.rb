@@ -3,9 +3,6 @@
 module Shaka
   # Anthropic list prices, which bill uncached input, cache reads and cache writes separately.
   module AnthropicCost
-    # Per million tokens: input, cache read, 5-minute cache write, 1-hour cache write, output.
-    # Every model Anthropic still serves outside limited-availability programs; retired models
-    # are omitted because no current session routes to one.
     # Fast mode is 2x standard rates. Cache multipliers stack on top, so the same
     # multiplier applies to every token category. The rate card names which models publish it.
 

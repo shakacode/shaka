@@ -20,6 +20,8 @@ module Shaka
 
     def self.installed_file
       File.realpath(INSTALLED_PATH)
+    rescue SystemCallError => e
+      raise Error, "Installed rate card is unreadable: #{e.message}"
     end
 
     # Review stays on the installed card. Implementation uses the named checkout,
@@ -65,12 +67,18 @@ module Shaka
       raise Error, "#{PATH} must be a mapping" unless data.is_a?(Hash)
 
       new(Schema.check(data), candidate:)
-    rescue Psych::Exception => e
-      raise Error, "Invalid #{PATH}: #{e.message}"
-    rescue KeyError => e
-      raise Error, "#{PATH} is missing #{e.key}"
+    rescue Psych::Exception, KeyError, SystemCallError => e
+      raise Error, rate_card_error(e)
     end
     private_class_method :load_file
+
+    def self.rate_card_error(error)
+      return "#{PATH} is missing #{error.key}" if error.is_a?(KeyError)
+      return "Rate card is unreadable: #{error.message}" if error.is_a?(SystemCallError)
+
+      "Invalid #{PATH}: #{error.message}"
+    end
+    private_class_method :rate_card_error
 
     attr_reader :label
 
