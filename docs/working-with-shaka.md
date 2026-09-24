@@ -23,7 +23,8 @@ active. See the [workflow](workflow.md).
 Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
 Repository restrictions and required approvals still apply. Trust, authentication,
 release, and other consequential changes need explicit human review. Put additional
-project restrictions in `AGENTS.md`; Shaka has no built-in file-count or commit-count limits.
+project restrictions in `AGENTS.md`. A PR past the
+[size limits](settings.md#mergelimits) goes back to you before the agent merges it.
 
 You can also request planning only, review only, or a PR without merging.
 

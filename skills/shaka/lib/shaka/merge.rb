@@ -6,6 +6,7 @@ require_relative 'merge_submission'
 require_relative 'ci_review_wait'
 require_relative 'merge_review_evidence'
 require_relative 'merge_required_checks'
+require_relative 'merge_limits'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
@@ -19,8 +20,8 @@ module Shaka
       @submission = MergeSubmission.new(github)
     end
 
-    def call(head:, base:, walkthrough:)
-      @target = MergeTarget.required!(head, base)
+    def call(head:, base:, walkthrough:, limits: MergeLimits.new)
+      @target = MergeTarget.required!(head, base, limits)
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
       verify_checks(@github.required_checks)

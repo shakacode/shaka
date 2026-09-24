@@ -175,6 +175,12 @@ Keep optional review history and routine rollback detail collapsed.
 
 Supply the current COMMENT review URL in the `walkthrough` field. The helper
 renders its link after the summary, or `_Not published yet._` until it exists.
+Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
+the GitHub Deployments API for the PR head and links the newest successful
+deployment's `environment_url`, the same link GitHub shows as "View deployment";
+it renders nothing when the head has none. Supply a URL yourself only when the
+preview appears solely in a provider comment or CI log. The helper links it beside
+the walkthrough.
 Also link to the current review result. Self-edit the content JSON before
 publication; let the helper render headings, tables, and details.
 
