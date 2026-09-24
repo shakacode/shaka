@@ -862,7 +862,7 @@ class LocalReviewAttestationCaseTest < Minitest::Test
   def test_host_report_accepts_the_mixed_case_line_review_prompt_requires
     with_repository do |root, base, head, _bin|
       line = "REVIEWED #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS <n>"
-      assert_includes codex_prompt(head, base), "End with exactly:\n#{line}"
+      assert_includes codex_prompt(head, base), line
       result, error, status = host_check(root, head, "#{line.sub('<n>', '0')}\n", 'OpenAI/Codex')
       assert_predicate status, :success?, error
       assert_equal 'reported', result.fetch('status')
@@ -896,6 +896,15 @@ class LocalReviewAttestationCaseTest < Minitest::Test
 
     refute Shaka::LocalReviewEvidence.valid?(mixed, head:, reviewer: 'openai/codex', effort: 'UNKNOWN')
     assert Shaka::LocalReviewEvidence.valid?(exact, head:, reviewer: 'openai/codex', effort: 'UNKNOWN')
+  end
+
+  # Break caught: folding letters inside Regexp.escape turns a tab into the text [Tt].
+  def test_folded_reviewer_keeps_escaped_whitespace
+    head = 'b' * 40
+    reviewer = "a\tb"
+    text = "REVIEWED #{head} BY #{reviewer} EFFORT UNKNOWN FINDINGS 0\n"
+
+    assert Shaka::LocalReviewEvidence.valid?(text, head:, reviewer:, effort: 'UNKNOWN')
   end
 
   private

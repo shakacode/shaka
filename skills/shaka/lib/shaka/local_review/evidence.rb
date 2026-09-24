@@ -9,9 +9,9 @@ module Shaka
       return false unless text.valid_encoding?
 
       expected_effort = effort ? Regexp.escape(effort) : '\S+'
-      # Fold reviewer case only. review-prompt keeps the given spelling; review check compares
-      # the lowercased identity, and an exact match rejects a copied line.
-      identity = Regexp.escape(reviewer).gsub(/[A-Za-z]/) { |char| "[#{char.upcase}#{char.downcase}]" }
+      # Fold reviewer case only. review-prompt keeps the given spelling; an exact match would
+      # reject a copied line. The inline group leaves Regexp.escape sequences intact.
+      identity = "(?i:#{Regexp.escape(reviewer)})"
       prefix = "(?:\\A|\\n)REVIEWED #{Regexp.escape(head)} BY #{identity} EFFORT "
       pattern = Regexp.new("#{prefix}#{expected_effort} FINDINGS \\d+\\s*\\z")
       text.match?(pattern)
