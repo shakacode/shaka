@@ -101,7 +101,9 @@ class LocalReviewCodexTest < Minitest::Test
 
   def assert_codex_invocation(trace, root, head)
     invocation = JSON.parse(File.read(trace))
-    assert_equal %w[exec -s read-only --ignore-rules --ignore-user-config], invocation.fetch('args').first(5)
+    expected = ['exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
+                '-c', 'skills.include_instructions=false']
+    assert_equal expected, invocation.fetch('args').first(expected.length)
     assert_includes invocation.fetch('args'), '--skip-git-repo-check'
     assert_includes invocation.fetch('prompt'), '+after'
     assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
@@ -938,7 +940,9 @@ module LocalReviewFixture
       abort 'wrong executable name' if ENV['REVIEW_EXPECT_NAME'] && File.basename($PROGRAM_NAME) != ENV['REVIEW_EXPECT_NAME']
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, cwd: Dir.pwd }))
       report = ARGV.fetch(ARGV.index('-o') + 1)
-      File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
+      isolated = ARGV.each_cons(2).include?(['-c', 'skills.include_instructions=false'])
+      review = isolated ? "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n" : 'Done / In progress / Blocked / Next'
+      File.write(report, review)
     RUBY
   end
 
@@ -975,6 +979,7 @@ module LocalReviewFixture
     assert_equal head, result.fetch('head')
     assert_equal reviewer, result.fetch('reviewer')
     assert File.file?(result.fetch('report'))
+    assert_includes File.read(result.fetch('report')), "REVIEWED #{head} BY #{reviewer}"
     result
   end
 
