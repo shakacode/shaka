@@ -4,12 +4,18 @@ require_relative 'error'
 require_relative 'merge_target'
 require_relative 'merge_submission'
 require_relative 'ci_review_wait'
+require_relative 'required_checks'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
   class Merge
-    def initialize(github, ci_review_wait: nil, seam_wait: nil)
+    EMPTY_REQUIRED_CHECKS = 'GitHub reported no required checks on this branch. Merge refuses that empty set. ' \
+                            'If the branch is unprotected, enable branch protection or list merge.required_checks; ' \
+                            'if required checks have not registered yet, wait and retry. This is not unread evidence.'
+
+    def initialize(github, ci_review_wait: nil, seam_wait: nil, seam_required_checks: nil)
       @github = github
+      @seam_required_checks = seam_required_checks
       @ci_review_wait = CiReviewWait.effective(seam: seam_wait, override: ci_review_wait)
       @submission = MergeSubmission.new(github)
     end
@@ -18,7 +24,7 @@ module Shaka
       @target = MergeTarget.required!(head, base)
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
-      verify_checks(@github.required_checks)
+      verify_checks(RequiredChecks.new(@github, seam_names: @seam_required_checks).call.fetch('checks'))
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
       current = @github.snapshot
       return reconcile_queued_replay(initial, current, head) if initial['isInMergeQueue']
@@ -106,11 +112,7 @@ module Shaka
 
     def verify_checks(checks)
       raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
-      if checks.empty?
-        raise Error, 'GitHub reported no required checks on this branch. Merge refuses that empty ' \
-                     'set. If the branch is unprotected, enable branch protection; if required ' \
-                     'checks have not registered yet, wait and retry. This is not unread evidence.'
-      end
+      raise Error, EMPTY_REQUIRED_CHECKS if checks.empty?
 
       checks.each do |check|
         next if passing_check?(check)

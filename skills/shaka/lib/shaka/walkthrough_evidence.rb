@@ -2,6 +2,7 @@
 
 require 'uri'
 require_relative 'error'
+require_relative 'required_checks'
 require_relative 'public_comments/bounded_list'
 
 module Shaka
@@ -10,8 +11,9 @@ module Shaka
     FILE_PAGES = 10
     TERMINAL_BUCKETS = %w[pass fail skipping cancel].freeze
 
-    def initialize(github)
+    def initialize(github, seam_required_checks: nil)
       @github = github
+      @seam_required_checks = seam_required_checks
     end
 
     def verify(head, body)
@@ -54,7 +56,7 @@ module Shaka
       (completed_names(required_rows) + review_names).uniq
     end
 
-    def required_rows = @github.required_checks
+    def required_rows = RequiredChecks.new(@github, seam_names: @seam_required_checks).call.fetch('checks')
 
     def named_gate?(body, name)
       body.match?(/(?<![A-Za-z0-9_-])#{Regexp.escape(name)}(?![A-Za-z0-9_-])/)

@@ -22,6 +22,30 @@ Set a task's preference with `Use merge policy auto`. This is a task instruction
 editing the PR's settings does not change its own merge authority. Required human
 approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-policy).
 
+## `merge.required_checks`
+
+**Optional.** A list of CI check names that must pass before Shaka treats a PR as
+ready or merges it. Use it when GitHub cannot require checks, such as a private
+repository on the GitHub Free plan.
+
+```yaml
+merge:
+  preference: ask
+  required_checks:
+    - checks
+```
+
+GitHub's own required checks win: when the base branch has any, Shaka uses those
+and ignores this list. Otherwise every listed check must report on the PR head and
+pass. A check that never reports blocks, so a renamed job cannot silently drop out.
+Use the names `gh pr checks` shows on a PR; CI systems such as CircleCI report one
+check per workflow rather than per job.
+The `shaka pr` report marks these checks as coming from the seam.
+
+Only Shaka enforces this list. Someone who clicks merge on GitHub is not stopped,
+and nothing ties a name to a specific workflow, so a PR could add a job with the
+same name. For GitHub-enforced protection, use a ruleset or branch protection.
+
 Shaka has no built-in file-count or commit-count limits for Auto merging.
 Project-specific limits belong in `AGENTS.md` and are checked by the agent; the
 [enforcement reference](workflow.md#what-is-enforced) explains the boundary.

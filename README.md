@@ -50,8 +50,8 @@ The guide gives you prompts for both steps, including an optional personal fork.
 
 Ruby 3.4 or later, Git, an authenticated [GitHub CLI](https://cli.github.com/), and
 [a coding agent](docs/coding-agents.md) that can load skills and run commands.
-Your repository's default branch must require at least one CI check on GitHub; see
-[before you start](docs/configure-repository.md#before-you-start).
+Shaka waits for CI checks that GitHub requires or that you list in its settings;
+see [before you start](docs/configure-repository.md#before-you-start).
 
 ## How it works
 

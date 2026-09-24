@@ -125,6 +125,16 @@ class SeamMigratePlanTest < Minitest::Test
     end
   end
 
+  def test_seam_required_checks_are_retained
+    with_legacy_repository('control_plane_flow_shape.yml') do |root|
+      sha = rewrite_yaml(root) { |data| data.merge('merge' => data['merge'].merge('required_checks' => ['checks'])) }
+      report = migrate_report(root, sha)
+
+      assert_includes report.fetch('retained'), 'merge.required_checks'
+      assert_equal ['checks'], report.dig('established', 'merge', 'required_checks')
+    end
+  end
+
   def test_command_role_collision_chooses_the_stricter_temporary_behavior
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => swapped_commands) }

@@ -13,6 +13,12 @@ module Shaka
       new(root:, candidate_commands:).load(ref)
     end
 
+    # PR commands read policy only from a trusted ref; without one they keep GitHub's native gates
+    # instead of falling back to the candidate file.
+    def self.from_ref(root:, ref:)
+      load(root:, ref:) if ref
+    end
+
     def initialize(root:, candidate_commands: true)
       @root = root
       @candidate_commands = candidate_commands

@@ -73,10 +73,10 @@ module Shaka
       api("#{reviews_path}/#{positive_integer(id)}")
     end
 
-    def walkthrough(head:, body:)
+    def walkthrough(head:, body:, seam_required_checks: nil)
       body = publishable(body)
       verify_head(head)
-      WalkthroughEvidence.new(self).verify(head, body)
+      WalkthroughEvidence.new(self, seam_required_checks:).verify(head, body)
       record_walkthrough(head, body)
     end
 

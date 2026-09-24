@@ -9,13 +9,15 @@ and standard script; keep those definitions there.
    `.agents/bin/` wrappers; include any existing fast validation or staged CI
    capability when useful. Shaka's own [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin) are examples.
 3. Establish review jobs from their actual workflows and merge authority from
-   the user's instructions. Keep Ask when no broader authority exists. Check that
-   GitHub exposes required checks enforced for the account that will merge. If the
-   branch protection or rules API returns 403 `Upgrade to GitHub Pro or make this
-   repository public`, stop before writing files and tell the user that the owner's
-   GitHub plan cannot require checks on this private repository. The fix is a plan
-   upgrade or a public repository, not a settings change; link
-   [before you start](../../../docs/configure-repository.md#before-you-start).
+   the user's instructions. Keep Ask when no broader authority exists. Check whether
+   GitHub exposes required checks enforced for the account that will merge. When it
+   enforces none, or the branch protection or rules API returns 403 `Upgrade to
+   GitHub Pro or make this repository public` (a private repository on GitHub Free),
+   do not stop. Offer the names `gh pr checks` reports on a recent PR, recommend the
+   one that runs the full validation, and pass each one the user confirms as
+   `--required-check`. Take names from that output, not from job names inside a CI
+   config: CircleCI, for example, reports one check per workflow. Explain that Shaka,
+   not GitHub, then enforces them.
 4. Prepare the files with the trusted installed helper. For an existing
    configuration, use the [migration procedure](migration.md).
 5. Inspect the generated diff, run its checks, and commit it. When the default
@@ -39,8 +41,8 @@ is:
 Replace every example command with the repository's actual command. If no CI
 review job exists, use `--review-policy none` and omit `--ci-review-job`. Meaningful
 implementation still gets local review. The initializer refuses to overwrite
-conflicting files. GitHub must expose required checks enforced for the account
-that will merge.
+conflicting files. When GitHub enforces no required checks, add
+`--required-check NAME` for each confirmed check.
 
 
 ## Review and merge the first setup PR
@@ -81,12 +83,13 @@ intake and passes it as `--ref`.
 Supply `--root`, `--setup-command`, `--test-command`, `--validate-command`, and
 `--review-policy`. Unless review policy is `none`, supply `--ci-review-job` for
 an actual job; repeat it for additional jobs. Confirm that GitHub enforces at
-least one observable required check before initialization.
+least one observable required check, or supply `--required-check` for each check
+the user confirms; see [`merge.required_checks`](../../../docs/settings.md#mergerequired_checks).
 
 The initializer writes the three required wrappers, `.agents/shaka.md`, and YAML
 with `version`, `review`, `merge`, and the default `branches.name`. It defaults to
 Ask. Add `--merge-preference auto` only with established authority, `--base-branch`
-for another base. Add optional reviewer entries, `repo_prefix`, and WIP settings
+for another base, and `--required-check` for seam-declared checks. Add optional reviewer entries, `repo_prefix`, and WIP settings
 by editing the YAML afterward. Point to requirements from `AGENTS.md`.
 
 Command arguments are parsed as argument lists. Put pipelines and other compound
