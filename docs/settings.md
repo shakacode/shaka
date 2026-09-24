@@ -41,10 +41,11 @@ it; omitted keys keep their default. Changed lines are additions plus deletions.
 
 When a PR is past a limit, or GitHub does not report its size, `merge` refuses
 it. The agent then reports the counts and hands the PR back as Ask. To let the
-agent merge it, confirm that commit in chat. The confirmation still counts after
-a clean rebase, or after conflict fixes that change no behavior; any other new
-commit needs another confirmation. Required checks, reviews, and approvals still
-apply.
+agent merge it, confirm that commit in chat or
+[approve it](working-with-shaka.md#find-prs-waiting-on-you). The confirmation
+still counts after a clean rebase, or after conflict fixes that change no
+behavior; any other new commit needs another confirmation. Required checks,
+reviews, and approvals still apply.
 
 `merge` checks the counts and that a confirmation names the commit being
 merged. Whether you actually confirmed it is the agent's responsibility; the
