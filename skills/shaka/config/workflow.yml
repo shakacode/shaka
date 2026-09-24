@@ -397,11 +397,11 @@ phases:
         `merge` only for that SHA or a rebased head the next item allows. Run `attention` with
         `--state none` when work on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge` with the current head and walkthrough ID. A required
-        native
-        approval must arrive first, and do not ask for a second approval afterward.
-      - Under Ask, the user may approve the labeled PR instead of clicking merge: in chat, or with an
-        APPROVE review that `comments` reports from a verified configured actor for the labeled
-        head. That approval covers the reviewed change, so a moved base does not send it back.
+        native approval must arrive first, and do not ask for a second approval afterward.
+      - Under Ask, the user may approve the labeled PR instead of clicking merge: in chat, or through
+        an `APPROVED` review for the labeled head, as `comments` reports it, from a GitHub login the
+        user named in this task as a merge approver. Comment trust alone grants no approval. That
+        approval covers the reviewed change, so a moved base does not send it back.
         When GitHub needs the branch updated, rebase onto this task's base. If the rebase is clean,
         or you resolve its conflicts without changing behavior the walkthrough describes, revalidate,
         complete review for the new head, publish its walkthrough, and run `merge` for that head

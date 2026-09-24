@@ -36,8 +36,10 @@ The agent labels a PR when it stops for you:
 | `awaiting-answer` | Your answer to a question the agent asked in chat |
 | `awaiting-merge-approval` | Your merge or approval of the named commit; set only under **Ask** |
 
-To approve, tell the agent in chat or submit an **Approve** review on GitHub, then
-return to the chat so the agent can act on it. If the base branch moved, the agent
+To approve, tell the agent in chat. An **Approve** review on GitHub also counts
+when it comes from a login you named to the agent as a merge approver; GitHub does
+not let the account that opened the PR approve it. Return to the chat so the agent
+can act on the approval. If the base branch moved, the agent
 rebases, revalidates, and merges without asking again. When resolving a conflict changes
 behavior, it explains the resolution and asks you to approve the new commit.
 
