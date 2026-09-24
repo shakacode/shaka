@@ -130,12 +130,17 @@ module Shaka
       git_executable
       validate!
       validate_tempdir!
-      run_report(review_prompt)
+      with_requested_model(run_report(review_prompt))
     rescue Shaka::Error, SystemCallError => e
-      setup_failure(e)
+      with_requested_model(setup_failure(e))
     end
 
     private
+
+    # Records what was asked for on every outcome; the routed model comes only from native usage.
+    def with_requested_model(result)
+      @options[:model] ? result.merge('requested_model' => @options[:model]) : result
+    end
 
     def run_report(prompt)
       report = Tempfile.create(['shaka-review-', '.md'])
@@ -206,7 +211,7 @@ module Shaka
       return incomplete('Reviewer returned no matching review attestation', path) unless
         LocalReviewEvidence.valid?(text, head: head, reviewer: reviewer, effort: effort)
 
-      { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer, 'model' => @options[:model],
+      { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer,
         'report' => path, 'usage' => @options[:usage] }.compact
     end
 

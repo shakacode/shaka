@@ -203,7 +203,7 @@ class LocalReviewOtherCliTest < Minitest::Test
   def assert_claude_model(result, trace, model)
     args = JSON.parse(File.read(trace)).fetch('args')
     assert_equal model, args.fetch(args.index('--model') + 1)
-    assert_equal model, result.fetch('model')
+    assert_equal model, result.fetch('requested_model')
   end
 
   def assert_grok_invocation(trace)
@@ -216,6 +216,20 @@ end
 
 class LocalReviewProviderFailureTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: a failed attempt drops the model it requested, hiding a mistyped model name.
+  def test_failed_claude_run_records_the_requested_model
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'claude', "#!/bin/sh\necho unknown-model >&2\nexit 2\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude', model: 'typo-model')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'cli_failure', result.fetch('failure_stage')
+      assert_equal 'typo-model', result.fetch('requested_model')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
 
   def test_claude_error_json_is_a_cli_failure_but_not_an_automatic_skip
     with_repository do |root, base, head, bin|
