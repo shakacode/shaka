@@ -249,7 +249,7 @@ phases:
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH
         attention OWNER/REPO NUMBER --state answer|merge|none
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
-          --ref SHA [--ci-review-wait MODE]
+          --ref SHA [--ci-review-wait MODE] [--limits-confirmed-head SHA]
         usage --commit SHA --contribution CATEGORY
         ```
 
@@ -385,6 +385,13 @@ phases:
         for every named job in `review.ci_review_jobs` on the current head and do not merge while the state is
         UNSTABLE. Pass `merge --ref` from intake and `--ci-review-wait MODE` only for a this-task override. Read
         completed feedback before merge and report pending optional reviews.
+      - `merge` refuses a PR over the trusted `merge.limits` for changed files, changed lines, or
+        commits, or whose size GitHub does not report. That refusal switches Auto to Ask: report
+        the counts and hand the PR back. Pass `--limits-confirmed-head SHA` only for a head the
+        user confirmed in this task after seeing the counts; asking you to merge a named head is
+        that confirmation. A confirmation carries to the head a clean rebase produces, or a
+        conflict resolution that changes no behavior the walkthrough describes. Any other new
+        commit needs a new confirmation.
       - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge

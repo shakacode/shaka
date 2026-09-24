@@ -425,6 +425,18 @@ rules:
       maintainer authorized, so `merge --head` on a later head succeeds. Carrying the authorized
       SHA is the agent's alone. The scan does not reach this rule, which restricts with
       "only for".
+  - id: merge-limits-confirmation
+    phase: finish
+    quote: >-
+      Pass `--limits-confirmed-head SHA` only for a head the user confirmed in this task after
+      seeing the counts
+    enforced_by: agent
+    note: >-
+      `MergeLimits#verify!` refuses a PR over the trusted limits or with unreported counts, and
+      refuses a confirmation that names a head other than the one being merged. It cannot tell
+      whether a user confirmed that head, or whether a rebase changed behavior, so passing the
+      flag honestly is the agent's alone. The scan does not reach this rule, which restricts
+      with "only for".
   - id: none-or-one-allows-optional-checks
     phase: finish
     quote: >-

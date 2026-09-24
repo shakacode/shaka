@@ -22,9 +22,34 @@ Set a task's preference with `Use merge policy auto`. This is a task instruction
 editing the PR's settings does not change its own merge authority. Required human
 approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-policy).
 
-Shaka has no built-in file-count or commit-count limits for Auto merging.
-Project-specific limits belong in `AGENTS.md` and are checked by the agent; the
+## `merge.limits`
+
+**Optional.** Size limits for a merge the agent submits. A PR at a limit still
+merges; one past it goes back to you.
+
+```yaml
+merge:
+  preference: auto
+  limits:
+    max_changed_files: 29
+    max_changed_lines: 999
+    max_commits: 9
+```
+
+The values above are the defaults. Set any key to a positive integer to change
+it; omitted keys keep their default. Changed lines are additions plus deletions.
+
+When a PR is past a limit, or GitHub does not report its size, `merge` refuses
+it. The agent then reports the counts and hands the PR back as Ask. To let the
+agent merge it, confirm that commit in chat. The confirmation still counts after
+a clean rebase, or after conflict fixes that change no behavior; any other new
+commit needs another confirmation. Required checks, reviews, and approvals still
+apply.
+
+`merge` checks the counts and that a confirmation names the commit being
+merged. Whether you actually confirmed it is the agent's responsibility; the
 [enforcement reference](workflow.md#what-is-enforced) explains the boundary.
+Put other project restrictions in `AGENTS.md`.
 
 ## `review.required`
 
