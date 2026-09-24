@@ -62,9 +62,11 @@ implementation conversation.
 
 ## Why did the agent ignore a PR comment?
 
-The agent reads public comments only from accounts in
-`.agents/trusted-github-actors.yml` and your machine's allowlist. This keeps text
-from strangers from steering the agent. See
+The agent reads public comment text only from people with write access to the
+repository and from the users, bots, and teams listed in
+`.agents/trusted-github-actors.yml` or your machine's allowlist. It withholds
+other comments and keeps their links for you to read. This keeps text from
+strangers from steering the agent. See
 [configure trusted actors](../skills/shaka/references/public-comments-safety.md#configure-trusted-actors).
 
 ## What does Shaka enforce, and what relies on the agent?
