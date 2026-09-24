@@ -67,9 +67,9 @@ final diff for the agent to reconcile. Keep raw notes in the local backup.
 ## Resume unfinished work
 
 Open the PR's **WIP Details** to find the owning chat, last known state, and next
-action. When available, the **Thread** link takes you straight back: in Codex, a
-`codex://threads/...` link opens the original conversation so you can pick up where
-the agent stopped. Before another agent takes over, confirm the previous one has
+action. The **Thread** link can reopen the conversation when the owner's machine
+is reachable. In Codex, `codex://threads/...` takes you back to the original chat
+to pick up where the agent stopped. Before another agent takes over, confirm the previous one has
 stopped or handed off; a timestamp cannot prove it.
 
 ## Split a large change
