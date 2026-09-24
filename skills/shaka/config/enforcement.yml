@@ -417,7 +417,7 @@ rules:
     note: The question is chat prose; no command reads the final response.
   - id: merge-authorization-is-sha-bound
     phase: finish
-    quote: run `merge` only for that SHA or a rebased head the next item allows
+    quote: run `merge` only for that SHA or a rebased head the Ask approval item allows
     enforced_by: agent
     note: >-
       `Merge#verify_snapshot` refuses unless GitHub reports the head the caller passed, which
