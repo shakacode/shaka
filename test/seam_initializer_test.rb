@@ -34,7 +34,7 @@ module SeamInitializerTestHelpers
     [COMMAND, 'seam', 'init', '--root', root, '--base-branch', 'main',
      '--setup-command', setup_command, '--validate-command', validate_command,
      '--test-command', test_command, '--review-policy', 'meaningful_changes',
-     '--ci-review-agent', 'claude-review']
+     '--ci-review-job', 'claude-review']
   end
 
   def generated_files(root)
@@ -52,7 +52,7 @@ module SeamInitializerTestHelpers
   def assert_complete_seam(root, output)
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
-    assert_equal %w[base_branch branches commands merge recovery review version], config.keys.sort
+    assert_equal %w[base_branch branches commands merge review version wip], config.keys.sort
     assert_equal ['preference'], config.fetch('merge').keys
     assert_includes File.read(File.join(root, '.agents/agent-workflow.yml')), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
@@ -244,13 +244,13 @@ class SeamInitializerTest < Minitest::Test
     end
   end
 
-  def test_rejects_a_missing_plan_before_writing
+  def test_rejects_the_removed_plan_flag_before_writing
     with_repository do |root|
       arguments = [*init_arguments(root), '--plan', 'docs/missing.md']
       _output, error, status = Open3.capture3(*arguments)
 
       refute_predicate status, :success?
-      assert_includes error, 'plan does not exist: docs/missing.md'
+      assert_includes error, 'invalid option: --plan'
       refute_path_exists File.join(root, '.agents')
     end
   end
@@ -259,19 +259,19 @@ end
 class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
-  def test_rejects_a_repeated_ci_review_agent_before_writing
+  def test_rejects_a_repeated_ci_review_job_before_writing
     with_repository do |root|
-      arguments = init_arguments(root) + ['--ci-review-agent', 'Claude-Review']
+      arguments = init_arguments(root) + ['--ci-review-job', 'Claude-Review']
       _output, error, status = Open3.capture3(*arguments)
 
       refute_predicate status, :success?
-      assert_includes error, 'review.ci_review_agents repeats claude-review'
+      assert_includes error, 'review.ci_review_jobs repeats claude-review'
       refute_path_exists File.join(root, '.agents')
     end
   end
 
   def test_rejects_missing_required_policy_before_writing
-    %w[--review-policy --ci-review-agent].each do |flag|
+    %w[--review-policy --ci-review-job].each do |flag|
       with_repository do |root|
         arguments = init_arguments(root)
         arguments.slice!(arguments.index(flag), 2)
@@ -300,12 +300,12 @@ class SeamInitializerValidationTest < Minitest::Test
     with_repository do |root|
       arguments = init_arguments(root)
       arguments[arguments.index('meaningful_changes')] = 'none'
-      arguments.slice!(arguments.index('--ci-review-agent'), 2)
+      arguments.slice!(arguments.index('--ci-review-job'), 2)
 
       output, error, status = Open3.capture3(*arguments)
 
       assert_predicate status, :success?, error
-      assert_equal({ 'required' => 'none', 'pace' => 'swift' }, JSON.parse(output).fetch('review'))
+      assert_equal({ 'required' => 'none', 'ci_review_wait' => 'one' }, JSON.parse(output).fetch('review'))
     end
   end
 
@@ -370,6 +370,20 @@ class SeamInitializerValidationTest < Minitest::Test
 
       refute_predicate status, :success?
       assert_includes error, 'must be a simple argv command'
+      refute_path_exists File.join(root, '.agents')
+    end
+  end
+end
+
+class SeamInitializerRetiredFlagTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_old_ci_review_agent_flag_names_replacement
+    with_repository do |root|
+      _output, error, status = Open3.capture3(*init_arguments(root), '--ci-review-agent', 'old-job')
+
+      refute_predicate status, :success?
+      assert_includes error, '--ci-review-agent moved to --ci-review-job'
       refute_path_exists File.join(root, '.agents')
     end
   end
@@ -527,6 +541,9 @@ module SeamInitializerPointerAssertions
     assert_equal 0o644, File.stat(path).mode & 0o777
     assert_pointer_identity(pointer)
     assert_pointer_commands(pointer)
+    pointer.scan(%r{https://github\.com/shakacode/shaka/blob/main/([^\s)]+)}).flatten.each do |target|
+      assert_path_exists File.expand_path("../#{target}", __dir__)
+    end
   end
 
   def assert_pointer_identity(pointer)

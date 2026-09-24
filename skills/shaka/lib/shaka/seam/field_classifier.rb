@@ -6,7 +6,8 @@ module Shaka
   class Seam
     # Review-key half of seam classification, including renamed keys and collisions.
     module ReviewFields
-      REVIEW_KEYS = (%w[required pace] + RepositoryConfig::ReviewSchema::RENAMED.values).uniq.freeze
+      REVIEW_KEYS = (%w[required] + RepositoryConfig::ReviewSchema::RENAMED.values).uniq.freeze
+      PREVIOUS_CI_KEY = 'ci_review_agents'
 
       private
 
@@ -20,10 +21,19 @@ module Shaka
         key = RepositoryConfig::ReviewSchema::RENAMED.fetch(source, source)
         return @blocking << "review.#{source}" unless REVIEW_KEYS.include?(key)
         return @blocking << collision(source, key) if @established.fetch('review', {}).key?(key)
-        return @blocking << ci_value_block(source) if unacceptable_ci_value?(source, nested)
+
+        error = review_value_error(source, nested)
+        return @blocking << error if error
 
         @retained << "review.#{key}"
-        store_review(source, key, job_list(source, nested))
+        store_review(source, key, review_value(source, nested))
+      end
+
+      def review_value_error(source, value)
+        return ci_value_block(source) if unacceptable_ci_value?(source, value)
+        return unless source == 'pace' && !%w[swift thorough].include?(value)
+
+        'review.pace must be swift or thorough'
       end
 
       def collision(source, key)
@@ -34,23 +44,28 @@ module Shaka
 
       # The none-policy cleanup removes the bare field name. A bad value needs a message that stays.
       def ci_value_block(source)
-        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
-        return "review.#{agents} must be a list of CI job names" if source == agents
+        jobs = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
+        if source == PREVIOUS_CI_KEY
+          return "review.#{source} must be a list of CI job names before moving to review.#{jobs}"
+        end
+        return "review.#{jobs} must be a list of CI job names" if source == jobs
 
         "review.#{source}"
       end
 
-      # A retired check is one job name. The current key is a list. Anything else blocks.
+      # The current and immediately previous keys are lists. Older check fields are scalars.
       def unacceptable_ci_value?(source, nested)
-        agents = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
-        return !nested.is_a?(Array) if source == agents
+        jobs = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
+        return !nested.is_a?(Array) if [jobs, PREVIOUS_CI_KEY].include?(source)
 
-        RepositoryConfig::ReviewSchema::RENAMED[source] == agents && !nested.is_a?(String)
+        RepositoryConfig::ReviewSchema::RENAMED[source] == jobs && !nested.is_a?(String)
       end
 
-      def job_list(source, nested)
+      def review_value(source, nested)
+        return nested == 'thorough' ? 'all' : 'one' if source == 'pace'
+
         legacy = RepositoryConfig::ReviewSchema::RENAMED[source]
-        return [nested] if legacy == RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS && nested.is_a?(String)
+        return [nested] if legacy == RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS && nested.is_a?(String)
 
         nested
       end
@@ -67,7 +82,7 @@ module Shaka
       include ReviewFields
 
       MOVED_TO_AGENTS = %w[
-        review_gate approval_exempt changelog benchmark_labels merge_ledger follow_up_prefix
+        plan review_gate approval_exempt changelog benchmark_labels merge_ledger follow_up_prefix
         writing_style untrusted_contributor_intake secret_redaction_patterns
         trusted_github_actor_boundary compact_terminal_structure_max_lanes merge_submission
         autonomous_merge automation_reviewers hosted_qa_gate
@@ -76,7 +91,7 @@ module Shaka
         trusted_actions hosted_ci_trigger ci_change_detector ci_parity_environment
       ].freeze
       RETIRED = %w[protection commands coordination_backend].freeze
-      RETAINED = %w[base_branch repo_prefix version plan branches recovery].freeze
+      RETAINED = %w[base_branch repo_prefix version branches wip recovery].freeze
       MERGE_RETAINED = %w[preference].freeze
       MERGE_RETIRED = %w[method release].freeze
 
@@ -118,18 +133,35 @@ module Shaka
         RETIRED.include?(key) ? record(@retired, key) : @blocking << key
       end
 
+      def migrate_recovery(value)
+        return @blocking << 'recovery' unless value.is_a?(Hash)
+        return @blocking << 'recovery (collides with wip)' if @data.key?('wip')
+        return retain('wip', {}) if value.empty?
+
+        unless valid_legacy_location?(value)
+          @blocking << 'recovery must contain one boolean location setting'
+          return
+        end
+        @established['wip'] = { 'include_locations' => value.values.first }
+        @retained << 'wip.include_locations'
+      end
+
+      def valid_legacy_location?(value)
+        value.size == 1 && (value.keys - %w[workspace_path publish_locations]).empty? &&
+          [true, false].include?(value.values.first)
+      end
+
       def retain(key, value)
-        if %w[branches recovery].include?(key) && !value.is_a?(Hash)
+        return migrate_recovery(value) if key == 'recovery'
+
+        if %w[branches wip].include?(key) && !value.is_a?(Hash)
           @blocking << key
           return
         end
-        if key == 'version' && value != 1
-          @blocking << 'version'
-          return
-        end
+        return @blocking << 'version' if key == 'version' && value != 1
 
         @retained << key
-        @established[key] = value if %w[base_branch repo_prefix version plan branches recovery].include?(key)
+        @established[key] = value
       end
 
       def classify_merge(value)
@@ -152,7 +184,7 @@ module Shaka
       def require_review_and_merge
         required = @established.dig('review', 'required')
         @blocking << 'review.required' unless required
-        check = RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS
+        check = RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS
         @blocking << "review.#{check}" if required && required != 'none' && !@established.dig('review', check)
         @blocking << 'merge.preference' unless @established.dig('merge', 'preference')
       end

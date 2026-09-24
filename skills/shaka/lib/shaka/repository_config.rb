@@ -2,7 +2,6 @@
 
 require 'yaml'
 require_relative 'error'
-require_relative 'review_pace'
 require_relative 'repository_config/command_paths'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
@@ -12,10 +11,10 @@ module Shaka
   class RepositoryConfig
     PATH = '.agents/agent-workflow.yml'
 
-    DEFAULT_RECOVERY = { 'workspace_path' => true }.freeze
+    DEFAULT_WIP = { 'include_locations' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :recovery, :sha
+    attr_reader :base_branch, :commands, :review, :merge, :wip, :sha
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
       new(root:, source:, available_commands:, sha:, candidate_commands:).load
@@ -49,13 +48,13 @@ module Shaka
 
     # Callers read this as the effective contract, so defaults belong in it.
     def to_h
-      @data.merge('commands' => commands, 'review' => review, 'recovery' => recovery)
+      @data.merge('commands' => commands, 'review' => review, 'wip' => wip)
     end
 
     private
 
     def apply_schema
-      schema = Schema.new(root: @root, data: @data, available_commands: @available_commands, sha: @sha,
+      schema = Schema.new(root: @root, data: @data, available_commands: @available_commands,
                           candidate_commands: @candidate_commands)
       schema.validate
       @commands = schema.commands
@@ -64,13 +63,13 @@ module Shaka
 
     def assign_sections
       @base_branch = @data['base_branch']
-      @review = with_default_pace(@data.fetch('review'))
+      @review = with_default_review_wait(@data.fetch('review'))
       @merge = @data.fetch('merge')
-      @recovery = DEFAULT_RECOVERY.merge(@data.fetch('recovery', {}))
+      @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
     end
 
-    def with_default_pace(review)
-      review.merge('pace' => ReviewPace.normalize(review['pace']))
+    def with_default_review_wait(review)
+      { 'ci_review_wait' => 'one' }.merge(review)
     end
   end
 end

@@ -24,7 +24,7 @@ module SeamPrefixHelpers
   def config
     {
       'version' => 1, 'base_branch' => 'main',
-      'review' => { 'required' => 'meaningful_changes', 'ci_review_agents' => ['claude-review'] },
+      'review' => { 'required' => 'meaningful_changes', 'ci_review_jobs' => ['claude-review'] },
       'merge' => { 'preference' => 'ask' }
     }
   end
@@ -82,19 +82,6 @@ class SeamPrefixTest < Minitest::Test
     end
   end
 
-  def test_prefix_reads_a_trusted_plan_when_the_working_tree_deleted_it
-    with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/pilot-plan.md') do |root|
-      FileUtils.mkdir_p(File.join(root, 'docs'))
-      File.write(File.join(root, 'docs/pilot-plan.md'), "plan\n")
-      commit_repository(root)
-      FileUtils.rm(File.join(root, 'docs/pilot-plan.md'))
-      output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
-
-      assert_predicate status, :success?, error
-      assert_equal({ 'prefix' => 'PLAN', 'source' => 'seam' }, JSON.parse(output))
-    end
-  end
-
   def test_prefix_reads_a_trusted_ref_when_candidate_setup_is_missing
     with_repository('repo_prefix' => 'PLAN') do |root|
       commit_repository(root)
@@ -127,44 +114,6 @@ class SeamPrefixTest < Minitest::Test
 
       refute_predicate status, :success?
       assert_includes error, '.agents/bin/trigger-hosted-ci requires .agents/bin/validate-local'
-    end
-  end
-
-  def test_prefix_follows_a_trusted_plan_symlink_inside_the_commit
-    with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/plan.md') do |root|
-      FileUtils.mkdir_p(File.join(root, 'docs'))
-      File.write(File.join(root, 'docs/pilot-plan.md'), "plan\n")
-      File.symlink('pilot-plan.md', File.join(root, 'docs/plan.md'))
-      commit_repository(root)
-      FileUtils.rm(File.join(root, 'docs/plan.md'))
-      output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
-
-      assert_predicate status, :success?, error
-      assert_equal({ 'prefix' => 'PLAN', 'source' => 'seam' }, JSON.parse(output))
-    end
-  end
-
-  def test_prefix_accepts_a_trusted_plan_filename_that_contains_dots
-    with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/v1..v2.md') do |root|
-      FileUtils.mkdir_p(File.join(root, 'docs'))
-      File.write(File.join(root, 'docs/v1..v2.md'), "plan\n")
-      commit_repository(root)
-      output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
-
-      assert_predicate status, :success?, error
-      assert_equal({ 'prefix' => 'PLAN', 'source' => 'seam' }, JSON.parse(output))
-    end
-  end
-
-  def test_prefix_rejects_a_trusted_plan_symlink_with_a_missing_target
-    with_repository('repo_prefix' => 'PLAN', 'plan' => 'docs/plan.md') do |root|
-      FileUtils.mkdir_p(File.join(root, 'docs'))
-      File.symlink('missing.md', File.join(root, 'docs/plan.md'))
-      commit_repository(root)
-      _output, error, status = Open3.capture3(COMMAND, 'prefix', '--root', root, '--ref', 'HEAD')
-
-      refute_predicate status, :success?
-      assert_includes error, 'plan'
     end
   end
 end

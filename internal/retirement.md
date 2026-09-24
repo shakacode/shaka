@@ -33,7 +33,7 @@ repository names stay out of this public file.
 
 ## Messaging
 
-- New adopters follow [getting started](getting-started.md) and never need
+- New adopters follow [getting started](../docs/getting-started.md) and never need
   `agent-workflows`.
 - Predecessor README and install paths must say Shaka is the successor and that
   a legacy seam is transitional.
@@ -61,6 +61,3 @@ or seam-doctor path:
 - trusted source install and host recipes in getting-started;
 - typed seam `version: 1` with fixed `.agents/bin/` commands;
 - `shaka seam check --ref` against the default branch.
-
-[Issue #32](https://github.com/shakacode/shaka/issues/32) still owns overall
-documentation length. This page owns identity and retirement accuracy.

@@ -39,8 +39,18 @@ require 'shaka/public_comments'
 github = MyGitHubAdapter.new('OWNER/REPO', 42) # see "GitHub adapter"
 reader = Shaka::PublicComments::Reader.new(github, machine_path: '/etc/my-cli/trusted-github-actors.yml')
 
+```
+
+Choose the call that matches the discussion. For a pull request:
+
+```ruby
 pull_request = reader.call(expected_head: '0123456789abcdef0123456789abcdef01234567')
-issue = reader.call(issue_only: true) # when 42 is an issue
+```
+
+For an issue instead:
+
+```ruby
+issue = reader.call(issue_only: true)
 ```
 
 You supply:
@@ -54,9 +64,9 @@ You supply:
 | Repository configuration | Nothing. The reader fetches `.agents/trusted-github-actors.yml` at the repository's current default-branch commit, so a pull request cannot trust its own author. |
 
 Both files use the keys in
-[working with your agent](working-with-your-agent.md#what-the-helpers-protect). A read that
+[working with your agent](../skills/shaka/references/public-comments-safety.md#configure-trusted-actors). A read that
 cannot be verified raises `Shaka::Error` and returns no partial result.
-[`test/fixtures/public_comments_consumer.rb`](../test/fixtures/public_comments_consumer.rb)
+[`test/fixtures/public_comments_consumer.rb`](https://github.com/shakacode/shaka/blob/main/test/fixtures/public_comments_consumer.rb)
 is a complete consumer, which the package test runs against the installed gem.
 
 ## GitHub adapter
@@ -81,7 +91,7 @@ The token needs to read repository metadata, issues, pull requests, and review
 threads; read collaborator permissions; and, when teams are configured, read
 organization team membership. Without collaborator or team access, affected
 bodies are withheld as unavailable evidence or the read stops, as the
-[trust-config limits](working-with-your-agent.md#what-the-helpers-protect) explain.
+[trust-config limits](../skills/shaka/references/public-comments-safety.md#configure-trusted-actors) explain.
 
 `Shaka::GitHub` (`require 'shaka/github'`) is the adapter Shaka's CLI uses
 through the authenticated `gh` command. You may use it, but its other methods

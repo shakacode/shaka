@@ -21,6 +21,25 @@ module PackageTestHelpers
     FileUtils.remove_entry(@directory)
   end
 
+  def assert_packaged_links(root)
+    Dir.glob(File.join(root, '**/*.md')).each do |path|
+      relative_markdown_targets(path).each do |target|
+        resolved = File.expand_path(target, File.dirname(path))
+        assert resolved.start_with?("#{root}/") && File.exist?(resolved), "#{path}: missing #{target}"
+      end
+    end
+  end
+
+  def relative_markdown_targets(path)
+    text = File.read(path).gsub(/```.*?```/m, '')
+    text.scan(/\]\(([^)\s]+)\)/).flatten.filter_map do |target|
+      target = target.delete_prefix('<').delete_suffix('>').split('#', 2).first
+      next if target.nil? || target.empty? || target.match?(%r{\A(?:[a-z][\w+.-]*:|/)})
+
+      target
+    end
+  end
+
   private
 
   def install_gem

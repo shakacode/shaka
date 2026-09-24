@@ -3,14 +3,14 @@
 require_relative 'error'
 require_relative 'merge_target'
 require_relative 'merge_submission'
-require_relative 'review_pace'
+require_relative 'ci_review_wait'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
   class Merge
-    def initialize(github, pace: nil, seam_pace: nil)
+    def initialize(github, ci_review_wait: nil, seam_wait: nil)
       @github = github
-      @pace = ReviewPace.effective(seam: seam_pace, override: pace)
+      @ci_review_wait = CiReviewWait.effective(seam: seam_wait, override: ci_review_wait)
       @submission = MergeSubmission.new(github)
     end
 
@@ -86,7 +86,7 @@ module Shaka
 
     def verify_native_state(pull)
       unless pull['isInMergeQueue']
-        verify_merge_state(pull, ReviewPace.allowed_merge_states(@pace, pull['isMergeQueueEnabled']))
+        verify_merge_state(pull, CiReviewWait.allowed_merge_states(@ci_review_wait, pull['isMergeQueueEnabled']))
       end
 
       verify_review_state(pull)

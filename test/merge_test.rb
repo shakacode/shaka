@@ -108,10 +108,10 @@ class MergeNativeGateTest < Minitest::Test
     assert_equal 'MERGED', @merge.call(head: HEAD, base: BASE, walkthrough: 17)['state']
   end
 
-  # Production break: thorough pace waits for optional review jobs. Allowing
+  # Production break: all wait waits for optional review jobs. Allowing
   # UNSTABLE here would merge while claude-review is still pending or red.
-  def test_thorough_pace_refuses_unstable_optional_checks
-    merge = Shaka::Merge.new(@client, pace: 'thorough')
+  def test_all_wait_refuses_unstable_optional_checks
+    merge = Shaka::Merge.new(@client, ci_review_wait: 'all')
     @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
 
     error = assert_raises(Shaka::Error) { merge.call(head: HEAD, base: BASE, walkthrough: 17) }
@@ -119,8 +119,8 @@ class MergeNativeGateTest < Minitest::Test
     assert_empty @client.mutations
   end
 
-  def test_queue_enabled_thorough_pace_refuses_unstable_enqueue
-    merge = Shaka::Merge.new(@client, pace: 'thorough')
+  def test_queue_enabled_all_wait_refuses_unstable_enqueue
+    merge = Shaka::Merge.new(@client, ci_review_wait: 'all')
     ready = snapshot.merge('isMergeQueueEnabled' => true, 'mergeStateStatus' => 'UNSTABLE')
     @client.snapshots = [ready]
 
@@ -129,8 +129,8 @@ class MergeNativeGateTest < Minitest::Test
     assert_empty @client.mutations
   end
 
-  def test_thorough_seam_cannot_be_overridden_to_swift_at_merge
-    merge = Shaka::Merge.new(@client, pace: 'swift', seam_pace: 'thorough')
+  def test_all_seam_cannot_be_overridden_to_none_at_merge
+    merge = Shaka::Merge.new(@client, ci_review_wait: 'none', seam_wait: 'all')
     @client.snapshots = [snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
 
     error = assert_raises(Shaka::Error) { merge.call(head: HEAD, base: BASE, walkthrough: 17) }

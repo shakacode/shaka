@@ -112,7 +112,7 @@ class ReviewerCommandTest < Minitest::Test
 
   def config
     { 'version' => 1, 'base_branch' => 'main',
-      'review' => { 'required' => 'meaningful_changes', 'ci_review_agents' => ['claude-review'],
+      'review' => { 'required' => 'meaningful_changes', 'ci_review_jobs' => ['claude-review'],
                     'local_review_agents' => [{ 'provider' => 'anthropic', 'model_family' => 'claude' },
                                               { 'provider' => 'openai', 'model_family' => 'codex' },
                                               { 'provider' => 'xai', 'model_family' => 'grok' }] },

@@ -87,9 +87,8 @@ module Shaka
           'review' => established.fetch('review'),
           'merge' => established.fetch('merge'),
           'branches' => established['branches'],
-          'recovery' => established['recovery'],
-          'repo_prefix' => established['repo_prefix'],
-          'plan' => established['plan']
+          'wip' => established['wip'],
+          'repo_prefix' => established['repo_prefix']
         }.compact
       end
 

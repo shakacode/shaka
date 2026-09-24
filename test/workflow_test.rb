@@ -80,7 +80,7 @@ end
 
 class WorkflowCommandTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
-  GUIDE_LINK = %r{\]\(<([^>]+/docs/[\w-]+\.md)(?:#([\w-]+))?>\)}
+  GUIDE_LINK = /\]\(<([^>]+\.md)(?:#([\w-]+))?>\)/
 
   def test_workflow_command_renders_every_phase_and_boundary
     output, status = Open3.capture2e(COMMAND, 'workflow')

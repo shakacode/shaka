@@ -1,103 +1,73 @@
 # Shaka
 
-Give your agent a task. Get a verified PR and a clear explanation.
+**Give your coding agent a task. Get a tested, reviewed PR that's easy to understand.**
 
-Shaka is the early `0.0.x` successor to [`shakacode/agent-workflows`](https://github.com/shakacode/agent-workflows).
-It is not “Shaka V2.” Seam YAML `version: 1` is the typed-contract version;
-the published gem identifier `0.1.0.pre.1` only reserves the RubyGems name.
-Install from this repository, not from the predecessor pack.
-
-```text
-$shaka Fix the failing search test
-```
-
-Or establish a control tower to organize the work. From a Codex task in the
-repository's saved project:
+Shaka guides the work from the first question through implementation, local tests,
+independent review, and delivery on GitHub. You spend less time directing the
+process and checking whether the agent finished the job.
 
 ```text
-$rct
+$shaka Fix search when the query contains an apostrophe.
 ```
 
-From the Claude Code desktop session that will coordinate repositories:
+Shaka checks for existing work, considers whether the change is worth doing, and
+recommends a model and effort level. You can also give it an issue or task link:
 
 ```text
-/mct-claude
+$shaka https://linear.app/your-team/issue/APP-123/fix-search
+Use Sol, medium effort. Go.
 ```
 
-You steer the work. Shaka takes it through delivery:
+Replace the example link and choose a model available in your coding agent.
+When those settings are active, Shaka starts without another model-selection
+question. It still brings you decisions that need your input.
 
-- Reads your repository's instructions and asks about missing requirements.
-- Tests the behavior before fixing it, then runs your repository's checks.
-- Opens a pull request with a walkthrough of what changed and why.
-- Handles review findings and verifies the fixes.
-- Asks you to merge on GitHub when the PR is ready, or merges when authorized.
+## Why use it?
 
-## You choose who can merge
+- **Spend less time directing the process.** Describe the outcome. Shaka supplies
+  the steps through testing, review, and PR delivery.
+- **Avoid unnecessary CI runs.** Run tests and adversarial reviews locally, and
+  inspect before-and-after screenshots for UI changes. Fix problems before
+  pushing to reduce CI runs and review rounds.
+- **Make review easier.** The PR leads with the result and evidence. Screenshots
+  show visible changes; a code walkthrough explains implementation choices.
+- **See what a PR cost.** Find available token usage and estimated dollar cost,
+  including local review, in the PR. Missing usage is marked unknown.
+- **Control merging.** Choose **Ask** to merge on GitHub yourself, or **Auto** to
+  let the agent merge after checks and required approvals. Consequential changes
+  still need explicit human review.
+- **Resume unfinished work.** WIP Details on the PR identify the owning agent chat,
+  where it stopped, and what comes next.
+- **Use your existing tools.** Shaka uses your coding agent and repository scripts.
+  It currently delivers PRs through GitHub.
 
-**Ask:** when the PR is ready and nothing else remains, you merge it on GitHub and can archive the chat.
-**Auto:** you authorize the agent to merge once the verified revision passes required
-checks and approvals. Risky changes still need a human decision.
-Existing authority is reused; a review-only or PR-only request keeps that stopping point.
+## Get started
 
-## For people
+[Install Shaka and configure your repository](docs/getting-started.md).
+The guide gives you prompts for both steps, including an optional personal fork.
 
-[Install Shaka and complete your first task →](docs/getting-started.md)
+### Requirements
 
-| I want to… | Read |
-| --- | --- |
-| Choose merge authority, answer questions, or split a larger task | [Working with your agent](docs/working-with-your-agent.md) |
-| Use master and repository control towers to organize Shaka tasks | [Control towers](docs/control-towers.md) |
-| Understand review findings or a blocked PR | [Review handling](docs/review.md) |
-| Evaluate code, UI, or documentation changes | [Verification and reader trials](docs/verification.md) |
-| Understand model, effort, and token reports | [Usage reporting](docs/usage-reporting.md) |
-| Track test repositories and migrate a predecessor seam | [Test fleet](docs/fleet.md) |
-| Follow predecessor retirement | [Retirement](docs/retirement.md) |
-| Check supported hosts and their limits | [Host support](docs/host-support.md) |
-| Upgrade or remove an installation | [Installation maintenance](docs/getting-started.md#upgrade) |
-| Publish a RubyGems prerelease | [Release process](docs/releasing.md) |
+Ruby 3.4 or later, Git, an authenticated [GitHub CLI](https://cli.github.com/), and
+[a coding agent](docs/coding-agents.md) that can load skills and run commands.
 
-### For open-source maintainers and contributors
+## How it works
 
-Open-source work starts with validating issues, PRs, and their comments before
-acting on them. Treat material from strangers as untrusted input. Verify who supplied
-it, whether they are authorized for the action, and whether the claim or change is valid.
-Recognized team members and repository-approved bots should fit the ordinary workflow;
-recognition alone does not make their content correct or grant permission to execute code.
+- **A shared workflow.** The skill guides each task through planning,
+  implementation, verification, review, and delivery. Repository settings supply
+  your commands and merge preferences.
+- **Evidence before delivery.** Tests, independent review, and visual comparisons
+  help you judge the result. See [PR verification](docs/pr-verification.md).
+- **Explicit enforcement.** Ruby helpers check configuration, filter public
+  comments, and enforce merge conditions alongside GitHub. Some steps still rely
+  on the agent; the [enforcement reference](docs/workflow.md#what-is-enforced)
+  shows the distinction.
 
-See [open-source intake and current limits](docs/working-with-your-agent.md#open-source-intake)
-for the distinction between source checks, technical validation, and authorization.
-The public-comment screen is only part of this work. Other projects can call it
-from Ruby as an [experimental API](docs/public-comments.md).
+## Documentation
 
-## For agents and contributors to Shaka
+- [Getting started](docs/getting-started.md) — install, configure, and run a task.
+- [Working with Shaka](docs/working-with-shaka.md) — merge policy, feedback, and resuming work.
+- [Repository setup](docs/configure-repository.md) and [settings](docs/settings.md).
+- [Documentation index](docs/README.md) — all product guides.
 
-Start with the [Shaka skill](skills/shaka/SKILL.md), whose small trust bootstrap
-loads the packaged [workflow configuration](skills/shaka/config/workflow.yml)
-through `shaka workflow`, or the focused [repository control tower setup](skills/rct/SKILL.md)
-and the Claude Code [master](skills/mct-claude/SKILL.md) and
-[repository](skills/rct-claude/SKILL.md) tower setups.
-`shaka enforcement` reports what backs each rule that workflow states with
-never, must, do not, or only when: a command that refuses it, a command that only
-reports it, a GitHub setting, or nothing but the agent.
-Each repository exposes predictable engineering commands through `.agents/bin/` and keeps
-typed authority in `.agents/agent-workflow.yml`; `AGENTS.md` retains human-only boundaries.
-Create a missing contract with `shaka seam init` after identifying the repository's real
-commands and policy. See the [requirements](docs/pilot-plan.md)
-and [gem packaging guide](docs/packaging.md) for design, distribution, and the
-version-pinned CI seam check.
-The procedure owns execution; linked guides explain decisions and evidence for
-people and agents. Keep shared rules in one place and follow the procedure's references.
-
-In Claude Code, send `/shaka`. In Cursor, install into `~/.cursor/skills` and
-confirm `/shaka` in a new chat. In OpenCode, install into `~/.config/opencode/skills`
-and send `/shaka` in a new session. Codex is the first reference host;
-[Claude Code has one verified consumer delivery; Cursor and OpenCode remain unverified](docs/host-support.md). Public pilot: [progress](https://github.com/shakacode/shaka/issues/77).
-
-Public GitHub.com repositories can run CodeQL without a paid Advanced Security
-license. This project's [CodeQL workflow](.github/workflows/codeql.yml) analyzes
-Ruby on pull requests and pushes to `main`. Org or repo settings must still allow
-GitHub Actions and code scanning, or the job cannot upload alerts. A private fork
-needs GitHub Advanced Security (or equivalent) enabled before the same workflow
-can publish results.
-
-[MIT licensed](LICENSE). Copyright © 2026 ShakaCode.
+[Skill references](skills/shaka/references/README.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)

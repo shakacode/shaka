@@ -14,10 +14,11 @@ Gem::Specification.new do |spec|
   spec.metadata['rubygems_mfa_required'] = 'true'
   spec.metadata['documentation_uri'] = "#{spec.homepage}/blob/main/docs/getting-started.md"
   spec.files = Dir['skills/rct/SKILL.md', 'skills/mct-claude/SKILL.md', 'skills/rct-claude/SKILL.md',
-                   'skills/shaka/SKILL.md',
+                   'skills/shaka/SKILL.md', 'skills/shaka/references/*.md',
                    'skills/shaka/config/*.yml', 'skills/shaka/lib/**/*.rb',
-                   'skills/shaka/docs/*.md', 'skills/shaka/scripts/*', 'bin/install', 'exe/*',
-                   'docs/*.md', 'README.md', 'LICENSE']
+                   'skills/shaka/scripts/*', 'bin/install', 'exe/*', 'docs/**/*.md',
+                   'contributing/**/*.md',
+                   'README.md', 'CONTRIBUTING.md', 'LICENSE']
   spec.bindir = 'exe'
   spec.executables = %w[shaka shaka-install]
   spec.require_paths = ['skills/shaka/lib']

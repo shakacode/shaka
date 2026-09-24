@@ -28,9 +28,30 @@ class PackageTest < Minitest::Test
     assert_equal File.read(File.join(ROOT, 'LICENSE')), File.read(license)
   end
 
+  def test_built_gem_contains_the_guides_its_workflow_links_to
+    archive = File.join(@directory, 'guides.gem')
+    run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
+    files = Gem::Package.new(archive).spec.files
+
+    %w[docs/getting-started.md skills/shaka/references/review.md skills/shaka/references/writing.md
+       contributing/packaging.md CONTRIBUTING.md].each do |path|
+      assert_includes files, path
+    end
+  end
+
+  def test_packaged_markdown_links_resolve_inside_the_package
+    archive = File.join(@directory, 'links.gem')
+    run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
+    destination = File.join(@directory, 'links')
+    Gem::Package.new(archive).extract_files(destination)
+
+    assert_packaged_links(destination)
+  end
+
   def test_built_gem_excludes_repository_internal_trust_files
     run_gem('build', 'shaka.gemspec', '--output', archive = File.join(@directory, 'trust.gem'), chdir: ROOT)
     refute_empty(files = Gem::Package.new(archive).spec.files)
+    assert_empty files.grep(%r{\Ainternal/})
     [%r{(?:\A|/)trusted-github-actors\.ya?ml\z}, %r{\A\.agents/}].each { |pattern| assert_empty files.grep(pattern) }
   end
 
@@ -74,7 +95,7 @@ class PackageTest < Minitest::Test
   def check_shaka_skill(shaka, source)
     assert File.file?(File.join(shaka, 'SKILL.md'))
     assert File.file?(File.join(shaka, 'config', 'workflow.yml'))
-    assert File.file?(File.join(shaka, 'docs', 'shaka-issue-offer.md'))
+    assert File.file?(File.join(shaka, 'references', 'shaka-issue-offer.md'))
     assert_equal source, shaka
   end
 

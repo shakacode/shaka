@@ -1,0 +1,11 @@
+# Development records
+
+Public project records for Shaka maintainers. These files are not product setup
+instructions or private company plans.
+
+- [Requirements and acceptance](requirements.md) — original scope and remaining evidence; issue #77 tracks acceptance.
+- [Coding-environment trials](coding-environment-trials.md) — dated observations, not a support matrix.
+- [Test fleet](fleet.md) — repository adoption and migration evidence.
+- [Local evaluation proposal](local-evaluation-proposal.md) — proposed experiments, not shipped behavior.
+- [Improving Shaka](improving-shaka.md) — maintainer method for investigating observed workflow failures.
+- [Predecessor retirement](retirement.md) — temporary migration record; remove after its acceptance conditions are met.

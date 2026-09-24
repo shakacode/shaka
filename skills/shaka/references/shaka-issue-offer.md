@@ -10,7 +10,7 @@ user considers the offer.
 
 Offer a clear, actionable gap worth tracking, not every idea set aside by the active task. For an
 AI-found gap or uncertain value, use the Shaka
-[value checkpoint](https://github.com/shakacode/shaka/blob/main/docs/working-with-your-agent.md#say-what-the-work-is-worth);
+[value checkpoint](delivery.md#say-what-the-work-is-worth);
 keep missing impact and frequency UNKNOWN, and skip offers that remain speculative or low-value. Draft a concise
 title and body from public sources. Verify the gap in current public Shaka materials
 and cite that source in the draft; cite public sources for other factual claims. Exclude details

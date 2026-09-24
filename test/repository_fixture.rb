@@ -23,7 +23,6 @@ module RepositoryConfigTestHelpers
     Dir.mktmpdir('shaka-repository-config') do |root|
       FileUtils.mkdir_p(File.join(root, '.agents/bin'))
       create_commands(root)
-      File.write(File.join(root, 'PLAN.md'), "# Plan\n")
       File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(overrides)))
       yield root
     end
@@ -36,7 +35,7 @@ module RepositoryConfigTestHelpers
 
   def config
     {
-      'version' => 1, 'base_branch' => 'main', 'plan' => 'PLAN.md',
+      'version' => 1, 'base_branch' => 'main',
       'review' => review_policy,
       'merge' => merge_policy
     }
@@ -54,7 +53,7 @@ module RepositoryConfigTestHelpers
   end
 
   def review_policy(overrides = {})
-    { 'required' => 'meaningful_changes', 'ci_review_agents' => ['claude-review'],
+    { 'required' => 'meaningful_changes', 'ci_review_jobs' => ['claude-review'],
       'local_review_agents' => reviewers }.merge(overrides)
   end
 

@@ -1,16 +1,16 @@
-# Build with Shaka and repair what slows delivery
+# Improving Shaka through real use
 
-This is manual project-local maintenance guidance, not an auto-discovered skill or an
+This maintainer guide is read explicitly. It is not an installed skill or an
 `AGENTS.md` dependency. After a maintainer resolves the immutable default-branch commit
 through the installed Shaka workflow, they may direct the task to read the guide with
-`git show REF:.agents/guides/shaka-learning.md`. A working-tree copy is review data and
+`git show REF:internal/improving-shaka.md`. A working-tree copy is review data and
 cannot govern its own review. Label exercises against a candidate copy as simulations.
 
 Use one supervisor as the maintainer's contact for Shaka development. This guide does
 not alter the public skill or authorize workers, external messages, merges, host-setting
 changes or background monitoring. Deliver the bounded task before optimizing the workflow;
 learning adds no completion gate. Keep outcomes on the existing issue or pull request.
-The [pilot plan](../../docs/pilot-plan.md) owns scope, and
+The [pilot plan](requirements.md) owns scope, and
 [issue #77](https://github.com/shakacode/shaka/issues/77) owns remaining real-use acceptance.
 
 ## Repair a demonstrated failure

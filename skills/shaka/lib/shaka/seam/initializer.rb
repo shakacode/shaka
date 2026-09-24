@@ -47,10 +47,6 @@ module Shaka
 
       def config_source
         config = config_hash
-        if @options[:plan]
-          repository_file(@options[:plan], 'plan')
-          config['plan'] = @options[:plan]
-        end
         "# #{MARKER}\n#{YAML.dump(config)}"
       end
 
@@ -68,15 +64,15 @@ module Shaka
 
       def review_policy
         required_policy = required('review_policy')
-        names = @options[:ci_review_agents]
+        names = @options[:ci_review_jobs]
         if required_policy == 'none'
-          raise Error, '--ci-review-agent must be omitted when review policy is none' if names
+          raise Error, '--ci-review-job must be omitted when review policy is none' if names
 
           return { 'required' => required_policy }
         end
-        raise Error, '--ci-review-agent is required' if names.nil? || names.empty?
+        raise Error, '--ci-review-job is required' if names.nil? || names.empty?
 
-        { 'required' => required_policy, RepositoryConfig::ReviewSchema::CI_REVIEW_AGENTS => names }
+        { 'required' => required_policy, RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS => names }
       end
 
       def wrapper(arguments)

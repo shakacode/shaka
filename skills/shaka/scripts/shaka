@@ -110,8 +110,8 @@ rescue JSON::ParserError => e
   raise Shaka::Error, "Content file is not valid JSON: #{e.message}"
 end
 
-def merge_seam_pace(options)
-  Shaka::ReviewPace.seam_from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
+def merge_seam_wait(options)
+  Shaka::CiReviewWait.seam_from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
 end
 
 def walkthrough_body(options)
@@ -140,11 +140,11 @@ parser = OptionParser.new do |flags|
     options[:comment] = value
   end
   flags.on('--walkthrough ID', 'Published COMMENT review ID') { |value| options[:walkthrough] = value }
-  flags.on('--pace PACE', Shaka::ReviewPace::VALUES, 'Review wait mode: swift or thorough') do |value|
-    options[:pace] = value
+  flags.on('--ci-review-wait MODE', Shaka::CiReviewWait::VALUES, 'CI reviews to await: none, one, all') do |value|
+    options[:ci_review_wait] = value
   end
-  flags.on('--root DIR', 'Repository root for trusted merge pace') { |value| options[:root] = value }
-  flags.on('--ref REF', 'Trusted commit for merge pace') { |value| options[:ref] = value }
+  flags.on('--root DIR', 'Repository root for trusted review settings') { |value| options[:root] = value }
+  flags.on('--ref REF', 'Trusted commit for review settings') { |value| options[:ref] = value }
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('-h', '--help', 'Show usage') do
@@ -176,8 +176,8 @@ begin
            when 'walkthrough'
              github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
            when 'merge'
-             Shaka::Merge.new(github, pace: options[:pace],
-                                      seam_pace: merge_seam_pace(options)).call(
+             Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],
+                                      seam_wait: merge_seam_wait(options)).call(
                                         head: options.fetch(:head),
                                         base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough)

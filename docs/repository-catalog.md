@@ -1,75 +1,21 @@
-# Install-local repository catalog
+# Repository catalog
 
-Shaka does not keep a central fleet registry. Each repository owns its display prefix
-in the trusted `.agents/agent-workflow.yml` seam. An installation may rebuild a local
-catalog of repositories it already knows about. That catalog is convenience data: it
-is safe to delete, and missing or stale entries must not block `shaka seam check`,
-`shaka prefix`, or other work inside a checkout.
+When you use Shaka across projects, a local catalog helps you find their settings
+and avoid confusing repository prefixes. For example, `SHOP` and `DOCS` make
+agent chat titles such as `SHOP PR #42 · Fix checkout` easy to distinguish.
 
-## Location
+Ask your agent:
 
-Default home is `$SHAKA_HOME`, or `~/.shaka` when that variable is unset.
-
-| Path | Role |
-| --- | --- |
-| `$SHAKA_HOME/repos.yml` | Registered checkout roots. Discovery source. |
-| `$SHAKA_HOME/catalog.json` | Rebuilt index. Safe to delete. |
-
-Neither file belongs in a public repository. Do not copy private repository names
-into public artifacts.
-
-## Discovery
-
-`shaka repos add --root DIR` appends a realpath to `repos.yml`. Hosts may write the
-same file themselves. Discovery stays in this install-local command; it does not
-live in the portable GitHub or merge modules, and it does not scrape GitHub orgs.
-
-A missing `repos.yml` is an empty root list. Refreshing then writes an empty
-catalog.
-
-## Refresh
-
-```bash
-shaka repos refresh
+```text
+Refresh the Shaka catalog for my repositories. Report duplicate prefixes
+and compare their review and merge settings before proposing changes.
 ```
 
-For each registered root, refresh reads `origin` for identity and canonical URL,
-then loads the trusted default-branch seam from `origin/HEAD`, falling back to
-`origin/main` or `origin/master` when that symbolic ref is missing. It does not trust
-a candidate working tree. The effective prefix is the seam `repo_prefix` when
-present, otherwise the [documented fallback](settings.md#repo_prefix).
+The catalog records known repositories and reports duplicate prefixes. It does
+not enforce globally unique names or synchronize settings automatically. The
+agent checks each repository's trusted configuration and proposes any changes
+through its own PR.
 
-Stdout and `catalog.json` use the same object:
-
-```json
-{
-  "version": 1,
-  "repositories": [
-    {
-      "identity": "shakacode/shaka",
-      "url": "https://github.com/shakacode/shaka",
-      "root": "/path/to/shaka",
-      "prefix": "SHAKA",
-      "prefix_source": "seam"
-    }
-  ],
-  "duplicate_prefixes": {}
-}
-```
-
-`identity` is always `owner/name`. Duplicate prefixes across **distinct**
-`host/owner/name` keys are listed under `duplicate_prefixes` and printed on stderr;
-refresh still writes the catalog and exits non-zero so a collision cannot silently
-select the wrong repository. Two checkouts of the same host and identity with the
-same prefix are not a collision. The same `owner/name` on different hosts is a
-collision when the prefixes match. Distinct non-default ports on the same host are
-distinct repositories. Catalog `url` values never keep remote userinfo,
-query strings, or fragments; userinfo ends at the last `@` in the authority, and
-SCP remotes catalog as `ssh://host/owner/name`. A missing or unreadable registered
-root is skipped with a stderr warning; refresh still writes the remaining rows and
-exits non-zero.
-
-## Direct operation
-
-`shaka prefix --root DIR --ref REF` resolves one repository without reading the
-catalog. Removing `catalog.json` does not remove seam metadata.
+The catalog is local convenience data, not authority. Deleting it does not change
+repository settings. Agents use the [catalog procedure](../skills/shaka/references/repository-catalog.md)
+for paths, commands, and output fields.

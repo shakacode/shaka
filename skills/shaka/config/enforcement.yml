@@ -66,9 +66,9 @@ rules:
     quote: Never guess checks
     enforced_by: agent
     note: >-
-      `Seam::Initializer` refuses to write a seam without at least one `--required-check`, so a
-      check cannot be reached by omission. It cannot tell a real check name from an invented
-      one, and a guess passed on that flag becomes the seam's required check.
+      The initializer requires named CI review jobs when review policy is not `none`, but it
+      cannot verify that those jobs exist. GitHub owns required merge checks; the agent must
+      inspect live settings rather than infer them from configuration or workflow names.
   - id: never-grant-merge-authority
     phase: plan
     quote: grant merge authority
@@ -301,31 +301,24 @@ rules:
     note: >-
       Nothing reads review metadata on the agent's behalf to confirm which reviewer produced a
       report, so a green check named for a reviewer can still be mistaken for one.
-  - id: pace-from-the-trusted-ref
+  - id: ci-wait-from-the-trusted-ref
     phase: review
     quote: >-
-      Read pace from `shaka seam check --ref`, never from candidate YAML.
+      Read `review.ci_review_wait` from `shaka seam check --ref`, never from candidate YAML.
     enforced_by: agent
     note: >-
-      `ReviewPace.seam_from_ref` reads the pace through `TrustedConfigSource` at the ref it is
-      given, and `ReviewPace.effective` keeps thorough when either input is thorough, so a swift
-      candidate cannot weaken a thorough trusted seam. Nothing checks where the agent read the
+      `CiReviewWait.seam_from_ref` reads the wait through `TrustedConfigSource` at the ref it is
+      given, and `CiReviewWait.effective` keeps the stricter of the trusted setting and task override, so a
+      candidate cannot lower a trusted minimum. Nothing checks where the agent read the
       value it passes, which is the same gap the trusted-seam-ref row above describes.
-  - id: swift-skips-the-hosted-review-wait
+  - id: none-skips-the-hosted-review-wait
     phase: review
-    quote: do not wait for `review.ci_review_agents`
+    quote: do not wait for `review.ci_review_jobs`
     enforced_by: agent
     note: >-
-      `ReviewPace.allowed_merge_states` admits UNSTABLE under swift, so the command permits the
+      `CiReviewWait.allowed_merge_states` admits UNSTABLE under none and one, so the command permits the
       merge while that job runs. Permitting is not enforcing: an agent that waits anyway simply
       never calls `merge`, and nothing fails.
-  - id: no-second-wait-after-a-nit-sha
-    phase: review
-    quote: Do not wait for that check again after a nit-only or diagnostic-only follow-up SHA.
-    enforced_by: agent
-    note: >-
-      Nothing classifies a SHA as nit-only. The distinction is a judgment about what the commit
-      changed, which is the kind of call #36 section 5 retires the engine for.
   - id: advisory-bot-findings-are-read
     phase: review
     quote: read completed findings
@@ -334,15 +327,17 @@ rules:
     note: Nothing observes what the agent read, so an unread CodeRabbit finding costs nothing.
   - id: advisory-bots-never-block
     phase: review
-    quote: never wait for them
-    rule: Never wait for an advisory bot
+    quote: >-
+      never wait for them except under the explicit comment-resolution settlement procedure below.
+    rule: Advisory reviewers add a bounded wait when resolving comments
     enforced_by: agent
     note: >-
-      Under swift, `ReviewPace.allowed_merge_states` admits UNSTABLE, so an unnamed bot's
-      pending job does not hold a merge the agent submits. Under thorough it admits CLEAN
+      Under none and one, `CiReviewWait.allowed_merge_states` admits UNSTABLE, so an unnamed bot's
+      pending job does not hold a merge the agent submits. Under all it admits CLEAN
       alone on a queue-disabled base, and a pending advisory check is what makes the state
       UNSTABLE, so there the bot does hold the merge and the rule reads the other way. Either
-      way an agent that waits simply does not submit, and nothing fails.
+      way an agent that waits simply does not submit, and nothing fails. The explicit
+      comment-resolution procedure adds an agent-owned bounded wait; no code times or enforces it.
   - id: nits-do-not-restart-the-cycle
     phase: review
     quote: After two repair rounds, remaining nits do not start another cycle.
@@ -423,22 +418,22 @@ rules:
       maintainer authorized, so `merge --head` on a later head succeeds. Carrying the authorized
       SHA is the agent's alone. The scan does not reach this rule, which restricts with
       "only for".
-  - id: swift-does-not-wait-for-optional-checks
+  - id: none-or-one-allows-optional-checks
     phase: finish
     quote: >-
-      In swift, do not wait for optional checks to make merge state CLEAN
+      With `ci_review_wait: none` or `one`, do not wait for optional checks to make merge state CLEAN
     enforced_by: agent
     note: >-
-      `ReviewPace.allowed_merge_states` returns UNSTABLE among the swift states, so the command
+      `CiReviewWait.allowed_merge_states` returns UNSTABLE among the none and one states, so the command
       accepts the merge once required checks pass. It cannot make an agent stop waiting.
-  - id: thorough-refuses-unstable
+  - id: all-refuses-unstable
     phase: finish
     quote: do not merge while the state is UNSTABLE
     enforced_by: code
     detector: >-
-      Under thorough, `ReviewPace.allowed_merge_states` returns CLEAN alone on a queue-disabled
+      Under all, `CiReviewWait.allowed_merge_states` returns CLEAN alone on a queue-disabled
       base, so `merge` refuses an UNSTABLE state rather than leaving it to the agent. A
-      maintainer clicking merge is outside it; GitHub does not know about the pace.
+      maintainer clicking merge is outside it; GitHub does not know about the wait.
   - id: no-background-retries
     phase: finish
     quote: never schedule background retries

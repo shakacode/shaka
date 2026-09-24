@@ -1,26 +1,13 @@
-# Shaka repository contract. Every setting is documented in docs/settings.md.
-# Candidate/local validation (no authority): shaka seam check --root . --local
-# Trusted policy: shaka seam check --root . --ref SHA after resolving the default branch.
+# Shaka settings for this repository. See docs/settings.md.
 ---
-version: 1
-# base_branch is omitted, so it resolves to this repository's default branch, main.
-# A task may still name a different base for itself; that never changes where policy is read from.
-# Short display prefix for RCT/MCT titles. Presentation only.
+version: 1 # Configuration format, independent of the Shaka release version.
 repo_prefix: SHAKA
-# Optional repository-relative plan document.
-plan: docs/pilot-plan.md
-# Reviewer policy. Each key is documented in docs/settings.md#review.
-# A fresh context is what makes a review adversarial, so the implementation
-# model qualifies; a different provider is only preferred.
 review:
-  # always, meaningful_changes, or none
   required: meaningful_changes
-  # CI job names to read. Not required merge checks. Repeat an entry for another job.
-  ci_review_agents:
+  ci_review_jobs:
     - claude-review
-  # swift or thorough. Omitted means swift.
-  pace: swift
-  # Local review agents, in preference order. Not the CI jobs above.
+  ci_review_wait: one
+  # Local reviewer identities, in preference order.
   local_review_agents:
     - provider: anthropic
       model_family: claude
@@ -28,9 +15,7 @@ review:
       model_family: codex
     - provider: xai
       model_family: grok
-# Merge authority for a finished pull request.
 merge:
   preference: ask
-# Feature-branch layout. {login} is gh api user --jq .login; {host} is the tool.
 branches:
   name: '{login}-{host}/{issue}-{description}'

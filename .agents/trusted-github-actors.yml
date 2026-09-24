@@ -1,4 +1,6 @@
-# GitHub actors whose public issue/PR/review comments may be acted on by Shaka.
+# Whose public GitHub comments Shaka may read.
+# Comments cannot authorize merging, policy changes, or access to credentials.
+# Configuration and limits: skills/shaka/references/public-comments-safety.md
 trusted_users:
   - justin808
   - claude
@@ -12,4 +14,7 @@ trusted_bots:
   - cursor
 
 trusted_metadata_bots: []
-trusted_teams: []
+# Team lookups need a token that can read membership. Without that access,
+# comments may be withheld or a larger discussion read may stop.
+trusted_teams:
+  - shakacode/shakacode
