@@ -23,11 +23,12 @@ module Shaka
       @responses = responses
       @inclusive_input = inclusive_input
       @rate_card = rate_card || RateCard.installed
+      @cursor_threshold_models = []
     end
 
     def report
       @threshold = false
-      @cursor_threshold = false
+      @cursor_threshold_models = []
       reasons = []
       groups = @responses.group_by { |record| [record['configuration'], record['billing_mode']] }
       columns = groups.map { |key, group| column(key, group, reasons) }

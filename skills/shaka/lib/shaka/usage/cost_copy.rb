@@ -3,9 +3,6 @@
 module Shaka
   # Report copy for the rate-card cost scenarios.
   module CostCopy
-    THRESHOLD_NOTE = 'OpenAI API estimates apply the 272K context threshold.'
-    CURSOR_THRESHOLD_NOTE = 'Cursor Grok 4.7 estimates apply the 256K context threshold.'
-
     private
 
     def markdown(columns, reasons)
@@ -84,9 +81,24 @@ module Shaka
     end
 
     def footer(columns, reasons)
-      [reasons.uniq.join('; '), source_line(columns), (@threshold ? THRESHOLD_NOTE : nil),
-       (@cursor_threshold ? CURSOR_THRESHOLD_NOTE : nil)]
-        .compact.reject(&:empty?).join("\n")
+      [reasons.uniq.join('; '), source_line(columns), (@threshold ? openai_threshold_note : nil),
+       cursor_threshold_note].compact.reject(&:empty?).join("\n")
+    end
+
+    def openai_threshold_note
+      "OpenAI API estimates apply the #{threshold_label(@rate_card.openai_threshold)} context threshold."
+    end
+
+    def cursor_threshold_note
+      return if @cursor_threshold_models.nil? || @cursor_threshold_models.empty?
+
+      @cursor_threshold_models.uniq.map do |model, limit|
+        "Cursor #{model} estimates apply the #{threshold_label(limit)} context threshold."
+      end.join("\n")
+    end
+
+    def threshold_label(value)
+      value.is_a?(Integer) && (value % 1_000).zero? ? "#{value / 1_000}K" : value.to_s
     end
 
     def show(amount, unit)

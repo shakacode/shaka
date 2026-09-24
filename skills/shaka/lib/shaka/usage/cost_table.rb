@@ -85,9 +85,7 @@ module Shaka
       columns.filter_map do |column|
         next unless openai_rated?(column) || cursor_rated?(column)
 
-        model = column[:model].to_s.delete_suffix('-fast')
-        provider = column[:provider] == 'cursor' ? 'cursor' : 'openai'
-        @rate_card.source_for(provider, model) || MODEL_SOURCES[model]
+        MODEL_SOURCES[column[:model].to_s.delete_suffix('-fast')]
       end.uniq
     end
 

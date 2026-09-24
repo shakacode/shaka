@@ -23,7 +23,7 @@ module Shaka
       limit = @rate_card.cursor_threshold(model)
       return listed.map { |value| Rational(value) } unless limit && input > limit
 
-      @cursor_threshold = true
+      @cursor_threshold_models << [model.to_s, limit]
       multiple = @rate_card.cursor_long_context(billing)
       @rate_card.cursor_rate(model, 'standard').map { |value| Rational(value) * multiple }
     end

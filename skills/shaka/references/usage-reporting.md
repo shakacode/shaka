@@ -170,9 +170,10 @@ Effort has no price multiplier. Unsupported models, missing counters, and
 contradictory records leave the estimate unknown.
 
 Implementation estimates read `skills/shaka/config/model-rates.yml` from the
-candidate checkout when that file is present and is not the installed copy. Pass
-`--rate-root DIR` to name the checkout. Review estimates and every other
-contribution keep the installed card, including when that option is set. The
+git checkout that contains the command, including when the command runs in a
+subdirectory. Pass `--rate-root DIR` to name a different checkout. Review
+estimates and every other contribution keep the installed card, including when
+that option is set. The
 installed command still applies its own pricing formulas. The report names the
 card it used. Actual charge stays UNKNOWN. A card the installed loader cannot
 check fails the report.

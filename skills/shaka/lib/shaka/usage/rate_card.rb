@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'open3'
 require 'yaml'
 require_relative '../error'
 require_relative '../repository_config/duplicate_keys'
@@ -12,7 +13,6 @@ module Shaka
     PRICE = /\A(?:0|[1-9]\d*)(?:\.\d+)?\z/
     NAME = /\A[a-zA-Z0-9][a-zA-Z0-9._:-]{0,79}\z/
     DATE = /\A\d{4}-\d{2}-\d{2}\z/
-    SOURCE = %r{\Ahttps://[^\s)]+\z}
 
     def self.installed
       @installed ||= load_file(INSTALLED_PATH, candidate: false)
@@ -34,13 +34,22 @@ module Shaka
     def self.checkout_root(explicit_root)
       return File.expand_path(explicit_root) if explicit_root
 
-      path = File.join(Dir.pwd, PATH)
+      root = repository_root(Dir.pwd)
+      path = File.join(root, PATH)
       return unless File.file?(path)
       return if File.realpath(path) == installed_file
 
-      Dir.pwd
+      root
     end
-    private_class_method :checkout_root
+
+    def self.repository_root(start)
+      output, status = Open3.capture2('git', '-C', start, 'rev-parse', '--show-toplevel')
+      return start unless status.success?
+
+      found = output.strip
+      found.empty? ? start : found
+    end
+    private_class_method :checkout_root, :repository_root
 
     def self.load_root(root)
       path = File.join(root, PATH)
@@ -98,11 +107,6 @@ module Shaka
       speed == 'standard' || (speed == 'fast' && anthropic_fast?(model))
     end
 
-    def source_for(provider, model)
-      url = dig(provider, 'models', model, 'source')
-      "[#{model}](#{url})" if url
-    end
-
     private
 
     def models(provider) = @data.fetch(provider).fetch('models')
@@ -152,24 +156,24 @@ module Shaka
       end
 
       def openai_model(entry, label)
-        fields = mapping(entry, label, %w[credits api source])
+        fields = mapping(entry, label, %w[credits api])
         { 'credits' => prices(fields.fetch('credits'), 3, "#{label} credits"),
-          'api' => prices(fields.fetch('api'), 3, "#{label} api") }.merge(source(fields, label))
+          'api' => prices(fields.fetch('api'), 3, "#{label} api") }
       end
 
       def cursor_model(entry, label)
-        fields = mapping(entry, label, %w[standard fast threshold source])
+        fields = mapping(entry, label, %w[standard fast threshold])
         priced = { 'standard' => prices(fields.fetch('standard'), 3, "#{label} standard"),
                    'fast' => prices(fields.fetch('fast'), 3, "#{label} fast") }
         priced['threshold'] = positive(fields.fetch('threshold'), "#{label} threshold") if fields.key?('threshold')
-        priced.merge(source(fields, label))
+        priced
       end
 
       def anthropic_model(entry, label)
-        fields = mapping(entry, label, %w[prices fast source])
+        fields = mapping(entry, label, %w[prices fast])
         priced = { 'prices' => prices(fields.fetch('prices'), 5, "#{label} prices") }
         priced['fast'] = boolean(fields.fetch('fast'), "#{label} fast") if fields.key?('fast')
-        priced.merge(source(fields, label))
+        priced
       end
 
       def models(value, provider)
@@ -206,15 +210,6 @@ module Shaka
 
       def price_list?(value)
         value.all? { |item| item.is_a?(String) && item.match?(PRICE) }
-      end
-
-      def source(fields, label)
-        return {} unless fields.key?('source')
-
-        url = fields.fetch('source')
-        raise Error, "#{label} source must be an https URL" unless url.is_a?(String) && url.match?(SOURCE)
-
-        { 'source' => url }
       end
 
       def date(value, label)
