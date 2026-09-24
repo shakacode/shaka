@@ -4,6 +4,7 @@
 require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
+require_relative '../lib/shaka/attention'
 require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
@@ -99,7 +100,7 @@ if ARGV.first == 'prefix'
   exit Shaka::Prefix.run(ARGV)
 end
 
-COMMANDS = %w[pr comments description reply resolve walkthrough merge].freeze
+COMMANDS = %w[pr comments description reply resolve walkthrough merge attention].freeze
 
 def content(path)
   parsed = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -148,6 +149,9 @@ parser = OptionParser.new do |flags|
   flags.on('--ref REF', 'Trusted commit for review settings') { |value| options[:ref] = value }
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
+  flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, none') do |value|
+    options[:state] = value
+  end
   flags.on('-h', '--help', 'Show usage') do
     puts flags
     exit
@@ -187,6 +191,7 @@ begin
                                         base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough)
                                       )
+           when 'attention' then Shaka::Attention.new(github).call(state: options.fetch(:state))
            end
   puts JSON.pretty_generate(result)
 rescue OptionParser::ParseError, KeyError, SystemCallError, Shaka::Error => e

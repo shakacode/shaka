@@ -228,6 +228,33 @@ class ClaudeUsageFailuresTest < Minitest::Test
     end
   end
 
+  # A user record's uuid looks like the turn ID but is not; an empty table would hide that.
+  # A turn whose only response lacks an ID has no readable response either.
+  def test_turn_that_matches_no_response_fails_and_names_the_expected_field
+    Dir.mktmpdir do |directory|
+      file = transcript(directory, 'session.jsonl', [prompt('old'), reply('m0', 900), prompt('new'), reply(nil, 1)])
+      output, error, status = Open3.capture3(NO_HOST, COMMAND, 'usage', '--commit', COMMIT, '--contribution',
+                                             'implementation', '--host', 'claude-code', '--file', file,
+                                             '--turn', 'old', '--turn', 'new', '--turn', 'user-uuid')
+      refute_predicate status, :success?
+      assert_empty output
+      assert_match(/new, user-uuid .*promptId/, error)
+    end
+  end
+
+  # Conflict reduction clears a response's turn; the selected turn still existed.
+  def test_explicit_turns_with_conflicting_copies_report_the_conflict
+    Dir.mktmpdir do |directory|
+      first = transcript(directory, 'first.jsonl', [prompt('new'), reply('m1', 100)])
+      second = transcript(directory, 'second.jsonl', [prompt('new'), reply('m1', 999)])
+      moved = transcript(directory, 'moved.jsonl', [prompt('other'), reply('m1', 100)])
+      [[second, '--turn', 'new'], [moved, '--turn', 'new', '--turn', 'other']].each do |other, *turns|
+        output = report('--host', 'claude-code', '--file', first, '--file', other, *turns)
+        assert_includes output, 'Conflicting response copies'
+      end
+    end
+  end
+
   def test_both_host_contexts_require_an_explicit_host
     environment = { 'PI_CODING_AGENT' => nil, 'CODEX_THREAD_ID' => SESSION,
                     'CLAUDE_CODE_SESSION_ID' => SESSION }
@@ -316,14 +343,14 @@ class ClaudeUsagePriceTest < Minitest::Test
     assert_includes output, 'Server tool usage UNKNOWN'
   end
 
-  def test_fast_mode_is_not_priced_as_standard_speed
+  def test_published_fast_mode_is_priced_at_its_dedicated_rate
     Dir.mktmpdir do |directory|
       fast = priced_reply('m1', 100)
       fast[:message][:usage][:speed] = 'fast'
       file = transcript(directory, 'session.jsonl', [prompt('new'), fast])
       output = report('--host', 'claude-code', '--file', file)
-      assert_metric output, 'USD estimate', 'UNKNOWN'
-      assert_includes output, 'Anthropic fast-mode rates are not published here'
+      assert_metric output, 'USD estimate', '$0.002158'
+      assert_includes output, 'fast mode is priced for Opus models with a published rate'
     end
   end
 end

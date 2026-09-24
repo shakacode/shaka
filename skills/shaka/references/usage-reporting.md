@@ -20,10 +20,14 @@ selects the latest turn. That is a snapshot, not necessarily the whole task.
 | --- | --- |
 | `--host NAME` | Select a host when multiple host markers are present |
 | `--file PATH` | Read a saved native source; repeat for additional sources |
-| `--turn ID` | Select specific turns; repeat as needed |
+| `--turn ID` | Select specific turns; repeat as needed. Each host section below names the ID field |
 | `--all-turns` | Include a session dedicated entirely to this task; cannot combine with `--turn` |
 | `--commit SHA,SHA` | Associate the selected interval with several commits |
 | `--contribution CATEGORY` | `implementation`, `review`, `integration`, or `shared-planning` |
+
+A `--turn` ID that matches no readable response fails with the expected field
+instead of printing an empty table. A source with no readable responses still
+reports them as unavailable.
 
 Use explicit host selection for a child agent launched inside Pi, which inherits
 Pi's process marker. Selecting Pi never falls back to unrelated Codex records.
@@ -78,11 +82,14 @@ did not change the result.
 
 `CLAUDE_CODE_SESSION_ID` selects a transcript under `CLAUDE_CONFIG_DIR` (default
 `~/.claude`). The reader checks its ID and includes subagent transcripts from the
-selected turn. A turn is a prompt ID; multiple supplied files use the first file's
-latest turn by default. Streamed copies count once, using the final usage line.
+selected turn. A turn is the `promptId` on a `type: "user"` record, not that
+record's `uuid`. List them in order with
+`jq -r 'select(.type == "user") | .promptId' FILE | uniq`. Multiple supplied files use
+the first file's latest turn by default. Streamed copies count once, using the final
+usage line.
 
 For CLI reviews, save `claude -p --output-format json` output. The reader consumes
-the result object's `usage`, never its review text. An `is_error` result is unknown.
+the result object's `usage`, never its review text, and its turn is the `session_id`. An `is_error` result is unknown.
 A present top-level `model` is used; otherwise a single `modelUsage` entry can supply
 `canonicalModel`. Multiple model entries leave the route unknown. Effort is reported
 only when recorded.
@@ -174,7 +181,7 @@ contradictory records leave the estimate unknown.
 | Standard Codex credits | Configured supported OpenAI model. Unknown when cache writes exist because their credit rate is unpublished. |
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes, which use their own published rates. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
-| Anthropic list-price USD | Supported routed model first, otherwise supported configured model; only recorded standard-speed responses are priced. |
+| Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published Opus fast mode are priced. |
 | Pi native nominal USD | Copy the host's recorded cost instead of applying a rate card. |
 
 Rate notes and source links apply only to supported provider/model pairs. A
@@ -184,8 +191,10 @@ of its unknown estimate. The table's model is the one actually priced.
 ### Anthropic details
 
 Input, cache reads, and writes are separate. Use the recorded 5-minute/1-hour
-`cache_creation` split; an unsplit write total stays unknown. Fast or unrecorded
-speed stays unknown. Standard and fast responses remain separate columns.
+`cache_creation` split; an unsplit write total stays unknown. Fast mode is priced
+at twice standard token rates for Opus 5.5, Opus 5, and Opus 4.8; cache multipliers
+stack on top. Fast mode for other models and unrecorded speed stay unknown. Standard
+and fast responses remain separate columns.
 
 Add the recorded web-search charge. An absent server-tool group or search counter
 means no searches; a present malformed group or invalid count is unknown. Fetch
@@ -194,7 +203,7 @@ records do not establish container-time cost or monthly allowance treatment.
 
 Recorded US-only inference applies 1.1 times token rates, excluding the per-request
 search charge. Absent US routing uses the provider's global default. The September
-19, 2026 rate record has no Anthropic long-context multiplier.
+23, 2026 rate record has no Anthropic long-context multiplier.
 
 ### Cursor and OpenCode details
 

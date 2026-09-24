@@ -1,6 +1,6 @@
 # Configure a repository
 
-Ask your agent to connect the repository's existing tools to Shaka:
+Connect your existing tools to Shaka:
 
 ```text
 $shaka Configure this repository for Shaka. Reuse its existing setup,
@@ -8,7 +8,7 @@ test, and validation commands. Explain the review and merge choices.
 Use merge policy ask.
 ```
 
-The agent inspects your project, asks for missing choices, and prepares a setup PR:
+The agent inspects your project, confirms missing choices, and prepares these files:
 
 | File | Purpose |
 | --- | --- |
@@ -21,9 +21,12 @@ The agent inspects your project, asks for missing choices, and prepares a setup 
 | `.agents/trusted-github-actors.yml` | Whose public GitHub comments the agent may read |
 | `AGENTS.md` | Project instructions and constraints |
 
-These scripts usually wrap commands the project already has. In Shaka's own
-repository, `.agents/bin/setup` installs development dependencies; `bin/install`
-installs Shaka into your coding agent. They serve different users.
+The scripts usually wrap existing commands. In Shaka's repository, `.agents/bin/setup`
+installs development dependencies; `bin/install` installs the skill.
+
+You merge the first setup PR yourself on GitHub. Until it merges, the default branch
+has no trusted settings, so Shaka cannot choose a reviewer from them or merge
+on your behalf. The agent reviews the PR, then gives it back with the commit to merge.
 
 To change a choice later:
 

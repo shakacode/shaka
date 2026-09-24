@@ -23,17 +23,33 @@ module Shaka
     end
 
     def self.discover
-      identity = ENV.fetch('CODEX_THREAD_ID', nil)
-      return [] unless identity&.match?(/\A[0-9a-f-]{36}\z/)
+      file = session_file(ENV.fetch('CODEX_THREAD_ID', nil))
+      file ? [file] : []
+    end
+
+    # `codex exec --json` announces its thread first; that thread's saved session holds its token counts.
+    def self.announced_session(events)
+      events.each_line do |line|
+        event = JSON.parse(line)
+        return session_file(event['thread_id']) if event.is_a?(Hash) && event['type'] == 'thread.started'
+      rescue JSON::ParserError, EncodingError
+        next
+      end
+      nil
+    end
+
+    # The saved session for one thread ID, or nil when it is not exactly one matching file.
+    def self.session_file(identity)
+      return unless identity.is_a?(String) && identity.match?(/\A[0-9a-f-]{36}\z/)
 
       home = ENV.fetch('CODEX_HOME', File.expand_path('~/.codex'))
       files = Dir.glob(File.join(home, 'sessions', '*', '*', '*', "*#{identity}.jsonl"))
-      return [] unless files.one?
+      return unless files.one?
 
-      metadata = JSON.parse(File.open(files.first, &:readline))
-      matching_source?(metadata, identity) ? files : []
-    rescue JSON::ParserError, SystemCallError, EOFError
-      []
+      metadata = JSON.parse(File.open(files.first, encoding: 'UTF-8', &:readline))
+      files.first if matching_source?(metadata, identity)
+    rescue JSON::ParserError, EncodingError, SystemCallError, EOFError
+      nil
     end
 
     def self.matching_source?(metadata, identity)
@@ -49,7 +65,8 @@ module Shaka
       @context = {}
       @provider = nil
       @records = []
-      File.foreach(file) { |line| consume(parse(line)) }
+      File.foreach(file, encoding: 'UTF-8') { |line| consume(parse(line)) }
+      note_readable(@records)
       selected = selected_turns(turns)
       @gaps << 'Unreadable or unidentifiable records' if @all_turns && selected.size != @records.size
       @records.select { |record| selected.include?(record['turn_id']) }.each { |record| count(record) }
@@ -86,13 +103,19 @@ module Shaka
     end
 
     def parse(line)
-      record = JSON.parse(line)
+      record = JSON.parse(line) if line.valid_encoding?
       return record if record.is_a?(Hash) && record['payload'].is_a?(Hash)
 
+      unreadable
+    rescue JSON::ParserError, EncodingError
+      unreadable
+    end
+
+    # An unreadable line may have changed the turn's settings, so later responses keep
+    # the turn but not a model or effort that might no longer apply.
+    def unreadable
       @gaps << 'Unreadable or unidentifiable records'
-      nil
-    rescue JSON::ParserError
-      @gaps << 'Unreadable or unidentifiable records'
+      @context = @context.slice('turn_id')
       nil
     end
   end

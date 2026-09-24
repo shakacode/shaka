@@ -9,6 +9,7 @@ module Shaka
     RATES = {
       'claude-fable-5-1' => %w[10 0.25 12.5 20 50],
       'claude-fable-5' => %w[10 1 12.5 20 50],
+      'claude-opus-5-5' => %w[4 0.2 5 8 20],
       'claude-opus-5' => %w[5 0.5 6.25 10 25],
       'claude-opus-4-8' => %w[5 0.5 6.25 10 25],
       'claude-opus-4-7' => %w[5 0.5 6.25 10 25],
@@ -19,6 +20,22 @@ module Shaka
       'claude-sonnet-4-5' => %w[3 0.3 3.75 6 15],
       'claude-haiku-4-5' => %w[1 0.1 1.25 2 5]
     }.freeze
+    # Fast mode is published for these Opus versions at 2x standard rates. Cache
+    # multipliers stack on top, so the same multiplier applies to every token category.
+    FAST_MODELS = %w[claude-opus-5-5 claude-opus-5 claude-opus-4-8].freeze
+
+    def self.rate_model(routed, configured, speed)
+      names = [routed, configured].map(&:to_s)
+      names.map! { |name| name.delete_suffix('-fast') } if speed == 'fast'
+      names.find { |name| RATES.key?(name) }
+    end
+
+    def self.rated_speed?(model, speed)
+      return false unless model
+
+      speed == 'standard' || (speed == 'fast' && FAST_MODELS.include?(model))
+    end
+
     # Web search bills $10 per 1,000 requests on top of tokens; web fetch adds no charge.
     # Readers report no searches as zero, so a count that is absent here was never established.
     SEARCH_RATE = Rational(1, 100)
@@ -29,29 +46,33 @@ module Shaka
     private
 
     # Claude Code records only the routed model; exports that name a configured model use that.
-    def anthropic_rate(configuration)
-      return unless configuration.is_a?(Array)
-
-      _provider, model, routed = configuration
-      RATES[[routed, model].find { |name| RATES.key?(name) }]
-    end
-
     def anthropic_price(record, mode)
       return [nil, 'Codex credits do not price Anthropic'] if mode == :credits
 
-      rate = anthropic_rate(record['configuration'])
-      return [nil, 'Unsupported provider or configured model'] unless rate
-
-      speed = record['billing_mode']
-      return [nil, speed_reason(speed)] unless speed == 'standard'
+      rate, reason = anthropic_rate_for(record['configuration'], record['billing_mode'])
+      return [nil, reason] if reason
 
       priced, reason = anthropic_categories(record['usage'])
       reason ? [nil, reason] : [anthropic_bill(priced, rate), nil]
     end
 
-    # Fast mode bills at its own rates, and a source that records no speed establishes neither.
-    def speed_reason(speed)
-      speed == 'fast' ? 'Anthropic fast-mode rates are not published here' : 'Billing speed UNKNOWN'
+    def anthropic_rate_for(configuration, speed)
+      return [nil, 'Unsupported provider or configured model'] unless configuration.is_a?(Array)
+
+      _provider, configured, routed = configuration
+      model = AnthropicCost.rate_model(routed, configured, speed)
+      return [nil, 'Unsupported provider or configured model'] unless model
+
+      return [nil, speed_reason(speed, model)] unless AnthropicCost.rated_speed?(model, speed)
+
+      rates = RATES.fetch(model).map { |price| Rational(price) }
+      rates = rates.map { |price| price * 2 } if speed == 'fast'
+      [rates, nil]
+    end
+
+    # Claude model rates apply only where the provider publishes the corresponding speed.
+    def speed_reason(speed, model)
+      speed == 'fast' ? "Anthropic fast-mode rate UNKNOWN for #{model}" : 'Billing speed UNKNOWN'
     end
 
     def anthropic_bill(priced, rate)
