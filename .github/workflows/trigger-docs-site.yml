@@ -1,0 +1,27 @@
+name: Trigger docs site rebuild
+
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**"]
+
+permissions: {}
+
+jobs:
+  notify-docs-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.DOCS_DISPATCH_APP_ID }}
+          private-key: ${{ secrets.DOCS_DISPATCH_APP_KEY }}
+          owner: shakacode
+          repositories: shaka-shakacode-com
+
+      - uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: shakacode/shaka-shakacode-com
+          event-type: docs-updated
