@@ -119,11 +119,9 @@ module Shaka
     private
 
     def unmatched_turns
-      missing = @options[:turns].uniq - turn_ids(@responses)
+      missing = @options[:turns].uniq - @source.matched_turns
       missing.empty? || all_responses.empty? ? [] : missing
     end
-
-    def turn_ids(responses) = responses.map { |record| record['turn_id'] }
 
     def all_responses
       Usage::READERS.fetch(@options[:host]).new(@options[:files], [], all_turns: true).responses.values

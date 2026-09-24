@@ -169,8 +169,6 @@ class ClaudeUsageTest < Minitest::Test
       output = report('--host', 'claude-code', '--file', first, '--file', second)
       assert_includes output, 'Conflicting response copies'
       refute_includes output, '| 100 |'
-      assert_includes report('--host', 'claude-code', '--file', first, '--file', second, '--turn', 'new'),
-                      'Conflicting response copies'
     end
   end
 end
@@ -240,6 +238,19 @@ class ClaudeUsageFailuresTest < Minitest::Test
       refute_predicate status, :success?
       assert_empty output
       assert_match(/user-uuid.*promptId/, error)
+    end
+  end
+
+  # Conflict reduction clears a response's turn; the selected turn still existed.
+  def test_explicit_turns_with_conflicting_copies_report_the_conflict
+    Dir.mktmpdir do |directory|
+      first = transcript(directory, 'first.jsonl', [prompt('new'), reply('m1', 100)])
+      second = transcript(directory, 'second.jsonl', [prompt('new'), reply('m1', 999)])
+      moved = transcript(directory, 'moved.jsonl', [prompt('other'), reply('m1', 100)])
+      [[second, '--turn', 'new'], [moved, '--turn', 'new', '--turn', 'other']].each do |other, *turns|
+        output = report('--host', 'claude-code', '--file', first, '--file', other, *turns)
+        assert_includes output, 'Conflicting response copies'
+      end
     end
   end
 

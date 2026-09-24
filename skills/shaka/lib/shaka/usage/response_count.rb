@@ -8,17 +8,19 @@ module Shaka
     # them separately is priced only where the estimator publishes exclusive rates.
     INCLUSIVE_INPUT = true
 
+    # Turns of the selected records, noted before conflicting copies lose their turn.
+    def matched_turns = @matched_turns || []
+
     private
 
     def count(record)
+      (@matched_turns ||= []) << record['turn_id']
       identity = record['response_id']
       return @gaps << 'Unreadable or unidentifiable records' unless identity.is_a?(String) && !identity.empty?
 
       previous = @responses[identity]
       if previous && previous != record
-        # A turn both copies agree on stays selectable; its usage is still unknown.
-        turn = previous['turn_id'] if previous['turn_id'] == record['turn_id']
-        previous.merge!('usage' => {}, 'configuration' => [nil] * 4, 'timestamp' => nil, 'turn_id' => turn,
+        previous.merge!('usage' => {}, 'configuration' => [nil] * 4, 'timestamp' => nil, 'turn_id' => nil,
                         'billing_mode' => nil)
         @gaps << 'Conflicting response copies'
       end
