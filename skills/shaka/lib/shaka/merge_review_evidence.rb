@@ -16,7 +16,7 @@ module Shaka
     EARLIER_CANDIDATES = 5
     # Markdown that instructs agents can change trust or merge policy, so it needs fresh review.
     INSTRUCTION_FILES = %w[agents.md claude.md gemini.md skill.md].freeze
-    INSTRUCTION_DIRECTORIES = %w[.agents/ .claude/ .cursor/ .github/].freeze
+    INSTRUCTION_DIRECTORIES = %w[.agents/ .claude/ .cursor/ .github/ skills/].freeze
 
     def initialize(github, required:, waiver: nil)
       @github = github

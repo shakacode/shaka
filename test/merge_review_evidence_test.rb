@@ -114,7 +114,9 @@ class MergeReviewEvidenceTest < Minitest::Test
   end
 
   def test_refuses_an_earlier_attestation_when_agent_instructions_changed_since
-    %w[AGENTS.md skills/shaka/SKILL.md .agents/writing-style.md pkg/.github/pull_request_template.md].each do |path|
+    paths = %w[AGENTS.md skills/shaka/references/review.md .agents/writing-style.md
+               pkg/.github/pull_request_template.md]
+    paths.each do |path|
       @client.comments = [attestation(EARLIER)]
       @client.comparisons = { EARLIER => markdown_only('README.md', path) }
 
