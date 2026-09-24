@@ -4,6 +4,7 @@
 require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
+require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/claim'
@@ -26,6 +27,11 @@ require_relative '../lib/shaka/workflow'
 if ARGV.first == 'usage'
   ARGV.shift
   exit Shaka::Usage.run(ARGV)
+end
+
+if ARGV.first == 'issue-create'
+  ARGV.shift
+  exit Shaka::IssueCreate.run(ARGV)
 end
 
 if ARGV.first == 'work'
@@ -120,7 +126,7 @@ def usage_banner
    '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka review run --help',
    '; shaka review check --help', '; shaka seam check --help',
    '; shaka workflow --help', '; shaka enforcement --help', '; shaka doctor --help',
-   '; shaka repos --help; shaka prefix --help'].join
+   '; shaka repos --help; shaka prefix --help; shaka issue-create --help'].join
 end
 
 options = {}

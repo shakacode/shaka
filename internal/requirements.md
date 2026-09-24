@@ -105,9 +105,19 @@ This record defines the current product, not proof that acceptance is complete.
   and quality on comparable real changes, including retries and review. Fewer
   tokens alone does not establish improvement.
 
+- **R19 — Keep Shaka gaps actionable.** Unless offers are skipped, the root task
+  owner offers a public-source draft for a worthwhile, independently verified gap
+  outside the active request. Verify the fixed public repository identity and get
+  exact-query approval before searching; share candidate links and metadata for
+  inspection. Get separate approval for the exact issue text, repeat the search,
+  and return for review and approval if candidates change. File the unchanged draft
+  only after candidates are cleared. Exclude private context; stop on identity
+  mismatch, search failure or limit, or unresolved candidates. Never create an
+  issue automatically. See the [issue-offer procedure](../skills/shaka/references/shaka-issue-offer.md).
+
 ## Design
 
-- **D1 (R1–R3, R9):** one shared `$shaka` skill. Task requirements stay in their
+- **D1 (R1–R3, R9, R19):** one shared `$shaka` skill. Task requirements stay in their
   original record; delivery evidence stays on the PR. No local workflow database.
 - **D2 (R2, R4–R7):** a small Ruby command validates repository configuration and
   provides `pr`, `walkthrough`, and `merge`.

@@ -85,3 +85,17 @@ a prerequisite PR, merge first, and leave the main PR focused on the integration
 Shaka uses ordinary sequential PRs. Each needs its own tests and review, and the
 agent updates the remaining branch after the prerequisite merges. This does not
 require a stacked-PR service. The original chat owns the overall outcome.
+
+## Suggest improvements to Shaka
+
+When Shaka confirms a worthwhile product gap outside your task, it offers an issue
+and keeps working. You can ask it to skip these offers.
+
+The agent shows you a draft based on public sources, asks before searching for
+duplicates, and asks again before filing. You inspect possible matches; the agent
+rechecks them before filing and returns to you if they change. A failed or limited
+search, unresolved candidates, or a repository mismatch stops filing. No search
+results do not prove there are no duplicates.
+
+The agent checks consent and sources; the issue command verifies the destination.
+See the [issue-offer procedure](../skills/shaka/references/shaka-issue-offer.md).

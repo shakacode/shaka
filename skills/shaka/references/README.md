@@ -22,6 +22,7 @@ the workflow reaches that decision:
 | Assess documentation changes | [Documentation verification](documentation-verification.md) |
 | Choose tests and evidence | [Verification](../../../docs/pr-verification.md) |
 | Report model, token, and cost evidence | [Usage reporting](usage-reporting.md) |
+| Offer an issue for a verified Shaka gap | [Issue offers](shaka-issue-offer.md) |
 | Read public issue and review discussions | [Public comments](public-comments-safety.md) |
 | Operate a control tower | [Control towers](control-towers.md) |
 | Launch coding agents or enumerate desktop sessions | [Launchers and agent sessions](launchers-and-sessions.md) |
