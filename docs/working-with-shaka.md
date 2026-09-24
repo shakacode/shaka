@@ -41,9 +41,9 @@ when it comes from a login you named to the agent as a merge approver; GitHub do
 not let the account that opened the PR approve it. Return to the chat so the agent
 can act on the approval. If GitHub requires updating the branch first, the agent
 rebases, revalidates, and merges without asking again. When a branch rule requires
-GitHub approval of the new commit, it asks for that approval. When resolving a
-conflict changes behavior, it explains the resolution and asks you to approve the
-new commit. While it waits for either approval, the PR keeps its
+GitHub approval of the new commit, it asks for that approval. When the rebase changes
+behavior, with or without conflicts, it explains the difference and asks you to
+approve the new commit. While it waits for either approval, the PR keeps its
 `awaiting-merge-approval` label.
 
 A PR carries at most one of these labels. The agent removes it when work resumes.

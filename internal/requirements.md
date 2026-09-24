@@ -70,7 +70,9 @@ This record defines the current product, not proof that acceptance is complete.
   unset, default to Ask without an answer, and reuse established authority. Preserve
   review-only and PR-only stopping points.
 - **R5 — Avoid repeated merge decisions.** After the walkthrough and required gates,
-  Ask names the ready head and directs the user to GitHub's offered merge control.
+  Ask names the ready head and directs the user to GitHub's offered merge control, or
+  merges after the user's approval, rebasing first when the rebased change keeps the
+  approved behavior.
   Auto submits eligible work after the same gates, including native approvals.
   Use an existing Merge Queue and wait for its terminal result under Auto; Ask
   leaves the click and later queue failures to GitHub and a new task. Unclear
