@@ -14,6 +14,9 @@ module Shaka
     COMPARE_FILE_LIMIT = 300
     # Bounds compare requests when many earlier revisions were reviewed.
     EARLIER_CANDIDATES = 5
+    # Markdown that instructs agents can change trust or merge policy, so it needs fresh review.
+    INSTRUCTION_FILES = %w[agents.md claude.md gemini.md skill.md].freeze
+    INSTRUCTION_DIRECTORIES = %w[.agents/ .claude/ .cursor/ .github/].freeze
 
     def initialize(github, required:, waiver: nil)
       @github = github
@@ -25,13 +28,12 @@ module Shaka
       return { 'basis' => 'not_required' } if @required == 'none'
 
       reason = waiver_reason
-      found = attestations
-      current = found.find { |entry| entry['reviewed'] == head }
-      return current.merge('basis' => 'current_head') if current
+      found = attestations(reason)
+      return found if found.is_a?(Hash)
 
       rejected = []
-      earlier = earlier_evidence(found, head, rejected)
-      return earlier if earlier
+      evidence = published_evidence(found, head, rejected)
+      return evidence if evidence
       return { 'basis' => 'waived', 'reason' => reason } if reason
 
       raise Error, refusal(head, rejected)
@@ -48,8 +50,17 @@ module Shaka
       reason
     end
 
+    # A waiver must still work when GitHub cannot list the comments that would make it unnecessary.
+    def attestations(reason)
+      published_attestations
+    rescue Error => e
+      raise unless reason
+
+      { 'basis' => 'waived', 'reason' => reason, 'evidence_unavailable' => e.message }
+    end
+
     # Newest first, so the latest review of a revision is the one reported.
-    def attestations
+    def published_attestations
       account = @github.viewer_login
       @github.issue_comments.reverse.flat_map do |comment|
         next [] unless comment.is_a?(Hash) && comment.dig('user', 'login') == account
@@ -59,6 +70,13 @@ module Shaka
             'findings' => findings.to_i, 'comment' => comment['html_url'] }.compact
         end
       end
+    end
+
+    def published_evidence(found, head, rejected)
+      current = found.find { |entry| entry['reviewed'] == head }
+      return current.merge('basis' => 'current_head') if current
+
+      earlier_evidence(found, head, rejected)
     end
 
     def earlier_evidence(found, head, rejected)
@@ -91,16 +109,22 @@ module Shaka
       return 'the file list may be truncated' if files.length >= COMPARE_FILE_LIMIT
 
       code = non_markdown_paths(files)
-      "non-Markdown changes since review: #{code.first(3).join(', ')}" unless code.empty?
+      "changes since review need fresh review: #{code.first(3).join(', ')}" unless code.empty?
     end
 
     # A rename counts from both sides, so moving code into a .md name is still a code change.
     def non_markdown_paths(files)
       files.flat_map { |file| file.values_at('filename', 'previous_filename').compact }
-           .reject { |path| markdown?(path) }.uniq
+           .reject { |path| prose?(path) }.uniq
     end
 
-    def markdown?(path) = path.is_a?(String) && path.downcase.end_with?('.md')
+    def prose?(path)
+      return false unless path.is_a?(String)
+
+      name = path.downcase
+      name.end_with?('.md') && !INSTRUCTION_FILES.include?(File.basename(name)) &&
+        INSTRUCTION_DIRECTORIES.none? { |directory| name.start_with?(directory) || name.include?("/#{directory}") }
+    end
 
     def refusal(head, rejected)
       detail = if rejected.empty?

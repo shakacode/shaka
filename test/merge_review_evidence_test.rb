@@ -3,7 +3,7 @@
 require_relative 'test_helper'
 require 'shaka/merge_review_evidence'
 
-class MergeReviewEvidenceTest < Minitest::Test
+module MergeReviewEvidenceFixtures
   HEAD = 'a' * 40
   EARLIER = 'c' * 40
   ACCOUNT = 'shaka-agent'
@@ -48,6 +48,10 @@ class MergeReviewEvidenceTest < Minitest::Test
   def markdown_only(*names)
     { 'status' => 'ahead', 'files' => names.map { |name| { 'filename' => name, 'status' => 'modified' } } }
   end
+end
+
+class MergeReviewEvidenceTest < Minitest::Test
+  include MergeReviewEvidenceFixtures
 
   def test_accepts_an_attestation_for_the_exact_head
     @client.comments = [attestation(HEAD)]
@@ -106,7 +110,17 @@ class MergeReviewEvidenceTest < Minitest::Test
     error = assert_raises(Shaka::Error) { evidence }
 
     assert_includes error.message, EARLIER
-    assert_match(/non-Markdown/, error.message)
+    assert_match(%r{need fresh review: lib/merge\.rb}, error.message)
+  end
+
+  def test_refuses_an_earlier_attestation_when_agent_instructions_changed_since
+    %w[AGENTS.md skills/shaka/SKILL.md .agents/writing-style.md pkg/.github/pull_request_template.md].each do |path|
+      @client.comments = [attestation(EARLIER)]
+      @client.comparisons = { EARLIER => markdown_only('README.md', path) }
+
+      error = assert_raises(Shaka::Error) { evidence }
+      assert_includes error.message, path
+    end
   end
 
   def test_refuses_a_rename_from_a_non_markdown_path
@@ -141,12 +155,31 @@ class MergeReviewEvidenceTest < Minitest::Test
 
     assert_equal older, evidence.fetch('reviewed')
   end
+end
+
+class MergeReviewWaiverTest < Minitest::Test
+  include MergeReviewEvidenceFixtures
 
   def test_waiver_is_reported_when_no_evidence_exists
     result = evidence(waiver: '  Prose-only change; claude-review covered it  ')
 
     assert_equal 'waived', result.fetch('basis')
     assert_equal 'Prose-only change; claude-review covered it', result.fetch('reason')
+  end
+
+  def test_waiver_survives_an_unreadable_comment_list
+    def @client.issue_comments = raise(Shaka::Error, 'Comment listing exceeds 20 pages.')
+
+    result = evidence(waiver: 'CI review covered this head')
+
+    assert_equal 'waived', result.fetch('basis')
+    assert_equal 'Comment listing exceeds 20 pages.', result.fetch('evidence_unavailable')
+  end
+
+  def test_unreadable_comment_list_without_a_waiver_still_refuses
+    def @client.issue_comments = raise(Shaka::Error, 'Comment listing exceeds 20 pages.')
+
+    assert_raises(Shaka::Error) { evidence }
   end
 
   def test_evidence_is_preferred_over_a_waiver

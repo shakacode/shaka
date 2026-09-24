@@ -54,10 +54,14 @@ line in a PR comment written by the account that runs the merge:
 - An attestation for the current head is accepted from any reviewer, including the
   implementation model in a fresh session.
 - An attestation for an earlier commit is accepted when every file changed since
-  then is Markdown and the reviewed commit is still an ancestor of the head.
+  then is Markdown and the reviewed commit is still an ancestor of the head. Agent
+  instruction files do not count as Markdown here: `AGENTS.md`, `CLAUDE.md`,
+  `GEMINI.md`, `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`, or
+  `.github/` can change policy, so they need a fresh review or a waiver.
 - Otherwise the merge stops before submitting. Pass `--review-waiver REASON` when
   review was intentionally skipped, a follow-up only fixed nits, or a CI review
-  covered the head. The merge result reports the reason.
+  covered the head. The merge result reports the reason. A waiver also lets the
+  merge proceed when GitHub cannot list the PR comments; the result names that error.
 
 The merge result names the evidence it used under `review_evidence`. That record
 shows what the attestation claims. It does not prove a reviewer process ran or that
