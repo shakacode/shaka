@@ -99,18 +99,6 @@ class LocalReviewCodexTest < Minitest::Test
 
   private
 
-  def assert_codex_invocation(trace, root, head)
-    invocation = JSON.parse(File.read(trace))
-    expected = ['exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
-                '-c', 'skills.include_instructions=false']
-    assert_equal expected, invocation.fetch('args').first(expected.length)
-    assert_includes invocation.fetch('args'), '--skip-git-repo-check'
-    assert_includes invocation.fetch('prompt'), '+after'
-    assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
-    assert_codex_source_context(invocation, root, head)
-    refute_path_exists invocation.fetch('cwd')
-  end
-
   def assert_missing_codex(result)
     assert_equal 'not_completed', result.fetch('status')
     refute result.fetch('attempted')
@@ -900,6 +888,18 @@ class LocalReviewCodexUsageTest < Minitest::Test
 end
 
 module LocalReviewContextAssertion
+  def assert_codex_invocation(trace, root, head)
+    invocation = JSON.parse(File.read(trace))
+    expected = ['exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
+                '-c', 'skills.include_instructions=false']
+    assert_equal expected, invocation.fetch('args').first(expected.length)
+    assert_includes invocation.fetch('args'), '--skip-git-repo-check'
+    assert_includes invocation.fetch('prompt'), '+after'
+    assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
+    assert_codex_source_context(invocation, root, head)
+    refute_path_exists invocation.fetch('cwd')
+  end
+
   def assert_codex_source_context(invocation, root, head)
     prompt = invocation.fetch('prompt')
     assert_includes prompt, 'EFFORT UNKNOWN'
