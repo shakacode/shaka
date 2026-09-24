@@ -384,11 +384,17 @@ class PublicationDeploymentLinkTest < Minitest::Test
 
   def test_the_deployment_link_follows_the_walkthrough_link_before_any_section
     link = PublicationRegressionTest::WALKTHROUGH
-    assert_includes render, "A summary.\n\n[Code Walkthrough](#{link}) · [Deployment](#{DEPLOYMENT})\n\n## Outcome"
+    assert_includes render, "A summary.\n\n[Code Walkthrough](#{link}) · [Deployment](<#{DEPLOYMENT}>)\n\n## Outcome"
   end
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
-    assert_includes render('walkthrough' => nil), "A summary.\n\n_Not published yet._\n\n[Deployment](#{DEPLOYMENT})\n"
+    assert_includes render('walkthrough' => nil),
+                    "A summary.\n\n_Not published yet._\n\n[Deployment](<#{DEPLOYMENT}>)\n"
+  end
+
+  # A bare `)` would end the Markdown link at `/a` instead of linking `/a)b`.
+  def test_a_parenthesis_in_the_deployment_url_stays_inside_the_link
+    assert_includes render('deployment' => 'https://preview.example/a)b'), '[Deployment](<https://preview.example/a)b>)'
   end
 
   def test_none_records_that_the_repository_has_no_deployment
@@ -405,7 +411,8 @@ class PublicationDeploymentLinkTest < Minitest::Test
   end
 
   def test_a_deployment_must_be_an_https_url
-    ['http://example.com', 'example.com', 'https://example.com/a b', "https://example.com\nx"].each do |value|
+    ['http://example.com', 'example.com', 'https://example.com/a b', "https://example.com\nx",
+     'https://?', 'https://example.com/<x>'].each do |value|
       error = assert_raises(Shaka::Error) { render('deployment' => value) }
       assert_includes error.message, 'deployment'
     end

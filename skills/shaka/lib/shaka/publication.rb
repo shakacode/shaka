@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'uri'
 require_relative 'error'
 require_relative 'provenance'
 
@@ -90,7 +91,6 @@ module Shaka
   # Renders the links a reader needs before any description section.
   module PublicationLinks
     WALKTHROUGH_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#pullrequestreview-\d+\z}
-    DEPLOYMENT_URL = %r{\Ahttps://\S+\z}
     UNPUBLISHED = '_Not published yet._'
 
     module_function
@@ -109,9 +109,17 @@ module Shaka
     def deployment(url)
       url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'deployment')
       return if url == 'none'
-      raise Error, 'Publication deployment must be an https URL or none.' unless url.match?(DEPLOYMENT_URL)
+      raise Error, 'Publication deployment must be an https URL or none.' unless https_url?(url)
 
-      "[Deployment](#{url})"
+      # Angle brackets keep a `)` in the URL from ending the Markdown link early.
+      "[Deployment](<#{url}>)"
+    end
+
+    def https_url?(url)
+      uri = URI.parse(url)
+      uri.is_a?(URI::HTTPS) && !uri.host.to_s.empty?
+    rescue URI::InvalidURIError
+      false
     end
 
     def walkthrough(url)
