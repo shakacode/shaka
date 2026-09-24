@@ -170,6 +170,16 @@ class UsageTest < Minitest::Test
     assert_includes report, 'SHARED'
     refute_includes report, THREAD
   end
+
+  # Break caught: an unreadable replacement context left the earlier model in place,
+  # so later responses were priced at a rate the session may no longer have used.
+  def test_unreadable_line_does_not_leave_earlier_settings_on_later_responses
+    replacement = %({"type":"turn_context","payload":{"turn_id":"current","model":"gpt-\xFF"}}\n).b +
+                  "#{JSON.generate(usage('current', 'current', 50))}\n"
+    report = run_report([context('current')], raw_tail: replacement)
+    assert_metric report, 'Configured model', 'UNKNOWN'
+    assert_metric report, 'Input', 50
+  end
 end
 
 class UsageReviewCoverageTest < Minitest::Test
@@ -182,7 +192,9 @@ class UsageReviewCoverageTest < Minitest::Test
   def test_reads_utf8_under_a_c_locale_and_reports_invalid_bytes_as_unreadable
     records = [{ type: 'response_item', payload: { text: 'Café — SENSITIVE' } }, context('current'),
                usage('current', 'current', 100)]
-    report = run_report(records, raw_tail: "\xFF\n".b, environment: { 'LC_ALL' => 'C', 'LANG' => 'C' })
+    invalid = %({"type":"turn_context","payload":{"turn_id":"other","model":"gpt-\xFF"}}\n).b +
+              "#{JSON.generate(usage('other', 'other', 900))}\n"
+    report = run_report(records, raw_tail: invalid, environment: { 'LC_ALL' => 'C', 'LANG' => 'C' })
     assert_metric report, 'Input', 100
     assert_includes report, 'Unreadable or unidentifiable records'
     refute_includes report, 'SENSITIVE'

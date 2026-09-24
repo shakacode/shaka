@@ -102,13 +102,19 @@ module Shaka
     end
 
     def parse(line)
-      record = JSON.parse(line)
+      record = JSON.parse(line) if line.valid_encoding?
       return record if record.is_a?(Hash) && record['payload'].is_a?(Hash)
 
-      @gaps << 'Unreadable or unidentifiable records'
-      nil
+      unreadable
     rescue JSON::ParserError, EncodingError
+      unreadable
+    end
+
+    # An unreadable line may have changed the turn's settings, so later responses keep
+    # the turn but not a model or effort that might no longer apply.
+    def unreadable
       @gaps << 'Unreadable or unidentifiable records'
+      @context = @context.slice('turn_id')
       nil
     end
   end
