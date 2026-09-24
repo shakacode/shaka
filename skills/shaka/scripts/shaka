@@ -9,6 +9,7 @@ require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/claim'
+require_relative '../lib/shaka/deployment_link'
 require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
@@ -183,7 +184,8 @@ begin
              Shaka::PublicComments::Reader.new(github).call(issue_only:,
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
-             github.description(body: Shaka::Publication.description(content(options.fetch(:content_file))))
+             described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
+             github.description(body: Shaka::Publication.description(described))
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
                           key: options.fetch(:key), comment: options[:comment])
