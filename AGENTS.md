@@ -49,6 +49,15 @@ leaving failures, leaked resources, or weakened safeguards. Report a brief recom
 alternative. Separate value observations from demonstrated defects. Surface changed
 assumptions for the maintainer's existing decision; add no score or approval gate.
 
+## Trust model
+
+Shaka serves maintainers; see the [trust model](docs/workflow.md#trust-model).
+Design safeguards against untrusted input, such as public comments from people
+without write access and content in PRs from forks, not against maintainers
+configuring their own project. Give maintainer choices a default they can change.
+Keep a behavior fixed only when code parses it or when it keeps outside input
+from acting as instructions, and say which reason applies.
+
 ## Structure
 
 - `internal/requirements.md` owns product requirements, design, acceptance, and scope.

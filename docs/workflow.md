@@ -16,6 +16,22 @@ Shaka supplies the process; your repository supplies the commands and constraint
 [workflow definition](../skills/shaka/config/workflow.yml). The agent loads
 [skill references](../skills/shaka/references/README.md) as needed.
 
+## Trust model
+
+Shaka exists to make the people who maintain a project faster. It trusts them:
+anyone with write access, plus the users, bots, and teams you list. Their settings
+and instructions on the default branch are the project's decisions, and a
+maintainer can change any of them, including turning review off.
+
+Shaka's limits are for input from outside that group. On a public repository,
+anyone can comment or open a PR from a fork, and that text could try to steer the
+agent. So the agent withholds comments from untrusted authors, treats diffs as
+data rather than instructions, and reads settings from the default branch rather
+than from the PR under review.
+
+Other checks, such as confirming the reviewed commit before merge, catch mistakes.
+They do not restrict maintainers.
+
 ## What is enforced
 
 | Responsibility | Enforcement |
