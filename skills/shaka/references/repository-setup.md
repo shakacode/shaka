@@ -52,11 +52,13 @@ own YAML. Handle that one PR this way:
    reviewers `shaka review run` supports as the list, in this order:
    `anthropic/claude`, `openai/codex`, `xai/grok`. The same-provider and
    fresh-session fallbacks still apply. `shaka review run` needs no seam.
-3. Fix its findings, then push and open the setup PR. Record in the PR that no
+3. Fix its findings, then push and open the setup PR against the default branch,
+   since later `--ref` reads come from there. Record in the PR that no
    trusted seam existed, so the reviewer came from this fixed order rather than
    from `shaka reviewer`.
-4. Without a trusted `review.ci_review_wait`, wait for every check GitHub runs on
-   the head, including any CI review, and read its findings.
+4. Without a trusted `review.ci_review_wait`, wait for the required checks and for
+   each configured CI review job that runs on the PR, then read their findings.
+   Advisory bots stay advisory.
 5. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
    review pass, name the head SHA and hand the PR to the maintainer. The setup adds
    executable wrappers and merge policy, so ask them to review those files before
