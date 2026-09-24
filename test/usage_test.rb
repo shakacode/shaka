@@ -41,8 +41,8 @@ module UsageFixture
       file = write_records(directory, records, options)
       environment = host_environment(directory).merge(options.fetch(:environment, {}))
       sources = options[:discover] ? [] : ['--file', file] * options.fetch(:copies, 1)
-      output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources,
-                                             '--commit', COMMIT, '--contribution', 'implementation', *)
+      output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources, '--commit', COMMIT,
+                                             '--contribution', options[:contribution] || 'implementation', *)
       assert_predicate status, :success?, error
       output
     end
