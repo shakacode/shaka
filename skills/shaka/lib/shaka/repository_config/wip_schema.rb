@@ -5,7 +5,7 @@ require_relative 'validation'
 
 module Shaka
   class RepositoryConfig
-    # Validates the optional wip-note policy.
+    # Validates the optional WIP Details policy.
     class WipSchema
       include Validation
 

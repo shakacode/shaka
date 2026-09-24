@@ -246,5 +246,5 @@ elapsed timestamps cannot establish it.
 
 Check that the outcome is understandable without opening every detail, questions
 arrived in time, and model/token evidence remains findable. Compare similar
-accepted changes using the [pilot criteria](../../../internal/requirements.md#success-evidence-and-commit-attribution).
+accepted changes using the [pilot criteria](https://github.com/shakacode/shaka/blob/main/internal/requirements.md#success-evidence-and-commit-attribution).
 A shorter document or a passing prose review does not establish better usability.

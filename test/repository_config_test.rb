@@ -210,16 +210,16 @@ class RepositoryConfigOptionalCommandTest < Minitest::Test
 end
 
 # The optional wip policy decides what an unfinished pull request may publish.
-class RepositoryConfigRecoveryTest < Minitest::Test
+class RepositoryConfigWipTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
-  def test_recovery_defaults_to_publishing_locations
+  def test_wip_defaults_to_publishing_locations
     with_repository do |root|
       assert_equal({ 'include_locations' => true }, Shaka::RepositoryConfig.load(root:).wip)
     end
   end
 
-  def test_the_effective_contract_includes_the_recovery_default
+  def test_the_effective_contract_includes_the_wip_default
     with_repository do |root|
       assert_equal({ 'include_locations' => true }, Shaka::RepositoryConfig.load(root:).to_h.fetch('wip'))
     end
@@ -247,7 +247,7 @@ class RepositoryConfigRecoveryTest < Minitest::Test
     end
   end
 
-  def test_rejects_an_unknown_recovery_key
+  def test_rejects_an_unknown_wip_key
     with_repository('wip' => { 'workspace' => false }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
@@ -255,7 +255,7 @@ class RepositoryConfigRecoveryTest < Minitest::Test
     end
   end
 
-  def test_rejects_a_recovery_value_that_is_not_a_boolean
+  def test_rejects_a_wip_value_that_is_not_a_boolean
     with_repository('wip' => { 'include_locations' => 'yes' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 

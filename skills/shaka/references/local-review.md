@@ -33,7 +33,7 @@ here — a fresh session has none of the author's reasoning to anchor on.
 A local CLI differs from a hosted reviewer in three ways: it uses your credentials, must not edit,
 and leaves report publication to you. The report names the revision and model so the record stands
 on its own. On a public repository, include only
-review prose permitted by the public-prose rule above; retain withheld comments as links rather
+review prose permitted by the [public-prose rule](review.md#read-public-review-prose-safely); retain withheld comments as links rather
 than supplying their bodies.
 
 Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers.

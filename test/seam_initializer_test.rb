@@ -244,7 +244,7 @@ class SeamInitializerTest < Minitest::Test
     end
   end
 
-  def test_rejects_a_missing_plan_before_writing
+  def test_rejects_the_removed_plan_flag_before_writing
     with_repository do |root|
       arguments = [*init_arguments(root), '--plan', 'docs/missing.md']
       _output, error, status = Open3.capture3(*arguments)

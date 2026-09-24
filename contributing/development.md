@@ -1,6 +1,6 @@
 # Developing Shaka
 
-Read [AGENTS.md](../AGENTS.md) before changing the project. Runtime code uses Ruby's
+Read [AGENTS.md](https://github.com/shakacode/shaka/blob/main/AGENTS.md) before changing the project. Runtime code uses Ruby's
 standard library and `gh`; development adds Minitest and RuboCop through Bundler.
 
 ```bash

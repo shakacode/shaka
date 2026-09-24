@@ -152,16 +152,18 @@ repositories; do not copy Shaka's scripts into them.
 
 ## Host boundary
 
-Codex is the reference host. Claude Code skill startup, precedence over a same-named
+### Recorded acceptance evidence (September 14–17, 2026)
+
+Codex was the reference host. Claude Code skill startup, precedence over a same-named
 repository skill, and its usage reader were verified on September 15, and one complete
-consumer delivery followed on September 17 (agent-workflows-com#62). Repeated use
-across more consumer repositories is still required before claiming broad support.
-Validate Cursor after that. OpenCode's canonical install path, TUI launcher, and
-export-based usage reader follow the same pattern; its consumer delivery is likewise
-unverified.
+consumer delivery followed on September 17 (agent-workflows-com#62). Those formal
+trials had not yet established repeated consumer delivery for Cursor and OpenCode. Later maintainer-reported team use is noted in the
+[coding-environment record](coding-environment-trials.md); issue #77 owns the
+remaining acceptance evidence. OpenCode’s canonical install path, TUI launcher,
+and export-based usage reader share the same workflow.
 Share the skill and GitHub helpers; keep host installation,
-permissions, and native usage readers separate. See [development environments](../docs/coding-agents.md)
-for tested versions, startup boundaries, and known gaps.
+permissions, and native usage readers separate. See [coding-environment trials](coding-environment-trials.md)
+for the tested versions, startup boundaries, and evidence gaps.
 
 ## Merge boundary
 

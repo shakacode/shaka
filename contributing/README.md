@@ -6,5 +6,5 @@
 - [Releasing](releasing.md) — explicitly approved releases.
 - [Public-comment API](public-comments-api.md) — Ruby integration.
 
-[Development records](../internal/README.md) hold plans, trials, and temporary
+[Development records](https://github.com/shakacode/shaka/blob/main/internal/README.md) hold plans, trials, and temporary
 migration work. They describe Shaka's development, not how to use the product.

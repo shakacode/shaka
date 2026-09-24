@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
                    'skills/shaka/SKILL.md', 'skills/shaka/references/*.md',
                    'skills/shaka/config/*.yml', 'skills/shaka/lib/**/*.rb',
                    'skills/shaka/scripts/*', 'bin/install', 'exe/*', 'docs/**/*.md',
-                   'contributing/**/*.md', 'internal/**/*.md',
+                   'contributing/**/*.md',
                    'README.md', 'CONTRIBUTING.md', 'LICENSE']
   spec.bindir = 'exe'
   spec.executables = %w[shaka shaka-install]

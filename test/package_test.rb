@@ -33,7 +33,8 @@ class PackageTest < Minitest::Test
     run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
     files = Gem::Package.new(archive).spec.files
 
-    %w[docs/getting-started.md skills/shaka/references/review.md skills/shaka/references/writing.md].each do |path|
+    %w[docs/getting-started.md skills/shaka/references/review.md skills/shaka/references/writing.md
+       contributing/packaging.md CONTRIBUTING.md].each do |path|
       assert_includes files, path
     end
   end
@@ -41,6 +42,7 @@ class PackageTest < Minitest::Test
   def test_built_gem_excludes_repository_internal_trust_files
     run_gem('build', 'shaka.gemspec', '--output', archive = File.join(@directory, 'trust.gem'), chdir: ROOT)
     refute_empty(files = Gem::Package.new(archive).spec.files)
+    assert_empty files.grep(%r{\Ainternal/})
     [%r{(?:\A|/)trusted-github-actors\.ya?ml\z}, %r{\A\.agents/}].each { |pattern| assert_empty files.grep(pattern) }
   end
 

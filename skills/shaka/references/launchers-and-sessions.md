@@ -2,7 +2,7 @@
 
 Use this reference for launcher boundaries and Claude Code tower discovery.
 Installation belongs in [the installation reference](installation.md); dated trial results
-belong in the [validation record](../../../internal/coding-environment-trials.md).
+belong in the [validation record](https://github.com/shakacode/shaka/blob/main/internal/coding-environment-trials.md).
 
 ## Codex launcher boundary
 

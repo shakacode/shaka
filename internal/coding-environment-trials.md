@@ -1,6 +1,8 @@
 # Coding-environment trials record
 
-These are dated observations, not a claim of support for every later version.
+These are dated observations, not a current support matrix. On September 23,
+the maintainer reported additional team use of Pi and OpenCode beyond these
+recorded trials. The observations below retain their original dates and limits.
 For installation, see [development environments](../docs/coding-agents.md).
 
 ## September 2026 trials
