@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 require_relative 'error'
 require_relative 'publishing'
+require_relative 'review_thread'
 require_relative 'walkthrough_evidence'
 require_relative 'github/check_list'
 
@@ -72,6 +73,10 @@ module Shaka
 
     def review(id)
       api("#{reviews_path}/#{positive_integer(id)}")
+    end
+
+    def resolve_thread(thread_id)
+      ReviewThread.resolve(self, thread_id)
     end
 
     def walkthrough(head:, body:)

@@ -66,6 +66,7 @@ module Shaka
       return missing('codex') unless executable
 
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
+              '-c', 'skills.include_instructions=false',
               '--skip-git-repo-check', '--json', '-o', @report, '-']
       stdout, stderr, status = reviewer_process(args, prompt)
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'optparse'
+require_relative '../error'
 require_relative 'claude_usage'
 require_relative 'codex_usage'
 require_relative 'cost_estimate'
@@ -9,6 +10,17 @@ require_relative 'opencode_usage'
 require_relative 'pi_usage'
 
 module Shaka
+  # Failure text for `shaka usage`, kept beside the command so the runner stays small.
+  module UsageErrors
+    module_function
+
+    def message(error)
+      return "shaka usage: #{error.message}" if error.is_a?(Error)
+
+      'shaka usage: invalid options; use shaka usage --help'
+    end
+  end
+
   # Host-context fallback rows when a reader has no per-response records.
   module UsageTable
     private
@@ -152,8 +164,8 @@ module Shaka
       raise OptionParser::InvalidArgument unless arguments.empty? && valid_mapping?(options)
 
       new(options).print_report
-    rescue OptionParser::ParseError
-      warn 'shaka usage: invalid options; use shaka usage --help'
+    rescue OptionParser::ParseError, Error => e
+      warn UsageErrors.message(e)
       1
     end
 
@@ -163,6 +175,7 @@ module Shaka
         source_options(flags, options)
         flags.on('--commit SHA', 'Affected full commit SHAs, comma separated') { |v| options[:commit] = v }
         flags.on('--contribution NAME', 'Contribution category (see guide)') { |v| options[:contribution] = v }
+        flags.on('--rate-root DIR', 'Implementation rate-card checkout') { |value| options[:rate_root] = value }
         flags.on('-h', '--help') { options[:help] = true }
       end
     end
@@ -200,7 +213,8 @@ module Shaka
 
     def report
       <<~MARKDOWN
-        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT).report.rstrip}
+        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
+                                           rate_card: selected_rate_card).report.rstrip}
 
         #{reviewer_coverage}
         Native usage is PARTIAL. #{count}. Scope: #{turn_scope}.
@@ -221,6 +235,10 @@ module Shaka
     end
 
     private
+
+    def selected_rate_card
+      RateCard.select(contribution: @options[:contribution], explicit_root: @options[:rate_root])
+    end
 
     def turn_scope
       return 'all turns in selected sources' if @options[:all_turns]
