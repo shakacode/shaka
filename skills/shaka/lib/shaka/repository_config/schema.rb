@@ -2,6 +2,7 @@
 
 require_relative '../branch_name'
 require_relative '../error'
+require_relative '../merge_limits'
 require_relative '../repo_prefix'
 require_relative 'branch_schema'
 require_relative 'command_schema'
@@ -73,8 +74,9 @@ module Shaka
         retired = %w[method release].find { |key| merge.key?(key) }
         raise Error, "merge.#{retired} is no longer configurable; see skills/shaka/references/migration.md" if retired
 
-        keys!(merge, ['preference'], [], 'merge')
+        keys!(merge, ['preference'], ['limits'], 'merge')
         enum!(merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
+        MergeLimits.validate!(merge['limits']) if merge.key?('limits')
       end
 
       def reject_retired_root_keys

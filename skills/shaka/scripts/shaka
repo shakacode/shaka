@@ -12,6 +12,7 @@ require_relative '../lib/shaka/claim'
 require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
+require_relative '../lib/shaka/merge_limits'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/publication'
 require_relative '../lib/shaka/recommendation'
@@ -115,6 +116,11 @@ def merge_seam_wait(options)
   Shaka::CiReviewWait.seam_from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
 end
 
+def merge_limits(options)
+  Shaka::MergeLimits.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
+                              confirmed_head: options[:confirmed_head])
+end
+
 def walkthrough_body(options)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
@@ -145,6 +151,7 @@ parser = OptionParser.new do |flags|
   flags.on('--ci-review-wait MODE', Shaka::CiReviewWait::VALUES, 'CI reviews to await: none, one, all') do |value|
     options[:ci_review_wait] = value
   end
+  flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits') { |sha| options[:confirmed_head] = sha }
   flags.on('--root DIR', 'Repository root for trusted review settings') { |value| options[:root] = value }
   flags.on('--ref REF', 'Trusted commit for review settings') { |value| options[:ref] = value }
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
@@ -189,7 +196,8 @@ begin
                                       seam_wait: merge_seam_wait(options)).call(
                                         head: options.fetch(:head),
                                         base: options.fetch(:base),
-                                        walkthrough: options.fetch(:walkthrough)
+                                        walkthrough: options.fetch(:walkthrough),
+                                        limits: merge_limits(options)
                                       )
            when 'attention' then Shaka::Attention.new(github).call(state: options.fetch(:state))
            end

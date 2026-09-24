@@ -16,6 +16,7 @@ module Shaka
         pullRequest(number: $number) {
           id number url state isDraft headRefOid baseRefName merged mergeCommit { oid }
           mergeStateStatus reviewDecision viewerCanMergeAsAdmin
+          changedFiles additions deletions commits { totalCount }
           isInMergeQueue isMergeQueueEnabled autoMergeRequest { enabledAt }
           mergeQueueEntry {
             id position state estimatedTimeToMerge
