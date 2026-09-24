@@ -33,7 +33,7 @@ module Shaka
       @limits.verify!(pull, @head)
     end
 
-    # The size is rechecked because a moved base can change the comparison under the same head.
+    # The size is rechecked so the counts that gate submission come from the last snapshot read.
     def unchanged!(initial, current)
       unless current['baseRefName'] == initial['baseRefName']
         raise Error, 'PR base changed; refresh verification and walkthrough'
