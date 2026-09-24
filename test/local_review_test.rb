@@ -99,16 +99,6 @@ class LocalReviewCodexTest < Minitest::Test
 
   private
 
-  def assert_codex_invocation(trace, root, head)
-    invocation = JSON.parse(File.read(trace))
-    assert_equal %w[exec -s read-only --ignore-rules --ignore-user-config], invocation.fetch('args').first(5)
-    assert_includes invocation.fetch('args'), '--skip-git-repo-check'
-    assert_includes invocation.fetch('prompt'), '+after'
-    assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
-    assert_codex_source_context(invocation, root, head)
-    refute_path_exists invocation.fetch('cwd')
-  end
-
   def assert_missing_codex(result)
     assert_equal 'not_completed', result.fetch('status')
     refute result.fetch('attempted')
@@ -162,6 +152,20 @@ class LocalReviewOtherCliTest < Minitest::Test
     end
   end
 
+  # Break caught: a requested Claude reviewer model is dropped and the CLI default runs unrecorded.
+  def test_claude_run_passes_the_requested_model_and_records_it
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'claude-invocation.json')
+      fake_claude(bin, head)
+      output, error, status = run_review(root, base, head, bin, env: { 'REVIEW_TRACE' => trace },
+                                                                reviewer: 'anthropic/claude', model: 'claude-opus-5-5')
+      result = assert_successful_review(output, error, status, head, 'anthropic/claude')
+      assert_claude_model(result, trace, 'claude-opus-5-5')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   def test_omitted_effort_does_not_pass_placeholder_to_claude
     with_repository do |root, base, head, bin|
       trace = File.join(root, 'claude-invocation.json')
@@ -186,6 +190,12 @@ class LocalReviewOtherCliTest < Minitest::Test
     assert_includes invocation.fetch('prompt'), 'Restricted Claude cannot run Git commands'
   end
 
+  def assert_claude_model(result, trace, model)
+    args = JSON.parse(File.read(trace)).fetch('args')
+    assert_equal model, args.fetch(args.index('--model') + 1)
+    assert_equal model, result.fetch('requested_model')
+  end
+
   def assert_grok_invocation(trace)
     invocation = JSON.parse(File.read(trace))
     assert_includes invocation.fetch('args'), 'grok-4'
@@ -196,6 +206,20 @@ end
 
 class LocalReviewProviderFailureTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: a failed attempt drops the model it requested, hiding a mistyped model name.
+  def test_failed_claude_run_records_the_requested_model
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'claude', "#!/bin/sh\necho unknown-model >&2\nexit 2\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude', model: 'typo-model')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'cli_failure', result.fetch('failure_stage')
+      assert_equal 'typo-model', result.fetch('requested_model')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
 
   def test_claude_error_json_is_a_cli_failure_but_not_an_automatic_skip
     with_repository do |root, base, head, bin|
@@ -233,14 +257,24 @@ class LocalReviewProviderFailureTest < Minitest::Test
     end
   end
 
-  def test_model_option_for_claude_is_a_setup_failure_not_silently_ignored
+  def test_model_option_for_codex_is_a_setup_failure_not_silently_ignored
     with_repository do |root, base, head, bin|
-      output, _error, status = run_review(root, base, head, bin,
-                                          reviewer: 'anthropic/claude', model: 'requested-model')
+      output, _error, status = run_review(root, base, head, bin, model: 'requested-model')
       refute_predicate status, :success?
       result = JSON.parse(output)
       assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), '--model is only supported for xai/grok'
+      assert_includes result.fetch('reason'), '--model is unsupported for openai/codex'
+    end
+  end
+
+  # Break caught: an unset MODEL variable launches claude --model "" and reads as a CLI failure.
+  def test_empty_claude_model_is_a_setup_failure
+    with_repository do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude', model: ' ')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '--model must name a model'
     end
   end
 
@@ -854,6 +888,18 @@ class LocalReviewCodexUsageTest < Minitest::Test
 end
 
 module LocalReviewContextAssertion
+  def assert_codex_invocation(trace, root, head)
+    invocation = JSON.parse(File.read(trace))
+    expected = ['exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
+                '-c', 'skills.include_instructions=false']
+    assert_equal expected, invocation.fetch('args').first(expected.length)
+    assert_includes invocation.fetch('args'), '--skip-git-repo-check'
+    assert_includes invocation.fetch('prompt'), '+after'
+    assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
+    assert_codex_source_context(invocation, root, head)
+    refute_path_exists invocation.fetch('cwd')
+  end
+
   def assert_codex_source_context(invocation, root, head)
     prompt = invocation.fetch('prompt')
     assert_includes prompt, 'EFFORT UNKNOWN'
@@ -894,7 +940,9 @@ module LocalReviewFixture
       abort 'wrong executable name' if ENV['REVIEW_EXPECT_NAME'] && File.basename($PROGRAM_NAME) != ENV['REVIEW_EXPECT_NAME']
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, cwd: Dir.pwd }))
       report = ARGV.fetch(ARGV.index('-o') + 1)
-      File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
+      isolated = ARGV.each_cons(2).include?(['-c', 'skills.include_instructions=false'])
+      review = isolated ? "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n" : 'Done / In progress / Blocked / Next'
+      File.write(report, review)
     RUBY
   end
 
@@ -931,6 +979,7 @@ module LocalReviewFixture
     assert_equal head, result.fetch('head')
     assert_equal reviewer, result.fetch('reviewer')
     assert File.file?(result.fetch('report'))
+    assert_includes File.read(result.fetch('report')), "REVIEWED #{head} BY #{reviewer}"
     result
   end
 

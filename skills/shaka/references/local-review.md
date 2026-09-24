@@ -77,11 +77,13 @@ whose local diagnostic establishes a real reviewer outage. A bad argument, setup
 report-validation failure does not qualify.
 
 The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config
---skip-git-repo-check --json -o REPORT -` from its neutral directory.
+-c skills.include_instructions=false --skip-git-repo-check --json -o REPORT -` from its neutral directory.
 Codex has no documented effort flag in this invocation, so the helper rejects `--effort` for
 `openai/codex` and records `EFFORT UNKNOWN` rather than asserting an unverified setting.
-`-s read-only` confines it, the ignore flags skip user/project rules and config, and the report
-is created outside the checkout. It does not use `--ephemeral`, so the session remains saved. `--json` reports its thread ID,
+`-s read-only` confines it, the ignore flags skip user/project rules and config, and the skills
+setting keeps installed skill descriptions out of the reviewer's instructions to prevent
+description-based routing to an unrelated installed skill. The report is created outside the checkout.
+It does not use `--ephemeral`, so the session remains saved. `--json` reports its thread ID,
 and the result's `usage` names that saved session under `CODEX_HOME` (default `~/.codex`);
 run `shaka usage --host codex --file USAGE --commit HEAD --contribution review --all-turns`
 on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
@@ -108,7 +110,10 @@ and denies anything that would prompt. `--restricted` removes command-running to
 Claude.ai OAuth**. `--strict-mcp-config` with no config drops MCP servers. Do **not** add
 `--bare`: that flag skips keychain and OAuth (`Not logged in · Please run /login`) and only
 accepts `ANTHROPIC_API_KEY`, so a logged-in Max/claude.ai session looks unavailable.
-`--effort` is recorded in the attestation. Check `--help` before relying on these flags.
+`--effort` is recorded in the attestation. Pass `--model NAME` to pin the reviewer model;
+the helper adds `--model NAME` to that command and reports it as `requested_model` in every
+result. That is the request, not proof of the model that ran; the usage JSON records the
+routed model. Without it, the CLI's default model runs. Check `--help` before relying on these flags.
 
 Grok 1.0.30:
 
