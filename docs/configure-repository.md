@@ -24,7 +24,7 @@ The agent inspects your project, confirms missing choices, and prepares these fi
 The scripts usually wrap existing commands. In Shaka's repository, `.agents/bin/setup`
 installs development dependencies; `bin/install` installs the skill.
 
-You merge the setup PR yourself on GitHub. Until it merges, the default branch
+You merge the first setup PR yourself on GitHub. Until it merges, the default branch
 has no trusted settings, so Shaka cannot choose a reviewer from them or merge
 on your behalf. The agent reviews the PR, then gives it back with the commit to merge.
 
