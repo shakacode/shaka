@@ -55,7 +55,9 @@ own YAML. Handle that one PR this way:
 3. Fix its findings, then push and open the setup PR. Record in the PR that no
    trusted seam existed, so the reviewer came from this fixed order rather than
    from `shaka reviewer`.
-4. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
+4. Without a trusted `review.ci_review_wait`, wait for every check GitHub runs on
+   the head, including any CI review, and read its findings.
+5. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
    review pass, name the head SHA and hand the PR to the maintainer, who merges it
    on GitHub under the repository's existing protection.
 

@@ -65,9 +65,9 @@ phases:
         contract, repeats safely, and refuses repository-owned destinations. Candidate changes stay
         subject to the previously trusted boundary, and settings for another workflow grant this
         one no permission to merge or run background work. Until that setup PR merges, every
-        `--ref` command stops, so review and hand off the setup PR through the packaged
+        `--ref` command stops, so review, wait for, and hand off the setup PR through the packaged
         [first setup PR path](<{{package_root}}/skills/shaka/references/repository-setup.md#review-and-merge-the-first-setup-pr>)
-        in place of `reviewer` and `merge`.
+        in place of every step that reads policy with `--ref`.
       - Resolve this task's base branch, which is the branch the work starts from and the branch
         its pull request targets. It is not where policy comes from: `seam check --ref` keeps
         reading the contract from the default branch whatever the base is, so a base a task names
