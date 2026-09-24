@@ -89,6 +89,7 @@ module Shaka
     def claude_process(executable, prompt)
       args = [executable, '-p', '--permission-mode', 'plan', '--permission-prompts', 'none', '--restricted',
               '--safe-mode', '--strict-mcp-config']
+      args.push('--model', @options[:model]) if @options[:model]
       args.push('--effort', effort) if effort
       args.push('--output-format', 'json', '-')
       reviewer_process(args, prompt)
