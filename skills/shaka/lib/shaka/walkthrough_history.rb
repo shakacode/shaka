@@ -8,7 +8,7 @@ module Shaka
   #
   # Only a COMMENT review by the authenticated author is rewritten. The previous
   # body stays in the details block, including any later human edit of that text.
-  # A failure here is reported on the new review and does not undo its publication.
+  # A failure is returned with the publication result and does not undo the new review.
   class WalkthroughHistory
     MARKER = 'Superseded — read the current walkthrough:'
     POINTER = /\A#{Regexp.escape(MARKER)} (\S+)/
