@@ -67,8 +67,10 @@ final diff for the agent to reconcile. Keep raw notes in the local backup.
 ## Resume unfinished work
 
 Open the PR's **WIP Details** to find the owning chat, last known state, and next
-action. Return to that chat when possible. Before another agent takes over,
-confirm the previous one has stopped or handed off; a timestamp cannot prove it.
+action. When available, the **Thread** link takes you straight back: in Codex, a
+`codex://threads/...` link opens the original conversation so you can pick up where
+the agent stopped. Before another agent takes over, confirm the previous one has
+stopped or handed off; a timestamp cannot prove it.
 
 ## Split a large change
 
@@ -82,10 +84,7 @@ no stacked-PR service is needed.
 
 ## Suggest improvements to Shaka
 
-For a worthwhile, verified gap outside your task, Shaka offers an issue. It shows
-a draft based on public sources, asks before searching for duplicates, and asks
-again before filing. You inspect possible matches; changed search results require
-your review again. Filing stops if the search or destination checks fail.
+Tell your agent in chat what you would like Shaka to do better. For example:
+“Shaka asks too many setup questions—can we simplify that?”
 
-You can skip these offers. The [issue-offer procedure](../skills/shaka/references/shaka-issue-offer.md)
-describes the consent and source checks.
+The agent helps refine the idea and asks before filing an issue.

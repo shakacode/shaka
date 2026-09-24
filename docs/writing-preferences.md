@@ -3,14 +3,20 @@
 Lead with what changed and why. Show the evidence needed to judge it; keep
 implementation detail in the walkthrough and longer records in expandable sections.
 
-To customize Shaka's [writing guidance](../skills/shaka/references/writing.md),
-add preferences to `AGENTS.md`, or link a separate file:
+For a task, tell the agent how you want it to write:
+
+```text
+Keep PR descriptions short. Lead with what changed for the user,
+use before/after examples, and put implementation details in the walkthrough.
+```
+
+For persistent repository defaults, Shaka currently uses `AGENTS.md`. Put your
+preferences there, or add a pointer to a separate style file:
 
 ```text
 Before writing PR descriptions, walkthroughs, or review replies, read
 .agents/writing-style.md and apply its writing preferences.
 ```
 
-For example, ask for short paragraphs, before/after examples, and plain language.
-The agent follows trusted repository instructions. A separate file needs an
-explicit pointer; there is no new configuration key.
+The agent follows trusted repository instructions. Shaka does not automatically
+load a style file. See its [default writing guidance](../skills/shaka/references/writing.md).
