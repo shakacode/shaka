@@ -13,8 +13,9 @@ and standard script; keep those definitions there.
    GitHub exposes required checks enforced for the account that will merge.
 4. Prepare the files with the trusted installed helper. For an existing
    configuration, use the [migration procedure](migration.md).
-5. Inspect the generated diff, run its checks, and publish a setup PR. Merge the
-   setup through the repository's existing rules before relying on its new policy.
+5. Inspect the generated diff, run its checks, and publish a setup PR. Follow
+   [the first setup PR](#review-and-merge-the-first-setup-pr) path to review it and
+   hand it to the maintainer before relying on its new policy.
 
 For a repository whose commands and review job match this example, the initializer
 is:
@@ -32,8 +33,33 @@ is:
 Replace every example command with the repository's actual command. If no CI
 review job exists, use `--review-policy none` and omit `--ci-review-job`. Meaningful
 implementation still gets local review. The initializer refuses to overwrite
-conflicting files. Review and merge the setup PR before relying on its policy.
-GitHub must expose required checks enforced for the account that will merge.
+conflicting files. GitHub must expose required checks enforced for the account
+that will merge.
+
+
+## Review and merge the first setup PR
+
+When the default branch has no `.agents/agent-workflow.yml`, every `--ref` command
+stops with `Cannot read .agents/agent-workflow.yml at SHA`. That includes
+`seam check`, `reviewer`, and `merge`. The refusal is correct: the setup PR must not
+grant itself review or merge policy. Do not work around it with the candidate's
+own YAML. Handle that one PR this way:
+
+1. Validate with `shaka seam check --root . --local` and the new wrapper scripts.
+   The local check proves syntax only.
+2. Choose the local reviewer by hand from the reviewers `shaka review run`
+   supports, in this order: `anthropic/claude`, `openai/codex`, `xai/grok`.
+   Take the first whose provider did not implement the change, applying the
+   [availability evidence rules](review.md#choose-a-local-reviewer). Run it
+   with `shaka review run` as usual; that command needs no seam.
+3. Record in the PR that no trusted seam existed, so the reviewer came from this
+   fixed order rather than from `shaka reviewer`.
+4. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
+   review pass, name the head SHA and hand the PR to the maintainer, who merges it
+   on GitHub under the repository's existing protection.
+
+After that merge, resolve the new default-branch commit and use it as `--ref` for
+every later task.
 
 
 ## What `seam init` writes
