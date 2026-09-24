@@ -22,7 +22,7 @@ skips the model-selection question. Shaka still asks about consequential decisio
 ## Why use it?
 
 - **Catch problems before CI.** Test and review locally, including adversarial
-  reviews and before-and-after screenshots for UI changes. Push fewer repair rounds.
+  reviews and before-and-after screenshots for UI changes. Fix problems before pushing.
 - **Make review easier.** Get a PR with evidence and a walkthrough of the changes.
 - **See what a PR cost.** See available token usage and estimated cost, including local review.
 - **Control merging.** Choose **Ask** to merge yourself or **Auto** to let the agent
