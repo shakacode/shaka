@@ -592,6 +592,11 @@ class MergeLimitsGateTest < Minitest::Test
     assert_limit_blocked(/GitHub merge state/, confirmed_head: HEAD)
   end
 
+  def test_a_count_that_grows_before_submission_hands_back_as_ask
+    @client.snapshots = [snapshot, snapshot.merge('changedFiles' => 4)]
+    assert_limit_blocked(/files 4 > 3/)
+  end
+
   def test_default_limits_apply_when_the_caller_passes_none
     @client.snapshots = [snapshot.merge('changedFiles' => 30)]
     assert_blocked(/files 30 > 29/)

@@ -33,10 +33,13 @@ module Shaka
       @limits.verify!(pull, @head)
     end
 
+    # The size is rechecked because a moved base can change the comparison under the same head.
     def unchanged!(initial, current)
-      return if current['baseRefName'] == initial['baseRefName']
+      unless current['baseRefName'] == initial['baseRefName']
+        raise Error, 'PR base changed; refresh verification and walkthrough'
+      end
 
-      raise Error, 'PR base changed; refresh verification and walkthrough'
+      @limits.verify!(current, @head)
     end
   end
 end
