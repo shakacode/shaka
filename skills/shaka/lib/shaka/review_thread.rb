@@ -14,18 +14,6 @@ module Shaka
         }
       }
     GRAPHQL
-    CONFIRM = <<~GRAPHQL
-      query($id: ID!) {
-        node(id: $id) {
-          __typename
-          ... on PullRequestReviewThread {
-            id
-            isResolved
-            pullRequest { number }
-          }
-        }
-      }
-    GRAPHQL
 
     def self.resolve(github, thread_id)
       new(github, thread_id).resolve
@@ -43,7 +31,6 @@ module Shaka
       refuse_resolved(thread)
       check_reply(thread)
       mutate
-      confirm
       { 'thread_id' => @thread_id, 'is_resolved' => true }
     end
 
@@ -67,14 +54,15 @@ module Shaka
     end
 
     def check_reply(thread)
-      return if authors(thread).include?(@account)
+      return if replies(thread).include?(@account)
       raise Error, 'Review-thread reply evidence is incomplete.' if more_comments?(thread)
 
       raise Error, 'Resolve a review thread only after this account has replied on it.'
     end
 
-    def authors(thread)
-      thread.dig('comments', 'nodes').filter_map do |comment|
+    # The first comment opens the thread. A later comment from this account is the reply.
+    def replies(thread)
+      thread.dig('comments', 'nodes').drop(1).filter_map do |comment|
         comment.dig('author', 'login') if comment.is_a?(Hash)
       end
     end
@@ -90,19 +78,8 @@ module Shaka
       raise Error, 'GitHub did not resolve the review thread.'
     end
 
-    def confirm
-      return if stored?(@github.graphql(CONFIRM, id: @thread_id)['node'])
-
-      raise Error, 'The review thread is not resolved.'
-    end
-
     def resolved?(thread)
       thread.is_a?(Hash) && thread['id'] == @thread_id && thread['isResolved'] == true
-    end
-
-    def stored?(node)
-      resolved?(node) && node['__typename'] == 'PullRequestReviewThread' &&
-        node.dig('pullRequest', 'number') == @github.number
     end
   end
 end

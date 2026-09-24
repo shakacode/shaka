@@ -10,12 +10,21 @@ class ReviewThreadTest < Minitest::Test
   SCRIPT = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
 
   def test_resolve_marks_an_unresolved_thread_after_this_account_replied
-    github = client(user_response, thread_page, mutation_response(true), confirmation(true))
+    github = client(user_response, thread_page, mutation_response(true))
 
     assert_equal({ 'thread_id' => THREAD, 'is_resolved' => true }, github.resolve_thread(THREAD))
-    assert_equal %w[user graphql graphql graphql], paths
+    assert_equal %w[user graphql graphql], paths
     assert_includes sent(2)['query'], 'resolveReviewThread'
     assert_equal THREAD, sent(2).dig('variables', 'id')
+  end
+
+  def test_resolve_refuses_a_thread_this_account_only_opened
+    github = client(user_response, thread_page(authors: ['justin808']))
+
+    error = assert_raises(Shaka::Error) { github.resolve_thread(THREAD) }
+
+    assert_includes error.message, 'replied'
+    assert_equal %w[user graphql], paths
   end
 
   def test_resolve_refuses_a_thread_before_this_account_replied
@@ -46,11 +55,20 @@ class ReviewThreadTest < Minitest::Test
   end
 
   def test_resolve_refuses_when_github_leaves_the_thread_unresolved
-    github = client(user_response, thread_page, mutation_response(true), confirmation(false))
+    github = client(user_response, thread_page, mutation_response(false))
 
     error = assert_raises(Shaka::Error) { github.resolve_thread(THREAD) }
 
-    assert_includes error.message, 'not resolved'
+    assert_includes error.message, 'did not resolve'
+  end
+
+  def test_resolve_refuses_a_malformed_thread_id_before_calling_github
+    github = client
+
+    error = assert_raises(Shaka::Error) { github.resolve_thread('not a thread') }
+
+    assert_includes error.message, 'review-thread ID'
+    assert_empty @calls
   end
 
   def test_resolve_refuses_when_reply_evidence_is_incomplete
@@ -96,15 +114,6 @@ class ReviewThreadTest < Minitest::Test
   def mutation_response(resolved)
     response({ 'data' => { 'resolveReviewThread' => {
                'thread' => { 'id' => THREAD, 'isResolved' => resolved }
-             } } })
-  end
-
-  def confirmation(resolved)
-    response({ 'data' => { 'node' => {
-               '__typename' => 'PullRequestReviewThread',
-               'id' => THREAD,
-               'isResolved' => resolved,
-               'pullRequest' => { 'number' => 42 }
              } } })
   end
 

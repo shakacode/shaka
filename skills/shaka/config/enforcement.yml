@@ -249,9 +249,9 @@ rules:
     quote: Do not resolve a thread before this account has replied on it.
     enforced_by: code
     detector: >-
-      `ReviewThread#check_reply` reads the authenticated account and the thread's comment
-      authors, and `resolve` refuses the mutation until that account has a comment on the
-      thread. A truncated comment page that does not already show the reply fails closed.
+      `ReviewThread#check_reply` ignores the thread's opening comment and refuses the
+      mutation until a later comment is from the authenticated account. A truncated
+      comment page that does not already show that reply fails closed.
   - id: resolve-only-when-settled
     phase: explain
     quote: >-

@@ -251,7 +251,7 @@ phases:
         ```
 
         `pr` reports the native readiness snapshot and required checks; it is not an exit code.
-        `description` replaces only its marked region.         `reply` reuses its stable key; `--comment`
+        `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
         answers an inline thread. Mark a settled inline thread resolved with `resolve`.
         Do not resolve a thread before this account has replied on it.
         Do not resolve a thread while its concern is open, its body was withheld, or the user asked to leave it open.
