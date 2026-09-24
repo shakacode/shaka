@@ -1,19 +1,22 @@
 # Writing preferences
 
-A PR should make the reviewer's job easier. Start with what changed for the user
-and why, then provide the evidence needed to judge it. Keep implementation detail
-in the walkthrough and longer records in expandable sections.
+Lead with what changed and why. Show the evidence needed to judge it; keep
+implementation detail in the walkthrough and longer records in expandable sections.
 
-Shaka's [default writing guidance](../skills/shaka/references/writing.md) is part
-of the installed skill. To customize it for a repository, put preferences in
-`AGENTS.md`, or create `.agents/writing-style.md` and add a pointer to `AGENTS.md`:
+For a task, tell the agent how you want it to write:
+
+```text
+Keep PR descriptions short. Lead with what changed for the user,
+use before/after examples, and put implementation details in the walkthrough.
+```
+
+For persistent repository defaults, Shaka currently uses `AGENTS.md`. Put your
+preferences there, or add a pointer to a separate style file:
 
 ```text
 Before writing PR descriptions, walkthroughs, or review replies, read
 .agents/writing-style.md and apply its writing preferences.
 ```
 
-For example, the file might ask for short paragraphs, before/after examples, and
-plain language for readers unfamiliar with the implementation. The agent follows
-the version from trusted repository instructions. The file is ordinary Markdown;
-Shaka does not auto-discover it or require another configuration key.
+The agent follows trusted repository instructions. Shaka does not automatically
+load a style file. See its [default writing guidance](../skills/shaka/references/writing.md).

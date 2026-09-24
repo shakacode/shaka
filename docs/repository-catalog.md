@@ -1,8 +1,8 @@
 # Repository catalog
 
-When you use Shaka across projects, a local catalog helps you find their settings
-and avoid confusing repository prefixes. For example, `SHOP` and `DOCS` make
-agent chat titles such as `SHOP PR #42 · Fix checkout` easy to distinguish.
+A local catalog helps compare settings across projects and spot duplicate chat-title
+prefixes. For example, `SHOP PR #42 · Fix checkout` is easy to distinguish from a
+`DOCS` task.
 
 Ask your agent:
 
@@ -11,11 +11,9 @@ Refresh the Shaka catalog for my repositories. Report duplicate prefixes
 and compare their review and merge settings before proposing changes.
 ```
 
-The catalog records known repositories and reports duplicate prefixes. It does
-not enforce globally unique names or synchronize settings automatically. The
-agent checks each repository's trusted configuration and proposes any changes
-through its own PR.
+The catalog lists repositories and duplicate prefixes. The agent compares each
+repository's trusted review and merge settings and proposes changes through its PR.
+The catalog does not synchronize settings or enforce unique prefixes.
 
-The catalog is local convenience data, not authority. Deleting it does not change
-repository settings. Agents use the [catalog procedure](../skills/shaka/references/repository-catalog.md)
-for paths, commands, and output fields.
+Deleting the catalog does not change repository settings. See the agent's
+[catalog procedure](../skills/shaka/references/repository-catalog.md) for commands and file locations.
