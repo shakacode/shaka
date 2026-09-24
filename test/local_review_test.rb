@@ -5,6 +5,7 @@ require 'fileutils'
 require 'json'
 require 'rbconfig'
 require_relative '../skills/shaka/lib/shaka/local_review/process'
+require_relative '../skills/shaka/lib/shaka/local_review/evidence'
 
 class LocalReviewCodexTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -853,6 +854,68 @@ class LocalReviewStatusTest < Minitest::Test
   end
 end
 
+class LocalReviewAttestationCaseTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: review check lowercases the reviewer, then matches it case-sensitively,
+  # so a report that copies the mixed-case line review-prompt requires never counts.
+  def test_host_report_accepts_the_mixed_case_line_review_prompt_requires
+    with_repository do |root, base, head, _bin|
+      line = "REVIEWED #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS <n>"
+      assert_includes codex_prompt(head, base), "End with exactly:\n#{line}"
+      result, error, status = host_check(root, head, "#{line.sub('<n>', '0')}\n", 'OpenAI/Codex')
+      assert_predicate status, :success?, error
+      assert_equal 'reported', result.fetch('status')
+      assert_equal 'openai/codex', result.fetch('reviewer')
+    end
+  end
+
+  def test_mixed_case_attestation_rejects_a_different_reviewer
+    with_repository do |root, _base, head, _bin|
+      line = "REVIEWED #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS 0\n"
+      result, _error, status = host_check(root, head, line, 'anthropic/claude')
+      refute_predicate status, :success?
+      assert_equal 'not_completed', result.fetch('status')
+    end
+  end
+
+  def test_lowercased_attestation_keyword_is_rejected
+    with_repository do |root, _base, head, _bin|
+      line = "reviewed #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS 0\n"
+      result, _error, status = host_check(root, head, line, 'OpenAI/Codex')
+      refute_predicate status, :success?
+      assert_equal 'not_completed', result.fetch('status')
+    end
+  end
+
+  # Break caught: folding the whole attestation would treat EFFORT unknown as EFFORT UNKNOWN.
+  def test_attestation_keeps_effort_case_exact
+    head = 'a' * 40
+    mixed = "REVIEWED #{head} BY OpenAI/Codex EFFORT unknown FINDINGS 0\n"
+    exact = "REVIEWED #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS 0\n"
+
+    refute Shaka::LocalReviewEvidence.valid?(mixed, head:, reviewer: 'openai/codex', effort: 'UNKNOWN')
+    assert Shaka::LocalReviewEvidence.valid?(exact, head:, reviewer: 'openai/codex', effort: 'UNKNOWN')
+  end
+
+  private
+
+  def codex_prompt(head, base)
+    prompt, error, status = Open3.capture3(COMMAND, 'review-prompt', '--head', head,
+                                           '--base', base, '--reviewer', 'OpenAI/Codex')
+    assert_predicate status, :success?, error
+    prompt
+  end
+
+  def host_check(root, head, body, reviewer)
+    path = File.join(root, 'host-review.md')
+    File.write(path, body)
+    output, error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+                                           '--reviewer', reviewer, '--report', path)
+    [JSON.parse(output), error, status]
+  end
+end
+
 class LocalReviewCodexUsageTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -1057,3 +1120,4 @@ LocalReviewCaseIdentityTest.include(LocalReviewFixture)
 LocalReviewTimeoutTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
+LocalReviewAttestationCaseTest.include(LocalReviewFixture)
