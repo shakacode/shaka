@@ -106,7 +106,9 @@ and denies anything that would prompt. `--restricted` removes command-running to
 Claude.ai OAuth**. `--strict-mcp-config` with no config drops MCP servers. Do **not** add
 `--bare`: that flag skips keychain and OAuth (`Not logged in · Please run /login`) and only
 accepts `ANTHROPIC_API_KEY`, so a logged-in Max/claude.ai session looks unavailable.
-`--effort` is recorded in the attestation. Check `--help` before relying on these flags.
+`--effort` is recorded in the attestation. Pass `--model NAME` to pin the reviewer model;
+the helper adds `--model NAME` to that command and reports it as `model` in the result.
+Without it, the CLI's default model runs. Check `--help` before relying on these flags.
 
 Grok 1.0.30:
 

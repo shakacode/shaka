@@ -162,6 +162,20 @@ class LocalReviewOtherCliTest < Minitest::Test
     end
   end
 
+  # Break caught: a requested Claude reviewer model is dropped and the CLI default runs unrecorded.
+  def test_claude_run_passes_the_requested_model_and_records_it
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'claude-invocation.json')
+      fake_claude(bin, head)
+      output, error, status = run_review(root, base, head, bin, env: { 'REVIEW_TRACE' => trace },
+                                                                reviewer: 'anthropic/claude', model: 'claude-opus-5-5')
+      result = assert_successful_review(output, error, status, head, 'anthropic/claude')
+      assert_claude_model(result, trace, 'claude-opus-5-5')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   def test_omitted_effort_does_not_pass_placeholder_to_claude
     with_repository do |root, base, head, bin|
       trace = File.join(root, 'claude-invocation.json')
@@ -184,6 +198,12 @@ class LocalReviewOtherCliTest < Minitest::Test
     assert_includes invocation.fetch('args'), '--safe-mode'
     assert_includes invocation.fetch('prompt'), '+after'
     assert_includes invocation.fetch('prompt'), 'Restricted Claude cannot run Git commands'
+  end
+
+  def assert_claude_model(result, trace, model)
+    args = JSON.parse(File.read(trace)).fetch('args')
+    assert_equal model, args.fetch(args.index('--model') + 1)
+    assert_equal model, result.fetch('model')
   end
 
   def assert_grok_invocation(trace)
@@ -233,14 +253,13 @@ class LocalReviewProviderFailureTest < Minitest::Test
     end
   end
 
-  def test_model_option_for_claude_is_a_setup_failure_not_silently_ignored
+  def test_model_option_for_codex_is_a_setup_failure_not_silently_ignored
     with_repository do |root, base, head, bin|
-      output, _error, status = run_review(root, base, head, bin,
-                                          reviewer: 'anthropic/claude', model: 'requested-model')
+      output, _error, status = run_review(root, base, head, bin, model: 'requested-model')
       refute_predicate status, :success?
       result = JSON.parse(output)
       assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), '--model is only supported for xai/grok'
+      assert_includes result.fetch('reason'), '--model is unsupported for openai/codex'
     end
   end
 
