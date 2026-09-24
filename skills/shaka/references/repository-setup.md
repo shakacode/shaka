@@ -47,11 +47,11 @@ own YAML. Handle that one PR this way:
 
 1. Validate with `shaka seam check --root . --local` and the new wrapper scripts.
    The local check proves syntax only.
-2. Choose the local reviewer by hand from the reviewers `shaka review run`
-   supports, in this order: `anthropic/claude`, `openai/codex`, `xai/grok`.
-   Take the first whose provider did not implement the change, applying the
-   [availability evidence rules](review.md#choose-a-local-reviewer). Run it
-   with `shaka review run` as usual; that command needs no seam.
+2. Choose the local reviewer by hand with the
+   [usual selection rules](review.md#choose-a-local-reviewer), treating the
+   reviewers `shaka review run` supports as the list, in this order:
+   `anthropic/claude`, `openai/codex`, `xai/grok`. The same-provider and
+   fresh-session fallbacks still apply. `shaka review run` needs no seam.
 3. Record in the PR that no trusted seam existed, so the reviewer came from this
    fixed order rather than from `shaka reviewer`.
 4. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
