@@ -377,6 +377,13 @@ rules:
     quote: do not ask for a second approval afterward
     enforced_by: agent
     note: Asking again is chat prose; no command reads the final response.
+  - id: merge-approval-label-ask-only
+    phase: finish
+    quote: Never set `awaiting-merge-approval` in Auto mode.
+    enforced_by: agent
+    note: >-
+      `attention` does not read the merge preference, so it labels a PR in Auto mode as readily
+      as in Ask mode.
   - id: required-checks
     phase: finish
     quote: Never accept missing, failed, pending, or stale required checks

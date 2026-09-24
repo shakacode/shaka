@@ -10,8 +10,8 @@ class CliTest < Minitest::Test
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert_predicate status, :success?, error
     operations = %w[pr comments description reply walkthrough merge recommendation checkpoint seam doctor
-                    enforcement repos prefix]
-    (operations + %w[--head --issue --content-file --key --comment --ci-review-wait --ref]).each do |token|
+                    enforcement repos prefix attention]
+    (operations + %w[--head --issue --content-file --key --comment --ci-review-wait --ref --state]).each do |token|
       assert_includes output, token
     end
   end
@@ -19,6 +19,14 @@ class CliTest < Minitest::Test
   def test_invalid_ci_review_wait_does_not_call_github
     without_github do |dir, sentinel|
       _output, error, status = run_offline(dir, '{}', 'merge', 'owner/repo', '1', '--ci-review-wait', 'auto')
+      refute_predicate status, :success?, error
+      refute_path_exists sentinel
+    end
+  end
+
+  def test_invalid_attention_state_does_not_call_github
+    without_github do |dir, sentinel|
+      _output, error, status = run_offline(dir, '{}', 'attention', 'owner/repo', '1', '--state', 'approved')
       refute_predicate status, :success?, error
       refute_path_exists sentinel
     end

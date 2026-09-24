@@ -27,6 +27,20 @@ project restrictions in `AGENTS.md`; Shaka has no built-in file-count or commit-
 
 You can also request planning only, review only, or a PR without merging.
 
+## Find PRs waiting on you
+
+The agent labels a PR when it stops for you:
+
+| Label | What it waits for |
+| --- | --- |
+| `awaiting-answer` | Your answer to a question the agent asked in chat |
+| `awaiting-merge-approval` | Your merge of the named commit; set only under **Ask** |
+
+A PR carries at most one of these labels. The agent removes it when work resumes.
+Search `is:open label:awaiting-answer` or `is:open label:awaiting-merge-approval`
+to see your queue. Nothing but the agent clears these labels, so one can go stale
+if the agent stops before work resumes; remove it by hand.
+
 ## What you get
 
 The agent reproduces bugs, tests new behavior, runs your checks, and handles

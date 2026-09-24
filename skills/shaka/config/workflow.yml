@@ -149,6 +149,9 @@ phases:
       - Choose routine, reversible approaches yourself. Ask consequential questions with a
         recommendation, await required answers before dependent work, and continue independent work
         meanwhile. Retain decisions in the task or PR within its privacy; silence is not approval.
+        When the task has a PR and stops for a user answer, run the saved helper's `attention
+        OWNER/REPO NUMBER --state answer` so GitHub lists it as `awaiting-answer`; run it with
+        `--state none` when work resumes.
         If another agent edits the change, agree on file ownership or take turns. Delegated workers
         own exclusive files or worktrees and never publish or merge.
       - For behavior changes, observe one meaningful failing test, make the smallest change that
@@ -247,6 +250,7 @@ phases:
         description OWNER/REPO NUMBER --content-file PATH
         reply OWNER/REPO NUMBER --content-file PATH --key NAME [--comment ROOT_COMMENT_ID]
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH
+        attention OWNER/REPO NUMBER --state answer|merge|none
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA [--ci-review-wait MODE]
         usage --commit SHA --contribution CATEGORY
@@ -387,12 +391,14 @@ phases:
       - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
-        click, name the expected head SHA, and tell the user they may use GitHub's currently offered
-        merge control for that SHA and then archive this chat. If GitHub shows a different head or
-        offers no allowed merge method, tell them not to merge. Do not bypass protection. Do not ask
-        whether you should merge. Ask does not treat that GitHub click instruction as authorization
-        to run `merge`. If they later ask you to merge this head, run `merge` only for that SHA.
-        In Auto mode, run `merge` with the current head and walkthrough ID. A required native
+        click, run `attention OWNER/REPO NUMBER --state merge` to label the PR
+        `awaiting-merge-approval`, name the expected head SHA, and tell the user they may use
+        GitHub's currently offered merge control for that SHA and then archive this chat. If GitHub
+        shows a different head or offers no allowed merge method, tell them not to merge. Do not
+        bypass protection. Do not ask whether you should merge. Ask does not treat that GitHub click
+        instruction as authorization to run `merge`. If they later ask you to merge this head, run
+        `merge` only for that SHA. Run `attention` with `--state none` when work on the PR resumes.
+        Never set `awaiting-merge-approval` in Auto mode. In Auto mode, run `merge` with the current head and walkthrough ID. A required native
         approval must arrive first, and do not ask for a second approval afterward.
       - Leave repository queue settings and delayed auto-merge unchanged. When the helper submits
         merge, on a queue-disabled base merge immediately while the task is active. On a
