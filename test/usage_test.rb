@@ -39,14 +39,18 @@ module UsageFixture
   def run_report(records, *, **options)
     Dir.mktmpdir do |directory|
       file = write_records(directory, records, options)
-      environment = { 'PI_CODING_AGENT' => nil, 'CODEX_HOME' => directory, 'CODEX_THREAD_ID' => THREAD,
-                      'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }
+      environment = host_environment(directory).merge(options.fetch(:environment, {}))
       sources = options[:discover] ? [] : ['--file', file] * options.fetch(:copies, 1)
       output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources, '--commit', COMMIT,
                                              '--contribution', options[:contribution] || 'implementation', *)
       assert_predicate status, :success?, error
       output
     end
+  end
+
+  def host_environment(directory)
+    { 'PI_CODING_AGENT' => nil, 'CODEX_HOME' => directory, 'CODEX_THREAD_ID' => THREAD,
+      'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }
   end
 
   def write_records(directory, records, options)
@@ -173,6 +177,17 @@ class UsageReviewCoverageTest < Minitest::Test
 
   # A review snapshot that counted tokens but still said only "external reviewer
   # UNKNOWN" hid the local adversarial pass that those numbers belong to.
+  # Break caught: a shell without a UTF-8 locale crashed on the first non-ASCII
+  # byte in a Codex session, so review usage could not be reported at all.
+  def test_reads_utf8_under_a_c_locale_and_reports_invalid_bytes_as_unreadable
+    records = [{ type: 'response_item', payload: { text: 'Café — SENSITIVE' } }, context('current'),
+               usage('current', 'current', 100)]
+    report = run_report(records, raw_tail: "\xFF\n".b, environment: { 'LC_ALL' => 'C', 'LANG' => 'C' })
+    assert_metric report, 'Input', 100
+    assert_includes report, 'Unreadable or unidentifiable records'
+    refute_includes report, 'SENSITIVE'
+  end
+
   def test_review_contribution_with_records_includes_local_adversarial_usage
     report = run_report([context('current'), usage('current', 'current', 100)], '--contribution', 'review')
     header = report.split('<details>').first

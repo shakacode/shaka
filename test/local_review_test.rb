@@ -819,6 +819,40 @@ class LocalReviewStatusTest < Minitest::Test
   end
 end
 
+class LocalReviewCodexUsageTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: Codex reviews published usage UNKNOWN because the run never named its saved session.
+  def test_codex_run_returns_its_saved_session_as_usage
+    with_repository do |root, base, head, bin|
+      Dir.mktmpdir('shaka-codex-home') do |home|
+        fake_codex_with_session(bin, head)
+        output, error, status = run_review(root, base, head, bin, env: { 'CODEX_HOME' => home })
+        result = assert_successful_review(output, error, status, head, 'openai/codex')
+        assert_equal Dir.glob(File.join(home, 'sessions', '*', '*', '*', '*.jsonl')), [result.fetch('usage')]
+        File.unlink(result.fetch('report'))
+      end
+    end
+  end
+
+  private
+
+  # Writes a saved session under CODEX_HOME and announces its thread the way `codex exec --json` does.
+  def fake_codex_with_session(bin, head, thread = '01a0d246-e758-7052-92bc-95afb12a6f60')
+    write_executable(bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'fileutils'
+      require 'json'
+      report = ARGV.fetch(ARGV.index('-o') + 1)
+      File.write(report, "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
+      folder = FileUtils.mkdir_p(File.join(ENV.fetch('CODEX_HOME'), 'sessions', '2026', '09', '23')).first
+      meta = JSON.generate(type: 'session_meta', payload: { id: '#{thread}' })
+      File.write(File.join(folder, 'rollout-#{thread}.jsonl'), meta)
+      puts JSON.generate(type: 'thread.started', thread_id: '#{thread}') if ARGV.include?('--json')
+    RUBY
+  end
+end
+
 module LocalReviewContextAssertion
   def assert_codex_source_context(invocation, root, head)
     prompt = invocation.fetch('prompt')
@@ -962,6 +996,7 @@ end
 
 LocalReviewCodexTest.include(LocalReviewFixture)
 LocalReviewCodexTest.include(LocalReviewContextAssertion)
+LocalReviewCodexUsageTest.include(LocalReviewFixture)
 LocalReviewOtherCliTest.include(LocalReviewFixture)
 LocalReviewProviderFailureTest.include(LocalReviewFixture)
 LocalReviewClaudeProtocolTest.include(LocalReviewFixture)
