@@ -7,6 +7,11 @@ on:
 
 permissions: {}
 
+# Only the latest docs push matters; the site rebuilds from current main.
+concurrency:
+  group: trigger-docs-site
+  cancel-in-progress: true
+
 jobs:
   notify-docs-site:
     runs-on: ubuntu-latest
