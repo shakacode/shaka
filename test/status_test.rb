@@ -18,7 +18,7 @@ class StatusTest < Minitest::Test
     empty = ['', "no required checks reported on the 'main' branch\n", STATUS.new(1)]
     head = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' },
             { 'name' => 'lint', 'state' => 'PENDING', 'bucket' => 'pending' }]
-    github = client(snapshot_response, empty, response(head, status: 8), snapshot_response)
+    github = client(snapshot_response, empty, *no_configured_requirements, response(head, status: 8), snapshot_response)
     result = Shaka::Status.new(github, seam_required_checks: ['checks']).call
 
     assert_equal [head.first], result['requiredChecks']

@@ -32,6 +32,8 @@ module MergeFixtures
 
     def checks = head_checks || []
 
+    def configured_required_checks = []
+
     def review(id)
       @requested_review = id
       raise review_result if review_result.is_a?(Exception)

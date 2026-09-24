@@ -54,6 +54,11 @@ module GitHubHelper
     [snapshot_response, files_response, *gate_responses, html_response, review_response, review_response, *extra]
   end
 
+  def no_configured_requirements
+    base = { 'baseRefName' => 'main', 'baseRef' => { 'refUpdateRule' => nil } }
+    [response({ 'data' => { 'repository' => { 'pullRequest' => base } } }), response([])]
+  end
+
   def pending_review_gate_responses
     passed = { 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }
     pending = { 'name' => 'claude-review', 'state' => 'PENDING', 'bucket' => 'pending' }

@@ -4,9 +4,10 @@ require_relative 'test_helper'
 require 'shaka/required_checks'
 
 class RequiredChecksTest < Minitest::Test
-  Client = Struct.new(:native, :head) do
+  Client = Struct.new(:native, :head, :configured) do
     def required_checks = native
     def checks = head
+    def configured_required_checks = configured || []
   end
 
   PASS = { 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }.freeze
@@ -23,6 +24,13 @@ class RequiredChecksTest < Minitest::Test
     result = Shaka::RequiredChecks.new(Client.new([], [other, PASS]), seam_names: ['checks']).call
 
     assert_equal({ 'source' => 'seam', 'checks' => [PASS] }, result)
+  end
+
+  # An unreported native requirement leaves `gh pr checks --required` empty; the seam must not replace it.
+  def test_configured_native_requirements_that_have_not_reported_keep_github_as_the_source
+    result = Shaka::RequiredChecks.new(Client.new([], [PASS], ['validate']), seam_names: ['checks']).call
+
+    assert_equal({ 'source' => 'github', 'checks' => [] }, result)
   end
 
   def test_a_seam_check_absent_from_the_head_is_reported_missing

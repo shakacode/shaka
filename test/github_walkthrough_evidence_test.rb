@@ -146,7 +146,8 @@ class GitHubSeamWalkthroughEvidenceTest < Minitest::Test
   def test_walkthrough_omitting_a_completed_seam_required_check_is_refused
     empty = ['', "no required checks reported on the 'main' branch\n", STATUS.new(1)]
     head = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
-    github = client(snapshot_response, files_response, empty, response(head), response(head))
+    github = client(snapshot_response, files_response, empty, *no_configured_requirements, response(head),
+                    response(head))
     error = assert_raises(Shaka::Error) do
       github.walkthrough(head: HEAD, body: "See #{PINNED_LINK}.", seam_required_checks: ['checks'])
     end

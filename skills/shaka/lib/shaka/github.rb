@@ -6,6 +6,7 @@ require_relative 'error'
 require_relative 'publishing'
 require_relative 'walkthrough_evidence'
 require_relative 'github/check_list'
+require_relative 'github/required_check_rules'
 
 module Shaka
   # The native pull-request evidence a publication decision depends on.
@@ -45,6 +46,7 @@ module Shaka
     include Publishing
     include GraphqlTransport
     include CheckList
+    include RequiredCheckRules
 
     attr_reader :repository, :number
 
