@@ -130,12 +130,17 @@ module Shaka
       git_executable
       validate!
       validate_tempdir!
-      run_report(review_prompt)
+      with_requested_model(run_report(review_prompt))
     rescue Shaka::Error, SystemCallError => e
-      setup_failure(e)
+      with_requested_model(setup_failure(e))
     end
 
     private
+
+    # Records what was asked for on every outcome; the routed model comes only from native usage.
+    def with_requested_model(result)
+      @options[:model] ? result.merge('requested_model' => @options[:model]) : result
+    end
 
     def run_report(prompt)
       report = Tempfile.create(['shaka-review-', '.md'])
@@ -173,7 +178,13 @@ module Shaka
       validate_criteria_ref!
       validate_timeout!
       validate_reviewer!
+      validate_model_name!
       validate_checkout!
+    end
+
+    # An unset MODEL variable must fail here, not launch the reviewer with an empty model.
+    def validate_model_name!
+      raise Shaka::Error, '--model must name a model' if @options[:model]&.match?(/\A\s*\z/)
     end
 
     def validate_reviewer!
@@ -189,7 +200,7 @@ module Shaka
 
     def validate_model!
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
-      raise Shaka::Error, '--model is only supported for xai/grok' if reviewer != 'xai/grok' && @options[:model]
+      raise Shaka::Error, '--model is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:model]
       raise Shaka::Error, '--effort is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:effort]
     end
 
