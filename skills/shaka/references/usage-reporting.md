@@ -20,10 +20,14 @@ selects the latest turn. That is a snapshot, not necessarily the whole task.
 | --- | --- |
 | `--host NAME` | Select a host when multiple host markers are present |
 | `--file PATH` | Read a saved native source; repeat for additional sources |
-| `--turn ID` | Select specific turns; repeat as needed |
+| `--turn ID` | Select specific turns; repeat as needed. Each host section below names the ID field |
 | `--all-turns` | Include a session dedicated entirely to this task; cannot combine with `--turn` |
 | `--commit SHA,SHA` | Associate the selected interval with several commits |
 | `--contribution CATEGORY` | `implementation`, `review`, `integration`, or `shared-planning` |
+
+A `--turn` ID that matches no readable response fails with the expected field
+instead of printing an empty table. A source with no readable responses still
+reports them as unavailable.
 
 Use explicit host selection for a child agent launched inside Pi, which inherits
 Pi's process marker. Selecting Pi never falls back to unrelated Codex records.
@@ -78,11 +82,14 @@ did not change the result.
 
 `CLAUDE_CODE_SESSION_ID` selects a transcript under `CLAUDE_CONFIG_DIR` (default
 `~/.claude`). The reader checks its ID and includes subagent transcripts from the
-selected turn. A turn is a prompt ID; multiple supplied files use the first file's
-latest turn by default. Streamed copies count once, using the final usage line.
+selected turn. A turn is the `promptId` on a `type: "user"` record, not that
+record's `uuid`. List them in order with
+`jq -r 'select(.type == "user") | .promptId' FILE | uniq`. Multiple supplied files use
+the first file's latest turn by default. Streamed copies count once, using the final
+usage line.
 
 For CLI reviews, save `claude -p --output-format json` output. The reader consumes
-the result object's `usage`, never its review text. An `is_error` result is unknown.
+the result object's `usage`, never its review text, and its turn is the `session_id`. An `is_error` result is unknown.
 A present top-level `model` is used; otherwise a single `modelUsage` entry can supply
 `canonicalModel`. Multiple model entries leave the route unknown. Effort is reported
 only when recorded.
