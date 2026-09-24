@@ -211,7 +211,7 @@ for that head and update the description's link. Keep review history in the
 description's details rather than appending it to the walkthrough.
 
 The walkthrough command collapses your older walkthroughs after it confirms the new
-review. Each one leads with “Superseded — read the current walkthrough” and that
+review. Each one leads with “Superseded — read the current walkthrough:” and that
 review's link, and the old body and revision stay inside details. Other authors'
 reviews and independent reports stay as they are. When the edit is unavailable,
 the new walkthrough still stands and the command reports the limitation. This

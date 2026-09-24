@@ -14,7 +14,6 @@ module Shaka
     POINTER = /\A#{Regexp.escape(MARKER)} (\S+)/
     HEADING = /^# Code Walkthrough$/
     FOOTER = /_Walkthrough for commit `([0-9a-f]{40})`\. This is a COMMENT, not an approval\._/
-    ATTESTATION = /^REVIEWED [0-9a-f]{40} BY \S/
     UPDATE = <<~GRAPHQL
       mutation($id: ID!, $body: String!) {
         updatePullRequestReview(input: {pullRequestReviewId: $id, body: $body}) {
@@ -52,8 +51,6 @@ module Shaka
     end
 
     def walkthrough_body?(body)
-      return false if body.match?(ATTESTATION)
-
       collapsed?(body) || (body.match?(HEADING) && body.match?(FOOTER))
     end
 
@@ -83,13 +80,15 @@ module Shaka
     def retarget(body, url)
       return if body[POINTER, 1] == url
 
-      body.sub(POINTER, "#{MARKER} #{url}")
+      revised = body.sub(POINTER, "#{MARKER} #{url}")
+      return revised unless revised == body
+
+      raise Error, 'Collapsed walkthrough pointer could not be updated.'
     end
 
     def wrap(body, url)
-      sha = body[FOOTER, 1]
-      summary = sha ? "Walkthrough for commit `#{sha}`" : 'Earlier code walkthrough'
-      "#{MARKER} #{url}\n\n<details>\n<summary>#{summary}</summary>\n\n#{body.rstrip}\n\n</details>\n"
+      summary = "<summary>Walkthrough for commit `#{body[FOOTER, 1]}`</summary>"
+      "#{MARKER} #{url}\n\n<details>\n#{summary}\n\n#{body.rstrip}\n\n</details>\n"
     end
 
     def replace_review(review, body)
