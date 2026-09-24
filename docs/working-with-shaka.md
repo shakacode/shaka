@@ -39,8 +39,8 @@ The agent labels a PR when it stops for you:
 To approve, tell the agent in chat. An **Approve** review on GitHub also counts
 when it comes from a login you named to the agent as a merge approver; GitHub does
 not let the account that opened the PR approve it. Return to the chat so the agent
-can act on the approval. If the base branch moved, the agent rebases, revalidates,
-and merges without asking again. When branch protection dismissed a required GitHub
+can act on the approval. If GitHub requires updating the branch first, the agent
+rebases, revalidates, and merges without asking again. When branch protection dismissed a required GitHub
 approval, it asks for that approval on the new commit. When resolving a conflict
 changes behavior, it explains the resolution and asks you to approve the new commit.
 
