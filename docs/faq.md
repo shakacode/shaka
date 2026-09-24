@@ -27,16 +27,17 @@ them as part of the diff. See [settings](settings.md).
 | Changes to Shaka's workflow | A [fork of Shaka](workflow.md#customize-the-instructions) |
 
 Keep `AGENTS.md` a regular file with the instructions in it; Shaka reads it from
-Git at the trusted commit. Claude Code v2.1.277 and later reads `AGENTS.md`
-directly, so a repository no longer needs a `CLAUDE.md` for Claude. If you keep
-one, import the shared file with `@AGENTS.md`. See Claude Code's
+Git at the trusted commit. Recent Claude Code versions can read `AGENTS.md`
+directly, but not in every session, and not by default when a `CLAUDE.md` exists.
+To give Claude the same instructions every time, add a `CLAUDE.md` containing
+`@AGENTS.md` rather than a symlink. See Claude Code's
 [AGENTS.md support](https://code.claude.com/docs/en/memory#agents-md).
 
 ## Why did the agent stop to ask about model and effort?
 
 Before it changes code, Shaka recommends a model and effort for the task and
-waits for you. To skip the wait, name an available model and effort that are
-already active and say “Go”. See [give it an outcome](working-with-shaka.md#give-it-an-outcome).
+waits for you. To skip the wait, name the model and effort it would recommend,
+make sure they are active, and say “Go”. See [give it an outcome](working-with-shaka.md#give-it-an-outcome).
 
 ## Why didn't the agent merge my PR?
 
