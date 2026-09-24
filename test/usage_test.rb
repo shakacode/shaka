@@ -182,7 +182,9 @@ class UsageReviewCoverageTest < Minitest::Test
   def test_reads_utf8_under_a_c_locale_and_reports_invalid_bytes_as_unreadable
     records = [{ type: 'response_item', payload: { text: 'Café — SENSITIVE' } }, context('current'),
                usage('current', 'current', 100)]
-    report = run_report(records, raw_tail: "\xFF\n".b, environment: { 'LC_ALL' => 'C', 'LANG' => 'C' })
+    invalid = %({"type":"turn_context","payload":{"turn_id":"other","model":"gpt-\xFF"}}\n).b +
+              "#{JSON.generate(usage('other', 'other', 900))}\n"
+    report = run_report(records, raw_tail: invalid, environment: { 'LC_ALL' => 'C', 'LANG' => 'C' })
     assert_metric report, 'Input', 100
     assert_includes report, 'Unreadable or unidentifiable records'
     refute_includes report, 'SENSITIVE'

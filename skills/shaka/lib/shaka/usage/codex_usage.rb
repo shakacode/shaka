@@ -102,7 +102,7 @@ module Shaka
     end
 
     def parse(line)
-      record = JSON.parse(line)
+      record = line.valid_encoding? && JSON.parse(line)
       return record if record.is_a?(Hash) && record['payload'].is_a?(Hash)
 
       @gaps << 'Unreadable or unidentifiable records'
