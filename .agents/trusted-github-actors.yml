@@ -3,7 +3,6 @@
 # Configuration and limits: skills/shaka/references/public-comments-safety.md
 trusted_users:
   - justin808
-  - claude
 
 # Bot entries are base bot names. GitHub API logins usually include the
 # `[bot]` suffix; humans with the same base login are not trusted by this list.
