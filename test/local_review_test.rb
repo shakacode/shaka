@@ -277,6 +277,17 @@ class LocalReviewProviderFailureTest < Minitest::Test
     end
   end
 
+  # Break caught: an unset MODEL variable launches claude --model "" and reads as a CLI failure.
+  def test_empty_claude_model_is_a_setup_failure
+    with_repository do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude', model: ' ')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '--model must name a model'
+    end
+  end
+
   def test_explicit_codex_effort_is_rejected_before_launch
     with_repository do |root, base, head, bin|
       output, _error, status = run_review(root, base, head, bin, effort: 'medium')

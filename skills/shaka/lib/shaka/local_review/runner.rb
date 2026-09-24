@@ -178,7 +178,13 @@ module Shaka
       validate_criteria_ref!
       validate_timeout!
       validate_reviewer!
+      validate_model_name!
       validate_checkout!
+    end
+
+    # An unset MODEL variable must fail here, not launch the reviewer with an empty model.
+    def validate_model_name!
+      raise Shaka::Error, '--model must name a model' if @options[:model]&.match?(/\A\s*\z/)
     end
 
     def validate_reviewer!
