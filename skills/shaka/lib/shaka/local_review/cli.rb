@@ -3,6 +3,7 @@
 require 'json'
 require 'open3'
 require 'tempfile'
+require_relative '../usage/codex_usage'
 require_relative 'executable'
 require_relative 'process'
 
@@ -65,10 +66,11 @@ module Shaka
       return missing('codex') unless executable
 
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
-              '--skip-git-repo-check', '-o', @report, '-']
+              '--skip-git-repo-check', '--json', '-o', @report, '-']
       stdout, stderr, status = reviewer_process(args, prompt)
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?
 
+      @options[:usage] = CodexUsage.announced_session(stdout)
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
 
