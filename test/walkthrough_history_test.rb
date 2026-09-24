@@ -209,4 +209,12 @@ class WalkthroughHistoryFooterTest < Minitest::Test
     assert_includes body, "<summary>Walkthrough for commit `#{OLD_SHA}`</summary>"
     refute_includes body, "<summary>Walkthrough for commit `#{older}`</summary>"
   end
+
+  def test_a_review_that_stops_being_a_walkthrough_is_not_rewritten
+    published = publish_over(review_record(7, PRIOR), review_response(body: "No longer a walkthrough.\n"))
+
+    assert_empty published.dig('earlier_walkthroughs', 'collapsed')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'Review 7'
+    refute(@calls.any? { |_argv, stdin| stdin.include?('updatePullRequestReview') })
+  end
 end

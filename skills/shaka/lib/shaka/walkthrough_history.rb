@@ -27,6 +27,16 @@ module Shaka
     end
 
     def self.unfenced(body) = body.gsub(/^```.*?^```/m, '')
+
+    def self.earlier?(review, current)
+      prior = submitted_at(review)
+      prior && prior < current
+    end
+
+    def self.submitted_at(review)
+      value = review['submitted_at']
+      value if value.is_a?(String) && value.match?(/\A\d{4}-\d{2}-\d{2}T/)
+    end
   end
 
   # Collapses earlier Code Walkthrough reviews after a new one is confirmed.
@@ -37,7 +47,6 @@ module Shaka
   class WalkthroughHistory
     MARKER = 'Superseded — read the current walkthrough:'
     POINTER = /\A#{Regexp.escape(MARKER)} (\S+)/
-    FOOTER = WalkthroughText::FOOTER
     UPDATE = <<~GRAPHQL
       mutation($id: ID!, $body: String!) {
         updatePullRequestReview(input: {pullRequestReviewId: $id, body: $body}) {
@@ -67,7 +76,7 @@ module Shaka
     def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'unavailable' => [] }
 
     def earlier_walkthroughs(published)
-      current = submission_time(published)
+      current = WalkthroughText.submitted_at(published)
       raise Error, 'Published walkthrough has no submission time.' unless current
 
       list_reviews.select { |review| earlier_walkthrough?(review, published, current) }
@@ -75,27 +84,26 @@ module Shaka
 
     def earlier_walkthrough?(review, published, current)
       review['id'] != published['id'] && review['state'] == 'COMMENTED' &&
-        WalkthroughText.walkthrough?(review['body'].to_s, MARKER) && earlier_submission?(review, current)
-    end
-
-    def earlier_submission?(review, current)
-      prior = submission_time(review)
-      prior && prior < current
-    end
-
-    def submission_time(review)
-      value = review['submitted_at']
-      value if value.is_a?(String) && value.match?(/\A\d{4}-\d{2}-\d{2}T/)
+        WalkthroughText.walkthrough?(review['body'].to_s, MARKER) && WalkthroughText.earlier?(review, current)
     end
 
     def fold_one(review, url, account, report)
       return report['left_intact'] << review['id'] unless review.dig('user', 'login') == account
 
-      fresh = @github.review(review['id'])
-      source = fresh['body'].to_s
+      source = fresh_walkthrough(review, report)
+      return unless source
+
       apply_revision(review, revised_body(source, url), source, report)
     rescue Error => e
       report['unavailable'] << "Review #{review['id']}: #{e.message}"
+    end
+
+    def fresh_walkthrough(review, report)
+      source = @github.review(review['id'])['body'].to_s
+      return source if WalkthroughText.walkthrough?(source, MARKER)
+
+      report['unavailable'] << "Review #{review['id']} changed before collapse."
+      nil
     end
 
     def apply_revision(review, revised, source, report)
