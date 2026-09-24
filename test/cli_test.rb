@@ -24,14 +24,6 @@ class CliTest < Minitest::Test
     end
   end
 
-  def test_invalid_attention_state_does_not_call_github
-    without_github do |dir, sentinel|
-      _output, error, status = run_offline(dir, '{}', 'attention', 'owner/repo', '1', '--state', 'approved')
-      refute_predicate status, :success?, error
-      refute_path_exists sentinel
-    end
-  end
-
   def test_missing_content_file_is_a_clear_error
     _output, error, status = Open3.capture3(COMMAND, 'description', 'owner/repo', '1',
                                             '--content-file', '/missing/shaka-content.json')

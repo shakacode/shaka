@@ -18,18 +18,26 @@ module Shaka
       wanted = LABELS[state]
       raise Error, 'Pull request is not open.' if wanted && @github.snapshot['state'] != 'OPEN'
 
-      current = names(@github.api_list(path))
-      stale = current.select { |name| attention?(name) && !name.casecmp?(wanted.to_s) }
-      stale.each { |name| current = names(@github.api(path(name), method: 'DELETE', expected: Array)) }
-      unless wanted.nil? || current.any? { |name| name.casecmp?(wanted) }
-        current = names(@github.api(path, method: 'POST', fields: { labels: [wanted] }, expected: Array))
-      end
+      current = keep_only(wanted)
       { 'state' => state, 'labels' => current.select { |name| attention?(name) } }
     end
 
     private
 
     def path(label = nil) = ["repos/#{@github.repository}/issues/#{@github.number}/labels", label].compact.join('/')
+
+    # Deletes every other attention label, then adds the wanted one when it is missing.
+    def keep_only(wanted)
+      current = names(@github.api_list(path))
+      current.select { |name| attention?(name) && !name.casecmp?(wanted.to_s) }.each do |name|
+        current = write(path(name), 'DELETE')
+      end
+      return current if wanted.nil? || current.include?(wanted)
+
+      write(path, 'POST', labels: [wanted])
+    end
+
+    def write(target, method, **fields) = names(@github.api(target, method:, fields:, expected: Array))
 
     def attention?(name) = LABELS.value?(name.downcase)
 
