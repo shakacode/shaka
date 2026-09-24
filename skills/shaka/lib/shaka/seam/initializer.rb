@@ -47,10 +47,6 @@ module Shaka
 
       def config_source
         config = config_hash
-        if @options[:plan]
-          repository_file(@options[:plan], 'plan')
-          config['plan'] = @options[:plan]
-        end
         "# #{MARKER}\n#{YAML.dump(config)}"
       end
 

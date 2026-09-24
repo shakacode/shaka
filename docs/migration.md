@@ -1,14 +1,15 @@
-# Upgrade an existing installation
+# Upgrade an installation
 
-Ask your agent to update Shaka and adapt the repository configuration together:
+Ask your agent:
 
 ```text
-Upgrade this repository to the current Shaka pilot. Inspect the installed
-version and our configuration, preserve local customizations, and prepare any
-configuration changes as a PR. Tell me whether active tasks need to restart.
-Keep our current review and merge choices.
+Update my Shaka installation. Preserve my customizations and check whether
+this repository needs configuration changes. Keep its review and merge choices.
 ```
 
-Shaka is still a pilot, so settings can change between revisions. Let the agent
-follow the [migration procedure](agents/migration.md) and review its diff before
-merging. An installation upgrade alone may leave a repository's settings outdated.
+For a fork, ask it to compare upstream changes before updating. Installation and
+repository configuration may need to move together; the agent uses the
+[upgrade procedure](../skills/shaka/references/migration.md) and prepares any
+repository changes for review.
+
+Automatic update notifications are not currently implemented.

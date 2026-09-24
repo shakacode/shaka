@@ -1,36 +1,37 @@
 # Configure a repository
 
-Ask Shaka to use the project's existing commands:
+Ask your agent to connect the repository's existing tools to Shaka:
 
 ```text
-$shaka Configure this repository for Shaka using our existing setup, tests,
-and validation commands. Use our installed CI reviewers and keep merging at
-Ask. Include fast local validation or staged CI if this project supports them.
-Prepare the configuration as a PR and explain any decisions I need to make.
+$shaka Configure this repository for Shaka. Reuse its existing setup,
+test, and validation commands. Explain the review and merge choices.
+Use merge policy ask.
 ```
 
-Use `/shaka` in Claude Code, Cursor, or OpenCode. The agent inspects your project
-and prepares these files for review:
+The agent inspects your project, asks for missing choices, and prepares a setup PR:
 
-| File | What it tells Shaka |
+| File | Purpose |
 | --- | --- |
-| `.agents/agent-workflow.yml` | Which reviews to run and who merges |
-| `.agents/bin/setup`, `test`, `validate` | How to prepare and check this project |
-| `.agents/trusted-github-actors.yml` | Whose public GitHub comments it may read |
+| `.agents/agent-workflow.yml` | Review, merge, branch, and WIP settings |
+| `.agents/bin/setup` | Install project dependencies |
+| `.agents/bin/test` | Run tests; accept focused test arguments |
+| `.agents/bin/validate` | Run the complete pre-PR checks |
+| `.agents/bin/validate-local` (optional) | Run a faster local check before review |
+| `.agents/bin/trigger-hosted-ci` (optional) | Start deferred CI after local fixes; requires `validate-local` |
+| `.agents/trusted-github-actors.yml` | Whose public GitHub comments the agent may read |
 | `AGENTS.md` | Project instructions and constraints |
 
-If checks have a useful faster first pass, `.agents/bin/validate-local` runs it.
-An optional `.agents/bin/trigger-hosted-ci` starts staged CI after fixes. The
-agent should explain which scripts fit the project in its setup PR.
+These scripts usually wrap commands the project already has. In Shaka's own
+repository, `.agents/bin/setup` installs development dependencies; `bin/install`
+installs Shaka into your coding agent. They serve different users.
 
-To change a choice later, describe the result you want:
+To change a choice later:
 
 ```text
-$shaka Configure this repository to wait for all configured CI reviewers
-before merging. Keep merge approval with me.
+$shaka Configure this repository to wait for all configured CI reviewers.
+Keep merge policy ask.
 ```
 
-All settings and defaults are defined once in the [configuration reference](settings.md).
-Shaka's own [configuration](../.agents/agent-workflow.yml) and
-[scripts](../.agents/bin/) provide working examples. For an older installation,
-see [upgrading](migration.md). Agents use the [setup procedure](agents/repository-setup.md).
+See [settings](settings.md) for values and defaults. Shaka's own
+[configuration](../.agents/agent-workflow.yml) and [scripts](../.agents/bin/)
+provide working examples.

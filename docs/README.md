@@ -1,22 +1,20 @@
-# Shaka documentation
+# Documentation
 
-- [Getting started](getting-started.md) — install with a prompt and run your first task.
-- [Working with Shaka](working-with-shaka.md) — choose model, effort, merging, and give feedback.
-- [Repository setup](configure-repository.md) — ask the agent to set up your project.
-- [Development environments](development-environments.md) — Codex, Claude Code, Cursor, OpenCode, and Pi.
-- [Upgrading](migration.md) — update Shaka and existing configuration together.
+## Start here
 
-## Reference
+- [Getting started](getting-started.md) — install, configure, and run a task.
+- [Coding agents](coding-agents.md) — Codex, Claude Code, Cursor, OpenCode, and Pi.
+- [Working with Shaka](working-with-shaka.md) — merge policy, feedback, and resuming work.
 
-[Settings and scripts](settings.md) ·
-[Review procedure](agents/review.md) · [Usage reporting](agents/usage-reporting.md)
+## Configure and understand
 
-## Advanced pilot features
+- [Repository setup](configure-repository.md) — connect your project's commands to Shaka.
+- [Settings](settings.md) — options and defaults.
+- [PR verification](pr-verification.md) — tests, review, and visual evidence.
+- [Workflow and enforcement](workflow.md) — what the skill does and what code checks.
+- [Writing preferences](writing-preferences.md) — clear PRs and repository-specific style.
+- [Repository catalog](repository-catalog.md) — consistent setup and distinct project prefixes.
+- [Control towers](control-towers.md) — organize work within and across repositories.
 
-After basic Shaka delivery works for you, [control towers](control-towers.md)
-can help organize work across repositories.
-
-## Agent and contributor documentation
-
-[Agent references](agents/README.md) support the installed skill in any repository.
-[Contributor documentation](contributing/README.md) covers development of Shaka itself.
+For an existing installation, see [upgrading](migration.md).
+Development guidance lives in [Contributing](../CONTRIBUTING.md).

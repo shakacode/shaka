@@ -1,9 +1,12 @@
 # Shaka
 
-This public pilot implements the small product described in `docs/pilot-plan.md`.
+This public pilot implements the small product described in `internal/requirements.md`.
 The maintainer authorized implementation, publication, and merging verified PRs.
-The maintainer authorizes public Codex thread locators in unfinished-PR recovery notes.
+The maintainer authorizes public Codex thread locators in unfinished-PR WIP Details.
 Keep company strategy and private operational data out of product artifacts.
+
+Before writing documentation, PR descriptions, walkthroughs, or review replies,
+read [.agents/writing-style.md](.agents/writing-style.md) and apply its preferences.
 
 ## Working agreement
 
@@ -27,7 +30,7 @@ Keep company strategy and private operational data out of product artifacts.
 
 ## Is the change worth carrying?
 
-For Shaka changes, use the existing [value checkpoint](docs/agents/delivery.md#say-what-the-work-is-worth)
+For Shaka changes, use the existing [value checkpoint](skills/shaka/references/delivery.md#say-what-the-work-is-worth)
 and respect settled maintainer scope. When planning proposes substantial complexity,
 or the implementation materially increases the expected cost, assess the tradeoff
 in that checkpoint or the existing adversarial review.
@@ -48,13 +51,13 @@ assumptions for the maintainer's existing decision; add no score or approval gat
 
 ## Structure
 
-- `docs/pilot-plan.md` owns product requirements, design, acceptance, and scope.
+- `internal/requirements.md` owns product requirements, design, acceptance, and scope.
 - `eval/fixtures/local_evaluation/` holds the two public-safe Slice 0 fixture trees.
 - `skills/shaka/SKILL.md` is the public workflow entry point.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` is the machine-readable repository contract. It
-  records Shaka-specific review, merge-authority, branch-naming, and recovery
+  records Shaka-specific review, merge-authority, branch-naming, and WIP
   policy. Live GitHub settings remain authoritative. Standard executable entry
   points live at fixed names under `.agents/bin/`.
 - `skills/shaka/config/enforcement.yml` records what enforces each rule `workflow.yml`

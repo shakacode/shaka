@@ -134,7 +134,7 @@ class RepositoryConfigRetiredSettingTest < Minitest::Test
       with_repository('merge' => merge_policy.merge(key => value)) do |root|
         message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
         assert_includes message, "merge.#{key} is no longer configurable"
-        assert_includes message, 'docs/agents/migration.md'
+        assert_includes message, 'skills/shaka/references/migration.md'
       end
     end
   end
@@ -144,7 +144,7 @@ class RepositoryConfigRetiredSettingTest < Minitest::Test
       with_repository(key => value) do |root|
         message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
         assert_includes message, "#{key} moved out of the seam"
-        assert_includes message, 'docs/agents/migration.md'
+        assert_includes message, 'skills/shaka/references/migration.md'
       end
     end
   end
@@ -209,25 +209,33 @@ class RepositoryConfigOptionalCommandTest < Minitest::Test
   end
 end
 
-# The optional recovery policy decides what an unfinished pull request may publish.
+# The optional wip policy decides what an unfinished pull request may publish.
 class RepositoryConfigRecoveryTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
   def test_recovery_defaults_to_publishing_locations
     with_repository do |root|
-      assert_equal({ 'publish_locations' => true }, Shaka::RepositoryConfig.load(root:).recovery)
+      assert_equal({ 'include_locations' => true }, Shaka::RepositoryConfig.load(root:).wip)
     end
   end
 
   def test_the_effective_contract_includes_the_recovery_default
     with_repository do |root|
-      assert_equal({ 'publish_locations' => true }, Shaka::RepositoryConfig.load(root:).to_h.fetch('recovery'))
+      assert_equal({ 'include_locations' => true }, Shaka::RepositoryConfig.load(root:).to_h.fetch('wip'))
     end
   end
 
   def test_a_repository_can_opt_out_of_publishing_locations
-    with_repository('recovery' => { 'publish_locations' => false }) do |root|
-      assert_equal({ 'publish_locations' => false }, Shaka::RepositoryConfig.load(root:).recovery)
+    with_repository('wip' => { 'include_locations' => false }) do |root|
+      assert_equal({ 'include_locations' => false }, Shaka::RepositoryConfig.load(root:).wip)
+    end
+  end
+
+  def test_plan_requires_migration_to_agent_instructions
+    with_repository('plan' => 'requirements.md') do |root|
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+
+      assert_includes error.message, 'plan moved out of the seam'
     end
   end
 
@@ -235,23 +243,23 @@ class RepositoryConfigRecoveryTest < Minitest::Test
     with_repository('recovery' => { 'workspace_path' => false }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'recovery.publish_locations'
+      assert_includes error.message, 'wip.include_locations'
     end
   end
 
   def test_rejects_an_unknown_recovery_key
-    with_repository('recovery' => { 'workspace' => false }) do |root|
+    with_repository('wip' => { 'workspace' => false }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'unknown recovery key: workspace'
+      assert_includes error.message, 'unknown wip key: workspace'
     end
   end
 
   def test_rejects_a_recovery_value_that_is_not_a_boolean
-    with_repository('recovery' => { 'publish_locations' => 'yes' }) do |root|
+    with_repository('wip' => { 'include_locations' => 'yes' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
 
-      assert_includes error.message, 'recovery.publish_locations must be true or false'
+      assert_includes error.message, 'wip.include_locations must be true or false'
     end
   end
 

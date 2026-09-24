@@ -2,7 +2,6 @@
 
 require 'pathname'
 require_relative '../error'
-require_relative '../trusted_path_resolver'
 
 module Shaka
   class RepositoryConfig
@@ -34,8 +33,6 @@ module Shaka
       end
 
       def file!(value, label)
-        return committed_file!(value, label) if @sha
-
         path = repository_path(value, label)
         raise Error, "#{label} does not exist: #{value}" unless File.file?(path)
 
@@ -43,19 +40,6 @@ module Shaka
         raise Error, "#{label} must resolve inside the repository" unless real_path.start_with?("#{@root}/")
 
         path
-      end
-
-      def committed_file!(value, label)
-        relative = string!(value, label)
-        if Pathname.new(relative).absolute? || relative.split('/').include?('..')
-          raise Error, "#{label} must stay inside the repository"
-        end
-
-        _resolved, entry = TrustedPathResolver.new(root: @root, sha: @sha).resolve(relative)
-        mode, type = entry || []
-        return relative if type == 'blob' && mode != '120000'
-
-        raise Error, "#{label} does not exist at #{@sha}: #{value}"
       end
 
       def executable!(value, label)

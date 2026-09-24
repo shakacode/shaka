@@ -1,79 +1,87 @@
 # Working with Shaka
 
-Give Shaka the outcome you want, enough context to recognize success, and any
-limits. You can start with a description, an issue number, or a task link.
+## Give it an outcome
+
+Describe the result you want, or provide a GitHub issue or a task link from a
+tracker such as Linear. Include constraints the agent could not infer:
 
 ```text
-$shaka Fix search when the query contains an apostrophe.
-Add a regression test. Keep the existing search syntax.
-Bring the finished PR back for me to merge. Use Astra, medium effort. Go.
+$shaka Add CSV export to the orders page. Reuse the filters shown on screen.
 ```
 
-Use `/shaka` in Claude Code, Cursor, or OpenCode. Open the task in the repository
-where the work belongs. If a task link points elsewhere, provide that checkout
-when the agent asks.
+Shaka checks for existing work and recommends a model and effort level. Supply
+an available model, effort, and “Go” to skip that question once the settings are
+active. The [workflow](workflow.md) explains the remaining steps.
 
-Specify a model available in your coding environment, its reasoning effort, and
-“Go” when you are ready. Shaka proceeds once those settings are active. If you
-omit them, it recommends settings and waits for your choice.
+## Choose a merge policy
 
-## Choose who merges
-
-| Preference | What happens |
+| Policy | What happens |
 | --- | --- |
-| **Ask** | The agent finishes the PR and tells you which reviewed commit is ready. You merge it on GitHub. This is the default. |
-| **Auto** | The agent merges after required checks and approvals pass. A consequential risk or unclear authority still needs your decision. |
+| **Ask** (default) | The agent brings back a reviewed PR and identifies the commit you can merge on GitHub. |
+| **Auto** | The agent merges after required checks, review, and approvals. |
 
-To choose Auto, say: “Merge when checks and required approvals pass.” Shaka reuses
-an existing choice for its agreed scope. You can also ask for **planning only**,
-**review only**, or a **PR without merging**.
+Say `Use merge policy ask` or `Use merge policy auto` in your prompt to set the
+choice for that task. A prompt can change the ordinary preference; it cannot
+bypass repository restrictions, GitHub protection, or required human approval.
+Trust, authentication, release, and other consequential changes still require
+explicit human review. Shaka has no built-in file-count threshold for switching
+to Ask; put additional project restrictions in `AGENTS.md`.
 
-## What happens during a task
+You can also request planning only, review only, or a PR without merging.
 
-The agent reads the repository's instructions and checks whether another task
-already owns the work. Your model and effort choice above handles the initial
-checkpoint when the active settings match.
+## What you get
 
-For a behavior change, the agent tries to reproduce the failure before fixing it.
-It runs the repository's checks, obtains an independent review, and addresses
-findings. Routine implementation choices stay with the agent. Questions come
-back to you when the answer changes the product, scope, or risk.
+For a bug fix, the agent reproduces the failure before fixing it. For a new
+behavior, it tests the expected result. It runs your checks, obtains an
+independent review, and handles findings before pushing.
 
-For example, an import fix might uncover invalid dates. The useful question is
-whether to reject the whole file or import the valid rows. You should receive
-that question before the agent builds one of those behaviors.
+The PR description leads with the result and validation. Screenshots show UI
+changes; the code walkthrough explains implementation choices. Expandable
+sections hold usage estimates, detailed checks, and **WIP Details** for unfinished
+work. See [PR verification](pr-verification.md).
 
-## Read the finished PR
-
-The **description** tells you what changed, whether the checks passed, and what
-still needs attention. The **code walkthrough** explains the implementation and
-links to the reviewed code. Review and usage details are available on the same PR.
-
-A green CI job alone does not establish that a review completed. Shaka looks for
-the report and checks which commit it reviewed. See the [review reference](agents/review.md)
-for waiting rules, and [usage reporting](agents/usage-reporting.md) for partial or
-unknown cost figures.
+Routine choices stay with the agent. It asks you when an answer changes the
+product, scope, or risk.
 
 ## Give feedback
 
-Comment on the pull request, continue in the owning task, or edit files locally.
-Ask the task to address your PR comments when they are ready. Describe what feels wrong,
-supply an example, or edit the files directly and tell the agent to read the diff.
-Rough notes are useful: “Explain why this helps,” “Too much detail,” or a rewritten
-sentence can give the agent enough direction to finish the edit.
+### On GitHub or in chat
 
-When editing locally, use the task's checkout and ask the agent to pause file
-edits while you work. When you are done, tell it which changes are finished prose
-and which are comments to resolve. The agent should preserve your edits, turn
-notes into finished text, and rerun the affected checks.
+Leave PR comments, then paste the review link into the agent chat and ask it to
+address them. You can also give feedback directly in that chat. Describe what
+feels wrong or show the result you want.
 
-## Resume interrupted work
+### In your editor
 
-An unfinished PR includes **WIP Details** with its owning task, last known state,
-and next action. Return to that task when possible. Before a new task takes over,
-confirm that the previous one has stopped or is handing over; an old timestamp
-alone does not establish that.
+Rough edits and voice-dictated notes work well. Put comments next to the passage
+that needs attention; an optional `Agent:` prefix distinguishes notes from final
+wording.
 
-For a larger task, ask for a useful PR split. Each PR needs its own validation and
-review, and the original task stays open until the whole requested outcome is
-complete.
+1. Tell the agent you are editing and ask it to keep the checkout read-only.
+2. Make your notes and leave them unstaged. Local edits and local commits do not
+   trigger GitHub CI; pushing to an open PR normally does.
+3. Tell the agent you have stopped and hand over the files.
+4. The agent saves a patch and copies outside the repository, works through the
+   feedback, and validates the finished changes before pushing.
+5. Resume editing when the agent hands the checkout back.
+
+Take turns writing to the same checkout. A separate clone or worktree also keeps
+your drafts apart, but the agent still needs a clear handoff and a final diff to
+reconcile. Raw feedback belongs in the local backup, not the published commit.
+
+## Resume unfinished work
+
+Open the PR's **WIP Details** to find the owning agent chat, last known state, and
+next action. Return to that chat when possible. Before another agent takes over,
+confirm the previous one has stopped or handed off; an old timestamp alone does
+not prove that.
+
+## Split a large change
+
+Ask the agent to extract independently useful changes into smaller PRs. For
+example, a React on Rails upgrade may need React 19: the React update can become
+a prerequisite PR, merge first, and leave the main PR focused on the integration.
+
+Shaka uses ordinary sequential PRs. Each needs its own tests and review, and the
+agent updates the remaining branch after the prerequisite merges. This does not
+require a stacked-PR service. The original chat owns the overall outcome.

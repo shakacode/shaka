@@ -1,7 +1,6 @@
-# Control towers (advanced pilot)
+# Control towers
 
-Use Shaka for a few tasks before trying control towers. They are optional,
-experimental tools for keeping track of work across repositories.
+Use Shaka for a few tasks before trying control towers. They are optional tools for keeping track of work within a repository and across projects.
 
 A **Repository Control Tower (RCT)** follows one repository's priorities and
 unfinished tasks. A **Master Control Tower (MCT)** coordinates several RCTs and
@@ -21,5 +20,5 @@ tower what needs attention; you choose which task starts. Setup itself starts no
 backlog work or recurring scans.
 
 Keep each tower set within one environment: Claude and Codex cannot read each
-other's sessions. The [agent reference](agents/control-towers.md) retains setup,
-ownership, triage, handoff, and adoption instructions.
+other's sessions. The tower skills use these [operating procedures](../skills/shaka/references/control-towers.md)
+for setup, ownership, triage, and handoff.

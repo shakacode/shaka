@@ -1,51 +1,64 @@
 # Getting started
 
-## 1. Ask your agent to install Shaka
+## 1. Install Shaka
 
-Open your coding agent and paste:
-
-```text
-Install Shaka from https://github.com/shakacode/shaka for this coding
-environment. Use the current main branch, check its installation instructions
-and prerequisites, and keep the installation outside the projects I edit.
-Confirm that the Shaka skill is available.
-```
-
-Shaka needs Ruby 3.4, Git, and an authenticated GitHub CLI. The agent checks these
-and walks you through anything that requires your account or permission.
-
-During the pilot, use `main` for current work. You can instead name an existing
-tag or your own fork in the prompt. The currently published gem is an early
-name-reservation prerelease; wait for a supported release before choosing that route.
-See [development environments](development-environments.md) for support status.
-
-## 2. Set up your repository
-
-Open a task in the repository you want to work on:
+Open your coding agent and ask:
 
 ```text
-$shaka Configure this repository using our existing setup, tests, and validation
-commands. Prepare a PR for the configuration. Keep merging at Ask.
+Install Shaka from https://github.com/shakacode/shaka for this coding agent.
+Keep the installation outside the repositories I'll work on.
+Follow its installation instructions and confirm the skill is available.
 ```
 
-Use `/shaka` in Claude Code, Cursor, or OpenCode. Skip this step if the repository
-is already configured. Review and merge the setup PR before starting delivery.
+Shaka needs Ruby 3.4 or later, Git, and an authenticated GitHub CLI. The agent
+checks these and installs the skill in the appropriate directory. Start a new
+chat if the skill does not appear. See [coding agents](coding-agents.md).
 
-## 3. Give Shaka a task
+### Use a personal fork
+
+A fork lets you customize Shaka and contribute improvements upstream:
 
 ```text
-$shaka Fix search when the query contains an apostrophe. Add a regression test
-and bring the reviewed PR back for me to merge. Use Astra, medium effort. Go.
+Fork https://github.com/shakacode/shaka into my GitHub account and install
+Shaka from that fork. Keep upstream configured so we can pull updates
+and submit improvements back to shakacode/shaka.
 ```
 
-Choose an available model in your coding environment. Naming the model, effort,
-and “Go” lets Shaka proceed once those settings are active. Otherwise it
-recommends settings and waits for your choice.
+Use the source installation for now. The published gem is a name-reservation
+prerelease and does not contain the current workflow.
 
-Shaka implements the change, runs checks, obtains review, addresses findings,
-and publishes a PR with an explanation of the code. You make the final merge click.
+## 2. Configure your repository
 
-Next: [working with Shaka](working-with-shaka.md), [configuration](configure-repository.md),
-or [upgrading an existing installation](migration.md).
+Open a chat in the repository you want to work on:
 
-Manual commands and installation details are in the [agent installation reference](agents/installation.md).
+```text
+$shaka Configure this repository for Shaka. Inspect its existing checks
+and suggest the settings. Keep merge policy ask.
+```
+
+This connects the repository to Shaka through a small configuration file and
+standard scripts—the repository **seam**. The agent reuses existing commands and
+prepares a setup PR. Review and merge it before starting delivery.
+If you invoke Shaka in an unconfigured repository, its workflow guides you through
+setup; you do not need to memorize the configuration first.
+
+See [repository setup](configure-repository.md) for the files involved.
+
+## 3. Start a task
+
+```text
+$shaka Fix search when the query contains an apostrophe.
+```
+
+Describe the outcome or provide an issue or task link. Shaka recommends a model
+and effort level, then waits for your choice. To supply them up front:
+
+```text
+$shaka Fix search when the query contains an apostrophe. Use Sol, medium effort. Go.
+```
+
+Choose a model available in your coding agent. The agent verifies active settings
+before proceeding; naming a model does not switch the application for you.
+Testing and review are part of the workflow, so you do not need to request them
+in every prompt. See [working with Shaka](working-with-shaka.md) for merge choices
+and feedback.

@@ -5,7 +5,7 @@ require_relative '../error'
 require_relative '../repo_prefix'
 require_relative 'branch_schema'
 require_relative 'command_schema'
-require_relative 'recovery_schema'
+require_relative 'wip_schema'
 require_relative 'review_schema'
 require_relative 'validation'
 
@@ -16,15 +16,14 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch plan branches recovery repo_prefix].freeze
+      OPTIONAL = %w[base_branch branches wip repo_prefix].freeze
 
       attr_reader :commands
 
-      def initialize(root:, data:, available_commands: nil, sha: nil, candidate_commands: true)
+      def initialize(root:, data:, available_commands: nil, candidate_commands: true)
         @root = root
         @data = data
         @available_commands = available_commands
-        @sha = sha
         @candidate_commands = candidate_commands
       end
 
@@ -47,12 +46,11 @@ module Shaka
         raise Error, 'version must be 1' unless @data['version'] == 1
 
         BranchName.explicit!(@data['base_branch'], label: 'base_branch', root: @root) if @data.key?('base_branch')
-        file!(@data['plan'], 'plan') if @data.key?('plan')
       end
 
       def validate_optional
         BranchSchema.new(@data['branches']).validate if @data.key?('branches')
-        RecoverySchema.new(@data['recovery']).validate if @data.key?('recovery')
+        WipSchema.new(@data['wip']).validate if @data.key?('wip')
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
       end
 
@@ -73,17 +71,21 @@ module Shaka
       def validate_merge
         merge = mapping!(@data['merge'], 'merge')
         retired = %w[method release].find { |key| merge.key?(key) }
-        raise Error, "merge.#{retired} is no longer configurable; see docs/agents/migration.md" if retired
+        raise Error, "merge.#{retired} is no longer configurable; see skills/shaka/references/migration.md" if retired
 
         keys!(merge, ['preference'], [], 'merge')
         enum!(merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
       end
 
       def reject_retired_root_keys
-        retired = %w[protection trusted_actions].find { |key| @data.key?(key) }
+        if @data.key?('recovery')
+          raise Error, 'recovery moved to wip.include_locations; migrate the location setting before use'
+        end
+
+        retired = %w[protection trusted_actions plan].find { |key| @data.key?(key) }
         return unless retired
 
-        raise Error, "#{retired} moved out of the seam; see docs/agents/migration.md"
+        raise Error, "#{retired} moved out of the seam; see skills/shaka/references/migration.md"
       end
     end
   end

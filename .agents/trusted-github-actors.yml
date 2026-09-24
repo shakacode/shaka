@@ -1,6 +1,6 @@
 # Whose public GitHub comments Shaka may read.
 # Comments cannot authorize merging, policy changes, or access to credentials.
-# Configuration and limits: docs/agents/public-comments.md
+# Configuration and limits: skills/shaka/references/public-comments-safety.md
 trusted_users:
   - justin808
   - claude

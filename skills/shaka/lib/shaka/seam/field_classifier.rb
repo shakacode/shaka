@@ -82,7 +82,7 @@ module Shaka
       include ReviewFields
 
       MOVED_TO_AGENTS = %w[
-        review_gate approval_exempt changelog benchmark_labels merge_ledger follow_up_prefix
+        plan review_gate approval_exempt changelog benchmark_labels merge_ledger follow_up_prefix
         writing_style untrusted_contributor_intake secret_redaction_patterns
         trusted_github_actor_boundary compact_terminal_structure_max_lanes merge_submission
         autonomous_merge automation_reviewers hosted_qa_gate
@@ -91,7 +91,7 @@ module Shaka
         trusted_actions hosted_ci_trigger ci_change_detector ci_parity_environment
       ].freeze
       RETIRED = %w[protection commands coordination_backend].freeze
-      RETAINED = %w[base_branch repo_prefix version plan branches recovery].freeze
+      RETAINED = %w[base_branch repo_prefix version branches wip recovery].freeze
       MERGE_RETAINED = %w[preference].freeze
       MERGE_RETIRED = %w[method release].freeze
 
@@ -133,20 +133,28 @@ module Shaka
         RETIRED.include?(key) ? record(@retired, key) : @blocking << key
       end
 
-      def recovery_value(value)
-        return value unless value.is_a?(Hash) && value.key?('workspace_path')
+      def migrate_recovery(value)
+        return @blocking << 'recovery' unless value.is_a?(Hash)
+        return @blocking << 'recovery (collides with wip)' if @data.key?('wip')
+        return retain('wip', {}) if value.empty?
 
-        if value.key?('publish_locations')
-          @blocking << 'recovery.workspace_path (collides with recovery.publish_locations)'
-          return value
+        unless valid_legacy_location?(value)
+          @blocking << 'recovery must contain one boolean location setting'
+          return
         end
+        @established['wip'] = { 'include_locations' => value.values.first }
+        @retained << 'wip.include_locations'
+      end
 
-        value.except('workspace_path').merge('publish_locations' => value.fetch('workspace_path'))
+      def valid_legacy_location?(value)
+        value.size == 1 && (value.keys - %w[workspace_path publish_locations]).empty? &&
+          [true, false].include?(value.values.first)
       end
 
       def retain(key, value)
-        value = recovery_value(value) if key == 'recovery'
-        if %w[branches recovery].include?(key) && !value.is_a?(Hash)
+        return migrate_recovery(value) if key == 'recovery'
+
+        if %w[branches wip].include?(key) && !value.is_a?(Hash)
           @blocking << key
           return
         end

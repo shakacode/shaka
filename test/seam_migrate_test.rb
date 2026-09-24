@@ -597,7 +597,47 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
       report = migrate_report(root, sha)
 
       assert_empty report.fetch('blocking')
-      assert_equal({ 'publish_locations' => false }, report.dig('established', 'recovery'))
+      assert_equal({ 'include_locations' => false }, report.dig('established', 'wip'))
+    end
+  end
+
+  def test_empty_previous_group_keeps_default_location_behavior
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('recovery' => {}) }
+      report = migrate_report(root, sha)
+
+      assert_empty report.fetch('blocking')
+      assert_equal({}, report.dig('established', 'wip'))
+    end
+  end
+
+  def test_intermediate_location_name_preserves_the_privacy_choice
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('recovery' => { 'publish_locations' => false }) }
+      report = migrate_report(root, sha)
+
+      assert_empty report.fetch('blocking')
+      assert_equal({ 'include_locations' => false }, report.dig('established', 'wip'))
+    end
+  end
+
+  def test_two_old_location_names_block_instead_of_choosing_one
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) do |data|
+        data.merge('recovery' => { 'workspace_path' => false, 'publish_locations' => true })
+      end
+
+      refute_empty migrate_report(root, sha).fetch('blocking')
+    end
+  end
+
+  def test_plan_moves_to_agent_instructions_instead_of_being_silently_discarded
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
+      sha = rewrite_yaml(root) { |data| data.merge('plan' => 'requirements.md') }
+      report = migrate_report(root, sha)
+
+      assert_includes report.fetch('moved_to_agents'), 'plan'
+      refute report.fetch('established').key?('plan')
     end
   end
 
@@ -606,18 +646,18 @@ class SeamMigrateRecoveryLocationsTest < Minitest::Test
       migrate_report(root, sha, '--apply')
       config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
 
-      assert_equal({ 'publish_locations' => false }, config.fetch('recovery'))
+      assert_equal({ 'include_locations' => false }, config.fetch('wip'))
     end
   end
 
   def test_conflicting_location_keys_block_instead_of_selecting_a_value
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) do |data|
-        data.merge('recovery' => { 'workspace_path' => false, 'publish_locations' => true })
+        data.merge('recovery' => { 'workspace_path' => false }, 'wip' => { 'include_locations' => true })
       end
 
       assert_includes migrate_report(root, sha).fetch('blocking'),
-                      'recovery.workspace_path (collides with recovery.publish_locations)'
+                      'recovery (collides with wip)'
     end
   end
 end

@@ -13,7 +13,6 @@ module Shaka
         flags.on('--merge-preference MODE', %w[ask auto], 'ask or auto (default: ask)') do |value|
           @options[:merge_preference] = value
         end
-        flags.on('--plan PATH', 'Optional repository-relative plan path') { |value| @options[:plan] = value }
       end
 
       def add_review_policy_options(flags)

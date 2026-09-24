@@ -52,7 +52,7 @@ module SeamInitializerTestHelpers
   def assert_complete_seam(root, output)
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
-    assert_equal %w[base_branch branches commands merge recovery review version], config.keys.sort
+    assert_equal %w[base_branch branches commands merge review version wip], config.keys.sort
     assert_equal ['preference'], config.fetch('merge').keys
     assert_includes File.read(File.join(root, '.agents/agent-workflow.yml')), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
@@ -250,7 +250,7 @@ class SeamInitializerTest < Minitest::Test
       _output, error, status = Open3.capture3(*arguments)
 
       refute_predicate status, :success?
-      assert_includes error, 'plan does not exist: docs/missing.md'
+      assert_includes error, 'invalid option: --plan'
       refute_path_exists File.join(root, '.agents')
     end
   end
