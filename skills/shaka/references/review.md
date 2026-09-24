@@ -34,6 +34,12 @@ Independent review evidence is either a published
 for that head. The identity line on a `shaka reply` names the publisher; the closing
 attestation names the reviewer.
 
+`merge` reads that attestation from PR comments the merging account wrote. It accepts
+one for the current head, or for an ancestor when every later change is Markdown.
+A different reviewer model is better, but a same-model review in a fresh session is
+accepted. When no attestation applies, `merge --review-waiver REASON` records why
+review was skipped or covered elsewhere, and the merge result reports that reason.
+
 Runtime, trust, and test changes need fresh affected review. Classify follow-ups
 against the diff before applying the reference's waiting rules.
 

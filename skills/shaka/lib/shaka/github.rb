@@ -92,6 +92,19 @@ module Shaka
 
     def api_list(path) = api(path, expected: Array)
 
+    def viewer_login = viewer
+
+    def issue_comments
+      PublicComments::BoundedList.new(self, max_pages: Publishing::REPLY_PAGES, label: 'Comment listing')
+                                 .call("repos/#{@repository}/issues/#{@number}/comments")
+    end
+
+    def compare(from, to)
+      [from, to].each { |sha| raise Error, 'Expected a full commit SHA.' unless sha.to_s.match?(/\A[0-9a-f]{40}\z/) }
+
+      api("repos/#{@repository}/compare/#{from}...#{to}")
+    end
+
     private
 
     def positive_integer(value)

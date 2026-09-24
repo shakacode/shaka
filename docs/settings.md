@@ -45,8 +45,23 @@ Meaningful implementation also gets a local adversarial review before push:
 
 `shaka review run` verifies the reviewer process completed and returned a report
 for the expected commit. `shaka review check` validates a supplied report but does
-not prove a reviewer process ran. The merge command does not currently require
-this local-review evidence; the agent remains responsible for that step.
+not prove a reviewer process ran.
+
+`shaka merge` requires a published attestation unless `review.required` is `none`.
+It looks for a `REVIEWED <sha> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`
+line in a PR comment written by the account that runs the merge:
+
+- An attestation for the current head is accepted from any reviewer, including the
+  implementation model in a fresh session.
+- An attestation for an earlier commit is accepted when every file changed since
+  then is Markdown and the reviewed commit is still an ancestor of the head.
+- Otherwise the merge stops before submitting. Pass `--review-waiver REASON` when
+  review was intentionally skipped, a follow-up only fixed nits, or a CI review
+  covered the head. The merge result reports the reason.
+
+The merge result names the evidence it used under `review_evidence`. That record
+shows what the attestation claims. It does not prove a reviewer process ran or that
+its findings were fixed.
 
 ## `review.ci_review_jobs`
 
