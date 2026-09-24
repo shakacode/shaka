@@ -541,6 +541,9 @@ module SeamInitializerPointerAssertions
     assert_equal 0o644, File.stat(path).mode & 0o777
     assert_pointer_identity(pointer)
     assert_pointer_commands(pointer)
+    pointer.scan(%r{https://github\.com/shakacode/shaka/blob/main/([^\s)]+)}).flatten.each do |target|
+      assert_path_exists File.expand_path("../#{target}", __dir__)
+    end
   end
 
   def assert_pointer_identity(pointer)
