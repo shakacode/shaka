@@ -71,6 +71,31 @@ class MergeReviewEvidenceTest < Minitest::Test
     assert_equal 'anthropic/claude', evidence.fetch('reviewer')
   end
 
+  # Review identities keep their configured case and may contain spaces, as `review check` accepts.
+  def test_accepts_any_identity_the_review_checker_accepts
+    ['OpenAI/Codex', 'acme/my model'].each do |reviewer|
+      @client.comments = [attestation(HEAD, reviewer:)]
+
+      assert_equal reviewer, evidence.fetch('reviewer')
+    end
+  end
+
+  def test_ignores_an_identity_the_review_checker_rejects
+    @client.comments = [attestation(HEAD, reviewer: 'openai/codex/extra')]
+
+    assert_raises(Shaka::Error) { evidence }
+  end
+
+  # The attestation closes a report; a quoted or retracted line is not evidence.
+  def test_ignores_an_attestation_that_does_not_close_the_comment
+    line = "REVIEWED #{HEAD} BY openai/codex EFFORT high FINDINGS 0"
+    ["```\n#{line}\n```", "#{line}\n\nRetracted: this review was for another branch."].each do |body|
+      @client.comments = [{ 'user' => { 'login' => ACCOUNT }, 'body' => body }]
+
+      assert_raises(Shaka::Error) { evidence }
+    end
+  end
+
   def test_refuses_when_no_attestation_exists
     error = assert_raises(Shaka::Error) { evidence }
 
@@ -144,7 +169,7 @@ class MergeReviewEvidenceTest < Minitest::Test
 
   def test_refuses_a_comparison_that_may_be_truncated
     @client.comments = [attestation(EARLIER)]
-    names = Array.new(Shaka::MergeReviewEvidence::COMPARE_FILE_LIMIT) { |index| "docs/#{index}.md" }
+    names = Array.new(Shaka::MergeReviewComparison::COMPARE_FILE_LIMIT) { |index| "docs/#{index}.md" }
     @client.comparisons = { EARLIER => markdown_only(*names) }
 
     assert_raises(Shaka::Error) { evidence }

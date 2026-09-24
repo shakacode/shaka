@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'reviewer_selection'
+require_relative 'merge_review_comparison'
 
 module Shaka
   # Finds the published local-review attestation an agent-driven merge relies on.
@@ -9,14 +11,10 @@ module Shaka
   # does not prove a reviewer process ran, which model answered, or that findings were fixed;
   # the result reports what the line claims so the record does not overstate it.
   class MergeReviewEvidence
-    ATTESTATION = %r{^REVIEWED ([0-9a-f]{40}) BY ([a-z0-9._-]+/[a-z0-9._-]+) EFFORT (\S+) FINDINGS (\d+)[ \t]*\r?$}
-    # GitHub's compare API lists at most this many files, so a full page may hide code changes.
-    COMPARE_FILE_LIMIT = 300
+    # Like LocalReviewEvidence, the line must close the report; ReviewerSelection judges the identity.
+    ATTESTATION = /(?:\A|\n)REVIEWED ([0-9a-f]{40}) BY ([^\n]+?) EFFORT (\S+) FINDINGS (\d+)\s*\z/
     # Bounds compare requests when many earlier revisions were reviewed.
     EARLIER_CANDIDATES = 5
-    # Markdown that instructs agents can change trust or merge policy, so it needs fresh review.
-    INSTRUCTION_FILES = %w[agents.md claude.md gemini.md skill.md].freeze
-    INSTRUCTION_DIRECTORIES = %w[.agents/ .claude/ .cursor/ .github/ skills/].freeze
 
     def initialize(github, required:, waiver: nil)
       @github = github
@@ -62,14 +60,26 @@ module Shaka
     # Newest first, so the latest review of a revision is the one reported.
     def published_attestations
       account = @github.viewer_login
-      @github.issue_comments.reverse.flat_map do |comment|
-        next [] unless comment.is_a?(Hash) && comment.dig('user', 'login') == account
+      @github.issue_comments.reverse.filter_map do |comment|
+        next unless comment.is_a?(Hash) && comment.dig('user', 'login') == account
 
-        comment['body'].to_s.scan(ATTESTATION).reverse.map do |sha, reviewer, effort, findings|
-          { 'reviewed' => sha, 'reviewer' => reviewer, 'effort' => effort,
-            'findings' => findings.to_i, 'comment' => comment['html_url'] }.compact
-        end
+        attestation(comment)
       end
+    end
+
+    def attestation(comment)
+      sha, reviewer, effort, findings = comment['body'].to_s.match(ATTESTATION)&.captures
+      return unless sha && reviewer_identity?(reviewer)
+
+      { 'reviewed' => sha, 'reviewer' => reviewer, 'effort' => effort,
+        'findings' => findings.to_i, 'comment' => comment['html_url'] }.compact
+    end
+
+    def reviewer_identity?(text)
+      ReviewerSelection.parse(text)
+      true
+    rescue Error
+      false
     end
 
     def published_evidence(found, head, rejected)
@@ -91,7 +101,7 @@ module Shaka
 
     def markdown_only_changes(reviewed, head, rejected)
       comparison = @github.compare(reviewed, head)
-      problem = comparison_problem(comparison)
+      problem = MergeReviewComparison.problem(comparison)
       return comparison['files'].map { |file| file['filename'] } unless problem
 
       rejected << "#{reviewed}: #{problem}"
@@ -99,31 +109,6 @@ module Shaka
     rescue Error => e
       rejected << "#{reviewed}: comparison unavailable (#{e.message})"
       nil
-    end
-
-    def comparison_problem(comparison)
-      return 'it is not an ancestor of the head' unless comparison.is_a?(Hash) && comparison['status'] == 'ahead'
-
-      files = comparison['files']
-      return 'the file list is missing' unless files.is_a?(Array) && files.all?(Hash)
-      return 'the file list may be truncated' if files.length >= COMPARE_FILE_LIMIT
-
-      code = non_markdown_paths(files)
-      "changes since review need fresh review: #{code.first(3).join(', ')}" unless code.empty?
-    end
-
-    # A rename counts from both sides, so moving code into a .md name is still a code change.
-    def non_markdown_paths(files)
-      files.flat_map { |file| file.values_at('filename', 'previous_filename').compact }
-           .reject { |path| prose?(path) }.uniq
-    end
-
-    def prose?(path)
-      return false unless path.is_a?(String)
-
-      name = path.downcase
-      name.end_with?('.md') && !INSTRUCTION_FILES.include?(File.basename(name)) &&
-        INSTRUCTION_DIRECTORIES.none? { |directory| name.start_with?(directory) || name.include?("/#{directory}") }
     end
 
     def refusal(head, rejected)

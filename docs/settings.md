@@ -73,25 +73,31 @@ Meaningful implementation also gets a local adversarial review before push:
 for the expected commit. `shaka review check` validates a supplied report but does
 not prove a reviewer process ran.
 
-`shaka merge` requires a published attestation unless `review.required` is `none`.
-It looks for a `REVIEWED <sha> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`
-line in a PR comment written by the account that runs the merge:
+Before it merges, `shaka merge` checks that the PR has a local review of the
+commit being merged. The agent posts the review report as a PR comment, and the
+report's last line names the commit and the reviewer:
 
-- An attestation for the current head is accepted from any reviewer, including the
-  implementation model in a fresh session.
-- An attestation for an earlier commit is accepted when every file changed since
-  then is Markdown and the reviewed commit is still an ancestor of the head. Agent
-  instruction files do not count as Markdown here: `AGENTS.md`, `CLAUDE.md`,
-  `GEMINI.md`, `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`,
-  `.github/`, or `skills/` can change policy, so they need a fresh review or a waiver.
-- Otherwise the merge stops before submitting. Pass `--review-waiver REASON` when
-  review was intentionally skipped, a follow-up only fixed nits, or a CI review
-  covered the head. The merge result reports the reason. A waiver also lets the
-  merge proceed when GitHub cannot list the PR comments; the result names that error.
+```text
+REVIEWED <commit> BY <provider>/<family> EFFORT <effort> FINDINGS <count>
+```
 
-The merge result names the evidence it used under `review_evidence`. That record
-shows what the attestation claims. It does not prove a reviewer process ran or that
-its findings were fixed.
+`merge` counts only comments from the GitHub account running the merge, and only
+when that line ends the comment. Any reviewer counts, including the
+implementation model in a fresh session.
+
+A review of an earlier commit still counts when every later change is ordinary
+Markdown. Agent instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`,
+`GEMINI.md`, `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`,
+`.github/`, or `skills/` need a new review.
+
+When no review applies, `merge` stops before merging. Pass
+`--review-waiver REASON` when review was skipped on purpose, a later commit only
+fixed nits, or a CI review covered the commit. The waiver also covers a PR whose
+comments GitHub cannot list. With `review.required: none`, `merge` skips this check.
+
+The merge result shows the review it relied on, or the waiver reason, under
+`review_evidence`. That records what the posted line says. It does not prove a
+reviewer process ran or that its findings were fixed.
 
 ## `review.ci_review_jobs`
 
