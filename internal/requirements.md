@@ -152,6 +152,11 @@ repositories; do not copy Shaka's scripts into them.
 
 ## Host boundary
 
+Share the skill and GitHub helpers; keep host installation, permissions, and
+native usage readers separate. Repeated consumer deliveries are required before
+claiming broad validated support. Keep issue #77 open until its required real-use
+acceptance evidence is established; informal usage reports do not close that gate.
+
 ### Recorded acceptance evidence (September 14–17, 2026)
 
 Codex was the reference host. Claude Code skill startup, precedence over a same-named
@@ -161,8 +166,7 @@ trials had not yet established repeated consumer delivery for Cursor and OpenCod
 [coding-environment record](coding-environment-trials.md); issue #77 owns the
 remaining acceptance evidence. OpenCode’s canonical install path, TUI launcher,
 and export-based usage reader share the same workflow.
-Share the skill and GitHub helpers; keep host installation,
-permissions, and native usage readers separate. See [coding-environment trials](coding-environment-trials.md)
+See [coding-environment trials](coding-environment-trials.md)
 for the tested versions, startup boundaries, and evidence gaps.
 
 ## Merge boundary

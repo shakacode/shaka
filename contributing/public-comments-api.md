@@ -66,7 +66,7 @@ You supply:
 Both files use the keys in
 [working with your agent](../skills/shaka/references/public-comments-safety.md#configure-trusted-actors). A read that
 cannot be verified raises `Shaka::Error` and returns no partial result.
-[`test/fixtures/public_comments_consumer.rb`](../test/fixtures/public_comments_consumer.rb)
+[`test/fixtures/public_comments_consumer.rb`](https://github.com/shakacode/shaka/blob/main/test/fixtures/public_comments_consumer.rb)
 is a complete consumer, which the package test runs against the installed gem.
 
 ## GitHub adapter

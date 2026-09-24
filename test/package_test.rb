@@ -39,6 +39,15 @@ class PackageTest < Minitest::Test
     end
   end
 
+  def test_packaged_markdown_links_resolve_inside_the_package
+    archive = File.join(@directory, 'links.gem')
+    run_gem('build', 'shaka.gemspec', '--output', archive, chdir: ROOT)
+    destination = File.join(@directory, 'links')
+    Gem::Package.new(archive).extract_files(destination)
+
+    assert_packaged_links(destination)
+  end
+
   def test_built_gem_excludes_repository_internal_trust_files
     run_gem('build', 'shaka.gemspec', '--output', archive = File.join(@directory, 'trust.gem'), chdir: ROOT)
     refute_empty(files = Gem::Package.new(archive).spec.files)

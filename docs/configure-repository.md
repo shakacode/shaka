@@ -33,5 +33,5 @@ Keep merge policy ask.
 ```
 
 See [settings](settings.md) for values and defaults. Shaka's own
-[configuration](../.agents/agent-workflow.yml) and [scripts](../.agents/bin/)
+[configuration](https://github.com/shakacode/shaka/blob/main/.agents/agent-workflow.yml) and [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin)
 provide working examples.
