@@ -117,7 +117,8 @@ module Shaka
 
     def https_url?(url)
       uri = URI.parse(url)
-      uri.is_a?(URI::HTTPS) && !uri.host.to_s.empty?
+      # Userinfo would publish credentials in a public PR body.
+      uri.is_a?(URI::HTTPS) && !uri.host.to_s.empty? && uri.userinfo.nil?
     rescue URI::InvalidURIError
       false
     end

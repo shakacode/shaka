@@ -412,7 +412,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
 
   def test_a_deployment_must_be_an_https_url
     ['http://example.com', 'example.com', 'https://example.com/a b', "https://example.com\nx",
-     'https://?', 'https://example.com/<x>'].each do |value|
+     'https://?', 'https://example.com/<x>', 'https://user:secret@preview.example'].each do |value|
       error = assert_raises(Shaka::Error) { render('deployment' => value) }
       assert_includes error.message, 'deployment'
     end
