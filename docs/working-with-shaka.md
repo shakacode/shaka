@@ -17,15 +17,40 @@ active. See the [workflow](workflow.md).
 
 | Policy | What happens |
 | --- | --- |
-| **Ask** (default) | Review the ready PR, then merge it on GitHub or tell the agent to merge that commit. |
+| **Ask** (default) | Review the ready PR, then merge it on GitHub or approve it so the agent merges. |
 | **Auto** | The agent merges after required checks, review, and approvals. |
 
 Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
 Repository restrictions and required approvals still apply. Trust, authentication,
 release, and other consequential changes need explicit human review. Put additional
-project restrictions in `AGENTS.md`; Shaka has no built-in file-count or commit-count limits.
+project restrictions in `AGENTS.md`. A PR past the
+[size limits](settings.md#mergelimits) goes back to you before the agent merges it.
 
 You can also request planning only, review only, or a PR without merging.
+
+## Find PRs waiting on you
+
+The agent labels a PR when it stops for you:
+
+| Label | What it waits for |
+| --- | --- |
+| `awaiting-answer` | Your answer to a question the agent asked in chat |
+| `awaiting-merge-approval` | Your merge or approval of the named commit; set only under **Ask** |
+
+To approve, tell the agent in chat. An **Approve** review on GitHub also counts
+when it comes from a login you named to the agent as a merge approver; GitHub does
+not let the account that opened the PR approve it. Return to the chat so the agent
+can act on the approval. If GitHub requires updating the branch first, the agent
+rebases, revalidates, and merges without asking again. When a branch rule requires
+GitHub approval of the new commit, it asks for that approval. When the rebase changes
+behavior, with or without conflicts, it explains the difference and asks you to
+approve the new commit. While it waits for either approval, the PR keeps its
+`awaiting-merge-approval` label.
+
+A PR carries at most one of these labels. The agent removes it when work resumes.
+Search `is:open label:awaiting-answer` or `is:open label:awaiting-merge-approval`
+to see your queue. Nothing but the agent clears these labels, so one can go stale
+if the agent stops before work resumes; remove it by hand.
 
 ## What you get
 

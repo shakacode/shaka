@@ -175,6 +175,8 @@ Keep optional review history and routine rollback detail collapsed.
 
 Supply the current COMMENT review URL in the `walkthrough` field. The helper
 renders its link after the summary, or `_Not published yet._` until it exists.
+Supply the live preview or deployment URL in the required `deployment` field, or
+`none` when the change deploys nowhere. The helper links it beside the walkthrough.
 Also link to the current review result. Self-edit the content JSON before
 publication; let the helper render headings, tables, and details.
 
