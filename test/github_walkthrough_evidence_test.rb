@@ -34,7 +34,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   def test_walkthrough_pin_to_a_renamed_file_previous_path_is_accepted
     files = response([{ 'filename' => 'new.yml', 'previous_filename' => CHANGED_FILE }])
     github = client(snapshot_response, files, *gate_responses, html_response, review_response, review_response,
-                    snapshot_response)
+                    snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
     assert_equal 'COMMENTED', published['state']
   end
@@ -63,7 +63,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   def test_pending_review_checks_are_not_required_in_the_walkthrough
     body = "See #{PINNED_LINK}. Gates: validate."
     github = client(snapshot_response, files_response, *pending_review_gate_responses, html_response,
-                    review_response(body: body), review_response(body: body), snapshot_response)
+                    review_response(body: body), review_response(body: body), snapshot_response, response([]))
     assert_equal 'COMMENTED', github.walkthrough(head: HEAD, body: body)['state']
   end
 
@@ -86,7 +86,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   def test_walkthrough_pin_on_a_later_files_page_is_accepted
     page_one = (1..100).map { |index| "other/#{index}.txt" }
     github = client(snapshot_response, files_response(page_one), files_response, *gate_responses, html_response,
-                    review_response, review_response, snapshot_response)
+                    review_response, review_response, snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
     assert_equal 'COMMENTED', published['state']
   end
@@ -95,7 +95,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   def test_walkthrough_pin_followed_by_sentence_punctuation_is_accepted
     body = "See https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}. Gates: validate, claude-review."
     github = client(snapshot_response, files_response, *gate_responses, html_response,
-                    review_response(body: body), review_response(body: body), snapshot_response)
+                    review_response(body: body), review_response(body: body), snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: body)
     assert_equal 'COMMENTED', published['state']
   end
@@ -103,7 +103,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
   def test_walkthrough_pin_inside_angle_brackets_is_accepted
     body = "See <https://github.com/owner/repo/blob/#{HEAD}/#{CHANGED_FILE}>. Gates: validate, claude-review."
     github = client(snapshot_response, files_response, *gate_responses, html_response,
-                    review_response(body: body), review_response(body: body), snapshot_response)
+                    review_response(body: body), review_response(body: body), snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: body)
     assert_equal 'COMMENTED', published['state']
   end
@@ -112,7 +112,7 @@ class GitHubWalkthroughEvidenceTest < Minitest::Test
     name = 'lib/a+b.rb'
     body = "See https://github.com/owner/repo/blob/#{HEAD}/#{name}. Gates: validate, claude-review."
     github = client(snapshot_response, files_response([name]), *gate_responses, html_response,
-                    review_response(body: body), review_response(body: body), snapshot_response)
+                    review_response(body: body), review_response(body: body), snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: body)
     assert_equal 'COMMENTED', published['state']
   end
@@ -133,7 +133,7 @@ class GitHubUnprotectedWalkthroughTest < Minitest::Test
     body = "See #{PINNED_LINK}. Gates: claude-review."
     github = client(snapshot_response, files_response, unprotected, response(COMPLETED_GATES),
                     html_response, review_response(body: body), review_response(body: body),
-                    snapshot_response)
+                    snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: body)
     assert_equal 'COMMENTED', published['state']
   end
