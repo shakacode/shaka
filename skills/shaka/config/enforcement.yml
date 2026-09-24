@@ -244,6 +244,23 @@ rules:
     note: >-
       Undetectable by design. `comments` screens what it returns and marks what it excluded,
       and nothing observes what the agent reads through another route.
+  - id: resolve-after-reply
+    phase: explain
+    quote: Do not resolve a thread before this account has replied on it.
+    enforced_by: code
+    detector: >-
+      `ReviewThread#check_reply` ignores the thread's opening comment and refuses the
+      mutation until a later comment is from the authenticated account. A truncated
+      comment page that does not already show that reply fails closed.
+  - id: resolve-only-when-settled
+    phase: explain
+    quote: >-
+      Do not resolve a thread while its concern is open, its body was withheld, or the user
+      asked to leave it open.
+    enforced_by: agent
+    note: >-
+      `resolve` checks thread membership, reply authorship, and the stored resolved state.
+      It cannot tell an open concern, a withheld body, or a request to leave the thread open.
   - id: no-reply-to-excluded-author
     phase: explain
     quote: Never reply in a public inline thread that includes an excluded author
