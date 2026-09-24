@@ -89,8 +89,9 @@ A review of an earlier commit still counts in two cases:
 
 - **Updated from the base branch.** Bringing the branch up to date with the base,
   by merge or rebase, keeps the review when the PR's own changes are identical to
-  what was reviewed. Only the line numbers may move. A conflict fix that changes
-  the PR's lines needs a new review.
+  what was reviewed. Line numbers may move only in files the base update also
+  changed, and binary files must be byte-for-byte the same. A conflict fix that
+  changes the PR's lines needs a new review.
 - **Ordinary Markdown since.** Every later change is ordinary Markdown. Agent
   instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
   `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or

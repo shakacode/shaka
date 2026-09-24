@@ -11,7 +11,7 @@ module Shaka
     # Markdown that instructs agents can change trust or merge policy, so it needs fresh review.
     INSTRUCTION_FILES = %w[agents.md claude.md gemini.md skill.md].freeze
     INSTRUCTION_DIRECTORIES = %w[.agents/ .claude/ .cursor/ .github/ skills/].freeze
-    # Only the positions move when the base adds lines above a hunk.
+    # Only the positions move when the base adds lines above a hunk in the same file.
     HUNK_POSITION = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/
 
     def initialize(github, head:, base: nil)
@@ -43,11 +43,10 @@ module Shaka
     end
 
     def same_changes?(reviewed, rejected)
-      before = changes(@github.compare(@base, reviewed))
-      after = @head_changes ||= changes(@github.compare(@base, @head))
-      problem = if before.nil? || after.nil? then 'its changes against the base cannot be compared'
-                elsif before != after then 'the PR changes differ from what was reviewed'
-                end
+      before = @github.compare(@base, reviewed)
+      after = @head_comparison ||= @github.compare(@base, @head)
+      shifted = base_update_files(before, after)
+      problem = change_difference(changes(before, shifted), changes(after, shifted))
       rejected << "#{reviewed}: #{problem}" if problem
       problem.nil?
     rescue Error => e
@@ -55,14 +54,42 @@ module Shaka
       false
     end
 
-    # A file GitHub omits the patch for, other than a pure rename, cannot be proven unchanged.
-    def changes(comparison)
-      files = listed_files(comparison)
-      return unless files&.all? { |file| file['patch'].is_a?(String) || file['changes'].to_i.zero? }
+    def change_difference(before, after)
+      return 'its changes against the base cannot be compared' if before.nil? || after.nil?
 
-      files.map do |file|
-        [file['filename'], file['previous_filename'], file['status'], file['patch'].to_s.gsub(HUNK_POSITION, '@@')]
-      end.sort_by(&:to_s)
+      'the PR changes differ from what was reviewed' unless before == after
+    end
+
+    # Hunks may move only in files the base itself changed between the two merge bases; anywhere
+    # else a moved hunk is a real edit, such as the same change applied to a different block.
+    def base_update_files(before, after)
+      old_base, new_base = [before, after].map { |comparison| merge_base(comparison) }
+      return [] if old_base.nil? || new_base.nil? || old_base == new_base
+
+      files = listed_files(@github.compare(old_base, new_base))
+      files ? files.map { |file| file['filename'] } : []
+    end
+
+    def merge_base(comparison)
+      sha = comparison.is_a?(Hash) ? comparison.dig('merge_base_commit', 'sha') : nil
+      sha if sha.is_a?(String) && sha.match?(/\A[0-9a-f]{40}\z/)
+    end
+
+    # A file without a patch, such as a binary, matches only by its blob identity.
+    def changes(comparison, shifted)
+      files = listed_files(comparison)
+      return unless files&.all? { |file| file['patch'].is_a?(String) || file['sha'].is_a?(String) }
+
+      files.map { |file| file_change(file, shifted) }.sort_by(&:to_s)
+    end
+
+    def file_change(file, shifted)
+      patch = file['patch']
+      content = if patch.nil? then file['sha']
+                elsif shifted.include?(file['filename']) then patch.gsub(HUNK_POSITION, '@@')
+                else patch
+                end
+      [file['filename'], file['previous_filename'], file['status'], content]
     end
 
     def listed_files(comparison)
