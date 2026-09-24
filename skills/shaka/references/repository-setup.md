@@ -59,8 +59,8 @@ own YAML. Handle that one PR this way:
    review pass, name the head SHA and hand the PR to the maintainer, who merges it
    on GitHub under the repository's existing protection.
 
-After that merge, resolve the new default-branch commit and use it as `--ref` for
-every later task.
+After that merge, each later task resolves the current default-branch commit at
+intake and passes it as `--ref`.
 
 
 ## What `seam init` writes
