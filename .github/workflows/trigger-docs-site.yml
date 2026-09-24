@@ -14,6 +14,8 @@ concurrency:
 
 jobs:
   notify-docs-site:
+    # Forks have no dispatch secrets; skip instead of failing.
+    if: github.repository == 'shakacode/shaka'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -24,6 +26,8 @@ jobs:
           private-key: ${{ secrets.DOCS_DISPATCH_APP_KEY }}
           owner: shakacode
           repositories: shaka-shakacode-com
+          # repository_dispatch needs only Contents write on the site repository.
+          permission-contents: write
 
       - uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:

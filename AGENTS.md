@@ -58,7 +58,9 @@ assumptions for the maintainer's existing decision; add no score or approval gat
 - `docs/` is the canonical source for the docs site at shaka.shakacode.com
   (`shakacode/shaka-shakacode-com`), which syncs it on every build. Write docs
   content here, never in the site repository. Once the docs-dispatch secrets are
-  set, a push to `main` that changes `docs/` triggers a site rebuild.
+  set here, the docs-dispatch App is installed on the site repository, and the
+  site listens for `docs-updated`, a push to `main` that changes `docs/`
+  triggers a site rebuild.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` is the machine-readable repository contract. It
