@@ -186,7 +186,10 @@ and acceptable risk. Changes to execution trust, authentication, permissions,
 release/deployment, destructive migrations, or merge guards require human review.
 Small size does not prove low risk. Unclear authority needs a decision; a safety
 failure blocks submission. Require observable native checks enforced for the actor;
-unknown or bypass-capable identities block. Leave repository queue settings and armed
+unknown or bypass-capable identities block. When GitHub has no required checks configured
+on the base branch, as on a private repository on the GitHub Free plan, the trusted seam's
+`merge.required_checks` stands in for them and Shaka alone enforces it (maintainer decision
+on #235). Leave repository queue settings and armed
 auto-merges unchanged. The helper performs an immediate squash merge when the base has no
 queue. When the base has Merge Queue enabled, the helper lets GitHub's enqueue operation
 decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKED` expected

@@ -35,6 +35,15 @@ class GitHubRequiredCheckRulesTest < Minitest::Test
     assert_equal 403, error.http_status
   end
 
+  def test_a_malformed_status_check_rule_is_refused_rather_than_read_as_empty
+    [{ 'type' => 'required_status_checks' },
+     { 'type' => 'required_status_checks', 'parameters' => { 'required_status_checks' => [{}] } }].each do |rule|
+      github = client(base_rule_response([]), response([rule]))
+      error = assert_raises(Shaka::Error) { github.configured_required_checks }
+      assert_includes error.message, 'required_status_checks'
+    end
+  end
+
   def test_a_full_page_of_rules_is_refused_rather_than_truncated
     rules = Array.new(100) { { 'type' => 'pull_request' } }
     error = assert_raises(Shaka::Error) { client(base_rule_response([]), response(rules)).configured_required_checks }

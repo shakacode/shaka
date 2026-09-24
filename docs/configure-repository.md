@@ -11,11 +11,12 @@ gh api "repos/{owner}/{repo}/rules/branches/$(gh repo view --json defaultBranchR
   --jq '[.[] | select(.type == "required_status_checks")] | length'
 ```
 
-A result of `1` or more means GitHub already requires checks. Branch protection
-rules (rather than rulesets) do not appear here; check **Settings → Branches**.
+A result of `1` or more means a ruleset requires checks; confirm that the account
+that merges is not on its bypass list. Branch protection rules (rather than
+rulesets) do not appear here; check **Settings → Branches**.
 
-If the result is `0`, or the command fails with `Upgrade to GitHub Pro or make this
-repository public`, list your CI checks in
+If neither requires a check, or the command fails with `Upgrade to GitHub Pro or make
+this repository public`, list your CI checks in
 [`merge.required_checks`](settings.md#mergerequired_checks) instead. That error
 means the repository is private on the GitHub Free plan, which offers no required
 checks. Shaka then enforces the listed checks itself, and the agent offers the

@@ -50,9 +50,19 @@ module Shaka
           rules.size >= RULES_PAGE
 
         rules.select { |rule| rule.is_a?(Hash) && rule['type'] == 'required_status_checks' }.flat_map do |rule|
-          rule.dig('parameters', 'required_status_checks').map { |check| check.fetch('context') }
+          rule_contexts(rule.dig('parameters', 'required_status_checks'))
         end
       end
+
+      # A rule whose checks cannot be read must not count as requiring nothing.
+      def rule_contexts(checks)
+        contexts = Array(checks).map { |check| check['context'] if check.is_a?(Hash) }
+        return contexts if checks.is_a?(Array) && contexts.all? { |context| readable_context?(context) }
+
+        raise Error, 'GitHub returned a required_status_checks rule without readable check names.'
+      end
+
+      def readable_context?(context) = context.is_a?(String) && !context.empty?
     end
   end
 end
