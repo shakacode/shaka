@@ -195,3 +195,18 @@ class WalkthroughHistoryTest < Minitest::Test
     assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'Review 7'
   end
 end
+
+class WalkthroughHistoryFooterTest < Minitest::Test
+  include WalkthroughHistoryExamples
+
+  def test_a_fenced_older_footer_does_not_label_the_summary
+    older = 'c' * 40
+    quoted = "_Walkthrough for commit `#{older}`. This is a COMMENT, not an approval._"
+    fenced = PRIOR.sub("The earlier behavior.\n", "The earlier behavior.\n\n```\n#{quoted}\n```\n")
+    publish_over(review_record(7, fenced), *collapse_responses(fenced, collapsed(fenced)))
+
+    body = JSON.parse(graphql_call.last).dig('variables', 'body')
+    assert_includes body, "<summary>Walkthrough for commit `#{OLD_SHA}`</summary>"
+    refute_includes body, "<summary>Walkthrough for commit `#{older}`</summary>"
+  end
+end

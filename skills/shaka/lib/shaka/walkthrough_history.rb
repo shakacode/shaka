@@ -17,10 +17,16 @@ module Shaka
     # A quoted walkthrough inside a fence, or a report that continues after the
     # footer, is not the review this command published.
     def self.rendered?(body)
-      visible = body.gsub(/^```.*?^```/m, '')
+      visible = unfenced(body)
       last = visible.lines.map(&:strip).reject(&:empty?).last
       visible.match?(HEADING) && last&.match?(FOOTER_LINE)
     end
+
+    def self.revision(body)
+      unfenced(body).scan(FOOTER).flatten.last
+    end
+
+    def self.unfenced(body) = body.gsub(/^```.*?^```/m, '')
   end
 
   # Collapses earlier Code Walkthrough reviews after a new one is confirmed.
@@ -87,7 +93,7 @@ module Shaka
 
       fresh = @github.review(review['id'])
       source = fresh['body'].to_s
-      apply_revision(review.merge('body' => source), revised_body(source, url), source, report)
+      apply_revision(review, revised_body(source, url), source, report)
     rescue Error => e
       report['unavailable'] << "Review #{review['id']}: #{e.message}"
     end
@@ -115,7 +121,7 @@ module Shaka
     end
 
     def wrap(body, url)
-      summary = "<summary>Walkthrough for commit `#{body[FOOTER, 1]}`</summary>"
+      summary = "<summary>Walkthrough for commit `#{WalkthroughText.revision(body)}`</summary>"
       "#{MARKER} #{url}\n\n<details>\n#{summary}\n\n#{body.rstrip}\n\n</details>\n"
     end
 
