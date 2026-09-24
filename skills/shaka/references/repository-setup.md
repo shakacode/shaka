@@ -10,7 +10,12 @@ and standard script; keep those definitions there.
    capability when useful. Shaka's own [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin) are examples.
 3. Establish review jobs from their actual workflows and merge authority from
    the user's instructions. Keep Ask when no broader authority exists. Check that
-   GitHub exposes required checks enforced for the account that will merge.
+   GitHub exposes required checks enforced for the account that will merge. If the
+   branch protection or rules API returns 403 `Upgrade to GitHub Pro or make this
+   repository public`, stop before writing files and tell the user that the owner's
+   GitHub plan cannot require checks on this private repository. The fix is a plan
+   upgrade or a public repository, not a settings change; link
+   [before you start](../../../docs/configure-repository.md#before-you-start).
 4. Prepare the files with the trusted installed helper. For an existing
    configuration, use the [migration procedure](migration.md).
 5. Inspect the generated diff, run its checks, and commit it. When the default

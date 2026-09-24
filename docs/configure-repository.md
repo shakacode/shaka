@@ -1,5 +1,29 @@
 # Configure a repository
 
+## Before you start
+
+Shaka relies on GitHub to block merges until CI passes. Your default branch needs
+branch protection or a ruleset that requires at least one CI check. Check it from
+the repository:
+
+```bash
+gh api "repos/{owner}/{repo}/rules/branches/$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)" \
+  --jq '[.[] | select(.type == "required_status_checks")] | length'
+```
+
+A result of `1` or more means you are ready. Branch protection rules (rather than
+rulesets) do not appear here; check **Settings → Branches** instead. If you see
+`0`, add a ruleset that requires your CI check.
+
+If the command fails with `Upgrade to GitHub Pro or make this repository public`,
+the repository is private and its owner is on the GitHub Free plan. GitHub offers no
+required checks there. Upgrade the organization to GitHub Team (or the account to
+GitHub Pro), or make the repository public, before you configure Shaka. Otherwise
+the agent stops before writing any files. See
+[issue #235](https://github.com/shakacode/shaka/issues/235).
+
+## Set up
+
 Connect your existing tools to Shaka:
 
 ```text

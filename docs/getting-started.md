@@ -29,6 +29,10 @@ and submit improvements back to shakacode/shaka.
 
 ## 2. Configure your repository
 
+First confirm that GitHub requires a CI check on your default branch. A private
+repository on the GitHub Free plan cannot do this. See
+[before you start](configure-repository.md#before-you-start).
+
 Open a chat in your project:
 
 ```text
