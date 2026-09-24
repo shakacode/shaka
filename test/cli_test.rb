@@ -9,11 +9,9 @@ class CliTest < Minitest::Test
   def test_help_explains_each_operation
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert_predicate status, :success?, error
-    operations = %w[pr comments description reply walkthrough merge recommendation checkpoint seam doctor
-                    enforcement repos prefix attention]
-    (operations + %w[--head --issue --content-file --key --comment --ci-review-wait --ref --state]).each do |token|
-      assert_includes output, token
-    end
+    %w[pr comments description reply resolve walkthrough merge recommendation checkpoint seam doctor
+       enforcement repos prefix attention --head --issue --content-file --key --comment --thread
+       --ci-review-wait --ref --state].each { |token| assert_includes output, token }
   end
 
   def test_invalid_ci_review_wait_does_not_call_github

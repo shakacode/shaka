@@ -192,7 +192,7 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
 3. After changes, run the affected checks and the repository's validation. Obtain review
    of the fix and affected behavior on the new commit, using the existing workflow
    or its documented re-review mechanism. A stale finding may still apply; check it
-   before resolving the thread. Do not call an unreviewed fix independently reviewed.
+   before resolving the thread with `shaka resolve`. Do not call an unreviewed fix independently reviewed.
 4. Stop when material findings are addressed and independent review for this task has
    completed. Refresh GitHub required checks and required approvals,
    update the walkthrough, and follow the task's existing merge authority. After two repair
@@ -218,7 +218,7 @@ against the merged change and current main, replies on its original thread, and
 fixes a demonstrated defect in a small PR. Revert only when the impact warrants it;
 merging alone is not a reason to dismiss feedback or to revert. Decline unsupported
 findings with evidence; do not create an issue for every suggestion. Link a fix
-before resolving its thread, and keep the original review's revision clear.
+before resolving its thread with `shaka resolve`, and keep the original review's revision clear.
 
 After the owning task ends, GitHub notifications or a resumed task bring new reviews
 back to an owner. This workflow does not keep running or promise background review

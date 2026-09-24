@@ -100,7 +100,7 @@ if ARGV.first == 'prefix'
   exit Shaka::Prefix.run(ARGV)
 end
 
-COMMANDS = %w[pr comments description reply walkthrough merge attention].freeze
+COMMANDS = %w[pr comments description reply resolve walkthrough merge attention].freeze
 
 def content(path)
   parsed = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -148,6 +148,7 @@ parser = OptionParser.new do |flags|
   flags.on('--comment ID', Integer, 'Root review comment for an inline-thread reply') do |value|
     options[:comment] = value
   end
+  flags.on('--thread ID', 'Inline review thread to mark resolved') { |value| options[:thread] = value }
   flags.on('--walkthrough ID', 'Published COMMENT review ID') { |value| options[:walkthrough] = value }
   flags.on('--ci-review-wait MODE', Shaka::CiReviewWait::VALUES, 'CI reviews to await: none, one, all') do |value|
     options[:ci_review_wait] = value
@@ -174,6 +175,8 @@ begin
   if options[:review_waiver] && command != 'merge'
     raise OptionParser::InvalidArgument, '--review-waiver is only for merge'
   end
+  raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
+  raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
 
   github = Shaka::GitHub.new(repository, number)
   result = case command
@@ -189,6 +192,8 @@ begin
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
                           key: options.fetch(:key), comment: options[:comment])
+           when 'resolve'
+             github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'
              github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
            when 'merge'
