@@ -16,7 +16,8 @@ Gem::Specification.new do |spec|
   spec.files = Dir['skills/rct/SKILL.md', 'skills/mct-claude/SKILL.md', 'skills/rct-claude/SKILL.md',
                    'skills/shaka/SKILL.md',
                    'skills/shaka/config/*.yml', 'skills/shaka/lib/**/*.rb',
-                   'skills/shaka/scripts/*', 'bin/install', 'exe/*', 'docs/*.md', 'README.md', 'LICENSE']
+                   'skills/shaka/docs/*.md', 'skills/shaka/scripts/*', 'bin/install', 'exe/*',
+                   'docs/*.md', 'README.md', 'LICENSE']
   spec.bindir = 'exe'
   spec.executables = %w[shaka shaka-install]
   spec.require_paths = ['skills/shaka/lib']
