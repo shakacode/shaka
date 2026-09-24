@@ -58,8 +58,10 @@ own YAML. Handle that one PR this way:
    trusted seam existed, so the reviewer came from this fixed order rather than
    from `shaka reviewer`.
 4. Without a trusted `review.ci_review_wait`, wait for the required checks and for
-   each configured CI review job that runs on the PR, then read their findings.
-   Advisory bots stay advisory.
+   each configured CI review job that runs on the PR. Read findings only through
+   `shaka comments`; the trusted actor list is not on the default branch yet, so
+   name any withheld CI review for the maintainer instead of reading it another
+   way. Advisory bots stay advisory.
 5. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
    review pass, name the head SHA and hand the PR to the maintainer. The setup adds
    executable wrappers and merge policy, so ask them to review those files before
