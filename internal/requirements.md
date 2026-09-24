@@ -74,8 +74,9 @@ This record defines the current product, not proof that acceptance is complete.
   merges after the user's approval, rebasing first when the rebased change keeps the
   approved behavior.
   Auto submits eligible work after the same gates, including native approvals.
-  Use an existing Merge Queue and wait for its terminal result under Auto; Ask
-  leaves the click and later queue failures to GitHub and a new task. Unclear
+  Use an existing Merge Queue and wait for its terminal result whenever the agent
+  submits the merge; a user's GitHub click leaves later queue failures to GitHub
+  and a new task. Unclear
   authority or consequential risk needs a human decision. Native stacks and
   user-armed delayed auto-merge remain outside scope.
 - **R8 — Preserve installations.** Install into an explicit skills directory with
