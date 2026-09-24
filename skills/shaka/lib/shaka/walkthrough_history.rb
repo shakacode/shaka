@@ -9,6 +9,7 @@ module Shaka
     HEADING = /^# Code Walkthrough$/
     FOOTER = /_Walkthrough for commit `([0-9a-f]{40})`\. This is a COMMENT, not an approval\._/
     FOOTER_LINE = /\A#{FOOTER}\z/
+    DETAILS_TAG = %r{</?details\b[^>\n]*>}i
 
     def self.walkthrough?(body, marker)
       body.start_with?("#{marker} ") || rendered?(body)
@@ -27,6 +28,18 @@ module Shaka
     end
 
     def self.unfenced(body) = body.gsub(/^```.*?^```/m, '')
+
+    # A details tag in the archived prose is text, so it cannot close the disclosure.
+    # A fenced example keeps the characters the walkthrough showed.
+    def self.archive(body)
+      body.split(/^(```.*?^```)/m).map { |part| escape_details(part) }.join
+    end
+
+    def self.escape_details(part)
+      return part if part.start_with?('```')
+
+      part.gsub(DETAILS_TAG) { |tag| "&lt;#{tag[1..-2]}&gt;" }
+    end
 
     def self.earlier?(review, current)
       prior = submitted_at(review)
@@ -130,7 +143,8 @@ module Shaka
 
     def wrap(body, url)
       summary = "<summary>Walkthrough for commit `#{WalkthroughText.revision(body)}`</summary>"
-      "#{MARKER} #{url}\n\n<details>\n#{summary}\n\n#{body.rstrip}\n\n</details>\n"
+      archived = WalkthroughText.archive(body.rstrip)
+      "#{MARKER} #{url}\n\n<details>\n#{summary}\n\n#{archived}\n\n</details>\n"
     end
 
     def replace_review(review, body, source)

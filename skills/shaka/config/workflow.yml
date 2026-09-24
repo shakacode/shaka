@@ -282,7 +282,9 @@ phases:
         walkthrough for its head instead of adding to the last one; review history belongs in the
         description. The walkthrough command collapses each earlier walkthrough by the
         authenticated author beneath “Superseded — read the current walkthrough:”, preserving
-        the revision, evidence, and any human edits inside details. It leaves every other
+        the revision, evidence, and any human edits inside details. A details tag in that
+        archived prose is written as text so the disclosure stays closed; a fenced example
+        keeps its characters. It leaves every other
         author's review intact. When that edit is unavailable, publication still succeeds
         and the result names the limitation.
       - Divide the two by what each reader needs. The description serves someone who will not work

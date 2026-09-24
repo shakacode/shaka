@@ -214,7 +214,9 @@ description's details rather than appending it to the walkthrough.
 
 The walkthrough command collapses your older walkthroughs after it confirms the new
 review. Each one leads with “Superseded — read the current walkthrough:” and that
-review's link, and the old body and revision stay inside details. Other authors'
+review's link, and the old body and revision stay inside details. A details tag in
+that archived prose is written as text so the disclosure stays closed; a fenced
+example keeps its characters. Other authors'
 reviews and independent reports stay as they are. When the edit is unavailable,
 the new walkthrough still stands and the command reports the limitation. This
 cleanup does not block merge.

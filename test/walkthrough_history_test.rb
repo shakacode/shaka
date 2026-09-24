@@ -36,7 +36,7 @@ module WalkthroughHistoryExamples
       <details>
       <summary>Walkthrough for commit `#{OLD_SHA}`</summary>
 
-      #{body.rstrip}
+      #{Shaka::WalkthroughText.archive(body.rstrip)}
 
       </details>
     TEXT
@@ -54,6 +54,13 @@ module WalkthroughHistoryExamples
     assert_includes body, "#{Shaka::WalkthroughHistory::MARKER} #{CURRENT_URL}"
     assert_includes body, sentence
     assert_includes body, "Walkthrough for commit `#{OLD_SHA}`"
+  end
+
+  def assert_archived_details_stay_text(body)
+    visible = body.gsub(/^```.*?^```/m, '')
+    assert_equal [1, 1], [visible.scan('<details>').size, visible.scan(%r{</details>}).size]
+    assert_includes body, '&lt;details&gt;kept&lt;/details&gt;'
+    assert_includes body, "```\n</details>\n```"
   end
 
   def assert_single_details_points_current
@@ -208,6 +215,13 @@ class WalkthroughHistoryFooterTest < Minitest::Test
     body = JSON.parse(graphql_call.last).dig('variables', 'body')
     assert_includes body, "<summary>Walkthrough for commit `#{OLD_SHA}`</summary>"
     refute_includes body, "<summary>Walkthrough for commit `#{older}`</summary>"
+  end
+
+  def test_a_details_tag_in_prose_cannot_close_the_archived_walkthrough
+    noisy = PRIOR.sub('The earlier behavior.', "Uses <details>kept</details>.\n\n```\n</details>\n```\n")
+    publish_over(review_record(7, noisy), *collapse_responses(noisy, collapsed(noisy)))
+
+    assert_archived_details_stay_text(JSON.parse(graphql_call.last).dig('variables', 'body'))
   end
 
   def test_a_review_that_stops_being_a_walkthrough_is_not_rewritten
