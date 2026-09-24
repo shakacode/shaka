@@ -22,7 +22,8 @@ module Shaka
       @waiver = waiver
     end
 
-    def call(head)
+    # With the PR's base branch, a review also survives a clean update from that base.
+    def call(head, base: nil)
       return { 'basis' => 'not_required' } if @required == 'none'
 
       reason = waiver_reason
@@ -30,7 +31,7 @@ module Shaka
       return found if found.is_a?(Hash)
 
       rejected = []
-      evidence = published_evidence(found, head, rejected)
+      evidence = published_evidence(found, head, MergeReviewComparison.new(@github, head:, base:), rejected)
       return evidence if evidence
       return { 'basis' => 'waived', 'reason' => reason } if reason
 
@@ -82,32 +83,14 @@ module Shaka
       false
     end
 
-    def published_evidence(found, head, rejected)
+    def published_evidence(found, head, comparison, rejected)
       current = found.find { |entry| entry['reviewed'] == head }
       return current.merge('basis' => 'current_head') if current
 
-      earlier_evidence(found, head, rejected)
-    end
-
-    def earlier_evidence(found, head, rejected)
       found.uniq { |entry| entry['reviewed'] }.first(EARLIER_CANDIDATES).each do |entry|
-        changed = markdown_only_changes(entry['reviewed'], head, rejected)
-        next unless changed
-
-        return entry.merge('basis' => 'markdown_only_since_review', 'changed_since_review' => changed)
+        match = comparison.match(entry['reviewed'], rejected)
+        return entry.merge(match) if match
       end
-      nil
-    end
-
-    def markdown_only_changes(reviewed, head, rejected)
-      comparison = @github.compare(reviewed, head)
-      problem = MergeReviewComparison.problem(comparison)
-      return comparison['files'].map { |file| file['filename'] } unless problem
-
-      rejected << "#{reviewed}: #{problem}"
-      nil
-    rescue Error => e
-      rejected << "#{reviewed}: comparison unavailable (#{e.message})"
       nil
     end
 

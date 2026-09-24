@@ -25,7 +25,7 @@ module Shaka
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
       verify_checks(@github.required_checks)
-      evidence = verify_reviews(head, walkthrough)
+      evidence = verify_reviews(head, base, walkthrough)
       current = @github.snapshot
       return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
 
@@ -37,9 +37,9 @@ module Shaka
     private
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
-    def verify_reviews(head, walkthrough)
+    def verify_reviews(head, base, walkthrough)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
-      { 'review_evidence' => @review_evidence.call(head) }
+      { 'review_evidence' => @review_evidence.call(head, base:) }
     end
 
     def reconcile_queued_replay(initial, current, head)

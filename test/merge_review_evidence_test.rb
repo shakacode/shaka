@@ -25,7 +25,7 @@ module MergeReviewEvidenceFixtures
 
     def compare(from, to)
       @compared << [from, to]
-      result = comparisons.fetch(from) { raise Shaka::Error, 'gh api compare failed (exit 1).' }
+      result = comparisons.fetch([from, to]) { comparisons.fetch(from) { raise Shaka::Error, 'gh api compare failed.' } }
       raise result if result.is_a?(Exception)
 
       result

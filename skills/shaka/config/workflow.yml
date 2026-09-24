@@ -342,9 +342,10 @@ phases:
         for the current head. A later nit-only or diagnostic-only SHA does not reopen that wait;
         a SHA that changes runtime, trust, or tests does. A user-requested
         review gate still blocks until it completes. `merge` checks this evidence: it accepts an
-        attestation the merging account published for the head, or for an ancestor when only
-        Markdown other than agent instructions changed since. For a nit-only follow-up, a prose-only exception, or a head a CI
-        review covered, pass `--review-waiver REASON`; the merge result reports it.
+        attestation the merging account published for the head, or for an earlier commit when
+        a clean update from the base left the PR's own changes identical or only Markdown other
+        than agent instructions changed since. For a nit-only follow-up, a prose-only exception,
+        or a head a CI review covered, pass `--review-waiver REASON`; the merge result reports it.
         Keep status and gaps visible; put advisory
         reviewer history in details. Link the current review result from the PR summary and
         final response.

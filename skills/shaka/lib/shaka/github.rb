@@ -7,6 +7,7 @@ require_relative 'publishing'
 require_relative 'review_thread'
 require_relative 'walkthrough_evidence'
 require_relative 'github/check_list'
+require_relative 'github/review_evidence_reads'
 
 module Shaka
   # The native pull-request evidence a publication decision depends on.
@@ -47,6 +48,7 @@ module Shaka
     include Publishing
     include GraphqlTransport
     include CheckList
+    include ReviewEvidenceReads
 
     attr_reader :repository, :number
 
@@ -97,19 +99,6 @@ module Shaka
     end
 
     def api_list(path) = api(path, expected: Array)
-
-    def viewer_login = viewer
-
-    def issue_comments
-      PublicComments::BoundedList.new(self, max_pages: Publishing::REPLY_PAGES, label: 'Comment listing')
-                                 .call("repos/#{@repository}/issues/#{@number}/comments")
-    end
-
-    def compare(from, to)
-      [from, to].each { |sha| raise Error, 'Expected a full commit SHA.' unless sha.to_s.match?(/\A[0-9a-f]{40}\z/) }
-
-      api("repos/#{@repository}/compare/#{from}...#{to}")
-    end
 
     private
 

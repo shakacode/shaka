@@ -85,10 +85,16 @@ REVIEWED <commit> BY <provider>/<family> EFFORT <effort> FINDINGS <count>
 when that line ends the comment. Any reviewer counts, including the
 implementation model in a fresh session.
 
-A review of an earlier commit still counts when every later change is ordinary
-Markdown. Agent instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`,
-`GEMINI.md`, `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`,
-`.github/`, or `skills/` need a new review.
+A review of an earlier commit still counts in two cases:
+
+- **Updated from the base branch.** Bringing the branch up to date with the base,
+  by merge or rebase, keeps the review when the PR's own changes are identical to
+  what was reviewed. Only the line numbers may move. A conflict fix that changes
+  the PR's lines needs a new review.
+- **Ordinary Markdown since.** Every later change is ordinary Markdown. Agent
+  instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
+  `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or
+  `skills/` need a new review.
 
 When no review applies, `merge` stops before merging. Pass
 `--review-waiver REASON` when review was skipped on purpose, a later commit only

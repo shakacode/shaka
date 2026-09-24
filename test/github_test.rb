@@ -67,24 +67,6 @@ class GitHubTest < Minitest::Test
     assert_equal %w[gh api repos/owner/repo/pulls/42/comments --method GET --input -], @calls.first.first
   end
 
-  def test_review_evidence_reads_use_fixed_endpoints
-    github = client(response([{ 'id' => 1 }]), response({ 'status' => 'ahead', 'files' => [] }))
-
-    assert_equal [{ 'id' => 1 }], github.issue_comments
-    assert_equal({ 'status' => 'ahead', 'files' => [] }, github.compare(BASE, HEAD))
-    assert_equal ['gh', 'api', 'repos/owner/repo/issues/42/comments?per_page=100&page=1', '--method', 'GET',
-                  '--input', '-'], @calls.first.first
-    assert_equal ['gh', 'api', "repos/owner/repo/compare/#{BASE}...#{HEAD}", '--method', 'GET', '--input', '-'],
-                 @calls.last.first
-  end
-
-  def test_compare_refuses_a_non_sha_before_calling_github
-    github = client
-
-    assert_raises(Shaka::Error) { github.compare('main', HEAD) }
-    assert_empty @calls
-  end
-
   def test_list_failure_identifies_endpoint_without_stderr
     %w[repos/owner/repo/pulls/42/comments orgs/owner/teams/maintainers/members].each do |path|
       error = assert_raises(Shaka::Error) { client(response({}, status: 4)).api_list(path) }
