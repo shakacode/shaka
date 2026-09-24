@@ -6,6 +6,7 @@ require_relative 'error'
 require_relative 'publishing'
 require_relative 'review_thread'
 require_relative 'walkthrough_evidence'
+require_relative 'walkthrough_history'
 require_relative 'github/check_list'
 
 module Shaka
@@ -83,7 +84,8 @@ module Shaka
       body = publishable(body)
       verify_head(head)
       WalkthroughEvidence.new(self).verify(head, body)
-      record_walkthrough(head, body)
+      published = record_walkthrough(head, body)
+      published.merge('earlier_walkthroughs' => WalkthroughHistory.new(self).collapse(published))
     end
 
     def api(path, method: 'GET', fields: {}, expected: Hash, headers: [])
