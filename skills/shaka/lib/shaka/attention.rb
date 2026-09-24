@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'public_comments/bounded_list'
 
 module Shaka
   # Labels a pull request with the one decision it waits on, so GitHub's PR list shows it.
@@ -18,8 +19,8 @@ module Shaka
       wanted = LABELS[state]
       raise Error, 'Pull request is not open.' if wanted && @github.snapshot['state'] != 'OPEN'
 
-      current = keep_only(wanted)
-      { 'state' => state, 'labels' => current.select { |name| attention?(name) } }
+      keep_only(wanted)
+      { 'state' => state, 'labels' => [wanted].compact }
     end
 
     private
@@ -28,24 +29,22 @@ module Shaka
 
     # Deletes every other attention label, then adds the wanted one when it is missing.
     def keep_only(wanted)
-      current = names(@github.api_list(path))
+      current = current_labels
       current.select { |name| attention?(name) && !name.casecmp?(wanted.to_s) }.each do |name|
-        current = write(path(name), 'DELETE')
+        @github.api(path(name), method: 'DELETE', expected: Array)
       end
-      return current if wanted.nil? || current.include?(wanted)
+      return if wanted.nil? || current.any? { |name| name.casecmp?(wanted) }
 
-      write(path, 'POST', labels: [wanted])
+      @github.api(path, method: 'POST', fields: { labels: [wanted] }, expected: Array)
     end
 
-    def write(target, method, **fields) = names(@github.api(target, method:, fields:, expected: Array))
-
-    def attention?(name) = LABELS.value?(name.downcase)
-
-    def names(labels)
-      valid = labels.all? { |label| label.is_a?(Hash) && label['name'].is_a?(String) }
-      raise Error, 'GitHub returned malformed labels.' unless valid
+    def current_labels
+      labels = PublicComments::BoundedList.new(@github, max_pages: 10, label: 'Label list').call(path)
+      raise Error, 'GitHub returned malformed labels.' unless labels.all? { |label| label['name'].is_a?(String) }
 
       labels.map { |label| label['name'] }
     end
+
+    def attention?(name) = LABELS.value?(name.downcase)
   end
 end

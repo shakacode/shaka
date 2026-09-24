@@ -7,6 +7,7 @@ class AttentionTest < Minitest::Test
   include GitHubHelper
 
   LABELS_PATH = 'repos/owner/repo/issues/42/labels'
+  FIRST_PAGE = "#{LABELS_PATH}?per_page=100&page=1".freeze
 
   def labels_response(*names)
     response(names.map { |name| { 'name' => name } })
@@ -33,7 +34,7 @@ class AttentionTest < Minitest::Test
     result = call('merge', snapshot_response, labels_response('awaiting-merge-approval'))
 
     assert_equal({ 'state' => 'merge', 'labels' => ['awaiting-merge-approval'] }, result)
-    assert_equal 2, @calls.length
+    assert_equal([[FIRST_PAGE, 'GET']], requests.drop(1).map { |request| request.first(2) })
   end
 
   def test_none_clears_both_labels_even_after_the_pr_closes
@@ -42,6 +43,23 @@ class AttentionTest < Minitest::Test
 
     assert_equal({ 'state' => 'none', 'labels' => [] }, result)
     assert_equal(%w[GET DELETE DELETE], requests.map { |request| request[1] })
+  end
+
+  def test_none_clears_a_label_on_the_second_page
+    first_page = labels_response(*(1..100).map { |index| "label-#{index}" })
+    result = call('none', first_page, labels_response('awaiting-answer'), labels_response)
+
+    assert_equal({ 'state' => 'none', 'labels' => [] }, result)
+    assert_equal ["#{LABELS_PATH}?per_page=100&page=2", 'GET'], requests[1].first(2)
+    assert_equal ["#{LABELS_PATH}/awaiting-answer", 'DELETE'], requests[2].first(2)
+  end
+
+  def test_a_failed_label_write_is_an_error
+    error = assert_raises(Shaka::Error) do
+      call('answer', snapshot_response, labels_response, response({}, status: 1))
+    end
+
+    assert_match(/gh api .*labels failed/, error.message)
   end
 
   def test_setting_a_label_requires_an_open_pull_request
