@@ -11,13 +11,13 @@ module CandidateRateCardFixture
     run_report([candidate_context, candidate_usage], *arguments)
   end
 
-  def capture_usage(records, *)
+  def capture_usage(records, *, env: {})
     Dir.mktmpdir do |directory|
       file = write_records(directory, records, {})
       environment = { 'PI_CODING_AGENT' => nil, 'CODEX_HOME' => directory, 'CODEX_THREAD_ID' => UsageFixture::THREAD,
                       'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }
-      Open3.capture3(environment, UsageFixture::COMMAND, 'usage', '--file', file, '--commit', UsageFixture::COMMIT,
-                     '--contribution', 'implementation', *)
+      Open3.capture3(environment.merge(env), UsageFixture::COMMAND, 'usage', '--file', file, '--commit',
+                     UsageFixture::COMMIT, '--contribution', 'implementation', *)
     end
   end
 
@@ -25,6 +25,23 @@ module CandidateRateCardFixture
     Dir.mktmpdir do |root|
       write_card(root, extra)
       yield root
+    end
+  end
+
+  def isolated_ruby
+    Dir.mktmpdir do |root|
+      bindir = File.join(root, 'bin')
+      FileUtils.mkdir_p(bindir)
+      File.symlink(RbConfig.ruby, File.join(bindir, 'ruby'))
+      yield bindir
+    end
+  end
+
+  def in_empty_directory(&)
+    Dir.mktmpdir do |root|
+      nested = File.join(root, 'nested')
+      FileUtils.mkdir_p(nested)
+      Dir.chdir(nested, &)
     end
   end
 
@@ -131,6 +148,16 @@ class CandidateRateCardTest < Minitest::Test
       report = Dir.chdir(root) { implementation(nil) }
       assert_metric report, 'USD estimate', '$0.001000'
       assert_includes report, 'Rate card: candidate checkout'
+    end
+  end
+
+  def test_missing_git_fails_checkout_discovery
+    isolated_ruby do |bindir|
+      _output, error, status = in_empty_directory do
+        capture_usage([candidate_context, candidate_usage], env: { 'PATH' => bindir })
+      end
+      refute_predicate status, :success?
+      assert_includes error, 'Could not read the git checkout'
     end
   end
 

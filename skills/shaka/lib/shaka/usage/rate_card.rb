@@ -50,6 +50,8 @@ module Shaka
 
       found = output.strip
       found.empty? ? start : found
+    rescue SystemCallError => e
+      raise Error, "Could not read the git checkout: #{e.message}"
     end
     private_class_method :checkout_root, :repository_root
 
