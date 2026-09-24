@@ -224,6 +224,30 @@ class WalkthroughHistoryFooterTest < Minitest::Test
     assert_archived_details_stay_text(JSON.parse(graphql_call.last).dig('variables', 'body'))
   end
 
+  def test_a_same_second_walkthrough_with_a_lower_id_is_earlier
+    prior = review_record(7, PRIOR, submitted_at: '2026-09-24T08:00:00Z')
+    published = publish_over(prior, *collapse_responses(PRIOR, collapsed(PRIOR)))
+
+    assert_equal [7], published.dig('earlier_walkthroughs', 'collapsed')
+  end
+
+  def test_a_same_second_walkthrough_with_a_higher_id_stays
+    prior = review_record(200, PRIOR, submitted_at: '2026-09-24T08:00:00Z')
+    github = client(*publish_responses(snapshot_response), response([prior]))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_empty published.dig('earlier_walkthroughs', 'collapsed')
+  end
+
+  def test_a_preamble_before_a_pasted_walkthrough_is_not_collapsed
+    pasted = "Independent report.\n\n#{PRIOR}"
+    github = client(*publish_responses(snapshot_response), response([review_record(7, pasted)]))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_empty published.dig('earlier_walkthroughs', 'collapsed')
+    assert_empty published.dig('earlier_walkthroughs', 'left_intact')
+  end
+
   def test_a_review_that_stops_being_a_walkthrough_is_not_rewritten
     published = publish_over(review_record(7, PRIOR), review_response(body: "No longer a walkthrough.\n"))
 

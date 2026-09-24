@@ -7,6 +7,7 @@ module Shaka
   # Recognizes a review body this command itself rendered.
   module WalkthroughText
     HEADING = /^# Code Walkthrough$/
+    IDENTITY = /\A🤖 /
     FOOTER = /_Walkthrough for commit `([0-9a-f]{40})`\. This is a COMMENT, not an approval\._/
     FOOTER_LINE = /\A#{FOOTER}\z/
     DETAILS_TAG = %r{</?details\b[^>\n]*>}i
@@ -18,10 +19,17 @@ module Shaka
     # A quoted walkthrough inside a fence, or a report that continues after the
     # footer, is not the review this command published.
     def self.rendered?(body)
-      visible = unfenced(body)
-      last = visible.lines.map(&:strip).reject(&:empty?).last
-      visible.match?(HEADING) && last&.match?(FOOTER_LINE)
+      lines = visible_lines(body)
+      opening_identity?(lines) && heading?(lines) && closing_footer?(lines)
     end
+
+    def self.visible_lines(body) = unfenced(body).lines.map(&:strip).reject(&:empty?)
+
+    def self.opening_identity?(lines) = lines.first&.match?(IDENTITY)
+
+    def self.heading?(lines) = lines.any? { |line| line.match?(HEADING) }
+
+    def self.closing_footer?(lines) = lines.last&.match?(FOOTER_LINE)
 
     def self.revision(body)
       unfenced(body).scan(FOOTER).flatten.last
@@ -41,9 +49,22 @@ module Shaka
       part.gsub(DETAILS_TAG) { |tag| "&lt;#{tag[1..-2]}&gt;" }
     end
 
-    def self.earlier?(review, current)
+    # Equal timestamps use the review id, which GitHub assigns in creation order.
+    # A later id is not earlier, so overlapping publishes still cannot point at each other.
+    def self.earlier?(review, published)
       prior = submitted_at(review)
-      prior && prior < current
+      current = submitted_at(published)
+      return false unless prior && current
+      return true if prior < current
+      return false unless prior == current
+
+      older_id?(review, published)
+    end
+
+    def self.older_id?(review, published)
+      current = published['id']
+      prior = review['id']
+      current.is_a?(Integer) && prior.is_a?(Integer) && prior < current
     end
 
     def self.submitted_at(review)
@@ -89,15 +110,14 @@ module Shaka
     def fresh_report = { 'collapsed' => [], 'left_intact' => [], 'unavailable' => [] }
 
     def earlier_walkthroughs(published)
-      current = WalkthroughText.submitted_at(published)
-      raise Error, 'Published walkthrough has no submission time.' unless current
+      raise Error, 'Published walkthrough has no submission time.' unless WalkthroughText.submitted_at(published)
 
-      list_reviews.select { |review| earlier_walkthrough?(review, published, current) }
+      list_reviews.select { |review| earlier_walkthrough?(review, published) }
     end
 
-    def earlier_walkthrough?(review, published, current)
+    def earlier_walkthrough?(review, published)
       review['id'] != published['id'] && review['state'] == 'COMMENTED' &&
-        WalkthroughText.walkthrough?(review['body'].to_s, MARKER) && WalkthroughText.earlier?(review, current)
+        WalkthroughText.walkthrough?(review['body'].to_s, MARKER) && WalkthroughText.earlier?(review, published)
     end
 
     def fold_one(review, url, account, report)
