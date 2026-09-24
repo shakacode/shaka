@@ -58,8 +58,9 @@ own YAML. Handle that one PR this way:
 4. Without a trusted `review.ci_review_wait`, wait for every check GitHub runs on
    the head, including any CI review, and read its findings.
 5. Do not run `shaka merge`, and do not merge with `gh pr merge`. Once checks and
-   review pass, name the head SHA and hand the PR to the maintainer, who merges it
-   on GitHub under the repository's existing protection.
+   review pass, name the head SHA and hand the PR to the maintainer. The setup adds
+   executable wrappers and merge policy, so ask them to review those files before
+   they merge it on GitHub under the repository's existing protection.
 
 After that merge, each later task resolves the current default-branch commit at
 intake and passes it as `--ref`.
