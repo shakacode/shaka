@@ -19,7 +19,7 @@ class PublicationRegressionTest < Minitest::Test
 
   def description_content(**changes)
     { 'identity' => IDENTITY, 'summary' => 'A summary.', 'walkthrough' => WALKTHROUGH, 'table' => TABLE,
-      'provenance' => PUBLIC_PROVENANCE, 'details' => [USAGE] }.merge(changes)
+      'deployment' => 'none', 'provenance' => PUBLIC_PROVENANCE, 'details' => [USAGE] }.merge(changes)
   end
 
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one
@@ -144,7 +144,7 @@ class PublicationUsageCostSummaryTest < Minitest::Test
     body = "#{PublicationRegressionTest::USAGE.fetch('body')}\n\n#{header}\n#{separator}\n#{estimate}\n"
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'details' => [{ 'summary' => summary, 'body' => body }] }
     )
@@ -158,7 +158,7 @@ class PublicationStructureTest < Minitest::Test
   def render(**changes)
     Shaka::Publication.description(
       { 'identity' => IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE,
         'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
@@ -222,7 +222,7 @@ class PublicationStructureTest < Minitest::Test
 
   def test_a_real_newline_in_a_cell_cannot_split_the_row
     content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
-                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] },
                 'provenance' => PUBLIC_PROVENANCE }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
@@ -276,7 +276,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def render(walkthrough: PublicationRegressionTest::WALKTHROUGH)
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => walkthrough, 'table' => PublicationRegressionTest::TABLE,
+        'walkthrough' => walkthrough, 'deployment' => 'none', 'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE, 'details' => [PublicationRegressionTest::USAGE] }
     )
   end
@@ -303,7 +303,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def render_with_section
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'details' => [PublicationRegressionTest::USAGE] }
@@ -343,7 +343,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
   # leaving a PR without the route evidence needed for later comparison.
   def test_description_renders_public_safe_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
-                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
                 'details' => [PublicationRegressionTest::USAGE] }
     rendered = Shaka::Publication.description(content)
@@ -357,11 +357,57 @@ class PublicationProvenanceRequirementTest < Minitest::Test
 
   def test_description_refuses_missing_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
-                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => PublicationRegressionTest::TABLE,
                 'details' => [PublicationRegressionTest::USAGE] }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
 
     assert_includes error.message, 'provenance'
+  end
+end
+
+# https://github.com/shakacode/shaka-shakacode-com/pull/3 left out the live preview that
+# https://github.com/shakacode/shaka-shakacode-com/pull/2 wrote into its summary, so the
+# renderer places the deployment link beside the walkthrough link and requires a choice.
+class PublicationDeploymentLinkTest < Minitest::Test
+  DEPLOYMENT = 'https://shaka-shakacode-com.justin-fed.workers.dev'
+
+  def render(**changes)
+    Shaka::Publication.description(
+      { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => DEPLOYMENT,
+        'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
+        'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
+        'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
+    )
+  end
+
+  def test_the_deployment_link_follows_the_walkthrough_link_before_any_section
+    link = PublicationRegressionTest::WALKTHROUGH
+    assert_includes render, "A summary.\n\n[Code Walkthrough](#{link}) · [Deployment](#{DEPLOYMENT})\n\n## Outcome"
+  end
+
+  def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
+    assert_includes render('walkthrough' => nil), "A summary.\n\n_Not published yet._\n\n[Deployment](#{DEPLOYMENT})\n"
+  end
+
+  def test_none_records_that_the_repository_has_no_deployment
+    rendered = render('deployment' => 'none')
+    refute_includes rendered, 'Deployment'
+    assert_includes rendered, "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH})\n\n## Outcome"
+  end
+
+  def test_a_missing_or_blank_deployment_is_refused
+    [nil, '  '].each do |value|
+      error = assert_raises(Shaka::Error) { render('deployment' => value) }
+      assert_includes error.message, 'deployment'
+    end
+  end
+
+  def test_a_deployment_must_be_an_https_url
+    ['http://example.com', 'example.com', 'https://example.com/a b', "https://example.com\nx"].each do |value|
+      error = assert_raises(Shaka::Error) { render('deployment' => value) }
+      assert_includes error.message, 'deployment'
+    end
   end
 end
