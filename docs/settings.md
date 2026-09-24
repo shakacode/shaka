@@ -37,7 +37,7 @@ merge:
 
 GitHub's own required checks win: when the base branch has any, Shaka uses those
 and ignores this list. Otherwise every listed check must report on the PR head and
-pass. A check that never reports blocks, so a renamed job cannot silently drop out.
+pass, or finish as neutral or skipped, the same outcomes GitHub accepts. A check that never reports blocks, so a renamed job cannot silently drop out.
 Use the names `gh pr checks` shows on a PR; CI systems such as CircleCI report one
 check per workflow rather than per job.
 The `shaka pr` report marks these checks as coming from the seam.
