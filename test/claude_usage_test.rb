@@ -169,6 +169,8 @@ class ClaudeUsageTest < Minitest::Test
       output = report('--host', 'claude-code', '--file', first, '--file', second)
       assert_includes output, 'Conflicting response copies'
       refute_includes output, '| 100 |'
+      assert_includes report('--host', 'claude-code', '--file', first, '--file', second, '--turn', 'new'),
+                      'Conflicting response copies'
     end
   end
 end

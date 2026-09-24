@@ -99,8 +99,8 @@ module Shaka
 
   # Refuses explicit turns that name nothing in a source that has readable turns.
   module UsageTurns
-    FIELDS = { 'codex' => 'turn_id', 'claude-code' => 'promptId', 'cursor' => 'generation_id',
-               'opencode' => 'user message id', 'pi' => 'user entry id' }.freeze
+    FIELDS = { 'codex' => 'turn_id', 'claude-code' => 'promptId (session_id for claude -p JSON)',
+               'cursor' => 'generation_id', 'opencode' => 'user message id', 'pi' => 'user entry id' }.freeze
 
     # A mistyped turn would otherwise publish an empty table that reads as missing records.
     # A source with no readable turns keeps its own unavailable-records report instead.
@@ -120,7 +120,7 @@ module Shaka
 
     def unmatched_turns
       missing = @options[:turns].uniq - turn_ids(@responses)
-      missing.empty? || turn_ids(all_responses).empty? ? [] : missing
+      missing.empty? || all_responses.empty? ? [] : missing
     end
 
     def turn_ids(responses) = responses.map { |record| record['turn_id'] }

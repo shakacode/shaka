@@ -16,7 +16,9 @@ module Shaka
 
       previous = @responses[identity]
       if previous && previous != record
-        previous.merge!('usage' => {}, 'configuration' => [nil] * 4, 'timestamp' => nil, 'turn_id' => nil,
+        # A turn both copies agree on stays selectable; its usage is still unknown.
+        turn = previous['turn_id'] if previous['turn_id'] == record['turn_id']
+        previous.merge!('usage' => {}, 'configuration' => [nil] * 4, 'timestamp' => nil, 'turn_id' => turn,
                         'billing_mode' => nil)
         @gaps << 'Conflicting response copies'
       end

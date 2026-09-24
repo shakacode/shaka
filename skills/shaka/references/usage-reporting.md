@@ -89,7 +89,7 @@ the first file's latest turn by default. Streamed copies count once, using the f
 usage line.
 
 For CLI reviews, save `claude -p --output-format json` output. The reader consumes
-the result object's `usage`, never its review text. An `is_error` result is unknown.
+the result object's `usage`, never its review text, and its turn is the `session_id`. An `is_error` result is unknown.
 A present top-level `model` is used; otherwise a single `modelUsage` entry can supply
 `canonicalModel`. Multiple model entries leave the route unknown. Effort is reported
 only when recorded.
