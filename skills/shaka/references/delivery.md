@@ -210,11 +210,12 @@ Edit wording at the same revision in place. For a new commit, publish a walkthro
 for that head and update the description's link. Keep review history in the
 description's details rather than appending it to the walkthrough.
 
-After confirming the new link, try to collapse your older walkthroughs beneath
-“Superseded — read the current walkthrough,” preserving the old body and revision.
-Leave human edits and independent reports intact. If editing is unavailable or
-authorship is uncertain, keep the current link prominent and report the limitation.
-This cleanup does not block merge.
+The walkthrough command collapses your older walkthroughs after it confirms the new
+review. Each one leads with “Superseded — read the current walkthrough” and that
+review's link, and the old body and revision stay inside details. Other authors'
+reviews and independent reports stay as they are. When the edit is unavailable,
+the new walkthrough still stands and the command reports the limitation. This
+cleanup does not block merge.
 
 Collapsed PR content is still public and still costs tokens when loaded. Store
 useful evidence once; retrieve and link it as needed.

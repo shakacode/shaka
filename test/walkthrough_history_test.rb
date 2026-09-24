@@ -1,0 +1,139 @@
+# frozen_string_literal: true
+
+require_relative 'github_helper'
+
+class WalkthroughHistoryTest < Minitest::Test
+  include GitHubHelper
+
+  OLD_SHA = 'b' * 40
+  PRIOR = <<~BODY.freeze
+    🤖 agent · provider · model · medium
+
+    # Code Walkthrough
+
+    The earlier behavior.
+
+    _Walkthrough for commit `#{OLD_SHA}`. This is a COMMENT, not an approval._
+  BODY
+  CURRENT_URL = 'https://github.com/owner/repo/pull/42#pullrequestreview-123'
+
+  def test_an_earlier_walkthrough_by_the_author_points_at_the_new_review
+    published = publish_over(review_record(7, PRIOR), html_response, graphql_response,
+                             review_response(body: collapsed(PRIOR)))
+
+    assert_equal [7], published.dig('earlier_walkthroughs', 'collapsed')
+    assert_empty published.dig('earlier_walkthroughs', 'left_intact')
+    assert_pointer_keeps('The earlier behavior.')
+  end
+
+  def test_another_authors_walkthrough_stays_intact
+    prior = review_record(7, PRIOR, login: 'other')
+    github = client(*publish_responses(snapshot_response), response([prior]), response({ 'login' => 'ada' }))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_equal [7], published.dig('earlier_walkthroughs', 'left_intact')
+    assert_empty published.dig('earlier_walkthroughs', 'collapsed')
+    refute(@calls.any? { |_argv, stdin| stdin.include?('updatePullRequestReview') })
+  end
+
+  def test_an_independent_report_is_not_a_walkthrough
+    report = review_record(7, "#{PRIOR}\nREVIEWED #{OLD_SHA} BY openai/codex\n")
+    github = client(*publish_responses(snapshot_response), response([report]))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_empty published.dig('earlier_walkthroughs', 'collapsed')
+    assert_empty published.dig('earlier_walkthroughs', 'left_intact')
+  end
+
+  def test_a_walkthrough_that_already_points_at_the_current_review_is_left_alone
+    prior = review_record(7, collapsed(PRIOR))
+    github = client(*publish_responses(snapshot_response), response([prior]), response({ 'login' => 'ada' }))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_empty published.dig('earlier_walkthroughs', 'collapsed')
+    assert_equal(1, @calls.count { |argv, _| argv.include?('markdown') })
+  end
+
+  def test_a_superseded_walkthrough_is_retargeted_without_nesting_details
+    earlier = collapsed(PRIOR).sub(CURRENT_URL, 'https://github.com/owner/repo/pull/42#pullrequestreview-9')
+    publish_over(review_record(7, earlier), html_response, graphql_response, review_response(body: collapsed(PRIOR)))
+
+    assert_single_details_points_current
+  end
+
+  def test_a_walkthrough_on_a_later_reviews_page_is_collapsed
+    page = (1..100).map { |id| review_record(id, 'Approved.', state: 'APPROVED') }
+    prior = review_record(101, PRIOR)
+    github = client(*publish_responses(snapshot_response), response(page), response([prior]),
+                    response({ 'login' => 'ada' }), html_response, graphql_response,
+                    review_response(body: collapsed(PRIOR)))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_equal [101], published.dig('earlier_walkthroughs', 'collapsed')
+  end
+
+  def test_a_failed_collapse_leaves_the_new_walkthrough_published
+    github = client(*publish_responses(snapshot_response), response({}, status: 1))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_equal 'COMMENTED', published['state']
+    assert_equal 123, published['id']
+    refute_empty published.dig('earlier_walkthroughs', 'unavailable')
+  end
+
+  def test_a_readback_mismatch_is_reported_for_that_review_only
+    prior = review_record(7, PRIOR)
+    github = client(*publish_responses(snapshot_response), response([prior]), response({ 'login' => 'ada' }),
+                    html_response, graphql_response, review_response(body: 'different'))
+    published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
+
+    assert_empty published.dig('earlier_walkthroughs', 'collapsed')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'Review 7'
+  end
+
+  private
+
+  def review_record(id, body, login: 'ada', state: 'COMMENTED')
+    { 'id' => id, 'node_id' => "PRR_#{id}", 'state' => state, 'body' => body, 'user' => { 'login' => login } }
+  end
+
+  def collapsed(body)
+    <<~TEXT
+      #{Shaka::WalkthroughHistory::MARKER} #{CURRENT_URL}
+
+      <details>
+      <summary>Walkthrough for commit `#{OLD_SHA}`</summary>
+
+      #{body.rstrip}
+
+      </details>
+    TEXT
+  end
+
+  def publish_over(prior, *tail)
+    github = client(*publish_responses(snapshot_response), response([prior]), response({ 'login' => 'ada' }), *tail)
+    github.walkthrough(head: HEAD, body: WALKTHROUGH)
+  end
+
+  def assert_pointer_keeps(sentence)
+    mutation = JSON.parse(graphql_call.last)
+    assert_equal 'PRR_7', mutation.dig('variables', 'id')
+    body = mutation.dig('variables', 'body')
+    assert_includes body, "#{Shaka::WalkthroughHistory::MARKER} #{CURRENT_URL}"
+    assert_includes body, sentence
+    assert_includes body, "Walkthrough for commit `#{OLD_SHA}`"
+  end
+
+  def assert_single_details_points_current
+    body = JSON.parse(graphql_call.last).dig('variables', 'body')
+    assert_equal 1, body.scan('<details>').size
+    assert_includes body, CURRENT_URL
+    assert_includes body, 'The earlier behavior.'
+  end
+
+  def graphql_response = response({ 'data' => { 'updatePullRequestReview' => { 'pullRequestReview' => {} } } })
+
+  def graphql_call
+    @calls.reverse.find { |_argv, stdin| stdin.include?('updatePullRequestReview') }
+  end
+end
