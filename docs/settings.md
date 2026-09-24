@@ -1,9 +1,8 @@
 # Settings
 
-Repository settings live in `.agents/agent-workflow.yml`. Ask your agent to
-[configure the repository](configure-repository.md) or edit the file in a PR.
-Settings take authority from the default branch; a PR cannot weaken the rules
-used to review itself.
+Settings live in `.agents/agent-workflow.yml`. Ask your agent to
+[configure the repository](configure-repository.md), or edit the file in a PR.
+The default branch supplies policy; a PR cannot weaken its own review rules.
 
 ## `merge.preference`
 
@@ -14,25 +13,24 @@ merge:
   preference: ask
 ```
 
-With `ask`, the agent brings back a ready PR for you to merge on GitHub. With
-`auto`, it merges after required checks, reviews, and approvals. Set a task's
-preference in the prompt: `Use merge policy auto`. Repository restrictions and
-required human approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-policy).
+With `ask`, you merge the ready PR on GitHub. With `auto`, the agent merges after
+required checks, reviews, and approvals. Set a task's preference with
+`Use merge policy auto`; repository restrictions still apply.
+See [merge policy](working-with-shaka.md#choose-a-merge-policy).
 
 ## `review.required`
 
 **Required.** Values: `meaningful_changes`, `always`, or `none`.
 
-This controls when configured CI review reports are required:
+When to require configured CI review reports:
 
 - `meaningful_changes`: implementation changes; trivial prose can skip with a reason.
 - `always`: every PR, including trivial changes.
 - `none`: no configured CI review backstop. Omit `ci_review_jobs` with this setting.
 
-Meaningful implementation still receives a local adversarial review before push.
-That step is an agent instruction; Ruby does not prove it happened. A review
-needs fresh context, and can use the implementation model if another reviewer
-is unavailable.
+Meaningful implementation also gets a local adversarial review before push.
+The agent arranges it; Ruby does not verify it happened. A fresh review context
+can use the implementation model when another reviewer is unavailable.
 
 ## `review.ci_review_jobs`
 
@@ -47,9 +45,8 @@ review:
   ci_review_wait: one
 ```
 
-The agent reads their reports and waits according to `ci_review_wait`. A green
-job alone does not prove a review completed. These names are separate from
-GitHub's required merge checks.
+The agent reads reports according to `ci_review_wait`; a green job alone does not
+prove review completed. GitHub's required merge checks are configured separately.
 
 ## `review.ci_review_wait`
 
@@ -61,14 +58,12 @@ GitHub's required merge checks.
 | `one` | At least one configured reviewer reports on the current commit |
 | `all` | Every configured reviewer reports on the current commit |
 
-Local review does not waive `one` or `all`. With `review.required: none`, there
-are no configured review jobs to wait for. GitHub's required checks and approvals
-apply in every mode. A task can request more waiting, but cannot weaken the trusted
-repository setting.
+Local review does not waive `one` or `all`. With `review.required: none`, no
+configured review jobs apply. GitHub's required checks and approvals apply in
+every mode. A task can increase the wait, but cannot lower the repository minimum.
 
-The agent verifies and counts reports. The merge helper checks GitHub conditions;
-it permits an optional pending check (`UNSTABLE`) for `none` and `one`, but requires
-`CLEAN` for `all`.
+The agent counts verified reports. The merge helper permits optional pending
+checks (`UNSTABLE`) for `none` and `one`; `all` requires `CLEAN`.
 
 ## `review.local_review_agents`
 
@@ -86,18 +81,14 @@ review:
       model_family: codex
 ```
 
-These are stable provider/family names, not model releases. An Opus or GPT update
-does not require changing this list. The agent prefers a different provider when
-available and chooses the concrete model and effort for the review. These entries
-do not set either one.
-
-Put custom review criteria in trusted `AGENTS.md`. The agent can include them in
-the reviewer prompt. For invocation and supported CLIs, see the
-[skill procedure](../skills/shaka/references/review.md#choose-a-local-reviewer).
+Use stable provider/family names; model releases do not require list updates.
+The agent prefers a different provider and chooses the review model and effort
+separately. Put custom review criteria in trusted `AGENTS.md`.
+See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).
 
 ## Standard command scripts
 
-These fixed paths connect Shaka to your project's existing tools:
+Connect your existing tools at these fixed paths:
 
 | Script | Required? | Purpose |
 | --- | --- | --- |
@@ -116,24 +107,21 @@ cd "$(dirname "$0")/../.."
 exec bundle exec rake test "$@"
 ```
 
-`exec` replaces the wrapper process, preserving the command's exit status and
-signals. A symlink to a tracked executable inside the repository also works if
-the working directory, environment, and arguments already match.
+`exec` preserves the command's exit status and signals. A symlink to a tracked
+executable also works if its directory, environment, and arguments already match.
 
-Scripts must exist, be executable, and stay within the repository so the reviewed
-commit determines what runs. `.agents` and `.agents/bin` must be real directories.
-An optional check already present on the default branch cannot disappear just
-because a PR deletes it. Removing one requires an explicit policy change approved
-by the maintainer.
+Scripts must be executable and resolve within the repository. `.agents` and
+`.agents/bin` must be real directories. Removing an optional check already on the
+default branch requires an explicit, maintainer-approved policy change.
 
 ## `base_branch`
 
 **Optional. Default: the repository's default branch.**
 
-Use `base_branch: develop` when tasks normally start from and target `develop`.
-An explicit task choice or an existing PR's target takes precedence. A different
-base needs confirmation and uses Ask for that task. Policy still comes from the
-default branch, regardless of where the PR targets.
+Use `base_branch: develop` to start from and target `develop`. An explicit task
+choice or existing PR target takes precedence. A base outside the configured or
+default branch needs confirmation and uses Ask. Policy always comes from the
+default branch.
 
 ## `branches.name`
 
@@ -151,8 +139,7 @@ branches:
 | `{issue}` | Issue, PR, or work-item number; required in the template |
 | `{description}` | Short task description |
 
-For example: `alex-codex/42-fix-search`. Shaka currently supports GitHub PR
-delivery; this setting does not add GitLab support.
+For example: `alex-codex/42-fix-search`.
 
 ## `wip.include_locations`
 
@@ -163,30 +150,24 @@ wip:
   include_locations: false
 ```
 
-Controls whether **WIP Details** in an unfinished PR include the checkout path
-and agent-session link. With `false`, both are shown as `UNKNOWN`; ownership,
-state, and next action remain available.
+Include the checkout path and session link in **WIP Details**. With `false`,
+both appear as `UNKNOWN`; ownership, state, and next action remain visible.
 
-These locations can reveal local names or identifiers. The agent must inspect
-what it publishes; Ruby does not guarantee that the information is nonconfidential.
-Expandable PR sections are public whenever the PR is public.
+Locations can reveal local names or identifiers. The agent checks for private
+information; Ruby does not. Expandable sections on public PRs are public too.
 
 ## `repo_prefix`
 
 **Optional. Default: a label derived from the repository name.**
 
-Use a short uppercase label, such as `repo_prefix: SHOP`. It helps distinguish
-chat titles such as `SHOP PR #42 · Fix checkout`. Configured prefixes are 1–6
-uppercase ASCII letters or digits.
-
-The [repository catalog](repository-catalog.md) helps find duplicate prefixes
-across your projects.
+Use 1–6 uppercase ASCII letters or digits, such as `repo_prefix: SHOP`, to label
+chat titles: `SHOP PR #42 · Fix checkout`. The
+[repository catalog](repository-catalog.md) reports duplicate prefixes.
 
 ## `version`
 
 **Required. Currently `1`.** This identifies the configuration format, not the
 installed Shaka release.
 
-The file is validated YAML: unknown keys and invalid values produce an error.
-For requirements or a design plan, point to the document from `AGENTS.md`; no
-separate `plan` setting is needed.
+Unknown keys and invalid values produce an error. Link requirements and design
+plans from `AGENTS.md`.
