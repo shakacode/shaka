@@ -26,6 +26,7 @@ module Shaka
       def call
         files = generated_files
         RepositoryConfig::ReviewSchema.new(review_policy).validate
+        RepositoryConfig::MergeSchema.new(merge_policy).validate
         preflight_directories
         RepositoryConfig::CommandSchema.new(root: @root).validate_available_optional_commands
         preflight_files(files)
@@ -57,9 +58,14 @@ module Shaka
           'version' => 1,
           'base_branch' => base_branch,
           'review' => review_policy,
-          'merge' => { 'preference' => @options.fetch(:merge_preference, 'ask') },
+          'merge' => merge_policy,
           'branches' => { 'name' => '{login}-{host}/{issue}-{description}' }
         }.compact
+      end
+
+      def merge_policy
+        { 'preference' => @options.fetch(:merge_preference, 'ask'),
+          RepositoryConfig::MergeSchema::REQUIRED_CHECKS => @options[:required_checks] }.compact
       end
 
       def review_policy

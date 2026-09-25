@@ -23,6 +23,7 @@ require_relative '../lib/shaka/local_review'
 require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
+require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
@@ -113,18 +114,6 @@ rescue JSON::ParserError => e
   raise Shaka::Error, "Content file is not valid JSON: #{e.message}"
 end
 
-def merge_seam_wait(options)
-  Shaka::CiReviewWait.seam_from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
-end
-
-# Without a trusted ref the evidence check stays on; only a trusted `review.required: none` drops it.
-def merge_review_required(options)
-  return unless options[:ref]
-
-  require_relative '../lib/shaka/trusted_config_source'
-  Shaka::TrustedConfigSource.load(root: options[:root] || Dir.pwd, ref: options[:ref]).review['required']
-end
-
 def merge_limits(options)
   Shaka::MergeLimits.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
                               confirmed_head: options[:confirmed_head])
@@ -166,8 +155,8 @@ parser = OptionParser.new do |flags|
     options[:ci_review_wait] = value
   end
   merge_flags(flags, options)
-  flags.on('--root DIR', 'Repository root for trusted review settings') { |value| options[:root] = value }
-  flags.on('--ref REF', 'Trusted commit for review settings') { |value| options[:ref] = value }
+  flags.on('--root DIR', 'Repository root for trusted seam settings') { |value| options[:root] = value }
+  flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, none') do |value|
@@ -191,8 +180,12 @@ begin
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
 
   github = Shaka::GitHub.new(repository, number)
+  if %w[pr walkthrough merge].include?(command)
+    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
+  end
+  seam_required_checks = seam&.merge&.fetch('required_checks', nil)
   result = case command
-           when 'pr' then Shaka::Status.new(github).call
+           when 'pr' then Shaka::Status.new(github, seam_required_checks:).call
            when 'comments'
              issue_only = options.fetch(:issue_only, false)
              raise OptionParser::InvalidArgument, '--head does not apply to issues' if issue_only && options[:head]
@@ -208,12 +201,13 @@ begin
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'
-             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
+             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options), seam_required_checks:)
            when 'merge'
-             review = { required: merge_review_required(options), waiver: options[:review_waiver],
+             review = { required: seam&.review&.fetch('required'), waiver: options[:review_waiver],
                         root: options[:root] || Dir.pwd }
              Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],
-                                      seam_wait: merge_seam_wait(options), review:).call(
+                                      seam_wait: seam&.review&.fetch('ci_review_wait'), review:,
+                                      seam_required_checks:).call(
                                         head: options.fetch(:head),
                                         base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough),

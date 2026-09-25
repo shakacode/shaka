@@ -106,6 +106,7 @@ module Shaka
         classified = FieldClassifier.new(@data).call
         overlay_explicit_policy(classified)
         reject_invalid_review(classified)
+        reject_invalid_merge(classified)
         require_optional_entry_points(classified)
         report_body(classified)
       end
@@ -115,6 +116,16 @@ module Shaka
         return unless review.is_a?(Hash)
 
         RepositoryConfig::ReviewSchema.new(review).validate
+      rescue Error => e
+        classified.blocking << e.message
+      end
+
+      # A missing preference is already blocking; validate the rest once it is established.
+      def reject_invalid_merge(classified)
+        merge = classified.established['merge']
+        return unless merge.is_a?(Hash) && merge.key?('preference')
+
+        RepositoryConfig::MergeSchema.new(merge).validate
       rescue Error => e
         classified.blocking << e.message
       end

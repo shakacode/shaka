@@ -8,6 +8,7 @@ require_relative 'review_thread'
 require_relative 'walkthrough_evidence'
 require_relative 'walkthrough_history'
 require_relative 'github/check_list'
+require_relative 'github/required_check_rules'
 require_relative 'github/review_evidence_reads'
 
 module Shaka
@@ -49,6 +50,7 @@ module Shaka
     include Publishing
     include GraphqlTransport
     include CheckList
+    include RequiredCheckRules
     include ReviewEvidenceReads
 
     attr_reader :repository, :number
@@ -82,10 +84,10 @@ module Shaka
       ReviewThread.resolve(self, thread_id)
     end
 
-    def walkthrough(head:, body:)
+    def walkthrough(head:, body:, seam_required_checks: nil)
       body = publishable(body)
       verify_head(head)
-      WalkthroughEvidence.new(self).verify(head, body)
+      WalkthroughEvidence.new(self, seam_required_checks:).verify(head, body)
       published = record_walkthrough(head, body)
       published.merge('earlier_walkthroughs' => WalkthroughHistory.new(self).collapse(published))
     end

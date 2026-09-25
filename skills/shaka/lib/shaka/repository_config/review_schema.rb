@@ -66,26 +66,13 @@ module Shaka
         label = "review.#{CI_REVIEW_JOBS}"
         return omitted_check!(label) if @review['required'] == 'none'
 
-        job_names!(@review[CI_REVIEW_JOBS], label)
+        name_list!(@review[CI_REVIEW_JOBS], label, 'CI job names')
       end
 
       def omitted_check!(label)
         return unless @review.key?(CI_REVIEW_JOBS)
 
         raise Error, "#{label} must be omitted when review.required is none"
-      end
-
-      def job_names!(names, label)
-        raise Error, "#{label} must be a list of CI job names" unless names.is_a?(Array)
-        raise Error, "#{label} must not be empty" if names.empty?
-
-        names.each_with_index { |name, index| string!(name, "#{label}[#{index}]") }
-        repeated_job!(names, label)
-      end
-
-      def repeated_job!(names, label)
-        repeated = names.map(&:downcase).tally.find { |_, count| count > 1 }
-        raise Error, "#{label} repeats #{repeated.first}" if repeated
       end
 
       def validate_review_wait

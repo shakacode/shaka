@@ -8,8 +8,9 @@ module MergeFixtures
   BASE = 'main'
 
   class Client
-    attr_accessor :snapshots, :checks, :review_result, :mutation_result, :mutation_error, :comments
+    attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error, :comments
     attr_reader :mutations, :requested_review, :features
+    attr_writer :checks
 
     def initialize
       @mutations = []
@@ -24,10 +25,18 @@ module MergeFixtures
     end
 
     def required_checks
-      raise checks if checks.is_a?(Exception)
+      raise @checks if @checks.is_a?(Exception)
 
-      checks
+      @checks
     end
+
+    def checks
+      return head_checks || [] unless head_checks&.first.is_a?(Array)
+
+      head_checks.length > 1 ? head_checks.shift : head_checks.first
+    end
+
+    def configured_required_checks = []
 
     def review(id)
       @requested_review = id
@@ -265,6 +274,54 @@ class MergeCheckTest < Minitest::Test
     assert_match(/branch protection/, error.message)
     assert_match(/wait and retry/, error.message)
     assert_empty @client.mutations
+  end
+
+  def test_empty_required_checks_point_to_the_seam_fallback
+    @client.checks = []
+    assert_blocked(/merge\.required_checks/)
+  end
+
+  def test_seam_required_checks_gate_merge_when_github_enforces_none
+    @client.checks = []
+    @client.head_checks = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17)['state']
+  end
+
+  def test_a_seam_required_check_missing_from_the_head_blocks
+    @client.checks = []
+    @client.head_checks = [{ 'name' => 'lint', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing.*"name" => "checks", "state" => "MISSING"/)
+  end
+
+  # GitHub cannot catch a seam check that fails while review evidence is read, so merge rereads it.
+  def test_a_seam_required_check_that_fails_during_review_reads_blocks
+    @client.checks = []
+    @client.head_checks = [[{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }],
+                           [{ 'name' => 'checks', 'state' => 'FAILURE', 'bucket' => 'fail' }]]
+    @client.snapshots = [snapshot, snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing/)
+  end
+
+  def test_a_failing_seam_required_check_blocks
+    @client.checks = []
+    @client.head_checks = [{ 'name' => 'checks', 'state' => 'FAILURE', 'bucket' => 'fail' }]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing/)
+  end
+
+  def test_native_required_checks_are_not_replaced_by_the_seam_list
+    @client.checks = [{ 'name' => 'Validate', 'state' => 'FAILURE', 'bucket' => 'fail' }]
+    @client.head_checks = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing/)
   end
 
   def test_failed_pending_cancelled_or_unknown_checks_block

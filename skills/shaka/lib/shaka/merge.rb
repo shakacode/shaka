@@ -4,6 +4,7 @@ require_relative 'error'
 require_relative 'merge_target'
 require_relative 'merge_submission'
 require_relative 'ci_review_wait'
+require_relative 'required_checks'
 require_relative 'merge_review_evidence'
 require_relative 'merge_required_checks'
 require_relative 'merge_limits'
@@ -14,8 +15,9 @@ module Shaka
     include MergeRequiredChecks
 
     # `review` takes MergeReviewEvidence's `required`, `waiver`, and checkout `root`.
-    def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {})
+    def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
       @github = github
+      @seam_required_checks = seam_required_checks
       @ci_review_wait = CiReviewWait.effective(seam: seam_wait, override: ci_review_wait)
       @review_evidence = MergeReviewEvidence.new(github, **review)
       @submission = MergeSubmission.new(github)
@@ -25,8 +27,7 @@ module Shaka
       @target = MergeTarget.required!(head, base, limits)
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
-      verify_checks(@github.required_checks)
-      evidence = verify_reviews(head, base, walkthrough)
+      evidence = verify_reviews(head, base, walkthrough, verify_gate)
       current = @github.snapshot
       return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
 
@@ -37,10 +38,19 @@ module Shaka
 
     private
 
+    def verify_gate
+      gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
+      verify_checks(gate.fetch('checks'))
+      gate
+    end
+
     # The walkthrough explains the change; the attestation records that a separate review ran.
-    def verify_reviews(head, base, walkthrough)
+    # GitHub cannot catch a seam check that fails while these are read, so it is read again.
+    def verify_reviews(head, base, walkthrough, gate)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
-      { 'review_evidence' => @review_evidence.call(head, base:) }
+      evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
+      verify_gate if gate['source'] == 'seam'
+      evidence
     end
 
     def reconcile_queued_replay(initial, current, head)

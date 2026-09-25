@@ -324,8 +324,7 @@ rules:
       Read `review.ci_review_wait` from `shaka seam check --ref`, never from candidate YAML.
     enforced_by: agent
     note: >-
-      `CiReviewWait.seam_from_ref` reads the wait through `TrustedConfigSource` at the ref it is
-      given, and `CiReviewWait.effective` keeps the stricter of the trusted setting and task override, so a
+      `TrustedConfigSource.from_ref` reads the wait at the ref it is given, and `CiReviewWait.effective` keeps the stricter of the trusted setting and task override, so a
       candidate cannot lower a trusted minimum. Nothing checks where the agent read the
       value it passes, which is the same gap the trusted-seam-ref row above describes.
   - id: none-skips-the-hosted-review-wait
@@ -408,10 +407,18 @@ rules:
     detector: >-
       `Merge#verify_checks` refuses an empty required-check list and any check that is not
       passing, and `Merge#verify_snapshot` refuses a head that moved since verification. That
-      covers the path where the helper submits the merge. In Ask mode the maintainer clicks
-      merge and the helper never runs, so the gate there is the repository's own protection:
-      shakacode/shaka's "Protect main" ruleset supplies `required_status_checks`, and a
-      repository without it has nothing in that path.
+      covers the path where the helper submits the merge. When no required check has reported
+      and `GitHub#configured_required_checks` finds none configured in classic protection or
+      rulesets, `RequiredChecks` substitutes the trusted seam's `merge.required_checks`, read
+      at `--ref`, and reports a declared check absent from the head as MISSING so it blocks.
+      When none of the configured native checks has reported yet, each appears as a MISSING row
+      rather than an empty set. Once some have reported, the list holds only those, and GitHub's
+      own protection enforces the rest. `Merge` reads seam checks again after the review evidence,
+      because GitHub cannot refuse a merge when one of them fails in that window.
+      In Ask mode the maintainer clicks merge and the helper never runs, so the gate there
+      is the repository's own protection: shakacode/shaka's "Protect main" ruleset supplies
+      `required_status_checks`, and a repository without it has nothing in that path beyond
+      the `shaka pr` report the agent hands over.
   - id: no-protection-bypass
     phase: finish
     quote: never bypass protection

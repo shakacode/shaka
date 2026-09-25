@@ -5,6 +5,7 @@ require_relative 'repository_fixture'
 require 'yaml'
 require 'shaka/repository_config'
 require 'shaka/ci_review_wait'
+require 'shaka/trusted_config_source'
 
 class CiReviewWaitTest < Minitest::Test
   def test_omitted_wait_is_one
@@ -108,13 +109,17 @@ class CiReviewWaitSeamTest < Minitest::Test
     end
   end
 
-  def test_reads_all_wait_from_a_trusted_ref_not_the_candidate_file
-    with_repository('review' => review_policy('ci_review_wait' => 'all')) do |root|
+  def test_reads_merge_policy_from_a_trusted_ref_not_the_candidate_file
+    trusted = { 'review' => review_policy('ci_review_wait' => 'all'),
+                'merge' => merge_policy.merge('required_checks' => ['checks']) }
+    with_repository(trusted) do |root|
       commit_repository(root)
-      weaken_candidate_wait(root)
+      weaken_candidate_policy(root)
+      seam = Shaka::TrustedConfigSource.from_ref(root:, ref: 'HEAD')
 
-      assert_equal 'all', Shaka::CiReviewWait.seam_from_ref(root:, ref: 'HEAD')
-      assert_nil Shaka::CiReviewWait.seam_from_ref(root:, ref: nil)
+      assert_equal 'all', seam.review.fetch('ci_review_wait')
+      assert_equal ['checks'], seam.merge.fetch('required_checks')
+      assert_nil Shaka::TrustedConfigSource.from_ref(root:, ref: nil)
     end
   end
 
@@ -133,10 +138,11 @@ class CiReviewWaitSeamTest < Minitest::Test
            'commit', '--quiet', '-m', 'trusted', exception: true)
   end
 
-  def weaken_candidate_wait(root)
+  def weaken_candidate_policy(root)
     path = File.join(root, '.agents/agent-workflow.yml')
     data = YAML.load_file(path)
     data['review']['ci_review_wait'] = 'none'
+    data['merge'].delete('required_checks')
     File.write(path, YAML.dump(data))
   end
 end

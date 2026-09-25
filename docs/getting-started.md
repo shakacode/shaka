@@ -29,6 +29,10 @@ and submit improvements back to shakacode/shaka.
 
 ## 2. Configure your repository
 
+Shaka waits for your CI checks. If GitHub does not require any, for example on a
+private repository on the GitHub Free plan, setup lists them in the Shaka settings
+instead. See [before you start](configure-repository.md#before-you-start).
+
 Open a chat in your project:
 
 ```text

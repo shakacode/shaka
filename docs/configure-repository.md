@@ -1,5 +1,26 @@
 # Configure a repository
 
+## Before you start
+
+Shaka waits for your CI checks before it calls a PR ready, and before it merges one
+in Auto mode. It uses the checks GitHub requires on your default branch through a
+ruleset or branch protection. When GitHub requires none, as on any private
+repository on the GitHub Free plan, list them in
+[`merge.required_checks`](settings.md#mergerequired_checks) instead.
+
+Setup works this out for you. To see where you stand first:
+
+```text
+$shaka Which CI checks does GitHub require on this repository's default branch?
+If none, which check names appear on recent PRs?
+```
+
+A repository with no required checks can still use Shaka in Ask mode: the agent runs
+local validation and review, and you merge on GitHub. Auto merge needs at least one
+required check.
+
+## Set up
+
 Connect your existing tools to Shaka:
 
 ```text

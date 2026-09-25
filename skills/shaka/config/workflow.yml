@@ -245,13 +245,13 @@ phases:
         table rows, empty required content, and bodies GitHub does not render.
 
         ```text
-        pr OWNER/REPO NUMBER
+        pr OWNER/REPO NUMBER --root DIR --ref SHA
         comments OWNER/REPO NUMBER --head SHA
         comments OWNER/REPO ISSUE_NUMBER --issue
         description OWNER/REPO NUMBER --content-file PATH
         reply OWNER/REPO NUMBER --content-file PATH --key NAME [--comment ROOT_COMMENT_ID]
         resolve OWNER/REPO NUMBER --thread THREAD_ID
-        walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH
+        walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         attention OWNER/REPO NUMBER --state answer|merge|none
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA [--ci-review-wait MODE] [--limits-confirmed-head SHA]
@@ -260,6 +260,8 @@ phases:
         ```
 
         `pr` reports the native readiness snapshot and required checks; it is not an exit code.
+        Its `requiredChecksSource` is `github`, or `seam` when GitHub enforces no required checks
+        and the trusted `merge.required_checks` gates the PR instead.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
         answers an inline thread. Mark a settled inline thread resolved with `resolve`.
         Do not resolve a thread before this account has replied on it.
@@ -398,7 +400,8 @@ phases:
         Uncertain authority, consequential risk, or a base neither the trusted seam nor the
         default branch establishes switches Auto to Ask; safety failures block.
       - Refresh `pr` and inspect required check states. Never accept missing, failed, pending, or stale
-        required checks, and never bypass protection. Wait when independent review is not yet
+        required checks, and never bypass protection. An empty required set is acceptable only in Ask
+        mode; say in the handoff that no check gates the PR. Wait when independent review is not yet
         satisfied, and follow the configured CI review wait. Wait for any user-requested review gate
         whether or not a local review already ran. With `ci_review_wait: none` or `one`, do not wait for optional checks to make
         merge state CLEAN; `merge` accepts UNSTABLE once required checks pass. With `ci_review_wait: all`, wait
@@ -421,8 +424,10 @@ phases:
         shows a different head or offers no allowed merge method, tell them not to merge. Do not
         bypass protection. Do not ask whether you should merge. Ask does not treat that GitHub click
         instruction as authorization to run `merge`. If they later ask you to merge this head, run
-        `merge` only for that SHA or a rebased head the Ask approval item allows. Run `attention` with
-        `--state none` when work on the PR resumes. Never set `awaiting-merge-approval` in Auto
+        `merge` only for that SHA or a rebased head the Ask approval item allows. When
+        `requiredChecksSource` is `seam`, GitHub will not stop that click, so name each seam-declared
+        check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
+        on the PR resumes. Never set `awaiting-merge-approval` in Auto
         mode. In Auto mode, run `merge` with the current head and walkthrough ID. A required
         native approval must arrive first, and do not ask for a second approval afterward.
       - Under Ask, the user may approve the labeled PR instead of clicking merge: in chat, or when the

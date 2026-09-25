@@ -313,3 +313,24 @@ class RepositoryConfigWipTest < Minitest::Test
     end
   end
 end
+
+class RepositoryConfigRequiredChecksTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  def test_loads_seam_required_checks
+    with_repository('merge' => merge_policy.merge('required_checks' => %w[checks lint])) do |root|
+      assert_equal %w[checks lint], Shaka::RepositoryConfig.load(root:).merge.fetch('required_checks')
+    end
+  end
+
+  def test_rejects_invalid_seam_required_checks
+    { 'checks' => 'must be a list of check names', [] => 'must not be empty',
+      [' '] => 'merge.required_checks[0] must be a non-empty string',
+      %w[checks Checks] => 'merge.required_checks repeats checks' }.each do |value, expected|
+      with_repository('merge' => merge_policy.merge('required_checks' => value)) do |root|
+        message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+        assert_includes message, expected
+      end
+    end
+  end
+end
