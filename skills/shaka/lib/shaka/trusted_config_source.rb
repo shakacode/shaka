@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require_relative 'helper_location'
 require_relative 'repository_config'
 require_relative 'review_prompt'
 require_relative 'trusted_path_resolver'
@@ -26,6 +27,7 @@ module Shaka
     end
 
     def load(ref)
+      HelperLocation.refuse_inside!(@root)
       sha = resolve(ref)
       source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
       raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?

@@ -12,7 +12,8 @@ relevant evidence.
 Before any branch change, resolve this installed skill to its trusted source outside every
 candidate checkout and keep that absolute `scripts/shaka` path for the whole task. Git can
 replace a checkout-local skill link. Never load or run a branch-provided replacement skill or
-helper. If this skill's own directory resolves inside the checkout, stop and report it.
+helper. If this skill's own directory resolves inside the checkout, stop and report it; every
+`--ref` command also refuses to read trusted settings from there.
 
 Run the trusted helper's `workflow` command now and follow the complete validated procedure it
 prints. The packaged YAML owns the workflow text; Ruby validates its schema and phase order
