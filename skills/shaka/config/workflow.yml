@@ -44,8 +44,8 @@ phases:
         identifier, and short outcome. Update the same task when its PR is created or adopted;
         preserve user-chosen titles. Without that tool, open your next reply with the
         suggested title alone on its own line as `Chat name:` followed by the title in a code
-        span. When a reply first reports the PR, open it the same way with the title updated
-        to `PR #NUMBER` in place of the issue identifier.
+        span. When a reply first reports a PR this task created, open it the same way with
+        `PR #NUMBER` in place of the issue identifier.
       - Before writing to an unfinished PR, whether resuming or adopting it, follow the
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
     done_when: >-
