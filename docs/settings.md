@@ -5,6 +5,16 @@ Settings live in `.agents/agent-workflow.yml`. Ask your agent to
 Policy comes from the default branch; settings changed in a PR do not govern
 that PR.
 
+Repository writing defaults live in the optional conventional file
+`.agents/writing-style.md`, not in this YAML mapping. `seam check` returns its
+contents as `writing_style.guide` only when `--ref` reads it from the trusted
+commit. Local and implicit candidate checks validate the file but do not return
+its prose; an invalid candidate file fails that check. Under `--ref`, an invalid
+file produces a warning and is omitted without withholding the repository's
+trusted workflow policy. The warning is present on stderr and as
+`writing_style_warning` in the JSON output.
+See [writing preferences](writing-preferences.md).
+
 ## `merge.preference`
 
 **Required.** Values: `ask` or `auto`. Setup defaults to `ask`.

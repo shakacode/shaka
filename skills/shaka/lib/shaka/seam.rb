@@ -10,6 +10,7 @@ require_relative 'seam/migrator'
 require_relative 'seam/pointer'
 require_relative 'seam/policy_options'
 require_relative 'trusted_config_source'
+require_relative 'writing_style'
 
 module Shaka
   # Validates the machine-readable repository boundary.
@@ -72,9 +73,14 @@ module Shaka
     end
 
     def check_report
-      config = TrustedConfigSource.load(root:, ref: @options[:ref])
-      return CheckReport.trusted(config, ref: @options[:ref]) if @options.key?(:ref)
+      if @options.key?(:ref)
+        config = TrustedConfigSource.load(root:, ref: @options[:ref])
+        writing_style, warning = WritingStyle.optional { WritingStyle.load(root:, sha: config.sha) }
+        return CheckReport.trusted(config, ref: @options[:ref], writing_style:, warning:)
+      end
 
+      config = RepositoryConfig.load(root:)
+      WritingStyle.validate_candidate(root:)
       CheckReport.local(config)
     end
 
