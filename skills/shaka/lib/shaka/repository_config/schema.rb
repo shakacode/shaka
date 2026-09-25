@@ -3,6 +3,7 @@
 require_relative '../branch_name'
 require_relative '../error'
 require_relative '../repo_prefix'
+require_relative '../review_prompt'
 require_relative 'branch_schema'
 require_relative 'command_schema'
 require_relative 'merge_schema'
@@ -64,9 +65,20 @@ module Shaka
         review = mapping!(@data['review'], 'review')
         ReviewSchema.retired!(review)
         ReviewSchema.renamed!(review)
-        optional = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, 'ci_review_wait']
+        optional = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, 'ci_review_wait',
+                    ReviewSchema::PROMPT_FILE]
         keys!(review, ['required'], optional, 'review')
         ReviewSchema.new(review).validate
+        local_prompt_files!(review) unless @available_commands
+      end
+
+      # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
+      def local_prompt_files!(review)
+        ReviewSchema.prompt_files(review).each do |label, path|
+          file = file!(path, label)
+          error = ReviewPrompt.file_error(File.size(file)) { File.binread(file) }
+          raise Error, "#{label} #{path} #{error}" if error
+        end
       end
 
       def validate_merge

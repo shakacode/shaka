@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative 'repository_config'
+require_relative 'review_prompt'
 require_relative 'trusted_path_resolver'
 
 module Shaka
@@ -29,11 +30,35 @@ module Shaka
       source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
       raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?
 
-      RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
-                            candidate_commands: @candidate_commands)
+      config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
+                                     candidate_commands: @candidate_commands)
+      validate_prompt_files(config.review, sha)
+      config
     end
 
     private
+
+    # A prompt file the review runner would reject would stop every local review, including the one
+    # for the PR that fixes it.
+    def validate_prompt_files(review, sha)
+      resolver = TrustedPathResolver.new(root: @root, sha:)
+      RepositoryConfig::ReviewSchema.prompt_files(review).each do |label, path|
+        resolved, entry = resolver.resolve(path)
+        is_blob = entry && entry.last == 'blob' && entry.first != TrustedPathResolver::SYMLINK.first
+        raise Error, "#{label} does not name a file at #{sha}: #{path}" unless is_blob
+
+        error = ReviewPrompt.file_error(git_output(sha, resolved, '-s').to_i) { git_output(sha, resolved, '-p') }
+        raise Error, "#{label} #{path} at #{sha} #{error}" if error
+      end
+    end
+
+    # `-s` prints the blob size and `-p` its contents.
+    def git_output(sha, path, option)
+      text, error, status = Open3.capture3('git', '-C', @root, 'cat-file', option, "#{sha}:#{path}", binmode: true)
+      raise Error, "Cannot read #{path} at #{sha}: #{error.strip}" unless status.success?
+
+      text
+    end
 
     def resolve(ref)
       arguments = ['git', '-C', @root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}"]

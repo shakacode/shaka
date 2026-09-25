@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/review_prompt'
+require 'tmpdir'
 
 # The instructions a locally invoked reviewer receives.
 class ReviewPromptTest < Minitest::Test
@@ -82,5 +83,45 @@ class ReviewPromptTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes err, 'PROVIDER/MODEL_FAMILY'
+  end
+
+  def test_default_instructions_come_from_the_packaged_file
+    prompt = render
+
+    assert_includes prompt, File.read(Shaka::ReviewPrompt::DEFAULT_INSTRUCTIONS).strip
+  end
+
+  # A repository's own instructions replace the defaults; the protocol rules and attestation stay.
+  def test_prompt_file_replaces_the_default_instructions_and_keeps_the_protocol
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, 'review-prompt.md')
+      File.write(path, "Focus on query plans.\n")
+      prompt = render('--prompt-file', path)
+
+      assert_includes prompt, 'Focus on query plans.'
+      refute_includes prompt, 'Contract drift'
+      assert_includes prompt, 'Make no edits.'
+      assert_includes prompt, 'REVIEWED abc1234 BY openai/codex EFFORT UNKNOWN FINDINGS <n>'
+    end
+  end
+
+  def test_rejects_an_empty_prompt_file
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, 'review-prompt.md')
+      File.write(path, "  \n")
+      _, err, status = Open3.capture3(
+        File.expand_path('../skills/shaka/scripts/shaka', __dir__), 'review-prompt', *BASE, '--prompt-file', path
+      )
+
+      refute_predicate status, :success?
+      assert_includes err, '--prompt-file is empty'
+    end
+  end
+
+  # Checking the size first means an oversized prompt file is rejected without loading it.
+  def test_rejects_an_oversized_prompt_before_reading_it
+    error = Shaka::ReviewPrompt.file_error(Shaka::ReviewPrompt::MAX_INSTRUCTIONS_BYTES + 1) { flunk 'read the file' }
+
+    assert_equal 'exceeds 100 KB', error
   end
 end

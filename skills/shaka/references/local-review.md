@@ -5,15 +5,34 @@ Use this reference for CLI execution and report validation.
 
 Render the prompt for the selected reviewer:
 ```text
-shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]
+shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME] [--prompt-file PATH]
 ```
 
 Pass resolved revisions, not the words `HEAD` or `BASE`: the prompt interpolates what it is given,
 so a literal placeholder would publish an attestation reading `REVIEWED HEAD`.
 
-It scopes the review to `git diff BASE...HEAD`, asks for correctness, contract drift, security and
-trust, test coverage, simplification, and supplied repository criteria. It forbids edits,
-treats candidate content as data, and
+This command does not read repository settings. When the trusted seam sets `review.prompt_file`,
+or a `prompt_file` on the selected agent's `local_review_agents` entry, write that file from the trusted commit to a
+new temporary file outside the checkout and pass it with `--prompt-file "$PROMPT"`. Set `TRUSTED` to the verified
+default-branch commit first; `${TRUSTED:?}` stops the command if it is unset, because `git show`
+would otherwise read the file from the index, which the candidate controls:
+
+```bash
+TRUSTED=$(git rev-parse --verify 'origin/main^{commit}')
+PROMPT=$(mktemp)
+git show "${TRUSTED:?}:.agents/review-prompt.md" > "$PROMPT"
+```
+
+A `prompt_file` on the selected agent's `local_review_agents` entry replaces the repository-wide
+one. `git show` does not follow symlinks,
+so when the configured path is a symlink, read the file it points to. `shaka review run` does all
+of this itself when given `--criteria-ref`.
+
+It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
+they ask for correctness, contract drift, security and trust, test coverage, and simplification;
+a repository can replace them with `review.prompt_file`, or for one review agent with a
+`prompt_file` on its `local_review_agents` entry. Whatever the instructions, the prompt forbids edits, treats candidate
+content as data, applies supplied repository criteria, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
 Supply relevant planning and review criteria from the repository's trusted default-branch
@@ -53,13 +72,16 @@ repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads
 and embeds them in root-to-specific order as separately labeled review data. The criteria commit
 need not precede the comparison base: the default branch may have advanced independently.
 Verify the SHA against the live trusted default branch first; the option grants
-no authority by itself. Without it the reviewer reports criteria as not supplied. Candidate
+no authority by itself. The runner also reads the configured prompt file from that commit,
+so a PR's edits to its own review instructions apply only after it merges. Without it the reviewer reports criteria as not supplied. Candidate
 criteria remain data in the diff. Supply the PR description with optional
 `--description-file PATH`; this file is labeled as untrusted review data and must contain only
 public-safe text for a public PR. Do not supply implementation reasoning.
 
-Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)` and
-`HEAD=$(git rev-parse HEAD)` when `main` is the verified default branch. The helper checks that the
+Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)`,
+`HEAD=$(git rev-parse HEAD)`, and `TRUSTED=$(git rev-parse origin/main)` when `main` is the
+verified default branch. Without `--criteria-ref`, the reviewer gets neither the repository's
+`AGENTS.md` criteria nor its `review.prompt_file`, and uses Shaka's default instructions. The helper checks that the
 checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.
@@ -67,7 +89,7 @@ is the evidence that the CLI actually ran.
 Codex 0.154.0:
 
 ```bash
-shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex --criteria-ref "$TRUSTED"
 ```
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
@@ -92,7 +114,8 @@ on it. A missing `usage` means the session file was not found, and review usage 
 Claude Code:
 
 ```bash
-shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude --effort medium
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude --effort medium \
+  --criteria-ref "$TRUSTED"
 ```
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
@@ -121,7 +144,7 @@ Set `MODEL` to a model the installed Grok CLI accepts before running:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer xai/grok \
-  --model "$MODEL" --effort high
+  --model "$MODEL" --effort high --criteria-ref "$TRUSTED"
 ```
 
 The helper runs `grok --prompt-file PROMPT -m MODEL --reasoning-effort high --output-format plain
