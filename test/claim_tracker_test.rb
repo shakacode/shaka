@@ -16,6 +16,17 @@ class ClaimTrackerTest < Minitest::Test
     assert_equal ['alex/eng-123-fix-search'], result.fetch('branches')
   end
 
+  def test_a_tracker_key_matches_a_lowercased_branch_through_the_seam_template
+    result = claim('ENG-123', prs: [], branches: "aaa\trefs/heads/feature/eng-123/fix\n",
+                              branch_name: 'feature/{issue}/{description}')
+
+    assert_equal ['feature/eng-123/fix'], result.fetch('branches')
+  end
+
+  def test_accepts_a_jira_key_whose_project_has_an_underscore
+    assert_equal 'MY_PROJ-12', claim('MY_PROJ-12', prs: [], branches: '').fetch('query')
+  end
+
   def test_a_tracker_branch_name_is_reported_in_place_of_the_template
     result = claim('ENG-123', prs: [], branches: '', branch_name: 'feature/{issue}/{description}',
                               tracker_branch: 'alex/eng-123-fix-search')
@@ -33,9 +44,13 @@ class ClaimTrackerTest < Minitest::Test
   end
 
   def test_cli_rejects_a_tracker_branch_git_would_refuse
-    _stdout, status = capture_cli(['ENG-123', '--branch', 'alex/bad..name'], prs: [], branches: '')
+    status = nil
+    _stdout, stderr = capture_io do
+      status = Shaka::Claim.run(['ENG-123', '--branch', 'alex/bad..name'], runner: runner(prs: [], branches: ''))
+    end
 
     assert_equal 1, status
+    assert_includes stderr, '--branch must be a valid Git branch name'
   end
 
   def test_cli_reports_a_valid_tracker_branch

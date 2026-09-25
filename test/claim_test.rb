@@ -2,7 +2,6 @@
 
 require_relative 'test_helper'
 require 'json'
-require 'stringio'
 require 'shaka/claim'
 require_relative 'claim_helpers'
 
@@ -52,7 +51,7 @@ class ClaimTest < Minitest::Test
   end
 
   def test_refuses_a_work_item_that_is_neither_a_number_nor_a_tracker_key
-    %w[restore ENG- -123 ENG-0 1ENG-2].each do |query|
+    %w[restore ENG- -123 ENG-0 1ENG-2 _ENG-2].each do |query|
       error = assert_raises(Shaka::Error) { claim(query, prs: [], branches: '') }
 
       assert_includes error.message, 'issue number or tracker key', query

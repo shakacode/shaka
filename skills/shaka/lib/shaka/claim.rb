@@ -117,7 +117,7 @@ module Shaka
     # A GitHub issue or PR number, or a tracker key such as Linear's or Jira's `ENG-123`.
     def work_item(value)
       text = value.to_s
-      return text if text.ascii_only? && text.match?(/\A(?:[A-Za-z][A-Za-z0-9]*-)?[1-9]\d*\z/)
+      return text if text.ascii_only? && text.match?(/\A(?:[A-Za-z][A-Za-z0-9_]*-)?[1-9]\d*\z/)
 
       raise Error, 'Expected an issue number or tracker key such as ENG-123.'
     end
