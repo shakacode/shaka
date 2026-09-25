@@ -37,6 +37,17 @@ class ClaimMissingSeamTest < Minitest::Test
     end
   end
 
+  def test_cli_fails_when_the_seam_parent_is_not_a_directory
+    Dir.mktmpdir do |root|
+      File.write(File.join(root, '.agents'), "not a directory\n")
+      stdout, status, stderr = run_claim(root, prs: [], branches: '')
+
+      assert_equal 1, status
+      assert_includes stderr, 'agent-workflow.yml'
+      assert_empty stdout
+    end
+  end
+
   def test_cli_fails_when_the_seam_is_a_broken_symlink
     Dir.mktmpdir do |root|
       FileUtils.mkdir_p(File.join(root, '.agents'))
