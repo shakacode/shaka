@@ -34,6 +34,19 @@ class TrustedHelperLocationTest < Minitest::Test
     end
   end
 
+  def test_trusted_read_refuses_an_installed_skill_link_into_the_checkout
+    with_repository do |root|
+      install_skill(File.join(root, 'skills'))
+      commit(root)
+      with_symlink(File.join(root, 'skills/shaka')) do |skill|
+        error, status = trusted_check(File.join(skill, 'scripts/shaka'), root)
+
+        refute_predicate status, :success?
+        assert_includes error, 'resolves inside the checkout'
+      end
+    end
+  end
+
   def test_trusted_read_accepts_a_helper_in_a_sibling_with_a_shared_prefix
     Dir.mktmpdir('shaka-parent') do |parent|
       with_repository do |source|
