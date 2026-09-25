@@ -13,10 +13,11 @@ module Shaka
   class Merge
     include MergeRequiredChecks
 
-    def initialize(github, ci_review_wait: nil, seam_wait: nil, review_required: nil, review_waiver: nil)
+    # `review` takes MergeReviewEvidence's `required`, `waiver`, and checkout `root`.
+    def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {})
       @github = github
       @ci_review_wait = CiReviewWait.effective(seam: seam_wait, override: ci_review_wait)
-      @review_evidence = MergeReviewEvidence.new(github, required: review_required, waiver: review_waiver)
+      @review_evidence = MergeReviewEvidence.new(github, **review)
       @submission = MergeSubmission.new(github)
     end
 

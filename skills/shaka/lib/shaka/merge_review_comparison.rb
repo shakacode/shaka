@@ -4,20 +4,20 @@ require_relative 'error'
 
 module Shaka
   # Decides whether a review of an earlier commit still covers the head: either only ordinary
-  # Markdown changed since, or updating from the base left the PR's own changes identical.
+  # Markdown changed since, or the head is exactly a clean merge of it with a newer base.
   class MergeReviewComparison
     # GitHub's compare API lists at most this many files, so a full page may hide code changes.
     COMPARE_FILE_LIMIT = 300
     # Markdown that instructs agents can change trust or merge policy, so it needs fresh review.
     INSTRUCTION_FILES = %w[agents.md claude.md gemini.md skill.md].freeze
     INSTRUCTION_DIRECTORIES = %w[.agents/ .claude/ .cursor/ .github/ skills/].freeze
-    # Only the positions move when the base adds lines above a hunk in the same file.
-    HUNK_POSITION = /^@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/
 
-    def initialize(github, head:, base: nil)
+    # `proof` answers whether the head is exactly a clean merge of a reviewed commit with the base.
+    def initialize(github, head:, base: nil, proof: nil)
       @github = github
       @head = head
       @base = base
+      @proof = proof
     end
 
     # Returns what the match rests on, or nil after recording why the review does not apply.
@@ -25,7 +25,7 @@ module Shaka
       changed = markdown_only_changes(reviewed, rejected)
       return { 'basis' => 'markdown_only_since_review', 'changed_since_review' => changed } if changed
 
-      { 'basis' => 'unchanged_since_review' } if @base && same_changes?(reviewed, rejected)
+      { 'basis' => 'unchanged_since_review' } if @base && @proof && same_changes?(reviewed, rejected)
     end
 
     private
@@ -42,11 +42,9 @@ module Shaka
       nil
     end
 
+    # Proves the head is exactly a clean merge of the reviewed commit with the base it now builds on.
     def same_changes?(reviewed, rejected)
-      before = @github.compare(@base, reviewed)
-      after = @head_comparison ||= @github.compare(@base, @head)
-      shifted = base_update_files(before, after)
-      problem = change_difference(changes(before, shifted), changes(after, shifted))
+      problem = @proof.problem(reviewed:, base: head_merge_base, head: @head)
       rejected << "#{reviewed}: #{problem}" if problem
       problem.nil?
     rescue Error => e
@@ -54,42 +52,8 @@ module Shaka
       false
     end
 
-    def change_difference(before, after)
-      return 'its changes against the base cannot be compared' if before.nil? || after.nil?
-
-      'the PR changes differ from what was reviewed' unless before == after
-    end
-
-    # Hunks may move only in files the base itself changed between the two merge bases; anywhere
-    # else a moved hunk is a real edit, such as the same change applied to a different block.
-    def base_update_files(before, after)
-      old_base, new_base = [before, after].map { |comparison| merge_base(comparison) }
-      return [] if old_base.nil? || new_base.nil? || old_base == new_base
-
-      files = listed_files(@github.compare(old_base, new_base))
-      files ? files.map { |file| file['filename'] } : []
-    end
-
-    def merge_base(comparison)
-      sha = comparison.is_a?(Hash) ? comparison.dig('merge_base_commit', 'sha') : nil
-      sha if sha.is_a?(String) && sha.match?(/\A[0-9a-f]{40}\z/)
-    end
-
-    # A file without a patch, such as a binary, matches only by its blob identity.
-    def changes(comparison, shifted)
-      files = listed_files(comparison)
-      return unless files&.all? { |file| file['patch'].is_a?(String) || file['sha'].is_a?(String) }
-
-      files.map { |file| file_change(file, shifted) }.sort_by(&:to_s)
-    end
-
-    def file_change(file, shifted)
-      patch = file['patch']
-      content = if patch.nil? then file['sha']
-                elsif shifted.include?(file['filename']) then patch.gsub(HUNK_POSITION, '@@')
-                else patch
-                end
-      [file['filename'], file['previous_filename'], file['status'], content]
+    def head_merge_base
+      @head_merge_base ||= @github.compare(@base, @head).dig('merge_base_commit', 'sha')
     end
 
     def listed_files(comparison)

@@ -210,10 +210,10 @@ begin
            when 'walkthrough'
              github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options))
            when 'merge'
+             review = { required: merge_review_required(options), waiver: options[:review_waiver],
+                        root: options[:root] || Dir.pwd }
              Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],
-                                      seam_wait: merge_seam_wait(options),
-                                      review_required: merge_review_required(options),
-                                      review_waiver: options[:review_waiver]).call(
+                                      seam_wait: merge_seam_wait(options), review:).call(
                                         head: options.fetch(:head),
                                         base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough),

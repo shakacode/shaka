@@ -1,0 +1,105 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'fileutils'
+require 'shaka/merge_tree_proof'
+
+# Exercises the proof against real repositories: a review survives only a conflict-free update from the base.
+class MergeTreeProofTest < Minitest::Test
+  BLOCK = "value = 1\n"
+
+  def setup
+    @root = Dir.mktmpdir('shaka-merge-tree-')
+    git('init', '--quiet', '--initial-branch=main')
+    write('app.rb', "#{BLOCK}middle\n#{BLOCK}")
+    write('run.sh', "echo run\n", mode: 0o755)
+    write('footer.txt', "footer\n")
+    commit('base')
+    branch_and_move_base
+  end
+
+  # The feature branch edits the first block; main then changes an unrelated file.
+  def branch_and_move_base
+    git('switch', '--quiet', '-c', 'feature')
+    write('app.rb', "value = 2\nmiddle\n#{BLOCK}")
+    @reviewed = commit('reviewed change')
+    git('switch', '--quiet', 'main')
+    write('footer.txt', "new footer\n")
+    @new_base = commit('base moves on')
+  end
+
+  def teardown = FileUtils.remove_entry(@root)
+
+  def git(*args)
+    output, error, status = Open3.capture3('git', '-C', @root, '-c', 'user.name=Test',
+                                           '-c', 'user.email=test@example.com', *args)
+    raise "git #{args.join(' ')} failed: #{error}" unless status.success?
+
+    output.strip
+  end
+
+  def write(name, text, mode: 0o644)
+    path = File.join(@root, name)
+    File.write(path, text)
+    File.chmod(mode, path)
+  end
+
+  def commit(message)
+    git('add', '-A')
+    git('commit', '--quiet', '-m', message)
+    git('rev-parse', 'HEAD')
+  end
+
+  def rebased_head
+    git('switch', '--quiet', 'feature')
+    git('rebase', '--quiet', 'main')
+    git('rev-parse', 'HEAD')
+  end
+
+  def proof(head) = Shaka::MergeTreeProof.new(@root).problem(reviewed: @reviewed, base: @new_base, head:)
+
+  def test_a_clean_rebase_matches
+    assert_nil proof(rebased_head)
+  end
+
+  def test_merging_the_base_into_the_branch_matches
+    git('switch', '--quiet', 'feature')
+    git('merge', '--quiet', '--no-edit', 'main')
+
+    assert_nil proof(git('rev-parse', 'HEAD'))
+  end
+
+  def test_moving_the_edit_to_an_identical_block_does_not_match
+    rebased_head
+    write('app.rb', "#{BLOCK}middle\nvalue = 2\n")
+
+    assert_match(/differs from a clean merge/, proof(commit('move the edit')))
+  end
+
+  def test_removing_an_executable_bit_does_not_match
+    rebased_head
+    File.chmod(0o644, File.join(@root, 'run.sh'))
+
+    assert_match(/differs from a clean merge/, proof(commit('drop the executable bit')))
+  end
+
+  def test_a_conflicting_update_does_not_match
+    git('switch', '--quiet', 'main')
+    write('app.rb', "value = 3\nmiddle\n#{BLOCK}")
+    @new_base = commit('conflicting base change')
+
+    assert_match(/does not merge cleanly/, proof(@reviewed))
+  end
+
+  def test_a_missing_commit_cannot_be_proven
+    assert_match(/not available locally/, proof('0' * 40))
+  end
+
+  def test_a_directory_outside_git_cannot_be_proven
+    Dir.mktmpdir do |outside|
+      problem = Shaka::MergeTreeProof.new(outside).problem(reviewed: @reviewed, base: @new_base, head: @reviewed)
+
+      assert_match(/not available locally/, problem)
+    end
+  end
+end

@@ -3,6 +3,7 @@
 require_relative 'error'
 require_relative 'reviewer_selection'
 require_relative 'merge_review_comparison'
+require_relative 'merge_tree_proof'
 
 module Shaka
   # Finds the published local-review attestation an agent-driven merge relies on.
@@ -16,13 +17,14 @@ module Shaka
     # Bounds compare requests when many earlier revisions were reviewed.
     EARLIER_CANDIDATES = 5
 
-    def initialize(github, required:, waiver: nil)
+    def initialize(github, required: nil, waiver: nil, root: nil)
       @github = github
       @required = required
       @waiver = waiver
+      @proof = root && MergeTreeProof.new(root)
     end
 
-    # With the PR's base branch, a review also survives a clean update from that base.
+    # With the PR's base branch and a checkout `root`, a review also survives a clean update from that base.
     def call(head, base: nil)
       return { 'basis' => 'not_required' } if @required == 'none'
 
@@ -31,7 +33,8 @@ module Shaka
       return found if found.is_a?(Hash)
 
       rejected = []
-      evidence = published_evidence(found, head, MergeReviewComparison.new(@github, head:, base:), rejected)
+      comparison = MergeReviewComparison.new(@github, head:, base:, proof: @proof)
+      evidence = published_evidence(found, head, comparison, rejected)
       return evidence if evidence
       return { 'basis' => 'waived', 'reason' => reason } if reason
 

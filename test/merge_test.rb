@@ -223,7 +223,7 @@ class MergeReviewEvidenceGateTest < Minitest::Test
 
   def test_waiver_merges_and_reports_its_reason
     @client.comments = []
-    merge = Shaka::Merge.new(@client, review_waiver: 'Prose-only change')
+    merge = Shaka::Merge.new(@client, review: { waiver: 'Prose-only change' })
 
     result = merge.call(head: HEAD, base: BASE, walkthrough: 17)
 
@@ -233,7 +233,7 @@ class MergeReviewEvidenceGateTest < Minitest::Test
   def test_trusted_none_needs_no_review_evidence
     @client.comments = []
 
-    result = Shaka::Merge.new(@client, review_required: 'none').call(head: HEAD, base: BASE, walkthrough: 17)
+    result = Shaka::Merge.new(@client, review: { required: 'none' }).call(head: HEAD, base: BASE, walkthrough: 17)
 
     assert_equal 'not_required', result.dig('review_evidence', 'basis')
   end
