@@ -400,7 +400,8 @@ phases:
         Uncertain authority, consequential risk, or a base neither the trusted seam nor the
         default branch establishes switches Auto to Ask; safety failures block.
       - Refresh `pr` and inspect required check states. Never accept missing, failed, pending, or stale
-        required checks, and never bypass protection. Wait when independent review is not yet
+        required checks, and never bypass protection. An empty required set is acceptable only in Ask
+        mode; say in the handoff that no check gates the PR. Wait when independent review is not yet
         satisfied, and follow the configured CI review wait. Wait for any user-requested review gate
         whether or not a local review already ran. With `ci_review_wait: none` or `one`, do not wait for optional checks to make
         merge state CLEAN; `merge` accepts UNSTABLE once required checks pass. With `ci_review_wait: all`, wait

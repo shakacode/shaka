@@ -2,25 +2,22 @@
 
 ## Before you start
 
-Shaka waits for CI before it calls a PR ready or merges it. It learns which checks
-matter from GitHub: a ruleset or branch protection that requires them on your
-default branch. Check it from the repository:
+Shaka waits for your CI checks before it calls a PR ready, and before it merges one
+in Auto mode. It uses the checks GitHub requires on your default branch through a
+ruleset or branch protection. When GitHub requires none, as on any private
+repository on the GitHub Free plan, list them in
+[`merge.required_checks`](settings.md#mergerequired_checks) instead.
 
-```bash
-gh api "repos/{owner}/{repo}/rules/branches/$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)" \
-  --jq '[.[] | select(.type == "required_status_checks")] | length'
+Setup works this out for you. To see where you stand first:
+
+```text
+$shaka Which CI checks does GitHub require on this repository's default branch?
+If none, which check names appear on recent PRs?
 ```
 
-A result of `1` or more means a ruleset requires checks; confirm that the account
-that merges is not on its bypass list. Branch protection rules (rather than
-rulesets) do not appear here; check **Settings → Branches**.
-
-If neither requires a check, or the command fails with `Upgrade to GitHub Pro or make
-this repository public`, list your CI checks in
-[`merge.required_checks`](settings.md#mergerequired_checks) instead. That error
-means the repository is private on the GitHub Free plan, which offers no required
-checks. Shaka then enforces the listed checks itself, and the agent offers the
-check names GitHub reports on a recent PR during setup.
+A repository with no required checks can still use Shaka in Ask mode: the agent runs
+local validation and review, and you merge on GitHub. Auto merge needs at least one
+required check.
 
 ## Set up
 

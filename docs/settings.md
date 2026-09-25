@@ -24,27 +24,32 @@ approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-p
 
 ## `merge.required_checks`
 
-**Optional.** A list of CI check names that must pass before Shaka treats a PR as
-ready or merges it. Use it when GitHub cannot require checks, such as a private
-repository on the GitHub Free plan.
+**Optional.** CI checks that must pass before Shaka treats a PR as ready. Use it
+when GitHub cannot require checks, such as on a private repository on the GitHub
+Free plan.
 
 ```yaml
 merge:
   preference: ask
   required_checks:
-    - checks
+    - test
 ```
 
-GitHub's own required checks win: when the base branch has any, Shaka uses those
-and ignores this list. Otherwise every listed check must report on the PR head and
-pass, or finish as neutral or skipped, the same outcomes GitHub accepts. A check that never reports blocks, so a renamed job cannot silently drop out.
-Use the names `gh pr checks` shows on a PR; CI systems such as CircleCI report one
-check per workflow rather than per job.
-The `shaka pr` report marks these checks as coming from the seam.
+GitHub's required checks come first. If the base branch requires any, Shaka uses
+those and ignores this list.
 
-Only Shaka enforces this list. Someone who clicks merge on GitHub is not stopped,
-and nothing ties a name to a specific workflow, so a PR could add a job with the
-same name. For GitHub-enforced protection, use a ruleset or branch protection.
+Otherwise, each listed check must appear on the PR and pass. Neutral and skipped
+results count as passing, as they do on GitHub. If a listed check never appears,
+the PR is blocked, so a renamed job cannot quietly drop out of the gate. Use the
+names `gh pr checks` shows: CircleCI, for example, reports one check per workflow,
+not per job.
+
+The list governs only what Shaka does. In Ask mode, the agent waits for these checks
+before it reports a PR ready and labels it `awaiting-merge-approval`. In Auto mode,
+`shaka merge` refuses to merge until they pass. GitHub does not know about the list, so it
+does not stop anyone from clicking merge. Nothing ties a name to a specific
+workflow either, so a PR could add a job with a listed name. For protection that
+GitHub enforces, use a ruleset or branch protection.
 
 ## `merge.limits`
 
