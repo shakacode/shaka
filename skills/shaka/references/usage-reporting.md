@@ -183,8 +183,8 @@ checkout. Review estimates and every other contribution keep the installed card,
 including when that option is set. The installed command still applies its own
 pricing formulas. The report names the card it used. The verified date is the
 date written in that card, so an implementation estimate can show a date supplied
-by the candidate checkout. Actual charge stays UNKNOWN. A card the installed
-loader cannot check fails the report.
+by the candidate checkout. A card the installed loader cannot check fails the
+report.
 
 | Scenario | Treatment |
 | --- | --- |

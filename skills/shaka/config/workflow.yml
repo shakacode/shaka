@@ -246,7 +246,8 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `walkthrough`, required `deployment`, optional `sections`, required `table`,
-        required `provenance`, and required usage `details`; walkthroughs also require `head`.
+        required `provenance`, required usage `details`, and `wip` while the PR is unfinished;
+        walkthroughs also require `head`.
         The helper always renders a Code Walkthrough link after the summary: the COMMENT review
         URL when `walkthrough` is supplied, otherwise `_Not published yet._`. Do not bury that URL
         in the opening paragraph. Set `deployment` to `auto` to link the newest successful GitHub

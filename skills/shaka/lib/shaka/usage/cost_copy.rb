@@ -7,7 +7,7 @@ module Shaka
 
     def markdown(columns, reasons)
       parts = [cost_table(columns),
-               "Cost estimates are not invoices. Rate card: #{@rate_card.label}. Actual charge: UNKNOWN.",
+               "Rate card: #{@rate_card.label}.",
                intro(columns),
                footer(columns, reasons)].compact.reject { |part| part.to_s.strip.empty? }
       "#{parts.join("\n\n")}\n"
