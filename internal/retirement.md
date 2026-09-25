@@ -19,10 +19,11 @@ Do not archive `agent-workflows` before named consumers have a verified Shaka pa
 
 ## Consumer order
 
-Inventory from verified repository evidence only. [Fleet rollout](fleet.md#rollout-status-and-selection)
-still pauses new consumer migrations. Do not start another migration from that
-inventory until the pause lifts. The named public consumers for this checklist
-are the ones already evidenced, not a queue to open next:
+The migration pause is lifted for the 16 public consumers selected in the
+[current Shaka test fleet](fleet.md#rollout-status-and-selection). Work from the
+active-fleet statuses and blockers; do not start migrations outside that cohort
+until the maintainer expands it. The named consumers below retain their original
+retirement-checklist work:
 
 - [React on Rails](https://github.com/shakacode/react_on_rails) — [PR 5093](https://github.com/shakacode/react_on_rails/pull/5093); point the seam at Shaka and mark leftover predecessor files transitional.
 - [Control Plane Flow](https://github.com/shakacode/control-plane-flow) — [PR 491](https://github.com/shakacode/control-plane-flow/pull/491); same rule.

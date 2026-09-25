@@ -41,9 +41,12 @@ merges. A schema-valid file alone does not prove which Shaka release last review
 | [`shakacode/shakapacker`](https://github.com/shakacode/shakapacker) | `main` | `0.1.0.pre.1` | 1 (PR) | Waiting for approval | [PR #1311](https://github.com/shakacode/shakapacker/pull/1311), head `dd041bb`; live branch rules require an independent approval, and the current trust allowlist prevents Shaka from reading review comments. |
 | [`shakacode/shakaperf`](https://github.com/shakacode/shakaperf) | `main` | `0.1.0.pre.1` | 1 | Merged | [PR #233](https://github.com/shakacode/shakaperf/pull/233), merge `cd133ae`. |
 | [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial) | `master` | `0.1.0.pre.1` | 1 | Merged; follow-up draft | [PR #838](https://github.com/shakacode/react-webpack-rails-tutorial/pull/838), merge `2ed4233`; [PR #839](https://github.com/shakacode/react-webpack-rails-tutorial/pull/839), head `ca751d1`, is draft with passing earlier checks and one maintainer-review thread open. |
+
 Add a repository here only when it is intentionally part of current Shaka testing.
-Record an exact Shaka version, not `latest`, and link the adoption or upgrade PR. Remove
-it when testing ends; the repository's own history remains the durable delivery record.
+Record an exact Shaka version, not `latest`, and link the adoption or upgrade PR. A
+selected repository that cannot be migrated safely stays marked Blocked with the reason
+and a note that no PR exists yet. Remove it when testing ends; the repository's own
+history remains the durable delivery record.
 Private consumers belong in the private repository catalog, not in this public file.
 
 ## Rollout status and selection
