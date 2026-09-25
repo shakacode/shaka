@@ -27,8 +27,7 @@ module Shaka
       @target = MergeTarget.required!(head, base, limits)
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
-      verify_checks(RequiredChecks.new(@github, seam_names: @seam_required_checks).call.fetch('checks'))
-      evidence = verify_reviews(head, base, walkthrough)
+      evidence = verify_reviews(head, base, walkthrough, verify_gate)
       current = @github.snapshot
       return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
 
@@ -39,10 +38,19 @@ module Shaka
 
     private
 
+    def verify_gate
+      gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
+      verify_checks(gate.fetch('checks'))
+      gate
+    end
+
     # The walkthrough explains the change; the attestation records that a separate review ran.
-    def verify_reviews(head, base, walkthrough)
+    # GitHub cannot catch a seam check that fails while these are read, so it is read again.
+    def verify_reviews(head, base, walkthrough, gate)
       verify_walkthrough(@github.review(walkthrough), head, walkthrough)
-      { 'review_evidence' => @review_evidence.call(head, base:) }
+      evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
+      verify_gate if gate['source'] == 'seam'
+      evidence
     end
 
     def reconcile_queued_replay(initial, current, head)

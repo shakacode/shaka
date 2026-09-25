@@ -30,7 +30,11 @@ module MergeFixtures
       @checks
     end
 
-    def checks = head_checks || []
+    def checks
+      return head_checks || [] unless head_checks&.first.is_a?(Array)
+
+      head_checks.length > 1 ? head_checks.shift : head_checks.first
+    end
 
     def configured_required_checks = []
 
@@ -291,6 +295,17 @@ class MergeCheckTest < Minitest::Test
     @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
 
     assert_blocked(/Required check is not passing.*"name" => "checks", "state" => "MISSING"/)
+  end
+
+  # GitHub cannot catch a seam check that fails while review evidence is read, so merge rereads it.
+  def test_a_seam_required_check_that_fails_during_review_reads_blocks
+    @client.checks = []
+    @client.head_checks = [[{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }],
+                           [{ 'name' => 'checks', 'state' => 'FAILURE', 'bucket' => 'fail' }]]
+    @client.snapshots = [snapshot, snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing/)
   end
 
   def test_a_failing_seam_required_check_blocks
