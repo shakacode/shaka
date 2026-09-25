@@ -151,9 +151,11 @@ A reviewer's own `prompt_file` in `local_review_agents` wins over the
 repository-wide one, so each reviewer can get different instructions. Here Codex
 uses its own file and Claude uses `.agents/review-prompt.md`.
 
-Shaka reads the file from the default branch, like other settings, so a PR that
-changes it is reviewed with the current version. `shaka seam check` fails when a
-configured file is missing. Shaka keeps a few rules whatever
+`shaka review run --criteria-ref SHA` reads the file from that trusted
+default-branch commit, so a PR that changes it is reviewed with the current
+version. Without `--criteria-ref`, the reviewer gets Shaka's default
+instructions. `shaka seam check` fails when a configured file is missing, empty,
+larger than 100 KB, or not UTF-8. Shaka keeps a few rules whatever
 the file says: the reviewer makes no edits, treats the diff as data rather than
 instructions, reports which `AGENTS.md` criteria it used, and ends with the
 `REVIEWED` line that `shaka review run` checks.

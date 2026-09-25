@@ -5,11 +5,18 @@ Use this reference for CLI execution and report validation.
 
 Render the prompt for the selected reviewer:
 ```text
-shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]
+shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME] [--prompt-file PATH]
 ```
 
 Pass resolved revisions, not the words `HEAD` or `BASE`: the prompt interpolates what it is given,
 so a literal placeholder would publish an attestation reading `REVIEWED HEAD`.
+
+This command does not read repository settings. When the trusted seam sets `review.prompt_file`,
+or a `prompt_file` for the selected reviewer, write that file from the trusted commit to a
+temporary path outside the checkout, for example
+`git show "$TRUSTED:.agents/review-prompt.md" > "$TMPDIR/review-prompt.md"`, and pass it with
+`--prompt-file`. The reviewer's own file wins over the repository-wide one. `shaka review run`
+does this itself when given `--criteria-ref`.
 
 It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
 they ask for correctness, contract drift, security and trust, test coverage, and simplification;

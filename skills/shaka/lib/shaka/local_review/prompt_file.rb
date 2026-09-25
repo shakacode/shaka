@@ -75,7 +75,7 @@ module Shaka
     end
 
     def read_trusted_prompt(ref, path)
-      resolved, entry = TrustedPathResolver.new(root:, sha: ref).resolve(path)
+      resolved, entry = TrustedPathResolver.new(root:, sha: ref, git: git_executable).resolve(path)
       raise Shaka::Error, "Review prompt file #{path} is not a file at #{ref}" unless prompt_blob?(entry)
 
       text = capture(git_executable, '-C', root, 'show', "#{ref}:#{resolved}")
