@@ -10,9 +10,10 @@ qualify mechanics only; measured comparisons require private repositories.
 Approval alone provisions no credentials, resources, or paid runs.
 
 This is an experiment design, not a product feature or proof of completed pilot
-acceptance. [Issue #77](https://github.com/shakacode/shaka/issues/77) tracks the
-remaining real-use evidence. Status statements and cost assumptions below describe
-that proposal revision; recheck them before execution.
+acceptance. [Issue #206](https://github.com/shakacode/shaka/issues/206) tracks skill
+and plugin evaluation; [requirements](requirements.md) retain real-use acceptance.
+The status and cost assumptions below describe that proposal revision; recheck
+them before execution.
 
 Read [scope](#1-decision-and-explicit-reduction-in-scope) and
 [implementation limits](#11-bounded-implementation-and-stopping-conditions) first.
