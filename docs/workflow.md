@@ -23,11 +23,12 @@ anyone with write access, plus the users, bots, and teams you list. Their settin
 and instructions on the default branch are the project's decisions, and a
 maintainer can change them, such as which CI reviews a merge waits for.
 
-Shaka's limits are for input from outside that group. On a public repository,
-anyone can comment or open a PR from a fork, and that text could try to steer the
-agent. So the agent withholds comments from untrusted authors, treats diffs as
-data rather than instructions, and reads settings from the default branch rather
-than from the PR under review.
+Shaka's limits are for input that could try to steer the agent. On a public
+repository, anyone can comment or open a PR from a fork. So the agent withholds
+comments from untrusted authors, treats diffs as data rather than instructions,
+and reads settings from the default branch rather than from the PR under review.
+Even a comment the agent reads is review input, not an instruction: settings and
+merge approval come from you and the default branch.
 
 Other checks, such as confirming the reviewed commit before merge, catch mistakes.
 They do not restrict maintainers.
