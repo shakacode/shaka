@@ -201,14 +201,17 @@ phases:
         rather than calling it ready. Record which reviewer ran at which revision in the chat and
         the PR review status line. See
         [choose a local reviewer](<{{package_root}}/skills/shaka/references/review.md#choose-a-local-reviewer>).
-      - For visible changes, inspect before and after screenshots, and add a short video when
-        interaction or timing matters. Publish safe, reviewer-accessible evidence labeled with its
-        tested revision. Captures complement tests; they do not replace them. Read the packaged
+      - For user-visible changes, use the change by hand on the head you will push, and capture
+        before and after screenshots on desktop and mobile, adding a short video when interaction
+        or timing matters. Inspect each capture for the intended state. After a later commit that
+        changes runtime behavior, repeat the manual pass and refresh the affected captures.
+        Captures complement tests; they do not replace them. Read the packaged
         [verification guide](<{{package_root}}/docs/pr-verification.md>) when deciding what evidence a
         change needs.
     done_when: >-
-      The change is committed, validation passed on that exact head, and the local adversarial
-      review ran with its findings handled or its missing result and reason are explicit.
+      The change is committed, validation passed on that exact head, a user-visible change was
+      used by hand and captured on that head, and the local adversarial review ran with its
+      findings handled or its missing result and reason are explicit.
   - id: explain
     title: Explain
     body: |-
@@ -216,6 +219,13 @@ phases:
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
+      - Check a user-visible change's captures for credentials and private content, then publish
+        them on its PR with `gh pr comment NUMBER --attach 'PATH#ALT TEXT'` (GitHub CLI 2.99 or
+        later), label them with the tested revision, and read the comment back to confirm each
+        capture became an uploaded URL; a local path is not evidence. When a capture cannot be published, record
+        `uploader_absent`, `uploader_denied`, or `upload_failed: DETAIL` on the PR in its place.
+        When `deployment: auto` resolves a deployment, repeat the manual pass against it, or
+        record on the PR why not.
       - Use the review-ready path unless a needed reviewer's trusted workflow shows it reviews drafts.
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
@@ -324,7 +334,9 @@ phases:
         the other values use allowlisted text or `UNKNOWN`. The renderer adds the public machine
         alias from `SHAKA_MACHINE_ALIAS` and keeps the native usage table as the only observed route
         and token record.
-    done_when: The PR description, walkthrough, and usage describe the current head.
+    done_when: >-
+      The PR description, walkthrough, and usage describe the current head, and a user-visible
+      change has that head's captures or a recorded blocked reason published on the PR.
   - id: review
     title: Review
     body: |-

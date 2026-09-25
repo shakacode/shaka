@@ -46,7 +46,20 @@ Use safe test data. Before publishing, check for credentials, private task detai
 customer data, and unrelated screen content. Expandable sections on public PRs
 are public too.
 
-Use a supported attachment route and confirm the reviewer can open the evidence;
-a local path is not shared evidence. Label the tested commit and behavior. After
-code changes, refresh affected evidence or explain which part still applies.
-Report failed captures or missing access as gaps.
+For a user-visible change, the agent also uses the change by hand on the head it
+pushes, and repeats that pass after any later commit that changes runtime behavior.
+When the PR has a preview deployment, it checks the preview too, or says why not.
+
+Attach captures to a PR comment with GitHub CLI 2.99 or later, then open the
+comment to confirm each path became an uploaded link. A local path is not shared
+evidence.
+
+```sh
+gh pr comment 42 --attach './before-desktop.png#Menu before, desktop' \
+  --attach './after-desktop.png#Menu after, desktop'
+```
+
+Label the tested commit and behavior. After code changes, refresh affected
+evidence or explain which part still applies. When a capture cannot be published,
+the PR records why: `uploader_absent` (no attachment route is available),
+`uploader_denied` (the upload was refused), or `upload_failed:` with the error.

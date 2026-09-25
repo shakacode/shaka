@@ -204,6 +204,15 @@ rules:
     note: >-
       Nothing reads a published body to tell in-scope work from a comment on something else,
       and the scan does not reach this rule either, because it restricts with a bare "only".
+  - id: visible-change-evidence-published
+    phase: explain
+    quote: a local path is not evidence
+    rule: Publish a user-visible change's captures on its PR, or a blocked reason in their place.
+    enforced_by: agent
+    note: >-
+      Nothing reads the PR for uploaded captures or a recorded blocked reason, so a user-visible
+      change can reach merge with neither. The scan does not reach this rule either, because it
+      states no marker form.
   - id: comments-is-the-only-reader
     phase: explain
     quote: Read public issue and PR feedback only with `comments`
