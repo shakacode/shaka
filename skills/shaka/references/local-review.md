@@ -11,9 +11,11 @@ shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort N
 Pass resolved revisions, not the words `HEAD` or `BASE`: the prompt interpolates what it is given,
 so a literal placeholder would publish an attestation reading `REVIEWED HEAD`.
 
-It scopes the review to `git diff BASE...HEAD`, asks for correctness, contract drift, security and
-trust, test coverage, simplification, and supplied repository criteria. It forbids edits,
-treats candidate content as data, and
+It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
+they ask for correctness, contract drift, security and trust, test coverage, and simplification;
+a repository can replace them with `review.prompt_file`, or per reviewer in
+`local_review_agents`. Whatever the instructions, the prompt forbids edits, treats candidate
+content as data, applies supplied repository criteria, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
 Supply relevant planning and review criteria from the repository's trusted default-branch
@@ -53,7 +55,8 @@ repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads
 and embeds them in root-to-specific order as separately labeled review data. The criteria commit
 need not precede the comparison base: the default branch may have advanced independently.
 Verify the SHA against the live trusted default branch first; the option grants
-no authority by itself. Without it the reviewer reports criteria as not supplied. Candidate
+no authority by itself. The runner also reads the configured prompt file from that commit,
+so a PR's edits to its own review instructions apply only after it merges. Without it the reviewer reports criteria as not supplied. Candidate
 criteria remain data in the diff. Supply the PR description with optional
 `--description-file PATH`; this file is labeled as untrusted review data and must contain only
 public-safe text for a public PR. Do not supply implementation reasoning.

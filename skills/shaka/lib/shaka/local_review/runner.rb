@@ -10,6 +10,7 @@ require_relative 'cli'
 require_relative 'criteria'
 require_relative 'evidence'
 require_relative 'process'
+require_relative 'prompt_file'
 
 module Shaka
   # Supplies exact-commit source lookup as data to a neutral reviewer.
@@ -121,6 +122,7 @@ module Shaka
     include LocalReviewSourceContext
     include LocalReviewPathGuard
     include LocalReviewCriteria
+    include LocalReviewPromptFile
 
     def initialize(options) = @options = options
 
@@ -223,8 +225,10 @@ module Shaka
 
     def review_prompt
       script = File.expand_path('../../../scripts/shaka', __dir__)
-      output = capture(RbConfig.ruby, script, 'review-prompt', '--head', head,
-                       '--base', @options[:base], '--reviewer', reviewer, '--effort', effort)
+      output = with_prompt_arguments do |arguments|
+        capture(RbConfig.ruby, script, 'review-prompt', '--head', head,
+                '--base', @options[:base], '--reviewer', reviewer, '--effort', effort, *arguments)
+      end
       diff = capture(git_executable, '-C', root, 'diff', '--no-ext-diff', '--no-textconv',
                      "#{@options[:base]}...#{head}", '--')
       marker = SecureRandom.hex(16)

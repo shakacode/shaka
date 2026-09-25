@@ -1,0 +1,122 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'fileutils'
+require 'json'
+require 'yaml'
+
+# A repository's review instructions, read from the trusted commit and chosen per reviewer.
+class ReviewPromptFileTest < Minitest::Test
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+
+  # The PR under review cannot change the instructions it is reviewed with.
+  def test_uses_the_repository_prompt_file_from_the_trusted_commit
+    with_repository('prompt_file' => '.agents/review-prompt.md') do |root, base, head, bin|
+      prompt = review_prompt(root, base, head, bin)
+
+      assert_includes prompt, 'Trusted repository instructions'
+      refute_includes prompt, 'Candidate instructions'
+      refute_includes prompt, 'Contract drift'
+      assert_includes prompt, 'Make no edits.'
+    end
+  end
+
+  def test_a_reviewer_prompt_file_overrides_the_repository_prompt_file
+    agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'prompt_file' => '.agents/codex-prompt.md' }]
+    review = { 'prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents }
+    with_repository(review) do |root, base, head, bin|
+      prompt = review_prompt(root, base, head, bin)
+
+      assert_includes prompt, 'Codex-only instructions'
+      refute_includes prompt, 'Trusted repository instructions'
+    end
+  end
+
+  def test_keeps_the_default_instructions_without_a_prompt_file
+    with_repository do |root, base, head, bin|
+      assert_includes review_prompt(root, base, head, bin), 'Contract drift'
+    end
+  end
+
+  def test_a_missing_prompt_file_stops_the_review_before_launch
+    with_repository('prompt_file' => '.agents/absent.md') do |root, base, head, bin|
+      output, = run_review(root, base, head, bin)
+      result = JSON.parse(output)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '.agents/absent.md'
+      refute File.exist?(File.join(root, 'trace.json'))
+    end
+  end
+
+  private
+
+  def review_prompt(root, base, head, bin)
+    output, error, status = run_review(root, base, head, bin)
+    assert_predicate status, :success?, "#{output}\n#{error}"
+    File.unlink(JSON.parse(output).fetch('report'))
+    # The diff shows both versions of a changed prompt file as data; only the instructions matter here.
+    JSON.parse(File.read(File.join(root, 'trace.json'))).fetch('prompt').split('SUPPORTING SOURCE DATA').first
+  end
+
+  def run_review(root, base, head, bin)
+    Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(root, 'trace.json') },
+                   COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
+                   '--reviewer', 'openai/codex', '--criteria-ref', base)
+  end
+
+  def with_repository(review = {})
+    Dir.mktmpdir('shaka-review-prompt-file') do |root|
+      Dir.mktmpdir('shaka-review-prompt-cli') do |bin|
+        base = trusted_commit(root, review)
+        File.write(File.join(root, '.agents/review-prompt.md'), "Candidate instructions\n")
+        commit!(root, 'candidate change')
+        fake_codex(bin, git!(root, 'rev-parse', 'HEAD').strip)
+        yield root, base, git!(root, 'rev-parse', 'HEAD').strip, bin
+      end
+    end
+  end
+
+  def trusted_commit(root, review)
+    git!(root, 'init')
+    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    %w[setup validate test].each { |name| write_executable(File.join(root, '.agents/bin'), name, "#!/bin/sh\n") }
+    File.write(File.join(root, '.agents/review-prompt.md'), "Trusted repository instructions\n")
+    File.write(File.join(root, '.agents/codex-prompt.md'), "Codex-only instructions\n")
+    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(review)))
+    commit!(root, 'trusted')
+    git!(root, 'rev-parse', 'HEAD').strip
+  end
+
+  def seam(review)
+    { 'version' => 1, 'merge' => { 'preference' => 'ask' },
+      'review' => { 'required' => 'none' }.merge(review) }
+  end
+
+  def fake_codex(bin, head)
+    write_executable(bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'json'
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ prompt: STDIN.read }))
+      File.write(ARGV.fetch(ARGV.index('-o') + 1), "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
+    RUBY
+  end
+
+  def write_executable(directory, name, script)
+    path = File.join(directory, name)
+    File.write(path, script)
+    File.chmod(0o755, path)
+  end
+
+  def commit!(root, message)
+    git!(root, 'add', '.')
+    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', message)
+  end
+
+  def git!(root, *)
+    output, status = Open3.capture2e(TEST_GIT, '-C', root, *)
+    raise output unless status.success?
+
+    output
+  end
+end

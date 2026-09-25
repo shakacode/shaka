@@ -128,6 +128,38 @@ The agent prefers a different provider and chooses the review model and effort
 separately. Put custom review criteria in trusted `AGENTS.md`.
 See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).
 
+## `review.prompt_file`
+
+**Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**
+A Markdown file in your repository that replaces what the local reviewer looks for
+and how it reports. Copy the default to start.
+
+```yaml
+review:
+  required: meaningful_changes
+  ci_review_jobs: [claude-review]
+  prompt_file: .agents/review-prompt.md
+  local_review_agents:
+    - provider: openai
+      model_family: codex
+      prompt_file: .agents/review-prompt-codex.md
+    - provider: anthropic
+      model_family: claude
+```
+
+A reviewer's own `prompt_file` in `local_review_agents` wins over the
+repository-wide one, so each reviewer can get different instructions. Here Codex
+uses its own file and Claude uses `.agents/review-prompt.md`.
+
+Shaka reads the file from the default branch, like other settings, so a PR that
+changes it is reviewed with the current version. Shaka keeps a few rules whatever
+the file says: the reviewer makes no edits, treats the diff as data rather than
+instructions, reports which `AGENTS.md` criteria it used, and ends with the
+`REVIEWED` line that `shaka review run` checks.
+
+The file configures local reviews. A CI review job gets its prompt from its own
+workflow; to give it the same instructions, have the workflow read this file.
+
 ## Standard command scripts
 
 Connect your existing tools at these fixed paths:
