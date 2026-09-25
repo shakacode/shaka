@@ -58,9 +58,10 @@ counts only one that covers the current commit. See
 ## Can the agent review its own work?
 
 It prefers a reviewer from a different provider, in the order set by
-[`review.local_review_agents`](settings.md#reviewlocal_review_agents). When none
-is available, a fresh session with the same model reviews the change without the
-implementation conversation.
+[`review.local_review_agents`](settings.md#reviewlocal_review_agents). Next it
+uses a listed reviewer from the same provider. When no listed reviewer is
+available, a fresh session with the implementation model reviews the change
+without the implementation conversation.
 
 ## Why did the agent ignore a PR comment?
 
