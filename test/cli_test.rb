@@ -117,3 +117,13 @@ class CliTest < Minitest::Test
     assert_includes error, 'Expected a full PR head'
   end
 end
+
+class CliReviewWaiverTest < Minitest::Test
+  # Option parsing rejects the flag before any GitHub client exists.
+  def test_review_waiver_is_only_for_merge
+    _output, error, status = Open3.capture3(CliTest::COMMAND, 'pr', 'owner/repo', '1', '--review-waiver', 'docs')
+
+    refute_predicate status, :success?
+    assert_match(/--review-waiver is only for merge/, error)
+  end
+end

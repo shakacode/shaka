@@ -8,6 +8,7 @@ require_relative 'review_thread'
 require_relative 'walkthrough_evidence'
 require_relative 'walkthrough_history'
 require_relative 'github/check_list'
+require_relative 'github/review_evidence_reads'
 
 module Shaka
   # The native pull-request evidence a publication decision depends on.
@@ -48,6 +49,7 @@ module Shaka
     include Publishing
     include GraphqlTransport
     include CheckList
+    include ReviewEvidenceReads
 
     attr_reader :repository, :number
 

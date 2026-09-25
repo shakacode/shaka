@@ -255,6 +255,7 @@ phases:
         attention OWNER/REPO NUMBER --state answer|merge|none
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA [--ci-review-wait MODE] [--limits-confirmed-head SHA]
+          [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY
         ```
 
@@ -345,7 +346,12 @@ phases:
         `REVIEWED SHA BY PROVIDER/FAMILY` attestation, or by a verified report from `review.ci_review_jobs`,
         for the current head. A later nit-only or diagnostic-only SHA does not reopen that wait;
         a SHA that changes runtime, trust, or tests does. A user-requested
-        review gate still blocks until it completes. Keep status and gaps visible; put advisory
+        review gate still blocks until it completes. `merge` checks this evidence: it accepts an
+        attestation the merging account published for the head, or for an earlier commit when
+        the head is exactly a conflict-free merge of it with the newer base, or only Markdown
+        other than agent instructions changed since. For a nit-only follow-up, a prose-only exception,
+        or a head a CI review covered, pass `--review-waiver REASON`; the merge result reports it.
+        Keep status and gaps visible; put advisory
         reviewer history in details. Link the current review result from the PR summary and
         final response.
       - Read `review.ci_review_wait` from `shaka seam check --ref`, never from candidate YAML.
