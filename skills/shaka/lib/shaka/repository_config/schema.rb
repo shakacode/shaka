@@ -75,7 +75,8 @@ module Shaka
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
       def local_prompt_files!(review)
         ReviewSchema.prompt_files(review).each do |label, path|
-          error = ReviewPrompt.instructions_error(File.binread(file!(path, label)))
+          file = file!(path, label)
+          error = ReviewPrompt.file_error(File.size(file)) { File.binread(file) }
           raise Error, "#{label} #{path} #{error}" if error
         end
       end

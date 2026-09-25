@@ -58,6 +58,7 @@ module Shaka
                                                  "#{ref}:#{RepositoryConfig::PATH}"],
                                                 stdin_data: nil, chdir: root, timeout:)
       raise Shaka::Error, "git timed out after #{timeout}s" unless status
+      raise Shaka::Error, 'git output drain timed out after 2s' if status.is_a?(LocalReviewProcess::DrainTimeout)
 
       status.success?
     end
@@ -78,12 +79,17 @@ module Shaka
       resolved, entry = TrustedPathResolver.new(root:, sha: ref, git: git_executable).resolve(path)
       raise Shaka::Error, "Review prompt file #{path} is not a file at #{ref}" unless prompt_blob?(entry)
 
-      text = capture(git_executable, '-C', root, 'show', "#{ref}:#{resolved}")
-      error = ReviewPrompt.instructions_error(text)
+      text = nil
+      error = ReviewPrompt.file_error(trusted_blob(ref, resolved, '-s').to_i) do
+        text = trusted_blob(ref, resolved, '-p')
+      end
       raise Shaka::Error, "Review prompt file #{path} at #{ref} #{error}" if error
 
       text
     end
+
+    # `-s` prints the blob size and `-p` its contents.
+    def trusted_blob(ref, path, option) = capture(git_executable, '-C', root, 'cat-file', option, "#{ref}:#{path}")
 
     def prompt_blob?(entry) = entry && entry.last == 'blob' && entry.first != TrustedPathResolver::SYMLINK.first
   end

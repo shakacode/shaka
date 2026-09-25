@@ -117,4 +117,11 @@ class ReviewPromptTest < Minitest::Test
       assert_includes err, '--prompt-file is empty'
     end
   end
+
+  # Checking the size first means an oversized prompt file is rejected without loading it.
+  def test_rejects_an_oversized_prompt_before_reading_it
+    error = Shaka::ReviewPrompt.file_error(Shaka::ReviewPrompt::MAX_INSTRUCTIONS_BYTES + 1) { flunk 'read the file' }
+
+    assert_equal 'exceeds 100 KB', error
+  end
 end

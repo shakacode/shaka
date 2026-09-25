@@ -41,10 +41,12 @@ module Shaka
     }.freeze
 
     # Seam checks and the review runner apply the same limits, so a file they accept always renders.
-    def self.instructions_error(text)
-      return "exceeds #{MAX_INSTRUCTIONS_BYTES / 1000} KB" if text.bytesize > MAX_INSTRUCTIONS_BYTES
+    # Seam checks and the review runner apply the same limits, so a file they accept always renders.
+    # The size is checked before the block reads the file, so an oversized file is never loaded.
+    def self.file_error(bytes)
+      return "exceeds #{MAX_INSTRUCTIONS_BYTES / 1000} KB" if bytes > MAX_INSTRUCTIONS_BYTES
 
-      text = text.dup.force_encoding(Encoding::UTF_8)
+      text = yield.dup.force_encoding(Encoding::UTF_8)
       return 'is not UTF-8' unless text.valid_encoding?
 
       'is empty' if text.strip.empty?
@@ -95,11 +97,11 @@ module Shaka
     def scope = "The change is exactly: git diff #{base}...#{head}"
 
     def instructions
-      text = File.binread(@options.fetch(:prompt_file, DEFAULT_INSTRUCTIONS))
-      error = self.class.instructions_error(text)
+      path = @options.fetch(:prompt_file, DEFAULT_INSTRUCTIONS)
+      error = self.class.file_error(File.size(path)) { File.binread(path) }
       raise Shaka::Error, "--prompt-file #{error}" if error
 
-      text.force_encoding(Encoding::UTF_8).strip
+      File.read(path, encoding: 'UTF-8').strip
     end
 
     def closing

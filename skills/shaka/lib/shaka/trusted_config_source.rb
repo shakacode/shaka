@@ -41,13 +41,14 @@ module Shaka
         is_blob = entry && entry.last == 'blob' && entry.first != TrustedPathResolver::SYMLINK.first
         raise Error, "#{label} does not name a file at #{sha}: #{path}" unless is_blob
 
-        error = ReviewPrompt.instructions_error(git_show(sha, resolved))
+        error = ReviewPrompt.file_error(git_output(sha, resolved, '-s').to_i) { git_output(sha, resolved, '-p') }
         raise Error, "#{label} #{path} at #{sha} #{error}" if error
       end
     end
 
-    def git_show(sha, path)
-      text, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{path}", binmode: true)
+    # `-s` prints the blob size and `-p` its contents.
+    def git_output(sha, path, option)
+      text, error, status = Open3.capture3('git', '-C', @root, 'cat-file', option, "#{sha}:#{path}", binmode: true)
       raise Error, "Cannot read #{path} at #{sha}: #{error.strip}" unless status.success?
 
       text
