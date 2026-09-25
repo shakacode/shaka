@@ -7,6 +7,7 @@ class AttentionTest < Minitest::Test
   include GitHubHelper
 
   LABELS_PATH = 'repos/owner/repo/issues/42/labels'
+  REPO_LABELS = 'repos/owner/repo/labels'
   FIRST_PAGE = "#{LABELS_PATH}?per_page=100&page=1".freeze
 
   def labels_response(*names)
@@ -21,13 +22,44 @@ class AttentionTest < Minitest::Test
     @calls.map { |argv, input| [argv[2], argv[argv.index('--method') + 1], input] }
   end
 
+  def label_exists = response({ 'name' => 'existing' })
+  def label_missing = response({ 'message' => 'Not Found' }, status: 1, http_status: 404)
+
   def test_answer_replaces_merge_approval_with_one_label
-    result = call('answer', snapshot_response, labels_response('bug', 'awaiting-merge-approval'),
+    result = call('answer', snapshot_response, labels_response('bug', 'awaiting-merge-approval'), label_exists,
                   labels_response('bug'), labels_response('bug', 'awaiting-answer'))
 
     assert_equal({ 'state' => 'answer', 'labels' => ['awaiting-answer'] }, result)
-    assert_equal ["#{LABELS_PATH}/awaiting-merge-approval", 'DELETE'], requests[2].first(2)
-    assert_equal [LABELS_PATH, 'POST', JSON.generate(labels: ['awaiting-answer'])], requests[3]
+    assert_equal ["#{LABELS_PATH}/awaiting-merge-approval", 'DELETE'], requests[3].first(2)
+    assert_equal [LABELS_PATH, 'POST', JSON.generate(labels: ['awaiting-answer'])], requests[4]
+  end
+
+  def test_a_missing_label_is_created_with_its_color_and_description
+    call('merge', snapshot_response, labels_response, label_missing,
+         response({ 'name' => 'awaiting-merge-approval' }), labels_response('awaiting-merge-approval'))
+
+    assert_equal ["#{REPO_LABELS}/awaiting-merge-approval", 'GET'], requests[2].first(2)
+    path, method, input = requests[3]
+    assert_equal [REPO_LABELS, 'POST'], [path, method]
+    assert_equal({ 'name' => 'awaiting-merge-approval', 'color' => '8250DF',
+                   'description' => Shaka::Attention::DESCRIPTIONS.fetch('awaiting-merge-approval') },
+                 JSON.parse(input))
+  end
+
+  def test_an_existing_repository_label_is_applied_without_creating
+    result = call('answer', snapshot_response, labels_response, label_exists, labels_response('awaiting-answer'))
+
+    assert_equal({ 'state' => 'answer', 'labels' => ['awaiting-answer'] }, result)
+    assert_equal(%w[GET GET POST], requests.drop(1).map { |request| request[1] })
+  end
+
+  def test_a_caller_who_cannot_create_labels_still_applies_one
+    forbidden = response({ 'message' => 'Forbidden' }, status: 1, http_status: 403)
+    result = call('answer', snapshot_response, labels_response, label_missing, forbidden,
+                  labels_response('awaiting-answer'))
+
+    assert_equal({ 'state' => 'answer', 'labels' => ['awaiting-answer'] }, result)
+    assert_equal [LABELS_PATH, 'POST'], requests[4].first(2)
   end
 
   def test_merge_keeps_an_existing_label_without_writing
@@ -56,7 +88,7 @@ class AttentionTest < Minitest::Test
 
   def test_a_failed_label_write_is_an_error
     error = assert_raises(Shaka::Error) do
-      call('answer', snapshot_response, labels_response, response({}, status: 1))
+      call('answer', snapshot_response, labels_response, label_exists, response({}, status: 1))
     end
 
     assert_match(/gh api .*labels failed/, error.message)
