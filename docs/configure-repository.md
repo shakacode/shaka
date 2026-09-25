@@ -34,7 +34,6 @@ The agent inspects your project, confirms missing choices, and prepares these fi
 | File | Purpose |
 | --- | --- |
 | `.agents/agent-workflow.yml` | Review, merge, branch, and WIP settings |
-| `.agents/writing-style.md` (optional) | Repository defaults for documentation and published PR prose |
 | `.agents/bin/setup` | Install project dependencies |
 | `.agents/bin/test` | Run tests; accept focused test arguments |
 | `.agents/bin/validate` | Run the complete pre-PR checks |
@@ -45,10 +44,6 @@ The agent inspects your project, confirms missing choices, and prepares these fi
 
 The scripts usually wrap existing commands. In Shaka's repository, `.agents/bin/setup`
 installs development dependencies; `bin/install` installs the skill.
-
-Add the optional writing-style file when the repository needs persistent prose
-preferences. Shaka reads it from the trusted default branch; see
-[writing preferences](writing-preferences.md).
 
 You merge the first setup PR yourself on GitHub. Until it merges, the default branch
 has no trusted settings, so Shaka cannot choose a reviewer from them or merge
@@ -64,3 +59,6 @@ Keep merge policy ask.
 See [settings](settings.md) for values and defaults. Shaka's own
 [configuration](https://github.com/shakacode/shaka/blob/main/.agents/agent-workflow.yml) and [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin)
 provide working examples.
+
+To choose how the agent writes documentation and PRs, see
+[writing preferences](writing-preferences.md).

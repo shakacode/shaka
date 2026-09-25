@@ -26,3 +26,30 @@ then the conventional style defaults.
 Self-edit the content JSON; do not rewrite the rendered GitHub body or invoke a
 separate rewriting skill for Shaka's publication step. No prose score or style
 schema is needed.
+
+## Loading repository defaults
+
+`shaka seam check --root ROOT --ref SHA` reads the optional
+`.agents/writing-style.md` from the same resolved default-branch commit as the
+repository settings. It returns the text as `writing_style.guide`. A candidate
+change cannot replace that guide while its own PR is being described.
+
+The file must be non-empty UTF-8 text in a regular file, at most 100 KiB.
+The loader checks size before reading content and rejects symlinks, directories,
+and submodules. Markdown is the convention, not a syntax check.
+
+Local and implicit candidate checks validate the file without returning its
+prose; invalid candidate files fail the check. Under `--ref`, an invalid guide
+instead produces a warning on stderr and in `writing_style_warning`, and the
+guide is omitted. Report the problem and continue using the remaining writing
+instructions. Required repository policy stays available.
+
+`shaka doctor` checks repository configuration but does not validate this style
+file. Use `shaka seam check --root ROOT --local` to check a candidate file.
+For an existing `AGENTS.md` pointer to this conventional path, replace any symlink
+with a regular file before adopting automatic loading. Other style-file pointers
+remain supported through the trusted `AGENTS.md` instructions above.
+
+Ruby verifies file loading and validation, not writing quality or compliance
+with the guide. Applying preferences and resolving their precedence remain agent
+responsibilities; review actual output before claiming improved writing.
