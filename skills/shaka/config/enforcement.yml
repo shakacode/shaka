@@ -411,7 +411,9 @@ rules:
       and `GitHub#configured_required_checks` finds none configured in classic protection or
       rulesets, `RequiredChecks` substitutes the trusted seam's `merge.required_checks`, read
       at `--ref`, and reports a declared check absent from the head as MISSING so it blocks.
-      Configured native checks that have not reported yet are also MISSING rows, never an empty set.
+      When none of the configured native checks has reported yet, each appears as a MISSING row
+      rather than an empty set. Once some have reported, the list holds only those, and GitHub's
+      own protection enforces the rest.
       In Ask mode the maintainer clicks merge and the helper never runs, so the gate there
       is the repository's own protection: shakacode/shaka's "Protect main" ruleset supplies
       `required_status_checks`, and a repository without it has nothing in that path beyond
