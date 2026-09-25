@@ -37,6 +37,18 @@ class ClaimMissingSeamTest < Minitest::Test
     end
   end
 
+  def test_cli_fails_when_the_seam_is_a_broken_symlink
+    Dir.mktmpdir do |root|
+      FileUtils.mkdir_p(File.join(root, '.agents'))
+      File.symlink('missing.yml', File.join(root, '.agents', 'agent-workflow.yml'))
+      stdout, status, stderr = run_claim(root, prs: [], branches: '')
+
+      assert_equal 1, status
+      assert_includes stderr, 'agent-workflow.yml'
+      assert_empty stdout
+    end
+  end
+
   private
 
   def run_claim(root, prs:, branches:)

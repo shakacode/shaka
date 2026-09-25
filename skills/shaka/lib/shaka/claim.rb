@@ -49,7 +49,7 @@ module Shaka
 
     def self.branch_name_for(root)
       path = File.join(root, RepositoryConfig::PATH)
-      return unless File.exist?(path)
+      return unless File.exist?(path) || File.symlink?(path)
 
       RepositoryConfig.load(root: root).to_h.dig('branches', 'name')
     end
