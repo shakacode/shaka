@@ -41,25 +41,6 @@ class ReviewPolicyTest < Minitest::Test
     end
   end
 
-  def test_loads_repository_and_reviewer_prompt_files
-    agents = [reviewers.first.merge('prompt_file' => '.agents/codex-prompt.md'), reviewers.last]
-    policy = review_policy('prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents)
-    with_repository('review' => policy) do |root|
-      review = Shaka::RepositoryConfig.load(root:).review
-
-      assert_equal '.agents/review-prompt.md', review.fetch('prompt_file')
-      assert_equal '.agents/codex-prompt.md', review.fetch('local_review_agents').first.fetch('prompt_file')
-    end
-  end
-
-  def test_rejects_a_prompt_file_outside_the_repository
-    with_repository('review' => review_policy('prompt_file' => '../shared/review-prompt.md')) do |root|
-      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
-
-      assert_includes message, 'review.prompt_file must be a path inside the repository'
-    end
-  end
-
   def test_rejects_an_empty_reviewer_preference_list
     with_repository('review' => review_policy('local_review_agents' => [])) do |root|
       message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message

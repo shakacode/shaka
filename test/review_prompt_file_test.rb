@@ -4,6 +4,8 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'json'
 require 'yaml'
+require_relative 'repository_fixture'
+require 'shaka/repository_config'
 
 # A repository's review instructions, read from the trusted commit and chosen per reviewer.
 class ReviewPromptFileTest < Minitest::Test
@@ -45,7 +47,7 @@ class ReviewPromptFileTest < Minitest::Test
 
       assert_equal 'setup_failure', result.fetch('failure_stage')
       assert_includes result.fetch('reason'), '.agents/absent.md'
-      refute File.exist?(File.join(root, 'trace.json'))
+      refute_path_exists File.join(root, 'trace.json')
     end
   end
 
@@ -81,11 +83,15 @@ class ReviewPromptFileTest < Minitest::Test
     git!(root, 'init')
     FileUtils.mkdir_p(File.join(root, '.agents/bin'))
     %w[setup validate test].each { |name| write_executable(File.join(root, '.agents/bin'), name, "#!/bin/sh\n") }
+    write_trusted_files(root, review)
+    commit!(root, 'trusted')
+    git!(root, 'rev-parse', 'HEAD').strip
+  end
+
+  def write_trusted_files(root, review)
     File.write(File.join(root, '.agents/review-prompt.md'), "Trusted repository instructions\n")
     File.write(File.join(root, '.agents/codex-prompt.md'), "Codex-only instructions\n")
     File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(review)))
-    commit!(root, 'trusted')
-    git!(root, 'rev-parse', 'HEAD').strip
   end
 
   def seam(review)
@@ -118,5 +124,29 @@ class ReviewPromptFileTest < Minitest::Test
     raise output unless status.success?
 
     output
+  end
+end
+
+# The settings that name review instructions.
+class ReviewPromptFileSchemaTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  def test_loads_repository_and_reviewer_prompt_files
+    agents = [reviewers.first.merge('prompt_file' => '.agents/codex-prompt.md'), reviewers.last]
+    policy = review_policy('prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents)
+    with_repository('review' => policy) do |root|
+      review = Shaka::RepositoryConfig.load(root:).review
+
+      assert_equal '.agents/review-prompt.md', review.fetch('prompt_file')
+      assert_equal '.agents/codex-prompt.md', review.fetch('local_review_agents').first.fetch('prompt_file')
+    end
+  end
+
+  def test_rejects_a_prompt_file_outside_the_repository
+    with_repository('review' => review_policy('prompt_file' => '../shared/review-prompt.md')) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.prompt_file must be a path inside the repository'
+    end
   end
 end

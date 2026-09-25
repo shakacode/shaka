@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'rbconfig'
 require 'securerandom'
 require 'tempfile'
 require 'tmpdir'
@@ -224,11 +223,7 @@ module Shaka
     end
 
     def review_prompt
-      script = File.expand_path('../../../scripts/shaka', __dir__)
-      output = with_prompt_arguments do |arguments|
-        capture(RbConfig.ruby, script, 'review-prompt', '--head', head,
-                '--base', @options[:base], '--reviewer', reviewer, '--effort', effort, *arguments)
-      end
+      output = review_instructions
       diff = capture(git_executable, '-C', root, 'diff', '--no-ext-diff', '--no-textconv',
                      "#{@options[:base]}...#{head}", '--')
       marker = SecureRandom.hex(16)
