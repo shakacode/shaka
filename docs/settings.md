@@ -147,9 +147,10 @@ review:
       model_family: claude
 ```
 
-A reviewer's own `prompt_file` in `local_review_agents` wins over the
-repository-wide one, so each reviewer can get different instructions. Here Codex
-uses its own file and Claude uses `.agents/review-prompt.md`.
+To give one review agent different instructions, set `prompt_file` on that
+agent's entry in `local_review_agents`. It replaces `review.prompt_file` when that
+agent reviews. Here Codex reviews with `.agents/review-prompt-codex.md`, and Claude,
+which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
 
 `shaka review run --criteria-ref SHA` reads the file from that trusted
 default-branch commit, so a PR that changes it is reviewed with the current
