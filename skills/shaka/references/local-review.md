@@ -13,9 +13,17 @@ so a literal placeholder would publish an attestation reading `REVIEWED HEAD`.
 
 This command does not read repository settings. When the trusted seam sets `review.prompt_file`,
 or a `prompt_file` for the selected reviewer, write that file from the trusted commit to a
-temporary path outside the checkout, for example
-`git show "$TRUSTED:.agents/review-prompt.md" > "$TMPDIR/review-prompt.md"`, and pass it with
-`--prompt-file`. The reviewer's own file wins over the repository-wide one. `shaka review run`
+new temporary file outside the checkout and pass it with `--prompt-file "$PROMPT"`. Set `TRUSTED` to the verified
+default-branch commit first; `${TRUSTED:?}` stops the command if it is unset, because `git show`
+would otherwise read the file from the index, which the candidate controls:
+
+```bash
+TRUSTED=$(git rev-parse --verify 'origin/main^{commit}')
+PROMPT=$(mktemp)
+git show "${TRUSTED:?}:.agents/review-prompt.md" > "$PROMPT"
+```
+
+The reviewer's own file wins over the repository-wide one. `shaka review run`
 does this itself when given `--criteria-ref`.
 
 It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
