@@ -3,7 +3,7 @@
 Public project records for Shaka maintainers. These files are not product setup
 instructions or private company plans.
 
-- [Requirements and acceptance](requirements.md) — original scope and remaining evidence; issue #77 tracks acceptance.
+- [Requirements and acceptance](requirements.md) — original scope and remaining evidence.
 - [Coding-environment trials](coding-environment-trials.md) — dated observations, not a support matrix.
 - [Test fleet](fleet.md) — repository adoption and migration evidence.
 - [Local evaluation proposal](local-evaluation-proposal.md) — proposed experiments, not shipped behavior.
