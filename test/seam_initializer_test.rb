@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'json'
 require 'yaml'
+require 'shaka/merge_limits'
 require 'shaka/version'
 
 module SeamInitializerTestHelpers
@@ -53,7 +54,7 @@ module SeamInitializerTestHelpers
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
     assert_equal %w[base_branch branches commands merge review version wip], config.keys.sort
-    assert_equal ['preference'], config.fetch('merge').keys
+    assert_equal({ 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS }, config.fetch('merge'))
     assert_includes File.read(File.join(root, '.agents/agent-workflow.yml')), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
   end

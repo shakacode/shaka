@@ -4,7 +4,9 @@ require 'json'
 require 'open3'
 require_relative 'error'
 require_relative 'publishing'
+require_relative 'review_thread'
 require_relative 'walkthrough_evidence'
+require_relative 'walkthrough_history'
 require_relative 'github/check_list'
 require_relative 'github/required_check_rules'
 
@@ -16,6 +18,7 @@ module Shaka
         pullRequest(number: $number) {
           id number url state isDraft headRefOid baseRefName merged mergeCommit { oid }
           mergeStateStatus reviewDecision viewerCanMergeAsAdmin
+          changedFiles additions deletions commits { totalCount }
           isInMergeQueue isMergeQueueEnabled autoMergeRequest { enabledAt }
           mergeQueueEntry {
             id position state estimatedTimeToMerge
@@ -75,11 +78,16 @@ module Shaka
       api("#{reviews_path}/#{positive_integer(id)}")
     end
 
+    def resolve_thread(thread_id)
+      ReviewThread.resolve(self, thread_id)
+    end
+
     def walkthrough(head:, body:, seam_required_checks: nil)
       body = publishable(body)
       verify_head(head)
       WalkthroughEvidence.new(self, seam_required_checks:).verify(head, body)
-      record_walkthrough(head, body)
+      published = record_walkthrough(head, body)
+      published.merge('earlier_walkthroughs' => WalkthroughHistory.new(self).collapse(published))
     end
 
     def api(path, method: 'GET', fields: {}, expected: Hash, headers: [])

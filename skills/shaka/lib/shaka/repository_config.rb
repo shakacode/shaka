@@ -2,6 +2,7 @@
 
 require 'yaml'
 require_relative 'error'
+require_relative 'merge_limits'
 require_relative 'repository_config/command_paths'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
@@ -48,7 +49,7 @@ module Shaka
 
     # Callers read this as the effective contract, so defaults belong in it.
     def to_h
-      @data.merge('commands' => commands, 'review' => review, 'wip' => wip)
+      @data.merge('commands' => commands, 'review' => review, 'merge' => merge, 'wip' => wip)
     end
 
     private
@@ -64,7 +65,8 @@ module Shaka
     def assign_sections
       @base_branch = @data['base_branch']
       @review = with_default_review_wait(@data.fetch('review'))
-      @merge = @data.fetch('merge')
+      merge = @data.fetch('merge')
+      @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
     end
 

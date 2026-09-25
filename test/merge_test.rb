@@ -66,7 +66,8 @@ module MergeFixtures
     { 'id' => 'PR_123', 'headRefOid' => HEAD, 'baseRefName' => BASE, 'state' => 'OPEN', 'isDraft' => false,
       'viewerCanMergeAsAdmin' => false, 'isMergeQueueEnabled' => false, 'isInMergeQueue' => false,
       'mergeQueueEntry' => nil,
-      'autoMergeRequest' => nil, 'mergeStateStatus' => 'CLEAN', 'reviewDecision' => nil }
+      'autoMergeRequest' => nil, 'mergeStateStatus' => 'CLEAN', 'reviewDecision' => nil,
+      'changedFiles' => 3, 'additions' => 40, 'deletions' => 10, 'commits' => { 'totalCount' => 2 } }
   end
 
   def assert_blocked(pattern)
@@ -581,5 +582,65 @@ class MergeSubmissionTest < Minitest::Test
   def test_snapshot_failure_does_not_submit
     @client.snapshots = [Shaka::Error.new('Snapshot unavailable')]
     assert_blocked(/Snapshot unavailable/)
+  end
+end
+
+class MergeLimitsGateTest < Minitest::Test
+  include MergeFixtures
+
+  LIMITS = { 'max_changed_files' => 3, 'max_changed_lines' => 50, 'max_commits' => 2 }.freeze
+
+  def merge_with(confirmed_head: nil)
+    @merge.call(head: HEAD, base: BASE, walkthrough: 17,
+                limits: Shaka::MergeLimits.new(LIMITS, confirmed_head:))
+  end
+
+  def assert_limit_blocked(pattern, confirmed_head: nil)
+    error = assert_raises(Shaka::Error) { merge_with(confirmed_head:) }
+    assert_match pattern, error.message
+    assert_empty @client.mutations
+  end
+
+  def test_counts_at_each_limit_merge
+    assert_equal 'MERGED', merge_with.fetch('state')
+  end
+
+  def test_one_past_any_limit_hands_back_as_ask
+    [{ 'changedFiles' => 4 }, { 'deletions' => 11 }, { 'commits' => { 'totalCount' => 3 } }].each do |change|
+      @client.snapshots = [snapshot.merge(change)]
+      assert_limit_blocked(/exceeds merge limits .*hand it to the user as Ask/)
+    end
+  end
+
+  def test_missing_size_evidence_hands_back_as_ask
+    [{ 'changedFiles' => nil }, { 'additions' => '40' }, { 'commits' => nil }, { 'commits' => {} },
+     { 'changedFiles' => -1 }].each do |change|
+      @client.snapshots = [snapshot.merge(change)]
+      assert_limit_blocked(/did not report the PR size/)
+    end
+  end
+
+  def test_confirmation_for_the_current_head_merges_past_limits
+    @client.snapshots = [snapshot.merge('changedFiles' => 400, 'commits' => nil)]
+    assert_equal 'MERGED', merge_with(confirmed_head: HEAD).fetch('state')
+  end
+
+  def test_confirmation_for_another_head_needs_a_new_decision
+    assert_limit_blocked(/names c{40}, not the current head/, confirmed_head: 'c' * 40)
+  end
+
+  def test_confirmation_does_not_relax_native_gates
+    @client.snapshots = [snapshot.merge('changedFiles' => 400, 'mergeStateStatus' => 'BLOCKED')]
+    assert_limit_blocked(/GitHub merge state/, confirmed_head: HEAD)
+  end
+
+  def test_a_count_that_grows_before_submission_hands_back_as_ask
+    @client.snapshots = [snapshot, snapshot.merge('changedFiles' => 4)]
+    assert_limit_blocked(/files 4 > 3/)
+  end
+
+  def test_default_limits_apply_when_the_caller_passes_none
+    @client.snapshots = [snapshot.merge('changedFiles' => 30)]
+    assert_blocked(/files 30 > 29/)
   end
 end

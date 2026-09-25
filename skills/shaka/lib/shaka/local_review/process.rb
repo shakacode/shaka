@@ -17,6 +17,8 @@ module Shaka
 
     def self.capture_streams(streams, waiter, input, timeout)
       stdin, stdout, stderr = streams
+      # Reviewer CLIs emit UTF-8 whatever the host locale; a US-ASCII default breaks parsing.
+      [stdout, stderr].each { |stream| stream.set_encoding(Encoding::UTF_8) }
       writer = Thread.new { write_input(stdin, input) }
       out_reader = Thread.new { stdout.read }
       err_reader = Thread.new { stderr.read }

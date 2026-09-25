@@ -175,6 +175,12 @@ Keep optional review history and routine rollback detail collapsed.
 
 Supply the current COMMENT review URL in the `walkthrough` field. The helper
 renders its link after the summary, or `_Not published yet._` until it exists.
+Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
+the GitHub Deployments API for the PR head and links the newest successful
+deployment's `environment_url`, the same link GitHub shows as "View deployment";
+it renders nothing when the head has none. Supply a URL yourself only when the
+preview appears solely in a provider comment or CI log. The helper links it beside
+the walkthrough.
 Also link to the current review result. Self-edit the content JSON before
 publication; let the helper render headings, tables, and details.
 
@@ -210,11 +216,14 @@ Edit wording at the same revision in place. For a new commit, publish a walkthro
 for that head and update the description's link. Keep review history in the
 description's details rather than appending it to the walkthrough.
 
-After confirming the new link, try to collapse your older walkthroughs beneath
-“Superseded — read the current walkthrough,” preserving the old body and revision.
-Leave human edits and independent reports intact. If editing is unavailable or
-authorship is uncertain, keep the current link prominent and report the limitation.
-This cleanup does not block merge.
+The walkthrough command collapses your older walkthroughs after it confirms the new
+review. Each one leads with “Superseded — read the current walkthrough:” and that
+review's link, and the old body and revision stay inside details. A details tag in
+that archived prose is written as text so the disclosure stays closed; a fenced
+example keeps its characters. Other authors'
+reviews and independent reports stay as they are. When the edit is unavailable,
+the new walkthrough still stands and the command reports the limitation. This
+cleanup does not block merge.
 
 Collapsed PR content is still public and still costs tokens when loaded. Store
 useful evidence once; retrieve and link it as needed.
