@@ -128,9 +128,9 @@ module Shaka
 
     def run
       @attempted = false
-      HelperLocation.refuse_inside!(root)
       validate_path!
       git_executable
+      HelperLocation.refuse_inside!(root)
       validate!
       validate_tempdir!
       with_requested_model(run_report(review_prompt))

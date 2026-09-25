@@ -3,6 +3,7 @@
 require 'open3'
 require 'yaml'
 require_relative '../error'
+require_relative '../helper_location'
 require_relative '../repository_config'
 require_relative '../repository_config/duplicate_keys'
 require_relative 'check_report'
@@ -39,6 +40,7 @@ module Shaka
         parse!
         return 0 if @options[:help]
 
+        HelperLocation.refuse_inside!(root)
         load_predecessor!
         report = build_report
         return apply(report) if @options[:apply]
