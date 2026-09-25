@@ -4,8 +4,8 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'shaka/merge_tree_proof'
 
-# Exercises the proof against real repositories: a review survives only a conflict-free update from the base.
-class MergeTreeProofTest < Minitest::Test
+# A repository where a feature branch edits the first of two identical blocks and main moves on.
+module MergeTreeProofRepository
   BLOCK = "value = 1\n"
 
   def setup
@@ -57,6 +57,11 @@ class MergeTreeProofTest < Minitest::Test
   end
 
   def proof(head) = Shaka::MergeTreeProof.new(@root).problem(reviewed: @reviewed, base: @new_base, head:)
+end
+
+# A review survives only a conflict-free update from the base.
+class MergeTreeProofTest < Minitest::Test
+  include MergeTreeProofRepository
 
   def test_a_clean_rebase_matches
     assert_nil proof(rebased_head)
@@ -91,6 +96,23 @@ class MergeTreeProofTest < Minitest::Test
     assert_match(/does not merge cleanly/, proof(@reviewed))
   end
 
+  def test_a_missing_commit_cannot_be_proven
+    assert_match(/not available locally/, proof('0' * 40))
+  end
+
+  def test_a_directory_outside_git_cannot_be_proven
+    Dir.mktmpdir do |outside|
+      problem = Shaka::MergeTreeProof.new(outside).problem(reviewed: @reviewed, base: @new_base, head: @reviewed)
+
+      assert_match(/not available locally/, problem)
+    end
+  end
+end
+
+# The proof must run only Git's built-in merge and leave the checkout repository untouched.
+class MergeTreeProofIsolationTest < Minitest::Test
+  include MergeTreeProofRepository
+
   # The branch picks merge drivers through .gitattributes; the proof must never run one.
   def test_a_configured_merge_driver_never_runs
     marker = File.join(@root, 'driver-ran')
@@ -113,22 +135,31 @@ class MergeTreeProofTest < Minitest::Test
     git('switch', '--quiet', 'feature')
   end
 
+  # merge.default picks a driver even when no attribute names one.
+  def test_a_default_merge_driver_never_runs
+    marker = File.join(@root, 'default-driver-ran')
+    git('config', 'merge.default', 'evil')
+    select_driver_on_branch("touch #{marker}; true")
+    File.delete(File.join(@root, '.gitattributes'))
+    File.write(File.join(@root, '.git', 'info', 'attributes'), "* merge=evil\n")
+
+    proof(@reviewed)
+
+    refute_path_exists marker
+  end
+
+  # The unrebased branch head differs from the merge, so the merged tree is new.
+  def test_the_proof_writes_nothing_into_the_checkout_repository
+    before = git('count-objects', '-v')
+
+    assert_match(/differs from a clean merge/, proof(@reviewed))
+    assert_equal before, git('count-objects', '-v')
+  end
+
   def test_a_git_that_cannot_start_leaves_the_proof_unavailable
     proof = Shaka::MergeTreeProof.new(@root)
     def proof.git(*) = raise(Errno::ENOENT, 'git')
 
     assert_match(/not available locally/, proof.problem(reviewed: @reviewed, base: @new_base, head: @reviewed))
-  end
-
-  def test_a_missing_commit_cannot_be_proven
-    assert_match(/not available locally/, proof('0' * 40))
-  end
-
-  def test_a_directory_outside_git_cannot_be_proven
-    Dir.mktmpdir do |outside|
-      problem = Shaka::MergeTreeProof.new(outside).problem(reviewed: @reviewed, base: @new_base, head: @reviewed)
-
-      assert_match(/not available locally/, problem)
-    end
   end
 end

@@ -60,7 +60,8 @@ This controls when configured CI review reports are required. Options:
 
 - `meaningful_changes`: implementation changes; trivial prose can skip with a reason.
 - `always`: every PR, including trivial changes.
-- `none`: no configured CI review backstop. Omit `ci_review_jobs` with this setting.
+- `none`: no configured CI review backstop, and `shaka merge` does not check for a
+  local review. Omit `ci_review_jobs` with this setting.
 
 Meaningful implementation also gets a local adversarial review before push:
 
@@ -91,9 +92,10 @@ A review of an earlier commit still counts in two cases:
   by merge or rebase, keeps the review when there were no conflicts and nothing
   else changed. `merge` checks this with Git in the local checkout: the head must
   match, file for file, what merging the reviewed commit with the new base
-  produces. The check uses only Git's built-in merge, so no merge driver or script
-  from the branch runs. If Git is older than 2.40 or those commits are not in the
-  checkout, `merge` asks for a new review or a waiver instead.
+  produces. The check runs Git's built-in merge in a temporary repository, so no
+  merge driver or script runs and nothing is written to your repository. If Git
+  is older than 2.40 or those commits are not in the checkout, `merge` asks for a
+  new review or a waiver instead.
 - **Ordinary Markdown since.** Every later change is ordinary Markdown. Agent
   instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
   `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or
