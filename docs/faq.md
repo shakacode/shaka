@@ -33,7 +33,8 @@ settings change as part of the diff. See [settings](settings.md).
 | What | Where |
 | --- | --- |
 | Commands, merge policy, and review jobs | [Settings](settings.md) in `.agents/shaka/config.yml` |
-| Project constraints, review criteria, and writing style | `AGENTS.md` |
+| Project constraints and review criteria | `AGENTS.md` |
+| Writing style | [Writing preferences](writing-preferences.md) in `.agents/writing-style.md` |
 | What the local reviewer looks for and how it reports | [`review.prompt_file`](settings.md#reviewprompt_file), replacing Shaka's defaults |
 | Changes to Shaka's workflow | A [fork of Shaka](workflow.md#customize-the-instructions) |
 
