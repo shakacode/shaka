@@ -105,7 +105,7 @@ master from here.
 ## Stamp the role and record it
 
 Resolve the sibling installed `shaka` skill to a trusted `scripts/shaka` path outside
-every candidate checkout; stop if it is inside the checkout. Rename this session with
+every candidate checkout. Rename this session with
 `set_session_title` to `<PREFIX> RCT — Shaka`, using that helper as `prefix --root ROOT
 --ref REF` and its JSON `prefix` field, and pin it with `set_pinned`. Preserve a more
 specific user-chosen title

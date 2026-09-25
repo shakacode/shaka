@@ -72,7 +72,7 @@ summary, idle state, or old message is insufficient.
 
 Once the MCT is unambiguous, make this task the RCT. Resolve the sibling installed
 Shaka skill to its trusted source outside every candidate checkout and retain the
-absolute `scripts/shaka` path; stop if it resolves inside the checkout. Resolve the
+absolute `scripts/shaka` path. Resolve the
 display prefix with that absolute helper as `prefix --root ROOT --ref REF` from the
 trusted default branch (`repo_prefix` when present, otherwise the documented
 fallback) and use the JSON `prefix` field. Rename the task to a concise repository-specific title of the form
