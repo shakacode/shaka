@@ -4,9 +4,11 @@ require_relative 'test_helper'
 require 'json'
 require 'stringio'
 require 'shaka/claim'
+require_relative 'claim_helpers'
 
 class ClaimTest < Minitest::Test
-  STATUS = Struct.new(:exitstatus)
+  include ClaimHelpers
+
   PR_110 = { 'number' => 110, 'title' => 'Restore lines', 'url' => 'https://example/110',
              'headRefName' => 'jg-claude/36-restore-workflow-lines' }.freeze
   PR_111 = { 'number' => 111, 'title' => 'Dup', 'url' => 'https://example/111',
@@ -49,10 +51,12 @@ class ClaimTest < Minitest::Test
     assert_equal 'feature/{issue}/{description}', result.fetch('branch_name')
   end
 
-  def test_refuses_a_non_numeric_work_item
-    error = assert_raises(Shaka::Error) { claim('restore', prs: [], branches: '') }
+  def test_refuses_a_work_item_that_is_neither_a_number_nor_a_tracker_key
+    %w[restore ENG- -123 ENG-0 1ENG-2].each do |query|
+      error = assert_raises(Shaka::Error) { claim(query, prs: [], branches: '') }
 
-    assert_includes error.message, 'positive integer'
+      assert_includes error.message, 'issue number or tracker key', query
+    end
   end
 
   def test_cli_prints_collision_json
@@ -70,21 +74,6 @@ class ClaimTest < Minitest::Test
 
   private
 
-  def claim(query, prs:, branches:, branch_name: nil)
-    Shaka::Claim.new(query: query, root: Dir.pwd, runner: runner(prs: prs, branches: branches),
-                     branch_name: branch_name).result
-  end
-
-  def capture_cli(arguments, prs:, branches:)
-    stdout = StringIO.new
-    original = $stdout
-    $stdout = stdout
-    status = Shaka::Claim.run(arguments, runner: runner(prs: prs, branches: branches))
-    [stdout.string, status]
-  ensure
-    $stdout = original
-  end
-
   def pr_argv(prs:, branches:)
     seen = nil
     inner = runner(prs: prs, branches: branches)
@@ -94,14 +83,5 @@ class ClaimTest < Minitest::Test
     end
     Shaka::Claim.new(query: '36', root: Dir.pwd, runner: wrapped, branch_name: nil).result
     seen
-  end
-
-  def runner(prs:, branches:)
-    lambda do |argv, **|
-      return [JSON.generate(prs), '', STATUS.new(0)] if argv[1] == 'pr'
-      return [branches, '', STATUS.new(0)] if argv[1] == 'ls-remote'
-
-      raise "Unexpected command: #{argv.inspect}"
-    end
   end
 end

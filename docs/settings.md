@@ -284,6 +284,11 @@ branches:
 
 For example: `alex-codex/42-fix-search`.
 
+When a task comes from a tracker that offers a branch name, such as Linear's
+**Copy git branch name**, the agent passes it to `shaka claim ENG-123 --branch NAME`
+and uses that name instead of the template. Trackers link a pull request to its
+work item through that branch name. Git must accept the name as a branch name.
+
 ## `wip.include_locations`
 
 **Optional. Default: `true`.**
