@@ -135,6 +135,14 @@ class SeamMigratePlanTest < Minitest::Test
     end
   end
 
+  def test_plan_blocks_invalid_seam_required_checks
+    with_legacy_repository('control_plane_flow_shape.yml') do |root|
+      sha = rewrite_yaml(root) { |data| data.merge('merge' => data['merge'].merge('required_checks' => [])) }
+
+      assert_includes migrate_report(root, sha).fetch('blocking'), 'merge.required_checks must not be empty'
+    end
+  end
+
   def test_command_role_collision_chooses_the_stricter_temporary_behavior
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => swapped_commands) }

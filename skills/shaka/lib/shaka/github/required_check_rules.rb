@@ -35,7 +35,7 @@ module Shaka
       private
 
       def ruleset_contexts(branch)
-        path = "repos/#{@repository}/rules/branches/#{branch.split('/').map { URI.encode_uri_component(it) }.join('/')}"
+        path = "repos/#{@repository}/rules/branches/#{URI.encode_uri_component(branch)}"
         stdout, stderr, status = @runner.call(['gh', 'api', "#{path}?per_page=#{RULES_PAGE}"], stdin_data: '')
         failed = !status.exitstatus.zero?
         return [] if failed && "#{stdout}#{stderr}".match?(PLAN_WITHOUT_RULESETS)

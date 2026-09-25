@@ -19,6 +19,12 @@ class GitHubRequiredCheckRulesTest < Minitest::Test
     assert_equal ['gh', 'api', 'repos/owner/repo/rules/branches/main?per_page=100'], @calls.last.first.first(3)
   end
 
+  def test_a_slash_in_the_base_branch_is_one_encoded_segment
+    client(base_rule_response([], branch: 'release/1.x'), response([])).configured_required_checks
+
+    assert_equal 'repos/owner/repo/rules/branches/release%2F1.x?per_page=100', @calls.last.first[2]
+  end
+
   def test_an_unprotected_branch_requires_nothing
     assert_empty client(base_rule_response(nil), response([])).configured_required_checks
   end
@@ -52,10 +58,10 @@ class GitHubRequiredCheckRulesTest < Minitest::Test
 
   private
 
-  def base_rule_response(contexts)
+  def base_rule_response(contexts, branch: 'main')
     rule = contexts && { 'requiredStatusCheckContexts' => contexts }
     response({ 'data' => { 'repository' => { 'pullRequest' => {
-               'baseRefName' => 'main', 'baseRef' => { 'refUpdateRule' => rule }
+               'baseRefName' => branch, 'baseRef' => { 'refUpdateRule' => rule }
              } } } })
   end
 end
