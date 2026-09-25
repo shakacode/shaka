@@ -10,16 +10,7 @@ Browse [this repository’s configuration](https://github.com/shakacode/shaka/bl
 commented example with explicit defaults and repository-specific review choices.
 Optional settings that would pin a branch, model, or prompt stay commented.
 
-Repository writing defaults live in the optional conventional file
-`.agents/writing-style.md`, not in this YAML mapping. `seam check` returns its
-contents as `writing_style.guide` only when `--ref` reads it from the trusted
-commit. Local and implicit candidate checks validate the file but do not return
-its prose; an invalid candidate file fails that check. Under `--ref`, an invalid
-file produces a warning and is omitted without withholding the repository's
-trusted workflow policy. The warning is present on stderr and as
-`writing_style_warning` in the JSON output.
-See [writing preferences](writing-preferences.md).
-
+For documentation and PR style, see [writing preferences](writing-preferences.md).
 
 ## `merge.preference`
 
