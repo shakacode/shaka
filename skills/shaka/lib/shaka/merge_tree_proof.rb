@@ -5,11 +5,14 @@ require 'open3'
 module Shaka
   # Proves a head is exactly a conflict-free merge of a reviewed commit with a newer base.
   #
-  # `git merge-tree --write-tree` (Git 2.38+) merges in memory, so it reads no working tree and
-  # runs no candidate code. It writes unreferenced objects that `git gc` prunes. Comparing whole
-  # trees covers file modes, binaries, and moved edits, which patch text cannot.
+  # `git merge-tree --write-tree` merges in memory and writes unreferenced objects that `git gc`
+  # prunes. Comparing whole trees covers file modes, binaries, and moved edits, which patch text
+  # cannot. The branch could select a configured merge driver through .gitattributes, so the proof
+  # reads attributes from the empty tree (`--attr-source`, Git 2.40+) and ignores the user's
+  # attributes file; only Git's built-in merge runs.
   class MergeTreeProof
     COMMIT = /\A[0-9a-f]{40}\z/
+    EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 
     def initialize(root) = @root = root
 
@@ -25,7 +28,7 @@ module Shaka
     def tree_problem(reviewed, base, head)
       merged, status = merged_tree(base, reviewed)
       return 'the reviewed commit does not merge cleanly with the base' if status == 1
-      return 'the commits needed for the proof are not available locally' unless status.zero? && merged
+      return 'the commits needed for the proof are not available locally' unless status&.zero? && merged
 
       head_tree = tree(head)
       return 'the commits needed for the proof are not available locally' unless head_tree
@@ -48,6 +51,8 @@ module Shaka
       nil
     end
 
-    def git(*) = Open3.capture3('git', '-C', @root, *)
+    def git(*)
+      Open3.capture3('git', '-C', @root, "--attr-source=#{EMPTY_TREE}", '-c', 'core.attributesFile=/dev/null', *)
+    end
   end
 end

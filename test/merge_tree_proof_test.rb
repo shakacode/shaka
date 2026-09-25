@@ -91,6 +91,35 @@ class MergeTreeProofTest < Minitest::Test
     assert_match(/does not merge cleanly/, proof(@reviewed))
   end
 
+  # The branch picks merge drivers through .gitattributes; the proof must never run one.
+  def test_a_configured_merge_driver_never_runs
+    marker = File.join(@root, 'driver-ran')
+    select_driver_on_branch("touch #{marker}; false")
+
+    proof(@reviewed)
+
+    refute_path_exists marker
+  end
+
+  # Leaves the branch checked out, as a candidate checkout would be, with both sides editing app.rb.
+  def select_driver_on_branch(command)
+    git('config', 'merge.evil.driver', command)
+    git('switch', '--quiet', 'feature')
+    write('.gitattributes', "app.rb merge=evil\n")
+    @reviewed = commit('select the driver')
+    git('switch', '--quiet', 'main')
+    write('app.rb', "#{BLOCK}middle\nvalue = 9\n")
+    @new_base = commit('base edits the same file')
+    git('switch', '--quiet', 'feature')
+  end
+
+  def test_a_git_that_cannot_start_leaves_the_proof_unavailable
+    proof = Shaka::MergeTreeProof.new(@root)
+    def proof.git(*) = raise(Errno::ENOENT, 'git')
+
+    assert_match(/not available locally/, proof.problem(reviewed: @reviewed, base: @new_base, head: @reviewed))
+  end
+
   def test_a_missing_commit_cannot_be_proven
     assert_match(/not available locally/, proof('0' * 40))
   end

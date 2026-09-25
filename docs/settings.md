@@ -91,8 +91,9 @@ A review of an earlier commit still counts in two cases:
   by merge or rebase, keeps the review when there were no conflicts and nothing
   else changed. `merge` checks this with Git in the local checkout: the head must
   match, file for file, what merging the reviewed commit with the new base
-  produces. If Git is older than 2.38 or those commits are not in the checkout,
-  `merge` asks for a new review or a waiver instead.
+  produces. The check uses only Git's built-in merge, so no merge driver or script
+  from the branch runs. If Git is older than 2.40 or those commits are not in the
+  checkout, `merge` asks for a new review or a waiver instead.
 - **Ordinary Markdown since.** Every later change is ordinary Markdown. Agent
   instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
   `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or
