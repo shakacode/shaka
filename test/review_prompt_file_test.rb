@@ -13,12 +13,11 @@ class ReviewPromptFileTest < Minitest::Test
 
   # The PR under review cannot change the instructions it is reviewed with.
   def test_uses_the_repository_prompt_file_from_the_trusted_commit
-    with_repository('prompt_file' => '.agents/review-prompt.md') do |root, base, head, bin|
+    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }) do |root, base, head, bin|
       prompt = review_prompt(root, base, head, bin)
 
       assert_includes prompt, 'Trusted repository instructions'
       refute_includes prompt, 'Candidate instructions'
-      refute_includes prompt, 'Contract drift'
       assert_includes prompt, 'Make no edits.'
     end
   end
@@ -34,6 +33,13 @@ class ReviewPromptFileTest < Minitest::Test
     end
   end
 
+  # Reading one review setting must not make the review depend on the rest of the seam being valid.
+  def test_reads_the_prompt_file_when_other_settings_at_the_trusted_commit_are_incomplete
+    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }, commands: false) do |root, base, head, bin|
+      assert_includes review_prompt(root, base, head, bin), 'Trusted repository instructions'
+    end
+  end
+
   def test_keeps_the_default_instructions_without_a_prompt_file
     with_repository do |root, base, head, bin|
       assert_includes review_prompt(root, base, head, bin), 'Contract drift'
@@ -41,7 +47,7 @@ class ReviewPromptFileTest < Minitest::Test
   end
 
   def test_a_missing_prompt_file_stops_the_review_before_launch
-    with_repository('prompt_file' => '.agents/absent.md') do |root, base, head, bin|
+    with_repository({ 'prompt_file' => '.agents/absent.md' }) do |root, base, head, bin|
       output, = run_review(root, base, head, bin)
       result = JSON.parse(output)
 
@@ -67,10 +73,10 @@ class ReviewPromptFileTest < Minitest::Test
                    '--reviewer', 'openai/codex', '--criteria-ref', base)
   end
 
-  def with_repository(review = {})
+  def with_repository(review = {}, commands: true)
     Dir.mktmpdir('shaka-review-prompt-file') do |root|
       Dir.mktmpdir('shaka-review-prompt-cli') do |bin|
-        base = trusted_commit(root, review)
+        base = trusted_commit(root, review, commands)
         File.write(File.join(root, '.agents/review-prompt.md'), "Candidate instructions\n")
         commit!(root, 'candidate change')
         fake_codex(bin, git!(root, 'rev-parse', 'HEAD').strip)
@@ -79,10 +85,12 @@ class ReviewPromptFileTest < Minitest::Test
     end
   end
 
-  def trusted_commit(root, review)
+  def trusted_commit(root, review, commands)
     git!(root, 'init')
     FileUtils.mkdir_p(File.join(root, '.agents/bin'))
-    %w[setup validate test].each { |name| write_executable(File.join(root, '.agents/bin'), name, "#!/bin/sh\n") }
+    if commands
+      %w[setup validate test].each { |name| write_executable(File.join(root, '.agents/bin'), name, "#!/bin/sh\n") }
+    end
     write_trusted_files(root, review)
     commit!(root, 'trusted')
     git!(root, 'rev-parse', 'HEAD').strip

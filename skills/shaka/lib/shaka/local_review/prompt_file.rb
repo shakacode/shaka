@@ -3,8 +3,8 @@
 require 'open3'
 require 'rbconfig'
 require 'tempfile'
+require 'yaml'
 require_relative '../repository_config'
-require_relative '../trusted_config_source'
 require_relative '../trusted_path_resolver'
 
 module Shaka
@@ -36,8 +36,19 @@ module Shaka
       ref = @options[:criteria_ref]
       return unless ref && trusted_seam?(ref)
 
-      path = configured_prompt_path(TrustedConfigSource.load(root:, ref:, candidate_commands: false).review)
+      path = configured_prompt_path(trusted_review_settings(ref))
       path && read_trusted_prompt(ref, path)
+    end
+
+    # Reads only the review section, so the rest of the seam need not be valid for a review to run;
+    # `shaka seam check` validates the whole contract.
+    def trusted_review_settings(ref)
+      source = capture(git_executable, '-C', root, 'show', "#{ref}:#{RepositoryConfig::PATH}")
+      data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
+      review = data.is_a?(Hash) ? data['review'] : nil
+      review.is_a?(Hash) ? review : {}
+    rescue Psych::Exception => e
+      raise Shaka::Error, "Invalid #{RepositoryConfig::PATH} at #{ref}: #{e.message}"
     end
 
     # A repository without a seam at that commit keeps the default instructions.
@@ -48,10 +59,14 @@ module Shaka
 
     # A reviewer's own file wins over the repository-wide one.
     def configured_prompt_path(review)
-      agents = review.fetch(RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS, [])
+      agents = Array(review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS]).grep(Hash)
       agent = agents.find { |entry| entry.values_at(*ReviewerSelection::IDENTITY).join('/').downcase == reviewer }
       prompt_file = RepositoryConfig::ReviewSchema::PROMPT_FILE
-      agent&.fetch(prompt_file, nil) || review[prompt_file]
+      path = agent&.fetch(prompt_file, nil) || review[prompt_file]
+      return if path.nil?
+      raise Shaka::Error, "review #{prompt_file} must be a repository path" unless path.is_a?(String)
+
+      path
     end
 
     def read_trusted_prompt(ref, path)
