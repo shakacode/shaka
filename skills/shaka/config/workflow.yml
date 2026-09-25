@@ -42,7 +42,9 @@ phases:
         user explicitly chooses broader scope. Review-only and PR-only work skips it.
       - Use the host's native task-title tool when available: repository, verified issue or PR
         identifier, and short outcome. Update the same task when its PR is created or adopted;
-        preserve user-chosen titles. Without that tool, suggest the title once.
+        preserve user-chosen titles. Without that tool, open your next reply with the
+        suggested title alone on its own line as `Chat name:` followed by the title in a code
+        span, and repeat that line with the PR number in the reply that reports the new PR.
       - Before writing to an unfinished PR, whether resuming or adopting it, follow the
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
     done_when: >-
