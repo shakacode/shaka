@@ -46,8 +46,9 @@ Use safe test data. Before publishing, check for credentials, private task detai
 customer data, and unrelated screen content. Expandable sections on public PRs
 are public too.
 
-For a user-visible change, the agent also uses the change by hand on the head it
-pushes, and repeats that pass after any later commit that changes runtime behavior.
+For a layout, styling, or interaction change, the agent also uses the change by
+hand on the head it pushes, and repeats that pass after any later commit that
+changes runtime behavior.
 When the PR has a preview deployment, it checks the preview too, or says why not.
 
 Attach captures to a PR comment with GitHub CLI 2.99 or later, then open the
