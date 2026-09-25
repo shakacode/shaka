@@ -15,6 +15,7 @@
 - [Writing preferences](writing-preferences.md) — clear PRs and repository-specific style.
 - [Repository catalog](repository-catalog.md) — consistent setup and distinct project prefixes.
 - [Control towers](control-towers.md) — organize work within and across repositories.
+- [FAQ](faq.md) — customization limits, merges, reviews, and comments.
 
 For an existing installation, see [upgrading](migration.md).
 Development guidance lives in [Contributing](../CONTRIBUTING.md).
