@@ -23,8 +23,9 @@ PROMPT=$(mktemp)
 git show "${TRUSTED:?}:.agents/review-prompt.md" > "$PROMPT"
 ```
 
-The reviewer's own file wins over the repository-wide one. `shaka review run`
-does this itself when given `--criteria-ref`.
+The reviewer's own file wins over the repository-wide one. `git show` does not follow symlinks,
+so when the configured path is a symlink, read the file it points to. `shaka review run` does all
+of this itself when given `--criteria-ref`.
 
 It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
 they ask for correctness, contract drift, security and trust, test coverage, and simplification;
