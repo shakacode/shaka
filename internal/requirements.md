@@ -134,7 +134,9 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 - **D4 (R6–R7):** use live native checks, merge state, and approvals.
   Inspect check states, not just a CLI exit code. Require observable checks
   enforced for the acting account; GitHub owns full enforcement, including
-  requirements absent from the reported list. COMMENT never substitutes for APPROVE.
+  requirements absent from the reported list. When the base branch has no required
+  checks configured, the trusted seam's `merge.required_checks` stands in and Shaka
+  enforces it (see the merge boundary). COMMENT never substitutes for APPROVE.
 - **D5 (R8, R10):** link the complete skill from a version-controlled trusted source
   into an explicit skills directory. Refuse foreign targets and preserve user settings.
 - **D6 (R10):** runtime uses Ruby standard libraries. Development uses Bundler,
