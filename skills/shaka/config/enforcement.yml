@@ -206,13 +206,21 @@ rules:
       and the scan does not reach this rule either, because it restricts with a bare "only".
   - id: visible-change-evidence-published
     phase: explain
-    quote: a local path is not evidence
-    rule: Publish a UI change's captures on its PR, or a blocked reason in their place.
+    quote: then publish them on its PR
+    rule: Publish a UI change's captures on its PR.
     enforced_by: agent
     note: >-
-      Nothing reads the PR for uploaded captures or a recorded blocked reason, so a UI change
-      can reach merge with neither. The scan does not reach this rule either, because it
-      states no marker form.
+      Nothing reads the PR for uploaded captures, so a UI change can reach merge without them.
+      The scan does not reach this rule either, because it states no marker form.
+  - id: visible-change-blocked-reason
+    phase: explain
+    quote: >-
+      When a capture cannot be published, record `uploader_absent`, `uploader_denied`, or
+      `upload_failed: DETAIL` on the PR in its place.
+    enforced_by: agent
+    note: >-
+      Nothing checks that a missing capture has a recorded reason, and the scan does not reach
+      this rule, because it states no marker form.
   - id: comments-is-the-only-reader
     phase: explain
     quote: Read public issue and PR feedback only with `comments`

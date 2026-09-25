@@ -225,8 +225,8 @@ phases:
         tested revision, and read the comment back to confirm each capture became an uploaded
         URL; a local path is not evidence. When a capture cannot be published, record
         `uploader_absent`, `uploader_denied`, or `upload_failed: DETAIL` on the PR in its place.
-        When the description links a preview, whether `deployment: auto` resolved it or you
-        supplied its URL, repeat the manual pass against it, or record on the PR why not.
+        Once you resolve a preview for the description, whether through `deployment: auto` or a
+        URL you supply, repeat the manual pass against it, or record on the PR why not.
       - Use the review-ready path unless a needed reviewer's trusted workflow shows it reviews drafts.
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
