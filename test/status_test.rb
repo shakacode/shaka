@@ -27,7 +27,7 @@ class StatusTest < Minitest::Test
 
   def test_status_reports_absent_required_checks_without_failing
     empty = ['', "no required checks reported on the 'main' branch\n", STATUS.new(1)]
-    result = Shaka::Status.new(client(snapshot_response, empty, snapshot_response)).call
+    result = Shaka::Status.new(client(snapshot_response, empty, *no_configured_requirements, snapshot_response)).call
     assert_equal [], result['requiredChecks']
     refute result.key?('requiredChecksUnavailable')
   end

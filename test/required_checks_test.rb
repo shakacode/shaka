@@ -26,11 +26,14 @@ class RequiredChecksTest < Minitest::Test
     assert_equal({ 'source' => 'seam', 'checks' => [PASS] }, result)
   end
 
-  # An unreported native requirement leaves `gh pr checks --required` empty; the seam must not replace it.
-  def test_configured_native_requirements_that_have_not_reported_keep_github_as_the_source
-    result = Shaka::RequiredChecks.new(Client.new([], [PASS], ['validate']), seam_names: ['checks']).call
+  # An unreported native requirement leaves `gh pr checks --required` empty; it must block, not vanish.
+  def test_configured_native_requirements_that_have_not_reported_are_missing
+    missing = { 'name' => 'validate', 'state' => 'MISSING', 'bucket' => 'missing' }
+    [['checks'], nil].each do |seam_names|
+      result = Shaka::RequiredChecks.new(Client.new([], [PASS], ['validate']), seam_names:).call
 
-    assert_equal({ 'source' => 'github', 'checks' => [] }, result)
+      assert_equal({ 'source' => 'github', 'checks' => [missing] }, result)
+    end
   end
 
   def test_a_seam_check_absent_from_the_head_is_reported_missing

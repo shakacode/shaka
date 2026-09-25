@@ -131,9 +131,9 @@ class GitHubUnprotectedWalkthroughTest < Minitest::Test
   def test_walkthrough_on_an_unprotected_branch_cites_completed_optional_gates
     unprotected = ['', "no required checks reported on the 'main' branch\n", STATUS.new(1)]
     body = "See #{PINNED_LINK}. Gates: claude-review."
-    github = client(snapshot_response, files_response, unprotected, response(COMPLETED_GATES),
-                    html_response, review_response(body: body), review_response(body: body),
-                    snapshot_response, response([]))
+    github = client(snapshot_response, files_response, unprotected, *no_configured_requirements,
+                    response(COMPLETED_GATES), html_response, review_response(body: body),
+                    review_response(body: body), snapshot_response, response([]))
     published = github.walkthrough(head: HEAD, body: body)
     assert_equal 'COMMENTED', published['state']
   end
