@@ -4,6 +4,7 @@ require 'json'
 require 'securerandom'
 require 'tempfile'
 require 'tmpdir'
+require_relative '../helper_location'
 require_relative '../reviewer_selection'
 require_relative 'cli'
 require_relative 'criteria'
@@ -127,6 +128,7 @@ module Shaka
 
     def run
       @attempted = false
+      HelperLocation.refuse_inside!(root)
       validate_path!
       git_executable
       validate!

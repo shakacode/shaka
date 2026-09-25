@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require_relative 'repository_fixture'
 require 'fileutils'
+require 'json'
 
 class TrustedHelperLocationTest < Minitest::Test
   include RepositoryConfigTestHelpers
@@ -44,6 +45,19 @@ class TrustedHelperLocationTest < Minitest::Test
         refute_predicate status, :success?
         assert_includes error, 'resolves inside the checkout'
       end
+    end
+  end
+
+  def test_local_review_refuses_a_helper_inside_the_checkout
+    with_repository do |root|
+      helper = install_skill(File.join(root, 'skills'))
+      commit(root)
+      head = `git -C #{root} rev-parse HEAD`.strip
+      output, _error, status = Open3.capture3(helper, 'review', 'run', '--root', root, '--head', head,
+                                              '--base', head, '--reviewer', 'openai/codex')
+
+      refute_predicate status, :success?
+      assert_includes JSON.parse(output).fetch('reason'), 'resolves inside the checkout'
     end
   end
 

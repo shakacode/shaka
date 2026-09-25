@@ -38,7 +38,7 @@ They do not restrict maintainers.
 | Responsibility | Enforcement |
 | --- | --- |
 | Valid settings, command paths, and values | Ruby configuration checks |
-| Running the installed helper, not a copy the checkout can replace | Ruby refuses every trusted settings read when the helper lives inside the checkout it reads |
+| Running the installed helper, not a copy the checkout can replace | Ruby refuses `--ref` settings reads and `review run` when the helper lives inside the checkout |
 | Which public comment bodies an agent reads | Ruby allowlist and provenance checks |
 | Reviewed commit and required GitHub merge conditions | Ruby merge helper and GitHub protection |
 | Adequate tests, useful screenshots, and independent review | Agent judgment and review |
