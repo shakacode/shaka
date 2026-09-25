@@ -26,7 +26,7 @@ until the maintainer expands it. The named consumers below retain their original
 retirement-checklist work:
 
 - [React on Rails](https://github.com/shakacode/react_on_rails) — [PR 5093](https://github.com/shakacode/react_on_rails/pull/5093); point the seam at Shaka and mark leftover predecessor files transitional.
-- [Control Plane Flow](https://github.com/shakacode/control-plane-flow) — [PR 491](https://github.com/shakacode/control-plane-flow/pull/491); same rule.
+- [Control Plane Flow](https://github.com/shakacode/control-plane-flow) — migration completed by [PR #496](https://github.com/shakacode/control-plane-flow/pull/496), merge `3d16440`; same rule.
 
 Record pinned revision, consumed files, whether each behavior moves to Shaka,
 stays repository-local, or is retired, and the owning migration PR. Private
