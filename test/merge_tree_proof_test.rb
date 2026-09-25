@@ -149,6 +149,33 @@ class MergeTreeProofIsolationTest < Minitest::Test
   end
 
   # The unrebased branch head differs from the merge, so the merged tree is new.
+  # Configuration can also arrive through the environment of the process that runs merge.
+  def test_a_driver_from_environment_configuration_never_runs
+    marker = File.join(@root, 'environment-driver-ran')
+    select_driver_on_branch('true')
+    File.delete(File.join(@root, '.gitattributes'))
+    settings = { 'GIT_CONFIG_COUNT' => '2', 'GIT_CONFIG_KEY_0' => 'merge.default', 'GIT_CONFIG_VALUE_0' => 'env',
+                 'GIT_CONFIG_KEY_1' => 'merge.env.driver', 'GIT_CONFIG_VALUE_1' => "touch #{marker}; true" }
+    with_environment(settings) { proof(@reviewed) }
+
+    refute_path_exists marker
+  end
+
+  def with_environment(settings)
+    saved = settings.keys.to_h { |key| [key, ENV.fetch(key, nil)] }
+    settings.each { |key, value| ENV[key] = value }
+    yield
+  ensure
+    saved.each { |key, value| ENV[key] = value }
+  end
+
+  def test_an_old_git_is_reported_as_unsupported
+    proof = Shaka::MergeTreeProof.new(@root)
+    def proof.git_version = 'git version 2.40.1'
+
+    assert_match(/Git 2\.41 or later/, proof.problem(reviewed: @reviewed, base: @new_base, head: @reviewed))
+  end
+
   def test_the_proof_writes_nothing_into_the_checkout_repository
     before = git('count-objects', '-v')
 

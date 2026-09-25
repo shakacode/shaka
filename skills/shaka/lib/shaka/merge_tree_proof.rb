@@ -8,23 +8,25 @@ module Shaka
   #
   # Comparing whole trees covers file modes, binaries, and moved edits, which patch text cannot.
   # The merge runs in a throwaway bare repository that borrows the checkout's objects through
-  # `alternates`. It has no config, attributes, or hooks, and system, global, and XDG sources are
-  # off, so no merge driver can run: neither one a branch selects through .gitattributes nor one
-  # `merge.default` names. Only Git's built-in merge runs, and its objects stay in the throwaway
-  # repository. `--attr-source` needs Git 2.40 or later; older Git leaves the proof unavailable.
+  # `alternates`. Git starts with a cleared environment, and the repository has no config,
+  # attributes, template, or hooks, so no merge driver can run: not one a branch selects through
+  # .gitattributes, one `merge.default` names, or one injected through GIT_CONFIG_* variables.
+  # Only Git's built-in merge runs, and its objects stay in the throwaway repository.
+  # `--attr-source` needs Git 2.41 or later.
   class MergeTreeProof
     COMMIT = /\A[0-9a-f]{40}\z/
     EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
     UNAVAILABLE = 'the commits needed for the proof are not available locally'
+    MINIMUM_GIT = [2, 41].freeze
     ISOLATED = { 'GIT_CONFIG_NOSYSTEM' => '1', 'GIT_CONFIG_GLOBAL' => File::NULL, 'GIT_ATTR_NOSYSTEM' => '1',
-                 'XDG_CONFIG_HOME' => File::NULL, 'GIT_DIR' => nil, 'GIT_OBJECT_DIRECTORY' => nil,
-                 'GIT_ALTERNATE_OBJECT_DIRECTORIES' => nil }.freeze
+                 'XDG_CONFIG_HOME' => File::NULL, 'HOME' => File::NULL }.freeze
 
     def initialize(root) = @root = root
 
     # Returns nil when the proof holds, or why it does not.
     def problem(reviewed:, base:, head:)
       return 'the commits are not full SHAs' unless [reviewed, base, head].all? { |sha| sha.to_s.match?(COMMIT) }
+      return 'the proof needs Git 2.41 or later' unless supported_git?
 
       objects = object_directory
       return UNAVAILABLE unless objects
@@ -39,6 +41,21 @@ module Shaka
 
     private
 
+    def supported_git?
+      version = git_version.to_s[/\Agit version (\d+)\.(\d+)/, 0]&.scan(/\d+/)&.map(&:to_i)
+      version && (version <=> MINIMUM_GIT) >= 0
+    end
+
+    def git_version
+      output, _error, status = run('git', 'version')
+      output if status.success?
+    rescue SystemCallError
+      nil
+    end
+
+    # Only PATH survives from the caller, so GIT_CONFIG_* and similar variables cannot reach Git.
+    def run(*) = Open3.capture3({ 'PATH' => ENV.fetch('PATH', '') }.merge(ISOLATED), *, unsetenv_others: true)
+
     def tree_problem(reviewed, base, head)
       merged, status = merged_tree(base, reviewed)
       return 'the reviewed commit does not merge cleanly with the base' if status == 1
@@ -52,15 +69,14 @@ module Shaka
 
     # Reading the checkout's object location runs no merge machinery.
     def object_directory
-      output, _error, status = Open3.capture3(ISOLATED, 'git', '-C', @root, 'rev-parse', '--path-format=absolute',
-                                              '--git-common-dir')
+      output, _error, status = run('git', '-C', @root, 'rev-parse', '--path-format=absolute', '--git-common-dir')
       File.join(output.strip, 'objects') if status.success? && !output.strip.empty?
     rescue SystemCallError
       nil
     end
 
     def borrow(objects)
-      _output, _error, status = Open3.capture3(ISOLATED, 'git', 'init', '--quiet', '--bare', @scratch)
+      _output, _error, status = run('git', 'init', '--quiet', '--bare', '--template=', @scratch)
       return false unless status.success?
 
       File.write(File.join(@scratch, 'objects', 'info', 'alternates'), "#{objects}\n")
@@ -84,9 +100,6 @@ module Shaka
       nil
     end
 
-    def git(*)
-      Open3.capture3(ISOLATED, 'git', '-C', @scratch, "--attr-source=#{EMPTY_TREE}",
-                     '-c', "core.attributesFile=#{File::NULL}", *)
-    end
+    def git(*) = run('git', '-C', @scratch, "--attr-source=#{EMPTY_TREE}", '-c', "core.attributesFile=#{File::NULL}", *)
   end
 end

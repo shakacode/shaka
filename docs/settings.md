@@ -94,7 +94,7 @@ A review of an earlier commit still counts in two cases:
   match, file for file, what merging the reviewed commit with the new base
   produces. The check runs Git's built-in merge in a temporary repository, so no
   merge driver or script runs and nothing is written to your repository. If Git
-  is older than 2.40 or those commits are not in the checkout, `merge` asks for a
+  is older than 2.41 or those commits are not in the checkout, `merge` asks for a
   new review or a waiver instead.
 - **Ordinary Markdown since.** Every later change is ordinary Markdown. Agent
   instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
