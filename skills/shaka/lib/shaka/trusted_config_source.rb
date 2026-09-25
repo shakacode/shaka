@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative 'repository_config'
+require_relative 'review_prompt'
 require_relative 'trusted_path_resolver'
 
 module Shaka
@@ -31,14 +32,25 @@ module Shaka
 
     private
 
-    # A missing prompt file would stop every local review, including the one for the PR that fixes it.
+    # A prompt file the review runner would reject would stop every local review, including the one
+    # for the PR that fixes it.
     def validate_prompt_files(review, sha)
       resolver = TrustedPathResolver.new(root: @root, sha:)
       RepositoryConfig::ReviewSchema.prompt_files(review).each do |label, path|
-        _, entry = resolver.resolve(path)
-        raise Error, "#{label} does not name a file at #{sha}: #{path}" unless entry && entry.last == 'blob' &&
-                                                                               entry.first != TrustedPathResolver::SYMLINK.first
+        resolved, entry = resolver.resolve(path)
+        is_blob = entry && entry.last == 'blob' && entry.first != TrustedPathResolver::SYMLINK.first
+        raise Error, "#{label} does not name a file at #{sha}: #{path}" unless is_blob
+
+        error = ReviewPrompt.instructions_error(git_show(sha, resolved))
+        raise Error, "#{label} #{path} at #{sha} #{error}" if error
       end
+    end
+
+    def git_show(sha, path)
+      text, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{path}", binmode: true)
+      raise Error, "Cannot read #{path} at #{sha}: #{error.strip}" unless status.success?
+
+      text
     end
 
     def resolve(ref)

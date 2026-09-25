@@ -4,6 +4,7 @@ require_relative '../branch_name'
 require_relative '../error'
 require_relative '../merge_limits'
 require_relative '../repo_prefix'
+require_relative '../review_prompt'
 require_relative 'branch_schema'
 require_relative 'command_schema'
 require_relative 'wip_schema'
@@ -73,7 +74,10 @@ module Shaka
 
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
       def local_prompt_files!(review)
-        ReviewSchema.prompt_files(review).each { |label, path| file!(path, label) }
+        ReviewSchema.prompt_files(review).each do |label, path|
+          error = ReviewPrompt.instructions_error(File.binread(file!(path, label)))
+          raise Error, "#{label} #{path} #{error}" if error
+        end
       end
 
       def validate_merge

@@ -40,6 +40,16 @@ module Shaka
       prompt_file: ['--prompt-file PATH', 'Review instructions replacing the default ones']
     }.freeze
 
+    # Seam checks and the review runner apply the same limits, so a file they accept always renders.
+    def self.instructions_error(text)
+      return "exceeds #{MAX_INSTRUCTIONS_BYTES / 1000} KB" if text.bytesize > MAX_INSTRUCTIONS_BYTES
+
+      text = text.dup.force_encoding(Encoding::UTF_8)
+      return 'is not UTF-8' unless text.valid_encoding?
+
+      'is empty' if text.strip.empty?
+    end
+
     def self.run(arguments)
       new(arguments).run
     rescue OptionParser::ParseError, Shaka::Error, SystemCallError => e
@@ -85,15 +95,11 @@ module Shaka
     def scope = "The change is exactly: git diff #{base}...#{head}"
 
     def instructions
-      path = @options.fetch(:prompt_file, DEFAULT_INSTRUCTIONS)
-      raise Shaka::Error, "--prompt-file exceeds #{MAX_INSTRUCTIONS_BYTES / 1000} KB" if
-        File.size(path) > MAX_INSTRUCTIONS_BYTES
+      text = File.binread(@options.fetch(:prompt_file, DEFAULT_INSTRUCTIONS))
+      error = self.class.instructions_error(text)
+      raise Shaka::Error, "--prompt-file #{error}" if error
 
-      text = File.binread(path).force_encoding(Encoding::UTF_8)
-      raise Shaka::Error, '--prompt-file is not UTF-8' unless text.valid_encoding?
-      raise Shaka::Error, '--prompt-file is empty' if text.strip.empty?
-
-      text.strip
+      text.force_encoding(Encoding::UTF_8).strip
     end
 
     def closing

@@ -4,6 +4,7 @@ require 'rbconfig'
 require 'tempfile'
 require 'yaml'
 require_relative '../repository_config'
+require_relative '../review_prompt'
 require_relative '../trusted_path_resolver'
 
 module Shaka
@@ -77,7 +78,11 @@ module Shaka
       resolved, entry = TrustedPathResolver.new(root:, sha: ref).resolve(path)
       raise Shaka::Error, "Review prompt file #{path} is not a file at #{ref}" unless prompt_blob?(entry)
 
-      capture(git_executable, '-C', root, 'show', "#{ref}:#{resolved}")
+      text = capture(git_executable, '-C', root, 'show', "#{ref}:#{resolved}")
+      error = ReviewPrompt.instructions_error(text)
+      raise Shaka::Error, "Review prompt file #{path} at #{ref} #{error}" if error
+
+      text
     end
 
     def prompt_blob?(entry) = entry && entry.last == 'blob' && entry.first != TrustedPathResolver::SYMLINK.first

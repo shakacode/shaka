@@ -7,56 +7,12 @@ require 'yaml'
 require_relative 'repository_fixture'
 require 'shaka/repository_config'
 require 'shaka/trusted_config_source'
+require 'shaka/seam/field_classifier'
 
 # A repository's review instructions, read from the trusted commit and chosen per reviewer.
-class ReviewPromptFileTest < Minitest::Test
+# Builds a repository whose trusted commit configures review prompts, and runs review run on it.
+module ReviewPromptFileFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
-
-  # The PR under review cannot change the instructions it is reviewed with.
-  def test_uses_the_repository_prompt_file_from_the_trusted_commit
-    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }) do |root, base, head, bin|
-      prompt = review_prompt(root, base, head, bin)
-
-      assert_includes prompt, 'Trusted repository instructions'
-      refute_includes prompt, 'Candidate instructions'
-      assert_includes prompt, 'Make no edits.'
-    end
-  end
-
-  def test_a_reviewer_prompt_file_overrides_the_repository_prompt_file
-    agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'prompt_file' => '.agents/codex-prompt.md' }]
-    review = { 'prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents }
-    with_repository(review) do |root, base, head, bin|
-      prompt = review_prompt(root, base, head, bin)
-
-      assert_includes prompt, 'Codex-only instructions'
-      refute_includes prompt, 'Trusted repository instructions'
-    end
-  end
-
-  # Reading one review setting must not make the review depend on the rest of the seam being valid.
-  def test_reads_the_prompt_file_when_other_settings_at_the_trusted_commit_are_incomplete
-    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }, commands: false) do |root, base, head, bin|
-      assert_includes review_prompt(root, base, head, bin), 'Trusted repository instructions'
-    end
-  end
-
-  def test_keeps_the_default_instructions_without_a_prompt_file
-    with_repository do |root, base, head, bin|
-      assert_includes review_prompt(root, base, head, bin), 'Contract drift'
-    end
-  end
-
-  def test_a_missing_prompt_file_stops_the_review_before_launch
-    with_repository({ 'prompt_file' => '.agents/absent.md' }) do |root, base, head, bin|
-      output, = run_review(root, base, head, bin)
-      result = JSON.parse(output)
-
-      assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), '.agents/absent.md'
-      refute_path_exists File.join(root, 'trace.json')
-    end
-  end
 
   private
 
@@ -100,6 +56,7 @@ class ReviewPromptFileTest < Minitest::Test
   def write_trusted_files(root, review)
     File.write(File.join(root, '.agents/review-prompt.md'), "Trusted repository instructions\n")
     File.write(File.join(root, '.agents/codex-prompt.md'), "Codex-only instructions\n")
+    File.write(File.join(root, '.agents/empty-prompt.md'), "\n")
     File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(seam(review)))
   end
 
@@ -133,6 +90,65 @@ class ReviewPromptFileTest < Minitest::Test
     raise output unless status.success?
 
     output
+  end
+end
+
+class ReviewPromptFileTest < Minitest::Test
+  include ReviewPromptFileFixture
+
+  # The PR under review cannot change the instructions it is reviewed with.
+  def test_uses_the_repository_prompt_file_from_the_trusted_commit
+    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }) do |root, base, head, bin|
+      prompt = review_prompt(root, base, head, bin)
+
+      assert_includes prompt, 'Trusted repository instructions'
+      refute_includes prompt, 'Candidate instructions'
+      assert_includes prompt, 'Make no edits.'
+    end
+  end
+
+  def test_a_reviewer_prompt_file_overrides_the_repository_prompt_file
+    agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'prompt_file' => '.agents/codex-prompt.md' }]
+    review = { 'prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents }
+    with_repository(review) do |root, base, head, bin|
+      prompt = review_prompt(root, base, head, bin)
+
+      assert_includes prompt, 'Codex-only instructions'
+      refute_includes prompt, 'Trusted repository instructions'
+    end
+  end
+
+  # Reading one review setting must not make the review depend on the rest of the seam being valid.
+  def test_reads_the_prompt_file_when_other_settings_at_the_trusted_commit_are_incomplete
+    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }, commands: false) do |root, base, head, bin|
+      assert_includes review_prompt(root, base, head, bin), 'Trusted repository instructions'
+    end
+  end
+
+  def test_keeps_the_default_instructions_without_a_prompt_file
+    with_repository do |root, base, head, bin|
+      assert_includes review_prompt(root, base, head, bin), 'Contract drift'
+    end
+  end
+
+  def test_an_unusable_prompt_file_stops_the_review_with_the_reason
+    with_repository({ 'prompt_file' => '.agents/empty-prompt.md' }) do |root, base, head, bin|
+      reason = JSON.parse(run_review(root, base, head, bin).first).fetch('reason')
+
+      assert_includes reason, '.agents/empty-prompt.md'
+      assert_includes reason, 'is empty'
+    end
+  end
+
+  def test_a_missing_prompt_file_stops_the_review_before_launch
+    with_repository({ 'prompt_file' => '.agents/absent.md' }) do |root, base, head, bin|
+      output, = run_review(root, base, head, bin)
+      result = JSON.parse(output)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '.agents/absent.md'
+      refute_path_exists File.join(root, 'trace.json')
+    end
   end
 end
 
@@ -179,6 +195,25 @@ class ReviewPromptFileSchemaTest < Minitest::Test
     end
   end
 
+  def test_rejects_an_empty_prompt_file_in_the_checkout
+    with_repository('review' => review_policy('prompt_file' => '.agents/empty.md')) do |root|
+      File.write(File.join(root, '.agents/empty.md'), "\n")
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.prompt_file .agents/empty.md is empty'
+    end
+  end
+
+  def test_rejects_an_empty_prompt_file_at_the_trusted_commit
+    with_repository('review' => review_policy('prompt_file' => '.agents/empty.md')) do |root|
+      File.write(File.join(root, '.agents/empty.md'), "\n")
+      commit(root)
+      error = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.load(root:, ref: 'HEAD') }
+
+      assert_includes error.message, 'is empty'
+    end
+  end
+
   private
 
   def write_prompts(root)
@@ -188,5 +223,17 @@ class ReviewPromptFileSchemaTest < Minitest::Test
   def commit(root)
     [%w[init --quiet], %w[add .], %w[-c user.name=Test -c user.email=test@example.com commit --quiet -m trusted]]
       .each { |arguments| system('git', '-C', root, *arguments, exception: true) }
+  end
+end
+
+# Upgrading a seam keeps the review prompt setting.
+class ReviewPromptFileMigrationTest < Minitest::Test
+  def test_migration_retains_the_prompt_file
+    data = { 'version' => 1, 'merge' => { 'preference' => 'ask' },
+             'review' => { 'required' => 'none', 'prompt_file' => '.agents/review-prompt.md' } }
+    result = Shaka::Seam::FieldClassifier.new(data).call
+
+    assert_empty result.blocking
+    assert_equal '.agents/review-prompt.md', result.established.dig('review', 'prompt_file')
   end
 end
