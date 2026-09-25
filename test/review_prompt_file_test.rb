@@ -6,6 +6,7 @@ require 'json'
 require 'yaml'
 require_relative 'repository_fixture'
 require 'shaka/repository_config'
+require 'shaka/trusted_config_source'
 
 # A repository's review instructions, read from the trusted commit and chosen per reviewer.
 class ReviewPromptFileTest < Minitest::Test
@@ -143,6 +144,7 @@ class ReviewPromptFileSchemaTest < Minitest::Test
     agents = [reviewers.first.merge('prompt_file' => '.agents/codex-prompt.md'), reviewers.last]
     policy = review_policy('prompt_file' => '.agents/review-prompt.md', 'local_review_agents' => agents)
     with_repository('review' => policy) do |root|
+      write_prompts(root)
       review = Shaka::RepositoryConfig.load(root:).review
 
       assert_equal '.agents/review-prompt.md', review.fetch('prompt_file')
@@ -156,5 +158,35 @@ class ReviewPromptFileSchemaTest < Minitest::Test
 
       assert_includes message, 'review.prompt_file must be a path inside the repository'
     end
+  end
+
+  # A setting that names a missing file would stop every review, including the one for its fix.
+  def test_rejects_a_prompt_file_missing_from_the_checkout
+    with_repository('review' => review_policy('prompt_file' => '.agents/absent.md')) do |root|
+      message = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }.message
+
+      assert_includes message, 'review.prompt_file does not exist'
+    end
+  end
+
+  def test_rejects_a_prompt_file_missing_from_the_trusted_commit
+    agents = [reviewers.first.merge('prompt_file' => '.agents/absent.md')]
+    with_repository('review' => review_policy('local_review_agents' => agents)) do |root|
+      commit(root)
+      error = assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.load(root:, ref: 'HEAD') }
+
+      assert_includes error.message, 'review.local_review_agents[0].prompt_file does not name a file'
+    end
+  end
+
+  private
+
+  def write_prompts(root)
+    %w[review-prompt codex-prompt].each { |name| File.write(File.join(root, ".agents/#{name}.md"), "Focus\n") }
+  end
+
+  def commit(root)
+    [%w[init --quiet], %w[add .], %w[-c user.name=Test -c user.email=test@example.com commit --quiet -m trusted]]
+      .each { |arguments| system('git', '-C', root, *arguments, exception: true) }
   end
 end

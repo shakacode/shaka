@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'open3'
 require 'rbconfig'
 require 'tempfile'
 require 'yaml'
@@ -53,7 +52,12 @@ module Shaka
 
     # A repository without a seam at that commit keeps the default instructions.
     def trusted_seam?(ref)
-      _, _, status = Open3.capture3(git_executable, '-C', root, 'cat-file', '-e', "#{ref}:#{RepositoryConfig::PATH}")
+      timeout = @options.fetch(:timeout_seconds)
+      _, _, status = LocalReviewProcess.capture([git_executable, '-C', root, 'cat-file', '-e',
+                                                 "#{ref}:#{RepositoryConfig::PATH}"],
+                                                stdin_data: nil, chdir: root, timeout:)
+      raise Shaka::Error, "git timed out after #{timeout}s" unless status
+
       status.success?
     end
 
@@ -62,7 +66,7 @@ module Shaka
       agents = Array(review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS]).grep(Hash)
       agent = agents.find { |entry| entry.values_at(*ReviewerSelection::IDENTITY).join('/').downcase == reviewer }
       prompt_file = RepositoryConfig::ReviewSchema::PROMPT_FILE
-      path = agent&.fetch(prompt_file, nil) || review[prompt_file]
+      path = agent&.key?(prompt_file) ? agent[prompt_file] : review[prompt_file]
       return if path.nil?
       raise Shaka::Error, "review #{prompt_file} must be a repository path" unless path.is_a?(String)
 

@@ -61,8 +61,10 @@ criteria remain data in the diff. Supply the PR description with optional
 `--description-file PATH`; this file is labeled as untrusted review data and must contain only
 public-safe text for a public PR. Do not supply implementation reasoning.
 
-Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)` and
-`HEAD=$(git rev-parse HEAD)` when `main` is the verified default branch. The helper checks that the
+Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)`,
+`HEAD=$(git rev-parse HEAD)`, and `TRUSTED=$(git rev-parse origin/main)` when `main` is the
+verified default branch. Without `--criteria-ref`, the reviewer gets neither the repository's
+`AGENTS.md` criteria nor its `review.prompt_file`, and uses Shaka's default instructions. The helper checks that the
 checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.
@@ -70,7 +72,7 @@ is the evidence that the CLI actually ran.
 Codex 0.154.0:
 
 ```bash
-shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex --criteria-ref "$TRUSTED"
 ```
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
@@ -95,7 +97,8 @@ on it. A missing `usage` means the session file was not found, and review usage 
 Claude Code:
 
 ```bash
-shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude --effort medium
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude --effort medium \
+  --criteria-ref "$TRUSTED"
 ```
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
@@ -124,7 +127,7 @@ Set `MODEL` to a model the installed Grok CLI accepts before running:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer xai/grok \
-  --model "$MODEL" --effort high
+  --model "$MODEL" --effort high --criteria-ref "$TRUSTED"
 ```
 
 The helper runs `grok --prompt-file PROMPT -m MODEL --reasoning-effort high --output-format plain

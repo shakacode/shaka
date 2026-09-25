@@ -68,6 +68,12 @@ module Shaka
                     ReviewSchema::PROMPT_FILE]
         keys!(review, ['required'], optional, 'review')
         ReviewSchema.new(review).validate
+        local_prompt_files!(review) unless @available_commands
+      end
+
+      # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
+      def local_prompt_files!(review)
+        ReviewSchema.prompt_files(review).each { |label, path| file!(path, label) }
       end
 
       def validate_merge

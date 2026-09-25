@@ -23,11 +23,23 @@ module Shaka
       source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
       raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?
 
-      RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
-                            candidate_commands: @candidate_commands)
+      config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
+                                     candidate_commands: @candidate_commands)
+      validate_prompt_files(config.review, sha)
+      config
     end
 
     private
+
+    # A missing prompt file would stop every local review, including the one for the PR that fixes it.
+    def validate_prompt_files(review, sha)
+      resolver = TrustedPathResolver.new(root: @root, sha:)
+      RepositoryConfig::ReviewSchema.prompt_files(review).each do |label, path|
+        _, entry = resolver.resolve(path)
+        raise Error, "#{label} does not name a file at #{sha}: #{path}" unless entry && entry.last == 'blob' &&
+                                                                               entry.first != TrustedPathResolver::SYMLINK.first
+      end
+    end
 
     def resolve(ref)
       arguments = ['git', '-C', @root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}"]

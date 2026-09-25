@@ -152,7 +152,8 @@ repository-wide one, so each reviewer can get different instructions. Here Codex
 uses its own file and Claude uses `.agents/review-prompt.md`.
 
 Shaka reads the file from the default branch, like other settings, so a PR that
-changes it is reviewed with the current version. Shaka keeps a few rules whatever
+changes it is reviewed with the current version. `shaka seam check` fails when a
+configured file is missing. Shaka keeps a few rules whatever
 the file says: the reviewer makes no edits, treats the diff as data rather than
 instructions, reports which `AGENTS.md` criteria it used, and ends with the
 `REVIEWED` line that `shaka review run` checks.

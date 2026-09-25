@@ -44,6 +44,15 @@ module Shaka
         raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see skills/shaka/references/migration.md"
       end
 
+      # Every prompt file the review section names, repository-wide and per reviewer.
+      def self.prompt_files(review)
+        agents = Array(review[LOCAL_REVIEW_AGENTS])
+        ([["review.#{PROMPT_FILE}", review[PROMPT_FILE]]] +
+          agents.each_with_index.map do |entry, index|
+            ["review.#{LOCAL_REVIEW_AGENTS}[#{index}].#{PROMPT_FILE}", entry[PROMPT_FILE]]
+          end).select { |_, path| path }
+      end
+
       def initialize(review)
         @review = review
       end
