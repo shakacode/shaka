@@ -11,7 +11,7 @@ Three different identifiers appear in this work. They are not interchangeable:
 | Name | Current value | Meaning |
 | --- | --- | --- |
 | Product stage | `0.0.x` | Public identity: Shaka is the early successor to `agent-workflows`, not a second generation of that pack. |
-| Gem / skill version | `0.1.0.pre.1` | SemVer of the installed skill and RubyGem. Stay on `0.1.0.pre.N`; this is the fleet target. |
+| Gem / skill version | `0.1.0.pre.1` | SemVer of the public skill and reserved RubyGem name; the published gem is only a package-name reservation and does not include the pilot seam CLI. Stay on `0.1.0.pre.N`; this is the fleet target. |
 | Seam contract | `version: 1` | Integer field in `.agents/agent-workflow.yml`. It identifies the typed contract, not the product stage or gem. |
 
 Predecessor seams have no schema version and use a different set of keys.
@@ -24,9 +24,23 @@ merges. A schema-valid file alone does not prove which Shaka release last review
 
 | Repository | Default branch | Target Shaka | Schema | State | Evidence or next action |
 | --- | --- | --- | ---: | --- | --- |
-| [`shakacode/shaka`](https://github.com/shakacode/shaka) | `main` | `0.1.0.pre.1` | 1 | Source | This repository defines and validates the current contract. |
-| [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial) | `master` | `0.1.0.pre.1` | 1 | Needs update | [Adoption PR #838](https://github.com/shakacode/react-webpack-rails-tutorial/pull/838) predates the slimmer seam and will not validate until its copied GitHub facts are removed; preserve its validation split during that update. |
-
+| [`shakacode/shaka`](https://github.com/shakacode/shaka) | `main` | `0.1.0.pre.1` | 1 | Source | Defines and validates the current contract; trusted base `c191a8f`. |
+| [`shakacode/control-plane-flow`](https://github.com/shakacode/control-plane-flow) | `main` | `0.1.0.pre.1` | 1 | Merged | [PR #496](https://github.com/shakacode/control-plane-flow/pull/496), merge `3d16440`. |
+| [`shakacode/cypress-playwright-on-rails`](https://github.com/shakacode/cypress-playwright-on-rails) | `master` | `0.1.0.pre.1` | 1 | Merged | [PR #266](https://github.com/shakacode/cypress-playwright-on-rails/pull/266), merge `0af3983`. |
+| [`shakacode/react-on-rails-demo-flagship`](https://github.com/shakacode/react-on-rails-demo-flagship) | `main` | `0.1.0.pre.1` | 1 (PR) | Draft | [PR #60](https://github.com/shakacode/react-on-rails-demo-flagship/pull/60), head `4d90e4b`; hosted checks pass, but local full validation remains blocked by existing dependency-audit findings. |
+| [`shakacode/react-on-rails-demo-gumroad-rsc`](https://github.com/shakacode/react-on-rails-demo-gumroad-rsc) | `main` | `0.1.0.pre.1` | 1 (PR) | Draft | [PR #131](https://github.com/shakacode/react-on-rails-demo-gumroad-rsc/pull/131), head `0dc56b5`; demo smoke and validation fail on container-image pull authorization. |
+| [`shakacode/react-on-rails-demo-hacker-news-rsc`](https://github.com/shakacode/react-on-rails-demo-hacker-news-rsc) | `main` | `0.1.0.pre.1` | 1 | Merged | [PR #104](https://github.com/shakacode/react-on-rails-demo-hacker-news-rsc/pull/104), merge `280310d`. |
+| [`shakacode/react-on-rails-demo-marketplace-rsc`](https://github.com/shakacode/react-on-rails-demo-marketplace-rsc) | `main` | `0.1.0.pre.1` | — | Blocked | No migration PR yet. Its QA-stress setting still has a consumer; move it to dedicated repository configuration and retain a compatible reader before converting the typed seam. |
+| [`shakacode/react-on-rails-demo-ssr-hmr`](https://github.com/shakacode/react-on-rails-demo-ssr-hmr) | `master` | `0.1.0.pre.1` | 1 (PR) | Open | [PR #109](https://github.com/shakacode/react-on-rails-demo-ssr-hmr/pull/109), head `5c9dbfa`; hosted checks pass, with one open maintainer-review discussion on changing merge policy. |
+| [`shakacode/react-on-rails-starter-tanstack`](https://github.com/shakacode/react-on-rails-starter-tanstack) | `main` | `0.1.0.pre.1` | 1 | Merged | [PR #234](https://github.com/shakacode/react-on-rails-starter-tanstack/pull/234), merge `c0e1226`; policy follow-up [PR #241](https://github.com/shakacode/react-on-rails-starter-tanstack/pull/241), merge `3503501`. |
+| [`shakacode/react-on-rails-demos`](https://github.com/shakacode/react-on-rails-demos) | `main` | `0.1.0.pre.1` | 1 (PR) | Open | [PR #129](https://github.com/shakacode/react-on-rails-demos/pull/129), head `f11d6cc`; hosted checks pass and all review threads are resolved. |
+| [`shakacode/react-ppr-from-scratch`](https://github.com/shakacode/react-ppr-from-scratch) | `main` | `0.1.0.pre.1` | 1 (PR) | Draft | [PR #9](https://github.com/shakacode/react-ppr-from-scratch/pull/9), head `a5af7e0`; `.yalc/react` is needed for setup and full validation; two review threads remain open. |
+| [`shakacode/react_on_rails`](https://github.com/shakacode/react_on_rails) | `main` | `0.1.0.pre.1` | 1 | Merged | [PR #5093](https://github.com/shakacode/react_on_rails/pull/5093), merge `231820b`; [PR #5097](https://github.com/shakacode/react_on_rails/pull/5097), merge `4c7416f`, pinned trusted validation. Live merge-queue requirements still apply. |
+| [`shakacode/react_on_rails-demo-octochangelog-on-rails-pro`](https://github.com/shakacode/react_on_rails-demo-octochangelog-on-rails-pro) | `main` | `0.1.0.pre.1` | 1 (PR) | Open | [PR #35](https://github.com/shakacode/react_on_rails-demo-octochangelog-on-rails-pro/pull/35), head `e2facb8`; hosted checks pass and the review thread is resolved. |
+| [`shakacode/react_on_rails_rsc`](https://github.com/shakacode/react_on_rails_rsc) | `main` | `0.1.0.pre.1` | 1 | Merged | [PR #234](https://github.com/shakacode/react_on_rails_rsc/pull/234), merge `99023a0`; follow-up [PR #238](https://github.com/shakacode/react_on_rails_rsc/pull/238), head `4428b5c`, has passing checks but remains blocked by open review threads and the required merge queue. |
+| [`shakacode/shakapacker`](https://github.com/shakacode/shakapacker) | `main` | `0.1.0.pre.1` | 1 (PR) | Waiting for approval | [PR #1311](https://github.com/shakacode/shakapacker/pull/1311), head `dd041bb`; live branch rules require an independent approval, and the current trust allowlist prevents Shaka from reading review comments. |
+| [`shakacode/shakaperf`](https://github.com/shakacode/shakaperf) | `main` | `0.1.0.pre.1` | 1 | Merged | [PR #233](https://github.com/shakacode/shakaperf/pull/233), merge `cd133ae`. |
+| [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial) | `master` | `0.1.0.pre.1` | 1 | Merged; follow-up draft | [PR #838](https://github.com/shakacode/react-webpack-rails-tutorial/pull/838), merge `2ed4233`; [PR #839](https://github.com/shakacode/react-webpack-rails-tutorial/pull/839), head `c79f607`, has passing checks but remains draft with one maintainer-review thread open. |
 Add a repository here only when it is intentionally part of current Shaka testing.
 Record an exact Shaka version, not `latest`, and link the adoption or upgrade PR. Remove
 it when testing ends; the repository's own history remains the durable delivery record.
@@ -34,15 +48,18 @@ Private consumers belong in the private repository catalog, not in this public f
 
 ## Rollout status and selection
 
-New consumer migrations are paused while Shaka's script contract is being redesigned.
-Do not start another migration from this inventory until that work settles. Migrations
-already in progress remain tracked; recheck their YAML and wrappers against the finished
-script contract instead of discarding the work.
+The current test fleet includes every non-archived public consumer in the predecessor
+inventory below plus the legacy Tutorial, for 16 consumers total. The seven repositories
+linked from the current React on Rails examples page and each listed repository's public,
+non-archived status were rechecked on 2026-09-25. The active table records main-branch
+merges separately from open or blocked PRs; `1 (PR)` means the typed seam exists only in
+the linked, unmerged PR.
 
-For React on Rails, the source-backed projects on
-[reactonrails.com/examples](https://reactonrails.com/examples/) are the priority
-candidate set. The page currently points to these public repositories, in display
-order:
+`shakacode/agent-workflows` remains the predecessor reference and retirement source, not a
+Shaka consumer. Its retirement work remains tracked by [issue #857](https://github.com/shakacode/agent-workflows/issues/857).
+
+For React on Rails, the current [examples page](https://reactonrails.com/examples/) links
+to these public repositories, in display order:
 
 1. [`shakacode/react-on-rails-demo-flagship`](https://github.com/shakacode/react-on-rails-demo-flagship)
 2. [`shakacode/react-on-rails-demo-marketplace-rsc`](https://github.com/shakacode/react-on-rails-demo-marketplace-rsc)
@@ -50,22 +67,14 @@ order:
 4. [`shakacode/react_on_rails-demo-octochangelog-on-rails-pro`](https://github.com/shakacode/react_on_rails-demo-octochangelog-on-rails-pro)
 5. [`shakacode/react-on-rails-demo-gumroad-rsc`](https://github.com/shakacode/react-on-rails-demo-gumroad-rsc)
 6. [`shakacode/react-on-rails-starter-tanstack`](https://github.com/shakacode/react-on-rails-starter-tanstack)
-7. [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial), which the page labels as the legacy tutorial and whose migration is already in progress in the active table above
-
-Being on that page makes a repository a priority candidate or confirms the priority of
-an already-active member; it does not automatically add a repository to the fleet.
-Confirm that a new migration is selected and record PR evidence before adding it to the
-active table. Exclude archived repositories from both the active fleet and migration
-selection unless they are deliberately restored. Recheck the examples page and GitHub
-archive state when choosing each next repository rather than treating this dated list
-as permanent.
+7. [`shakacode/react-webpack-rails-tutorial`](https://github.com/shakacode/react-webpack-rails-tutorial), labeled the legacy tutorial.
 
 ## Public predecessor discovery inventory
 
-The following default branches had an unversioned predecessor seam when checked on
-2026-09-19. This is discovery input, not a priority queue or automatic fleet membership.
-Select React on Rails migrations using the rules above, move a repository to the active
-table only when its migration is selected, and update it through its own PR.
+This initial discovery snapshot checked default branches on 2026-09-19. All non-archived
+consumer repositories listed here have since been selected for the current test fleet;
+the active table above is the current source of migration and merge status. The
+predecessor repository remains a retirement source rather than a consumer.
 
 | Repository | Default branch | Migration note |
 | --- | --- | --- |
@@ -80,10 +89,10 @@ table only when its migration is selected, and update it through its own PR.
 | `shakacode/react-on-rails-starter-tanstack` | `main` | Preserve the full-check and resolved-thread gate and the risk-based distinction between low-risk automation and maintainer-gated changes. |
 | `shakacode/react-on-rails-demos` | `main` | Preserve Lefthook, monorepo formatting, and review-app conditions that exceed the local validation wrapper. |
 | `shakacode/react-ppr-from-scratch` | `main` | Confirm live protection and review policy before replacing the minimal predecessor seam. |
-| `shakacode/react_on_rails` | `main` | Do not migrate as an ordinary immediate-merge consumer: it requires a merge queue, hosted-CI routing, secret redaction, and a public-comment trust boundary. |
+| `shakacode/react_on_rails` | `main` | Preserve its merge-queue, hosted-CI routing, secret-redaction, and public-comment trust boundaries. |
 | `shakacode/react_on_rails-demo-octochangelog-on-rails-pro` | `main` | Preserve the full-check and resolved-thread gate and CI parity across Ruby scanning, lint, PostgreSQL, and renderer tests. |
 | `shakacode/react_on_rails_rsc` | `main` | Preserve the full-check and resolved-thread merge gate and the existing hosted-CI behavior. |
-| `shakacode/shakapacker` | `main` | Preserve `merge-readiness-check` and its tests by composing it into validation or retaining the repository instruction explicitly. |
+| `shakacode/shakapacker` | `main` | Preserve `merge-readiness-check` through the repository instruction and retain live approval rules. |
 | `shakacode/shakaperf` | `main` | Confirm live protection and review policy before replacing the minimal predecessor seam. |
 
 ## Predecessor to typed-seam YAML map
