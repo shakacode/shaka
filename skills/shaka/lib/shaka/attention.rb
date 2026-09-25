@@ -13,7 +13,9 @@ module Shaka
       'awaiting-answer' => 'The agent asked a question in chat and is waiting for your answer',
       'awaiting-merge-approval' => 'Ready under Ask: merge this commit or approve it so the agent merges'
     }.freeze
-    LABEL_EXISTS = 422
+    NOT_FOUND = 404
+    # 403: the caller may apply labels but not create them. 422: another run created it first.
+    TOLERATED_CREATE_FAILURES = [403, 422].freeze
 
     def initialize(github)
       @github = github
@@ -36,21 +38,33 @@ module Shaka
     # Deletes every other attention label, then adds the wanted one when it is missing.
     def keep_only(wanted)
       current = current_labels
+      missing = wanted && current.none? { |name| name.casecmp?(wanted) }
+      ensure_repository_label(wanted) if missing
+      remove_other_attention_labels(current, wanted)
+      @github.api(path, method: 'POST', fields: { labels: [wanted] }, expected: Array) if missing
+    end
+
+    def remove_other_attention_labels(current, wanted)
       current.select { |name| attention?(name) && !name.casecmp?(wanted.to_s) }.each do |name|
         @github.api(path(name), method: 'DELETE', expected: Array)
       end
-      return if wanted.nil? || current.any? { |name| name.casecmp?(wanted) }
-
-      create(wanted)
-      @github.api(path, method: 'POST', fields: { labels: [wanted] }, expected: Array)
     end
 
     # Gives a new repository label its color and description; an existing one keeps the maintainer's.
+    # Without permission to create labels, the add-label call still runs and reports GitHub's answer.
+    def ensure_repository_label(label)
+      @github.api("repos/#{@github.repository}/labels/#{label}")
+    rescue Error => e
+      raise unless e.http_status == NOT_FOUND
+
+      create(label)
+    end
+
     def create(label)
       fields = { name: label, color: COLORS.fetch(label), description: DESCRIPTIONS.fetch(label) }
       @github.api("repos/#{@github.repository}/labels", method: 'POST', fields: fields)
     rescue Error => e
-      raise unless e.http_status == LABEL_EXISTS
+      raise unless TOLERATED_CREATE_FAILURES.include?(e.http_status)
     end
 
     def current_labels

@@ -40,8 +40,8 @@ The agent labels a PR when it stops for you:
 You don't create these labels. The first time the agent needs one in a repository,
 it creates it: `awaiting-answer` in amber and `awaiting-merge-approval` in purple,
 each with a description. Recolor or reword them freely; the agent never changes a
-label that already exists. Creating a label needs the same triage or write access
-as applying one.
+label that already exists. Creating a label needs write access; with triage access
+the agent can still apply labels someone else created.
 
 To approve, tell the agent in chat. An **Approve** review on GitHub also counts
 when it comes from a login you named to the agent as a merge approver; GitHub does
