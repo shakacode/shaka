@@ -84,7 +84,8 @@ This controls when configured CI review reports are required. Options:
 
 - `meaningful_changes`: implementation changes; trivial prose can skip with a reason.
 - `always`: every PR, including trivial changes.
-- `none`: no configured CI review backstop. Omit `ci_review_jobs` with this setting.
+- `none`: no configured CI review backstop, and `shaka merge` does not check for a
+  local review. Omit `ci_review_jobs` with this setting.
 
 Meaningful implementation also gets a local adversarial review before push:
 
@@ -95,8 +96,43 @@ Meaningful implementation also gets a local adversarial review before push:
 
 `shaka review run` verifies the reviewer process completed and returned a report
 for the expected commit. `shaka review check` validates a supplied report but does
-not prove a reviewer process ran. The merge command does not currently require
-this local-review evidence; the agent remains responsible for that step.
+not prove a reviewer process ran.
+
+Before it merges, `shaka merge` checks that the PR has a local review of the
+commit being merged. The agent posts the review report as a PR comment, and the
+report's last line names the commit and the reviewer:
+
+```text
+REVIEWED <commit> BY <provider>/<family> EFFORT <effort> FINDINGS <count>
+```
+
+`merge` counts only comments from the GitHub account running the merge, and only
+when that line ends the comment. Any reviewer counts, including the
+implementation model in a fresh session.
+
+A review of an earlier commit still counts in two cases:
+
+- **Updated from the base branch.** Bringing the branch up to date with the base,
+  by merge or rebase, keeps the review when there were no conflicts and nothing
+  else changed. `merge` checks this with Git in the local checkout: the head must
+  match, file for file, what merging the reviewed commit with the new base
+  produces. The check runs Git's built-in merge in a temporary repository, so no
+  merge driver or script runs and nothing is written to your repository. If Git
+  is older than 2.41 or those commits are not in the checkout, `merge` asks for a
+  new review or a waiver instead.
+- **Ordinary Markdown since.** Every later change is ordinary Markdown. Agent
+  instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
+  `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or
+  `skills/` need a new review.
+
+When no review applies, `merge` stops before merging. Pass
+`--review-waiver REASON` when review was skipped on purpose, a later commit only
+fixed nits, or a CI review covered the commit. The waiver also covers a PR whose
+comments GitHub cannot list. With `review.required: none`, `merge` skips this check.
+
+The merge result shows the review it relied on, or the waiver reason, under
+`review_evidence`. That records what the posted line says. It does not prove a
+reviewer process ran or that its findings were fixed.
 
 ## `review.ci_review_jobs`
 

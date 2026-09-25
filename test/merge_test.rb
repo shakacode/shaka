@@ -8,7 +8,7 @@ module MergeFixtures
   BASE = 'main'
 
   class Client
-    attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error
+    attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error, :comments
     attr_reader :mutations, :requested_review, :features
     attr_writer :checks
 
@@ -41,6 +41,12 @@ module MergeFixtures
       review_result
     end
 
+    def viewer_login = 'shaka-agent'
+
+    def issue_comments = comments
+
+    def compare(_from, _to) = raise(Shaka::Error, 'compare is not stubbed')
+
     def graphql(query, variables, feature: nil)
       @mutations << [query, variables]
       @features << feature
@@ -54,12 +60,18 @@ module MergeFixtures
     @client = Client.new
     @client.snapshots = [snapshot]
     @client.checks = [{ 'name' => 'Validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    @client.comments = [attestation_comment]
     @client.review_result = { 'id' => 17, 'commit_id' => HEAD, 'state' => 'COMMENTED', 'body' => 'Walkthrough' }
     @client.mutation_result = { 'mergePullRequest' => { 'pullRequest' => {
       'headRefOid' => HEAD, 'baseRefName' => BASE, 'state' => 'MERGED', 'merged' => true,
       'mergeCommit' => { 'oid' => 'b' * 40 }
     } } }
     @merge = Shaka::Merge.new(@client)
+  end
+
+  def attestation_comment
+    { 'user' => { 'login' => 'shaka-agent' }, 'html_url' => 'https://example.test/c/1',
+      'body' => "Report\n\nREVIEWED #{HEAD} BY openai/codex EFFORT high FINDINGS 0" }
   end
 
   def snapshot
@@ -188,6 +200,47 @@ class MergeNativeGateTest < Minitest::Test
     end
     @client.snapshots = [snapshot.except('reviewDecision')]
     assert_blocked(/Required reviews/)
+  end
+end
+
+class MergeReviewEvidenceGateTest < Minitest::Test
+  include MergeFixtures
+
+  def test_reports_the_review_evidence_it_merged_on
+    result = @merge.call(head: HEAD, base: BASE, walkthrough: 17)
+
+    assert_equal 'MERGED', result.fetch('state')
+    assert_equal 'current_head', result.dig('review_evidence', 'basis')
+    assert_equal 'openai/codex', result.dig('review_evidence', 'reviewer')
+  end
+
+  def test_refuses_without_review_evidence_before_submitting
+    @client.comments = []
+
+    assert_blocked(/No local-review attestation/)
+  end
+
+  def test_refuses_evidence_for_another_commit_before_submitting
+    @client.comments.first['body'] = "REVIEWED #{'c' * 40} BY openai/codex EFFORT high FINDINGS 0"
+
+    assert_blocked(/earlier attestations do not apply/)
+  end
+
+  def test_waiver_merges_and_reports_its_reason
+    @client.comments = []
+    merge = Shaka::Merge.new(@client, review: { waiver: 'Prose-only change' })
+
+    result = merge.call(head: HEAD, base: BASE, walkthrough: 17)
+
+    assert_equal({ 'basis' => 'waived', 'reason' => 'Prose-only change' }, result.fetch('review_evidence'))
+  end
+
+  def test_trusted_none_needs_no_review_evidence
+    @client.comments = []
+
+    result = Shaka::Merge.new(@client, review: { required: 'none' }).call(head: HEAD, base: BASE, walkthrough: 17)
+
+    assert_equal 'not_required', result.dig('review_evidence', 'basis')
   end
 end
 
