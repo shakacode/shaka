@@ -8,6 +8,12 @@ module Shaka
   class Attention
     LABELS = { 'answer' => 'awaiting-answer', 'merge' => 'awaiting-merge-approval' }.freeze
     STATES = [*LABELS.keys, 'none'].freeze
+    COLORS = { 'awaiting-answer' => 'F9A03F', 'awaiting-merge-approval' => '8250DF' }.freeze
+    DESCRIPTIONS = {
+      'awaiting-answer' => 'The agent asked a question in chat and is waiting for your answer',
+      'awaiting-merge-approval' => 'Ready under Ask: merge this commit or approve it so the agent merges'
+    }.freeze
+    LABEL_EXISTS = 422
 
     def initialize(github)
       @github = github
@@ -35,7 +41,16 @@ module Shaka
       end
       return if wanted.nil? || current.any? { |name| name.casecmp?(wanted) }
 
+      create(wanted)
       @github.api(path, method: 'POST', fields: { labels: [wanted] }, expected: Array)
+    end
+
+    # Gives a new repository label its color and description; an existing one keeps the maintainer's.
+    def create(label)
+      fields = { name: label, color: COLORS.fetch(label), description: DESCRIPTIONS.fetch(label) }
+      @github.api("repos/#{@github.repository}/labels", method: 'POST', fields: fields)
+    rescue Error => e
+      raise unless e.http_status == LABEL_EXISTS
     end
 
     def current_labels

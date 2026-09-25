@@ -37,6 +37,12 @@ The agent labels a PR when it stops for you:
 | `awaiting-answer` | Your answer to a question the agent asked in chat |
 | `awaiting-merge-approval` | Your merge or approval of the named commit; set only under **Ask** |
 
+You don't create these labels. The first time the agent needs one in a repository,
+it creates it: `awaiting-answer` in amber and `awaiting-merge-approval` in purple,
+each with a description. Recolor or reword them freely; the agent never changes a
+label that already exists. Creating a label needs the same triage or write access
+as applying one.
+
 To approve, tell the agent in chat. An **Approve** review on GitHub also counts
 when it comes from a login you named to the agent as a merge approver; GitHub does
 not let the account that opened the PR approve it. Return to the chat so the agent

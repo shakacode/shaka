@@ -7,6 +7,7 @@ class AttentionTest < Minitest::Test
   include GitHubHelper
 
   LABELS_PATH = 'repos/owner/repo/issues/42/labels'
+  REPO_LABELS = 'repos/owner/repo/labels'
   FIRST_PAGE = "#{LABELS_PATH}?per_page=100&page=1".freeze
 
   def labels_response(*names)
@@ -23,11 +24,32 @@ class AttentionTest < Minitest::Test
 
   def test_answer_replaces_merge_approval_with_one_label
     result = call('answer', snapshot_response, labels_response('bug', 'awaiting-merge-approval'),
-                  labels_response('bug'), labels_response('bug', 'awaiting-answer'))
+                  labels_response('bug'), response({ 'name' => 'awaiting-answer' }),
+                  labels_response('bug', 'awaiting-answer'))
 
     assert_equal({ 'state' => 'answer', 'labels' => ['awaiting-answer'] }, result)
     assert_equal ["#{LABELS_PATH}/awaiting-merge-approval", 'DELETE'], requests[2].first(2)
-    assert_equal [LABELS_PATH, 'POST', JSON.generate(labels: ['awaiting-answer'])], requests[3]
+    assert_equal [LABELS_PATH, 'POST', JSON.generate(labels: ['awaiting-answer'])], requests[4]
+  end
+
+  def test_a_missing_label_is_created_with_its_color_and_description
+    call('merge', snapshot_response, labels_response, response({ 'name' => 'awaiting-merge-approval' }),
+         labels_response('awaiting-merge-approval'))
+
+    path, method, input = requests[2]
+    assert_equal [REPO_LABELS, 'POST'], [path, method]
+    assert_equal({ 'name' => 'awaiting-merge-approval', 'color' => '8250DF',
+                   'description' => Shaka::Attention::DESCRIPTIONS.fetch('awaiting-merge-approval') },
+                 JSON.parse(input))
+  end
+
+  def test_an_existing_repository_label_keeps_its_color
+    result = call('answer', snapshot_response, labels_response,
+                  response({ 'message' => 'already_exists' }, status: 1, http_status: 422),
+                  labels_response('awaiting-answer'))
+
+    assert_equal({ 'state' => 'answer', 'labels' => ['awaiting-answer'] }, result)
+    assert_equal [LABELS_PATH, 'POST'], requests[3].first(2)
   end
 
   def test_merge_keeps_an_existing_label_without_writing
