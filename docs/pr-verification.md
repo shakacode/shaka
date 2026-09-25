@@ -56,8 +56,10 @@ evidence.
 
 ```sh
 gh pr comment 42 --attach './before-desktop.png#Menu before, desktop' \
-  --attach './after-desktop.png#Menu after, desktop'
+  --attach './after-desktop.png#Menu after, desktop' --attach './menu-open.mp4'
 ```
+
+Text after `#` is an image's alt text; a video takes no alt text.
 
 Label the tested commit and behavior. After code changes, refresh affected
 evidence or explain which part still applies. When a capture cannot be published,

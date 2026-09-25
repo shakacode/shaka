@@ -221,8 +221,9 @@ phases:
         collapse details.
       - Check a user-visible change's captures for credentials and private content, then publish
         them on its PR with `gh pr comment NUMBER --attach 'PATH#ALT TEXT'` (GitHub CLI 2.99 or
-        later), label them with the tested revision, and read the comment back to confirm each
-        capture became an uploaded URL; a local path is not evidence. When a capture cannot be published, record
+        later; a video takes a plain `PATH`, since video has no alt text), label them with the
+        tested revision, and read the comment back to confirm each capture became an uploaded
+        URL; a local path is not evidence. When a capture cannot be published, record
         `uploader_absent`, `uploader_denied`, or `upload_failed: DETAIL` on the PR in its place.
         When the description links a preview, whether `deployment: auto` resolved it or you
         supplied its URL, repeat the manual pass against it, or record on the PR why not.
