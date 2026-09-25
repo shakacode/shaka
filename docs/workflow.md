@@ -21,7 +21,7 @@ Shaka supplies the process; your repository supplies the commands and constraint
 Shaka exists to make the people who maintain a project faster. It trusts them:
 anyone with write access, plus the users, bots, and teams you list. Their settings
 and instructions on the default branch are the project's decisions, and a
-maintainer can change any of them, including turning review off.
+maintainer can change them, such as which CI reviews a merge waits for.
 
 Shaka's limits are for input from outside that group. On a public repository,
 anyone can comment or open a PR from a fork, and that text could try to steer the
