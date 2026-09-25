@@ -130,7 +130,7 @@ module Shaka
       @attempted = false
       validate_path!
       git_executable
-      HelperLocation.refuse_inside!(root)
+      HelperLocation.refuse_inside!(root, ask_git: false)
       validate!
       validate_tempdir!
       with_requested_model(run_report(review_prompt))

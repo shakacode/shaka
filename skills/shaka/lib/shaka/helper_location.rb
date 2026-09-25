@@ -9,9 +9,11 @@ module Shaka
   module HelperLocation
     SKILL_DIRECTORY = File.expand_path('../..', __dir__)
 
-    def self.refuse_inside!(root)
+    # Pass `ask_git: false` when the caller already resolved the checkout root and must not run an
+    # unbounded Git, as the local review runner does.
+    def self.refuse_inside!(root, ask_git: true)
       skill = File.realpath(SKILL_DIRECTORY)
-      checkout = checkout_root(root)
+      checkout = ask_git ? checkout_root(root) : File.realpath(root)
       return unless LocalReviewExecutable.candidate_owned?(skill, checkout)
 
       raise Error, "The shaka skill at #{skill} resolves inside the checkout #{checkout}; " \
@@ -25,7 +27,7 @@ module Shaka
     def self.checkout_root(root)
       directory = File.realpath(root)
       toplevel, _error, status = Open3.capture3('git', '-C', directory, 'rev-parse', '--show-toplevel')
-      status.success? ? File.realpath(toplevel.chomp) : directory
+      status.success? && !toplevel.strip.empty? ? File.realpath(toplevel.chomp) : directory
     end
     private_class_method :checkout_root
   end
