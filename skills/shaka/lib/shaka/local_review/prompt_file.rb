@@ -53,14 +53,18 @@ module Shaka
 
     # A repository without a seam at that commit keeps the default instructions.
     def trusted_seam?(ref)
+      bounded_git('cat-file', '-e', "#{ref}:#{RepositoryConfig::PATH}").last.success?
+    end
+
+    # Runs the vetted Git under the review timeout, for this module and TrustedPathResolver.
+    def bounded_git(*arguments)
       timeout = @options.fetch(:timeout_seconds)
-      _, _, status = LocalReviewProcess.capture([git_executable, '-C', root, 'cat-file', '-e',
-                                                 "#{ref}:#{RepositoryConfig::PATH}"],
-                                                stdin_data: nil, chdir: root, timeout:)
+      result = LocalReviewProcess.capture([git_executable, *arguments], stdin_data: nil, chdir: root, timeout:)
+      status = result.last
       raise Shaka::Error, "git timed out after #{timeout}s" unless status
       raise Shaka::Error, 'git output drain timed out after 2s' if status.is_a?(LocalReviewProcess::DrainTimeout)
 
-      status.success?
+      result
     end
 
     # A reviewer's own file wins over the repository-wide one.
@@ -76,7 +80,7 @@ module Shaka
     end
 
     def read_trusted_prompt(ref, path)
-      resolved, entry = TrustedPathResolver.new(root:, sha: ref, git: git_executable).resolve(path)
+      resolved, entry = TrustedPathResolver.new(root:, sha: ref, git: method(:bounded_git)).resolve(path)
       raise Shaka::Error, "Review prompt file #{path} is not a file at #{ref}" unless prompt_blob?(entry)
 
       text = nil

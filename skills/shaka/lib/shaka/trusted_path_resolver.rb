@@ -11,8 +11,11 @@ module Shaka
     TREE = %w[040000 tree].freeze
     MAX_SYMLINKS = 40
 
-    # The local review runner passes its vetted Git executable; other callers use Git from PATH.
-    def initialize(root:, sha:, git: 'git')
+    GIT = ->(*arguments) { Open3.capture3('git', *arguments) }
+
+    # `git` takes Git arguments and returns stdout, stderr, and status. The local review runner passes
+    # one that uses its vetted executable and timeout; other callers use Git from PATH.
+    def initialize(root:, sha:, git: GIT)
       @root = root
       @sha = sha
       @git = git
@@ -21,7 +24,7 @@ module Shaka
     def entry(path)
       parent = File.dirname(path)
       treeish = parent == '.' ? @sha : "#{@sha}:#{parent}"
-      output, _error, status = Open3.capture3(@git, '-C', @root, 'ls-tree', '-z', treeish)
+      output, _error, status = @git.call('-C', @root, 'ls-tree', '-z', treeish)
       return unless status.success? && !output.empty?
 
       parse_entry(output, File.basename(path))
@@ -90,7 +93,7 @@ module Shaka
     end
 
     def symlink_target(path)
-      target, error, status = Open3.capture3(@git, '-C', @root, 'show', "#{@sha}:#{path}")
+      target, error, status = @git.call('-C', @root, 'show', "#{@sha}:#{path}")
       raise Error, "Cannot read trusted symlink #{path} at #{@sha}: #{error.strip}" unless status.success?
 
       target

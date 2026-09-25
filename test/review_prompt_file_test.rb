@@ -24,10 +24,19 @@ module ReviewPromptFileFixture
     JSON.parse(File.read(File.join(root, 'trace.json'))).fetch('prompt').split('SUPPORTING SOURCE DATA').first
   end
 
-  def run_review(root, base, head, bin)
+  def run_review(root, base, head, bin, *options)
     Open3.capture3({ 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(root, 'trace.json') },
                    COMMAND, 'review', 'run', '--root', root, '--base', base, '--head', head,
-                   '--reviewer', 'openai/codex', '--criteria-ref', base)
+                   '--reviewer', 'openai/codex', '--criteria-ref', base, *options)
+  end
+
+  # Delegates to the real Git but stalls on the tree lookup that resolves a prompt file path.
+  def stall_prompt_lookup(bin)
+    write_executable(bin, 'git', <<~SH)
+      #!/bin/sh
+      case "$*" in *"ls-tree -z"*) sleep 6 ;; esac
+      exec #{TEST_GIT} "$@"
+    SH
   end
 
   def with_repository(review = {}, commands: true)
@@ -137,6 +146,16 @@ class ReviewPromptFileTest < Minitest::Test
 
       assert_includes reason, '.agents/empty-prompt.md'
       assert_includes reason, 'is empty'
+    end
+  end
+
+  def test_a_stalled_prompt_lookup_is_bounded_by_the_review_timeout
+    with_repository({ 'prompt_file' => '.agents/review-prompt.md' }) do |root, base, head, bin|
+      stall_prompt_lookup(bin)
+      result = JSON.parse(run_review(root, base, head, bin, '--timeout-seconds', '2').first)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'timed out'
     end
   end
 

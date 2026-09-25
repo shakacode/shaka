@@ -41,7 +41,6 @@ module Shaka
     }.freeze
 
     # Seam checks and the review runner apply the same limits, so a file they accept always renders.
-    # Seam checks and the review runner apply the same limits, so a file they accept always renders.
     # The size is checked before the block reads the file, so an oversized file is never loaded.
     def self.file_error(bytes)
       return "exceeds #{MAX_INSTRUCTIONS_BYTES / 1000} KB" if bytes > MAX_INSTRUCTIONS_BYTES
