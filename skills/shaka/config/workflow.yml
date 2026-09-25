@@ -203,8 +203,9 @@ phases:
         [choose a local reviewer](<{{package_root}}/skills/shaka/references/review.md#choose-a-local-reviewer>).
       - For UI changes, meaning layout, styling, or output shown in a browser, use the change by
         hand on the head you will push, and capture before and after screenshots on desktop and
-        mobile, adding a short video when interaction or timing matters. Inspect each capture for the intended state. After a later commit that
-        changes runtime behavior, repeat the manual pass and refresh the affected captures.
+        mobile, adding a short video when interaction or timing matters. Inspect each capture
+        for the intended state. After a later commit that changes runtime behavior, repeat the
+        manual pass and refresh the affected captures.
         Captures complement tests; they do not replace them. Read the packaged
         [verification guide](<{{package_root}}/docs/pr-verification.md>) when deciding what evidence a
         change needs.
