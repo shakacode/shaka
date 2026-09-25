@@ -40,8 +40,10 @@ phases:
         bring the ready PR back so you can merge it on GitHub. Recommend a choice and default to Ask without an answer.
         Existing authority needs no repeated question. Keep the answer scoped to this task unless the
         user explicitly chooses broader scope. Review-only and PR-only work skips it.
-      - Use the host's native task-title tool when available: repository, verified issue or PR
-        identifier, and short outcome. Update the same task when its PR is created or adopted;
+      - Name the chat `PREFIX #ISSUE · outcome`, or `PREFIX PR #NUMBER · outcome` once a PR
+        exists, taking `PREFIX` from the saved helper's `prefix --root ROOT --ref REF`. Rename it
+        with the host's tool, as the [chat-naming guide](<{{package_root}}/skills/shaka/references/launchers-and-sessions.md#name-the-chat>)
+        lists, before your first reply, and again when this task creates or adopts its PR;
         preserve user-chosen titles. Without that tool, open your next reply with the
         suggested title alone on its own line as `Chat name:` followed by the title in a code
         span. When a reply first reports a PR this task created, open it the same way with
