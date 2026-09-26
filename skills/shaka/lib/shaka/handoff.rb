@@ -51,7 +51,7 @@ module Shaka
       return owe('no awaiting label', 'Set the attention label for what the PR waits on.') if labels.empty?
       return owe(labels.join('+'), "Keep exactly one attention label; found #{labels.join(', ')}.") if labels.length > 1
 
-      if labels.first == 'awaiting-merge-approval' && !passing?(checks)
+      if labels.first.casecmp?('awaiting-merge-approval') && !passing?(checks)
         @owed << 'awaiting-merge-approval is set while required checks are not all passing.'
       end
       labels.first

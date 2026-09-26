@@ -111,9 +111,11 @@ class HandoffTest < Minitest::Test
   end
 
   def test_merge_approval_while_required_checks_are_pending_is_owed
-    result = handoff(labels: ['awaiting-merge-approval'], checks: [check('pending')])
+    %w[awaiting-merge-approval Awaiting-Merge-Approval].each do |label|
+      result = handoff(labels: [label], checks: [check('pending')])
 
-    assert(result['owed'].any? { |item| item.include?('awaiting-merge-approval') })
+      assert(result['owed'].any? { |item| item.include?('awaiting-merge-approval') }, label)
+    end
   end
 
   def test_a_moved_head_is_owed
