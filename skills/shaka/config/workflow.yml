@@ -217,6 +217,13 @@ phases:
         Captures complement tests; they do not replace them. Read the packaged
         [verification guide](<{{package_root}}/docs/pr-verification.md>) when deciding what evidence a
         change needs.
+      - When a change aims to speed up page load, rendering, or bundle size, or risks slowing
+        them, measure it against the base with ShakaPerf. If `command -v shaka-perf` finds it,
+        run `shaka-perf compare` with the base as control and the change as experiment, and
+        report the verdict as improvement, wash, regression, or ambiguous with the metrics and
+        sample count. A single page load is not evidence. If it is missing, suggest
+        [ShakaPerf](https://github.com/shakacode/shakaperf) and `shaka-perf init` to the user,
+        and state on the PR that the speed claim was not measured.
     done_when: >-
       The change is committed, validation passed on that exact head, a UI change was used by
       hand and captured on that head, and the local adversarial review ran with its
