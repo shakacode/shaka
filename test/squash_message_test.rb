@@ -133,4 +133,15 @@ class MergeSquashMessageTest < Minitest::Test
 
     assert_equal 'not_applied_merge_queue', result.fetch('squash_message')
   end
+
+  def test_an_already_queued_pull_request_reports_that_the_message_was_not_applied
+    entry = queue_entry(position: 1)
+    @client.snapshots = [snapshot.merge('isMergeQueueEnabled' => true, 'isInMergeQueue' => true,
+                                        'mergeQueueEntry' => entry)]
+
+    result = @merge.call(head: HEAD, base: BASE, walkthrough: 17, squash_message:)
+
+    assert_equal 'not_applied_merge_queue', result.fetch('squash_message')
+    assert_empty @client.mutations
+  end
 end

@@ -29,12 +29,6 @@ module Shaka
       @body = [wrap(plain(content['body'])), trailers(commit_messages)].reject(&:empty?).join("\n\n")
     end
 
-    # The mutation parameters, input fields, and variables MergeSubmission adds.
-    def graphql
-      [', $headline: String!, $body: String!', ', commitHeadline: $headline, commitBody: $body',
-       { 'headline' => headline, 'body' => body }]
-    end
-
     private
 
     def headline_for(title, number)

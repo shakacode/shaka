@@ -5,7 +5,8 @@ require_relative 'error'
 module Shaka
   # Submits an already-verified pull request through its native GitHub path.
   class MergeSubmission
-    # A SquashMessage adds its headline and body; without one GitHub uses the repository default.
+    # A SquashMessage fills MESSAGE_FIELDS; without one GitHub uses the repository default.
+    MESSAGE_FIELDS = [', $headline: String!, $body: String!', ', commitHeadline: $headline, commitBody: $body'].freeze
     MERGE_MUTATION = <<~GRAPHQL
       mutation($id: ID!, $head: GitObjectID!%<params>s) {
         mergePullRequest(input: {pullRequestId: $id, expectedHeadOid: $head, mergeMethod: SQUASH%<input>s}) {
@@ -26,14 +27,15 @@ module Shaka
       }
     GRAPHQL
 
+    # A SquashMessage, or nil for the repository's squash default. A merge queue takes no
+    # message: it squashes with the repository default, and the result says so.
+    attr_writer :message
+
     def initialize(github)
       @github = github
     end
 
-    # `message` is a SquashMessage, or nil for the repository's squash default. A merge queue
-    # takes no message: it squashes with the repository default, and the result says so.
-    def call(pull, head, message: nil)
-      @message = message
+    def call(pull, head)
       return queued_result(pull, head) if pull['isInMergeQueue']
       return enqueue(pull, head) if pull['isMergeQueueEnabled']
 
@@ -60,8 +62,7 @@ module Shaka
     private
 
     def merge(id, head)
-      params, input, variables = @message ? @message.graphql : ['', '', {}]
-      result = @github.graphql(format(MERGE_MUTATION, params:, input:), { 'id' => id, 'head' => head, **variables })
+      result = @github.graphql(*merge_request(id, head))
       payload = result['mergePullRequest']
       pr = payload['pullRequest'] if payload.is_a?(Hash)
       unless pr.is_a?(Hash) && pr['merged'] == true && pr['state'] == 'MERGED' && pr['headRefOid'] == head
@@ -69,6 +70,14 @@ module Shaka
       end
 
       pr
+    end
+
+    def merge_request(id, head)
+      return [format(MERGE_MUTATION, params: '', input: ''), { 'id' => id, 'head' => head }] unless @message
+
+      params, input = MESSAGE_FIELDS
+      [format(MERGE_MUTATION, params:, input:),
+       { 'id' => id, 'head' => head, 'headline' => @message.headline, 'body' => @message.body }]
     end
 
     def enqueue(pull, head)
