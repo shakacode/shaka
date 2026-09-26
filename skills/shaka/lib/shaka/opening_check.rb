@@ -43,15 +43,16 @@ module Shaka
                                          'items' => SENTENCE } }
     }.freeze
 
-    def initialize(summary:, published_body:, candidate_root:)
+    def initialize(summary:, body:, published_body:, candidate_root:)
       @opening = summary.to_s.strip.split(/\n\s*\n/).first.to_s.strip
+      @lead = lead(body.to_s)
       @published_body = published_body.to_s
       @candidate_root = candidate_root
     end
 
     def call
       return not_checked('the summary is empty') if @opening.empty?
-      return { 'status' => 'unchanged' } if @published_body.include?(@opening)
+      return { 'status' => 'unchanged' } if @lead && @published_body.include?(@lead)
 
       executable = LocalReviewExecutable.resolve('claude', candidate_root: @candidate_root)
       return not_checked('claude is not on PATH') unless executable
@@ -73,6 +74,13 @@ module Shaka
     end
 
     private
+
+    # The rendered body up to the end of the opening; the identity line before it pins the
+    # opening to its place, so a paragraph promoted from later in the body is checked again.
+    def lead(body)
+      index = body.index(@opening)
+      index && body[0, index + @opening.length]
+    end
 
     def parse(executable)
       args = [executable, '-p', '--model', MODEL, '--effort', 'low', '--permission-mode', 'plan',

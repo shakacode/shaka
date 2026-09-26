@@ -34,9 +34,16 @@ class OpeningCheckTest < Minitest::Test
 
   def test_skips_the_model_when_the_published_opening_is_unchanged
     with_claude(parse('shaka merge', false)) do |root, trace|
-      result = check(COMMAND_FIRST, root:, published: "<!-- shaka:begin -->\n#{COMMAND_FIRST}\n")
+      result = check(COMMAND_FIRST, root:, published: "<!-- shaka:begin -->\n#{render(COMMAND_FIRST)}")
       assert_equal({ 'status' => 'unchanged' }, result)
       refute_path_exists trace
+    end
+  end
+
+  def test_checks_a_later_paragraph_promoted_to_the_opening
+    with_claude(parse('shaka merge', false)) do |root, _trace|
+      published = render("#{OUTCOME_FIRST}\n\n#{COMMAND_FIRST}")
+      assert_equal 'flagged', check(COMMAND_FIRST, root:, published:).fetch('status')
     end
   end
 
@@ -74,8 +81,11 @@ class OpeningCheckTest < Minitest::Test
   end
 
   def check(summary, root:, published: '')
-    Shaka::OpeningCheck.new(summary:, published_body: published, candidate_root: File.realpath(root)).call
+    Shaka::OpeningCheck.new(summary:, body: render(summary), published_body: published,
+                            candidate_root: File.realpath(root)).call
   end
+
+  def render(summary) = "**Author:** agent\n\n#{summary}\n\n| Check |\n| --- |\n| ok |\n"
 
   def parse(character, reader_facing)
     { is_error: false, structured_output: { sentences: [{ character:, reader_facing:, action: 'acts',
