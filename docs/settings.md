@@ -5,6 +5,8 @@ Settings live in `.agents/agent-workflow.yml`. Ask your agent to
 Policy comes from the default branch; settings changed in a PR do not govern
 that PR.
 
+For documentation and PR style, see [writing preferences](writing-preferences.md).
+
 ## `merge.preference`
 
 **Required.** Values: `ask` or `auto`. Setup defaults to `ask`.

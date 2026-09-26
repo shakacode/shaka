@@ -59,3 +59,6 @@ Keep merge policy ask.
 See [settings](settings.md) for values and defaults. Shaka's own
 [configuration](https://github.com/shakacode/shaka/blob/main/.agents/agent-workflow.yml) and [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin)
 provide working examples.
+
+To choose how the agent writes documentation and PRs, see
+[writing preferences](writing-preferences.md).

@@ -1,22 +1,25 @@
 # Writing preferences
 
-Lead with what changed and why. Show the evidence needed to judge it; keep
-implementation detail in the walkthrough and longer records in expandable sections.
-
-For a task, tell the agent how you want it to write:
+Tell the agent how you want it to write:
 
 ```text
-Keep PR descriptions short. Lead with what changed for the user,
-use before/after examples, and put implementation details in the walkthrough.
+Keep this PR description to three bullets. Explain what changed for the user
+and put implementation details in the walkthrough.
 ```
 
-For persistent repository defaults, Shaka currently uses `AGENTS.md`. Put your
-preferences there, or add a pointer to a separate style file:
+To reuse preferences across tasks, add `.agents/writing-style.md` to your repository:
 
-```text
-Before writing PR descriptions, walkthroughs, or review replies, read
-.agents/writing-style.md and apply its writing preferences.
+```markdown
+# Writing style
+
+- Write documentation for someone new to the project.
+- Keep PR descriptions short and lead with what changed for the user.
+- Use before-and-after examples when they clarify behavior.
 ```
 
-The agent follows trusted repository instructions. Shaka does not automatically
-load a style file. See its [default writing guidance](../skills/shaka/references/writing.md).
+Once the file is merged into your default branch, Shaka loads it automatically.
+You can override these defaults in a task. Existing writing instructions in
+`AGENTS.md` and your personal agent instructions also take precedence.
+
+If Shaka reports a problem with the file, ask the agent to fix it. You can keep
+working and give writing instructions in chat.

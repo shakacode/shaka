@@ -50,7 +50,8 @@ it does not prove a task followed every step.
 ## Customize the instructions
 
 Put commands and merge choices in [settings](settings.md). Use `AGENTS.md` for
-project constraints, review criteria, and writing preferences.
+project constraints and review criteria. For documentation and PR style, see
+[writing preferences](writing-preferences.md).
 
 To change Shaka, edit the workflow and references in a fork. Update the enforcement
 map for changed rules, run the checks, and submit a PR. Install the reviewed version
