@@ -34,6 +34,14 @@ class AttentionTest < Minitest::Test
     assert_equal [LABELS_PATH, 'POST', JSON.generate(labels: ['awaiting-answer'])], requests[4]
   end
 
+  def test_resume_replaces_answer
+    result = call('resume', snapshot_response, labels_response('awaiting-answer'), label_exists,
+                  labels_response, labels_response('awaiting-resume'))
+
+    assert_equal({ 'state' => 'resume', 'labels' => ['awaiting-resume'] }, result)
+    assert_equal ["#{LABELS_PATH}/awaiting-answer", 'DELETE'], requests[3].first(2)
+  end
+
   def test_a_missing_label_is_created_with_its_color_and_description
     call('merge', snapshot_response, labels_response, label_missing,
          response({ 'name' => 'awaiting-merge-approval' }), labels_response('awaiting-merge-approval'))

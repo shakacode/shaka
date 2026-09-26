@@ -36,10 +36,11 @@ The agent labels a PR when it stops for you:
 | --- | --- |
 | `awaiting-answer` | Your answer to a question the agent asked in chat |
 | `awaiting-merge-approval` | Your merge or approval of the named commit; set only under **Ask** |
+| `awaiting-resume` | You to resume the agent; it paused with nothing set to wake it |
 
 You don't create these labels. The first time the agent needs one in a repository,
-it creates it: `awaiting-answer` in amber and `awaiting-merge-approval` in purple,
-each with a description. Recolor or reword them freely; the agent never changes a
+it creates it: `awaiting-answer` in amber, `awaiting-merge-approval` in purple, and
+`awaiting-resume` in blue, each with a description. Recolor or reword them freely; the agent never changes a
 label that already exists. Creating a label needs write access; with triage access
 the agent can still apply labels someone else created.
 
@@ -54,9 +55,14 @@ approve the new commit. While it waits for either approval, the PR keeps its
 `awaiting-merge-approval` label.
 
 A PR carries at most one of these labels. The agent removes it when work resumes.
-Search `is:open label:awaiting-answer` or `is:open label:awaiting-merge-approval`
-to see your queue. Nothing but the agent clears these labels, so one can go stale
+Search `is:open label:awaiting-answer`, `is:open label:awaiting-merge-approval`, or
+`is:open label:awaiting-resume` to see your queue. Nothing but the agent clears these labels, so one can go stale
 if the agent stops before work resumes; remove it by hand.
+
+To resume an `awaiting-resume` PR, or any PR whose chat was lost to a crash or restart,
+paste the **Next action** from its WIP Details into a new chat, such as
+`$shaka https://github.com/OWNER/REPO/pull/N` in Codex. The agent runs `shaka handoff`
+first to read the PR's live state, then continues.
 
 ## What you get
 

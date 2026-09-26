@@ -5,6 +5,7 @@ require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/attention'
+require_relative '../lib/shaka/handoff'
 require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
@@ -103,7 +104,7 @@ if ARGV.first == 'prefix'
   exit Shaka::Prefix.run(ARGV)
 end
 
-COMMANDS = %w[pr comments description reply resolve walkthrough merge attention].freeze
+COMMANDS = %w[pr comments description reply resolve walkthrough merge attention handoff].freeze
 
 def content(path)
   parsed = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -159,7 +160,7 @@ parser = OptionParser.new do |flags|
   flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
-  flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, none') do |value|
+  flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, resume, none') do |value|
     options[:state] = value
   end
   flags.on('-h', '--help', 'Show usage') do
@@ -180,7 +181,7 @@ begin
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
 
   github = Shaka::GitHub.new(repository, number)
-  if %w[pr walkthrough merge].include?(command)
+  if %w[pr walkthrough merge handoff].include?(command)
     seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
   end
   seam_required_checks = seam&.merge&.fetch('required_checks', nil)
@@ -214,8 +215,10 @@ begin
                                         limits: merge_limits(options)
                                       )
            when 'attention' then Shaka::Attention.new(github).call(state: options.fetch(:state))
+           when 'handoff' then Shaka::Handoff.new(github, seam_required_checks:).call(head: options[:head])
            end
   puts JSON.pretty_generate(result)
+  exit Shaka::Handoff.exit_status(result) if command == 'handoff'
 rescue OptionParser::ParseError, KeyError, SystemCallError, Shaka::Error => e
   warn "shaka: #{e.message}"
   exit 1

@@ -10,7 +10,7 @@ class CliTest < Minitest::Test
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert_predicate status, :success?, error
     %w[pr comments description reply resolve walkthrough merge recommendation checkpoint seam doctor
-       enforcement repos prefix attention --head --issue --content-file --key --comment --thread
+       enforcement repos prefix attention handoff --head --issue --content-file --key --comment --thread
        --ci-review-wait --ref --state].each { |token| assert_includes output, token }
   end
 

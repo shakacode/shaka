@@ -418,6 +418,15 @@ rules:
     note: >-
       `attention` does not read the merge preference, so it labels a PR in Auto mode as readily
       as in Ask mode.
+  - id: stop-time-handoff
+    phase: always
+    quote: Settle each owed item and run it again before stopping.
+    enforced_by: agent
+    note: >-
+      `handoff` reads live GitHub state and exits 2 while the PR lacks exactly one attention
+      label, holds `awaiting-merge-approval` with required checks not passing, or has a walkthrough
+      or WIP Details for an older head. Nothing runs it when a turn ends unless the host wires it
+      into a stop hook.
   - id: required-checks
     phase: finish
     quote: Never accept missing, failed, pending, or stale required checks

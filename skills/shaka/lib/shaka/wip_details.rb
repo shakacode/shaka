@@ -20,6 +20,15 @@ module Shaka
       'next_action' => 'Next action'
     }.freeze
 
+    NOTE = %r{<details>\n<summary>#{SUMMARY}</summary>\n\n(.*?)\n\n</details>}m
+
+    # Reads the Revision cell back from a description this class rendered, or nil without a note.
+    def self.revision(body)
+      note = body.to_s[NOTE, 1] or return
+
+      note[/^\| #{FIELDS.fetch('revision')} \| (.*) \|$/, 1]
+    end
+
     def initialize(spec)
       @spec = spec
     end
