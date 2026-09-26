@@ -2,11 +2,13 @@
 
 ## Can I customize the prompt Shaka gives its local reviewer?
 
-Yes. Set [`review.prompt_file`](settings.md#reviewprompt_file) to a Markdown file
-in your repository to replace Shaka's default instructions for what the local
-reviewer looks for and how it reports. To give one review agent different
-instructions, set `prompt_file` on that agent's entry in `local_review_agents`.
-Copy Shaka's default instructions to start.
+Yes. In `.agents/agent-workflow.yml`, set
+[`review.prompt_file`](settings.md#reviewprompt_file) to the path of a Markdown
+file, relative to the repository root, such as `.agents/review-prompt.md`. It
+replaces Shaka's default instructions for what the local reviewer looks for and
+how it reports. To give one review agent different instructions, set
+`prompt_file` on that agent's entry in `local_review_agents`. Copy Shaka's
+[default instructions](../skills/shaka/config/review-prompt.md) to start.
 
 The agent reads the file from the default branch when it runs
 `shaka review run --criteria-ref`, so a PR that edits it is reviewed with the
@@ -82,6 +84,8 @@ their links for you to read. See
 
 ## What does Shaka enforce, and what relies on the agent?
 
-Ruby checks settings, trusted comment authors, and the reviewed commit at merge.
-Test quality, screenshots, independent review, and privacy rely on the agent's
-judgment. See [what is enforced](workflow.md#what-is-enforced).
+Ruby checks settings and trusted comment authors. When the agent merges, it also
+checks the reviewed commit and that a local review of that commit was posted, or
+that a reason for skipping it was given. How thorough that review was, test
+quality, screenshots, and privacy rely on the agent's judgment. See
+[what is enforced](workflow.md#what-is-enforced).
