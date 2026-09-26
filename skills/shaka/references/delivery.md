@@ -67,7 +67,9 @@ the decision unless scope or expected cost materially changes.
 ### Recover an unfinished PR
 
 Keep a collapsed **WIP Details** entry in the PR description until GitHub confirms
-the outcome. Publish it through `description` using the `details` list. Refresh at
+the outcome. Publish it through the `description` content's `wip` object, whose
+snake_case keys name the fields below; the helper renders them as one table and
+refuses a hand-written `WIP Details` details item. Refresh at
 meaningful progress and every stopping point, with all other description fields
 still accurate for the named head. An Ask handoff leaves the note in place with
 state “waiting for GitHub merge” and the expected SHA. A failed merge also retains it.

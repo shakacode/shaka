@@ -418,3 +418,65 @@ class PublicationDeploymentLinkTest < Minitest::Test
     end
   end
 end
+
+# Hosts published WIP Details as prose paragraphs, a table, or unseparated lines
+# (https://github.com/shakacode/shaka/pull/258, /pull/254, /pull/248); the helper now owns one table.
+class PublicationWipDetailsTest < Minitest::Test
+  WIP = { 'owner' => 'm5 · Claude Code · k7q2', 'task' => 'shaka #255 use the tracker branch name',
+          'thread' => 'UNKNOWN', 'last_observed_activity' => '2026-09-25 13:31 HST',
+          'revision' => 'feature @ 4602d275a094fa555eba472d39b8bca340d7afeb', 'workspace' => 'UNKNOWN',
+          'unfinished_work' => 'none', 'stopped_because' => 'paused', 'merge_authority' => 'ask',
+          'state' => 'awaiting hosted checks', 'next_action' => 'read claude-review' }.freeze
+
+  def render(wip, details: [PublicationRegressionTest::USAGE])
+    content = PublicationRegressionTest.new('render').description_content('wip' => wip, 'details' => details)
+    Shaka::Publication.description(content)
+  end
+
+  def test_wip_renders_every_field_as_one_table_in_workflow_order
+    rendered = render(WIP)
+    note = rendered[%r{<details>\n<summary>WIP Details</summary>\n\n(.*?)\n\n</details>}m, 1]
+    lines = note.lines.map(&:chomp)
+    assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
+    labels = lines.drop(2).map { |line| line.split(' | ').first.delete_prefix('| ') }
+    assert_equal Shaka::WipDetails::FIELDS.values, labels
+    assert_includes lines, '| Stopped because | paused |'
+  end
+
+  def test_wip_follows_the_usage_details
+    rendered = render(WIP)
+    assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>WIP Details')
+  end
+
+  def test_the_note_is_omitted_after_the_outcome
+    refute_includes render(nil), 'WIP Details'
+  end
+
+  def test_a_pipe_in_a_value_stays_inside_its_cell
+    assert_includes render(WIP.merge('state' => 'a | b')), '| State | a \\| b |'
+  end
+
+  def test_a_backslash_before_a_pipe_cannot_undo_its_escape
+    assert_includes render(WIP.merge('state' => 'a\\|b')), '| State | a\\\\\\|b |'
+  end
+
+  def test_missing_and_unknown_fields_are_named
+    error = assert_raises(Shaka::Error) { render(WIP.except('thread')) }
+    assert_includes error.message, 'missing fields: thread'
+    error = assert_raises(Shaka::Error) { render(WIP.merge('mood' => 'fine')) }
+    assert_includes error.message, 'unknown fields: mood'
+  end
+
+  def test_blank_and_multiline_values_are_refused
+    ['', "two\nlines", 7].each do |value|
+      error = assert_raises(Shaka::Error) { render(WIP.merge('task' => value)) }
+      assert_includes error.message, 'wip task'
+    end
+  end
+
+  def test_a_hand_written_wip_details_item_is_refused
+    prose = { 'summary' => 'WIP Details', 'body' => "Owner: m5\nTask: something" }
+    error = assert_raises(Shaka::Error) { render(nil, details: [PublicationRegressionTest::USAGE, prose]) }
+    assert_includes error.message, 'wip object'
+  end
+end

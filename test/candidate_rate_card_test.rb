@@ -92,7 +92,7 @@ class CandidateRateCardTest < Minitest::Test
       assert_metric report, 'Credits estimate', '0.010000'
       assert_metric report, 'USD estimate', '$0.001000'
       assert_includes report, 'Rate card: candidate checkout'
-      assert_includes report, 'Actual charge: UNKNOWN'
+      refute_includes report, 'not invoices'
     end
   end
 

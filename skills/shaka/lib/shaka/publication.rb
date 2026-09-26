@@ -3,6 +3,7 @@
 require 'uri'
 require_relative 'error'
 require_relative 'provenance'
+require_relative 'wip_details'
 
 module Shaka
   # Checks supplied text for the mechanical failures models reproduce by hand.
@@ -140,7 +141,7 @@ module Shaka
     TABLE_SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
 
     def self.description(content)
-      new(content, require_tables: true).render(%i[top_links sections table provenance details])
+      new(content, require_tables: true).render(%i[top_links sections table provenance details wip])
     end
 
     def self.comment(content) = new(content).render([])
@@ -212,8 +213,24 @@ module Shaka
     def details
       items = PublicationText.list(@content['details'], 'details')
       rendered = items.map { |detail| details_block(detail) }
-      require_usage_table(items) if @require_tables
+      if @require_tables
+        require_usage_table(items)
+        refuse_free_form_wip(items)
+      end
       rendered
+    end
+
+    # The note is optional because it disappears once GitHub confirms the outcome.
+    def wip
+      spec = @content['wip']
+      spec.nil? ? [] : [details_block(WipDetails.new(spec).detail)]
+    end
+
+    # Hand-written notes are what made each host publish a different shape.
+    def refuse_free_form_wip(items)
+      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(WipDetails::SUMMARY) }
+
+      raise Error, 'Publication WIP Details must be supplied as the wip object, not a details item.'
     end
 
     def provenance
