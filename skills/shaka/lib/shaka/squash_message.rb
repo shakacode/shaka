@@ -16,9 +16,14 @@ module Shaka
 
     attr_reader :headline, :body
 
+    # GitHub lists at most 250 commits for a PR; a longer PR would lose trailers silently.
     def self.for(github, content)
       commits = PublicComments::BoundedList.new(github, max_pages: COMMIT_PAGES, label: 'Commit listing')
                                            .call("repos/#{github.repository}/pulls/#{github.number}/commits")
+      unless commits.length == github.snapshot.dig('commits', 'totalCount')
+        raise Error, 'GitHub listed only some of the PR commits, so co-author trailers would be incomplete.'
+      end
+
       new(content, number: github.number, commit_messages: commits.map { |commit| commit.dig('commit', 'message') })
     end
 

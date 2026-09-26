@@ -56,6 +56,28 @@ class SquashMessageTest < Minitest::Test
   end
 end
 
+class SquashMessageCommitsTest < Minitest::Test
+  Listing = Struct.new(:repository, :number, :commits, :total) do
+    def api_list(_path) = commits
+    def snapshot = { 'commits' => { 'totalCount' => total } }
+  end
+
+  def build(commits, total)
+    Shaka::SquashMessage.for(Listing.new('owner/repo', 42, commits, total), { 'title' => 'T', 'body' => 'B' })
+  end
+
+  def test_trailers_come_from_every_listed_commit
+    commits = [{ 'commit' => { 'message' => "Fix\n\nCo-authored-by: Ana <ana@example.test>" } }]
+
+    assert_equal "B\n\nCo-authored-by: Ana <ana@example.test>", build(commits, 1).body
+  end
+
+  def test_a_pr_with_more_commits_than_github_lists_is_refused
+    error = assert_raises(Shaka::Error) { build([{ 'commit' => { 'message' => 'Fix' } }], 300) }
+    assert_match(/only some of the PR commits/, error.message)
+  end
+end
+
 class SquashCommentTest < Minitest::Test
   include GitHubHelper
 
@@ -70,11 +92,16 @@ class SquashCommentTest < Minitest::Test
 
   def expected_body = Shaka::GitHub.new('owner/repo', 42).send(:squash_comment_body, HEAD, squash_message)
 
+  # Only 7 is ours to delete: 8 is someone else's, 9 lacks the marker, 10 is the new
+  # comment, and 11 came from a concurrent run after it.
+  def listing
+    response([listed(7, 'shaka-agent'), listed(8, 'someone'), listed(9, 'shaka-agent', 'Plain note'),
+              listed(10, 'shaka-agent'), listed(11, 'shaka-agent')])
+  end
+
   def test_posts_a_new_comment_and_deletes_only_this_accounts_earlier_ones
-    earlier = [listed(7, 'shaka-agent'), listed(8, 'someone'), listed(9, 'shaka-agent', 'Plain note'),
-               listed(10, 'shaka-agent')]
     github = client(snapshot_response, stored(expected_body), response({ 'login' => 'shaka-agent' }),
-                    response(earlier), ['', '', STATUS.new(0)])
+                    listing, ['', '', STATUS.new(0)])
 
     result = github.squash_comment(head: HEAD, message: squash_message)
 

@@ -5,8 +5,7 @@ require_relative 'error'
 module Shaka
   # Submits an already-verified pull request through its native GitHub path.
   class MergeSubmission
-    # A SquashMessage fills MESSAGE_FIELDS; without one GitHub uses the repository default.
-    MESSAGE_FIELDS = [', $headline: String!, $body: String!', ', commitHeadline: $headline, commitBody: $body'].freeze
+    # A SquashMessage adds its headline and body; without one GitHub uses the repository default.
     MERGE_MUTATION = <<~GRAPHQL
       mutation($id: ID!, $head: GitObjectID!%<params>s) {
         mergePullRequest(input: {pullRequestId: $id, expectedHeadOid: $head, mergeMethod: SQUASH%<input>s}) {
@@ -75,8 +74,8 @@ module Shaka
     def merge_request(id, head)
       return [format(MERGE_MUTATION, params: '', input: ''), { 'id' => id, 'head' => head }] unless @message
 
-      params, input = MESSAGE_FIELDS
-      [format(MERGE_MUTATION, params:, input:),
+      [format(MERGE_MUTATION, params: ', $headline: String!, $body: String!',
+                              input: ', commitHeadline: $headline, commitBody: $body'),
        { 'id' => id, 'head' => head, 'headline' => @message.headline, 'body' => @message.body }]
     end
 
