@@ -81,10 +81,15 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Revision | Branch and current head |
 | Workspace | Checkout directory, subject to the privacy setting below |
 | Unfinished work | Uncommitted, untracked, deleted, stashed, or unpushed work; `none` only after inspection proves the branch holds everything |
-| Stopped because | `running`, `paused`, or `interrupted` |
+| Stopped because | `running`, `awaiting merge approval`, `awaiting decision`, `paused`, or `interrupted` |
 | Merge authority | Previously established `ask` or `auto`, or `UNKNOWN`; this field grants no authority |
 | State | In progress, named check/review wait, blocker, decision, GitHub merge of a named head, or handoff to a named successor |
 | Next action | One step that continues the task |
+
+Stopped because names why the task is not running. Use `awaiting merge approval`
+while the PR carries the `awaiting-merge-approval` label, `awaiting decision` while
+it carries `awaiting-answer`, and `paused` only when the user stopped the task for
+another reason.
 
 Use safe filenames or counts for unfinished work; use `UNKNOWN` if the previous
 checkout has not been inspected or cannot be reached. A fresh clone cannot prove
