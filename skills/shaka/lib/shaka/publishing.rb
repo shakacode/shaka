@@ -24,6 +24,8 @@ module Shaka
       confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
     end
 
+    def description_body = pull['body'].to_s
+
     def reply(body:, key:, comment: nil, trust_config: nil,
               machine_path: PublicComments::TrustConfig::MACHINE_PATH)
       mark = reply_mark(key)
