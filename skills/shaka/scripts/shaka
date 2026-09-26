@@ -184,6 +184,7 @@ begin
     raise OptionParser::InvalidArgument, '--squash-message is only for merge'
   end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
+  raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
 
   github = Shaka::GitHub.new(repository, number)

@@ -72,7 +72,9 @@ class HandoffTest < Minitest::Test
       'user' => { 'login' => author } }
   end
 
-  def check(bucket) = { 'name' => 'validate', 'state' => bucket.upcase, 'bucket' => bucket }
+  STATES = { 'pass' => 'SUCCESS', 'pending' => 'PENDING', 'skipping' => 'SKIPPED' }.freeze
+
+  def check(bucket) = { 'name' => 'validate', 'state' => STATES.fetch(bucket), 'bucket' => bucket }
 
   def handoff(expected: HEAD, woken_by: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
@@ -101,6 +103,25 @@ class HandoffTest < Minitest::Test
 
     assert_empty result['owed']
     assert_includes result['status'], 'woken by background watcher'
+  end
+
+  def test_a_wake_source_does_not_excuse_a_leftover_label
+    result = handoff(labels: ['awaiting-resume'], woken_by: 'background watcher')
+
+    assert(result['owed'].any? { |item| item.include?('Remove awaiting-resume') })
+  end
+
+  def test_merge_approval_without_a_walkthrough_is_owed
+    result = handoff(labels: ['awaiting-merge-approval'], reviews: [])
+
+    assert(result['owed'].any? { |item| item.include?('Publish a walkthrough') })
+  end
+
+  def test_a_check_whose_state_and_bucket_disagree_is_not_passing
+    result = handoff(labels: ['awaiting-merge-approval'],
+                     checks: [{ 'name' => 'validate', 'state' => 'FAILURE', 'bucket' => 'pass' }])
+
+    assert(result['owed'].any? { |item| item.include?('not all passing') })
   end
 
   def test_a_copied_walkthrough_from_another_account_is_ignored
@@ -172,6 +193,19 @@ class HandoffTest < Minitest::Test
     result = handoff(expected: nil)
 
     assert_empty result['owed']
+  end
+end
+
+class HandoffCliTest < Minitest::Test
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+
+  # The flag is refused before any GitHub client exists, so this runs offline.
+  def test_woken_by_is_refused_outside_handoff
+    _output, error, status = Open3.capture3(COMMAND, 'attention', 'owner/repo', '1', '--state', 'none',
+                                            '--woken-by', 'watcher')
+
+    refute_predicate status, :success?
+    assert_includes error, '--woken-by is only for handoff'
   end
 end
 

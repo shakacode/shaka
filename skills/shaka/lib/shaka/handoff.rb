@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'attention'
+require_relative 'merge_required_checks'
 require_relative 'public_comments/bounded_list'
 require_relative 'status'
 require_relative 'walkthrough_history'
@@ -10,9 +11,10 @@ module Shaka
   # Reports what an agent still owes a PR before it ends a turn, and what a resumed session finds.
   # It reads only; the agent settles each owed item and runs it again.
   class Handoff
+    include MergeRequiredChecks
+
     OWED_EXIT = 2
     SHORT = 7
-    PASSING = %w[pass skipping].freeze
 
     # A Stop hook or script can refuse to end the turn on this status without parsing the report.
     def self.exit_status(result) = result.fetch('owed').empty? ? 0 : OWED_EXIT
@@ -46,15 +48,22 @@ module Shaka
 
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.
     def label_fact(checks)
-      labels = Attention.new(@github).current
-      return "woken by #{@woken_by}" if labels.empty? && @woken_by
-      return owe('no awaiting label', 'Set the attention label for what the PR waits on.') if labels.empty?
-      return owe(labels.join('+'), "Keep exactly one attention label; found #{labels.join(', ')}.") if labels.length > 1
+      @labels = Attention.new(@github).current
+      return woken_fact if @woken_by
+      return owe('no awaiting label', 'Set the attention label for what the PR waits on.') if @labels.empty?
+      return owe(@labels.join('+'), "Keep exactly one attention label; found #{list}.") if @labels.length > 1
 
-      if labels.first.casecmp?('awaiting-merge-approval') && !passing?(checks)
+      if merge_requested? && !passing?(checks)
         @owed << 'awaiting-merge-approval is set while required checks are not all passing.'
       end
-      labels.first
+      @labels.first
+    end
+
+    # A wake source replaces the label: the agent acts next, so no person should see the PR in a queue.
+    def woken_fact
+      return "woken by #{@woken_by}" if @labels.empty?
+
+      owe(@labels.join('+'), "Remove #{list}; #{@woken_by} wakes the agent, not a person.")
     end
 
     def checks_fact(checks, unavailable)
@@ -65,11 +74,16 @@ module Shaka
       "required checks #{counts.join(', ')}"
     end
 
-    def passing?(checks) = checks.is_a?(Array) && checks.all? { |check| PASSING.include?(check['bucket']) }
+    # Uses the merge gate's own test, so handoff never calls settled a check that merge would refuse.
+    def passing?(checks) = checks.is_a?(Array) && checks.all? { |check| passing_check?(check) }
 
     def walkthrough_fact(live)
       revision = latest_walkthrough
-      return note('no walkthrough', 'No walkthrough yet; one is required before merge.') unless revision
+      unless revision
+        return owe('no walkthrough', 'Publish a walkthrough before asking for merge.') if merge_requested?
+
+        return note('no walkthrough', 'No walkthrough yet; one is required before merge.')
+      end
       return "walkthrough #{revision[0, SHORT]}" if revision == live
 
       owe("walkthrough #{revision[0, SHORT]}", "The walkthrough explains #{revision}; publish one for #{live}.")
@@ -98,6 +112,10 @@ module Shaka
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")
     end
+
+    def list = @labels.join(', ')
+
+    def merge_requested? = @labels.any? { |label| label.casecmp?('awaiting-merge-approval') }
 
     def owe(fact, item)
       @owed << item
