@@ -119,6 +119,12 @@ def merge_limits(options)
                               confirmed_head: options[:confirmed_head])
 end
 
+def require_merge_ref!(options)
+  return if options[:ref].is_a?(String) && !options[:ref].strip.empty?
+
+  raise Shaka::Error, 'merge requires --ref so policy comes from a trusted commit'
+end
+
 def walkthrough_body(options)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
@@ -203,12 +209,14 @@ begin
            when 'walkthrough'
              github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options), seam_required_checks:)
            when 'merge'
+             head = options.fetch(:head)
+             require_merge_ref!(options)
              review = { required: seam&.review&.fetch('required'), waiver: options[:review_waiver],
                         root: options[:root] || Dir.pwd }
              Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],
                                       seam_wait: seam&.review&.fetch('ci_review_wait'), review:,
                                       seam_required_checks:).call(
-                                        head: options.fetch(:head),
+                                        head:,
                                         base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough),
                                         limits: merge_limits(options)

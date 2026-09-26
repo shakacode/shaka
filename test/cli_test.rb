@@ -118,6 +118,21 @@ class CliTest < Minitest::Test
   end
 end
 
+class CliMergeRefTest < Minitest::Test
+  def test_merge_without_ref_does_not_call_github
+    Dir.mktmpdir do |dir|
+      sentinel = File.join(dir, 'called')
+      File.write(stub = File.join(dir, 'gh'), "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
+      File.chmod(0o755, stub)
+      args = ['merge', 'owner/repo', '1', '--head', 'a' * 40, '--base', 'main', '--walkthrough', '1']
+      _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, CliTest::COMMAND, *args)
+      refute_predicate status, :success?
+      assert_includes error, '--ref'
+      refute_path_exists sentinel
+    end
+  end
+end
+
 class CliReviewWaiverTest < Minitest::Test
   # Option parsing rejects the flag before any GitHub client exists.
   def test_review_waiver_is_only_for_merge
