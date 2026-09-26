@@ -85,7 +85,7 @@ their links for you to read. See
 ## What does Shaka enforce, and what relies on the agent?
 
 Ruby checks settings and trusted comment authors. When the agent merges, it also
-checks the reviewed commit and that a local review of that commit was posted, or
-that a reason for skipping it was given. How thorough that review was, test
-quality, screenshots, and privacy rely on the agent's judgment. See
+checks the reviewed commit and, when review is required, that posted review
+covers it or that a reason for skipping review was given. How thorough that review
+was, test quality, screenshots, and privacy rely on the agent's judgment. See
 [what is enforced](workflow.md#what-is-enforced).

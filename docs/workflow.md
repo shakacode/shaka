@@ -40,14 +40,15 @@ They do not restrict maintainers.
 | Valid settings, command paths, and values | Ruby configuration checks |
 | Which public comment bodies an agent reads | Ruby allowlist and provenance checks |
 | Reviewed commit and required GitHub merge conditions | Ruby merge helper and GitHub protection |
-| A posted local review of the merged commit, or a stated waiver | Ruby merge helper, when the agent merges |
+| Posted review evidence covering the merged commit, or a stated waiver | Ruby merge helper, when the agent merges and review is required |
 | Adequate tests, useful screenshots, and how thorough the review was | Agent judgment and review |
 | Keeping private information out of publications | Agent inspection; no automated privacy scan |
 
-The merge helper confirms that a review line naming the commit was posted on the
-PR; it cannot tell whether the review was careful or its findings were fixed. A
-merge you make yourself on GitHub skips this check. See
-[`review.required`](settings.md#reviewrequired) for what counts as review evidence.
+The merge helper confirms that review posted on the PR covers the commit it
+merges; it cannot tell whether the review was careful or its findings were fixed.
+A merge you make yourself on GitHub skips this check, and so does
+`review.required: none`. See [`review.required`](settings.md#reviewrequired) for
+what counts as review evidence.
 
 `shaka enforcement` lists rules enforced by code and those that rely on the agent.
 Its [source map](../skills/shaka/config/enforcement.yml) describes enforcement;
