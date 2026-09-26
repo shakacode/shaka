@@ -216,6 +216,12 @@ class WipDetailsRevisionTest < Minitest::Test
     assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::WipDetails.revision(body)
   end
 
+  def test_a_body_saved_with_crlf_line_endings_still_reads
+    body = HandoffFixtures.description.gsub("\n", "\r\n")
+
+    assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::WipDetails.revision(body)
+  end
+
   def test_a_body_without_the_note_has_no_revision
     assert_nil Shaka::WipDetails.revision('plain body')
   end

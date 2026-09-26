@@ -74,7 +74,7 @@ module Shaka
       "required checks #{counts.join(', ')}"
     end
 
-    # Uses the merge gate's own test, so handoff never calls settled a check that merge would refuse.
+    # Judges each check with the merge gate's own test. An empty set passes, as Ask allows.
     def passing?(checks) = checks.is_a?(Array) && checks.all? { |check| passing_check?(check) }
 
     def walkthrough_fact(live)

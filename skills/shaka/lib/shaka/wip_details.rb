@@ -24,7 +24,8 @@ module Shaka
 
     # Reads the Revision cell back from a description this class rendered, or nil without a note.
     def self.revision(body)
-      note = body.to_s[NOTE, 1] or return
+      # A body saved from GitHub's web editor comes back with CRLF line endings.
+      note = body.to_s.gsub("\r\n", "\n")[NOTE, 1] or return
 
       note[/^\| #{FIELDS.fetch('revision')} \| (.*) \|$/, 1]
     end
