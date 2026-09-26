@@ -86,10 +86,11 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | State | In progress, named check/review wait, blocker, decision, GitHub merge of a named head, or handoff to a named successor |
 | Next action | One step that continues the task |
 
-For Stopped because, use `awaiting merge approval` while the PR carries the
-`awaiting-merge-approval` label, `awaiting decision` while it carries
-`awaiting-answer`, and `paused` only when the user stopped the task for another
-reason.
+For Stopped because, use `awaiting merge approval` for an Ask handoff that waits
+for a GitHub merge click or approval, the stop that also applies the
+`awaiting-merge-approval` label. Use `awaiting decision` for a stop that waits for
+a user answer, which applies `awaiting-answer`. Use `paused` only when the user
+stopped the task for another reason.
 
 Use safe filenames or counts for unfinished work; use `UNKNOWN` if the previous
 checkout has not been inspected or cannot be reached. A fresh clone cannot prove
