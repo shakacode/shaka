@@ -2,15 +2,24 @@
 
 ## Can I customize the prompt Shaka gives its local reviewer?
 
-Not the prompt text yet. Today, add your project's review criteria to `AGENTS.md`
-on the default branch. The agent passes that commit to
-`shaka review run --criteria-ref`, which adds the root `AGENTS.md` and any
-`AGENTS.md` in a directory the change touches. See
-[invoke a reviewer locally](../skills/shaka/references/local-review.md).
+Yes. In `.agents/agent-workflow.yml`, set
+[`review.prompt_file`](settings.md#reviewprompt_file) to the path of a Markdown
+file, relative to the repository root, such as `.agents/review-prompt.md`. It
+replaces Shaka's default instructions for what the local reviewer looks for and
+how it reports. To give one review agent different instructions, set
+`prompt_file` on that agent's entry in `local_review_agents`. Copy Shaka's
+[default instructions](../skills/shaka/config/review-prompt.md) to start.
 
-A few parts of the prompt are protocol rather than policy. The closing `REVIEWED`
-line lets `shaka review run` confirm which commit was reviewed. The markers
-around the diff keep text in a contributor's change from reading as instructions.
+The agent reads the file from the default branch when it runs
+`shaka review run --criteria-ref`, so a PR that edits it is reviewed with the
+current version. Criteria in `AGENTS.md` still apply on top of the prompt file.
+The prompt file configures local reviews; a CI review job takes its prompt from
+its own workflow.
+
+A few rules stay whatever the file says, because they are protocol rather than
+policy. For example, the closing `REVIEWED` line lets `shaka review run` confirm
+which commit was reviewed. The [settings](settings.md#reviewprompt_file) list
+them all.
 
 ## Can a PR change Shaka's settings or rules for itself?
 
@@ -25,6 +34,7 @@ settings change as part of the diff. See [settings](settings.md).
 | --- | --- |
 | Commands, merge policy, and review jobs | [Settings](settings.md) in `.agents/agent-workflow.yml` |
 | Project constraints, review criteria, and writing style | `AGENTS.md` |
+| What the local reviewer looks for and how it reports | [`review.prompt_file`](settings.md#reviewprompt_file), replacing Shaka's defaults |
 | Changes to Shaka's workflow | A [fork of Shaka](workflow.md#customize-the-instructions) |
 
 Keep `AGENTS.md` a regular file with the instructions in it; Shaka reads it from
@@ -74,6 +84,8 @@ their links for you to read. See
 
 ## What does Shaka enforce, and what relies on the agent?
 
-Ruby checks settings, trusted comment authors, and the reviewed commit at merge.
-Test quality, screenshots, independent review, and privacy rely on the agent's
-judgment. See [what is enforced](workflow.md#what-is-enforced).
+Ruby checks settings and trusted comment authors. When the agent merges, it also
+checks the reviewed commit and, when review is required, that posted review
+covers it or that a reason for skipping review was given. How thorough that review
+was, test quality, screenshots, and privacy rely on the agent's judgment. See
+[what is enforced](workflow.md#what-is-enforced).
