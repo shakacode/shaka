@@ -52,8 +52,9 @@ rules:
     quote: do not invent a personal prefix
     enforced_by: agent
     note: >-
-      `claim` returns the seam's `branches.name`, but nothing compares the branch actually
-      created against that template, including its `{host}` slug.
+      `claim` returns the seam's `branches.name`, or the tracker's branch name passed with
+      `--branch` after Git accepts it, but nothing compares the branch actually created against
+      that name or template, including its `{host}` slug.
   - id: no-invented-edits
     phase: intake
     quote: do not invent edits when that check fails
