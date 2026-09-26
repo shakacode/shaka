@@ -23,8 +23,10 @@ module Shaka
       @submission = MergeSubmission.new(github)
     end
 
-    def call(head:, base:, walkthrough:, limits: MergeLimits.new)
+    # `squash_message` is a SquashMessage, or nil for the repository's squash default.
+    def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
       @target = MergeTarget.required!(head, base, limits)
+      @submission.message = squash_message
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
       evidence = verify_reviews(head, base, walkthrough, verify_gate)

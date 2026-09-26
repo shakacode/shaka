@@ -58,6 +58,20 @@ Search `is:open label:awaiting-answer` or `is:open label:awaiting-merge-approval
 to see your queue. Nothing but the agent clears these labels, so one can go stale
 if the agent stops before work resumes; remove it by hand.
 
+## Squash with a useful commit message
+
+When a PR is ready for your merge, the agent posts the squash commit message as the
+PR's last comment, just above the merge button: a title such as `Add CSV export (#42)`
+and a short plain-text body that says what changed and why, followed by the branch
+commits' `Co-authored-by` lines. Each block has a copy button; paste them into
+GitHub's squash merge boxes. When the head changes, the agent posts a new comment
+and deletes the old one. When the agent merges under **Auto**, it sends the same
+message itself, except through a merge queue, which uses the repository default.
+
+GitHub fills those boxes from a repository setting, by default with every branch
+commit's title. To start from the PR title and an empty body instead, set **Settings →
+General → Pull Requests → Allow squash merging** to **Default to pull request title**.
+
 ## What you get
 
 The agent reproduces bugs, tests new behavior, runs your checks, and handles

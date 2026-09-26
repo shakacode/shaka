@@ -276,15 +276,22 @@ phases:
         resolve OWNER/REPO NUMBER --thread THREAD_ID
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         attention OWNER/REPO NUMBER --state answer|merge|none
+        squash-message OWNER/REPO NUMBER --head SHA --content-file PATH
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA [--ci-review-wait MODE] [--limits-confirmed-head SHA]
-          [--review-waiver REASON]
+          [--review-waiver REASON] [--squash-message PATH]
         usage --commit SHA --contribution CATEGORY
         ```
 
         `pr` reports the native readiness snapshot and required checks; it is not an exit code.
         Its `requiredChecksSource` is `github`, or `seam` when GitHub enforces no required checks
         and the trusted `merge.required_checks` gates the PR instead.
+        `squash-message` and `merge --squash-message` read the same JSON: `title`, the PR title,
+        and `body`, plain text for a `git log` reader that says what changed and why, drawn from
+        the description summary without its links, tables, or evidence. The helper appends
+        `(#N)`, wraps the body, and carries the branch commits' `Co-authored-by` trailers.
+        `squash-message` posts it as a new comment and deletes this account's earlier one.
+        A merge queue takes no message, and `merge` reports that.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
         answers an inline thread. Mark a settled inline thread resolved with `resolve`.
         Do not resolve a thread before this account has replied on it.
@@ -444,7 +451,8 @@ phases:
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
         click, run `attention OWNER/REPO NUMBER --state merge` to label the PR
-        `awaiting-merge-approval`, name the expected head SHA, and tell the user they may use
+        `awaiting-merge-approval`, run `squash-message` for that head so the last comment holds
+        the commit title and body to paste into the squash merge boxes, name the expected head SHA, and tell the user they may use
         GitHub's currently offered merge control for that SHA and then archive this chat. If GitHub
         shows a different head or offers no allowed merge method, tell them not to merge. Do not
         bypass protection. Do not ask whether you should merge. Ask does not treat that GitHub click
@@ -453,7 +461,8 @@ phases:
         `requiredChecksSource` is `seam`, GitHub will not stop that click, so name each seam-declared
         check and its state at that SHA in the handoff. Run `attention` with `--state none` when work
         on the PR resumes. Never set `awaiting-merge-approval` in Auto
-        mode. In Auto mode, run `merge` with the current head and walkthrough ID. A required
+        mode. In Auto mode, run `merge` with the current head, walkthrough ID, and
+        `--squash-message` content. A required
         native approval must arrive first, and do not ask for a second approval afterward.
       - Under Ask, the user may approve the labeled PR instead of clicking merge: in chat, or when the
         latest review for the labeled head, as `comments` reports it, from a GitHub login the user

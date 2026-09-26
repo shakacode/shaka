@@ -10,6 +10,7 @@ require_relative 'walkthrough_history'
 require_relative 'github/check_list'
 require_relative 'github/required_check_rules'
 require_relative 'github/review_evidence_reads'
+require_relative 'github/squash_comment'
 
 module Shaka
   # The native pull-request evidence a publication decision depends on.
@@ -52,6 +53,7 @@ module Shaka
     include CheckList
     include RequiredCheckRules
     include ReviewEvidenceReads
+    include SquashComment
 
     attr_reader :repository, :number
 
