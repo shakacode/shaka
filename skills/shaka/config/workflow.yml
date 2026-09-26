@@ -251,6 +251,10 @@ phases:
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
         wrappers and inflated significance. A reply leads with the decision and uses the thread's
         shared context.
+      - `description` reports an advisory `opening` result. When it is `flagged`, the first
+        sentence's subject is a command, file, or internal step; rewrite the opening from the
+        reported parse so what the reader sees leads, then publish again. `not_checked` means
+        no small model was reachable; self-edit as before.
       - Supply meaning as content JSON and let the helper render it. Self-edit those summaries before
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,

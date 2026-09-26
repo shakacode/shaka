@@ -14,6 +14,7 @@ require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/merge_limits'
+require_relative '../lib/shaka/opening_check'
 require_relative '../lib/shaka/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/publication'
@@ -199,7 +200,10 @@ begin
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
              described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
-             github.description(body: Shaka::Publication.description(described))
+             body = Shaka::Publication.description(described)
+             opening = Shaka::OpeningCheck.new(summary: described['summary'], published_body: github.description_body,
+                                               candidate_root: File.realpath(options[:root] || Dir.pwd)).call
+             github.description(body:).merge('opening' => opening)
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
                           key: options.fetch(:key), comment: options[:comment])
