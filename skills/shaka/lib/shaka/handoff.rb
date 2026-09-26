@@ -89,8 +89,10 @@ module Shaka
     end
 
     def wip_fact(live)
-      body = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")['body']
-      revision = WipDetails.revision(body)
+      pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
+      moved = pull.dig('head', 'sha')
+      @owed << "PR head moved to #{moved} while handoff read it; run it again." if moved && moved != live
+      revision = WipDetails.revision(pull['body'])
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
       return "WIP #{live[0, SHORT]}" if revision.include?(live)
 
