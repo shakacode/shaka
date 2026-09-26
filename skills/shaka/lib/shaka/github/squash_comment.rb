@@ -22,18 +22,20 @@ module Shaka
 
     private
 
+    # The fence outruns any backtick run in the message, so the text cannot close its block.
     def squash_comment_body(head, message)
+      fence = '`' * [3, "#{message.headline}\n#{message.body}".scan(/`+/).map(&:length).max.to_i + 1].max
       <<~MARKDOWN
         #{SQUASH_MARK}
         **Squash commit message for `#{head[0, 7]}`.** Paste the title and the body into GitHub's squash merge boxes.
 
-        ```text
+        #{fence}text
         #{message.headline}
-        ```
+        #{fence}
 
-        ```text
+        #{fence}text
         #{message.body}
-        ```
+        #{fence}
       MARKDOWN
     end
 

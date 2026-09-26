@@ -115,6 +115,13 @@ class SquashCommentTest < Minitest::Test
     verify_posted_blocks
   end
 
+  def test_backticks_in_the_body_cannot_close_its_copy_block
+    message = Shaka::SquashMessage.new({ 'title' => 'T', 'body' => "#{'a' * 72} ``` #{'b' * 72}" }, number: 42)
+    body = Shaka::GitHub.new('owner/repo', 42).send(:squash_comment_body, HEAD, message)
+
+    assert_includes body, "````text\n#{'a' * 72}\n```\n#{'b' * 72}\n````"
+  end
+
   def test_refuses_a_moved_head_before_posting
     github = client(snapshot_response(head: 'c' * 40))
 
