@@ -79,7 +79,7 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Owner | Public machine alias, host, and a random owner tag, such as `m5 · Codex desktop · k7q2` |
 | Task | Searchable task title or shareable tracker locator |
 | Thread | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
-| Last observed activity | Observed time and timezone; otherwise `UNKNOWN` |
+| Last observed activity | Date, time to the minute, and timezone of the latest observed activity, such as `2026-09-25 17:42 PDT`; otherwise `UNKNOWN` |
 | Revision | Branch and current head |
 | Workspace | Checkout directory, subject to the privacy setting below |
 | Unfinished work | Uncommitted, untracked, deleted, stashed, or unpushed work; `none` only after inspection proves the branch holds everything |

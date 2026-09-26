@@ -224,7 +224,9 @@ phases:
   - id: explain
     title: Explain
     body: |-
-      - Push the reviewed head, then open or adopt its PR. Use trusted `gh` for authorized
+      - Push the reviewed head, then open or adopt its PR. Open a new PR with an empty body
+        (`gh pr create --body ''`) and let `description` fill it; any text outside the managed
+        region stays in the body. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
