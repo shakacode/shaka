@@ -72,8 +72,11 @@ module Shaka
       lines.join("\n")
     end
 
+    # Git trailers live in a message's last paragraph; an example earlier in the body is prose.
     def trailers(messages)
-      found = messages.compact.flat_map { |message| message.to_s.scan(TRAILER).flatten.map(&:strip) }
+      found = messages.compact.flat_map do |message|
+        message.to_s.strip.split(/\n[ \t]*\n/).last.to_s.scan(TRAILER).flatten.map(&:strip)
+      end
       found.uniq(&:downcase).map { |who| "Co-authored-by: #{who}" }.join("\n")
     end
   end

@@ -43,6 +43,12 @@ class SquashMessageTest < Minitest::Test
                  'Co-authored-by: Ana <ana@example.test>', squash(messages:).body
   end
 
+  def test_a_trailer_example_inside_the_body_is_not_a_co_author
+    messages = ["Document attribution\n\nCo-authored-by: Example <example@example.test>\n\nThis is sample syntax."]
+
+    assert_equal 'Summary.', squash(messages:).body
+  end
+
   def test_markdown_meant_for_a_pr_description_is_refused
     ["```ruby\nx\n```", "<details>\n<summary>Usage</summary>", "| a | b |\n| --- | --- |"].each do |body|
       error = assert_raises(Shaka::Error) { squash(body:) }
