@@ -201,7 +201,8 @@ begin
            when 'description'
              described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
              body = Shaka::Publication.description(described)
-             opening = Shaka::OpeningCheck.new(summary: described['summary'], published_body: github.description_body,
+             opening = Shaka::OpeningCheck.new(summary: described['summary'], body:,
+                                               published_body: github.description_body,
                                                candidate_root: File.realpath(options[:root] || Dir.pwd)).call
              github.description(body:).merge('opening' => opening)
            when 'reply'
