@@ -276,7 +276,7 @@ phases:
         resolve OWNER/REPO NUMBER --thread THREAD_ID
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         attention OWNER/REPO NUMBER --state answer|merge|resume|none
-        handoff OWNER/REPO NUMBER [--head SHA] --root DIR --ref SHA
+        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA [--ci-review-wait MODE] [--limits-confirmed-head SHA]
           [--review-waiver REASON]
@@ -505,7 +505,8 @@ always: |-
   Before ending any turn on a task with an open PR, run the saved helper's
   `handoff OWNER/REPO NUMBER --head SHA --root DIR --ref SHA`. Its status line names the head,
   attention label, required checks, walkthrough head, and WIP Details head; exit status 2 lists
-  owed work. Settle each owed item and run it again before stopping. A session resuming a PR
+  owed work. When a host monitor or background watcher will wake this session, add
+  `--woken-by` naming it in place of a label. Settle each owed item and run it again before stopping. A session resuming a PR
   after a restart, crash, or new chat runs `handoff` without `--head` first, treats WIP Details
   as stale evidence, and continues from the live report.
 

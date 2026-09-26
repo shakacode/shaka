@@ -22,7 +22,10 @@ module Shaka
       @status = Status.new(github, seam_required_checks:)
     end
 
-    def call(head: nil)
+    # woken_by names what will wake this session, such as a host PR monitor or a background watcher;
+    # the PR then needs no attention label, because the agent, not a person, acts next.
+    def call(head: nil, woken_by: nil)
+      @woken_by = woken_by
       pr = @status.call
       live = pr.fetch('headRefOid')
       @owed = []
@@ -44,6 +47,7 @@ module Shaka
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.
     def label_fact(checks)
       labels = Attention.new(@github).current
+      return "woken by #{@woken_by}" if labels.empty? && @woken_by
       return owe('no awaiting label', 'Set the attention label for what the PR waits on.') if labels.empty?
       return owe(labels.join('+'), "Keep exactly one attention label; found #{labels.join(', ')}.") if labels.length > 1
 
@@ -72,11 +76,14 @@ module Shaka
     end
 
     # Superseded walkthroughs are wrapped in a pointer, so only the current one still renders as a walkthrough.
+    # Only this account's reviews count, so a commenter's copied walkthrough cannot change what is owed.
     def latest_walkthrough
       path = "repos/#{@github.repository}/pulls/#{@github.number}/reviews"
       reviews = PublicComments::BoundedList.new(@github, max_pages: 5, label: 'Review listing').call(path)
+      account = @github.api('user')['login']
       current = reviews.reverse.find do |review|
-        review['state'] == 'COMMENTED' && WalkthroughText.rendered?(review['body'].to_s)
+        review.dig('user', 'login') == account && review['state'] == 'COMMENTED' &&
+          WalkthroughText.rendered?(review['body'].to_s)
       end
       current && WalkthroughText.revision(current['body'])
     end

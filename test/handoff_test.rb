@@ -29,6 +29,7 @@ class HandoffTest < Minitest::Test
     def configured_required_checks = []
 
     def api(path, **)
+      return { 'login' => 'shaka-agent' } if path == 'user'
       raise "unexpected read #{path}" unless path == 'repos/owner/repo/pulls/42'
 
       { 'body' => @pull[:body] }
@@ -60,17 +61,18 @@ class HandoffTest < Minitest::Test
 
   def description(wip = WIP) = self.class.description(wip)
 
-  def walkthrough(head)
+  def walkthrough(head, author: 'shaka-agent')
     body = Shaka::Publication.walkthrough('identity' => IDENTITY, 'summary' => 'What changed.', 'head' => head)
-    { 'id' => 7, 'state' => 'COMMENTED', 'body' => body, 'submitted_at' => '2026-09-25T00:00:00Z' }
+    { 'id' => 7, 'state' => 'COMMENTED', 'body' => body, 'submitted_at' => '2026-09-25T00:00:00Z',
+      'user' => { 'login' => author } }
   end
 
   def check(bucket) = { 'name' => 'validate', 'state' => bucket.upcase, 'bucket' => bucket }
 
-  def handoff(expected: HEAD, **pull)
+  def handoff(expected: HEAD, woken_by: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
                  reviews: [walkthrough(HEAD)], checks: [check('pass')] }
-    Shaka::Handoff.new(FakeGitHub.new(defaults.merge(pull))).call(head: expected)
+    Shaka::Handoff.new(FakeGitHub.new(defaults.merge(pull))).call(head: expected, woken_by:)
   end
 
   def test_a_labeled_current_pr_owes_nothing
@@ -87,6 +89,19 @@ class HandoffTest < Minitest::Test
 
     assert_equal 'no awaiting label', result['status'][/no awaiting label/]
     assert(result['owed'].any? { |item| item.include?('attention') })
+  end
+
+  def test_a_session_something_will_wake_needs_no_label
+    result = handoff(labels: [], woken_by: 'background watcher')
+
+    assert_empty result['owed']
+    assert_includes result['status'], 'woken by background watcher'
+  end
+
+  def test_a_copied_walkthrough_from_another_account_is_ignored
+    result = handoff(reviews: [walkthrough(HEAD), walkthrough(OLD, author: 'outsider')])
+
+    assert_empty result['owed']
   end
 
   def test_two_attention_labels_are_owed_as_one_decision
