@@ -3,8 +3,11 @@
 require_relative 'test_helper'
 require 'json'
 require_relative '../skills/shaka/lib/shaka/opening_check'
+require_relative 'opening_check_test_helpers'
 
 class OpeningCheckTest < Minitest::Test
+  include OpeningCheckTestHelpers
+
   COMMAND_FIRST = '`shaka merge` now stops before submitting a PR that has no local-review attestation ' \
                   'covering its head.'
   OUTCOME_FIRST = 'Pull requests for Linear and other tracker issues now link to their issue.'
@@ -15,7 +18,7 @@ class OpeningCheckTest < Minitest::Test
       assert_equal 'flagged', result.fetch('status')
       assert_includes result.fetch('reason'), '"shaka merge"'
       assert_equal 'shaka merge', result.dig('parse', 0, 'character')
-      assert_invoked_outside(root, trace)
+      assert_invoked_outside(root, trace, COMMAND_FIRST)
     end
   end
 
@@ -37,6 +40,21 @@ class OpeningCheckTest < Minitest::Test
       result = check(COMMAND_FIRST, root:, published: "<!-- shaka:begin -->\n#{render(COMMAND_FIRST)}")
       assert_equal({ 'status' => 'unchanged' }, result)
       refute_path_exists trace
+    end
+  end
+
+  def test_checks_a_shortened_opening
+    with_claude(parse('shaka merge', false)) do |root, _trace|
+      published = render("#{COMMAND_FIRST} It also reports the reason.")
+      assert_equal 'flagged', check(COMMAND_FIRST, root:, published:).fetch('status')
+    end
+  end
+
+  def test_checkout_root_covers_the_whole_repository_from_a_subdirectory
+    Dir.mktmpdir do |dir|
+      system('git', 'init', '-q', dir, exception: true)
+      Dir.mkdir(File.join(dir, 'docs'))
+      assert_equal File.realpath(dir), Shaka::OpeningCheck.checkout_root(File.join(dir, 'docs'))
     end
   end
 
@@ -70,58 +88,5 @@ class OpeningCheckTest < Minitest::Test
       assert_equal 'not_checked', check(COMMAND_FIRST, root: bin).fetch('status')
       refute_path_exists trace
     end
-  end
-
-  private
-
-  def assert_invoked_outside(root, trace)
-    invocation = JSON.parse(File.read(trace))
-    assert_includes invocation.fetch('prompt'), COMMAND_FIRST
-    refute invocation.fetch('pwd').start_with?(File.realpath(root)), 'the model must not run inside the checkout'
-  end
-
-  def check(summary, root:, published: '')
-    Shaka::OpeningCheck.new(summary:, body: render(summary), published_body: published,
-                            candidate_root: File.realpath(root)).call
-  end
-
-  def render(summary) = "**Author:** agent\n\n#{summary}\n\n| Check |\n| --- |\n| ok |\n"
-
-  def parse(character, reader_facing)
-    { is_error: false, structured_output: { sentences: [{ character:, reader_facing:, action: 'acts',
-                                                          object: 'something', hidden_actions: [],
-                                                          internal_terms: [] }] } }
-  end
-
-  # The fake CLI lives in its own directory beside a separate candidate root.
-  def with_claude(output, body: nil)
-    Dir.mktmpdir do |dir|
-      bin = File.join(dir, 'bin')
-      root = File.join(dir, 'checkout')
-      [bin, root].each { |path| Dir.mkdir(path) }
-      trace = File.join(dir, 'trace.json')
-      body ||= "puts #{JSON.generate(output).inspect}"
-      write_claude(bin, trace, body)
-      with_path(bin) { yield(root, trace, bin) }
-    end
-  end
-
-  def write_claude(bin, trace, body)
-    path = File.join(bin, 'claude')
-    File.write(path, <<~RUBY)
-      #!#{RbConfig.ruby}
-      require 'json'
-      File.write(#{trace.inspect}, JSON.generate({ args: ARGV, prompt: STDIN.read, pwd: Dir.pwd }))
-      #{body}
-    RUBY
-    File.chmod(0o755, path)
-  end
-
-  def with_path(path)
-    original = ENV.fetch('PATH', nil)
-    ENV['PATH'] = path
-    yield
-  ensure
-    ENV['PATH'] = original
   end
 end
