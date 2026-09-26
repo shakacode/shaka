@@ -5,9 +5,10 @@ require_relative 'error'
 module Shaka
   # Submits an already-verified pull request through its native GitHub path.
   class MergeSubmission
+    # A SquashMessage adds its headline and body; without one GitHub uses the repository default.
     MERGE_MUTATION = <<~GRAPHQL
-      mutation($id: ID!, $head: GitObjectID!) {
-        mergePullRequest(input: {pullRequestId: $id, expectedHeadOid: $head, mergeMethod: SQUASH}) {
+      mutation($id: ID!, $head: GitObjectID!%<params>s) {
+        mergePullRequest(input: {pullRequestId: $id, expectedHeadOid: $head, mergeMethod: SQUASH%<input>s}) {
           pullRequest { state headRefOid baseRefName merged mergeCommit { oid } }
         }
       }
@@ -29,11 +30,14 @@ module Shaka
       @github = github
     end
 
-    def call(pull, head)
+    # `message` is a SquashMessage, or nil for the repository's squash default. A merge queue
+    # takes no message: it squashes with the repository default, and the result says so.
+    def call(pull, head, message: nil)
+      @message = message
       return queued_result(pull, head) if pull['isInMergeQueue']
       return enqueue(pull, head) if pull['isMergeQueueEnabled']
 
-      merge(pull.fetch('id'), head)
+      noted(merge(pull.fetch('id'), head), 'applied')
     rescue Error => e
       raise Error, "#{e.message}; inspect live PR state before retrying a merge"
     end
@@ -56,7 +60,8 @@ module Shaka
     private
 
     def merge(id, head)
-      result = @github.graphql(MERGE_MUTATION, { 'id' => id, 'head' => head })
+      params, input, variables = @message ? @message.graphql : ['', '', {}]
+      result = @github.graphql(format(MERGE_MUTATION, params:, input:), { 'id' => id, 'head' => head, **variables })
       payload = result['mergePullRequest']
       pr = payload['pullRequest'] if payload.is_a?(Hash)
       unless pr.is_a?(Hash) && pr['merged'] == true && pr['state'] == 'MERGED' && pr['headRefOid'] == head
@@ -107,8 +112,11 @@ module Shaka
       entry = pull['mergeQueueEntry']
       raise Error, 'GitHub reports queue membership without the expected head entry' unless valid_entry?(entry, head)
 
-      { 'submission' => 'merge_queue', 'headRefOid' => head, 'mergeQueueEntry' => entry }
+      noted({ 'submission' => 'merge_queue', 'headRefOid' => head, 'mergeQueueEntry' => entry },
+            'not_applied_merge_queue')
     end
+
+    def noted(result, outcome) = @message ? result.merge('squash_message' => outcome) : result
 
     def valid_entry?(entry, head)
       return false unless entry.is_a?(Hash) && entry['id'].is_a?(String) && !entry['id'].empty?
