@@ -5,6 +5,7 @@ require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/attention'
+require_relative '../lib/shaka/handoff'
 require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
@@ -104,7 +105,7 @@ if ARGV.first == 'prefix'
   exit Shaka::Prefix.run(ARGV)
 end
 
-COMMANDS = %w[pr comments description reply resolve walkthrough merge attention squash-message].freeze
+COMMANDS = %w[pr comments description reply resolve walkthrough merge attention squash-message handoff].freeze
 
 def content(path)
   parsed = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -135,10 +136,11 @@ def usage_banner
    '; shaka repos --help; shaka prefix --help; shaka issue-create --help'].join
 end
 
-def merge_flags(flags, options)
+def command_flags(flags, options)
   flags.on('--review-waiver REASON', 'Merge without review evidence') { |value| options[:review_waiver] = value }
   flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits') { |sha| options[:confirmed_head] = sha }
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
+  flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
 end
 
 options = {}
@@ -156,12 +158,12 @@ parser = OptionParser.new do |flags|
   flags.on('--ci-review-wait MODE', Shaka::CiReviewWait::VALUES, 'CI reviews to await: none, one, all') do |value|
     options[:ci_review_wait] = value
   end
-  merge_flags(flags, options)
+  command_flags(flags, options)
   flags.on('--root DIR', 'Repository root for trusted seam settings') { |value| options[:root] = value }
   flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
-  flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, none') do |value|
+  flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, resume, none') do |value|
     options[:state] = value
   end
   flags.on('-h', '--help', 'Show usage') do
@@ -182,10 +184,11 @@ begin
     raise OptionParser::InvalidArgument, '--squash-message is only for merge'
   end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
+  raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
 
   github = Shaka::GitHub.new(repository, number)
-  if %w[pr walkthrough merge].include?(command)
+  if %w[pr walkthrough merge handoff].include?(command)
     seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
   end
   seam_required_checks = seam&.merge&.fetch('required_checks', nil)
@@ -224,8 +227,11 @@ begin
            when 'squash-message'
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
              github.squash_comment(head: options.fetch(:head), message:)
+           when 'handoff' then Shaka::Handoff.new(github, seam_required_checks:).call(head: options[:head],
+                                                                                      woken_by: options[:woken_by])
            end
   puts JSON.pretty_generate(result)
+  exit Shaka::Handoff.exit_status(result) if command == 'handoff'
 rescue OptionParser::ParseError, KeyError, SystemCallError, Shaka::Error => e
   warn "shaka: #{e.message}"
   exit 1

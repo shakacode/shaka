@@ -86,7 +86,7 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Stopped because | `running`, `awaiting merge approval`, `awaiting answer`, `paused`, or `interrupted` |
 | Merge authority | Previously established `ask` or `auto`, or `UNKNOWN`; this field grants no authority |
 | State | In progress, named check/review wait, blocker, decision, GitHub merge of a named head, or handoff to a named successor |
-| Next action | One step that continues the task |
+| Next action | One step that continues the task; while `awaiting-resume`, the prompt that resumes it, such as `$shaka PR_URL` |
 
 For Stopped because, use `awaiting merge approval` for an Ask handoff that waits
 for a GitHub merge click or approval; that stop also applies the
@@ -117,8 +117,9 @@ See [configuration](../../../docs/settings.md#wipinclude_locations).
 
 **Resume as the original owner:** read the live note before writing. If it names
 another owner or tag, preserve local work without pushing, report the transfer,
-and stop. Otherwise refresh the PR and continue. A missing or outdated note after
-a crash is a reason to inspect live state, not to abandon recovery.
+and stop. Otherwise run `handoff OWNER/REPO NUMBER --root DIR --ref SHA` to read
+the live head, label, checks, and walkthrough and WIP heads, then continue. A missing
+or outdated note after a crash is a reason to inspect live state, not to abandon recovery.
 
 **Take over in a new task:** require maintainer confirmation that the previous
 owner stopped or is handing over. An idle task, old timestamp, or missing note
