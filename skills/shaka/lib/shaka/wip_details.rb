@@ -47,14 +47,15 @@ module Shaka
       raise Error, "Publication wip #{problem}: #{keys.join(', ')}#{advice}." unless keys.empty?
     end
 
-    # Escaping pipes keeps a value from silently adding a column.
+    # Escaping pipes keeps a value from silently adding a column; escaping backslashes first
+    # keeps a value's own backslash from pairing with that escape.
     def cell(key)
       value = @spec[key]
       unless value.is_a?(String) && !value.strip.empty? && !value.match?(/[\r\n]/)
         raise Error, "Publication wip #{key} must be single-line nonempty text."
       end
 
-      value.strip.gsub('|', '\\|')
+      value.strip.gsub(/[\\|]/) { |character| "\\#{character}" }
     end
   end
 end

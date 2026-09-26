@@ -456,6 +456,10 @@ class PublicationWipDetailsTest < Minitest::Test
     assert_includes render(WIP.merge('state' => 'a | b')), '| State | a \\| b |'
   end
 
+  def test_a_backslash_before_a_pipe_cannot_undo_its_escape
+    assert_includes render(WIP.merge('state' => 'a\\|b')), '| State | a\\\\\\|b |'
+  end
+
   def test_missing_and_unknown_fields_are_named
     error = assert_raises(Shaka::Error) { render(WIP.except('thread')) }
     assert_includes error.message, 'missing fields: thread'
