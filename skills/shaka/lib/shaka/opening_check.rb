@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'open3'
 require 'tmpdir'
 require_relative 'local_review/executable'
 require_relative 'local_review/process'
@@ -62,6 +63,12 @@ module Shaka
       not_checked(e.message)
     end
 
+    # The whole checkout, so a candidate `claude` anywhere in it is refused even from a subdirectory.
+    def self.checkout_root(dir)
+      top, status = Open3.capture2('git', '-C', dir, 'rev-parse', '--show-toplevel', err: File::NULL)
+      File.realpath(status.success? ? top.strip : dir)
+    end
+
     # Rule, applied in code: flag a first sentence whose actor is not reader-facing.
     def self.verdict(sentences)
       first = sentences.first
@@ -75,11 +82,12 @@ module Shaka
 
     private
 
-    # The rendered body up to the end of the opening; the identity line before it pins the
-    # opening to its place, so a paragraph promoted from later in the body is checked again.
+    # The rendered body through the newline that ends the opening. The identity line before it
+    # pins the opening to its place and the newline to its end, so a promoted or shortened
+    # opening is checked again.
     def lead(body)
       index = body.index(@opening)
-      index && body[0, index + @opening.length]
+      index && body[0, index + @opening.length + 1]
     end
 
     def parse(executable)
