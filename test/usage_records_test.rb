@@ -79,6 +79,17 @@ class UsageRecordsTest < Minitest::Test
     assert_equal 1, stats['replaced']
   end
 
+  # Break: an integration snapshot for another commit erased the implementation report's attribution.
+  def test_replacement_keeps_reports_with_a_different_contribution_or_commits
+    old = record('claude-code', 'impl-a', responses: %w[c1])
+    other_role = record('claude-code', 'integration', responses: %w[c1 c2], contribution: 'integration')
+    assert_includes carried(existing(old), other_role), 'impl-a'
+    other_commit = record('claude-code', 'commit-b', responses: %w[c1 c2], commits: ['b' * 40])
+    assert_includes carried(existing(old), other_commit), 'impl-a'
+    squashed = record('claude-code', 'squashed', responses: %w[c1], commits: [COMMIT, 'c' * 40])
+    refute_includes carried(existing(old), squashed), 'impl-a'
+  end
+
   # Break: concurrent work in another session overlapped in time but shares no responses.
   def test_concurrent_sources_without_shared_responses_are_both_kept
     old = record('claude-code', 'implementation', responses: %w[c1])

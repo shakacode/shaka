@@ -4,6 +4,31 @@ require 'json'
 require 'time'
 
 module Shaka
+  # Structural checks a carried or new report must pass before it can keep or replace history.
+  module UsageRecordShape
+    module_function
+
+    # A carried block must still look like the helper's report, so an edit cannot hide more
+    # markers or unbalanced markup under the managed output.
+    def report_shape?(text)
+      inner = text.sub(/\A.*?\n/, '').delete_suffix(UsageRecords::END_MARK)
+      !inner.include?('<!-- shaka:') && balanced_details?(inner)
+    end
+
+    # Only the helper's own lowercase tags are accepted; any other form could close the outer disclosure.
+    def balanced_details?(text)
+      tags = text.scan(%r{</?details\b[^>]*>}i)
+      return false unless tags.all? { |tag| ['<details>', '</details>'].include?(tag) }
+
+      depth = tags.reduce(0) do |open, tag|
+        return false if tag == '</details>' && open.zero?
+
+        tag == '</details>' ? open - 1 : open + 1
+      end
+      depth.zero?
+    end
+  end
+
   # Keeps usage reports from earlier hosts, models, and reviews when a description is republished.
   # Each `shaka usage` report is wrapped in hidden markers naming what it counted, so a later agent
   # on any host can tell a refreshed snapshot from a disjoint contribution.
@@ -54,7 +79,7 @@ module Shaka
 
     # A report already pasted into the new body is neither carried nor counted.
     def outcome(text, fields, fresh, body)
-      return 'dropped' unless fields && report_shape?(text)
+      return 'dropped' unless fields && UsageRecordShape.report_shape?(text)
       return if body.include?(text)
 
       superseded?(fields, fresh) ? 'replaced' : 'retained'
@@ -65,28 +90,8 @@ module Shaka
     # A new report must pass the same shape check before it may replace history.
     def text_records(text)
       text.to_enum(:scan, BLOCK).filter_map do
-        parse(Regexp.last_match[1]) if report_shape?(Regexp.last_match[0])
+        parse(Regexp.last_match[1]) if UsageRecordShape.report_shape?(Regexp.last_match[0])
       end
-    end
-
-    # A carried block must still look like the helper's report, so an edit cannot hide more
-    # markers or unbalanced markup under the managed output.
-    def report_shape?(text)
-      inner = text.sub(/\A.*?\n/, '').delete_suffix(END_MARK)
-      !inner.include?('<!-- shaka:') && balanced_details?(inner)
-    end
-
-    # Only the helper's own lowercase tags are accepted; any other form could close the outer disclosure.
-    def balanced_details?(text)
-      tags = text.scan(%r{</?details\b[^>]*>}i)
-      return false unless tags.all? { |tag| ['<details>', '</details>'].include?(tag) }
-
-      depth = tags.reduce(0) do |open, tag|
-        return false if tag == '</details>' && open.zero?
-
-        tag == '</details>' ? open - 1 : open + 1
-      end
-      depth.zero?
     end
 
     def parse(json)
@@ -103,9 +108,14 @@ module Shaka
     # partial overlap nor an empty snapshot of an unreadable source deletes measured usage. An old
     # report without response IDs is replaced by a new one from the same source over an
     # overlapping or unknown interval, since nothing shows them to be different work.
+    # A replacement must also keep the old report's contribution and every commit it named.
     def superseded?(old, fresh)
-      same_host = fresh.select { |new| new['host'] == old['host'] }
+      same_host = fresh.select { |new| new['host'] == old['host'] && same_attribution?(old, new) }
       covered?(old, same_host) || same_host.any? { |new| fallback_match?(old, new) }
+    end
+
+    def same_attribution?(old, new)
+      old['contribution'] == new['contribution'] && (Array(old['commits']) - Array(new['commits'])).empty?
     end
 
     def covered?(old, same_host)

@@ -58,9 +58,15 @@ branch is in the base repository carries reports, because anyone who can edit it
 description already has write access. A fork's author can edit its description,
 so a fork's reports are never carried.
 
-- New reports on the same host cover an earlier report when together they hold
-  every response it counted. A partial overlap keeps both reports, so they may
-  share some responses.
+- A new report can cover an earlier one only when it has the same host and
+  contribution and names every commit the earlier report named. An integration
+  snapshot therefore never erases an implementation report, and a republish that
+  adds the squash SHA still replaces.
+- Such new reports cover an earlier report when together they hold every
+  response it counted. A partial overlap keeps both reports, so they may share
+  some responses. The identity records which responses had readable counters,
+  not which fields, so a re-read that loses one field of a counted response is
+  not detected.
 - A new report without response IDs, such as one from a source that became
   unreadable, never replaces a report that has them.
 - When the earlier report lacks response IDs, a new report covers it when they
