@@ -256,6 +256,7 @@ Pass that commit with `description --ref SHA` to use the setting. Without `--ref
 the development model gets the built-in prompt and an explanation.
 If the configured check cannot run, the description still publishes and the
 development model receives a fallback prompt with the reason.
+Invalid reviewer/model flag combinations are usage errors and stop the command before publication.
 
 ## Standard command scripts
 

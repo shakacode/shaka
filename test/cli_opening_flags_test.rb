@@ -24,4 +24,11 @@ class CliOpeningFlagsTest < Minitest::Test
       assert_includes error, '--opening-model is unsupported for openai/codex'
     end
   end
+
+  def test_malformed_reviewer_with_a_model_is_a_usage_error
+    _output, error, status = Open3.capture3(COMMAND, 'description', 'owner/repo', '1',
+                                            '--opening-reviewer', 'claude', '--opening-model', 'named-model')
+    refute_predicate status, :success?
+    assert_includes error, 'Reviewer identity must be PROVIDER/MODEL_FAMILY'
+  end
 end
