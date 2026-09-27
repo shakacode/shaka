@@ -298,11 +298,12 @@ work item through that branch name. Git must accept the name as a branch name.
 
 ```yaml
 wip:
-  include_locations: false
+  include_locations: true
 ```
 
-Include the checkout path and session link in **WIP Details**. With `false`,
-both appear as `UNKNOWN`; ownership, state, and next action remain visible.
+Include the checkout path and session link in **WIP Details**. `seam init` writes
+this value. Set it to `false` to publish both as `UNKNOWN`; ownership, state, and
+next action remain visible.
 
 Locations can reveal local names or identifiers. The agent must inspect them for
 private information before publishing; Ruby does not check for it. Expandable

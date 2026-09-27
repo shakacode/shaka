@@ -701,6 +701,20 @@ class SeamInitializerReadmeCoexistenceTest < Minitest::Test
   end
 end
 
+class SeamInitializerWipTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_init_writes_include_locations_true
+    with_repository do |root|
+      _output, error, status = init(root)
+
+      assert_predicate status, :success?, error
+      config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+      assert_equal({ 'include_locations' => true }, config.fetch('wip'))
+    end
+  end
+end
+
 class SeamInitializerRequiredCheckTest < Minitest::Test
   include SeamInitializerTestHelpers
 

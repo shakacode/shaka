@@ -67,7 +67,8 @@ module Shaka
           'base_branch' => base_branch,
           'review' => review_policy,
           'merge' => merge_policy,
-          'branches' => { 'name' => '{login}-{host}/{issue}-{description}' }
+          'branches' => { 'name' => '{login}-{host}/{issue}-{description}' },
+          'wip' => RepositoryConfig::DEFAULT_WIP
         }.compact
       end
 

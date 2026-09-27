@@ -92,11 +92,14 @@ check the user confirms when GitHub requires none; see
 required checks at all, keep merge preference `ask`.
 
 The initializer writes the three required wrappers, `.agents/shaka.md`, and YAML
-with `version`, `review`, `merge`, and the default `branches.name`. It defaults to
-Ask. Add `--merge-preference auto` only with established authority, `--base-branch`
-for another base, and `--required-check` for seam-declared checks. Add optional reviewer entries, `repo_prefix`, and WIP settings
-by editing the YAML afterward. If the repository already uses `AGENTS.md`, it may
-point to its requirements there; Shaka does not require that file.
+with `version`, `review`, `merge`, the default `branches.name`, and
+`wip.include_locations: true`. It defaults to Ask. Add `--merge-preference auto`
+only with established authority, `--base-branch` for another base, and
+`--required-check` for seam-declared checks. Add optional reviewer entries and
+`repo_prefix` by editing the YAML afterward. Set `wip.include_locations` to
+`false` only when the user asks to hide the checkout path and session link.
+If the repository already uses `AGENTS.md`, it may point to its requirements
+there; Shaka does not require that file.
 
 Command arguments are parsed as argument lists. Put pipelines and other compound
 shell behavior in repository scripts rather than in command flags.
