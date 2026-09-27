@@ -2,7 +2,9 @@
 
 require 'open3'
 require 'optparse'
+require 'json'
 require_relative 'error'
+require_relative 'version'
 require_relative 'usage/usage'
 require_relative 'doctor/bounded_command'
 require_relative 'doctor/checks'
@@ -35,6 +37,8 @@ module Shaka
       parser.parse!(arguments)
       return help(parser) if options[:help]
 
+      return report_installation(arguments) if options[:installation_json]
+
       report(arguments, options)
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
       warn "shaka: #{e.message}"
@@ -49,6 +53,13 @@ module Shaka
       subject.blocked? ? 1 : 0
     end
 
+    def self.report_installation(arguments)
+      raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
+
+      puts JSON.generate(installation_identity)
+      0
+    end
+
     def self.option_parser(options)
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka doctor [--root DIR]'
@@ -56,6 +67,7 @@ module Shaka
         flags.on('--host NAME', Usage::READERS.keys, Usage::READERS.keys.join(', ')) do |value|
           options[:host] = value
         end
+        flags.on('--installation-json', 'JSON installation identity') { options[:installation_json] = true }
         flags.on('-h', '--help', 'Show usage') { options[:help] = true }
       end
     end
@@ -65,7 +77,18 @@ module Shaka
       0
     end
 
-    private_class_method :report, :option_parser, :help
+    private_class_method :report, :report_installation, :option_parser, :help
+
+    def self.installation_identity
+      path = File.expand_path('../../../../.shaka-install.json', __dir__)
+      return JSON.parse(File.read(path)) if File.file?(path)
+
+      { 'schema_version' => 1, 'package_id' => nil, 'version' => Shaka::VERSION,
+        'source' => { 'kind' => 'uninstalled', 'repository' => nil, 'revision' => nil,
+                      'base_revision' => nil, 'content_sha256' => nil } }
+    rescue JSON::ParserError => e
+      raise Shaka::Error, "Installed package metadata is invalid: #{e.message}"
+    end
 
     def initialize(root:, host: nil, environment: ENV, system: System.default)
       @root = root
@@ -79,7 +102,8 @@ module Shaka
     def blocked? = checks.any? { |item| item.fetch(:status) == 'failed' }
 
     def report
-      ["Shaka doctor: #{overall.upcase}", context, '', *ordered.map { |item| render(item) }].join("\n")
+      ["Shaka doctor: #{overall.upcase}", context, installation_summary, '',
+       *ordered.map { |item| render(item) }].join("\n")
     end
 
     private
@@ -92,6 +116,21 @@ module Shaka
     # Detection answers nil when several hosts are present and falls back to codex when none
     # is, so the report always says which host it used and how sure it is.
     def context = "host #{named_host} · root #{@root}"
+
+    def installation_summary
+      identity = self.class.installation_identity
+      source = identity.fetch('source')
+      "installation #{identity.fetch('version')} · #{source_summary(source)} · " \
+        "package #{identity['package_id'] || 'UNKNOWN'}"
+    end
+
+    def source_summary(source)
+      return "revision #{source.fetch('revision')}" if source['kind'] == 'revision'
+      return 'uninstalled' if source['kind'] == 'uninstalled'
+
+      "development base #{source['base_revision'] || 'UNKNOWN'} " \
+        "content #{source.fetch('content_sha256')}"
+    end
 
     def named_host
       return 'ambiguous' if @host.nil?

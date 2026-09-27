@@ -32,7 +32,9 @@ git clone https://github.com/shakacode/shaka.git "$HOME/agent-tools/shaka"
 "$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.agents/skills"
 ```
 
-This installs a link for Codex. Open a new task in your project and look for
+The installer copies the skill to `~/.local/share/shaka/installs/` and links Codex
+to that managed copy. The source checkout can then be removed. Open a new task in
+your project and look for
 `$shaka`; restart Codex if it does not appear.
 
 <a id="use-shaka-in-claude-code"></a>
@@ -48,7 +50,7 @@ Use the same installer with your environment's skills directory:
 | Cursor | `"$HOME/.cursor/skills"` | `/shaka` in a new Agent chat |
 | OpenCode | `"$HOME/.config/opencode/skills"` | `/shaka` in a new session |
 
-Keep the source and links outside the agent's writable directories. See
+Keep the managed copy and links outside the agent's writable directories. See
 [environment details](#development-environment-details) for terminal launchers, Pi, Cursor usage hooks,
 and tested limitations.
 
@@ -70,6 +72,10 @@ Never overwrite local customizations to make an update succeed.
 After installing, follow [repository setup](repository-setup.md), then run
 `shaka doctor --root /path/to/repository` from the trusted installed helper.
 Resolve failed checks before publishing work.
+`shaka doctor --installation-json` prints the installed version, package ID, and
+source identity without checking a repository. A clean tracked source records its
+exact revision. A modified source records its base revision and content hash as a
+development installation.
 
 ## Upgrade
 
@@ -81,13 +87,25 @@ git -C "$HOME/agent-tools/shaka" switch main
 git -C "$HOME/agent-tools/shaka" pull --ff-only
 ```
 
-Start a new task after upgrading. Installed links use the updated source.
-Run the installer again with your original options if you want newly added skills.
+Run `bin/install` from the chosen source with your original `--skills-dir` and
+optional tower flags. It validates a new managed copy before switching the links.
+Existing tasks keep their current helper path; start a new task for the upgrade.
+The previous package remains under `~/.local/share/shaka/installs/`.
 Configuration changes may also require a repository migration.
+
+To roll back, read the previous package ID from the installer's `Package:` line
+or from `shaka doctor --installation-json` before upgrading, then run:
+
+```bash
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.agents/skills" --rollback PACKAGE_ID
+```
+
+Include the same optional tower flags used for that package. The installer refuses
+an unknown or changed package.
 
 ## Remove
 
-Inspect the link first and confirm it points to this Shaka installation:
+Inspect the link first and confirm it points to a managed Shaka package:
 
 ```bash
 ls -l "$HOME/.agents/skills/shaka"

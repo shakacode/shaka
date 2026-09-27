@@ -12,10 +12,10 @@ class ConfigurationBoundaryTest < Minitest::Test
   OTHER_PATHS = %w[merge_review_comparison.rb seam/initializer_readme.rb seam/pointer.rb].freeze
   OTHER_GIT_READ = %w[local_review/criteria.rb seam/upgrade_plan/indexed_references.rb].freeze
   OTHER_FILE_IO = %w[
-    checkpoint.rb doctor/cursor_stop_hook.rb enforcement_config.rb local_review/cli.rb
-    local_review/path_guard.rb local_review/shebang.rb
-    local_review/report_check.rb local_review/runner.rb merge_tree_proof.rb opening_parse.rb
-    opening_check.rb opening_verdict_cache.rb recommendation.rb
+    checkpoint.rb doctor.rb doctor/cursor_stop_hook.rb enforcement_config.rb install/package.rb
+    install/source.rb install/tree.rb local_review/cli.rb local_review/path_guard.rb
+    local_review/shebang.rb local_review/report_check.rb local_review/runner.rb
+    merge_tree_proof.rb opening_parse.rb opening_check.rb opening_verdict_cache.rb recommendation.rb
     repos/home.rb review_prompt.rb usage/claude_usage.rb usage/codex_usage.rb
     usage/cursor_usage_store.rb usage/opencode_usage.rb usage/pi_usage.rb usage/rate_card.rb
     workflow_config.rb

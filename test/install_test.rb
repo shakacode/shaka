@@ -1,37 +1,23 @@
 # frozen_string_literal: true
 
-require_relative 'test_helper'
+require_relative 'install_support'
 require 'fileutils'
 require 'rbconfig'
 require 'shellwords'
+require 'json'
 
 module InstallTestAssertions
   def assert_skill_link(source, destination, content)
     assert File.symlink?(destination)
-    assert_equal File.realpath(source), File.readlink(destination)
+    refute_equal File.realpath(source), File.readlink(destination)
+    assert_includes File.readlink(destination), '/.local/share/shaka/installs/'
     assert_equal content, File.read(File.join(destination, 'SKILL.md'))
   end
 end
 
 class InstallTest < Minitest::Test
   include InstallTestAssertions
-
-  def setup
-    @directory = Dir.mktmpdir('workflows-install')
-    @source = File.join(@directory, 'source', 'skills', 'shaka')
-    @rct_source = File.join(@directory, 'source', 'skills', 'rct')
-    @installer = File.join(@directory, 'source', 'bin', 'install')
-    @skills_dir = File.join(@directory, 'isolated profile', 'skills')
-    @destination = File.join(@skills_dir, 'shaka')
-    @rct_destination = File.join(@skills_dir, 'rct')
-    FileUtils.mkdir_p([@source, @rct_source, File.dirname(@installer)])
-    FileUtils.cp(File.expand_path('../bin/install', __dir__), @installer)
-    write_skills
-  end
-
-  def teardown
-    FileUtils.remove_entry(@directory)
-  end
+  include InstallTestSupport
 
   def test_installs_into_an_explicit_directory_with_spaces
     output, status = install
@@ -110,7 +96,7 @@ class InstallTest < Minitest::Test
     install
     File.write(File.join(@source, 'SKILL.md'), 'version two')
 
-    assert_equal 'version two', File.read(File.join(@destination, 'SKILL.md'))
+    assert_equal 'version one', File.read(File.join(@destination, 'SKILL.md'))
   end
 
   def test_preflights_every_skill_before_installing_any_link
@@ -121,20 +107,5 @@ class InstallTest < Minitest::Test
     refute_predicate install.last, :success?
     refute_path_exists @destination
     assert_equal 'user content', File.read(marker)
-  end
-
-  private
-
-  def write_skills
-    File.write(File.join(@source, 'SKILL.md'), 'version one')
-    File.write(File.join(@rct_source, 'SKILL.md'), 'rct version one')
-  end
-
-  def install
-    run_installer('--skills-dir', @skills_dir, '--with-rct')
-  end
-
-  def run_installer(*)
-    Open3.capture2e(RbConfig.ruby, @installer, *)
   end
 end
