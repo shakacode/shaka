@@ -28,7 +28,21 @@ class OpeningBrokenShebangTest < Minitest::Test
     end
   end
 
+  def test_bare_direct_shebang_stops_before_publication
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_bare_shebang_rejected(dir, root) }
+    end
+  end
+
   private
+
+  def assert_bare_shebang_rejected(dir, root)
+    output, error, status = run_description(dir, root:) { |bin| File.write(File.join(bin, 'gh'), "#!node\n") }
+    refute_predicate status, :success?, output
+    assert_includes error, 'Relative shebang interpreter'
+    refute_path_exists File.join(dir, 'published.md')
+  end
 
   def assert_broken_interpreter_safe(dir, root)
     write_executable(dir, 'codex', 'exit 1')

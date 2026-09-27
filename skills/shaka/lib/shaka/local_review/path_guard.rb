@@ -4,6 +4,7 @@
 
 require_relative '../error'
 require_relative 'executable'
+require_relative 'shebang'
 
 module Shaka
   # Screens command lookup paths before candidate data can influence a process.
@@ -102,37 +103,6 @@ module Shaka
       false # A missing interpreter cannot launch candidate code.
     end
 
-    def self.shebang_interpreter(executable)
-      line = File.open(executable, 'rb') { |file| file.read(256).to_s.lines.first.to_s }
-      return unless line.start_with?('#!')
-
-      words = line.delete_prefix('#!').split
-      return unless words.first
-
-      return guarded_env_interpreter(line, words) if File.basename(words.first) == 'env'
-
-      words.first
-    end
-
-    def self.guarded_env_interpreter(line, words)
-      raise Shaka::Error, 'Unsupported env shebang quoting' if line.match?(/['"\\$]/)
-
-      env_interpreter(words)
-    end
-
-    def self.env_interpreter(words)
-      arguments = env_arguments(words.drop(1))
-      interpreter = arguments.first
-      raise Shaka::Error, 'env shebang sets environment variables' if interpreter&.match?(/\A[A-Za-z_]\w*=/)
-      raise Shaka::Error, 'Cannot determine env shebang interpreter' if interpreter.nil? || interpreter.start_with?('-')
-
-      interpreter
-    end
-
-    def self.env_arguments(arguments)
-      arguments.shift if arguments.first == '-S'
-      arguments[0] = arguments.first.delete_prefix('-S') if arguments.first&.start_with?('-S')
-      arguments
-    end
+    def self.shebang_interpreter(executable) = LocalReviewShebang.interpreter(executable)
   end
 end
