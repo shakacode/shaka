@@ -115,7 +115,8 @@ module Shaka
       @owed << "PR head moved to #{moved} while handoff read it; run it again." if moved && moved != live
       revision = WipDetails.revision(managed_region(pull['body'].to_s))
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
-      return "WIP #{live[0, SHORT]}" if revision.include?(live)
+      # Revision reads `branch @ head`; the head is its last full SHA, whatever the branch is named.
+      return "WIP #{live[0, SHORT]}" if revision.scan(/\b[0-9a-f]{40}\b/).last == live
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")
     end

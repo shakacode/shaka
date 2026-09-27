@@ -171,8 +171,10 @@ class HandoffTest < Minitest::Test
   def test_a_missing_or_stale_wip_note_is_owed
     assert(handoff(body: 'no note').fetch('owed').any? { |item| item.include?('WIP Details is missing') })
 
-    stale = handoff(body: description(WIP.merge('revision' => "feature @ #{OLD}")))
-    assert(stale['owed'].any? { |item| item.include?('WIP Details names') })
+    %W[feature\ @\ #{OLD} fix/#{HEAD}\ @\ #{OLD}].each do |revision|
+      stale = handoff(body: description(WIP.merge('revision' => revision)))
+      assert(stale['owed'].any? { |item| item.include?('WIP Details names') }, revision)
+    end
   end
 
   def test_a_walkthrough_for_an_older_head_is_owed_but_a_missing_one_is_only_noted
