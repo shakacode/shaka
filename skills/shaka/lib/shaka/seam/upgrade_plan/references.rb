@@ -89,13 +89,13 @@ module Shaka
 
         def blocked_reference?(keys, executable, line)
           executable || keys.any? { |old| @moves.none? { |move| move['from'] == old } } ||
-            keys.any? { |old| dynamic_reference?(line, old) }
+            keys.any? { |old| dynamic_reference?(line, old) || complex_reference?(line, old) }
         end
 
         def block_reference(path, keys, executable, line)
           reason = if executable
                      'executable old-path reference'
-                   elsif keys.any? { |old| dynamic_reference?(line, old) }
+                   elsif keys.any? { |old| dynamic_reference?(line, old) || complex_reference?(line, old) }
                      "dynamic old-path reference #{keys.join(', ')}"
                    else
                      "reference to unmoved path #{keys.join(', ')}"

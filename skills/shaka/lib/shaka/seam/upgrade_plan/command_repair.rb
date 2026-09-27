@@ -20,6 +20,7 @@ module Shaka
 
         def checked_repair(old, text)
           return invalid_script(old, 'executable content is not UTF-8; inspect it manually') unless text.valid_encoding?
+          return invalid_script(old, 'unsupported command language; inspect it') unless supported_language?(text)
 
           repaired, kind = repair_root(text)
           return invalid_script(old, 'ambiguous repository-root calculation; repair it explicitly') unless repaired
@@ -27,6 +28,10 @@ module Shaka
           return invalid_script(old, 'old command path; repair it explicitly') if old_path?(repaired)
 
           [repaired, kind]
+        end
+
+        def supported_language?(text)
+          text.lines.first.to_s.match?(/\A#!.*\b(?:sh|bash|dash|ksh|zsh|ruby)\b/)
         end
 
         def invalid_script(path, message)

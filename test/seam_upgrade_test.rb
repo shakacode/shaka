@@ -231,6 +231,8 @@ class SeamUpgradeRecoveryTest < Minitest::Test
   end
 
   def test_permission_denial_then_retry
+    skip 'chmod denial needs a non-root runner' if Process.uid.zero?
+
     with_repository do |root|
       directory = File.join(root, '.agents')
       File.chmod(0o555, directory)
@@ -620,6 +622,27 @@ end
 
 class SeamUpgradeDependencySafetyTest < Minitest::Test
   include SeamUpgradeFixture
+
+  def test_make_substitution_and_parent_relative_command_paths_block
+    with_repository do |root|
+      path = File.join(root, 'ci.yml')
+      File.write(path, "run: $(git rev-parse --show-toplevel)/.agents/bin/test\n" \
+                       "run: $(CURDIR)/.agents/bin/test\nrun: ../.agents/bin/test\n")
+      commit_fixture(root, 'complex prefixes')
+      assert_blocked_with(root, 'old-path reference')
+    end
+  end
+
+  def test_unknown_executable_languages_block
+    { 'python' => "ROOT = Path(__file__).resolve().parents[2]\n",
+      'node' => "const root = path.join(__dirname, '..', '..')\n" }.each do |language, body|
+      with_repository do |root|
+        write_wrapper(root, 'setup', "#!/usr/bin/env #{language}\n#{body}")
+        commit_fixture(root, 'unknown language')
+        assert_blocked_with(root, 'unsupported command language')
+      end
+    end
+  end
 
   def test_inbound_symlink_to_legacy_command_directory_blocks
     with_repository do |root|

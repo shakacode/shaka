@@ -13,7 +13,15 @@ module Shaka
         end
 
         def matching_paths(text)
-          reference_mapping.keys.select { |old| text.match?(token_pattern(old)) || dynamic_reference?(text, old) }
+          reference_mapping.keys.select do |old|
+            text.match?(token_pattern(old)) || dynamic_reference?(text, old) || complex_reference?(text, old)
+          end
+        end
+
+        def complex_reference?(text, old)
+          escaped = Regexp.escape(old)
+          prefix = '(?:\$\([^)]*\)/|(?:\.\./)+)'
+          text.match?(Regexp.new("#{prefix}#{escaped}#{path_end}"))
         end
 
         def dynamic_reference?(text, old)
