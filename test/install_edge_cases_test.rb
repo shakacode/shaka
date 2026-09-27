@@ -57,7 +57,7 @@ class InstallEdgeCasesTest < Minitest::Test
     replace_fixture_with_full_skill
     output, status = run_installer('--skills-dir', @skills_dir)
     assert_predicate status, :success?, output
-    File.write(File.join(package_path, '.shaka-install.json'), '{}')
+    corrupt_metadata
     output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor',
                                      '--installation-json')
 
@@ -79,6 +79,11 @@ class InstallEdgeCasesTest < Minitest::Test
   def assert_invalid_full_doctor_report
     report, = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor')
     assert_includes report, '[FAILED] Installation — Installed package metadata is invalid'
+  end
+
+  def corrupt_metadata
+    File.write(File.join(package_path, '.shaka-install.json'),
+               '{"version":"1","source":{"kind":"revision","content_sha256":"0","revision":null}}')
   end
 
   def commit_source

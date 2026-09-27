@@ -18,10 +18,11 @@ class InstallManagedTest < Minitest::Test
   end
 
   def test_modified_source_records_development_identity_and_hash
+    unrelated_parent_repository
     install!
     identity = package_identity
     assert_equal 'development', identity.fetch('source').fetch('kind')
-    assert_nil identity.fetch('source').fetch('revision')
+    assert_nil identity.fetch('source').fetch('repository')
     assert_match(/\A[0-9a-f]{64}\z/, identity.fetch('source').fetch('content_sha256'))
     refute_includes JSON.generate(identity), @directory
   end
@@ -34,6 +35,8 @@ class InstallManagedTest < Minitest::Test
     assert_equal 'revision', identity.fetch('kind')
     assert_equal revision, identity.fetch('revision')
     assert_nil identity.fetch('base_revision')
+    install!
+    rollback!(package_identity.fetch('package_id'))
   end
 
   def test_modified_git_source_records_base_revision
@@ -101,7 +104,7 @@ class InstallManagedTest < Minitest::Test
   end
 
   def commit_source
-    File.write(File.join(@source, 'lib', 'shaka', 'version.rb'), "module Shaka; VERSION = '0.1.0'; end\n")
+    File.write(File.join(@source, 'lib', 'shaka', 'version.rb'), "module Shaka\n  VERSION = '0.1.0-rc1'\nend\n")
     root = File.join(@directory, 'source')
     git('init', '-q', root)
     git('-C', root, 'add', 'skills')

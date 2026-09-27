@@ -11,7 +11,7 @@ module Shaka
     class Package
       METADATA = '.shaka-install.json'
       ALLOWED = %w[shaka rct mct-claude rct-claude].freeze
-      ID_PATTERN = /\A[\w.]+-[0-9a-f]{64}-[0-9a-f]{64}\z/
+      ID_PATTERN = /\A[A-Za-z0-9._+-]+-[0-9a-f]{64}-[0-9a-f]{64}\z/
 
       def initialize(root, source, names, tree)
         @root = root

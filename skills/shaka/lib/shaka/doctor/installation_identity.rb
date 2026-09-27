@@ -25,7 +25,8 @@ module Shaka
 
         source = identity['source']
         source.is_a?(Hash) && %w[revision development].include?(source['kind']) &&
-          source['content_sha256'].is_a?(String)
+          source['content_sha256'].is_a?(String) &&
+          (source['kind'] != 'revision' || source['revision'].is_a?(String))
       end
 
       def self.uninstalled

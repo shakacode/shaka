@@ -38,6 +38,11 @@ module InstallTestSupport
     JSON.parse(File.read(File.join(package_path, '.shaka-install.json')))
   end
 
+  def unrelated_parent_repository
+    git('init', '-q', @directory)
+    git('-C', @directory, 'config', 'remote.origin.url', 'https://example.com/unrelated.git')
+  end
+
   private
 
   def prepare_paths

@@ -16,7 +16,10 @@ module Shaka
       def version
         path = File.join(@root, 'skills/shaka/lib/shaka/version.rb')
         match = File.read(path).match(/^\s*VERSION\s*=\s*['"]([^'"]+)['"]/) if File.file?(path)
-        match ? match[1] : 'UNKNOWN'
+        value = match ? match[1] : 'UNKNOWN'
+        raise ArgumentError, 'Invalid Shaka version' unless value.match?(/\A[A-Za-z0-9][A-Za-z0-9._+-]*\z/)
+
+        value
       end
 
       def identity(hash)
@@ -69,6 +72,8 @@ module Shaka
       end
 
       def remote
+        return unless git('rev-parse', '--show-toplevel') == @root
+
         value = git('config', '--get', 'remote.origin.url')
         return value if value&.match?(/\Agit@[^:]+:.+/)
 
