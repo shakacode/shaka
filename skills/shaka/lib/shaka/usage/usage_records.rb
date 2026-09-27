@@ -20,6 +20,15 @@ module Shaka
 
     def begin_mark(fields) = "#{BEGIN_PREFIX}#{JSON.generate(fields)} -->"
 
+    # Anyone who can edit a same-repository PR body has write access. A fork author can edit
+    # theirs, so a fork's reports are never carried as the helper's own evidence.
+    def carry_from(content, pull)
+      head = pull.dig('head', 'repo', 'full_name')
+      return carry(content, pull['body']) if head && head == pull.dig('base', 'repo', 'full_name')
+
+      [content, { 'retained' => 0, 'replaced' => 0, 'dropped' => 0, 'skipped' => 'fork' }]
+    end
+
     # Returns the content with carried records prepended to its usage body, and what happened.
     def carry(content, existing)
       stats = { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }

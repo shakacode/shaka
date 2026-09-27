@@ -48,12 +48,15 @@ configuration, or interval metadata produce `UNKNOWN`.
 
 Paste each report whole into the description's usage details. Hidden markers at
 its first and last lines record the host, the commits, the contribution, the
-interval, and digests of the response and source IDs. They do not publish the
-IDs or local paths.
+interval, and digests of the source IDs and of the response IDs whose counters
+are readable. They do not publish the IDs or local paths.
 
 When `description` republishes a PR, it keeps each earlier report from the
 managed region unless the new reports, in any usage section, cover its work.
-Carried reports join the first usage section.
+Carried reports join the first usage section. Only a pull request whose head
+branch is in the base repository carries reports, because anyone who can edit its
+description already has write access. A fork's author can edit its description,
+so a fork's reports are never carried.
 
 - New reports on the same host cover an earlier report when together they hold
   every response it counted. A partial overlap keeps both reports, so they may

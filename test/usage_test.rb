@@ -384,6 +384,13 @@ class UsageIdentityTest < Minitest::Test
     assert_equal [2, 1], [fields['responses'].uniq.size, fields['sources'].size]
   end
 
+  # Break: a conflicting copy kept its ID with no counters and so covered an earlier measured report.
+  def test_identity_lists_only_responses_with_readable_counters
+    report = run_report([context('current'), usage('replayed', 'current', 100), usage('replayed', 'current', 200),
+                         usage('clean', 'current', 100)])
+    assert_equal 1, JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])['responses'].size
+  end
+
   def test_report_identity_hides_response_ids_and_closes_the_record
     report = run_report([context('current'), usage('r1', 'current', 100)])
     refute_includes report.lines.first, 'r1'

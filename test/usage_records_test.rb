@@ -125,6 +125,23 @@ class UsageRecordsTest < Minitest::Test
     refute_includes body, 'outside-region'
   end
 
+  def pull_from(head)
+    { 'body' => existing(record('codex', 'forged', responses: %w[f1])), 'head' => { 'repo' => { 'full_name' => head } },
+      'base' => { 'repo' => { 'full_name' => 'shakacode/shaka' } } }
+  end
+
+  # Break: a fork author could forge a report that the helper then republished as its own evidence.
+  def test_reports_from_a_fork_pull_request_are_not_carried
+    content, stats = Shaka::UsageRecords.carry_from(described('new'), pull_from('fork/shaka'))
+    refute_includes content['details'].first['body'], 'forged'
+    assert_equal 'fork', stats['skipped']
+  end
+
+  def test_reports_from_a_same_repository_pull_request_are_carried
+    content, = Shaka::UsageRecords.carry_from(described('new'), pull_from('shakacode/shaka'))
+    assert_includes content['details'].first['body'], 'forged'
+  end
+
   def test_content_without_a_prior_region_is_unchanged
     content = described('x')
     assert_equal [content, { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }],

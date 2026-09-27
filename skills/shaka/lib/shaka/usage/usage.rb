@@ -152,8 +152,16 @@ module Shaka
     def record_identity
       from, to = timestamps.minmax
       { 'host' => @options[:host], 'sources' => @options[:files].map { |file| digest(file) }.uniq,
-        'responses' => @source.responses.keys.map { |id| digest(id) }, 'contribution' => @options[:contribution],
+        'responses' => measured_responses.map { |id| digest(id) }, 'contribution' => @options[:contribution],
         'commits' => @options[:commit].split(','), 'from' => from || 'UNKNOWN', 'to' => to || 'UNKNOWN' }
+    end
+
+    # A response whose counters are unreadable cannot stand in for one an earlier report measured.
+    def measured_responses
+      @source.responses.filter_map do |id, record|
+        usage = record['usage']
+        id if usage.is_a?(Hash) && usage.values.any?(Integer)
+      end
     end
 
     def digest(value) = Digest::SHA256.hexdigest("#{@options[:host]}\0#{value}")[0, 12]

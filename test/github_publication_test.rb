@@ -70,7 +70,7 @@ class GitHubDescriptionTest < Minitest::Test
     updated = "<!-- shaka:begin -->\nBuilt from #{existing.size}.\n<!-- shaka:end -->\n\nSummary by CodeRabbit"
     github = client(pull_response(existing), html_response('<p>ok</p>'), pull_response(existing),
                     pull_response(updated))
-    github.description { |read| "Built from #{read.size}.\n" }
+    github.description { |read| "Built from #{read['body'].size}.\n" }
     assert_equal updated, sent_body
   end
 

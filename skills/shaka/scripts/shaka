@@ -239,8 +239,8 @@ begin
                end)
                described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
                usage_records = nil
-               published = github.description do |existing|
-                 carried, usage_records = Shaka::UsageRecords.carry(described, existing)
+               published = github.description do |pull|
+                 carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
                  Shaka::Publication.description(carried)
                end
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
