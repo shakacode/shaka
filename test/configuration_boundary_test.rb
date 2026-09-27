@@ -9,11 +9,13 @@ class ConfigurationBoundaryTest < Minitest::Test
 
   ROOT = File.expand_path('../skills/shaka/lib/shaka', __dir__)
   INTERNAL = %w[configuration.rb repository_config.rb trusted_config_source.rb].freeze
-  EXPLANATORY = %w[seam/initializer_readme.rb seam/pointer.rb].freeze
-  ACCESS_CALLERS = %w[
-    claim.rb doctor/checks.rb local_review/prompt_file.rb seam/initializer.rb
-    seam/initializer_destination.rb seam/initializer_readme.rb seam/migration_apply.rb
-    seam/migration_plan.rb seam/migrator.rb
+  OTHER_PATHS = %w[merge_review_comparison.rb seam/initializer_readme.rb seam/pointer.rb].freeze
+  OTHER_FILE_IO = %w[
+    checkpoint.rb doctor/cursor_stop_hook.rb enforcement_config.rb local_review/cli.rb
+    local_review/report_check.rb local_review/runner.rb merge_tree_proof.rb recommendation.rb
+    repos/home.rb review_prompt.rb usage/claude_usage.rb usage/codex_usage.rb
+    usage/cursor_usage_store.rb usage/opencode_usage.rb usage/pi_usage.rb usage/rate_card.rb
+    workflow_config.rb
   ].freeze
 
   def test_public_paths_remain_concrete_and_independent
@@ -75,14 +77,25 @@ class ConfigurationBoundaryTest < Minitest::Test
   end
 
   def source_findings(relative, source)
+    path_findings(relative, source) + access_findings(relative, source)
+  end
+
+  def path_findings(relative, source)
     findings = []
-    literal = source.match?(%r{["'](?:~/)?\.agents/})
-    findings << 'path literal' if literal && !EXPLANATORY.include?(relative)
+    literal = source.include?('.agents')
+    findings << 'path literal' if literal && !OTHER_PATHS.include?(relative)
     findings << 'contract alias' if source.include?('RepositoryConfig::PATH')
+    findings
+  end
+
+  def access_findings(relative, source)
+    findings = []
     direct_read = /File\.(?:read|binread|write)\([^\n]*(?:CONTRACT|SEAM|POINTER_PATH)/
     findings << 'direct contract read' if source.match?(direct_read)
     direct_access = source.match?(/File\.(?:read|binread|write|open)\(/)
-    findings << 'direct file access' if ACCESS_CALLERS.include?(relative) && direct_access
+    findings << 'unclassified file access' if direct_access && !OTHER_FILE_IO.include?(relative)
+    git_read = source.match?(/['"](?:show|cat-file)['"]/) && relative != 'local_review/criteria.rb'
+    findings << 'unclassified Git read' if git_read && relative != 'trusted_path_resolver.rb'
     findings
   end
 end

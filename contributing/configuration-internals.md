@@ -45,9 +45,11 @@ The boundary covers repository-facing settings, allowlists, executable discovery
 and seam initialization and migration. Packaged `workflow.yml`, `enforcement.yml`,
 and usage rate data have separate loaders; the install-local repository catalog
 and GitHub metadata are also separate. Generated pointer text and error messages
-may show concrete paths as explanations. The architectural test checks production
+may show concrete paths as explanations. The merge-review classifier names
+`.agents/` as an instruction directory, not a configuration source. The architectural test checks production
 path literals and direct access, and a code-search review covers assembled access
-that a string scan cannot prove absent.
+that a string scan cannot prove absent. The guard classifies unrelated file I/O
+explicitly, so a new production reader or writer needs a review of its source.
 
 | Concern | Source |
 | --- | --- |
