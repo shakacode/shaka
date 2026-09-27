@@ -46,7 +46,7 @@ module Shaka
       names = options[:all_executables] ? Dir.children(directory) : options[:names]
       names.any? do |name|
         path = File.join(directory, name)
-        File.symlink?(path) && File.executable?(path) &&
+        File.symlink?(path) && (options[:all_executables] || File.executable?(path)) &&
           LocalReviewExecutable.candidate_owned?(File.realpath(path), candidate_root)
       end
     rescue SystemCallError
