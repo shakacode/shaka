@@ -19,7 +19,7 @@ module Shaka
 
     def description(body:, prose: ProseLimits.new)
       current = pull
-      prose.verify!(publishable(body), kind: :description, changed_lines: ProseLimits.changed_lines(current))
+      prose.verify!(markdown(publishable(body)), kind: :description, changed_lines: ProseLimits.changed_lines(current))
       merged = merge(current['body'].to_s, publishable(body))
       verify_rendering(merged)
       check_unchanged(current['body'].to_s)
@@ -53,7 +53,7 @@ module Shaka
 
       expected = PublicationText.prose(body).lines.count { |line| line.match?(SEPARATOR) }
       rendered = html.scan('<table').size
-      return if rendered >= expected
+      return html if rendered >= expected
 
       raise Error, "GitHub rendered #{rendered} of #{expected} table(s); check the separator column count."
     end

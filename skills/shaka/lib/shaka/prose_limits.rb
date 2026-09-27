@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Refuses a description or walkthrough whose visible prose is shaped as a wall of text.
+# Refuses a description or walkthrough whose rendered, visible prose is shaped as a wall of text.
 
 require_relative 'error'
 require_relative 'visible_prose'
@@ -49,8 +49,9 @@ module Shaka
 
     def to_h = @limits.dup
 
-    def verify!(markdown, kind:, changed_lines:)
-      paragraphs = VisibleProse.new(markdown).paragraphs
+    # html is GitHub's rendering, so Markdown rules come from GitHub rather than a copy of them.
+    def verify!(html, kind:, changed_lines:)
+      paragraphs = VisibleProse.new(html).paragraphs
       problems = long_sentences(paragraphs) + long_paragraphs(paragraphs) +
                  [length_problem(paragraphs, kind, changed_lines)].compact
       return if problems.empty?

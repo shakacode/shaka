@@ -89,10 +89,9 @@ module Shaka
 
     def walkthrough(head:, body:, seam_required_checks: nil, prose: ProseLimits.new)
       body = publishable(body)
-      pr = verify_head(head)
-      prose.verify!(body, kind: :walkthrough, changed_lines: ProseLimits.changed_lines(pr))
+      changed_lines = ProseLimits.changed_lines(verify_head(head))
       WalkthroughEvidence.new(self, seam_required_checks:).verify(head, body)
-      published = record_walkthrough(head, body)
+      published = record_walkthrough(head, body) { |html| prose.verify!(html, kind: :walkthrough, changed_lines:) }
       published.merge('earlier_walkthroughs' => WalkthroughHistory.new(self).collapse(published))
     end
 
@@ -121,7 +120,7 @@ module Shaka
     def reviews_path = "repos/#{@repository}/pulls/#{@number}/reviews"
 
     def record_walkthrough(head, body)
-      verify_rendering(body)
+      yield verify_rendering(body)
       created = api(reviews_path, method: 'POST', fields: { event: 'COMMENT', commit_id: head, body: body })
       published = review(created['id'])
       verify_review(published, created['id'], head, body)

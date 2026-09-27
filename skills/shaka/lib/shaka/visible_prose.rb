@@ -1,75 +1,51 @@
 # frozen_string_literal: true
 
-# Reduces rendered Markdown to the prose a reader sees without expanding anything.
+# Reduces GitHub's rendered HTML to the prose a reader sees without expanding anything.
+
+require 'cgi'
 
 module Shaka
-  # Splits visible Markdown into paragraphs and list items, each as its sentences.
+  # Splits rendered HTML into paragraphs and list items, each as its sentences.
   class VisibleProse
-    # Tables, headings, block quotes, and comments are not running prose.
-    HIDDEN_LINE = /\A[ \t]*(?:\||\#{1,6}(?:[ \t]|$)|>|<!--)/
-    LIST_ITEM = /\n(?=[ \t]*(?:[-*+]|\d+[.)])[ \t])/
-    LIST_MARKER = /\A[ \t]*(?:[-*+]|\d+[.)])[ \t]+/
-    CODE_SPAN = /(`+)(?:(?!\1).)*\1(?!`)/m
-    COMMENT = /<!--.*?-->/
+    # Collapsed details, code blocks, tables, headings, and quotes are not running prose.
+    HIDDEN = %r{\A<(/?)(?:details|pre|table|h[1-6]|blockquote)\b}i
+    BLOCK = %r{\A</?(?:p|li|ul|ol|div|br|hr)\b}i
+    CODE = %r{\A<(/?)code\b}i
     # A false split only shortens a sentence, so any word may start the next one, as in "iOS".
-    SENTENCE_END = /(?<=[.!?])[*_"')\]]*\s+(?=[*_"'(\[]*[[:alnum:]])/
+    SENTENCE_END = /(?<=[.!?])["')\]]*\s+(?=["'(\[]*[[:alnum:]])/
 
     def self.words(text) = text.split.count { |token| token.match?(/[[:alnum:]]/) }
 
-    def initialize(markdown)
-      @fence = nil
-      @depth = 0
-      @after_blank = true
-      @lines = markdown.to_s.lines.map { |line| visible?(line) ? line : "\n" }
+    def initialize(html)
+      @hidden = 0
+      @code = false
+      @text = html.to_s.split(/(<[^>]*>)/).map { |token| token.start_with?('<') ? tag(token) : text(token) }.join
     end
 
     def paragraphs
-      @lines.join.split(/\n[ \t]*\n/).flat_map { |block| block.split(LIST_ITEM) }
-            .map { |unit| inline_text(unit).split(SENTENCE_END) }
-            .reject(&:empty?)
+      @text.split("\n\n").map { |block| block.gsub(/\s+/, ' ').strip.split(SENTENCE_END) }.reject(&:empty?)
     end
 
     private
 
-    def visible?(line)
-      hidden = fenced?(line) || collapsed?(line) || indented_code?(line) || line.match?(HIDDEN_LINE)
-      @after_blank = line.strip.empty?
-      !hidden
+    def text(token)
+      @hidden.zero? && !@code ? CGI.unescapeHTML(token).gsub(/\s+/, ' ') : ''
     end
 
-    # An indented code block starts only after a blank line; an indented list item stays prose.
-    def indented_code?(line)
-      @indented = line.match?(/\A(?: {4}|\t)/) && !line.match?(LIST_MARKER) && (@after_blank || @indented)
-    end
-
-    def fenced?(line)
-      marker = line[/\A[ \t]*(`{3,}|~{3,})/, 1]
-      if @fence
-        @fence = nil if marker && marker[0] == @fence[0] && marker.size >= @fence.size
-        return true
+    def tag(token)
+      if (hidden = token.match(HIDDEN))
+        @hidden = [@hidden + (hidden[1].empty? ? 1 : -1), 0].max
+        return "\n\n"
       end
-      @fence = marker
-      !marker.nil?
+      return code(token.match(CODE)[1].empty?) if token.match?(CODE)
+
+      token.match?(BLOCK) ? "\n\n" : ''
     end
 
-    # A details block is read only by someone who chooses to open it.
-    def collapsed?(line)
-      tags = line.gsub(CODE_SPAN, '').gsub(COMMENT, '')
-      @depth += tags.scan(/<details\b/i).size
-      hidden = @depth.positive?
-      @depth = [@depth - tags.scan(%r{</details\s*>}i).size, 0].max
-      hidden
-    end
-
-    # Code spans and URLs read as one capitalized word, so a sentence may still start with one.
-    def inline_text(unit)
-      unit.gsub(/!\[[^\]]*\]\([^)]*\)/, '')
-          .gsub(/\[([^\]]*)\]\((?:<[^>]*>|[^)]*)\)/, '\1')
-          .gsub(CODE_SPAN, 'Code')
-          .gsub(%r{https?://\S+}, 'Link')
-          .gsub(/<[^>]*>/, ' ')
-          .sub(LIST_MARKER, '')
-          .gsub(/\s+/, ' ').strip
+    # An inline code span reads as one capitalized word, so a sentence may still start with one.
+    def code(opening)
+      @code = opening
+      opening && @hidden.zero? ? ' Code ' : ''
     end
   end
 end

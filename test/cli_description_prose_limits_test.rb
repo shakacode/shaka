@@ -35,8 +35,7 @@ class CliDescriptionProseLimitsTest < Minitest::Test
       Dir.mktmpdir do |dir|
         _output, error, status = run_description(dir, root:, ref: true)
 
-        refute_predicate status, :success?
-        assert_includes error, 'a sentence has 30 words (limit 20)'
+        assert_refused_before_publication(dir, status, error)
       end
     end
   end
@@ -44,6 +43,21 @@ class CliDescriptionProseLimitsTest < Minitest::Test
   private
 
   def description_content = super.merge('summary' => @summary)
+
+  # Renders tables as tables and other blocks as paragraphs, enough for the prose limits to measure.
+  def fake_gh
+    super.sub("when 'markdown' then puts JSON.generate('<table></table>' * 10)", <<~'RUBY'.chomp)
+      when 'markdown'
+        blocks = request.fetch('text').split(/\n\s*\n/).reject { |block| block.start_with?('<') }
+        puts blocks.map { |block| block.start_with?('|') ? '<table></table>' : "<p>#{block}</p>" }.join
+    RUBY
+  end
+
+  def assert_refused_before_publication(dir, status, error)
+    refute_predicate status, :success?
+    assert_includes error, 'a sentence has 30 words (limit 20)'
+    refute_path_exists File.join(dir, 'published.md')
+  end
 
   def break_candidate_layout(root)
     contract = File.join(root, '.agents/agent-workflow.yml')
