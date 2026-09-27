@@ -34,7 +34,7 @@ module Shaka
     end
 
     def valid_sentence?(sentence)
-      return false unless sentence.is_a?(Hash) && sentence.keys.sort == FIELDS.sort
+      return false unless sentence.is_a?(Hash) && (FIELDS - sentence.keys).empty?
       return false unless sentence['reader_facing'] in true | false
 
       text_fields?(sentence) && array_fields?(sentence)

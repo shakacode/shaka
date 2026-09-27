@@ -60,7 +60,9 @@ class CliOpeningCheckTest < Minitest::Test
         output, error, status = run_description(dir, root:, reviewer: 'anthropic/claude')
         assert_predicate status, :success?, error
         assert_equal 'flagged', JSON.parse(output).dig('opening', 'status')
-        assert_includes File.read(File.join(dir, 'opening-prompt.txt')), 'Name the reader-facing subject.'
+        prompt = File.read(File.join(dir, 'opening-prompt.txt'))
+        assert_includes prompt, 'Name the reader-facing subject.'
+        assert_includes prompt, 'hidden_actions and internal_terms as arrays of strings'
       end
     end
   end
@@ -76,11 +78,14 @@ class CliOpeningCheckTest < Minitest::Test
   end
 
   def test_trusted_prompt_reaches_default_host_model
-    with_trusted_prompt do |root|
-      Dir.mktmpdir do |dir|
-        output, error, status = run_description(dir, root:, ref: true)
-        assert_predicate status, :success?, error
-        assert_includes JSON.parse(output).dig('opening', 'prompt'), 'Name the reader-facing subject.'
+    [true, false].each do |enabled|
+      with_trusted_prompt(enabled:) do |root|
+        Dir.mktmpdir do |dir|
+          output, error, status = run_description(dir, root:, ref: true)
+          assert_predicate status, :success?, error
+          assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+          assert_includes JSON.parse(output).dig('opening', 'prompt'), 'Name the reader-facing subject.'
+        end
       end
     end
   end
@@ -96,8 +101,8 @@ class CliOpeningCheckTest < Minitest::Test
 
   private
 
-  def with_trusted_prompt
-    with_repository('opening_check' => { 'enabled' => true, 'prompt_file' => '.agents/opening.md' }) do |root|
+  def with_trusted_prompt(enabled: true)
+    with_repository('opening_check' => { 'enabled' => enabled, 'prompt_file' => '.agents/opening.md' }) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Name the reader-facing subject.')
       commit(root)
       yield root
