@@ -16,7 +16,7 @@ module Shaka
 
       ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true,
                                                                   all_executables: true)
-      gh = selected_gh(original.to_s, candidate_root) if select_gh
+      gh = selected_command(select_gh, original.to_s, candidate_root)
       with_neutral_directory(candidate_root) do |neutral|
         in_context(select_gh, neutral) { yield candidate_root, gh, neutral }
       end
@@ -26,6 +26,13 @@ module Shaka
 
     def self.in_context(select_gh, neutral, &)
       select_gh ? yield : Dir.chdir(neutral, &)
+    end
+
+    def self.selected_command(select_gh, original_path, candidate_root)
+      return selected_gh(original_path, candidate_root) if select_gh
+
+      LocalReviewPathGuard.safe_executable(ENV.fetch('PATH'), 'git', candidate_root)
+      nil
     end
 
     def self.with_neutral_directory(candidate_root)
@@ -38,14 +45,11 @@ module Shaka
     end
 
     def self.selected_gh(original_path, candidate_root)
-      gh = LocalReviewPathGuard.safe_executable(original_path, 'gh', candidate_root)
-      return unless gh
-
-      return gh unless LocalReviewPathGuard.shebang_interpreter(gh)
-
-      linked = LocalReviewPathGuard.candidate_executable_link?(File.dirname(gh), candidate_root,
-                                                               { all_executables: true })
-      linked ? LocalReviewPathGuard.safe_executable(ENV.fetch('PATH'), 'gh', candidate_root) : gh
+      # Reject malformed gh wrappers before a contaminated PATH directory is removed.
+      original = LocalReviewPathGuard.first_executable(original_path.split(File::PATH_SEPARATOR, -1), 'gh',
+                                                       candidate_root, true)
+      LocalReviewPathGuard.interpreter_name(original, 'gh', candidate_root) if original
+      LocalReviewPathGuard.safe_executable(ENV.fetch('PATH'), 'gh', candidate_root)
     end
 
     def initialize(root:, ref:, reviewer: nil, model: nil)

@@ -64,7 +64,14 @@ module Shaka
 
     def self.safe_executable(path, name, candidate_root)
       selected = first_executable(path.split(File::PATH_SEPARATOR, -1), name, candidate_root, true)
-      selected.tap { |path| interpreter_name(path, name, candidate_root) if path }
+      return unless selected
+
+      real_directory = File.dirname(File.realpath(selected))
+      linked = candidate_executable_link?(real_directory, candidate_root, { all_executables: true })
+      raise Shaka::Error, "#{name} wrapper directory contains candidate-backed links" if linked
+
+      interpreter_name(selected, name, candidate_root)
+      selected
     end
 
     def self.first_executable(entries, name, candidate_root, drop_candidate)
