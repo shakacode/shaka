@@ -97,10 +97,17 @@ class UsageRecordsTest < Minitest::Test
     refute_includes carried(existing(old), unknown), 'earlier'
   end
 
-  # Break: an unrelated new report with response IDs skipped the fallback for one without them.
+  # Break: regenerating from an unreadable source replaced measured usage with an empty snapshot.
+  def test_measured_report_survives_a_same_source_report_without_responses
+    old = record('codex', 'measured', responses: %w[a])
+    empty = record('codex', 'empty', responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    assert_includes carried(existing(old), empty), 'measured'
+  end
+
+  # Break: an unrelated new report with response IDs skipped the fallback for an old one without them.
   def test_missing_id_fallback_applies_beside_unrelated_reports
-    old = record('codex', 'old', responses: %w[a])
-    same_source = record('codex', 'refresh', responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    old = record('codex', 'old', responses: [])
+    same_source = record('codex', 'refresh', responses: %w[c1])
     unrelated = record('codex', 'other', responses: %w[b], sources: ['s2'])
     refute_includes carried(existing(old), "#{same_source}\n\n#{unrelated}"), 'old'
   end

@@ -85,9 +85,10 @@ module Shaka
       nil
     end
 
-    # New reports replace an old one only when they hold every response it counted, so a partial
-    # overlap never deletes usage. Without response IDs, the same source over an overlapping or
-    # unknown interval cannot be shown to be different work.
+    # New reports replace an old one only when they hold every response it counted, so neither a
+    # partial overlap nor an empty snapshot of an unreadable source deletes measured usage. An old
+    # report without response IDs is replaced by a new one from the same source over an
+    # overlapping or unknown interval, since nothing shows them to be different work.
     def superseded?(old, fresh)
       same_host = fresh.select { |new| new['host'] == old['host'] }
       covered?(old, same_host) || same_host.any? { |new| fallback_match?(old, new) }
@@ -97,9 +98,8 @@ module Shaka
       old['responses'].any? && (old['responses'] - same_host.flat_map { |new| new['responses'] }).empty?
     end
 
-    # Applies to each pair where either side lacks response IDs, whatever other new reports hold.
     def fallback_match?(old, new)
-      return false unless old['responses'].empty? || new['responses'].empty?
+      return false unless old['responses'].empty?
 
       old['sources'].intersect?(new['sources']) && intervals_touch?(old, new)
     end

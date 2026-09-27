@@ -40,6 +40,10 @@ An interval associated with several commits is **SHARED**. Never divide its toke
 into invented per-commit amounts. Preserve the original mapping after squash and
 associate the merged SHA without recounting it.
 
+The helper deduplicates response IDs across supplied files, including resumed or
+forked copies, and ignores cumulative snapshots. Conflicting counters,
+configuration, or interval metadata produce `UNKNOWN`.
+
 ## Keep earlier reports when work changes hands
 
 Paste each report whole into the description's usage details. Hidden markers at
@@ -49,24 +53,26 @@ IDs or local paths.
 
 When `description` republishes a PR, it keeps each earlier report from the
 managed region unless the new reports, in any usage section, cover its work.
-Carried reports join the first usage section. New reports on the same
-host cover it when together they hold every response it counted. A partial
-overlap keeps both reports, so they may share some responses. When either side
-lacks response IDs, a new report covers the old one when they share a source and
-their intervals overlap or either interval is `UNKNOWN`. A switch from Claude
-Code to Codex and back therefore keeps all three contributions, and a refreshed
-`--all-turns` snapshot replaces the earlier snapshots of the same session.
+Carried reports join the first usage section.
+
+- New reports on the same host cover an earlier report when together they hold
+  every response it counted. A partial overlap keeps both reports, so they may
+  share some responses.
+- A new report without response IDs, such as one from a source that became
+  unreadable, never replaces a report that has them.
+- When the earlier report lacks response IDs, a new report covers it when they
+  share a source and their intervals overlap or either interval is `UNKNOWN`.
+
+A switch from Claude Code to Codex and back therefore keeps all three
+contributions, and a refreshed `--all-turns` snapshot replaces the earlier
+snapshots of the same session.
 
 The collapsed summary lists each report's USD estimate and adds no total, because
 the reports may be partial or shared. The command drops a carried report whose
-markers or `<details>` tags were edited out of shape, including a report that
-lost its end marker or uses any tag form other than lowercase `<details>`, and prints how many reports
-it retained, replaced, and dropped. It refuses a description longer than GitHub's
-65,536-character limit.
-
-The helper deduplicates response IDs across supplied files, including resumed or
-forked copies, and ignores cumulative snapshots. Conflicting counters,
-configuration, or interval metadata produce `UNKNOWN`.
+markers or `<details>` tags were edited out of shape, including one that lost its
+end marker or uses any tag form other than lowercase `<details>`. It prints how
+many reports it retained, replaced, and dropped, and refuses a description longer
+than GitHub's 65,536-character limit.
 
 ## Reading the result
 
