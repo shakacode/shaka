@@ -97,6 +97,14 @@ class UsageRecordsTest < Minitest::Test
     refute_includes carried(existing(old), unknown), 'earlier'
   end
 
+  # Break: an unrelated new report with response IDs skipped the fallback for one without them.
+  def test_missing_id_fallback_applies_beside_unrelated_reports
+    old = record('codex', 'old', responses: %w[a])
+    same_source = record('codex', 'refresh', responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    unrelated = record('codex', 'other', responses: %w[b], sources: ['s2'])
+    refute_includes carried(existing(old), "#{same_source}\n\n#{unrelated}"), 'old'
+  end
+
   def test_hand_written_usage_keeps_prior_records_without_duplicating_pasted_ones
     old = record('codex', 'codex-review', responses: %w[r1])
     assert_includes carried(existing(old), "| Metric | x |\n| --- | --- |\n| Input | UNKNOWN |"), 'codex-review'

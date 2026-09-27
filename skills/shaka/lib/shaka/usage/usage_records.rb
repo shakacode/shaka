@@ -90,13 +90,19 @@ module Shaka
     # unknown interval cannot be shown to be different work.
     def superseded?(old, fresh)
       same_host = fresh.select { |new| new['host'] == old['host'] }
-      covered = same_host.flat_map { |new| new['responses'] }
-      return (old['responses'] - covered).empty? unless old['responses'].empty? || covered.empty?
-
-      same_host.any? { |new| same_source_interval?(old, new) }
+      covered?(old, same_host) || same_host.any? { |new| fallback_match?(old, new) }
     end
 
-    def same_source_interval?(old, new) = old['sources'].intersect?(new['sources']) && intervals_touch?(old, new)
+    def covered?(old, same_host)
+      old['responses'].any? && (old['responses'] - same_host.flat_map { |new| new['responses'] }).empty?
+    end
+
+    # Applies to each pair where either side lacks response IDs, whatever other new reports hold.
+    def fallback_match?(old, new)
+      return false unless old['responses'].empty? || new['responses'].empty?
+
+      old['sources'].intersect?(new['sources']) && intervals_touch?(old, new)
+    end
 
     def intervals_touch?(old, new)
       from, to, new_from, new_to = [old['from'], old['to'], new['from'], new['to']].map { |stamp| time(stamp) }
