@@ -22,12 +22,17 @@ module Shaka
 
     NOTE = %r{<details>\n<summary>#{SUMMARY}</summary>\n\n(.*?)\n\n</details>}m
 
-    # Reads the Revision cell back from a description this class rendered, or nil without a note.
-    def self.revision(body)
+    # Reads the Revision cell back from a note this class rendered, or nil when the text holds no
+    # complete note: a partial or reordered table was not written by this class.
+    def self.revision(text)
       # A body saved from GitHub's web editor comes back with CRLF line endings.
-      note = body.to_s.gsub("\r\n", "\n")[NOTE, 1] or return
+      note = text.to_s.gsub("\r\n", "\n")[NOTE, 1] or return
+      cells = rows(note)
+      cells[FIELDS.keys.index('revision')].last if cells.map(&:first) == FIELDS.values
+    end
 
-      note[/^\| #{FIELDS.fetch('revision')} \| (.*) \|$/, 1]
+    def self.rows(note)
+      note.lines.drop(2).map { |line| line.chomp.match(/\A\| (.+?) \| (.*) \|\z/)&.captures || [] }
     end
 
     def initialize(spec)

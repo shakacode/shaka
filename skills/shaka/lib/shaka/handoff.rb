@@ -3,6 +3,7 @@
 require_relative 'attention'
 require_relative 'merge_required_checks'
 require_relative 'public_comments/bounded_list'
+require_relative 'publishing'
 require_relative 'status'
 require_relative 'walkthrough_history'
 require_relative 'wip_details'
@@ -99,18 +100,31 @@ module Shaka
         review.dig('user', 'login') == account && review['state'] == 'COMMENTED' &&
           WalkthroughText.rendered?(review['body'].to_s)
       end
-      current && WalkthroughText.revision(current['body'])
+      current && bound_revision(current)
+    end
+
+    # GitHub binds a review to its commit; the footer is editable text, so it only counts when it agrees.
+    def bound_revision(review)
+      commit = review['commit_id']
+      commit if commit.is_a?(String) && WalkthroughText.revision(review['body']) == commit
     end
 
     def wip_fact(live)
       pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
       moved = pull.dig('head', 'sha')
       @owed << "PR head moved to #{moved} while handoff read it; run it again." if moved && moved != live
-      revision = WipDetails.revision(pull['body'])
+      revision = WipDetails.revision(managed_region(pull['body'].to_s))
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
       return "WIP #{live[0, SHORT]}" if revision.include?(live)
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")
+    end
+
+    # Only text between the helper's markers is its own; anyone who can edit the body can write elsewhere.
+    def managed_region(body)
+      return '' unless body.scan(Publishing::OPEN_MARK).one? && body.scan(Publishing::CLOSE_MARK).one?
+
+      body.split(Publishing::OPEN_MARK, 2).last.split(Publishing::CLOSE_MARK, 2).first
     end
 
     def list = @labels.join(', ')

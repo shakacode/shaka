@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require 'shaka/handoff'
 require 'shaka/publication'
+require 'shaka/publishing'
 
 # Answers the reads handoff makes, so each test states only the PR state it cares about.
 class HandoffFakeGitHub
@@ -51,12 +52,25 @@ module HandoffFixtures
   TABLE = { 'columns' => %w[Check Result], 'rows' => [%w[validate pass]] }.freeze
   USAGE = { 'summary' => 'Usage', 'body' => "| Provider | Native total |\n| --- | ---: |\n| anthropic | 1 |" }.freeze
 
-  def self.description(wip = WIP)
+  def self.rendered(wip = WIP)
     Shaka::Publication.description(
       'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE, 'deployment' => 'none',
       'provenance' => PROVENANCE, 'details' => [USAGE], 'wip' => wip
     )
   end
+
+  # The body as `description` stores it: the rendered text inside the helper's markers.
+  def self.walkthrough(head, author: 'shaka-agent', commit: head)
+    body = Shaka::Publication.walkthrough('identity' => IDENTITY, 'summary' => 'What changed.', 'head' => head)
+    { 'id' => 7, 'state' => 'COMMENTED', 'body' => body, 'submitted_at' => '2026-09-25T00:00:00Z',
+      'user' => { 'login' => author }, 'commit_id' => commit }
+  end
+
+  STATES = { 'pass' => 'SUCCESS', 'pending' => 'PENDING', 'skipping' => 'SKIPPED' }.freeze
+
+  def self.check(bucket) = { 'name' => 'validate', 'state' => STATES.fetch(bucket), 'bucket' => bucket }
+
+  def self.description(wip = WIP) = "#{Shaka::Publishing::OPEN_MARK}\n#{rendered(wip)}#{Shaka::Publishing::CLOSE_MARK}"
 end
 
 class HandoffTest < Minitest::Test
@@ -64,17 +78,10 @@ class HandoffTest < Minitest::Test
   REVIEWS = 'repos/owner/repo/pulls/42/reviews'
   include HandoffFixtures
 
+  def walkthrough(...) = HandoffFixtures.walkthrough(...)
+  def check(bucket) = HandoffFixtures.check(bucket)
+
   def description(wip = WIP) = HandoffFixtures.description(wip)
-
-  def walkthrough(head, author: 'shaka-agent')
-    body = Shaka::Publication.walkthrough('identity' => IDENTITY, 'summary' => 'What changed.', 'head' => head)
-    { 'id' => 7, 'state' => 'COMMENTED', 'body' => body, 'submitted_at' => '2026-09-25T00:00:00Z',
-      'user' => { 'login' => author } }
-  end
-
-  STATES = { 'pass' => 'SUCCESS', 'pending' => 'PENDING', 'skipping' => 'SKIPPED' }.freeze
-
-  def check(bucket) = { 'name' => 'validate', 'state' => STATES.fetch(bucket), 'bucket' => bucket }
 
   def handoff(expected: HEAD, woken_by: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
@@ -122,6 +129,18 @@ class HandoffTest < Minitest::Test
                      checks: [{ 'name' => 'validate', 'state' => 'FAILURE', 'bucket' => 'pass' }])
 
     assert(result['owed'].any? { |item| item.include?('not all passing') })
+  end
+
+  def test_a_walkthrough_whose_footer_disagrees_with_its_commit_does_not_count
+    result = handoff(reviews: [walkthrough(HEAD, commit: OLD)])
+
+    assert(result['notes'].any? { |item| item.include?('No walkthrough') })
+  end
+
+  def test_a_wip_note_outside_the_managed_region_does_not_count
+    body = "#{HandoffFixtures.rendered}\n\n#{Shaka::Publishing::OPEN_MARK}\nsummary#{Shaka::Publishing::CLOSE_MARK}"
+
+    assert(handoff(body:).fetch('owed').any? { |item| item.include?('WIP Details is missing') })
   end
 
   def test_a_copied_walkthrough_from_another_account_is_ignored
@@ -211,15 +230,21 @@ end
 
 class WipDetailsRevisionTest < Minitest::Test
   def test_the_revision_reads_back_from_a_rendered_description
-    body = HandoffFixtures.description
+    body = HandoffFixtures.rendered
 
     assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::WipDetails.revision(body)
   end
 
   def test_a_body_saved_with_crlf_line_endings_still_reads
-    body = HandoffFixtures.description.gsub("\n", "\r\n")
+    body = HandoffFixtures.rendered.gsub("\n", "\r\n")
 
     assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::WipDetails.revision(body)
+  end
+
+  def test_an_incomplete_table_has_no_revision
+    body = HandoffFixtures.rendered.sub(/^\| Owner \|.*\n/, '')
+
+    assert_nil Shaka::WipDetails.revision(body)
   end
 
   def test_a_body_without_the_note_has_no_revision
