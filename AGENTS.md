@@ -15,6 +15,8 @@ is the reusable default.
 - Assume the reader is new to Shaka and wants to get useful work done.
 - In product guides, explain outcomes, choices, and examples. Put agent execution
   details with the skill and development records under `internal/`.
+- Put command syntax and flag rules in the Shaka skill. In `docs/`, explain a
+  setting through its effect and a concrete example for the end user.
 - Lead with the action or benefit. Explain a term when the reader first needs it.
 - Keep one source for each setting and link to it. Avoid duplicate option tables.
 - Distinguish shipped behavior, agent instructions, and proposed features.

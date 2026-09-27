@@ -14,6 +14,7 @@ require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/merge_limits'
+require_relative '../lib/shaka/opening_publication'
 require_relative '../lib/shaka/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/publication'
@@ -147,6 +148,18 @@ def merge_flags(flags, options)
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
 end
 
+def opening_flags(flags, options)
+  flags.on('--opening-reviewer ID', 'Configured provider/family for an opening check') do |value|
+    options[:opening_reviewer] = value
+  end
+  flags.on('--opening-model MODEL', 'Model for the opening reviewer') { |value| options[:opening_model] = value }
+end
+
+def trust_flags(flags, options)
+  flags.on('--root DIR', 'Repository root for trusted seam settings') { |value| options[:root] = value }
+  flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
+end
+
 options = {}
 parser = OptionParser.new do |flags|
   flags.banner = usage_banner
@@ -163,8 +176,8 @@ parser = OptionParser.new do |flags|
     options[:ci_review_wait] = value
   end
   merge_flags(flags, options)
-  flags.on('--root DIR', 'Repository root for trusted seam settings') { |value| options[:root] = value }
-  flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
+  trust_flags(flags, options)
+  opening_flags(flags, options)
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, none') do |value|
@@ -189,6 +202,17 @@ begin
   end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
+  if options[:opening_reviewer] && command != 'description'
+    raise Shaka::Error, '--opening-reviewer is only for description.'
+  end
+  if options[:opening_model] && !options[:opening_reviewer]
+    raise Shaka::Error, '--opening-model requires --opening-reviewer.'
+  end
+
+  if options[:opening_model] && options[:opening_reviewer]
+    reviewer = Shaka::ReviewerSelection.parse(options[:opening_reviewer]).values.map(&:downcase).join('/')
+    raise Shaka::Error, '--opening-model is unsupported for openai/codex.' if reviewer == 'openai/codex'
+  end
 
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge].include?(command)
@@ -204,8 +228,21 @@ begin
              Shaka::PublicComments::Reader.new(github).call(issue_only:,
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
-             described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
-             github.description(body: Shaka::Publication.description(described))
+             root = options[:root] || Dir.pwd
+             Shaka::OpeningPublication.with_safe_path(root:) do |_candidate_root, gh, neutral|
+               raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
+
+               github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
+                 Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
+               end)
+               described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
+               body = Shaka::Publication.description(described)
+               published = github.description(body:)
+               opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
+                                                       reviewer: options[:opening_reviewer],
+                                                       model: options[:opening_model]).call(described['summary'])
+               published.merge('opening' => opening)
+             end
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
                           key: options.fetch(:key), comment: options[:comment])

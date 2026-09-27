@@ -53,7 +53,7 @@ module SeamInitializerTestHelpers
   def assert_complete_seam(root, output)
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
-    assert_equal %w[base_branch branches commands merge paths review version wip], config.keys.sort
+    assert_equal %w[base_branch branches commands merge opening_check paths review version wip], config.keys.sort
     assert_equal({ 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS }, config.fetch('merge'))
     assert_includes File.read(File.join(root, '.agents/agent-workflow.yml')), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }

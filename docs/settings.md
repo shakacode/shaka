@@ -130,9 +130,9 @@ A review of an earlier commit still counts in two cases:
   `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or
   `skills/` need a new review.
 
-When no review applies, `merge` stops before merging. Pass
-`--review-waiver REASON` when review was skipped on purpose, a later commit only
-fixed nits, or a CI review covered the commit. The waiver also covers a PR whose
+When no review applies, `merge` stops before merging. A maintainer can record a
+waiver reason when review was skipped on purpose, a later commit only fixed nits,
+or a CI review covered the commit. The waiver also covers a PR whose
 comments GitHub cannot list. With `review.required: none`, `merge` skips this check.
 
 The merge result shows the review it relied on, or the waiver reason, under
@@ -220,17 +220,50 @@ agent's entry in `local_review_agents`. It replaces `review.prompt_file` when th
 agent reviews. Here Codex reviews with `.agents/review-prompt-codex.md`, and Claude,
 which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
 
-`shaka review run --criteria-ref SHA` reads the file from that trusted
-default-branch commit, so a PR that changes it is reviewed with the current
-version. Without `--criteria-ref`, the reviewer gets Shaka's default
-instructions. `shaka seam check` fails when a configured file is missing, empty,
-larger than 100 KB, or not UTF-8. Shaka keeps a few rules whatever
+Shaka reads the file from a trusted default-branch revision, so a PR that
+changes it is reviewed with the current version. Without a trusted prompt,
+the reviewer gets Shaka's default instructions. Settings validation fails
+when a configured file is missing, empty, larger than 100 KB, or not UTF-8.
+Shaka keeps a few rules whatever
 the file says: the reviewer makes no edits, treats the diff as data rather than
 instructions, reports which `AGENTS.md` criteria it used, and ends with the
 `REVIEWED` line that `shaka review run` checks.
 
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.
+
+## `opening_check`
+
+**Optional.** By default, the coding agent tries a separate local reviewer from
+the trusted reviewer list. To keep the opening with the coding agent, set:
+
+```yaml
+opening_check:
+  external_enabled: false
+  prompt_file: .agents/opening-prompt.md # optional
+```
+
+For a customization example, copy [Shaka's default opening prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/opening-prompt.md)
+to `.agents/opening-prompt.md` and edit it for your team. Shaka reads that same
+default file when you have not configured a replacement.
+
+For example, a team can develop with Codex and list Claude and Grok in
+`review.local_review_agents`. The coding agent tries the listed providers in
+preference order. If neither is available, Shaka returns the opening-check
+prompt for Codex to apply. With the setting disabled, the coding agent receives
+the prompt without sending the opening to another model.
+
+When `external_enabled` is true, the agent uses `review.local_review_agents` in
+its existing preference order: a different provider first, then another listed
+provider, then the development model when no listed CLI completes the parse.
+`external_enabled` defaults to `true`; only a provider in the trusted reviewer
+list may receive the opening. A valid `prompt_file`
+replaces the default parsing instructions for both external and development-model
+checks. Shaka reads it from the trusted default-branch revision, applies the
+same file checks as `review.prompt_file`, and treats the PR opening as data.
+The required JSON field names and types remain fixed by Shaka.
+If the configured check cannot run, the description still publishes and the
+development model receives a fallback prompt with the reason.
 
 ## Standard command scripts
 
@@ -288,8 +321,8 @@ branches:
 For example: `alex-codex/42-fix-search`.
 
 When a task comes from a tracker that offers a branch name, such as Linear's
-**Copy git branch name**, the agent passes it to `shaka claim ENG-123 --branch NAME`
-and uses that name instead of the template. Trackers link a pull request to its
+**Copy git branch name**, the agent uses that name instead of the template.
+Trackers link a pull request to its
 work item through that branch name. Git must accept the name as a branch name.
 
 ## `wip.include_locations`

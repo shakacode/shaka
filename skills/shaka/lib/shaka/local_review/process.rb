@@ -9,8 +9,8 @@ module Shaka
       def success? = false
     end
 
-    def self.capture(arguments, stdin_data:, chdir:, timeout:)
-      Open3.popen3(*arguments, chdir: chdir, pgroup: true) do |stdin, stdout, stderr, waiter|
+    def self.capture(arguments, stdin_data:, chdir:, timeout:, env: {})
+      Open3.popen3(env, *arguments, chdir: chdir, pgroup: true) do |stdin, stdout, stderr, waiter|
         capture_streams([stdin, stdout, stderr], waiter, stdin_data, timeout)
       end
     end

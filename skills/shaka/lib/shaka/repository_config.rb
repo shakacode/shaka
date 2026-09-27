@@ -14,10 +14,16 @@ module Shaka
     DEFAULT_WIP = { 'include_locations' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :wip, :sha, :config_path
+    attr_reader :base_branch, :commands, :review, :merge, :wip, :opening_check, :sha, :config_path
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
       new(root:, source:, available_commands:, sha:, candidate_commands:).load
+    end
+
+    def self.prompt_files(review:, opening:)
+      files = ReviewSchema.prompt_files(review)
+      path = opening['prompt_file']
+      path ? files + [['opening_check.prompt_file', path]] : files
     end
 
     def initialize(root:, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
@@ -65,7 +71,8 @@ module Shaka
                   'paths' => { 'policy_configuration' => config_path,
                                'candidate_configuration' => @candidate_detected&.contract,
                                'trusted_command_directory' => @layout.command_directory,
-                               'candidate_command_directory' => @candidate_layout.command_directory })
+                               'candidate_command_directory' => @candidate_layout.command_directory },
+                  'opening_check' => opening_check)
     end
 
     private
@@ -84,6 +91,7 @@ module Shaka
       merge = @data.fetch('merge')
       @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
+      @opening_check = { 'external_enabled' => true }.merge(@data.fetch('opening_check', {}))
     end
 
     def with_default_review_wait(review)
