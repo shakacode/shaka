@@ -79,6 +79,13 @@ class UsageRecordsTest < Minitest::Test
     assert_equal 1, stats['replaced']
   end
 
+  # Break: a snapshot whose totals became UNKNOWN from one unreadable response erased measured totals.
+  def test_incomplete_new_report_does_not_replace_measured_history
+    old = record('codex', 'measured', responses: %w[a])
+    incomplete = record('codex', 'incomplete', responses: %w[a], complete: false)
+    assert_includes carried(existing(old), incomplete), 'measured'
+  end
+
   # Break: an integration snapshot for another commit erased the implementation report's attribution.
   def test_replacement_keeps_reports_with_a_different_contribution_or_commits
     old = record('claude-code', 'impl-a', responses: %w[c1])

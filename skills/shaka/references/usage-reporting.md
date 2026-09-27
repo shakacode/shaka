@@ -59,7 +59,8 @@ description already has write access. A fork's author can edit its description,
 so a fork's reports are never carried.
 
 - A new report can cover an earlier one only when it has the same host and
-  contribution and names every commit the earlier report named. An integration
+  contribution, names every commit the earlier report named, and read counters
+  for every response it lists, so its totals are known. An integration
   snapshot therefore never erases an implementation report, and a republish that
   adds the squash SHA still replaces.
 - Such new reports cover an earlier report when together they hold every

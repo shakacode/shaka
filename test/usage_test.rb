@@ -396,7 +396,8 @@ class UsageIdentityTest < Minitest::Test
     negative = usage('negative', 'current', -1)
     negative[:payload][:usage].merge!(cached_input_tokens: -1, output_tokens: -1, reasoning_output_tokens: -1)
     report = run_report([context('current'), negative, usage('clean', 'current', 100)])
-    assert_equal 1, JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])['responses'].size
+    fields = JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])
+    assert_equal [1, false], [fields['responses'].size, fields['complete']]
   end
 
   def test_report_identity_hides_response_ids_and_closes_the_record

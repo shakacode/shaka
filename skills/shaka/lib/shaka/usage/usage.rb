@@ -149,11 +149,18 @@ module Shaka
     end
 
     # Digests let a later host match responses and sources without publishing local paths or IDs.
+    # Complete means every listed response had readable counters, so the report's totals are known.
     def record_identity
-      from, to = timestamps.minmax
       { 'host' => @options[:host], 'sources' => @options[:files].map { |file| digest(file) }.uniq,
         'responses' => measured_responses.map { |id| digest(id) }, 'contribution' => @options[:contribution],
-        'commits' => @options[:commit].split(','), 'from' => from || 'UNKNOWN', 'to' => to || 'UNKNOWN' }
+        'commits' => @options[:commit].split(','), 'complete' => complete? }.merge(interval_fields)
+    end
+
+    def complete? = measured_responses.size == @source.responses.size
+
+    def interval_fields
+      from, to = timestamps.minmax
+      { 'from' => from || 'UNKNOWN', 'to' => to || 'UNKNOWN' }
     end
 
     # A response without a readable token counter cannot stand in for one an earlier report measured.

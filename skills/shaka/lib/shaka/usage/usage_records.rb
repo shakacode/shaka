@@ -110,7 +110,9 @@ module Shaka
     # overlapping or unknown interval, since nothing shows them to be different work.
     # A replacement must also keep the old report's contribution and every commit it named.
     def superseded?(old, fresh)
-      same_host = fresh.select { |new| new['host'] == old['host'] && same_attribution?(old, new) }
+      same_host = fresh.select do |new|
+        new['host'] == old['host'] && new['complete'] != false && same_attribution?(old, new)
+      end
       covered?(old, same_host) || same_host.any? { |new| fallback_match?(old, new) }
     end
 
