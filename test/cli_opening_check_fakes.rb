@@ -5,8 +5,8 @@ module CliOpeningCheckFakes
   private
 
   def run_description(dir, root: self.class::ROOT, reviewer: nil, model: nil, ref: nil)
-    write_executable(dir, 'gh', fake_gh)
-    write_executable(dir, 'claude', fake_claude)
+    write_fake_commands(dir)
+    yield(dir) if block_given?
     content = File.join(dir, 'content.json')
     File.write(content, JSON.generate(description_content))
     options = ['--root', root, '--content-file', content]
@@ -15,6 +15,11 @@ module CliOpeningCheckFakes
     options.push('--opening-model', model) if model
     Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir },
                    self.class::COMMAND, 'description', 'owner/repo', '1', *options)
+  end
+
+  def write_fake_commands(dir)
+    write_executable(dir, 'gh', fake_gh)
+    write_executable(dir, 'claude', fake_claude)
   end
 
   def commit(root)

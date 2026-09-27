@@ -711,6 +711,25 @@ class LocalReviewPathGuardIntegrationTest < Minitest::Test
       assert_includes result.fetch('reason'), 'inside candidate checkout'
     end
   end
+
+  def test_candidate_backed_interpreter_is_rejected_before_review
+    with_repository do |root, base, head, bin|
+      add_candidate_interpreter(root, bin, head)
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      assert_equal 'setup_failure', JSON.parse(output).fetch('failure_stage')
+    end
+  end
+
+  private
+
+  def add_candidate_interpreter(root, bin, head)
+    write_executable(root, 'node', "#!/bin/sh\nexit 1\n")
+    File.symlink(File.join(root, 'node'), File.join(bin, 'node'))
+    fake_codex(bin, head)
+    codex = File.join(bin, 'codex')
+    File.write(codex, File.read(codex).sub(/\A#![^\n]+/, '#!/usr/bin/env node'))
+  end
 end
 
 class LocalReviewCaseIdentityTest < Minitest::Test
