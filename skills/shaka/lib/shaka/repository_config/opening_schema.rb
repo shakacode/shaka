@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'pathname'
 require_relative 'validation'
 
 module Shaka
@@ -21,9 +20,7 @@ module Shaka
         end
         return unless @opening.key?('prompt_file')
 
-        path = string!(@opening['prompt_file'], 'opening_check.prompt_file')
-        inside = !Pathname.new(path).absolute? && !path.split('/').include?('..')
-        raise Error, 'opening_check.prompt_file must be a path inside the repository' unless inside
+        prompt_path!(@opening['prompt_file'], 'opening_check.prompt_file')
       end
     end
   end

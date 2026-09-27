@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'pathname'
 require_relative '../error'
 require_relative '../reviewer_selection'
 require_relative 'validation'
@@ -64,7 +63,7 @@ module Shaka
         validate_check
         validate_review_wait
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
-        prompt_file!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
+        prompt_path!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
       end
 
       private
@@ -116,14 +115,7 @@ module Shaka
         mapping!(entry, label)
         keys!(entry, IDENTITY, [PROMPT_FILE], label)
         IDENTITY.each { |key| component!(entry[key], "#{label}.#{key}") }
-        prompt_file!(entry[PROMPT_FILE], "#{label}.#{PROMPT_FILE}") if entry.key?(PROMPT_FILE)
-      end
-
-      # `review run` reads the file from the trusted commit's tree, so only a repository path can name it.
-      def prompt_file!(value, label)
-        string!(value, label)
-        inside = !Pathname.new(value).absolute? && !value.split('/').include?('..')
-        raise Error, "#{label} must be a path inside the repository" unless inside
+        prompt_path!(entry[PROMPT_FILE], "#{label}.#{PROMPT_FILE}") if entry.key?(PROMPT_FILE)
       end
 
       # `shaka reviewer` reads identities as PROVIDER/MODEL_FAMILY and strips each part, so a

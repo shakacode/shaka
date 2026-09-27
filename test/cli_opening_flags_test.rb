@@ -17,9 +17,11 @@ class CliOpeningFlagsTest < Minitest::Test
                                             '--opening-model', 'model-name')
     refute_predicate status, :success?
     assert_includes error, '--opening-model requires --opening-reviewer'
-    _output, error, status = Open3.capture3(COMMAND, 'description', 'owner/repo', '1',
-                                            '--opening-reviewer', 'openai/codex', '--opening-model', 'named-model')
-    refute_predicate status, :success?
-    assert_includes error, '--opening-model is unsupported for openai/codex'
+    ['openai/codex', ' openai / codex '].each do |reviewer|
+      _output, error, status = Open3.capture3(COMMAND, 'description', 'owner/repo', '1',
+                                              '--opening-reviewer', reviewer, '--opening-model', 'named-model')
+      refute_predicate status, :success?
+      assert_includes error, '--opening-model is unsupported for openai/codex'
+    end
   end
 end
