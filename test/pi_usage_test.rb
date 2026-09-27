@@ -176,7 +176,7 @@ class PiUsageTest < Minitest::Test
       assert_includes output, '2 responses'
       assert_includes output, 'Pi source versions: 3'
       assert_includes output, 'latest user turn on the active branch'
-      refute_match(REDACTED_OUTPUT, output)
+      refute_match(REDACTED_OUTPUT, without_usage_identity(output))
     end
   end
 

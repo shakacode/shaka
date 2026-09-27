@@ -53,7 +53,12 @@ module Shaka
 
     def unterminated(region) = region.scan(BEGIN_PREFIX).size - region.scan(BLOCK).size
 
-    def text_records(text) = text.to_enum(:scan, BLOCK).filter_map { parse(Regexp.last_match[1]) }
+    # A new report must pass the same shape check before it may replace history.
+    def text_records(text)
+      text.to_enum(:scan, BLOCK).filter_map do
+        parse(Regexp.last_match[1]) if report_shape?(Regexp.last_match[0])
+      end
+    end
 
     # A carried block must still look like the helper's report, so an edit cannot hide more
     # markers or unbalanced markup under the managed output.

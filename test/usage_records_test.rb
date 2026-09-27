@@ -162,6 +162,13 @@ class UsageRecordsShapeTest < Minitest::Test
     end
   end
 
+  # Break: a malformed new report replaced valid history, then was itself dropped on the next update.
+  def test_malformed_new_report_does_not_replace_history
+    old = record('codex', 'history', responses: %w[h1])
+    malformed = record('codex', 'malformed', responses: %w[h1]).sub('</details>', '</DETAILS>')
+    assert_includes carried(existing(old), malformed), 'history'
+  end
+
   # Break: an edited block could smuggle markers or unbalanced markup under the helper's output.
   def test_blocks_that_lost_the_report_shape_are_dropped_and_counted
     broken = record('codex', 'broken', responses: %w[b1]).sub('</details>', '')
