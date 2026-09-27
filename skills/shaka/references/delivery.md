@@ -242,14 +242,14 @@ Cover the change completely, then stop.
   command, and its result. State each count once, and leave results from
   earlier heads to the description's review history.
 
-For example, this run of sentences hides three related guards:
+For example, these three sentences state two guards, one of them twice:
 
 > Slash-bearing relative shebang interpreters are rejected before the command
 > runs. Guarded env shebangs reject environment assignments so a wrapper cannot
 > replace the sanitized PATH. Direct relative shebang interpreters, including
 > bare `#!node`, are rejected before launch.
 
-A list gives each guard its own line and code link:
+A list states each guard once, with its code link:
 
 > Before a selected wrapper runs, the interpreter guard rejects:
 >
