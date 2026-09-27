@@ -204,6 +204,9 @@ begin
   end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
+  if command == 'handoff' && options[:ref].to_s.strip.empty?
+    raise Shaka::Error, 'handoff requires --ref so seam-required checks come from a trusted commit.'
+  end
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
   if options[:opening_reviewer] && command != 'description'
     raise Shaka::Error, '--opening-reviewer is only for description.'
