@@ -46,9 +46,11 @@ To give Claude the same instructions every time, add a `CLAUDE.md` containing
 
 ## Why did the agent stop to ask about model and effort?
 
-Before it changes code, Shaka recommends a model and effort for the task and
-waits for you. To skip the wait, name the model and effort it would recommend,
-make sure they are active, and say “Go”. See [give it an outcome](working-with-shaka.md#give-it-an-outcome).
+Before it changes code, Shaka recommends a model and effort for the task. If
+you say “Go” and those settings are already active, it starts without asking
+you to restate them. It pauses when the active settings are unavailable or
+unverified, differ from the recommendation, or conflict with a preference you
+named. See [give it an outcome](working-with-shaka.md#give-it-an-outcome).
 
 ## Why didn't the agent merge my PR?
 
