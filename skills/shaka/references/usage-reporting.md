@@ -59,15 +59,16 @@ description already has write access. A fork's author can edit its description,
 so a fork's reports are never carried.
 
 - A new report can cover an earlier one only when it has the same host and
-  contribution, names every commit the earlier report named, and read counters
-  for every response it lists, so its totals are known. An integration
+  contribution, names every commit the earlier report named, and read at least
+  one token counter for every response it selected. An integration
   snapshot therefore never erases an implementation report, and a republish that
   adds the squash SHA still replaces.
 - Such new reports cover an earlier report when together they hold every
   response it counted. A partial overlap keeps both reports, so they may share
   some responses. The identity records which responses had readable counters,
-  not which fields, so a re-read that loses one field of a counted response is
-  not detected.
+  not which fields, because readers legitimately leave some fields `UNKNOWN`. A
+  refresh in which a response keeps only some of its counters can therefore
+  replace a report with more known totals.
 - A new report without response IDs, such as one from a source that became
   unreadable, never replaces a report that has them.
 - When the earlier report lacks response IDs, a new report covers it when they

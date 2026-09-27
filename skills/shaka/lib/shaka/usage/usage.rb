@@ -149,7 +149,8 @@ module Shaka
     end
 
     # Digests let a later host match responses and sources without publishing local paths or IDs.
-    # Complete means every listed response had readable counters, so the report's totals are known.
+    # Complete means every selected response had at least one readable token counter. It does not
+    # say which fields were read, because readers legitimately leave some fields UNKNOWN.
     def record_identity
       { 'host' => @options[:host], 'sources' => @options[:files].map { |file| digest(file) }.uniq,
         'responses' => measured_responses.map { |id| digest(id) }, 'contribution' => @options[:contribution],
