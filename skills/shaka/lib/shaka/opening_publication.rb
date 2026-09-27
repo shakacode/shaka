@@ -15,19 +15,34 @@ module Shaka
     end
 
     def call(summary)
+      @prompt = nil
       raise Error, 'No trusted --ref supplied for opening settings.' unless @ref
 
-      source = TrustedConfigSource.new(root: @root)
-      config = TrustedConfigSource.from_ref(root: @root, ref: @ref)
-      prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')
-      validate_reviewer!(config) if @reviewer
-      OpeningCheck.new(summary:, candidate_root: OpeningCheckout.root(@root),
-                       reviewer: @reviewer, model: @model, prompt:).call
+      candidate_root = OpeningCheckout.root(@root)
+      raise Error, 'Candidate checkout root is unknown.' unless candidate_root
+
+      with_safe_path(candidate_root) { check_with_trusted_settings(summary, candidate_root) }
     rescue StandardError => e
-      fallback(summary, e, prompt)
+      fallback(summary, e, @prompt)
     end
 
     private
+
+    def check_with_trusted_settings(summary, candidate_root)
+      source = TrustedConfigSource.new(root: @root)
+      config = TrustedConfigSource.from_ref(root: @root, ref: @ref)
+      @prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')
+      validate_reviewer!(config) if @reviewer
+      OpeningCheck.new(summary:, candidate_root:, reviewer: @reviewer, model: @model, prompt: @prompt).call
+    end
+
+    def with_safe_path(candidate_root)
+      original = ENV.fetch('PATH', nil)
+      ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:)
+      yield
+    ensure
+      ENV['PATH'] = original
+    end
 
     def validate_reviewer!(config)
       raise Error, 'Opening reviewer requires trusted opening_check.enabled.' unless

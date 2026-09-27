@@ -214,6 +214,11 @@ begin
     raise Shaka::Error, '--opening-model is unsupported for openai/codex.' if reviewer == 'openai/codex'
   end
 
+  if command == 'description'
+    candidate_root = Shaka::OpeningCheckout.root(options[:root] || Dir.pwd)
+    ENV['PATH'] = Shaka::LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root:) if candidate_root
+  end
+
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge].include?(command)
     seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
