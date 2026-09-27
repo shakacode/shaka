@@ -232,8 +232,9 @@ Cover the change completely, then stop.
 
 - Link each step to the lines it explains with a commit-pinned permalink to a
   line range. One link per file leaves the reader searching.
-- Describe the code at this head. Words such as "now", "new", and "was removed"
-  narrate the branch's history and go stale: write "rejects", not "now rejects".
+- Describe the code at this head, compared with the base branch. Leave out the
+  branch's own history: "was removed" or "now rejects" about an earlier commit
+  on the branch goes stale and means nothing to a reader of the diff.
 - Give each paragraph one idea and lead with it. Split a paragraph past about
   four sentences, and keep most sentences under 25 words.
 - Use a list for parallel items, such as the guarantees a guard provides: one
