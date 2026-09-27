@@ -38,8 +38,28 @@ calls remain `UNKNOWN` when their records are absent.
 
 An interval associated with several commits is **SHARED**. Never divide its tokens
 into invented per-commit amounts. Preserve the original mapping after squash and
-associate the merged SHA without recounting it. Replace overlapping snapshots;
-retain earlier non-overlapping reports.
+associate the merged SHA without recounting it.
+
+## Keep earlier reports when work changes hands
+
+Paste each report whole into the description's usage details. Hidden markers at
+its first and last lines record the host, the commits, the contribution, the
+interval, and digests of the response and source IDs. They do not publish the
+IDs or local paths.
+
+When `description` republishes a PR, it keeps each earlier report from the
+managed region unless a new report covers the same work. Reports on the same host
+cover the same work when they share a response. When either report lacks
+response IDs, they cover the same work when they share a source and their
+intervals overlap or either interval is `UNKNOWN`. The newer report replaces the
+older one. A switch from Claude Code to Codex and back therefore keeps all three
+contributions, and a refreshed snapshot of the same turns replaces the old one.
+
+The collapsed summary lists each report's USD estimate and adds no total, because
+the reports may be partial or shared. The command drops a carried report whose
+markers or `<details>` tags were edited out of shape, and prints how many reports
+it retained, replaced, and dropped. It refuses a description longer than GitHub's
+65,536-character limit.
 
 The helper deduplicates response IDs across supplied files, including resumed or
 forked copies, and ignores cumulative snapshots. Conflicting counters,

@@ -65,6 +65,9 @@ module UsageFixture
     file
   end
 
+  # Each run reads its own temporary file, so the source digest in the first line differs.
+  def without_identity(report) = report.lines.drop(1).join
+
   def priced_context(turn, model, effort: 'high')
     context(turn).tap { |setting| setting[:payload].merge!(model: model, effort: effort) }
   end
@@ -320,7 +323,7 @@ class UsageFailuresTest < Minitest::Test
     reports = [[original, changed], [changed, original]].map do |first, second|
       run_report([first, usage('same', 'current', 100), second, usage('same', 'current', 100)])
     end
-    assert_equal reports.first, reports.last
+    assert_equal(*reports.map { |report| without_identity(report) })
     assert_metric reports.first, 'USD estimate', 'UNKNOWN'
     assert_includes reports.first, 'Conflicting response copies'
   end
@@ -368,5 +371,25 @@ class MetricAssertTest < Minitest::Test
   def test_rejects_extra_trailing_cells
     assert_raises(Minitest::Assertion) { assert_metric("| Input | 300 | 999 |\n", 'Input', 300) }
     assert_metric("| Input | 300 |\n", 'Input', 300)
+  end
+end
+
+# Each report carries a hidden identity so later description updates can keep or replace it.
+class UsageIdentityTest < Minitest::Test
+  include UsageFixture
+
+  # Break: without an identity, a later host cannot tell this report from a refreshed snapshot.
+  def test_report_is_marked_with_hashed_response_and_source_identity
+    report = run_report([context('current'), usage('r1', 'current', 100), usage('r2', 'current', 100)])
+    fields = JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])
+    assert_equal ['codex', 'implementation', [COMMIT], '2026-09-14T12:00:00Z', '2026-09-14T12:00:00Z'],
+                 fields.values_at('host', 'contribution', 'commits', 'from', 'to')
+    assert_equal [2, 1], [fields['responses'].uniq.size, fields['sources'].size]
+  end
+
+  def test_report_identity_hides_response_ids_and_closes_the_record
+    report = run_report([context('current'), usage('r1', 'current', 100)])
+    refute_includes report.lines.first, 'r1'
+    assert_equal "<!-- shaka:usage:end -->\n", report.lines.last
   end
 end

@@ -1,0 +1,108 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'json'
+require_relative '../skills/shaka/lib/shaka/usage/usage_records'
+
+# A description update must keep usage from earlier hosts, models, and reviews.
+class UsageRecordsTest < Minitest::Test
+  COMMIT = 'a' * 40
+
+  DEFAULTS = { 'sources' => ['s1'], 'contribution' => 'implementation', 'commits' => [COMMIT],
+               'from' => '2026-09-14T12:00:00Z', 'to' => '2026-09-14T13:00:00Z' }.freeze
+
+  def record(host, label, **overrides)
+    fields = DEFAULTS.merge('host' => host).merge(overrides.transform_keys(&:to_s))
+    "#{Shaka::UsageRecords.begin_mark(fields)}\n| Metric | #{label} |\n| --- | --- |\n" \
+      "| USD estimate | #{label} |\n\n<details>\n<summary>Token detail</summary>\n\n#{label}\n\n</details>\n" \
+      "#{Shaka::UsageRecords::END_MARK}"
+  end
+
+  def described(usage_body)
+    { 'summary' => 'S', 'details' => [{ 'summary' => 'Usage and cost', 'body' => usage_body }] }
+  end
+
+  def existing(*records, outside: '')
+    "#{outside}<!-- shaka:begin -->\nS\n\n<details>\n<summary>Usage and cost</summary>\n\n" \
+      "#{records.join("\n\n")}\n\n</details>\n<!-- shaka:end -->"
+  end
+
+  def carried(existing_body, usage_body)
+    content, = Shaka::UsageRecords.carry(described(usage_body), existing_body)
+    content['details'].first['body']
+  end
+
+  # Break: publishing Codex usage after Claude implementation erased the Claude record (#269).
+  def test_provider_handoff_keeps_the_earlier_implementation_and_review
+    claude = record('claude-code', 'opus-impl', responses: %w[c1 c2])
+    review = record('codex', 'codex-review', responses: %w[r1], sources: ['s2'], contribution: 'review')
+    body = carried(existing(claude, review), record('codex', 'codex-integration', responses: %w[x1], sources: ['s3']))
+    %w[opus-impl codex-review codex-integration].each { |label| assert_includes body, label }
+    assert_operator body.index('opus-impl'), :<, body.index('codex-integration')
+  end
+
+  # Break: returning to Claude would replace the first Claude snapshot from a disjoint turn.
+  def test_return_to_original_provider_keeps_its_disjoint_earlier_turn
+    first = record('claude-code', 'claude-turn-1', responses: %w[c1])
+    codex = record('codex', 'codex-turn', responses: %w[x1], sources: ['s2'])
+    body = carried(existing(first, codex), record('claude-code', 'claude-turn-2', responses: %w[c2]))
+    %w[claude-turn-1 codex-turn claude-turn-2].each { |label| assert_includes body, label }
+  end
+
+  # Break: a refreshed snapshot of the same responses would publish them twice.
+  def test_newer_snapshot_replaces_one_sharing_responses
+    old = record('claude-code', 'claude-old', responses: %w[c1 c2])
+    body = carried(existing(old), record('claude-code', 'claude-all-turns', responses: %w[c1 c2 c3]))
+    refute_includes body, 'claude-old'
+    assert_includes body, 'claude-all-turns'
+  end
+
+  # Break: concurrent work in another session overlapped in time but shares no responses.
+  def test_concurrent_sources_without_shared_responses_are_both_kept
+    old = record('claude-code', 'implementation', responses: %w[c1])
+    body = carried(existing(old), record('claude-code', 'review', responses: %w[r1], sources: ['s2']))
+    assert_includes body, 'implementation'
+  end
+
+  # Break: records without response IDs fall back to source and interval.
+  def test_unknown_responses_compare_source_and_interval
+    old = record('codex', 'earlier', responses: [], from: '2026-09-14T10:00:00Z', to: '2026-09-14T11:00:00Z')
+    later = record('codex', 'later', responses: [], from: '2026-09-14T12:00:00Z', to: '2026-09-14T13:00:00Z')
+    assert_includes carried(existing(old), later), 'earlier'
+    overlapping = record('codex', 'overlap', responses: [], from: '2026-09-14T10:30:00Z', to: '2026-09-14T12:00:00Z')
+    refute_includes carried(existing(old), overlapping), 'earlier'
+    unknown = record('codex', 'unknown', responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    refute_includes carried(existing(old), unknown), 'earlier'
+  end
+
+  def test_hand_written_usage_keeps_prior_records_without_duplicating_pasted_ones
+    old = record('codex', 'codex-review', responses: %w[r1])
+    assert_includes carried(existing(old), "| Metric | x |\n| --- | --- |\n| Input | UNKNOWN |"), 'codex-review'
+    assert_equal 1, carried(existing(old), "Pasted:\n\n#{old}").scan(Shaka::UsageRecords::END_MARK).size
+  end
+
+  # Break: text outside the managed region belongs to someone else and is never adopted.
+  def test_only_records_inside_the_managed_region_are_carried
+    outside = record('codex', 'outside-region', responses: %w[o1])
+    body = carried(existing(outside: "#{outside}\n\n"), record('codex', 'new', responses: %w[n1]))
+    refute_includes body, 'outside-region'
+  end
+
+  # Break: an edited block could smuggle markers or unbalanced markup under the helper's output.
+  def test_blocks_that_lost_the_report_shape_are_dropped_and_counted
+    broken = record('codex', 'broken', responses: %w[b1]).sub('</details>', '')
+    marked = record('codex', 'marked', responses: %w[m1]).sub('Token detail', '<!-- shaka:reply:x -->')
+    unreadable = "<!-- shaka:usage {not json} -->\nx\n#{Shaka::UsageRecords::END_MARK}"
+    content, stats = Shaka::UsageRecords.carry(described(record('codex', 'new', responses: %w[n1])),
+                                               existing(broken, unreadable).sub('S', "S\n#{marked}"))
+    body = content['details'].first['body']
+    ['broken', 'marked', 'not json'].each { |text| refute_includes body, text }
+    assert_equal({ 'retained' => 0, 'replaced' => 0, 'dropped' => 3 }, stats)
+  end
+
+  def test_content_without_a_prior_region_is_unchanged
+    content = described('x')
+    assert_equal [content, { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }],
+                 Shaka::UsageRecords.carry(content, 'plain body')
+  end
+end

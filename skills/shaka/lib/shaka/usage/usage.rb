@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'digest'
 require 'optparse'
 require_relative '../error'
 require_relative 'claude_usage'
@@ -8,6 +9,7 @@ require_relative 'cost_estimate'
 require_relative 'cursor_usage'
 require_relative 'opencode_usage'
 require_relative 'pi_usage'
+require_relative 'usage_records'
 
 module Shaka
   # Failure text for `shaka usage`, kept beside the command so the runner stays small.
@@ -135,10 +137,33 @@ module Shaka
     end
   end
 
+  # Hidden identity that lets a later host tell this report from a refreshed snapshot.
+  module UsageIdentity
+    private
+
+    def timestamps
+      @responses.filter_map do |record|
+        stamp = record['timestamp']
+        stamp if stamp.is_a?(String) && stamp.match?(/\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z\z/)
+      end
+    end
+
+    # Digests let a later host match responses and sources without publishing local paths or IDs.
+    def record_identity
+      from, to = timestamps.minmax
+      { 'host' => @options[:host], 'sources' => @options[:files].map { |file| digest(file) }.uniq,
+        'responses' => @source.responses.keys.map { |id| digest(id) }, 'contribution' => @options[:contribution],
+        'commits' => @options[:commit].split(','), 'from' => from || 'UNKNOWN', 'to' => to || 'UNKNOWN' }
+    end
+
+    def digest(value) = Digest::SHA256.hexdigest("#{@options[:host]}\0#{value}")[0, 12]
+  end
+
   # Read-only reporting of per-response usage records from a supported host.
   class Usage
     include UsageTable
     include UsageTurns
+    include UsageIdentity
 
     SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
     METRIC_FIELDS = [
@@ -211,7 +236,9 @@ module Shaka
       @responses = @source.responses.values
     end
 
-    def report
+    def report = "#{UsageRecords.begin_mark(record_identity)}\n#{report_body}#{UsageRecords::END_MARK}\n"
+
+    def report_body
       <<~MARKDOWN
         #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
                                            rate_card: selected_rate_card).report.rstrip}
@@ -255,10 +282,6 @@ module Shaka
     end
 
     def interval
-      timestamps = @responses.filter_map do |record|
-        stamp = record['timestamp']
-        stamp if stamp.is_a?(String) && stamp.match?(/\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z\z/)
-      end
       timestamps.empty? ? 'UNKNOWN' : timestamps.minmax.join(' through ')
     end
 

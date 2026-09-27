@@ -16,9 +16,11 @@ module Shaka
     REPLY_PAGES = 20
     SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
 
-    def description(body:)
+    # A block builds the body from the description it replaces, using this same read.
+    def description(body: nil)
       existing = pull['body'].to_s
-      merged = merge(existing, publishable(body))
+      merged = merge(existing, publishable(block_given? ? yield(existing) : body))
+      check_length(merged)
       verify_rendering(merged)
       check_unchanged(existing)
       confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
@@ -86,6 +88,9 @@ module Shaka
       prefix, rest = existing.split(OPEN_MARK, 2)
       "#{prefix}#{managed}#{rest.split(CLOSE_MARK, 2).last}"
     end
+
+    # Carried usage records grow the body; GitHub would otherwise reject it with an opaque error.
+    def check_length(body) = body.length <= 65_536 || raise(Error, "Body exceeds GitHub's 65536-character limit.")
 
     # This update rewrites the whole body, so an edit that landed while it was prepared
     # would be erased. Re-reading narrows that window; it does not close it, because

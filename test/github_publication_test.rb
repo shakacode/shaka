@@ -64,6 +64,24 @@ class GitHubDescriptionTest < Minitest::Test
     assert_includes sent, 'Summary by CodeRabbit'
   end
 
+  # Break: reading the body separately for carried usage reopens the window check_unchanged narrows.
+  def test_description_builds_the_body_from_the_same_read_it_guards
+    existing = "#{MANAGED}\n\nSummary by CodeRabbit"
+    updated = "<!-- shaka:begin -->\nBuilt from #{existing.size}.\n<!-- shaka:end -->\n\nSummary by CodeRabbit"
+    github = client(pull_response(existing), html_response('<p>ok</p>'), pull_response(existing),
+                    pull_response(updated))
+    github.description { |read| "Built from #{read.size}.\n" }
+    assert_equal updated, sent_body
+  end
+
+  # Break: carried usage records grow the body until GitHub rejects it with an opaque error.
+  def test_description_over_the_github_body_limit_is_refused_before_writing
+    github = client(pull_response(''))
+    error = assert_raises(Shaka::Error) { github.description(body: "#{'x' * 65_536}\n") }
+    assert_match(/65536/, error.message)
+    assert_equal 1, @calls.size
+  end
+
   def test_republishing_replaces_only_the_managed_region
     existing = "#{MANAGED}\n\nSummary by CodeRabbit"
     updated = "<!-- shaka:begin -->\nNew text.\n<!-- shaka:end -->\n\nSummary by CodeRabbit"
