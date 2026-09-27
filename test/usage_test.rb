@@ -65,9 +65,6 @@ module UsageFixture
     file
   end
 
-  # Each run reads its own temporary file, so the source digest in the first line differs.
-  def without_identity(report) = report.lines.drop(1).join
-
   def priced_context(turn, model, effort: 'high')
     context(turn).tap { |setting| setting[:payload].merge!(model: model, effort: effort) }
   end
@@ -101,7 +98,7 @@ class UsageTest < Minitest::Test
     assert_includes report, 'gpt-test'
     assert_includes report, 'high'
     assert_includes report, '2 responses'
-    refute_includes report, '9999'
+    refute_includes without_usage_identity(report), '9999'
   end
 
   def test_explicit_turns_across_resumed_files_are_shared_without_recounting_responses
@@ -148,7 +145,7 @@ class UsageTest < Minitest::Test
     assert_metric report, 'Cached input', 40
     assert_includes report, 'Unreadable or unidentifiable records'
     refute_includes report, 'SENSITIVE'
-    refute_includes report, '9900'
+    refute_includes without_usage_identity(report), '9900'
   end
 
   def test_all_turns_counts_a_dedicated_task_once_and_discloses_scope
@@ -252,7 +249,7 @@ class UsageFailuresTest < Minitest::Test
                            usage('unattributed', turn, 9900)], '--all-turns')
       assert_includes report.split('<details>').first, 'Unreadable or unidentifiable records'
       assert_includes report, '| 100 |'
-      refute_includes report, '9900'
+      refute_includes without_usage_identity(report), '9900'
     end
   end
 
@@ -323,7 +320,7 @@ class UsageFailuresTest < Minitest::Test
     reports = [[original, changed], [changed, original]].map do |first, second|
       run_report([first, usage('same', 'current', 100), second, usage('same', 'current', 100)])
     end
-    assert_equal(*reports.map { |report| without_identity(report) })
+    assert_equal(*reports.map { |report| without_usage_identity(report) })
     assert_metric reports.first, 'USD estimate', 'UNKNOWN'
     assert_includes reports.first, 'Conflicting response copies'
   end

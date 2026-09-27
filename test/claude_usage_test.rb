@@ -126,7 +126,7 @@ class ClaudeUsageTest < Minitest::Test
       assert_includes output, '2 responses'
       assert_includes output, 'Claude Code source versions: 2.1.270'
       assert_includes output, 'Anthropic input excludes cached input and cache writes'
-      refute_match(/900|SENSITIVE/, output)
+      refute_match(/900|SENSITIVE/, without_usage_identity(output))
     end
   end
 
@@ -216,7 +216,7 @@ class ClaudeUsageFailuresTest < Minitest::Test
       output = report('--host', 'claude-code', '--file', file, '--all-turns')
       assert_includes output, '| 100 |'
       assert_includes output.split('<details>').first, 'Unreadable or unidentifiable records'
-      refute_match(/900|800/, output)
+      refute_match(/900|800/, without_usage_identity(output))
     end
   end
 
