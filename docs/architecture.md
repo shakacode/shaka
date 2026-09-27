@@ -9,8 +9,9 @@ tracking system.
 
 ## Keep facts where people look for them
 
-- The selected work item holds the reason for the work: priority, scope, and
-  dependencies.
+- When there is a work item, it holds the reason for the work: priority, scope,
+  and dependencies. For tasks started from a description, capture that context
+  in the PR.
 - GitHub holds delivery evidence: commits, checks, reviews, and the PR outcome.
 - The agent task holds experiments and unpushed work. That context is temporary.
 

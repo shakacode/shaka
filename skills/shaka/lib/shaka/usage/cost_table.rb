@@ -5,8 +5,10 @@ module Shaka
   module CostTable
     MODEL_SOURCES = {
       'gpt-5.6-terra' => '[Terra](https://developers.openai.com/api/docs/models/gpt-5.6-terra)',
-      'gpt-5.6-sol' => '[Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol)',
+      'gpt-5.6-sol' => '[GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol)',
       'gpt-6-astra' => '[Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)',
+      'gpt-6-sol' => '[GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol)',
+      'gpt-6-luna' => '[GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna)',
       'grok-4.6' => '[Cursor Grok 4.6](https://cursor.com/docs/models/grok-4-6)',
       'grok-4.7' => '[Cursor Grok 4.7](https://cursor.com/docs/models/grok-4-7)'
     }.freeze
@@ -14,6 +16,8 @@ module Shaka
     CACHE_SOURCE = '[prompt-cache accounting](https://developers.openai.com/api/docs/guides/prompt-caching)'
     CURSOR_PRICING = '[Cursor model pricing](https://cursor.com/docs/models-and-pricing)'
     ANTHROPIC_PRICING = '[Anthropic pricing](https://platform.claude.com/docs/en/about-claude/pricing)'
+    ANTHROPIC_FAST_PRICING = '[Anthropic fast-mode pricing]' \
+                             '(https://platform.claude.com/docs/en/build-with-claude/fast-mode)'
 
     private
 
@@ -65,8 +69,10 @@ module Shaka
 
     def source_links(columns)
       priced = priced_columns(columns)
+      fast_anthropic = priced.any? { |column| column[:billing] == 'fast' && anthropic_rated?(column) }
       [*rate_card_links(priced), (CURSOR_PRICING if cursor_priced?(priced)),
-       (ANTHROPIC_PRICING if anthropic_priced?(priced))].compact
+       (ANTHROPIC_PRICING if anthropic_priced?(priced)),
+       (ANTHROPIC_FAST_PRICING if fast_anthropic)].compact
     end
 
     def rate_card_links(priced)

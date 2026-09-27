@@ -59,6 +59,15 @@ class SeamCheckModeTest < Minitest::Test
     end
   end
 
+  def test_required_check_does_not_apply_to_check
+    with_repository do |root|
+      _payload, error, status = capture_check(root, '--local', '--required-check', 'checks')
+
+      refute_predicate status, :success?
+      assert_includes error, 'init options do not apply to check'
+    end
+  end
+
   def test_local_does_not_apply_to_init
     Dir.mktmpdir('shaka-seam-init') do |root|
       _output, error, status = Open3.capture3(COMMAND, 'seam', 'init', '--root', root, '--local')

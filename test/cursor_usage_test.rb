@@ -246,6 +246,19 @@ class CursorUsageFailuresTest < Minitest::Test
     end
   end
 
+  # Cursor selects generations in its own reader, so it needs its own unmatched-turn check.
+  def test_turn_that_matches_no_generation_fails_and_names_the_expected_field
+    Dir.mktmpdir do |directory|
+      file = write_records(directory, [stored(NEW, 100)])
+      output, error, status = Open3.capture3(CLEAR, COMMAND, 'usage', '--host', 'cursor', '--file', file,
+                                             '--commit', COMMIT, '--contribution', 'implementation',
+                                             '--turn', 'typo')
+      refute_predicate status, :success?
+      assert_empty output
+      assert_match(/typo.*generation_id/, error)
+    end
+  end
+
   def test_explicit_turns_do_not_copy_ambient_cursor_models
     Dir.mktmpdir do |directory|
       env = { 'CURSOR_MODEL_ID' => 'grok-4.6' }

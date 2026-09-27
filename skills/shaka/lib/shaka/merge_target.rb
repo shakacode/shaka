@@ -9,29 +9,37 @@ module Shaka
   # request may never have targeted the branch the change was validated against, because it
   # was retargeted before this run or because a stated base was never applied to a pull
   # request the task adopted. Or its target may move while this run reads gates. Both live
-  # here so neither can be dropped without the other being obvious.
+  # here so neither can be dropped without the other being obvious. A head past the size limits
+  # also needs a human to confirm it before an agent may land it.
   class MergeTarget
-    def self.required!(head, base)
+    def self.required!(head, base, limits)
       raise Error, 'Expected a full commit SHA' unless head.is_a?(String) && head.match?(/\A[0-9a-f]{40}\z/)
-      return new(base) if base.is_a?(String) && !base.strip.empty?
+      return new(head, base, limits) if base.is_a?(String) && !base.strip.empty?
 
       raise Error, 'Expected the base branch the change was validated against'
     end
 
-    def initialize(base)
+    def initialize(head, base, limits)
+      @head = head
       @base = base
+      @limits = limits
     end
 
     def validated!(pull)
-      return if pull['baseRefName'] == @base
+      unless pull['baseRefName'] == @base
+        raise Error, "PR targets #{pull['baseRefName'].inspect}, not the validated base #{@base.inspect}"
+      end
 
-      raise Error, "PR targets #{pull['baseRefName'].inspect}, not the validated base #{@base.inspect}"
+      @limits.verify!(pull, @head)
     end
 
+    # The size is rechecked so the counts that gate submission come from the last snapshot read.
     def unchanged!(initial, current)
-      return if current['baseRefName'] == initial['baseRefName']
+      unless current['baseRefName'] == initial['baseRefName']
+        raise Error, 'PR base changed; refresh verification and walkthrough'
+      end
 
-      raise Error, 'PR base changed; refresh verification and walkthrough'
+      @limits.verify!(current, @head)
     end
   end
 end

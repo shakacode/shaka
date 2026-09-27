@@ -44,7 +44,7 @@ module Shaka
     end
 
     def keep_credit_reason?(provider, model, credits, group)
-      credits || (provider == 'openai' && OpenAICost::RATES.key?(model.to_s) && !native_recorded?(group))
+      credits || (provider == 'openai' && @rate_card.openai_model?(model) && !native_recorded?(group))
     end
 
     def blank_column

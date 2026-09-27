@@ -1,6 +1,6 @@
 # Launchers and agent sessions
 
-Use this reference for launcher boundaries and Claude Code tower discovery.
+Use this reference for launcher boundaries, chat naming, and Claude Code tower discovery.
 Installation belongs in [the installation reference](installation.md); dated trial results
 belong in the [validation record](https://github.com/shakacode/shaka/blob/main/internal/coding-environment-trials.md).
 
@@ -31,6 +31,22 @@ launcher creates no separate session directory.
 The launcher sets `OPENCODE_DISABLE_PROJECT_CONFIG` to prevent loading candidate
 `.opencode` plugins, `opencode.json`, and instructions. Trusted global configuration
 still loads. Account, model, and permission settings remain the coding agent's responsibility.
+
+## Name the chat
+
+Workflow titles look like `SHAKA #131 · Drop skill-path stop`, or
+`SHAKA PR #257 · Chat-name fallback` once a PR exists. Omit `#ISSUE` for work without an
+issue. Hosts differ in how the agent renames its own chat:
+
+| Host | How the agent renames its chat |
+| --- | --- |
+| Claude Code in the Claude desktop app | `set_session_title` with `session_id` `self`. The tool is deferred, so load it through tool search before deciding the host has none. Read the title back with `get_session`. |
+| Codex desktop | The native task rename tool, as the RCT skill uses it. |
+| Claude Code terminal CLI | No agent tool. Use the `Chat name:` line. |
+| Other hosts | Use a rename tool only when the host offers one. Otherwise, use the `Chat name:` line. |
+
+The app asks the user to approve a rename when the user chose the current title. Treat a
+declined rename as a user-chosen title and do not retry it.
 
 ## Claude Code tower messages
 

@@ -28,6 +28,15 @@ module Shaka
         raise Error, "missing #{label} key: #{missing.first}" unless missing.empty?
       end
 
+      def name_list!(names, label, noun)
+        raise Error, "#{label} must be a list of #{noun}" unless names.is_a?(Array)
+        raise Error, "#{label} must not be empty" if names.empty?
+
+        names.each_with_index { |name, index| string!(name, "#{label}[#{index}]") }
+        repeated = names.map(&:downcase).tally.find { |_, count| count > 1 }
+        raise Error, "#{label} repeats #{repeated.first}" if repeated
+      end
+
       def enum!(value, allowed, message)
         raise Error, message unless allowed.include?(value)
       end

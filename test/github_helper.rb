@@ -34,7 +34,8 @@ module GitHubHelper
   end
 
   def review_response(body: WALKTHROUGH, **changes)
-    response({ 'id' => 123, 'state' => 'COMMENTED', 'commit_id' => HEAD, 'body' => body }.merge(changes))
+    response({ 'id' => 123, 'state' => 'COMMENTED', 'commit_id' => HEAD, 'body' => body,
+               'submitted_at' => '2026-09-24T08:00:00Z' }.merge(changes))
   end
 
   def files_response(names = [CHANGED_FILE])
@@ -52,6 +53,11 @@ module GitHubHelper
 
   def publish_responses(*extra)
     [snapshot_response, files_response, *gate_responses, html_response, review_response, review_response, *extra]
+  end
+
+  def no_configured_requirements
+    base = { 'baseRefName' => 'main', 'baseRef' => { 'refUpdateRule' => nil } }
+    [response({ 'data' => { 'repository' => { 'pullRequest' => base } } }), response([])]
   end
 
   def pending_review_gate_responses

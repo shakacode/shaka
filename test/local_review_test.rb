@@ -5,6 +5,7 @@ require 'fileutils'
 require 'json'
 require 'rbconfig'
 require_relative '../skills/shaka/lib/shaka/local_review/process'
+require_relative '../skills/shaka/lib/shaka/local_review/evidence'
 
 class LocalReviewCodexTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -99,16 +100,6 @@ class LocalReviewCodexTest < Minitest::Test
 
   private
 
-  def assert_codex_invocation(trace, root, head)
-    invocation = JSON.parse(File.read(trace))
-    assert_equal %w[exec -s read-only --ignore-rules --ignore-user-config], invocation.fetch('args').first(5)
-    assert_includes invocation.fetch('args'), '--skip-git-repo-check'
-    assert_includes invocation.fetch('prompt'), '+after'
-    assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
-    assert_codex_source_context(invocation, root, head)
-    refute_path_exists invocation.fetch('cwd')
-  end
-
   def assert_missing_codex(result)
     assert_equal 'not_completed', result.fetch('status')
     refute result.fetch('attempted')
@@ -162,6 +153,20 @@ class LocalReviewOtherCliTest < Minitest::Test
     end
   end
 
+  # Break caught: a requested Claude reviewer model is dropped and the CLI default runs unrecorded.
+  def test_claude_run_passes_the_requested_model_and_records_it
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'claude-invocation.json')
+      fake_claude(bin, head)
+      output, error, status = run_review(root, base, head, bin, env: { 'REVIEW_TRACE' => trace },
+                                                                reviewer: 'anthropic/claude', model: 'claude-opus-5-5')
+      result = assert_successful_review(output, error, status, head, 'anthropic/claude')
+      assert_claude_model(result, trace, 'claude-opus-5-5')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   def test_omitted_effort_does_not_pass_placeholder_to_claude
     with_repository do |root, base, head, bin|
       trace = File.join(root, 'claude-invocation.json')
@@ -170,6 +175,20 @@ class LocalReviewOtherCliTest < Minitest::Test
                                          env: { 'REVIEW_TRACE' => trace }, reviewer: 'anthropic/claude', effort: nil)
       result = assert_successful_review(output, error, status, head, 'anthropic/claude')
       refute_includes JSON.parse(File.read(trace)).fetch('args'), '--effort'
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  # Break caught: a shell without a UTF-8 locale crashes on a non-ASCII Claude report.
+  def test_claude_report_with_non_ascii_text_completes_under_us_ascii_default_encoding
+    with_repository do |root, base, head, bin|
+      fake_claude(bin, head, findings: 'no findings – checked')
+      output, error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude',
+                                                                env: { 'REVIEW_TRACE' => File.join(root, 'trace.json'),
+                                                                       'RUBYOPT' => '-EUS-ASCII' })
+      result = assert_successful_review(output, error, status, head, 'anthropic/claude')
+      assert_includes File.read(result.fetch('report'), encoding: 'UTF-8'), 'no findings – checked'
     ensure
       cleanup_artifacts(result)
     end
@@ -186,6 +205,12 @@ class LocalReviewOtherCliTest < Minitest::Test
     assert_includes invocation.fetch('prompt'), 'Restricted Claude cannot run Git commands'
   end
 
+  def assert_claude_model(result, trace, model)
+    args = JSON.parse(File.read(trace)).fetch('args')
+    assert_equal model, args.fetch(args.index('--model') + 1)
+    assert_equal model, result.fetch('requested_model')
+  end
+
   def assert_grok_invocation(trace)
     invocation = JSON.parse(File.read(trace))
     assert_includes invocation.fetch('args'), 'grok-4'
@@ -196,6 +221,20 @@ end
 
 class LocalReviewProviderFailureTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: a failed attempt drops the model it requested, hiding a mistyped model name.
+  def test_failed_claude_run_records_the_requested_model
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'claude', "#!/bin/sh\necho unknown-model >&2\nexit 2\n")
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude', model: 'typo-model')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'cli_failure', result.fetch('failure_stage')
+      assert_equal 'typo-model', result.fetch('requested_model')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
 
   def test_claude_error_json_is_a_cli_failure_but_not_an_automatic_skip
     with_repository do |root, base, head, bin|
@@ -233,14 +272,24 @@ class LocalReviewProviderFailureTest < Minitest::Test
     end
   end
 
-  def test_model_option_for_claude_is_a_setup_failure_not_silently_ignored
+  def test_model_option_for_codex_is_a_setup_failure_not_silently_ignored
     with_repository do |root, base, head, bin|
-      output, _error, status = run_review(root, base, head, bin,
-                                          reviewer: 'anthropic/claude', model: 'requested-model')
+      output, _error, status = run_review(root, base, head, bin, model: 'requested-model')
       refute_predicate status, :success?
       result = JSON.parse(output)
       assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), '--model is only supported for xai/grok'
+      assert_includes result.fetch('reason'), '--model is unsupported for openai/codex'
+    end
+  end
+
+  # Break caught: an unset MODEL variable launches claude --model "" and reads as a CLI failure.
+  def test_empty_claude_model_is_a_setup_failure
+    with_repository do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin, reviewer: 'anthropic/claude', model: ' ')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '--model must name a model'
     end
   end
 
@@ -819,7 +868,124 @@ class LocalReviewStatusTest < Minitest::Test
   end
 end
 
+class LocalReviewAttestationCaseTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: review check lowercases the reviewer, then matches it case-sensitively,
+  # so a report that copies the mixed-case line review-prompt requires never counts.
+  def test_host_report_accepts_the_mixed_case_line_review_prompt_requires
+    with_repository do |root, base, head, _bin|
+      line = "REVIEWED #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS <n>"
+      assert_includes codex_prompt(head, base), line
+      result, error, status = host_check(root, head, "#{line.sub('<n>', '0')}\n", 'OpenAI/Codex')
+      assert_predicate status, :success?, error
+      assert_equal 'reported', result.fetch('status')
+      assert_equal 'openai/codex', result.fetch('reviewer')
+    end
+  end
+
+  def test_mixed_case_attestation_rejects_a_different_reviewer
+    with_repository do |root, _base, head, _bin|
+      line = "REVIEWED #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS 0\n"
+      result, _error, status = host_check(root, head, line, 'anthropic/claude')
+      refute_predicate status, :success?
+      assert_equal 'not_completed', result.fetch('status')
+    end
+  end
+
+  def test_lowercased_attestation_keyword_is_rejected
+    with_repository do |root, _base, head, _bin|
+      line = "reviewed #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS 0\n"
+      result, _error, status = host_check(root, head, line, 'OpenAI/Codex')
+      refute_predicate status, :success?
+      assert_equal 'not_completed', result.fetch('status')
+    end
+  end
+
+  # Break caught: folding the whole attestation would treat EFFORT unknown as EFFORT UNKNOWN.
+  def test_attestation_keeps_effort_case_exact
+    head = 'a' * 40
+    mixed = "REVIEWED #{head} BY OpenAI/Codex EFFORT unknown FINDINGS 0\n"
+    exact = "REVIEWED #{head} BY OpenAI/Codex EFFORT UNKNOWN FINDINGS 0\n"
+
+    refute Shaka::LocalReviewEvidence.valid?(mixed, head:, reviewer: 'openai/codex', effort: 'UNKNOWN')
+    assert Shaka::LocalReviewEvidence.valid?(exact, head:, reviewer: 'openai/codex', effort: 'UNKNOWN')
+  end
+
+  # Break caught: folding letters inside Regexp.escape turns a tab into the text [Tt].
+  def test_folded_reviewer_keeps_escaped_whitespace
+    head = 'b' * 40
+    reviewer = "a\tb"
+    text = "REVIEWED #{head} BY #{reviewer} EFFORT UNKNOWN FINDINGS 0\n"
+
+    assert Shaka::LocalReviewEvidence.valid?(text, head:, reviewer:, effort: 'UNKNOWN')
+  end
+
+  private
+
+  def codex_prompt(head, base)
+    prompt, error, status = Open3.capture3(COMMAND, 'review-prompt', '--head', head,
+                                           '--base', base, '--reviewer', 'OpenAI/Codex')
+    assert_predicate status, :success?, error
+    prompt
+  end
+
+  def host_check(root, head, body, reviewer)
+    path = File.join(root, 'host-review.md')
+    File.write(path, body)
+    output, error, status = Open3.capture3(COMMAND, 'review', 'check', '--head', head,
+                                           '--reviewer', reviewer, '--report', path)
+    [JSON.parse(output), error, status]
+  end
+end
+
+class LocalReviewCodexUsageTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: Codex reviews published usage UNKNOWN because the run never named its saved session.
+  def test_codex_run_returns_its_saved_session_as_usage
+    with_repository do |root, base, head, bin|
+      Dir.mktmpdir('shaka-codex-home') do |home|
+        fake_codex_with_session(bin, head)
+        output, error, status = run_review(root, base, head, bin, env: { 'CODEX_HOME' => home })
+        result = assert_successful_review(output, error, status, head, 'openai/codex')
+        assert_equal Dir.glob(File.join(home, 'sessions', '*', '*', '*', '*.jsonl')), [result.fetch('usage')]
+        File.unlink(result.fetch('report'))
+      end
+    end
+  end
+
+  private
+
+  # Writes a saved session under CODEX_HOME and announces its thread the way `codex exec --json` does.
+  def fake_codex_with_session(bin, head, thread = '01a0d246-e758-7052-92bc-95afb12a6f60')
+    write_executable(bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'fileutils'
+      require 'json'
+      report = ARGV.fetch(ARGV.index('-o') + 1)
+      File.write(report, "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
+      folder = FileUtils.mkdir_p(File.join(ENV.fetch('CODEX_HOME'), 'sessions', '2026', '09', '23')).first
+      meta = JSON.generate(type: 'session_meta', payload: { id: '#{thread}' })
+      File.write(File.join(folder, 'rollout-#{thread}.jsonl'), meta)
+      puts JSON.generate(type: 'thread.started', thread_id: '#{thread}') if ARGV.include?('--json')
+    RUBY
+  end
+end
+
 module LocalReviewContextAssertion
+  def assert_codex_invocation(trace, root, head)
+    invocation = JSON.parse(File.read(trace))
+    expected = ['exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
+                '-c', 'skills.include_instructions=false']
+    assert_equal expected, invocation.fetch('args').first(expected.length)
+    assert_includes invocation.fetch('args'), '--skip-git-repo-check'
+    assert_includes invocation.fetch('prompt'), '+after'
+    assert_match(/--- BEGIN DIFF DATA [0-9a-f]{32} ---/, invocation.fetch('prompt'))
+    assert_codex_source_context(invocation, root, head)
+    refute_path_exists invocation.fetch('cwd')
+  end
+
   def assert_codex_source_context(invocation, root, head)
     prompt = invocation.fetch('prompt')
     assert_includes prompt, 'EFFORT UNKNOWN'
@@ -860,7 +1026,9 @@ module LocalReviewFixture
       abort 'wrong executable name' if ENV['REVIEW_EXPECT_NAME'] && File.basename($PROGRAM_NAME) != ENV['REVIEW_EXPECT_NAME']
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, cwd: Dir.pwd }))
       report = ARGV.fetch(ARGV.index('-o') + 1)
-      File.write(report, "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
+      isolated = ARGV.each_cons(2).include?(['-c', 'skills.include_instructions=false'])
+      review = isolated ? "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n" : 'Done / In progress / Blocked / Next'
+      File.write(report, review)
     RUBY
   end
 
@@ -872,12 +1040,12 @@ module LocalReviewFixture
     RUBY
   end
 
-  def fake_claude(bin, head, effort: 'medium')
+  def fake_claude(bin, head, effort: 'medium', findings: 'no findings')
     write_executable(bin, 'claude', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
-      puts JSON.generate({ is_error: false, result: "no findings\\nREVIEWED #{head} BY anthropic/claude EFFORT #{effort} FINDINGS 0" })
+      puts JSON.generate({ is_error: false, result: "#{findings}\\nREVIEWED #{head} BY anthropic/claude EFFORT #{effort} FINDINGS 0" })
     RUBY
   end
 
@@ -897,6 +1065,7 @@ module LocalReviewFixture
     assert_equal head, result.fetch('head')
     assert_equal reviewer, result.fetch('reviewer')
     assert File.file?(result.fetch('report'))
+    assert_includes File.read(result.fetch('report')), "REVIEWED #{head} BY #{reviewer}"
     result
   end
 
@@ -962,6 +1131,7 @@ end
 
 LocalReviewCodexTest.include(LocalReviewFixture)
 LocalReviewCodexTest.include(LocalReviewContextAssertion)
+LocalReviewCodexUsageTest.include(LocalReviewFixture)
 LocalReviewOtherCliTest.include(LocalReviewFixture)
 LocalReviewProviderFailureTest.include(LocalReviewFixture)
 LocalReviewClaudeProtocolTest.include(LocalReviewFixture)
@@ -973,3 +1143,4 @@ LocalReviewCaseIdentityTest.include(LocalReviewFixture)
 LocalReviewTimeoutTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
+LocalReviewAttestationCaseTest.include(LocalReviewFixture)

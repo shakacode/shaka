@@ -9,11 +9,9 @@ class CliTest < Minitest::Test
   def test_help_explains_each_operation
     output, error, status = Open3.capture3(COMMAND, '--help')
     assert_predicate status, :success?, error
-    operations = %w[pr comments description reply walkthrough merge recommendation checkpoint seam doctor
-                    enforcement repos prefix]
-    (operations + %w[--head --issue --content-file --key --comment --ci-review-wait --ref]).each do |token|
-      assert_includes output, token
-    end
+    %w[pr comments description reply resolve walkthrough merge recommendation checkpoint seam doctor
+       enforcement repos prefix attention --head --issue --content-file --key --comment --thread
+       --ci-review-wait --ref --state].each { |token| assert_includes output, token }
   end
 
   def test_invalid_ci_review_wait_does_not_call_github
@@ -117,5 +115,30 @@ class CliTest < Minitest::Test
     _output, error, status = Open3.capture3(COMMAND, 'comments', 'owner/repo', '1')
     refute_predicate status, :success?
     assert_includes error, 'Expected a full PR head'
+  end
+end
+
+class CliMergeRefTest < Minitest::Test
+  def test_merge_without_ref_does_not_call_github
+    Dir.mktmpdir do |dir|
+      sentinel = File.join(dir, 'called')
+      File.write(stub = File.join(dir, 'gh'), "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
+      File.chmod(0o755, stub)
+      args = ['merge', 'owner/repo', '1', '--head', 'a' * 40, '--base', 'main', '--walkthrough', '1']
+      _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, CliTest::COMMAND, *args)
+      refute_predicate status, :success?
+      assert_includes error, '--ref'
+      refute_path_exists sentinel
+    end
+  end
+end
+
+class CliReviewWaiverTest < Minitest::Test
+  # Option parsing rejects the flag before any GitHub client exists.
+  def test_review_waiver_is_only_for_merge
+    _output, error, status = Open3.capture3(CliTest::COMMAND, 'pr', 'owner/repo', '1', '--review-waiver', 'docs')
+
+    refute_predicate status, :success?
+    assert_match(/--review-waiver is only for merge/, error)
   end
 end

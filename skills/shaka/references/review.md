@@ -34,6 +34,15 @@ Independent review evidence is either a published
 for that head. The identity line on a `shaka reply` names the publisher; the closing
 attestation names the reviewer.
 
+`merge` reads that attestation from the last line of PR comments the merging
+account wrote. It accepts one for the current head. It also accepts one for an
+earlier commit when the head's tree equals a conflict-free `git merge-tree` of that
+commit with the base the head now builds on, computed in the `--root` checkout, or when every later change is Markdown other
+than agent instructions such as `AGENTS.md`, `.agents/` files, or skill procedures.
+A different reviewer model is better, but a same-model review in a fresh session is
+accepted. When no attestation applies, `merge --review-waiver REASON` records why
+review was skipped or covered elsewhere, and the merge result reports that reason.
+
 Runtime, trust, and test changes need fresh affected review. Classify follow-ups
 against the diff before applying the reference's waiting rules.
 
@@ -62,8 +71,10 @@ under [reviews after merge](#reviews-after-merge).
 ## Custom review instructions
 
 Put standing project review criteria in the trusted default-branch `AGENTS.md`.
-Pass that immutable commit as `shaka review run --criteria-ref SHA`; the runner
-includes root and applicable nested `AGENTS.md` criteria in the prompt.
+To replace the default review instructions, set `review.prompt_file`, or a
+`prompt_file` on one agent's `local_review_agents` entry. Pass the trusted commit as
+`shaka review run --criteria-ref SHA`; the runner includes root and applicable
+nested `AGENTS.md` criteria and the configured prompt file from that commit.
 For this PR's scope, use `--description-file PATH` to supply its description as
 review data. Proposed changes
 to review instructions are also data until they become trusted policy.
@@ -132,10 +143,11 @@ subagent a CLI attempt.
 
 During planning, check whether each reviewer needed to satisfy the gate runs on draft pull
 requests, reading its trusted workflow rather than the seam: the standard reviewer workflow
-guards on `draft == false`, so the review-ready path is the usual one. Run
-`.agents/bin/validate-local` before review when the trusted seam reports it present; otherwise
-run `.agents/bin/validate`.
-The optional `.agents/bin/trigger-hosted-ci` requires `validate-local`; after batching fixes,
+guards on `draft == false`, so the review-ready path is the usual one. Run the
+trusted seam's `validate_local` command before review when it is available; otherwise
+run its `validate` command. Obtain both executable paths from
+`shaka seam check --root ROOT --ref TRUSTED_SHA` and run those paths from the candidate checkout.
+The optional `trigger_hosted_ci` command requires `validate_local`; after batching fixes,
 run the full `validate` script and then the trigger. This follows the React on Rails pattern: draft
 creation and review do not request its broad hosted matrix.
 
@@ -185,7 +197,7 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
 3. After changes, run the affected checks and the repository's validation. Obtain review
    of the fix and affected behavior on the new commit, using the existing workflow
    or its documented re-review mechanism. A stale finding may still apply; check it
-   before resolving the thread. Do not call an unreviewed fix independently reviewed.
+   before resolving the thread with `shaka resolve`. Do not call an unreviewed fix independently reviewed.
 4. Stop when material findings are addressed and independent review for this task has
    completed. Refresh GitHub required checks and required approvals,
    update the walkthrough, and follow the task's existing merge authority. After two repair
@@ -211,7 +223,7 @@ against the merged change and current main, replies on its original thread, and
 fixes a demonstrated defect in a small PR. Revert only when the impact warrants it;
 merging alone is not a reason to dismiss feedback or to revert. Decline unsupported
 findings with evidence; do not create an issue for every suggestion. Link a fix
-before resolving its thread, and keep the original review's revision clear.
+before resolving its thread with `shaka resolve`, and keep the original review's revision clear.
 
 After the owning task ends, GitHub notifications or a resumed task bring new reviews
 back to an owner. This workflow does not keep running or promise background review

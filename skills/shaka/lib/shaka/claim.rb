@@ -3,9 +3,10 @@
 require 'json'
 require 'open3'
 require 'optparse'
+require_relative 'branch_name'
 require_relative 'error'
 require_relative 'claim/names'
-require_relative 'repository_config'
+require_relative 'configuration'
 
 module Shaka
   # Lists open pull requests and remote branches that already cover a work item.
@@ -13,10 +14,12 @@ module Shaka
     PR_JSON = 'number,title,url,headRefName'
 
     def self.run(arguments, runner: nil)
-      query, root = parse(arguments)
+      query, root, tracker_branch = parse(arguments)
       return 0 unless query
 
-      subject = new(query: query, root: root, runner: runner, branch_name: branch_name_for(root))
+      tracker_branch &&= BranchName.explicit!(tracker_branch, label: '--branch', root: root)
+      subject = new(query: query, root: root, runner: runner, branch_name: branch_name_for(root),
+                    tracker_branch: tracker_branch)
       puts JSON.generate(subject.result)
       0
     rescue OptionParser::ParseError, JSON::ParserError, SystemCallError, Shaka::Error => e
@@ -31,13 +34,16 @@ module Shaka
       return help(parser) if options[:help]
       raise OptionParser::InvalidArgument, parser.to_s unless arguments.length == 1
 
-      [arguments.first, File.realpath(options.fetch(:root, Dir.pwd))]
+      [arguments.first, File.realpath(options.fetch(:root, Dir.pwd)), options[:branch]]
     end
 
     def self.option_parser(options)
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka claim QUERY [--root DIR]'
+        flags.banner = 'Usage: shaka claim QUERY [--root DIR] [--branch NAME]'
         flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
+        flags.on('--branch NAME', 'Branch name the tracker supplies for this work item') do |value|
+          options[:branch] = value
+        end
         flags.on('-h', '--help', 'Show usage') { options[:help] = true }
       end
     end
@@ -48,16 +54,18 @@ module Shaka
     end
 
     def self.branch_name_for(root)
-      RepositoryConfig.load(root: root).to_h.dig('branches', 'name')
+      return unless Configuration.contract_entry?(root)
+
+      Configuration.worktree(root: root).to_h.dig('branches', 'name')
     end
 
     private_class_method :parse, :option_parser, :help, :branch_name_for
 
-    def initialize(query:, root:, runner: nil, branch_name: nil)
-      @query = positive_integer(query).to_s
+    def initialize(query:, root:, runner: nil, branch_name: nil, tracker_branch: nil)
+      @query = work_item(query)
       @root = root
       @runner = runner || ->(argv, stdin_data: '') { Open3.capture3(*argv, stdin_data: stdin_data, chdir: @root) }
-      @names = Names.new(query: @query, template: branch_name)
+      @names = Names.new(query: @query, template: branch_name, exact: tracker_branch)
     end
 
     def result
@@ -101,12 +109,12 @@ module Shaka
       raise Error, "#{argv.first} is unavailable."
     end
 
-    def positive_integer(value)
-      unless value.to_s.ascii_only? && value.to_s.match?(/\A[1-9]\d*\z/)
-        raise Error, 'Expected a positive integer identifier.'
-      end
+    # A GitHub issue or PR number, or a tracker key such as Linear's or Jira's `ENG-123`.
+    def work_item(value)
+      text = value.to_s
+      return text if text.ascii_only? && text.match?(/\A(?:[A-Za-z][A-Za-z0-9_]*-)?[1-9]\d*\z/)
 
-      value.to_i
+      raise Error, 'Expected an issue number or tracker key such as ENG-123.'
     end
 
     def utf8(value)

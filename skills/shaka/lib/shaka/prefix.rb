@@ -6,7 +6,7 @@ require 'optparse'
 require_relative 'error'
 require_relative 'git_origin'
 require_relative 'repo_prefix'
-require_relative 'trusted_config_source'
+require_relative 'configuration'
 
 module Shaka
   # Prints the display prefix for one repository from its trusted seam.
@@ -56,22 +56,9 @@ module Shaka
     end
 
     def call
-      config = TrustedConfigSource.load(root: @root, ref: @ref || default_ref, candidate_commands: false).to_h
+      config = Configuration.trusted(root: @root, ref: @ref || Configuration.default_ref(root: @root),
+                                     candidate_commands: false).to_h
       RepoPrefix.display(configured: config['repo_prefix'], repository_name: GitOrigin.repository_name(root: @root))
-    end
-
-    private
-
-    def default_ref
-      %w[origin/HEAD origin/main origin/master].find { |ref| commit?(ref) } ||
-        raise(Error, 'Cannot resolve origin/HEAD or origin/main as a trusted commit')
-    end
-
-    def commit?(ref)
-      _output, _error, status = Open3.capture3(
-        'git', '-C', @root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}"
-      )
-      status.success?
     end
   end
 end

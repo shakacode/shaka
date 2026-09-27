@@ -24,13 +24,6 @@ module Shaka
       waits.max_by { |wait| VALUES.index(wait) }
     end
 
-    def self.seam_from_ref(root:, ref:)
-      return unless ref
-
-      require_relative 'trusted_config_source'
-      TrustedConfigSource.load(root:, ref:).review.fetch('ci_review_wait')
-    end
-
     def self.allowed_merge_states(wait, queue_enabled)
       allow_unstable = normalize(wait) != 'all'
       return %w[CLEAN BEHIND BLOCKED UNSTABLE] if queue_enabled && allow_unstable

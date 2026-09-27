@@ -1,7 +1,7 @@
 # Coding agents
 
-Shaka runs inside your coding agent, which supplies the model, permissions, and
-tools. Install the skill once, then use it in your repositories.
+Your coding agent supplies the model, permissions, and tools. Install Shaka once
+and use it across your repositories.
 
 | Coding agent | Start a task | Notes |
 | --- | --- | --- |
@@ -11,10 +11,9 @@ tools. Install the skill once, then use it in your repositories.
 | OpenCode | `/shaka` | Use the installed skill in a session; an optional launcher is also available |
 | Pi | Load the installed Shaka skill | Uses Pi's existing permissions; no separate Shaka launcher |
 
-Start with the [installation prompt](getting-started.md). The installing agent
-uses the [installation reference](../skills/shaka/references/installation.md)
-for directories and environment-specific setup.
+Use the [installation prompt](getting-started.md); the agent follows the
+[installation reference](../skills/shaka/references/installation.md) for your environment.
 
-Want to add another coding agent? Submit a PR with installation instructions,
-a demonstrated task, and any limitations. Keep environment-specific code separate
-from the shared delivery workflow. See [contributing](../CONTRIBUTING.md).
+To support another coding agent, [contribute](../CONTRIBUTING.md) installation
+instructions, a demonstrated task, and known limitations. Keep environment-specific
+code separate from the shared workflow.

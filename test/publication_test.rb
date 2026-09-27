@@ -19,7 +19,7 @@ class PublicationRegressionTest < Minitest::Test
 
   def description_content(**changes)
     { 'identity' => IDENTITY, 'summary' => 'A summary.', 'walkthrough' => WALKTHROUGH, 'table' => TABLE,
-      'provenance' => PUBLIC_PROVENANCE, 'details' => [USAGE] }.merge(changes)
+      'deployment' => 'none', 'provenance' => PUBLIC_PROVENANCE, 'details' => [USAGE] }.merge(changes)
   end
 
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one
@@ -144,7 +144,7 @@ class PublicationUsageCostSummaryTest < Minitest::Test
     body = "#{PublicationRegressionTest::USAGE.fetch('body')}\n\n#{header}\n#{separator}\n#{estimate}\n"
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'details' => [{ 'summary' => summary, 'body' => body }] }
     )
@@ -158,7 +158,7 @@ class PublicationStructureTest < Minitest::Test
   def render(**changes)
     Shaka::Publication.description(
       { 'identity' => IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE,
         'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
@@ -222,7 +222,7 @@ class PublicationStructureTest < Minitest::Test
 
   def test_a_real_newline_in_a_cell_cannot_split_the_row
     content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
-                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] },
                 'provenance' => PUBLIC_PROVENANCE }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
@@ -276,7 +276,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def render(walkthrough: PublicationRegressionTest::WALKTHROUGH)
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => walkthrough, 'table' => PublicationRegressionTest::TABLE,
+        'walkthrough' => walkthrough, 'deployment' => 'none', 'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE, 'details' => [PublicationRegressionTest::USAGE] }
     )
   end
@@ -303,7 +303,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def render_with_section
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'details' => [PublicationRegressionTest::USAGE] }
@@ -343,7 +343,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
   # leaving a PR without the route evidence needed for later comparison.
   def test_description_renders_public_safe_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
-                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
                 'details' => [PublicationRegressionTest::USAGE] }
     rendered = Shaka::Publication.description(content)
@@ -357,11 +357,126 @@ class PublicationProvenanceRequirementTest < Minitest::Test
 
   def test_description_refuses_missing_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
-                'walkthrough' => PublicationRegressionTest::WALKTHROUGH,
+                'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => PublicationRegressionTest::TABLE,
                 'details' => [PublicationRegressionTest::USAGE] }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
 
     assert_includes error.message, 'provenance'
+  end
+end
+
+# https://github.com/shakacode/shaka-shakacode-com/pull/3 left out the live preview that
+# https://github.com/shakacode/shaka-shakacode-com/pull/2 wrote into its summary, so the
+# renderer places the deployment link beside the walkthrough link and requires a choice.
+class PublicationDeploymentLinkTest < Minitest::Test
+  DEPLOYMENT = 'https://shaka-shakacode-com.justin-fed.workers.dev'
+
+  def render(**changes)
+    Shaka::Publication.description(
+      { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
+        'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => DEPLOYMENT,
+        'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
+        'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
+        'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
+    )
+  end
+
+  def test_the_deployment_link_follows_the_walkthrough_link_before_any_section
+    link = PublicationRegressionTest::WALKTHROUGH
+    assert_includes render, "A summary.\n\n[Code Walkthrough](#{link}) · [Deployment](<#{DEPLOYMENT}>)\n\n## Outcome"
+  end
+
+  def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
+    assert_includes render('walkthrough' => nil),
+                    "A summary.\n\n_Not published yet._\n\n[Deployment](<#{DEPLOYMENT}>)\n"
+  end
+
+  # A bare `)` would end the Markdown link at `/a` instead of linking `/a)b`.
+  def test_a_parenthesis_in_the_deployment_url_stays_inside_the_link
+    assert_includes render('deployment' => 'https://preview.example/a)b'), '[Deployment](<https://preview.example/a)b>)'
+  end
+
+  def test_none_records_that_the_repository_has_no_deployment
+    rendered = render('deployment' => 'none')
+    refute_includes rendered, 'Deployment'
+    assert_includes rendered, "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH})\n\n## Outcome"
+  end
+
+  def test_a_missing_or_blank_deployment_is_refused
+    [nil, '  '].each do |value|
+      error = assert_raises(Shaka::Error) { render('deployment' => value) }
+      assert_includes error.message, 'deployment'
+    end
+  end
+
+  def test_a_deployment_must_be_an_https_url
+    ['http://example.com', 'example.com', 'https://example.com/a b', "https://example.com\nx",
+     'https://?', 'https://example.com/<x>', 'https://user:secret@preview.example'].each do |value|
+      error = assert_raises(Shaka::Error) { render('deployment' => value) }
+      assert_includes error.message, 'deployment'
+    end
+  end
+end
+
+# Hosts published WIP Details as prose paragraphs, a table, or unseparated lines
+# (https://github.com/shakacode/shaka/pull/258, /pull/254, /pull/248); the helper now owns one table.
+class PublicationWipDetailsTest < Minitest::Test
+  WIP = { 'owner' => 'm5 · Claude Code · k7q2', 'task' => 'shaka #255 use the tracker branch name',
+          'thread' => 'UNKNOWN', 'last_observed_activity' => '2026-09-25 13:31 HST',
+          'revision' => 'feature @ 4602d275a094fa555eba472d39b8bca340d7afeb', 'workspace' => 'UNKNOWN',
+          'unfinished_work' => 'none', 'stopped_because' => 'paused', 'merge_authority' => 'ask',
+          'state' => 'awaiting hosted checks', 'next_action' => 'read claude-review' }.freeze
+
+  def render(wip, details: [PublicationRegressionTest::USAGE])
+    content = PublicationRegressionTest.new('render').description_content('wip' => wip, 'details' => details)
+    Shaka::Publication.description(content)
+  end
+
+  def test_wip_renders_every_field_as_one_table_in_workflow_order
+    rendered = render(WIP)
+    note = rendered[%r{<details>\n<summary>WIP Details</summary>\n\n(.*?)\n\n</details>}m, 1]
+    lines = note.lines.map(&:chomp)
+    assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
+    labels = lines.drop(2).map { |line| line.split(' | ').first.delete_prefix('| ') }
+    assert_equal Shaka::WipDetails::FIELDS.values, labels
+    assert_includes lines, '| Stopped because | paused |'
+  end
+
+  def test_wip_follows_the_usage_details
+    rendered = render(WIP)
+    assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>WIP Details')
+  end
+
+  def test_the_note_is_omitted_after_the_outcome
+    refute_includes render(nil), 'WIP Details'
+  end
+
+  def test_a_pipe_in_a_value_stays_inside_its_cell
+    assert_includes render(WIP.merge('state' => 'a | b')), '| State | a \\| b |'
+  end
+
+  def test_a_backslash_before_a_pipe_cannot_undo_its_escape
+    assert_includes render(WIP.merge('state' => 'a\\|b')), '| State | a\\\\\\|b |'
+  end
+
+  def test_missing_and_unknown_fields_are_named
+    error = assert_raises(Shaka::Error) { render(WIP.except('thread')) }
+    assert_includes error.message, 'missing fields: thread'
+    error = assert_raises(Shaka::Error) { render(WIP.merge('mood' => 'fine')) }
+    assert_includes error.message, 'unknown fields: mood'
+  end
+
+  def test_blank_and_multiline_values_are_refused
+    ['', "two\nlines", 7].each do |value|
+      error = assert_raises(Shaka::Error) { render(WIP.merge('task' => value)) }
+      assert_includes error.message, 'wip task'
+    end
+  end
+
+  def test_a_hand_written_wip_details_item_is_refused
+    prose = { 'summary' => 'WIP Details', 'body' => "Owner: m5\nTask: something" }
+    error = assert_raises(Shaka::Error) { render(nil, details: [PublicationRegressionTest::USAGE, prose]) }
+    assert_includes error.message, 'wip object'
   end
 end

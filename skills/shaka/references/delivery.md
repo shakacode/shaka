@@ -37,11 +37,16 @@ choice. Honor explicit user settings. Consider total planning, implementation,
 retries, and review; waiting or a tool error alone does not justify more effort.
 
 Use the workflow's `recommendation` and `checkpoint` commands. Proceed without
-another response only when the user explicitly supplied matching model and
-effort, clearly asked to start, and those settings are active and usable. Otherwise
-pause with one next action. Check the actual host setting on resume when available;
-a prompt cannot change the runner. Planning-only work returns its plan and usage
-without an implementation checkpoint.
+another response when the user clearly asks to start, the recommended model and
+effort are active and usable, and any settings the user supplied match the
+recommendation. A start word such as `go` does not require the user to restate
+active settings. Otherwise pause with one next action. Check the actual host
+setting on resume when available; a prompt cannot change the runner. Planning-only
+work returns its plan and usage without an implementation checkpoint.
+
+If the checkpoint reports `recommendation_missing`, supply the omitted model or
+effort recommendation and rerun it. This is an agent input to complete before
+bringing a decision to the user.
 
 Work solo unless delegation is authorized and useful. Obtain a fresh-context
 review before pushing meaningful implementation, using [reviewer selection](review.md#choose-a-local-reviewer).
@@ -67,7 +72,9 @@ the decision unless scope or expected cost materially changes.
 ### Recover an unfinished PR
 
 Keep a collapsed **WIP Details** entry in the PR description until GitHub confirms
-the outcome. Publish it through `description` using the `details` list. Refresh at
+the outcome. Publish it through the `description` content's `wip` object, whose
+snake_case keys name the fields below; the helper renders them as one table and
+refuses a hand-written `WIP Details` details item. Refresh at
 meaningful progress and every stopping point, with all other description fields
 still accurate for the named head. An Ask handoff leaves the note in place with
 state “waiting for GitHub merge” and the expected SHA. A failed merge also retains it.
@@ -77,14 +84,20 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Owner | Public machine alias, host, and a random owner tag, such as `m5 · Codex desktop · k7q2` |
 | Task | Searchable task title or shareable tracker locator |
 | Thread | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
-| Last observed activity | Observed time and timezone; otherwise `UNKNOWN` |
+| Last observed activity | Date, time to the minute, and timezone of the latest observed activity, such as `2026-09-25 17:42 PDT`; otherwise `UNKNOWN` |
 | Revision | Branch and current head |
 | Workspace | Checkout directory, subject to the privacy setting below |
 | Unfinished work | Uncommitted, untracked, deleted, stashed, or unpushed work; `none` only after inspection proves the branch holds everything |
-| Stopped because | `running`, `paused`, or `interrupted` |
+| Stopped because | `running`, `awaiting merge approval`, `awaiting answer`, `paused`, or `interrupted` |
 | Merge authority | Previously established `ask` or `auto`, or `UNKNOWN`; this field grants no authority |
 | State | In progress, named check/review wait, blocker, decision, GitHub merge of a named head, or handoff to a named successor |
 | Next action | One step that continues the task |
+
+For Stopped because, use `awaiting merge approval` for an Ask handoff that waits
+for a GitHub merge click or approval; that stop also applies the
+`awaiting-merge-approval` label. Use `awaiting answer` for a stop that waits for
+a user answer; that stop applies `awaiting-answer`. Use `paused` for any other
+deliberate stop, such as a named check wait or a blocker.
 
 Use safe filenames or counts for unfinished work; use `UNKNOWN` if the previous
 checkout has not been inspected or cannot be reached. A fresh clone cannot prove
@@ -175,6 +188,12 @@ Keep optional review history and routine rollback detail collapsed.
 
 Supply the current COMMENT review URL in the `walkthrough` field. The helper
 renders its link after the summary, or `_Not published yet._` until it exists.
+Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
+the GitHub Deployments API for the PR head and links the newest successful
+deployment's `environment_url`, the same link GitHub shows as "View deployment";
+it renders nothing when the head has none. Supply a URL yourself only when the
+preview appears solely in a provider comment or CI log. The helper links it beside
+the walkthrough.
 Also link to the current review result. Self-edit the content JSON before
 publication; let the helper render headings, tables, and details.
 
@@ -210,11 +229,14 @@ Edit wording at the same revision in place. For a new commit, publish a walkthro
 for that head and update the description's link. Keep review history in the
 description's details rather than appending it to the walkthrough.
 
-After confirming the new link, try to collapse your older walkthroughs beneath
-“Superseded — read the current walkthrough,” preserving the old body and revision.
-Leave human edits and independent reports intact. If editing is unavailable or
-authorship is uncertain, keep the current link prominent and report the limitation.
-This cleanup does not block merge.
+The walkthrough command collapses your older walkthroughs after it confirms the new
+review. Each one leads with “Superseded — read the current walkthrough:” and that
+review's link, and the old body and revision stay inside details. A details tag in
+that archived prose is written as text so the disclosure stays closed; a fenced
+example keeps its characters. Other authors'
+reviews and independent reports stay as they are. When the edit is unavailable,
+the new walkthrough still stands and the command reports the limitation. This
+cleanup does not block merge.
 
 Collapsed PR content is still public and still costs tokens when loaded. Store
 useful evidence once; retrieve and link it as needed.

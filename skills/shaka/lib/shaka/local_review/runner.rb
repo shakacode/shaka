@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'rbconfig'
 require 'securerandom'
 require 'tempfile'
 require 'tmpdir'
@@ -10,6 +9,7 @@ require_relative 'cli'
 require_relative 'criteria'
 require_relative 'evidence'
 require_relative 'process'
+require_relative 'prompt_file'
 
 module Shaka
   # Supplies exact-commit source lookup as data to a neutral reviewer.
@@ -121,6 +121,7 @@ module Shaka
     include LocalReviewSourceContext
     include LocalReviewPathGuard
     include LocalReviewCriteria
+    include LocalReviewPromptFile
 
     def initialize(options) = @options = options
 
@@ -130,12 +131,17 @@ module Shaka
       git_executable
       validate!
       validate_tempdir!
-      run_report(review_prompt)
+      with_requested_model(run_report(review_prompt))
     rescue Shaka::Error, SystemCallError => e
-      setup_failure(e)
+      with_requested_model(setup_failure(e))
     end
 
     private
+
+    # Records what was asked for on every outcome; the routed model comes only from native usage.
+    def with_requested_model(result)
+      @options[:model] ? result.merge('requested_model' => @options[:model]) : result
+    end
 
     def run_report(prompt)
       report = Tempfile.create(['shaka-review-', '.md'])
@@ -173,7 +179,13 @@ module Shaka
       validate_criteria_ref!
       validate_timeout!
       validate_reviewer!
+      validate_model_name!
       validate_checkout!
+    end
+
+    # An unset MODEL variable must fail here, not launch the reviewer with an empty model.
+    def validate_model_name!
+      raise Shaka::Error, '--model must name a model' if @options[:model]&.match?(/\A\s*\z/)
     end
 
     def validate_reviewer!
@@ -189,7 +201,7 @@ module Shaka
 
     def validate_model!
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
-      raise Shaka::Error, '--model is only supported for xai/grok' if reviewer != 'xai/grok' && @options[:model]
+      raise Shaka::Error, '--model is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:model]
       raise Shaka::Error, '--effort is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:effort]
     end
 
@@ -211,9 +223,7 @@ module Shaka
     end
 
     def review_prompt
-      script = File.expand_path('../../../scripts/shaka', __dir__)
-      output = capture(RbConfig.ruby, script, 'review-prompt', '--head', head,
-                       '--base', @options[:base], '--reviewer', reviewer, '--effort', effort)
+      output = review_instructions
       diff = capture(git_executable, '-C', root, 'diff', '--no-ext-diff', '--no-textconv',
                      "#{@options[:base]}...#{head}", '--')
       marker = SecureRandom.hex(16)

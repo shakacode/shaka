@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
+require_relative '../configuration/paths'
 require_relative '../repository_config/review_schema'
 
 module Shaka
   class Seam
     # Review-key half of seam classification, including renamed keys and collisions.
     module ReviewFields
-      REVIEW_KEYS = (%w[required] + RepositoryConfig::ReviewSchema::RENAMED.values).uniq.freeze
+      REVIEW_KEYS = (%w[required] + RepositoryConfig::ReviewSchema::RENAMED.values +
+                     [RepositoryConfig::ReviewSchema::PROMPT_FILE]).uniq.freeze
       PREVIOUS_CI_KEY = 'ci_review_agents'
 
       private
@@ -92,7 +94,7 @@ module Shaka
       ].freeze
       RETIRED = %w[protection commands coordination_backend].freeze
       RETAINED = %w[base_branch repo_prefix version branches wip recovery].freeze
-      MERGE_RETAINED = %w[preference].freeze
+      MERGE_RETAINED = %w[preference required_checks].freeze
       MERGE_RETIRED = %w[method release].freeze
 
       Result = Struct.new(:retained, :moved_to_agents, :moved_to_operational_config, :retired, :blocking,
@@ -112,7 +114,7 @@ module Shaka
       def call
         mapping = @data
         unless mapping.is_a?(Hash) && mapping.keys.all?(String)
-          @blocking << '.agents/agent-workflow.yml'
+          @blocking << Configuration::Paths::CONTRACT
           return result
         end
 

@@ -3,8 +3,10 @@
 require_relative '../branch_name'
 require_relative '../error'
 require_relative '../repo_prefix'
+require_relative '../review_prompt'
 require_relative 'branch_schema'
 require_relative 'command_schema'
+require_relative 'merge_schema'
 require_relative 'wip_schema'
 require_relative 'review_schema'
 require_relative 'validation'
@@ -20,17 +22,22 @@ module Shaka
 
       attr_reader :commands
 
-      def initialize(root:, data:, available_commands: nil, candidate_commands: true)
+      def initialize(root:, data:, available_commands: nil, candidate_commands: true,
+                     selection: Configuration::Layout::Selection.new(policy: Configuration::Layout::LEGACY,
+                                                                     candidate: Configuration::Layout::LEGACY))
         @root = root
         @data = data
         @available_commands = available_commands
         @candidate_commands = candidate_commands
+        @layout = selection.policy
+        @candidate_layout = selection.candidate
+        @config_path = @layout.contract
       end
 
       def validate
-        mapping!(@data, PATH)
+        mapping!(@data, @config_path)
         reject_retired_root_keys
-        keys!(@data, REQUIRED, OPTIONAL, PATH)
+        keys!(@data, REQUIRED, OPTIONAL, @config_path)
         validate_header
         validate_commands
         validate_review
@@ -56,25 +63,32 @@ module Shaka
 
       def validate_commands
         @commands = CommandSchema.new(root: @root, available_commands: @available_commands,
-                                      candidate_commands: @candidate_commands).validate
+                                      candidate_commands: @candidate_commands, layout: @layout,
+                                      candidate_layout: @candidate_layout).validate
       end
 
       def validate_review
         review = mapping!(@data['review'], 'review')
         ReviewSchema.retired!(review)
         ReviewSchema.renamed!(review)
-        optional = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, 'ci_review_wait']
+        optional = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, 'ci_review_wait',
+                    ReviewSchema::PROMPT_FILE]
         keys!(review, ['required'], optional, 'review')
         ReviewSchema.new(review).validate
+        local_prompt_files!(review) unless @available_commands
+      end
+
+      # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
+      def local_prompt_files!(review)
+        ReviewSchema.prompt_files(review).each do |label, path|
+          file = file!(path, label)
+          error = ReviewPrompt.file_error(File.size(file)) { File.binread(file) }
+          raise Error, "#{label} #{path} #{error}" if error
+        end
       end
 
       def validate_merge
-        merge = mapping!(@data['merge'], 'merge')
-        retired = %w[method release].find { |key| merge.key?(key) }
-        raise Error, "merge.#{retired} is no longer configurable; see skills/shaka/references/migration.md" if retired
-
-        keys!(merge, ['preference'], [], 'merge')
-        enum!(merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
+        MergeSchema.new(@data['merge']).validate
       end
 
       def reject_retired_root_keys

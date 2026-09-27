@@ -54,9 +54,8 @@ module Shaka
       @responses = {}
       @versions = []
       @gaps = []
-      @identified = false
       files.each { |file| ingest(file, turns, all_turns) }
-      @gaps << UNAVAILABLE unless @identified
+      @gaps << UNAVAILABLE unless readable_turns?
     end
 
     def context_configuration
@@ -74,7 +73,7 @@ module Shaka
 
     def keep_selected(chosen, wanted, all_turns)
       identified = chosen.values.select { |record| turn?(record['turn_id']) }
-      @identified ||= identified.any?
+      note_readable(identified)
       unreadable if all_turns && identified.size < chosen.values.size
       identified.each { |record| count(record.except('preferred')) if wanted.include?(record['turn_id']) }
     end

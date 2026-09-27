@@ -6,7 +6,7 @@ class GitHubWalkthroughTest < Minitest::Test
   include GitHubHelper
 
   def test_walkthrough_creates_comment_and_reads_back_the_review_and_head
-    github = client(*publish_responses(snapshot_response))
+    github = client(*publish_responses(snapshot_response), response([]))
     published = github.walkthrough(head: HEAD, body: WALKTHROUGH)
     assert_equal 'COMMENTED', published['state']
     assert_equal({ 'event' => 'COMMENT', 'commit_id' => HEAD, 'body' => WALKTHROUGH },

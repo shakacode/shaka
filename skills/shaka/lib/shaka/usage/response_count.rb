@@ -8,11 +8,26 @@ module Shaka
     # them separately is priced only where the estimator publishes exclusive rates.
     INCLUSIVE_INPUT = true
 
+    # Turns of the selected records, noted before conflicting copies lose their turn.
+    def matched_turns = @matched_turns || []
+
+    # Whether any source held an identified response in an identified turn, whatever was selected.
+    def readable_turns? = @readable_turns || false
+
     private
+
+    def note_readable(records)
+      @readable_turns = readable_turns? || records.any? do |record|
+        identity = record['response_id']
+        turn?(record['turn_id']) && identity.is_a?(String) && !identity.empty?
+      end
+    end
 
     def count(record)
       identity = record['response_id']
       return @gaps << 'Unreadable or unidentifiable records' unless identity.is_a?(String) && !identity.empty?
+
+      (@matched_turns ||= []) << record['turn_id']
 
       previous = @responses[identity]
       if previous && previous != record
@@ -26,6 +41,7 @@ module Shaka
     # Without explicit turns, every source uses the first source's latest turn.
     def count_selected(sources, turns, all_turns)
       records = sources.map(&:first).flat_map(&:values)
+      note_readable(records)
       selected(records, wanted_turns(sources, turns), all_turns).each { |record| count(record) }
     end
 

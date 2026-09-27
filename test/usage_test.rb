@@ -39,14 +39,18 @@ module UsageFixture
   def run_report(records, *, **options)
     Dir.mktmpdir do |directory|
       file = write_records(directory, records, options)
-      environment = { 'PI_CODING_AGENT' => nil, 'CODEX_HOME' => directory, 'CODEX_THREAD_ID' => THREAD,
-                      'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }
+      environment = host_environment(directory).merge(options.fetch(:environment, {}))
       sources = options[:discover] ? [] : ['--file', file] * options.fetch(:copies, 1)
-      output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources,
-                                             '--commit', COMMIT, '--contribution', 'implementation', *)
+      output, error, status = Open3.capture3(environment, COMMAND, 'usage', *sources, '--commit', COMMIT,
+                                             '--contribution', options[:contribution] || 'implementation', *)
       assert_predicate status, :success?, error
       output
     end
+  end
+
+  def host_environment(directory)
+    { 'PI_CODING_AGENT' => nil, 'CODEX_HOME' => directory, 'CODEX_THREAD_ID' => THREAD,
+      'CLAUDE_CODE_SESSION_ID' => nil, 'CURSOR_CONVERSATION_ID' => nil }
   end
 
   def write_records(directory, records, options)
@@ -166,6 +170,16 @@ class UsageTest < Minitest::Test
     assert_includes report, 'SHARED'
     refute_includes report, THREAD
   end
+
+  # Break caught: an unreadable replacement context left the earlier model in place,
+  # so later responses were priced at a rate the session may no longer have used.
+  def test_unreadable_line_does_not_leave_earlier_settings_on_later_responses
+    replacement = %({"type":"turn_context","payload":{"turn_id":"current","model":"gpt-\xFF"}}\n).b +
+                  "#{JSON.generate(usage('current', 'current', 50))}\n"
+    report = run_report([context('current')], raw_tail: replacement)
+    assert_metric report, 'Configured model', 'UNKNOWN'
+    assert_metric report, 'Input', 50
+  end
 end
 
 class UsageReviewCoverageTest < Minitest::Test
@@ -173,6 +187,19 @@ class UsageReviewCoverageTest < Minitest::Test
 
   # A review snapshot that counted tokens but still said only "external reviewer
   # UNKNOWN" hid the local adversarial pass that those numbers belong to.
+  # Break caught: a shell without a UTF-8 locale crashed on the first non-ASCII
+  # byte in a Codex session, so review usage could not be reported at all.
+  def test_reads_utf8_under_a_c_locale_and_reports_invalid_bytes_as_unreadable
+    records = [{ type: 'response_item', payload: { text: 'Café — SENSITIVE' } }, context('current'),
+               usage('current', 'current', 100)]
+    invalid = %({"type":"turn_context","payload":{"turn_id":"other","model":"gpt-\xFF"}}\n).b +
+              "#{JSON.generate(usage('other', 'other', 900))}\n"
+    report = run_report(records, raw_tail: invalid, environment: { 'LC_ALL' => 'C', 'LANG' => 'C' })
+    assert_metric report, 'Input', 100
+    assert_includes report, 'Unreadable or unidentifiable records'
+    refute_includes report, 'SENSITIVE'
+  end
+
   def test_review_contribution_with_records_includes_local_adversarial_usage
     report = run_report([context('current'), usage('current', 'current', 100)], '--contribution', 'review')
     header = report.split('<details>').first
@@ -316,6 +343,23 @@ class UsageFailuresTest < Minitest::Test
       assert_empty output
       assert_includes error, 'shaka usage:'
       refute_includes error, 'SENSITIVE'
+    end
+  end
+end
+
+class UsageTurnSelectionTest < Minitest::Test
+  include UsageFixture
+
+  # Codex selects turns in its own reader, so it needs its own unmatched-turn check.
+  def test_codex_turn_that_matches_no_response_fails_and_names_the_expected_field
+    Dir.mktmpdir do |directory|
+      file = write_records(directory, [context('old'), usage('first', 'old', 900)], {})
+      output, error, status = Open3.capture3({ 'CODEX_THREAD_ID' => nil }, COMMAND, 'usage', '--host', 'codex',
+                                             '--file', file, '--commit', COMMIT, '--contribution',
+                                             'implementation', '--turn', 'typo')
+      refute_predicate status, :success?
+      assert_empty output
+      assert_match(/typo.*turn_id/, error)
     end
   end
 end

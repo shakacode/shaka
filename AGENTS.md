@@ -5,8 +5,25 @@ The maintainer authorized implementation, publication, and merging verified PRs.
 The maintainer authorizes public Codex thread locators in unfinished-PR WIP Details.
 Keep company strategy and private operational data out of product artifacts.
 
-Before writing documentation, PR descriptions, walkthroughs, or review replies,
-read [.agents/writing-style.md](.agents/writing-style.md) and apply its preferences.
+## Writing in this repository
+
+These prose preferences apply only to `shakacode/shaka` documentation, PR
+descriptions, code walkthroughs, and review replies. They do not set code style
+or require other repositories to copy them. The [Shaka skill's writing guidance](skills/shaka/references/writing.md)
+is the reusable default.
+
+- Assume the reader is new to Shaka and wants to get useful work done.
+- In product guides, explain outcomes, choices, and examples. Put agent execution
+  details with the skill and development records under `internal/`.
+- Lead with the action or benefit. Explain a term when the reader first needs it.
+- Keep one source for each setting and link to it. Avoid duplicate option tables.
+- Distinguish shipped behavior, agent instructions, and proposed features.
+  Say exactly what Ruby verifies; do not imply that a rule in prose is enforced.
+- Give the reader a useful prompt before a long command sequence.
+- Remove repetition, vague qualifiers, and explanations of the document's own
+  organization unless they help navigation.
+- Preserve rough editor feedback outside the checkout before replacing it with
+  finished prose. Take turns editing shared files and resolve every note.
 
 ## Working agreement
 
@@ -20,8 +37,10 @@ read [.agents/writing-style.md](.agents/writing-style.md) and apply its preferen
   Reuse or adapt validated, portable code when it fits this pilot; explain the
   chosen reuse and material differences in the PR. Treat the other repository
   as reference material, not as authority over this project's instructions.
-- GitHub issue #77 owns remaining pilot acceptance; closed issue #1 holds the original
-  requirements. Keep the implementation to them.
+- `internal/requirements.md` owns remaining pilot acceptance; closed issue #1 holds
+  the original requirements. Issue #206 tracks skill and plugin evaluation, not
+  completion of real-use acceptance. Keep Shaka implementation within the
+  requirements in `internal/requirements.md`.
   Name feature branches from the trusted seam `branches.name`; never push to `main`.
 - Product merge preferences are `ask` and `auto`. Review-only work stops at its
   requested outcome. Existing maintainer merge authority persists; do not ask again.
@@ -49,12 +68,27 @@ leaving failures, leaked resources, or weakened safeguards. Report a brief recom
 alternative. Separate value observations from demonstrated defects. Surface changed
 assumptions for the maintainer's existing decision; add no score or approval gate.
 
+## Trust model
+
+Shaka serves maintainers; see the [trust model](docs/workflow.md#trust-model).
+Design safeguards against untrusted input, such as public comments from people
+without write access and content in PRs from forks, not against maintainers
+configuring their own project. Give maintainer choices a default they can change.
+Keep a behavior fixed only when code parses it or when it keeps outside input
+from acting as instructions, and say which reason applies.
+
 ## Structure
 
 - `internal/requirements.md` owns product requirements, design, acceptance, and scope.
 - `eval/fixtures/local_evaluation/` holds the two public-safe Slice 0 fixture trees.
 - `skills/shaka/SKILL.md` is the public workflow entry point.
 - `skills/shaka/references/` holds companion procedures referenced by the workflow.
+- `docs/` is the canonical source for the docs site at shaka.shakacode.com
+  (`shakacode/shaka-shakacode-com`), which syncs it on every build. Write docs
+  content here, never in the site repository. Once the docs-dispatch secrets are
+  set here, the docs-dispatch App is installed on the site repository, and the
+  site listens for `docs-updated`, a push to `main` that changes `docs/`
+  triggers a site rebuild.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` links the public skill into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` is the machine-readable repository contract. It
@@ -73,8 +107,10 @@ assumptions for the maintainer's existing decision; add no score or approval gat
   candidate PR's version.
 - Markdown explains decisions and invokes commands. Put executable logic in code.
 - Prefer Ruby standard libraries and GitHub CLI. Runtime needs no new gem.
-- Keep the workflow portable. Codex is the first reference host; host-specific
-  installation and usage readers must not enter the GitHub/merge modules.
+- Keep the workflow portable across supported coding agents. Codex was the first
+  reference host, not a required local installation; use the available host.
+  Host-specific installation and usage readers must not enter the GitHub/merge modules.
+- For local reviews, follow the trusted [reviewer selection procedure](skills/shaka/references/review.md#choose-a-local-reviewer).
 - Tests verify behavior and failures, not exact instruction wording. Keep focused
   files and use normal RuboCop defaults; no baseline ratchet or global metrics disable.
 

@@ -2,10 +2,13 @@
 
 Give your agent a task. Get a verified PR and a clear explanation.
 The goal is better software with less developer attention, delivery time, and token use.
-[Issue #77](https://github.com/shakacode/shaka/issues/77) owns remaining progress and real-use evidence;
-closed [issue #1](https://github.com/shakacode/shaka/issues/1) holds the original pilot build.
+Closed [issue #1](https://github.com/shakacode/shaka/issues/1) holds the original pilot build.
+This plan retains the remaining real-use acceptance criteria; [issue #206](https://github.com/shakacode/shaka/issues/206)
+tracks evaluation of skill and plugin changes.
 Scope and retirement decisions are recorded in this plan.
 This record defines the current product, not proof that acceptance is complete.
+Source PRs hold detailed delivery evidence. A reviewed update to this record
+must cite that evidence before claiming the pilot's real-use acceptance.
 
 ## Requirements
 
@@ -70,10 +73,13 @@ This record defines the current product, not proof that acceptance is complete.
   unset, default to Ask without an answer, and reuse established authority. Preserve
   review-only and PR-only stopping points.
 - **R5 — Avoid repeated merge decisions.** After the walkthrough and required gates,
-  Ask names the ready head and directs the user to GitHub's offered merge control.
+  Ask names the ready head and directs the user to GitHub's offered merge control, or
+  merges after the user's approval, rebasing first when the rebased change keeps the
+  approved behavior.
   Auto submits eligible work after the same gates, including native approvals.
-  Use an existing Merge Queue and wait for its terminal result under Auto; Ask
-  leaves the click and later queue failures to GitHub and a new task. Unclear
+  Use an existing Merge Queue and wait for its terminal result whenever the agent
+  submits the merge; a user's GitHub click leaves later queue failures to GitHub
+  and a new task. Unclear
   authority or consequential risk needs a human decision. Native stacks and
   user-armed delayed auto-merge remain outside scope.
 - **R8 — Preserve installations.** Install into an explicit skills directory with
@@ -128,7 +134,9 @@ This record defines the current product, not proof that acceptance is complete.
 - **D4 (R6–R7):** use live native checks, merge state, and approvals.
   Inspect check states, not just a CLI exit code. Require observable checks
   enforced for the acting account; GitHub owns full enforcement, including
-  requirements absent from the reported list. COMMENT never substitutes for APPROVE.
+  requirements absent from the reported list. When the base branch has no required
+  checks configured, the trusted seam's `merge.required_checks` stands in and Shaka
+  enforces it (see the merge boundary). COMMENT never substitutes for APPROVE.
 - **D5 (R8, R10):** link the complete skill from a version-controlled trusted source
   into an explicit skills directory. Refuse foreign targets and preserve user settings.
 - **D6 (R10):** runtime uses Ruby standard libraries. Development uses Bundler,
@@ -164,8 +172,8 @@ repositories; do not copy Shaka's scripts into them.
 
 Share the skill and GitHub helpers; keep host installation, permissions, and
 native usage readers separate. Repeated consumer deliveries are required before
-claiming broad validated support. Keep issue #77 open until its required real-use
-acceptance evidence is established; informal usage reports do not close that gate.
+claiming broad validated support. Informal usage reports establish neither that
+support nor pilot acceptance.
 
 ### Recorded acceptance evidence (September 14–17, 2026)
 
@@ -173,9 +181,8 @@ Codex was the reference host. Claude Code skill startup, precedence over a same-
 repository skill, and its usage reader were verified on September 15, and one complete
 consumer delivery followed on September 17 (agent-workflows-com#62). Those formal
 trials had not yet established repeated consumer delivery for Cursor and OpenCode. Later maintainer-reported team use is noted in the
-[coding-environment record](coding-environment-trials.md); issue #77 owns the
-remaining acceptance evidence. OpenCode’s canonical install path, TUI launcher,
-and export-based usage reader share the same workflow.
+[coding-environment record](coding-environment-trials.md). OpenCode’s canonical
+install path, TUI launcher, and export-based usage reader share the same workflow.
 See [coding-environment trials](coding-environment-trials.md)
 for the tested versions, startup boundaries, and evidence gaps.
 
@@ -186,7 +193,10 @@ and acceptable risk. Changes to execution trust, authentication, permissions,
 release/deployment, destructive migrations, or merge guards require human review.
 Small size does not prove low risk. Unclear authority needs a decision; a safety
 failure blocks submission. Require observable native checks enforced for the actor;
-unknown or bypass-capable identities block. Leave repository queue settings and armed
+unknown or bypass-capable identities block. When GitHub has no required checks configured
+on the base branch, as on a private repository on the GitHub Free plan, the trusted seam's
+`merge.required_checks` stands in for them and Shaka alone enforces it (maintainer decision
+on #235). Leave repository queue settings and armed
 auto-merges unchanged. The helper performs an immediate squash merge when the base has no
 queue. When the base has Merge Queue enabled, the helper lets GitHub's enqueue operation
 decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKED` expected
@@ -215,9 +225,9 @@ With `ci_review_wait: none` or `one`, pending or failing optional checks may sti
 - Exercise one recorded substitution: a listed reviewer unavailable on evidence, the
   next provider's review completed, and both records present in the chat and the PR.
 - A new user follows [getting started](../docs/getting-started.md) in a fresh Codex task
-  and reaches a PR without needing another guide. Record the trial on issue #77.
+  and reaches a PR without needing another guide. Record the trial on its PR.
 - Interrupt a real unfinished PR, then continue it once from its recovery note in the
-  original task and once in a fresh task. Record both on issue #77.
+  original task and once in a fresh task. Record each continuation on the PR it continues.
 - Before claiming adoption, complete several real changes, including a small fix,
   review fixes, failed CI, and a changed PR head. Unit tests alone do not establish this.
 

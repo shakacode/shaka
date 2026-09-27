@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative 'rate_card'
 require_relative 'cursor_cost'
 require_relative 'anthropic_cost'
 require_relative 'openai_cost'
@@ -18,14 +19,16 @@ module Shaka
     include CostTable
     include CostColumns
 
-    def initialize(responses, inclusive_input: true)
+    def initialize(responses, inclusive_input: true, rate_card: nil)
       @responses = responses
       @inclusive_input = inclusive_input
+      @rate_card = rate_card || RateCard.installed
+      @cursor_threshold_models = []
     end
 
     def report
       @threshold = false
-      @cursor_threshold = false
+      @cursor_threshold_models = []
       reasons = []
       groups = @responses.group_by { |record| [record['configuration'], record['billing_mode']] }
       columns = groups.map { |key, group| column(key, group, reasons) }

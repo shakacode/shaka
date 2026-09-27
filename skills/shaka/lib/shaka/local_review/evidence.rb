@@ -9,7 +9,10 @@ module Shaka
       return false unless text.valid_encoding?
 
       expected_effort = effort ? Regexp.escape(effort) : '\S+'
-      prefix = "(?:\\A|\\n)REVIEWED #{Regexp.escape(head)} BY #{Regexp.escape(reviewer)} EFFORT "
+      # Fold reviewer case only. review-prompt keeps the given spelling; an exact match would
+      # reject a copied line. The inline group leaves Regexp.escape sequences intact.
+      identity = "(?i:#{Regexp.escape(reviewer)})"
+      prefix = "(?:\\A|\\n)REVIEWED #{Regexp.escape(head)} BY #{identity} EFFORT "
       pattern = Regexp.new("#{prefix}#{expected_effort} FINDINGS \\d+\\s*\\z")
       text.match?(pattern)
     end

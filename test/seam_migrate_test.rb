@@ -125,6 +125,24 @@ class SeamMigratePlanTest < Minitest::Test
     end
   end
 
+  def test_seam_required_checks_are_retained
+    with_legacy_repository('control_plane_flow_shape.yml') do |root|
+      sha = rewrite_yaml(root) { |data| data.merge('merge' => data['merge'].merge('required_checks' => ['checks'])) }
+      report = migrate_report(root, sha)
+
+      assert_includes report.fetch('retained'), 'merge.required_checks'
+      assert_equal ['checks'], report.dig('established', 'merge', 'required_checks')
+    end
+  end
+
+  def test_plan_blocks_invalid_seam_required_checks
+    with_legacy_repository('control_plane_flow_shape.yml') do |root|
+      sha = rewrite_yaml(root) { |data| data.merge('merge' => data['merge'].merge('required_checks' => [])) }
+
+      assert_includes migrate_report(root, sha).fetch('blocking'), 'merge.required_checks must not be empty'
+    end
+  end
+
   def test_command_role_collision_chooses_the_stricter_temporary_behavior
     with_legacy_repository('control_plane_flow_shape.yml') do |root, _sha|
       sha = rewrite_yaml(root) { |data| data.merge('commands' => swapped_commands) }
@@ -195,6 +213,21 @@ class SeamMigrateApplyTest < Minitest::Test
       assert_includes error, '.agents/shaka.md'
       assert_equal "repository owned pointer\n", File.read(File.join(root, '.agents/shaka.md'))
       assert_equal yaml, File.read(File.join(root, '.agents/agent-workflow.yml'))
+    end
+  end
+
+  def test_apply_refuses_a_new_configuration_beside_the_legacy_destination
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+      modern = File.join(root, '.agents/shaka/config.yml')
+      FileUtils.mkdir_p(File.dirname(modern))
+      File.write(modern, "version: 1\n")
+      before = snapshot(root)
+
+      _output, error, status = migrate(root, sha, '--apply')
+
+      refute_predicate status, :success?
+      assert_match(%r{\.agents/agent-workflow.yml.*\.agents/shaka/config.yml}, error)
+      assert_equal before, snapshot(root)
     end
   end
 

@@ -4,31 +4,56 @@ require_relative 'error'
 require_relative 'merge_target'
 require_relative 'merge_submission'
 require_relative 'ci_review_wait'
+require_relative 'required_checks'
+require_relative 'merge_review_evidence'
+require_relative 'merge_required_checks'
+require_relative 'merge_limits'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
   class Merge
-    def initialize(github, ci_review_wait: nil, seam_wait: nil)
+    include MergeRequiredChecks
+
+    # `review` takes MergeReviewEvidence's `required`, `waiver`, and checkout `root`.
+    def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
       @github = github
+      @seam_required_checks = seam_required_checks
       @ci_review_wait = CiReviewWait.effective(seam: seam_wait, override: ci_review_wait)
+      @review_evidence = MergeReviewEvidence.new(github, **review)
       @submission = MergeSubmission.new(github)
     end
 
-    def call(head:, base:, walkthrough:)
-      @target = MergeTarget.required!(head, base)
+    # `squash_message` is a SquashMessage, or nil for the repository's squash default.
+    def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
+      @target = MergeTarget.required!(head, base, limits)
+      @submission.message = squash_message
       initial = @github.snapshot
       verify_snapshot(initial, head, @target)
-      verify_checks(@github.required_checks)
-      verify_walkthrough(@github.review(walkthrough), head, walkthrough)
+      evidence = verify_reviews(head, base, walkthrough, verify_gate)
       current = @github.snapshot
-      return reconcile_queued_replay(initial, current, head) if initial['isInMergeQueue']
+      return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
 
       verify_snapshot(current, head)
       @target.unchanged!(initial, current)
-      @submission.call(current, head)
+      @submission.call(current, head).merge(evidence)
     end
 
     private
+
+    def verify_gate
+      gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
+      verify_checks(gate.fetch('checks'))
+      gate
+    end
+
+    # The walkthrough explains the change; the attestation records that a separate review ran.
+    # GitHub cannot catch a seam check that fails while these are read, so it is read again.
+    def verify_reviews(head, base, walkthrough, gate)
+      verify_walkthrough(@github.review(walkthrough), head, walkthrough)
+      evidence = { 'review_evidence' => @review_evidence.call(head, base:) }
+      verify_gate if gate['source'] == 'seam'
+      evidence
+    end
 
     def reconcile_queued_replay(initial, current, head)
       unless current['state'] == 'MERGED'
@@ -102,31 +127,6 @@ module Shaka
       return if pull.key?('reviewDecision') && [nil, 'APPROVED'].include?(pull['reviewDecision'])
 
       raise Error, 'Required reviews are not satisfied or their state is unknown'
-    end
-
-    def verify_checks(checks)
-      raise Error, 'No observable required checks; native readiness is unknown' unless checks.is_a?(Array)
-      if checks.empty?
-        raise Error, 'GitHub reported no required checks on this branch. Merge refuses that empty ' \
-                     'set. If the branch is unprotected, enable branch protection; if required ' \
-                     'checks have not registered yet, wait and retry. This is not unread evidence.'
-      end
-
-      checks.each do |check|
-        next if passing_check?(check)
-
-        raise Error, "Required check is not passing or is malformed: #{check.inspect}"
-      end
-    end
-
-    def passing_check?(check)
-      return false unless check.is_a?(Hash) && check['name'].is_a?(String) && !check['name'].strip.empty?
-
-      case check['state']
-      when 'SUCCESS' then check['bucket'] == 'pass'
-      when 'NEUTRAL', 'SKIPPED' then check['bucket'] == 'skipping'
-      else false
-      end
     end
 
     def verify_walkthrough(review, head, id)

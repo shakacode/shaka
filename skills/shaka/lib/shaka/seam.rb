@@ -9,7 +9,7 @@ require_relative 'seam/initializer'
 require_relative 'seam/migrator'
 require_relative 'seam/pointer'
 require_relative 'seam/policy_options'
-require_relative 'trusted_config_source'
+require_relative 'configuration'
 
 module Shaka
   # Validates the machine-readable repository boundary.
@@ -53,7 +53,7 @@ module Shaka
 
     def validate_check_options
       init_keys = %i[base_branch setup_command validate_command test_command review_policy ci_review_jobs
-                     merge_preference]
+                     merge_preference required_checks]
       raise OptionParser::InvalidArgument, 'init options do not apply to check' if @options.keys.intersect?(init_keys)
       raise OptionParser::InvalidArgument, '--local cannot be combined with --ref' if local? && @options.key?(:ref)
     end
@@ -72,7 +72,7 @@ module Shaka
     end
 
     def check_report
-      config = TrustedConfigSource.load(root:, ref: @options[:ref])
+      config = Configuration.trusted(root:, ref: @options[:ref])
       return CheckReport.trusted(config, ref: @options[:ref]) if @options.key?(:ref)
 
       CheckReport.local(config)

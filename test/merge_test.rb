@@ -8,8 +8,9 @@ module MergeFixtures
   BASE = 'main'
 
   class Client
-    attr_accessor :snapshots, :checks, :review_result, :mutation_result, :mutation_error
+    attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error, :comments
     attr_reader :mutations, :requested_review, :features
+    attr_writer :checks
 
     def initialize
       @mutations = []
@@ -24,10 +25,18 @@ module MergeFixtures
     end
 
     def required_checks
-      raise checks if checks.is_a?(Exception)
+      raise @checks if @checks.is_a?(Exception)
 
-      checks
+      @checks
     end
+
+    def checks
+      return head_checks || [] unless head_checks&.first.is_a?(Array)
+
+      head_checks.length > 1 ? head_checks.shift : head_checks.first
+    end
+
+    def configured_required_checks = []
 
     def review(id)
       @requested_review = id
@@ -35,6 +44,12 @@ module MergeFixtures
 
       review_result
     end
+
+    def viewer_login = 'shaka-agent'
+
+    def issue_comments = comments
+
+    def compare(_from, _to) = raise(Shaka::Error, 'compare is not stubbed')
 
     def graphql(query, variables, feature: nil)
       @mutations << [query, variables]
@@ -49,6 +64,7 @@ module MergeFixtures
     @client = Client.new
     @client.snapshots = [snapshot]
     @client.checks = [{ 'name' => 'Validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    @client.comments = [attestation_comment]
     @client.review_result = { 'id' => 17, 'commit_id' => HEAD, 'state' => 'COMMENTED', 'body' => 'Walkthrough' }
     @client.mutation_result = { 'mergePullRequest' => { 'pullRequest' => {
       'headRefOid' => HEAD, 'baseRefName' => BASE, 'state' => 'MERGED', 'merged' => true,
@@ -57,11 +73,17 @@ module MergeFixtures
     @merge = Shaka::Merge.new(@client)
   end
 
+  def attestation_comment
+    { 'user' => { 'login' => 'shaka-agent' }, 'html_url' => 'https://example.test/c/1',
+      'body' => "Report\n\nREVIEWED #{HEAD} BY openai/codex EFFORT high FINDINGS 0" }
+  end
+
   def snapshot
     { 'id' => 'PR_123', 'headRefOid' => HEAD, 'baseRefName' => BASE, 'state' => 'OPEN', 'isDraft' => false,
       'viewerCanMergeAsAdmin' => false, 'isMergeQueueEnabled' => false, 'isInMergeQueue' => false,
       'mergeQueueEntry' => nil,
-      'autoMergeRequest' => nil, 'mergeStateStatus' => 'CLEAN', 'reviewDecision' => nil }
+      'autoMergeRequest' => nil, 'mergeStateStatus' => 'CLEAN', 'reviewDecision' => nil,
+      'changedFiles' => 3, 'additions' => 40, 'deletions' => 10, 'commits' => { 'totalCount' => 2 } }
   end
 
   def assert_blocked(pattern)
@@ -185,6 +207,47 @@ class MergeNativeGateTest < Minitest::Test
   end
 end
 
+class MergeReviewEvidenceGateTest < Minitest::Test
+  include MergeFixtures
+
+  def test_reports_the_review_evidence_it_merged_on
+    result = @merge.call(head: HEAD, base: BASE, walkthrough: 17)
+
+    assert_equal 'MERGED', result.fetch('state')
+    assert_equal 'current_head', result.dig('review_evidence', 'basis')
+    assert_equal 'openai/codex', result.dig('review_evidence', 'reviewer')
+  end
+
+  def test_refuses_without_review_evidence_before_submitting
+    @client.comments = []
+
+    assert_blocked(/No local-review attestation/)
+  end
+
+  def test_refuses_evidence_for_another_commit_before_submitting
+    @client.comments.first['body'] = "REVIEWED #{'c' * 40} BY openai/codex EFFORT high FINDINGS 0"
+
+    assert_blocked(/earlier attestations do not apply/)
+  end
+
+  def test_waiver_merges_and_reports_its_reason
+    @client.comments = []
+    merge = Shaka::Merge.new(@client, review: { waiver: 'Prose-only change' })
+
+    result = merge.call(head: HEAD, base: BASE, walkthrough: 17)
+
+    assert_equal({ 'basis' => 'waived', 'reason' => 'Prose-only change' }, result.fetch('review_evidence'))
+  end
+
+  def test_trusted_none_needs_no_review_evidence
+    @client.comments = []
+
+    result = Shaka::Merge.new(@client, review: { required: 'none' }).call(head: HEAD, base: BASE, walkthrough: 17)
+
+    assert_equal 'not_required', result.dig('review_evidence', 'basis')
+  end
+end
+
 class MergeCheckTest < Minitest::Test
   include MergeFixtures
 
@@ -211,6 +274,54 @@ class MergeCheckTest < Minitest::Test
     assert_match(/branch protection/, error.message)
     assert_match(/wait and retry/, error.message)
     assert_empty @client.mutations
+  end
+
+  def test_empty_required_checks_point_to_the_seam_fallback
+    @client.checks = []
+    assert_blocked(/merge\.required_checks/)
+  end
+
+  def test_seam_required_checks_gate_merge_when_github_enforces_none
+    @client.checks = []
+    @client.head_checks = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17)['state']
+  end
+
+  def test_a_seam_required_check_missing_from_the_head_blocks
+    @client.checks = []
+    @client.head_checks = [{ 'name' => 'lint', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing.*"name" => "checks", "state" => "MISSING"/)
+  end
+
+  # GitHub cannot catch a seam check that fails while review evidence is read, so merge rereads it.
+  def test_a_seam_required_check_that_fails_during_review_reads_blocks
+    @client.checks = []
+    @client.head_checks = [[{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }],
+                           [{ 'name' => 'checks', 'state' => 'FAILURE', 'bucket' => 'fail' }]]
+    @client.snapshots = [snapshot, snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing/)
+  end
+
+  def test_a_failing_seam_required_check_blocks
+    @client.checks = []
+    @client.head_checks = [{ 'name' => 'checks', 'state' => 'FAILURE', 'bucket' => 'fail' }]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing/)
+  end
+
+  def test_native_required_checks_are_not_replaced_by_the_seam_list
+    @client.checks = [{ 'name' => 'Validate', 'state' => 'FAILURE', 'bucket' => 'fail' }]
+    @client.head_checks = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+
+    assert_blocked(/Required check is not passing/)
   end
 
   def test_failed_pending_cancelled_or_unknown_checks_block
@@ -539,5 +650,65 @@ class MergeSubmissionTest < Minitest::Test
   def test_snapshot_failure_does_not_submit
     @client.snapshots = [Shaka::Error.new('Snapshot unavailable')]
     assert_blocked(/Snapshot unavailable/)
+  end
+end
+
+class MergeLimitsGateTest < Minitest::Test
+  include MergeFixtures
+
+  LIMITS = { 'max_changed_files' => 3, 'max_changed_lines' => 50, 'max_commits' => 2 }.freeze
+
+  def merge_with(confirmed_head: nil)
+    @merge.call(head: HEAD, base: BASE, walkthrough: 17,
+                limits: Shaka::MergeLimits.new(LIMITS, confirmed_head:))
+  end
+
+  def assert_limit_blocked(pattern, confirmed_head: nil)
+    error = assert_raises(Shaka::Error) { merge_with(confirmed_head:) }
+    assert_match pattern, error.message
+    assert_empty @client.mutations
+  end
+
+  def test_counts_at_each_limit_merge
+    assert_equal 'MERGED', merge_with.fetch('state')
+  end
+
+  def test_one_past_any_limit_hands_back_as_ask
+    [{ 'changedFiles' => 4 }, { 'deletions' => 11 }, { 'commits' => { 'totalCount' => 3 } }].each do |change|
+      @client.snapshots = [snapshot.merge(change)]
+      assert_limit_blocked(/exceeds merge limits .*hand it to the user as Ask/)
+    end
+  end
+
+  def test_missing_size_evidence_hands_back_as_ask
+    [{ 'changedFiles' => nil }, { 'additions' => '40' }, { 'commits' => nil }, { 'commits' => {} },
+     { 'changedFiles' => -1 }].each do |change|
+      @client.snapshots = [snapshot.merge(change)]
+      assert_limit_blocked(/did not report the PR size/)
+    end
+  end
+
+  def test_confirmation_for_the_current_head_merges_past_limits
+    @client.snapshots = [snapshot.merge('changedFiles' => 400, 'commits' => nil)]
+    assert_equal 'MERGED', merge_with(confirmed_head: HEAD).fetch('state')
+  end
+
+  def test_confirmation_for_another_head_needs_a_new_decision
+    assert_limit_blocked(/names c{40}, not the current head/, confirmed_head: 'c' * 40)
+  end
+
+  def test_confirmation_does_not_relax_native_gates
+    @client.snapshots = [snapshot.merge('changedFiles' => 400, 'mergeStateStatus' => 'BLOCKED')]
+    assert_limit_blocked(/GitHub merge state/, confirmed_head: HEAD)
+  end
+
+  def test_a_count_that_grows_before_submission_hands_back_as_ask
+    @client.snapshots = [snapshot, snapshot.merge('changedFiles' => 4)]
+    assert_limit_blocked(/files 4 > 3/)
+  end
+
+  def test_default_limits_apply_when_the_caller_passes_none
+    @client.snapshots = [snapshot.merge('changedFiles' => 30)]
+    assert_blocked(/files 30 > 29/)
   end
 end

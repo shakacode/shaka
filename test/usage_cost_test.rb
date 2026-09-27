@@ -101,6 +101,67 @@ class UsageCostTest < Minitest::Test
   end
 end
 
+class UsageGPT6CostTest < Minitest::Test
+  include UsageFixture
+
+  RATES = {
+    'gpt-6-sol' => { credits: '13.200000', base: '$0.528000', cache_write: '$0.205000',
+                     long: '$16.138000' },
+    'gpt-6-luna' => { credits: '0.660000', base: '$0.026400', cache_write: '$0.010250',
+                      long: '$0.806900' }
+  }.freeze
+
+  def test_gpt_6_sol_published_rates
+    assert_rates('gpt-6-sol')
+  end
+
+  def test_gpt_6_luna_published_rates
+    assert_rates('gpt-6-luna')
+  end
+
+  private
+
+  def assert_rates(model)
+    rates = RATES.fetch(model)
+    assert_standard_rates(model, rates)
+    assert_cache_write_rate(model, rates)
+    assert_long_context_rates(model, rates)
+  end
+
+  def assert_standard_rates(model, rates)
+    records = [priced_context('standard', model),
+               priced_usage('standard-response', 'standard', 200_000, cached: 40_000, output: 20_000)]
+    report = run_report(records)
+    assert_metric report, 'Credits estimate', rates[:credits]
+    assert_metric report, 'USD estimate', rates[:base]
+    assert_openai_sources report, model
+  end
+
+  def assert_cache_write_rate(model, rates)
+    records = [priced_context('cache-write', model),
+               priced_usage('cache-response', 'cache-write', 100_000, writes: 10_000, output: 0)]
+    report = run_report(records)
+    assert_metric report, 'Credits estimate', 'UNKNOWN'
+    assert_metric report, 'USD estimate', rates[:cache_write]
+    assert_includes report, 'Credit cache-write rate UNKNOWN'
+  end
+
+  def assert_long_context_rates(model, rates)
+    records = [priced_context('long', model),
+               priced_usage('long-response', 'long', 300_000,
+                            cached: 20_000, writes: 10_000, output: 1_000_000)]
+    report = run_report(records)
+    assert_metric report, 'USD estimate', rates[:long]
+    assert_includes report, '272K context threshold'
+    assert_openai_sources report, model
+  end
+
+  def assert_openai_sources(report, model)
+    assert_includes report, "models/#{model}"
+    assert_includes report, 'learn.chatgpt.com/docs/pricing'
+  end
+end
+
 class UsageCursorCostTest < Minitest::Test
   def test_cursor_grok_keeps_unpriced_writes_in_ordinary_input
     report = Shaka::CostEstimate.new([cursor_record]).report
@@ -245,6 +306,7 @@ end
 
 module AnthropicCostFixture
   ANTHROPIC_LINK = 'platform.claude.com/docs/en/about-claude/pricing'
+  ANTHROPIC_FAST_LINK = 'platform.claude.com/docs/en/build-with-claude/fast-mode'
 
   private
 
@@ -273,8 +335,9 @@ class UsageAnthropicCostTest < Minitest::Test
   def test_standard_opus_prices_each_cache_write_at_its_own_ttl_rate
     report = estimate(anthropic_record)
     assert_metric report, 'USD estimate', '$0.001110'
-    assert_includes report, 'Anthropic API list prices, verified 2026-09-19'
+    assert_includes report, 'Anthropic API list prices, verified 2026-09-23'
     assert_includes report, ANTHROPIC_LINK
+    refute_includes report, ANTHROPIC_FAST_LINK
     refute_includes report, 'Credits estimate'
     refute_includes report, 'Cache-exclusive input is unpriced'
     refute_includes report, 'developers.openai.com'
@@ -295,12 +358,26 @@ class UsageAnthropicCostTest < Minitest::Test
   end
 
   def test_every_served_model_family_has_a_rate_including_the_cheaper_fable_cache_read
-    { 'claude-opus-4-5' => '$0.001110', 'claude-sonnet-4-5' => '$0.000666',
+    { 'claude-opus-5-5' => '$0.000880', 'claude-opus-4-5' => '$0.001110',
+      'claude-sonnet-4-5' => '$0.000666',
       'claude-haiku-4-5' => '$0.000222', 'claude-fable-5-1' => '$0.002190',
       'claude-fable-5' => '$0.002220' }.each do |model, expected|
       report = estimate(anthropic_record(configuration: ['anthropic', 'UNKNOWN', model, 'xhigh']))
       assert_metric report, 'USD estimate', expected
     end
+  end
+
+  def test_opus_55_fast_mode_doubles_its_rate_and_includes_both_sources
+    configuration = %w[anthropic UNKNOWN claude-opus-5-5 xhigh]
+    standard = estimate(anthropic_record(configuration: configuration))
+    fast = estimate(anthropic_record(configuration: configuration, billing: 'fast'))
+
+    assert_metric standard, 'USD estimate', '$0.000880'
+    assert_includes standard, ANTHROPIC_LINK
+    refute_includes standard, ANTHROPIC_FAST_LINK
+    assert_metric fast, 'USD estimate', '$0.001760'
+    assert_includes fast, ANTHROPIC_LINK
+    assert_includes fast, ANTHROPIC_FAST_LINK
   end
 
   def test_web_search_requests_are_charged_on_top_of_the_token_estimate
@@ -349,15 +426,26 @@ end
 class UsageAnthropicUnknownTest < Minitest::Test
   include AnthropicCostFixture
 
-  def test_fast_mode_and_unrecorded_speed_stay_unknown_rather_than_pricing_as_standard
+  def test_published_fast_mode_is_priced_and_unrecorded_speed_stays_unknown
     fast = estimate(anthropic_record(billing: 'fast'))
-    assert_metric fast, 'USD estimate', 'UNKNOWN'
-    assert_includes fast, 'Anthropic fast-mode rates are not published here'
+    assert_metric fast, 'USD estimate', '$0.002220'
+    assert_includes fast, ANTHROPIC_LINK
+    assert_includes fast, ANTHROPIC_FAST_LINK
+    assert_includes fast, 'fast mode is priced for Opus models with a published rate'
     silent = estimate(anthropic_record(billing: 'UNKNOWN'))
     assert_metric silent, 'USD estimate', 'UNKNOWN'
     assert_includes silent, 'Billing speed UNKNOWN'
     refute_includes silent, '$0.00'
-    [fast, silent].each { |report| refute_includes report, ANTHROPIC_LINK }
+    refute_includes silent, ANTHROPIC_LINK
+  end
+
+  def test_fast_mode_for_a_model_without_a_published_rate_stays_unknown
+    fast = estimate(anthropic_record(configuration: %w[anthropic UNKNOWN claude-sonnet-5 xhigh],
+                                     billing: 'fast'))
+    assert_metric fast, 'USD estimate', 'UNKNOWN'
+    assert_includes fast, 'Anthropic fast-mode rate UNKNOWN for claude-sonnet-5'
+    refute_includes fast, ANTHROPIC_LINK
+    refute_includes fast, ANTHROPIC_FAST_LINK
   end
 
   def test_a_half_reported_cache_write_split_stays_unknown

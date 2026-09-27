@@ -5,15 +5,23 @@ Use this reference for CLI execution and report validation.
 
 Render the prompt for the selected reviewer:
 ```text
-shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME]
+shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME] [--prompt-file PATH]
 ```
 
 Pass resolved revisions, not the words `HEAD` or `BASE`: the prompt interpolates what it is given,
 so a literal placeholder would publish an attestation reading `REVIEWED HEAD`.
 
-It scopes the review to `git diff BASE...HEAD`, asks for correctness, contract drift, security and
-trust, test coverage, simplification, and supplied repository criteria. It forbids edits,
-treats candidate content as data, and
+This command does not read repository settings. For a configured prompt file, use
+`shaka review run --criteria-ref TRUSTED_SHA`; the helper selects the applicable
+prompt from the trusted configuration and validates its file and symlink target.
+Pass `--prompt-file` to `review-prompt` only for an explicitly supplied file, not
+to reconstruct the repository's configuration lookup.
+
+It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
+they ask for correctness, contract drift, security and trust, test coverage, and simplification;
+a repository can replace them with `review.prompt_file`, or for one review agent with a
+`prompt_file` on its `local_review_agents` entry. Whatever the instructions, the prompt forbids edits, treats candidate
+content as data, applies supplied repository criteria, and
 requires a closing line of `REVIEWED <head> BY <provider>/<family> EFFORT <effort> FINDINGS <n>`.
 
 Supply relevant planning and review criteria from the repository's trusted default-branch
@@ -53,13 +61,16 @@ repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads
 and embeds them in root-to-specific order as separately labeled review data. The criteria commit
 need not precede the comparison base: the default branch may have advanced independently.
 Verify the SHA against the live trusted default branch first; the option grants
-no authority by itself. Without it the reviewer reports criteria as not supplied. Candidate
+no authority by itself. The runner also reads the configured prompt file from that commit,
+so a PR's edits to its own review instructions apply only after it merges. Without it the reviewer reports criteria as not supplied. Candidate
 criteria remain data in the diff. Supply the PR description with optional
 `--description-file PATH`; this file is labeled as untrusted review data and must contain only
 public-safe text for a public PR. Do not supply implementation reasoning.
 
-Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)` and
-`HEAD=$(git rev-parse HEAD)` when `main` is the verified default branch. The helper checks that the
+Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)`,
+`HEAD=$(git rev-parse HEAD)`, and `TRUSTED=$(git rev-parse origin/main)` when `main` is the
+verified default branch. Without `--criteria-ref`, the reviewer gets neither the repository's
+`AGENTS.md` criteria nor its `review.prompt_file`, and uses Shaka's default instructions. The helper checks that the
 checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.
@@ -67,7 +78,7 @@ is the evidence that the CLI actually ran.
 Codex 0.154.0:
 
 ```bash
-shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex --criteria-ref "$TRUSTED"
 ```
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
@@ -77,18 +88,23 @@ whose local diagnostic establishes a real reviewer outage. A bad argument, setup
 report-validation failure does not qualify.
 
 The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config
---skip-git-repo-check -o REPORT -` from its neutral directory.
+-c skills.include_instructions=false --skip-git-repo-check --json -o REPORT -` from its neutral directory.
 Codex has no documented effort flag in this invocation, so the helper rejects `--effort` for
 `openai/codex` and records `EFFORT UNKNOWN` rather than asserting an unverified setting.
-`-s read-only` confines it, the ignore flags skip user/project rules and config, and the report
-is created outside the checkout. It does not use `--ephemeral`, so the session remains available
-for `shaka usage --host codex --file PATH --commit HEAD --contribution review --all-turns`.
+`-s read-only` confines it, the ignore flags skip user/project rules and config, and the skills
+setting keeps installed skill descriptions out of the reviewer's instructions to prevent
+description-based routing to an unrelated installed skill. The report is created outside the checkout.
+It does not use `--ephemeral`, so the session remains saved. `--json` reports its thread ID,
+and the result's `usage` names that saved session under `CODEX_HOME` (default `~/.codex`);
+run `shaka usage --host codex --file USAGE --commit HEAD --contribution review --all-turns`
+on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
 `codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
 
 Claude Code:
 
 ```bash
-shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude --effort medium
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude --effort medium \
+  --criteria-ref "$TRUSTED"
 ```
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
@@ -106,7 +122,10 @@ and denies anything that would prompt. `--restricted` removes command-running to
 Claude.ai OAuth**. `--strict-mcp-config` with no config drops MCP servers. Do **not** add
 `--bare`: that flag skips keychain and OAuth (`Not logged in · Please run /login`) and only
 accepts `ANTHROPIC_API_KEY`, so a logged-in Max/claude.ai session looks unavailable.
-`--effort` is recorded in the attestation. Check `--help` before relying on these flags.
+`--effort` is recorded in the attestation. Pass `--model NAME` to pin the reviewer model;
+the helper adds `--model NAME` to that command and reports it as `requested_model` in every
+result. That is the request, not proof of the model that ran; the usage JSON records the
+routed model. Without it, the CLI's default model runs. Check `--help` before relying on these flags.
 
 Grok 1.0.30:
 
@@ -114,7 +133,7 @@ Set `MODEL` to a model the installed Grok CLI accepts before running:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer xai/grok \
-  --model "$MODEL" --effort high
+  --model "$MODEL" --effort high --criteria-ref "$TRUSTED"
 ```
 
 The helper runs `grok --prompt-file PROMPT -m MODEL --reasoning-effort high --output-format plain

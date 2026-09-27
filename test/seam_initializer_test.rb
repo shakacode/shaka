@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'json'
 require 'yaml'
+require 'shaka/merge_limits'
 require 'shaka/version'
 
 module SeamInitializerTestHelpers
@@ -52,8 +53,8 @@ module SeamInitializerTestHelpers
   def assert_complete_seam(root, output)
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
-    assert_equal %w[base_branch branches commands merge review version wip], config.keys.sort
-    assert_equal ['preference'], config.fetch('merge').keys
+    assert_equal %w[base_branch branches commands merge paths review version wip], config.keys.sort
+    assert_equal({ 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS }, config.fetch('merge'))
     assert_includes File.read(File.join(root, '.agents/agent-workflow.yml')), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
   end
@@ -256,6 +257,24 @@ class SeamInitializerTest < Minitest::Test
   end
 end
 
+class SeamInitializerLayoutTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_refuses_to_create_legacy_config_beside_new_config
+    with_repository do |root|
+      path = File.join(root, '.agents/shaka/config.yml')
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "version: 1\n")
+      _output, error, status = init(root)
+
+      refute_predicate status, :success?
+      assert_includes error, '.agents/shaka/config.yml'
+      assert_includes error, '.agents/agent-workflow.yml'
+      refute_path_exists File.join(root, '.agents/agent-workflow.yml')
+    end
+  end
+end
+
 class SeamInitializerValidationTest < Minitest::Test
   include SeamInitializerTestHelpers
 
@@ -285,7 +304,7 @@ class SeamInitializerValidationTest < Minitest::Test
   end
 
   def test_rejects_retired_github_fact_options
-    %w[--required-check --trusted-action].each do |flag|
+    %w[--trusted-action].each do |flag|
       with_repository do |root|
         _output, error, status = Open3.capture3(*init_arguments(root), flag, 'value')
 
@@ -678,6 +697,32 @@ class SeamInitializerReadmeCoexistenceTest < Minitest::Test
         assert_predicate status, :success?, error
         assert_complete_seam(root, output)
       end
+    end
+  end
+end
+
+class SeamInitializerRequiredCheckTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_writes_seam_required_checks
+    with_repository do |root|
+      arguments = init_arguments(root) + ['--required-check', 'checks', '--required-check', 'lint']
+      _output, error, status = Open3.capture3(*arguments)
+
+      assert_predicate status, :success?, error
+      config = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
+      assert_equal %w[checks lint], config.dig('merge', 'required_checks')
+    end
+  end
+
+  def test_rejects_a_repeated_required_check_before_writing
+    with_repository do |root|
+      arguments = init_arguments(root) + ['--required-check', 'checks', '--required-check', 'Checks']
+      _output, error, status = Open3.capture3(*arguments)
+
+      refute_predicate status, :success?
+      assert_includes error, 'merge.required_checks repeats checks'
+      refute_path_exists File.join(root, '.agents')
     end
   end
 end

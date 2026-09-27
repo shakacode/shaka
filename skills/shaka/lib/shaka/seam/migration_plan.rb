@@ -3,6 +3,7 @@
 require 'open3'
 require 'shellwords'
 require_relative '../repository_config'
+require_relative '../configuration'
 require_relative 'field_classifier'
 require_relative 'migration_policy'
 
@@ -21,21 +22,20 @@ module Shaka
       end
 
       def command_inventory
-        RepositoryConfig::CommandPaths::ALL.to_h do |name, path|
+        Configuration::Paths::COMMANDS.to_h do |name, path|
           [name, { 'path' => path, 'present_at_from_ref' => command_present?(path) }]
         end
       end
 
       def command_present?(path)
-        _out, status = Open3.capture2e('git', '-C', root, 'cat-file', '-e', "#{@sha}:#{path}")
-        status.success?
+        Configuration.entry_at_commit?(root:, sha: @sha, path:)
       end
 
       def command_collisions
         mapping = command_mapping
         return [] unless mapping
 
-        RepositoryConfig::CommandPaths::ALL.keys.filter_map { |role| collision_for(role, mapping) }
+        Configuration::Paths::COMMANDS.keys.filter_map { |role| collision_for(role, mapping) }
       end
 
       def command_mapping
@@ -43,7 +43,7 @@ module Shaka
       end
 
       def collision_for(role, mapping)
-        expected = RepositoryConfig::CommandPaths::ALL.fetch(role)
+        expected = Configuration::Paths::COMMANDS.fetch(role)
         actual = mapping[role]
         return if actual.nil? || actual == expected
 
@@ -55,20 +55,22 @@ module Shaka
         return optional_collision_behavior(role, mapping.fetch(role)) if optional_role?(role)
 
         targets = [mapping['validate'], mapping['test']].compact.uniq.join(' and ')
-        'Until the new seam is trusted, use the stricter superset: both .agents/bin/validate and ' \
-          ".agents/bin/test must execute #{targets}"
+        'Until the new seam is trusted, use the stricter superset: both ' \
+          "#{Configuration::Paths::REQUIRED_COMMANDS.fetch('validate')} and " \
+          "#{Configuration::Paths::REQUIRED_COMMANDS.fetch('test')} must execute #{targets}"
       end
 
       def optional_role?(role)
-        RepositoryConfig::CommandPaths::OPTIONAL.key?(role)
+        Configuration::Paths::OPTIONAL_COMMANDS.key?(role)
       end
 
       def setup_collision_behavior(actual)
-        "Keep #{actual} reachable from .agents/bin/setup until the new seam is trusted"
+        "Keep #{actual} reachable from #{Configuration::Paths::REQUIRED_COMMANDS.fetch('setup')} " \
+          'until the new seam is trusted'
       end
 
       def optional_collision_behavior(role, actual)
-        expected = RepositoryConfig::CommandPaths::OPTIONAL.fetch(role)
+        expected = Configuration::Paths::OPTIONAL_COMMANDS.fetch(role)
         "Keep #{actual} reachable from #{expected} until the new seam is trusted"
       end
 
@@ -76,9 +78,9 @@ module Shaka
         mapping = command_mapping
         return unless mapping
 
-        RepositoryConfig::CommandPaths::OPTIONAL.each do |role, path|
+        Configuration::Paths::OPTIONAL_COMMANDS.each do |role, path|
           next unless mapping.key?(role)
-          next if File.file?(File.join(root, path))
+          next if Configuration.command_file?(root, role)
 
           classified.blocking << path
         end
@@ -88,7 +90,7 @@ module Shaka
         mapping = command_mapping
         return [] unless mapping
 
-        RepositoryConfig::CommandPaths::ALL.filter_map do |role, expected|
+        Configuration::Paths::COMMANDS.filter_map do |role, expected|
           actual = mapping[role]
           actual if actual.is_a?(String) && actual != expected
         end
@@ -106,6 +108,7 @@ module Shaka
         classified = FieldClassifier.new(@data).call
         overlay_explicit_policy(classified)
         reject_invalid_review(classified)
+        reject_invalid_merge(classified)
         require_optional_entry_points(classified)
         report_body(classified)
       end
@@ -115,6 +118,16 @@ module Shaka
         return unless review.is_a?(Hash)
 
         RepositoryConfig::ReviewSchema.new(review).validate
+      rescue Error => e
+        classified.blocking << e.message
+      end
+
+      # A missing preference is already blocking; validate the rest once it is established.
+      def reject_invalid_merge(classified)
+        merge = classified.established['merge']
+        return unless merge.is_a?(Hash) && merge.key?('preference')
+
+        RepositoryConfig::MergeSchema.new(merge).validate
       rescue Error => e
         classified.blocking << e.message
       end
@@ -140,10 +153,11 @@ module Shaka
       end
 
       def rollback_recipe
-        restore = "git -C #{Shellwords.escape(root)} checkout #{@sha} -- #{RepositoryConfig::PATH}"
-        return "#{restore} .agents/shaka.md" if command_present?('.agents/shaka.md')
+        restore = "git -C #{Shellwords.escape(root)} checkout #{@sha} -- #{Configuration::Paths::CONTRACT}"
+        pointer = Configuration::Paths::POINTER
+        return "#{restore} #{pointer}" if command_present?(pointer)
 
-        "#{restore} && rm -f #{Shellwords.escape(File.join(root, '.agents/shaka.md'))}"
+        "#{restore} && rm -f #{Shellwords.escape(Configuration.path(root, :POINTER))}"
       end
 
       def validation_notes
