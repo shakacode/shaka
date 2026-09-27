@@ -47,7 +47,7 @@ module Shaka
       return not_checked('the candidate checkout root is unknown') unless @candidate_root
 
       @cache = make_cache(@cache_dir)
-      previous = @cache.read
+      previous = @cache&.read
       return previous if previous
 
       run_check
@@ -61,7 +61,7 @@ module Shaka
         LocalReviewExecutable.candidate_owned?(temp_root, @candidate_root)
 
       verdict = judge(parse)
-      @cache.write(verdict)
+      @cache&.write(verdict)
       verdict
     end
 
@@ -81,6 +81,8 @@ module Shaka
     def make_cache(directory)
       OpeningVerdictCache.new(opening: @opening, model: [@reviewer, @model].join('/'),
                               prompt: model_prompt, directory:)
+    rescue ArgumentError, SystemCallError
+      nil # Checking still works when this host has no usable cache directory.
     end
 
     def parse

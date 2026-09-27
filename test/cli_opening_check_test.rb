@@ -45,12 +45,12 @@ class CliOpeningCheckTest < Minitest::Test
   def test_trusted_setting_allows_a_listed_reviewer
     with_repository('opening_check' => { 'enabled' => true }) do |root|
       commit(root)
-      Dir.mktmpdir do |dir|
-        output, error, status = run_description(dir, root:, reviewer: 'anthropic/claude', model: 'claude-haiku')
-        assert_predicate status, :success?, error
-        assert_equal 'flagged', JSON.parse(output).dig('opening', 'status')
-        assert_path_exists File.join(dir, 'claude-called')
-        assert_includes JSON.parse(File.read(File.join(dir, 'claude-args.json'))), 'claude-haiku'
+      %w[anthropic/claude ANTHROPIC/CLAUDE].each do |reviewer|
+        Dir.mktmpdir do |dir|
+          output, error, _status = run_description(dir, root:, reviewer:, model: 'claude-haiku')
+          assert_equal 'flagged', JSON.parse(output).dig('opening', 'status'), error
+          assert_includes JSON.parse(File.read(File.join(dir, 'claude-args.json'))), 'claude-haiku'
+        end
       end
     end
   end

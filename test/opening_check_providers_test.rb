@@ -69,6 +69,18 @@ class OpeningCheckProvidersTest < Minitest::Test
     end
   end
 
+  def test_missing_home_does_not_stop_the_model_check
+    with_claude(parse('shaka merge', false)) do |root, _trace|
+      original = Dir.method(:home)
+      Dir.define_singleton_method(:home) { raise ArgumentError, 'no home' }
+      result = Shaka::OpeningCheck.new(summary: COMMAND_FIRST, candidate_root: root,
+                                       reviewer: 'anthropic/claude').call
+      assert_equal 'flagged', result.fetch('status')
+    ensure
+      Dir.define_singleton_method(:home, original)
+    end
+  end
+
   def test_unreadable_cache_entry_retries_the_model
     with_claude(parse('Pull requests', true)) do |root, trace|
       assert_equal 'passed', check('Pull requests show the outcome.', root:).fetch('status')
