@@ -11,7 +11,9 @@ module Shaka
     BEGIN_PREFIX = '<!-- shaka:usage '
     END_MARK = '<!-- shaka:usage:end -->'
     REGION = /<!-- shaka:begin -->(.*?)<!-- shaka:end -->/m
-    BLOCK = /#{Regexp.escape(BEGIN_PREFIX)}(.*?) -->\n.*?#{Regexp.escape(END_MARK)}/m
+    # A block ends before any later begin marker, so a lost end marker cannot swallow the next report.
+    OPENING = Regexp.escape(BEGIN_PREFIX)
+    BLOCK = /#{OPENING}([^\n]*) -->\n(?:(?!#{OPENING}).)*?#{Regexp.escape(END_MARK)}/m
     FIELDS = %w[host sources responses contribution commits from to].freeze
 
     module_function
@@ -31,6 +33,7 @@ module Shaka
 
     def carried(region, body, stats)
       fresh = text_records(body)
+      stats['dropped'] += unterminated(region)
       region.to_enum(:scan, BLOCK).filter_map do
         text = Regexp.last_match[0]
         outcome = outcome(text, parse(Regexp.last_match[1]), fresh, body)
@@ -44,8 +47,10 @@ module Shaka
       return 'dropped' unless fields && report_shape?(text)
       return if body.include?(text)
 
-      fresh.any? { |other| overlap?(fields, other) } ? 'replaced' : 'retained'
+      superseded?(fields, fresh) ? 'replaced' : 'retained'
     end
+
+    def unterminated(region) = region.scan(BEGIN_PREFIX).size - region.scan(BLOCK).size
 
     def text_records(text) = text.to_enum(:scan, BLOCK).filter_map { parse(Regexp.last_match[1]) }
 
@@ -53,7 +58,16 @@ module Shaka
     # markers or unbalanced markup under the managed output.
     def report_shape?(text)
       inner = text.sub(/\A.*?\n/, '').delete_suffix(END_MARK)
-      !inner.include?('<!-- shaka:') && inner.scan('<details>').size == inner.scan('</details>').size
+      !inner.include?('<!-- shaka:') && balanced_details?(inner)
+    end
+
+    def balanced_details?(text)
+      depth = text.scan(%r{</?details>}).reduce(0) do |open, tag|
+        return false if tag == '</details>' && open.zero?
+
+        tag == '</details>' ? open - 1 : open + 1
+      end
+      depth.zero?
     end
 
     def parse(json)
@@ -66,14 +80,18 @@ module Shaka
       nil
     end
 
-    # Shared responses are the same work. Without response IDs, the same source over an
-    # overlapping or unknown interval cannot be shown to be different work.
-    def overlap?(old, new)
-      return false unless old['host'] == new['host']
-      return old['responses'].intersect?(new['responses']) unless old['responses'].empty? || new['responses'].empty?
+    # New reports replace an old one only when they hold every response it counted, so a partial
+    # overlap never deletes usage. Without response IDs, the same source over an overlapping or
+    # unknown interval cannot be shown to be different work.
+    def superseded?(old, fresh)
+      same_host = fresh.select { |new| new['host'] == old['host'] }
+      covered = same_host.flat_map { |new| new['responses'] }
+      return (old['responses'] - covered).empty? unless old['responses'].empty? || covered.empty?
 
-      old['sources'].intersect?(new['sources']) && intervals_touch?(old, new)
+      same_host.any? { |new| same_source_interval?(old, new) }
     end
+
+    def same_source_interval?(old, new) = old['sources'].intersect?(new['sources']) && intervals_touch?(old, new)
 
     def intervals_touch?(old, new)
       from, to, new_from, new_to = [old['from'], old['to'], new['from'], new['to']].map { |stamp| time(stamp) }

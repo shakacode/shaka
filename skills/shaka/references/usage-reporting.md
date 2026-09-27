@@ -48,16 +48,18 @@ interval, and digests of the response and source IDs. They do not publish the
 IDs or local paths.
 
 When `description` republishes a PR, it keeps each earlier report from the
-managed region unless a new report covers the same work. Reports on the same host
-cover the same work when they share a response. When either report lacks
-response IDs, they cover the same work when they share a source and their
-intervals overlap or either interval is `UNKNOWN`. The newer report replaces the
-older one. A switch from Claude Code to Codex and back therefore keeps all three
-contributions, and a refreshed snapshot of the same turns replaces the old one.
+managed region unless the new reports cover its work. New reports on the same
+host cover it when together they hold every response it counted. A partial
+overlap keeps both reports, so they may share some responses. When either side
+lacks response IDs, a new report covers the old one when they share a source and
+their intervals overlap or either interval is `UNKNOWN`. A switch from Claude
+Code to Codex and back therefore keeps all three contributions, and a refreshed
+`--all-turns` snapshot replaces the earlier snapshots of the same session.
 
 The collapsed summary lists each report's USD estimate and adds no total, because
 the reports may be partial or shared. The command drops a carried report whose
-markers or `<details>` tags were edited out of shape, and prints how many reports
+markers or `<details>` tags were edited out of shape, including a report that
+lost its end marker, and prints how many reports
 it retained, replaced, and dropped. It refuses a description longer than GitHub's
 65,536-character limit.
 

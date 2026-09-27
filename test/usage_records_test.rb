@@ -57,6 +57,30 @@ class UsageRecordsTest < Minitest::Test
     assert_includes body, 'claude-all-turns'
   end
 
+  # Break: a latest-turn snapshot after --all-turns deleted the responses it did not cover.
+  def test_partial_overlap_keeps_the_report_holding_uncovered_responses
+    old = record('claude-code', 'all-turns', responses: %w[c1 c2])
+    body = carried(existing(old), record('claude-code', 'latest-turn', responses: %w[c2 c3]))
+    assert_includes body, 'all-turns'
+  end
+
+  # Break: a report missing its end marker swallowed the next valid report.
+  def test_unterminated_report_is_dropped_without_losing_the_next_one
+    cut = record('codex', 'cut', responses: %w[a1]).delete_suffix(Shaka::UsageRecords::END_MARK)
+    kept = record('codex', 'kept', responses: %w[k1])
+    content, stats = Shaka::UsageRecords.carry(described(record('codex', 'new', responses: %w[n1])),
+                                               existing(cut, kept))
+    assert_includes content['details'].first['body'], 'kept'
+    assert_equal({ 'retained' => 1, 'replaced' => 0, 'dropped' => 1 }, stats)
+  end
+
+  # Break: a closing tag before its opener passed the count check and closed the outer disclosure.
+  def test_reversed_details_tags_are_dropped
+    reversed = record('codex', 'reversed', responses: %w[v1])
+               .sub('<details>', '</details>').sub(%r{</details>\n<!--}, "<details>\n<!--")
+    refute_includes carried(existing(reversed), record('codex', 'new', responses: %w[n1])), 'reversed'
+  end
+
   # Break: concurrent work in another session overlapped in time but shares no responses.
   def test_concurrent_sources_without_shared_responses_are_both_kept
     old = record('claude-code', 'implementation', responses: %w[c1])
