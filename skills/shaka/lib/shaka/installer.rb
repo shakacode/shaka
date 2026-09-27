@@ -9,12 +9,12 @@ require_relative 'install/links'
 module Shaka
   # Installs a checkout independent copy and points one host's skills directory to it.
   class Installer
-    def initialize(source_root:, skills_dir:, names:, rollback: nil)
+    def initialize(source_root:, skills_dir:, names:, rollback: nil, managed_dir: nil)
       @source_root = File.realpath(source_root)
-      @skills_dir = File.expand_path(skills_dir)
+      @skills_dir = canonical(skills_dir)
       @names = names
       @rollback = rollback
-      @managed = File.join(Dir.home, '.local/share/shaka/installs')
+      @managed = canonical(managed_dir || File.join(Dir.home, '.local/share/shaka/installs'))
       refuse_overlap
     end
 
@@ -29,6 +29,13 @@ module Shaka
     end
 
     private
+
+    def canonical(path)
+      expanded = File.expand_path(path)
+      ancestor = expanded
+      ancestor = File.dirname(ancestor) until File.exist?(ancestor) || File.symlink?(ancestor)
+      File.expand_path(File.join(File.realpath(ancestor), expanded.delete_prefix(ancestor).delete_prefix('/')))
+    end
 
     def refuse_overlap
       [@managed, @skills_dir].each do |path|

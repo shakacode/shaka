@@ -36,6 +36,8 @@ The installer copies the skill to `~/.local/share/shaka/installs/` and links Cod
 to that managed copy. The source checkout can then be removed. Open a new task in
 your project and look for
 `$shaka`; restart Codex if it does not appear.
+Use `--managed-dir DIR` when the default package location is writable by the
+agent. Pass the same directory on upgrades and rollbacks.
 
 <a id="use-shaka-in-claude-code"></a>
 <a id="use-shaka-in-cursor"></a>
@@ -76,6 +78,8 @@ Resolve failed checks before publishing work.
 source identity without checking a repository. A clean tracked source records its
 exact revision. A modified source records its base revision and content hash as a
 development installation.
+Doctor reports the identity recorded at install time; it does not recheck the
+package's contents on each run.
 
 ## Upgrade
 
@@ -92,6 +96,8 @@ optional tower flags. It validates a new managed copy before switching the links
 Existing tasks keep their current helper path; start a new task for the upgrade.
 The previous package remains under `~/.local/share/shaka/installs/`.
 Configuration changes may also require a repository migration.
+If an unchanged-source reinstall refuses a changed package, move only that
+package directory aside and rerun the installer to create a fresh copy.
 
 To roll back, read the previous package ID from the installer's `Package:` line
 or from `shaka doctor --installation-json` before upgrading, then run:
@@ -120,6 +126,8 @@ unlink "$HOME/.agents/skills/shaka"
 Use the appropriate directory for other environments. If you installed tower skills,
 inspect and remove their links too: `rct`, or `mct-claude` and `rct-claude`.
 Preserve unrelated files. Removing skill links leaves repositories and PRs intact.
+Managed copies remain available for rollback; remove one only after no host link
+or active task uses it.
 
 ## Development environment details
 

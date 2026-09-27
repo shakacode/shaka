@@ -38,6 +38,23 @@ class InstallRecoveryTest < Minitest::Test
     assert_equal 'version one', File.read(File.join(@destination, 'SKILL.md'))
   end
 
+  def test_managed_directory_can_be_chosen_explicitly
+    managed = File.join(@directory, 'durable packages')
+    output, status = run_installer('--skills-dir', @skills_dir, '--managed-dir', managed)
+
+    assert_predicate status, :success?, output
+    assert File.readlink(@destination).start_with?(File.realpath(managed))
+  end
+
+  def test_refuses_a_skills_directory_reached_through_a_symlink_into_source
+    alias_path = File.join(@directory, 'source-alias')
+    File.symlink(File.join(@directory, 'source'), alias_path)
+    output, status = run_installer('--skills-dir', File.join(alias_path, 'host-skills'))
+
+    refute_predicate status, :success?
+    assert_includes output, 'overlaps source checkout'
+  end
+
   def test_checkout_reference_check_requires_a_path_separator
     path = File.join(@source, 'example.md')
     tree = Shaka::Install::Tree.new(['shaka'])
