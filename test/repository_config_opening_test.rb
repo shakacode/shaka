@@ -20,6 +20,13 @@ class RepositoryConfigOpeningTest < Minitest::Test
     end
   end
 
+  def test_rejects_a_missing_local_opening_prompt
+    with_repository('opening_check' => { 'prompt_file' => '.agents/missing.md' }) do |root|
+      error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+      assert_includes error.message, 'opening_check.prompt_file does not exist'
+    end
+  end
+
   def test_trusted_prompt_comes_from_the_pinned_commit
     with_repository('opening_check' => { 'enabled' => true, 'prompt_file' => '.agents/opening.md' }) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Parse the first sentence.')
@@ -28,6 +35,18 @@ class RepositoryConfigOpeningTest < Minitest::Test
       config = source.load('HEAD')
       File.write(File.join(root, '.agents/opening.md'), 'Candidate replacement.')
       assert_equal 'Parse the first sentence.', source.opening_prompt(config)
+    end
+  end
+
+  def test_trusted_prompt_resolves_a_symlinked_directory
+    with_repository('opening_check' => { 'enabled' => true,
+                                         'prompt_file' => '.agents/opening-link/prompt.md' }) do |root|
+      FileUtils.mkdir_p(File.join(root, 'prompts'))
+      File.write(File.join(root, 'prompts/prompt.md'), 'Parse this opening.')
+      File.symlink('../prompts', File.join(root, '.agents/opening-link'))
+      commit(root)
+      source = Shaka::TrustedConfigSource.new(root:)
+      assert_equal 'Parse this opening.', source.opening_prompt(source.load('HEAD'))
     end
   end
 

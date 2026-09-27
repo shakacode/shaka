@@ -46,10 +46,8 @@ module Shaka
                                          'items' => SENTENCE } }
     }.freeze
 
-    def initialize(summary:, body:, published_body:, candidate_root:, **options)
+    def initialize(summary:, candidate_root:, **options)
       @opening = summary.to_s.strip.split(/\n\s*\n/).first.to_s.strip
-      @lead = lead(body.to_s)
-      @published_body = published_body.to_s
       @candidate_root = candidate_root
       @reviewer = options[:reviewer]
       @model = options[:model]
@@ -62,7 +60,7 @@ module Shaka
       return not_checked('the candidate checkout root is unknown') unless @candidate_root
       return { 'status' => 'host_check', 'prompt' => model_prompt } unless @reviewer
 
-      previous = prior_verdict
+      previous = @cache.read
       return previous if previous
 
       run_check
@@ -98,18 +96,6 @@ module Shaka
     def make_cache(directory)
       OpeningVerdictCache.new(opening: @opening, model: [@reviewer, @model].join('/'),
                               prompt: model_prompt, schema: JSON.generate(SCHEMA), directory:)
-    end
-
-    def prior_verdict
-      @cache.read if @lead && @published_body.include?(@lead)
-    end
-
-    # The rendered body through the newline that ends the opening. The identity line before it
-    # pins the opening to its place and the newline to its end, so a promoted or shortened
-    # opening is checked again.
-    def lead(body)
-      index = body.index(@opening)
-      index && body[0, index + @opening.length + 1]
     end
 
     def parse

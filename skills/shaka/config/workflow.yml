@@ -261,10 +261,11 @@ phases:
         When the trusted seam sets `opening_check.enabled: true`, use the same ordered reviewer
         selection and unavailable-provider fallback as local code review, passing the selected
         identity with `--opening-reviewer` and any chosen `--opening-model`. The command only
-        sends the opening to a separate provider named in the trusted reviewer list. If no
+        sends the opening to a model named in the trusted reviewer list. If no
         listed provider can complete the parse, apply the returned prompt in the current model.
-        A `flagged` result identifies an internal first-sentence subject; rewrite the opening
-        so what the reader sees leads, then publish again. `not_checked` also carries the prompt
+        A `flagged` result means the first sentence has an internal subject. Use the opening
+        and any returned parse to rewrite it so what the reader sees leads, then publish again.
+        `not_checked` also carries the prompt
         for the current-model fallback. A successful verdict is cached locally, but failed calls
         are retried when the same opening is published again.
       - Supply meaning as content JSON and let the helper render it. Self-edit those summaries before

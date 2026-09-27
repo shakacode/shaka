@@ -14,13 +14,10 @@ module OpeningCheckTestHelpers
     refute invocation.fetch('pwd').start_with?(File.realpath(root)), 'the model must not run inside the checkout'
   end
 
-  def check(summary, root:, published: '', reviewer: 'anthropic/claude')
-    Shaka::OpeningCheck.new(summary:, body: render(summary), published_body: published,
-                            candidate_root: File.realpath(root), reviewer:,
+  def check(summary, root:, reviewer: 'anthropic/claude')
+    Shaka::OpeningCheck.new(summary:, candidate_root: File.realpath(root), reviewer:,
                             cache_dir: File.join(root, 'cache')).call
   end
-
-  def render(summary) = "**Author:** agent\n\n#{summary}\n\n| Check |\n| --- |\n| ok |\n"
 
   def parse(character, reader_facing)
     { sentences: [{ character:, reader_facing:, action: 'acts', object: 'something',

@@ -5,7 +5,10 @@ module Shaka
   module TrustedOpeningPrompt
     def opening_prompt(config)
       path = config.opening_check['prompt_file']
-      path && git_output(config.sha, path, '-p')
+      return unless path
+
+      resolved, = TrustedPathResolver.new(root: @root, sha: config.sha).resolve(path)
+      git_output(config.sha, resolved, '-p')
     end
 
     private

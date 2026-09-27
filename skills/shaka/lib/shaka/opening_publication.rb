@@ -1,0 +1,52 @@
+# frozen_string_literal: true
+
+require_relative 'opening_check'
+require_relative 'reviewer_selection'
+require_relative 'trusted_config_source'
+
+module Shaka
+  # Selects an opted-in opening parser; any setup failure leaves the host-model check available.
+  class OpeningPublication
+    def initialize(root:, ref:, reviewer: nil, model: nil)
+      @root = root
+      @ref = ref
+      @reviewer = reviewer
+      @model = model
+    end
+
+    def call(summary)
+      source = TrustedConfigSource.new(root: @root)
+      config = TrustedConfigSource.from_ref(root: @root, ref: @ref)
+      validate_reviewer!(config) if @reviewer
+      prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')
+      OpeningCheck.new(summary:, candidate_root: OpeningCheck.checkout_root(@root),
+                       reviewer: @reviewer, model: @model, prompt:).call
+    rescue StandardError => e
+      fallback(summary, e)
+    end
+
+    private
+
+    def validate_reviewer!(config)
+      raise Error, 'Opening reviewer requires trusted opening_check.enabled.' unless
+        config&.opening_check&.fetch('enabled', false)
+
+      allowed = Array(config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS])
+      requested = ReviewerSelection.parse(@reviewer).values_at('provider', 'model_family').map(&:downcase)
+      return if listed?(allowed, requested)
+
+      raise Error, 'Opening reviewer is not in the trusted reviewer list.'
+    end
+
+    def listed?(allowed, requested)
+      allowed.any? { |entry| entry.values_at('provider', 'model_family').map(&:downcase) == requested }
+    end
+
+    def fallback(summary, error)
+      result = OpeningCheck.new(summary:, candidate_root: OpeningCheck.checkout_root(@root)).call
+      result.merge('reason' => "External opening check unavailable: #{error.message}")
+    rescue StandardError => e
+      { 'status' => 'not_checked', 'reason' => e.message }
+    end
+  end
+end

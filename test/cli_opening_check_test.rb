@@ -2,16 +2,23 @@
 
 require_relative 'test_helper'
 require_relative 'repository_fixture'
+require_relative 'cli_opening_check_fakes'
 require 'json'
 require 'rbconfig'
 
 # Exercises the description command through rendering, model output, and GitHub publication.
 class CliOpeningCheckTest < Minitest::Test
   include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
 
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = '`shaka merge` now checks the reviewed head.'
+  FALLBACK_ROUTES = [
+    [{ 'enabled' => false }, 'anthropic/claude'],
+    [{ 'enabled' => true, 'prompt_file' => '.agents/missing.md' }, 'anthropic/claude'],
+    [{ 'enabled' => true }, 'unlisted/model']
+  ].freeze
 
   def test_description_returns_the_opening_result_after_publishing
     Dir.mktmpdir do |dir|
@@ -19,6 +26,7 @@ class CliOpeningCheckTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
       assert_includes File.read(File.join(dir, 'published.md')), SUMMARY
+      refute_path_exists File.join(dir, 'claude-called')
     end
   end
 
@@ -29,11 +37,29 @@ class CliOpeningCheckTest < Minitest::Test
         output, error, status = run_description(dir, root:, reviewer: 'anthropic/claude')
         assert_predicate status, :success?, error
         assert_equal 'flagged', JSON.parse(output).dig('opening', 'status')
+        assert_path_exists File.join(dir, 'claude-called')
+      end
+    end
+  end
+
+  def test_unavailable_or_untrusted_opening_route_publishes_with_host_fallback
+    FALLBACK_ROUTES.each do |setting, reviewer|
+      with_repository('opening_check' => setting) do |root|
+        commit(root)
+        Dir.mktmpdir { |dir| assert_host_fallback(dir, root:, reviewer:) }
       end
     end
   end
 
   private
+
+  def assert_host_fallback(dir, root:, reviewer:)
+    output, error, status = run_description(dir, root:, reviewer:)
+    assert_predicate status, :success?, error
+    assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+    assert_path_exists File.join(dir, 'published.md')
+    refute_path_exists File.join(dir, 'claude-called')
+  end
 
   def run_description(dir, root: ROOT, reviewer: nil)
     write_executable(dir, 'gh', fake_gh)
@@ -68,33 +94,5 @@ class CliOpeningCheckTest < Minitest::Test
     path = File.join(dir, name)
     File.write(path, "#!#{RbConfig.ruby}\n#{source}")
     File.chmod(0o755, path)
-  end
-
-  def fake_gh
-    <<~RUBY
-      require 'json'
-      request = JSON.parse(STDIN.read)
-      case ARGV[1]
-      when 'repos/owner/repo/pulls/1'
-        if ARGV.include?('PATCH')
-          File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
-          puts JSON.generate(request)
-        else
-          puts JSON.generate('body' => '')
-        end
-      when 'markdown' then puts JSON.generate('<table></table>' * 10)
-      else abort "unexpected gh request: \#{ARGV.inspect}"
-      end
-    RUBY
-  end
-
-  def fake_claude
-    <<~RUBY
-      require 'json'
-      STDIN.read
-      sentence = { 'character' => 'shaka merge', 'reader_facing' => false, 'action' => 'checks',
-                   'object' => 'head', 'hidden_actions' => [], 'internal_terms' => [] }
-      puts JSON.generate('is_error' => false, 'result' => JSON.generate('sentences' => [sentence]))
-    RUBY
   end
 end
