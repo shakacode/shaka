@@ -105,6 +105,15 @@ class OpeningCheckTest < Minitest::Test
     end
   end
 
+  def test_provider_cannot_supply_a_not_checked_control_result
+    with_claude({ status: 'not_checked' }) do |root, _trace|
+      result = check(COMMAND_FIRST, root:)
+      assert_equal 'not_checked', result.fetch('status')
+      assert_includes result.fetch('reason'), 'no usable parse'
+      assert_includes result.fetch('prompt'), COMMAND_FIRST
+    end
+  end
+
   def test_a_cli_inside_the_checkout_is_not_run
     with_claude(parse('shaka merge', false)) do |_root, trace, bin|
       assert_equal 'not_checked', check(COMMAND_FIRST, root: bin).fetch('status')

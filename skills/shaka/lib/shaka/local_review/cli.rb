@@ -21,6 +21,13 @@ module Shaka
       file.path
     end
 
+    def save_usage(output)
+      file = Tempfile.create(['shaka-review-usage-', '.json'])
+      file.write(output)
+      file.close
+      file.path
+    end
+
     def process_failure(command, status, stderr, stdout)
       exit_reason = if status.nil?
                       "timed out after #{@options.fetch(:timeout_seconds)}s"
@@ -36,7 +43,13 @@ module Shaka
 
     def reviewer_process(args, input = nil)
       LocalReviewProcess.capture(args, stdin_data: input, chdir: @root,
-                                       timeout: @options.fetch(:timeout_seconds))
+                                       timeout: @options.fetch(:timeout_seconds),
+                                       env: @path ? { 'PATH' => @path } : {})
+    end
+
+    def reviewer_executable(name)
+      LocalReviewExecutable.resolve(name, candidate_root: @candidate_root,
+                                          path: @path || ENV.fetch('PATH', ''))
     end
   end
 
@@ -44,11 +57,12 @@ module Shaka
   class LocalReviewCli
     include LocalReviewDiagnostic
 
-    def initialize(options, root:, report:, candidate_root:)
+    def initialize(options, root:, report:, candidate_root:, path: nil)
       @options = options
       @root = root
       @report = report
       @candidate_root = candidate_root
+      @path = path
     end
 
     def run(prompt)
@@ -62,7 +76,7 @@ module Shaka
     private
 
     def codex(prompt)
-      executable = LocalReviewExecutable.resolve('codex', candidate_root: @candidate_root)
+      executable = reviewer_executable('codex')
       return missing('codex') unless executable
 
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
@@ -76,7 +90,7 @@ module Shaka
     end
 
     def claude(prompt)
-      executable = LocalReviewExecutable.resolve('claude', candidate_root: @candidate_root)
+      executable = reviewer_executable('claude')
       return missing('claude') unless executable
 
       output, stderr, status = claude_process(executable, prompt)
@@ -111,7 +125,7 @@ module Shaka
     def valid_claude_result?(result) = result['result'].is_a?(String) && !result['result'].strip.empty?
 
     def grok(prompt)
-      executable = LocalReviewExecutable.resolve('grok', candidate_root: @candidate_root)
+      executable = reviewer_executable('grok')
       return missing('grok') unless executable
 
       file = prompt_file(prompt)
@@ -137,13 +151,6 @@ module Shaka
       args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
       output, stderr, status = reviewer_process(args)
       status&.success? ? output : process_failure('grok', status, stderr, output)
-    end
-
-    def save_usage(output)
-      file = Tempfile.create(['shaka-review-usage-', '.json'])
-      file.write(output)
-      file.close
-      file.path
     end
 
     def missing(name) = outcome("#{name} is not on PATH", 'executable_missing', false)

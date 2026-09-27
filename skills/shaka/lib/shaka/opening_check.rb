@@ -2,6 +2,7 @@
 
 require 'tmpdir'
 require_relative 'local_review/cli'
+require_relative 'local_review/path_guard'
 require_relative 'opening_checkout'
 require_relative 'opening_parse'
 require_relative 'opening_verdict_cache'
@@ -12,6 +13,8 @@ module Shaka
   # code applies the rule. The check never edits the text and never stops publication.
   class OpeningCheck
     include OpeningParse
+
+    ParseFailure = Struct.new(:reason, :detail)
 
     TIMEOUT_SECONDS = 90
     SENTENCE_LIMIT = 3
@@ -60,7 +63,10 @@ module Shaka
       return not_checked('temporary model directory is inside the candidate checkout') if
         LocalReviewExecutable.candidate_owned?(temp_root, @candidate_root)
 
-      verdict = judge(parse)
+      parsed = parse
+      return not_checked(parsed.reason, parsed.detail) if parsed.is_a?(ParseFailure)
+
+      verdict = judge(parsed)
       @cache&.write(verdict)
       verdict
     end
@@ -90,9 +96,10 @@ module Shaka
       Dir.mktmpdir('shaka-opening-') do |dir|
         report = File.join(dir, 'parse.json')
         options = { reviewer: @reviewer, model: @model, effort: 'low', timeout_seconds: TIMEOUT_SECONDS }
-        outcome = LocalReviewCli.new(options, root: dir, report:, candidate_root: @candidate_root)
+        path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: @candidate_root)
+        outcome = LocalReviewCli.new(options, root: dir, report:, candidate_root: @candidate_root, path:)
                                 .run(model_prompt)
-        return not_checked(outcome['reason'], outcome.slice('failure_stage', 'diagnostic_path')) if outcome
+        return ParseFailure.new(outcome['reason'], outcome.slice('failure_stage', 'diagnostic_path')) if outcome
 
         parse_report(report)
       end

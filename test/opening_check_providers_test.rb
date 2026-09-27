@@ -60,6 +60,19 @@ class OpeningCheckProvidersTest < Minitest::Test
     end
   end
 
+  def test_candidate_path_entry_skips_external_reviewer
+    with_claude(parse('shaka merge', false)) do |root, trace, bin|
+      candidate_bin = File.join(root, 'bin')
+      Dir.mkdir(candidate_bin)
+      with_path([candidate_bin, bin].join(File::PATH_SEPARATOR)) do
+        result = check(COMMAND_FIRST, root:)
+        assert_equal 'not_checked', result.fetch('status')
+        assert_includes result.fetch('reason'), 'PATH entry resolves inside candidate checkout'
+        refute_path_exists trace
+      end
+    end
+  end
+
   def test_reuses_a_cached_pass_without_another_model_call
     with_claude(parse('Pull requests', true)) do |root, trace|
       assert_equal 'passed', check('Pull requests show the outcome.', root:).fetch('status')

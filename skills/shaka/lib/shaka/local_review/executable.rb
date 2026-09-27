@@ -3,8 +3,8 @@
 module Shaka
   # Checks whether a documented reviewer executable is reachable on PATH.
   module LocalReviewExecutable
-    def self.resolve(name, candidate_root:)
-      ENV.fetch('PATH', '').split(File::PATH_SEPARATOR, -1).each do |directory|
+    def self.resolve(name, candidate_root:, path: ENV.fetch('PATH', ''))
+      path.split(File::PATH_SEPARATOR, -1).each do |directory|
         directory = '.' if directory.empty?
         path = File.expand_path(File.join(directory, name))
         next unless File.file?(path) && File.executable?(path)
