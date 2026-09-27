@@ -40,9 +40,10 @@ module Shaka
       end
 
       def reject_checkout_references(root, source)
+        prefix = "#{source}/"
         @names.each do |name|
           entries(root, name).select { |path| File.file?(path) }.each do |path|
-            raise ArgumentError, "Checkout reference in package: #{path}" if File.binread(path).include?(source)
+            raise ArgumentError, "Checkout reference in package: #{path}" if File.binread(path).include?(prefix)
           end
         end
       end

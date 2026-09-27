@@ -21,13 +21,17 @@ module Shaka
 
       def identity(hash)
         revision = git('rev-parse', '--verify', 'HEAD') if git('rev-parse', '--show-toplevel') == @root
-        exact = revision && tracked? && clean?
+        exact = exact_revision?(revision)
         { 'kind' => exact ? 'revision' : 'development', 'repository' => remote,
           'revision' => exact ? revision : nil, 'base_revision' => exact ? nil : revision,
           'content_sha256' => hash }
       end
 
       private
+
+      def exact_revision?(revision)
+        revision && tracked? && clean? && matching_blobs?
+      end
 
       def git(*)
         git_raw(*)&.strip
@@ -41,12 +45,22 @@ module Shaka
       end
 
       def tracked?
-        selected_paths = @names.flat_map do |name|
-          @tree.entries(@root, name).select { |path| File.file?(path) }
-        end
-        selected = selected_paths.map { |path| path.delete_prefix("#{@root}/") }
+        selected = selected_files
         listed = git_raw('ls-files', '-z', '--cached', '--', *selected)
         listed && listed.split("\0").sort == selected.sort
+      end
+
+      def selected_files
+        paths = @names.flat_map do |name|
+          @tree.entries(@root, name).select { |path| File.file?(path) }
+        end
+        paths.map { |path| path.delete_prefix("#{@root}/") }
+      end
+
+      def matching_blobs?
+        selected_files.all? do |path|
+          git('hash-object', '--path', path, File.join(@root, path)) == git('rev-parse', "HEAD:#{path}")
+        end
       end
 
       def clean?

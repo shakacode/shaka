@@ -11,6 +11,7 @@ module Shaka
     class Package
       METADATA = '.shaka-install.json'
       ALLOWED = %w[shaka rct mct-claude rct-claude].freeze
+      ID_PATTERN = /\A[\w.]+-[0-9a-f]{64}-[0-9a-f]{64}\z/
 
       def initialize(root, source, names, tree)
         @root = root
@@ -30,8 +31,7 @@ module Shaka
       end
 
       def existing(id)
-        pattern = /\A[\w.]+-[0-9a-f]{64}-[0-9a-f]{64}\z/
-        raise ArgumentError, 'Invalid package identity' unless id.match?(pattern)
+        raise ArgumentError, 'Invalid package identity' unless id.match?(ID_PATTERN)
 
         path = verify(File.join(@root, id))
         metadata = JSON.parse(File.read(File.join(path, METADATA)))

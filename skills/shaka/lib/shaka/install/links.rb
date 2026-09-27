@@ -42,6 +42,7 @@ module Shaka
       end
 
       def preflight(target)
+        refuse_omitted_links
         @names.each do |name|
           raise ArgumentError, "Package lacks #{name}" unless File.directory?(File.join(target, 'skills', name))
           next unless File.exist?(destination(name)) || File.symlink?(destination(name))
@@ -51,17 +52,32 @@ module Shaka
         end
       end
 
+      def refuse_omitted_links
+        (Package::ALLOWED - @names).each do |name|
+          next unless File.symlink?(destination(name))
+
+          target = old_target(name)
+          next unless target == File.join(@source, 'skills', name) || managed_target?(name, target)
+
+          raise ArgumentError, "Existing Shaka skill #{name} was omitted; repeat its install flag"
+        end
+      end
+
       def owned?(name)
         target = old_target(name)
         return false unless target
         return true if target == File.join(@source, 'skills', name)
+        return false unless managed_target?(name, target)
 
         package = File.dirname(target, 2)
-        return false unless target == File.join(package, 'skills', name)
-        return false unless package.start_with?("#{@managed}/")
-
-        @package.verify(package, content: false)
+        @package.verify(package, content: false) if File.file?(File.join(package, Package::METADATA))
         true
+      end
+
+      def managed_target?(name, target)
+        package = File.dirname(target, 2)
+        package.start_with?("#{@managed}/") && File.basename(package).match?(Package::ID_PATTERN) &&
+          target == File.join(package, 'skills', name)
       end
 
       def switch_one(name, package)

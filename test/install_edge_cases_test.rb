@@ -23,6 +23,16 @@ class InstallEdgeCasesTest < Minitest::Test
     assert_equal 'revision', package_identity.fetch('source').fetch('kind')
   end
 
+  def test_hidden_worktree_edit_is_recorded_as_development
+    commit_source
+    root = File.join(@directory, 'source')
+    git('-C', root, 'update-index', '--assume-unchanged', 'skills/shaka/SKILL.md')
+    File.write(File.join(@source, 'SKILL.md'), 'hidden edit')
+    install!
+
+    assert_equal 'development', package_identity.fetch('source').fetch('kind')
+  end
+
   def test_rollback_rejects_flags_that_would_mix_skill_versions
     install!
     id = package_identity.fetch('package_id')
