@@ -249,11 +249,12 @@ a different provider first, then another listed provider, then the development
 model when no listed CLI completes the parse. `enabled` defaults to `false`;
 having a CLI on `PATH` alone does not send text to it. A valid `prompt_file`
 replaces the default parsing instructions for both external and development-model
-checks. Shaka reads that file from the trusted default-branch commit, applies
+checks. Shaka reads that file from the commit supplied with `--ref`, applies
 the same file checks as `review.prompt_file`, and treats the PR opening as data.
 The required JSON field names and types remain fixed by the command.
 Verify the default branch's full commit SHA and pass it with `description --ref SHA`
-to use the setting. Symbolic refs such as `HEAD` are not accepted. Without `--ref`,
+to use the setting. The command checks the SHA form; the agent verifies its
+default-branch provenance. Symbolic refs such as `HEAD` are not accepted. Without `--ref`,
 the development model gets the built-in prompt and an explanation.
 If the configured check cannot run, the description still publishes and the
 development model receives a fallback prompt with the reason.

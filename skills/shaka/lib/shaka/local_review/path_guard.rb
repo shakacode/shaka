@@ -6,17 +6,17 @@ require_relative 'executable'
 module Shaka
   # Refuses candidate-controlled PATH entries before any external command runs.
   module LocalReviewPathGuard
-    def self.safe_path(path, candidate_root:, drop_candidate: false)
+    def self.safe_path(path, candidate_root:, drop_candidate: false, inspect_links: true)
       entries = path.split(File::PATH_SEPARATOR, -1)
-      entries.filter_map { |entry| normalized_path_entry(entry, candidate_root, drop_candidate) }
+      entries.filter_map { |entry| normalized_path_entry(entry, candidate_root, drop_candidate, inspect_links) }
              .join(File::PATH_SEPARATOR)
     end
 
-    def self.normalized_path_entry(entry, candidate_root, drop_candidate)
+    def self.normalized_path_entry(entry, candidate_root, drop_candidate, inspect_links)
       directory = File.expand_path(entry.empty? ? '.' : entry)
       return directory unless File.directory?(directory)
 
-      state = candidate_path_state(File.realpath(directory), candidate_root)
+      state = candidate_path_state(File.realpath(directory), candidate_root, inspect_links)
       return if state == :uninspectable
       return directory if state == :safe
       return if drop_candidate
@@ -24,8 +24,9 @@ module Shaka
       raise Shaka::Error, 'PATH entry resolves inside candidate checkout'
     end
 
-    def self.candidate_path_state(directory, candidate_root)
+    def self.candidate_path_state(directory, candidate_root, inspect_links)
       return :candidate if LocalReviewExecutable.candidate_owned?(directory, candidate_root)
+      return :safe unless inspect_links
 
       linked = candidate_executable_link?(directory, candidate_root)
       return :uninspectable if linked == :uninspectable
@@ -46,7 +47,8 @@ module Shaka
     private
 
     def validate_path!
-      ENV['PATH'] = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root)
+      ENV['PATH'] = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root,
+                                                                          inspect_links: false)
     end
   end
 end

@@ -18,6 +18,9 @@ class OpeningPathGuardTest < Minitest::Test
       with_uninspectable(external) do
         path = Shaka::LocalReviewPathGuard.safe_path("#{external}:#{safe}", candidate_root: root)
         assert_equal safe, path
+        review_path = Shaka::LocalReviewPathGuard.safe_path("#{external}:#{safe}", candidate_root: root,
+                                                                                   inspect_links: false)
+        assert_equal "#{external}:#{safe}", review_path
       end
     end
   end

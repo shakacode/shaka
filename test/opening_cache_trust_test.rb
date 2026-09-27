@@ -19,6 +19,17 @@ class OpeningCacheTrustTest < Minitest::Test
     end
   end
 
+  def test_cached_flagged_result_keeps_the_fallback_prompt
+    with_claude(parse('shaka merge', false)) do |root, _trace|
+      opening = '`shaka merge` checks the head.'
+      assert_equal 'flagged', check(opening, root:).fetch('status')
+      cached = check(opening, root:)
+      assert_equal 'flagged', cached.fetch('status')
+      refute cached.key?('parse')
+      assert_includes cached.fetch('prompt'), opening
+    end
+  end
+
   private
 
   def run_check(root)
