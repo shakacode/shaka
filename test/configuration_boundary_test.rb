@@ -21,11 +21,28 @@ class ConfigurationBoundaryTest < Minitest::Test
 
   def test_trusted_read_never_uses_a_valid_worktree_as_fallback
     with_repository do |root|
+      File.write(File.join(root, 'README.md'), "Fixture\n")
+      commit_fixture(root, 'README.md')
+
       assert_instance_of Shaka::RepositoryConfig, Shaka::Configuration.worktree(root:)
 
-      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: 'missing-ref') }
+      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: 'HEAD') }
 
-      assert_includes error.message, 'Invalid trusted ref'
+      assert_includes error.message, 'Cannot read .agents/agent-workflow.yml'
+    end
+  end
+
+  def test_invalid_trusted_contract_does_not_use_valid_worktree
+    with_repository do |root|
+      contract = File.join(root, '.agents/agent-workflow.yml')
+      valid = File.read(contract)
+      File.write(contract, "review: [invalid\n")
+      commit_fixture(root, '.')
+      File.write(contract, valid)
+
+      assert_instance_of Shaka::RepositoryConfig, Shaka::Configuration.worktree(root:)
+      error = assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: 'HEAD') }
+      assert_includes error.message, 'Invalid .agents/agent-workflow.yml'
     end
   end
 
@@ -36,6 +53,13 @@ class ConfigurationBoundaryTest < Minitest::Test
   end
 
   private
+
+  def commit_fixture(root, path)
+    system('git', '-C', root, 'init', '--quiet', exception: true)
+    system('git', '-C', root, 'add', path, exception: true)
+    system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+           'commit', '--quiet', '-m', 'Trusted fixture', exception: true)
+  end
 
   def boundary_violation(file)
     relative = file.delete_prefix("#{ROOT}/")

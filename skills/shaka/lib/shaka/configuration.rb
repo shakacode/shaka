@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'open3'
 require 'yaml'
 require_relative 'configuration/paths'
 require_relative 'repository_config'

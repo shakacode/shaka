@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+require 'open3'
+require 'yaml'
+require_relative '../repository_config'
+require_relative '../review_prompt'
+require_relative '../trusted_path_resolver'
+
 module Shaka
   module Configuration
     # Source selection and immutable Git-tree reads for repository configuration.
