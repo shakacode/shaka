@@ -5,9 +5,25 @@ The maintainer authorized implementation, publication, and merging verified PRs.
 The maintainer authorizes public Codex thread locators in unfinished-PR WIP Details.
 Keep company strategy and private operational data out of product artifacts.
 
-Before writing documentation, PR descriptions, code walkthroughs, or
-review replies, read the repository's [writing preferences](.agents/writing-style.md).
-Those preferences govern prose on these surfaces; they are not code-style rules.
+## Writing in this repository
+
+These prose preferences apply only to `shakacode/shaka` documentation, PR
+descriptions, code walkthroughs, and review replies. They do not set code style
+or require other repositories to copy them. The [Shaka skill's writing guidance](skills/shaka/references/writing.md)
+is the reusable default.
+
+- Assume the reader is new to Shaka and wants to get useful work done.
+- In product guides, explain outcomes, choices, and examples. Put agent execution
+  details with the skill and development records under `internal/`.
+- Lead with the action or benefit. Explain a term when the reader first needs it.
+- Keep one source for each setting and link to it. Avoid duplicate option tables.
+- Distinguish shipped behavior, agent instructions, and proposed features.
+  Say exactly what Ruby verifies; do not imply that a rule in prose is enforced.
+- Give the reader a useful prompt before a long command sequence.
+- Remove repetition, vague qualifiers, and explanations of the document's own
+  organization unless they help navigation.
+- Preserve rough editor feedback outside the checkout before replacing it with
+  finished prose. Take turns editing shared files and resolve every note.
 
 ## Working agreement
 
