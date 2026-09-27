@@ -19,14 +19,25 @@ module Shaka
           tmp = "#{journal_path}.tmp"
           raise Error, "Existing upgrade journal temporary file: #{tmp}" if File.exist?(tmp)
 
+          created = false
+          create_journal_temp(tmp, journal)
+          created = true
+          File.rename(tmp, journal_path)
+        ensure
+          File.delete(tmp) if created && File.file?(tmp)
+        end
+
+        def create_journal_temp(tmp, journal)
+          created = false
           File.open(tmp, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
+            created = true
             file.write(JSON.generate(journal))
             file.flush
             file.fsync
           end
-          File.rename(tmp, journal_path)
-        ensure
-          File.delete(tmp) if tmp && File.file?(tmp)
+        rescue StandardError
+          File.delete(tmp) if created && File.file?(tmp)
+          raise
         end
 
         def write_desired(journal)

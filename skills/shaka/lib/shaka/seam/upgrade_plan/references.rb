@@ -20,6 +20,8 @@ module Shaka
         end
 
         def scan_reference(path)
+          return scan_symlink_reference(path) if snapshot(path)['type'] == 'symlink'
+
           text = reference_text(path)
           return unless text
 
@@ -28,6 +30,19 @@ module Shaka
 
           source = snapshot(path)
           @changes << { from: path, to: path, after: source.merge('data' => [updated.b].pack('m0')) }
+        end
+
+        def scan_symlink_reference(path)
+          resolved = File.realpath(File.join(@root, path))
+          return unless resolved.start_with?("#{@root}/")
+
+          target = resolved.delete_prefix("#{@root}/")
+          return unless @moves.any? { |move| move['from'] == target }
+
+          @references << { 'path' => path, 'kind' => 'inbound symlink', 'paths' => [target] }
+          @blockers << "#{path}: symlink targets moved #{target}; repair the link explicitly"
+        rescue Errno::ENOENT, Errno::ELOOP
+          nil
         end
 
         def reference_text(path)
@@ -44,7 +59,7 @@ module Shaka
           historical = historical_line?(path, line)
           @references << { 'path' => path, 'kind' => reference_kind(path, historical), 'paths' => keys }
           return line if historical
-          return block_reference(path, keys, executable, line) if blocked_reference?(keys, executable)
+          return block_reference(path, keys, executable, line) if blocked_reference?(keys, executable, line)
 
           keys.reduce(line) do |result, old|
             result.gsub(token_pattern(old)) { "#{::Regexp.last_match[:lead]}#{reference_mapping.fetch(old)}" }
@@ -52,6 +67,8 @@ module Shaka
         end
 
         def historical_line?(path, line)
+          return true if File.basename(path).match?(/\A(?:CHANGELOG|HISTORY|RELEASE[-_]?NOTES)(?:\.|\z)/i)
+
           path.end_with?('.md') && line.match?(/\b(previously|formerly|historically|before upgrade|old path)\b/i)
         end
 
@@ -62,18 +79,32 @@ module Shaka
           'repository guidance or executable reference'
         end
 
-        def blocked_reference?(keys, executable)
-          executable || keys.any? { |old| @moves.none? { |move| move['from'] == old } }
+        def blocked_reference?(keys, executable, line)
+          executable || keys.any? { |old| @moves.none? { |move| move['from'] == old } } ||
+            keys.any? { |old| dynamic_reference?(line, old) }
         end
 
         def block_reference(path, keys, executable, line)
-          reason = executable ? 'executable old-path reference' : "reference to unmoved path #{keys.join(', ')}"
+          reason = if executable
+                     'executable old-path reference'
+                   elsif keys.any? { |old| dynamic_reference?(line, old) }
+                     "dynamic old-path reference #{keys.join(', ')}"
+                   else
+                     "reference to unmoved path #{keys.join(', ')}"
+                   end
           @blockers << "#{path}: #{reason} needs explicit repair"
           line
         end
 
         def matching_paths(text)
-          reference_mapping.keys.select { |old| text.match?(token_pattern(old)) }
+          reference_mapping.keys.select { |old| text.match?(token_pattern(old)) || dynamic_reference?(text, old) }
+        end
+
+        def dynamic_reference?(text, old)
+          escaped = Regexp.escape(old)
+          variable = %r~(?:\$\{\{[^}]+\}\}|\$\{[^}]+\}|#\{[^}]+\})/#{escaped}(?![[:alnum:]_./-])~
+          absolute = %r{(?:\A|[\s"'=])/(?:[^/\s"']+/)*#{escaped}(?![[:alnum:]_./-])}
+          text.match?(variable) || text.match?(absolute)
         end
 
         def token_pattern(path)

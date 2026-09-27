@@ -58,6 +58,12 @@ module Shaka
         def ambiguous_root?(text)
           text.include?('../..') || text.include?('Pathname(__dir__).parent.parent')
         end
+
+        def invocation_relative?(text)
+          text.lines.any? do |line|
+            line.match?(/dirname\s+(?:--?\s+)?["']?\$0["']?/) && !line.include?(GIT_ROOT)
+          end
+        end
       end
     end
   end

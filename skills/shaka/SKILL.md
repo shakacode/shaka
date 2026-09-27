@@ -18,3 +18,6 @@ Run the trusted helper's `workflow` command now and follow the complete validate
 prints. The packaged YAML owns the workflow text; Ruby validates its schema and phase order
 before rendering it. If loading or validation fails, stop and report the error instead of
 reconstructing the workflow from memory.
+
+For an existing repository using the older `.agents/` layout, follow the
+[configuration layout upgrade](references/migration.md#upgrade-the-configuration-layout).

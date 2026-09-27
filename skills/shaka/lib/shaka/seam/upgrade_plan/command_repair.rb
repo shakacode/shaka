@@ -23,10 +23,8 @@ module Shaka
 
           repaired, kind = repair_root(text)
           return invalid_script(old, 'ambiguous repository-root calculation; repair it explicitly') unless repaired
-          if old_path?(repaired)
-            return invalid_script(old,
-                                  'executable refers to an old command path; repair it explicitly')
-          end
+          return invalid_script(old, 'invocation-relative dependency') if invocation_relative?(repaired)
+          return invalid_script(old, 'old command path; repair it explicitly') if old_path?(repaired)
 
           [repaired, kind]
         end

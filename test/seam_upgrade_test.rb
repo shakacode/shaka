@@ -526,3 +526,100 @@ class SeamUpgradeSecondReviewTest < Minitest::Test
     end
   end
 end
+
+class SeamUpgradeThirdReviewTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  def test_dynamic_and_absolute_references_block_without_touching_files
+    with_repository do |root|
+      path = File.join(root, '.github/workflows/ci.yml')
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, dynamic_references)
+      commit_fixture(root, 'dynamic paths')
+      assert_blocked_with(root, 'dynamic old-path reference')
+      assert_includes File.read(path), '${root}/.agents/bin/test'
+    end
+  end
+
+  def dynamic_references
+    <<~TEXT
+      run: ${root}/.agents/bin/test
+      run: ${{ github.workspace }}/.agents/bin/test
+      run: /repo/.agents/bin/test
+    TEXT
+  end
+
+  def test_moved_script_with_sibling_dependency_blocks
+    with_repository do |root|
+      write_wrapper(root, 'setup', "#!/bin/sh\nset -eu\n. \"$(dirname \"$0\")/common.sh\"\n")
+      commit_fixture(root, 'sibling dependency')
+      assert_blocked_with(root, 'invocation-relative dependency')
+    end
+  end
+
+  def test_inbound_symlink_to_moved_command_blocks
+    with_repository do |root|
+      File.symlink('../.agents/bin/test', File.join(root, 'bin/test'))
+      commit_fixture(root, 'inbound link')
+      assert_blocked_with(root, 'symlink targets moved')
+    end
+  end
+
+  def test_release_history_keeps_old_paths
+    with_repository do |root|
+      path = File.join(root, 'CHANGELOG.md')
+      File.write(path, '- Added `.agents/bin/test` wrapper (v1.2)')
+      commit_fixture(root, 'history')
+      apply_upgrade(root)
+      assert_equal '- Added `.agents/bin/test` wrapper (v1.2)', File.read(path)
+    end
+  end
+
+  def test_existing_journal_temporary_file_is_preserved
+    with_repository do |root|
+      temporary = "#{Shaka::Seam::Upgrader.journal_path(root)}.tmp"
+      File.write(temporary, 'leave me')
+      _output, error, status = upgrade(root, '--apply', '--digest', report(root).fetch('digest'))
+      refute_predicate status, :success?
+      assert_includes error, 'Existing upgrade journal temporary file'
+      assert_equal 'leave me', File.read(temporary)
+    end
+  end
+
+  def test_failure_during_destination_creation_restores_sources
+    with_repository do |root|
+      digest = report(root).fetch('digest')
+      assert_raises(Shaka::Error) { failing_creator.new(['--root', root, '--apply', '--digest', digest]).run }
+      assert File.file?(File.join(root, '.agents/agent-workflow.yml'))
+      refute_path_exists File.join(root, '.agents/shaka/config.yml')
+      refute_path_exists Shaka::Seam::Upgrader.journal_path(root)
+    end
+  end
+
+  def failing_creator
+    Class.new(Shaka::Seam::Upgrader) do
+      private
+
+      def write_new_state(relative, state)
+        @created = (@created || 0) + 1
+        raise Errno::EIO, 'injected creation failure' if @created == 2
+
+        super
+      end
+    end
+  end
+
+  def test_set_o_errexit_allows_custom_shell_root_repair
+    with_repository do |root|
+      write_wrapper(root, 'setup', "#!/bin/sh\nset -o errexit\nroot=$(dirname \"$0\")/../..\nexit 0\n")
+      commit_fixture(root, 'errexit')
+      assert_equal 'ready', report(root).fetch('status')
+    end
+  end
+
+  def assert_blocked_with(root, reason)
+    preview = report(root)
+    assert_equal 'blocked', preview.fetch('status')
+    assert_includes preview.fetch('blockers').join, reason
+  end
+end
