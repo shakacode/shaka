@@ -5,8 +5,7 @@ require_relative 'error'
 module Shaka
   # Finds the 1-based line range a walkthrough code link names, by text rather than number.
   module CodeLinkRange
-    CLOSER = /\A(?:end\b|\})/
-    CONTINUATION = /\A[)\]]/
+    CLOSER = /\A(?:end|\})[\s;),]*\z/
 
     module_function
 
@@ -33,28 +32,24 @@ module Shaka
       raise Error, "no line after #{lines[start].strip.inspect} contains #{text.inspect}."
     end
 
-    # The block ends at the next line indented no deeper than its first line. A closing
-    # `end` or brace belongs to the block; a closing parenthesis or bracket finishes a
-    # multi-line signature, so the block continues; any other line starts the next one.
+    # A block runs to the first bare `end` or `}` at its first line's indentation, so
+    # `rescue`, `else`, and a signature's closing parenthesis stay inside it. Leaving that
+    # indentation first means the language has no such closer here, so the link needs `to`.
     def block_end(lines, start)
       depth = indentation(lines[start])
-      last = start
-      ((start + 1)...lines.size).each do |index|
-        case block_line(lines[index], depth)
-        when :inside then last = index
-        when :closer then return index
-        when :outside then return last
-        end
-      end
-      last
+      closing = ((start + 1)...lines.size).find { |index| block_boundary?(lines[index], depth) }
+      return closing if closing && lines[closing].strip.match?(CLOSER)
+
+      raise Error, "no closing end or } at the indentation of #{lines[start].strip.inspect}; use to text."
     end
 
-    def block_line(line, depth)
+    # The first bare closer at the block's indentation, or the first line indented less.
+    def block_boundary?(line, depth)
       text = line.strip
-      return :blank if text.empty?
-      return :inside if indentation(line) > depth || text.match?(CONTINUATION)
+      return false if text.empty?
 
-      text.match?(CLOSER) ? :closer : :outside
+      indent = indentation(line)
+      indent < depth || (indent == depth && text.match?(CLOSER))
     end
 
     def indentation(line) = line[/\A[ \t]*/].size
