@@ -208,6 +208,9 @@ begin
   if options[:opening_model] && !options[:opening_reviewer]
     raise Shaka::Error, '--opening-model requires --opening-reviewer.'
   end
+  if options[:opening_model] && options[:opening_reviewer].downcase == 'openai/codex'
+    raise Shaka::Error, '--opening-model is unsupported for openai/codex.'
+  end
 
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge].include?(command)

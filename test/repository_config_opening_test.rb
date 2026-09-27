@@ -24,9 +24,10 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_rejects_non_boolean_or_unknown_opening_settings
-    [{ 'enabled' => 'yes' }, { 'foo' => true }].each do |opening|
+    [{ 'enabled' => 'yes' }, { 'foo' => true }, true].each do |opening|
       with_repository('opening_check' => opening) do |root|
-        assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+        assert_includes error.message, 'opening_check'
       end
     end
   end
