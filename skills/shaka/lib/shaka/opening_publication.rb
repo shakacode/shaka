@@ -5,6 +5,7 @@
 require_relative 'opening_check'
 require_relative 'reviewer_selection'
 require_relative 'trusted_config_source'
+require 'tmpdir'
 
 module Shaka
   # Loads the opted-in parser choice after a PR description is published.
@@ -17,9 +18,20 @@ module Shaka
       ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true,
                                                                   all_executables: true)
       gh = selected_gh(original.to_s, candidate_root) if select_gh
-      yield candidate_root, gh
+      return yield(candidate_root, gh) unless select_gh
+
+      with_neutral_directory(candidate_root) { |neutral| yield candidate_root, gh, neutral }
     ensure
       ENV['PATH'] = original
+    end
+
+    def self.with_neutral_directory(candidate_root)
+      Dir.mktmpdir('shaka-description-') do |neutral|
+        raise Error, 'Temporary publication directory is inside candidate checkout.' if
+          LocalReviewExecutable.candidate_owned?(File.realpath(neutral), candidate_root)
+
+        yield neutral
+      end
     end
 
     def self.selected_gh(original_path, candidate_root)

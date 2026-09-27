@@ -42,7 +42,32 @@ class OpeningBrokenShebangTest < Minitest::Test
     end
   end
 
+  def test_gh_wrapper_cannot_load_relative_file_from_candidate_checkout
+    with_repository do |root|
+      File.write(File.join(root, 'helper.rb'), "File.write(File.join(ENV.fetch('HOME'), 'candidate-executed'), '')\n")
+      commit(root)
+      Dir.mktmpdir { |dir| assert_gh_runs_outside_candidate(dir, root) }
+    end
+  end
+
   private
+
+  def assert_gh_runs_outside_candidate(dir, root)
+    output, error, status = Dir.chdir(root) do
+      run_description(dir, root:) { |bin| install_relative_gh_wrapper(bin) }
+    end
+    assert_predicate status, :success?, error
+    assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+    refute_path_exists File.join(dir, 'candidate-executed')
+  end
+
+  def install_relative_gh_wrapper(bin)
+    real = File.join(bin, 'gh-real')
+    File.rename(File.join(bin, 'gh'), real)
+    wrapper = "#!/bin/sh\n[ ! -f ./helper.rb ] || ruby ./helper.rb\nexec \"#{real}\" \"$@\"\n"
+    File.write(File.join(bin, 'gh'), wrapper)
+    File.chmod(0o755, File.join(bin, 'gh'))
+  end
 
   def assert_unrelated_relative_shebang_safe(dir, root)
     output, error, status = run_description(dir, root:) do |bin|
