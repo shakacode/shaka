@@ -8,6 +8,7 @@ require_relative '../reviewer_selection'
 require_relative 'cli'
 require_relative 'criteria'
 require_relative 'evidence'
+require_relative 'path_guard'
 require_relative 'process'
 require_relative 'prompt_file'
 
@@ -55,27 +56,16 @@ module Shaka
     def checkout_marker?(directory) = File.exist?(File.join(directory, '.git'))
   end
 
-  # Refuses candidate-controlled PATH entries before any external command runs.
+  # Adds checkout-specific guards used by the full local review runner.
   module LocalReviewPathGuard
     private
 
     def validate_path!
-      entries = ENV.fetch('PATH', '').split(File::PATH_SEPARATOR, -1)
-      ENV['PATH'] = entries.map { |entry| normalized_path_entry(entry) }.join(File::PATH_SEPARATOR)
-    end
-
-    def normalized_path_entry(entry)
-      directory = File.expand_path(entry.empty? ? '.' : entry)
-      if File.directory?(directory)
-        target = File.realpath(directory)
-        raise Shaka::Error, 'PATH entry resolves inside candidate checkout' if
-          LocalReviewExecutable.candidate_owned?(target, root)
-      end
-      directory
+      ENV['PATH'] = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
     end
 
     def git_executable
-      @git_executable ||= LocalReviewExecutable.resolve('git', candidate_root: root) ||
+      @git_executable ||= LocalReviewPathGuard.safe_executable(ENV.fetch('PATH', ''), 'git', root) ||
                           (raise Shaka::Error, 'git is not on PATH')
     end
 
@@ -192,9 +182,7 @@ module Shaka
       raise Shaka::Error, '--reviewer is required' if @options[:reviewer].to_s.empty?
 
       @options[:reviewer] = ReviewerSelection.parse(@options.fetch(:reviewer)).values.map(&:downcase).join('/')
-      unless %w[openai/codex anthropic/claude xai/grok].include?(reviewer)
-        raise Shaka::Error, 'Unsupported local reviewer'
-      end
+      raise Shaka::Error, 'Unsupported local reviewer' unless ReviewerSelection::SUPPORTED_REVIEWERS.include?(reviewer)
 
       validate_model!
     end

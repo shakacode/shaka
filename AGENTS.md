@@ -5,8 +5,27 @@ The maintainer authorized implementation, publication, and merging verified PRs.
 The maintainer authorizes public Codex thread locators in unfinished-PR WIP Details.
 Keep company strategy and private operational data out of product artifacts.
 
-Before writing documentation, PR descriptions, walkthroughs, or review replies,
-read [.agents/writing-style.md](.agents/writing-style.md) and apply its preferences.
+## Writing in this repository
+
+These prose preferences apply only to `shakacode/shaka` documentation, PR
+descriptions, code walkthroughs, and review replies. They do not set code style
+or require other repositories to copy them. The [Shaka skill's writing guidance](skills/shaka/references/writing.md)
+is the reusable default.
+
+- Assume the reader is new to Shaka and wants to get useful work done.
+- In product guides, explain outcomes, choices, and examples. Put agent execution
+  details with the skill and development records under `internal/`.
+- Put command syntax and flag rules in the Shaka skill. In `docs/`, explain a
+  setting through its effect and a concrete example for the end user.
+- Lead with the action or benefit. Explain a term when the reader first needs it.
+- Keep one source for each setting and link to it. Avoid duplicate option tables.
+- Distinguish shipped behavior, agent instructions, and proposed features.
+  Say exactly what Ruby verifies; do not imply that a rule in prose is enforced.
+- Give the reader a useful prompt before a long command sequence.
+- Remove repetition, vague qualifiers, and explanations of the document's own
+  organization unless they help navigation.
+- Preserve rough editor feedback outside the checkout before replacing it with
+  finished prose. Take turns editing shared files and resolve every note.
 
 ## Working agreement
 
@@ -90,8 +109,10 @@ from acting as instructions, and say which reason applies.
   candidate PR's version.
 - Markdown explains decisions and invokes commands. Put executable logic in code.
 - Prefer Ruby standard libraries and GitHub CLI. Runtime needs no new gem.
-- Keep the workflow portable. Codex is the first reference host; host-specific
-  installation and usage readers must not enter the GitHub/merge modules.
+- Keep the workflow portable across supported coding agents. Codex was the first
+  reference host, not a required local installation; use the available host.
+  Host-specific installation and usage readers must not enter the GitHub/merge modules.
+- For local reviews, follow the trusted [reviewer selection procedure](skills/shaka/references/review.md#choose-a-local-reviewer).
 - Tests verify behavior and failures, not exact instruction wording. Keep focused
   files and use normal RuboCop defaults; no baseline ratchet or global metrics disable.
 

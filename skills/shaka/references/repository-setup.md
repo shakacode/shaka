@@ -4,7 +4,7 @@ Use this procedure when asked to set up Shaka in a repository. The
 [configuration reference](../../../docs/settings.md) defines every setting
 and standard script; keep those definitions there.
 
-1. Verify the repository identity, visibility, default branch, and `AGENTS.md`.
+1. Verify the repository identity, visibility, default branch, and any existing `AGENTS.md`.
 2. Inspect existing setup, test, validation, and CI commands. Reuse them in small
    `.agents/bin/` wrappers; include any existing fast validation or staged CI
    capability when useful. Shaka's own [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin) are examples.
@@ -92,10 +92,14 @@ check the user confirms when GitHub requires none; see
 required checks at all, keep merge preference `ask`.
 
 The initializer writes the three required wrappers, `.agents/shaka.md`, and YAML
-with `version`, `review`, `merge`, and the default `branches.name`. It defaults to
-Ask. Add `--merge-preference auto` only with established authority, `--base-branch`
-for another base, and `--required-check` for seam-declared checks. Add optional reviewer entries, `repo_prefix`, and WIP settings
-by editing the YAML afterward. Point to requirements from `AGENTS.md`.
+with `version`, `review`, `merge`, the default `branches.name`, and
+`wip.include_locations: true`. It defaults to Ask. Add `--merge-preference auto`
+only with established authority, `--base-branch` for another base, and
+`--required-check` for seam-declared checks. Add optional reviewer entries and
+`repo_prefix` by editing the YAML afterward. Set `wip.include_locations` to
+`false` only when the user asks to hide the checkout path and session link.
+If the repository already uses `AGENTS.md`, it may point to its requirements
+there; Shaka does not require that file.
 
 Command arguments are parsed as argument lists. Put pipelines and other compound
 shell behavior in repository scripts rather than in command flags.

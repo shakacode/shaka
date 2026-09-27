@@ -8,6 +8,9 @@ module Shaka
   # Renders the validated workflow for an agent host.
   class Workflow
     PACKAGE_ROOT = File.expand_path('../../..', File.dirname(WorkflowConfig::PATH))
+    TOKENS = {
+      'package_root' => PACKAGE_ROOT
+    }.freeze
 
     def self.run(arguments)
       new(arguments).run
@@ -59,7 +62,9 @@ module Shaka
     end
 
     def expand(text)
-      expanded = text.gsub('{{package_root}}', PACKAGE_ROOT)
+      expanded = text.gsub(/\{\{([^{}]+)\}\}/) do
+        TOKENS.fetch(Regexp.last_match(1)) { raise Error, 'workflow.yml contains an unknown template token' }
+      end
       raise Error, 'workflow.yml contains an unknown template token' if expanded.include?('{{')
 
       expanded

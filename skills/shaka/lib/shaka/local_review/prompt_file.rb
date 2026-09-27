@@ -2,10 +2,7 @@
 
 require 'rbconfig'
 require 'tempfile'
-require 'yaml'
-require_relative '../repository_config'
-require_relative '../review_prompt'
-require_relative '../trusted_path_resolver'
+require_relative '../configuration'
 
 module Shaka
   # Reads the repository's review instructions from the same trusted commit as its criteria.
@@ -37,23 +34,20 @@ module Shaka
       return unless ref && trusted_seam?(ref)
 
       path = configured_prompt_path(trusted_review_settings(ref))
-      path && read_trusted_prompt(ref, path)
+      access = { executable: git_executable, capture: method(:capture), resolver: method(:bounded_git) }
+      path && Configuration.prompt_at_commit(root:, ref:, path:, git_access: access)
     end
 
     # Reads only the review section, so the rest of the seam need not be valid for a review to run;
     # `shaka seam check` validates the whole contract.
     def trusted_review_settings(ref)
-      source = capture(git_executable, '-C', root, 'show', "#{ref}:#{RepositoryConfig::PATH}")
-      data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
-      review = data.is_a?(Hash) ? data['review'] : nil
-      review.is_a?(Hash) ? review : {}
-    rescue Psych::Exception => e
-      raise Shaka::Error, "Invalid #{RepositoryConfig::PATH} at #{ref}: #{e.message}"
+      Configuration.review_at_commit(root:, ref:, git: git_executable, capture: method(:capture),
+                                     probe: method(:bounded_git))
     end
 
-    # A repository without a seam at that commit keeps the default instructions.
+    # A commit without either configuration keeps the default instructions; invalid sources fail closed.
     def trusted_seam?(ref)
-      bounded_git('cat-file', '-e', "#{ref}:#{RepositoryConfig::PATH}").last.success?
+      Configuration.contract_at_commit?(root:, ref:, git: method(:bounded_git))
     end
 
     # Runs the vetted Git under the review timeout, for this module and TrustedPathResolver.
@@ -78,23 +72,5 @@ module Shaka
 
       path
     end
-
-    def read_trusted_prompt(ref, path)
-      resolved, entry = TrustedPathResolver.new(root:, sha: ref, git: method(:bounded_git)).resolve(path)
-      raise Shaka::Error, "Review prompt file #{path} is not a file at #{ref}" unless prompt_blob?(entry)
-
-      text = nil
-      error = ReviewPrompt.file_error(trusted_blob(ref, resolved, '-s').to_i) do
-        text = trusted_blob(ref, resolved, '-p')
-      end
-      raise Shaka::Error, "Review prompt file #{path} at #{ref} #{error}" if error
-
-      text
-    end
-
-    # `-s` prints the blob size and `-p` its contents.
-    def trusted_blob(ref, path, option) = capture(git_executable, '-C', root, 'cat-file', option, "#{ref}:#{path}")
-
-    def prompt_blob?(entry) = entry && entry.last == 'blob' && entry.first != TrustedPathResolver::SYMLINK.first
   end
 end

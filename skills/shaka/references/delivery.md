@@ -37,11 +37,16 @@ choice. Honor explicit user settings. Consider total planning, implementation,
 retries, and review; waiting or a tool error alone does not justify more effort.
 
 Use the workflow's `recommendation` and `checkpoint` commands. Proceed without
-another response only when the user explicitly supplied matching model and
-effort, clearly asked to start, and those settings are active and usable. Otherwise
-pause with one next action. Check the actual host setting on resume when available;
-a prompt cannot change the runner. Planning-only work returns its plan and usage
-without an implementation checkpoint.
+another response when the user clearly asks to start, the recommended model and
+effort are active and usable, and any settings the user supplied match the
+recommendation. A start word such as `go` does not require the user to restate
+active settings. Otherwise pause with one next action. Check the actual host
+setting on resume when available; a prompt cannot change the runner. Planning-only
+work returns its plan and usage without an implementation checkpoint.
+
+If the checkpoint reports `recommendation_missing`, supply the omitted model or
+effort recommendation and rerun it. This is an agent input to complete before
+bringing a decision to the user.
 
 Work solo unless delegation is authorized and useful. Obtain a fresh-context
 review before pushing meaningful implementation, using [reviewer selection](review.md#choose-a-local-reviewer).

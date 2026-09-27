@@ -15,6 +15,12 @@ module Shaka
         value
       end
 
+      def prompt_path!(value, label)
+        path = string!(value, label)
+        inside = !Pathname.new(path).absolute? && !path.split('/').include?('..')
+        raise Error, "#{label} must be a path inside the repository" unless inside
+      end
+
       def mapping!(value, label)
         raise Error, "#{label} must be a mapping" unless value.is_a?(Hash) && value.keys.all?(String)
 
