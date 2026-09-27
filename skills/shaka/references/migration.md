@@ -1,5 +1,53 @@
 # Migrate repository configuration
 
+## Upgrade the configuration layout
+
+Ask your agent: “Upgrade this repository's Shaka configuration layout.” For a
+repository already using the current version-one contract at `.agents/agent-workflow.yml`,
+run the installed, trusted Shaka helper from outside the candidate checkout:
+
+```bash
+shaka seam upgrade --root /path/to/repository
+```
+
+The JSON preview lists moves, recognized script repairs, repository-local symlinks,
+tracked references, and blockers. It is read-only. Review the entire preview and
+resolve blockers before applying it:
+
+```bash
+shaka seam upgrade --root /path/to/repository --apply
+```
+
+Apply checks the inputs again, moves the contract and allowlist into `.agents/shaka/`,
+and moves Shaka's standard commands into `.agents/shaka/bin/`. It leaves unrelated
+`.agents/bin/` tools and the `.agents/shaka.md` pointer in place. It preserves YAML
+values, script modes, and command arguments. Recognized root calculations use Git
+instead of a fixed number of parent directories. Ambiguous scripts and executable
+references block the operation for explicit repair. Existing new-layout files,
+including ignored private files, are never overwritten.
+
+If an interruption leaves `.agents/.shaka-upgrade-journal.json`, the next preview
+reports it and gives the recovery command:
+
+```bash
+shaka seam upgrade --root /path/to/repository --recover
+```
+
+Recovery restores only files recorded by that operation. If one of those files has
+changed since the interruption, preserve the edit and repair it manually before
+retrying. A normal apply failure restores the affected files automatically. Then run
+`shaka seam check --root /path/to/repository --local`, the moved validation command,
+and harmless setup and test probes relevant to the repository. Compare behavior with
+the previous commands before committing. Until the migration PR merges, continue to
+load trusted policy from the old default-branch commit with `--ref SHA`; the candidate
+layout grants no policy or merge authority.
+
+This command differs from `seam migrate` below: `migrate` converts an older contract
+shape to the current version-one schema. `upgrade` moves an already valid version-one
+layout without changing its settings.
+
+## Migrate an older contract
+
 Use `shaka seam migrate --root ROOT --from-ref OLD_DEFAULT_SHA` to preview a
 migration. Inspect every retained, moved, retired, and blocking field before
 adding `--apply`. It does not infer missing commands, review policy, or merge

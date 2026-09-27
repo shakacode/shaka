@@ -16,6 +16,8 @@ class ConfigurationBoundaryTest < Minitest::Test
     repos/home.rb review_prompt.rb usage/claude_usage.rb usage/codex_usage.rb
     usage/cursor_usage_store.rb usage/opencode_usage.rb usage/pi_usage.rb usage/rate_card.rb
     workflow_config.rb
+    seam/upgrade_plan.rb seam/upgrade_plan/references.rb seam/upgrader.rb
+    seam/upgrader/filesystem.rb seam/upgrader/recovery.rb
   ].freeze
 
   def test_public_paths_remain_concrete_and_independent

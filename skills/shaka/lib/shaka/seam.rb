@@ -7,6 +7,7 @@ require_relative 'repository_config'
 require_relative 'seam/check_report'
 require_relative 'seam/initializer'
 require_relative 'seam/migrator'
+require_relative 'seam/upgrader'
 require_relative 'seam/pointer'
 require_relative 'seam/policy_options'
 require_relative 'configuration'
@@ -30,6 +31,7 @@ module Shaka
 
     def run
       return Migrator.run(@arguments) if @arguments.first == 'migrate'
+      return Upgrader.run(@arguments) if @arguments.first == 'upgrade'
 
       parser = option_parser
       parser.parse!(@arguments)
@@ -95,6 +97,7 @@ module Shaka
       "Usage: shaka seam check [--root DIR] [--local | --ref REF]\n       " \
         "shaka seam init --root DIR [options]\n       " \
         "shaka seam migrate --root DIR --from-ref SHA [--plan | --apply]\n       " \
+        "shaka seam upgrade --root DIR [--apply | --recover]\n       " \
         'shaka seam pointer'
     end
 

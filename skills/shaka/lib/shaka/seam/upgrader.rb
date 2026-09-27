@@ -1,0 +1,96 @@
+# frozen_string_literal: true
+
+require 'fileutils'
+require 'json'
+require 'optparse'
+require_relative 'upgrade_plan'
+require_relative 'upgrader/apply'
+require_relative 'upgrader/filesystem'
+require_relative 'upgrader/recovery'
+
+module Shaka
+  class Seam
+    # Moves a legacy candidate layout with an explicit preview and a recoverable journal.
+    class Upgrader
+      JOURNAL = File.join(Configuration::Paths::DIRECTORY, '.shaka-upgrade-journal.json')
+
+      include Apply
+      include Filesystem
+      include Recovery
+
+      def self.run(arguments)
+        new(arguments).run
+      rescue OptionParser::ParseError, SystemCallError, Shaka::Error, JSON::ParserError => e
+        warn "shaka: #{e.message}"
+        1
+      end
+
+      def initialize(arguments)
+        @arguments = arguments.dup
+        @options = {}
+      end
+
+      def run
+        parse_request!
+        return 0 if @options[:help]
+
+        @root = File.realpath(@options.fetch(:root))
+        verify_git_root!
+        dispatch
+      end
+
+      def parse_request!
+        @arguments.shift if @arguments.first == 'upgrade'
+        parser.parse!(@arguments)
+        return if @options[:help]
+
+        raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty? && @options[:root]
+        return unless @options[:apply] && @options[:recover]
+
+        raise OptionParser::InvalidArgument, '--apply and --recover are exclusive'
+      end
+
+      def dispatch
+        return recover if @options[:recover]
+        return journal_notice if File.exist?(journal_path)
+
+        plan = UpgradePlan.new(@root)
+        report = plan.build
+        return apply(plan, report) if @options[:apply]
+
+        puts JSON.generate(report)
+        0
+      end
+
+      private
+
+      def parser
+        OptionParser.new do |flags|
+          flags.banner = 'Usage: shaka seam upgrade --root DIR [--apply | --recover]'
+          flags.on('--root DIR', 'Repository root') { |value| @options[:root] = value }
+          flags.on('--apply', 'Apply the complete preview after a fresh preflight') { @options[:apply] = true }
+          flags.on('--recover', 'Restore files after an interrupted apply') { @options[:recover] = true }
+          flags.on('-h', '--help', 'Show usage') do
+            puts flags
+            @options[:help] = true
+          end
+        end
+      end
+
+      def verify_git_root!
+        output, error, status = Open3.capture3('git', '-C', @root, 'rev-parse', '--show-toplevel')
+        raise Error, "Cannot identify repository root: #{error.strip}" unless status.success?
+        raise Error, "--root must be the Git worktree root: #{output.strip}" unless File.realpath(output.strip) == @root
+      end
+
+      def journal_path = File.join(@root, JOURNAL)
+
+      def journal_notice
+        message = "Interrupted upgrade journal at #{JOURNAL}; run shaka seam upgrade --root #{@root} --recover, " \
+                  'then preview again. Preserve any file edited since interruption and repair it manually.'
+        puts JSON.generate('mode' => 'preview', 'status' => 'recovery_required', 'blockers' => [message])
+        0
+      end
+    end
+  end
+end
