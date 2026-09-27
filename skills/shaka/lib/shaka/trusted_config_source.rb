@@ -11,6 +11,7 @@ module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
   class TrustedConfigSource
     include Configuration::Sources
+
     def self.load(root:, ref: nil, candidate_commands: true)
       return RepositoryConfig.load(root:) unless ref
 
@@ -30,7 +31,7 @@ module Shaka
 
     def load(ref)
       sha = resolve(ref)
-      layout = trusted_layout(sha)
+      layout = Configuration::Layout.commit(root: @root, sha:, allow_missing: true) || Configuration::Layout::LEGACY
       source = read_at_commit(root: @root, sha:, path: layout.contract, display_ref: ref)
       config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha, layout), sha:,
                                      candidate_commands: @candidate_commands)
@@ -47,10 +48,6 @@ module Shaka
     end
 
     private
-
-    def trusted_layout(sha)
-      Configuration::Layout.commit(root: @root, sha:, allow_missing: true) || Configuration::Layout::LEGACY
-    end
 
     # A prompt file the review runner would reject would stop every local review, including the one
     # for the PR that fixes it.
