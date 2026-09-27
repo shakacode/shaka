@@ -73,9 +73,8 @@ module HandoffFixtures
   def self.description(wip = WIP) = "#{Shaka::Publishing::OPEN_MARK}\n#{rendered(wip)}#{Shaka::Publishing::CLOSE_MARK}"
 end
 
-class HandoffTest < Minitest::Test
-  LABELS = 'repos/owner/repo/issues/42/labels'
-  REVIEWS = 'repos/owner/repo/pulls/42/reviews'
+# Runs handoff against a fake PR whose defaults owe nothing, so each test changes one fact.
+module HandoffHarness
   include HandoffFixtures
 
   def walkthrough(...) = HandoffFixtures.walkthrough(...)
@@ -88,6 +87,12 @@ class HandoffTest < Minitest::Test
                  reviews: [walkthrough(HEAD)], checks: [check('pass')] }
     Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull))).call(head: expected, woken_by:)
   end
+end
+
+class HandoffTest < Minitest::Test
+  LABELS = 'repos/owner/repo/issues/42/labels'
+  REVIEWS = 'repos/owner/repo/pulls/42/reviews'
+  include HandoffHarness
 
   def test_a_labeled_current_pr_owes_nothing
     result = handoff
@@ -129,18 +134,6 @@ class HandoffTest < Minitest::Test
                      checks: [{ 'name' => 'validate', 'state' => 'FAILURE', 'bucket' => 'pass' }])
 
     assert(result['owed'].any? { |item| item.include?('not all passing') })
-  end
-
-  def test_a_walkthrough_whose_footer_disagrees_with_its_commit_does_not_count
-    result = handoff(reviews: [walkthrough(HEAD, commit: OLD)])
-
-    assert(result['notes'].any? { |item| item.include?('No walkthrough') })
-  end
-
-  def test_a_wip_note_outside_the_managed_region_does_not_count
-    body = "#{HandoffFixtures.rendered}\n\n#{Shaka::Publishing::OPEN_MARK}\nsummary#{Shaka::Publishing::CLOSE_MARK}"
-
-    assert(handoff(body:).fetch('owed').any? { |item| item.include?('WIP Details is missing') })
   end
 
   def test_a_copied_walkthrough_from_another_account_is_ignored
@@ -212,6 +205,30 @@ class HandoffTest < Minitest::Test
     result = handoff(expected: nil)
 
     assert_empty result['owed']
+  end
+end
+
+# Handoff reads only evidence Shaka controls: commit-bound reviews and its own description region.
+class HandoffEvidenceTest < Minitest::Test
+  include HandoffHarness
+
+  def test_a_walkthrough_whose_footer_disagrees_with_its_commit_does_not_count
+    result = handoff(reviews: [walkthrough(HEAD, commit: OLD)])
+
+    assert(result['notes'].any? { |item| item.include?('No walkthrough') })
+  end
+
+  def test_a_wip_note_outside_the_managed_region_does_not_count
+    body = "#{HandoffFixtures.rendered}\n\n#{Shaka::Publishing::OPEN_MARK}\nsummary#{Shaka::Publishing::CLOSE_MARK}"
+
+    assert(handoff(body:).fetch('owed').any? { |item| item.include?('WIP Details is missing') })
+  end
+
+  def test_reversed_markers_hold_no_managed_region
+    marks = [Shaka::Publishing::CLOSE_MARK, Shaka::Publishing::OPEN_MARK]
+    body = "#{marks.join("\n")}\n#{HandoffFixtures.rendered}"
+
+    assert(handoff(body:).fetch('owed').any? { |item| item.include?('WIP Details is missing') })
   end
 end
 

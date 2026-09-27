@@ -122,9 +122,12 @@ module Shaka
 
     # Only text between the helper's markers is its own; anyone who can edit the body can write elsewhere.
     def managed_region(body)
-      return '' unless body.scan(Publishing::OPEN_MARK).one? && body.scan(Publishing::CLOSE_MARK).one?
+      open = body.index(Publishing::OPEN_MARK)
+      close = body.index(Publishing::CLOSE_MARK)
+      single = body.scan(Publishing::OPEN_MARK).one? && body.scan(Publishing::CLOSE_MARK).one?
+      return '' unless single && open < close
 
-      body.split(Publishing::OPEN_MARK, 2).last.split(Publishing::CLOSE_MARK, 2).first
+      body[(open + Publishing::OPEN_MARK.length)...close]
     end
 
     def list = @labels.join(', ')
