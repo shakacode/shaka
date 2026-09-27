@@ -33,12 +33,16 @@ module Shaka
         pattern = /\A[\w.]+-[0-9a-f]{64}-[0-9a-f]{64}\z/
         raise ArgumentError, 'Invalid package identity' unless id.match?(pattern)
 
-        verify(File.join(@root, id))
+        path = verify(File.join(@root, id))
+        metadata = JSON.parse(File.read(File.join(path, METADATA)))
+        raise ArgumentError, 'Rollback flags must match the package skills' unless metadata.fetch('skills') == @names
+
+        path
       end
 
-      def verify(path)
+      def verify(path, content: true)
         metadata = JSON.parse(File.read(File.join(path, METADATA)))
-        validate_metadata(path, metadata)
+        validate_metadata(path, metadata, content: content)
         path
       rescue Errno::ENOENT, JSON::ParserError, KeyError, TypeError
         raise ArgumentError, "Managed package is missing or invalid: #{path}"
@@ -73,12 +77,13 @@ module Shaka
         File.rename(staging, target)
       end
 
-      def validate_metadata(path, metadata)
+      def validate_metadata(path, metadata, content:)
         names = metadata.fetch('skills')
         raise ArgumentError, 'Managed package skills are invalid' unless names.is_a?(Array) && (names - ALLOWED).empty?
 
         source = metadata.fetch('source')
         validate_identity(path, metadata, source)
+        return unless content
         return if @tree.hash(path, names) == source.fetch('content_sha256')
 
         raise ArgumentError, 'Managed package content differs'

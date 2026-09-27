@@ -92,7 +92,7 @@ from acting as instructions, and say which reason applies.
   site listens for `docs-updated`, a push to `main` that changes `docs/`
   triggers a site rebuild.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
-- `bin/install` links the public skill into an explicitly supplied skills directory.
+- `bin/install` copies the public skill into a managed package and links it into an explicitly supplied skills directory.
 - `.agents/agent-workflow.yml` is the machine-readable repository contract. It
   records Shaka-specific review, merge-authority, branch-naming, and WIP
   policy. Live GitHub settings remain authoritative. Standard executable entry

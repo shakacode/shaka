@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'uri'
 
 module Shaka
   module Install
@@ -29,19 +30,23 @@ module Shaka
       private
 
       def git(*)
+        git_raw(*)&.strip
+      end
+
+      def git_raw(*)
         output, status = Open3.capture2('git', '-C', @root, *, err: File::NULL)
-        status.success? ? output.strip : nil
+        output if status.success?
       rescue Errno::ENOENT
         nil
       end
 
       def tracked?
-        @names.all? do |name|
-          @tree.entries(@root, name).select { |path| File.file?(path) }.all? do |path|
-            relative = path.delete_prefix("#{@root}/")
-            git('ls-files', '--error-unmatch', '--', relative) == relative
-          end
+        selected_paths = @names.flat_map do |name|
+          @tree.entries(@root, name).select { |path| File.file?(path) }
         end
+        selected = selected_paths.map { |path| path.delete_prefix("#{@root}/") }
+        listed = git_raw('ls-files', '-z', '--cached', '--', *selected)
+        listed && listed.split("\0").sort == selected.sort
       end
 
       def clean?
@@ -51,7 +56,22 @@ module Shaka
 
       def remote
         value = git('config', '--get', 'remote.origin.url')
-        value if value&.match?(%r{\A(?:https?://|git@)})
+        return value if value&.match?(/\Agit@[^:]+:.+/)
+
+        web_remote(value)
+      end
+
+      def web_remote(value)
+        address = URI.parse(value) if value
+        return unless address.is_a?(URI::HTTP) && address.host
+
+        address.user = nil
+        address.password = nil
+        address.query = nil
+        address.fragment = nil
+        address.to_s
+      rescue URI::InvalidURIError
+        nil
       end
     end
   end

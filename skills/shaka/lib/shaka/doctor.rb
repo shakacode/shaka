@@ -2,13 +2,12 @@
 
 require 'open3'
 require 'optparse'
-require 'json'
 require_relative 'error'
-require_relative 'version'
 require_relative 'usage/usage'
 require_relative 'doctor/bounded_command'
 require_relative 'doctor/checks'
 require_relative 'doctor/cursor_stop_hook'
+require_relative 'doctor/installation_identity'
 
 module Shaka
   # Reports whether this machine can run the workflow and publish a complete pull request.
@@ -56,13 +55,13 @@ module Shaka
     def self.report_installation(arguments)
       raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
 
-      puts JSON.generate(installation_identity)
+      puts JSON.generate(InstallationIdentity.read)
       0
     end
 
     def self.option_parser(options)
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka doctor [--root DIR]'
+        flags.banner = 'Usage: shaka doctor [--root DIR] [--installation-json]'
         flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
         flags.on('--host NAME', Usage::READERS.keys, Usage::READERS.keys.join(', ')) do |value|
           options[:host] = value
@@ -79,17 +78,6 @@ module Shaka
 
     private_class_method :report, :report_installation, :option_parser, :help
 
-    def self.installation_identity
-      path = File.expand_path('../../../../.shaka-install.json', __dir__)
-      return JSON.parse(File.read(path)) if File.file?(path)
-
-      { 'schema_version' => 1, 'package_id' => nil, 'version' => Shaka::VERSION,
-        'source' => { 'kind' => 'uninstalled', 'repository' => nil, 'revision' => nil,
-                      'base_revision' => nil, 'content_sha256' => nil } }
-    rescue JSON::ParserError => e
-      raise Shaka::Error, "Installed package metadata is invalid: #{e.message}"
-    end
-
     def initialize(root:, host: nil, environment: ENV, system: System.default)
       @root = root
       @stated = !host.nil?
@@ -99,7 +87,9 @@ module Shaka
 
     def checks = @checks ||= @source.call
 
-    def blocked? = checks.any? { |item| item.fetch(:status) == 'failed' }
+    def blocked?
+      checks.any? { |item| item.fetch(:status) == 'failed' } || installation_summary.start_with?('[FAILED]')
+    end
 
     def report
       ["Shaka doctor: #{overall.upcase}", context, installation_summary, '',
@@ -118,10 +108,16 @@ module Shaka
     def context = "host #{named_host} · root #{@root}"
 
     def installation_summary
-      identity = self.class.installation_identity
+      @installation_summary ||= render_installation_summary
+    end
+
+    def render_installation_summary
+      identity = InstallationIdentity.read
       source = identity.fetch('source')
       "installation #{identity.fetch('version')} · #{source_summary(source)} · " \
         "package #{identity['package_id'] || 'UNKNOWN'}"
+    rescue Shaka::Error, KeyError, TypeError => e
+      "[FAILED] Installation — #{e.message}"
     end
 
     def source_summary(source)

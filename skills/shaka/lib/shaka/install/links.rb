@@ -60,7 +60,7 @@ module Shaka
         return false unless target == File.join(package, 'skills', name)
         return false unless package.start_with?("#{@managed}/")
 
-        @package.verify(package)
+        @package.verify(package, content: false)
         true
       end
 
