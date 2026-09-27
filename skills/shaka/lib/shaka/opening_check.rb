@@ -58,19 +58,6 @@ module Shaka
       not_checked(e.message)
     end
 
-    def run_check
-      temp_root = File.realpath(Dir.tmpdir)
-      return not_checked('temporary model directory is inside the candidate checkout') if
-        LocalReviewExecutable.candidate_owned?(temp_root, @candidate_root)
-
-      parsed = parse
-      return not_checked(parsed.reason, parsed.detail) if parsed.is_a?(ParseFailure)
-
-      verdict = judge(parsed)
-      @cache&.write(verdict)
-      verdict
-    end
-
     # Rule, applied in code: flag a first sentence whose actor is not reader-facing.
     def self.verdict(sentences)
       first = sentences.first
@@ -83,6 +70,19 @@ module Shaka
     end
 
     private
+
+    def run_check
+      temp_root = File.realpath(Dir.tmpdir)
+      return not_checked('temporary model directory is inside the candidate checkout') if
+        LocalReviewExecutable.candidate_owned?(temp_root, @candidate_root)
+
+      parsed = parse
+      return not_checked(parsed.reason, parsed.detail) if parsed.is_a?(ParseFailure)
+
+      verdict = judge(parsed)
+      @cache&.write(verdict)
+      verdict
+    end
 
     def canonical_root(root)
       File.realpath(root) if root
