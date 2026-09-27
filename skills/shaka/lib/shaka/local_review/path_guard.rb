@@ -95,9 +95,16 @@ module Shaka
 
       words = line.delete_prefix('#!').split
       return unless words.first
-      return env_interpreter(words) if File.basename(words.first) == 'env'
+
+      return guarded_env_interpreter(line, words) if File.basename(words.first) == 'env'
 
       words.first
+    end
+
+    def self.guarded_env_interpreter(line, words)
+      raise Shaka::Error, 'Unsupported env shebang quoting' if line.match?(/['"\\$]/)
+
+      env_interpreter(words)
     end
 
     def self.env_interpreter(words)
