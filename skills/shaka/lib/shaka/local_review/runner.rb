@@ -61,8 +61,7 @@ module Shaka
     private
 
     def validate_path!
-      ENV['PATH'] = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root,
-                                                                          drop_candidate: true, all_executables: true)
+      ENV['PATH'] = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
     end
 
     def git_executable

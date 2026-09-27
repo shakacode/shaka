@@ -9,46 +9,39 @@ require_relative 'shebang'
 module Shaka
   # Screens command lookup paths before candidate data can influence a process.
   module LocalReviewPathGuard
-    GUARDED_EXECUTABLES = %w[gh git claude codex grok].freeze
-
-    def self.safe_path(path, candidate_root:, drop_candidate: false, inspect_links: true, all_executables: false)
+    def self.safe_path(path, candidate_root:, drop_candidate: false)
       entries = path.split(File::PATH_SEPARATOR, -1)
-      names = guarded_names(entries, candidate_root, drop_candidate) if inspect_links && !all_executables
-      options = { drop_candidate:, inspect_links:, all_executables:, names: }
       entries.filter_map do |entry|
-        normalized_path_entry(entry, candidate_root, options)
+        normalized_path_entry(entry, candidate_root, drop_candidate)
       end
              .join(File::PATH_SEPARATOR)
     end
 
-    def self.normalized_path_entry(entry, candidate_root, options)
+    def self.normalized_path_entry(entry, candidate_root, drop_candidate)
       directory = File.expand_path(entry.empty? ? '.' : entry)
       return directory unless File.directory?(directory)
 
-      state = candidate_path_state(File.realpath(directory), candidate_root, options)
+      state = candidate_path_state(File.realpath(directory), candidate_root)
       return if state == :uninspectable
       return directory if state == :safe
-      return if options[:drop_candidate]
+      return if drop_candidate
 
       raise Shaka::Error, 'PATH entry resolves inside candidate checkout'
     end
 
-    def self.candidate_path_state(directory, candidate_root, options)
+    def self.candidate_path_state(directory, candidate_root)
       return :candidate if LocalReviewExecutable.candidate_owned?(directory, candidate_root)
-      return :safe unless options[:inspect_links]
 
-      linked = candidate_executable_link?(directory, candidate_root, options)
+      linked = candidate_link_in_directory?(directory, candidate_root)
       return :uninspectable if linked == :uninspectable
 
       linked ? :candidate : :safe
     end
 
-    def self.candidate_executable_link?(directory, candidate_root, options)
-      names = options[:all_executables] ? Dir.children(directory) : options[:names]
-      names.any? do |name|
+    def self.candidate_link_in_directory?(directory, candidate_root)
+      Dir.children(directory).any? do |name|
         path = File.join(directory, name)
-        File.symlink?(path) && (options[:all_executables] || File.executable?(path)) &&
-          candidate_link?(path, candidate_root)
+        File.symlink?(path) && candidate_link?(path, candidate_root)
       end
     rescue SystemCallError
       :uninspectable # Omit a PATH directory that cannot be inspected.
@@ -60,20 +53,12 @@ module Shaka
       false # A dangling link cannot launch candidate code; inspect the remaining links.
     end
 
-    def self.guarded_names(entries, candidate_root, drop_candidate)
-      interpreters = GUARDED_EXECUTABLES.filter_map do |name|
-        executable = first_executable(entries, name, candidate_root, drop_candidate)
-        interpreter_name(executable, name, candidate_root) if executable
-      end
-      (GUARDED_EXECUTABLES + interpreters).uniq
-    end
-
     def self.safe_executable(path, name, candidate_root)
       selected = first_executable(path.split(File::PATH_SEPARATOR, -1), name, candidate_root, true)
       return unless selected
 
       real_directory = File.dirname(File.realpath(selected))
-      linked = candidate_executable_link?(real_directory, candidate_root, { all_executables: true })
+      linked = candidate_link_in_directory?(real_directory, candidate_root)
       raise Shaka::Error, "#{name} wrapper directory cannot be inspected" if linked == :uninspectable
       raise Shaka::Error, "#{name} wrapper directory contains candidate-backed links" if linked
 

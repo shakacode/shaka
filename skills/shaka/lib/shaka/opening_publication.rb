@@ -14,8 +14,7 @@ module Shaka
       original = ENV.fetch('PATH', nil)
       candidate_root = OpeningCheckout.root(root) || (raise Error, 'Candidate checkout root is unknown.')
 
-      ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true,
-                                                                  all_executables: true)
+      ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true)
       gh = selected_command(select_gh, original.to_s, candidate_root)
       with_neutral_directory(candidate_root) do |neutral|
         in_context(select_gh, neutral) { yield candidate_root, gh, neutral }

@@ -18,27 +18,14 @@ class OpeningPathGuardTest < Minitest::Test
       with_uninspectable(external) do
         path = Shaka::LocalReviewPathGuard.safe_path("#{external}:#{safe}", candidate_root: root)
         assert_equal safe, path
-        review_path = Shaka::LocalReviewPathGuard.safe_path("#{external}:#{safe}", candidate_root: root,
-                                                                                   inspect_links: false)
-        assert_equal "#{external}:#{safe}", review_path
       end
     end
   end
 
-  def test_keeps_external_directory_with_unrelated_candidate_link
+  def test_rejects_external_directory_with_unrelated_candidate_link
     with_candidate_link do |root, external, _safe|
       File.rename(File.join(external, 'gh'), File.join(external, 'project-tool'))
-      assert_equal external, Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root,
-                                                                             drop_candidate: true)
-    end
-  end
-
-  def test_strict_model_path_rejects_unrelated_candidate_executable_link
-    with_candidate_link do |root, external, _safe|
-      File.rename(File.join(external, 'gh'), File.join(external, 'node'))
-      assert_raises(Shaka::Error) do
-        Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root, all_executables: true)
-      end
+      assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root) }
     end
   end
 
@@ -49,8 +36,8 @@ class OpeningPathGuardTest < Minitest::Test
       write_script(File.join(external, 'gh'), "#!#{root}/node\n")
       write_script(File.join(safe, 'gh'), "#!/bin/sh\nexit 0\n")
       path = "#{safe}:#{external}"
-      assert_equal path, Shaka::LocalReviewPathGuard.safe_path(path, candidate_root: root)
-      assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root) }
+      assert_equal File.join(safe, 'gh'), Shaka::LocalReviewPathGuard.safe_executable(path, 'gh', root)
+      assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_executable(external, 'gh', root) }
     end
   end
 
@@ -69,7 +56,7 @@ class OpeningPathGuardTest < Minitest::Test
       File.unlink(File.join(external, 'gh'))
       ["#!/usr/bin/env -S 'FOO=1 node'", "#!/usr/bin/env -S PATH=#{root} node"].each do |shebang|
         write_script(File.join(external, 'gh'), "#{shebang}\n")
-        assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root) }
+        assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_executable(external, 'gh', root) }
       end
     end
   end
@@ -79,7 +66,7 @@ class OpeningPathGuardTest < Minitest::Test
       File.unlink(File.join(external, 'gh'))
       ['#!./node', '#!/usr/bin/env ./node', '#!/usr/bin/env -S ./node'].each do |shebang|
         write_script(File.join(external, 'gh'), "#{shebang}\n")
-        assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root) }
+        assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_executable(external, 'gh', root) }
       end
     end
   end
