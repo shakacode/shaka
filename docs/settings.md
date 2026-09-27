@@ -294,7 +294,8 @@ For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
 links to the code, then publishes again. Shaka reads these values from the
 trusted default-branch revision when the agent passes `--ref`; without it, the
-defaults apply.
+defaults apply. If that revision cannot be read, `description` still publishes
+under the defaults and its result says why, while `walkthrough` stops.
 
 ## Standard command scripts
 

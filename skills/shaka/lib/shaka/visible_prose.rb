@@ -10,14 +10,16 @@ module Shaka
     LIST_ITEM = /\n(?=[ \t]*(?:[-*+]|\d+[.)])[ \t])/
     LIST_MARKER = /\A[ \t]*(?:[-*+]|\d+[.)])[ \t]+/
     CODE_SPAN = /(`+)(?:(?!\1).)*\1(?!`)/m
-    # Closing quotes, brackets, and emphasis may follow the stop; opening ones may precede the capital.
-    SENTENCE_END = /(?<=[.!?])[*_"')\]]*\s+(?=[*_"'(\[]*[[:upper:][:digit:]])/
+    COMMENT = /<!--.*?-->/
+    # A false split only shortens a sentence, so any word may start the next one, as in "iOS".
+    SENTENCE_END = /(?<=[.!?])[*_"')\]]*\s+(?=[*_"'(\[]*[[:alnum:]])/
 
     def self.words(text) = text.split.count { |token| token.match?(/[[:alnum:]]/) }
 
     def initialize(markdown)
       @fence = nil
       @depth = 0
+      @after_blank = true
       @lines = markdown.to_s.lines.map { |line| visible?(line) ? line : "\n" }
     end
 
@@ -30,9 +32,14 @@ module Shaka
     private
 
     def visible?(line)
-      return false if fenced?(line) || collapsed?(line)
+      hidden = fenced?(line) || collapsed?(line) || indented_code?(line) || line.match?(HIDDEN_LINE)
+      @after_blank = line.strip.empty?
+      !hidden
+    end
 
-      !line.match?(HIDDEN_LINE)
+    # An indented code block starts only after a blank line; an indented list item stays prose.
+    def indented_code?(line)
+      @indented = line.match?(/\A(?: {4}|\t)/) && !line.match?(LIST_MARKER) && (@after_blank || @indented)
     end
 
     def fenced?(line)
@@ -47,7 +54,7 @@ module Shaka
 
     # A details block is read only by someone who chooses to open it.
     def collapsed?(line)
-      tags = line.gsub(CODE_SPAN, '')
+      tags = line.gsub(CODE_SPAN, '').gsub(COMMENT, '')
       @depth += tags.scan(/<details\b/i).size
       hidden = @depth.positive?
       @depth = [@depth - tags.scan(%r{</details\s*>}i).size, 0].max
