@@ -54,6 +54,16 @@ class OpeningPathGuardTest < Minitest::Test
     end
   end
 
+  def test_dropped_candidate_wrapper_does_not_hide_safe_command
+    with_candidate_link do |root, external, safe|
+      write_script(File.join(root, 'node'), "#!/bin/sh\nexit 1\n")
+      write_script(File.join(root, 'gh'), "#!#{root}/node\n")
+      write_script(File.join(safe, 'gh'), "#!/bin/sh\nexit 0\n")
+      path = "#{external}:#{safe}"
+      assert_equal safe, Shaka::LocalReviewPathGuard.safe_path(path, candidate_root: root, drop_candidate: true)
+    end
+  end
+
   private
 
   def write_script(path, body)

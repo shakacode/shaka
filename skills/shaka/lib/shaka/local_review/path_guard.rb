@@ -12,7 +12,7 @@ module Shaka
 
     def self.safe_path(path, candidate_root:, drop_candidate: false, inspect_links: true, all_executables: false)
       entries = path.split(File::PATH_SEPARATOR, -1)
-      names = guarded_names(entries, candidate_root) if inspect_links
+      names = guarded_names(entries, candidate_root, drop_candidate) if inspect_links
       options = { drop_candidate:, inspect_links:, all_executables:, names: }
       entries.filter_map do |entry|
         normalized_path_entry(entry, candidate_root, options)
@@ -53,21 +53,29 @@ module Shaka
       :uninspectable # Omit a PATH directory that cannot be inspected.
     end
 
-    def self.guarded_names(entries, candidate_root)
+    def self.guarded_names(entries, candidate_root, drop_candidate)
       interpreters = GUARDED_EXECUTABLES.filter_map do |name|
-        executable = first_executable(entries, name)
+        executable = first_executable(entries, name, candidate_root, drop_candidate)
         interpreter_name(executable, name, candidate_root) if executable
       end
       (GUARDED_EXECUTABLES + interpreters).uniq
     end
 
-    def self.first_executable(entries, name)
+    def self.first_executable(entries, name, candidate_root, drop_candidate)
       entries.each do |entry|
         directory = File.expand_path(entry.empty? ? '.' : entry)
         executable = File.join(directory, name)
-        return executable if File.file?(executable) && File.executable?(executable)
+        next unless File.file?(executable) && File.executable?(executable)
+        next if drop_candidate && candidate_executable?(directory, executable, candidate_root)
+
+        return executable
       end
       nil
+    end
+
+    def self.candidate_executable?(directory, executable, candidate_root)
+      LocalReviewExecutable.candidate_owned?(File.realpath(directory), candidate_root) ||
+        LocalReviewExecutable.candidate_owned?(File.realpath(executable), candidate_root)
     end
 
     def self.interpreter_name(executable, name, candidate_root)
