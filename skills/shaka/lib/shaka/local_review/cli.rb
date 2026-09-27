@@ -117,7 +117,7 @@ module Shaka
       return failure('claude -p reported an error', output) if result['is_error']
       return invalid('claude -p returned no review', output) unless valid_claude_result?(result)
 
-      @options[:usage] = save_usage(output)
+      @options[:usage] = save_usage(output) if @options.fetch(:capture_usage, true)
       File.write(@report, result.fetch('result'))
       nil
     end

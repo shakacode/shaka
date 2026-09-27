@@ -113,7 +113,8 @@ module Shaka
       # Reuse the review CLI adapters and run outside the candidate checkout.
       Dir.mktmpdir('shaka-opening-') do |dir|
         report = File.join(dir, 'parse.json')
-        options = { reviewer: @reviewer, model: @model, effort: 'low', timeout_seconds: TIMEOUT_SECONDS }
+        options = { reviewer: @reviewer, model: @model, effort: 'low', timeout_seconds: TIMEOUT_SECONDS,
+                    capture_usage: false }
         path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: @candidate_root)
         outcome = LocalReviewCli.new(options, root: dir, report:, candidate_root: @candidate_root, path:)
                                 .run(model_prompt)
