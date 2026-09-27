@@ -42,6 +42,9 @@ module Shaka
       body[(open + open_mark.length)...close]
     end
 
+    # Revision reads `BRANCH @ SHA`; only the part after the last ` @ ` is the head, whatever the branch is named.
+    def self.head(revision) = revision.to_s.split(' @ ').last.to_s.strip
+
     def self.rows(note)
       note.lines.drop(2).map { |line| line.chomp.match(/\A\| (.+?) \| (.*) \|\z/)&.captures || [] }
     end

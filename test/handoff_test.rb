@@ -174,6 +174,12 @@ class HandoffTest < Minitest::Test
     assert(result['owed'].any? { |item| item.include?('while handoff read it') })
   end
 
+  def test_a_cleared_revision_cell_counts_as_missing
+    cleared = description.sub(/^\| Revision \| .* \|$/, '| Revision |  |')
+
+    assert(handoff(body: cleared).fetch('owed').any? { |item| item.include?('WIP Details is missing') })
+  end
+
   def test_a_missing_or_stale_wip_note_is_owed
     assert(handoff(body: 'no note').fetch('owed').any? { |item| item.include?('WIP Details is missing') })
 

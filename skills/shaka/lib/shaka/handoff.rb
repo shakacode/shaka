@@ -121,14 +121,18 @@ module Shaka
 
     def wip_fact(live)
       pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
-      moved = pull.dig('head', 'sha')
-      @owed << "PR head moved to #{moved} while handoff read it; run it again." if moved && moved != live
-      revision = WipDetails.revision(WipDetails.managed_region(pull['body'].to_s, Publishing::OPEN_MARK, Publishing::CLOSE_MARK))
-      return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
-      # Revision reads `branch @ head`; only the part after the last ` @ ` is the head, whatever the branch is named.
-      return "WIP #{live[0, SHORT]}" if revision.split(' @ ').last.strip == live
+      recheck_head(pull.dig('head', 'sha'), live)
+      revision = WipDetails.revision(WipDetails.managed_region(pull['body'].to_s, Publishing::OPEN_MARK,
+                                                               Publishing::CLOSE_MARK))
+      return owe('no WIP', 'WIP Details is missing; publish it before stopping.') if revision.to_s.strip.empty?
+      return "WIP #{live[0, SHORT]}" if WipDetails.head(revision) == live
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")
+    end
+
+    # The final read also returns the head, so a push during the earlier reads cannot pass as current.
+    def recheck_head(moved, live)
+      @owed << "PR head moved to #{moved} while handoff read it; run it again." if moved && moved != live
     end
 
     def list = @labels.join(', ')
