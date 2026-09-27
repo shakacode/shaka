@@ -21,8 +21,6 @@ module Shaka
     end
 
     def self.prompt_files(review:, opening:)
-      raise Error, 'opening_check must be a mapping' unless opening.is_a?(Hash)
-
       files = ReviewSchema.prompt_files(review)
       path = opening['prompt_file']
       path ? files + [['opening_check.prompt_file', path]] : files

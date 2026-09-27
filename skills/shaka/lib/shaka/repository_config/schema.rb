@@ -41,6 +41,7 @@ module Shaka
         keys!(@data, REQUIRED, OPTIONAL, @config_path)
         validate_header
         validate_commands
+        # Validate opening_check before review prompt collection reads its prompt_file.
         validate_optional
         validate_review
         validate_merge
