@@ -5,6 +5,7 @@ require 'yaml'
 require_relative '../repository_config'
 require_relative '../review_prompt'
 require_relative '../trusted_path_resolver'
+require_relative 'layout'
 
 module Shaka
   module Configuration
@@ -37,8 +38,11 @@ module Shaka
         source
       end
 
-      def contract_at_commit?(ref:, git:)
-        git.call('cat-file', '-e', "#{ref}:#{Paths::CONTRACT}").last.success?
+      def contract_at_commit?(root:, ref:, git:)
+        sha, error, status = git.call('-C', root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}")
+        raise Error, "Invalid trusted ref #{ref}: #{error.strip}" unless status.success?
+
+        !Layout.commit(root:, sha: sha.strip, allow_missing: true, git:).nil?
       end
 
       def entry_at_commit?(sha:, path:, root:)
@@ -56,13 +60,15 @@ module Shaka
       end
 
       # Review instructions intentionally tolerate unrelated, incomplete seam fields.
-      def review_at_commit(root:, ref:, git:, capture:)
-        source = capture.call(git, '-C', root, 'show', "#{ref}:#{Paths::CONTRACT}")
+      def review_at_commit(root:, ref:, git:, capture:, probe:)
+        sha = capture.call(git, '-C', root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}").strip
+        layout = Layout.commit(root:, sha:, allow_missing: true, git: probe) || Layout::LEGACY
+        source = capture.call(git, '-C', root, 'show', "#{sha}:#{layout.contract}")
         data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
         review = data.is_a?(Hash) ? data['review'] : nil
         review.is_a?(Hash) ? review : {}
       rescue Psych::Exception => e
-        raise Error, "Invalid #{Paths::CONTRACT} at #{ref}: #{e.message}"
+        raise Error, "Invalid #{layout.contract} at #{sha}: #{e.message}"
       end
 
       def prompt_at_commit(root:, ref:, path:, git_access:)

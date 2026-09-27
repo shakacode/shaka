@@ -4,10 +4,14 @@ require 'open3'
 require_relative 'repository_config'
 require_relative 'review_prompt'
 require_relative 'trusted_path_resolver'
+require_relative 'configuration/layout'
+require_relative 'configuration/sources'
 
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
   class TrustedConfigSource
+    include Configuration::Sources
+
     def self.load(root:, ref: nil, candidate_commands: true)
       return RepositoryConfig.load(root:) unless ref
 
@@ -27,16 +31,19 @@ module Shaka
 
     def load(ref)
       sha = resolve(ref)
-      source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
-      raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?
-
-      config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
+      layout = trusted_layout(sha)
+      source = read_at_commit(root: @root, sha:, path: layout.contract, display_ref: ref)
+      config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha, layout), sha:,
                                      candidate_commands: @candidate_commands)
       validate_prompt_files(config.review, sha)
       config
     end
 
     private
+
+    def trusted_layout(sha)
+      Configuration::Layout.commit(root: @root, sha:, allow_missing: true) || Configuration::Layout::LEGACY
+    end
 
     # A prompt file the review runner would reject would stop every local review, including the one
     # for the PR that fixes it.
@@ -68,13 +75,13 @@ module Shaka
       sha.strip
     end
 
-    def optional_commands(sha)
-      validate_command_directory(sha)
+    def optional_commands(sha, layout)
+      validate_command_directory(sha, layout)
       resolver = TrustedPathResolver.new(root: @root, sha:)
-      validate_required_commands(resolver, sha)
-      entries = command_entries(resolver)
-      validate_legacy_command_entries(resolver, entries, sha)
-      RepositoryConfig::CommandPaths::OPTIONAL.filter_map do |name, path|
+      validate_required_commands(resolver, sha, layout)
+      entries = command_entries(resolver, layout)
+      validate_legacy_command_entries(resolver, entries, sha, layout)
+      layout.optional.filter_map do |name, path|
         next unless entries.key?(path)
 
         validate_command_entry(entries.fetch(path), path, sha, resolver)
@@ -82,8 +89,8 @@ module Shaka
       end
     end
 
-    def validate_required_commands(resolver, sha)
-      RepositoryConfig::CommandPaths::REQUIRED.each_value do |path|
+    def validate_required_commands(resolver, sha, layout)
+      layout.required.each_value do |path|
         entry = resolver.entry(path)
         raise Error, "#{path} is missing at trusted ref #{sha}" unless entry
 
@@ -91,8 +98,8 @@ module Shaka
       end
     end
 
-    def validate_command_directory(sha)
-      directory = Configuration::Paths::COMMAND_DIRECTORY
+    def validate_command_directory(sha, layout)
+      directory = layout.command_directory
       type, error, status = Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{sha}:#{directory}")
       return if status.success? && type.strip == 'tree'
       raise Error, "#{directory} at #{sha} must be a real directory, not a symlink" if status.success?
@@ -100,15 +107,15 @@ module Shaka
       raise Error, "Cannot inspect #{directory} at #{sha}: #{error.strip}"
     end
 
-    def command_entries(resolver)
-      RepositoryConfig::CommandPaths::OPTIONAL.values.to_h do |path|
+    def command_entries(resolver, layout)
+      layout.optional.values.to_h do |path|
         [path, resolver.entry(path)]
       end.compact
     end
 
-    def validate_legacy_command_entries(resolver, entries, sha)
-      RepositoryConfig::CommandPaths::LEGACY_OPTIONAL.each do |name, legacy_path|
-        fixed_path = RepositoryConfig::CommandPaths::OPTIONAL.fetch(name)
+    def validate_legacy_command_entries(resolver, entries, sha, layout)
+      layout.legacy_optional.each do |name, legacy_path|
+        fixed_path = layout.optional.fetch(name)
         next unless resolver.entry(legacy_path) && !entries.key?(fixed_path)
 
         raise Error, "#{legacy_path} requires the standard entry point #{fixed_path} at trusted ref #{sha}"

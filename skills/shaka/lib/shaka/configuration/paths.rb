@@ -11,6 +11,9 @@ module Shaka
       POINTER = '.agents/shaka.md'
       LEGACY_README = '.agents/README.md'
       REPOSITORY_ALLOWLIST = '.agents/trusted-github-actors.yml'
+      NEW_CONTRACT = '.agents/shaka/config.yml'
+      NEW_COMMAND_DIRECTORY = '.agents/shaka/bin'
+      NEW_REPOSITORY_ALLOWLIST = '.agents/shaka/trusted-github-actors.yml'
       MACHINE_ALLOWLIST = '~/.agents/trusted-github-actors.yml'
 
       REQUIRED_COMMANDS = {
@@ -27,6 +30,15 @@ module Shaka
         'trigger_hosted_ci' => '.agents/bin/trigger_hosted_ci'
       }.freeze
       COMMANDS = REQUIRED_COMMANDS.merge(OPTIONAL_COMMANDS).freeze
+      NEW_REQUIRED_COMMANDS = REQUIRED_COMMANDS.transform_values do |path|
+        path.sub(COMMAND_DIRECTORY, NEW_COMMAND_DIRECTORY)
+      end.freeze
+      NEW_OPTIONAL_COMMANDS = OPTIONAL_COMMANDS.transform_values do |path|
+        path.sub(COMMAND_DIRECTORY, NEW_COMMAND_DIRECTORY)
+      end.freeze
+      NEW_LEGACY_OPTIONAL_COMMANDS = LEGACY_OPTIONAL_COMMANDS.transform_values do |path|
+        path.sub(COMMAND_DIRECTORY, NEW_COMMAND_DIRECTORY)
+      end.freeze
       REPOSITORY_NAMES = {
         DIRECTORY: DIRECTORY, COMMAND_DIRECTORY: COMMAND_DIRECTORY, CONTRACT: CONTRACT,
         POINTER: POINTER, LEGACY_README: LEGACY_README, REPOSITORY_ALLOWLIST: REPOSITORY_ALLOWLIST

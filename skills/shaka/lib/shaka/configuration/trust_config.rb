@@ -10,10 +10,15 @@ module Shaka
     class TrustConfig
       MACHINE_PATH = Configuration::Paths::MACHINE_ALLOWLIST
       REPO_PATH = Configuration::Paths::REPOSITORY_ALLOWLIST
+      NEW_REPO_PATH = Configuration::Paths::NEW_REPOSITORY_ALLOWLIST
       BLOB_QUERY = <<~GRAPHQL
-        query($owner: String!, $name: String!, $expression: String!) {
+        query($owner: String!, $name: String!, $expression: String!, $newExpression: String!) {
           repository(owner: $owner, name: $name) {
             object(expression: $expression) {
+              __typename
+              ... on Blob { text isBinary isTruncated byteSize }
+            }
+            newObject: object(expression: $newExpression) {
               __typename
               ... on Blob { text isBinary isTruncated byteSize }
             }
@@ -76,21 +81,28 @@ module Shaka
       end
 
       def repository_config(base_oid)
-        object = repository_blob(base_oid)
+        object, path = repository_blob(base_oid)
         return if object.nil?
-        raise Error, 'Trusted-base repository trust config is not readable text.' unless valid_blob?(object)
+        raise Error, "Trusted-base #{path} is not readable text." unless valid_blob?(object)
 
-        settings.parse(object['text'], scope: 'repository')
+        parsed = settings.parse(object['text'], scope: 'repository')
+        parsed.fetch(:provenance)['path'] = path
+        parsed
       end
 
       def repository_blob(base_oid)
         owner, name = @github.repository.split('/')
         result = @github.graphql(BLOB_QUERY, owner: owner, name: name,
-                                             expression: "#{base_oid}:#{REPO_PATH}")
+                                             expression: "#{base_oid}:#{REPO_PATH}",
+                                             newExpression: "#{base_oid}:#{NEW_REPO_PATH}")
         repository = result['repository']
         raise Error, 'Trusted-base repository trust config is unavailable.' unless repository.is_a?(Hash)
 
-        repository['object']
+        legacy = repository['object']
+        modern = repository['newObject']
+        raise Error, "Both #{REPO_PATH} and #{NEW_REPO_PATH} exist" if legacy && modern
+
+        [legacy || modern, modern ? NEW_REPO_PATH : REPO_PATH]
       end
 
       def valid_blob?(object)

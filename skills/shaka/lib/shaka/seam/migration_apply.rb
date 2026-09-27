@@ -52,10 +52,18 @@ module Shaka
 
         files = generated_files(report)
         preflight_directories
+        refuse_new_configuration!
         preflight_migration_files(files)
         created = write_migration_files(files)
         verify_candidate(created)
         CheckReport.emit(report)
+      end
+
+      def refuse_new_configuration!
+        return unless Configuration::Layout.worktree(root:, allow_missing: true) == Configuration::Layout::NEW
+
+        raise Error, "#{Configuration::Paths::NEW_CONTRACT} already exists; seam migrate writes " \
+                     "#{Configuration::Paths::CONTRACT} and cannot create a second configuration"
       end
 
       def generated_files(report)

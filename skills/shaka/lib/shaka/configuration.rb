@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'configuration/paths'
+require_relative 'configuration/layout'
 require_relative 'repository_config'
 require_relative 'trusted_config_source'
 require_relative 'configuration/sources'
@@ -34,16 +35,8 @@ module Shaka
       File.file?(command_path(root, name))
     end
 
-    def contract_file?(root)
-      File.file?(path(root, :CONTRACT))
-    end
-
     def contract_entry?(root)
-      target = path(root, :CONTRACT)
-      File.lstat(target)
-      true
-    rescue Errno::ENOENT
-      false
+      !Layout.worktree(root:, allow_missing: true).nil?
     end
 
     def contract_matches?(root, source)

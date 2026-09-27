@@ -28,6 +28,7 @@ module Shaka
         RepositoryConfig::ReviewSchema.new(review_policy).validate
         RepositoryConfig::MergeSchema.new(merge_policy).validate
         preflight_directories
+        refuse_new_configuration!
         RepositoryConfig::CommandSchema.new(root: @root).validate_available_optional_commands
         preflight_files(files)
         write_files(files)
@@ -36,6 +37,13 @@ module Shaka
       end
 
       private
+
+      def refuse_new_configuration!
+        return unless Configuration::Layout.worktree(root: @root, allow_missing: true) == Configuration::Layout::NEW
+
+        raise Error, "#{Configuration::Paths::NEW_CONTRACT} already exists; seam init writes " \
+                     "#{Configuration::Paths::CONTRACT} and cannot create a second configuration"
+      end
 
       def generated_files
         wrappers = COMMAND_NAMES.to_h do |name|

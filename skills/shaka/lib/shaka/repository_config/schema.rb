@@ -22,17 +22,22 @@ module Shaka
 
       attr_reader :commands
 
-      def initialize(root:, data:, available_commands: nil, candidate_commands: true)
+      def initialize(root:, data:, available_commands: nil, candidate_commands: true,
+                     selection: Configuration::Layout::Selection.new(policy: Configuration::Layout::LEGACY,
+                                                                     candidate: Configuration::Layout::LEGACY))
         @root = root
         @data = data
         @available_commands = available_commands
         @candidate_commands = candidate_commands
+        @layout = selection.policy
+        @candidate_layout = selection.candidate
+        @config_path = @layout.contract
       end
 
       def validate
-        mapping!(@data, PATH)
+        mapping!(@data, @config_path)
         reject_retired_root_keys
-        keys!(@data, REQUIRED, OPTIONAL, PATH)
+        keys!(@data, REQUIRED, OPTIONAL, @config_path)
         validate_header
         validate_commands
         validate_review
@@ -58,7 +63,8 @@ module Shaka
 
       def validate_commands
         @commands = CommandSchema.new(root: @root, available_commands: @available_commands,
-                                      candidate_commands: @candidate_commands).validate
+                                      candidate_commands: @candidate_commands, layout: @layout,
+                                      candidate_layout: @candidate_layout).validate
       end
 
       def validate_review

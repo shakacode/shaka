@@ -216,6 +216,21 @@ class SeamMigrateApplyTest < Minitest::Test
     end
   end
 
+  def test_apply_refuses_a_new_configuration_beside_the_legacy_destination
+    with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
+      modern = File.join(root, '.agents/shaka/config.yml')
+      FileUtils.mkdir_p(File.dirname(modern))
+      File.write(modern, "version: 1\n")
+      before = snapshot(root)
+
+      _output, error, status = migrate(root, sha, '--apply')
+
+      refute_predicate status, :success?
+      assert_match(%r{\.agents/agent-workflow.yml.*\.agents/shaka/config.yml}, error)
+      assert_equal before, snapshot(root)
+    end
+  end
+
   def test_apply_restores_original_contract_mode
     with_legacy_repository('control_plane_flow_shape.yml') do |root, sha|
       yaml = File.join(root, '.agents/agent-workflow.yml')

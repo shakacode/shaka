@@ -16,7 +16,6 @@ module Shaka
 
       WRITER = %w[ADMIN MAINTAIN WRITE].freeze
       RUBY = '3.4'
-      SEAM = Configuration::Paths::CONTRACT
 
       def initialize(root:, host:, environment:, system:)
         @root = root
@@ -92,18 +91,20 @@ module Shaka
       # It deliberately does not restate the seam's commands or merge preference: doctor takes
       # no authority from the seam, and the workflow revalidates policy from a trusted ref.
       def repository_seam
-        return missing_seam unless Configuration.contract_file?(@root)
+        return missing_seam unless Configuration.contract_entry?(@root)
 
-        Configuration.worktree(root: @root)
-        check('Repository seam', 'healthy', "#{SEAM} loads and validates in this working tree")
+        config = Configuration.worktree(root: @root)
+        check('Repository seam', 'healthy', "#{config.config_path} loads and validates in this working tree")
       rescue Shaka::Error, SystemCallError => e
-        check('Repository seam', 'failed', "#{SEAM} is not usable: #{first_line(e.message)}",
+        check('Repository seam', 'failed', "repository configuration is not usable: #{first_line(e.message)}",
               guidance: 'Repair the contract, or let `shaka seam init` rewrite a valid one.')
       end
 
-      # File.file? rather than File.exist?: reading a FIFO here would block the whole report.
+      # A missing contract is distinct from a present but unusable file.
       def missing_seam
-        check('Repository seam', 'failed', "this root has no #{SEAM} regular file",
+        legacy = Configuration::Paths::CONTRACT
+        modern = Configuration::Paths::NEW_CONTRACT
+        check('Repository seam', 'failed', "this root has no #{legacy} or #{modern} regular file",
               guidance: 'Run `shaka seam init` here, or point `--root` at the repository you meant.')
       end
 

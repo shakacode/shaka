@@ -53,7 +53,7 @@ module SeamInitializerTestHelpers
   def assert_complete_seam(root, output)
     config = JSON.parse(output)
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
-    assert_equal %w[base_branch branches commands merge review version wip], config.keys.sort
+    assert_equal %w[base_branch branches commands merge paths review version wip], config.keys.sort
     assert_equal({ 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS }, config.fetch('merge'))
     assert_includes File.read(File.join(root, '.agents/agent-workflow.yml')), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
@@ -253,6 +253,24 @@ class SeamInitializerTest < Minitest::Test
       refute_predicate status, :success?
       assert_includes error, 'invalid option: --plan'
       refute_path_exists File.join(root, '.agents')
+    end
+  end
+end
+
+class SeamInitializerLayoutTest < Minitest::Test
+  include SeamInitializerTestHelpers
+
+  def test_refuses_to_create_legacy_config_beside_new_config
+    with_repository do |root|
+      path = File.join(root, '.agents/shaka/config.yml')
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "version: 1\n")
+      _output, error, status = init(root)
+
+      refute_predicate status, :success?
+      assert_includes error, '.agents/shaka/config.yml'
+      assert_includes error, '.agents/agent-workflow.yml'
+      refute_path_exists File.join(root, '.agents/agent-workflow.yml')
     end
   end
 end
