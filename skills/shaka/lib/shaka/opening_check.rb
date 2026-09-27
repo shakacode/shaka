@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# Parses a PR opening with the selected model and returns a nonblocking verdict.
+
 require 'tmpdir'
 require_relative 'local_review/cli'
 require_relative 'local_review/path_guard'
@@ -8,9 +10,6 @@ require_relative 'opening_parse'
 require_relative 'opening_verdict_cache'
 
 module Shaka
-  # Advises the writing agent when a description's first sentence is led by something a
-  # maintainer does not care about, such as a command. A model parses the opening;
-  # code applies the rule. The check never edits the text and never stops publication.
   class OpeningCheck
     include OpeningParse
 

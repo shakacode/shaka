@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
+# Validates model-produced opening parses before code applies the verdict rule.
+
 require 'json'
 
 module Shaka
-  # Accepts a plain JSON answer or a single JSON Markdown fence from a model CLI.
   module OpeningParse
     MAX_REPORT_BYTES = 20_000
     FIELDS = %w[character reader_facing action object hidden_actions internal_terms].freeze

@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
+# Validates the optional opening-check settings in the repository contract.
+
 require_relative 'validation'
 
 module Shaka
   class RepositoryConfig
-    # Explicit consent for a model outside the coding agent to inspect PR openings.
     class OpeningSchema
       include Validation
 

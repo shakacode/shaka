@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
+# Keeps candidate-owned executables and script interpreters out of command PATHs.
+
 require_relative '../error'
 require_relative 'executable'
 
 module Shaka
-  # Refuses candidate-controlled PATH entries before any external command runs.
   module LocalReviewPathGuard
     GUARDED_EXECUTABLES = %w[gh git claude codex grok].freeze
 

@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
+# Loads trusted opening-check settings after publication and selects a reviewer.
+
 require_relative 'opening_check'
 require_relative 'reviewer_selection'
 require_relative 'trusted_config_source'
 
 module Shaka
-  # Selects an opted-in opening parser; any setup failure leaves the host-model check available.
   class OpeningPublication
     def initialize(root:, ref:, reviewer: nil, model: nil)
       @root = root

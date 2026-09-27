@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
+# Finds the candidate checkout boundary without invoking its Git executable.
+
 module Shaka
-  # Finds the checkout boundary without invoking a candidate-controlled Git executable.
   module OpeningCheckout
     module_function
 
