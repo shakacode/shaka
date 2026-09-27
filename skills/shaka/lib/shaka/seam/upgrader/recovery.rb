@@ -44,19 +44,67 @@ module Shaka
         end
 
         def validate_journal!(journal)
-          raise Error, "Unsupported upgrade journal at #{journal_path}" unless journal['version'] == 1
-
-          original = journal.fetch('original')
-          desired = journal.fetch('desired')
+          validate_journal_version!(journal)
+          original, desired = journal_states!(journal)
           raise Error, 'Upgrade journal path sets differ' unless original.keys.sort == desired.keys.sort
 
-          original.each_key { |path| safe_recovery_path!(path) }
+          original.each_key { |path| validate_journal_entry!(path, original[path], desired[path]) }
           validate_temporary_paths!(journal, original.keys)
+        end
+
+        def validate_journal_version!(journal)
+          return if journal.is_a?(Hash) && journal['version'] == 1
+
+          raise Error, "Unsupported upgrade journal at #{journal_path}"
+        end
+
+        def journal_states!(journal)
+          original = journal['original']
+          desired = journal['desired']
+          unless original.is_a?(Hash) && desired.is_a?(Hash)
+            raise Error, 'Upgrade journal must contain original and desired states'
+          end
+
+          [original, desired]
+        end
+
+        def validate_journal_entry!(path, before, after)
+          raise Error, 'Upgrade journal paths must be text' unless path.is_a?(String)
+
+          safe_recovery_path!(path)
+          validate_journal_state!(before)
+          validate_journal_state!(after)
+        end
+
+        def validate_journal_state!(state)
+          raise Error, 'Invalid upgrade journal state' unless state.is_a?(Hash)
+
+          valid = case state['type']
+                  when 'absent' then true
+                  when 'symlink' then state['target'].is_a?(String)
+                  when 'file' then valid_file_state?(state)
+                  else false
+                  end
+          raise Error, 'Invalid upgrade journal state' unless valid
+        end
+
+        def valid_file_state?(state)
+          return false unless state['mode'].is_a?(Integer) && state['mode'].between?(0, 0o7777)
+          return false unless state['data'].is_a?(String)
+
+          state['data'].unpack1('m0')
+          true
+        rescue ArgumentError
+          false
         end
 
         def validate_temporary_paths!(journal, paths)
           expected_temps = paths.map { |path| "#{path}.shaka-upgrade-tmp" }.sort
-          raise Error, 'Upgrade journal temporary paths differ' unless journal.fetch('temporary').sort == expected_temps
+          temporary = journal['temporary']
+          unless temporary.is_a?(Array) && temporary.all?(String) &&
+                 temporary.sort == expected_temps
+            raise Error, 'Upgrade journal temporary paths differ'
+          end
         end
 
         def safe_recovery_path!(relative)

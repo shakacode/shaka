@@ -648,7 +648,8 @@ class SeamUpgradeDependencySafetyTest < Minitest::Test
 
   def test_other_ruby_and_shell_relative_paths_block
     ["root = File.join(__dir__, '..', '..')\n", "require_relative 'common'\n",
-     ". \"${BASH_SOURCE%/*}/common.sh\"\n"].each do |body|
+     ". \"${BASH_SOURCE%/*}/common.sh\"\n", ". \"${0%/*}/common.sh\"\n",
+     "load File.join(File.dirname(__FILE__), 'common.rb')\n", "echo \"$0\"\n"].each do |body|
       with_repository do |root|
         write_wrapper(root, 'setup', "#!/bin/sh\n#{body}")
         commit_fixture(root, 'relative dependency')
@@ -677,6 +678,65 @@ class SeamUpgradeDependencySafetyTest < Minitest::Test
       commit_fixture(root, 'live instruction')
       apply_upgrade(root)
       assert_equal 'Run .agents/shaka/bin/test (formerly make test).', File.read(path)
+    end
+  end
+
+  def test_path_entry_and_backtick_directory_reference_block
+    with_repository do |root|
+      path = File.join(root, 'README.md')
+      File.write(path, "export PATH=\"$PWD/.agents/bin:$PATH\"\nUse `.agents/bin` here.\n")
+      commit_fixture(root, 'path entry')
+      assert_blocked_with(root, 'old command-directory reference')
+    end
+  end
+
+  def test_terminal_period_does_not_hide_command_reference
+    with_repository do |root|
+      path = File.join(root, 'README.md')
+      File.write(path, 'Run .agents/bin/test.')
+      commit_fixture(root, 'sentence')
+      apply_upgrade(root)
+      assert_equal 'Run .agents/shaka/bin/test.', File.read(path)
+    end
+  end
+end
+
+class SeamUpgradeJournalSafetyTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  def test_recovery_rejects_missing_state_without_backtrace
+    with_repository do |root|
+      journal = Shaka::Seam::Upgrader.journal_path(root)
+      File.write(journal, JSON.generate('version' => 1, 'original' => {}))
+      _output, error, status = upgrade(root, '--recover')
+      refute_predicate status, :success?
+      assert_includes error, 'Upgrade journal must contain original and desired states'
+      refute_includes error, 'Traceback'
+    end
+  end
+
+  def test_recovery_rejects_malformed_file_state_without_backtrace
+    with_repository do |root|
+      journal = write_journal(root, plan_for(root))
+      journal.fetch('desired')['.agents/shaka/config.yml'] = { 'type' => 'file', 'data' => 'bad' }
+      File.write(Shaka::Seam::Upgrader.journal_path(root), JSON.generate(journal))
+      _output, error, status = upgrade(root, '--recover')
+      refute_predicate status, :success?
+      assert_includes error, 'Invalid upgrade journal state'
+      refute_includes error, 'Traceback'
+    end
+  end
+
+  def test_symlink_target_with_invocation_relative_logic_blocks
+    with_repository do |root|
+      FileUtils.mkdir_p(File.join(root, 'scripts'))
+      File.write(File.join(root, 'scripts/validate.sh'), "#!/bin/sh\ncd \"$(dirname \"$0\")/../..\"\n")
+      File.chmod(0o755, File.join(root, 'scripts/validate.sh'))
+      path = File.join(root, '.agents/bin/validate')
+      File.delete(path)
+      File.symlink('../../scripts/validate.sh', path)
+      commit_fixture(root, 'script link')
+      assert_blocked_with(root, 'symlink target uses an invocation-relative path')
     end
   end
 end

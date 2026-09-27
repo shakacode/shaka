@@ -61,7 +61,9 @@ module Shaka
 
         def invocation_relative?(text)
           remaining = text.gsub(GIT_ROOT, '').gsub(RUBY_GIT_ROOT, '')
-          remaining.match?(/dirname\s+(?:--?\s+)?["']?\$0["']?|\b__dir__\b|\brequire_relative\b|\bBASH_SOURCE\b/)
+          shell = /\$(?:0\b|\{0[^}]*\})|\bBASH_SOURCE\b/
+          ruby = /\b__dir__\b|\b__FILE__\b|\brequire_relative\b/
+          remaining.match?(shell) || remaining.match?(ruby)
         end
       end
     end

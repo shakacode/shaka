@@ -88,6 +88,7 @@ module Shaka
           source = File.join(@root, old)
           resolved = File.realpath(source)
           return unsafe_link(old) unless resolved.start_with?("#{@root}/")
+          return unsafe_link_target(old) if target_depends_on_invocation?(resolved, mapping)
 
           relative = link_target(resolved, target, mapping)
           record_link(old, target, source, relative)
@@ -100,6 +101,19 @@ module Shaka
         def unsafe_link(old)
           @blockers << "#{old}: symlink leaves the checkout; replace it before upgrading"
           nil
+        end
+
+        def unsafe_link_target(old)
+          @blockers << "#{old}: symlink target uses an invocation-relative path; repair it before upgrading"
+          nil
+        end
+
+        def target_depends_on_invocation?(resolved, mapping)
+          relative = resolved.delete_prefix("#{@root}/")
+          return false if mapping.key?(relative) || !File.file?(resolved)
+
+          text = File.binread(resolved).force_encoding(Encoding::UTF_8)
+          text.valid_encoding? && invocation_relative?(text)
         end
 
         def record_link(old, target, source, relative)
