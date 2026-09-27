@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'attention'
+require_relative 'error'
 require_relative 'merge_required_checks'
 require_relative 'public_comments/bounded_list'
 require_relative 'publishing'
@@ -28,11 +29,12 @@ module Shaka
     # woken_by names what will wake this session, such as a host PR monitor or a background watcher;
     # the PR then needs no attention label, because the agent, not a person, acts next.
     def call(head: nil, woken_by: nil)
-      @woken_by = woken_by
+      @woken_by = wake_source(woken_by)
       pr = @status.call
       live = pr.fetch('headRefOid')
       @owed = []
       @notes = []
+      @labels = []
       @owed << "PR head moved to #{live}; reread the PR before stopping." if head && head != live
       facts = pr['state'] == 'OPEN' ? open_facts(pr, live) : []
       { 'status' => ["PR ##{@github.number} #{pr['state']} head #{live[0, SHORT]}", *facts].join(' · '),
@@ -40,6 +42,14 @@ module Shaka
     end
 
     private
+
+    # A blank name, as from an unset variable in a wrapper, would silently excuse a missing label.
+    def wake_source(name)
+      return if name.nil?
+      raise Error, '--woken-by needs a name for what will wake this session.' if name.strip.empty?
+
+      name.strip
+    end
 
     def open_facts(snapshot, live)
       checks = snapshot['requiredChecks']
@@ -113,22 +123,12 @@ module Shaka
       pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
       moved = pull.dig('head', 'sha')
       @owed << "PR head moved to #{moved} while handoff read it; run it again." if moved && moved != live
-      revision = WipDetails.revision(managed_region(pull['body'].to_s))
+      revision = WipDetails.revision(WipDetails.managed_region(pull['body'].to_s, Publishing::OPEN_MARK, Publishing::CLOSE_MARK))
       return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
       # Revision reads `branch @ head`; the head is its last full SHA, whatever the branch is named.
       return "WIP #{live[0, SHORT]}" if revision.scan(/\b[0-9a-f]{40}\b/).last == live
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")
-    end
-
-    # Only text between the helper's markers is its own; anyone who can edit the body can write elsewhere.
-    def managed_region(body)
-      open = body.index(Publishing::OPEN_MARK)
-      close = body.index(Publishing::CLOSE_MARK)
-      single = body.scan(Publishing::OPEN_MARK).one? && body.scan(Publishing::CLOSE_MARK).one?
-      return '' unless single && open < close
-
-      body[(open + Publishing::OPEN_MARK.length)...close]
     end
 
     def list = @labels.join(', ')

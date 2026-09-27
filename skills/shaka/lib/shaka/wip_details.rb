@@ -31,6 +31,17 @@ module Shaka
       cells[FIELDS.keys.index('revision')].last if cells.map(&:first) == FIELDS.values
     end
 
+    # Only text between one opening and one later closing marker is the helper's own; anyone who can
+    # edit the body can write elsewhere in it.
+    def self.managed_region(body, open_mark, close_mark)
+      open = body.index(open_mark)
+      close = body.index(close_mark)
+      single = body.scan(open_mark).one? && body.scan(close_mark).one?
+      return '' unless single && open < close
+
+      body[(open + open_mark.length)...close]
+    end
+
     def self.rows(note)
       note.lines.drop(2).map { |line| line.chomp.match(/\A\| (.+?) \| (.*) \|\z/)&.captures || [] }
     end

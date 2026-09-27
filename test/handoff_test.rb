@@ -117,6 +117,12 @@ class HandoffTest < Minitest::Test
     assert_includes result['status'], 'woken by background watcher'
   end
 
+  def test_a_blank_wake_source_is_refused
+    error = assert_raises(Shaka::Error) { handoff(labels: [], woken_by: '  ') }
+
+    assert_includes error.message, '--woken-by needs a name'
+  end
+
   def test_a_wake_source_does_not_excuse_a_leftover_label
     result = handoff(labels: ['awaiting-resume'], woken_by: 'background watcher')
 
