@@ -58,6 +58,23 @@ class RepositoryConfigOpeningTest < Minitest::Test
     end
   end
 
+  def test_trusted_prompt_rejects_a_directory
+    with_repository('opening_check' => { 'prompt_file' => '.agents/opening' }) do |root|
+      Dir.mkdir(File.join(root, '.agents/opening'))
+      File.write(File.join(root, '.agents/opening/note.md'), 'text')
+      commit(root)
+      assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.load(root:, ref: 'HEAD') }
+    end
+  end
+
+  def test_trusted_prompt_rejects_an_oversize_file
+    with_repository('opening_check' => { 'prompt_file' => '.agents/opening.md' }) do |root|
+      File.write(File.join(root, '.agents/opening.md'), 'x' * 100_001)
+      commit(root)
+      assert_raises(Shaka::Error) { Shaka::TrustedConfigSource.load(root:, ref: 'HEAD') }
+    end
+  end
+
   private
 
   def commit(root)

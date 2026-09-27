@@ -66,13 +66,13 @@ class OpeningCheckTest < Minitest::Test
     Dir.mktmpdir do |dir|
       system('git', 'init', '-q', dir, exception: true)
       Dir.mkdir(File.join(dir, 'docs'))
-      assert_equal File.realpath(dir), Shaka::OpeningCheck.checkout_root(File.join(dir, 'docs'))
+      assert_equal File.realpath(dir), Shaka::OpeningCheckout.root(File.join(dir, 'docs'))
     end
   end
 
   def test_unknown_checkout_root_skips_the_cli
     with_claude(parse('shaka merge', false)) do |_root, trace|
-      assert_nil Shaka::OpeningCheck.checkout_root(Dir.mktmpdir)
+      assert_nil Shaka::OpeningCheckout.root(Dir.mktmpdir)
       result = Shaka::OpeningCheck.new(summary: COMMAND_FIRST, candidate_root: nil,
                                        reviewer: 'anthropic/claude').call
       assert_equal 'not_checked', result.fetch('status')

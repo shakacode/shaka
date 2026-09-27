@@ -65,8 +65,6 @@ module Shaka
       verdict
     end
 
-    def self.checkout_root(dir) = OpeningCheckout.root(dir)
-
     # Rule, applied in code: flag a first sentence whose actor is not reader-facing.
     def self.verdict(sentences)
       first = sentences.first

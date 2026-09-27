@@ -21,7 +21,7 @@ module Shaka
       config = TrustedConfigSource.from_ref(root: @root, ref: @ref)
       prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')
       validate_reviewer!(config) if @reviewer
-      OpeningCheck.new(summary:, candidate_root: OpeningCheck.checkout_root(@root),
+      OpeningCheck.new(summary:, candidate_root: OpeningCheckout.root(@root),
                        reviewer: @reviewer, model: @model, prompt:).call
     rescue StandardError => e
       fallback(summary, e, prompt)
@@ -45,7 +45,7 @@ module Shaka
     end
 
     def fallback(summary, error, prompt)
-      result = OpeningCheck.new(summary:, candidate_root: OpeningCheck.checkout_root(@root), prompt:).call
+      result = OpeningCheck.new(summary:, candidate_root: OpeningCheckout.root(@root), prompt:).call
       result.merge('reason' => "Opening check unavailable: #{error.message}")
     end
   end

@@ -17,6 +17,7 @@ class CliOpeningCheckTest < Minitest::Test
   FALLBACK_ROUTES = [
     [{ 'enabled' => false }, 'anthropic/claude'],
     [{ 'enabled' => true, 'prompt_file' => '.agents/missing.md' }, 'anthropic/claude'],
+    [{ 'enabled' => true }, 'anthropic/other-family'],
     [{ 'enabled' => true }, 'unlisted/model']
   ].freeze
 
