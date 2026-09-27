@@ -4,8 +4,8 @@ require_relative 'test_helper'
 require 'json'
 require_relative '../skills/shaka/lib/shaka/usage/usage_records'
 
-# A description update must keep usage from earlier hosts, models, and reviews.
-class UsageRecordsTest < Minitest::Test
+# Builds marked usage reports and the descriptions that hold them.
+module UsageRecordsFixture
   COMMIT = 'a' * 40
 
   DEFAULTS = { 'sources' => ['s1'], 'contribution' => 'implementation', 'commits' => [COMMIT],
@@ -31,6 +31,11 @@ class UsageRecordsTest < Minitest::Test
     content, = Shaka::UsageRecords.carry(described(usage_body), existing_body)
     content['details'].first['body']
   end
+end
+
+# A description update must keep usage from earlier hosts, models, and reviews.
+class UsageRecordsTest < Minitest::Test
+  include UsageRecordsFixture
 
   # Break: publishing Codex usage after Claude implementation erased the Claude record (#269).
   def test_provider_handoff_keeps_the_earlier_implementation_and_review
@@ -64,21 +69,14 @@ class UsageRecordsTest < Minitest::Test
     assert_includes body, 'all-turns'
   end
 
-  # Break: a report missing its end marker swallowed the next valid report.
-  def test_unterminated_report_is_dropped_without_losing_the_next_one
-    cut = record('codex', 'cut', responses: %w[a1]).delete_suffix(Shaka::UsageRecords::END_MARK)
-    kept = record('codex', 'kept', responses: %w[k1])
-    content, stats = Shaka::UsageRecords.carry(described(record('codex', 'new', responses: %w[n1])),
-                                               existing(cut, kept))
-    assert_includes content['details'].first['body'], 'kept'
-    assert_equal({ 'retained' => 1, 'replaced' => 0, 'dropped' => 1 }, stats)
-  end
-
-  # Break: a closing tag before its opener passed the count check and closed the outer disclosure.
-  def test_reversed_details_tags_are_dropped
-    reversed = record('codex', 'reversed', responses: %w[v1])
-               .sub('<details>', '</details>').sub(%r{</details>\n<!--}, "<details>\n<!--")
-    refute_includes carried(existing(reversed), record('codex', 'new', responses: %w[n1])), 'reversed'
+  # Break: a refreshed review in a second usage section left its old snapshot carried into the first.
+  def test_reports_in_every_usage_section_count_as_new
+    old = record('codex', 'old-review', responses: %w[r1])
+    content = described(record('claude-code', 'impl', responses: %w[c1]))
+    content['details'] << { 'summary' => 'Review usage', 'body' => record('codex', 'new-review', responses: %w[r1]) }
+    carried_content, stats = Shaka::UsageRecords.carry(content, existing(old))
+    refute_includes carried_content['details'].map { |item| item['body'] }.join, 'old-review'
+    assert_equal 1, stats['replaced']
   end
 
   # Break: concurrent work in another session overlapped in time but shares no responses.
@@ -112,6 +110,43 @@ class UsageRecordsTest < Minitest::Test
     refute_includes body, 'outside-region'
   end
 
+  def test_content_without_a_prior_region_is_unchanged
+    content = described('x')
+    assert_equal [content, { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }],
+                 Shaka::UsageRecords.carry(content, 'plain body')
+  end
+end
+
+# Carried reports edited out of the helper's shape are dropped, never adopted.
+class UsageRecordsShapeTest < Minitest::Test
+  include UsageRecordsFixture
+
+  # Break: a report missing its end marker swallowed the next valid report.
+  def test_unterminated_report_is_dropped_without_losing_the_next_one
+    cut = record('codex', 'cut', responses: %w[a1]).delete_suffix(Shaka::UsageRecords::END_MARK)
+    kept = record('codex', 'kept', responses: %w[k1])
+    content, stats = Shaka::UsageRecords.carry(described(record('codex', 'new', responses: %w[n1])),
+                                               existing(cut, kept))
+    assert_includes content['details'].first['body'], 'kept'
+    assert_equal({ 'retained' => 1, 'replaced' => 0, 'dropped' => 1 }, stats)
+  end
+
+  # Break: a closing tag before its opener passed the count check and closed the outer disclosure.
+  def test_reversed_details_tags_are_dropped
+    reversed = record('codex', 'reversed', responses: %w[v1])
+               .sub('<details>', '</details>').sub(%r{</details>\n<!--}, "<details>\n<!--")
+    refute_includes carried(existing(reversed), record('codex', 'new', responses: %w[n1])), 'reversed'
+  end
+
+  # Break: an uppercase closing tag passed the balance check and closed the outer disclosure.
+  def test_details_tag_variants_are_dropped
+    ['</DETAILS>', '<details open>'].each do |variant|
+      odd = record('codex', 'odd', responses: %w[v1]).sub("\n#{Shaka::UsageRecords::END_MARK}",
+                                                          "#{variant}\n#{Shaka::UsageRecords::END_MARK}")
+      refute_includes carried(existing(odd), record('codex', 'new', responses: %w[n1])), 'odd'
+    end
+  end
+
   # Break: an edited block could smuggle markers or unbalanced markup under the helper's output.
   def test_blocks_that_lost_the_report_shape_are_dropped_and_counted
     broken = record('codex', 'broken', responses: %w[b1]).sub('</details>', '')
@@ -122,11 +157,5 @@ class UsageRecordsTest < Minitest::Test
     body = content['details'].first['body']
     ['broken', 'marked', 'not json'].each { |text| refute_includes body, text }
     assert_equal({ 'retained' => 0, 'replaced' => 0, 'dropped' => 3 }, stats)
-  end
-
-  def test_content_without_a_prior_region_is_unchanged
-    content = described('x')
-    assert_equal [content, { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }],
-                 Shaka::UsageRecords.carry(content, 'plain body')
   end
 end

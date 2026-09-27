@@ -23,9 +23,10 @@ module Shaka
     # Returns the content with carried records prepended to its usage body, and what happened.
     def carry(content, existing)
       stats = { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }
-      usage = usage_detail(content)
+      usages = usage_details(content)
+      usage = usages.first
       region = managed_region(existing)
-      kept = usage && region ? carried(region, usage['body'].to_s, stats) : []
+      kept = usage && region ? carried(region, usages.map { |item| item['body'].to_s }.join("\n\n"), stats) : []
       return [content, stats] if kept.empty?
 
       [with_usage_body(content, usage, [*kept, usage['body']].join("\n\n")), stats]
@@ -61,8 +62,12 @@ module Shaka
       !inner.include?('<!-- shaka:') && balanced_details?(inner)
     end
 
+    # Only the helper's own lowercase tags are accepted; any other form could close the outer disclosure.
     def balanced_details?(text)
-      depth = text.scan(%r{</?details>}).reduce(0) do |open, tag|
+      tags = text.scan(%r{</?details\b[^>]*>}i)
+      return false unless tags.all? { |tag| ['<details>', '</details>'].include?(tag) }
+
+      depth = tags.reduce(0) do |open, tag|
         return false if tag == '</details>' && open.zero?
 
         tag == '</details>' ? open - 1 : open + 1
@@ -113,11 +118,12 @@ module Shaka
       text[REGION, 1]
     end
 
-    def usage_detail(content)
+    # Carried reports join the first usage section; every usage section holds new reports.
+    def usage_details(content)
       details = content.is_a?(Hash) ? content['details'] : nil
-      return unless details.is_a?(Array)
+      return [] unless details.is_a?(Array)
 
-      details.find { |item| item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i) }
+      details.select { |item| item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i) }
     end
 
     def with_usage_body(content, usage, body)

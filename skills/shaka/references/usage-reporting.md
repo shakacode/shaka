@@ -48,7 +48,8 @@ interval, and digests of the response and source IDs. They do not publish the
 IDs or local paths.
 
 When `description` republishes a PR, it keeps each earlier report from the
-managed region unless the new reports cover its work. New reports on the same
+managed region unless the new reports, in any usage section, cover its work.
+Carried reports join the first usage section. New reports on the same
 host cover it when together they hold every response it counted. A partial
 overlap keeps both reports, so they may share some responses. When either side
 lacks response IDs, a new report covers the old one when they share a source and
@@ -59,7 +60,7 @@ Code to Codex and back therefore keeps all three contributions, and a refreshed
 The collapsed summary lists each report's USD estimate and adds no total, because
 the reports may be partial or shared. The command drops a carried report whose
 markers or `<details>` tags were edited out of shape, including a report that
-lost its end marker, and prints how many reports
+lost its end marker or uses any tag form other than lowercase `<details>`, and prints how many reports
 it retained, replaced, and dropped. It refuses a description longer than GitHub's
 65,536-character limit.
 
