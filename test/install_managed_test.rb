@@ -50,6 +50,15 @@ class InstallManagedTest < Minitest::Test
     assert_nil identity.fetch('revision')
   end
 
+  def test_mode_only_change_is_recorded_as_development_when_git_ignores_file_modes
+    commit_source
+    git('-C', File.join(@directory, 'source'), 'config', 'core.fileMode', 'false')
+    File.chmod(0o755, File.join(@source, 'SKILL.md'))
+    install!
+
+    assert_equal 'development', package_identity.fetch('source').fetch('kind')
+  end
+
   def test_new_clean_revision_gets_its_own_package_even_with_same_skill_bytes
     commit_source
     install!

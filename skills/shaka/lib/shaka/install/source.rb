@@ -33,7 +33,10 @@ module Shaka
       private
 
       def exact_revision?(revision)
-        revision && tracked? && clean? && matching_blobs?
+        return false unless revision
+
+        tracked = revision_files
+        tracked && tracked.keys.sort == selected_files.sort && clean? && matching_blobs?(tracked)
       end
 
       def git(*)
@@ -47,11 +50,15 @@ module Shaka
         nil
       end
 
-      def tracked?
-        selected = selected_files
-        listed = git_raw('ls-tree', '-r', '--name-only', '-z', 'HEAD', '--',
-                         *@names.map { |name| "skills/#{name}" })
-        listed && listed.split("\0").sort == selected.sort
+      def revision_files
+        listed = git_raw('ls-tree', '-r', '-z', 'HEAD', '--', *@names.map { |name| "skills/#{name}" })
+        return unless listed
+
+        listed.split("\0").to_h do |entry|
+          header, path = entry.split("\t", 2)
+          mode, _type, object = header.split
+          [path, [mode, object]]
+        end
       end
 
       def selected_files
@@ -61,9 +68,11 @@ module Shaka
         paths.map { |path| path.delete_prefix("#{@root}/") }
       end
 
-      def matching_blobs?
-        selected_files.all? do |path|
-          git('hash-object', '--path', path, File.join(@root, path)) == git('rev-parse', "HEAD:#{path}")
+      def matching_blobs?(tracked)
+        tracked.all? do |path, (mode, object)|
+          actual = File.join(@root, path)
+          expected_mode = File.executable?(actual) ? '100755' : '100644'
+          mode == expected_mode && git('hash-object', '--path', path, actual) == object
         end
       end
 

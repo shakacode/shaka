@@ -23,7 +23,7 @@ module Shaka
       source = Install::Source.new(@source_root, @names, tree)
       package = Install::Package.new(@managed, source, @names, tree)
       target = @rollback ? package.existing(@rollback) : package.prepare(@source_root)
-      Install::Links.new(@skills_dir, @managed, @source_root, @names, package).switch_all(target)
+      Install::Links.new(@skills_dir, @managed, @source_root, @names).switch_all(target)
       puts "Package: #{File.basename(target)}"
       puts "Next: #{Shellwords.escape(File.join(@skills_dir, 'shaka/scripts/shaka'))} seam init --help"
     end

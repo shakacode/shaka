@@ -101,7 +101,11 @@ module Shaka
     # Worst first, and stable within a status so the check order stays predictable.
     def ordered = checks.sort_by.with_index { |item, index| [-SEVERITY.fetch(item.fetch(:status)), index] }
 
-    def overall = checks.map { |item| item.fetch(:status) }.max_by { |status| SEVERITY.fetch(status) } || 'healthy'
+    def overall
+      return 'failed' if installation_summary.start_with?('[FAILED]')
+
+      checks.map { |item| item.fetch(:status) }.max_by { |status| SEVERITY.fetch(status) } || 'healthy'
+    end
 
     # Detection answers nil when several hosts are present and falls back to codex when none
     # is, so the report always says which host it used and how sure it is.
@@ -116,7 +120,7 @@ module Shaka
       source = identity.fetch('source')
       "installation #{identity.fetch('version')} · #{source_summary(source)} · " \
         "package #{identity['package_id'] || 'UNKNOWN'}"
-    rescue Shaka::Error, KeyError, TypeError => e
+    rescue Shaka::Error, KeyError, TypeError, SystemCallError => e
       "[FAILED] Installation — #{e.message}"
     end
 

@@ -7,12 +7,11 @@ module Shaka
   module Install
     # Switches only Shaka owned host links after the complete package is ready.
     class Links
-      def initialize(skills_dir, managed, source, names, package)
+      def initialize(skills_dir, managed, source, names)
         @skills_dir = skills_dir
         @managed = managed
         @source = source
         @names = names
-        @package = package
       end
 
       def switch_all(target)
@@ -68,9 +67,8 @@ module Shaka
         target = old_target(name)
         return false unless target
         return true if target == File.join(@source, 'skills', name)
-        return false unless managed_target?(name, target)
 
-        true
+        managed_target?(name, target)
       end
 
       def managed_target?(name, target)

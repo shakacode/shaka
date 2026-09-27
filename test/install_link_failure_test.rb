@@ -18,10 +18,8 @@ class InstallLinkFailureTest < Minitest::Test
   private
 
   def failing_linker
-    verifier = Object.new
-    def verifier.verify(*) = nil
     failing_linker_class.new(@skills_dir, File.dirname(package_path), File.realpath(File.join(@directory, 'source')),
-                             %w[shaka rct], verifier)
+                             %w[shaka rct])
   end
 
   def failing_linker_class

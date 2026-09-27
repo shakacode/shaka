@@ -40,9 +40,9 @@ module Shaka
         path
       end
 
-      def verify(path, content: true)
+      def verify(path)
         metadata = JSON.parse(File.read(File.join(path, METADATA)))
-        validate_metadata(path, metadata, content: content)
+        validate_metadata(path, metadata)
         path
       rescue Errno::ENOENT, JSON::ParserError, KeyError, TypeError
         raise ArgumentError, "Managed package is missing or invalid: #{path}"
@@ -77,13 +77,12 @@ module Shaka
         File.rename(staging, target)
       end
 
-      def validate_metadata(path, metadata, content:)
+      def validate_metadata(path, metadata)
         names = metadata.fetch('skills')
         raise ArgumentError, 'Managed package skills are invalid' unless names.is_a?(Array) && (names - ALLOWED).empty?
 
         source = metadata.fetch('source')
         validate_identity(path, metadata, source)
-        return unless content
         return if @tree.hash(path, names) == source.fetch('content_sha256')
 
         raise ArgumentError, 'Managed package content differs'

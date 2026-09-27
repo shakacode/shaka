@@ -104,7 +104,9 @@ class InstallEdgeCasesTest < Minitest::Test
   def skill_text = File.read(File.join(@destination, 'SKILL.md'))
 
   def assert_invalid_full_doctor_report
-    report, = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor')
+    report, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor')
+    refute_predicate status, :success?
+    assert_includes report, 'Shaka doctor: FAILED'
     assert_includes report, '[FAILED] Installation — Installed package metadata is invalid'
   end
 
