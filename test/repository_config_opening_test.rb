@@ -35,7 +35,7 @@ class RepositoryConfigOpeningTest < Minitest::Test
   def test_rejects_an_invalid_opening_prompt_path
     with_repository('opening_check' => { 'prompt_file' => '../outside.md' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
-      assert_includes error.message, 'opening_check.prompt_file'
+      assert_equal 'opening_check.prompt_file must be a path inside the repository', error.message
     end
   end
 

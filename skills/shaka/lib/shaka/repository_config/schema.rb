@@ -41,9 +41,9 @@ module Shaka
         keys!(@data, REQUIRED, OPTIONAL, @config_path)
         validate_header
         validate_commands
+        validate_optional
         validate_review
         validate_merge
-        validate_optional
       end
 
       private

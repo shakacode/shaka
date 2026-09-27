@@ -35,9 +35,12 @@ module Shaka
 
       allowed = Array(config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS])
       requested = ReviewerSelection.parse(@reviewer).values_at('provider', 'model_family').map(&:downcase)
-      return @reviewer = requested.join('/') if listed?(allowed, requested)
+      raise Error, 'Opening reviewer is not in the trusted reviewer list.' unless listed?(allowed, requested)
 
-      raise Error, 'Opening reviewer is not in the trusted reviewer list.'
+      normalized = requested.join('/')
+      raise Error, 'Unsupported local reviewer' unless ReviewerSelection::SUPPORTED_REVIEWERS.include?(normalized)
+
+      @reviewer = normalized
     end
 
     def listed?(allowed, requested)
