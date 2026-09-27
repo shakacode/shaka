@@ -12,17 +12,20 @@ module Shaka
   class OpeningPublication
     def self.with_safe_path(root:, select_gh: true)
       original = ENV.fetch('PATH', nil)
-      candidate_root = OpeningCheckout.root(root)
-      raise Error, 'Candidate checkout root is unknown.' unless candidate_root
+      candidate_root = OpeningCheckout.root(root) || (raise Error, 'Candidate checkout root is unknown.')
 
       ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true,
                                                                   all_executables: true)
       gh = selected_gh(original.to_s, candidate_root) if select_gh
-      return yield(candidate_root, gh) unless select_gh
-
-      with_neutral_directory(candidate_root) { |neutral| yield candidate_root, gh, neutral }
+      with_neutral_directory(candidate_root) do |neutral|
+        in_context(select_gh, neutral) { yield candidate_root, gh, neutral }
+      end
     ensure
       ENV['PATH'] = original
+    end
+
+    def self.in_context(select_gh, neutral, &)
+      select_gh ? yield : Dir.chdir(neutral, &)
     end
 
     def self.with_neutral_directory(candidate_root)
@@ -46,7 +49,7 @@ module Shaka
     end
 
     def initialize(root:, ref:, reviewer: nil, model: nil)
-      @root = root
+      @root = OpeningCheckout.root(root) || root
       @ref = ref
       @reviewer = reviewer
       @model = model
