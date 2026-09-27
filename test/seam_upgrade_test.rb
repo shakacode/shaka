@@ -621,6 +621,31 @@ end
 class SeamUpgradeDependencySafetyTest < Minitest::Test
   include SeamUpgradeFixture
 
+  def test_inbound_symlink_to_legacy_command_directory_blocks
+    with_repository do |root|
+      File.symlink('.agents/bin', File.join(root, 'tools'))
+      commit_fixture(root, 'directory link')
+      assert_blocked_with(root, 'symlink targets moved path')
+    end
+  end
+
+  def test_unmoved_tool_calling_moved_sibling_blocks
+    with_repository do |root|
+      path = File.join(root, '.agents/bin/formatter')
+      File.write(path, "#!/bin/sh\nexec \"$(dirname \"$0\")/test\"\n")
+      commit_fixture(root, 'unmoved tool')
+      assert_blocked_with(root, 'tool uses an invocation-relative path')
+    end
+  end
+
+  def test_unmoved_tool_using_dot_slash_command_blocks
+    with_repository do |root|
+      File.write(File.join(root, '.agents/bin/formatter'), "#!/bin/sh\nexec ./test\n")
+      commit_fixture(root, 'relative tool')
+      assert_blocked_with(root, 'tool uses an invocation-relative path')
+    end
+  end
+
   def test_other_ruby_and_shell_relative_paths_block
     ["root = File.join(__dir__, '..', '..')\n", "require_relative 'common'\n",
      ". \"${BASH_SOURCE%/*}/common.sh\"\n"].each do |body|

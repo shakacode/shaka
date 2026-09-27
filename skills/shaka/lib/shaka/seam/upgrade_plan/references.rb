@@ -20,36 +20,28 @@ module Shaka
         end
 
         def scan_reference(path)
-          return scan_symlink_reference(path) if snapshot(path)['type'] == 'symlink'
+          stat = File.lstat(File.join(@root, path))
+          return scan_symlink_reference(path) if stat.symlink?
+          return unless stat.file?
 
-          text = reference_text(path)
-          return unless text
-
-          updated = text.lines.map { |line| rewrite_line(path, line, text.start_with?('#!')) }.join
-          return if updated == text
-
-          source = snapshot(path)
-          @changes << { from: path, to: path, after: source.merge('data' => [updated.b].pack('m0')) }
-        end
-
-        def scan_symlink_reference(path)
-          resolved = File.realpath(File.join(@root, path))
-          return unless resolved.start_with?("#{@root}/")
-
-          target = resolved.delete_prefix("#{@root}/")
-          return unless @moves.any? { |move| move['from'] == target }
-
-          @references << { 'path' => path, 'kind' => 'inbound symlink', 'paths' => [target] }
-          @blockers << "#{path}: symlink targets moved #{target}; repair the link explicitly"
-        rescue Errno::ENOENT, Errno::ELOOP
+          scan_regular_reference(path, stat)
+        rescue Errno::ENOENT, Errno::ENOTDIR
           nil
         end
 
-        def reference_text(path)
-          return unless snapshot(path)['type'] == 'file'
-
+        def scan_regular_reference(path, stat)
           text = File.binread(File.join(@root, path)).force_encoding(Encoding::UTF_8)
-          text if text.valid_encoding?
+          return unless text.valid_encoding? && !text.include?("\0")
+
+          scan_unmoved_tool(path, text)
+          updated = text.lines.map { |line| rewrite_line(path, line, text.start_with?('#!')) }.join
+          return if updated == text
+
+          @changes << { from: path, to: path, after: file_state_from_text(stat, updated) }
+        end
+
+        def file_state_from_text(stat, text)
+          { 'type' => 'file', 'mode' => stat.mode & 0o7777, 'data' => [text.b].pack('m0') }
         end
 
         def rewrite_line(path, line, executable)
