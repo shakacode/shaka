@@ -391,6 +391,14 @@ class UsageIdentityTest < Minitest::Test
     assert_equal 1, JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])['responses'].size
   end
 
+  # Break: a negative counter rendered UNKNOWN yet counted as measured, so it could cover real usage.
+  def test_identity_leaves_out_responses_with_only_negative_counters
+    negative = usage('negative', 'current', -1)
+    negative[:payload][:usage].merge!(cached_input_tokens: -1, output_tokens: -1, reasoning_output_tokens: -1)
+    report = run_report([context('current'), negative, usage('clean', 'current', 100)])
+    assert_equal 1, JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])['responses'].size
+  end
+
   def test_report_identity_hides_response_ids_and_closes_the_record
     report = run_report([context('current'), usage('r1', 'current', 100)])
     refute_includes report.lines.first, 'r1'

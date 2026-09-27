@@ -161,7 +161,7 @@ module Shaka
       fields = Usage::METRIC_FIELDS.map(&:last)
       @source.responses.filter_map do |id, record|
         usage = record['usage']
-        id if usage.is_a?(Hash) && usage.values_at(*fields).any?(Integer)
+        id if usage.is_a?(Hash) && usage.values_at(*fields).any? { |value| value.is_a?(Integer) && value >= 0 }
       end
     end
 
