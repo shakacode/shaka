@@ -261,7 +261,8 @@ A list states each guard once, with its code link:
 ### Keep one current walkthrough
 
 Edit wording at the same revision in place. For a new commit, write a walkthrough
-from that head's diff and update the description's link. Extending the previous
+from the whole PR diff at that head (`git diff BASE...HEAD`), not only the new
+commit, and update the description's link. Extending the previous
 walkthrough carries its repair history into the new one. Keep review history in the
 description's details rather than appending it to the walkthrough.
 
