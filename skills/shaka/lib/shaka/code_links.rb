@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'uri'
+require_relative 'code_link_range'
 require_relative 'error'
 
 module Shaka
@@ -10,7 +11,6 @@ module Shaka
   # more than one line refuses publication instead of guessing.
   class CodeLinks
     REFERENCE = /\]\(code:([A-Za-z0-9_.-]+)\)/
-    CLOSER = /\A(?:end\b|[}\])])/
 
     def self.resolve(content, github)
       return content unless content.key?('code_links')
@@ -62,13 +62,11 @@ module Shaka
 
     def range(name, link)
       path, from = definition(name, link)
-      lines = file(name, path)
-      start = unique_line(name, lines, from)
-      finish = if link['block'] then block_end(lines, start)
-               elsif link['to'] then later_line(name, lines, start, link['to'])
-               else start
-               end
-      [start + 1, finish + 1]
+      CodeLinkRange.find(file(name, path), from, to: link['to'], block: link['block'])
+    rescue Error => e
+      raise e if e.message.start_with?('Walkthrough code link')
+
+      raise Error, "Walkthrough code link #{name}: #{e.message}"
     end
 
     def definition(name, link)
@@ -90,37 +88,6 @@ module Shaka
     end
 
     def text?(value) = value.is_a?(String) && !value.strip.empty?
-
-    def unique_line(name, lines, text)
-      matches = lines.each_index.select { |index| lines[index].include?(text) }
-      return matches.first if matches.size == 1
-
-      raise Error, "Walkthrough code link #{name}: #{text.inspect} matches #{matches.size} lines; use unique text."
-    end
-
-    def later_line(name, lines, start, text)
-      found = (start...lines.size).find { |index| lines[index].include?(text) }
-      return found if found
-
-      raise Error, "Walkthrough code link #{name}: no line at or after #{lines[start].strip.inspect} " \
-                   "contains #{text.inspect}."
-    end
-
-    # The block ends at the next line indented no deeper than its first line. A closing
-    # `end`, brace, or bracket belongs to the block; any other line starts the next one.
-    def block_end(lines, start)
-      depth = indentation(lines[start])
-      last = start
-      lines[(start + 1)..].each_with_index do |line, offset|
-        next if line.strip.empty?
-        return (line.strip.match?(CLOSER) ? start + 1 + offset : last) if indentation(line) <= depth
-
-        last = start + 1 + offset
-      end
-      last
-    end
-
-    def indentation(line) = line[/\A[ \t]*/].size
 
     def file(name, path)
       @files[path] ||= begin

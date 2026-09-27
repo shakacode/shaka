@@ -78,6 +78,19 @@ class CodeLinksTest < Minitest::Test
     assert_equal "[flow](#{BLOB}/lib/package.rb#L6-L12)", body
   end
 
+  def test_to_text_on_the_starting_line_does_not_end_the_range
+    body = resolved_body({ 'x' => { 'path' => 'lib/package.rb', 'from' => 'def prepare', 'to' => 'end' } },
+                         '[x](code:x)', github('lib/package.rb' => PACKAGE.sub('prepare(root)', 'prepare(send_end)')))
+    assert_equal "[x](#{BLOB}/lib/package.rb#L2-L4)", body
+  end
+
+  def test_block_link_continues_past_a_multiline_signature
+    source = "def call(\n  root\n)\n  run(root)\nend\n"
+    body = resolved_body({ 'x' => { 'path' => 'lib/call.rb', 'from' => 'def call', 'block' => true } },
+                         '[x](code:x)', github('lib/call.rb' => source))
+    assert_equal "[x](#{BLOB}/lib/call.rb#L1-L5)", body
+  end
+
   def test_link_without_to_or_block_names_one_line
     body = resolved_body({ 'call' => { 'path' => 'lib/package.rb', 'from' => 'copy(root)' } }, '[call](code:call)')
     assert_equal "[call](#{BLOB}/lib/package.rb#L7)", body
@@ -108,7 +121,7 @@ class CodeLinksRefusalTest < Minitest::Test
     cases = {
       { 'path' => 'lib/package.rb', 'from' => 'def ' } => 'matches 3 lines',
       { 'path' => 'lib/package.rb', 'from' => 'def absent' } => 'matches 0 lines',
-      { 'path' => 'lib/package.rb', 'from' => 'def publish', 'to' => 'def stage' } => 'no line at or after'
+      { 'path' => 'lib/package.rb', 'from' => 'def publish', 'to' => 'def stage' } => 'no line after'
     }
     cases.each do |link, message|
       error = assert_raises(Shaka::Error) { resolved_body({ 'x' => link }, '[x](code:x)') }
