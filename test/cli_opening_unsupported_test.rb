@@ -16,7 +16,7 @@ class CliOpeningUnsupportedTest < Minitest::Test
 
   def test_listed_unsupported_reviewer_falls_back_with_a_clear_reason
     review = review_policy('local_review_agents' => [{ 'provider' => 'foo', 'model_family' => 'bar' }])
-    with_repository('opening_check' => { 'enabled' => true }, 'review' => review) do |root|
+    with_repository('opening_check' => { 'external_enabled' => true }, 'review' => review) do |root|
       commit(root)
       Dir.mktmpdir do |dir|
         output, error, status = run_description(dir, root:, reviewer: 'foo/bar')

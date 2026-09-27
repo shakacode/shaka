@@ -91,7 +91,7 @@ module Shaka
       merge = @data.fetch('merge')
       @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
-      @opening_check = { 'enabled' => false }.merge(@data.fetch('opening_check', {}))
+      @opening_check = { 'external_enabled' => true }.merge(@data.fetch('opening_check', {}))
     end
 
     def with_default_review_wait(review)

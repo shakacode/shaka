@@ -7,10 +7,10 @@ require 'shaka/trusted_config_source'
 class RepositoryConfigOpeningTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
-  def test_external_opening_checks_default_to_disabled
+  def test_external_opening_checks_default_to_enabled
     with_repository do |root|
       config = Shaka::RepositoryConfig.load(root:)
-      assert_equal({ 'enabled' => false }, config.opening_check)
+      assert_equal({ 'external_enabled' => true }, config.opening_check)
       assert_equal config.opening_check, config.to_h.fetch('opening_check')
     end
   end
@@ -18,13 +18,13 @@ class RepositoryConfigOpeningTest < Minitest::Test
   def test_effective_contract_includes_the_default_with_a_prompt_file
     with_repository('opening_check' => { 'prompt_file' => '.agents/opening.md' }) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Parse this opening.')
-      assert_equal({ 'enabled' => false, 'prompt_file' => '.agents/opening.md' },
+      assert_equal({ 'external_enabled' => true, 'prompt_file' => '.agents/opening.md' },
                    Shaka::RepositoryConfig.load(root:).to_h.fetch('opening_check'))
     end
   end
 
   def test_rejects_non_boolean_or_unknown_opening_settings
-    [{ 'enabled' => 'yes' }, { 'foo' => true }, true].each do |opening|
+    [{ 'external_enabled' => 'yes' }, { 'enabled' => true }, { 'foo' => true }, true].each do |opening|
       with_repository('opening_check' => opening) do |root|
         error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
         assert_includes error.message, 'opening_check'
@@ -47,7 +47,7 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_trusted_prompt_comes_from_the_pinned_commit
-    with_repository('opening_check' => { 'enabled' => true, 'prompt_file' => '.agents/opening.md' }) do |root|
+    with_repository('opening_check' => { 'external_enabled' => true, 'prompt_file' => '.agents/opening.md' }) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Parse the first sentence.')
       commit(root)
       source = Shaka::TrustedConfigSource.new(root:)
@@ -58,7 +58,7 @@ class RepositoryConfigOpeningTest < Minitest::Test
   end
 
   def test_trusted_prompt_resolves_a_symlinked_directory
-    with_repository('opening_check' => { 'enabled' => true,
+    with_repository('opening_check' => { 'external_enabled' => true,
                                          'prompt_file' => '.agents/opening-link/prompt.md' }) do |root|
       FileUtils.mkdir_p(File.join(root, 'prompts'))
       File.write(File.join(root, 'prompts/prompt.md'), 'Parse this opening.')

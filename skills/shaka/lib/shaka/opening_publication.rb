@@ -8,7 +8,7 @@ require_relative 'trusted_config_source'
 require 'tmpdir'
 
 module Shaka
-  # Loads the opted-in parser choice after a PR description is published.
+  # Loads the trusted parser choice after a PR description is published.
   class OpeningPublication
     def self.with_safe_path(root:, select_gh: true)
       original = ENV.fetch('PATH', nil)
@@ -82,8 +82,8 @@ module Shaka
     end
 
     def validate_reviewer!(config)
-      raise Error, 'Opening reviewer requires trusted opening_check.enabled.' unless
-        config&.opening_check&.fetch('enabled', false)
+      raise Error, 'Opening reviewer requires trusted opening_check.external_enabled.' unless
+        config&.opening_check&.fetch('external_enabled', true)
 
       allowed = Array(config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS])
       requested = ReviewerSelection.parse(@reviewer).values_at('provider', 'model_family').map(&:downcase)

@@ -15,10 +15,10 @@ class CliOpeningCheckTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = '`shaka merge` now checks the reviewed head.'
   FALLBACK_ROUTES = [
-    [{ 'enabled' => false }, 'anthropic/claude'],
-    [{ 'enabled' => true, 'prompt_file' => '.agents/missing.md' }, 'anthropic/claude'],
-    [{ 'enabled' => true }, 'anthropic/other-family'],
-    [{ 'enabled' => true }, 'unlisted/model']
+    [{ 'external_enabled' => false }, 'anthropic/claude'],
+    [{ 'external_enabled' => true, 'prompt_file' => '.agents/missing.md' }, 'anthropic/claude'],
+    [{ 'external_enabled' => true }, 'anthropic/other-family'],
+    [{ 'external_enabled' => true }, 'unlisted/model']
   ].freeze
 
   def test_description_returns_the_opening_result_after_publishing
@@ -43,7 +43,7 @@ class CliOpeningCheckTest < Minitest::Test
   end
 
   def test_trusted_setting_allows_a_listed_reviewer
-    with_repository('opening_check' => { 'enabled' => true }) do |root|
+    with_repository do |root|
       commit(root)
       %w[anthropic/claude ANTHROPIC/CLAUDE].each do |reviewer|
         Dir.mktmpdir do |dir|
@@ -103,7 +103,8 @@ class CliOpeningCheckTest < Minitest::Test
   private
 
   def with_trusted_prompt(enabled: true)
-    with_repository('opening_check' => { 'enabled' => enabled, 'prompt_file' => '.agents/opening.md' }) do |root|
+    with_repository('opening_check' => { 'external_enabled' => enabled,
+                                         'prompt_file' => '.agents/opening.md' }) do |root|
       File.write(File.join(root, '.agents/opening.md'), 'Name the reader-facing subject.')
       commit(root)
       yield root
