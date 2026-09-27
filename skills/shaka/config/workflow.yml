@@ -219,9 +219,9 @@ phases:
         change needs.
       - When a change aims to speed up page load, rendering, or bundle size, or changes what
         a page loads or how it is cached or streamed, measure it against the base. Copy and
-        styling tweaks fall outside this step. When the repository has its own base-versus-change
-        benchmark, use it and report its result; otherwise use ShakaPerf. For ShakaPerf, first
-        check `command -v shaka-perf`. If it is missing, suggest
+        styling tweaks with no speed aim fall outside this step. When the repository has its
+        own base-versus-change benchmark, use it and report its result; otherwise use ShakaPerf.
+        For ShakaPerf, first check `command -v shaka-perf`. If it is missing, suggest
         [ShakaPerf](https://github.com/shakacode/shakaperf#usage) to the user. If it is installed
         but the repository has no `abtests.config.ts`, the ShakaPerf config that names the pages
         to compare, offer to run `shaka-perf init` and its twin-server setup, which runs the base
