@@ -3,11 +3,20 @@
 require 'optparse'
 require_relative 'error'
 require_relative 'workflow_config'
+require_relative 'configuration/paths'
 
 module Shaka
   # Renders the validated workflow for an agent host.
   class Workflow
     PACKAGE_ROOT = File.expand_path('../../..', File.dirname(WorkflowConfig::PATH))
+    TOKENS = {
+      'package_root' => PACKAGE_ROOT,
+      'config_contract' => Configuration::Paths::CONTRACT,
+      'config_command_directory' => Configuration::Paths::COMMAND_DIRECTORY,
+      'config_validate_local' => Configuration::Paths::OPTIONAL_COMMANDS.fetch('validate_local'),
+      'config_validate' => Configuration::Paths::REQUIRED_COMMANDS.fetch('validate'),
+      'config_trigger_hosted_ci' => Configuration::Paths::OPTIONAL_COMMANDS.fetch('trigger_hosted_ci')
+    }.freeze
 
     def self.run(arguments)
       new(arguments).run
@@ -59,7 +68,9 @@ module Shaka
     end
 
     def expand(text)
-      expanded = text.gsub('{{package_root}}', PACKAGE_ROOT)
+      expanded = text.gsub(/\{\{([^{}]+)\}\}/) do
+        TOKENS.fetch(Regexp.last_match(1)) { raise Error, 'workflow.yml contains an unknown template token' }
+      end
       raise Error, 'workflow.yml contains an unknown template token' if expanded.include?('{{')
 
       expanded

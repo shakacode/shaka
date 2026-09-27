@@ -6,7 +6,7 @@ require 'optparse'
 require_relative 'branch_name'
 require_relative 'error'
 require_relative 'claim/names'
-require_relative 'repository_config'
+require_relative 'configuration'
 
 module Shaka
   # Lists open pull requests and remote branches that already cover a work item.
@@ -54,14 +54,9 @@ module Shaka
     end
 
     def self.branch_name_for(root)
-      path = File.join(root, RepositoryConfig::PATH)
-      begin
-        File.lstat(path)
-      rescue Errno::ENOENT
-        return
-      end
+      return unless Configuration.contract_entry?(root)
 
-      RepositoryConfig.load(root: root).to_h.dig('branches', 'name')
+      Configuration.worktree(root: root).to_h.dig('branches', 'name')
     end
 
     private_class_method :parse, :option_parser, :help, :branch_name_for

@@ -9,7 +9,7 @@ require_relative 'seam/initializer'
 require_relative 'seam/migrator'
 require_relative 'seam/pointer'
 require_relative 'seam/policy_options'
-require_relative 'trusted_config_source'
+require_relative 'configuration'
 
 module Shaka
   # Validates the machine-readable repository boundary.
@@ -72,7 +72,7 @@ module Shaka
     end
 
     def check_report
-      config = TrustedConfigSource.load(root:, ref: @options[:ref])
+      config = Configuration.trusted(root:, ref: @options[:ref])
       return CheckReport.trusted(config, ref: @options[:ref]) if @options.key?(:ref)
 
       CheckReport.local(config)

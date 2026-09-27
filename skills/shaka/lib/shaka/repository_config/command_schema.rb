@@ -51,7 +51,7 @@ module Shaka
       end
 
       def validate_interface_directory
-        %w[.agents .agents/bin].each do |relative|
+        [Configuration::Paths::DIRECTORY, Configuration::Paths::COMMAND_DIRECTORY].each do |relative|
           path = File.join(@root, relative)
           raise Error, "#{relative} must be a real directory, not a symlink" if File.symlink?(path)
         end

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../configuration/paths'
 require_relative '../repository_config/review_schema'
 
 module Shaka
@@ -113,7 +114,7 @@ module Shaka
       def call
         mapping = @data
         unless mapping.is_a?(Hash) && mapping.keys.all?(String)
-          @blocking << '.agents/agent-workflow.yml'
+          @blocking << Configuration::Paths::CONTRACT
           return result
         end
 

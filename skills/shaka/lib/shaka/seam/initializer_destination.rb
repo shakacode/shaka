@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require_relative '../error'
+require_relative '../configuration/paths'
 
 module Shaka
   class Seam
@@ -10,7 +11,7 @@ module Shaka
       private
 
       def preflight_directories
-        ['.agents', '.agents/bin'].each do |relative|
+        [Configuration::Paths::DIRECTORY, Configuration::Paths::COMMAND_DIRECTORY].each do |relative|
           path = File.join(@root, relative)
           next unless File.exist?(path) || File.symlink?(path)
 
@@ -31,7 +32,7 @@ module Shaka
         return false unless File.file?(path) && !File.symlink?(path)
         return false unless (File.stat(path).mode & 0o7777) == destination_mode(path)
 
-        existing = File.read(path, encoding: 'UTF-8')
+        existing = Configuration.generated_text(root: @root, path:)
         existing == content || previously_generated_readme?(path, existing)
       end
 
@@ -46,7 +47,7 @@ module Shaka
         # Narrow accidental-change windows; same-target concurrent writers are unsupported.
         preflight_directories
         preflight_files(files)
-        FileUtils.mkdir_p(File.join(@root, '.agents/bin'))
+        FileUtils.mkdir_p(Configuration::Paths.at(@root, Configuration::Paths::COMMAND_DIRECTORY))
         preflight_directories
         files.each do |path, content|
           preflight_directories
@@ -56,16 +57,14 @@ module Shaka
       end
 
       def write_new_file(path, content)
-        flags = File::WRONLY | File::CREAT | File::EXCL
-        File.open(path, flags, 0o600) do |file|
-          file.write(content)
-          file.chmod(destination_mode(path))
-        end
+        Configuration.create_generated_file(root: @root, path:, content:, mode: destination_mode(path))
       end
 
       def destination_mode(path) = wrapper_path?(path) ? 0o755 : 0o644
 
-      def wrapper_path?(path) = File.dirname(path) == File.join(@root, '.agents/bin')
+      def wrapper_path?(path)
+        File.dirname(path) == Configuration::Paths.at(@root, Configuration::Paths::COMMAND_DIRECTORY)
+      end
     end
   end
 end

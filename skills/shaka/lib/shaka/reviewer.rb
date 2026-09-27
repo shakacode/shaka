@@ -5,7 +5,7 @@ require 'optparse'
 require_relative 'error'
 require_relative 'repository_config'
 require_relative 'reviewer_selection'
-require_relative 'trusted_config_source'
+require_relative 'configuration'
 
 module Shaka
   # Answers which listed reviewer satisfies the alternate-review gate for one change.
@@ -48,7 +48,7 @@ module Shaka
     end
 
     def config
-      TrustedConfigSource.load(root:, ref: @options[:ref])
+      Configuration.trusted(root:, ref: @options[:ref])
     end
 
     def option_parser

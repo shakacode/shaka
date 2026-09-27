@@ -92,11 +92,12 @@ module Shaka
     end
 
     def validate_command_directory(sha)
-      type, error, status = Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{sha}:.agents/bin")
+      directory = Configuration::Paths::COMMAND_DIRECTORY
+      type, error, status = Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{sha}:#{directory}")
       return if status.success? && type.strip == 'tree'
-      raise Error, ".agents/bin at #{sha} must be a real directory, not a symlink" if status.success?
+      raise Error, "#{directory} at #{sha} must be a real directory, not a symlink" if status.success?
 
-      raise Error, "Cannot inspect .agents/bin at #{sha}: #{error.strip}"
+      raise Error, "Cannot inspect #{directory} at #{sha}: #{error.strip}"
     end
 
     def command_entries(resolver)
