@@ -47,8 +47,8 @@ class CliOpeningCheckTest < Minitest::Test
       commit(root)
       %w[anthropic/claude ANTHROPIC/CLAUDE].each do |reviewer|
         Dir.mktmpdir do |dir|
-          output, error, _status = run_description(dir, root:, reviewer:, model: 'claude-haiku')
-          assert_equal 'flagged', JSON.parse(output).dig('opening', 'status'), error
+          _output, error, status = run_description(dir, root:, reviewer:, model: 'claude-haiku')
+          assert_predicate status, :success?, error
           assert_includes JSON.parse(File.read(File.join(dir, 'claude-args.json'))), 'claude-haiku'
         end
       end

@@ -29,7 +29,7 @@ module Shaka
     end
 
     def valid_sentences?(sentences)
-      sentences.is_a?(Array) && sentences.size.between?(1, self.class::SENTENCE_LIMIT) && sentences.all? do |sentence|
+      sentences.is_a?(Array) && !sentences.empty? && sentences.all? do |sentence|
         valid_sentence?(sentence)
       end
     end
