@@ -24,27 +24,16 @@ module Shaka
       end
 
       def create_pointer(path, content, created)
-        File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
-          created << path
-          file.write(content)
-          file.chmod(destination_mode(path))
-        end
+        Configuration.create_file(path, content, mode: destination_mode(path)) { created << path }
       end
 
       def replace_contract(path, content)
         @contract_mode ||= File.stat(path).mode & 0o777
-        tmp = "#{path}.migrate-#{Process.pid}"
-        File.open(tmp, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
-          file.write(content)
-          file.chmod(destination_mode(path))
-        end
-        File.rename(tmp, path)
-      ensure
-        File.delete(tmp) if tmp && File.file?(tmp)
+        Configuration.replace_file(path, content, mode: destination_mode(path))
       end
 
       def restore_contract
-        path = File.join(root, Migrator::CONTRACT)
+        path = Configuration.path(root, :CONTRACT)
         replace_contract(path, @source)
         File.chmod(@contract_mode, path) if @contract_mode
       end
@@ -71,13 +60,13 @@ module Shaka
 
       def generated_files(report)
         {
-          File.join(root, Migrator::CONTRACT) => contract_source(report.fetch('established')),
-          File.join(root, Initializer::POINTER_PATH) => readme_source
+          Configuration.path(root, :CONTRACT) => contract_source(report.fetch('established')),
+          Configuration.path(root, :POINTER) => readme_source
         }
       end
 
       def contract_source(established)
-        "# #{Migrator::MARKER}\n#{YAML.dump(typed_contract(established))}"
+        Configuration.generated_contract(marker: Migrator::MARKER, data: typed_contract(established))
       end
 
       def typed_contract(established)
@@ -103,8 +92,7 @@ module Shaka
       end
 
       def contract_replaceable?(path)
-        path == File.join(root, Migrator::CONTRACT) && File.file?(path) && !File.symlink?(path) &&
-          File.read(path) == @source
+        path == Configuration.path(root, :CONTRACT) && Configuration.contract_matches?(root, @source)
       end
 
       def write_migration_files(files)
@@ -133,8 +121,7 @@ module Shaka
       end
 
       def contract_changed?
-        path = File.join(root, Migrator::CONTRACT)
-        File.file?(path) && File.read(path) != @source
+        Configuration.contract_changed?(root, @source)
       end
 
       def shaka_command = File.expand_path('../../../scripts/shaka', __dir__)

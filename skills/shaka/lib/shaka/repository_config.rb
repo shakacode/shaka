@@ -3,6 +3,7 @@
 require 'yaml'
 require_relative 'error'
 require_relative 'merge_limits'
+require_relative 'configuration/paths'
 require_relative 'repository_config/command_paths'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
@@ -10,7 +11,7 @@ require_relative 'repository_config/schema'
 module Shaka
   # Loads the small, typed repository contract used by the workflow.
   class RepositoryConfig
-    PATH = '.agents/agent-workflow.yml'
+    PATH = Configuration::Paths::CONTRACT
 
     DEFAULT_WIP = { 'include_locations' => true }.freeze
 

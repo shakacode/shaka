@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../version'
+require_relative '../configuration/paths'
 
 module Shaka
   class Seam
@@ -8,7 +9,7 @@ module Shaka
     module InitializerReadme
       HOME = 'https://github.com/shakacode/shaka'
       DOCS = "#{HOME}/blob/main/docs".freeze
-      LEGACY_README = '.agents/README.md'
+      LEGACY_README = Configuration::Paths::LEGACY_README
 
       private
 
@@ -64,7 +65,7 @@ module Shaka
       end
 
       def legacy_generated_readme?(path)
-        File.read(path, encoding: 'UTF-8').start_with?(readme_marker)
+        Configuration.text(path).start_with?(readme_marker)
       rescue Errno::EACCES, Errno::EPERM
         false
       end

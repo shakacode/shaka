@@ -3,7 +3,7 @@
 require 'json'
 require 'rubygems/version'
 require_relative '../error'
-require_relative '../repository_config'
+require_relative '../configuration'
 require_relative 'check'
 require_relative 'machine_alias'
 require_relative 'usage_source'
@@ -16,7 +16,7 @@ module Shaka
 
       WRITER = %w[ADMIN MAINTAIN WRITE].freeze
       RUBY = '3.4'
-      SEAM = '.agents/agent-workflow.yml'
+      SEAM = Configuration::Paths::CONTRACT
 
       def initialize(root:, host:, environment:, system:)
         @root = root
@@ -92,9 +92,9 @@ module Shaka
       # It deliberately does not restate the seam's commands or merge preference: doctor takes
       # no authority from the seam, and the workflow revalidates policy from a trusted ref.
       def repository_seam
-        return missing_seam unless File.file?(File.join(@root, SEAM))
+        return missing_seam unless Configuration.contract_file?(@root)
 
-        RepositoryConfig.load(root: @root)
+        Configuration.worktree(root: @root)
         check('Repository seam', 'healthy', "#{SEAM} loads and validates in this working tree")
       rescue Shaka::Error, SystemCallError => e
         check('Repository seam', 'failed', "#{SEAM} is not usable: #{first_line(e.message)}",
