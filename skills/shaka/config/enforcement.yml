@@ -424,7 +424,7 @@ rules:
     enforced_by: agent
     note: >-
       `handoff` reads live GitHub state and exits 2 while the PR lacks exactly one attention
-      label, holds `awaiting-merge-approval` with required checks not passing, or has a walkthrough
+      label (or, with `--woken-by`, still carries one), holds `awaiting-merge-approval` with required checks not passing, or has a walkthrough
       or WIP Details for an older head. Nothing runs it when a turn ends unless the host wires it
       into a stop hook.
   - id: required-checks
