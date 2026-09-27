@@ -156,11 +156,12 @@ module Shaka
         'commits' => @options[:commit].split(','), 'from' => from || 'UNKNOWN', 'to' => to || 'UNKNOWN' }
     end
 
-    # A response whose counters are unreadable cannot stand in for one an earlier report measured.
+    # A response without a readable token counter cannot stand in for one an earlier report measured.
     def measured_responses
+      fields = Usage::METRIC_FIELDS.map(&:last)
       @source.responses.filter_map do |id, record|
         usage = record['usage']
-        id if usage.is_a?(Hash) && usage.values.any?(Integer)
+        id if usage.is_a?(Hash) && usage.values_at(*fields).any?(Integer)
       end
     end
 

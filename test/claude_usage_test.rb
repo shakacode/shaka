@@ -354,3 +354,19 @@ class ClaudeUsagePriceTest < Minitest::Test
     end
   end
 end
+
+# The report identity names only responses whose token counters were read.
+class ClaudeUsageIdentityTest < Minitest::Test
+  include ClaudeUsageFixture
+
+  # Break: a web-search count of zero made a response with no token counters count as measured.
+  def test_response_without_token_counters_is_left_out_of_the_identity
+    Dir.mktmpdir do |directory|
+      empty = reply('msg-empty', 0)
+      empty[:message][:usage] = { server_tool_use: { web_search_requests: 0 } }
+      path = transcript(directory, 'session.jsonl', [prompt('turn'), empty, reply('msg-full', 100)])
+      identity = JSON.parse(report('--host', 'claude-code', '--file', path)[/\A<!-- shaka:usage (.*) -->\n/, 1])
+      assert_equal 1, identity['responses'].size
+    end
+  end
+end
