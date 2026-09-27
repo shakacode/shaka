@@ -9,14 +9,14 @@ require_relative 'trusted_config_source'
 module Shaka
   # Loads the opted-in parser choice after a PR description is published.
   class OpeningPublication
-    def self.with_safe_path(root:)
+    def self.with_safe_path(root:, select_gh: true)
       original = ENV.fetch('PATH', nil)
       candidate_root = OpeningCheckout.root(root)
       raise Error, 'Candidate checkout root is unknown.' unless candidate_root
 
       ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true,
                                                                   all_executables: true)
-      gh = selected_gh(original.to_s, candidate_root)
+      gh = selected_gh(original.to_s, candidate_root) if select_gh
       yield candidate_root, gh
     ensure
       ENV['PATH'] = original
@@ -47,7 +47,9 @@ module Shaka
       raise Error, 'Opening settings require a full commit SHA from the trusted default branch.' unless
         @ref.match?(/\A[0-9a-f]{40}\z/i)
 
-      self.class.with_safe_path(root: @root) { |candidate_root| check_with_trusted_settings(summary, candidate_root) }
+      self.class.with_safe_path(root: @root, select_gh: false) do |candidate_root|
+        check_with_trusted_settings(summary, candidate_root)
+      end
     rescue StandardError => e
       fallback(summary, e, @prompt)
     end
