@@ -9,7 +9,17 @@ class RepositoryConfigOpeningTest < Minitest::Test
 
   def test_external_opening_checks_default_to_disabled
     with_repository do |root|
-      assert_equal({ 'enabled' => false }, Shaka::RepositoryConfig.load(root:).opening_check)
+      config = Shaka::RepositoryConfig.load(root:)
+      assert_equal({ 'enabled' => false }, config.opening_check)
+      assert_equal config.opening_check, config.to_h.fetch('opening_check')
+    end
+  end
+
+  def test_effective_contract_includes_the_default_with_a_prompt_file
+    with_repository('opening_check' => { 'prompt_file' => '.agents/opening.md' }) do |root|
+      File.write(File.join(root, '.agents/opening.md'), 'Parse this opening.')
+      assert_equal({ 'enabled' => false, 'prompt_file' => '.agents/opening.md' },
+                   Shaka::RepositoryConfig.load(root:).to_h.fetch('opening_check'))
     end
   end
 

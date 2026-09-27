@@ -71,7 +71,8 @@ module Shaka
                   'paths' => { 'policy_configuration' => config_path,
                                'candidate_configuration' => @candidate_detected&.contract,
                                'trusted_command_directory' => @layout.command_directory,
-                               'candidate_command_directory' => @candidate_layout.command_directory })
+                               'candidate_command_directory' => @candidate_layout.command_directory },
+                  'opening_check' => opening_check)
     end
 
     private
