@@ -42,7 +42,7 @@ class CliOpeningPathTest < Minitest::Test
   end
 
   def assert_direct_opening_safe(dir, root)
-    with_candidate_git(dir, root) do |trace|
+    with_candidate_git_link(dir, root) do |trace|
       result = Shaka::OpeningPublication.new(root:, ref: 'HEAD').call(SUMMARY)
       assert_equal 'host_check', result.fetch('status')
       refute_path_exists trace
@@ -54,6 +54,15 @@ class CliOpeningPathTest < Minitest::Test
     trace = File.join(dir, 'candidate-git-called')
     write_executable(bin, 'git', "File.write(#{trace.inspect}, '')")
     with_candidate_path(bin) { yield trace }
+  end
+
+  def with_candidate_git_link(dir, root)
+    Dir.mkdir(bin = File.join(root, 'candidate-bin'))
+    trace = File.join(dir, 'candidate-git-called')
+    write_executable(bin, 'git', "File.write(#{trace.inspect}, '')")
+    Dir.mkdir(external = File.join(dir, 'external-bin'))
+    File.symlink(File.join(bin, 'git'), File.join(external, 'git'))
+    with_candidate_path(external) { yield trace }
   end
 
   def with_candidate_path(bin)

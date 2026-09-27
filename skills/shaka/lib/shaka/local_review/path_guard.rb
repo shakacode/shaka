@@ -16,13 +16,28 @@ module Shaka
       directory = File.expand_path(entry.empty? ? '.' : entry)
       if File.directory?(directory)
         target = File.realpath(directory)
-        if LocalReviewExecutable.candidate_owned?(target, candidate_root)
+        if candidate_path?(target, candidate_root)
           return if drop_candidate
 
           raise Shaka::Error, 'PATH entry resolves inside candidate checkout'
         end
       end
       directory
+    end
+
+    def self.candidate_path?(directory, candidate_root)
+      LocalReviewExecutable.candidate_owned?(directory, candidate_root) ||
+        candidate_executable_link?(directory, candidate_root)
+    end
+
+    def self.candidate_executable_link?(directory, candidate_root)
+      Dir.children(directory).any? do |name|
+        path = File.join(directory, name)
+        File.symlink?(path) && File.executable?(path) &&
+          LocalReviewExecutable.candidate_owned?(File.realpath(path), candidate_root)
+      end
+    rescue SystemCallError
+      true # A PATH directory that cannot be inspected cannot be trusted.
     end
 
     private
