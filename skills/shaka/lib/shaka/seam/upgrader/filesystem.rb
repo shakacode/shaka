@@ -34,8 +34,19 @@ module Shaka
           desired = journal.fetch('desired')
           # Create destinations before removing sources, so an interruption never loses a source.
           created = desired.keys.select { |path| original.fetch(path)['type'] == 'absent' }
-          write_paths(created, desired)
+          created.sort.each { |path| write_new_state(path, desired.fetch(path)) }
           write_paths(desired.keys - created, desired)
+        end
+
+        def write_new_state(relative, state)
+          absolute = File.join(@root, relative)
+          FileUtils.mkdir_p(File.dirname(absolute))
+          return File.symlink(state.fetch('target'), absolute) if state.fetch('type') == 'symlink'
+
+          tmp = "#{absolute}.shaka-upgrade-tmp"
+          write_temp_file(tmp, state)
+          File.link(tmp, absolute)
+          File.delete(tmp)
         end
 
         def write_paths(paths, desired)

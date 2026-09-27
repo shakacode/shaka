@@ -26,6 +26,9 @@ values, script modes, and command arguments. Recognized root calculations use Gi
 instead of a fixed number of parent directories. Ambiguous scripts and executable
 references block the operation for explicit repair. Existing new-layout files,
 including ignored private files, are never overwritten.
+The repaired wrappers require Git and a worktree at run time. If commands run from
+an archive or container image without Git metadata, repair that deployment path
+explicitly before applying; the preview does not prove equivalence outside a Git worktree.
 
 If an interruption leaves `shaka-upgrade-journal.json` in the worktree's Git
 administrative directory, the next preview

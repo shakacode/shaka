@@ -443,3 +443,86 @@ class SeamUpgradeReviewFixTest < Minitest::Test
     File.write(Shaka::Seam::Upgrader.journal_path(root), JSON.generate(journal))
   end
 end
+
+class SeamUpgradeSecondReviewTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  def test_apply_with_existing_journal_fails_without_mutation
+    with_repository do |root|
+      digest = report(root).fetch('digest')
+      write_journal(root, plan_for(root))
+      _output, error, status = upgrade(root, '--apply', '--digest', digest)
+      refute_predicate status, :success?
+      assert_includes error, 'Interrupted upgrade'
+      assert File.file?(File.join(root, '.agents/agent-workflow.yml'))
+    end
+  end
+
+  def test_existing_temporary_file_is_preserved
+    with_repository do |root|
+      temporary = File.join(root, '.agents/agent-workflow.yml.shaka-upgrade-tmp')
+      File.write(temporary, 'user file')
+      _output, error, status = upgrade(root, '--apply', '--digest', report(root).fetch('digest'))
+      refute_predicate status, :success?
+      assert_includes error, 'Existing upgrade temporary file'
+      assert_equal 'user file', File.read(temporary)
+      refute_path_exists Shaka::Seam::Upgrader.journal_path(root)
+    end
+  end
+
+  def test_vendored_path_is_not_rewritten
+    with_repository do |root|
+      path = File.join(root, 'ci.yml')
+      File.write(path, 'run: vendor/tool/.agents/bin/test')
+      commit_fixture(root, 'vendor')
+      apply_upgrade(root)
+      assert_equal 'run: vendor/tool/.agents/bin/test', File.read(path)
+    end
+  end
+
+  def test_mode_flags_are_checked
+    with_repository do |root|
+      digest = report(root).fetch('digest')
+      [['--digest', digest], ['--apply'], ['--apply', '--recover', '--digest', digest]].each do |flags|
+        _output, _error, status = upgrade(root, *flags)
+        refute_predicate status, :success?
+      end
+    end
+  end
+
+  def test_apply_on_already_upgraded_layout_is_a_noop
+    with_repository do |root|
+      apply_upgrade(root)
+      assert_equal 'already_upgraded', apply_upgrade(root).fetch('status')
+    end
+  end
+
+  def test_symlink_to_another_moved_command_keeps_target
+    with_repository do |root|
+      path = File.join(root, '.agents/bin/validate')
+      File.delete(path)
+      File.symlink('test', path)
+      commit_fixture(root, 'linked-command')
+      apply_upgrade(root)
+      assert_equal 'test', File.readlink(File.join(root, '.agents/shaka/bin/validate'))
+    end
+  end
+
+  def test_tracked_executable_reference_blocks
+    with_repository do |root|
+      path = File.join(root, 'run-ci')
+      File.write(path, "#!/bin/sh\nexec .agents/bin/test \"$@\"\n")
+      File.chmod(0o755, path)
+      commit_fixture(root, 'executable-reference')
+      assert_includes report(root).fetch('blockers').join, 'executable old-path reference'
+    end
+  end
+
+  def test_symlinked_legacy_command_directory_blocks
+    with_repository do |root|
+      FileUtils.mv(File.join(root, '.agents/bin'), File.join(root, 'old-bin'))
+      File.symlink('../old-bin', File.join(root, '.agents/bin'))
+      assert_includes report(root).fetch('blockers').join, 'expected a real directory'
+    end
+  end
+end

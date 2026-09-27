@@ -7,15 +7,14 @@ module Shaka
       module Apply
         private
 
-        def apply(_plan, report)
+        def apply(plan, report)
           blockers = report.fetch('blockers')
           raise Error, "Upgrade blocked: #{blockers.join('; ')}" unless blockers.empty?
 
           check_reviewed_digest!(report)
           return emit_apply(report, 'already_upgraded') if report['status'] == 'already_upgraded'
 
-          fresh = recheck_plan(report)
-          journal = upgrade_journal(fresh, report)
+          journal = upgrade_journal(plan, report)
           preflight_permissions!(journal.fetch('original').keys)
           write_journal(journal)
           execute_upgrade(journal)
@@ -33,17 +32,9 @@ module Shaka
           0
         end
 
-        def recheck_plan(report)
-          fresh = UpgradePlan.new(@root)
-          current = fresh.build
-          return fresh if current['digest'] == report['digest'] && current['blockers'].empty?
-
-          raise Error, 'Upgrade inputs changed during preflight; run a fresh preview'
-        end
-
-        def upgrade_journal(fresh, report)
-          original = fresh.original_states
-          desired = fresh.desired_states
+        def upgrade_journal(plan, report)
+          original = plan.original_states
+          desired = plan.desired_states
           temporary = original.keys.map { |path| "#{path}.shaka-upgrade-tmp" }
           { 'version' => 1, 'original' => original, 'desired' => desired,
             'digest' => report.fetch('digest'), 'temporary' => temporary }
@@ -63,8 +54,18 @@ module Shaka
         end
 
         def preflight_permissions!(paths)
-          paths.each { |relative| preflight_path(relative) }
+          paths.each do |relative|
+            preflight_path(relative)
+            preflight_temporary!(relative)
+          end
           raise Error, "Permission denied for #{journal_path}" unless File.writable?(File.dirname(journal_path))
+        end
+
+        def preflight_temporary!(relative)
+          temporary = File.join(@root, "#{relative}.shaka-upgrade-tmp")
+          return unless File.exist?(temporary) || File.symlink?(temporary)
+
+          raise Error, "Existing upgrade temporary file: #{temporary}; preserve or remove it before retrying"
         end
 
         def preflight_path(relative)

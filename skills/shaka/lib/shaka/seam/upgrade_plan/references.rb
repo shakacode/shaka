@@ -46,7 +46,9 @@ module Shaka
           return line if historical
           return block_reference(path, keys, executable, line) if blocked_reference?(keys, executable)
 
-          keys.reduce(line) { |result, old| result.gsub(token_pattern(old), reference_mapping.fetch(old)) }
+          keys.reduce(line) do |result, old|
+            result.gsub(token_pattern(old)) { "#{::Regexp.last_match[:lead]}#{reference_mapping.fetch(old)}" }
+          end
         end
 
         def historical_line?(path, line)
@@ -75,7 +77,8 @@ module Shaka
         end
 
         def token_pattern(path)
-          %r{#{Regexp.escape(path)}(?![[:alnum:]_./-])}
+          leading = '(?<![[:alnum:]_./-])(?<lead>\./|\$[A-Za-z_]\w*/|"\$[A-Za-z_]\w*"/)?'
+          Regexp.new("#{leading}#{Regexp.escape(path)}(?![[:alnum:]_./-])")
         end
 
         def reference_mapping

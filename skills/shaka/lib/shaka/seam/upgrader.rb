@@ -73,7 +73,7 @@ module Shaka
 
       def dispatch
         return recover if @options[:recover]
-        return journal_notice if File.exist?(journal_path)
+        return existing_journal if File.exist?(journal_path)
 
         plan = UpgradePlan.new(@root)
         report = plan.build
@@ -81,6 +81,12 @@ module Shaka
 
         puts JSON.generate(report)
         0
+      end
+
+      def existing_journal
+        raise Error, "Interrupted upgrade at #{journal_path}; run --recover" if @options[:apply]
+
+        journal_notice
       end
 
       private
