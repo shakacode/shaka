@@ -69,6 +69,9 @@ so a fork's reports are never carried.
   not which fields, because readers legitimately leave some fields `UNKNOWN`. A
   refresh in which a response keeps only some of its counters can therefore
   replace a report with more known totals.
+- A Claude `-p` result uses its session ID as the response ID, so two print runs
+  resumed into one session look like one response, and the later report replaces
+  the earlier one. `shaka review run` starts a fresh session for each review.
 - A new report without response IDs, such as one from a source that became
   unreadable, never replaces a report that has them.
 - When the earlier report lacks response IDs, a new report covers it when they
