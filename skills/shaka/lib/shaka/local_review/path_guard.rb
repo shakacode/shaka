@@ -93,7 +93,17 @@ module Shaka
     end
 
     def self.env_interpreter(words)
-      words.drop(1).find { |word| !word.start_with?('-') }
+      arguments = env_arguments(words.drop(1))
+      interpreter = arguments.drop_while { |word| word.match?(/\A[A-Za-z_][A-Za-z0-9_]*=/) }.first
+      raise Shaka::Error, 'Cannot determine env shebang interpreter' if interpreter.nil? || interpreter.start_with?('-')
+
+      interpreter
+    end
+
+    def self.env_arguments(arguments)
+      arguments.shift if arguments.first == '-S'
+      arguments[0] = arguments.first.delete_prefix('-S') if arguments.first&.start_with?('-S')
+      arguments
     end
 
     private

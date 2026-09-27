@@ -16,24 +16,38 @@ class CliOpeningInterpreterTest < Minitest::Test
   def test_gh_wrapper_cannot_use_candidate_backed_interpreter
     with_repository do |root|
       commit(root)
-      Dir.mktmpdir { |dir| assert_gh_interpreter_safe(dir, root) }
+      Dir.mktmpdir { |dir| assert_gh_interpreter_safe(dir, root, '#!/usr/bin/env node') }
+    end
+  end
+
+  def test_env_split_string_skips_assignments_before_interpreter
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_gh_interpreter_safe(dir, root, '#!/usr/bin/env -S FOO=1 node') }
+    end
+  end
+
+  def test_env_attached_split_string_names_interpreter
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_gh_interpreter_safe(dir, root, '#!/usr/bin/env -Snode') }
     end
   end
 
   private
 
-  def assert_gh_interpreter_safe(dir, root)
+  def assert_gh_interpreter_safe(dir, root, shebang)
     external, safe = make_bins(dir)
     marker = File.join(dir, 'candidate-node-called')
     add_candidate_node(root, external, marker)
     write_executable(safe, 'gh', fake_gh)
     with_path(safe) do
-      assert_safe_publication(external, root, marker)
+      assert_safe_publication(external, root, marker, shebang)
     end
   end
 
-  def assert_safe_publication(external, root, marker)
-    output, error, status = run_description(external, root:) { |bin| use_env_node(bin) }
+  def assert_safe_publication(external, root, marker, shebang)
+    output, error, status = run_description(external, root:) { |bin| use_env_node(bin, shebang) }
     assert_predicate status, :success?, error
     assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
     assert_path_exists File.join(external, 'published.md')
@@ -51,9 +65,9 @@ class CliOpeningInterpreterTest < Minitest::Test
     File.symlink(target, File.join(external, 'node'))
   end
 
-  def use_env_node(bin)
+  def use_env_node(bin, shebang)
     gh = File.join(bin, 'gh')
-    File.write(gh, File.read(gh).sub(/\A#![^\n]+/, '#!/usr/bin/env node'))
+    File.write(gh, File.read(gh).sub(/\A#![^\n]+/, shebang))
   end
 
   def with_path(bin)
