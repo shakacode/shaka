@@ -41,12 +41,13 @@ module Shaka
     # Reads only the review section, so the rest of the seam need not be valid for a review to run;
     # `shaka seam check` validates the whole contract.
     def trusted_review_settings(ref)
-      Configuration.review_at_commit(root:, ref:, git: git_executable, capture: method(:capture))
+      Configuration.review_at_commit(root:, ref:, git: git_executable, capture: method(:capture),
+                                     probe: method(:bounded_git))
     end
 
-    # A repository without a seam at that commit keeps the default instructions.
+    # A commit without either configuration keeps the default instructions; invalid sources fail closed.
     def trusted_seam?(ref)
-      Configuration.contract_at_commit?(ref:, git: method(:bounded_git))
+      Configuration.contract_at_commit?(root:, ref:, git: method(:bounded_git))
     end
 
     # Runs the vetted Git under the review timeout, for this module and TrustedPathResolver.

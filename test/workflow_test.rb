@@ -93,15 +93,13 @@ class WorkflowCommandTest < Minitest::Test
     assert_includes output, 'Done when:'
   end
 
-  def test_workflow_expands_configuration_paths
+  def test_workflow_uses_resolved_configuration_paths
     output, status = Open3.capture2e(COMMAND, 'workflow')
-    paths = Shaka::Configuration::Paths
 
     assert_predicate status, :success?, output
-    [paths::CONTRACT, "#{paths::COMMAND_DIRECTORY}/", paths::OPTIONAL_COMMANDS.fetch('validate_local'),
-     paths::REQUIRED_COMMANDS.fetch('validate'), paths::OPTIONAL_COMMANDS.fetch('trigger_hosted_ci')].each do |path|
-      assert_includes output, "`#{path}`"
-    end
+    assert_includes output, 'run the reported scripts'
+    assert_includes output, 'resolved `validate` command'
+    refute_includes output, '.agents/bin/validate'
     refute_includes output, '{{'
   end
 
