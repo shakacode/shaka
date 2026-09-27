@@ -20,6 +20,12 @@ module Shaka
       new(root:, source:, available_commands:, sha:, candidate_commands:).load
     end
 
+    def self.prompt_files(review:, opening:)
+      files = ReviewSchema.prompt_files(review)
+      path = opening['prompt_file']
+      path ? files + [['opening_check.prompt_file', path]] : files
+    end
+
     def initialize(root:, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
       if source && available_commands.nil?
         raise Error, 'available_commands is required when repository policy comes from another source'

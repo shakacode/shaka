@@ -82,21 +82,11 @@ module Shaka
 
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
       def local_prompt_files!(review)
-        ReviewSchema.prompt_files(review).each do |label, path|
+        RepositoryConfig.prompt_files(review:, opening: @data.fetch('opening_check', {})).each do |label, path|
           file = file!(path, label)
           error = ReviewPrompt.file_error(File.size(file)) { File.binread(file) }
           raise Error, "#{label} #{path} #{error}" if error
         end
-        local_opening_prompt_file!
-      end
-
-      def local_opening_prompt_file!
-        opening = @data['opening_check'] || {}
-        return unless opening['prompt_file']
-
-        path = file!(opening['prompt_file'], 'opening_check.prompt_file')
-        error = ReviewPrompt.file_error(File.size(path)) { File.binread(path) }
-        raise Error, "opening_check.prompt_file #{opening['prompt_file']} #{error}" if error
       end
 
       def validate_merge

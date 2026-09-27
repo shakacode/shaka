@@ -6,14 +6,11 @@ require_relative 'review_prompt'
 require_relative 'trusted_path_resolver'
 require_relative 'configuration/layout'
 require_relative 'configuration/sources'
-require_relative 'trusted_opening_prompt'
 
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
   class TrustedConfigSource
     include Configuration::Sources
-    include TrustedOpeningPrompt
-
     def self.load(root:, ref: nil, candidate_commands: true)
       return RepositoryConfig.load(root:) unless ref
 
@@ -37,9 +34,16 @@ module Shaka
       source = read_at_commit(root: @root, sha:, path: layout.contract, display_ref: ref)
       config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha, layout), sha:,
                                      candidate_commands: @candidate_commands)
-      validate_prompt_files(config.review, sha)
-      validate_opening_prompt(config.opening_check, sha)
+      validate_prompt_files(config.review, config.opening_check, sha)
       config
+    end
+
+    def opening_prompt(config)
+      path = config.opening_check['prompt_file']
+      return unless path
+
+      resolved, = TrustedPathResolver.new(root: @root, sha: config.sha).resolve(path)
+      git_output(config.sha, resolved, '-p')
     end
 
     private
@@ -50,9 +54,9 @@ module Shaka
 
     # A prompt file the review runner would reject would stop every local review, including the one
     # for the PR that fixes it.
-    def validate_prompt_files(review, sha)
+    def validate_prompt_files(review, opening, sha)
       resolver = TrustedPathResolver.new(root: @root, sha:)
-      RepositoryConfig::ReviewSchema.prompt_files(review).each do |label, path|
+      RepositoryConfig.prompt_files(review:, opening:).each do |label, path|
         resolved, entry = resolver.resolve(path)
         is_blob = entry && entry.last == 'blob' && entry.first != TrustedPathResolver::SYMLINK.first
         raise Error, "#{label} does not name a file at #{sha}: #{path}" unless is_blob
