@@ -214,19 +214,54 @@ reasoning in the walkthrough. File paths alone do not decide placement.
 
 ### How a walkthrough is ordered
 
-Start with the earlier behavior and what now works. Then explain changes in the
-order that makes them understandable: usually contract or data model, core
-behavior, integrations, and finally tests, documentation, and migration.
+Open with the behavior that changed and why it was needed; the mechanism comes
+after. A reviewer who stops early still gets the main point, and the reason for a
+change is usually the hardest part to reconstruct from the diff.
+
+Then explain changes in the order that makes them understandable: usually
+contract or data model, core behavior, integrations, and finally tests,
+documentation, and migration. Keep related parts together, explain each idea
+before the step that needs it, and say where a reviewer should look hardest.
 
 Explain unfamiliar terms on first use. Distinguish mechanical moves and generated
 output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
-Use commit-pinned code links. Cover the change completely, then stop.
+Cover the change completely, then stop.
+
+### Keep a walkthrough readable
+
+- Link each step to the lines it explains with a commit-pinned permalink to a
+  line range. One link per file leaves the reader searching.
+- Describe the code at this head. Words such as "now", "new", and "was removed"
+  narrate the branch's history and go stale: write "rejects", not "now rejects".
+- Give each paragraph one idea and lead with it. Split a paragraph past about
+  four sentences, and keep most sentences under 25 words.
+- Use a list for parallel items, such as the guarantees a guard provides: one
+  per bullet, each linked to its code. Keep reasoning in prose.
+- Report validation as what it proves at this head: the behavior covered, the
+  command, and its result. State each count once, and leave results from
+  earlier heads to the description's review history.
+
+For example, this run of sentences hides three related guards:
+
+> Slash-bearing relative shebang interpreters are rejected before the command
+> runs. Guarded env shebangs reject environment assignments so a wrapper cannot
+> replace the sanitized PATH. Direct relative shebang interpreters, including
+> bare `#!node`, are rejected before launch.
+
+A list gives each guard its own line and code link:
+
+> Before a selected wrapper runs, the interpreter guard rejects:
+>
+> - relative interpreters, including bare `#!node` (code link)
+> - `env` shebangs that assign variables, which could replace the sanitized
+>   PATH (code link)
 
 ### Keep one current walkthrough
 
-Edit wording at the same revision in place. For a new commit, publish a walkthrough
-for that head and update the description's link. Keep review history in the
+Edit wording at the same revision in place. For a new commit, write a walkthrough
+from that head's diff and update the description's link. Extending the previous
+walkthrough carries its repair history into the new one. Keep review history in the
 description's details rather than appending it to the walkthrough.
 
 The walkthrough command collapses your older walkthroughs after it confirms the new
