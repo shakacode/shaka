@@ -148,6 +148,18 @@ def merge_flags(flags, options)
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
 end
 
+def opening_flags(flags, options)
+  flags.on('--opening-reviewer ID', 'Configured provider/family for an opening check') do |value|
+    options[:opening_reviewer] = value
+  end
+  flags.on('--opening-model MODEL', 'Model for the opening reviewer') { |value| options[:opening_model] = value }
+end
+
+def trust_flags(flags, options)
+  flags.on('--root DIR', 'Repository root for trusted seam settings') { |value| options[:root] = value }
+  flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
+end
+
 options = {}
 parser = OptionParser.new do |flags|
   flags.banner = usage_banner
@@ -164,8 +176,8 @@ parser = OptionParser.new do |flags|
     options[:ci_review_wait] = value
   end
   merge_flags(flags, options)
-  flags.on('--root DIR', 'Repository root for trusted seam settings') { |value| options[:root] = value }
-  flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
+  trust_flags(flags, options)
+  opening_flags(flags, options)
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, none') do |value|
@@ -190,6 +202,12 @@ begin
   end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
+  if options[:opening_reviewer] && command != 'description'
+    raise Shaka::Error, '--opening-reviewer is only for description.'
+  end
+  if options[:opening_model] && !options[:opening_reviewer]
+    raise Shaka::Error, '--opening-model requires --opening-reviewer.'
+  end
 
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge].include?(command)
@@ -207,9 +225,24 @@ begin
            when 'description'
              described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
              body = Shaka::Publication.description(described)
+             config = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
+             reviewer = options[:opening_reviewer]
+             if reviewer
+               raise Shaka::Error, 'Opening reviewer requires trusted opening_check.enabled.' unless
+                 config&.opening_check&.fetch('enabled', false)
+
+               allowed = Array(config.review[Shaka::RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS])
+               identity = Shaka::ReviewerSelection.parse(reviewer)
+               parts = identity.values_at('provider', 'model_family')
+               raise Shaka::Error, 'Opening reviewer is not in the trusted reviewer list.' unless
+                 allowed.any? { |entry| entry.values_at('provider', 'model_family') == parts }
+             end
+             prompt = Shaka::TrustedConfigSource.new(root: options[:root] || Dir.pwd).opening_prompt(config) if
+               config&.opening_check&.key?('prompt_file')
              candidate_root = Shaka::OpeningCheck.checkout_root(options[:root] || Dir.pwd)
              opening = Shaka::OpeningCheck.new(summary: described['summary'], body:,
-                                               published_body: github.description_body, candidate_root:).call
+                                               published_body: github.description_body, candidate_root:,
+                                               reviewer:, model: options[:opening_model], prompt:).call
              github.description(body:).merge('opening' => opening)
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),

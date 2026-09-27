@@ -7,6 +7,7 @@ require_relative '../review_prompt'
 require_relative 'branch_schema'
 require_relative 'command_schema'
 require_relative 'merge_schema'
+require_relative 'opening_schema'
 require_relative 'wip_schema'
 require_relative 'review_schema'
 require_relative 'validation'
@@ -18,7 +19,7 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip repo_prefix].freeze
+      OPTIONAL = %w[base_branch branches wip repo_prefix opening_check].freeze
 
       attr_reader :commands
 
@@ -58,6 +59,7 @@ module Shaka
       def validate_optional
         BranchSchema.new(@data['branches']).validate if @data.key?('branches')
         WipSchema.new(@data['wip']).validate if @data.key?('wip')
+        OpeningSchema.new(@data['opening_check']).validate if @data.key?('opening_check')
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
       end
 
@@ -85,6 +87,16 @@ module Shaka
           error = ReviewPrompt.file_error(File.size(file)) { File.binread(file) }
           raise Error, "#{label} #{path} #{error}" if error
         end
+        local_opening_prompt_file!
+      end
+
+      def local_opening_prompt_file!
+        opening = @data['opening_check'] || {}
+        return unless opening['prompt_file']
+
+        path = file!(opening['prompt_file'], 'opening_check.prompt_file')
+        error = ReviewPrompt.file_error(File.size(path)) { File.binread(path) }
+        raise Error, "opening_check.prompt_file #{opening['prompt_file']} #{error}" if error
       end
 
       def validate_merge

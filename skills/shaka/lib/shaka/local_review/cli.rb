@@ -132,7 +132,7 @@ module Shaka
     end
 
     def grok_process(executable, prompt_path)
-      args = [executable, '--prompt-file', prompt_path, '-m', @options[:model]]
+      args = [executable, '--prompt-file', prompt_path, *(['-m', @options[:model]] if @options[:model])]
       args.push('--reasoning-effort', effort) if effort
       args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
       output, stderr, status = reviewer_process(args)

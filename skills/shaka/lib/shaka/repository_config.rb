@@ -14,7 +14,7 @@ module Shaka
     DEFAULT_WIP = { 'include_locations' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :wip, :sha, :config_path
+    attr_reader :base_branch, :commands, :review, :merge, :wip, :opening_check, :sha, :config_path
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
       new(root:, source:, available_commands:, sha:, candidate_commands:).load
@@ -84,6 +84,7 @@ module Shaka
       merge = @data.fetch('merge')
       @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
+      @opening_check = { 'enabled' => false }.merge(@data.fetch('opening_check', {}))
     end
 
     def with_default_review_wait(review)

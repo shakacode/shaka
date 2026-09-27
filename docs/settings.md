@@ -232,6 +232,27 @@ instructions, reports which `AGENTS.md` criteria it used, and ends with the
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.
 
+## `opening_check`
+
+**Optional.** PR openings are checked by the coding agent's current model by default.
+To permit a separate local model to read the opening, enable the check in the
+trusted repository settings:
+
+```yaml
+opening_check:
+  enabled: true
+  prompt_file: .agents/opening-prompt.md # optional
+```
+
+The agent uses `review.local_review_agents` in its existing preference order:
+a different provider first, then another listed provider, then the development
+model when no listed CLI completes the parse. `enabled` defaults to `false`;
+having a CLI on `PATH` alone does not send text to it. `prompt_file` replaces
+the default parsing instructions for both external and development-model checks.
+Shaka reads that file from the trusted default-branch commit, applies the same
+file checks as `review.prompt_file`, and treats the PR opening as data. The
+description still publishes if the advisory check fails.
+
 ## Standard command scripts
 
 Connect your existing tools at these fixed paths:

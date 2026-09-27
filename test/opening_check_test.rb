@@ -15,7 +15,7 @@ class OpeningCheckTest < Minitest::Test
   def test_flags_a_first_sentence_led_by_a_command
     with_claude(parse('shaka merge', false)) do |root, trace|
       result = check(COMMAND_FIRST, root:)
-      assert_equal 'flagged', result.fetch('status')
+      assert_equal 'flagged', result.fetch('status'), result.inspect
       assert_includes result.fetch('reason'), '"shaka merge"'
       assert_equal 'shaka merge', result.dig('parse', 0, 'character')
       assert_invoked_outside(root, trace, COMMAND_FIRST)
@@ -35,11 +35,30 @@ class OpeningCheckTest < Minitest::Test
     end
   end
 
-  def test_skips_the_model_when_the_published_opening_is_unchanged
+  def test_checks_an_unchanged_opening_without_a_successful_verdict
     with_claude(parse('shaka merge', false)) do |root, trace|
       result = check(COMMAND_FIRST, root:, published: "<!-- shaka:begin -->\n#{render(COMMAND_FIRST)}")
-      assert_equal({ 'status' => 'unchanged' }, result)
+      assert_equal 'flagged', result.fetch('status')
+      assert_path_exists trace
+    end
+  end
+
+  def test_reuses_only_a_successful_verdict_for_an_unchanged_opening
+    with_claude(parse('shaka merge', false)) do |root, trace|
+      assert_equal 'flagged', check(COMMAND_FIRST, root:).fetch('status')
+      File.unlink(trace)
+      result = check(COMMAND_FIRST, root:, published: render(COMMAND_FIRST))
+      assert_equal 'flagged', result.fetch('status'), result.inspect
       refute_path_exists trace
+    end
+  end
+
+  def test_retries_an_unchanged_opening_after_the_cli_recovers
+    with_claude(nil, body: 'exit 3') do |root, trace, bin|
+      assert_equal 'not_checked', check(COMMAND_FIRST, root:).fetch('status')
+      output = JSON.generate(is_error: false, result: JSON.generate(parse('shaka merge', false)))
+      write_claude(bin, trace, "puts #{output.inspect}")
+      assert_equal 'flagged', check(COMMAND_FIRST, root:, published: render(COMMAND_FIRST)).fetch('status')
     end
   end
 
@@ -58,6 +77,16 @@ class OpeningCheckTest < Minitest::Test
     end
   end
 
+  def test_unknown_checkout_root_skips_the_cli
+    with_claude(parse('shaka merge', false)) do |_root, trace|
+      assert_nil Shaka::OpeningCheck.checkout_root(Dir.mktmpdir)
+      result = Shaka::OpeningCheck.new(summary: COMMAND_FIRST, body: render(COMMAND_FIRST),
+                                       published_body: '', candidate_root: nil).call
+      assert_equal 'not_checked', result.fetch('status')
+      refute_path_exists trace
+    end
+  end
+
   def test_checks_a_later_paragraph_promoted_to_the_opening
     with_claude(parse('shaka merge', false)) do |root, _trace|
       published = render("#{OUTCOME_FIRST}\n\n#{COMMAND_FIRST}")
@@ -68,15 +97,16 @@ class OpeningCheckTest < Minitest::Test
   def test_missing_cli_is_not_checked
     Dir.mktmpdir do |root|
       with_path(File.join(root, 'empty-bin')) do
-        assert_equal({ 'status' => 'not_checked', 'reason' => 'claude is not on PATH' },
-                     check(COMMAND_FIRST, root:))
+        result = check(COMMAND_FIRST, root:)
+        assert_equal 'not_checked', result.fetch('status')
+        assert_includes result.fetch('reason'), 'claude is not on PATH'
       end
     end
   end
 
   def test_failed_or_malformed_runs_are_not_checked
     ['exit 3', 'puts "not json"', 'puts JSON.generate(is_error: true)',
-     'puts JSON.generate(structured_output: { sentences: [{ character: "x" }] })'].each do |body|
+     'puts JSON.generate(result: JSON.generate(sentences: [{ character: "x" }]))'].each do |body|
       with_claude(nil, body:) do |root, _trace|
         assert_equal 'not_checked', check(COMMAND_FIRST, root:).fetch('status'), body
       end

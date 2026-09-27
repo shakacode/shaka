@@ -6,11 +6,13 @@ require_relative 'review_prompt'
 require_relative 'trusted_path_resolver'
 require_relative 'configuration/layout'
 require_relative 'configuration/sources'
+require_relative 'trusted_opening_prompt'
 
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
   class TrustedConfigSource
     include Configuration::Sources
+    include TrustedOpeningPrompt
 
     def self.load(root:, ref: nil, candidate_commands: true)
       return RepositoryConfig.load(root:) unless ref
@@ -36,6 +38,7 @@ module Shaka
       config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha, layout), sha:,
                                      candidate_commands: @candidate_commands)
       validate_prompt_files(config.review, sha)
+      validate_opening_prompt(config.opening_check, sha)
       config
     end
 

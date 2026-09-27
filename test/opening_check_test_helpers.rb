@@ -14,17 +14,17 @@ module OpeningCheckTestHelpers
     refute invocation.fetch('pwd').start_with?(File.realpath(root)), 'the model must not run inside the checkout'
   end
 
-  def check(summary, root:, published: '')
+  def check(summary, root:, published: '', reviewer: 'anthropic/claude')
     Shaka::OpeningCheck.new(summary:, body: render(summary), published_body: published,
-                            candidate_root: File.realpath(root)).call
+                            candidate_root: File.realpath(root), reviewer:,
+                            cache_dir: File.join(root, 'cache')).call
   end
 
   def render(summary) = "**Author:** agent\n\n#{summary}\n\n| Check |\n| --- |\n| ok |\n"
 
   def parse(character, reader_facing)
-    { is_error: false, structured_output: { sentences: [{ character:, reader_facing:, action: 'acts',
-                                                          object: 'something', hidden_actions: [],
-                                                          internal_terms: [] }] } }
+    { sentences: [{ character:, reader_facing:, action: 'acts', object: 'something',
+                    hidden_actions: [], internal_terms: [] }] }
   end
 
   # The fake CLI lives in its own directory beside a separate candidate root.
@@ -34,7 +34,7 @@ module OpeningCheckTestHelpers
       root = File.join(dir, 'checkout')
       [bin, root].each { |path| Dir.mkdir(path) }
       trace = File.join(dir, 'trace.json')
-      body ||= "puts #{JSON.generate(output).inspect}"
+      body ||= "puts #{JSON.generate(is_error: false, result: JSON.generate(output)).inspect}"
       write_claude(bin, trace, body)
       with_path(bin) { yield(root, trace, bin) }
     end
