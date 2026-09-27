@@ -2,7 +2,6 @@
 
 require 'uri'
 require_relative 'code_link_range'
-require_relative 'error'
 
 module Shaka
   # Turns walkthrough `code:NAME` link targets into commit-pinned line-range permalinks.
@@ -11,11 +10,15 @@ module Shaka
   # more than one line refuses publication instead of guessing.
   class CodeLinks
     REFERENCE = /\]\(code:([A-Za-z0-9_.-]+)\)/
+    # Fenced blocks and inline code spans show Markdown literally, so links there stay as written.
+    CODE = /(^[ \t]*```.*?^[ \t]*```[^\n]*$|`[^`\n]*`)/m
 
-    def self.resolve(content, github)
-      return content unless content.key?('code_links')
+    # Rewrites the rendered walkthrough, so links in the summary, sections, table, and
+    # details all resolve the same way.
+    def self.resolve(body, content, github)
+      return body unless content.key?('code_links')
 
-      new(content.fetch('code_links'), github, content.fetch('head')).apply(content)
+      new(content.fetch('code_links'), github, content.fetch('head')).rewrite(body)
     end
 
     def initialize(links, github, head)
@@ -28,26 +31,13 @@ module Shaka
       @urls = {}
     end
 
-    def apply(content)
-      resolved = content.except('code_links')
-      resolved['summary'] = rewrite(content['summary']) if content['summary'].is_a?(String)
-      %w[sections details].each do |key|
-        next unless content[key].is_a?(Array)
-
-        resolved[key] = content[key].map { |item| item.is_a?(Hash) ? rewrite_body(item) : item }
-      end
-      resolved
+    def rewrite(body)
+      body.split(CODE).each_with_index.map do |part, index|
+        index.odd? ? part : part.gsub(REFERENCE) { "](#{url(Regexp.last_match(1))})" }
+      end.join
     end
 
     private
-
-    def rewrite_body(item)
-      item['body'].is_a?(String) ? item.merge('body' => rewrite(item['body'])) : item
-    end
-
-    def rewrite(text)
-      text.gsub(REFERENCE) { "](#{url(Regexp.last_match(1))})" }
-    end
 
     def url(name)
       @urls[name] ||= begin

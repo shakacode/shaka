@@ -47,13 +47,8 @@ module CodeLinksFixtures
     FakeGitHub.new(files, [])
   end
 
-  def content(links, body)
-    { 'head' => HEAD, 'summary' => 'Summary.', 'code_links' => links,
-      'sections' => [{ 'heading' => 'Change', 'body' => body }] }
-  end
-
   def resolved_body(links, body, client = github)
-    Shaka::CodeLinks.resolve(content(links, body), client).fetch('sections').first.fetch('body')
+    Shaka::CodeLinks.resolve(body, { 'head' => HEAD, 'code_links' => links }, client)
   end
 end
 
@@ -99,21 +94,24 @@ class CodeLinksTest < Minitest::Test
     assert_equal "[call](#{BLOB}/lib/package.rb#L7)", body
   end
 
-  def test_links_resolve_in_summary_and_every_section_and_fetch_each_file_once
+  def test_every_reference_resolves_and_each_file_is_fetched_once
     client = github
     links = { 'stage' => { 'path' => 'lib/package.rb', 'from' => 'def stage', 'block' => true },
               'publish' => { 'path' => 'lib/package.rb', 'from' => 'def publish', 'block' => true } }
-    resolved = Shaka::CodeLinks.resolve(content(links, '[a](code:stage) and [b](code:publish)')
-                                          .merge('summary' => 'Start at [stage](code:stage).'), client)
-    assert_equal "Start at [stage](#{BLOB}/lib/package.rb#L6-L9).", resolved['summary']
-    assert_includes resolved['sections'].first['body'], "#{BLOB}/lib/package.rb#L11-L13"
-    refute resolved.key?('code_links')
+    body = resolved_body(links, "Start at [s](code:stage).\n\n| Code |\n| --- |\n| [p](code:publish) |", client)
+    assert_equal "Start at [s](#{BLOB}/lib/package.rb#L6-L9).\n\n| Code |\n| --- |\n" \
+                 "| [p](#{BLOB}/lib/package.rb#L11-L13) |", body
     assert_equal ["repos/owner/repo/contents/lib/package.rb?ref=#{HEAD}"], client.requests
   end
 
+  def test_code_spans_and_fences_keep_link_examples_literally
+    example = "Write `[label](code:NAME)`:\n\n```json\n[x](code:other)\n```\n"
+    assert_equal example, resolved_body({}, example)
+  end
+
   def test_content_without_code_links_is_unchanged
-    plain = { 'head' => HEAD, 'summary' => 'Summary.' }
-    assert_same plain, Shaka::CodeLinks.resolve(plain, github)
+    body = 'See [x](code:x).'
+    assert_same body, Shaka::CodeLinks.resolve(body, { 'head' => HEAD }, github)
   end
 end
 
@@ -163,7 +161,8 @@ class CodeLinksCommandTest < Minitest::Test
     Dir.mktmpdir do |dir|
       sentinel = failing_gh(dir)
       content = File.join(dir, 'content.json')
-      File.write(content, JSON.generate({ 'summary' => 'See [it](code:missing).', 'code_links' => {} }))
+      walkthrough = { 'identity' => {}, 'summary' => 'See [it](code:missing).', 'code_links' => {} }
+      File.write(content, JSON.generate(walkthrough))
       _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, 'walkthrough',
                                               'owner/repo', '1', '--head', 'a' * 40, '--content-file', content)
       refute_predicate status, :success?
