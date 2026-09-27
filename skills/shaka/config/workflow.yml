@@ -217,10 +217,11 @@ phases:
         Captures complement tests; they do not replace them. Read the packaged
         [verification guide](<{{package_root}}/docs/pr-verification.md>) when deciding what evidence a
         change needs.
-      - When a change aims to speed up page load, rendering, or bundle size, or changes what
-        a page loads or how it is cached or streamed, measure it against the base. Copy and
-        styling tweaks with no speed aim fall outside this step. When the repository has its
-        own base-versus-change benchmark, use it and report its result; otherwise use ShakaPerf.
+      - When a change aims to speed up page load, rendering, or bundle size, likely slows them,
+        or changes what a page loads or how it is cached or streamed, measure it against the base.
+        Copy and styling tweaks with no speed aim or likely speed cost fall outside this step.
+        When the repository has its own base-versus-change benchmark, use it and report its
+        result; otherwise use ShakaPerf.
         For ShakaPerf, first check `command -v shaka-perf`. If it is missing, suggest
         [ShakaPerf](https://github.com/shakacode/shakaperf#usage) to the user. If it is installed
         but the repository has no `abtests.config.ts`, the ShakaPerf config that names the pages
