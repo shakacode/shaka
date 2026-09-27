@@ -14,20 +14,23 @@ module Shaka
 
     def self.normalized_path_entry(entry, candidate_root, drop_candidate)
       directory = File.expand_path(entry.empty? ? '.' : entry)
-      if File.directory?(directory)
-        target = File.realpath(directory)
-        if candidate_path?(target, candidate_root)
-          return if drop_candidate
+      return directory unless File.directory?(directory)
 
-          raise Shaka::Error, 'PATH entry resolves inside candidate checkout'
-        end
-      end
-      directory
+      state = candidate_path_state(File.realpath(directory), candidate_root)
+      return if state == :uninspectable
+      return directory if state == :safe
+      return if drop_candidate
+
+      raise Shaka::Error, 'PATH entry resolves inside candidate checkout'
     end
 
-    def self.candidate_path?(directory, candidate_root)
-      LocalReviewExecutable.candidate_owned?(directory, candidate_root) ||
-        candidate_executable_link?(directory, candidate_root)
+    def self.candidate_path_state(directory, candidate_root)
+      return :candidate if LocalReviewExecutable.candidate_owned?(directory, candidate_root)
+
+      linked = candidate_executable_link?(directory, candidate_root)
+      return :uninspectable if linked == :uninspectable
+
+      linked ? :candidate : :safe
     end
 
     def self.candidate_executable_link?(directory, candidate_root)
@@ -37,7 +40,7 @@ module Shaka
           LocalReviewExecutable.candidate_owned?(File.realpath(path), candidate_root)
       end
     rescue SystemCallError
-      true # A PATH directory that cannot be inspected cannot be trusted.
+      :uninspectable # Omit a PATH directory that cannot be inspected.
     end
 
     private
