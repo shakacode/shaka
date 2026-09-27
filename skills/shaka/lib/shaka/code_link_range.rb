@@ -5,7 +5,7 @@ require_relative 'error'
 module Shaka
   # Finds the 1-based line range a walkthrough code link names, by text rather than number.
   module CodeLinkRange
-    CLOSER = /\A(?:end|\})[\s;),]*\z/
+    CLOSER = %r{\A(?:end|\})[\s;),]*(?:(?:#|//).*)?\z}
 
     module_function
 
@@ -38,7 +38,7 @@ module Shaka
     def block_end(lines, start)
       depth = indentation(lines[start])
       closing = ((start + 1)...lines.size).find { |index| block_boundary?(lines[index], depth) }
-      return closing if closing && lines[closing].strip.match?(CLOSER)
+      return closing if closing && indentation(lines[closing]) == depth
 
       raise Error, "no closing end or } at the indentation of #{lines[start].strip.inspect}; use to text."
     end

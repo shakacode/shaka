@@ -67,7 +67,7 @@ class CodeLinksTest < Minitest::Test
   end
 
   def test_block_link_keeps_same_indentation_clauses_before_the_closer
-    source = "def run\n  perform\nrescue Error\n  recover\nensure\n  close\nend\n" \
+    source = "def run\n  perform\nrescue Error\n  recover\nensure\n  close\nend # run\n" \
              "function f() {\n  if (x) {\n    a()\n  } else {\n    b()\n  }\n}\n"
     links = { 'run' => { 'path' => 'lib/run.rb', 'from' => 'def run', 'block' => true },
               'if' => { 'path' => 'lib/run.rb', 'from' => 'if (x)', 'block' => true } }
@@ -120,12 +120,17 @@ end
 class CodeLinksRefusalTest < Minitest::Test
   include CodeLinksFixtures
 
+  # The method closer sits deeper than a block would expect, so only the class closer is left.
+  REFUSALS = { 'lib/package.rb' => PACKAGE, 'bin/tool.py' => SCRIPT,
+               'lib/worker.rb' => "class Worker\n  def run\n    work\n      end\nend\n" }.freeze
+
   def test_ambiguous_or_missing_text_refuses_publication
     { { 'path' => 'lib/package.rb', 'from' => 'def ' } => 'matches 3 lines',
       { 'path' => 'lib/package.rb', 'from' => 'def absent' } => 'matches 0 lines',
       { 'path' => 'lib/package.rb', 'from' => 'def publish', 'to' => 'def stage' } => 'no line after',
-      { 'path' => 'bin/tool.py', 'from' => 'def first', 'block' => true } => 'use to text' }.each do |link, message|
-      error = assert_raises(Shaka::Error) { resolved_body({ 'x' => link }, '[x](code:x)') }
+      { 'path' => 'bin/tool.py', 'from' => 'def first', 'block' => true } => 'use to text',
+      { 'path' => 'lib/worker.rb', 'from' => 'def run', 'block' => true } => 'use to text' }.each do |link, message|
+      error = assert_raises(Shaka::Error) { resolved_body({ 'x' => link }, '[x](code:x)', github(REFUSALS)) }
       assert_includes error.message, message
       assert_includes error.message, 'code link x'
     end
