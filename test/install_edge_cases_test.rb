@@ -33,6 +33,18 @@ class InstallEdgeCasesTest < Minitest::Test
     assert_equal 'development', package_identity.fetch('source').fetch('kind')
   end
 
+  def test_hidden_deleted_file_is_not_labelled_exact_revision
+    path = File.join(@source, 'extra.md')
+    File.write(path, "tracked\n")
+    commit_source
+    root = File.join(@directory, 'source')
+    git('-C', root, 'update-index', '--assume-unchanged', 'skills/shaka/extra.md')
+    File.unlink(path)
+    install!
+
+    assert_equal 'development', package_identity.fetch('source').fetch('kind')
+  end
+
   def test_rollback_rejects_flags_that_would_mix_skill_versions
     install!
     id = package_identity.fetch('package_id')

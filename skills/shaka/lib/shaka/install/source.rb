@@ -49,7 +49,8 @@ module Shaka
 
       def tracked?
         selected = selected_files
-        listed = git_raw('ls-files', '-z', '--cached', '--', *selected)
+        listed = git_raw('ls-tree', '-r', '--name-only', '-z', 'HEAD', '--',
+                         *@names.map { |name| "skills/#{name}" })
         listed && listed.split("\0").sort == selected.sort
       end
 

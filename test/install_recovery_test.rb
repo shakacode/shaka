@@ -38,6 +38,16 @@ class InstallRecoveryTest < Minitest::Test
     assert_equal 'version one', File.read(File.join(@destination, 'SKILL.md'))
   end
 
+  def test_changed_package_requires_explicit_recovery_before_reinstall
+    install!
+    File.write(File.join(package_path, 'skills', 'shaka', 'extra'), 'changed')
+    refute_predicate install.last, :success?
+    FileUtils.mv(package_path, "#{package_path}.damaged")
+    install!
+
+    assert_equal 'version one', File.read(File.join(@destination, 'SKILL.md'))
+  end
+
   def test_managed_directory_can_be_chosen_explicitly
     managed = File.join(@directory, 'durable packages')
     output, status = run_installer('--skills-dir', @skills_dir, '--managed-dir', managed)
