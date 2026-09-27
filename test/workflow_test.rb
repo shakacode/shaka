@@ -91,8 +91,8 @@ class WorkflowCommandTest < Minitest::Test
     assert_includes output, '## Always'
     assert_includes output, '## Code quality'
     assert_includes output, 'Done when:'
-    assert_includes output, 'Load `.agents/agent-workflow.yml`'
-    assert_includes output, '`.agents/bin/validate-local`'
+    assert_includes output, "`#{Shaka::Configuration::Paths::CONTRACT}`"
+    assert_includes output, "`#{Shaka::Configuration::Paths::OPTIONAL_COMMANDS.fetch('validate_local')}`"
     refute_includes output, '{{'
   end
 

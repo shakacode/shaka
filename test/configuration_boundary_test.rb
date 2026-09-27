@@ -10,6 +10,11 @@ class ConfigurationBoundaryTest < Minitest::Test
   ROOT = File.expand_path('../skills/shaka/lib/shaka', __dir__)
   INTERNAL = %w[configuration.rb repository_config.rb trusted_config_source.rb].freeze
   EXPLANATORY = %w[seam/initializer_readme.rb seam/pointer.rb].freeze
+  ACCESS_CALLERS = %w[
+    claim.rb doctor/checks.rb local_review/prompt_file.rb seam/initializer.rb
+    seam/initializer_destination.rb seam/initializer_readme.rb seam/migration_apply.rb
+    seam/migration_plan.rb seam/migrator.rb
+  ].freeze
 
   def test_public_paths_remain_concrete_and_independent
     paths = Shaka::Configuration::Paths
@@ -76,6 +81,8 @@ class ConfigurationBoundaryTest < Minitest::Test
     findings << 'contract alias' if source.include?('RepositoryConfig::PATH')
     direct_read = /File\.(?:read|binread|write)\([^\n]*(?:CONTRACT|SEAM|POINTER_PATH)/
     findings << 'direct contract read' if source.match?(direct_read)
+    direct_access = source.match?(/File\.(?:read|binread|write|open)\(/)
+    findings << 'direct file access' if ACCESS_CALLERS.include?(relative) && direct_access
     findings
   end
 end
