@@ -249,6 +249,10 @@ phases:
         specific things in summaries and sections. Keep blockers visible; put supporting checks,
         review history, rollback, and usage in `details`. Avoid repeated status updates. Store useful
         evidence once and retrieve it as needed; collapsing does not save tokens.
+      - Point reviewers to the code instead of retelling it: the description links the walkthrough,
+        and the walkthrough links each step to its lines. Keep the text in proportion to the change.
+        `description` and `walkthrough` refuse visible prose past the trusted
+        [prose limits](<{{package_root}}/docs/settings.md#prose_limits>), so pass `--ref` to both.
       - Before publishing the PR description, walkthrough, or final response, self-edit each summary
         against the [portable baseline](<{{package_root}}/skills/shaka/references/writing.md>):
         lead with the outcome its reader notices, keep one main idea per sentence, put each condition
@@ -340,8 +344,8 @@ phases:
         keeps its characters. It leaves every other
         author's review intact. When that edit is unavailable, publication still succeeds
         and the result names the limitation.
-      - Divide the two by what each reader needs. The description serves someone who will not work
-        through the PR, so it carries the outcome headline, the delivery decisions and blockers a
+      - Divide the two by what each reader needs. The description serves someone deciding whether to
+        merge, so it carries the outcome headline, the delivery decisions and blockers a
         maintainer must act on, missing required review, the check table, provenance, usage, the
         WIP Details note while the PR is unfinished, and the links to the current walkthrough and review
         result. The walkthrough serves someone reading the code, so it carries the implementation

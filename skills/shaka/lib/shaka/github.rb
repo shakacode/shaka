@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 require_relative 'error'
 require_relative 'publishing'
+require_relative 'prose_limits'
 require_relative 'review_thread'
 require_relative 'walkthrough_evidence'
 require_relative 'walkthrough_history'
@@ -86,9 +87,10 @@ module Shaka
       ReviewThread.resolve(self, thread_id)
     end
 
-    def walkthrough(head:, body:, seam_required_checks: nil)
+    def walkthrough(head:, body:, seam_required_checks: nil, prose: ProseLimits.new)
       body = publishable(body)
-      verify_head(head)
+      pr = verify_head(head)
+      prose.verify!(body, kind: :walkthrough, changed_lines: ProseLimits.changed_lines(pr))
       WalkthroughEvidence.new(self, seam_required_checks:).verify(head, body)
       published = record_walkthrough(head, body)
       published.merge('earlier_walkthroughs' => WalkthroughHistory.new(self).collapse(published))
@@ -131,7 +133,7 @@ module Shaka
       raise Error, 'Expected a full commit SHA.' unless head.is_a?(String) && head.match?(/\A[0-9a-f]{40}\z/)
 
       pr = snapshot
-      return if pr['state'] == 'OPEN' && pr['headRefOid'] == head
+      return pr if pr['state'] == 'OPEN' && pr['headRefOid'] == head
 
       detail = review_id ? " Review #{review_id} was created; inspect the PR before retrying." : ''
       raise Error, "Pull request is not open at the expected head.#{detail}"

@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative 'error'
+require_relative 'prose_limits'
 require_relative 'public_comments/bounded_list'
 require_relative 'public_comments/reply_guard'
 require_relative 'publication'
@@ -16,11 +17,12 @@ module Shaka
     REPLY_PAGES = 20
     SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
 
-    def description(body:)
-      existing = pull['body'].to_s
-      merged = merge(existing, publishable(body))
+    def description(body:, prose: ProseLimits.new)
+      current = pull
+      prose.verify!(publishable(body), kind: :description, changed_lines: ProseLimits.changed_lines(current))
+      merged = merge(current['body'].to_s, publishable(body))
       verify_rendering(merged)
-      check_unchanged(existing)
+      check_unchanged(current['body'].to_s)
       confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
     end
 

@@ -22,3 +22,8 @@ When writing this repository's product guides, read docs/editorial-style.md.
 When trusted `AGENTS.md` exists, the Shaka workflow instructs the agent to follow
 its writing preferences and any style file it explicitly links. Shaka's Ruby
 helpers do not automatically load a linked file or verify editorial style.
+
+Shaka also refuses to publish a description or walkthrough that reads as a wall
+of text. It checks sentence length, paragraph length, and total length against
+the size of the change, so the text points reviewers to the code. You can change
+these limits with [`prose_limits`](settings.md#prose_limits).

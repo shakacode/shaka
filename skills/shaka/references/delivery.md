@@ -181,8 +181,9 @@ AI-edited rather than claiming full authorship.
 
 ### Make the PR description useful first
 
-Write for someone deciding whether to merge without reading the diff. State the
-outcome and why it matters. Show blockers, decisions, and missing required review.
+Write for someone deciding whether to merge. State the outcome and why it
+matters, then send them to the walkthrough and the code rather than retelling
+the diff. Show blockers, decisions, and missing required review.
 Include the check table, provenance, usage tables, and WIP Details note while unfinished.
 Keep optional review history and routine rollback detail collapsed.
 
