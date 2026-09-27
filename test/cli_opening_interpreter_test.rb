@@ -34,7 +34,26 @@ class CliOpeningInterpreterTest < Minitest::Test
     end
   end
 
+  def test_relative_env_interpreter_cannot_run_candidate_executable
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_relative_interpreter_rejected(dir, root) }
+    end
+  end
+
   private
+
+  def assert_relative_interpreter_rejected(dir, root)
+    external, = make_bins(dir)
+    marker = File.join(dir, 'candidate-node-called')
+    add_candidate_node(root, external, marker)
+    output, error, status = run_description(external, root:) do |bin|
+      use_env_node(bin, '#!/usr/bin/env ./node')
+    end
+    refute_predicate status, :success?, output
+    assert_includes error, 'gh interpreter uses a relative path'
+    refute_path_exists marker
+  end
 
   def assert_gh_interpreter_safe(dir, root, shebang)
     external, safe = make_bins(dir)

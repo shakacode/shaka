@@ -72,6 +72,16 @@ class OpeningPathGuardTest < Minitest::Test
     end
   end
 
+  def test_relative_shebang_interpreter_fails_closed
+    with_candidate_link do |root, external, _safe|
+      File.unlink(File.join(external, 'gh'))
+      ['#!./node', '#!/usr/bin/env ./node', '#!/usr/bin/env -S ./node'].each do |shebang|
+        write_script(File.join(external, 'gh'), "#{shebang}\n")
+        assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root) }
+      end
+    end
+  end
+
   private
 
   def write_script(path, body)

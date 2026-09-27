@@ -82,6 +82,10 @@ module Shaka
       interpreter = shebang_interpreter(executable)
       return unless interpreter
 
+      if !interpreter.start_with?('/') && interpreter.include?(File::SEPARATOR)
+        raise Shaka::Error, "#{name} interpreter uses a relative path"
+      end
+
       unsafe = interpreter.start_with?('/') &&
                LocalReviewExecutable.candidate_owned?(File.realpath(interpreter), candidate_root)
       raise Shaka::Error, "#{name} interpreter resolves inside candidate checkout" if unsafe
