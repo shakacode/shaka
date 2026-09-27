@@ -6,8 +6,7 @@ require 'fileutils'
 module Shaka
   # Keeps successful opening verdicts on this host without storing description text.
   class OpeningVerdictCache
-    def initialize(opening:, model:, prompt:, directory: nil)
-      directory ||= File.join(Dir.home, '.cache', 'shaka', 'opening-check')
+    def initialize(opening:, model:, prompt:, directory:)
       key = Digest::SHA256.hexdigest([model, prompt, opening].join("\0"))
       @path = File.join(directory, key)
       @directory = directory
