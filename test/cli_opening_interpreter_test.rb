@@ -63,16 +63,16 @@ class CliOpeningInterpreterTest < Minitest::Test
   end
 
   def assert_shell_helper_safe(dir, root)
-    external, safe = make_bins(dir)
+    external, = make_bins(dir)
     marker = File.join(dir, 'candidate-helper-called')
     write_executable(root, 'helper', "File.write(#{marker.inspect}, '')")
     File.symlink(File.join(root, 'helper'), File.join(external, 'helper'))
-    write_executable(safe, 'gh', fake_gh)
-    with_path(safe) do
-      assert_safe_publication(external, root, marker, '#!/bin/sh') do |bin|
-        File.write(File.join(bin, 'gh'), "#!/bin/sh\nhelper\n")
-      end
+    _output, _error, status = run_description(external, root:) do |bin|
+      File.write(File.join(bin, 'gh'), "#!/bin/sh\nhelper\n")
     end
+    refute_predicate status, :success?
+    refute_path_exists marker
+    refute_path_exists File.join(external, 'published.md')
   end
 
   def assert_gh_interpreter_safe(dir, root, shebang)
@@ -86,9 +86,7 @@ class CliOpeningInterpreterTest < Minitest::Test
   end
 
   def assert_safe_publication(external, root, marker, shebang)
-    output, error, status = run_description(external, root:) do |bin|
-      block_given? ? yield(bin) : use_env_node(bin, shebang)
-    end
+    output, error, status = run_description(external, root:) { |bin| use_env_node(bin, shebang) }
     assert_predicate status, :success?, error
     assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
     assert_path_exists File.join(external, 'published.md')

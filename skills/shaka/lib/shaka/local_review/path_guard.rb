@@ -61,6 +61,11 @@ module Shaka
       (GUARDED_EXECUTABLES + interpreters).uniq
     end
 
+    def self.safe_executable(path, name, candidate_root)
+      selected = first_executable(path.split(File::PATH_SEPARATOR, -1), name, candidate_root, true)
+      selected.tap { |path| interpreter_name(path, name, candidate_root) if path }
+    end
+
     def self.first_executable(entries, name, candidate_root, drop_candidate)
       entries.each do |entry|
         directory = File.expand_path(entry.empty? ? '.' : entry)
@@ -79,8 +84,7 @@ module Shaka
     end
 
     def self.interpreter_name(executable, name, candidate_root)
-      interpreter = shebang_interpreter(executable)
-      return unless interpreter
+      return unless (interpreter = shebang_interpreter(executable))
 
       if !interpreter.start_with?('/') && interpreter.include?(File::SEPARATOR)
         raise Shaka::Error, "#{name} interpreter uses a relative path"

@@ -214,14 +214,6 @@ begin
     raise Shaka::Error, '--opening-model is unsupported for openai/codex.' if reviewer == 'openai/codex'
   end
 
-  if command == 'description'
-    candidate_root = Shaka::OpeningCheckout.root(options[:root] || Dir.pwd)
-    if candidate_root
-      ENV['PATH'] = Shaka::LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root:,
-                                                                                 drop_candidate: true)
-    end
-  end
-
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge].include?(command)
     seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
@@ -237,7 +229,12 @@ begin
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
              root = options[:root] || Dir.pwd
-             Shaka::OpeningPublication.with_safe_path(root:) do
+             Shaka::OpeningPublication.with_safe_path(root:) do |_candidate_root, gh|
+               raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
+
+               github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
+                 Open3.capture3(gh, *argv.drop(1), stdin_data:)
+               end)
                described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
                body = Shaka::Publication.description(described)
                published = github.description(body:)

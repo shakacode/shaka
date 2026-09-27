@@ -16,9 +16,22 @@ module Shaka
 
       ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true,
                                                                   all_executables: true)
-      yield candidate_root
+      gh = selected_gh(original.to_s, candidate_root)
+      yield candidate_root, gh
     ensure
       ENV['PATH'] = original
+    end
+
+    def self.selected_gh(original_path, candidate_root)
+      gh = LocalReviewPathGuard.safe_executable(original_path, 'gh', candidate_root)
+      return unless gh
+
+      interpreter = LocalReviewPathGuard.shebang_interpreter(gh)
+      return gh if interpreter.nil? || interpreter.start_with?('/')
+
+      linked = LocalReviewPathGuard.candidate_executable_link?(File.dirname(gh), candidate_root,
+                                                               { names: [interpreter], all_executables: false })
+      linked ? LocalReviewPathGuard.safe_executable(ENV.fetch('PATH'), 'gh', candidate_root) || gh : gh
     end
 
     def initialize(root:, ref:, reviewer: nil, model: nil)
