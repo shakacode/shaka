@@ -46,10 +46,11 @@ and seam initialization and migration. Packaged `workflow.yml`, `enforcement.yml
 and usage rate data have separate loaders; the install-local repository catalog
 and GitHub metadata are also separate. Generated pointer text and error messages
 may show concrete paths as explanations. The merge-review classifier names
-`.agents/` as an instruction directory, not a configuration source. The architectural test checks production
-path literals and direct access, and a code-search review covers assembled access
-that a string scan cannot prove absent. The guard classifies unrelated file I/O
-explicitly, so a new production reader or writer needs a review of its source.
+`.agents/` as an instruction directory, not a configuration source. The architectural
+test flags `.agents` literals, selected `File` calls, and quoted Git reads outside
+the boundary. Its allowlist records unrelated file I/O. Code search must still
+review other APIs and dynamically assembled access; the scan does not prove
+complete encapsulation.
 
 | Concern | Source |
 | --- | --- |

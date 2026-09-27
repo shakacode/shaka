@@ -21,9 +21,14 @@ class ConfigurationBoundaryTest < Minitest::Test
   def test_public_paths_remain_concrete_and_independent
     paths = Shaka::Configuration::Paths
     assert_equal '.agents/agent-workflow.yml', paths::CONTRACT
+    assert_equal '.agents', paths::DIRECTORY
+    assert_equal '.agents/bin', paths::COMMAND_DIRECTORY
+    assert_equal '.agents/shaka.md', paths::POINTER
     assert_equal '~/.agents/trusted-github-actors.yml', paths::MACHINE_ALLOWLIST
     assert_equal '.agents/trusted-github-actors.yml', paths::REPOSITORY_ALLOWLIST
     assert_equal '.agents/bin/validate', paths::REQUIRED_COMMANDS.fetch('validate')
+    assert_equal '.agents/bin/validate-local', paths::OPTIONAL_COMMANDS.fetch('validate_local')
+    assert_equal '.agents/bin/trigger-hosted-ci', paths::OPTIONAL_COMMANDS.fetch('trigger_hosted_ci')
   end
 
   def test_trusted_read_never_uses_a_valid_worktree_as_fallback

@@ -91,8 +91,17 @@ class WorkflowCommandTest < Minitest::Test
     assert_includes output, '## Always'
     assert_includes output, '## Code quality'
     assert_includes output, 'Done when:'
-    assert_includes output, "`#{Shaka::Configuration::Paths::CONTRACT}`"
-    assert_includes output, "`#{Shaka::Configuration::Paths::OPTIONAL_COMMANDS.fetch('validate_local')}`"
+  end
+
+  def test_workflow_expands_configuration_paths
+    output, status = Open3.capture2e(COMMAND, 'workflow')
+    paths = Shaka::Configuration::Paths
+
+    assert_predicate status, :success?, output
+    [paths::CONTRACT, "#{paths::COMMAND_DIRECTORY}/", paths::OPTIONAL_COMMANDS.fetch('validate_local'),
+     paths::REQUIRED_COMMANDS.fetch('validate'), paths::OPTIONAL_COMMANDS.fetch('trigger_hosted_ci')].each do |path|
+      assert_includes output, "`#{path}`"
+    end
     refute_includes output, '{{'
   end
 
