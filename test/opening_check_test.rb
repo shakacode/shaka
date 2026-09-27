@@ -41,6 +41,7 @@ class OpeningCheckTest < Minitest::Test
       File.unlink(trace)
       result = check(COMMAND_FIRST, root:)
       assert_equal 'flagged', result.fetch('status'), result.inspect
+      assert_includes result.fetch('prompt'), COMMAND_FIRST
       refute_path_exists trace
     end
   end

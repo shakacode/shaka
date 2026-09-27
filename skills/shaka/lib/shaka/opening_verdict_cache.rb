@@ -11,13 +11,16 @@ module Shaka
       key = Digest::SHA256.hexdigest([model, prompt, opening].join("\0"))
       @path = File.join(directory, key)
       @directory = directory
+      @prompt = prompt
     end
 
     def read
       status = File.read(@path).strip
       return { 'status' => 'passed' } if status == 'passed'
-      return { 'status' => 'flagged', 'reason' => 'The unchanged opening was previously flagged.' } if
-        status == 'flagged'
+      if status == 'flagged'
+        return { 'status' => 'flagged', 'reason' => 'The unchanged opening was previously flagged.',
+                 'prompt' => @prompt }
+      end
 
       nil
     rescue SystemCallError, IOError

@@ -251,6 +251,8 @@ having a CLI on `PATH` alone does not send text to it. A valid `prompt_file`
 replaces the default parsing instructions for both external and development-model
 checks. Shaka reads that file from the trusted default-branch commit, applies
 the same file checks as `review.prompt_file`, and treats the PR opening as data.
+Pass that commit with `description --ref SHA` to use the setting. Without `--ref`,
+the development model gets the built-in prompt and an explanation.
 If the configured check cannot run, the description still publishes and the
 development model receives a fallback prompt with the reason.
 

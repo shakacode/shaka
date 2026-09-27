@@ -15,6 +15,8 @@ module Shaka
     end
 
     def call(summary)
+      raise Error, 'No trusted --ref supplied for opening settings.' unless @ref
+
       source = TrustedConfigSource.new(root: @root)
       config = TrustedConfigSource.from_ref(root: @root, ref: @ref)
       prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')

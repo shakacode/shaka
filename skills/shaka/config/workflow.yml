@@ -288,7 +288,7 @@ phases:
         pr OWNER/REPO NUMBER --root DIR --ref SHA
         comments OWNER/REPO NUMBER --head SHA
         comments OWNER/REPO ISSUE_NUMBER --issue
-        description OWNER/REPO NUMBER --content-file PATH --root DIR --ref SHA
+        description OWNER/REPO NUMBER --content-file PATH [--root DIR --ref SHA]
           [--opening-reviewer PROVIDER/FAMILY] [--opening-model MODEL]
         reply OWNER/REPO NUMBER --content-file PATH --key NAME [--comment ROOT_COMMENT_ID]
         resolve OWNER/REPO NUMBER --thread THREAD_ID

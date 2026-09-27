@@ -25,7 +25,18 @@ class CliOpeningCheckTest < Minitest::Test
       output, error, status = run_description(dir)
       assert_predicate status, :success?, error
       assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+      assert_includes JSON.parse(output).dig('opening', 'reason'), '--ref'
       assert_includes File.read(File.join(dir, 'published.md')), SUMMARY
+      refute_path_exists File.join(dir, 'claude-called')
+    end
+  end
+
+  def test_reviewer_without_trusted_ref_uses_host_fallback
+    Dir.mktmpdir do |dir|
+      output, error, status = run_description(dir, reviewer: 'anthropic/claude', ref: false)
+      assert_predicate status, :success?, error
+      assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+      assert_includes JSON.parse(output).dig('opening', 'reason'), '--ref'
       refute_path_exists File.join(dir, 'claude-called')
     end
   end
