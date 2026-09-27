@@ -41,6 +41,13 @@ class CliOpeningInterpreterTest < Minitest::Test
     end
   end
 
+  def test_shell_wrapper_cannot_launch_candidate_helper
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_shell_helper_safe(dir, root) }
+    end
+  end
+
   private
 
   def assert_relative_interpreter_rejected(dir, root)
@@ -55,6 +62,19 @@ class CliOpeningInterpreterTest < Minitest::Test
     refute_path_exists marker
   end
 
+  def assert_shell_helper_safe(dir, root)
+    external, safe = make_bins(dir)
+    marker = File.join(dir, 'candidate-helper-called')
+    write_executable(root, 'helper', "File.write(#{marker.inspect}, '')")
+    File.symlink(File.join(root, 'helper'), File.join(external, 'helper'))
+    write_executable(safe, 'gh', fake_gh)
+    with_path(safe) do
+      assert_safe_publication(external, root, marker, '#!/bin/sh') do |bin|
+        File.write(File.join(bin, 'gh'), "#!/bin/sh\nhelper\n")
+      end
+    end
+  end
+
   def assert_gh_interpreter_safe(dir, root, shebang)
     external, safe = make_bins(dir)
     marker = File.join(dir, 'candidate-node-called')
@@ -66,7 +86,9 @@ class CliOpeningInterpreterTest < Minitest::Test
   end
 
   def assert_safe_publication(external, root, marker, shebang)
-    output, error, status = run_description(external, root:) { |bin| use_env_node(bin, shebang) }
+    output, error, status = run_description(external, root:) do |bin|
+      block_given? ? yield(bin) : use_env_node(bin, shebang)
+    end
     assert_predicate status, :success?, error
     assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
     assert_path_exists File.join(external, 'published.md')

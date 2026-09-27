@@ -9,6 +9,18 @@ require_relative 'trusted_config_source'
 module Shaka
   # Loads the opted-in parser choice after a PR description is published.
   class OpeningPublication
+    def self.with_safe_path(root:)
+      original = ENV.fetch('PATH', nil)
+      candidate_root = OpeningCheckout.root(root)
+      raise Error, 'Candidate checkout root is unknown.' unless candidate_root
+
+      ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true,
+                                                                  all_executables: true)
+      yield candidate_root
+    ensure
+      ENV['PATH'] = original
+    end
+
     def initialize(root:, ref:, reviewer: nil, model: nil)
       @root = root
       @ref = ref
@@ -22,10 +34,7 @@ module Shaka
       raise Error, 'Opening settings require a full commit SHA from the trusted default branch.' unless
         @ref.match?(/\A[0-9a-f]{40}\z/i)
 
-      candidate_root = OpeningCheckout.root(@root)
-      raise Error, 'Candidate checkout root is unknown.' unless candidate_root
-
-      with_safe_path(candidate_root) { check_with_trusted_settings(summary, candidate_root) }
+      self.class.with_safe_path(root: @root) { |candidate_root| check_with_trusted_settings(summary, candidate_root) }
     rescue StandardError => e
       fallback(summary, e, @prompt)
     end
@@ -38,14 +47,6 @@ module Shaka
       @prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')
       validate_reviewer!(config) if @reviewer
       OpeningCheck.new(summary:, candidate_root:, reviewer: @reviewer, model: @model, prompt: @prompt).call
-    end
-
-    def with_safe_path(candidate_root)
-      original = ENV.fetch('PATH', nil)
-      ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true)
-      yield
-    ensure
-      ENV['PATH'] = original
     end
 
     def validate_reviewer!(config)

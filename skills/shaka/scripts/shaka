@@ -236,13 +236,16 @@ begin
              Shaka::PublicComments::Reader.new(github).call(issue_only:,
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
-             described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
-             body = Shaka::Publication.description(described)
-             published = github.description(body:)
-             opening = Shaka::OpeningPublication.new(root: options[:root] || Dir.pwd, ref: options[:ref],
-                                                     reviewer: options[:opening_reviewer],
-                                                     model: options[:opening_model]).call(described['summary'])
-             published.merge('opening' => opening)
+             root = options[:root] || Dir.pwd
+             Shaka::OpeningPublication.with_safe_path(root:) do
+               described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
+               body = Shaka::Publication.description(described)
+               published = github.description(body:)
+               opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
+                                                       reviewer: options[:opening_reviewer],
+                                                       model: options[:opening_model]).call(described['summary'])
+               published.merge('opening' => opening)
+             end
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
                           key: options.fetch(:key), comment: options[:comment])

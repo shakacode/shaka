@@ -38,7 +38,18 @@ class CliOpeningPathTest < Minitest::Test
     end
   end
 
-  def test_unrelated_candidate_symlink_does_not_hide_safe_gh
+  def test_unknown_checkout_root_stops_before_publication
+    Dir.mktmpdir do |root|
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:)
+        refute_predicate status, :success?
+        assert_includes error, 'Candidate checkout root is unknown'
+        refute_path_exists File.join(dir, 'published.md')
+      end
+    end
+  end
+
+  def test_unrelated_candidate_symlink_uses_independent_safe_gh
     with_repository do |root|
       commit(root)
       Dir.mktmpdir { |dir| assert_unrelated_candidate_link_safe(dir, root) }
@@ -48,10 +59,15 @@ class CliOpeningPathTest < Minitest::Test
   private
 
   def assert_unrelated_candidate_link_safe(dir, root)
-    target = File.join(root, 'project-tool')
-    File.write(target, "#!/bin/sh\nexit 1\n")
-    File.chmod(0o755, target)
-    File.symlink(target, File.join(dir, 'project-tool'))
+    write_executable(root, 'project-tool', 'exit 1')
+    File.symlink(File.join(root, 'project-tool'), File.join(dir, 'project-tool'))
+    Dir.mktmpdir do |safe|
+      write_executable(safe, 'gh', fake_gh)
+      with_candidate_path(safe) { assert_safe_gh_publishes(dir, root) }
+    end
+  end
+
+  def assert_safe_gh_publishes(dir, root)
     output, error, status = run_description(dir, root:)
     assert_predicate status, :success?, error
     assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
