@@ -7,7 +7,7 @@ class CheckpointTest < Minitest::Test
   # One input per settings pause reason, so the precedence sweep covers all six.
   SETTINGS_PROBLEMS = {
     'settings_unavailable' => { 'settings_available' => false },
-    'settings_not_explicit' => { 'requested_model' => nil },
+    'recommendation_missing' => { 'recommended_model' => nil },
     'settings_conflict' => { 'recommended_model' => 'gpt-5.6-sol' },
     'settings_unverified' => { 'active_effort' => nil },
     'settings_inactive' => { 'active_model' => 'gpt-5.6-sol' },
@@ -17,42 +17,50 @@ class CheckpointTest < Minitest::Test
   # Regression: a branch that always pauses would add a redundant user turn even
   # when intake supplied matching settings and immediate execution authorization.
   def test_matching_explicit_settings_with_immediate_start_satisfy_the_checkpoint
-    result = Shaka::Checkpoint.new(default_content).result
-
-    assert_equal 'proceed', result.fetch('status')
+    assert_equal 'proceed', Shaka::Checkpoint.new(default_content).result.fetch('status')
   end
 
   def test_inactive_matching_settings_pause_with_a_switch_action
-    result = Shaka::Checkpoint.new(default_content.merge('active_model' => 'gpt-5.6-sol')).result
-
-    assert_pause result, 'settings_inactive'
-  end
-
-  def test_differing_settings_pause_for_user_resolution
-    result = Shaka::Checkpoint.new(default_content.merge('recommended_model' => 'gpt-5.6-sol')).result
-
-    assert_pause result, 'settings_conflict'
+    assert_pause Shaka::Checkpoint.new(default_content.merge('active_model' => 'gpt-5.6-sol')).result,
+                 'settings_inactive'
   end
 
   def test_unavailable_settings_pause_with_an_available_settings_action
-    result = Shaka::Checkpoint.new(default_content.merge('settings_available' => false)).result
-
-    assert_pause result, 'settings_unavailable'
+    assert_pause Shaka::Checkpoint.new(default_content.merge('settings_available' => false)).result,
+                 'settings_unavailable'
   end
 
   # Characterization from issue #58: matching settings alone do not make an
   # ambiguous intake an immediate implementation request.
   def test_matching_settings_without_immediate_start_pause_for_ready
-    result = Shaka::Checkpoint.new(default_content.merge('immediate_start' => false)).result
-
-    assert_pause result, 'immediate_start_not_authorized'
+    assert_pause Shaka::Checkpoint.new(default_content.merge('immediate_start' => false)).result,
+                 'immediate_start_not_authorized'
   end
 
-  def test_missing_requested_settings_pause_for_confirmation
-    content = default_content.except('requested_model', 'requested_effort')
-    result = Shaka::Checkpoint.new(content).result
+  def test_go_with_active_recommended_settings_needs_no_explicit_settings
+    [%w[requested_model requested_effort], ['requested_model'], ['requested_effort']].each do |omitted|
+      assert_equal 'proceed', Shaka::Checkpoint.new(default_content.except(*omitted)).result.fetch('status')
+    end
+  end
 
-    assert_pause result, 'settings_not_explicit'
+  def test_go_without_explicit_settings_keeps_conflict_and_active_guards
+    cases = [
+      [default_content.except('requested_effort').merge('requested_model' => 'gpt-5.6-sol'), 'settings_conflict'],
+      [default_content.except('requested_model').merge('requested_effort' => 'high'), 'settings_conflict'],
+      [default_content.merge('requested_model' => '  '), 'settings_conflict'],
+      [default_content.except('requested_model', 'requested_effort').merge('active_effort' => 'high'),
+       'settings_inactive']
+    ]
+
+    cases.each { |content, reason| assert_pause Shaka::Checkpoint.new(content).result, reason }
+  end
+
+  def test_missing_recommendation_pauses_for_confirmation
+    %w[recommended_model recommended_effort].each do |missing|
+      result = Shaka::Checkpoint.new(default_content.except(missing)).result
+      assert_pause result, 'recommendation_missing'
+      assert_match(/recommendation/, result.fetch('action'))
+    end
   end
 
   def test_unreported_active_settings_pause_for_confirmation

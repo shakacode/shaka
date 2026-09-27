@@ -8,6 +8,7 @@ module Shaka
   # Decides whether an intake already supplies the implementation checkpoint.
   class Checkpoint
     VALUE_ACTION = 'Reply ready if the value stated above holds. Reject it and the task stops here.'
+    RECOMMENDATION_ACTION = 'Make a model and effort recommendation, then rerun checkpoint.'
 
     def self.run(arguments)
       path = content_path(arguments)
@@ -63,7 +64,7 @@ module Shaka
     private
 
     def proceed?
-      value_established? && explicit_settings? && matching_settings? && active_settings? &&
+      value_established? && matching_settings? && active_settings? &&
         immediate_start? && settings_available?
     end
 
@@ -75,15 +76,12 @@ module Shaka
       [true, false].include?(verdict) ? verdict : raise(Error, 'Checkpoint value_established must be true or false.')
     end
 
-    def explicit_settings?
-      %w[requested_model requested_effort recommended_model recommended_effort].all? do |field|
-        @content[field].is_a?(String) && !@content[field].strip.empty?
-      end
-    end
-
     def matching_settings?
-      @content['requested_model'] == @content['recommended_model'] &&
-        @content['requested_effort'] == @content['recommended_effort']
+      recommendation_present? &&
+        %w[model effort].all? do |setting|
+          requested = @content["requested_#{setting}"]
+          requested.nil? || requested == @content["recommended_#{setting}"]
+        end
     end
 
     def active_settings?
@@ -103,13 +101,13 @@ module Shaka
 
     def settings_pause_reason
       return 'settings_unavailable' unless settings_available?
-      return 'settings_not_explicit' unless explicit_settings?
+      return 'recommendation_missing' unless recommendation_present?
       return 'settings_conflict' if settings_conflict?
       return 'settings_unverified' unless active_settings_reported?
       return 'settings_inactive' unless active_settings?
       return 'immediate_start_not_authorized' unless immediate_start?
 
-      'settings_not_explicit'
+      'recommendation_missing'
     end
 
     def settings_conflict? = recommendation_present? && !matching_settings?
@@ -136,7 +134,7 @@ module Shaka
 
       return 'Reply ready to begin implementation.' if reason == 'immediate_start_not_authorized'
 
-      'Confirm a model and effort, then reply ready.'
+      RECOMMENDATION_ACTION
     end
 
     def recommendation_present?

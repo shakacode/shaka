@@ -135,14 +135,14 @@ rules:
   - id: checkpoint-proceed
     phase: plan
     quote: >-
-      Proceed without another response only when the user explicitly supplied both settings,
-      they match the recommendation, they are active and usable in the host, and immediate start
-      is unambiguous.
+      Proceed without another response when immediate start is unambiguous, the recommended
+      settings are active and usable in the host, and any settings the user supplied match the
+      recommendation.
     enforced_by: agent
     note: >-
-      `checkpoint` answers `pause` with a reason unless every one of those conditions holds, so
-      an honestly reported intake cannot skip the turn. It reads only the fields the agent sends
-      it: invented settings that agree with each other still produce `proceed`.
+      `checkpoint` answers `pause` unless the reported conditions hold, so an honestly reported
+      intake cannot skip the turn. It reads only the fields the agent sends it: invented active
+      settings that agree with the recommendation still produce `proceed`.
   - id: no-native-stacks
     phase: plan
     quote: do not create or merge them
