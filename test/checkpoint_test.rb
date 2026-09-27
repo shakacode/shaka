@@ -20,11 +20,6 @@ class CheckpointTest < Minitest::Test
     assert_equal 'proceed', Shaka::Checkpoint.new(default_content).result.fetch('status')
   end
 
-  def test_inactive_matching_settings_pause_with_a_switch_action
-    assert_pause Shaka::Checkpoint.new(default_content.merge('active_model' => 'gpt-5.6-sol')).result,
-                 'settings_inactive'
-  end
-
   def test_unavailable_settings_pause_with_an_available_settings_action
     assert_pause Shaka::Checkpoint.new(default_content.merge('settings_available' => false)).result,
                  'settings_unavailable'
@@ -47,27 +42,28 @@ class CheckpointTest < Minitest::Test
     cases = [
       [default_content.except('requested_effort').merge('requested_model' => 'gpt-5.6-sol'), 'settings_conflict'],
       [default_content.except('requested_model').merge('requested_effort' => 'high'), 'settings_conflict'],
-      [default_content.merge('requested_model' => '  '), 'settings_conflict'],
       [default_content.except('requested_model', 'requested_effort').merge('active_effort' => 'high'),
-       'settings_inactive']
+       'settings_inactive'],
+      [default_content.except('requested_model', 'requested_effort', 'active_model', 'active_effort'),
+       'settings_unverified']
     ]
 
     cases.each { |content, reason| assert_pause Shaka::Checkpoint.new(content).result, reason }
   end
 
-  def test_missing_recommendation_pauses_for_confirmation
+  def test_go_with_blank_requested_setting_uses_active_recommendation
+    result = Shaka::Checkpoint.new(default_content.merge('requested_model' => '  ')).result
+    assert_equal 'proceed', result.fetch('status')
+  end
+
+  def test_missing_recommendation_pauses_for_agent_to_retry
     %w[recommended_model recommended_effort].each do |missing|
-      result = Shaka::Checkpoint.new(default_content.except(missing)).result
+      content = default_content.except(missing)
+      content['settings_available'] = false if missing == 'recommended_effort'
+      result = Shaka::Checkpoint.new(content).result
       assert_pause result, 'recommendation_missing'
       assert_match(/recommendation/, result.fetch('action'))
     end
-  end
-
-  def test_unreported_active_settings_pause_for_confirmation
-    content = default_content.except('active_model', 'active_effort')
-    result = Shaka::Checkpoint.new(content).result
-
-    assert_pause result, 'settings_unverified'
   end
 
   # Issue #36 section 5 retires evidence engines that judge natural-language claims,

@@ -122,14 +122,16 @@ phases:
         `value_established` records the verdict now, not where the task came from: send false
         while the value is still only yours, from work you proposed or an unverified report,
         send true once the user agrees, and omit it when the user named the task.
-        It answers proceed, or pause with the next action. Proceed without another response when
+        It answers proceed, or pause with the next action. When the reason is
+        `recommendation_missing`, complete the recommendation and rerun the checkpoint; the
+        missing input is the agent's to supply. Proceed without another response when
         immediate start is unambiguous, the recommended settings are active and usable in the host,
         and any settings the user supplied match the recommendation. A start word such as `go`
-        does not require the user to restate active settings. Otherwise pause after the
-        recommendation and wait for ready. On resumption verify the settings when possible; a prompt
-        cannot change the runner. Differing settings stay the user's decision; unreported active
-        settings need the user's confirmation; unavailable settings need the user to select
-        available ones and reply ready.
+        does not require the user to restate active settings. For a pause that needs a user
+        decision, explain the next action and wait for ready. On resumption verify the settings
+        when possible; a prompt cannot change the runner. Differing settings stay the user's
+        decision; unreported active settings need the user's confirmation; unavailable settings
+        need the user to select available ones and reply ready.
       - Default to one PR. For larger tasks, read only the
         [task-splitting section](<{{package_root}}/skills/shaka/references/delivery.md#when-a-task-needs-several-prs>).
         Keep one owner and each PR's own tests, review, and authority; every split PR repeats phases

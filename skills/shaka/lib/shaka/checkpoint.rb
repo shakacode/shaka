@@ -7,8 +7,14 @@ require_relative 'error'
 module Shaka
   # Decides whether an intake already supplies the implementation checkpoint.
   class Checkpoint
-    VALUE_ACTION = 'Reply ready if the value stated above holds. Reject it and the task stops here.'
-    RECOMMENDATION_ACTION = 'Make a model and effort recommendation, then rerun checkpoint.'
+    ACTIONS = {
+      'value_not_established' => 'Reply ready if the value stated above holds. Reject it and the task stops here.',
+      'recommendation_missing' => 'Make a model and effort recommendation, then rerun checkpoint.',
+      'settings_unavailable' => 'Select an available model and effort, then reply ready.',
+      'settings_conflict' => 'Resolve the requested and recommended settings, then reply ready.',
+      'settings_unverified' => 'Confirm the active model and effort, then reply ready.',
+      'immediate_start_not_authorized' => 'Reply ready to begin implementation.'
+    }.freeze
 
     def self.run(arguments)
       path = content_path(arguments)
@@ -80,7 +86,8 @@ module Shaka
       recommendation_present? &&
         %w[model effort].all? do |setting|
           requested = @content["requested_#{setting}"]
-          requested.nil? || requested == @content["recommended_#{setting}"]
+          requested.nil? || (requested.is_a?(String) && requested.strip.empty?) ||
+            requested == @content["recommended_#{setting}"]
         end
     end
 
@@ -100,17 +107,15 @@ module Shaka
     end
 
     def settings_pause_reason
-      return 'settings_unavailable' unless settings_available?
       return 'recommendation_missing' unless recommendation_present?
-      return 'settings_conflict' if settings_conflict?
+      return 'settings_unavailable' unless settings_available?
+      return 'settings_conflict' unless matching_settings?
       return 'settings_unverified' unless active_settings_reported?
       return 'settings_inactive' unless active_settings?
       return 'immediate_start_not_authorized' unless immediate_start?
 
-      'recommendation_missing'
+      raise Error, 'Checkpoint has no pause reason.'
     end
-
-    def settings_conflict? = recommendation_present? && !matching_settings?
 
     def active_settings_reported?
       %w[active_model active_effort].all? do |field|
@@ -119,22 +124,12 @@ module Shaka
     end
 
     def action(reason)
-      return VALUE_ACTION if reason == 'value_not_established'
-
-      return 'Select an available model and effort, then reply ready.' if reason == 'settings_unavailable'
-
-      return 'Resolve the requested and recommended settings, then reply ready.' if reason == 'settings_conflict'
-
-      return 'Confirm the active model and effort, then reply ready.' if reason == 'settings_unverified'
-
       if reason == 'settings_inactive'
         return format('Set the host to %<model>s with %<effort>s effort, then reply ready.',
                       model: @content['recommended_model'], effort: @content['recommended_effort'])
       end
 
-      return 'Reply ready to begin implementation.' if reason == 'immediate_start_not_authorized'
-
-      RECOMMENDATION_ACTION
+      ACTIONS.fetch(reason) { raise Error, "Unknown checkpoint pause reason: #{reason}." }
     end
 
     def recommendation_present?

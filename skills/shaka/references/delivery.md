@@ -44,6 +44,10 @@ active settings. Otherwise pause with one next action. Check the actual host
 setting on resume when available; a prompt cannot change the runner. Planning-only
 work returns its plan and usage without an implementation checkpoint.
 
+If the checkpoint reports `recommendation_missing`, supply the omitted model or
+effort recommendation and rerun it. This is an agent input to complete before
+bringing a decision to the user.
+
 Work solo unless delegation is authorized and useful. Obtain a fresh-context
 review before pushing meaningful implementation, using [reviewer selection](review.md#choose-a-local-reviewer).
 A different provider is preferred; the implementation model in a fresh session
