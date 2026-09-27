@@ -5,15 +5,12 @@ require_relative 'error'
 require_relative 'merge_limits'
 require_relative 'configuration/paths'
 require_relative 'configuration/layout'
-require_relative 'repository_config/command_paths'
 require_relative 'repository_config/duplicate_keys'
 require_relative 'repository_config/schema'
 
 module Shaka
   # Loads the small, typed repository contract used by the workflow.
   class RepositoryConfig
-    PATH = Configuration::Paths::CONTRACT
-
     DEFAULT_WIP = { 'include_locations' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
@@ -38,7 +35,9 @@ module Shaka
 
     def select_paths
       @layout = sha ? Configuration::Layout.commit(root: @root, sha:) : Configuration::Layout.worktree(root: @root)
-      @candidate_detected = Configuration::Layout.worktree(root: @root, allow_missing: true) if @candidate_commands
+      @candidate_detected = if @candidate_commands
+                              sha ? Configuration::Layout.worktree(root: @root, allow_missing: true) : @layout
+                            end
       @candidate_layout = @candidate_detected || @layout
       @selection = Configuration::Layout::Selection.new(policy: @layout, candidate: @candidate_layout)
       @config_path = @layout.contract

@@ -2,7 +2,6 @@
 
 require_relative '../error'
 require_relative '../configuration/layout'
-require_relative 'command_paths'
 require_relative 'validation'
 
 module Shaka
