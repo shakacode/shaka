@@ -9,7 +9,9 @@ module Shaka
     HIDDEN_LINE = /\A[ \t]*(?:\||\#{1,6}(?:[ \t]|$)|>|<!--)/
     LIST_ITEM = /\n(?=[ \t]*(?:[-*+]|\d+[.)])[ \t])/
     LIST_MARKER = /\A[ \t]*(?:[-*+]|\d+[.)])[ \t]+/
-    SENTENCE_END = /(?<=[.!?]|[.!?]["')\]])\s+(?=["'(\[]?[[:upper:][:digit:]])/
+    CODE_SPAN = /(`+)(?:(?!\1).)*\1(?!`)/m
+    # Closing quotes, brackets, and emphasis may follow the stop; opening ones may precede the capital.
+    SENTENCE_END = /(?<=[.!?])[*_"')\]]*\s+(?=[*_"'(\[]*[[:upper:][:digit:]])/
 
     def self.words(text) = text.split.count { |token| token.match?(/[[:alnum:]]/) }
 
@@ -45,9 +47,10 @@ module Shaka
 
     # A details block is read only by someone who chooses to open it.
     def collapsed?(line)
-      @depth += line.scan(/<details\b/i).size
+      tags = line.gsub(CODE_SPAN, '')
+      @depth += tags.scan(/<details\b/i).size
       hidden = @depth.positive?
-      @depth = [@depth - line.scan(%r{</details\s*>}i).size, 0].max
+      @depth = [@depth - tags.scan(%r{</details\s*>}i).size, 0].max
       hidden
     end
 
@@ -55,7 +58,7 @@ module Shaka
     def inline_text(unit)
       unit.gsub(/!\[[^\]]*\]\([^)]*\)/, '')
           .gsub(/\[([^\]]*)\]\((?:<[^>]*>|[^)]*)\)/, '\1')
-          .gsub(/(`+)(?:(?!\1).)*\1(?!`)/m, 'Code')
+          .gsub(CODE_SPAN, 'Code')
           .gsub(%r{https?://\S+}, 'Link')
           .gsub(/<[^>]*>/, ' ')
           .sub(LIST_MARKER, '')

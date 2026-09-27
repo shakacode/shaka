@@ -127,11 +127,14 @@ def require_merge_ref!(options)
   raise Shaka::Error, 'merge requires --ref so policy comes from a trusted commit'
 end
 
-# Reads trusted limits through the opening check's guarded Git and neutral directory.
+# Reads trusted limits through the opening check's guarded Git; an unreadable trusted commit is reported.
 def description_prose_limits(root, ref)
-  Shaka::OpeningPublication.with_safe_path(root:, select_gh: false) { Shaka::ProseLimits.from_ref(root:, ref:) }
-rescue Shaka::Error
-  Shaka::ProseLimits.new # A setting that cannot be read safely cannot loosen the defaults.
+  limits = Shaka::OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
+    Shaka::ProseLimits.from_ref(root: candidate_root, ref:)
+  end
+  [limits, {}]
+rescue Shaka::Error => e
+  [Shaka::ProseLimits.new, { 'prose_limits' => "Default prose limits apply: #{e.message}" }]
 end
 
 def walkthrough_body(options)
@@ -236,7 +239,7 @@ begin
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
              root = options[:root] || Dir.pwd
-             prose = description_prose_limits(root, options[:ref])
+             prose, prose_note = description_prose_limits(root, options[:ref])
              Shaka::OpeningPublication.with_safe_path(root:) do |_candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
 
@@ -249,7 +252,7 @@ begin
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
                                                        model: options[:opening_model]).call(described['summary'])
-               published.merge('opening' => opening)
+               published.merge('opening' => opening).merge(prose_note)
              end
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
