@@ -48,10 +48,16 @@ module Shaka
       names.any? do |name|
         path = File.join(directory, name)
         File.symlink?(path) && (options[:all_executables] || File.executable?(path)) &&
-          LocalReviewExecutable.candidate_owned?(File.realpath(path), candidate_root)
+          candidate_link?(path, candidate_root)
       end
     rescue SystemCallError
       :uninspectable # Omit a PATH directory that cannot be inspected.
+    end
+
+    def self.candidate_link?(path, candidate_root)
+      LocalReviewExecutable.candidate_owned?(File.realpath(path), candidate_root)
+    rescue Errno::ENOENT
+      false # A dangling link cannot launch candidate code; inspect the remaining links.
     end
 
     def self.guarded_names(entries, candidate_root, drop_candidate)
@@ -68,6 +74,7 @@ module Shaka
 
       real_directory = File.dirname(File.realpath(selected))
       linked = candidate_executable_link?(real_directory, candidate_root, { all_executables: true })
+      raise Shaka::Error, "#{name} wrapper directory cannot be inspected" if linked == :uninspectable
       raise Shaka::Error, "#{name} wrapper directory contains candidate-backed links" if linked
 
       interpreter_name(selected, name, candidate_root)

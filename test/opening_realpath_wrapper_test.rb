@@ -31,6 +31,13 @@ class OpeningRealpathWrapperTest < Minitest::Test
     end
   end
 
+  def test_dangling_link_beside_real_gh_wrapper_does_not_block_publication
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_dangling_link_safe(dir, root) }
+    end
+  end
+
   private
 
   def add_candidate_helper(root)
@@ -53,6 +60,12 @@ class OpeningRealpathWrapperTest < Minitest::Test
     refute_path_exists File.join(dir, 'candidate-executed')
   end
 
+  def assert_dangling_link_safe(dir, root)
+    output, error, status = run_description(dir, root:) { |bin| real_wrapper(bin, root, 'gh', link_candidate: false) }
+    assert_predicate status, :success?, error
+    assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+  end
+
   def link_gh_wrapper(bin, root)
     real = real_wrapper(bin, root, 'gh')
     source = File.read(real).sub(/\A(#![^\n]+\n)/, "\\1require_relative 'helper'\n")
@@ -65,12 +78,13 @@ class OpeningRealpathWrapperTest < Minitest::Test
     File.chmod(0o755, real)
   end
 
-  def real_wrapper(bin, root, name)
+  def real_wrapper(bin, root, name, link_candidate: true)
     real_dir = File.join(bin, 'real')
     Dir.mkdir(real_dir)
     real = File.join(real_dir, name)
     File.rename(File.join(bin, name), real) if File.exist?(File.join(bin, name))
-    File.symlink(File.join(root, 'helper.rb'), File.join(real_dir, 'helper.rb'))
+    File.symlink(File.join(real_dir, 'missing.rb'), File.join(real_dir, 'dangling.rb'))
+    File.symlink(File.join(root, 'helper.rb'), File.join(real_dir, 'helper.rb')) if link_candidate
     File.symlink(real, File.join(bin, name))
     real
   end
