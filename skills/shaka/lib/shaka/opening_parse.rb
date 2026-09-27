@@ -22,6 +22,7 @@ module Shaka
       return result if result.is_a?(Hash) && result['status'] == 'not_checked'
 
       sentences = result.is_a?(Hash) && result['sentences']
+      sentences = sentences.first(self.class::SENTENCE_LIMIT) if sentences.is_a?(Array)
       return not_checked('the model returned no usable parse') unless valid_sentences?(sentences)
 
       self.class.verdict(sentences)

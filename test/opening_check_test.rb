@@ -22,13 +22,6 @@ class OpeningCheckTest < Minitest::Test
     end
   end
 
-  def test_accepts_a_model_parse_with_extra_fields
-    sentence = parse('shaka merge', false).fetch(:sentences).first.merge(text: COMMAND_FIRST)
-    with_claude({ sentences: [sentence] }) do |root, _trace|
-      assert_equal 'flagged', check(COMMAND_FIRST, root:).fetch('status')
-    end
-  end
-
   def test_passes_a_first_sentence_led_by_what_the_reader_sees
     with_claude(parse('Pull requests', true)) do |root, _trace|
       assert_equal 'passed', check(OUTCOME_FIRST, root:).fetch('status')

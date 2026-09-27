@@ -7,6 +7,24 @@ require_relative '../skills/shaka/lib/shaka/opening_check'
 class OpeningCheckProvidersTest < Minitest::Test
   include OpeningCheckTestHelpers
 
+  COMMAND_FIRST = '`shaka merge` checks the head.'
+
+  def test_accepts_a_model_parse_with_extra_fields
+    sentence = parse('shaka merge', false).fetch(:sentences).first.merge(text: COMMAND_FIRST)
+    with_claude({ sentences: [sentence] }) do |root, _trace|
+      assert_equal 'flagged', check(COMMAND_FIRST, root:).fetch('status')
+    end
+  end
+
+  def test_ignores_sentences_after_the_first_three
+    sentences = Array.new(4) { parse('shaka merge', false).fetch(:sentences).first }
+    with_claude({ sentences: }) do |root, _trace|
+      result = check(COMMAND_FIRST, root:)
+      assert_equal 'flagged', result.fetch('status')
+      assert_equal 3, result.fetch('parse').length
+    end
+  end
+
   def test_codex_can_parse_the_opening
     with_claude(nil) do |root, _trace, bin|
       output = JSON.generate(parse('shaka merge', false))
