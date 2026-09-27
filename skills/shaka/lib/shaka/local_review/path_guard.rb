@@ -117,7 +117,8 @@ module Shaka
 
     def self.env_interpreter(words)
       arguments = env_arguments(words.drop(1))
-      interpreter = arguments.drop_while { |word| word.match?(/\A[A-Za-z_][A-Za-z0-9_]*=/) }.first
+      interpreter = arguments.first
+      raise Shaka::Error, 'env shebang sets environment variables' if interpreter&.match?(/\A[A-Za-z_]\w*=/)
       raise Shaka::Error, 'Cannot determine env shebang interpreter' if interpreter.nil? || interpreter.start_with?('-')
 
       interpreter

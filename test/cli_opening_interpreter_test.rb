@@ -20,10 +20,13 @@ class CliOpeningInterpreterTest < Minitest::Test
     end
   end
 
-  def test_env_split_string_skips_assignments_before_interpreter
+  def test_env_split_string_rejects_path_assignment
     with_repository do |root|
       commit(root)
-      Dir.mktmpdir { |dir| assert_gh_interpreter_safe(dir, root, '#!/usr/bin/env -S FOO=1 node') }
+      Dir.mktmpdir do |dir|
+        assert_unsafe_interpreter_rejected(dir, root, "#!/usr/bin/env -S PATH=#{root} node",
+                                           'env shebang sets environment variables')
+      end
     end
   end
 
@@ -37,7 +40,9 @@ class CliOpeningInterpreterTest < Minitest::Test
   def test_relative_env_interpreter_cannot_run_candidate_executable
     with_repository do |root|
       commit(root)
-      Dir.mktmpdir { |dir| assert_relative_interpreter_rejected(dir, root) }
+      Dir.mktmpdir do |dir|
+        assert_unsafe_interpreter_rejected(dir, root, '#!/usr/bin/env ./node', 'gh interpreter uses a relative path')
+      end
     end
   end
 
@@ -50,15 +55,13 @@ class CliOpeningInterpreterTest < Minitest::Test
 
   private
 
-  def assert_relative_interpreter_rejected(dir, root)
+  def assert_unsafe_interpreter_rejected(dir, root, shebang, message)
     external, = make_bins(dir)
     marker = File.join(dir, 'candidate-node-called')
     add_candidate_node(root, external, marker)
-    output, error, status = run_description(external, root:) do |bin|
-      use_env_node(bin, '#!/usr/bin/env ./node')
-    end
+    output, error, status = run_description(external, root:) { |bin| use_env_node(bin, shebang) }
     refute_predicate status, :success?, output
-    assert_includes error, 'gh interpreter uses a relative path'
+    assert_includes error, message
     refute_path_exists marker
   end
 

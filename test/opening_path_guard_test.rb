@@ -64,11 +64,13 @@ class OpeningPathGuardTest < Minitest::Test
     end
   end
 
-  def test_quoted_env_split_string_fails_closed
+  def test_unsafe_env_split_string_fails_closed
     with_candidate_link do |root, external, _safe|
       File.unlink(File.join(external, 'gh'))
-      write_script(File.join(external, 'gh'), "#!/usr/bin/env -S 'FOO=1 node'\n")
-      assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root) }
+      ["#!/usr/bin/env -S 'FOO=1 node'", "#!/usr/bin/env -S PATH=#{root} node"].each do |shebang|
+        write_script(File.join(external, 'gh'), "#{shebang}\n")
+        assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root) }
+      end
     end
   end
 
