@@ -17,12 +17,12 @@ module Shaka
     def call(summary)
       source = TrustedConfigSource.new(root: @root)
       config = TrustedConfigSource.from_ref(root: @root, ref: @ref)
-      validate_reviewer!(config) if @reviewer
       prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')
+      validate_reviewer!(config) if @reviewer
       OpeningCheck.new(summary:, candidate_root: OpeningCheck.checkout_root(@root),
                        reviewer: @reviewer, model: @model, prompt:).call
     rescue StandardError => e
-      fallback(summary, e)
+      fallback(summary, e, prompt)
     end
 
     private
@@ -42,8 +42,8 @@ module Shaka
       allowed.any? { |entry| entry.values_at('provider', 'model_family').map(&:downcase) == requested }
     end
 
-    def fallback(summary, error)
-      result = OpeningCheck.new(summary:, candidate_root: OpeningCheck.checkout_root(@root)).call
+    def fallback(summary, error, prompt)
+      result = OpeningCheck.new(summary:, candidate_root: OpeningCheck.checkout_root(@root), prompt:).call
       result.merge('reason' => "External opening check unavailable: #{error.message}")
     rescue StandardError => e
       { 'status' => 'not_checked', 'reason' => e.message }

@@ -35,14 +35,6 @@ class OpeningCheckTest < Minitest::Test
     end
   end
 
-  def test_checks_an_opening_without_a_successful_verdict
-    with_claude(parse('shaka merge', false)) do |root, trace|
-      result = check(COMMAND_FIRST, root:)
-      assert_equal 'flagged', result.fetch('status')
-      assert_path_exists trace
-    end
-  end
-
   def test_reuses_only_a_successful_verdict
     with_claude(parse('shaka merge', false)) do |root, trace|
       assert_equal 'flagged', check(COMMAND_FIRST, root:).fetch('status')

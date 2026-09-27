@@ -42,6 +42,27 @@ class OpeningCheckProvidersTest < Minitest::Test
     end
   end
 
+  def test_reuses_a_cached_pass_without_another_model_call
+    with_claude(parse('Pull requests', true)) do |root, trace|
+      assert_equal 'passed', check('Pull requests show the outcome.', root:).fetch('status')
+      File.unlink(trace)
+      assert_equal 'passed', check('Pull requests show the outcome.', root:).fetch('status')
+      refute_path_exists trace
+    end
+  end
+
+  def test_unreadable_cache_entry_retries_the_model
+    with_claude(parse('Pull requests', true)) do |root, trace|
+      assert_equal 'passed', check('Pull requests show the outcome.', root:).fetch('status')
+      path = Dir.glob(File.join(root, 'cache', '*')).fetch(0)
+      File.unlink(path)
+      Dir.mkdir(path)
+      File.unlink(trace)
+      assert_equal 'passed', check('Pull requests show the outcome.', root:).fetch('status')
+      assert_path_exists trace
+    end
+  end
+
   private
 
   def write_model(bin, name, body)

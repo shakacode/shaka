@@ -34,10 +34,42 @@ class CliOpeningCheckTest < Minitest::Test
     with_repository('opening_check' => { 'enabled' => true }) do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        output, error, status = run_description(dir, root:, reviewer: 'anthropic/claude')
+        output, error, status = run_description(dir, root:, reviewer: 'anthropic/claude', model: 'claude-haiku')
         assert_predicate status, :success?, error
         assert_equal 'flagged', JSON.parse(output).dig('opening', 'status')
         assert_path_exists File.join(dir, 'claude-called')
+        assert_includes JSON.parse(File.read(File.join(dir, 'claude-args.json'))), 'claude-haiku'
+      end
+    end
+  end
+
+  def test_trusted_prompt_reaches_external_model
+    with_trusted_prompt do |root|
+      Dir.mktmpdir do |dir|
+        output, error, status = run_description(dir, root:, reviewer: 'anthropic/claude')
+        assert_predicate status, :success?, error
+        assert_equal 'flagged', JSON.parse(output).dig('opening', 'status')
+        assert_includes File.read(File.join(dir, 'opening-prompt.txt')), 'Name the reader-facing subject.'
+      end
+    end
+  end
+
+  def test_trusted_prompt_reaches_host_fallback
+    with_trusted_prompt do |root|
+      Dir.mktmpdir do |dir|
+        output, error, status = run_description(dir, root:, reviewer: 'unlisted/model')
+        assert_predicate status, :success?, error
+        assert_includes JSON.parse(output).dig('opening', 'prompt'), 'Name the reader-facing subject.'
+      end
+    end
+  end
+
+  def test_trusted_prompt_reaches_default_host_model
+    with_trusted_prompt do |root|
+      Dir.mktmpdir do |dir|
+        output, error, status = run_description(dir, root:, ref: true)
+        assert_predicate status, :success?, error
+        assert_includes JSON.parse(output).dig('opening', 'prompt'), 'Name the reader-facing subject.'
       end
     end
   end
@@ -53,46 +85,19 @@ class CliOpeningCheckTest < Minitest::Test
 
   private
 
+  def with_trusted_prompt
+    with_repository('opening_check' => { 'enabled' => true, 'prompt_file' => '.agents/opening.md' }) do |root|
+      File.write(File.join(root, '.agents/opening.md'), 'Name the reader-facing subject.')
+      commit(root)
+      yield root
+    end
+  end
+
   def assert_host_fallback(dir, root:, reviewer:)
     output, error, status = run_description(dir, root:, reviewer:)
     assert_predicate status, :success?, error
     assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
     assert_path_exists File.join(dir, 'published.md')
     refute_path_exists File.join(dir, 'claude-called')
-  end
-
-  def run_description(dir, root: ROOT, reviewer: nil)
-    write_executable(dir, 'gh', fake_gh)
-    write_executable(dir, 'claude', fake_claude)
-    content = File.join(dir, 'content.json')
-    File.write(content, JSON.generate(description_content))
-    options = ['--root', root, '--content-file', content]
-    options.push('--ref', 'HEAD', '--opening-reviewer', reviewer) if reviewer
-    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir },
-                   COMMAND, 'description', 'owner/repo', '1', *options)
-  end
-
-  def commit(root)
-    system('git', '-C', root, 'init', '-q', exception: true)
-    system('git', '-C', root, 'add', '.', exception: true)
-    system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
-           'commit', '-qm', 'trusted', exception: true)
-  end
-
-  def description_content
-    provenance = %w[task_source initial_prompt workflow_version requested_model requested_effort
-                    recommended_model recommended_effort active_model active_effort].to_h { |key| [key, 'UNKNOWN'] }
-    provenance['task_source'] = 'issue'
-    provenance['initial_prompt'] = 'EXCLUDED'
-    { 'identity' => { 'agent' => 'Codex' }, 'summary' => SUMMARY, 'deployment' => 'none',
-      'table' => { 'columns' => %w[Check Result], 'rows' => [%w[validate pass]] },
-      'provenance' => provenance,
-      'details' => [{ 'summary' => 'Usage', 'body' => "| Metric | Value |\n| --- | --- |\n| Total | 1 |" }] }
-  end
-
-  def write_executable(dir, name, source)
-    path = File.join(dir, name)
-    File.write(path, "#!#{RbConfig.ruby}\n#{source}")
-    File.chmod(0o755, path)
   end
 end

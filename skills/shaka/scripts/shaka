@@ -226,10 +226,11 @@ begin
            when 'description'
              described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
              body = Shaka::Publication.description(described)
+             published = github.description(body:)
              opening = Shaka::OpeningPublication.new(root: options[:root] || Dir.pwd, ref: options[:ref],
                                                      reviewer: options[:opening_reviewer],
                                                      model: options[:opening_model]).call(described['summary'])
-             github.description(body:).merge('opening' => opening)
+             published.merge('opening' => opening)
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
                           key: options.fetch(:key), comment: options[:comment])

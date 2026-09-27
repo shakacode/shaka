@@ -247,11 +247,12 @@ opening_check:
 The agent uses `review.local_review_agents` in its existing preference order:
 a different provider first, then another listed provider, then the development
 model when no listed CLI completes the parse. `enabled` defaults to `false`;
-having a CLI on `PATH` alone does not send text to it. `prompt_file` replaces
-the default parsing instructions for both external and development-model checks.
-Shaka reads that file from the trusted default-branch commit, applies the same
-file checks as `review.prompt_file`, and treats the PR opening as data. The
-description still publishes if the advisory check fails.
+having a CLI on `PATH` alone does not send text to it. A valid `prompt_file`
+replaces the default parsing instructions for both external and development-model
+checks. Shaka reads that file from the trusted default-branch commit, applies
+the same file checks as `review.prompt_file`, and treats the PR opening as data.
+If the configured check cannot run, the description still publishes and the
+development model receives a fallback prompt with the reason.
 
 ## Standard command scripts
 
