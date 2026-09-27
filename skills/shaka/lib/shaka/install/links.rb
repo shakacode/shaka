@@ -2,11 +2,16 @@
 
 require 'fileutils'
 require_relative 'package'
+require_relative 'link_lock'
+require_relative 'directory_safety'
 
 module Shaka
   module Install
-    # Switches only Shaka owned host links after the complete package is ready.
+    # Points agent skill links at the validated managed copy; see install/README.md.
     class Links
+      include LinkLock
+      include DirectorySafety
+
       def initialize(skills_dir, managed, source, names)
         @skills_dir = skills_dir
         @managed = managed
@@ -15,9 +20,12 @@ module Shaka
       end
 
       def switch_all(target)
-        preflight(target)
-        previous = @names.to_h { |name| [name, old_target(name)] }
-        switch_links(target, previous)
+        ensure_safe_directory(@skills_dir, 'Host skills directory')
+        with_lock(@skills_dir) do
+          preflight(target)
+          previous = @names.to_h { |name| [name, old_target(name)] }
+          switch_links(target, previous)
+        end
       end
 
       private
@@ -26,16 +34,29 @@ module Shaka
         changed = []
         begin
           @names.each do |name|
-            switch_one(name, target)
-            changed << name
+            switch_and_record(name, target, changed)
           end
-        rescue SystemCallError
-          changed.reverse_each { |name| restore(name, previous[name]) }
-          raise
+        rescue SystemCallError, IOError => e
+          restore_links(changed, previous)
+          raise e
+        end
+      end
+
+      def restore_links(changed, previous)
+        changed.reverse_each do |name|
+          restore(name, previous[name])
+        rescue SystemCallError, IOError => e
+          warn "Could not restore #{destination(name)}: #{e.message}"
         end
       end
 
       def destination(name) = File.join(@skills_dir, name)
+
+      def switch_and_record(name, target, changed)
+        message = switch_one(name, target)
+        changed << name
+        puts message
+      end
 
       def old_target(name)
         File.readlink(destination(name)) if File.symlink?(destination(name))
@@ -57,42 +78,55 @@ module Shaka
           next unless File.symlink?(destination(name))
 
           target = old_target(name)
-          next unless target == File.join(@source, 'skills', name) || managed_target?(name, target)
+          next unless source_target?(name, target) || managed_target?(name, target)
 
-          raise ArgumentError, "Existing Shaka skill #{name} was omitted; repeat its install flag"
+          raise ArgumentError, "Existing Shaka skill #{name} was omitted; unlink its managed link " \
+                               'before using a package without it, or repeat its install flag'
         end
       end
 
       def owned?(name)
         target = old_target(name)
         return false unless target
-        return true if target == File.join(@source, 'skills', name)
+        return true if source_target?(name, target)
 
         managed_target?(name, target)
       end
 
+      def source_target?(name, target)
+        source_skill = File.join(@source, 'skills', name)
+        target == source_skill || File.realpath(File.expand_path(target, @skills_dir)) == File.realpath(source_skill)
+      rescue Errno::ENOENT
+        false
+      end
+
       def managed_target?(name, target)
-        package = File.dirname(target, 2)
-        package.start_with?("#{@managed}/") && File.basename(package).match?(Package::ID_PATTERN) &&
-          target == File.join(package, 'skills', name)
+        expanded = File.expand_path(target, @skills_dir)
+        package = File.dirname(expanded, 2)
+        File.dirname(package) == @managed && File.basename(package).match?(Package::ID_PATTERN) &&
+          expanded == File.join(package, 'skills', name)
       end
 
       def switch_one(name, package)
         target = File.join(package, 'skills', name)
-        return puts("Already installed: #{destination(name)}") if old_target(name) == target
+        return "Already installed: #{destination(name)}" if old_target(name) == target
 
-        FileUtils.mkdir_p(@skills_dir)
-        temporary = File.join(@skills_dir, ".#{name}.shaka-#{Process.pid}")
-        File.symlink(target, temporary)
-        File.rename(temporary, destination(name))
-        puts "Installed: #{destination(name)} -> #{target}"
-      ensure
-        File.unlink(temporary) if temporary && File.symlink?(temporary)
+        replace_link(name, target, '')
+        "Installed: #{destination(name)} -> #{target}"
       end
 
       def restore(name, previous)
-        File.unlink(destination(name))
-        File.symlink(previous, destination(name)) if previous
+        return File.unlink(destination(name)) unless previous
+
+        replace_link(name, previous, 'restore-')
+      end
+
+      def replace_link(name, target, suffix)
+        temporary = File.join(@skills_dir, ".#{name}.shaka-#{suffix}#{Process.pid}")
+        created = File.symlink(target, temporary).zero?
+        File.rename(temporary, destination(name))
+      ensure
+        File.unlink(temporary) if created && File.symlink?(temporary)
       end
     end
   end

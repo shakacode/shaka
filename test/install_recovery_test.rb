@@ -14,6 +14,7 @@ class InstallRecoveryTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_includes output, 'rct was omitted'
+    assert_includes output, 'unlink its managed link'
     assert_equal previous, File.readlink(@destination)
   end
 
@@ -57,6 +58,18 @@ class InstallRecoveryTest < Minitest::Test
 
     refute_equal previous, package_path
     assert_equal 'version two', File.read(File.join(@destination, 'SKILL.md'))
+  end
+
+  def test_doctor_reports_missing_managed_metadata_as_a_failure
+    replace_fixture_with_full_skill
+    output, status = run_installer('--skills-dir', @skills_dir)
+    assert_predicate status, :success?, output
+    File.unlink(File.join(package_path, '.shaka-install.json'))
+    output, status = Open3.capture2e(File.join(@destination, 'scripts', 'shaka'), 'doctor',
+                                     '--installation-json')
+
+    refute_predicate status, :success?
+    assert_includes output, 'Installed package metadata is missing'
   end
 
   def test_managed_directory_can_be_chosen_explicitly

@@ -138,9 +138,10 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   checks configured, the trusted seam's `merge.required_checks` stands in and Shaka
   enforces it (see the merge boundary). COMMENT never substitutes for APPROVE.
 - **D5 (R8, R10):** copy the complete skill into a durable managed package outside
-  source checkouts, record its exact source revision or development base and content
-  hash, and link it into an explicit skills directory. Refuse foreign targets and
-  preserve user settings and previous packages for rollback.
+  the installing source checkout, record its exact source revision when verified, or a development
+  base when available, together with a content hash. Link it into an explicit
+  skills directory. Refuse foreign targets and preserve user settings and previous
+  packages for rollback.
 - **D6 (R10):** runtime uses Ruby standard libraries. Development uses Bundler,
   Minitest, and ordinary RuboCop defaults through `bin/validate`.
 - **D7 (R2, R12, R17):** repository seams own CI commands and triggers behind fixed
@@ -274,6 +275,8 @@ from any new file, database, or scheduler. Each delivery
 retains one owner and the same repository gates. This does not restore predecessor fleet
 machinery; claim adoption only after a real tower-to-delivery trial.
 
-Rollback: select a prior managed package with `bin/install --rollback PACKAGE_ID`,
+Rollback: select a prior managed package with
+`bin/install --skills-dir DIR --rollback PACKAGE_ID` with the same optional
+`--managed-dir DIR` and its recorded tower flags,
 or remove the verified skill link. Preserve unrelated installations and user files. See
 [upgrade and removal](../skills/shaka/references/installation.md#upgrade).

@@ -2,10 +2,11 @@
 
 require 'open3'
 require 'uri'
+require_relative 'version'
 
 module Shaka
   module Install
-    # Labels copied bytes with an exact Git revision only when every package file matches HEAD.
+    # Records where copied skills came from; see install/README.md.
     class Source
       def initialize(root, names, tree)
         @root = root
@@ -15,11 +16,7 @@ module Shaka
 
       def version
         path = File.join(@root, 'skills/shaka/lib/shaka/version.rb')
-        match = File.read(path).match(/^\s*VERSION\s*=\s*['"]([^'"]+)['"]/) if File.file?(path)
-        value = match ? match[1] : 'UNKNOWN'
-        raise ArgumentError, 'Invalid Shaka version' unless value.match?(/\A[A-Za-z0-9][A-Za-z0-9._+-]*\z/)
-
-        value
+        Version.read(path)
       end
 
       def identity(hash)
@@ -36,7 +33,8 @@ module Shaka
         return false unless revision
 
         tracked = revision_files
-        tracked && tracked.keys.sort == selected_files.sort && clean? && matching_blobs?(tracked)
+        tracked && tracked.keys.sort == selected_files.sort && tracked_directories?(tracked) &&
+          clean? && matching_blobs?(tracked)
       end
 
       def git(*)
@@ -68,12 +66,38 @@ module Shaka
         paths.map { |path| path.delete_prefix("#{@root}/") }
       end
 
-      def matching_blobs?(tracked)
-        tracked.all? do |path, (mode, object)|
-          actual = File.join(@root, path)
-          expected_mode = File.executable?(actual) ? '100755' : '100644'
-          mode == expected_mode && git('hash-object', '--path', path, actual) == object
+      def tracked_directories?(tracked)
+        return false unless @names.all? { |name| tracked.keys.any? { |path| path.start_with?("skills/#{name}/") } }
+
+        selected_directories.all? do |directory|
+          relative = directory.delete_prefix("#{@root}/")
+          tracked.keys.any? { |path| path.start_with?("#{relative}/") }
         end
+      end
+
+      def selected_directories
+        @names.flat_map { |name| @tree.entries(@root, name).select { |path| File.directory?(path) } }
+      end
+
+      def matching_blobs?(tracked)
+        return false unless matching_modes?(tracked)
+
+        tracked.each_slice(100).all? { |batch| matching_blob_batch?(batch) }
+      end
+
+      def matching_modes?(tracked)
+        tracked.all? do |path, (mode, _object)|
+          actual = File.join(@root, path)
+          file_mode = File.stat(actual).mode
+          expected_mode = file_mode.anybits?(0o100) ? '100755' : '100644'
+          file_mode.nobits?(0o002) && mode == expected_mode
+        end
+      end
+
+      def matching_blob_batch?(batch)
+        paths = batch.map { |path,| File.join(@root, path) }
+        hashes = git_raw('hash-object', '--no-filters', '--', *paths)&.lines&.map(&:strip)
+        hashes == batch.map { |_path, (_mode, object)| object }
       end
 
       def clean?

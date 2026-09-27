@@ -14,6 +14,13 @@ The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
 Start a new chat if the skill does not appear. See [coding agents](coding-agents.md)
 for environment-specific setup.
 
+Installation keeps a managed copy of the Shaka skill and links your coding agent
+to it. You can remove the source checkout after installation; the skill and its
+workflow still work. On upgrade, Shaka keeps the previous copy. To roll back
+after removing the checkout, get a source checkout again and run its installer.
+See [install and maintain Shaka](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/installation.md)
+for the procedure.
+
 Use a source installation: the published gem is a name-reservation prerelease
 without the current workflow.
 

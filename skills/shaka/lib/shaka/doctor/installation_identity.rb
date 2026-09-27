@@ -3,6 +3,7 @@
 require 'json'
 require_relative '../error'
 require_relative '../version'
+require_relative '../install/package'
 
 module Shaka
   class Doctor
@@ -10,23 +11,48 @@ module Shaka
     class InstallationIdentity
       def self.read
         path = File.expand_path('../../../../../.shaka-install.json', __dir__)
-        return uninstalled unless File.file?(path)
+        return missing_metadata(path) unless File.file?(path)
+        raise Shaka::Error, 'Installed package metadata is invalid.' if File.symlink?(path)
 
         identity = JSON.parse(File.read(path))
-        raise Shaka::Error, 'Installed package metadata is invalid.' unless valid?(identity)
+        raise Shaka::Error, 'Installed package metadata is invalid.' unless valid?(identity, path)
 
         identity
       rescue JSON::ParserError => e
         raise Shaka::Error, "Installed package metadata is invalid: #{e.message}"
       end
 
-      def self.valid?(identity)
-        return false unless identity.is_a?(Hash) && identity['version'].is_a?(String)
+      def self.missing_metadata(path)
+        package = File.basename(File.dirname(path))
+        raise Shaka::Error, 'Installed package metadata is missing.' if package.match?(Install::Package::ID_PATTERN)
 
-        source = identity['source']
+        uninstalled
+      end
+
+      def self.valid?(identity, path)
+        return false unless identity.is_a?(Hash) && identity['version'].is_a?(String)
+        return false unless valid_source?(identity['source'])
+        return false unless valid_skills?(identity['skills'])
+
+        valid_package_id?(identity, path)
+      end
+
+      def self.valid_skills?(skills)
+        Install::Package.valid_skills?(skills)
+      end
+
+      def self.valid_source?(source)
         source.is_a?(Hash) && %w[revision development].include?(source['kind']) &&
           source['content_sha256'].is_a?(String) &&
           (source['kind'] != 'revision' || source['revision'].is_a?(String))
+      end
+
+      def self.valid_package_id?(identity, path)
+        package = File.basename(File.dirname(path))
+        return true unless package.match?(Install::Package::ID_PATTERN)
+
+        identity['package_id'] == package &&
+          Install::Package.identity_for(identity['version'], identity['source']) == package
       end
 
       def self.uninstalled
@@ -35,7 +61,8 @@ module Shaka
                         'base_revision' => nil, 'content_sha256' => nil } }
       end
 
-      private_class_method :valid?, :uninstalled
+      private_class_method :valid?, :valid_source?, :valid_skills?, :valid_package_id?, :uninstalled,
+                           :missing_metadata
     end
   end
 end

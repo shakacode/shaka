@@ -32,9 +32,12 @@ begin
   names = ['shaka']
   names << 'rct' if with_rct
   names.push('mct-claude', 'rct-claude') if with_claude_towers
-  Shaka::Installer.new(source_root: File.expand_path('..', __dir__), skills_dir: skills_dir,
+  invoked_root = File.expand_path('..', File.dirname($PROGRAM_NAME))
+  resolved_root = File.expand_path('..', __dir__)
+  source_root = File.realpath(invoked_root) == resolved_root ? invoked_root : resolved_root
+  Shaka::Installer.new(source_root: source_root, skills_dir: skills_dir,
                        names: names, rollback: rollback, managed_dir: managed_dir).run
-rescue OptionParser::ParseError, SystemCallError, ArgumentError => e
+rescue OptionParser::ParseError, SystemCallError, IOError, ArgumentError => e
   warn e.message
   exit 1
 end

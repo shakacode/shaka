@@ -36,7 +36,7 @@ module Shaka
       parser.parse!(arguments)
       return help(parser) if options[:help]
 
-      return report_installation(arguments) if options[:installation_json]
+      return report_installation(arguments, options) if options[:installation_json]
 
       report(arguments, options)
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
@@ -52,8 +52,9 @@ module Shaka
       subject.blocked? ? 1 : 0
     end
 
-    def self.report_installation(arguments)
+    def self.report_installation(arguments, options)
       raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
+      raise OptionParser::InvalidArgument, 'flags cannot be combined' if options[:root] || options[:host]
 
       puts JSON.generate(InstallationIdentity.read)
       0
@@ -88,7 +89,7 @@ module Shaka
     def checks = @checks ||= @source.call
 
     def blocked?
-      checks.any? { |item| item.fetch(:status) == 'failed' } || installation_summary.start_with?('[FAILED]')
+      checks.any? { |item| item.fetch(:status) == 'failed' } || installation_failed?
     end
 
     def report
@@ -102,7 +103,7 @@ module Shaka
     def ordered = checks.sort_by.with_index { |item, index| [-SEVERITY.fetch(item.fetch(:status)), index] }
 
     def overall
-      return 'failed' if installation_summary.start_with?('[FAILED]')
+      return 'failed' if installation_failed?
 
       checks.map { |item| item.fetch(:status) }.max_by { |status| SEVERITY.fetch(status) } || 'healthy'
     end
@@ -111,8 +112,11 @@ module Shaka
     # is, so the report always says which host it used and how sure it is.
     def context = "host #{named_host} · root #{@root}"
 
-    def installation_summary
-      @installation_summary ||= render_installation_summary
+    def installation_summary = @installation_summary ||= render_installation_summary
+
+    def installation_failed?
+      installation_summary
+      !@installation_error.nil?
     end
 
     def render_installation_summary
@@ -121,6 +125,7 @@ module Shaka
       "installation #{identity.fetch('version')} · #{source_summary(source)} · " \
         "package #{identity['package_id'] || 'UNKNOWN'}"
     rescue Shaka::Error, KeyError, TypeError, SystemCallError => e
+      @installation_error = e
       "[FAILED] Installation — #{e.message}"
     end
 

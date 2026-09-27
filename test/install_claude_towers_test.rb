@@ -80,6 +80,17 @@ class InstallClaudeTowersTest < Minitest::Test
       FileUtils.mkdir_p(source(name))
       File.write(File.join(source(name), 'SKILL.md'), content)
     end
+    write_helper
+    version_dir = File.join(source('shaka'), 'lib/shaka')
+    FileUtils.mkdir_p(version_dir)
+    File.write(File.join(version_dir, 'version.rb'), "module Shaka\n  VERSION = '0.1.0.pre.1'\nend\n")
+  end
+
+  def write_helper
+    helper = File.join(source('shaka'), 'scripts/shaka')
+    FileUtils.mkdir_p(File.dirname(helper))
+    File.write(helper, "#!/usr/bin/env ruby\n")
+    File.chmod(0o755, helper)
   end
 
   def source(name)
