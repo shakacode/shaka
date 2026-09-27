@@ -5,6 +5,7 @@
 require 'json'
 
 module Shaka
+  # Checks the model answer's JSON shape before the verdict rule reads it.
   module OpeningParse
     MAX_REPORT_BYTES = 20_000
     FIELDS = %w[character reader_facing action object hidden_actions internal_terms].freeze

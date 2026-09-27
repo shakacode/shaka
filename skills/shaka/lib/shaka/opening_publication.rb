@@ -7,6 +7,7 @@ require_relative 'reviewer_selection'
 require_relative 'trusted_config_source'
 
 module Shaka
+  # Loads the opted-in parser choice after a PR description is published.
   class OpeningPublication
     def initialize(root:, ref:, reviewer: nil, model: nil)
       @root = root

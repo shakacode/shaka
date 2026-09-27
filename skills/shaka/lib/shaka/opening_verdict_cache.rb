@@ -6,6 +6,7 @@ require 'digest'
 require 'fileutils'
 
 module Shaka
+  # Reuses only successful verdicts for the same opening, model, and prompt.
   class OpeningVerdictCache
     def initialize(opening:, model:, prompt:, directory:)
       key = Digest::SHA256.hexdigest([model, prompt, opening].join("\0"))

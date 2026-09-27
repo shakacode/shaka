@@ -6,6 +6,7 @@ require_relative '../error'
 require_relative 'executable'
 
 module Shaka
+  # Screens command lookup paths before candidate data can influence a process.
   module LocalReviewPathGuard
     GUARDED_EXECUTABLES = %w[gh git claude codex grok].freeze
 

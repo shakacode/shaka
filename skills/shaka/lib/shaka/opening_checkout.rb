@@ -3,6 +3,7 @@
 # Finds the candidate checkout boundary without invoking its Git executable.
 
 module Shaka
+  # Finds the outer checkout directory without launching Git.
   module OpeningCheckout
     module_function
 

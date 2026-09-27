@@ -6,6 +6,7 @@ require_relative 'validation'
 
 module Shaka
   class RepositoryConfig
+    # Validates explicit consent and an optional trusted custom prompt path.
     class OpeningSchema
       include Validation
 
