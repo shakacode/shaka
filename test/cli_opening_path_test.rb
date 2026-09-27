@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require_relative 'repository_fixture'
 require_relative 'cli_opening_check_fakes'
+require_relative '../skills/shaka/lib/shaka/opening_publication'
 require 'json'
 require 'rbconfig'
 
@@ -21,19 +22,38 @@ class CliOpeningPathTest < Minitest::Test
     end
   end
 
+  def test_direct_opening_publication_filters_candidate_git
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_direct_opening_safe(dir, root) }
+    end
+  end
+
   private
 
   def assert_candidate_git_rejected(dir, root)
-    Dir.mkdir(bin = File.join(root, 'candidate-bin'))
-    trace = File.join(dir, 'candidate-git-called')
-    write_executable(bin, 'git', "File.write(#{trace.inspect}, '')")
-    with_candidate_path(bin) do
+    with_candidate_git(dir, root) do |trace|
       output, error, status = run_description(dir, root:, ref: true)
       assert_predicate status, :success?, error
       assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
       refute_path_exists trace
       assert_path_exists File.join(dir, 'published.md')
     end
+  end
+
+  def assert_direct_opening_safe(dir, root)
+    with_candidate_git(dir, root) do |trace|
+      result = Shaka::OpeningPublication.new(root:, ref: 'HEAD').call(SUMMARY)
+      assert_equal 'host_check', result.fetch('status')
+      refute_path_exists trace
+    end
+  end
+
+  def with_candidate_git(dir, root)
+    Dir.mkdir(bin = File.join(root, 'candidate-bin'))
+    trace = File.join(dir, 'candidate-git-called')
+    write_executable(bin, 'git', "File.write(#{trace.inspect}, '')")
+    with_candidate_path(bin) { yield trace }
   end
 
   def with_candidate_path(bin)
