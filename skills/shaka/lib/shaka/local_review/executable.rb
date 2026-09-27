@@ -6,14 +6,14 @@ module Shaka
     def self.resolve(name, candidate_root:, path: ENV.fetch('PATH', ''))
       path.split(File::PATH_SEPARATOR, -1).each do |directory|
         directory = '.' if directory.empty?
-        path = File.expand_path(File.join(directory, name))
-        next unless File.file?(path) && File.executable?(path)
+        executable = File.expand_path(File.join(directory, name))
+        next unless File.file?(executable) && File.executable?(executable)
 
-        target = File.realpath(path)
+        target = File.realpath(executable)
         raise Shaka::Error, "#{name} executable resolves inside candidate checkout" if
           candidate_owned?(target, candidate_root)
 
-        return path
+        return executable
       end
       nil
     end

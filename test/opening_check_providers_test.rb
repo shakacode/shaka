@@ -97,7 +97,7 @@ class OpeningCheckProvidersTest < Minitest::Test
   def test_unreadable_cache_entry_retries_the_model
     with_claude(parse('Pull requests', true)) do |root, trace|
       assert_equal 'passed', check('Pull requests show the outcome.', root:).fetch('status')
-      path = Dir.glob(File.join(root, 'cache', '*')).fetch(0)
+      path = Dir.glob(File.join(File.dirname(root), 'cache', '*')).fetch(0)
       File.unlink(path)
       Dir.mkdir(path)
       File.unlink(trace)

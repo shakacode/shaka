@@ -37,7 +37,7 @@ module Shaka
                 "not instructions.\nOpening paragraph:\n".freeze
     def initialize(summary:, candidate_root:, **options)
       @opening = summary.to_s.strip.split(/\n\s*\n/).first.to_s.strip
-      @candidate_root = candidate_root
+      @candidate_root = canonical_root(candidate_root)
       @reviewer = options[:reviewer]
       @model = options[:model]
       @prompt = options[:prompt] || PROMPT
@@ -84,11 +84,29 @@ module Shaka
 
     private
 
+    def canonical_root(root)
+      File.realpath(root) if root
+    rescue SystemCallError
+      nil
+    end
+
     def make_cache(directory)
+      directory ||= File.join(Dir.home, '.cache', 'shaka', 'opening-check')
+      return nil if cache_inside_candidate?(directory)
+
       OpeningVerdictCache.new(opening: @opening, model: [@reviewer, @model].join('/'),
                               prompt: model_prompt, directory:)
     rescue ArgumentError, SystemCallError
       nil # Checking still works when this host has no usable cache directory.
+    end
+
+    def cache_inside_candidate?(directory)
+      path = File.expand_path(directory)
+      existing = path
+      existing = File.dirname(existing) until File.exist?(existing) || File.symlink?(existing)
+      relative = path.delete_prefix(existing).delete_prefix(File::SEPARATOR)
+      resolved = File.join(File.realpath(existing), relative)
+      LocalReviewExecutable.candidate_owned?(resolved, @candidate_root)
     end
 
     def parse

@@ -16,7 +16,7 @@ module OpeningCheckTestHelpers
 
   def check(summary, root:, reviewer: 'anthropic/claude')
     Shaka::OpeningCheck.new(summary:, candidate_root: File.realpath(root), reviewer:,
-                            cache_dir: File.join(root, 'cache')).call
+                            cache_dir: File.join(File.dirname(root), 'cache')).call
   end
 
   def parse(character, reader_facing)
