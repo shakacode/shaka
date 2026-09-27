@@ -13,8 +13,8 @@ repository configuration changes for review.
 
 If the repository already has a valid version-one Shaka configuration under
 `.agents/`, ask: “Upgrade this repository's Shaka configuration layout.” The agent
-previews the exact moves and repairs with `shaka seam upgrade --root DIR`, resolves
-blockers, then applies with `--apply --digest PREVIEW_DIGEST`. The [layout upgrade procedure](../skills/shaka/references/migration.md#upgrade-the-configuration-layout)
+will preview the moves and repairs for review before applying them. The
+[layout upgrade procedure](../skills/shaka/references/migration.md#upgrade-the-configuration-layout)
 explains recovery and validation. Existing legacy layouts remain readable while a
 migration PR is under review.
 

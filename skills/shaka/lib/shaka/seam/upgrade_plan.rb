@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'digest'
+require 'json'
 require 'open3'
 require 'pathname'
 require_relative '../configuration'
@@ -9,7 +10,11 @@ require_relative 'upgrade_plan/inventory'
 require_relative 'upgrade_plan/command_repair'
 require_relative 'upgrade_plan/root_repair'
 require_relative 'upgrade_plan/reference_patterns'
+require_relative 'upgrade_plan/symlink_chain'
 require_relative 'upgrade_plan/reference_dependencies'
+require_relative 'upgrade_plan/indexed_references'
+require_relative 'upgrade_plan/private_tools'
+require_relative 'upgrade_plan/continued_references'
 require_relative 'upgrade_plan/references'
 
 module Shaka
@@ -19,13 +24,20 @@ module Shaka
       PATHS = Configuration::Paths
       OLD_ROOT = 'root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)'
       GIT_ROOT = Configuration::WrapperTemplate::SHELL_ROOT
-      RUBY_GIT_ROOT = "IO.popen(['git', '-C', __dir__, 'rev-parse', '--show-toplevel'], &:read).strip"
+      RUBY_GIT_ROOT = "IO.popen({ 'GIT_DIR' => nil, 'GIT_WORK_TREE' => nil, 'GIT_COMMON_DIR' => nil, " \
+                      "'GIT_PREFIX' => nil, 'GIT_CEILING_DIRECTORIES' => nil }, " \
+                      "['git', '-C', __dir__, 'rev-parse', '--show-toplevel'], " \
+                      '&:read).delete_suffix("\\n")'
 
       include Inventory
       include CommandRepair
       include RootRepair
       include ReferencePatterns
+      include SymlinkChain
       include ReferenceDependencies
+      include IndexedReferences
+      include PrivateTools
+      include ContinuedReferences
       include References
 
       attr_reader :changes, :blockers, :report
@@ -43,14 +55,13 @@ module Shaka
       def build
         preflight_directories
         layout = Configuration::Layout.worktree(root: @root, allow_missing: true)
+        inventory(layout)
+        scan_reference_inventory if layout == Configuration::Layout::LEGACY
+        dirty_overlap
+        finish_report(layout)
       rescue Shaka::Error => e
         @blockers << "#{e.message}; resolve the partial migration before retrying"
         finish_report(nil)
-      else
-        inventory(layout)
-        scan_references if layout == Configuration::Layout::LEGACY
-        dirty_overlap
-        finish_report(layout)
       end
 
       def finish_report(layout)
@@ -70,8 +81,8 @@ module Shaka
         @changes.flat_map { |change| [change.fetch(:from), change.fetch(:to)] }.uniq.sort
       end
 
-      def desired_states
-        states = entries.to_h { |path| [path, snapshot(path)] }
+      def desired_states(original = original_states)
+        states = original.dup
         @changes.each do |change|
           states[change[:to]] = change.fetch(:after)
           states[change[:from]] = absent if change[:from] != change[:to]
@@ -80,6 +91,8 @@ module Shaka
       end
 
       def original_states = entries.to_h { |path| [path, snapshot(path)] }
+
+      def fresh?(states, reviewed_digest) = digest_for(states) == reviewed_digest
 
       def snapshot(relative)
         absolute = File.join(@root, relative)
@@ -108,11 +121,14 @@ module Shaka
         'ready'
       end
 
-      def digest
+      def digest = digest_for(original_states)
+
+      def digest_for(states)
         payload = @changes.map do |change|
-          [change[:from], change[:to], snapshot(change[:from]), snapshot(change[:to]), change[:after]]
+          [change[:from], change[:to], states.fetch(change[:from]), states.fetch(change[:to]), change[:after]]
         end
-        Digest::SHA256.hexdigest(Marshal.dump(payload.sort_by(&:first)))
+        references = @references.sort_by { |item| JSON.generate(item) }
+        Digest::SHA256.hexdigest(JSON.generate([payload.sort_by(&:first), @blockers.sort, references]))
       end
 
       def preflight_directories

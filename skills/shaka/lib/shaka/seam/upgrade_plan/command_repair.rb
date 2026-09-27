@@ -31,7 +31,17 @@ module Shaka
         end
 
         def supported_language?(text)
-          text.lines.first.to_s.match?(/\A#!.*\b(?:sh|bash|dash|ksh|zsh|ruby)\b/)
+          shebang = text.lines.first.to_s
+          return false unless shebang.start_with?('#!')
+
+          %w[sh bash dash ruby].include?(shebang_command(shebang))
+        end
+
+        def shebang_command(shebang)
+          words = shebang.delete_prefix('#!').strip.split
+          command = File.basename(words.shift.to_s)
+          command = File.basename(words.reject { |word| word.start_with?('-') }.first.to_s) if command == 'env'
+          command
         end
 
         def invalid_script(path, message)
@@ -40,7 +50,9 @@ module Shaka
         end
 
         def old_path?(text)
-          matching_paths(text).any?
+          matching_paths(text).any? || directory_reference?(text) || segmented_reference?(text) ||
+            continued_old_path?(text) || alias_reference?(text) || shell_fragmented_reference?(text) ||
+            unsupported_path_reference?(text)
         end
       end
     end

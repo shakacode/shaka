@@ -23,12 +23,27 @@ Apply checks the inputs again, moves the contract and allowlist into `.agents/sh
 and moves Shaka's standard commands into `.agents/shaka/bin/`. It leaves unrelated
 `.agents/bin/` tools and the `.agents/shaka.md` pointer in place. It preserves YAML
 values, script modes, and command arguments. Recognized root calculations use Git
-instead of a fixed number of parent directories. Ambiguous scripts and executable
-references block the operation for explicit repair. Existing new-layout files,
+instead of a fixed number of parent directories. Ambiguous moved commands, tracked
+scripts with shebangs that refer to old paths, computed path prefixes, and directory-wide
+patterns block for explicit repair. Other unambiguous tracked text references to moved
+files, including CI and guide references, are rewritten. Historical changelog lines
+stay as written. Historical-sounding guide lines block for explicit repair, because
+a current instruction can appear later in the same line. Existing new-layout files,
 including ignored private files, are never overwritten.
-The repaired wrappers require Git and a worktree at run time. If commands run from
-an archive or container image without Git metadata, repair that deployment path
-explicitly before applying; the preview does not prove equivalence outside a Git worktree.
+Old-path references inside the contract or repository allowlist block instead of
+being rewritten, so their settings and comments are never silently changed.
+Ignored or untracked tools at the old command location also block: they may
+depend on moved siblings or become visible to Git after moving. Back up such a tool outside the checkout,
+remove it, apply the upgrade, then restore it at the new path and update its ignore
+rule. Review Git status before staging. The helper never moves that private file.
+Tracked symlinks that resolve outside the checkout block because the target's
+behavior cannot be verified as part of this migration. Repair that dependency
+explicitly before applying.
+The repaired wrappers require Git, a worktree, and an `env` command that supports
+`-u` to clear Git environment variables at run time. If commands run from
+an archive or container image without Git metadata, or Git refuses the checkout because
+of ownership or repository safety settings, repair that deployment path explicitly
+before applying; the preview does not prove equivalence in another execution environment.
 
 If an interruption leaves `shaka-upgrade-journal.json` in the worktree's Git
 administrative directory, the next preview
@@ -38,9 +53,14 @@ reports it and gives the recovery command:
 shaka seam upgrade --root /path/to/repository --recover
 ```
 
-Recovery restores only files recorded by that operation. If one of those files has
+If all files already match the completed upgrade, recovery removes the journal and
+reports `completed` without moving them back. Otherwise, recovery restores only
+files recorded by that operation. If one of those files has
 changed since the interruption, preserve the edit and repair it manually before
-retrying. A normal apply failure restores the affected files automatically. Then run
+retrying. A normal apply failure restores the affected files automatically. Stop
+other writers before applying or recovering: the upgrade changes several files,
+and its checks cannot protect an edit made by another process at the same instant.
+Then run
 `shaka seam check --root /path/to/repository --local`, the moved validation command,
 and harmless setup and test probes relevant to the repository. Compare behavior with
 the previous commands before committing. Until the migration PR merges, continue to

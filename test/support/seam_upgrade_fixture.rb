@@ -88,7 +88,8 @@ module SeamUpgradeFixture
     original = plan.original_states
     journal = { 'version' => 1, 'original' => original, 'desired' => plan.desired_states,
                 'digest' => plan.report.fetch('digest'),
-                'temporary' => original.keys.map { |path| "#{path}.shaka-upgrade-tmp" } }
+                'temporary' => original.keys.map { |path| "#{path}.shaka-upgrade-tmp" },
+                'created_directories' => ['.agents/shaka/bin', '.agents/shaka'] }
     File.write(Shaka::Seam::Upgrader.journal_path(root), JSON.generate(journal))
     journal
   end

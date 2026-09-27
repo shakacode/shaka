@@ -19,5 +19,7 @@ prints. The packaged YAML owns the workflow text; Ruby validates its schema and 
 before rendering it. If loading or validation fails, stop and report the error instead of
 reconstructing the workflow from memory.
 
-For an existing repository using the older `.agents/` layout, follow the
-[configuration layout upgrade](references/migration.md#upgrade-the-configuration-layout).
+For an existing repository with version-one configuration under `.agents/`, use the
+[configuration layout upgrade](references/migration.md#upgrade-the-configuration-layout)
+when you want to move it to `.agents/shaka/`. `seam init` still creates the original
+layout until #276 changes the initializer.

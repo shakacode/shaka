@@ -88,12 +88,18 @@ module Shaka
           source = File.join(@root, old)
           resolved = File.realpath(source)
           return unsafe_link(old) unless resolved.start_with?("#{@root}/")
-          return unsafe_link_target(old) if target_depends_on_invocation?(resolved, mapping)
+          return unsafe_link_target(old) if unsafe_link_dependency?(old, resolved, mapping)
 
-          relative = link_target(resolved, target, mapping)
+          relative = relocated_link_target(source, target, mapping)
+          return unsafe_link(old) unless relative
+
           record_link(old, target, source, relative)
           { 'type' => 'symlink', 'target' => relative }
-        rescue Errno::ENOENT, Errno::ELOOP
+        rescue Errno::ENOENT, Errno::ENOTDIR, Errno::ELOOP
+          broken_link(old)
+        end
+
+        def broken_link(old)
           @blockers << "#{old}: broken or looping symlink; repair it before upgrading"
           nil
         end
@@ -104,7 +110,8 @@ module Shaka
         end
 
         def unsafe_link_target(old)
-          @blockers << "#{old}: symlink target uses an invocation-relative path; repair it before upgrading"
+          @blockers << "#{old}: symlink target has unsupported or invocation-relative " \
+                       'behavior; repair it before upgrading'
           nil
         end
 
@@ -113,20 +120,14 @@ module Shaka
           return false if mapping.key?(relative) || !File.file?(resolved)
 
           text = File.binread(resolved).force_encoding(Encoding::UTF_8)
-          text.valid_encoding? && invocation_relative?(text)
+          return true unless text.valid_encoding? && supported_language?(text)
+
+          invocation_relative?(text) || old_path?(text)
         end
 
         def record_link(old, target, source, relative)
           @links << { 'from' => old, 'to' => target, 'old_target' => File.readlink(source),
                       'new_target' => relative, 'conversion' => 'retained as a relative link' }
-        end
-
-        def link_target(resolved, target, mapping)
-          original = resolved.delete_prefix("#{@root}/")
-          destination = mapping.fetch(original, original)
-          Pathname.new(File.join(@root, destination)).relative_path_from(
-            Pathname.new(File.dirname(File.join(@root, target)))
-          ).to_s
         end
       end
     end

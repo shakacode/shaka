@@ -2,11 +2,14 @@
 
 require 'fileutils'
 require 'json'
+require 'open3'
 require 'optparse'
 require_relative 'upgrade_plan'
 require_relative 'upgrader/apply'
 require_relative 'upgrader/filesystem'
 require_relative 'upgrader/recovery'
+require_relative 'upgrader/recovery_completion'
+require_relative 'upgrader/recovery_checks'
 
 module Shaka
   class Seam
@@ -17,6 +20,8 @@ module Shaka
       include Apply
       include Filesystem
       include Recovery
+      include RecoveryCompletion
+      include RecoveryChecks
 
       def self.run(arguments)
         new(arguments).run
@@ -73,7 +78,7 @@ module Shaka
 
       def dispatch
         return recover if @options[:recover]
-        return existing_journal if File.exist?(journal_path)
+        return existing_journal if File.exist?(journal_path) || File.symlink?(journal_path)
 
         plan = UpgradePlan.new(@root)
         report = plan.build
@@ -112,7 +117,9 @@ module Shaka
       def verify_git_root!
         output, error, status = Open3.capture3('git', '-C', @root, 'rev-parse', '--show-toplevel')
         raise Error, "Cannot identify repository root: #{error.strip}" unless status.success?
-        raise Error, "--root must be the Git worktree root: #{output.strip}" unless File.realpath(output.strip) == @root
+
+        git_root = output.delete_suffix("\n")
+        raise Error, "--root must be the Git worktree root: #{git_root}" unless File.realpath(git_root) == @root
       end
 
       def journal_path = self.class.journal_path(@root)

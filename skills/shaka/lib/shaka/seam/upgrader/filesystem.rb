@@ -12,19 +12,27 @@ module Shaka
           parent = File.dirname(parent) until File.exist?(parent) || File.symlink?(parent)
           raise Error, "Unsafe parent directory: #{parent}" if File.symlink?(parent) || !File.directory?(parent)
 
+          reject_symlink_parents!(path.delete_prefix("#{@root}/").split('/'))
+
           parent
         end
 
         def write_journal(journal)
           tmp = "#{journal_path}.tmp"
-          raise Error, "Existing upgrade journal temporary file: #{tmp}" if File.exist?(tmp)
+          raise Error, "Existing upgrade journal temporary file: #{tmp}" if File.exist?(tmp) || File.symlink?(tmp)
 
           created = false
           create_journal_temp(tmp, journal)
           created = true
-          File.rename(tmp, journal_path)
+          File.link(tmp, journal_path)
+          fsync_journal_directory
+          File.delete(tmp)
         ensure
           File.delete(tmp) if created && File.file?(tmp)
+        end
+
+        def fsync_journal_directory
+          File.open(File.dirname(journal_path), File::RDONLY, &:fsync)
         end
 
         def create_journal_temp(tmp, journal)
@@ -46,7 +54,7 @@ module Shaka
           # Create destinations before removing sources, so an interruption never loses a source.
           created = desired.keys.select { |path| original.fetch(path)['type'] == 'absent' }
           created.sort.each { |path| write_new_state(path, desired.fetch(path)) }
-          write_paths(desired.keys - created, desired)
+          write_paths(desired.keys - created, desired, original)
         end
 
         def write_new_state(relative, state)
@@ -60,8 +68,13 @@ module Shaka
           File.delete(tmp)
         end
 
-        def write_paths(paths, desired)
-          paths.sort.each { |path| write_state(path, desired.fetch(path)) }
+        def write_paths(paths, desired, original)
+          paths.sort.each do |path|
+            current = UpgradePlan.new(@root).snapshot(path)
+            raise Error, "#{path} changed during apply; recovery needed" unless current == original.fetch(path)
+
+            write_state(path, desired.fetch(path))
+          end
         end
 
         def write_state(relative, state)
@@ -90,19 +103,27 @@ module Shaka
         end
 
         def write_temp_file(tmp, state)
+          created = false
           File.open(tmp, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
-            file.write(state.fetch('data').unpack1('m0'))
-            file.chmod(state.fetch('mode'))
-            file.flush
-            file.fsync
+            created = true
+            write_temp_contents(file, state)
           end
+        rescue StandardError
+          File.delete(tmp) if created && File.file?(tmp)
+          raise
         end
 
-        def cleanup_empty_directories
-          [Configuration::Paths::NEW_COMMAND_DIRECTORY,
-           File.dirname(Configuration::Paths::NEW_CONTRACT)].each do |relative|
+        def write_temp_contents(file, state)
+          file.write(state.fetch('data').unpack1('m0'))
+          file.chmod(state.fetch('mode'))
+          file.flush
+          file.fsync
+        end
+
+        def cleanup_empty_directories(journal)
+          journal.fetch('created_directories').sort_by { |relative| -relative.count('/') }.each do |relative|
             path = File.join(@root, relative)
-            Dir.rmdir(path) if File.directory?(path) && Dir.empty?(path)
+            Dir.rmdir(path) if File.directory?(path) && !File.symlink?(path) && Dir.empty?(path)
           end
         end
       end

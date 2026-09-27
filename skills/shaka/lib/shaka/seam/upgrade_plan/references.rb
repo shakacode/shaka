@@ -9,7 +9,9 @@ module Shaka
 
         def scan_references
           moved = @moves.map { |item| item.fetch('from') }
-          tracked_paths.each { |path| scan_reference(path) unless moved.include?(path) }
+          moved.each { |path| scan_moved_config_reference(path) }
+          @tracked_reference_paths = tracked_paths.to_h { |path| [path, true] }
+          @tracked_reference_paths.each_key { |path| scan_reference(path) unless moved.include?(path) }
         end
 
         def tracked_paths
@@ -26,15 +28,22 @@ module Shaka
 
           scan_regular_reference(path, stat)
         rescue Errno::ENOENT, Errno::ENOTDIR
-          nil
+          @blockers << "#{path}: tracked file is absent; materialize or restore it before upgrading"
+        rescue Error => e
+          @blockers << e.message
         end
 
         def scan_regular_reference(path, stat)
-          text = File.binread(File.join(@root, path)).force_encoding(Encoding::UTF_8)
-          return unless text.valid_encoding? && !text.include?("\0")
+          text = reference_text(path, stat)
+          return unless text
 
+          scan_relative_helper_dependency(path, text)
           scan_unmoved_tool(path, text)
-          updated = text.lines.map { |line| rewrite_line(path, line, text.start_with?('#!')) }.join
+          scan_complex_references(path, text)
+          return unless text.include?("#{PATHS::DIRECTORY}/")
+
+          executable = text.start_with?('#!') || stat.mode & 0o111 != 0
+          updated = text.lines.map { |line| rewrite_line(path, line, executable) }.join
           return if updated == text
 
           @changes << { from: path, to: path, after: file_state_from_text(stat, updated) }
@@ -46,18 +55,21 @@ module Shaka
 
         def rewrite_line(path, line, executable)
           keys = matching_paths(line)
-          return line if keys.empty? && !command_directory_reference?(line)
+          return line if keys.empty? && !directory_reference?(line)
 
           record_reference(path, line, keys)
-          return line if historical_line?(path, line)
-          return block_directory_reference(path, line) if command_directory_reference?(line)
+          return historical_reference(path, line) if historical_line?(path, line)
+          return block_directory_reference(path, line) if directory_reference?(line)
           return block_reference(path, keys, executable, line) if blocked_reference?(keys, executable, line)
 
           replace_paths(line, keys)
         end
 
         def record_reference(path, line, keys)
-          paths = command_directory_reference?(line) ? keys + [PATHS::COMMAND_DIRECTORY] : keys
+          paths = keys.dup
+          paths << PATHS::COMMAND_DIRECTORY if command_directory_reference?(line)
+          paths << PATHS::DIRECTORY if layout_glob_reference?(line)
+          paths << PATHS::DIRECTORY if normalized_internal_reference?(line)
           kind = reference_kind(path, historical_line?(path, line))
           @references << { 'path' => path, 'kind' => kind, 'paths' => paths }
         end
@@ -68,15 +80,22 @@ module Shaka
           end
         end
 
-        def historical_line?(path, line)
-          return true if File.basename(path).match?(/\A(?:CHANGELOG|HISTORY|RELEASE[-_]?NOTES)(?:\.|\z)/i)
+        def historical_reference(path, line)
+          return line if File.basename(path).match?(/\A(?:CHANGELOG|HISTORY|RELEASE[-_]?NOTES)(?:\.|\z)/i)
 
-          path.end_with?('.md') &&
-            line.match?(/\A\s*(?:[-*]\s*)?(?:previously|formerly|historically|before upgrade|old path)\b/i)
+          @blockers << "#{path}: historical guide old-path reference; repair it explicitly"
+          line
         end
 
         def block_directory_reference(path, line)
-          @blockers << "#{path}: old command-directory reference needs explicit repair"
+          reason = if command_directory_reference?(line)
+                     'old command-directory reference'
+                   elsif normalized_internal_reference?(line)
+                     'normalized old-layout reference'
+                   else
+                     'old layout-directory pattern'
+                   end
+          @blockers << "#{path}: #{reason} needs explicit repair"
           line
         end
 
@@ -102,20 +121,6 @@ module Shaka
                    end
           @blockers << "#{path}: #{reason} needs explicit repair"
           line
-        end
-
-        def dirty_overlap
-          (git_paths('diff', '--name-only', '-z', 'HEAD', '--') +
-            git_paths('ls-files', '--others', '--exclude-standard', '-z')).intersection(entries).each do |path|
-            @blockers << "#{path}: overlapping checkout edit; save or repair it before upgrading"
-          end
-        end
-
-        def git_paths(*)
-          output, error, status = Open3.capture3('git', '-C', @root, *)
-          raise Error, "Cannot inspect checkout edits: #{error.strip}" unless status.success?
-
-          output.split("\0")
         end
       end
     end

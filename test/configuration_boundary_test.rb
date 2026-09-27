@@ -10,6 +10,7 @@ class ConfigurationBoundaryTest < Minitest::Test
   ROOT = File.expand_path('../skills/shaka/lib/shaka', __dir__)
   INTERNAL = %w[configuration.rb repository_config.rb trusted_config_source.rb].freeze
   OTHER_PATHS = %w[merge_review_comparison.rb seam/initializer_readme.rb seam/pointer.rb].freeze
+  OTHER_GIT_READ = %w[local_review/criteria.rb seam/upgrade_plan/indexed_references.rb].freeze
   OTHER_FILE_IO = %w[
     checkpoint.rb doctor/cursor_stop_hook.rb enforcement_config.rb local_review/cli.rb
     local_review/report_check.rb local_review/runner.rb merge_tree_proof.rb recommendation.rb
@@ -18,7 +19,8 @@ class ConfigurationBoundaryTest < Minitest::Test
     workflow_config.rb
     seam/upgrade_plan.rb seam/upgrade_plan/inventory.rb seam/upgrade_plan/references.rb
     seam/upgrade_plan/reference_patterns.rb
-    seam/upgrade_plan/reference_dependencies.rb seam/upgrader.rb
+    seam/upgrade_plan/reference_dependencies.rb seam/upgrade_plan/continued_references.rb seam/upgrader.rb
+    seam/upgrade_plan/symlink_chain.rb
     seam/upgrader/filesystem.rb seam/upgrader/recovery.rb
   ].freeze
 
@@ -117,7 +119,7 @@ class ConfigurationBoundaryTest < Minitest::Test
     findings << 'direct contract read' if source.match?(direct_read)
     direct_access = source.match?(/File\.(?:read|binread|write|open)\(/)
     findings << 'unclassified file access' if direct_access && !OTHER_FILE_IO.include?(relative)
-    git_read = source.match?(/['"](?:show|cat-file)['"]/) && relative != 'local_review/criteria.rb'
+    git_read = source.match?(/['"](?:show|cat-file)['"]/) && !OTHER_GIT_READ.include?(relative)
     findings << 'unclassified Git read' if git_read && relative != 'trusted_path_resolver.rb'
     findings
   end

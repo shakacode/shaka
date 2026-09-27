@@ -33,24 +33,43 @@ module Shaka
         end
 
         def upgrade_journal(plan, report)
-          original = plan.original_states
-          desired = plan.desired_states
+          original = validated_original(plan, report)
+          desired = plan.desired_states(original)
           temporary = original.keys.map { |path| "#{path}.shaka-upgrade-tmp" }
+          created_directories = [Configuration::Paths::NEW_COMMAND_DIRECTORY,
+                                 File.dirname(Configuration::Paths::NEW_CONTRACT)].reject do |relative|
+            File.exist?(File.join(@root, relative))
+          end
           { 'version' => 1, 'original' => original, 'desired' => desired,
-            'digest' => report.fetch('digest'), 'temporary' => temporary }
+            'digest' => report.fetch('digest'), 'temporary' => temporary,
+            'created_directories' => created_directories }
+        end
+
+        def validated_original(plan, report)
+          original = plan.original_states
+          return original if plan.fresh?(original, report.fetch('digest'))
+
+          raise Error, 'Upgrade inputs changed; run a fresh preview'
         end
 
         def execute_upgrade(journal)
           write_desired(journal)
           Configuration.worktree(root: @root)
-          File.delete(journal_path)
         rescue StandardError => e
+          restore_failed_upgrade(journal, e)
+        else
+          delete_journal
+        end
+
+        def delete_journal = File.delete(journal_path)
+
+        def restore_failed_upgrade(journal, error)
           begin
             restore(journal)
-          rescue StandardError => recovery_error
-            raise Error, "Apply failed: #{e.message}; recovery needed: #{recovery_error.message}. Run --recover."
+          rescue StandardError => e
+            raise Error, "Apply failed: #{error.message}; recovery needed: #{e.message}. Run --recover."
           end
-          raise Error, "Apply failed and was restored: #{e.message}"
+          raise Error, "Apply failed and was restored: #{error.message}"
         end
 
         def preflight_permissions!(paths)
@@ -75,7 +94,6 @@ module Shaka
             raise Error,
                   "Permission denied for #{relative}: parent #{parent} is not writable"
           end
-          return unless File.exist?(absolute) || File.symlink?(absolute)
           return unless File.directory?(absolute) && !File.symlink?(absolute)
 
           raise Error, "#{relative}: expected a file or symlink"

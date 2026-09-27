@@ -11,6 +11,8 @@ module Shaka
           journal = load_journal
           validate_journal!(journal)
 
+          return finish_completed_upgrade(journal) if completed_upgrade?(journal)
+
           restore(journal)
           puts JSON.generate('mode' => 'recover', 'status' => 'restored',
                              'paths' => journal.fetch('original').keys.sort)
@@ -30,8 +32,9 @@ module Shaka
           verify_recovery_state!(journal)
           journal.fetch('temporary').each { |relative| remove_state(File.join(@root, relative)) }
           original.sort.each { |path, state| write_state(path, state) }
+          cleanup_empty_directories(journal)
+          cleanup_owned_journal_temp
           File.delete(journal_path)
-          cleanup_empty_directories
         end
 
         def verify_recovery_state!(journal)
@@ -41,6 +44,7 @@ module Shaka
 
             raise Error, "#{path} changed after interruption; preserve that edit and repair manually"
           end
+          verify_temporary_states!(journal)
         end
 
         def validate_journal!(journal)
@@ -50,20 +54,18 @@ module Shaka
 
           original.each_key { |path| validate_journal_entry!(path, original[path], desired[path]) }
           validate_temporary_paths!(journal, original.keys)
+          validate_created_directories!(journal)
         end
 
         def validate_journal_version!(journal)
-          return if journal.is_a?(Hash) && journal['version'] == 1
-
-          raise Error, "Unsupported upgrade journal at #{journal_path}"
+          valid = journal.is_a?(Hash) && journal['version'] == 1
+          raise Error, "Unsupported upgrade journal at #{journal_path}" unless valid
         end
 
         def journal_states!(journal)
-          original = journal['original']
-          desired = journal['desired']
-          unless original.is_a?(Hash) && desired.is_a?(Hash)
-            raise Error, 'Upgrade journal must contain original and desired states'
-          end
+          original, desired = journal.values_at('original', 'desired')
+          valid = original.is_a?(Hash) && desired.is_a?(Hash)
+          raise Error, 'Upgrade journal must contain original and desired states' unless valid
 
           [original, desired]
         end
@@ -101,10 +103,8 @@ module Shaka
         def validate_temporary_paths!(journal, paths)
           expected_temps = paths.map { |path| "#{path}.shaka-upgrade-tmp" }.sort
           temporary = journal['temporary']
-          unless temporary.is_a?(Array) && temporary.all?(String) &&
-                 temporary.sort == expected_temps
-            raise Error, 'Upgrade journal temporary paths differ'
-          end
+          valid = temporary.is_a?(Array) && temporary.all?(String) && temporary.sort == expected_temps
+          raise Error, 'Upgrade journal temporary paths differ' unless valid
         end
 
         def safe_recovery_path!(relative)
