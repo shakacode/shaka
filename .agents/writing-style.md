@@ -1,8 +1,10 @@
-# Writing style for Shaka
+# Writing preferences for Shaka prose
 
+These repository preferences apply to documentation, PR descriptions,
+code walkthroughs, and review replies. They do not set Ruby or other code style.
 Assume the reader is new to Shaka and wants to get useful work done.
 
-- Product guides explain outcomes, choices, and examples. Put agent execution
+- In product guides, explain outcomes, choices, and examples. Put agent execution
   details with the skill and development records under `internal/`.
 - Lead with the action or benefit. Explain a term when the reader first needs it.
 - Keep one source for each setting and link to it. Avoid duplicate option tables.

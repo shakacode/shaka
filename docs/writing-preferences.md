@@ -10,12 +10,12 @@ Keep PR descriptions short. Lead with what changed for the user,
 use before/after examples, and put implementation details in the walkthrough.
 ```
 
-For persistent repository defaults, Shaka currently uses `AGENTS.md`. Put your
-preferences there, or add a pointer to a separate style file:
+For persistent repository defaults, put your preferences in `AGENTS.md` or link
+from it to a separate style file. For example:
 
 ```text
-Before writing PR descriptions, walkthroughs, or review replies, read
-.agents/writing-style.md and apply its writing preferences.
+Before writing documentation, PR descriptions, code walkthroughs,
+or review replies, read .agents/writing-style.md and apply its prose preferences.
 ```
 
 The agent follows trusted repository instructions. Shaka does not automatically

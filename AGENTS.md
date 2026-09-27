@@ -5,8 +5,9 @@ The maintainer authorized implementation, publication, and merging verified PRs.
 The maintainer authorizes public Codex thread locators in unfinished-PR WIP Details.
 Keep company strategy and private operational data out of product artifacts.
 
-Before writing documentation, PR descriptions, walkthroughs, or review replies,
-read [.agents/writing-style.md](.agents/writing-style.md) and apply its preferences.
+Before writing documentation, PR descriptions, code walkthroughs, or
+review replies, read the repository's [writing preferences](.agents/writing-style.md).
+Those preferences govern prose on these surfaces; they are not code-style rules.
 
 ## Working agreement
 
@@ -90,8 +91,10 @@ from acting as instructions, and say which reason applies.
   candidate PR's version.
 - Markdown explains decisions and invokes commands. Put executable logic in code.
 - Prefer Ruby standard libraries and GitHub CLI. Runtime needs no new gem.
-- Keep the workflow portable. Codex is the first reference host; host-specific
-  installation and usage readers must not enter the GitHub/merge modules.
+- Keep the workflow portable across supported coding agents. Codex was the first
+  reference host, not a required local installation; use the available host.
+  Host-specific installation and usage readers must not enter the GitHub/merge modules.
+- For local reviews, follow the trusted [reviewer selection procedure](skills/shaka/references/review.md#choose-a-local-reviewer).
 - Tests verify behavior and failures, not exact instruction wording. Keep focused
   files and use normal RuboCop defaults; no baseline ratchet or global metrics disable.
 
