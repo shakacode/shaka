@@ -7,7 +7,7 @@ review:
   ci_review_jobs:
     - claude-review
   ci_review_wait: one
-  # Local reviewer identities, in preference order.
+  # Optional local reviewer preferences; see docs/settings.md.
   local_review_agents:
     - provider: anthropic
       model_family: claude

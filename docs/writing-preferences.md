@@ -1,7 +1,8 @@
 # Writing preferences
 
-Lead with what changed and why. Show the evidence needed to judge it; keep
-implementation detail in the walkthrough and longer records in expandable sections.
+Shaka's installed skill provides [default writing guidance](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/writing.md)
+for PR descriptions, code walkthroughs, and review replies. Installing Shaka does
+not create or edit `AGENTS.md`, and these defaults work without that file.
 
 For a task, tell the agent how you want it to write:
 
@@ -10,13 +11,14 @@ Keep PR descriptions short. Lead with what changed for the user,
 use before/after examples, and put implementation details in the walkthrough.
 ```
 
-For persistent repository defaults, Shaka currently uses `AGENTS.md`. Put your
-preferences there, or add a pointer to a separate style file:
+For persistent repository preferences, you may create or edit `AGENTS.md` yourself.
+You may link to a separate file when the guidance is long or has a distinct
+audience. For example:
 
 ```text
-Before writing PR descriptions, walkthroughs, or review replies, read
-.agents/writing-style.md and apply its writing preferences.
+When writing this repository's product guides, read docs/editorial-style.md.
 ```
 
-The agent follows trusted repository instructions. Shaka does not automatically
-load a style file. See its [default writing guidance](../skills/shaka/references/writing.md).
+When trusted `AGENTS.md` exists, the Shaka workflow instructs the agent to follow
+its writing preferences and any style file it explicitly links. Shaka's Ruby
+helpers do not automatically load a linked file or verify editorial style.

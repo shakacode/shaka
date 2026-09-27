@@ -29,7 +29,8 @@ test, and validation commands. Explain the review and merge choices.
 Use merge policy ask.
 ```
 
-The agent inspects your project, confirms missing choices, and prepares these files:
+The agent inspects your project, confirms missing choices, prepares Shaka's files,
+and reads any existing project instructions:
 
 | File | Purpose |
 | --- | --- |
@@ -40,7 +41,7 @@ The agent inspects your project, confirms missing choices, and prepares these fi
 | `.agents/bin/validate-local` (optional) | Run a faster local check before review |
 | `.agents/bin/trigger-hosted-ci` (optional) | Start deferred CI after local fixes; requires `validate-local` |
 | `.agents/trusted-github-actors.yml` | Whose public GitHub comments the agent may read |
-| `AGENTS.md` | Project instructions and constraints |
+| `AGENTS.md` (optional) | Existing project instructions and constraints; Shaka does not create or edit it |
 
 The scripts usually wrap existing commands. In Shaka's repository, `.agents/bin/setup`
 installs development dependencies; `bin/install` installs the skill.

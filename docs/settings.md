@@ -174,8 +174,9 @@ checks (`UNSTABLE`) for `none` and `one`; `all` requires `CLEAN`.
 
 ## `review.local_review_agents`
 
-**Optional.** Ordered reviewer preferences. Without a list, selection falls back
-to a fresh review context using the implementation identity.
+**Optional.** Ordered reviewer preferences, not required local installations.
+Without a list, selection falls back to a fresh review context using the
+implementation identity.
 
 ```yaml
 review:
@@ -191,6 +192,8 @@ review:
 Use stable provider/family names; model releases do not require list updates.
 The agent prefers a different provider and chooses the review model and effort
 separately. Put custom review criteria in trusted `AGENTS.md`.
+Configured CI review jobs have separate waiting rules under
+[`review.ci_review_wait`](#reviewci_review_wait).
 See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).
 
 ## `review.prompt_file`
