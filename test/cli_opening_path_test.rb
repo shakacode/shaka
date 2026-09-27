@@ -29,11 +29,21 @@ class CliOpeningPathTest < Minitest::Test
     end
   end
 
+  def test_symbolic_ref_cannot_grant_opening_settings
+    with_repository do |root|
+      commit(root)
+      result = Shaka::OpeningPublication.new(root:, ref: 'HEAD').call(SUMMARY)
+      assert_equal 'host_check', result.fetch('status')
+      assert_includes result.fetch('reason'), 'full commit SHA'
+    end
+  end
+
   private
 
   def assert_candidate_git_rejected(dir, root)
+    sha = fixture_ref(root)
     with_candidate_git(dir, root) do |trace|
-      output, error, status = run_description(dir, root:, ref: true)
+      output, error, status = run_description(dir, root:, ref: sha)
       assert_predicate status, :success?, error
       assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
       refute_path_exists trace
@@ -42,8 +52,9 @@ class CliOpeningPathTest < Minitest::Test
   end
 
   def assert_direct_opening_safe(dir, root)
+    sha = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
     with_candidate_git_link(dir, root) do |trace|
-      result = Shaka::OpeningPublication.new(root:, ref: 'HEAD').call(SUMMARY)
+      result = Shaka::OpeningPublication.new(root:, ref: sha).call(SUMMARY)
       assert_equal 'host_check', result.fetch('status')
       refute_path_exists trace
     end

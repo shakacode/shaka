@@ -17,6 +17,8 @@ module Shaka
     def call(summary)
       @prompt = nil
       raise Error, 'No trusted --ref supplied for opening settings.' unless @ref
+      raise Error, 'Opening settings require a full commit SHA from the trusted default branch.' unless
+        @ref.match?(/\A[0-9a-f]{40}\z/i)
 
       candidate_root = OpeningCheckout.root(@root)
       raise Error, 'Candidate checkout root is unknown.' unless candidate_root

@@ -697,6 +697,22 @@ class LocalReviewRelativePathTest < Minitest::Test
   end
 end
 
+class LocalReviewPathGuardIntegrationTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_external_git_symlink_to_candidate_is_rejected_before_review
+    with_repository do |root, base, head, bin|
+      write_executable(root, 'git', "#!/bin/sh\nexit 0\n")
+      File.symlink(File.join(root, 'git'), File.join(bin, 'git'))
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'inside candidate checkout'
+    end
+  end
+end
+
 class LocalReviewCaseIdentityTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -1139,6 +1155,7 @@ LocalReviewEvidenceTest.include(LocalReviewFixture)
 LocalReviewStdoutFailureTest.include(LocalReviewFixture)
 LocalReviewContextTest.include(LocalReviewFixture)
 LocalReviewRelativePathTest.include(LocalReviewFixture)
+LocalReviewPathGuardIntegrationTest.include(LocalReviewFixture)
 LocalReviewCaseIdentityTest.include(LocalReviewFixture)
 LocalReviewTimeoutTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)

@@ -252,7 +252,8 @@ replaces the default parsing instructions for both external and development-mode
 checks. Shaka reads that file from the trusted default-branch commit, applies
 the same file checks as `review.prompt_file`, and treats the PR opening as data.
 The required JSON field names and types remain fixed by the command.
-Pass that commit with `description --ref SHA` to use the setting. Without `--ref`,
+Verify the default branch's full commit SHA and pass it with `description --ref SHA`
+to use the setting. Symbolic refs such as `HEAD` are not accepted. Without `--ref`,
 the development model gets the built-in prompt and an explanation.
 If the configured check cannot run, the description still publishes and the
 development model receives a fallback prompt with the reason.

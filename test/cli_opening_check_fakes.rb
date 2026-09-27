@@ -10,7 +10,7 @@ module CliOpeningCheckFakes
     content = File.join(dir, 'content.json')
     File.write(content, JSON.generate(description_content))
     options = ['--root', root, '--content-file', content]
-    options.push('--ref', 'HEAD') if ref.nil? ? reviewer : ref
+    options.concat(ref_option(root, ref, reviewer))
     options.push('--opening-reviewer', reviewer) if reviewer
     options.push('--opening-model', model) if model
     Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir },
@@ -22,6 +22,19 @@ module CliOpeningCheckFakes
     system('git', '-C', root, 'add', '.', exception: true)
     system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
            'commit', '-qm', 'trusted', exception: true)
+  end
+
+  def fixture_ref(root)
+    sha, status = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD')
+    raise 'fixture has no HEAD commit' unless status.success?
+
+    sha.strip
+  end
+
+  def ref_option(root, ref, reviewer)
+    return [] unless ref.nil? ? reviewer : ref
+
+    ['--ref', ref.is_a?(String) ? ref : fixture_ref(root)]
   end
 
   def description_content

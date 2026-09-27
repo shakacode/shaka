@@ -258,6 +258,7 @@ phases:
         shared context.
       - `description` reports an advisory `opening` result. Its default `host_check` gives this
         task's development model the parsing prompt, so the check works without another provider.
+        Pass the verified default-branch full commit SHA with `description --ref SHA`.
         When the trusted seam sets `opening_check.enabled: true`, use the same ordered reviewer
         selection and unavailable-provider fallback as local code review, passing the selected
         identity with `--opening-reviewer` and any chosen `--opening-model`. The command only
