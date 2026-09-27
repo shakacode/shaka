@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'yaml'
 require_relative 'configuration/paths'
 require_relative 'repository_config'
 require_relative 'trusted_config_source'
 require_relative 'configuration/sources'
+require_relative 'configuration/generated_files'
 
 module Shaka
   # Supported access to repository configuration. Worktree and trusted-commit reads
@@ -12,6 +12,7 @@ module Shaka
   # checkout fallback. RepositoryConfig and TrustedConfigSource remain focused internals.
   module Configuration
     extend Sources
+    extend GeneratedFiles
 
     module_function
 
@@ -22,7 +23,7 @@ module Shaka
     end
 
     def path(root, name)
-      Paths.at(root, Paths.const_get(name))
+      Paths.at(root, Paths::REPOSITORY_NAMES.fetch(name))
     end
 
     def command_path(root, name)
@@ -53,30 +54,6 @@ module Shaka
     def contract_changed?(root, source)
       target = path(root, :CONTRACT)
       File.file?(target) && File.read(target) != source
-    end
-
-    def text(path, encoding: 'UTF-8')
-      File.read(path, encoding:)
-    end
-
-    def generated_contract(marker:, data:)
-      "# #{marker}\n#{YAML.dump(data)}"
-    end
-
-    def create_file(path, content, mode:)
-      File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
-        yield if block_given?
-        file.write(content)
-        file.chmod(mode)
-      end
-    end
-
-    def replace_file(path, content, mode:)
-      tmp = "#{path}.migrate-#{Process.pid}"
-      create_file(tmp, content, mode:)
-      File.rename(tmp, path)
-    ensure
-      File.delete(tmp) if tmp && File.file?(tmp)
     end
   end
 end

@@ -65,7 +65,7 @@ module Shaka
       end
 
       def legacy_generated_readme?(path)
-        Configuration.text(path).start_with?(readme_marker)
+        Configuration.generated_text(root: @root, path:).start_with?(readme_marker)
       rescue Errno::EACCES, Errno::EPERM
         false
       end

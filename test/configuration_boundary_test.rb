@@ -31,6 +31,20 @@ class ConfigurationBoundaryTest < Minitest::Test
     assert_equal '.agents/bin/trigger-hosted-ci', paths::OPTIONAL_COMMANDS.fetch('trigger_hosted_ci')
   end
 
+  def test_repository_path_lookup_rejects_machine_and_command_collections
+    assert_equal '/repo/.agents/agent-workflow.yml', Shaka::Configuration.path('/repo', :CONTRACT)
+    assert_raises(KeyError) { Shaka::Configuration.path('/repo', :MACHINE_ALLOWLIST) }
+    assert_raises(KeyError) { Shaka::Configuration.path('/repo', :COMMANDS) }
+  end
+
+  def test_generated_file_reader_rejects_arbitrary_paths
+    error = assert_raises(Shaka::Error) do
+      Shaka::Configuration.generated_text(root: '/repo', path: '/repo/other.yml')
+    end
+
+    assert_includes error.message, 'Not a generated configuration path'
+  end
+
   def test_trusted_read_never_uses_a_valid_worktree_as_fallback
     with_repository do |root|
       File.write(File.join(root, 'README.md'), "Fixture\n")

@@ -27,6 +27,11 @@ module Shaka
         'trigger_hosted_ci' => '.agents/bin/trigger_hosted_ci'
       }.freeze
       COMMANDS = REQUIRED_COMMANDS.merge(OPTIONAL_COMMANDS).freeze
+      REPOSITORY_NAMES = {
+        DIRECTORY: DIRECTORY, COMMAND_DIRECTORY: COMMAND_DIRECTORY, CONTRACT: CONTRACT,
+        POINTER: POINTER, LEGACY_README: LEGACY_README, REPOSITORY_ALLOWLIST: REPOSITORY_ALLOWLIST
+      }.freeze
+      GENERATED_FILES = [CONTRACT, POINTER, LEGACY_README, *COMMANDS.values].freeze
 
       def self.at(root, relative) = File.join(root, relative)
     end

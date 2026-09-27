@@ -24,12 +24,12 @@ module Shaka
       end
 
       def create_pointer(path, content, created)
-        Configuration.create_file(path, content, mode: destination_mode(path)) { created << path }
+        Configuration.create_generated_file(root:, path:, content:, mode: destination_mode(path)) { created << path }
       end
 
       def replace_contract(path, content)
         @contract_mode ||= File.stat(path).mode & 0o777
-        Configuration.replace_file(path, content, mode: destination_mode(path))
+        Configuration.replace_contract(root:, content:, mode: destination_mode(path))
       end
 
       def restore_contract

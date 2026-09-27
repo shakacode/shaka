@@ -42,7 +42,8 @@ focused internals behind this interface. `configuration/trust_config.rb` owns
 allowlist source selection; its former require path is a compatibility shim.
 
 The boundary covers repository-facing settings, allowlists, executable discovery,
-and seam initialization and migration. Packaged `workflow.yml`, `enforcement.yml`,
+and seam initialization and migration. `configuration/generated_files.rb` restricts
+generated-file reads and writes to the known destinations. Packaged `workflow.yml`, `enforcement.yml`,
 and usage rate data have separate loaders; the install-local repository catalog
 and GitHub metadata are also separate. Generated pointer text and error messages
 may show concrete paths as explanations. The merge-review classifier names
@@ -55,6 +56,7 @@ complete encapsulation.
 | Concern | Source |
 | --- | --- |
 | Public access and path ownership | `configuration.rb`, `configuration/paths.rb` |
+| Generated file reads and writes | `configuration/generated_files.rb` |
 | YAML loading and effective defaults | `repository_config.rb` |
 | Root keys and values | `repository_config/schema.rb` |
 | Fixed scripts and optional dependencies | `repository_config/command_paths.rb`, `command_schema.rb` |

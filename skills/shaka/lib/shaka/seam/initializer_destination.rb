@@ -32,7 +32,7 @@ module Shaka
         return false unless File.file?(path) && !File.symlink?(path)
         return false unless (File.stat(path).mode & 0o7777) == destination_mode(path)
 
-        existing = Configuration.text(path)
+        existing = Configuration.generated_text(root: @root, path:)
         existing == content || previously_generated_readme?(path, existing)
       end
 
@@ -57,7 +57,7 @@ module Shaka
       end
 
       def write_new_file(path, content)
-        Configuration.create_file(path, content, mode: destination_mode(path))
+        Configuration.create_generated_file(root: @root, path:, content:, mode: destination_mode(path))
       end
 
       def destination_mode(path) = wrapper_path?(path) ? 0o755 : 0o644
