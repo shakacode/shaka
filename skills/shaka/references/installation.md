@@ -33,7 +33,8 @@ git clone https://github.com/shakacode/shaka.git "$HOME/agent-tools/shaka"
 ```
 
 The installer copies the skill to `~/.local/share/shaka/installs/` and links Codex
-to that managed copy. The source checkout can then be removed. Open a new task in
+to that managed copy. The source checkout can then be removed; select a source
+checkout again when upgrading or rolling back. Open a new task in
 your project and look for
 `$shaka`; restart Codex if it does not appear.
 Use `--managed-dir DIR` when the default package location is writable by the

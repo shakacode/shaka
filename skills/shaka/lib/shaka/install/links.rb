@@ -70,8 +70,6 @@ module Shaka
         return true if target == File.join(@source, 'skills', name)
         return false unless managed_target?(name, target)
 
-        package = File.dirname(target, 2)
-        @package.verify(package, content: false) if File.file?(File.join(package, Package::METADATA))
         true
       end
 

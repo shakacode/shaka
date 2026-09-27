@@ -23,6 +23,16 @@ class InstallEdgeCasesTest < Minitest::Test
     assert_equal 'revision', package_identity.fetch('source').fetch('kind')
   end
 
+  def test_ignored_local_file_is_excluded_from_the_managed_copy
+    commit_source
+    File.write(File.join(@directory, 'source', '.gitignore'), "skills/shaka/.env\n")
+    File.write(File.join(@source, '.env'), 'local secret')
+    install!
+
+    assert_equal 'revision', package_identity.fetch('source').fetch('kind')
+    assert_ignored_file_excluded
+  end
+
   def test_hidden_worktree_edit_is_recorded_as_development
     commit_source
     root = File.join(@directory, 'source')
@@ -80,6 +90,11 @@ class InstallEdgeCasesTest < Minitest::Test
   end
 
   private
+
+  def assert_ignored_file_excluded
+    refute_path_exists File.join(package_path, 'skills', 'shaka', '.env')
+    refute_includes File.read(File.join(package_path, '.shaka-install.json')), 'local secret'
+  end
 
   def install!
     output, status = install

@@ -48,6 +48,17 @@ class InstallRecoveryTest < Minitest::Test
     assert_equal 'version one', File.read(File.join(@destination, 'SKILL.md'))
   end
 
+  def test_upgrade_can_replace_a_link_to_a_package_with_corrupt_metadata
+    install!
+    previous = package_path
+    File.write(File.join(previous, '.shaka-install.json'), 'invalid json')
+    File.write(File.join(@source, 'SKILL.md'), 'version two')
+    install!
+
+    refute_equal previous, package_path
+    assert_equal 'version two', File.read(File.join(@destination, 'SKILL.md'))
+  end
+
   def test_managed_directory_can_be_chosen_explicitly
     managed = File.join(@directory, 'durable packages')
     output, status = run_installer('--skills-dir', @skills_dir, '--managed-dir', managed)
