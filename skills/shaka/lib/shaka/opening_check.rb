@@ -115,7 +115,7 @@ module Shaka
         report = File.join(dir, 'parse.json')
         options = { reviewer: @reviewer, model: @model, effort: 'low', timeout_seconds: TIMEOUT_SECONDS,
                     capture_usage: false }
-        path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: @candidate_root)
+        path = LocalReviewPathGuard.safe_path(ENV['PATH'].to_s, candidate_root: @candidate_root, all_executables: true)
         outcome = LocalReviewCli.new(options, root: dir, report:, candidate_root: @candidate_root, path:)
                                 .run(model_prompt)
         return ParseFailure.new(outcome['reason'], outcome.slice('failure_stage', 'diagnostic_path')) if outcome

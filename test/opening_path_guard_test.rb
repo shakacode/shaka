@@ -33,6 +33,15 @@ class OpeningPathGuardTest < Minitest::Test
     end
   end
 
+  def test_strict_model_path_rejects_unrelated_candidate_executable_link
+    with_candidate_link do |root, external, _safe|
+      File.rename(File.join(external, 'gh'), File.join(external, 'node'))
+      assert_raises(Shaka::Error) do
+        Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root, all_executables: true)
+      end
+    end
+  end
+
   private
 
   def with_uninspectable(directory)
