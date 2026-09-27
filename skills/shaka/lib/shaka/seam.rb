@@ -97,7 +97,7 @@ module Shaka
       "Usage: shaka seam check [--root DIR] [--local | --ref REF]\n       " \
         "shaka seam init --root DIR [options]\n       " \
         "shaka seam migrate --root DIR --from-ref SHA [--plan | --apply]\n       " \
-        "shaka seam upgrade --root DIR [--apply --digest SHA | --recover]\n       " \
+        "shaka seam upgrade --root DIR [--apply --digest PREVIEW_DIGEST | --recover]\n       " \
         'shaka seam pointer'
     end
 

@@ -101,4 +101,10 @@ module SeamUpgradeFixture
     first, *rest = output.lines
     "#{File.realpath(first.strip)}\n#{rest.join}"
   end
+
+  def assert_blocked_with(root, reason)
+    preview = report(root)
+    assert_equal 'blocked', preview.fetch('status')
+    assert_includes preview.fetch('blockers').join, reason
+  end
 end

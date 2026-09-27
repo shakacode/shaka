@@ -54,13 +54,23 @@ module Shaka
 
         def rewrite_line(path, line, executable)
           keys = matching_paths(line)
-          return line if keys.empty?
+          return line if keys.empty? && !command_directory_reference?(line)
 
-          historical = historical_line?(path, line)
-          @references << { 'path' => path, 'kind' => reference_kind(path, historical), 'paths' => keys }
-          return line if historical
+          record_reference(path, line, keys)
+          return line if historical_line?(path, line)
+          return block_directory_reference(path, line) if command_directory_reference?(line)
           return block_reference(path, keys, executable, line) if blocked_reference?(keys, executable, line)
 
+          replace_paths(line, keys)
+        end
+
+        def record_reference(path, line, keys)
+          paths = command_directory_reference?(line) ? keys + [PATHS::COMMAND_DIRECTORY] : keys
+          kind = reference_kind(path, historical_line?(path, line))
+          @references << { 'path' => path, 'kind' => kind, 'paths' => paths }
+        end
+
+        def replace_paths(line, keys)
           keys.reduce(line) do |result, old|
             result.gsub(token_pattern(old)) { "#{::Regexp.last_match[:lead]}#{reference_mapping.fetch(old)}" }
           end
@@ -69,7 +79,13 @@ module Shaka
         def historical_line?(path, line)
           return true if File.basename(path).match?(/\A(?:CHANGELOG|HISTORY|RELEASE[-_]?NOTES)(?:\.|\z)/i)
 
-          path.end_with?('.md') && line.match?(/\b(previously|formerly|historically|before upgrade|old path)\b/i)
+          path.end_with?('.md') &&
+            line.match?(/\A\s*(?:[-*]\s*)?(?:previously|formerly|historically|before upgrade|old path)\b/i)
+        end
+
+        def block_directory_reference(path, line)
+          @blockers << "#{path}: old command-directory reference needs explicit repair"
+          line
         end
 
         def reference_kind(path, historical)
@@ -94,29 +110,6 @@ module Shaka
                    end
           @blockers << "#{path}: #{reason} needs explicit repair"
           line
-        end
-
-        def matching_paths(text)
-          reference_mapping.keys.select { |old| text.match?(token_pattern(old)) || dynamic_reference?(text, old) }
-        end
-
-        def dynamic_reference?(text, old)
-          escaped = Regexp.escape(old)
-          variable = %r~(?:\$\{\{[^}]+\}\}|\$\{[^}]+\}|#\{[^}]+\})/#{escaped}(?![[:alnum:]_./-])~
-          absolute = %r{(?:\A|[\s"'=])/(?:[^/\s"']+/)*#{escaped}(?![[:alnum:]_./-])}
-          text.match?(variable) || text.match?(absolute)
-        end
-
-        def token_pattern(path)
-          leading = '(?<![[:alnum:]_./-])(?<lead>\./|\$[A-Za-z_]\w*/|"\$[A-Za-z_]\w*"/)?'
-          Regexp.new("#{leading}#{Regexp.escape(path)}(?![[:alnum:]_./-])")
-        end
-
-        def reference_mapping
-          { PATHS::CONTRACT => PATHS::NEW_CONTRACT,
-            PATHS::REPOSITORY_ALLOWLIST => PATHS::NEW_REPOSITORY_ALLOWLIST }.merge(
-              command_paths.to_h { |old| [old, old.sub(PATHS::COMMAND_DIRECTORY, PATHS::NEW_COMMAND_DIRECTORY)] }
-            )
         end
 
         def dirty_overlap

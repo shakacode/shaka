@@ -8,6 +8,7 @@ require_relative '../configuration/wrapper_template'
 require_relative 'upgrade_plan/inventory'
 require_relative 'upgrade_plan/command_repair'
 require_relative 'upgrade_plan/root_repair'
+require_relative 'upgrade_plan/reference_patterns'
 require_relative 'upgrade_plan/references'
 
 module Shaka
@@ -22,6 +23,7 @@ module Shaka
       include Inventory
       include CommandRepair
       include RootRepair
+      include ReferencePatterns
       include References
 
       attr_reader :changes, :blockers, :report

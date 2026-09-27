@@ -93,7 +93,7 @@ module Shaka
 
       def parser
         OptionParser.new do |flags|
-          flags.banner = 'Usage: shaka seam upgrade --root DIR [--apply --digest SHA | --recover]'
+          flags.banner = 'Usage: shaka seam upgrade --root DIR [--apply --digest PREVIEW_DIGEST | --recover]'
           flags.on('--root DIR', 'Repository root') { |value| @options[:root] = value }
           add_mode_options(flags)
           flags.on('-h', '--help', 'Show usage') do
@@ -105,7 +105,7 @@ module Shaka
 
       def add_mode_options(flags)
         flags.on('--apply', 'Apply the complete preview after a fresh preflight') { @options[:apply] = true }
-        flags.on('--digest SHA', 'Digest from the reviewed preview') { |value| @options[:digest] = value }
+        flags.on('--digest PREVIEW_DIGEST', 'Digest from the reviewed preview') { |value| @options[:digest] = value }
         flags.on('--recover', 'Restore files after an interrupted apply') { @options[:recover] = true }
       end
 

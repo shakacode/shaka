@@ -527,7 +527,7 @@ class SeamUpgradeSecondReviewTest < Minitest::Test
   end
 end
 
-class SeamUpgradeThirdReviewTest < Minitest::Test
+class SeamUpgradeReferenceSafetyTest < Minitest::Test
   include SeamUpgradeFixture
 
   def test_dynamic_and_absolute_references_block_without_touching_files
@@ -616,10 +616,42 @@ class SeamUpgradeThirdReviewTest < Minitest::Test
       assert_equal 'ready', report(root).fetch('status')
     end
   end
+end
 
-  def assert_blocked_with(root, reason)
-    preview = report(root)
-    assert_equal 'blocked', preview.fetch('status')
-    assert_includes preview.fetch('blockers').join, reason
+class SeamUpgradeDependencySafetyTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  def test_other_ruby_and_shell_relative_paths_block
+    ["root = File.join(__dir__, '..', '..')\n", "require_relative 'common'\n",
+     ". \"${BASH_SOURCE%/*}/common.sh\"\n"].each do |body|
+      with_repository do |root|
+        write_wrapper(root, 'setup', "#!/bin/sh\n#{body}")
+        commit_fixture(root, 'relative dependency')
+        assert_blocked_with(root, 'invocation-relative dependency')
+      end
+    end
+  end
+
+  def test_directory_globs_and_codeowners_block
+    with_repository do |root|
+      FileUtils.mkdir_p(File.join(root, '.github/workflows'))
+      File.write(File.join(root, '.github/CODEOWNERS'), '/.agents/bin/ @maintainers')
+      File.write(File.join(root, '.github/workflows/ci.yml'), "paths: ['.agents/bin/**']")
+      commit_fixture(root, 'directory references')
+      preview = report(root)
+      assert_equal 'blocked', preview.fetch('status')
+      count = preview.fetch('blockers').count { |item| item.include?('old command-directory') }
+      assert_equal 2, count
+    end
+  end
+
+  def test_live_readme_instruction_with_formerly_is_rewritten
+    with_repository do |root|
+      path = File.join(root, 'README.md')
+      File.write(path, 'Run .agents/bin/test (formerly make test).')
+      commit_fixture(root, 'live instruction')
+      apply_upgrade(root)
+      assert_equal 'Run .agents/shaka/bin/test (formerly make test).', File.read(path)
+    end
   end
 end

@@ -1,0 +1,40 @@
+# frozen_string_literal: true
+
+module Shaka
+  class Seam
+    class UpgradePlan
+      # Recognizes exact command paths and broader references needing explicit repair.
+      module ReferencePatterns
+        private
+
+        def command_directory_reference?(line)
+          directory = Regexp.escape(PATHS::COMMAND_DIRECTORY)
+          line.match?(Regexp.new("#{directory}(?:/(?=\\*|[\\s\"']|$)|(?=[\\s\"']|$))"))
+        end
+
+        def matching_paths(text)
+          reference_mapping.keys.select { |old| text.match?(token_pattern(old)) || dynamic_reference?(text, old) }
+        end
+
+        def dynamic_reference?(text, old)
+          escaped = Regexp.escape(old)
+          variable = %r~(?:\$\{\{[^}]+\}\}|\$\{[^}]+\}|#\{[^}]+\})/#{escaped}(?![[:alnum:]_./-])~
+          absolute = %r{(?:\A|[\s"'=])/(?:[^/\s"']+/)*#{escaped}(?![[:alnum:]_./-])}
+          text.match?(variable) || text.match?(absolute)
+        end
+
+        def token_pattern(path)
+          leading = '(?<![[:alnum:]_./-])(?<lead>\./|\$[A-Za-z_]\w*/|"\$[A-Za-z_]\w*"/)?'
+          Regexp.new("#{leading}#{Regexp.escape(path)}(?![[:alnum:]_./-])")
+        end
+
+        def reference_mapping
+          { PATHS::CONTRACT => PATHS::NEW_CONTRACT,
+            PATHS::REPOSITORY_ALLOWLIST => PATHS::NEW_REPOSITORY_ALLOWLIST }.merge(
+              command_paths.to_h { |old| [old, old.sub(PATHS::COMMAND_DIRECTORY, PATHS::NEW_COMMAND_DIRECTORY)] }
+            )
+        end
+      end
+    end
+  end
+end

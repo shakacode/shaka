@@ -41,7 +41,7 @@ module Shaka
             expression = match[:expression].start_with?('Pathname') ? "Pathname(#{RUBY_GIT_ROOT})" : RUBY_GIT_ROOT
             indent = match[:indent]
             assignment = "#{indent}root = #{expression}"
-            failure = "#{indent}abort 'Cannot find repository root' unless $?.success? && !root.empty?"
+            failure = "#{indent}abort 'Cannot find repository root' unless $?.success? && !root.to_s.empty?"
             "#{assignment}\n#{failure}"
           end
           [result, 'custom Ruby root discovery']
@@ -60,9 +60,8 @@ module Shaka
         end
 
         def invocation_relative?(text)
-          text.lines.any? do |line|
-            line.match?(/dirname\s+(?:--?\s+)?["']?\$0["']?/) && !line.include?(GIT_ROOT)
-          end
+          remaining = text.gsub(GIT_ROOT, '').gsub(RUBY_GIT_ROOT, '')
+          remaining.match?(/dirname\s+(?:--?\s+)?["']?\$0["']?|\b__dir__\b|\brequire_relative\b|\bBASH_SOURCE\b/)
         end
       end
     end
