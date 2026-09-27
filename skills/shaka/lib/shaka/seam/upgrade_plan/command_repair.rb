@@ -37,7 +37,7 @@ module Shaka
         end
 
         def old_path?(text)
-          reference_mapping.keys.any? { |path| text.include?(path) }
+          matching_paths(text).any?
         end
       end
     end

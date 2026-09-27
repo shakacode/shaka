@@ -83,7 +83,7 @@ class SeamUpgradeApplyTest < Minitest::Test
     with_repository do |root, parent|
       add_pointer(root)
       before = probe_results(root, '.agents/bin/setup', parent)
-      assert_equal 'applied', report(root, '--apply').fetch('status')
+      assert_equal 'applied', apply_upgrade(root).fetch('status')
       assert_equal before, probe_results(root, '.agents/shaka/bin/setup', parent)
       assert_moved_layout(root)
       assert_policy_sources(root)
@@ -124,7 +124,7 @@ class SeamUpgradeApplyTest < Minitest::Test
     with_repository do |root, parent|
       linked = File.join(parent, 'linked')
       git!(root, 'worktree', 'add', '-q', '-b', 'fixture-linked', linked)
-      report(linked, '--apply')
+      apply_upgrade(linked)
       output, error, status = Open3.capture3(File.join(linked, '.agents/shaka/bin/setup'), 'linked', chdir: parent)
       assert_predicate status, :success?, error
       assert_equal "#{File.realpath(linked)}\nlinked\n", output
@@ -138,7 +138,7 @@ class SeamUpgradeApplyTest < Minitest::Test
       File.symlink('../../bin/probe', path)
       commit_fixture(root, 'link')
       assert_equal '../../../bin/probe', report(root).fetch('symlinks').first.fetch('new_target')
-      report(root, '--apply')
+      apply_upgrade(root)
       assert_equal '../../../bin/probe', File.readlink(File.join(root, '.agents/shaka/bin/validate'))
     end
   end
@@ -204,11 +204,11 @@ class SeamUpgradeRecoveryTest < Minitest::Test
   def test_ordinary_failure_rolls_back
     with_repository do |root|
       File.write(File.join(root, 'notes.txt'), 'untouched')
-      error = assert_raises(Shaka::Error) { failing_upgrader.new(['--root', root, '--apply']).run }
+      error = attempt_failing_upgrade(root)
       assert_includes error.message, 'restored'
       assert_equal 'untouched', File.read(File.join(root, 'notes.txt'))
       assert_legacy_root_restored(root)
-      refute_path_exists File.join(root, Shaka::Seam::Upgrader::JOURNAL)
+      refute_path_exists Shaka::Seam::Upgrader.journal_path(root)
     end
   end
 
@@ -225,6 +225,11 @@ class SeamUpgradeRecoveryTest < Minitest::Test
     end
   end
 
+  def attempt_failing_upgrade(root)
+    digest = report(root).fetch('digest')
+    assert_raises(Shaka::Error) { failing_upgrader.new(['--root', root, '--apply', '--digest', digest]).run }
+  end
+
   def test_permission_denial_then_retry
     with_repository do |root|
       directory = File.join(root, '.agents')
@@ -232,16 +237,16 @@ class SeamUpgradeRecoveryTest < Minitest::Test
       assert_permission_denied(root)
     ensure
       File.chmod(0o755, directory) if directory && File.exist?(directory)
-      assert_equal 'applied', report(root, '--apply').fetch('status') if root
+      assert_equal 'applied', apply_upgrade(root).fetch('status') if root
     end
   end
 
   def assert_permission_denied(root)
-    _output, error, status = upgrade(root, '--apply')
+    _output, error, status = upgrade(root, '--apply', '--digest', report(root).fetch('digest'))
     refute_predicate status, :success?
     assert_includes error, 'Permission denied'
     assert File.file?(File.join(root, '.agents/agent-workflow.yml'))
-    refute_path_exists File.join(root, Shaka::Seam::Upgrader::JOURNAL)
+    refute_path_exists Shaka::Seam::Upgrader.journal_path(root)
   end
 
   def assert_legacy_root_restored(root)
@@ -258,7 +263,7 @@ class SeamUpgradeVariantsTest < Minitest::Test
       add_optional_commands(root)
       moves = report(root).fetch('moves').map { |item| item.fetch('from') }
       assert_includes moves, '.agents/bin/trigger-hosted-ci'
-      report(root, '--apply')
+      apply_upgrade(root)
       assert_optional_files(root)
     end
   end
@@ -288,7 +293,7 @@ class SeamUpgradeVariantsTest < Minitest::Test
 
   def test_broken_existing_new_layout_is_not_a_successful_noop
     with_repository do |root|
-      report(root, '--apply')
+      apply_upgrade(root)
       File.delete(File.join(root, '.agents/shaka/bin/setup'))
       preview = report(root)
       assert_equal 'blocked', preview.fetch('status')
@@ -301,7 +306,7 @@ class SeamUpgradeVariantsTest < Minitest::Test
       commit_fixture(root, 'ruby-root')
       before = ruby_result(root, '.agents/bin/setup', parent)
       assert_ruby_repair(root)
-      report(root, '--apply')
+      apply_upgrade(root)
       assert_equal before, ruby_result(root, '.agents/shaka/bin/setup', parent)
     end
   end
@@ -328,5 +333,113 @@ class SeamUpgradeVariantsTest < Minitest::Test
       assert_equal 'blocked', preview.fetch('status')
       assert_includes preview.fetch('blockers').join, 'ambiguous repository-root'
     end
+  end
+end
+
+class SeamUpgradeReviewFixTest < Minitest::Test
+  include SeamUpgradeFixture
+
+  def test_prefix_collisions_are_not_rewritten_but_live_ci_is
+    with_repository do |root|
+      path = File.join(root, 'ci.yml')
+      File.write(path, "run: .agents/bin/test-e2e\nrun: .agents/bin/test\n")
+      commit_fixture(root, 'ci')
+      apply_upgrade(root)
+      assert_equal "run: .agents/bin/test-e2e\nrun: .agents/shaka/bin/test\n", File.read(path)
+    end
+  end
+
+  def test_live_internal_reference_is_rewritten_and_historical_line_is_kept
+    with_repository do |root|
+      FileUtils.mkdir_p(File.join(root, 'internal/ci'))
+      FileUtils.mkdir_p(File.join(root, 'docs'))
+      File.write(File.join(root, 'internal/ci/run.yml'), 'run: .agents/bin/test')
+      File.write(File.join(root, 'docs/migration.md'), 'Previously .agents/bin/test')
+      commit_fixture(root, 'references')
+      apply_upgrade(root)
+      assert_reference_contents(root)
+    end
+  end
+
+  def assert_reference_contents(root)
+    assert_equal 'run: .agents/shaka/bin/test', File.read(File.join(root, 'internal/ci/run.yml'))
+    assert_equal 'Previously .agents/bin/test', File.read(File.join(root, 'docs/migration.md'))
+  end
+
+  def test_reference_to_unmoved_optional_command_blocks
+    with_repository do |root|
+      File.write(File.join(root, 'README.md'), 'Run .agents/bin/validate-local')
+      commit_fixture(root, 'reference')
+      preview = report(root)
+      assert_equal 'blocked', preview.fetch('status')
+      assert_includes preview.fetch('blockers').join, 'unmoved path'
+    end
+  end
+
+  def test_pathname_root_keeps_its_type
+    with_repository do |root, parent|
+      write_wrapper(root, 'setup', pathname_wrapper)
+      commit_fixture(root, 'pathname')
+      before = ruby_execution(root, '.agents/bin/setup', parent)
+      apply_upgrade(root)
+      assert_equal before, ruby_execution(root, '.agents/shaka/bin/setup', parent)
+    end
+  end
+
+  def pathname_wrapper
+    "#!/usr/bin/env ruby\nrequire 'pathname'\nroot = Pathname(__dir__).parent.parent\n" \
+      "Dir.chdir(root) { puts (root / 'bin/probe').exist? }\nexit 7\n"
+  end
+
+  def ruby_execution(root, command, parent)
+    output, error, status = Open3.capture3(File.join(root, command), chdir: parent)
+    [output, error, status.exitstatus]
+  end
+
+  def test_pipefail_without_errexit_blocks_shell_repair
+    with_repository do |root|
+      write_wrapper(root, 'setup', "#!/bin/sh\nset -o pipefail\nroot=$(dirname \"$0\")/../..\n")
+      commit_fixture(root, 'pipefail')
+      assert_includes report(root).fetch('blockers').join, 'ambiguous repository-root'
+    end
+  end
+
+  def test_apply_rejects_digest_from_earlier_preview
+    with_repository do |root|
+      digest = report(root).fetch('digest')
+      File.write(File.join(root, 'README.md'), 'Run .agents/bin/test')
+      commit_fixture(root, 'new-reference')
+      _output, error, status = upgrade(root, '--apply', '--digest', digest)
+      refute_predicate status, :success?
+      assert_includes error, 'inputs changed'
+      assert File.file?(File.join(root, '.agents/agent-workflow.yml'))
+    end
+  end
+
+  def test_candidate_supplied_journal_does_not_trigger_recovery
+    with_repository do |root|
+      File.write(File.join(root, '.agents/.shaka-upgrade-journal.json'), 'forged')
+      assert_equal 'ready', report(root).fetch('status')
+    end
+  end
+
+  def test_recovery_refuses_symlink_parent_escape
+    with_repository do |root, parent|
+      File.symlink(parent, File.join(root, 'evil'))
+      write_hostile_journal(root)
+      _output, error, status = upgrade(root, '--recover')
+      refute_predicate status, :success?
+      assert_includes error, 'symlink parent'
+      refute_path_exists File.join(parent, 'outside')
+    end
+  end
+
+  def write_hostile_journal(root)
+    entry = 'evil/outside'
+    original = { entry => { 'type' => 'file', 'mode' => 0o644, 'data' => ['key'].pack('m0') } }
+    desired = { entry => { 'type' => 'absent' } }
+    journal = { 'version' => 1, 'original' => original, 'desired' => desired,
+                'temporary' => ["#{entry}.shaka-upgrade-tmp"] }
+    File.write(Shaka::Seam::Upgrader.journal_path(root), JSON.generate(journal))
   end
 end

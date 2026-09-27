@@ -73,6 +73,10 @@ module SeamUpgradeFixture
     JSON.parse(output)
   end
 
+  def apply_upgrade(root)
+    report(root, '--apply', '--digest', report(root).fetch('digest'))
+  end
+
   def git!(root, *)
     output, status = Open3.capture2e('git', '-C', root, *)
     raise output unless status.success?
@@ -85,7 +89,7 @@ module SeamUpgradeFixture
     journal = { 'version' => 1, 'original' => original, 'desired' => plan.desired_states,
                 'digest' => plan.report.fetch('digest'),
                 'temporary' => original.keys.map { |path| "#{path}.shaka-upgrade-tmp" } }
-    File.write(File.join(root, Shaka::Seam::Upgrader::JOURNAL), JSON.generate(journal))
+    File.write(Shaka::Seam::Upgrader.journal_path(root), JSON.generate(journal))
     journal
   end
 

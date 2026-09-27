@@ -23,11 +23,11 @@ module Shaka
           text = reference_text(path)
           return unless text
 
-          keys = reference_mapping.keys.select { |old| text.include?(old) }
-          return if keys.empty?
+          updated = text.lines.map { |line| rewrite_line(path, line, text.start_with?('#!')) }.join
+          return if updated == text
 
-          @references << { 'path' => path, 'kind' => reference_kind(path), 'paths' => keys }
-          handle_reference(path, text, keys)
+          source = snapshot(path)
+          @changes << { from: path, to: path, after: source.merge('data' => [updated.b].pack('m0')) }
         end
 
         def reference_text(path)
@@ -37,28 +37,45 @@ module Shaka
           text if text.valid_encoding?
         end
 
-        def handle_reference(path, text, keys)
-          return if path.match?(HISTORICAL)
-          return block_executable_reference(path) if text.start_with?('#!') && !path.start_with?('.github/')
+        def rewrite_line(path, line, executable)
+          keys = matching_paths(line)
+          return line if keys.empty?
 
-          replace_reference(path, text, reference_mapping.slice(*keys))
+          historical = historical_line?(path, line)
+          @references << { 'path' => path, 'kind' => reference_kind(path, historical), 'paths' => keys }
+          return line if historical
+          return block_reference(path, keys, executable, line) if blocked_reference?(keys, executable)
+
+          keys.reduce(line) { |result, old| result.gsub(token_pattern(old), reference_mapping.fetch(old)) }
         end
 
-        def reference_kind(path)
-          return 'historical' if path.match?(HISTORICAL)
+        def historical_line?(path, line)
+          path.end_with?('.md') && line.match?(/\b(previously|formerly|historically|before upgrade|old path)\b/i)
+        end
+
+        def reference_kind(path, historical)
+          return 'historical' if historical
           return 'tracked CI' if path.start_with?('.github/')
 
           'repository guidance or executable reference'
         end
 
-        def block_executable_reference(path)
-          @blockers << "#{path}: executable old-path reference needs explicit repair"
+        def blocked_reference?(keys, executable)
+          executable || keys.any? { |old| @moves.none? { |move| move['from'] == old } }
         end
 
-        def replace_reference(path, text, replacements)
-          updated = replacements.reduce(text) { |result, (old, new_path)| result.gsub(old, new_path) }
-          source = snapshot(path)
-          @changes << { from: path, to: path, after: source.merge('data' => [updated.b].pack('m0')) }
+        def block_reference(path, keys, executable, line)
+          reason = executable ? 'executable old-path reference' : "reference to unmoved path #{keys.join(', ')}"
+          @blockers << "#{path}: #{reason} needs explicit repair"
+          line
+        end
+
+        def matching_paths(text)
+          reference_mapping.keys.select { |old| text.match?(token_pattern(old)) }
+        end
+
+        def token_pattern(path)
+          %r{#{Regexp.escape(path)}(?![[:alnum:]_./-])}
         end
 
         def reference_mapping

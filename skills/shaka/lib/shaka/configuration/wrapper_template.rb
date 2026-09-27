@@ -2,7 +2,7 @@
 
 module Shaka
   module Configuration
-    # Git-based root lookup shared by layout upgrades and new wrapper generation.
+    # Git root lookup used by layout upgrades; seam init adopts it in #276.
     module WrapperTemplate
       SHELL_ROOT = 'root=$(git -C "$(dirname -- "$0")" rev-parse --show-toplevel)'
     end

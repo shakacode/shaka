@@ -12,10 +12,11 @@ shaka seam upgrade --root /path/to/repository
 
 The JSON preview lists moves, recognized script repairs, repository-local symlinks,
 tracked references, and blockers. It is read-only. Review the entire preview and
-resolve blockers before applying it:
+resolve blockers before applying it. Copy the preview's `digest`; changed inputs
+require a new preview and digest:
 
 ```bash
-shaka seam upgrade --root /path/to/repository --apply
+shaka seam upgrade --root /path/to/repository --apply --digest PREVIEW_DIGEST
 ```
 
 Apply checks the inputs again, moves the contract and allowlist into `.agents/shaka/`,
@@ -26,7 +27,8 @@ instead of a fixed number of parent directories. Ambiguous scripts and executabl
 references block the operation for explicit repair. Existing new-layout files,
 including ignored private files, are never overwritten.
 
-If an interruption leaves `.agents/.shaka-upgrade-journal.json`, the next preview
+If an interruption leaves `shaka-upgrade-journal.json` in the worktree's Git
+administrative directory, the next preview
 reports it and gives the recovery command:
 
 ```bash

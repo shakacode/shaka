@@ -10,6 +10,8 @@ module Shaka
         def apply(_plan, report)
           blockers = report.fetch('blockers')
           raise Error, "Upgrade blocked: #{blockers.join('; ')}" unless blockers.empty?
+
+          check_reviewed_digest!(report)
           return emit_apply(report, 'already_upgraded') if report['status'] == 'already_upgraded'
 
           fresh = recheck_plan(report)
@@ -18,6 +20,12 @@ module Shaka
           write_journal(journal)
           execute_upgrade(journal)
           emit_apply(report, 'applied')
+        end
+
+        def check_reviewed_digest!(report)
+          return if @options[:digest] == report.fetch('digest')
+
+          raise Error, 'Upgrade inputs changed; run a fresh preview'
         end
 
         def emit_apply(report, status)
@@ -56,7 +64,7 @@ module Shaka
 
         def preflight_permissions!(paths)
           paths.each { |relative| preflight_path(relative) }
-          raise Error, "Permission denied for #{JOURNAL}" unless File.writable?(File.dirname(journal_path))
+          raise Error, "Permission denied for #{journal_path}" unless File.writable?(File.dirname(journal_path))
         end
 
         def preflight_path(relative)

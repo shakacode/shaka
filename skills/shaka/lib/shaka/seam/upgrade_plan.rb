@@ -17,9 +17,7 @@ module Shaka
       PATHS = Configuration::Paths
       OLD_ROOT = 'root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)'
       GIT_ROOT = Configuration::WrapperTemplate::SHELL_ROOT
-      RUBY_ROOT = "root = IO.popen(['git', '-C', __dir__, 'rev-parse', '--show-toplevel'], &:read).strip\n" \
-                  "abort 'Cannot find repository root' unless $?.success? && !root.empty?"
-      HISTORICAL = %r{\A(?:CHANGELOG|HISTORY|docs/migration\.md|internal/)}
+      RUBY_GIT_ROOT = "IO.popen(['git', '-C', __dir__, 'rev-parse', '--show-toplevel'], &:read).strip"
 
       include Inventory
       include CommandRepair

@@ -8,17 +8,21 @@ module Shaka
         private
 
         def recover
-          if !File.file?(journal_path) || File.symlink?(journal_path)
-            raise Error, "No regular interrupted upgrade journal at #{JOURNAL}"
-          end
-
-          journal = JSON.parse(File.read(journal_path))
+          journal = load_journal
           validate_journal!(journal)
 
           restore(journal)
           puts JSON.generate('mode' => 'recover', 'status' => 'restored',
                              'paths' => journal.fetch('original').keys.sort)
           0
+        end
+
+        def load_journal
+          unless File.file?(journal_path) && !File.symlink?(journal_path)
+            raise Error, "No regular interrupted upgrade journal at #{journal_path}"
+          end
+
+          JSON.parse(File.read(journal_path))
         end
 
         def restore(journal)
@@ -40,7 +44,7 @@ module Shaka
         end
 
         def validate_journal!(journal)
-          raise Error, "Unsupported upgrade journal at #{JOURNAL}" unless journal['version'] == 1
+          raise Error, "Unsupported upgrade journal at #{journal_path}" unless journal['version'] == 1
 
           original = journal.fetch('original')
           desired = journal.fetch('desired')
@@ -62,7 +66,16 @@ module Shaka
                    !absolute.start_with?("#{@root}/")
           raise Error, "Unsafe upgrade journal path: #{relative}" if unsafe
 
+          reject_symlink_parents!(parts)
           existing_parent(absolute)
+        end
+
+        def reject_symlink_parents!(parts)
+          path = @root
+          parts[0...-1].each do |part|
+            path = File.join(path, part)
+            raise Error, "Unsafe symlink parent in upgrade journal: #{path}" if File.symlink?(path)
+          end
         end
       end
     end

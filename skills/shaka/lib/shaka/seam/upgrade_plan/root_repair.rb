@@ -25,7 +25,7 @@ module Shaka
         end
 
         def exits_on_error?(text)
-          text.lines.any? { |line| line.match?(/^set -[^\n]*e/) }
+          text.lines.any? { |line| line.match?(/^\s*set\s+-(?:[a-zA-Z]*e[a-zA-Z]*|o\s+errexit)(?:\s|$)/) }
         end
 
         def custom_shell_root(text)
@@ -37,7 +37,12 @@ module Shaka
 
         def custom_ruby_root(text)
           result = text.sub(ruby_root_pattern) do
-            "#{::Regexp.last_match(1)}#{RUBY_ROOT}#{::Regexp.last_match(2)}"
+            match = ::Regexp.last_match
+            expression = match[:expression].start_with?('Pathname') ? "Pathname(#{RUBY_GIT_ROOT})" : RUBY_GIT_ROOT
+            indent = match[:indent]
+            assignment = "#{indent}root = #{expression}"
+            failure = "#{indent}abort 'Cannot find repository root' unless $?.success? && !root.empty?"
+            "#{assignment}\n#{failure}"
           end
           [result, 'custom Ruby root discovery']
         end
@@ -45,7 +50,9 @@ module Shaka
         def shell_root_pattern = %r{^(\s*root=)\$\(dirname (?:--? )?"\$0"\)/\.\./\.\.(\s*)$}
 
         def ruby_root_pattern
-          %r{^(\s*root = )(?:File\.expand_path\(['"]\.\./\.\.['"], __dir__\)|Pathname\(__dir__\)\.parent\.parent)(\s*)$}
+          file = "File\\.expand_path\\(['\"]\\.\\./\\.\\.['\"], __dir__\\)"
+          pathname = 'Pathname\\(__dir__\\)\\.parent\\.parent'
+          /^(?<indent>[ \t]*)root = (?<expression>#{file}|#{pathname})[ \t]*$/
         end
 
         def ambiguous_root?(text)
