@@ -54,21 +54,23 @@ module Shaka
     end
 
     def self.guarded_names(entries, candidate_root)
-      (GUARDED_EXECUTABLES + entries.flat_map { |entry| interpreter_names(entry, candidate_root) }).uniq
+      interpreters = GUARDED_EXECUTABLES.filter_map do |name|
+        executable = first_executable(entries, name)
+        interpreter_name(executable, name, candidate_root) if executable
+      end
+      (GUARDED_EXECUTABLES + interpreters).uniq
     end
 
-    def self.interpreter_names(entry, candidate_root)
-      directory = File.expand_path(entry.empty? ? '.' : entry)
-      return [] unless File.directory?(directory)
-
-      GUARDED_EXECUTABLES.filter_map do |name|
-        interpreter_name(File.join(directory, name), name, candidate_root)
+    def self.first_executable(entries, name)
+      entries.each do |entry|
+        directory = File.expand_path(entry.empty? ? '.' : entry)
+        executable = File.join(directory, name)
+        return executable if File.file?(executable) && File.executable?(executable)
       end
+      nil
     end
 
     def self.interpreter_name(executable, name, candidate_root)
-      return unless File.file?(executable) && File.executable?(executable)
-
       interpreter = shebang_interpreter(executable)
       return unless interpreter
 

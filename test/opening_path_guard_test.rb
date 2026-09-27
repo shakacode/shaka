@@ -42,7 +42,24 @@ class OpeningPathGuardTest < Minitest::Test
     end
   end
 
+  def test_ignores_unsafe_wrapper_shadowed_by_safe_command
+    with_candidate_link do |root, external, safe|
+      File.unlink(File.join(external, 'gh'))
+      write_script(File.join(root, 'node'), "#!/bin/sh\nexit 1\n")
+      write_script(File.join(external, 'gh'), "#!#{root}/node\n")
+      write_script(File.join(safe, 'gh'), "#!/bin/sh\nexit 0\n")
+      path = "#{safe}:#{external}"
+      assert_equal path, Shaka::LocalReviewPathGuard.safe_path(path, candidate_root: root)
+      assert_raises(Shaka::Error) { Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root) }
+    end
+  end
+
   private
+
+  def write_script(path, body)
+    File.write(path, body)
+    File.chmod(0o755, path)
+  end
 
   def with_uninspectable(directory)
     guarded = File.join(File.realpath(directory), 'gh')

@@ -249,8 +249,8 @@ to `.agents/opening-prompt.md` and edit it for your team. Shaka reads that same
 default file when you have not configured a replacement.
 
 For example, a team can enable this while developing with Codex and list Claude
-and Grok in `review.local_review_agents`. Shaka tries the listed providers in
-preference order. If neither is available, Codex receives the opening-check
+and Grok in `review.local_review_agents`. The coding agent tries the listed
+providers in preference order. If neither is available, Codex receives the opening-check
 prompt and can revise the first sentence itself. With the setting disabled,
 the coding agent handles the check without sending the opening to another model.
 
