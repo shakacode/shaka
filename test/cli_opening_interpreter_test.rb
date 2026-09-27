@@ -71,7 +71,7 @@ class CliOpeningInterpreterTest < Minitest::Test
     write_executable(root, 'helper', "File.write(#{marker.inspect}, '')")
     File.symlink(File.join(root, 'helper'), File.join(external, 'helper'))
     _output, _error, status = run_description(external, root:) do |bin|
-      File.write(File.join(bin, 'gh'), "#!/bin/sh\nhelper\n")
+      File.write(File.join(bin, 'gh'), "#!/bin/sh\n$(dirname \"$0\")/helper\n")
     end
     refute_predicate status, :success?
     refute_path_exists marker

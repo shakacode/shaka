@@ -49,7 +49,7 @@ class CliOpeningPathTest < Minitest::Test
     end
   end
 
-  def test_safe_gh_runs_beside_unrelated_candidate_symlink
+  def test_script_gh_beside_candidate_link_uses_safe_alternate
     with_repository do |root|
       commit(root)
       Dir.mktmpdir { |dir| assert_unrelated_candidate_link_safe(dir, root) }
@@ -61,7 +61,10 @@ class CliOpeningPathTest < Minitest::Test
   def assert_unrelated_candidate_link_safe(dir, root)
     write_executable(root, 'project-tool', 'exit 1')
     File.symlink(File.join(root, 'project-tool'), File.join(dir, 'project-tool'))
-    assert_safe_gh_publishes(dir, root)
+    Dir.mktmpdir do |safe|
+      write_executable(safe, 'gh', fake_gh)
+      with_candidate_path(safe) { assert_safe_gh_publishes(dir, root) }
+    end
   end
 
   def assert_safe_gh_publishes(dir, root)

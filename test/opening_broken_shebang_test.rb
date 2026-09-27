@@ -1,0 +1,59 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require_relative 'repository_fixture'
+require_relative 'cli_opening_check_fakes'
+require_relative '../skills/shaka/lib/shaka/opening_publication'
+require 'json'
+
+class OpeningBrokenShebangTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
+
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  ROOT = File.expand_path('..', __dir__)
+  SUMMARY = 'Pull requests explain the outcome first.'
+
+  def test_broken_unrelated_interpreter_does_not_stop_publication
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_broken_interpreter_safe(dir, root) }
+    end
+  end
+
+  def test_script_with_candidate_sibling_is_rejected_without_alternate_gh
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_no_unsafe_gh_selected(dir, root) }
+    end
+  end
+
+  private
+
+  def assert_broken_interpreter_safe(dir, root)
+    write_executable(dir, 'codex', 'exit 1')
+    path = File.join(dir, 'codex')
+    File.write(path, File.read(path).sub(/\A#![^\n]+/, '#!/nonexistent/shaka-interpreter'))
+    output, error, status = run_description(dir, root:)
+    assert_predicate status, :success?, error
+    assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+  end
+
+  def assert_no_unsafe_gh_selected(dir, root)
+    write_executable(dir, 'gh', fake_gh)
+    write_executable(root, 'helper', 'exit 1')
+    File.symlink(File.join(root, 'helper'), File.join(dir, 'helper'))
+    with_only_path(dir) do
+      selected = Shaka::OpeningPublication.with_safe_path(root:) { |_candidate, gh| gh }
+      assert_nil selected
+    end
+  end
+
+  def with_only_path(path)
+    original = ENV.fetch('PATH')
+    ENV['PATH'] = path
+    yield
+  ensure
+    ENV['PATH'] = original
+  end
+end

@@ -90,11 +90,16 @@ module Shaka
         raise Shaka::Error, "#{name} interpreter uses a relative path"
       end
 
-      unsafe = interpreter.start_with?('/') &&
-               LocalReviewExecutable.candidate_owned?(File.realpath(interpreter), candidate_root)
+      unsafe = interpreter.start_with?('/') && candidate_interpreter?(interpreter, candidate_root)
       raise Shaka::Error, "#{name} interpreter resolves inside candidate checkout" if unsafe
 
       File.basename(interpreter)
+    end
+
+    def self.candidate_interpreter?(interpreter, candidate_root)
+      LocalReviewExecutable.candidate_owned?(File.realpath(interpreter), candidate_root)
+    rescue SystemCallError
+      false # A missing interpreter cannot launch candidate code.
     end
 
     def self.shebang_interpreter(executable)
@@ -128,13 +133,6 @@ module Shaka
       arguments.shift if arguments.first == '-S'
       arguments[0] = arguments.first.delete_prefix('-S') if arguments.first&.start_with?('-S')
       arguments
-    end
-
-    private
-
-    def validate_path!
-      ENV['PATH'] = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root,
-                                                                          all_executables: true)
     end
   end
 end
