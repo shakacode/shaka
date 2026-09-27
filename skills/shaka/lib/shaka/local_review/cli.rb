@@ -85,7 +85,7 @@ module Shaka
       stdout, stderr, status = reviewer_process(args, prompt)
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?
 
-      @options[:usage] = CodexUsage.announced_session(stdout)
+      @options[:usage] = CodexUsage.announced_session(stdout) if @options.fetch(:capture_usage, true)
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
 

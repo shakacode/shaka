@@ -6,6 +6,8 @@ require_relative 'executable'
 module Shaka
   # Refuses candidate-controlled PATH entries before any external command runs.
   module LocalReviewPathGuard
+    GUARDED_EXECUTABLES = %w[gh git claude codex grok].freeze
+
     def self.safe_path(path, candidate_root:, drop_candidate: false, inspect_links: true)
       entries = path.split(File::PATH_SEPARATOR, -1)
       entries.filter_map { |entry| normalized_path_entry(entry, candidate_root, drop_candidate, inspect_links) }
@@ -35,7 +37,7 @@ module Shaka
     end
 
     def self.candidate_executable_link?(directory, candidate_root)
-      Dir.children(directory).any? do |name|
+      GUARDED_EXECUTABLES.any? do |name|
         path = File.join(directory, name)
         File.symlink?(path) && File.executable?(path) &&
           LocalReviewExecutable.candidate_owned?(File.realpath(path), candidate_root)

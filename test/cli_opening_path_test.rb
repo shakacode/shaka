@@ -38,7 +38,25 @@ class CliOpeningPathTest < Minitest::Test
     end
   end
 
+  def test_unrelated_candidate_symlink_does_not_hide_safe_gh
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_unrelated_candidate_link_safe(dir, root) }
+    end
+  end
+
   private
+
+  def assert_unrelated_candidate_link_safe(dir, root)
+    target = File.join(root, 'project-tool')
+    File.write(target, "#!/bin/sh\nexit 1\n")
+    File.chmod(0o755, target)
+    File.symlink(target, File.join(dir, 'project-tool'))
+    output, error, status = run_description(dir, root:)
+    assert_predicate status, :success?, error
+    assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+    assert_path_exists File.join(dir, 'published.md')
+  end
 
   def assert_candidate_git_rejected(dir, root)
     sha = fixture_ref(root)

@@ -25,19 +25,27 @@ class OpeningPathGuardTest < Minitest::Test
     end
   end
 
+  def test_keeps_external_directory_with_unrelated_candidate_link
+    with_candidate_link do |root, external, _safe|
+      File.rename(File.join(external, 'gh'), File.join(external, 'project-tool'))
+      assert_equal external, Shaka::LocalReviewPathGuard.safe_path(external, candidate_root: root,
+                                                                             drop_candidate: true)
+    end
+  end
+
   private
 
   def with_uninspectable(directory)
-    directory = File.realpath(directory)
-    original = Dir.method(:children)
-    Dir.define_singleton_method(:children) do |path|
-      raise Errno::EACCES if path == directory
+    guarded = File.join(File.realpath(directory), 'gh')
+    original = File.method(:symlink?)
+    File.define_singleton_method(:symlink?) do |path|
+      raise Errno::EACCES if path == guarded
 
       original.call(path)
     end
     yield
   ensure
-    Dir.define_singleton_method(:children, original)
+    File.define_singleton_method(:symlink?, original)
   end
 
   def with_candidate_link
