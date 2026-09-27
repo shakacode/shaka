@@ -6,17 +6,21 @@ require_relative 'executable'
 module Shaka
   # Refuses candidate-controlled PATH entries before any external command runs.
   module LocalReviewPathGuard
-    def self.safe_path(path, candidate_root:)
+    def self.safe_path(path, candidate_root:, drop_candidate: false)
       entries = path.split(File::PATH_SEPARATOR, -1)
-      entries.map { |entry| normalized_path_entry(entry, candidate_root) }.join(File::PATH_SEPARATOR)
+      entries.filter_map { |entry| normalized_path_entry(entry, candidate_root, drop_candidate) }
+             .join(File::PATH_SEPARATOR)
     end
 
-    def self.normalized_path_entry(entry, candidate_root)
+    def self.normalized_path_entry(entry, candidate_root, drop_candidate)
       directory = File.expand_path(entry.empty? ? '.' : entry)
       if File.directory?(directory)
         target = File.realpath(directory)
-        raise Shaka::Error, 'PATH entry resolves inside candidate checkout' if
-          LocalReviewExecutable.candidate_owned?(target, candidate_root)
+        if LocalReviewExecutable.candidate_owned?(target, candidate_root)
+          return if drop_candidate
+
+          raise Shaka::Error, 'PATH entry resolves inside candidate checkout'
+        end
       end
       directory
     end

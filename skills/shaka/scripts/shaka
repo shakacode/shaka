@@ -216,7 +216,10 @@ begin
 
   if command == 'description'
     candidate_root = Shaka::OpeningCheckout.root(options[:root] || Dir.pwd)
-    ENV['PATH'] = Shaka::LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root:) if candidate_root
+    if candidate_root
+      ENV['PATH'] = Shaka::LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root:,
+                                                                                 drop_candidate: true)
+    end
   end
 
   github = Shaka::GitHub.new(repository, number)

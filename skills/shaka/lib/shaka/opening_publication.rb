@@ -38,7 +38,7 @@ module Shaka
 
     def with_safe_path(candidate_root)
       original = ENV.fetch('PATH', nil)
-      ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:)
+      ENV['PATH'] = LocalReviewPathGuard.safe_path(original.to_s, candidate_root:, drop_candidate: true)
       yield
     ensure
       ENV['PATH'] = original
