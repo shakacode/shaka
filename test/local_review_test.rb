@@ -700,6 +700,28 @@ end
 class LocalReviewPathGuardIntegrationTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
+  def test_selected_git_with_relative_shebang_fails_before_execution
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'git', "#!node\n")
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'Relative shebang interpreter'
+    end
+  end
+
+  def test_selected_reviewer_with_relative_shebang_fails_before_execution
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!node\n")
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'Relative shebang interpreter'
+    end
+  end
+
   def test_external_git_symlink_to_candidate_uses_safe_review_commands
     with_repository do |root, base, head, bin|
       write_executable(root, 'git', "#!/bin/sh\nexit 0\n")

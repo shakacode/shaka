@@ -13,7 +13,7 @@ module Shaka
 
     def self.safe_path(path, candidate_root:, drop_candidate: false, inspect_links: true, all_executables: false)
       entries = path.split(File::PATH_SEPARATOR, -1)
-      names = guarded_names(entries, candidate_root, drop_candidate) if inspect_links
+      names = guarded_names(entries, candidate_root, drop_candidate) if inspect_links && !all_executables
       options = { drop_candidate:, inspect_links:, all_executables:, names: }
       entries.filter_map do |entry|
         normalized_path_entry(entry, candidate_root, options)

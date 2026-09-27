@@ -35,7 +35,23 @@ class OpeningBrokenShebangTest < Minitest::Test
     end
   end
 
+  def test_unrelated_relative_shebang_does_not_stop_publication
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_unrelated_relative_shebang_safe(dir, root) }
+    end
+  end
+
   private
+
+  def assert_unrelated_relative_shebang_safe(dir, root)
+    output, error, status = run_description(dir, root:) do |bin|
+      write_executable(bin, 'codex', 'exit 1')
+      File.write(File.join(bin, 'codex'), "#!node\n")
+    end
+    assert_predicate status, :success?, error
+    assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
+  end
 
   def assert_bare_shebang_rejected(dir, root)
     output, error, status = run_description(dir, root:) { |bin| File.write(File.join(bin, 'gh'), "#!node\n") }

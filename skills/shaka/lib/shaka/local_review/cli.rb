@@ -4,7 +4,7 @@ require 'json'
 require 'open3'
 require 'tempfile'
 require_relative '../usage/codex_usage'
-require_relative 'executable'
+require_relative 'path_guard'
 require_relative 'process'
 
 module Shaka
@@ -48,8 +48,7 @@ module Shaka
     end
 
     def reviewer_executable(name)
-      LocalReviewExecutable.resolve(name, candidate_root: @candidate_root,
-                                          path: @path || ENV.fetch('PATH', ''))
+      LocalReviewPathGuard.safe_executable(@path || ENV.fetch('PATH', ''), name, @candidate_root)
     end
   end
 

@@ -66,7 +66,7 @@ module Shaka
     end
 
     def git_executable
-      @git_executable ||= LocalReviewExecutable.resolve('git', candidate_root: root) ||
+      @git_executable ||= LocalReviewPathGuard.safe_executable(ENV.fetch('PATH', ''), 'git', root) ||
                           (raise Shaka::Error, 'git is not on PATH')
     end
 
