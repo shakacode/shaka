@@ -13,6 +13,14 @@ class RepositoryConfigOpeningTest < Minitest::Test
     end
   end
 
+  def test_rejects_non_boolean_or_unknown_opening_settings
+    [{ 'enabled' => 'yes' }, { 'foo' => true }].each do |opening|
+      with_repository('opening_check' => opening) do |root|
+        assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+      end
+    end
+  end
+
   def test_rejects_an_invalid_opening_prompt_path
     with_repository('opening_check' => { 'prompt_file' => '../outside.md' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }

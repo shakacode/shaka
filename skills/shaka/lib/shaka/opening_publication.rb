@@ -46,9 +46,7 @@ module Shaka
 
     def fallback(summary, error, prompt)
       result = OpeningCheck.new(summary:, candidate_root: OpeningCheck.checkout_root(@root), prompt:).call
-      result.merge('reason' => "External opening check unavailable: #{error.message}")
-    rescue StandardError => e
-      { 'status' => 'not_checked', 'reason' => e.message }
+      result.merge('reason' => "Opening check unavailable: #{error.message}")
     end
   end
 end

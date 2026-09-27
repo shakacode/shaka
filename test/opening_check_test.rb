@@ -73,10 +73,17 @@ class OpeningCheckTest < Minitest::Test
   def test_unknown_checkout_root_skips_the_cli
     with_claude(parse('shaka merge', false)) do |_root, trace|
       assert_nil Shaka::OpeningCheck.checkout_root(Dir.mktmpdir)
-      result = Shaka::OpeningCheck.new(summary: COMMAND_FIRST, candidate_root: nil).call
+      result = Shaka::OpeningCheck.new(summary: COMMAND_FIRST, candidate_root: nil,
+                                      reviewer: 'anthropic/claude').call
       assert_equal 'not_checked', result.fetch('status')
       refute_path_exists trace
     end
+  end
+
+  def test_host_check_works_without_a_checkout_root
+    result = Shaka::OpeningCheck.new(summary: COMMAND_FIRST, candidate_root: nil).call
+    assert_equal 'host_check', result.fetch('status')
+    assert_includes result.fetch('prompt'), COMMAND_FIRST
   end
 
   def test_missing_cli_is_not_checked

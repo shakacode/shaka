@@ -35,14 +35,15 @@ module Shaka
       @reviewer = options[:reviewer]
       @model = options[:model]
       @prompt = options[:prompt] || PROMPT
-      @cache = make_cache(options[:cache_dir])
+      @cache_dir = options[:cache_dir]
     end
 
     def call
       return not_checked('the summary is empty') if @opening.empty?
-      return not_checked('the candidate checkout root is unknown') unless @candidate_root
       return { 'status' => 'host_check', 'prompt' => model_prompt } unless @reviewer
+      return not_checked('the candidate checkout root is unknown') unless @candidate_root
 
+      @cache = make_cache(@cache_dir)
       previous = @cache.read
       return previous if previous
 
