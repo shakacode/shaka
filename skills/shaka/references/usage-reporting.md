@@ -38,12 +38,20 @@ calls remain `UNKNOWN` when their records are absent.
 
 An interval associated with several commits is **SHARED**. Never divide its tokens
 into invented per-commit amounts. Preserve the original mapping after squash and
-associate the merged SHA without recounting it. Replace overlapping snapshots;
-retain earlier non-overlapping reports.
+associate the merged SHA without recounting it.
 
 The helper deduplicates response IDs across supplied files, including resumed or
 forked copies, and ignores cumulative snapshots. Conflicting counters,
 configuration, or interval metadata produce `UNKNOWN`.
+
+## Keep earlier reports when work changes hands
+
+Paste each report whole into the description's usage details; hidden markers at
+its first and last lines identify it. When `description` republishes a PR, it
+keeps earlier reports unless a newer report covers the same work, so a handoff
+between hosts or models keeps every contribution. Fork PRs never carry reports.
+The command prints how many reports it retained, replaced, and dropped. A newer
+report that kept only some counters can still replace an earlier report.
 
 ## Reading the result
 

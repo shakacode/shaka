@@ -130,6 +130,13 @@ class PublicationUsageCostSummaryTest < Minitest::Test
     assert_includes rendered, '<summary>Usage and cost · $1.000000 · $1.000000</summary>'
   end
 
+  # Break: with records carried from an earlier host, only the first record's estimate showed.
+  def test_usage_and_cost_summary_lists_every_record_without_a_total
+    rendered = publish('Usage and cost', '| Metric | opus |', '| --- | --- |', '| USD estimate | UNKNOWN |', '',
+                       '| Metric | codex |', '| --- | --- |', '| USD estimate | $1.811534 |')
+    assert_includes rendered, '<summary>Usage and cost · UNKNOWN · $1.811534</summary>'
+  end
+
   # Break: appending a raw USD cell after summary_text lets markup close the disclosure.
   def test_usage_and_cost_summary_escapes_usd_cells
     rendered = publish('Usage and cost', '| Metric | x |', '| --- | --- |',
@@ -140,8 +147,8 @@ class PublicationUsageCostSummaryTest < Minitest::Test
 
   private
 
-  def publish(summary, header, separator, estimate)
-    body = "#{PublicationRegressionTest::USAGE.fetch('body')}\n\n#{header}\n#{separator}\n#{estimate}\n"
+  def publish(summary, *lines)
+    body = "#{PublicationRegressionTest::USAGE.fetch('body')}\n\n#{lines.join("\n")}\n"
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',

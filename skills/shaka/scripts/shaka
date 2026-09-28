@@ -238,12 +238,15 @@ begin
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
                described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
-               body = Shaka::Publication.description(described)
-               published = github.description(body:)
+               usage_records = nil
+               published = github.description do |pull|
+                 carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
+                 Shaka::Publication.description(carried)
+               end
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
                                                        model: options[:opening_model]).call(described['summary'])
-               published.merge('opening' => opening)
+               published.merge('opening' => opening, 'usage_records' => usage_records)
              end
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),

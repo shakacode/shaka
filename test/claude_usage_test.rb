@@ -126,7 +126,7 @@ class ClaudeUsageTest < Minitest::Test
       assert_includes output, '2 responses'
       assert_includes output, 'Claude Code source versions: 2.1.270'
       assert_includes output, 'Anthropic input excludes cached input and cache writes'
-      refute_match(/900|SENSITIVE/, output)
+      refute_match(/900|SENSITIVE/, without_usage_identity(output))
     end
   end
 
@@ -216,7 +216,7 @@ class ClaudeUsageFailuresTest < Minitest::Test
       output = report('--host', 'claude-code', '--file', file, '--all-turns')
       assert_includes output, '| 100 |'
       assert_includes output.split('<details>').first, 'Unreadable or unidentifiable records'
-      refute_match(/900|800/, output)
+      refute_match(/900|800/, without_usage_identity(output))
     end
   end
 
@@ -351,6 +351,48 @@ class ClaudeUsagePriceTest < Minitest::Test
       output = report('--host', 'claude-code', '--file', file)
       assert_metric output, 'USD estimate', '$0.002158'
       assert_includes output, 'fast mode is priced for Opus models with a published rate'
+    end
+  end
+end
+
+# The report identity names only responses whose token counters were read.
+class ClaudeUsageIdentityTest < Minitest::Test
+  include ClaudeUsageFixture
+
+  # Break: a web-search count of zero made a response with no token counters count as measured.
+  def test_response_without_token_counters_is_left_out_of_the_identity
+    Dir.mktmpdir do |directory|
+      empty = reply('msg-empty', 0)
+      empty[:message][:usage] = { server_tool_use: { web_search_requests: 0 } }
+      path = transcript(directory, 'session.jsonl', [prompt('turn'), empty, reply('msg-full', 100)])
+      identity = JSON.parse(report('--host', 'claude-code', '--file', path)[/\A<!-- shaka:usage (.*) -->\n/, 1])
+      assert_equal 1, identity['responses'].size
+    end
+  end
+
+  def print_identity(*files)
+    output = report('--host', 'claude-code', *files.flat_map { |file| ['--file', file] })
+    [JSON.parse(output[/\A<!-- shaka:usage (.*) -->\n/, 1])['responses'], output]
+  end
+
+  # Break: resumed print runs share a session ID, so a later run's report replaced an earlier one.
+  def test_resumed_print_runs_have_separate_identities
+    Dir.mktmpdir do |directory|
+      first, = print_identity(print_result_file(directory))
+      resumed, = print_identity(print_result_file(directory, usage: PRINT_USAGE.merge(output_tokens: 21)))
+      refute_equal first, resumed
+    end
+  end
+
+  # Break: scoping the identity by file made identical copies conflict and lose their counters.
+  def test_identical_print_result_copies_still_count_once
+    Dir.mktmpdir do |directory|
+      original = print_result_file(directory)
+      copy = File.join(directory, 'copy.json')
+      FileUtils.cp(original, copy)
+      responses, output = print_identity(original, copy)
+      assert_equal [1, print_identity(original).first], [responses.size, responses]
+      assert_metric output, 'Input', 100
     end
   end
 end

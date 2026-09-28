@@ -99,7 +99,7 @@ module PiUsageFixture
     assert_metric output, 'Input', 900, 300
     assert_metric output, 'Native total', 967, 434
     assert_includes output, '3 responses'
-    refute_match(/800|abandoned/, output)
+    refute_match(/800|abandoned/, without_usage_identity(output))
   end
 
   def assert_current_row(output)
@@ -119,7 +119,7 @@ module PiUsageFixture
     output = report('--host', 'pi', '--file', file, '--all-turns')
     assert_includes output, 'Responses: UNKNOWN'
     assert_includes output, 'Unreadable or unidentifiable records'
-    refute_match(/999|SENSITIVE|deadbeef/, output)
+    refute_match(/999|SENSITIVE|deadbeef/, without_usage_identity(output))
   end
 end
 
@@ -176,7 +176,7 @@ class PiUsageTest < Minitest::Test
       assert_includes output, '2 responses'
       assert_includes output, 'Pi source versions: 3'
       assert_includes output, 'latest user turn on the active branch'
-      refute_match(REDACTED_OUTPUT, output)
+      refute_match(REDACTED_OUTPUT, without_usage_identity(output))
     end
   end
 
@@ -247,7 +247,7 @@ class PiUsageTest < Minitest::Test
       output = report('--host', 'pi', '--file', write_session(directory, records))
       assert_includes output, '2 responses'
       assert_includes output, 'Compaction/summary usage on active branch excluded'
-      refute_match(/1098|SENSITIVE/, output)
+      refute_match(/1098|SENSITIVE/, without_usage_identity(output))
     end
   end
 end

@@ -128,7 +128,7 @@ class CursorUsageTest < Minitest::Test
       assert_includes output, '1 responses'
       assert_includes output, 'Cursor source versions: 3.20.21'
       assert_includes output.split('<details>').first, 'latest generation only'
-      refute_match(/900|SENSITIVE/, output)
+      refute_match(/900|SENSITIVE/, without_usage_identity(output))
     end
   end
 
@@ -213,7 +213,7 @@ class CursorUsageFailuresTest < Minitest::Test
                                        incomplete])
       output = report('--host', 'cursor', '--file', file)
       assert_metric output, 'Cached input', 'UNKNOWN'
-      refute_includes output, '9900'
+      refute_includes without_usage_identity(output), '9900'
     end
   end
 

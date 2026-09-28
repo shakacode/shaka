@@ -17,6 +17,11 @@ module MetricAssert
   end
 end
 
+# Report identity digests are hexadecimal, so they can contain any refuted number by chance.
+module UsageIdentityText
+  def without_usage_identity(report) = report.sub(/\A<!-- shaka:usage .*\n/, '')
+end
+
 module BooleanAssert
   def assert_true(value, message = nil)
     assert_instance_of(TrueClass, value, message)
@@ -30,6 +35,7 @@ end
 module Minitest
   class Test
     include MetricAssert
+    include UsageIdentityText
     include BooleanAssert
   end
 end

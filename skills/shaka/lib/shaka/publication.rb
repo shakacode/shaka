@@ -65,11 +65,12 @@ module Shaka
       end
     end
 
+    # Each carried usage record keeps its own estimate; the summary lists them and adds no total.
     def usd_estimate_cells(body)
-      line = body.each_line.map(&:rstrip).find { |row| row.match?(/\A\s*\|\s*USD estimate\s*\|/) }
-      return [] unless line
-
-      line.strip.delete_prefix('|').delete_suffix('|').split('|').map(&:strip).drop(1).reject(&:empty?)
+      lines = body.each_line.map(&:rstrip).grep(/\A\s*\|\s*USD estimate\s*\|/)
+      lines.flat_map do |line|
+        line.strip.delete_prefix('|').delete_suffix('|').split('|').map(&:strip).drop(1).reject(&:empty?)
+      end
     end
 
     def checked(value, field)
