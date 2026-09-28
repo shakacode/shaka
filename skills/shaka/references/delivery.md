@@ -231,7 +231,9 @@ Cover the change completely, then stop.
 ### Keep a walkthrough readable
 
 - Link each step to the lines it explains with a commit-pinned permalink to a
-  line range. One link per file leaves the reader searching.
+  line range. One link per file leaves the reader searching. A change with no
+  lines to link, such as a binary asset or submodule pointer, takes a
+  commit-pinned file or diff link instead.
 - Describe the code at this head, compared with the base branch. Leave out the
   branch's own history: "was removed" or "now rejects" about an earlier commit
   on the branch goes stale and means nothing to a reader of the diff.
@@ -240,8 +242,8 @@ Cover the change completely, then stop.
 - Use a list for parallel items, such as the guarantees a guard provides: one
   per bullet, each linked to its code. Keep reasoning in prose.
 - Add one small diagram when control passes through three or more components,
-  or when a state can move to more than one next state. Skip it when one
-  sentence can state the sequence. GitHub renders a `mermaid` code block in a
+  or when a state can move to more than one next state. Even then, skip it
+  when one sentence can state the sequence. GitHub renders a `mermaid` code block in a
   review. Keep it to about ten nodes, label each edge with the action, and let
   the prose carry the explanation.
 - Report validation as what it proves at this head: the behavior covered, the
