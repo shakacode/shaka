@@ -236,7 +236,7 @@ phases:
         result that covers none of them counts as unmeasured. Record the verdict for the PR as
         improvement, wash, regression, or ambiguous with the pages covered, metrics, sample count,
         and tested revision. A single page load is not evidence. Any regression, and an ambiguous
-        result or wash for a change meant to speed things up, goes back to Implement, or to the
+        result or wash for a change meant to speed things up, go back to Implement, or to the
         maintainer to accept it, before the PR is called ready; record that acceptance for the PR.
         A result stays valid across commits that leave runtime behavior and the comparison setup
         unchanged; after one that changes either, rerun the comparison or mark its result stale.
@@ -408,7 +408,8 @@ phases:
     done_when: >-
       The PR description, walkthrough, and usage describe the current head; a UI change has
       that head's captures or a recorded blocked reason published on the PR; and a
-      speed-affecting change has its comparison result or unmeasured note published there.
+      speed-affecting change has its comparison result, with any needed maintainer acceptance,
+      or its unmeasured note published there.
   - id: review
     title: Review
     body: |-
