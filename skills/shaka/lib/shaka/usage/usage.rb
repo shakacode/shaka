@@ -160,10 +160,10 @@ module Shaka
     def complete? = measured_responses.size == @source.responses.size
 
     # A Claude print result is keyed by its session, which resumed runs share, so its identity
-    # is scoped to the result file: separate runs never cover each other, a re-read still does.
+    # also covers its counters: separate runs differ, while a copy or re-read of one run matches.
     def response_digest(id)
-      source = @source.responses[id]['aggregate_source']
-      digest(source ? "#{source}\0#{id}" : id)
+      record = @source.responses[id]
+      digest(record['aggregate'] ? "#{id}\0#{JSON.generate(record['usage'])}" : id)
     end
 
     def interval_fields

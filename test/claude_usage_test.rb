@@ -370,15 +370,29 @@ class ClaudeUsageIdentityTest < Minitest::Test
     end
   end
 
+  def print_identity(*files)
+    output = report('--host', 'claude-code', *files.flat_map { |file| ['--file', file] })
+    [JSON.parse(output[/\A<!-- shaka:usage (.*) -->\n/, 1])['responses'], output]
+  end
+
   # Break: resumed print runs share a session ID, so a later run's report replaced an earlier one.
-  def test_print_results_in_separate_files_have_separate_identities
-    identities = Array.new(2) do
-      Dir.mktmpdir do |directory|
-        JSON.parse(report('--host', 'claude-code', '--file',
-                          print_result_file(directory))[/\A<!-- shaka:usage (.*) -->\n/, 1])['responses']
-      end
+  def test_resumed_print_runs_have_separate_identities
+    Dir.mktmpdir do |directory|
+      first, = print_identity(print_result_file(directory))
+      resumed, = print_identity(print_result_file(directory, usage: PRINT_USAGE.merge(output_tokens: 21)))
+      refute_equal first, resumed
     end
-    assert_equal 1, identities.first.size
-    refute_equal identities.first, identities.last
+  end
+
+  # Break: scoping the identity by file made identical copies conflict and lose their counters.
+  def test_identical_print_result_copies_still_count_once
+    Dir.mktmpdir do |directory|
+      original = print_result_file(directory)
+      copy = File.join(directory, 'copy.json')
+      FileUtils.cp(original, copy)
+      responses, output = print_identity(original, copy)
+      assert_equal [1, print_identity(original).first], [responses.size, responses]
+      assert_metric output, 'Input', 100
+    end
   end
 end
