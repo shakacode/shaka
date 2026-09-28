@@ -17,6 +17,12 @@ class VisibleProseTest < Minitest::Test
     assert_equal expected, paragraphs(RENDERED)
   end
 
+  def test_a_list_item_is_measured_whole_and_emoji_can_start_a_sentence
+    html = '<ul><li><p>First part.</p><p>✅ Second part.</p></li><li>Next item.</li></ul>'
+
+    assert_equal [['First part.', '✅ Second part.'], ['Next item.']], paragraphs(html)
+  end
+
   def test_a_hard_line_break_keeps_its_sentence_together
     assert_equal [['First half second half.']], paragraphs("<p>First half<br>\nsecond half.</p>")
   end

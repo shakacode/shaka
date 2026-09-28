@@ -10,14 +10,17 @@ module Shaka
     # Content inside these is hidden, except in an open details block and a collapsed block's summary.
     CONTAINER = %r{\A<(/?)(details|summary|pre|table|h[1-6]|blockquote)\b([^>]*)>}i
     BLOCK = %r{\A</?(?:p|li|ul|ol|div|hr)\b}i
+    ITEM = %r{\A<(/?)li\b}i
+    PARAGRAPH = %r{\A</?p\b}i
     CODE = %r{\A<(/?)code\b}i
-    # A false split only shortens a sentence, so any word may start the next one, as in "iOS".
-    SENTENCE_END = /(?<=[.!?])["')\]]*\s+(?=["'(\[]*[[:alnum:]])/
+    # A false split only shortens a sentence, so anything may start the next one, as in "iOS" or an emoji.
+    SENTENCE_END = /(?<=[.!?])["')\]]*\s+/
 
     def self.words(text) = text.split.count { |token| token.match?(/[[:alnum:]]/) }
 
     def initialize(html)
       @stack = []
+      @items = 0
       @summary = false
       @code = false
       @text = html.to_s.split(/(<[^>]*>)/).map { |token| token.start_with?('<') ? tag(token) : text(token) }.join
@@ -40,6 +43,14 @@ module Shaka
       match = token.match(CONTAINER)
       return container(*match.captures) if match
       return code(token.match(CODE)[1].empty?) if token.match?(CODE)
+
+      boundary(token)
+    end
+
+    # A list item is measured whole, even when it holds several paragraphs.
+    def boundary(token)
+      @items = [@items + (token.match(ITEM)[1].empty? ? 1 : -1), 0].max if token.match?(ITEM)
+      return ' ' if @items.positive? && token.match?(PARAGRAPH)
 
       token.match?(BLOCK) ? "\n\n" : ' '
     end
