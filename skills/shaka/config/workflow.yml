@@ -281,8 +281,8 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `walkthrough`, required `deployment`, optional `sections`, required `table`,
-        required `provenance`, required usage `details`, and `wip` while the PR is unfinished;
-        walkthroughs also require `head`.
+        required `provenance`, required usage `details` holding `usage` output, and `wip` while
+        the PR is unfinished; walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range

@@ -9,12 +9,24 @@ TEST_GIT = ENV.fetch('PATH').split(File::PATH_SEPARATOR).map { |dir| File.join(d
 end or raise 'git executable not found'
 
 $LOAD_PATH.unshift File.expand_path('../skills/shaka/lib', __dir__)
+require 'shaka/usage/usage_records'
 
 module MetricAssert
   def assert_metric(haystack, label, *values)
     row = "| #{label} | #{values.join(' | ')} |"
     assert_match(/(?:^|\n)#{Regexp.escape(row)}(?:\n|\z)/, haystack)
   end
+end
+
+# Descriptions accept only usage `shaka usage` marked, so fixtures wrap their tables the same way.
+module RenderedUsage
+  FIELDS = { 'host' => 'codex', 'sources' => ['s1'], 'responses' => ['r1'], 'contribution' => 'implementation',
+             'commits' => ['a' * 40], 'complete' => true,
+             'from' => '2026-09-14T12:00:00Z', 'to' => '2026-09-14T13:00:00Z' }.freeze
+
+  module_function
+
+  def body(table) = "#{Shaka::UsageRecords.begin_mark(FIELDS)}\n#{table}\n#{Shaka::UsageRecords::END_MARK}"
 end
 
 # Report identity digests are hexadecimal, so they can contain any refuted number by chance.

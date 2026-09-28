@@ -47,7 +47,9 @@ configuration, or interval metadata produce `UNKNOWN`.
 ## Keep earlier reports when work changes hands
 
 Paste each report whole into the description's usage details; hidden markers at
-its first and last lines identify it. When `description` republishes a PR, it
+its first and last lines identify it. `description` refuses usage details that
+hold no marked report, so a hand-written table fails even when an earlier report
+would be carried. When `description` republishes a PR, it
 keeps earlier reports unless a newer report covers the same work, so a handoff
 between hosts or models keeps every contribution. Fork PRs never carry reports.
 The command prints how many reports it retained, replaced, and dropped. A newer

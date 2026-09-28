@@ -53,7 +53,8 @@ module HandoffFixtures
                  'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'UNKNOWN',
                  'active_model' => 'UNKNOWN', 'active_effort' => 'UNKNOWN' }.freeze
   TABLE = { 'columns' => %w[Check Result], 'rows' => [%w[validate pass]] }.freeze
-  USAGE = { 'summary' => 'Usage', 'body' => "| Provider | Native total |\n| --- | ---: |\n| anthropic | 1 |" }.freeze
+  USAGE = { 'summary' => 'Usage',
+            'body' => RenderedUsage.body("| Provider | Native total |\n| --- | ---: |\n| anthropic | 1 |") }.freeze
 
   def self.rendered(wip = WIP)
     Shaka::Publication.description(
