@@ -24,10 +24,11 @@ module Shaka
       estimate = CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
                                                   rate_card: selected_rate_card)
       data = estimate.snapshot
+      columns = json_columns(estimate, data)
       {
         'note' => json_note(estimate, data),
-        'columns' => json_columns(estimate, data),
-        'record' => record_identity
+        'columns' => columns,
+        'record' => record_identity.merge('columns' => columns)
       }
     end
 

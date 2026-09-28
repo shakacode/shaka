@@ -218,6 +218,24 @@ class UsageRecordsShapeTest < Minitest::Test
     assert_includes carried_content.dig('usage', 'carried'), 'opus-impl'
     assert_equal 1, stats['retained']
   end
+
+  def test_a_later_structured_publish_keeps_the_earlier_table
+    table = "| Metric | opus |\n| --- | ---: |\n| USD estimate | $3.269110 |"
+    identity = DEFAULTS.merge('host' => 'claude-code', 'responses' => %w[c1])
+    old = "#{Shaka::UsageRecords.begin_mark(identity)}\n#{table}\n#{Shaka::UsageRecords::END_MARK}"
+    fresh = DEFAULTS.merge('host' => 'codex', 'responses' => %w[x1], 'sources' => ['s2'], 'columns' => [])
+    content = { 'usage' => { 'note' => 'n', 'records' => [fresh] } }
+    carried_content, stats = Shaka::UsageRecords.carry(content, existing(old))
+    assert_includes carried_content.dig('usage', 'carried'), '$3.269110'
+    assert_equal 1, stats['retained']
+  end
+
+  def test_a_usage_object_without_records_still_keeps_the_earlier_report
+    old = record('claude-code', 'opus-impl', responses: %w[c1])
+    content = { 'usage' => { 'note' => 'n', 'columns' => [] } }
+    carried_content, = Shaka::UsageRecords.carry(content, existing(old))
+    assert_includes carried_content.dig('usage', 'carried'), 'opus-impl'
+  end
 end
 
 # Only a report that read counters for every selected response may replace measured history.

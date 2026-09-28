@@ -9,11 +9,11 @@ module Shaka
 
     def structured_usage(content)
       usage = content.is_a?(Hash) ? content['usage'] : nil
-      usage if usage.is_a?(Hash) && usage.key?('records')
+      usage if usage.is_a?(Hash)
     end
 
     def apply(records, content, usage, existing, stats)
-      fresh = usage['records'].map { |fields| identity!(fields) }
+      fresh = Array(usage['records']).map { |fields| identity!(without_columns(fields)) }
       region = records.managed_region(existing)
       return [content, stats] unless region
 
@@ -34,6 +34,10 @@ module Shaka
 
     def identity!(fields)
       identity(fields) || raise(Error, 'Publication usage record is missing identity fields.')
+    end
+
+    def without_columns(fields)
+      fields.is_a?(Hash) ? fields.except('columns') : fields
     end
   end
 end

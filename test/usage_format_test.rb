@@ -16,6 +16,7 @@ class UsageFormatTest < Minitest::Test
   def test_json_format_keeps_the_note_and_record
     document = json_report
     assert_equal 'implementation', document.dig('record', 'contribution')
+    assert_equal document.fetch('columns'), document.dig('record', 'columns')
     assert_includes document.fetch('note'), 'Native usage is PARTIAL.'
   end
 

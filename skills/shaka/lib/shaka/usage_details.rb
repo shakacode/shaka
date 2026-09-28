@@ -4,8 +4,37 @@ require_relative 'error'
 require_relative 'usage/usage_records'
 
 module Shaka
+  # Row order and label suffixes for the published usage table.
+  module UsageTableText
+    def disambiguate(built)
+      seen = Hash.new(0)
+      built.map do |column|
+        seen[column['label']] += 1
+        next column if seen[column['label']] == 1
+
+        column.merge('label' => "#{column['label']}-#{seen[column['label']]}")
+      end
+    end
+
+    def table_for(columns)
+      labels = columns.map { |column| column['label'] }
+      separator = ['---', *(['---:'] * labels.size)]
+      rows = UsageDetails::METRICS.map { |key, label| [label, *columns.map { |column| column[key] }] }
+      [['Metric', *labels], separator, *rows].map { |row| "| #{row.join(' | ')} |" }.join("\n")
+    end
+
+    def record_blocks
+      @records.map do |entry|
+        body = entry['columns'] ? table_for(entry['columns']) : 'shaka usage record'
+        "#{UsageRecords.begin_mark(entry['identity'])}\n#{body}\n#{UsageRecords::END_MARK}"
+      end
+    end
+  end
+
   # Renders the PR usage table so every host publishes the same rows and alignment.
   class UsageDetails
+    include UsageTableText
+
     SUMMARY = 'Usage and cost'
     METRICS = [
       ['usd', 'USD estimate'],
@@ -66,11 +95,7 @@ module Shaka
       raise Error, 'Publication usage columns must be a list.' unless value.is_a?(Array)
       raise Error, 'Publication usage columns must include at least one column.' if value.empty?
 
-      built = value.map.with_index { |column, index| column_cells(column, index) }
-      labels = built.map { |column| column['label'] }
-      raise Error, 'Publication usage columns repeat a label.' if labels.uniq.size != labels.size
-
-      built
+      disambiguate(value.map.with_index { |column, index| column_cells(column, index) })
     end
 
     def column_cells(column, index)
@@ -98,12 +123,7 @@ module Shaka
       value.strip.gsub(/[\\|]/) { |character| "\\#{character}" }
     end
 
-    def table
-      labels = @columns.map { |column| column['label'] }
-      separator = ['---', *(['---:'] * labels.size)]
-      rows = METRICS.map { |key, label| [label, *@columns.map { |column| column[key] }] }
-      [['Metric', *labels], separator, *rows].map { |row| "| #{row.join(' | ')} |" }.join("\n")
-    end
+    def table = table_for(@columns)
 
     def carried_text
       return '' unless @spec.key?('carried')
@@ -120,11 +140,15 @@ module Shaka
       value = @spec['records']
       raise Error, 'Publication usage records must be a list.' unless value.is_a?(Array)
 
-      value.map { |fields| UsageRecordCarry.identity!(fields) }
+      value.map { |fields| record_entry(fields) }
     end
 
-    def record_blocks
-      @records.map { |fields| "#{UsageRecords.begin_mark(fields)}\nshaka usage record\n#{UsageRecords::END_MARK}" }
+    def record_entry(fields)
+      raise Error, 'Publication usage record must be an object.' unless fields.is_a?(Hash)
+
+      copied = fields.dup
+      nested = copied.delete('columns')
+      { 'identity' => UsageRecordCarry.identity!(copied), 'columns' => nested.nil? ? nil : columns(nested) }
     end
   end
 end

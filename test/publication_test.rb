@@ -542,6 +542,21 @@ class PublicationUsageTableTest < Minitest::Test
     assert_includes error.message, 'native_total'
   end
 
+  def test_a_repeated_label_gains_a_numeric_suffix
+    rendered = render(usage: { 'note' => 'n', 'columns' => [COLUMN, COLUMN] })
+    assert_includes rendered, '| claude-opus-5-5 implementation-2 |'
+  end
+
+  def test_a_record_block_keeps_that_reports_table
+    record = { 'host' => 'claude-code', 'sources' => ['s1'], 'responses' => ['c1'],
+               'contribution' => 'implementation', 'commits' => ['a' * 40], 'complete' => true,
+               'from' => '2026-09-14T12:00:00Z', 'to' => '2026-09-14T13:00:00Z', 'columns' => [COLUMN] }
+    rendered = render(usage: { 'note' => 'n', 'columns' => [COLUMN], 'records' => [record] })
+    block = rendered[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m]
+    assert_includes block, '$3.269110'
+    refute_includes block, 'shaka usage record'
+  end
+
   def test_a_hand_written_usage_details_item_is_refused
     prose = { 'summary' => 'Usage and cost', 'body' => "| Metric | x |\n| --- | ---: |\n| USD estimate | $1 |" }
     error = assert_raises(Shaka::Error) { render(details: [prose]) }

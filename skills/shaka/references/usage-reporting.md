@@ -8,13 +8,15 @@ shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 
 `--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
 Copy every column into the description `usage.columns` list and every `record` into
-`usage.records`. The description renders one table: USD estimate, then Input, Cached
-input, Output, Reasoning output, and Cache writes, with numeric columns right-aligned.
-Credits stay on each JSON column and in the Markdown report. A `details` item whose
-summary names usage is refused.
+`usage.records`. Each `record` includes that report's `columns`. The description
+renders one table: USD estimate, then Input, Cached input, Output, Reasoning output,
+and Cache writes, with numeric columns right-aligned. A repeated label gains a
+numeric suffix. Credits stay on each JSON column and in the Markdown report. A
+`details` item whose summary names usage is refused. Each record is also kept as a
+marked block holding that report's table, so a later host still has those figures.
 
-Include the helper's output in the PR, or in the final response when there is no
-PR. **Native** figures come from the host's records. **Estimated** figures apply a
+Put that `usage` object in the PR, or the JSON report in the final response when
+there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
 rate card to those records. `UNKNOWN` means the records do not establish a value;
 it never means zero.
 
@@ -266,9 +268,9 @@ IDs. Recovery-note session links follow their separate [publication rule](delive
 The required `provenance` object records task source, workflow version, and
 requested, recommended, and active model/effort. `task_source` is `description`,
 `issue`, or `pull_request`; missing route metadata is `UNKNOWN`. The initial prompt
-is excluded. Workflow version is published as the installed `Shaka::VERSION`.
-Pass that constant, `UNKNOWN`, or any other allowlisted token; a commit, the seam
-version, or a git describe is not what readers see. The renderer adds the public
+is excluded. The renderer ignores the supplied `workflow_version` and publishes
+the installed `Shaka::VERSION`. A commit, the seam version, or a git describe is
+not what readers see. The renderer adds the public
 alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`; it never falls back to a hostname.
 
 Native usage remains the observed execution record. Provenance does not accept
