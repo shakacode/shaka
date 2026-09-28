@@ -9,9 +9,11 @@ module Shaka
   # onto other code when earlier commits move lines, and text that is missing or matches
   # more than one line refuses publication instead of guessing.
   class CodeLinks
-    REFERENCE = /\]\(code:([A-Za-z0-9_.-]+)\)/
-    # Fenced blocks and inline code spans show Markdown literally, so links there stay as written.
-    CODE = /(^[ \t]*```.*?^[ \t]*```[^\n]*$|`[^`\n]*`)/m
+    # Fenced blocks and code spans show Markdown literally, so a link example there stays as
+    # written; matching them first leaves only prose references to resolve.
+    CODE = /^[ \t]*(?<fence>`{3,}|~{3,}).*?^[ \t]*\k<fence>[^\n]*$|(?<ticks>`+).*?(?<!`)\k<ticks>(?!`)/m
+    REFERENCE = /\]\(code:(?<name>[A-Za-z0-9_.-]+)\)/
+    TOKEN = Regexp.union(CODE, REFERENCE)
 
     # Rewrites the rendered walkthrough, so links in the summary, sections, table, and
     # details all resolve the same way.
@@ -32,9 +34,10 @@ module Shaka
     end
 
     def rewrite(body)
-      body.split(CODE).each_with_index.map do |part, index|
-        index.odd? ? part : part.gsub(REFERENCE) { "](#{url(Regexp.last_match(1))})" }
-      end.join
+      body.gsub(TOKEN) do
+        name = Regexp.last_match[:name]
+        name ? "](#{url(name)})" : Regexp.last_match[0]
+      end
     end
 
     private

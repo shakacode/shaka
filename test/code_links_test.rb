@@ -105,7 +105,8 @@ class CodeLinksTest < Minitest::Test
   end
 
   def test_code_spans_and_fences_keep_link_examples_literally
-    example = "Write `[label](code:NAME)`:\n\n```json\n[x](code:other)\n```\n"
+    example = "Write `[label](code:NAME)` or ``[a](code:b)``:\n\n```json\n[x](code:other)\n```\n\n" \
+              "~~~text\n[y](code:example)\n~~~\n"
     assert_equal example, resolved_body({}, example)
   end
 
@@ -161,8 +162,7 @@ class CodeLinksCommandTest < Minitest::Test
     Dir.mktmpdir do |dir|
       sentinel = failing_gh(dir)
       content = File.join(dir, 'content.json')
-      walkthrough = { 'identity' => {}, 'summary' => 'See [it](code:missing).', 'code_links' => {} }
-      File.write(content, JSON.generate(walkthrough))
+      File.write(content, JSON.generate({ 'identity' => {}, 'summary' => '[it](code:missing)', 'code_links' => {} }))
       _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, 'walkthrough',
                                               'owner/repo', '1', '--head', 'a' * 40, '--content-file', content)
       refute_predicate status, :success?
