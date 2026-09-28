@@ -514,6 +514,16 @@ class PrivateSourceInputTest < Minitest::Test
     end
   end
 
+  def test_nul_prompt_path_is_reported_as_partial
+    with_private_repository do |root, ref|
+      policy = config.merge('review' => review_policy('prompt_file' => "bad\0.md"))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
+      result = report(root, ref)
+      assert_equal 'partial', result.status
+      assert_nil result.candidate_config
+    end
+  end
+
   def test_unrelated_non_utf8_git_path_does_not_abort_inventory
     with_private_repository do |root, ref|
       resolver = Class.new(Shaka::Configuration::PrivateSource) do

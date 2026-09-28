@@ -94,7 +94,7 @@ module Shaka
         return if resolved.start_with?("#{DIRECTORY}/") || @committed.include?(resolved)
 
         @blockers << "#{relative} targets file #{resolved} outside #{DIRECTORY} without a candidate HEAD commit"
-      rescue SystemCallError => e
+      rescue SystemCallError, PrivatePathHops::EscapedRoot => e
         unsafe!(relative, "has an unsafe symlink path: #{e.class}")
       end
 

@@ -9,6 +9,7 @@ module Shaka
     class PrivatePathHops
       MAX_LINKS = 40
       DIRECTORY = File.dirname(Paths::NEW_CONTRACT)
+      class EscapedRoot < StandardError; end
 
       def self.uncommitted(root:, path:, committed:)
         new(root:, path:, committed:).uncommitted
@@ -18,7 +19,7 @@ module Shaka
         resolved = Pathname.new(File.realpath(File.join(root, path))).relative_path_from(Pathname.new(root)).to_s
         (resolved.start_with?("#{DIRECTORY}/") || committed.include?(resolved)) &&
           uncommitted(root:, path:, committed:).empty?
-      rescue SystemCallError
+      rescue SystemCallError, EscapedRoot
         false
       end
 
@@ -52,7 +53,7 @@ module Shaka
       end
 
       def ascend
-        raise Errno::EACCES, @path if @resolved.empty?
+        raise EscapedRoot, @path if @resolved.empty?
 
         @resolved.pop
       end

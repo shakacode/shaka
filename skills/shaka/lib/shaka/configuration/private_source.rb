@@ -129,7 +129,7 @@ module Shaka
         inspect_optional_pair(config)
         inspect_prompt_dependencies(config, committed)
         config
-      rescue Error, SystemCallError => e
+      rescue Error, SystemCallError, ArgumentError => e
         @blockers << e.message
         nil
       end
