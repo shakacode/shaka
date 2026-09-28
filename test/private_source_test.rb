@@ -74,6 +74,19 @@ module PrivateSourceFixture
   ensure
     File.define_singleton_method(:lstat, lstat) if lstat
   end
+
+  def with_unreadable_config(root)
+    path = File.join(File.realpath(root), '.agents/shaka/config.yml')
+    read = File.method(:read)
+    File.define_singleton_method(:read) do |requested, **options|
+      raise Errno::EACCES, requested if requested == path
+
+      read.call(requested, **options)
+    end
+    yield
+  ensure
+    File.define_singleton_method(:read, read) if read
+  end
 end
 
 class PrivateSourceStateTest < Minitest::Test
@@ -560,12 +573,7 @@ class PrivateSourceInputTest < Minitest::Test
 
   def test_unreadable_config_is_reported_as_partial
     with_private_repository do |root, ref|
-      path = File.join(root, '.agents/shaka/config.yml')
-      File.chmod(0, path)
-      expected = File.readable?(path) ? 'complete' : 'partial'
-      assert_equal expected, report(root, ref).status
-    ensure
-      File.chmod(0o644, path)
+      with_unreadable_config(root) { assert_equal 'partial', report(root, ref).status }
     end
   end
 
