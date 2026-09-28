@@ -8,7 +8,7 @@ require_relative '../skills/shaka/lib/shaka/usage/usage_records'
 module UsageRecordsFixture
   COMMIT = 'a' * 40
 
-  DEFAULTS = { 'sources' => ['s1'], 'contribution' => 'implementation', 'commits' => [COMMIT],
+  DEFAULTS = { 'sources' => ['s1'], 'contribution' => 'implementation', 'commits' => [COMMIT], 'complete' => true,
                'from' => '2026-09-14T12:00:00Z', 'to' => '2026-09-14T13:00:00Z' }.freeze
 
   def record(host, label, **overrides)
@@ -80,12 +80,6 @@ class UsageRecordsTest < Minitest::Test
   end
 
   # Break: a snapshot whose totals became UNKNOWN from one unreadable response erased measured totals.
-  def test_incomplete_new_report_does_not_replace_measured_history
-    old = record('codex', 'measured', responses: %w[a])
-    incomplete = record('codex', 'incomplete', responses: %w[a], complete: false)
-    assert_includes carried(existing(old), incomplete), 'measured'
-  end
-
   # Break: an integration snapshot for another commit erased the implementation report's attribution.
   def test_replacement_keeps_reports_with_a_different_contribution_or_commits
     old = record('claude-code', 'impl-a', responses: %w[c1])
@@ -214,5 +208,23 @@ class UsageRecordsShapeTest < Minitest::Test
     body = content['details'].first['body']
     ['broken', 'marked', 'not json'].each { |text| refute_includes body, text }
     assert_equal({ 'retained' => 0, 'replaced' => 0, 'dropped' => 3 }, stats)
+  end
+end
+
+# Only a report whose totals are known may replace measured history.
+class UsageRecordsCompletenessTest < Minitest::Test
+  include UsageRecordsFixture
+
+  # Break: a record missing its completeness flag was treated as complete and replaced history.
+  def test_new_report_without_a_completeness_flag_does_not_replace_history
+    old = record('codex', 'measured', responses: %w[a])
+    unflagged = record('codex', 'unflagged', responses: %w[a]).sub('"complete":true,', '')
+    assert_includes carried(existing(old), unflagged), 'measured'
+  end
+
+  def test_incomplete_new_report_does_not_replace_measured_history
+    old = record('codex', 'measured', responses: %w[a])
+    incomplete = record('codex', 'incomplete', responses: %w[a], complete: false)
+    assert_includes carried(existing(old), incomplete), 'measured'
   end
 end

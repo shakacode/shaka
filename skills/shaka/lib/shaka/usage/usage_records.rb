@@ -39,7 +39,7 @@ module Shaka
     # A block ends before any later begin marker, so a lost end marker cannot swallow the next report.
     OPENING = Regexp.escape(BEGIN_PREFIX)
     BLOCK = /#{OPENING}([^\n]*) -->\n(?:(?!#{OPENING}).)*?#{Regexp.escape(END_MARK)}/m
-    FIELDS = %w[host sources responses contribution commits from to].freeze
+    FIELDS = %w[host sources responses contribution commits complete from to].freeze
 
     module_function
 
@@ -111,7 +111,7 @@ module Shaka
     # A replacement must also keep the old report's contribution and every commit it named.
     def superseded?(old, fresh)
       same_host = fresh.select do |new|
-        new['host'] == old['host'] && new['complete'] != false && same_attribution?(old, new)
+        new['host'] == old['host'] && new['complete'] == true && same_attribution?(old, new)
       end
       covered?(old, same_host) || same_host.any? { |new| fallback_match?(old, new) }
     end
