@@ -233,7 +233,7 @@ Cover the change completely, then stop.
 - Link each step to the lines it explains with a commit-pinned permalink to a
   line range. One link per file leaves the reader searching. A change with no
   lines to link, such as a binary asset or submodule pointer, takes a
-  commit-pinned file or diff link instead.
+  commit-pinned file link instead.
 - Describe the code at this head, compared with the base branch. Leave out the
   branch's own history: "was removed" or "now rejects" about an earlier commit
   on the branch goes stale and means nothing to a reader of the diff.
