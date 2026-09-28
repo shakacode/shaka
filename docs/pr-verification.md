@@ -79,18 +79,9 @@ a taller viewport instead of scrolling when the change sits below the fold. Make
 one comparison for each view the change affects, usually desktop and mobile.
 
 The agent inspects both captures first, then generates the difference with any
-image tool the project already has. With ImageMagick 7:
-
-```sh
-magick identify -format '%f %wx%h\n' before-desktop.png after-desktop.png
-magick compare -metric AE -fuzz 2% before-desktop.png after-desktop.png diff-desktop.png
-```
-
-The first command prints each image's size; compare them yourself, because
-`compare` still produces a misleading result for images of different sizes. The
-second fades unchanged pixels and paints changed ones red. It prints the changed
-pixel count and exits with status 1 when the images differ, so allow that exit in
-scripts.
+image tool the project already has, such as ImageMagick, following the agent's
+[difference-image procedure](../skills/shaka/references/visual-diff.md). Unchanged
+pixels fade and changed ones turn red.
 
 Publish the difference beside its source captures in one PR comment, attached the
 same way as other captures. Label the compared revisions, the page and state, the
@@ -103,8 +94,8 @@ timestamps also change pixels. Say which regions the PR meant to change and
 explain any others.
 
 When animation, live data, or a different page structure keeps the captures from
-aligning, or no image comparison tool is available, the agent says why and publishes the clearest labeled before-and-after
-pair instead. A short recording still shows timing and interaction. Check the
+aligning, or no image comparison tool is available, the agent says why and
+publishes the clearest labeled before-and-after pair instead. A short recording still shows timing and interaction. Check the
 difference image for private data, unrelated screen content, error pages, and
 loading placeholders, the same as its source captures.
 

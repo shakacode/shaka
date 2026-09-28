@@ -220,7 +220,8 @@ phases:
         on desktop and mobile, adding a short video when interaction or timing matters. Inspect each capture
         for the intended state. When a before and after pair shows the same route, viewport, scroll
         position, data, and step at the same size, add a difference image marking the changed
-        pixels, and label which changes are intended. When the pair cannot align, or no image
+        pixels as the [difference-image procedure](<{{package_root}}/skills/shaka/references/visual-diff.md>)
+        shows, and label which changes are intended. When the pair cannot align, or no image
         comparison tool is available, say why and publish the clearest labeled pair instead.
         After a later commit that changes runtime behavior, repeat the
         manual pass and refresh the affected captures, including their difference images.
