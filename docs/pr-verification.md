@@ -66,3 +66,16 @@ Label the tested commit and behavior. After code changes, refresh affected
 evidence or explain which part still applies. When a capture cannot be published,
 the PR records why: `uploader_absent` (no attachment route is available),
 `uploader_denied` (the upload was refused), or `upload_failed:` with the error.
+
+## Show whether it is faster or slower
+
+Some changes aim to speed up page load, rendering, or bundle size, or could slow them.
+Others change what a page loads or how it is cached or streamed. For these, the agent
+compares the base with the change on pages and metrics that reach the change. It uses
+the repository's own benchmark when there is one, and
+[ShakaPerf](https://github.com/shakacode/shakaperf#usage) otherwise.
+
+The PR reports the verdict: improvement, wash, regression, or ambiguous. It names the
+pages, metrics, sample count, and the base and change commits. Any regression or
+ambiguous result, and a wash for an intended speed-up, go back for a fix or for the
+maintainer to accept. When no comparison can run, the PR says the speed was not measured.

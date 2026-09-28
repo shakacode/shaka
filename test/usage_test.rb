@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'shaka/publication'
 
 module UsageFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -398,6 +399,22 @@ class UsageIdentityTest < Minitest::Test
     report = run_report([context('current'), negative, usage('clean', 'current', 100)])
     fields = JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])
     assert_equal [1, false], [fields['responses'].size, fields['complete']]
+  end
+
+  # A pasted helper report is still a details item. The description takes the usage object.
+  def test_description_refuses_a_pasted_usage_report
+    [[context('current'), usage('r1', 'current', 100)], [context('current')]].each do |records|
+      content = { 'identity' => { 'agent' => 'Codex' }, 'summary' => 'A summary.', 'deployment' => 'none',
+                  'table' => { 'columns' => %w[Check], 'rows' => [%w[pass]] }, 'provenance' => provenance,
+                  'details' => [{ 'summary' => 'Usage and cost', 'body' => run_report(records) }] }
+      error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+      assert_includes error.message, 'usage object'
+    end
+  end
+
+  def provenance
+    %w[task_source requested_model requested_effort recommended_model recommended_effort active_model active_effort
+       workflow_version].to_h { |key| [key, 'UNKNOWN'] }.merge('initial_prompt' => 'EXCLUDED', 'task_source' => 'issue')
   end
 
   def test_report_identity_hides_response_ids_and_closes_the_record

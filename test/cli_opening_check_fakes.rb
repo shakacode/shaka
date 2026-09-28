@@ -70,7 +70,8 @@ module CliOpeningCheckFakes
   def fake_gh
     <<~RUBY
       require 'json'
-      request = JSON.parse(STDIN.read)
+      raw = STDIN.read
+      request = raw.strip.empty? ? {} : JSON.parse(raw)
       case ARGV[1]
       when 'repos/owner/repo/pulls/1'
         if ARGV.include?('PATCH')

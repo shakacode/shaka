@@ -256,3 +256,28 @@ class ReviewPromptFileMigrationTest < Minitest::Test
     assert_equal '.agents/review-prompt.md', result.established.dig('review', 'prompt_file')
   end
 end
+
+# The published review summary names the instructions the reviewer received.
+class ReviewPromptSourceTest < Minitest::Test
+  include ReviewPromptFileFixture
+
+  def test_reports_which_instructions_the_reviewer_received
+    agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'prompt_file' => '.agents/codex-prompt.md' }]
+    sources = { {} => 'Shaka default',
+                { 'prompt_file' => '.agents/review-prompt.md' } => 'review.prompt_file .agents/review-prompt.md',
+                { 'local_review_agents' => agents } => 'openai/codex prompt_file .agents/codex-prompt.md' }
+    sources.each { |review, source| assert_prompt_source(review, source) }
+  end
+
+  private
+
+  def assert_prompt_source(review, source)
+    with_repository(review) do |root, base, head, bin|
+      result = JSON.parse(run_review(root, base, head, bin).first)
+      File.unlink(result.fetch('report'))
+
+      # This fixture has no AGENTS.md, so the requested ref supplied no criteria.
+      assert_equal [source, nil], result.values_at('prompt_source', 'criteria_ref')
+    end
+  end
+end
