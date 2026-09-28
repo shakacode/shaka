@@ -5,9 +5,28 @@ require_relative 'repository_fixture'
 require_relative 'cli_opening_check_fakes'
 require 'json'
 
+module CliDescriptionDecisionsRun
+  def run_description(dir, root:, env: {}, decisions: true)
+    @decisions = decisions == true ? ['Which base?'] : decisions
+    write_fake_commands(dir)
+    content = File.join(dir, 'content.json')
+    File.write(content, JSON.generate(description_content))
+    options = ['--root', root, '--content-file', content, '--ref', fixture_ref(root)]
+    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }.merge(env),
+                   self.class::COMMAND, 'description', 'owner/repo', '1', *options)
+  end
+
+  def description_content
+    content = super
+    content['decisions'] = @decisions if @decisions
+    content
+  end
+end
+
 class CliDescriptionDecisionsTest < Minitest::Test
   include RepositoryConfigTestHelpers
   include CliOpeningCheckFakes
+  include CliDescriptionDecisionsRun
 
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
   ROOT = File.expand_path('..', __dir__)
@@ -97,22 +116,23 @@ class CliDescriptionDecisionsTest < Minitest::Test
     end
   end
 
-  private
-
-  def run_description(dir, root:, env: {}, decisions: true)
-    @decisions = decisions == true ? ['Which base?'] : decisions
-    write_fake_commands(dir)
-    content = File.join(dir, 'content.json')
-    File.write(content, JSON.generate(description_content))
-    options = ['--root', root, '--content-file', content, '--ref', fixture_ref(root)]
-    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }.merge(env),
-                   COMMAND, 'description', 'owner/repo', '1', *options)
+  def test_an_empty_decisions_list_removes_the_section_and_the_label
+    prior = "<!-- shaka:begin -->\n<!-- shaka:decisions -->\n<!-- shaka:end -->\n"
+    env = { 'EXISTING_BODY' => prior, 'PR_LABEL' => 'awaiting-answer' }
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir { |dir| assert_decisions_cleared(dir, root, env) }
+    end
   end
 
-  def description_content
-    content = super
-    content['decisions'] = @decisions if @decisions
-    content
+  private
+
+  def assert_decisions_cleared(dir, root, env)
+    output, error, status = run_description(dir, root:, decisions: [], env:)
+    assert_predicate status, :success?, error
+    refute_includes File.read(File.join(dir, 'published.md')), 'shaka:decisions'
+    assert_equal 'deleted', File.read(File.join(dir, 'released')).strip
+    assert_equal 'released', JSON.parse(output).dig('attention', 'state')
   end
 
   def fake_gh = DESCRIPTION_GH
@@ -144,6 +164,11 @@ DESCRIPTION_GH = <<~'RUBY'
   when %r{issues/1/labels\z}
     File.write(File.join(ENV.fetch('HOME'), 'labeled'), request.fetch('labels').join(','))
     puts JSON.generate([{ 'name' => 'awaiting-answer' }])
+  when %r{issues/1/labels/}
+    abort "unexpected label write: #{ARGV.inspect}" unless ARGV.include?('DELETE')
+
+    File.write(File.join(ENV.fetch('HOME'), 'released'), 'deleted')
+    puts '[]'
   when 'repos/owner/repo/labels/awaiting-answer'
     puts JSON.generate('name' => 'awaiting-answer')
   else

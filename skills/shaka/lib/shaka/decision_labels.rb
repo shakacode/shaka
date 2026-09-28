@@ -7,6 +7,10 @@ require_relative 'publication_sections'
 module Shaka
   # Keeps awaiting-answer aligned with the description's decisions list.
   class DecisionLabels
+    # A closed fence hides the marker. An unclosed opener does not, so a broken
+    # fence in an earlier section cannot drop a published question.
+    FENCE = /^[ \t]*(?<fence>(?<mark>[`~])\k<mark>{2,}).*?^[ \t]*\k<fence>\k<mark>*[ \t]*$/m
+
     def self.guard(github, content, existing_body = nil)
       decisions = list(content)
       if decisions.nil? && asks_for_decisions?(existing_body)
@@ -27,13 +31,7 @@ module Shaka
     end
 
     def self.asks_for_decisions?(body)
-      fenced = false
-      body.to_s.each_line.any? do |line|
-        fenced = !fenced if line.lstrip.start_with?('```', '~~~')
-        next false if fenced
-
-        line.strip == PublicationSections::MARKER
-      end
+      body.to_s.gsub(FENCE, '').each_line.any? { |line| line.strip == PublicationSections::MARKER }
     end
 
     def self.list(content)
