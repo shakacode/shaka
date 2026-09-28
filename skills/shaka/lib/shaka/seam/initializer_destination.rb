@@ -10,8 +10,13 @@ module Shaka
     module InitializerDestination
       private
 
+      def destination_directories
+        [Configuration::Paths::DIRECTORY, File.dirname(Initializer::LAYOUT.contract),
+         Initializer::LAYOUT.command_directory]
+      end
+
       def preflight_directories
-        [Configuration::Paths::DIRECTORY, Configuration::Paths::COMMAND_DIRECTORY].each do |relative|
+        destination_directories.each do |relative|
           path = File.join(@root, relative)
           next unless File.exist?(path) || File.symlink?(path)
 
@@ -26,6 +31,24 @@ module Shaka
 
           raise Error, "Refusing existing destination: #{path.delete_prefix("#{@root}/")}"
         end
+      end
+
+      # Refuse before the first write when a destination cannot be created, so a denied
+      # approval leaves nothing behind and the same command can simply run again.
+      def preflight_permissions(files)
+        pending = files.keys.reject { |path| File.file?(path) }
+        pending.map { |path| File.dirname(path) }.uniq.each do |directory|
+          parent = existing_parent(directory)
+          next if File.writable?(parent) && File.executable?(parent)
+
+          raise Error, "Permission denied for #{directory.delete_prefix("#{@root}/")}: " \
+                       "#{parent.delete_prefix("#{@root}/")} is not writable; grant write access and rerun seam init"
+        end
+      end
+
+      def existing_parent(path)
+        path = File.dirname(path) until File.exist?(path)
+        path
       end
 
       def matching_destination?(path, content)
@@ -47,7 +70,8 @@ module Shaka
         # Narrow accidental-change windows; same-target concurrent writers are unsupported.
         preflight_directories
         preflight_files(files)
-        FileUtils.mkdir_p(Configuration::Paths.at(@root, Configuration::Paths::COMMAND_DIRECTORY))
+        preflight_permissions(files)
+        FileUtils.mkdir_p(Configuration::Paths.at(@root, Initializer::LAYOUT.command_directory))
         preflight_directories
         files.each do |path, content|
           preflight_directories
@@ -63,7 +87,7 @@ module Shaka
       def destination_mode(path) = wrapper_path?(path) ? 0o755 : 0o644
 
       def wrapper_path?(path)
-        File.dirname(path) == Configuration::Paths.at(@root, Configuration::Paths::COMMAND_DIRECTORY)
+        File.dirname(path) == Configuration::Paths.at(@root, Initializer::LAYOUT.command_directory)
       end
     end
   end

@@ -6,8 +6,9 @@ and standard script; keep those definitions there.
 
 1. Verify the repository identity, visibility, default branch, and any existing `AGENTS.md`.
 2. Inspect existing setup, test, validation, and CI commands. Reuse them in small
-   `.agents/bin/` wrappers; include any existing fast validation or staged CI
-   capability when useful. Shaka's own [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin) are examples.
+   `.agents/shaka/bin/` wrappers; include any existing fast validation or staged CI
+   capability when useful. Shaka's own [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin) are examples
+   in the older `.agents/bin/` location.
 3. Establish review jobs from their actual workflows and merge authority from
    the user's instructions. Keep Ask when no broader authority exists. Check whether
    GitHub requires checks on the base branch: count `required_status_checks` rules
@@ -22,10 +23,11 @@ and standard script; keep those definitions there.
    reports one check per workflow. Explain that Shaka, not GitHub, then enforces them.
    If the user wants no required checks, continue with merge preference `ask` and
    say that Auto merge needs at least one.
-4. Prepare the files with the trusted installed helper. `seam init` still creates
-   version-one configuration in `.agents/`; an existing repository can use the
-   [layout upgrade procedure](migration.md#upgrade-the-configuration-layout)
-   when it wants to move to `.agents/shaka/`.
+4. Prepare the files with the trusted installed helper. `seam init` creates
+   version-one configuration in `.agents/shaka/`. When the repository already has
+   `.agents/agent-workflow.yml`, `seam init` refuses and names the
+   [layout upgrade procedure](migration.md#upgrade-the-configuration-layout); that
+   configuration keeps working without the upgrade.
    For an older contract shape, use the [migration procedure](migration.md#migrate-an-older-contract).
 5. Inspect the generated diff, run its checks, and commit it. When the default
    branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
@@ -54,8 +56,8 @@ conflicting files. When GitHub enforces no required checks, add
 
 ## Review and merge the first setup PR
 
-When the default branch has no `.agents/agent-workflow.yml`, every `--ref` command
-stops with `Cannot read .agents/agent-workflow.yml at SHA`. That includes
+When the default branch has no Shaka configuration, every `--ref` command stops
+with `Cannot find .agents/agent-workflow.yml or .agents/shaka/config.yml`. That includes
 `seam check`, `reviewer`, and `merge`. The refusal is correct: the setup PR must not
 grant itself review or merge policy. Do not work around it with the candidate's
 own YAML. Handle that one PR this way:
@@ -94,9 +96,13 @@ check the user confirms when GitHub requires none; see
 [`merge.required_checks`](../../../docs/settings.md#mergerequired_checks). With no
 required checks at all, keep merge preference `ask`.
 
-The initializer writes the three required wrappers, `.agents/shaka.md`, and YAML
-with `version`, `review`, `merge`, the default `branches.name`, and
-`wip.include_locations: true`. It defaults to Ask. Add `--merge-preference auto`
+The initializer writes `.agents/shaka/config.yml`, the three required wrappers in
+`.agents/shaka/bin/`, and the `.agents/shaka.md` pointer. The YAML holds `version`,
+`review`, `merge`, the default `branches.name`, and `wip.include_locations: true`.
+Each wrapper finds the repository root with Git, so it runs the same from any
+directory and from a linked worktree. The initializer refuses Shaka command names
+left in `.agents/bin/` without their configuration, leaves other `.agents/bin/`
+tools alone, and checks write access before writing anything. It defaults to Ask. Add `--merge-preference auto`
 only with established authority, `--base-branch` for another base, and
 `--required-check` for seam-declared checks. Add optional reviewer entries and
 `repo_prefix` by editing the YAML afterward. Set `wip.include_locations` to
