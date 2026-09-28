@@ -1,7 +1,18 @@
 # Make a difference image
 
-Use the image tool the project already has. With ImageMagick 7, confirm the two
-captures have the same size, then write the difference:
+Use an image tool that is already available. `command -v magick` shows whether
+ImageMagick 7 is installed. A project's own screenshot tests may also produce
+difference images; Playwright's `toHaveScreenshot`, for example, writes one when
+an assertion fails.
+
+When no tool is available, skip the difference image. Say so beside the captures,
+for example “No difference image: no image comparison tool on this machine,” and
+publish the clearest labeled before and after pair. Installing software on the
+machine or adding a project dependency just for this evidence needs the user's
+approval.
+
+With ImageMagick 7, confirm the two captures have the same size, then write the
+difference:
 
 ```sh
 magick identify -format '%f %wx%h\n' before-desktop.png after-desktop.png
