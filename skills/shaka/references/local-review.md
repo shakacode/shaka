@@ -84,10 +84,10 @@ shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex 
 
 With `--criteria-ref`, the helper takes the model and effort from the reviewer's trusted
 `local_review_agents` entry when the command names none; a named `--model` or `--effort` wins.
-When neither names a model, the ignored user configuration also drops the user's own model choice,
-so the CLI's built-in default runs, which has been `gpt-6-astra` at five times Sol's token price.
-`gpt-6-sol` at `medium` is the default choice for adversarial review; use a larger model or effort
-only when the change's risk calls for it.
+When neither names a model, Codex runs its built-in default; see
+[reviewer model and effort](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewlocal_review_agents)
+for why that costs more. `gpt-6-sol` at `medium` is the default choice for adversarial review;
+use a larger model or effort only when the change's risk calls for it.
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
