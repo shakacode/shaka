@@ -555,7 +555,14 @@ class PublicationUsageTableTest < Minitest::Test
     rendered = render(usage: { 'note' => 'n', 'columns' => [COLUMN], 'records' => [record] })
     block = rendered[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m]
     assert_includes block, '$3.269110'
-    refute_includes block, 'shaka usage record'
+    refute_includes rendered, '$3.269110 · $3.269110'
+  end
+
+  def test_carried_commented_rows_become_a_visible_table
+    carried = "<!-- | Metric | opus | -->\n<!-- | --- | ---: | -->\n<!-- | USD estimate | $1.000000 | -->"
+    rendered = render(usage: { 'note' => 'n', 'columns' => [COLUMN], 'carried' => carried })
+    assert_includes rendered, '| USD estimate | $1.000000 |'
+    assert_includes rendered, '<summary>Usage and cost · $3.269110 · $1.000000</summary>'
   end
 
   def test_a_hand_written_usage_details_item_is_refused

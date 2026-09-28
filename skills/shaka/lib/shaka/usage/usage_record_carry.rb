@@ -17,12 +17,10 @@ module Shaka
       region = records.managed_region(existing)
       return [content, stats] unless region
 
-      previous = usage['carried'].to_s
-      kept = records.carried(region, previous, stats, fresh)
+      kept = records.carried(region, '', stats, fresh)
       return [content, stats] if kept.empty?
 
-      combined = [previous, *kept].reject(&:empty?).join("\n\n")
-      [content.merge('usage' => usage.merge('carried' => combined)), stats]
+      [content.merge('usage' => usage.except('carried').merge('carried' => kept.join("\n\n"))), stats]
     end
 
     def identity(fields)

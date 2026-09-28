@@ -13,7 +13,8 @@ renders one table: Credits estimate, USD estimate, then Input, Cached input,
 Output, Reasoning output, and Cache writes, with numeric columns right-aligned.
 A repeated label gains a numeric suffix. A
 `details` item whose summary names usage is refused. Each record is also kept as a
-marked block holding that report's table, so a later host still has those figures.
+commented block holding that report's table. A later publish shows the table when
+it carries the block, so the current summary does not list the same amount twice.
 
 Put that `usage` object in the PR, or the JSON report in the final response when
 there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a

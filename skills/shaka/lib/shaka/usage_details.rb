@@ -23,11 +23,21 @@ module Shaka
       [['Metric', *labels], separator, *rows].map { |row| "| #{row.join(' | ')} |" }.join("\n")
     end
 
+    # The current report's table is already visible. Its copy stays in comments so the
+    # summary does not list the same amount twice, and a later publish can show it if carried.
     def record_blocks
       @records.map do |entry|
-        body = entry['columns'] ? table_for(entry['columns']) : 'shaka usage record'
+        body = entry['columns'] ? commented_table(table_for(entry['columns'])) : '<!-- retained usage record -->'
         "#{UsageRecords.begin_mark(entry['identity'])}\n#{body}\n#{UsageRecords::END_MARK}"
       end
+    end
+
+    def commented_table(table)
+      table.lines.map { |line| "<!-- #{line.rstrip} -->" }.join("\n")
+    end
+
+    def visible_carried(text)
+      text.gsub(/^<!-- (\|.*) -->$/, '\1')
     end
   end
 
@@ -66,7 +76,7 @@ module Shaka
       parts = []
       parts << @note unless @note.empty?
       parts << table
-      parts << @carried unless @carried.empty?
+      parts << visible_carried(@carried) unless @carried.empty?
       parts.concat(record_blocks)
       parts.join("\n\n")
     end
