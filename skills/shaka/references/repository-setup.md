@@ -22,8 +22,11 @@ and standard script; keep those definitions there.
    reports one check per workflow. Explain that Shaka, not GitHub, then enforces them.
    If the user wants no required checks, continue with merge preference `ask` and
    say that Auto merge needs at least one.
-4. Prepare the files with the trusted installed helper. For an existing
-   configuration, use the [migration procedure](migration.md).
+4. Prepare the files with the trusted installed helper. `seam init` still creates
+   version-one configuration in `.agents/`; an existing repository can use the
+   [layout upgrade procedure](migration.md#upgrade-the-configuration-layout)
+   when it wants to move to `.agents/shaka/`.
+   For an older contract shape, use the [migration procedure](migration.md#migrate-an-older-contract).
 5. Inspect the generated diff, run its checks, and commit it. When the default
    branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
    path to review it before publishing and hand it to the maintainer. A migration
