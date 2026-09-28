@@ -12,14 +12,29 @@ class VisibleProseTest < Minitest::Test
     expected = [['🤖 Claude Code · Anthropic · claude-opus-5-5 · xhigh'],
                 ['The summary uses Code in code.', 'Reviewers see the code.', 'iOS builds pass.'],
                 ['Code Walkthrough'], ['Example:'], ['Item one'], ['Nested item'], ['Item two with a link'],
-                ['After details.']]
+                ['Usage'], ['After details.']]
 
-    assert_equal expected, Shaka::VisibleProse.new(RENDERED).paragraphs
+    assert_equal expected, paragraphs(RENDERED)
+  end
+
+  def test_a_hard_line_break_keeps_its_sentence_together
+    assert_equal [['First half second half.']], paragraphs("<p>First half<br>\nsecond half.</p>")
+  end
+
+  def test_open_details_and_collapsed_summaries_are_visible
+    html = '<details open><summary>Why</summary><p>Shown.</p></details>' \
+           '<details><summary>Usage</summary><p>Hidden.</p></details>'
+
+    assert_equal [['Why'], ['Shown.'], ['Usage']], paragraphs(html)
   end
 
   def test_an_unclosed_hidden_block_hides_only_what_github_hides
     html = "<p>Before.</p>\n<details>\n<p>Inside.</p>"
 
-    assert_equal [['Before.']], Shaka::VisibleProse.new(html).paragraphs
+    assert_equal [['Before.']], paragraphs(html)
   end
+
+  private
+
+  def paragraphs(html) = Shaka::VisibleProse.new(html).paragraphs
 end

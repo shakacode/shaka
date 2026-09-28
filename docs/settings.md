@@ -281,8 +281,8 @@ prose_limits:
 ```
 
 The values above are the defaults. Set any key to a positive integer to change
-it; omitted keys keep their default. Each limit counts only visible prose.
-Collapsed details, code, tables, headings, quotes, and link addresses do not count.
+it; omitted keys keep their default. Each limit counts only the prose GitHub
+shows. Collapsed details, code, tables, headings, quotes, and link addresses do not count.
 
 - No sentence may run past `max_sentence_words`.
 - No paragraph or list item may run past `max_paragraph_words`.
