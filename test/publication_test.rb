@@ -97,8 +97,17 @@ class PublicationRegressionTest < Minitest::Test
   def test_a_usage_marker_without_its_identity_fields_is_refused
     ['{not json}', '{"host":"codex"}'].each do |identity|
       forged = { 'summary' => 'Usage',
-                 'body' => "<!-- shaka:usage #{identity} -->\n| a |\n| --- |\n<!-- shaka:usage:end -->" }
+                 'body' => "<!-- shaka:usage #{identity} -->\n| a |\n| --- |\n| 1 |\n<!-- shaka:usage:end -->" }
       assert_raises(Shaka::Error) { Shaka::Publication.description(description_content('details' => [forged])) }
+    end
+  end
+
+  # Markers with the report deleted between them would publish an empty disclosure.
+  def test_markers_around_no_table_are_refused
+    [RenderedUsage.body('Nothing measured.'),
+     "#{RenderedUsage.body('')}\n\n| a |\n| --- |\n| 1 |"].each do |body|
+      empty = { 'summary' => 'Usage', 'body' => body }
+      assert_raises(Shaka::Error) { Shaka::Publication.description(description_content('details' => [empty])) }
     end
   end
 
@@ -110,7 +119,7 @@ class PublicationRegressionTest < Minitest::Test
     hand = description_content('details' => [{ 'summary' => 'Usage', 'body' => "| a |\n| --- |\n| 2 |" }])
     carried, = Shaka::UsageRecords.carry(hand, existing)
     assert_includes Shaka::Publication.description(carried), '| openai | 1 |'
-    assert_raises(Shaka::Error) { Shaka::Publication.require_rendered_usage(hand['details']) }
+    assert_raises(Shaka::Error) { Shaka::UsageDetails.require_rendered(hand['details']) }
   end
 
   def test_a_later_usage_detail_with_a_complete_table_is_accepted

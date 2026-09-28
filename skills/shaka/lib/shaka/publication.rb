@@ -138,6 +138,39 @@ module Shaka
     end
   end
 
+  # A hand-written table can claim anything, so only a report `shaka usage` marked counts (#256).
+  # `description` also checks the supplied details before carrying, since a carried report would pass.
+  module UsageDetails
+    TABLE_SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
+
+    module_function
+
+    def require_rendered(items)
+      bodies = Array(items).filter_map do |item|
+        item['body'] if item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i)
+      end
+      return if bodies.any? { |body| rendered_reports(body.to_s).any? { |report| complete_table?(report) } }
+
+      raise Error, 'Publication description requires usage details rendered by `shaka usage`; ' \
+                   'run `shaka usage --commit SHA --contribution NAME` and supply its output unchanged ' \
+                   'as the usage details body. A hand-written usage table is refused.'
+    end
+
+    # Only a marked report whose identity parses counts; its table must sit between the markers.
+    def rendered_reports(body)
+      body.to_enum(:scan, UsageRecords::BLOCK).filter_map { Regexp.last_match[0] }
+          .select { |report| UsageRecords.text_records(report).any? }
+    end
+
+    def complete_table?(body)
+      PublicationText.prose(body).lines.map(&:rstrip).each_cons(3).any? do |header, separator, data|
+        pipe_row?(header) && separator.match?(TABLE_SEPARATOR) && pipe_row?(data) && !data.match?(TABLE_SEPARATOR)
+      end
+    end
+
+    def pipe_row?(line) = line.match?(/\A\s*\|.+\|\s*\z/)
+  end
+
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
     def self.description(content)
@@ -146,19 +179,6 @@ module Shaka
 
     def self.comment(content) = new(content).render([])
     def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
-
-    # A hand-written table can claim anything, so only a report `shaka usage` marked counts (#256).
-    # `description` also checks the supplied details before carrying, since a carried report would pass.
-    def self.require_rendered_usage(items)
-      bodies = Array(items).filter_map do |item|
-        item['body'] if item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i)
-      end
-      return if bodies.any? { |body| UsageRecords.text_records(body.to_s).any? }
-
-      raise Error, 'Publication description requires usage details rendered by `shaka usage`; ' \
-                   'run `shaka usage --commit SHA --contribution NAME` and supply its output unchanged ' \
-                   'as the usage details body. A hand-written usage table is refused.'
-    end
 
     def initialize(content, require_tables: false)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
@@ -227,7 +247,7 @@ module Shaka
       items = PublicationText.list(@content['details'], 'details')
       rendered = items.map { |detail| details_block(detail) }
       if @require_tables
-        self.class.require_rendered_usage(items)
+        UsageDetails.require_rendered(items)
         refuse_free_form_wip(items)
       end
       rendered
