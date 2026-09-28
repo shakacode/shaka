@@ -5,6 +5,7 @@ require_relative 'configuration/layout'
 require_relative 'repository_config'
 require_relative 'trusted_config_source'
 require_relative 'configuration/sources'
+require_relative 'configuration/private_source'
 require_relative 'configuration/generated_files'
 
 module Shaka
@@ -18,6 +19,9 @@ module Shaka
     module_function
 
     def worktree(root:) = RepositoryConfig.load(root:)
+
+    # ref is the caller-verified default-branch commit, not a candidate checkout ref.
+    def private_source(root:, ref:) = PrivateSource.new(root:, ref:).resolve
 
     def trusted(root:, ref:, candidate_commands: true)
       TrustedConfigSource.load(root:, ref:, candidate_commands:)
