@@ -225,22 +225,21 @@ phases:
       - When a change aims to speed up page load, rendering, or bundle size, likely slows them,
         or changes what a page loads or how it is cached or streamed, measure it against the base.
         Copy and styling tweaks with no speed aim or likely speed cost fall outside this step.
-        When the repository has its own base-versus-change benchmark, use it and record its
-        result for the PR; otherwise use ShakaPerf.
-        For ShakaPerf, first check `command -v shaka-perf`. If it is missing, suggest
+        When the repository has its own base-versus-change benchmark, use it; otherwise use
+        ShakaPerf. For ShakaPerf, first check `command -v shaka-perf`. If it is missing, suggest
         [ShakaPerf](https://github.com/shakacode/shakaperf#usage) to the user. If it is installed
         but the repository has no `abtests.config.ts`, the ShakaPerf config that names the pages
         to compare, offer to run `shaka-perf init` and its twin-server setup, which runs the base
         and the change as two local servers side by side. Once both are in place, run
-        `shaka-perf compare` with the base as control and the change as experiment. Record the
-        verdict for the PR as improvement, wash, regression, or ambiguous with the metrics,
-        sample count, and tested revision. A single page load is not evidence. Any regression,
-        and an ambiguous result or wash for a change meant to speed things up, goes back to
-        Implement, or to the maintainer to accept it, before the PR is called ready; record that
-        acceptance for the PR. A result stays valid across commits that leave runtime behavior
-        and the comparison setup unchanged; after one that changes either, rerun the comparison
-        or mark its result stale. When no comparison could run, record for the PR that the speed
-        claim was not measured.
+        `shaka-perf compare` with the base as control and the change as experiment.
+        For either comparison, record the verdict for the PR as improvement, wash, regression, or
+        ambiguous with the metrics, sample count, and tested revision. A single page load is not
+        evidence. Any regression, and an ambiguous result or wash for a change meant to speed
+        things up, goes back to Implement, or to the maintainer to accept it, before the PR is
+        called ready; record that acceptance for the PR. A result stays valid across commits that
+        leave runtime behavior and the comparison setup unchanged; after one that changes either,
+        rerun the comparison or mark its result stale. When no comparison could run, record for
+        the PR that the speed claim was not measured.
     done_when: >-
       The change is committed; validation passed on that exact head; a UI change was used by
       hand and captured on that head; a speed-affecting change has either a current comparison
