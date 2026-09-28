@@ -158,7 +158,39 @@ the model's own output reports it. Check `--help` before relying on any of these
 
 A local review is **UNVERIFIED** until the owner publishes its report, including that closing
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
-tests, and publishes a concise summary tied to the reviewed commit. Record available native
+tests, then publishes the review after pushing:
+
+```bash
+shaka review publish OWNER/REPO NUMBER --content-file PATH
+```
+
+The content JSON lists `rounds`, each with the reviewed `head`, `reviewer`, and `report_file`
+from `shaka review run`, plus the `prompt_source` and `criteria_ref` that command returned.
+Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
+`cost` out unless the host reports a priced route: never estimate a dollar figure for a
+subscription session. When `shaka reviewer` did not return `different_provider`, add
+`fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
+`reviewer`, `failure_stage`, and `reason` from its `shaka review run` result.
+
+```json
+{
+  "rounds": [
+    { "head": "SHA", "reviewer": "openai/codex", "report_file": "/tmp/shaka-review-x.md",
+      "prompt_source": "Shaka default", "criteria_ref": "TRUSTED_SHA",
+      "model": "gpt-5.5", "tokens": "41,200" }
+  ],
+  "fallback": { "outcome": "same_provider", "attempts": [
+    { "reviewer": "xai/grok", "failure_stage": "executable_missing", "reason": "grok is not on PATH" }
+  ] }
+}
+```
+
+The helper checks that each report closes with the attestation for its round, refuses a
+report whose prose carries its own `<details>` or `<summary>` tags, and refuses when the
+last round's head is not the PR's current head. It renders a `Local Adversarial Review`
+comment: a summary table, any reviewer fallback notice, each report collapsed, and the last
+round's attestation as the final line, where `merge` reads it. Publishing again replaces
+that comment rather than adding another. Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
 reviewer's source; missing evidence is UNKNOWN. Do not publish raw sessions or private
 context. A recovery
