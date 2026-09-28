@@ -131,7 +131,12 @@ module Shaka
         raise Error, "Publication usage column #{index + 1} #{key} must be single-line nonempty text."
       end
 
-      value.strip.gsub(/[\\|]/) { |character| "\\#{character}" }
+      text = value.strip
+      # Angle brackets stay so the summary can escape them. Only this sequence closes the
+      # comment that commented_table wraps around the cell.
+      raise Error, "Publication usage column #{index + 1} #{key} must not close a comment." if text.include?('-->')
+
+      text.gsub(/[\\|]/) { |character| "\\#{character}" }
     end
 
     def table = table_for(@columns)
