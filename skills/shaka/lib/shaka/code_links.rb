@@ -11,7 +11,7 @@ module Shaka
   class CodeLinks
     # Fenced blocks and code spans show Markdown literally, so a link example there stays as
     # written; matching them first leaves only prose references to resolve.
-    CODE = /^[ \t]*(?<fence>`{3,}|~{3,}).*?^[ \t]*\k<fence>[ \t]*$|(?<ticks>`+).*?(?<!`)\k<ticks>(?!`)/m
+    CODE = /^[ \t]*(?<fence>(?<mark>[`~])\k<mark>{2,}).*?^[ \t]*\k<fence>\k<mark>*[ \t]*$|(?<ticks>`+).*?(?<!`)\k<ticks>(?!`)/m
     REFERENCE = /\]\(code:(?<name>[A-Za-z0-9_.-]+)\)/
     TOKEN = Regexp.union(CODE, REFERENCE)
 
