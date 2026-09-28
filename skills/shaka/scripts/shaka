@@ -270,6 +270,7 @@ begin
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note)
              end
            when 'reply'
+             # A review lookup contacts GitHub, so a missing key fails before that lookup.
              key = options.fetch(:key)
              github.reply(body: Shaka::ReviewReply.compose(content(options.fetch(:content_file)), github),
                           key: key, comment: options[:comment])

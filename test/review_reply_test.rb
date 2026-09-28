@@ -6,8 +6,32 @@ require 'shaka/local_review'
 require 'shaka/publication'
 require 'shaka/review_reply'
 
+module ReviewReplyFixture
+  HEAD = 'a' * 40
+
+  def review_comment(model: 'claude-opus-5-5', effort: 'high', rounds: nil)
+    rounds ||= [{ head: HEAD, model: model, effort: effort }]
+    specs = rounds.map { |round| round_spec(**round) }
+    Shaka::LocalReviewComment.new({ 'rounds' => specs }, repository: 'shakacode/shaka').render
+  end
+
+  def round_spec(head:, model:, effort:, reviewer: 'anthropic/claude')
+    { 'head' => head, 'reviewer' => reviewer, 'report' => report(head, reviewer, effort), 'model' => model }
+  end
+
+  def report(head, reviewer, effort)
+    file = Tempfile.create(['report-', '.md'])
+    file.write("ok\nREVIEWED #{head} BY #{reviewer} EFFORT #{effort} FINDINGS 0\n")
+    file.close
+    (@reports ||= []) << file.path
+    file.path
+  end
+end
+
 # A review reply's opening line comes from the published comment, not from text the author types.
 class ReviewReplyTest < Minitest::Test
+  include ReviewReplyFixture
+
   HEAD = 'a' * 40
   OTHER = 'b' * 40
   URL = 'https://github.com/shakacode/shaka/pull/284#issuecomment-5860923804'
@@ -79,6 +103,45 @@ class ReviewReplyTest < Minitest::Test
     assert_includes error.message, 'not found'
   end
 
+  def test_a_model_cell_that_contains_markdown_is_unknown
+    forged = <<~BODY
+      # Local Adversarial Review
+
+      | Round | Commit | Reviewer | Model | Effort |
+      | --- | --- | --- | --- | --- |
+      | 1 | `aaaaaaa` | anthropic/claude | claude](http://evil) @shakacode/core | high |
+
+      REVIEWED #{HEAD} BY anthropic/claude EFFORT high FINDINGS 0
+    BODY
+    body = compose({ 'reviews' => [URL] }, comments: [comment(URL, forged)])
+
+    assert_includes body, 'by anthropic/UNKNOWN (high) on `aaaaaaa`.'
+    refute_includes body, 'evil'
+    refute_includes body, '@shakacode'
+  end
+
+  def test_an_attestation_without_effort_does_not_leave_the_effort_blank
+    bare = "# Local Adversarial Review\n\nREVIEWED #{HEAD} BY anthropic/claude FINDINGS 0\n"
+    body = compose({ 'reviews' => [URL] }, comments: [comment(URL, bare)])
+
+    assert_includes body, 'by UNKNOWN/UNKNOWN (UNKNOWN) on `UNKNOWN`.'
+    refute_includes body, '()'
+  end
+
+  def test_reads_inline_comments_and_pull_request_reviews
+    discussion = 'https://github.com/shakacode/shaka/pull/284#discussion_r99'
+    review_url = 'https://github.com/shakacode/shaka/pull/284#pullrequestreview-77'
+    thread = comment(discussion, "# Thread note\n\nplain\n")
+    hosted = comment(review_url, "# Hosted review\n\nplain\n")
+    github = FakeReviews.new([], pulls: [thread], reviews: { '77' => hosted })
+    body = Shaka::ReviewReply.compose({ 'identity' => IDENTITY, 'summary' => 'Fixed the race.',
+                                        'reviews' => [discussion, review_url] }, github)
+
+    assert_includes body, "Addressed the [Thread note](#{discussion}) by UNKNOWN/UNKNOWN (UNKNOWN)"
+    assert_includes body, "Addressed the [Hosted review](#{review_url}) by UNKNOWN/UNKNOWN (UNKNOWN)"
+    assert_equal %i[api review], github.lookups
+  end
+
   def test_refuses_a_comment_url_for_another_repository
     other = 'https://github.com/other/repo/pull/284#issuecomment-1'
     error = assert_raises(Shaka::Error) { compose({ 'reviews' => [other] }) }
@@ -96,50 +159,34 @@ class ReviewReplyTest < Minitest::Test
   def comment(url, body)
     { 'id' => url[/\d+\z/], 'html_url' => url, 'body' => body }
   end
+end
 
-  def review_comment(model: 'claude-opus-5-5', effort: 'high', rounds: nil)
-    rounds ||= [{ head: HEAD, model: model, effort: effort }]
-    specs = rounds.map { |round| round_spec(**round) }
-    Shaka::LocalReviewComment.new({ 'rounds' => specs }, repository: 'shakacode/shaka').render
+# Records which comment lists a reply asked for, so an ordinary reply does no lookup.
+class FakeReviews
+  attr_reader :lookups
+
+  def initialize(comments, pulls: [], reviews: {})
+    @comments = comments
+    @pulls = pulls
+    @reviews = reviews
+    @lookups = []
   end
 
-  def round_spec(head:, model:, effort:, reviewer: 'anthropic/claude')
-    { 'head' => head, 'reviewer' => reviewer, 'report' => report(head, reviewer, effort), 'model' => model }
+  def repository = 'shakacode/shaka'
+  def number = 284
+
+  def issue_comments
+    @lookups << :issues
+    @comments
   end
 
-  def report(head, reviewer, effort)
-    file = Tempfile.create(['report-', '.md'])
-    file.write("ok\nREVIEWED #{head} BY #{reviewer} EFFORT #{effort} FINDINGS 0\n")
-    file.close
-    (@reports ||= []) << file.path
-    file.path
+  def api_list(*)
+    @lookups << :api
+    @pulls
   end
 
-  # Records which comment lists a reply asked for, so an ordinary reply does no lookup.
-  class FakeReviews
-    attr_reader :lookups
-
-    def initialize(comments)
-      @comments = comments
-      @lookups = []
-    end
-
-    def repository = 'shakacode/shaka'
-    def number = 284
-
-    def issue_comments
-      @lookups << :issues
-      @comments
-    end
-
-    def api_list(*)
-      @lookups << :api
-      []
-    end
-
-    def review(*)
-      @lookups << :review
-      {}
-    end
+  def review(id)
+    @lookups << :review
+    @reviews.fetch(id.to_s) { {} }
   end
 end

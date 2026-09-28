@@ -11,7 +11,9 @@ module Shaka
   # The author supplies comment URLs. Provider, model, and effort come from that comment's
   # attestation and round ledger, so a reply cannot name a reviewer the comment does not show.
   class ReviewReply
-    URL = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/(pull|issues)/(\d+)#(issuecomment|discussion_r|pullrequestreview)-(\d+)\z}
+    # GitHub puts a hyphen before an issue-comment id and a review id, and none before a discussion id.
+    HYPHENATED = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/(pull|issues)/(\d+)#(issuecomment|pullrequestreview)-(\d+)\z}
+    DISCUSSION = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/pull/(\d+)#discussion_r(\d+)\z}
 
     def self.compose(content, github) = new(content, github).compose
 
@@ -47,19 +49,29 @@ module Shaka
     end
 
     def located(url)
-      match = url.match(URL)
-      raise Error, 'A review comment URL must point at a comment on this pull request.' unless on_pull?(match)
+      parts = parsed_url(url)
+      raise Error, 'A review comment URL must point at a comment on this pull request.' unless on_pull?(parts)
 
-      found = comments(match[5], match[6]).find { |comment| comment.is_a?(Hash) && comment['id'].to_s == match[6] }
+      _owner, _repo, _path, _number, fragment, id = parts
+      found = comments(fragment, id).find { |comment| comment.is_a?(Hash) && comment['id'].to_s == id }
       return found if found
 
       raise Error, 'The review comment was not found on this pull request.'
     end
 
-    def on_pull?(match)
-      return false unless match
+    def parsed_url(url)
+      if (match = url.match(HYPHENATED))
+        match.captures
+      elsif (match = url.match(DISCUSSION))
+        owner, repo, number, id = match.captures
+        [owner, repo, 'pull', number, 'discussion_r', id]
+      end
+    end
 
-      owner, repo, path, number, fragment, = match.captures
+    def on_pull?(parts)
+      return false unless parts
+
+      owner, repo, path, number, fragment, = parts
       return false unless "#{owner}/#{repo}".casecmp?(@github.repository) && number.to_i == @github.number
       return true if path == 'pull'
 
@@ -78,7 +90,9 @@ module Shaka
 
     # One published review comment, read back into the opening line.
     class Evidence
-      HEADING = /^# ([^\[\]\r\n]+)$/
+      # A heading or ledger cell is copied into the reply, so it cannot carry Markdown or a mention.
+      HEADING = /^# ([A-Za-z0-9][A-Za-z0-9 ._-]*)$/
+      TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._+-]*\z/
       COLUMNS = %w[Commit Reviewer Model].freeze
 
       def self.line(body:, url:) = new(body, url).line
@@ -97,8 +111,8 @@ module Shaka
       private
 
       def heading
-        text = @body.each_line.map(&:rstrip).find { |row| row.match?(HEADING) }&.delete_prefix('# ')
-        text.nil? || text.strip.empty? ? 'review' : text.strip
+        text = @body.each_line.map(&:rstrip).find { |row| row.match?(HEADING) }&.delete_prefix('# ')&.strip
+        text.nil? || text.empty? ? 'review' : text
       end
 
       def identity
@@ -106,7 +120,7 @@ module Shaka
         parsed = parse_reviewer(reviewer)
         return %w[UNKNOWN UNKNOWN UNKNOWN] unless parsed
 
-        [parsed.fetch('provider'), ledger_model(sha, reviewer), effort, sha]
+        [token(parsed.fetch('provider')), ledger_model(sha, reviewer), token(effort), sha]
       end
 
       def parse_reviewer(reviewer)
@@ -119,8 +133,12 @@ module Shaka
 
       def ledger_model(sha, reviewer)
         row = ledger_rows.reverse.find { |cells| match_row?(cells, sha, reviewer) }
-        model = row && row[:model]
-        model.nil? || model.empty? ? 'UNKNOWN' : model
+        token(row && row[:model])
+      end
+
+      def token(value)
+        text = value.to_s.strip
+        text.match?(TOKEN) ? text : 'UNKNOWN'
       end
 
       def match_row?(cells, sha, reviewer)
@@ -148,28 +166,14 @@ module Shaka
         @body.each_line.filter_map { |row| split_cells(row.rstrip) }
       end
 
+      # `\|` is one cell's escaped pipe. A trailing escaped pipe stays inside the last cell.
       def split_cells(row)
         return unless row.start_with?('|') && row.end_with?('|')
 
-        cells = []
-        current = +''
-        escaped = false
-        row[1..].chomp('|').each_char do |char|
-          escaped, current = next_cell(char, escaped, current, cells)
-        end
-        cells << current.strip
+        row[1..].chomp('|').split(/(?<!\\)\|/, -1).map { |cell| unescape(cell) }
       end
 
-      def next_cell(char, escaped, current, cells)
-        return [false, current << "\\#{char}"] if escaped
-        return [true, current] if char == '\\'
-
-        cells << current.strip if char == '|'
-        current = +'' if char == '|'
-        [false, char == '|' ? current : current << char]
-      end
-
-      def unescape(cell) = cell.gsub(/\\([\\|])/, '\1').strip
+      def unescape(cell) = cell.strip.gsub(/\\([\\|])/, '\1').strip
     end
   end
 end
