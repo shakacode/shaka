@@ -9,8 +9,7 @@ shaka usage --commit FULL_COMMIT_SHA --contribution implementation
 Include the helper's output in the PR, or in the final response when there is no
 PR. **Native** figures come from the host's records. **Estimated** figures apply a
 rate card to those records. `UNKNOWN` means the records do not establish a value;
-it never means zero. An estimate marked `(partial)` prices only the responses that
-could be priced; the report names how many were left out and why.
+it never means zero.
 
 ## Select the work being reported
 
@@ -175,7 +174,9 @@ helper report or attribute summary usage to a turn.
 The helper prices supported responses individually before summing. This handles
 model switches and context thresholds without charging cached input twice.
 Effort has no price multiplier. Unsupported models, missing counters, and
-contradictory records leave the estimate unknown.
+contradictory records leave that response unpriced. The column then sums the
+priced responses and marks the estimate `(partial)`, naming how many responses
+were left out and why; it is `UNKNOWN` only when no response could be priced.
 
 Implementation estimates read `skills/shaka/config/model-rates.yml` from the
 git checkout of the current directory, including a command started in a
@@ -189,7 +190,7 @@ report.
 
 | Scenario | Treatment |
 | --- | --- |
-| Standard Codex credits | Configured supported OpenAI model. Unknown when cache writes exist because their credit rate is unpublished. |
+| Standard Codex credits | Configured supported OpenAI model. A response with cache writes is unpriced because their credit rate is unpublished. |
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes, which use their own published rates. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
 | Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published Opus fast mode are priced. |
