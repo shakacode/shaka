@@ -134,6 +134,7 @@ class PrivateSourceStateTest < Minitest::Test
     with_private_repository do |root, _ref|
       error = assert_raises(Shaka::Error) { report(root, 'HEAD') }
       assert_includes error.message, 'immutable commit SHA'
+      assert_raises(Shaka::Error) { report(root, 'a' * 50) }
     end
   end
 

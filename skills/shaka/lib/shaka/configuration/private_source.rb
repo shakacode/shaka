@@ -58,7 +58,7 @@ module Shaka
 
       def resolved_ref
         raise Error, 'Private source ref must be an immutable commit SHA' unless
-          @ref.is_a?(String) && @ref.match?(/\A[0-9a-f]{40,64}\z/)
+          @ref.is_a?(String) && @ref.match?(/\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/)
 
         git('rev-parse', '--verify', '--end-of-options', "#{@ref}^{commit}").strip
       end
