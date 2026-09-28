@@ -50,6 +50,11 @@ module PrivateSourceFixture
     File.write(path, "#!/bin/sh\n")
     File.chmod(0o755, path)
   end
+
+  def write_review_prompt_policy(root)
+    policy = config.merge('review' => review_policy('prompt_file' => 'review.md'))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
+  end
 end
 
 class PrivateSourceStateTest < Minitest::Test
@@ -61,6 +66,28 @@ class PrivateSourceStateTest < Minitest::Test
       assert_equal 'absent', result.status
       assert_equal 'absent', result.trusted_source
       assert_empty result.inventory
+    end
+  end
+
+  def test_legacy_only_checkout_has_no_private_source
+    with_git_repository do |root|
+      ref = commit_project(root)
+      FileUtils.mkdir_p(File.join(root, '.agents'))
+      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+      assert_equal 'absent', report(root, ref).status
+    end
+  end
+
+  def test_trusted_legacy_policy_does_not_become_private
+    with_git_repository do |root|
+      commit_project(root)
+      FileUtils.mkdir_p(File.join(root, '.agents'))
+      File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+      system('git', '-C', root, 'add', '.agents/agent-workflow.yml', exception: true)
+      system('git', '-C', root, 'commit', '--quiet', '-m', 'team seam', exception: true)
+      result = report(root, head(root))
+      assert_equal 'absent', result.status
+      assert_equal 'present', result.trusted_source
     end
   end
 
@@ -202,11 +229,17 @@ class PrivateSourceSafetyTest < Minitest::Test
   def test_untracked_prompt_outside_private_tree_is_partial
     with_private_repository do |root, ref|
       File.write(File.join(root, 'review.md'), 'private prompt')
-      policy = config.merge('review' => review_policy('prompt_file' => 'review.md'))
-      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
+      write_review_prompt_policy(root)
       assert_equal 'partial', report(root, ref).status
       system('git', '-C', root, 'add', 'review.md', exception: true)
       assert_equal 'complete', report(root, ref).status
+    end
+  end
+
+  def test_missing_prompt_is_partial
+    with_private_repository do |root, ref|
+      write_review_prompt_policy(root)
+      assert_equal 'partial', report(root, ref).status
     end
   end
 

@@ -19,10 +19,9 @@ module Shaka
         def grants_merge_authority? = false
 
         def to_h
-          { 'mode' => mode, 'grants_policy' => false, 'grants_merge_authority' => false,
-            'root' => root, 'common_git_dir' => common_git_dir, 'ref' => ref,
-            'trusted_source' => trusted_source, 'status' => status, 'inventory' => inventory,
-            'blockers' => blockers }
+          { 'mode' => mode, 'grants_policy' => false, 'grants_merge_authority' => false, 'root' => root,
+            'common_git_dir' => common_git_dir, 'ref' => ref, 'trusted_source' => trusted_source,
+            'status' => status, 'inventory' => inventory, 'blockers' => blockers }
         end
       end
 
@@ -40,7 +39,7 @@ module Shaka
         inventory = PrivateInventory.new(root: @root, tracked:).scan
         @blockers.concat(inventory.blockers)
         inspect_conflicts(trusted, tracked, inventory.entries)
-        config = load_candidate(inventory.entries) unless inventory.unsafe || @conflict
+        config = load_candidate(inventory.entries, tracked) unless inventory.unsafe || @conflict
         result(sha, trusted, inventory, config)
       end
 
@@ -84,12 +83,15 @@ module Shaka
       end
 
       def inspect_conflicts(trusted, tracked, entries)
-        legacy = File.join(@root, Paths::CONTRACT)
-        conflict!("#{Paths::CONTRACT} conflicts with private #{Paths::NEW_CONTRACT}") if
-          File.exist?(legacy) || File.symlink?(legacy)
+        conflict!("#{Paths::CONTRACT} conflicts with private #{Paths::NEW_CONTRACT}") if legacy_collision?(entries)
         private_tracked = tracked.select { |path| path.start_with?("#{DIRECTORY}/") }
         conflict!("#{DIRECTORY} contains tracked files: #{private_tracked.join(', ')}") unless private_tracked.empty?
         conflict!("Trusted default branch already has #{trusted.contract}") if trusted && entries.any?
+      end
+
+      def legacy_collision?(entries)
+        legacy = File.join(@root, Paths::CONTRACT)
+        entries.any? && (File.exist?(legacy) || File.symlink?(legacy))
       end
 
       def conflict!(message)
@@ -97,7 +99,7 @@ module Shaka
         @conflict = true
       end
 
-      def load_candidate(entries)
+      def load_candidate(entries, tracked)
         return if entries.empty?
 
         unless entries.any? { |entry| entry[:path] == Paths::NEW_CONTRACT && entry[:type] == 'regular' }
@@ -105,13 +107,13 @@ module Shaka
           return
         end
 
-        validate_candidate
+        validate_candidate(tracked)
       end
 
-      def validate_candidate
+      def validate_candidate(tracked)
         config = RepositoryConfig.load(root: @root)
         inspect_optional_pair(config)
-        inspect_prompt_dependencies(config)
+        inspect_prompt_dependencies(config, tracked)
         config
       rescue Error => e
         @blockers << e.message
@@ -124,8 +126,7 @@ module Shaka
         @blockers << 'Private validate-local and trigger-hosted-ci must be present together'
       end
 
-      def inspect_prompt_dependencies(config)
-        tracked = git('ls-files', '--cached', '-z').split("\0")
+      def inspect_prompt_dependencies(config, tracked)
         RepositoryConfig.prompt_files(review: config.review, opening: config.opening_check).each do |label, path|
           resolved = File.realpath(File.join(@root, path))
           relative = Pathname.new(resolved).relative_path_from(Pathname.new(@root)).to_s
