@@ -302,7 +302,9 @@ rules:
     phase: explain
     quote: length comes from the change, never from the writer
     enforced_by: agent
-    note: Whether a section earns its place needs a model, not a length metric.
+    note: >-
+      `ProseLimits` refuses visible prose past 150 words plus 4 per changed line, but whether a
+      section earns its place within that budget needs a model, not a length metric.
   - id: walkthrough-whole-diff
     phase: explain
     quote: Write each new walkthrough from the whole PR diff at its head instead of extending the last one
@@ -311,9 +313,9 @@ rules:
       `WalkthroughEvidence` requires one commit-pinned link to a changed file and the names of
       completed required and review checks. It never compares the walkthrough with the diff, so
       an unexplained file or text carried over from an earlier walkthrough passes. Listing the
-      changed files a walkthrough never links would be an affordable detector. The readability
-      rules in the delivery guide, such as paragraph length and per-step line links, are also
-      unchecked.
+      changed files a walkthrough never links would be an affordable detector. `ProseLimits`
+      refuses long sentences and paragraphs; the per-step line links the delivery guide asks for
+      remain unchecked.
   - id: description-reader
     phase: explain
     quote: >-

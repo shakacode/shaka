@@ -3,6 +3,7 @@
 require 'yaml'
 require_relative 'error'
 require_relative 'merge_limits'
+require_relative 'prose_limits'
 require_relative 'configuration/paths'
 require_relative 'configuration/layout'
 require_relative 'repository_config/duplicate_keys'
@@ -14,7 +15,7 @@ module Shaka
     DEFAULT_WIP = { 'include_locations' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :wip, :opening_check, :sha, :config_path
+    attr_reader :base_branch, :commands, :review, :merge, :wip, :opening_check, :prose_limits, :sha, :config_path
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
       new(root:, source:, available_commands:, sha:, candidate_commands:).load
@@ -72,7 +73,7 @@ module Shaka
                                'candidate_configuration' => @candidate_detected&.contract,
                                'trusted_command_directory' => @layout.command_directory,
                                'candidate_command_directory' => @candidate_layout.command_directory },
-                  'opening_check' => opening_check)
+                  'opening_check' => opening_check, 'prose_limits' => prose_limits)
     end
 
     private
@@ -92,6 +93,7 @@ module Shaka
       @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
       @opening_check = { 'external_enabled' => true }.merge(@data.fetch('opening_check', {}))
+      @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
     end
 
     def with_default_review_wait(review)

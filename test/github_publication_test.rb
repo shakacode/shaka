@@ -8,6 +8,8 @@ module PublicationFixtures
 
   BODY = "🤖 Codex · OpenAI · terra · low\n\nA summary.\n"
   MANAGED = "<!-- shaka:begin -->\n#{BODY}<!-- shaka:end -->".freeze
+  # What the prose limits measure before a description is merged.
+  RENDERED = ['<p>A summary.</p>', 'private stderr must not be disclosed', GitHubHelper::STATUS.new(0)].freeze
 
   def pull_response(body)
     response({ 'id' => 1, 'number' => 42, 'body' => body })
@@ -17,7 +19,7 @@ module PublicationFixtures
     [html, 'private stderr must not be disclosed', STATUS.new(0)]
   end
 
-  def sent_body(index = 3) = JSON.parse(@calls[index].last)['body']
+  def sent_body(index = 4) = JSON.parse(@calls[index].last)['body']
 
   def viewer_response(login = 'shaka-bot') = response({ 'login' => login })
 
@@ -56,7 +58,7 @@ class GitHubDescriptionTest < Minitest::Test
 
   def test_description_keeps_content_other_authors_appended
     existing = "old\n\n<!-- coderabbit -->\nSummary by CodeRabbit"
-    github = client(pull_response(existing), html_response('<p>ok</p>'), pull_response(existing),
+    github = client(pull_response(existing), RENDERED, html_response('<p>ok</p>'), pull_response(existing),
                     pull_response("#{MANAGED}\n\n#{existing}"))
     github.description(body: BODY)
     sent = sent_body
@@ -68,7 +70,7 @@ class GitHubDescriptionTest < Minitest::Test
   def test_description_builds_the_body_from_the_same_read_it_guards
     existing = "#{MANAGED}\n\nSummary by CodeRabbit"
     updated = "<!-- shaka:begin -->\nBuilt from #{existing.size}.\n<!-- shaka:end -->\n\nSummary by CodeRabbit"
-    github = client(pull_response(existing), html_response('<p>ok</p>'), pull_response(existing),
+    github = client(pull_response(existing), RENDERED, html_response('<p>ok</p>'), pull_response(existing),
                     pull_response(updated))
     github.description { |read| "Built from #{read['body'].size}.\n" }
     assert_equal updated, sent_body
@@ -85,7 +87,7 @@ class GitHubDescriptionTest < Minitest::Test
   def test_republishing_replaces_only_the_managed_region
     existing = "#{MANAGED}\n\nSummary by CodeRabbit"
     updated = "<!-- shaka:begin -->\nNew text.\n<!-- shaka:end -->\n\nSummary by CodeRabbit"
-    github = client(pull_response(existing), html_response('<p>ok</p>'), pull_response(existing),
+    github = client(pull_response(existing), RENDERED, html_response('<p>ok</p>'), pull_response(existing),
                     pull_response(updated))
     github.description(body: "New text.\n")
     assert_equal updated, sent_body
@@ -94,27 +96,28 @@ class GitHubDescriptionTest < Minitest::Test
 
   def test_an_ambiguous_managed_region_is_refused_rather_than_truncating_the_body
     quoted = "Docs quoting <!-- shaka:begin --> in prose.\n\n#{MANAGED}\n\nkeep me"
-    github = client(pull_response(quoted))
+    github = client(pull_response(quoted), RENDERED)
     error = assert_raises(Shaka::Error) { github.description(body: BODY) }
     assert_includes error.message, 'ambiguous'
-    assert_equal 1, @calls.size
+    assert_equal 2, @calls.size
   end
 
   def test_an_edit_that_lands_while_the_update_is_prepared_is_not_erased
-    github = client(pull_response('original'), html_response('<p>ok</p>'), pull_response('someone edited'))
+    github = client(pull_response('original'), RENDERED, html_response('<p>ok</p>'), pull_response('someone edited'))
     error = assert_raises(Shaka::Error) { github.description(body: BODY) }
     assert_includes error.message, 'changed while'
-    assert_equal 3, @calls.size, 'the update must not be written after a concurrent edit'
+    assert_equal 4, @calls.size, 'the update must not be written after a concurrent edit'
   end
 
   def test_stored_body_that_does_not_match_the_submission_is_reported
-    github = client(pull_response(''), html_response('<p>ok</p>'), pull_response(''), pull_response('something else'))
+    github = client(pull_response(''), RENDERED, html_response('<p>ok</p>'), pull_response(''),
+                    pull_response('something else'))
     assert_raises(Shaka::Error) { github.description(body: BODY) }
   end
 
   def test_a_table_that_github_does_not_render_is_reported
     table = "#{BODY}\n| A | B |\n| --- | --- |\n| 1 | 2 |\n"
-    github = client(pull_response(''), html_response('<p>| A | B |</p>'))
+    github = client(pull_response(''), RENDERED, html_response('<p>| A | B |</p>'))
     error = assert_raises(Shaka::Error) { github.description(body: table) }
     assert_includes error.message, 'table'
   end
@@ -122,13 +125,13 @@ class GitHubDescriptionTest < Minitest::Test
   def test_a_rendered_table_passes_the_readback
     table = "#{BODY}\n| A | B |\n| --- | --- |\n| 1 | 2 |\n"
     managed = "<!-- shaka:begin -->\n#{table}<!-- shaka:end -->"
-    github = client(pull_response(''), html_response('<table><tr><td>1</td></tr></table>'), pull_response(''),
+    github = client(pull_response(''), RENDERED, html_response('<table><tr><td>1</td></tr></table>'), pull_response(''),
                     pull_response(managed))
     assert_equal managed, github.description(body: table)['body']
   end
 
   def test_escape_sequences_surviving_into_the_rendered_output_are_reported
-    github = client(pull_response(''), html_response('<p>A summary.\n\nMore.</p>'))
+    github = client(pull_response(''), RENDERED, html_response('<p>A summary.\n\nMore.</p>'))
     error = assert_raises(Shaka::Error) { github.description(body: BODY) }
     assert_includes error.message, 'escape sequence'
   end
@@ -207,13 +210,13 @@ class GitHubReplyTest < Minitest::Test
   def test_a_separator_row_inside_a_code_fence_is_not_expected_to_render
     documented = "#{BODY}\n```\n| A | B |\n| --- | --- |\n```\n"
     managed = "<!-- shaka:begin -->\n#{documented}<!-- shaka:end -->"
-    github = client(pull_response(''), html_response('<pre>| --- | --- |</pre>'), pull_response(''),
+    github = client(pull_response(''), RENDERED, html_response('<pre>| --- | --- |</pre>'), pull_response(''),
                     pull_response(managed))
     assert_equal managed, github.description(body: documented)['body']
   end
 
   def test_escape_sequences_inside_rendered_code_are_allowed
-    github = client(pull_response(''), html_response('<p>Use <code>\\n</code> here.</p>'), pull_response(''),
+    github = client(pull_response(''), RENDERED, html_response('<p>Use <code>\\n</code> here.</p>'), pull_response(''),
                     pull_response(MANAGED))
     assert_equal MANAGED, github.description(body: BODY)['body']
   end

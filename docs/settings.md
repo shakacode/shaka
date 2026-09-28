@@ -266,6 +266,49 @@ The required JSON field names and types remain fixed by Shaka.
 If the configured check cannot run, the description still publishes and the
 development model receives a fallback prompt with the reason.
 
+## `prose_limits`
+
+**Optional.** Shaka refuses to publish a PR description or code walkthrough
+that reads as a wall of text. Reviewing a small diff is faster than reading a
+long explanation of it, so the text should point to the code instead of
+retelling it.
+
+```yaml
+prose_limits:
+  max_sentence_words: 35
+  max_paragraph_words: 100
+  max_description_words: 300
+  words_per_changed_line: 4
+```
+
+The values above are the defaults. Set any key to a positive integer to change
+it; omitted keys keep their default. Each limit counts only the prose GitHub
+shows. Code blocks, tables, headings, quotes, link addresses, and the body of a
+collapsed details block do not count. A collapsed block's summary label counts,
+and an inline code span counts as one word.
+In a description, only the part Shaka manages counts; text that people or other tools
+add outside it is left alone.
+
+- No sentence may run past `max_sentence_words`.
+- No paragraph or list item may run past `max_paragraph_words`.
+- The whole text may use 150 words plus `words_per_changed_line` for each
+  changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
+- The description also stops at `max_description_words`, however large the change.
+
+When text breaks a limit, nothing reaches GitHub. The command exits with an
+error listing up to three problems and counting the rest. Each problem quotes a long
+sentence or paragraph, or states the total word count and its limit. The agent rewrites the text
+and runs the command again, so you see only a version that passed. The agent
+notes each refusal in the description's collapsed review history, so you can
+tell how often the limits fire.
+
+For example, a 19-line change with a 950-word walkthrough is refused. The agent
+splits long paragraphs, moves supporting detail into collapsed details, and
+links to the code, then publishes again. Shaka reads these values from the
+trusted default-branch revision when the agent passes `--ref`; without it, the
+defaults apply. If that revision cannot be read, `description` still publishes
+under the defaults and its result says why, while `walkthrough` stops.
+
 ## Standard command scripts
 
 Connect your existing tools at these fixed paths:

@@ -53,7 +53,7 @@ module Shaka
 
       expected = PublicationText.prose(body).lines.count { |line| line.match?(SEPARATOR) }
       rendered = html.scan('<table').size
-      return if rendered >= expected
+      return html if rendered >= expected
 
       raise Error, "GitHub rendered #{rendered} of #{expected} table(s); check the separator column count."
     end

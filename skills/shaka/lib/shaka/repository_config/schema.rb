@@ -2,6 +2,7 @@
 
 require_relative '../branch_name'
 require_relative '../error'
+require_relative '../prose_limits'
 require_relative '../repo_prefix'
 require_relative '../review_prompt'
 require_relative 'branch_schema'
@@ -19,7 +20,7 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip repo_prefix opening_check].freeze
+      OPTIONAL = %w[base_branch branches wip repo_prefix opening_check prose_limits].freeze
 
       attr_reader :commands
 
@@ -45,6 +46,7 @@ module Shaka
         validate_optional
         validate_review
         validate_merge
+        ProseLimits.validate!(@data['prose_limits']) if @data.key?('prose_limits')
       end
 
       private

@@ -4,6 +4,7 @@ require 'json'
 require 'open3'
 require_relative 'error'
 require_relative 'publishing'
+require_relative 'prose_limits'
 require_relative 'review_thread'
 require_relative 'walkthrough_evidence'
 require_relative 'walkthrough_history'
@@ -11,6 +12,7 @@ require_relative 'github/check_list'
 require_relative 'github/required_check_rules'
 require_relative 'github/review_evidence_reads'
 require_relative 'github/squash_comment'
+require_relative 'github/prose_description'
 
 module Shaka
   # The native pull-request evidence a publication decision depends on.
@@ -54,6 +56,7 @@ module Shaka
     include RequiredCheckRules
     include ReviewEvidenceReads
     include SquashComment
+    include ProseDescription
 
     attr_reader :repository, :number
 
@@ -86,11 +89,11 @@ module Shaka
       ReviewThread.resolve(self, thread_id)
     end
 
-    def walkthrough(head:, body:, seam_required_checks: nil)
+    def walkthrough(head:, body:, seam_required_checks: nil, prose: ProseLimits.new)
       body = publishable(body)
-      verify_head(head)
+      changed_lines = ProseLimits.changed_lines(verify_head(head))
       WalkthroughEvidence.new(self, seam_required_checks:).verify(head, body)
-      published = record_walkthrough(head, body)
+      published = record_walkthrough(head, body) { |html| prose.verify!(html, kind: :walkthrough, changed_lines:) }
       published.merge('earlier_walkthroughs' => WalkthroughHistory.new(self).collapse(published))
     end
 
@@ -119,7 +122,7 @@ module Shaka
     def reviews_path = "repos/#{@repository}/pulls/#{@number}/reviews"
 
     def record_walkthrough(head, body)
-      verify_rendering(body)
+      yield verify_rendering(body)
       created = api(reviews_path, method: 'POST', fields: { event: 'COMMENT', commit_id: head, body: body })
       published = review(created['id'])
       verify_review(published, created['id'], head, body)
@@ -131,7 +134,7 @@ module Shaka
       raise Error, 'Expected a full commit SHA.' unless head.is_a?(String) && head.match?(/\A[0-9a-f]{40}\z/)
 
       pr = snapshot
-      return if pr['state'] == 'OPEN' && pr['headRefOid'] == head
+      return pr if pr['state'] == 'OPEN' && pr['headRefOid'] == head
 
       detail = review_id ? " Review #{review_id} was created; inspect the PR before retrying." : ''
       raise Error, "Pull request is not open at the expected head.#{detail}"
