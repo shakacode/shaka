@@ -14,6 +14,15 @@ module Shaka
         new(root:, path:, committed:).uncommitted
       end
 
+      def self.committed_path?(root:, path:, committed:)
+        lexical = Pathname.new(File.expand_path(path, root)).relative_path_from(Pathname.new(root)).to_s
+        resolved = Pathname.new(File.realpath(File.join(root, path))).relative_path_from(Pathname.new(root)).to_s
+        committed.include?(lexical) && committed.include?(resolved) &&
+          uncommitted(root:, path:, committed:).empty?
+      rescue SystemCallError
+        false
+      end
+
       def initialize(root:, path:, committed:)
         @root = root
         @path = path

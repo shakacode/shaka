@@ -402,6 +402,25 @@ class PrivateSourceSymlinkChainTest < Minitest::Test
     end
   end
 
+  def test_prompt_link_that_leaves_and_reenters_worktree_is_partial
+    with_private_repository do |root, ref|
+      File.write(File.join(root, 'shared.md'), 'prompt')
+      File.symlink("../#{File.basename(root)}/shared.md", File.join(root, 'review.md'))
+      write_review_prompt_policy(root)
+      commit_file(root, 'shared.md', 'shared prompt')
+      commit_file(root, 'review.md', 'prompt link')
+      assert_equal 'partial', report(root, ref).status
+    end
+  end
+
+  def test_private_link_that_leaves_and_reenters_worktree_is_unsafe
+    with_private_repository do |root, ref|
+      File.write(File.join(root, 'shared.sh'), "#!/bin/sh\n")
+      File.symlink("../../../../#{File.basename(root)}/shared.sh", File.join(root, '.agents/shaka/bin/extra'))
+      assert_equal 'unsafe_file', report(root, ref).status
+    end
+  end
+
   private
 
   def create_chain(root, final:, middle:, first:, content:)

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'open3'
-require 'pathname'
 require_relative '../error'
 require_relative '../repository_config'
 require_relative 'layout'
@@ -141,21 +140,17 @@ module Shaka
 
       def inspect_prompt_dependencies(config, committed)
         RepositoryConfig.prompt_files(review: config.review, opening: config.opening_check).each do |label, path|
-          @blockers << "#{label} #{path} is outside #{PrivateInventory::DIRECTORY} and not tracked" unless
+          @blockers << "#{label} #{path} lacks a candidate HEAD commit" unless
             committed_prompt?(path, committed)
         end
       end
 
       def committed_prompt?(path, committed)
-        lexical = relative_path(File.expand_path(path, @root))
-        return true if lexical.start_with?("#{PrivateInventory::DIRECTORY}/")
+        private_root = File.join(@root, PrivateInventory::DIRECTORY)
+        return true if File.expand_path(path, @root).start_with?("#{private_root}/")
 
-        resolved = relative_path(File.realpath(File.join(@root, path)))
-        committed.include?(lexical) && committed.include?(resolved) &&
-          PrivatePathHops.uncommitted(root: @root, path:, committed:).empty?
+        PrivatePathHops.committed_path?(root: @root, path:, committed:)
       end
-
-      def relative_path(path) = Pathname.new(path).relative_path_from(Pathname.new(@root)).to_s
     end
   end
 end

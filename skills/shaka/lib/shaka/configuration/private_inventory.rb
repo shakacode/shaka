@@ -80,14 +80,14 @@ module Shaka
         inspect_external_links(path, relative)
         return if resolved.start_with?("#{DIRECTORY}/") || @committed.include?(resolved)
 
-        @blockers << "#{relative} targets untracked file #{resolved} outside #{DIRECTORY}"
+        @blockers << "#{relative} targets file #{resolved} outside #{DIRECTORY} without a candidate HEAD commit"
       rescue SystemCallError => e
-        unsafe!(relative, "has an unreadable symlink target: #{e.class}")
+        unsafe!(relative, "has an unsafe symlink path: #{e.class}")
       end
 
       def inspect_external_links(path, relative)
         PrivatePathHops.uncommitted(root: @root, path:, committed: @committed).each do |link|
-          @blockers << "#{relative} traverses untracked symlink #{link} outside #{DIRECTORY}"
+          @blockers << "#{relative} traverses symlink #{link} outside #{DIRECTORY} without a candidate HEAD commit"
         end
       end
 
