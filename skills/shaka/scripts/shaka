@@ -19,6 +19,7 @@ require_relative '../lib/shaka/opening_publication'
 require_relative '../lib/shaka/publication/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/publication/publication'
+require_relative '../lib/shaka/review_reply'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/repos'
 require_relative '../lib/shaka/review_prompt'
@@ -269,8 +270,9 @@ begin
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note)
              end
            when 'reply'
-             github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
-                          key: options.fetch(:key), comment: options[:comment])
+             key = options.fetch(:key)
+             github.reply(body: Shaka::ReviewReply.compose(content(options.fetch(:content_file)), github),
+                          key: key, comment: options[:comment])
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'

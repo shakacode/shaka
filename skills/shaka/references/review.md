@@ -31,8 +31,12 @@ for a recorded task override.
 
 Independent review evidence is either a published
 `REVIEWED <sha> BY <provider>/<family>` attestation or a verified named CI report
-for that head. The identity line on a `shaka reply` names the publisher; the closing
-attestation names the reviewer.
+for that head. The identity line on a `shaka reply` names the publisher. A reply
+that addresses a review opens with one line per review. Pass each comment URL in
+the reply content `reviews` list. The helper reads that comment's attestation and
+round ledger and writes the provider, model, effort, reviewed commit, and link.
+A model or effort the comment leaves out is `UNKNOWN`. The closing attestation
+still names the reviewer for merge.
 
 `merge` reads that attestation from the last line of PR comments the merging
 account wrote. It accepts one for the current head. It also accepts one for an
