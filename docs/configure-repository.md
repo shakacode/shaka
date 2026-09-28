@@ -34,17 +34,23 @@ and reads any existing project instructions:
 
 | File | Purpose |
 | --- | --- |
-| `.agents/agent-workflow.yml` | Review, merge, branch, and WIP settings |
-| `.agents/bin/setup` | Install project dependencies |
-| `.agents/bin/test` | Run tests; accept focused test arguments |
-| `.agents/bin/validate` | Run the complete pre-PR checks |
-| `.agents/bin/validate-local` (optional) | Run a faster local check before review |
-| `.agents/bin/trigger-hosted-ci` (optional) | Start deferred CI after local fixes; requires `validate-local` |
-| `.agents/trusted-github-actors.yml` | Whose public GitHub comments the agent may read |
+| `.agents/shaka/config.yml` | Review, merge, branch, and WIP settings |
+| `.agents/shaka/bin/setup` | Install project dependencies |
+| `.agents/shaka/bin/test` | Run tests; accept focused test arguments |
+| `.agents/shaka/bin/validate` | Run the complete pre-PR checks |
+| `.agents/shaka/bin/validate-local` (optional) | Run a faster local check before review |
+| `.agents/shaka/bin/trigger-hosted-ci` (optional) | Start deferred CI after local fixes; requires `validate-local` |
+| `.agents/shaka/trusted-github-actors.yml` | Whose public GitHub comments the agent may read |
+| `.agents/shaka.md` | Pointer to this configuration for people browsing the repository |
 | `AGENTS.md` (optional) | Existing project instructions and constraints; Shaka does not create or edit it |
 
 The scripts usually wrap existing commands. In Shaka's repository, `.agents/bin/setup`
 installs development dependencies; `bin/install` installs the skill.
+
+Repositories configured before this layout keep `.agents/agent-workflow.yml` and
+`.agents/bin/`, and Shaka still reads them. Moving to `.agents/shaka/` is optional;
+the [layout upgrade](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/migration.md#upgrade-the-configuration-layout)
+does it in one reviewed step. Shaka's own repository still uses the older layout.
 
 You merge the first setup PR yourself on GitHub. Until it merges, the default branch
 has no trusted settings, so Shaka cannot choose a reviewer from them or merge

@@ -1,6 +1,7 @@
 # Settings
 
-Settings live in `.agents/agent-workflow.yml`. Ask your agent to
+Settings live in `.agents/shaka/config.yml`; repositories configured before that
+layout keep them in `.agents/agent-workflow.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
 Policy comes from the default branch; settings changed in a PR do not govern
 that PR.
@@ -271,27 +272,29 @@ Connect your existing tools at these fixed paths:
 
 | Script | Required? | Purpose |
 | --- | --- | --- |
-| `.agents/bin/setup` | Yes | Install dependencies |
-| `.agents/bin/test` | Yes | Run tests; accept focused arguments |
-| `.agents/bin/validate` | Yes | Complete checks before publishing |
-| `.agents/bin/validate-local` | No | Faster checks before local review |
-| `.agents/bin/trigger-hosted-ci` | No | Start deferred CI after local fixes; requires `validate-local` |
+| `.agents/shaka/bin/setup` | Yes | Install dependencies |
+| `.agents/shaka/bin/test` | Yes | Run tests; accept focused arguments |
+| `.agents/shaka/bin/validate` | Yes | Complete checks before publishing |
+| `.agents/shaka/bin/validate-local` | No | Faster checks before local review |
+| `.agents/shaka/bin/trigger-hosted-ci` | No | Start deferred CI after local fixes; requires `validate-local` |
 
-A wrapper can call an existing command. For example:
+In the older layout, the same scripts live in `.agents/bin/`.
+
+A wrapper can call an existing command. `seam init` generates each required wrapper;
+it finds the repository root with Git, so it works from any directory and in linked
+worktrees. To run a different command, change only its last line, for example:
 
 ```sh
-#!/bin/sh
-set -eu
-cd "$(dirname "$0")/../.."
 exec bundle exec rake test "$@"
 ```
 
 `exec` preserves the command's exit status and signals. A symlink to a tracked
 executable also works if its directory, environment, and arguments already match.
 
-Scripts must be executable and resolve within the repository. `.agents` and
-`.agents/bin` must be real directories. Removing an optional check already on the
-default branch requires an explicit, maintainer-approved policy change.
+Scripts must be executable and resolve within the repository. `.agents` and the
+directories holding the configuration and scripts must be real directories.
+Removing an optional check already on the default branch requires an explicit,
+maintainer-approved policy change.
 
 ## `base_branch`
 

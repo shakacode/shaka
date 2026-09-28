@@ -2,7 +2,7 @@
 
 ## Can I customize the prompt Shaka gives its local reviewer?
 
-Yes. In `.agents/agent-workflow.yml`, set
+Yes. In your [settings](settings.md) file, set
 [`review.prompt_file`](settings.md#reviewprompt_file) to the path of a Markdown
 file, relative to the repository root, such as `.agents/review-prompt.md`. It
 replaces Shaka's default instructions for what the local reviewer looks for and
@@ -32,7 +32,7 @@ settings change as part of the diff. See [settings](settings.md).
 
 | What | Where |
 | --- | --- |
-| Commands, merge policy, and review jobs | [Settings](settings.md) in `.agents/agent-workflow.yml` |
+| Commands, merge policy, and review jobs | [Settings](settings.md) in `.agents/shaka/config.yml` |
 | Project constraints, review criteria, and writing style | `AGENTS.md` |
 | What the local reviewer looks for and how it reports | [`review.prompt_file`](settings.md#reviewprompt_file), replacing Shaka's defaults |
 | Changes to Shaka's workflow | A [fork of Shaka](workflow.md#customize-the-instructions) |

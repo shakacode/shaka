@@ -2,6 +2,10 @@
 
 ## Upgrade the configuration layout
 
+`seam init` writes the `.agents/shaka/` layout, and `seam migrate` still writes
+`.agents/agent-workflow.yml` beside `.agents/bin/`. Both layouts work; this upgrade
+moves the older one.
+
 Ask your agent: “Upgrade this repository's Shaka configuration layout.” For a
 repository already using the current version-one contract at `.agents/agent-workflow.yml`,
 run the installed, trusted Shaka helper from outside the candidate checkout:
