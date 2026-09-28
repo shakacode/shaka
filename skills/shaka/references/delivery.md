@@ -263,6 +263,12 @@ A list states each guard once, with its code link:
 > - `env` shebangs that assign variables, which could replace the sanitized
 >   PATH (code link)
 
+Code checks little of this. The `walkthrough` command refuses a walkthrough
+without a commit-pinned link to a changed file, or one that does not name each
+completed required and review check. It does not check the rules above or
+whole-diff coverage; they rest on the writer and on review, and
+`shaka enforcement` lists them as agent-enforced.
+
 ### Keep one current walkthrough
 
 Edit wording at the same revision in place. For a new commit, write a walkthrough
