@@ -144,6 +144,16 @@ class CodeLinksRefusalTest < Minitest::Test
     end
   end
 
+  def test_unrecognized_targets_and_string_booleans_are_refused
+    link = { 'path' => 'lib/package.rb', 'from' => 'def stage' }
+    cases = { '[run](code:Class#run)' => [{ 'x' => link }, 'undefined code link Class#run'],
+              '[x](code:x)' => [{ 'x' => link.merge('block' => 'false') }, 'non-boolean block'] }
+    cases.each do |body, (links, message)|
+      error = assert_raises(Shaka::Error) { resolved_body(links, body) }
+      assert_includes error.message, message
+    end
+  end
+
   def test_undefined_reference_and_invalid_definitions_are_refused
     link = { 'path' => 'lib/package.rb', 'from' => 'def stage' }
     [[{ 'x' => link }, '[y](code:y)', 'undefined code link y'],

@@ -15,7 +15,7 @@ module Shaka
     FENCE = /^[ \t]*(?<fence>(?<mark>[`~])\k<mark>{2,}).*?^[ \t]*\k<fence>\k<mark>*[ \t]*$/m
     SPAN = /(?<ticks>`+).*?(?<!`)\k<ticks>(?!`)/m
     CODE = Regexp.union(FENCE, SPAN)
-    REFERENCE = /\]\(code:(?<name>[A-Za-z0-9_.-]+)\)/
+    REFERENCE = /\]\(code:(?<name>[^)\s]*)\)/
     TOKEN = Regexp.union(CODE, REFERENCE)
 
     # Rewrites the rendered walkthrough, so links in the summary, sections, table, and
@@ -76,6 +76,8 @@ module Shaka
     end
 
     def check_end(name, link)
+      block = link['block']
+      raise Error, "Walkthrough code link #{name} has a non-boolean block." unless [nil, true, false].include?(block)
       raise Error, "Walkthrough code link #{name} takes either to or block, not both." if link['block'] && link['to']
       raise Error, "Walkthrough code link #{name} has invalid to text." if link.key?('to') && !text?(link['to'])
     end
