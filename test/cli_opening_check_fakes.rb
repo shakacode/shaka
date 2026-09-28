@@ -50,7 +50,8 @@ module CliOpeningCheckFakes
     { 'identity' => { 'agent' => 'Codex' }, 'summary' => self.class::SUMMARY, 'deployment' => 'none',
       'table' => { 'columns' => %w[Check Result], 'rows' => [%w[validate pass]] },
       'provenance' => provenance,
-      'details' => [{ 'summary' => 'Usage', 'body' => "| Metric | Value |\n| --- | --- |\n| Total | 1 |" }] }
+      'details' => [{ 'summary' => 'Usage',
+                      'body' => RenderedUsage.body("| Metric | Value |\n| --- | --- |\n| Total | 1 |") }] }
   end
 
   def write_executable(dir, name, source)

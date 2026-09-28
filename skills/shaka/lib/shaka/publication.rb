@@ -3,6 +3,7 @@
 require 'uri'
 require_relative 'error'
 require_relative 'provenance'
+require_relative 'usage/usage_records'
 require_relative 'wip_details'
 
 module Shaka
@@ -139,14 +140,25 @@ module Shaka
 
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
-    TABLE_SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
-
     def self.description(content)
       new(content, require_tables: true).render(%i[top_links sections table provenance details wip])
     end
 
     def self.comment(content) = new(content).render([])
     def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
+
+    # A hand-written table can claim anything, so only a report `shaka usage` marked counts (#256).
+    # `description` also checks the supplied details before carrying, since a carried report would pass.
+    def self.require_rendered_usage(items)
+      bodies = Array(items).filter_map do |item|
+        item['body'] if item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i)
+      end
+      return if bodies.any? { |body| UsageRecords.text_records(body.to_s).any? }
+
+      raise Error, 'Publication description requires usage details rendered by `shaka usage`; ' \
+                   'run `shaka usage --commit SHA --contribution NAME` and supply its output unchanged ' \
+                   'as the usage details body. A hand-written usage table is refused.'
+    end
 
     def initialize(content, require_tables: false)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
@@ -215,7 +227,7 @@ module Shaka
       items = PublicationText.list(@content['details'], 'details')
       rendered = items.map { |detail| details_block(detail) }
       if @require_tables
-        require_usage_table(items)
+        self.class.require_rendered_usage(items)
         refuse_free_form_wip(items)
       end
       rendered
@@ -247,25 +259,6 @@ module Shaka
       summary = PublicationText.usage_cost_summary(summary, body)
       "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
     end
-
-    def require_usage_table(items)
-      bodies = items.filter_map do |item|
-        item['body'] if item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i)
-      end
-      return if bodies.any? { |body| complete_markdown_table?(body) }
-
-      raise Error, 'Publication description requires usage details with a table.'
-    end
-
-    def complete_markdown_table?(body)
-      return false unless body.is_a?(String)
-
-      PublicationText.prose(body).lines.map(&:rstrip).each_cons(3).any? do |header, separator, data|
-        pipe_row?(header) && separator.match?(TABLE_SEPARATOR) && pipe_row?(data) && !data.match?(TABLE_SEPARATOR)
-      end
-    end
-
-    def pipe_row?(line) = line.match?(/\A\s*\|.+\|\s*\z/)
 
     def revision
       head = @content['head']

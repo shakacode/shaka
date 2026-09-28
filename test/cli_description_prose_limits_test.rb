@@ -48,7 +48,8 @@ class CliDescriptionProseLimitsTest < Minitest::Test
   def fake_gh
     super.sub("when 'markdown' then puts JSON.generate('<table></table>' * 10)", <<~'RUBY'.chomp)
       when 'markdown'
-        blocks = request.fetch('text').split(/\n\s*\n/).reject { |block| block.start_with?('<') }
+        blocks = request.fetch('text').split(/\n\s*\n/).map { |block| block.gsub(/^<!--.*-->\n/, '') }
+        blocks = blocks.reject { |block| block.start_with?('<') }
         puts blocks.map { |block| block.start_with?('|') ? '<table></table>' : "<p>#{block}</p>" }.join
     RUBY
   end

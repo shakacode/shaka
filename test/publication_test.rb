@@ -14,7 +14,7 @@ class PublicationRegressionTest < Minitest::Test
   IDENTITY = { 'agent' => 'Codex', 'provider' => 'OpenAI', 'model' => 'gpt-5.6-terra', 'effort' => 'low' }.freeze
   TABLE = { 'columns' => %w[Check Commit Result], 'rows' => [%w[bin/validate abc123 pass]] }.freeze
   USAGE = { 'summary' => 'Usage',
-            'body' => "| Provider | Native total |\n| --- | ---: |\n| openai | 1 |" }.freeze
+            'body' => RenderedUsage.body("| Provider | Native total |\n| --- | ---: |\n| openai | 1 |") }.freeze
   WALKTHROUGH = 'https://github.com/shakacode/shaka/pull/137#pullrequestreview-5258565629'
 
   def description_content(**changes)
@@ -85,6 +85,32 @@ class PublicationRegressionTest < Minitest::Test
               'body' => "Native usage is PARTIAL: 70 responses.\n\n| --- |" }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(description_content('details' => [decoy])) }
     assert_includes error.message, 'usage'
+  end
+
+  # https://github.com/shakacode/shaka/pull/253 published a hand-written UNKNOWN usage table.
+  def test_a_hand_written_usage_table_is_refused
+    hand = { 'summary' => 'Usage', 'body' => "| Metric | Value |\n| --- | --- |\n| Responses | UNKNOWN |" }
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(description_content('details' => [hand])) }
+    assert_includes error.message, 'shaka usage'
+  end
+
+  def test_a_usage_marker_without_its_identity_fields_is_refused
+    ['{not json}', '{"host":"codex"}'].each do |identity|
+      forged = { 'summary' => 'Usage',
+                 'body' => "<!-- shaka:usage #{identity} -->\n| a |\n| --- |\n<!-- shaka:usage:end -->" }
+      assert_raises(Shaka::Error) { Shaka::Publication.description(description_content('details' => [forged])) }
+    end
+  end
+
+  # A report carried from the published body would satisfy the rendered check, so `description`
+  # checks the supplied details before carrying.
+  def test_a_carried_report_does_not_admit_a_hand_written_table
+    existing = "<!-- shaka:begin -->\n<details>\n<summary>Usage</summary>\n\n#{USAGE.fetch('body')}\n" \
+               "</details>\n<!-- shaka:end -->"
+    hand = description_content('details' => [{ 'summary' => 'Usage', 'body' => "| a |\n| --- |\n| 2 |" }])
+    carried, = Shaka::UsageRecords.carry(hand, existing)
+    assert_includes Shaka::Publication.description(carried), '| openai | 1 |'
+    assert_raises(Shaka::Error) { Shaka::Publication.require_rendered_usage(hand['details']) }
   end
 
   def test_a_later_usage_detail_with_a_complete_table_is_accepted
