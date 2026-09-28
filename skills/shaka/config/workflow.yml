@@ -226,14 +226,14 @@ phases:
         or changes what a page loads or how it is cached or streamed, measure it against the base.
         Copy and styling tweaks with no speed aim or likely speed cost fall outside this step.
         When the repository has its own base-versus-change benchmark, use it and report its
-        result; otherwise use ShakaPerf.
+        result on the PR; otherwise use ShakaPerf.
         For ShakaPerf, first check `command -v shaka-perf`. If it is missing, suggest
         [ShakaPerf](https://github.com/shakacode/shakaperf#usage) to the user. If it is installed
         but the repository has no `abtests.config.ts`, the ShakaPerf config that names the pages
         to compare, offer to run `shaka-perf init` and its twin-server setup, which runs the base
         and the change as two local servers side by side. Once both are in place, run
         `shaka-perf compare` with the base as control and the change as experiment. Report the
-        verdict as improvement, wash, regression, or ambiguous with the metrics, sample count, and
+        verdict on the PR as improvement, wash, regression, or ambiguous with the metrics, sample count, and
         tested revision. A single page load is not evidence. A regression, an ambiguous result, or
         a wash for a change meant to speed things up goes back to Implement, or to the maintainer
         to accept it on the PR, before the PR is called ready. After a later commit that changes
