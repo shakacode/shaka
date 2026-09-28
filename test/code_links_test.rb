@@ -106,7 +106,7 @@ class CodeLinksTest < Minitest::Test
 
   def test_code_spans_and_fences_keep_link_examples_literally
     example = "Write `[label](code:NAME)` or ``[a](code:b)``:\n\n```json\n[x](code:other)\n```\n\n" \
-              "~~~text\n[y](code:example)\n~~~\n"
+              "~~~text\n~~~not a closing fence\n[y](code:example)\n~~~\n"
     assert_equal example, resolved_body({}, example)
   end
 
