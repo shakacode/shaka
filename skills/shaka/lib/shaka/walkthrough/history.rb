@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative 'error'
-require_relative 'public_comments/bounded_list'
+require_relative '../error'
+require_relative '../public_comments/bounded_list'
 
 module Shaka
   # Recognizes a review body this command itself rendered.
