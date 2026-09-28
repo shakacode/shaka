@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'records'
+
 module Shaka
   # Structural checks a carried or new report must pass before it can keep or replace history.
   module UsageRecordShape

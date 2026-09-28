@@ -228,3 +228,28 @@ class UsageRecordsCompletenessTest < Minitest::Test
     assert_includes carried(existing(old), incomplete), 'measured'
   end
 end
+
+# Each split file has to load without its sibling already in memory.
+class UsageFileLoadTest < Minitest::Test
+  ROOT = File.expand_path('../skills/shaka/lib/shaka/usage', __dir__)
+  FILES = {
+    'usage_errors.rb' => %w[UsageErrors],
+    'usage_table.rb' => %w[UsageTable],
+    'usage_turns.rb' => %w[UsageTurns],
+    'usage_identity.rb' => %w[UsageIdentity],
+    'command.rb' => %w[Usage],
+    'records.rb' => %w[UsageRecords UsageRecordShape],
+    'usage_record_shape.rb' => %w[UsageRecords UsageRecordShape],
+    'usage.rb' => %w[Usage],
+    'usage_records.rb' => %w[UsageRecords UsageRecordShape]
+  }.freeze
+
+  def test_each_usage_file_loads_alone
+    FILES.each do |file, constants|
+      checks = constants.map { |name| "defined?(Shaka::#{name})" }.join(' && ')
+      script = "require #{File.join(ROOT, file).inspect}; abort('missing') unless #{checks}"
+      output, status = Open3.capture2e(RbConfig.ruby, '-e', script)
+      assert_predicate status, :success?, "#{file}\n#{output}"
+    end
+  end
+end

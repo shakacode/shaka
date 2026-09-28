@@ -2,6 +2,7 @@
 
 require 'json'
 require 'time'
+require_relative 'usage_record_shape'
 
 module Shaka
   # Keeps usage reports from earlier hosts, models, and reviews when a description is republished.
