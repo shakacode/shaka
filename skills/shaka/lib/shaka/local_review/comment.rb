@@ -144,11 +144,13 @@ module Shaka
         text
       end
 
+      # Closed fences go first, by their own length, so the other checks see only prose and inline code.
       def check_markup(text)
-        prose = PublicationText.prose(text)
+        unfenced = text.gsub(CLOSED_FENCE, '')
+        prose = PublicationText.prose(unfenced)
         raise Error, "Round #{@number} report contains details or summary tags." if prose.match?(DISCLOSURE_TAG)
         raise Error, "Round #{@number} report has an unclosed code fence or HTML comment." if
-          text.gsub(CLOSED_FENCE, '').match?(FENCE) || prose.match?(OPEN_COMMENT)
+          unfenced.match?(FENCE) || prose.match?(OPEN_COMMENT)
       end
     end
   end

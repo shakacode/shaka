@@ -105,6 +105,9 @@ class LocalReviewCommentTest < Minitest::Test
     quoted = report(body: "Quoted `</details>` safely.\n")
     assert_includes render('rounds' => [round(report: quoted)]), 'Quoted `</details>` safely.'
 
+    nested = report(body: "````markdown\n```html\n</details>\n```\n````\n")
+    assert_includes render('rounds' => [round(report: nested)]), "```html\n</details>"
+
     raw = report(body: "Raw </details> tag.\n")
     assert_raises(Shaka::Error) { render('rounds' => [round(report: raw)]) }
   end
