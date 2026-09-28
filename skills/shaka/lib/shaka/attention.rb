@@ -6,12 +6,15 @@ require_relative 'public_comments/bounded_list'
 module Shaka
   # Labels a pull request with the one decision it waits on, so GitHub's PR list shows it.
   class Attention
-    LABELS = { 'answer' => 'awaiting-answer', 'merge' => 'awaiting-merge-approval' }.freeze
+    LABELS = { 'answer' => 'awaiting-answer', 'merge' => 'awaiting-merge-approval',
+               'resume' => 'awaiting-resume' }.freeze
     STATES = [*LABELS.keys, 'none'].freeze
-    COLORS = { 'awaiting-answer' => 'F9A03F', 'awaiting-merge-approval' => '8250DF' }.freeze
+    COLORS = { 'awaiting-answer' => 'F9A03F', 'awaiting-merge-approval' => '8250DF',
+               'awaiting-resume' => '1D76DB' }.freeze
     DESCRIPTIONS = {
       'awaiting-answer' => 'The agent asked a question in chat and is waiting for your answer',
-      'awaiting-merge-approval' => 'Ready under Ask: merge this commit or approve it so the agent merges'
+      'awaiting-merge-approval' => 'Ready under Ask: merge this commit or approve it so the agent merges',
+      'awaiting-resume' => 'Paused with nothing to wake the agent; resume from WIP Details'
     }.freeze
     NOT_FOUND = 404
     # 403: the caller may apply labels but not create them. 422: another run created it first.
@@ -30,6 +33,9 @@ module Shaka
       keep_only(wanted)
       { 'state' => state, 'labels' => [wanted].compact }
     end
+
+    # The attention labels the PR carries now, in GitHub's order.
+    def current = current_labels.select { |name| attention?(name) }
 
     private
 

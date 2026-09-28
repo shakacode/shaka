@@ -85,13 +85,13 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Task | Searchable task title or shareable tracker locator |
 | Thread | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
 | Last observed activity | Date, time to the minute, and timezone of the latest observed activity, such as `2026-09-25 17:42 PDT`; otherwise `UNKNOWN` |
-| Revision | Branch and current head |
+| Revision | Branch and full current head as `BRANCH @ SHA`; `handoff` reads the SHA after the last ` @ ` |
 | Workspace | Checkout directory, subject to the privacy setting below |
 | Unfinished work | Uncommitted, untracked, deleted, stashed, or unpushed work; `none` only after inspection proves the branch holds everything |
 | Stopped because | `running`, `awaiting merge approval`, `awaiting answer`, `paused`, or `interrupted` |
 | Merge authority | Previously established `ask` or `auto`, or `UNKNOWN`; this field grants no authority |
 | State | In progress, named check/review wait, blocker, decision, GitHub merge of a named head, or handoff to a named successor |
-| Next action | One step that continues the task |
+| Next action | One step that continues the task; while `awaiting-resume`, the prompt that resumes it, such as `$shaka PR_URL` |
 
 For Stopped because, use `awaiting merge approval` for an Ask handoff that waits
 for a GitHub merge click or approval; that stop also applies the
@@ -122,8 +122,9 @@ See [configuration](https://github.com/shakacode/shaka/blob/main/docs/settings.m
 
 **Resume as the original owner:** read the live note before writing. If it names
 another owner or tag, preserve local work without pushing, report the transfer,
-and stop. Otherwise refresh the PR and continue. A missing or outdated note after
-a crash is a reason to inspect live state, not to abandon recovery.
+and stop. Otherwise run `handoff OWNER/REPO NUMBER --root DIR --ref SHA` to read
+the live head, label, checks, and walkthrough and WIP heads, then continue. A missing
+or outdated note after a crash is a reason to inspect live state, not to abandon recovery.
 
 **Take over in a new task:** require maintainer confirmation that the previous
 owner stopped or is handing over. An idle task, old timestamp, or missing note
