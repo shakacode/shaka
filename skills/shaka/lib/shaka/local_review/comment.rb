@@ -55,13 +55,14 @@ module Shaka
         OUTCOMES.include?(outcome)
       return [] if outcome == 'different_provider'
 
-      [(['**Reviewer fallback:** no reviewer from a different provider could run, so this review ' \
+      [(['**Reviewer fallback:** no reviewer from a different provider ran, so this review ' \
          "used `#{outcome}`. [Add a second reviewer](#{SETUP_GUIDE}) to avoid this."] + attempts).join("\n")]
     end
 
+    # Selection can fall back without trying anything, as when no other provider is configured.
     def attempts
       tried = PublicationText.list(@fallback['attempts'], 'fallback attempts')
-      raise Error, 'Local review fallback must list the reviewers that were tried.' if tried.empty?
+      return [] if tried.empty?
 
       ['', 'Tried:', ''] + tried.map { |attempt| attempt_line(attempt) }
     end

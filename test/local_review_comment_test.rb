@@ -102,8 +102,12 @@ class LocalReviewCommentTest < Minitest::Test
     assert_raises(Shaka::Error) { render('rounds' => [round(report_file: raw)]) }
   end
 
-  def test_refuses_a_fallback_without_attempts
-    assert_raises(Shaka::Error) { render('rounds' => [round], 'fallback' => { 'outcome' => 'same_model' }) }
+  # Break caught: with no other provider configured, selection falls back without trying one.
+  def test_explains_a_fallback_that_tried_no_other_reviewer
+    body = render('rounds' => [round], 'fallback' => { 'outcome' => 'same_model', 'attempts' => [] })
+
+    assert_includes body, 'used `same_model`.'
+    refute_includes body, 'Tried:'
   end
 end
 

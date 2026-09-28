@@ -170,7 +170,8 @@ Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UN
 `cost` out unless the host reports a priced route: never estimate a dollar figure for a
 subscription session. When `shaka reviewer` did not return `different_provider`, add
 `fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
-`reviewer`, `failure_stage`, and `reason` from its `shaka review run` result.
+`reviewer`, `failure_stage`, and `reason` from its `shaka review run` result. Leave
+`attempts` empty when selection tried no other reviewer.
 
 ```json
 {
