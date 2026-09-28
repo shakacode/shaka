@@ -2,6 +2,7 @@
 
 require 'json'
 require 'time'
+require_relative 'usage_record_carry'
 
 module Shaka
   # Structural checks a carried or new report must pass before it can keep or replace history.
@@ -57,6 +58,9 @@ module Shaka
     # Returns the content with carried records prepended to its usage body, and what happened.
     def carry(content, existing)
       stats = { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }
+      usage = UsageRecordCarry.structured_usage(content)
+      return UsageRecordCarry.apply(self, content, usage, existing, stats) if usage
+
       usages = usage_details(content)
       usage = usages.first
       region = managed_region(existing)
@@ -66,8 +70,8 @@ module Shaka
       [with_usage_body(content, usage, [*kept, usage['body']].join("\n\n")), stats]
     end
 
-    def carried(region, body, stats)
-      fresh = text_records(body)
+    def carried(region, body, stats, fresh = nil)
+      fresh ||= text_records(body)
       stats['dropped'] += unterminated(region)
       region.to_enum(:scan, BLOCK).filter_map do
         text = Regexp.last_match[0]
@@ -95,11 +99,7 @@ module Shaka
     end
 
     def parse(json)
-      fields = JSON.parse(json)
-      return unless fields.is_a?(Hash) && FIELDS.all? { |key| fields.key?(key) }
-      return unless %w[sources responses].all? { |key| fields[key].is_a?(Array) }
-
-      fields
+      UsageRecordCarry.identity(JSON.parse(json))
     rescue JSON::ParserError
       nil
     end

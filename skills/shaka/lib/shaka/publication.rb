@@ -3,6 +3,7 @@
 require 'uri'
 require_relative 'error'
 require_relative 'provenance'
+require_relative 'usage_details'
 require_relative 'wip_details'
 
 module Shaka
@@ -139,8 +140,6 @@ module Shaka
 
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
-    TABLE_SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
-
     def self.description(content)
       new(content, require_tables: true).render(%i[top_links sections table provenance details wip])
     end
@@ -213,11 +212,12 @@ module Shaka
 
     def details
       items = PublicationText.list(@content['details'], 'details')
-      rendered = items.map { |detail| details_block(detail) }
       if @require_tables
-        require_usage_table(items)
+        refuse_free_form_usage(items)
         refuse_free_form_wip(items)
       end
+      rendered = items.map { |detail| details_block(detail) }
+      rendered.unshift(details_block(UsageDetails.new(@content['usage']).detail)) if @require_tables
       rendered
     end
 
@@ -228,6 +228,12 @@ module Shaka
     end
 
     # Hand-written notes are what made each host publish a different shape.
+    def refuse_free_form_usage(items)
+      return unless items.any? { |item| item.is_a?(Hash) && UsageDetails.usage_summary?(item['summary']) }
+
+      raise Error, 'Publication usage must be supplied as the usage object, not a details item.'
+    end
+
     def refuse_free_form_wip(items)
       return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(WipDetails::SUMMARY) }
 
@@ -247,25 +253,6 @@ module Shaka
       summary = PublicationText.usage_cost_summary(summary, body)
       "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
     end
-
-    def require_usage_table(items)
-      bodies = items.filter_map do |item|
-        item['body'] if item.is_a?(Hash) && item['summary'].to_s.match?(/usage/i)
-      end
-      return if bodies.any? { |body| complete_markdown_table?(body) }
-
-      raise Error, 'Publication description requires usage details with a table.'
-    end
-
-    def complete_markdown_table?(body)
-      return false unless body.is_a?(String)
-
-      PublicationText.prose(body).lines.map(&:rstrip).each_cons(3).any? do |header, separator, data|
-        pipe_row?(header) && separator.match?(TABLE_SEPARATOR) && pipe_row?(data) && !data.match?(TABLE_SEPARATOR)
-      end
-    end
-
-    def pipe_row?(line) = line.match?(/\A\s*\|.+\|\s*\z/)
 
     def revision
       head = @content['head']

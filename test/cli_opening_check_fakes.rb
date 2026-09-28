@@ -2,6 +2,15 @@
 
 # Fake model and GitHub commands for the command-level opening check tests.
 module CliOpeningCheckFakes
+  USAGE = {
+    'note' => 'Native usage is PARTIAL.',
+    'columns' => [{
+      'label' => 'codex', 'provider' => 'openai', 'model' => 'gpt-5.6-terra', 'routed' => 'UNKNOWN',
+      'effort' => 'medium', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
+      'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
+    }]
+  }.freeze
+
   private
 
   def run_description(dir, root: self.class::ROOT, reviewer: nil, model: nil, ref: nil)
@@ -49,8 +58,7 @@ module CliOpeningCheckFakes
     provenance['initial_prompt'] = 'EXCLUDED'
     { 'identity' => { 'agent' => 'Codex' }, 'summary' => self.class::SUMMARY, 'deployment' => 'none',
       'table' => { 'columns' => %w[Check Result], 'rows' => [%w[validate pass]] },
-      'provenance' => provenance,
-      'details' => [{ 'summary' => 'Usage', 'body' => "| Metric | Value |\n| --- | --- |\n| Total | 1 |" }] }
+      'provenance' => provenance, 'usage' => USAGE, 'details' => [] }
   end
 
   def write_executable(dir, name, source)

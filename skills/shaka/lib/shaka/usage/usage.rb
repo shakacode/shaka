@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'digest'
+require 'json'
 require 'optparse'
 require_relative '../error'
 require_relative 'claude_usage'
@@ -9,6 +10,7 @@ require_relative 'cost_estimate'
 require_relative 'cursor_usage'
 require_relative 'opencode_usage'
 require_relative 'pi_usage'
+require_relative 'json_report'
 require_relative 'usage_records'
 
 module Shaka
@@ -121,7 +123,7 @@ module Shaka
     def print_report
       missing = unmatched_turns
       if missing.empty?
-        puts report
+        puts @options[:format] == 'json' ? JSON.pretty_generate(json_document) : report
         return 0
       end
 
@@ -188,6 +190,7 @@ module Shaka
     include UsageTable
     include UsageTurns
     include UsageIdentity
+    include UsageJsonReport
 
     SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
     METRIC_FIELDS = [
@@ -205,7 +208,7 @@ module Shaka
                      'pi' => 'PI_CODING_AGENT' }.freeze
 
     def self.run(arguments)
-      options = { files: [], turns: [], host: detected_host }
+      options = { files: [], turns: [], host: detected_host, format: 'markdown' }
       parser(options).parse!(arguments)
       puts parser(options) if options[:help]
       return 0 if options[:help]
@@ -222,6 +225,7 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka usage --commit SHA[,SHA] --contribution NAME [options]'
         source_options(flags, options)
+        UsageJsonReport.format_option(flags, options)
         flags.on('--commit SHA', 'Affected full commit SHAs, comma separated') { |v| options[:commit] = v }
         flags.on('--contribution NAME', 'Contribution category (see guide)') { |v| options[:contribution] = v }
         flags.on('--rate-root DIR', 'Implementation rate-card checkout') { |value| options[:rate_root] = value }

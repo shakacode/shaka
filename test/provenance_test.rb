@@ -56,6 +56,17 @@ class ExecutionProvenanceTest < Minitest::Test
     refute_includes error.message, private_alias
   end
 
+  def test_publishes_the_installed_version_instead_of_a_host_specific_string
+    %w[1 c191a8f v0.1.0.pre.1-129-gef048dc UNKNOWN].each do |supplied|
+      body = Shaka::ExecutionProvenance.new(
+        PUBLIC_PROVENANCE.merge('workflow_version' => supplied)
+      ).detail.fetch('body')
+
+      assert_includes body, "| Workflow version | #{Shaka::VERSION} |"
+      refute_includes body, "| Workflow version | #{supplied} |"
+    end
+  end
+
   def test_refuses_raw_prompt_content_without_echoing_it
     private_prompt = 'customer-secret-7E2A'
     error = assert_raises(Shaka::Error) do

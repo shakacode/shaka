@@ -1,0 +1,39 @@
+# frozen_string_literal: true
+
+require_relative '../error'
+
+module Shaka
+  # Carries earlier usage reports when the new description supplies structured records.
+  module UsageRecordCarry
+    module_function
+
+    def structured_usage(content)
+      usage = content.is_a?(Hash) ? content['usage'] : nil
+      usage if usage.is_a?(Hash) && usage.key?('records')
+    end
+
+    def apply(records, content, usage, existing, stats)
+      fresh = usage['records'].map { |fields| identity!(fields) }
+      region = records.managed_region(existing)
+      return [content, stats] unless region
+
+      previous = usage['carried'].to_s
+      kept = records.carried(region, previous, stats, fresh)
+      return [content, stats] if kept.empty?
+
+      combined = [previous, *kept].reject(&:empty?).join("\n\n")
+      [content.merge('usage' => usage.merge('carried' => combined)), stats]
+    end
+
+    def identity(fields)
+      return unless fields.is_a?(Hash) && UsageRecords::FIELDS.all? { |key| fields.key?(key) }
+      return unless %w[sources responses].all? { |key| fields[key].is_a?(Array) }
+
+      fields
+    end
+
+    def identity!(fields)
+      identity(fields) || raise(Error, 'Publication usage record is missing identity fields.')
+    end
+  end
+end

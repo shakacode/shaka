@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'version'
 
 module Shaka
   # Renders a small, allowlisted record of route-selection evidence for a public PR.
@@ -30,7 +31,9 @@ module Shaka
       [
         ['Machine alias', machine_alias],
         ['Task source', values.fetch('task_source')],
-        ['Workflow version', values.fetch('workflow_version')],
+        # Hosts were publishing a commit, the seam version, or a git describe. The installed
+        # package version is the one value every host can print without inventing a third.
+        ['Workflow version', VERSION],
         ['Requested route', route(values, 'requested')],
         ['Recommended route', route(values, 'recommended')],
         ['Active setting', route(values, 'active')]

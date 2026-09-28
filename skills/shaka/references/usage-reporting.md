@@ -3,8 +3,15 @@
 Report available usage for each task's commits and contributions:
 
 ```text
-shaka usage --commit FULL_COMMIT_SHA --contribution implementation
+shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 ```
+
+`--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
+Copy every column into the description `usage.columns` list and every `record` into
+`usage.records`. The description renders one table: USD estimate, then Input, Cached
+input, Output, Reasoning output, and Cache writes, with numeric columns right-aligned.
+Credits stay on each JSON column and in the Markdown report. A `details` item whose
+summary names usage is refused.
 
 Include the helper's output in the PR, or in the final response when there is no
 PR. **Native** figures come from the host's records. **Estimated** figures apply a
@@ -46,10 +53,10 @@ configuration, or interval metadata produce `UNKNOWN`.
 
 ## Keep earlier reports when work changes hands
 
-Paste each report whole into the description's usage details; hidden markers at
-its first and last lines identify it. When `description` republishes a PR, it
-keeps earlier reports unless a newer report covers the same work, so a handoff
-between hosts or models keeps every contribution. Fork PRs never carry reports.
+Pass each JSON `record` through in `usage.records`. When `description` republishes
+a PR, it keeps earlier reports unless a newer record covers the same work, so a
+handoff between hosts or models keeps every contribution. The kept text is the
+earlier marked report, placed under the rendered table. Fork PRs never carry reports.
 The command prints how many reports it retained, replaced, and dropped. A newer
 report that kept only some counters can still replace an earlier report.
 
@@ -259,8 +266,10 @@ IDs. Recovery-note session links follow their separate [publication rule](delive
 The required `provenance` object records task source, workflow version, and
 requested, recommended, and active model/effort. `task_source` is `description`,
 `issue`, or `pull_request`; missing route metadata is `UNKNOWN`. The initial prompt
-is excluded. The renderer adds the public alias from `SHAKA_MACHINE_ALIAS`, or
-`UNKNOWN`; it never falls back to a hostname.
+is excluded. Workflow version is published as the installed `Shaka::VERSION`.
+Pass that constant, `UNKNOWN`, or any other allowlisted token; a commit, the seam
+version, or a git describe is not what readers see. The renderer adds the public
+alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`; it never falls back to a hostname.
 
 Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.

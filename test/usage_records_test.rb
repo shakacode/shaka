@@ -209,6 +209,15 @@ class UsageRecordsShapeTest < Minitest::Test
     ['broken', 'marked', 'not json'].each { |text| refute_includes body, text }
     assert_equal({ 'retained' => 0, 'replaced' => 0, 'dropped' => 3 }, stats)
   end
+
+  def test_structured_records_keep_a_disjoint_earlier_report
+    old = record('claude-code', 'opus-impl', responses: %w[c1 c2])
+    fresh = DEFAULTS.merge('host' => 'codex', 'responses' => %w[x1], 'sources' => ['s2'])
+    content = { 'usage' => { 'records' => [fresh] } }
+    carried_content, stats = Shaka::UsageRecords.carry(content, existing(old))
+    assert_includes carried_content.dig('usage', 'carried'), 'opus-impl'
+    assert_equal 1, stats['retained']
+  end
 end
 
 # Only a report that read counters for every selected response may replace measured history.

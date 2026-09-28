@@ -15,11 +15,20 @@ class PublicationRegressionTest < Minitest::Test
   TABLE = { 'columns' => %w[Check Commit Result], 'rows' => [%w[bin/validate abc123 pass]] }.freeze
   USAGE = { 'summary' => 'Usage',
             'body' => "| Provider | Native total |\n| --- | ---: |\n| openai | 1 |" }.freeze
+  USAGE_OBJECT = {
+    'note' => 'Native usage is PARTIAL.',
+    'columns' => [{
+      'label' => 'openai', 'provider' => 'openai', 'model' => 'gpt-test', 'routed' => 'UNKNOWN',
+      'effort' => 'high', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
+      'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
+    }]
+  }.freeze
   WALKTHROUGH = 'https://github.com/shakacode/shaka/pull/137#pullrequestreview-5258565629'
 
   def description_content(**changes)
     { 'identity' => IDENTITY, 'summary' => 'A summary.', 'walkthrough' => WALKTHROUGH, 'table' => TABLE,
-      'deployment' => 'none', 'provenance' => PUBLIC_PROVENANCE, 'details' => [USAGE] }.merge(changes)
+      'deployment' => 'none', 'provenance' => PUBLIC_PROVENANCE, 'usage' => USAGE_OBJECT,
+      'details' => [] }.merge(changes)
   end
 
   # https://github.com/shakacode/shaka/pull/37 published its whole description as one
@@ -87,14 +96,16 @@ class PublicationRegressionTest < Minitest::Test
     assert_includes error.message, 'usage'
   end
 
-  def test_a_later_usage_detail_with_a_complete_table_is_accepted
-    rendered = Shaka::Publication.description(
-      description_content('details' => [
-                            { 'summary' => 'Usage notes', 'body' => 'See the snapshot below.' },
-                            USAGE
-                          ])
-    )
-    assert_includes rendered, '| openai | 1 |'
+  def test_a_later_usage_detail_with_a_complete_table_is_refused
+    error = assert_raises(Shaka::Error) do
+      Shaka::Publication.description(
+        description_content('details' => [
+                              { 'summary' => 'Usage notes', 'body' => 'See the snapshot below.' },
+                              USAGE
+                            ])
+      )
+    end
+    assert_includes error.message, 'usage object'
   end
 end
 
@@ -102,58 +113,55 @@ class PublicationUsageCostSummaryTest < Minitest::Test
   # Break: Usage and cost as a collapsed summary without the USD total forces a second expand
   # to learn the scenario price that is already in the body table.
   def test_usage_and_cost_summary_includes_usd_totals_from_the_body
-    rendered = publish('Usage and cost', '| Metric | grok-4.6 |', '| --- | --- |',
-                       '| USD estimate | $0.758116 |')
+    rendered = publish(['$0.758116'])
     assert_includes rendered, '<summary>Usage and cost · $0.758116</summary>'
   end
 
   def test_usage_and_cost_summary_does_not_repeat_totals_already_in_the_summary
-    rendered = publish('Usage and cost · $0.758116', '| Metric | grok-4.6 |', '| --- | --- |',
-                       '| USD estimate | $0.758116 |')
-    assert_includes rendered, '<summary>Usage and cost · $0.758116</summary>'
-    refute_includes rendered, '$0.758116 · $0.758116'
+    body = "| Metric | grok-4.6 |\n| --- | ---: |\n| USD estimate | $0.758116 |"
+    summary = Shaka::PublicationText.usage_cost_summary('Usage and cost · $0.758116', body)
+    assert_equal 'Usage and cost · $0.758116', summary
   end
 
   # Break: a summary that already names one of two USD cells still gets the full
   # list appended, so the header shows $1 twice for two scenarios.
   def test_usage_and_cost_summary_appends_only_usd_cells_missing_from_the_header
-    rendered = publish('Usage and cost · $1', '| Metric | a | b |', '| --- | --- | --- |',
-                       '| USD estimate | $1 | $2 |')
-    assert_includes rendered, '<summary>Usage and cost · $1 · $2</summary>'
-    refute_includes rendered, '$1 · $1 · $2'
+    body = "| Metric | a | b |\n| --- | ---: | ---: |\n| USD estimate | $1 | $2 |"
+    summary = Shaka::PublicationText.usage_cost_summary('Usage and cost · $1', body)
+    assert_equal 'Usage and cost · $1 · $2', summary
   end
 
   # Break: include? treats two scenarios that share one USD amount as already listed.
   def test_usage_and_cost_summary_keeps_equal_usd_totals_for_each_scenario
-    rendered = publish('Usage and cost · $1.000000', '| Metric | a | b |', '| --- | --- | --- |',
-                       '| USD estimate | $1.000000 | $1.000000 |')
+    rendered = publish(['$1.000000', '$1.000000'])
     assert_includes rendered, '<summary>Usage and cost · $1.000000 · $1.000000</summary>'
   end
 
   # Break: with records carried from an earlier host, only the first record's estimate showed.
   def test_usage_and_cost_summary_lists_every_record_without_a_total
-    rendered = publish('Usage and cost', '| Metric | opus |', '| --- | --- |', '| USD estimate | UNKNOWN |', '',
-                       '| Metric | codex |', '| --- | --- |', '| USD estimate | $1.811534 |')
-    assert_includes rendered, '<summary>Usage and cost · UNKNOWN · $1.811534</summary>'
+    body = "| Metric | opus |\n| --- | ---: |\n| USD estimate | UNKNOWN |\n\n" \
+           "| Metric | codex |\n| --- | ---: |\n| USD estimate | $1.811534 |"
+    summary = Shaka::PublicationText.usage_cost_summary('Usage and cost', body)
+    assert_equal 'Usage and cost · UNKNOWN · $1.811534', summary
   end
 
   # Break: appending a raw USD cell after summary_text lets markup close the disclosure.
   def test_usage_and_cost_summary_escapes_usd_cells
-    rendered = publish('Usage and cost', '| Metric | x |', '| --- | --- |',
-                       '| USD estimate | </summary><h1> |')
+    rendered = publish(['</summary><h1>'])
     assert_includes rendered, '<summary>Usage and cost · &lt;/summary&gt;&lt;h1&gt;</summary>'
     refute_match(%r{<summary>Usage and cost · </summary>}, rendered)
   end
 
   private
 
-  def publish(summary, *lines)
-    body = "#{PublicationRegressionTest::USAGE.fetch('body')}\n\n#{lines.join("\n")}\n"
+  def publish(amounts)
+    base = PublicationRegressionTest::USAGE_OBJECT['columns'].first
+    columns = amounts.map.with_index { |amount, index| base.merge('label' => "model-#{index}", 'usd' => amount) }
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
-        'details' => [{ 'summary' => summary, 'body' => body }] }
+        'usage' => { 'note' => 'Native usage is PARTIAL.', 'columns' => columns }, 'details' => [] }
     )
   end
 end
@@ -168,7 +176,7 @@ class PublicationStructureTest < Minitest::Test
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE,
-        'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
+        'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes)
     )
   end
 
@@ -184,8 +192,7 @@ class PublicationStructureTest < Minitest::Test
   end
 
   def test_details_keep_the_blank_lines_github_needs_to_render_their_content
-    rendered = render('details' => [PublicationRegressionTest::USAGE,
-                                    { 'summary' => 'Rollback', 'body' => "| A |\n| --- |\n| 1 |" }])
+    rendered = render('details' => [{ 'summary' => 'Rollback', 'body' => "| A |\n| --- |\n| 1 |" }])
     assert_includes rendered, "<details>\n<summary>Rollback</summary>\n\n| A |"
     assert_includes rendered, "| 1 |\n\n</details>"
   end
@@ -194,7 +201,7 @@ class PublicationStructureTest < Minitest::Test
     [{ 'identity' => IDENTITY }, { 'identity' => IDENTITY, 'summary' => '   ' }, { 'summary' => 'A summary.' }]
       .each { |content| assert_raises(Shaka::Error) { Shaka::Publication.description(content) } }
     assert_raises(Shaka::Error) { render('sections' => [{ 'heading' => '', 'body' => 'Why.' }]) }
-    error = assert_raises(Shaka::Error) { render('details' => [{ 'summary' => 'Rollback', 'body' => 'Revert.' }]) }
+    error = assert_raises(Shaka::Error) { render('usage' => nil) }
     assert_includes error.message, 'usage'
   end
 
@@ -259,8 +266,7 @@ class PublicationStructureTest < Minitest::Test
   end
 
   def test_a_details_summary_cannot_close_its_own_disclosure
-    rendered = render('details' => [PublicationRegressionTest::USAGE,
-                                    { 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
+    rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
     assert_equal 3, rendered.scan('</summary>').size
     assert_equal 3, rendered.scan('</details>').size
@@ -284,7 +290,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => walkthrough, 'deployment' => 'none', 'table' => PublicationRegressionTest::TABLE,
-        'provenance' => PUBLIC_PROVENANCE, 'details' => [PublicationRegressionTest::USAGE] }
+        'provenance' => PUBLIC_PROVENANCE, 'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
     )
   end
 
@@ -313,7 +319,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
-        'details' => [PublicationRegressionTest::USAGE] }
+        'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
     )
   end
 
@@ -352,7 +358,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
-                'details' => [PublicationRegressionTest::USAGE] }
+                'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
     rendered = Shaka::Publication.description(content)
 
     assert_includes rendered, '<summary>Execution provenance</summary>'
@@ -366,7 +372,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => PublicationRegressionTest::TABLE,
-                'details' => [PublicationRegressionTest::USAGE] }
+                'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
 
     assert_includes error.message, 'provenance'
@@ -385,7 +391,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => DEPLOYMENT,
         'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
-        'details' => [PublicationRegressionTest::USAGE] }.merge(changes)
+        'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes)
     )
   end
 
@@ -435,7 +441,7 @@ class PublicationWipDetailsTest < Minitest::Test
           'unfinished_work' => 'none', 'stopped_because' => 'paused', 'merge_authority' => 'ask',
           'state' => 'awaiting hosted checks', 'next_action' => 'read claude-review' }.freeze
 
-  def render(wip, details: [PublicationRegressionTest::USAGE])
+  def render(wip, details: [])
     content = PublicationRegressionTest.new('render').description_content('wip' => wip, 'details' => details)
     Shaka::Publication.description(content)
   end
@@ -483,7 +489,62 @@ class PublicationWipDetailsTest < Minitest::Test
 
   def test_a_hand_written_wip_details_item_is_refused
     prose = { 'summary' => 'WIP Details', 'body' => "Owner: m5\nTask: something" }
-    error = assert_raises(Shaka::Error) { render(nil, details: [PublicationRegressionTest::USAGE, prose]) }
+    error = assert_raises(Shaka::Error) { render(nil, details: [prose]) }
     assert_includes error.message, 'wip object'
+  end
+end
+
+# Hosts each wrote a different usage table (#258, #254, #248). Ruby renders one.
+class PublicationUsageTableTest < Minitest::Test
+  COLUMN = {
+    'label' => 'claude-opus-5-5 implementation', 'provider' => 'anthropic', 'model' => 'claude-opus-5-5',
+    'routed' => 'claude-opus-5-5', 'effort' => 'medium', 'credits' => 'UNKNOWN', 'usd' => '$3.269110',
+    'input' => '100', 'cached_input' => '7558810', 'output' => '27535', 'reasoning_output' => '7687',
+    'cache_writes' => '150781'
+  }.freeze
+  REVIEW = COLUMN.merge('label' => 'claude-opus-5-5 review', 'usd' => '$0.308079', 'input' => '6',
+                        'cached_input' => '96593', 'output' => 'UNKNOWN', 'reasoning_output' => 'UNKNOWN',
+                        'cache_writes' => 'UNKNOWN').freeze
+
+  def render(usage: { 'note' => 'Native usage is PARTIAL.', 'columns' => [COLUMN, REVIEW] }, details: [])
+    Shaka::Publication.description(
+      PublicationRegressionTest.new('render').description_content('usage' => usage, 'details' => details)
+    )
+  end
+
+  RENDERED = <<~TABLE.chomp
+    | Metric | claude-opus-5-5 implementation | claude-opus-5-5 review |
+    | --- | ---: | ---: |
+    | USD estimate | $3.269110 | $0.308079 |
+    | Input | 100 | 6 |
+    | Cached input | 7558810 | 96593 |
+    | Output | 27535 | UNKNOWN |
+    | Reasoning output | 7687 | UNKNOWN |
+    | Cache writes | 150781 | UNKNOWN |
+  TABLE
+
+  def test_renders_one_right_aligned_table_in_fixed_metric_order
+    rendered = render
+    assert_includes rendered, RENDERED
+    assert_includes rendered, '<summary>Usage and cost · $3.269110 · $0.308079</summary>'
+    assert_operator rendered.index('Native usage is PARTIAL.'), :<, rendered.index('| Metric |')
+  end
+
+  def test_a_missing_column_metric_is_named
+    error = assert_raises(Shaka::Error) { render(usage: { 'note' => 'n', 'columns' => [COLUMN.except('output')] }) }
+    assert_includes error.message, 'output'
+  end
+
+  def test_an_unknown_column_field_is_named
+    error = assert_raises(Shaka::Error) do
+      render(usage: { 'note' => 'n', 'columns' => [COLUMN.merge('native_total' => '1')] })
+    end
+    assert_includes error.message, 'native_total'
+  end
+
+  def test_a_hand_written_usage_details_item_is_refused
+    prose = { 'summary' => 'Usage and cost', 'body' => "| Metric | x |\n| --- | ---: |\n| USD estimate | $1 |" }
+    error = assert_raises(Shaka::Error) { render(details: [prose]) }
+    assert_includes error.message, 'usage object'
   end
 end

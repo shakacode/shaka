@@ -280,7 +280,8 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `walkthrough`, required `deployment`, optional `sections`, required `table`,
-        required `provenance`, required usage `details`, and `wip` while the PR is unfinished;
+        required `provenance`, required `usage` (`note` and `columns` from `shaka usage --format json`),
+        and `wip` while the PR is unfinished. A `details` item whose summary names usage is refused;
         walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
@@ -364,7 +365,9 @@ phases:
         a walkthrough is the behavior that changed. Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
-        or `shared-planning`. Publish the local adversarial review as `--contribution review` from
+        or `shared-planning`. Pass `--format json` and put each report's `columns` into the
+        description `usage` object, with every report's `record` in `records`, so the helper
+        renders one table. Publish the local adversarial review as `--contribution review` from
         that run's `--file` or host context, rather than from the implementation session. Use
         `--all-turns` only when the session holds solely this task. Include
         available retry and contributor records, label shared intervals and UNKNOWN fields, and
@@ -383,7 +386,9 @@ phases:
       - Description provenance has exactly nine flat keys: `task_source`, `initial_prompt`,
         `workflow_version`, `requested_model`, `requested_effort`, `recommended_model`,
         `recommended_effort`, `active_model`, and `active_effort`. `initial_prompt` is `EXCLUDED`;
-        the other values use allowlisted text or `UNKNOWN`. The renderer adds the public machine
+        the other values use allowlisted text or `UNKNOWN`. The renderer publishes `Shaka::VERSION`
+        for Workflow version, so a commit, the seam version `1`, or a git describe is not what
+        readers see. The renderer adds the public machine
         alias from `SHAKA_MACHINE_ALIAS` and keeps the native usage table as the only observed route
         and token record.
     done_when: >-

@@ -27,13 +27,30 @@ module Shaka
     end
 
     def report
+      data = snapshot
+      markdown(data[:columns], data[:reasons])
+    end
+
+    # One pass of the priced columns, in the same order `report` prints them.
+    def snapshot
       @threshold = false
       @cursor_threshold_models = []
       reasons = []
       groups = @responses.group_by { |record| [record['configuration'], record['billing_mode']] }
       columns = groups.map { |key, group| column(key, group, reasons) }
       columns = [blank_column] if columns.empty?
-      markdown(columns, reasons)
+      { columns: columns, reasons: reasons, groups: groups.values }
+    end
+
+    def column_headers(columns) = cost_headers(columns)
+
+    def display(column, key, unit) = shown(column, key, unit)
+
+    def narrative = narrative_for(snapshot)
+
+    def narrative_for(data)
+      ["Rate card: #{@rate_card.label}.", intro(data[:columns]),
+       footer(data[:columns], data[:reasons])].compact.reject { |part| part.to_s.strip.empty? }.join("\n\n")
     end
 
     private
