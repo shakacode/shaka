@@ -86,22 +86,17 @@ magick identify -format '%f %wx%h\n' before-desktop.png after-desktop.png
 magick compare -metric AE -fuzz 2% before-desktop.png after-desktop.png diff-desktop.png
 ```
 
-The first command confirms both images have the same dimensions; `compare` still
-produces output for mismatched sizes, and every pixel then looks changed. The
+The first command prints each image's size; compare them yourself, because
+`compare` still produces a misleading result for images of different sizes. The
 second fades unchanged pixels and paints changed ones red. It prints the changed
 pixel count and exits with status 1 when the images differ, so allow that exit in
 scripts.
 
-Publish the difference beside its source captures in one PR comment. Label the
-compared revisions, the page and state, the viewport, and whether each changed
-region is intended:
-
-```sh
-gh pr comment 42 \
-  --attach './before-desktop.png#Pricing page before (main 4396e9c), desktop 1280x800' \
-  --attach './after-desktop.png#Pricing page after (abc1234), desktop 1280x800' \
-  --attach './diff-desktop.png#Changed pixels, desktop: new plan card intended, footer shift unintended'
-```
+Publish the difference beside its source captures in one PR comment, attached the
+same way as other captures. Label the compared revisions, the page and state, the
+viewport, and whether each changed region is intended, for example “Changed pixels,
+pricing page, desktop 1280x800, main 4396e9c to abc1234: new plan card intended,
+footer shift unintended.”
 
 A red region is not a defect by itself. Antialiasing, font rendering, and
 timestamps also change pixels. Say which regions the PR meant to change and
