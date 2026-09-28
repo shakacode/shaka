@@ -24,6 +24,7 @@ module Shaka
 
       def inspect = "#<#{self.class} mode=#{mode} status=#{status}>"
       alias_method :to_s, :inspect
+      def pretty_print(printer) = printer.text(inspect)
     end
 
     # Read-only preflight of private candidate settings in one Git worktree.
@@ -91,10 +92,14 @@ module Shaka
 
       def inspect_conflicts(trusted, indexed, committed, entries)
         conflict!("#{Paths::CONTRACT} conflicts with private #{Paths::NEW_CONTRACT}") if legacy_collision?(entries)
-        private_tracked = (indexed | committed).select { |path| path.start_with?("#{PrivateInventory::DIRECTORY}/") }
+        private_tracked = (indexed | committed).select { |path| private_path?(path) }
         conflict!("#{PrivateInventory::DIRECTORY} contains tracked files: #{private_tracked.join(', ')}") unless
           private_tracked.empty?
         conflict!("Trusted default branch already has #{trusted.contract}") if trusted && entries.any?
+      end
+
+      def private_path?(path)
+        path == PrivateInventory::DIRECTORY || path.start_with?("#{PrivateInventory::DIRECTORY}/")
       end
 
       def legacy_collision?(entries)

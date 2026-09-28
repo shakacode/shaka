@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require_relative 'configuration_layout_fixture'
 require 'shaka/configuration'
+require 'pp'
 
 module PrivateSourceFixture
   include ConfigurationLayoutFixture
@@ -320,6 +321,7 @@ class PrivateSourceBoundaryTest < Minitest::Test
       result = report(root, ref)
       refute_includes result.inspect, 'candidate_config'
       refute_includes result.to_s, 'RepositoryConfig'
+      refute_includes PP.pp(result, +''), 'candidate_config'
     end
   end
 
@@ -328,6 +330,24 @@ class PrivateSourceBoundaryTest < Minitest::Test
       ref = commit_project(root)
       File.symlink('elsewhere', File.join(root, '.agents'))
       assert_equal 'unsafe_file', report(root, ref).status
+    end
+  end
+
+  def test_tracked_submodule_at_private_root_conflicts
+    with_private_repository do |root, ref|
+      system('git', '-C', root, 'update-index', '--add', '--cacheinfo', '160000', ref, '.agents/shaka', exception: true)
+      assert_equal 'conflicting', report(root, ref).status
+    end
+  end
+
+  def test_external_symlink_target_must_be_committed
+    with_private_repository do |root, ref|
+      File.write(File.join(root, 'helper.sh'), "#!/bin/sh\n")
+      File.symlink('../../../helper.sh', File.join(root, '.agents/shaka/bin/extra'))
+      assert_equal 'partial', report(root, ref).status
+      system('git', '-C', root, 'add', 'helper.sh', exception: true)
+      system('git', '-C', root, 'commit', '--quiet', '-m', 'helper', exception: true)
+      assert_equal 'complete', report(root, ref).status
     end
   end
 end
