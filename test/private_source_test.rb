@@ -56,6 +56,11 @@ module PrivateSourceFixture
     policy = config.merge('review' => review_policy('prompt_file' => 'review.md'))
     File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
   end
+
+  def commit_file(root, path, message)
+    system('git', '-C', root, 'add', path, exception: true)
+    system('git', '-C', root, 'commit', '--quiet', '-m', message, exception: true)
+  end
 end
 
 class PrivateSourceStateTest < Minitest::Test
@@ -242,6 +247,18 @@ class PrivateSourceSafetyTest < Minitest::Test
       system('git', '-C', root, 'add', 'review.md', exception: true)
       assert_equal 'partial', report(root, ref).status
       system('git', '-C', root, 'commit', '--quiet', '-m', 'review prompt', exception: true)
+      assert_equal 'complete', report(root, ref).status
+    end
+  end
+
+  def test_external_prompt_symlink_must_itself_be_committed
+    with_private_repository do |root, ref|
+      File.write(File.join(root, 'shared-review.md'), 'tracked prompt')
+      commit_file(root, 'shared-review.md', 'shared prompt')
+      File.symlink('shared-review.md', File.join(root, 'review.md'))
+      write_review_prompt_policy(root)
+      assert_equal 'partial', report(root, ref).status
+      commit_file(root, 'review.md', 'prompt link')
       assert_equal 'complete', report(root, ref).status
     end
   end

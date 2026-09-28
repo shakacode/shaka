@@ -3,6 +3,7 @@
 require 'open3'
 require 'pathname'
 require_relative '../error'
+require_relative '../repository_config'
 require_relative 'layout'
 require_relative 'private_inventory'
 
@@ -29,7 +30,6 @@ module Shaka
 
     # Read-only preflight of private candidate settings in one Git worktree.
     class PrivateSource
-      Result = PrivateSourceResult
       def initialize(root:, ref:)
         @root = File.realpath(root)
         @ref = ref
@@ -62,10 +62,10 @@ module Shaka
 
       def result(sha, trusted, inventory, config)
         status = status_for(inventory, config)
-        Result.new(root: @root, common_git_dir: common_git_dir, ref: sha,
-                   trusted_source: trusted ? 'present' : 'absent', status:,
-                   inventory: inventory.entries, blockers: @blockers.freeze,
-                   candidate_config: status == 'complete' ? config : nil)
+        PrivateSourceResult.new(root: @root, common_git_dir: common_git_dir, ref: sha,
+                                trusted_source: trusted ? 'present' : 'absent', status:,
+                                inventory: inventory.entries, blockers: @blockers.freeze,
+                                candidate_config: status == 'complete' ? config : nil)
       end
 
       def status_for(inventory, config)
@@ -93,8 +93,7 @@ module Shaka
       def inspect_conflicts(trusted, indexed, committed, entries)
         conflict!("#{Paths::CONTRACT} conflicts with private #{Paths::NEW_CONTRACT}") if legacy_collision?(entries)
         private_tracked = (indexed | committed).select { |path| private_path?(path) }
-        conflict!("#{PrivateInventory::DIRECTORY} contains tracked files: #{private_tracked.join(', ')}") unless
-          private_tracked.empty?
+        conflict!("tracked private files: #{private_tracked.join(', ')}") unless private_tracked.empty?
         conflict!("Trusted default branch already has #{trusted.contract}") if trusted && entries.any?
       end
 
@@ -144,13 +143,21 @@ module Shaka
 
       def inspect_prompt_dependencies(config, committed)
         RepositoryConfig.prompt_files(review: config.review, opening: config.opening_check).each do |label, path|
-          resolved = File.realpath(File.join(@root, path))
-          relative = Pathname.new(resolved).relative_path_from(Pathname.new(@root)).to_s
-          next if relative.start_with?("#{PrivateInventory::DIRECTORY}/") || committed.include?(relative)
+          next if committed_prompt?(path, committed)
 
           @blockers << "#{label} #{path} is outside #{PrivateInventory::DIRECTORY} and not tracked"
         end
       end
+
+      def committed_prompt?(path, committed)
+        lexical = relative_path(File.expand_path(path, @root))
+        return true if lexical.start_with?("#{PrivateInventory::DIRECTORY}/")
+
+        resolved = relative_path(File.realpath(File.join(@root, path)))
+        committed.include?(lexical) && committed.include?(resolved)
+      end
+
+      def relative_path(path) = Pathname.new(path).relative_path_from(Pathname.new(@root)).to_s
     end
   end
 end
