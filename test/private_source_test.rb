@@ -358,6 +358,18 @@ class PrivateSourceBoundaryTest < Minitest::Test
     end
   end
 
+  def test_symlinked_private_root_has_one_unsafe_blocker
+    with_git_repository do |root|
+      ref = commit_project(root)
+      FileUtils.mkdir_p(File.join(root, '.agents'))
+      FileUtils.mkdir_p(File.join(root, 'elsewhere'))
+      File.symlink('../elsewhere', File.join(root, '.agents/shaka'))
+      result = report(root, ref)
+      assert_equal 'unsafe_file', result.status
+      assert_equal 1, result.blockers.size
+    end
+  end
+
   def test_tracked_submodule_at_private_root_conflicts
     with_private_repository do |root, ref|
       system('git', '-C', root, 'update-index', '--add', '--cacheinfo', '160000', ref, '.agents/shaka', exception: true)

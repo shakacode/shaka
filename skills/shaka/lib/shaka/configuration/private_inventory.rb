@@ -50,7 +50,9 @@ module Shaka
         return unless File.exist?(directory) || File.symlink?(directory)
 
         visit(directory)
-        unsafe!(DIRECTORY, 'must be a real directory') unless File.directory?(directory) && !File.symlink?(directory)
+        return if @unsafe || (File.directory?(directory) && !File.symlink?(directory))
+
+        unsafe!(DIRECTORY, 'must be a real directory')
       end
 
       def visit(path)
