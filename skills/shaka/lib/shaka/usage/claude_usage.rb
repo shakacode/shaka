@@ -18,6 +18,7 @@ module Shaka
 
     def print_snapshot(identity, record)
       { identity => { 'response_id' => identity, 'turn_id' => identity, 'timestamp' => record['timestamp'],
+                      'aggregate' => true,
                       'configuration' => ['anthropic', 'UNKNOWN', print_model(record), record['effort']],
                       'billing_mode' => speed(record['usage']), 'usage' => tokens(record['usage']) } }
     end

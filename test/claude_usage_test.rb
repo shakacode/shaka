@@ -369,4 +369,13 @@ class ClaudeUsageIdentityTest < Minitest::Test
       assert_equal 1, identity['responses'].size
     end
   end
+
+  # Break: resumed print runs share a session ID, so a later run's report replaced an earlier one.
+  def test_print_result_is_identified_by_its_file_not_its_session
+    Dir.mktmpdir do |directory|
+      identity = JSON.parse(report('--host', 'claude-code', '--file',
+                                   print_result_file(directory))[/\A<!-- shaka:usage (.*) -->\n/, 1])
+      assert_equal [[], true, 1], [identity['responses'], identity['complete'], identity['sources'].size]
+    end
+  end
 end

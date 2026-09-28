@@ -211,7 +211,7 @@ class UsageRecordsShapeTest < Minitest::Test
   end
 end
 
-# Only a report whose totals are known may replace measured history.
+# Only a report that read counters for every selected response may replace measured history.
 class UsageRecordsCompletenessTest < Minitest::Test
   include UsageRecordsFixture
 

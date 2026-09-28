@@ -51,8 +51,7 @@ its first and last lines identify it. When `description` republishes a PR, it
 keeps earlier reports unless a newer report covers the same work, so a handoff
 between hosts or models keeps every contribution. Fork PRs never carry reports.
 The command prints how many reports it retained, replaced, and dropped. A newer
-report that kept only some counters, or print runs resumed into one Claude
-session, can still replace an earlier report.
+report that kept only some counters can still replace an earlier report.
 
 ## Reading the result
 
