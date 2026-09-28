@@ -164,14 +164,66 @@ before relying on any of these; flags move.
 
 A local review is **UNVERIFIED** until the owner publishes its report, including that closing
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
-tests, then publishes the review after pushing:
+tests, then publishes the review after pushing.
+
+## Run the review loop with a ledger
+
+Keep every round in one ledger, a JSON file outside the checkout, for example
+`LEDGER="$(mktemp -d)/review-ledger.json"`. Pass `--ledger "$LEDGER"` to each
+`shaka review run`: a completed round adds its head, reviewer, effort, requested model, report,
+prompt source, criteria commit, and usage path. The ledger stays private until you publish it.
+
+The prompt asks for a class on every finding. Handle each by class:
+
+| Class | Meaning | In the loop |
+| --- | --- | --- |
+| `defect` | Wrong behavior, a security or trust hole, or a broken contract | Reproduce it where practical, fix it in a new commit, review again |
+| `risk` | A plausible defect you cannot reproduce | Fix it when the fix is clearly correct; otherwise document it |
+| `nit` | Style, naming, simplification, optional tests, docs polish | Document it for a later decision; never fixed in the loop |
+
+After a round with findings, record what became of each one:
 
 ```bash
-shaka review publish OWNER/REPO NUMBER --content-file PATH
+shaka review record --ledger "$LEDGER" --content-file FINDINGS.json
 ```
 
-The content JSON lists `rounds`. Copy each round's `head`, `reviewer`, `report`,
-`prompt_source`, and `criteria_ref` from its `shaka review run` result.
+```json
+{
+  "findings": [
+    { "id": "F1", "summary": "Exit code is 0 on a failed push", "class": "defect",
+      "disposition": "fixed", "commit": "FULL_FIX_SHA" },
+    { "id": "F2", "summary": "Rename run_all", "class": "nit", "disposition": "documented",
+      "note": "Outside this change" }
+  ],
+  "model": "gpt-6-sol", "tokens": "41,200"
+}
+```
+
+`disposition` is `fixed`, with the fix commit's full SHA, or `documented`. The helper refuses a
+fixed nit, a count that differs from the report's `FINDINGS n`, and a repeated id. Give a
+finding the same `id` when a later round raises it again: the comment then flags a finding that
+returned after its fix, a sign the fixes are not converging. `model`, `tokens`, and `cost` are
+optional, as described below, and a top-level `fallback` sets the fallback notice.
+
+`review run` refuses the next round until the last round's findings are recorded, refuses a
+head the ledger already reviewed, and refuses a different `--base`. The next round's prompt
+lists, as review data, every earlier finding's id, class, summary, and latest disposition
+(`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the last
+reviewed head. It asks the reviewer to confirm each fix and to review the full diff fresh.
+It leaves out each `note`, so the reviewer does not anchor on the author's reasons.
+
+A round whose findings are all documented ends the loop. Push, open or adopt the pull request,
+then publish right away:
+
+```bash
+shaka review publish OWNER/REPO NUMBER --content-file "$LEDGER"
+```
+
+## Publish content
+
+The ledger is the content file. Without one, the content JSON lists `rounds`. Copy each
+round's `head`, `reviewer`, `report`, `prompt_source`, and `criteria_ref` from its
+`shaka review run` result, and add its `findings` in the shape above.
 Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
 `cost` out unless the host reports a priced route: never estimate a dollar figure for a
 subscription session. When `shaka reviewer` did not return `different_provider`, add
@@ -200,7 +252,8 @@ unclosed code fence or a stray disclosure tag in a report would hide the attesta
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
 the helper writes both itself. It renders a `Local Adversarial Review`
-comment: a summary table, any reviewer fallback notice, each report collapsed, and the last
+comment: a summary table, any reviewer fallback notice, each report collapsed with its
+findings' dispositions and linked fix commits, and the last
 round's attestation as the final line, where `merge` reads it. Publishing again replaces
 that comment rather than adding another. Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the

@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require 'fileutils'
 require 'json'
+require 'tempfile'
 require 'rbconfig'
 require_relative '../skills/shaka/lib/shaka/local_review/process'
 require_relative '../skills/shaka/lib/shaka/local_review/evidence'
@@ -1083,6 +1084,98 @@ class LocalReviewCodexUsageTest < Minitest::Test
   end
 end
 
+class LocalReviewLoopTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  # Break caught: round 2 must check round 1's fixes without seeing why the author decided anything.
+  def test_ledger_records_rounds_and_feeds_prior_findings_to_the_next_round
+    in_loop do |head|
+      assert_equal 1, loop_round(head, findings: 1).fetch('round')
+      fix = fix_commit
+      assert_refused(fix, 'Record round 1')
+      record_fix(fix)
+      loop_round(fix, findings: 0)
+      assert_prior_round_prompt(File.read(File.join(@root, 'loop-trace')), fix)
+      assert_equal [head, fix], ledger_heads
+    end
+  end
+
+  def test_refuses_a_ledger_inside_the_checkout_and_a_repeated_head
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      assert_refused(head, 'commit the fix first')
+      @ledger = File.join(@root, 'ledger.json')
+      assert_refused(head, 'outside the candidate checkout')
+    end
+  end
+
+  private
+
+  def in_loop
+    with_repository do |root, base, head, bin|
+      Dir.mktmpdir('shaka-ledger') do |directory|
+        @root = root
+        @base = base
+        @bin = bin
+        @ledger = File.join(directory, 'ledger.json')
+        yield head
+      end
+    end
+  end
+
+  def loop_round(head, findings:)
+    write_executable(@bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      File.write(#{File.join(@root, 'loop-trace').inspect}, STDIN.read)
+      File.write(ARGV.fetch(ARGV.index('-o') + 1), "x\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS #{findings}\\n")
+    RUBY
+    output, error, status = run_review(@root, @base, head, @bin, ledger: @ledger)
+    (@results ||= []) << assert_successful_review(output, error, status, head, 'openai/codex')
+    @results.last
+  end
+
+  def assert_refused(head, message)
+    output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger)
+    refute_predicate status, :success?
+    assert_includes JSON.parse(output).fetch('reason'), message
+  end
+
+  def ledger_heads = JSON.parse(File.read(@ledger)).fetch('rounds').map { |round| round.fetch('head') }
+
+  def fix_commit
+    commit!(@root, 'fixed', 'Return the right exit code')
+    git!(@root, 'rev-parse', 'HEAD').strip
+  end
+
+  # A count that disagrees with the report is refused before the real record lands.
+  def record_fix(fix)
+    record([], expect: false)
+    record([{ 'id' => 'F1', 'summary' => 'Wrong exit code', 'class' => 'defect',
+              'disposition' => 'fixed', 'commit' => fix, 'note' => 'private reasoning' }])
+  end
+
+  def record(findings, expect: true)
+    Tempfile.create(['record-', '.json']) do |file|
+      file.write(JSON.generate('findings' => findings, 'tokens' => '1,000'))
+      file.close
+      _out, error, status = Open3.capture3(COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file',
+                                           file.path)
+      assert_equal expect, status.success?, error
+    end
+  end
+
+  def assert_prior_round_prompt(prompt, fix)
+    assert_match(/BEGIN PRIOR ROUND DATA [0-9a-f]{32}/, prompt)
+    assert_includes prompt, "- [F1] defect: Wrong exit code (fixed in #{fix[0, 7]})"
+    assert_includes prompt, "#{fix[0, 7]} Return the right exit code"
+    refute_includes prompt, 'private reasoning'
+  end
+end
+
 module LocalReviewContextAssertion
   def assert_codex_invocation(trace, root, head)
     invocation = JSON.parse(File.read(trace))
@@ -1116,7 +1209,7 @@ module LocalReviewArguments
   def append_review_options(arguments, reviewer, options)
     default_effort = reviewer.downcase == 'openai/codex' ? nil : 'medium'
     arguments.push('--effort', options.fetch(:effort, default_effort)) if options.fetch(:effort, default_effort)
-    %w[model criteria-ref description-file timeout-seconds].each do |key|
+    %w[model criteria-ref description-file timeout-seconds ledger].each do |key|
       value = options[key.tr('-', '_').to_sym]
       arguments.push("--#{key}", value.to_s) if value
     end
@@ -1256,3 +1349,4 @@ LocalReviewTimeoutTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
 LocalReviewAttestationCaseTest.include(LocalReviewFixture)
+LocalReviewLoopTest.include(LocalReviewFixture)

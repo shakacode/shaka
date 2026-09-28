@@ -191,6 +191,15 @@ phases:
         or no-op work may omit review with a recorded reason, unless the trusted seam sets
         `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
+      - Run the loop locally and keep it in one ledger: pass `review run --ledger PATH` with a
+        path outside the checkout. The prompt asks the reviewer to class each finding as a
+        `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
+        disposition with `review record`; the next `review run` refuses to start until they are
+        recorded, and refuses a head the ledger already reviewed. Fix defects, and risks whose
+        fix is clearly correct, in new commits, then review the new head. Document nits and the
+        remaining risks instead of fixing them; a round whose findings are all documented ends
+        the loop. The next round's prompt lists earlier findings and the commits since, without
+        your notes on them.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
         comes from the default branch. Pass `--implementer` once per provider and model family that
@@ -262,7 +271,9 @@ phases:
     body: |-
       - Push the reviewed head, then open or adopt its PR. Open a new PR with an empty body
         (`gh pr create --body ''`) and let `description` fill it; any text outside the managed
-        region stays in the body. Use trusted `gh` for authorized
+        region stays in the body. Publish the local review right after that with
+        `review publish OWNER/REPO NUMBER --content-file LEDGER`; nothing from the loop reaches
+        GitHub before the push, and publishing again updates the same comment. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
@@ -443,7 +454,8 @@ phases:
         host-model review uses `review check --head SHA --reviewer ID --report PATH`, whose
         `reported` result does not claim verified CLI execution. A local review is
         UNVERIFIED until you publish it with `review publish OWNER/REPO NUMBER --content-file PATH`,
-        which renders the Local Adversarial Review comment and keeps the attestation line last. See
+        which renders the Local Adversarial Review comment, with each round's findings and what
+        became of them, and keeps the attestation line last. See
         [invoke a reviewer locally](<{{package_root}}/skills/shaka/references/local-review.md>).
       - Independent review for this task is satisfied by a published local
         `REVIEWED SHA BY PROVIDER/FAMILY` attestation, or by a verified report from `review.ci_review_jobs`,

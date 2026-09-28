@@ -5,6 +5,7 @@ require 'optparse'
 require_relative 'error'
 require_relative 'github'
 require_relative 'local_review/comment'
+require_relative 'local_review/ledger'
 require_relative 'local_review/runner'
 require_relative 'local_review/report_check'
 
@@ -24,16 +25,17 @@ module Shaka
       @github = github
     end
 
+    ACTIONS = %w[run check record publish].freeze
+
     def run
       action = @arguments.shift
-      unless %w[run check publish].include?(action)
-        raise OptionParser::InvalidArgument, 'Usage: shaka review (run|check|publish) [options]'
-      end
+      raise OptionParser::InvalidArgument, "Usage: shaka review (#{ACTIONS.join('|')}) [options]" unless
+        ACTIONS.include?(action)
 
-      parser = { 'run' => run_parser, 'check' => check_parser, 'publish' => publish_parser }.fetch(action)
+      parser = send(:"#{action}_parser")
       parser.parse!(@arguments)
       return show_help(parser) if @options[:help]
-      return publish(parser) if action == 'publish'
+      return send(action, parser) if %w[record publish].include?(action)
 
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty?
 
@@ -50,7 +52,7 @@ module Shaka
     def run_parser
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review run --root DIR --base SHA --head SHA --reviewer ID'
-        %w[root base head reviewer effort model criteria-ref description-file timeout-seconds].each do |key|
+        %w[root base head reviewer effort model criteria-ref description-file timeout-seconds ledger].each do |key|
           flags.on("--#{key} VALUE") { |value| @options[key.tr('-', '_').to_sym] = value }
         end
         flags.on('-h', '--help') { @options[:help] = true }
@@ -77,6 +79,25 @@ module Shaka
       comment.check_rendering!(github.markdown(body))
       puts JSON.pretty_generate(github.reply(body:, key: LocalReviewComment::KEY))
       0
+    end
+
+    def record(parser)
+      raise OptionParser::InvalidArgument, parser.to_s unless
+        @arguments.empty? && @options[:ledger] && @options[:content_file]
+
+      ledger = LocalReviewLedger.new(@options[:ledger])
+      ledger.record!(JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8')))
+      puts JSON.pretty_generate('ledger' => ledger.path, 'round' => ledger.rounds.size)
+      0
+    end
+
+    def record_parser
+      OptionParser.new do |flags|
+        flags.banner = 'Usage: shaka review record --ledger PATH --content-file PATH'
+        flags.on('--ledger PATH') { |value| @options[:ledger] = value }
+        flags.on('--content-file PATH') { |value| @options[:content_file] = value }
+        flags.on('-h', '--help') { @options[:help] = true }
+      end
     end
 
     def publish_parser

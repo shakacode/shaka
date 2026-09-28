@@ -209,3 +209,59 @@ class LocalReviewPublishTest < Minitest::Test
     assert_empty github.replies
   end
 end
+
+# Renders what became of each finding, round by round.
+class LocalReviewDispositionTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  FIX = 'd' * 40
+
+  def finding(id, kind, disposition, **extra)
+    { 'id' => id, 'summary' => "#{kind} #{id}", 'class' => kind, 'disposition' => disposition }
+      .merge(extra.transform_keys(&:to_s))
+  end
+
+  def looped
+    first = round(EARLIER, report: report(EARLIER, findings: 2),
+                           findings: [finding('F1', 'defect', 'fixed', commit: FIX),
+                                      finding('F2', 'nit', 'documented', note: 'naming is out of scope')])
+    { 'rounds' => [first, round(report: report(body: "no findings\n", findings: 0))] }
+  end
+
+  # Break caught: a two-round loop must publish one comment whose last line is round 2's attestation.
+  def test_merge_accepts_a_two_round_loop_with_dispositions
+    body = Shaka::LocalReviewComment.new(looped, repository: 'o/r').render
+    github = Struct.new(:issue_comments) { def viewer_login = 'agent' }
+    comment = { 'user' => { 'login' => 'agent' }, 'body' => "<!-- shaka:reply:local-adversarial-review -->\n#{body}",
+                'html_url' => 'https://example.test/c/1' }
+
+    result = Shaka::MergeReviewEvidence.new(github.new([comment]), required: 'meaningful_changes').call(HEAD)
+
+    assert_equal %w[current_head openai/codex], result.values_at('basis', 'reviewer')
+    assert_looped(body)
+  end
+
+  def assert_looped(body)
+    assert_equal 2, body.scan("<details>\n<summary>Round ").size
+    assert_includes body, '| 2 (1 fixed, 1 documented) |'
+    assert_includes body, "- `F1` defect: defect F1 — fixed in [`ddddddd`](https://github.com/o/r/commit/#{FIX})"
+    assert_includes body, '- `F2` nit: nit F2 — documented nit — naming is out of scope'
+    assert body.end_with?("</details>\n\nREVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n")
+  end
+
+  def test_flags_a_finding_that_returns_after_its_fix
+    content = looped
+    content['rounds'][1] = round(findings: [finding('F1', 'defect', 'fixed', commit: 'e' * 40)])
+
+    assert_includes render(content), '· **returned after its fix in `ddddddd`**'
+  end
+
+  def test_refuses_fixing_a_nit_and_a_fix_without_its_commit
+    [finding('F1', 'nit', 'fixed', commit: FIX), finding('F1', 'defect', 'fixed'),
+     finding('F1', 'risk', 'documented', commit: FIX)].each do |bad|
+      assert_raises(Shaka::Error) { render('rounds' => [round(findings: [bad])]) }
+    end
+    assert_includes render('rounds' => [round(findings: [finding('F1', 'risk', 'fixed', commit: FIX)])]),
+                    'risk F1 — fixed in `ddddddd`'
+  end
+end

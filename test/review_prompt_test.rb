@@ -32,6 +32,16 @@ class ReviewPromptTest < Minitest::Test
     assert_includes prompt, 'REVIEWED abc1234 BY openai/codex EFFORT high FINDINGS <n>'
   end
 
+  # Break caught: the review loop reads each finding's class, so a repository prompt cannot drop it.
+  def test_requires_a_class_on_every_finding_whatever_the_instructions
+    Dir.mktmpdir do |directory|
+      instructions = File.join(directory, 'prompt.md')
+      File.write(instructions, "Only check spelling.\n")
+
+      assert_includes render('--prompt-file', instructions), 'Start every finding with one class: defect'
+    end
+  end
+
   def test_marks_unknown_effort_rather_than_omitting_it
     prompt = render
 

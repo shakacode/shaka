@@ -5,11 +5,12 @@ require_relative '../error'
 require_relative '../publication/publication'
 require_relative '../reviewer_selection'
 require_relative 'evidence'
+require_relative 'finding'
 
 module Shaka
   # Renders one pull request comment for a local adversarial review: a summary a reader skims,
-  # each report collapsed beneath it, and the last round's attestation as the closing line,
-  # which is where `merge` reads review evidence.
+  # each report and what became of its findings collapsed beneath it, and the last round's
+  # attestation as the closing line, which is where `merge` reads review evidence.
   class LocalReviewComment
     KEY = 'local-adversarial-review'
     TITLE = '# Local Adversarial Review'
@@ -38,7 +39,7 @@ module Shaka
     end
 
     def render
-      blocks = [TITLE, table, *fallback_notice, *@rounds.map(&:details), @rounds.last.attestation]
+      blocks = [TITLE, table, *fallback_notice, *round_details, @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
     end
 
@@ -62,6 +63,16 @@ module Shaka
       @rounds.all? do |round|
         found = html.index("<summary>#{round.summary}</summary>", offset)
         offset = found + 1 if found
+      end
+    end
+
+    # A finding whose id was marked fixed in an earlier round and comes back is flagged where it returns.
+    def round_details
+      fixed = {}
+      @rounds.map do |round|
+        text = round.details(@repository, fixed.dup)
+        round.findings.select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
+        text
       end
     end
 
@@ -105,7 +116,7 @@ module Shaka
 
     # One reviewed commit, its reviewer settings, and the report whose attestation it carries.
     class Round
-      attr_reader :head
+      attr_reader :head, :findings
 
       def initialize(spec, number)
         raise Error, "Local review round #{number} must be an object." unless spec.is_a?(Hash)
@@ -118,15 +129,19 @@ module Shaka
         # Parsed as `merge` parses it, so a comment merge would ignore is never published.
         @reviewer = ReviewerSelection.parse(field('reviewer')).values.map(&:downcase).join('/')
         @report = read_report
+        @findings = LocalReviewFinding.list(spec['findings'], "round #{number} finding")
       end
 
       # Code spans are never auto-linked, so the commit needs an explicit link to be clickable.
       def cells(repository = nil)
         effort, findings = @report.match(CLOSING).captures
-        commit = "`#{@head[0, 7]}`"
-        commit = "[#{commit}](https://github.com/#{repository}/commit/#{@head})" if repository
-        [@number.to_s, commit, @reviewer, optional('model'), effort, prompt, findings,
-         optional('tokens'), optional('cost')]
+        [@number.to_s, Round.commit(@head, repository), @reviewer, optional('model'), effort, prompt,
+         findings + outcome, optional('tokens'), optional('cost')]
+      end
+
+      def self.commit(sha, repository)
+        code = "`#{sha[0, 7]}`"
+        repository ? "[#{code}](https://github.com/#{repository}/commit/#{sha})" : code
       end
 
       def summary
@@ -136,11 +151,34 @@ module Shaka
                                      "effort #{effort} · #{findings} #{noun}", 'round summary')
       end
 
-      def details = "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n</details>"
+      def details(repository = nil, fixed_before = {})
+        "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n" \
+          "#{dispositions(repository, fixed_before)}</details>"
+      end
 
       def attestation = @report.strip.lines.last.strip
 
       private
+
+      def outcome
+        return '' if @findings.empty?
+
+        fixed = @findings.count(&:fixed?)
+        " (#{fixed} fixed, #{@findings.size - fixed} documented)"
+      end
+
+      def dispositions(repository, fixed_before)
+        return '' if @findings.empty?
+
+        lines = @findings.map do |finding|
+          result = finding.fixed? ? "fixed in #{Round.commit(finding.commit, repository)}" : finding.label
+          line = "- `#{finding.id}` #{finding.kind}: #{finding.summary} — #{result}"
+          line += " — #{finding.note}" if finding.note
+          returned = fixed_before[finding.id]
+          returned ? "#{line} · **returned after its fix in #{Round.commit(returned, repository)}**" : line
+        end
+        "**Dispositions**\n\n#{lines.join("\n")}\n\n"
+      end
 
       def prompt
         source = optional('prompt_source', 'Shaka default')
