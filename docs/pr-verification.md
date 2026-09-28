@@ -36,7 +36,6 @@ can complete the intended task. See the agent's
 | --- | --- |
 | Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both. |
 | Interaction, animation, or timing | A short recording, with screenshots where they help comparison. |
-| Page load, rendering, bundle size, or what a page loads or how it is cached or streamed | A comparison with the base as control and the change as experiment, from the repository's own benchmark or by default [ShakaPerf](https://github.com/shakacode/shakaperf#usage), and its verdict: improvement, wash, regression, or ambiguous. Any regression or ambiguous result, and a wash for a speed-up, go back for a fix or for the maintainer to accept. Without a comparison, the PR says the speed was not measured. |
 | Backend or command-line behavior | Focused tests and concise before/after output. |
 
 Inspect screenshots for the intended state, not an error page, blank screen, or
@@ -67,3 +66,16 @@ Label the tested commit and behavior. After code changes, refresh affected
 evidence or explain which part still applies. When a capture cannot be published,
 the PR records why: `uploader_absent` (no attachment route is available),
 `uploader_denied` (the upload was refused), or `upload_failed:` with the error.
+
+## Show whether it is faster or slower
+
+Some changes aim to speed up page load, rendering, or bundle size, or could slow them.
+Others change what a page loads or how it is cached or streamed. For these, the agent
+compares the base with the change on pages and metrics that reach the change. It uses
+the repository's own benchmark when there is one, and
+[ShakaPerf](https://github.com/shakacode/shakaperf#usage) otherwise.
+
+The PR reports the verdict: improvement, wash, regression, or ambiguous. It names the
+pages, metrics, sample count, and the base and change commits. Any regression or
+ambiguous result, and a wash for an intended speed-up, go back for a fix or for the
+maintainer to accept. When no comparison can run, the PR says the speed was not measured.
