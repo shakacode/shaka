@@ -38,36 +38,42 @@ Shaka review process before another search or filing attempt. GitHub CLI calls r
 repository by its name, not node ID; a move after either identity check remains a narrow race the
 procedure cannot eliminate.
 
-Search every issue and pull-request state; omit `--state`. Ask GitHub to match titles and bodies,
-but return only numeric and state metadata:
+Search every issue and pull-request state; omit `--state`. Run two metadata-only searches with the
+same query, one for issues and one for pull requests. GitHub rejects a combined search that does
+not include `is:issue` or `is:pull-request`, so either search failing or hitting its limit fails
+the whole check. Ask GitHub to match titles and bodies, and return only number, URL, and state:
 
 ```sh
-GH_HOST=github.com gh search issues --repo shakacode/shaka --include-prs --match title,body --limit 1000 \
-  --json number,url,isPullRequest,state -- "$QUERY"
+GH_HOST=github.com gh search issues --repo shakacode/shaka --match title,body --limit 1000 \
+  --json number,url,state -- "$QUERY"
+GH_HOST=github.com gh search prs --repo shakacode/shaka --match title,body --limit 1000 \
+  --json number,url,state -- "$QUERY"
 ```
 
-Pass `QUERY` after `--` as one safely quoted argument. The separator prevents a leading hyphen from
-becoming a CLI option; the term rules above prevent GitHub from treating query text as an operator.
-This best-effort search can miss duplicates when GitHub has no matching indexed text; no results is
-not proof no issue exists. A result is a
-possible duplicate, not a confirmed match: share its returned URL, number, `isPullRequest`, and
-state, and wait for the user to inspect it. Do not request or fetch
-titles, issue or pull-request descriptions, or comments. If search fails or returns 1,000 results,
-report that and do not file an issue. If a search returns no candidates, share its query and
-zero-result outcome, then ask whether the user authorizes creating the exact issue.
+Pass `QUERY` after `--` on each command as one safely quoted argument. The separator prevents a
+leading hyphen from becoming a CLI option. Options such as `--jq` placed after `--` become query
+text. The term rules above prevent GitHub from treating query text as an operator.
+This best-effort check can miss duplicates when GitHub has no matching indexed text; no results is
+not proof no issue exists. A result is a possible duplicate, not a confirmed match: share its
+returned URL, number, and state, name the search that returned it, and wait for the user to inspect
+it. That search is the issue-or-PR type. Do not request or fetch titles, issue or pull-request
+descriptions, or comments. If either search fails or returns 1,000 results, the whole check fails:
+report that and do not file an issue. If both searches return no candidates, share the query and
+the zero-result outcome, then ask whether the user authorizes creating the exact issue.
 
 ## File accepted text
 
 If there were no candidates, file only after the user accepts the zero-result caveat and explicitly
 authorizes creation. If there were candidates, file only after the user confirms none covers the gap
-and explicitly authorizes creation. Reverify the repository identity, then repeat the same search
-with the exact approved query. If it fails or reaches the result limit, do not file. Compare the
-returned candidate metadata with the results the user reviewed. If any candidate is new or its
-metadata changed, share the updated metadata and wait for the user's inspection and renewed explicit
+and explicitly authorizes creation. Reverify the repository identity, then repeat both searches
+with the exact approved query. If either search fails or either reaches the 1,000-result limit,
+the whole check fails; do not file. Compare the returned candidate metadata with the results the
+user reviewed, including which search returned each row. If any candidate is new or its metadata
+changed, share the updated metadata and wait for the user's inspection and renewed explicit
 approval before filing. If no candidate metadata changed, the existing filing approval remains
 sufficient. File only after the latest candidates are reviewed and the user confirms none covers the
-gap. Do not repeat the search after renewed approval; a candidate opened after the final recheck is a
-narrow race the procedure cannot eliminate.
+gap. Do not repeat the searches after renewed approval; a candidate opened after the final recheck
+is a narrow race the procedure cannot eliminate.
 
 Pass the exact approved text to the installed Shaka CLI's `issue-create` subcommand in a quoted
 here-document: put the single-line title first and the approved body on the remaining lines, and
