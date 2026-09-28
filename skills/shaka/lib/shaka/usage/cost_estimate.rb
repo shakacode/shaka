@@ -38,10 +38,17 @@ module Shaka
 
     private
 
+    # Responses that can be priced keep their estimate, marked partial, beside the ones that cannot.
     def total(group, mode)
-      amounts = group.map { |record| price(record, mode) }
-      reason = amounts.filter_map(&:last).first
-      [reason ? nil : amounts.sum { |amount, _| amount }, reason]
+      priced, unpriced = group.map { |record| price(record, mode) }.partition { |_, reason| reason.nil? }
+      return [nil, unpriced.first.last, false] if priced.empty? && unpriced.any?
+
+      sum = priced.sum { |amount, _| amount }
+      unpriced.empty? ? [sum, nil, false] : [sum, partial_reason(unpriced, group.size), true]
+    end
+
+    def partial_reason(unpriced, count)
+      "Partial estimate: #{unpriced.size} of #{count} responses unpriced (#{unpriced.map(&:last).uniq.join('; ')})."
     end
 
     # The OpenAI and Cursor rates bill input inclusive of its cached and written subsets;

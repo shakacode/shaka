@@ -8,19 +8,18 @@ module Shaka
     def column(key, group, reasons)
       configuration, billing = key
       provider, model, routed, effort = configuration
-      credits, api = priced_totals(group, reasons, provider, model)
       { provider: provider, model: billed_model(provider, billing, model),
         routed: billed_routed(provider, billing, routed), effort: effort,
-        billing: billing, credits: credits, api: api, native: native_cost?(group),
-        recorded_native: native_recorded?(group) }
+        billing: billing, native: native_cost?(group),
+        recorded_native: native_recorded?(group) }.merge(priced_totals(group, reasons, provider, model))
     end
 
     def priced_totals(group, reasons, provider, model)
-      credits, credit_reason = total(group, :credits)
-      api, api_reason = total(group, :api)
+      credits, credit_reason, credits_partial = total(group, :credits)
+      api, api_reason, api_partial = total(group, :api)
       reasons << credit_reason if credit_reason && keep_credit_reason?(provider, model, credits, group)
       reasons << api_reason if api_reason
-      [credits, api]
+      { credits: credits, api: api, credits_partial: credits_partial, api_partial: api_partial }
     end
 
     def billed_model(provider, billing, model)
@@ -32,8 +31,9 @@ module Shaka
       provider == 'anthropic' && billing == 'fast' && routed.is_a?(String) ? "#{routed}-fast" : routed
     end
 
+    # Any priced native cost needs the note, including one beside unpriced responses.
     def native_cost?(group)
-      group.any? && group.all? do |record|
+      group.any? do |record|
         value = record['usage'].is_a?(Hash) ? record['usage']['native_cost_usd'] : nil
         value.is_a?(Numeric) && value.finite? && value >= 0
       end
@@ -49,7 +49,7 @@ module Shaka
 
     def blank_column
       { provider: nil, model: nil, routed: nil, effort: nil, billing: nil, credits: nil, api: nil, native: false,
-        recorded_native: false }
+        recorded_native: false, credits_partial: false, api_partial: false }
     end
   end
 end

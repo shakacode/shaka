@@ -362,23 +362,24 @@ class PiUsageFailuresTest < Minitest::Test
     end
   end
 
-  def test_missing_or_invalid_native_cost_stays_unknown_without_losing_tokens
+  def test_missing_or_invalid_native_cost_is_left_out_of_a_partial_estimate_without_losing_tokens
     [nil, 'SENSITIVE', -1].each do |cost|
       Dir.mktmpdir do |directory|
         records = Marshal.load(Marshal.dump(branched_session))
         set_native_cost(records, cost)
         output = report('--host', 'pi', '--file', write_session(directory, records))
-        assert_unknown_native_cost(output)
+        assert_partial_native_cost(output)
       end
     end
   end
 
   private
 
-  def assert_unknown_native_cost(output)
+  def assert_partial_native_cost(output)
     assert_current_row(output)
-    assert_metric output, 'USD estimate', 'UNKNOWN'
-    refute_includes output, 'Pi recorded native nominal USD'
+    assert_metric output, 'USD estimate', '$0.000100 (partial)'
+    assert_includes output, 'Pi recorded native nominal USD'
+    assert_includes output, 'Partial estimate: 1 of 2 responses unpriced (Native nominal cost unavailable).'
     refute_includes output, 'SENSITIVE'
   end
 
