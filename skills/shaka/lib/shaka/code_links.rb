@@ -91,15 +91,21 @@ module Shaka
     def file(name, path)
       @files[path] ||= begin
         regular_file!(path)
-        response = @github.api("repos/#{@github.repository}/contents/#{encoded(path)}?ref=#{@head}")
-        unless response['type'] == 'file' && response['encoding'] == 'base64'
-          raise Error, "#{path} is not a regular file under 1 MB at #{@head}."
-        end
-
-        response['content'].to_s.unpack1('m').force_encoding(Encoding::UTF_8).split("\n", -1)
+        decoded(path, @github.api("repos/#{@github.repository}/contents/#{encoded(path)}?ref=#{@head}"))
       end
     rescue Error => e
       raise Error, "Walkthrough code link #{name}: #{e.message}"
+    end
+
+    def decoded(path, response)
+      unless response['type'] == 'file' && response['encoding'] == 'base64'
+        raise Error, "#{path} is not a regular file under 1 MB at #{@head}."
+      end
+
+      text = response['content'].to_s.unpack1('m').force_encoding(Encoding::UTF_8)
+      raise Error, "#{path} is not valid UTF-8 at #{@head}." unless text.valid_encoding?
+
+      text.split("\n", -1)
     end
 
     # The contents API follows a symlink to its target's text, while the permalink would

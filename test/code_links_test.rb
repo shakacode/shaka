@@ -175,6 +175,14 @@ class CodeLinksRefusalTest < Minitest::Test
     assert_includes error.message, 'not a regular file'
   end
 
+  def test_file_that_is_not_utf8_is_refused_cleanly
+    client = github({ 'lib/image.png' => "\xFF\xD8def x\n".b })
+    error = assert_raises(Shaka::Error) do
+      resolved_body({ 'x' => { 'path' => 'lib/image.png', 'from' => 'def x' } }, '[x](code:x)', client)
+    end
+    assert_includes error.message, 'not valid UTF-8'
+  end
+
   def test_unreadable_file_names_the_link
     error = assert_raises(Shaka::Error) do
       resolved_body({ 'x' => { 'path' => 'lib/missing.rb', 'from' => 'def x' } }, '[x](code:x)')
