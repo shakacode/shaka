@@ -207,7 +207,7 @@ module Shaka
         LocalReviewEvidence.valid?(text, head: head, reviewer: reviewer, effort: effort)
 
       { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer, 'report' => path,
-        'prompt_source' => prompt_source, 'criteria_ref' => @options[:criteria_ref],
+        'prompt_source' => prompt_source, 'criteria_ref' => (@options[:criteria_ref] if @criteria_supplied),
         'usage' => @options[:usage] }.compact
     end
 

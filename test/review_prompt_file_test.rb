@@ -276,7 +276,8 @@ class ReviewPromptSourceTest < Minitest::Test
       result = JSON.parse(run_review(root, base, head, bin).first)
       File.unlink(result.fetch('report'))
 
-      assert_equal [source, base], result.values_at('prompt_source', 'criteria_ref')
+      # This fixture has no AGENTS.md, so the requested ref supplied no criteria.
+      assert_equal [source, nil], result.values_at('prompt_source', 'criteria_ref')
     end
   end
 end

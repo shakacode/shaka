@@ -389,6 +389,7 @@ class LocalReviewEvidenceTest < Minitest::Test
                                          criteria_ref: base, env: { 'REVIEW_TRACE' => trace })
       result = assert_successful_review(output, error, status, head, 'openai/codex')
       assert_criteria_prompt(trace, base)
+      assert_equal base, result.fetch('criteria_ref')
     ensure
       cleanup_artifacts(result)
     end
