@@ -188,7 +188,10 @@ subscription session. When `shaka reviewer` did not return `different_provider`,
 
 The helper checks that each report closes with the attestation for its round. Reports are
 published verbatim, so before posting it asks GitHub to render the comment and refuses when an
-unclosed code fence or a stray disclosure tag in a report would hide the attestation. It renders a `Local Adversarial Review`
+unclosed code fence or a stray disclosure tag in a report would hide the attestation. The
+check cannot stop two reports that together imitate a round's layout, for example a reviewer
+steered by the PR it reads. The attestation and the summary table stay authoritative, because
+the helper writes both itself. It renders a `Local Adversarial Review`
 comment: a summary table, any reviewer fallback notice, each report collapsed, and the last
 round's attestation as the final line, where `merge` reads it. Publishing again replaces
 that comment rather than adding another. Record available native

@@ -100,6 +100,13 @@ class LocalReviewCommentTest < Minitest::Test
     assert_includes error.message, "does not close with REVIEWED #{HEAD}"
   end
 
+  # Break caught: merge parses the attested reviewer and ignores a comment it cannot parse.
+  def test_refuses_a_reviewer_merge_cannot_parse
+    malformed = report(reviewer: 'openai-codex')
+
+    assert_raises(Shaka::Error) { render('rounds' => [round(reviewer: 'openai-codex', report: malformed)]) }
+  end
+
   # Break caught: with no other provider configured, selection falls back without trying one.
   def test_explains_a_fallback_that_tried_no_other_reviewer
     body = render('rounds' => [round], 'fallback' => { 'outcome' => 'same_model', 'attempts' => [] })

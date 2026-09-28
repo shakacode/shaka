@@ -3,6 +3,7 @@
 require 'cgi'
 require_relative '../error'
 require_relative '../publication'
+require_relative '../reviewer_selection'
 require_relative 'evidence'
 
 module Shaka
@@ -106,7 +107,8 @@ module Shaka
         @head = spec['head'].to_s
         raise Error, "Round #{number} head must be a full commit SHA." unless @head.match?(LocalReviewEvidence::SHA)
 
-        @reviewer = field('reviewer').downcase
+        # Parsed as `merge` parses it, so a comment merge would ignore is never published.
+        @reviewer = ReviewerSelection.parse(field('reviewer')).values.map(&:downcase).join('/')
         @report = read_report
       end
 
