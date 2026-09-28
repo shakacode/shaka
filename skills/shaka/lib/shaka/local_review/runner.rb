@@ -189,8 +189,8 @@ module Shaka
 
     def validate_model!
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
-      raise Shaka::Error, '--model is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:model]
-      raise Shaka::Error, '--effort is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:effort]
+
+      RepositoryConfig::ReviewSchema.effort_level!(@options[:effort], '--effort') if @options[:effort]
     end
 
     def validate_checkout!
