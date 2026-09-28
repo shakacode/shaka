@@ -40,7 +40,12 @@ module Shaka
 
       private
 
-      def components(path) = Pathname.new(path).relative_path_from(Pathname.new(@root)).each_filename.to_a
+      def components(path)
+        prefix = "#{@root}/"
+        raise EscapedRoot, path unless path.start_with?(prefix)
+
+        path.delete_prefix(prefix).split('/')
+      end
 
       def consume(part)
         return if part == '.' || part.empty?

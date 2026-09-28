@@ -10,7 +10,7 @@ module Shaka
 
       def parse(output)
         output.b.split("\0".b).map do |path|
-          native = path.dup.force_encoding(Encoding.find('filesystem'))
+          native = path.dup.force_encoding(Encoding::UTF_8)
           native.valid_encoding? ? native : path
         end
       end

@@ -442,6 +442,16 @@ class PrivateSourceSymlinkChainTest < Minitest::Test
     end
   end
 
+  def test_absolute_target_parent_segment_keeps_external_hop
+    with_private_repository do |root, ref|
+      create_absolute_hop(root)
+      commit_file(root, 'internal/target.sh', 'target')
+      assert_equal 'partial', report(root, ref).status
+      commit_file(root, 'middle', 'middle hop')
+      assert_equal 'complete', report(root, ref).status
+    end
+  end
+
   def test_external_prompt_requires_every_hop_committed
     with_private_repository do |root, ref|
       create_chain(root, final: 'final.md', middle: 'middle.md', first: 'review.md', content: 'prompt')
@@ -472,6 +482,13 @@ class PrivateSourceSymlinkChainTest < Minitest::Test
   end
 
   private
+
+  def create_absolute_hop(root)
+    FileUtils.mkdir_p(File.join(root, 'internal/sub'))
+    File.write(File.join(root, 'internal/target.sh'), "#!/bin/sh\n")
+    File.symlink('internal/sub', File.join(root, 'middle'))
+    File.symlink("#{File.realpath(root)}/middle/../target.sh", File.join(root, '.agents/shaka/bin/extra'))
+  end
 
   def create_directory_prompt(root)
     FileUtils.mkdir_p(File.join(root, 'internal'))
