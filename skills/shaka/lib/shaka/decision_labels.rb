@@ -9,7 +9,7 @@ module Shaka
   class DecisionLabels
     def self.guard(github, content, existing_body = nil)
       decisions = list(content)
-      if decisions.nil? && existing_body.to_s.include?("## #{PublicationSections::DECISIONS_HEADING}")
+      if decisions.nil? && asks_for_decisions?(existing_body)
         raise Error, 'Pass decisions or an empty list; the pull request already asks for decisions.'
       end
       return if decisions.nil? || decisions.empty?
@@ -26,6 +26,17 @@ module Shaka
       decisions.empty? ? attention.release_answer : attention.call(state: 'answer', refuse_merge: true)
     end
 
+    def self.asks_for_decisions?(body)
+      heading = "## #{PublicationSections::DECISIONS_HEADING}"
+      fenced = false
+      body.to_s.each_line.any? do |line|
+        fenced = !fenced if line.lstrip.start_with?('```', '~~~')
+        next false if fenced
+
+        line.strip.casecmp?(heading)
+      end
+    end
+
     def self.list(content)
       return unless content.key?('decisions')
 
@@ -35,6 +46,6 @@ module Shaka
       decisions
     end
 
-    private_class_method :list
+    private_class_method :asks_for_decisions?, :list
   end
 end

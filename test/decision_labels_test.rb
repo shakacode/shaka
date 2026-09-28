@@ -54,6 +54,23 @@ class DecisionLabelsTest < Minitest::Test
     assert_equal [LABELS_PATH, 'POST', JSON.generate(labels: ['awaiting-answer'])], requests.last
   end
 
+  def test_a_longer_heading_or_a_fenced_example_is_not_an_open_decision
+    longer = "## Decisions for the maintainer (resolved)\n"
+    fenced = "```\n## Decisions for the maintainer\n```\n"
+    [longer, fenced].each do |body|
+      assert_nil Shaka::DecisionLabels.guard(client, {}, body)
+    end
+    assert_empty @calls
+  end
+
+  def test_an_existing_heading_matches_regardless_of_case
+    error = assert_raises(Shaka::Error) do
+      Shaka::DecisionLabels.guard(client, {}, "## decisions for the maintainer\n")
+    end
+
+    assert_includes error.message, 'empty list'
+  end
+
   def test_omitting_decisions_is_refused_when_the_body_already_asks
     body = "## Decisions for the maintainer\n\n- Which base?\n"
     error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
