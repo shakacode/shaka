@@ -70,6 +70,13 @@ class DecisionLabelsTest < Minitest::Test
     assert_includes error.message, 'empty list'
   end
 
+  def test_a_shorter_fence_does_not_close_a_longer_opener
+    body = "````ruby\n<!-- shaka:decisions -->\n```\n"
+    error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
+
+    assert_includes error.message, 'empty list'
+  end
+
   def test_a_tilde_fence_keeps_a_backtick_line_inside_it
     body = "~~~\n```\n<!-- shaka:decisions -->\n~~~\n"
     assert_nil Shaka::DecisionLabels.guard(client, {}, body)

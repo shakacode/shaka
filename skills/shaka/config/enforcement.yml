@@ -442,9 +442,11 @@ rules:
       `description` renders a non-empty `decisions` list as that section. After the body is
       stored, `DecisionLabels.sync` applies `awaiting-answer` or, for an empty list, removes only
       that label. Omitting the key while the body already asks for decisions is refused before
-      the write. A label write that fails after the body is stored, or a close or
-      merge-approval label that appears before that write, leaves the section until the
-      command is retried. Nothing requires the agent to publish the list before a turn ends.
+      the write. A label write that fails after the body is stored leaves the section until a
+      later publish. A close or merge-approval label that appears before that write also leaves
+      the section; the same non-empty list is refused until that wait is cleared, or an empty
+      list is published on an open pull request. Nothing requires the agent to publish the list
+      before a turn ends.
       `attention --state answer` can still set the label with no section, and `--state resume`,
       `merge`, or `none` can remove it while the section remains.
   - id: decisions-not-during-merge

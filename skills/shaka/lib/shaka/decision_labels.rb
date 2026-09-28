@@ -9,7 +9,8 @@ module Shaka
   class DecisionLabels
     # A closed fence hides the marker. An unclosed opener does not, so a broken
     # fence in an earlier section cannot drop a published question.
-    FENCE = /^[ \t]*(?<fence>(?<mark>[`~])\k<mark>{2,}).*?^[ \t]*\k<fence>\k<mark>*[ \t]*$/m
+    # The opener is atomic, so it cannot shrink to let a later shorter fence close it.
+    FENCE = /^[ \t]*(?<fence>(?>(?<mark>[`~])\k<mark>{2,}))[^\n]*\n.*?^[ \t]*\k<fence>\k<mark>*[ \t]*$/m
 
     def self.guard(github, content, existing_body = nil)
       decisions = list(content)
