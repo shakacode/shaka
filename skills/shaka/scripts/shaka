@@ -9,7 +9,6 @@ require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/claim'
-require_relative '../lib/shaka/code_links'
 require_relative '../lib/shaka/deployment_link'
 require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
@@ -28,6 +27,7 @@ require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
+require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
 
@@ -132,7 +132,7 @@ def walkthrough_body(options, github)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
   walkthrough = content(options.fetch(:content_file)).merge('head' => options.fetch(:head))
-  Shaka::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough), walkthrough, github)
+  Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough), walkthrough, github)
 end
 
 def usage_banner

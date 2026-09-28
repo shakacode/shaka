@@ -2,7 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
-require 'shaka/code_links'
+require 'shaka/walkthrough/code_links'
 
 module CodeLinksFixtures
   HEAD = 'a' * 40
@@ -56,7 +56,7 @@ module CodeLinksFixtures
   end
 
   def resolved_body(links, body, client = github)
-    Shaka::CodeLinks.resolve(body, { 'head' => HEAD, 'code_links' => links }, client)
+    Shaka::Walkthrough::CodeLinks.resolve(body, { 'head' => HEAD, 'code_links' => links }, client)
   end
 end
 
@@ -121,7 +121,7 @@ class CodeLinksTest < Minitest::Test
 
   def test_content_without_code_links_is_unchanged
     body = 'See [x](code:x).'
-    assert_same body, Shaka::CodeLinks.resolve(body, { 'head' => HEAD }, github)
+    assert_same body, Shaka::Walkthrough::CodeLinks.resolve(body, { 'head' => HEAD }, github)
   end
 end
 
