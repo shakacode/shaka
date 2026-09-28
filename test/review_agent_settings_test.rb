@@ -70,6 +70,15 @@ class ReviewAgentSettingsTest < Minitest::Test
     end
   end
 
+  # Break caught: a malformed default blocks the explicit choice that should replace it.
+  def test_an_explicit_option_replaces_a_malformed_default
+    with_repository(codex_agent('effort' => 3)) do |root, base, head, bin|
+      args, = codex_arguments(root, base, head, bin, '--effort', 'medium')
+
+      assert_includes args, 'model_reasoning_effort="medium"'
+    end
+  end
+
   # Break caught: a PR picks the model that reviews it by editing its own seam.
   def test_candidate_settings_do_not_choose_the_reviewer_model
     with_repository do |root, base, _head, bin|

@@ -127,7 +127,7 @@ module Shaka
         IDENTITY.each { |key| component!(entry[key], "#{label}.#{key}") }
         prompt_path!(entry[PROMPT_FILE], "#{label}.#{PROMPT_FILE}") if entry.key?(PROMPT_FILE)
         model!(entry[MODEL], "#{label}.#{MODEL}") if entry.key?(MODEL)
-        effort!(entry[EFFORT], "#{label}.#{EFFORT}") if entry.key?(EFFORT)
+        self.class.effort_level!(entry[EFFORT], "#{label}.#{EFFORT}") if entry.key?(EFFORT)
       end
 
       # The model is passed to the reviewer CLI as one argument.
@@ -135,8 +135,6 @@ module Shaka
         string!(value, label)
         raise Error, "#{label} must not contain whitespace" if value.match?(/\s/)
       end
-
-      def effort!(value, label) = self.class.effort_level!(value, label)
 
       # `shaka reviewer` reads identities as PROVIDER/MODEL_FAMILY and strips each part, so a
       # padded or slash-bearing value here would not match the identity the agent passes and a
