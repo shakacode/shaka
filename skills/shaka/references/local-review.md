@@ -206,8 +206,8 @@ returned after its fix, a sign the fixes are not converging. `model`, `tokens`, 
 optional, as described below, and a top-level `fallback` sets the fallback notice.
 
 `review run` refuses the next round until the last round's findings are recorded. It also
-refuses a head the ledger already reviewed, a head that does not contain the last reviewed
-one, and a different `--base`; after a rebase, start a new ledger. The next round's prompt
+refuses a head the ledger already reviewed, a head that lacks the last reviewed head or any
+recorded fix commit, and a different `--base`; after a rebase, start a new ledger. The next round's prompt
 lists, as review data, every earlier finding's id, class, summary, and latest disposition
 (`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the last
 reviewed head. It asks the reviewer to confirm each fix and to review the full diff fresh.

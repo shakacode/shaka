@@ -1123,6 +1123,19 @@ class LocalReviewLoopTest < Minitest::Test
     end
   end
 
+  # Break caught: the comment would call a finding fixed in a commit the reviewed head lacks.
+  def test_refuses_a_head_without_a_recorded_fix
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      git!(@root, 'checkout', '--quiet', '-b', 'side')
+      side = fix_commit
+      git!(@root, 'checkout', '--quiet', '-')
+      record_fix(side)
+      commit!(@root, 'unrelated', 'Change something else')
+      assert_refused(git!(@root, 'rev-parse', 'HEAD').strip, "does not build on #{side}")
+    end
+  end
+
   def test_refuses_a_ledger_inside_the_checkout
     in_loop do |head|
       @ledger = File.join(@root, 'ledger.json')
