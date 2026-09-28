@@ -78,13 +78,13 @@ module Shaka
     end
 
     # An inline code span reads as one capitalized word, so a sentence may still start with one.
-    # It keeps a final `.`, `!`, or `?`, which may end the sentence, as in `empty?`.
+    # It keeps a final `.`, `!`, `?`, or `…`, which may end the sentence, as in `empty?`.
     def code(opening)
       @code = opening
       @code_tail = '' if opening
       return '' unless visible?
 
-      opening ? ' Code' : "#{@code_tail.to_s.strip[/[.!?]\z/]} "
+      opening ? ' Code' : "#{@code_tail.to_s.strip[/[.!?…]\z/]} "
     end
   end
 end

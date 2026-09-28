@@ -30,9 +30,9 @@ class VisibleProseTest < Minitest::Test
   end
 
   def test_a_code_span_keeps_the_punctuation_that_ends_its_sentence
-    html = '<p>Call <code>empty?</code> Then stop at <code>done.</code> Next.</p>'
+    html = '<p>Call <code>empty?</code> Then stop at <code>done.</code> Wait <code>pending…</code> Next.</p>'
 
-    assert_equal [['Call Code?', 'Then stop at Code.', 'Next.']], paragraphs(html)
+    assert_equal [['Call Code?', 'Then stop at Code.', 'Wait Code…', 'Next.']], paragraphs(html)
   end
 
   def test_a_hard_line_break_keeps_its_sentence_together

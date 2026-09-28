@@ -296,7 +296,8 @@ add outside it is left alone.
 - The description also stops at `max_description_words`, however large the change.
 
 When text breaks a limit, nothing reaches GitHub. The command exits with an
-error that quotes up to three long sentences or paragraphs and counts the rest. The agent rewrites the text
+error listing up to three problems and counting the rest. Each problem quotes a long
+sentence or paragraph, or states the total word count and its limit. The agent rewrites the text
 and runs the command again, so you see only a version that passed. The agent
 notes each refusal in the description's collapsed review history, so you can
 tell how often the limits fire.
