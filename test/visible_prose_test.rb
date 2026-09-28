@@ -23,6 +23,12 @@ class VisibleProseTest < Minitest::Test
     assert_equal [['First part.', '✅ Second part.'], ['Next item.']], paragraphs(html)
   end
 
+  def test_nonbreaking_spaces_separate_words_and_inline_tags_do_not
+    html = "<p>One&nbsp;two&#160;three\u00A0four re<strong>try</strong>.</p>"
+
+    assert_equal 5, Shaka::VisibleProse.words(paragraphs(html).flatten.join(' '))
+  end
+
   def test_a_hard_line_break_keeps_its_sentence_together
     assert_equal [['First half second half.']], paragraphs("<p>First half<br>\nsecond half.</p>")
   end

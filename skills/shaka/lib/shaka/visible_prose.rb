@@ -13,10 +13,11 @@ module Shaka
     ITEM = %r{\A<(/?)li\b}i
     PARAGRAPH = %r{\A</?p\b}i
     CODE = %r{\A<(/?)code\b}i
+    BREAK = /\A<br\b/i
     # A false split only shortens a sentence, so anything may start the next one, as in "iOS" or an emoji.
     SENTENCE_END = /(?<=[.!?])["')\]]*\s+/
 
-    def self.words(text) = text.split.count { |token| token.match?(/[[:alnum:]]/) }
+    def self.words(text) = text.split(/[[:space:]]+/).count { |token| token.match?(/[[:alnum:]]/) }
 
     def initialize(html)
       @stack = []
@@ -27,7 +28,7 @@ module Shaka
     end
 
     def paragraphs
-      @text.split("\n\n").map { |block| block.gsub(/\s+/, ' ').strip.split(SENTENCE_END) }.reject(&:empty?)
+      @text.split("\n\n").map { |block| block.gsub(/[[:space:]]+/, ' ').strip.split(SENTENCE_END) }.reject(&:empty?)
     end
 
     private
@@ -35,10 +36,10 @@ module Shaka
     def visible? = @summary || @stack.all?(:shown)
 
     def text(token)
-      visible? && !@code ? CGI.unescapeHTML(token).gsub(/\s+/, ' ') : ''
+      visible? && !@code ? CGI.unescapeHTML(token.gsub('&nbsp;', ' ')).gsub(/[[:space:]]+/, ' ') : ''
     end
 
-    # A hard line break or inline tag keeps its sentence and paragraph together.
+    # A hard line break separates words; other inline tags join the text around them.
     def tag(token)
       match = token.match(CONTAINER)
       return container(*match.captures) if match
@@ -52,7 +53,9 @@ module Shaka
       @items = [@items + (token.match(ITEM)[1].empty? ? 1 : -1), 0].max if token.match?(ITEM)
       return ' ' if @items.positive? && token.match?(PARAGRAPH)
 
-      token.match?(BLOCK) ? "\n\n" : ' '
+      return "\n\n" if token.match?(BLOCK)
+
+      token.match?(BREAK) ? ' ' : ''
     end
 
     def container(closing, name, attributes)
