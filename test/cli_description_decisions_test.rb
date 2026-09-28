@@ -55,6 +55,20 @@ class CliDescriptionDecisionsTest < Minitest::Test
     end
   end
 
+  def test_description_does_not_label_when_a_decision_is_blank
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, ref: true, decisions: ['  '])
+
+        refute_predicate status, :success?
+        assert_includes error, 'decision'
+        refute_path_exists File.join(dir, 'published.md')
+        refute_path_exists File.join(dir, 'labeled')
+      end
+    end
+  end
+
   def test_description_without_decisions_does_not_touch_labels
     with_repository do |root|
       commit(root)
@@ -72,7 +86,7 @@ class CliDescriptionDecisionsTest < Minitest::Test
   private
 
   def run_description(dir, root:, ref:, env: {}, decisions: true)
-    @decisions = decisions
+    @decisions = decisions == true ? ['Which base?'] : decisions
     write_fake_commands(dir)
     content = File.join(dir, 'content.json')
     File.write(content, JSON.generate(description_content))
@@ -84,7 +98,7 @@ class CliDescriptionDecisionsTest < Minitest::Test
 
   def description_content
     content = super
-    content['decisions'] = ['Which base?'] if @decisions
+    content['decisions'] = @decisions if @decisions
     content
   end
 

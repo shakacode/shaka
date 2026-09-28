@@ -19,20 +19,20 @@ class DecisionLabelsTest < Minitest::Test
     @calls.map { |argv, input| [argv[2], argv[argv.index('--method') + 1], input] }
   end
 
-  def test_guard_refuses_merge_approval_without_writing_a_label
+  def test_sync_refuses_merge_approval_without_writing_a_label
     github = client(snapshot_response, labels_response('awaiting-merge-approval'))
     error = assert_raises(Shaka::Error) do
-      Shaka::DecisionLabels.guard(github, { 'decisions' => ['Which base?'] })
+      Shaka::DecisionLabels.sync(github, { 'decisions' => ['Which base?'] })
     end
 
     assert_includes error.message, 'awaiting-merge-approval'
     refute(requests.any? { |path, method, _input| path.include?('labels') && method != 'GET' })
   end
 
-  def test_guard_refuses_a_closed_pull_request_before_a_label_write
+  def test_sync_refuses_a_closed_pull_request_before_a_label_write
     github = client(snapshot_response(state: 'CLOSED'))
     error = assert_raises(Shaka::Error) do
-      Shaka::DecisionLabels.guard(github, { 'decisions' => ['Which base?'] })
+      Shaka::DecisionLabels.sync(github, { 'decisions' => ['Which base?'] })
     end
 
     assert_includes error.message, 'not open'

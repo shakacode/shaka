@@ -264,9 +264,9 @@ begin
                attention = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 Shaka::DecisionLabels.guard(github, carried)
+                 rendered = Shaka::Publication.description(carried)
                  attention = Shaka::DecisionLabels.sync(github, carried)
-                 Shaka::Publication.description(carried)
+                 rendered
                end
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],

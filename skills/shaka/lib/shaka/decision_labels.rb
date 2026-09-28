@@ -6,14 +6,6 @@ require_relative 'error'
 module Shaka
   # Keeps awaiting-answer aligned with the description's decisions list.
   class DecisionLabels
-    def self.guard(github, content)
-      decisions = list(content)
-      return if decisions.nil? || decisions.empty?
-      raise Error, 'Pull request is not open.' unless github.snapshot['state'] == 'OPEN'
-
-      Attention.new(github).refuse_merge_wait
-    end
-
     def self.sync(github, content)
       decisions = list(content)
       return if decisions.nil?
