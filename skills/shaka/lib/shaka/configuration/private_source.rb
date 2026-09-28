@@ -41,14 +41,14 @@ module Shaka
       def resolve
         verify_worktree!
         sha = resolved_ref
+        PrivateGitPaths.verify_trusted_tree!(sha:, git: method(:git))
         trusted = Layout.commit(root: @root, sha:, allow_missing: true)
         indexed = indexed_paths
         committed = committed_paths
         inventory = PrivateInventory.new(root: @root, committed:).scan
         @blockers.concat(inventory.blockers)
         inspect_conflicts(trusted, indexed, committed, inventory.entries)
-        config = load_candidate(inventory, committed)
-        result(sha, trusted, inventory, config)
+        result(sha, trusted, inventory, load_candidate(inventory, committed))
       end
 
       private

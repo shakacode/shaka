@@ -538,3 +538,31 @@ class PrivateSourceInputTest < Minitest::Test
     end
   end
 end
+
+class PrivateSourceTrustedTreeTest < Minitest::Test
+  include PrivateSourceFixture
+
+  def test_missing_trusted_tree_fails_closed
+    with_git_repository do |root|
+      ref = commit_trusted_policy(root)
+      write_private_seam(root)
+      delete_trusted_tree(root, ref)
+      assert_raises(Shaka::Error) { report(root, ref) }
+    end
+  end
+
+  private
+
+  def commit_trusted_policy(root)
+    commit_project(root)
+    FileUtils.mkdir_p(File.join(root, '.agents'))
+    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+    commit_file(root, '.agents/agent-workflow.yml', 'trusted policy')
+    head(root)
+  end
+
+  def delete_trusted_tree(root, ref)
+    tree = Open3.capture2('git', '-C', root, 'rev-parse', "#{ref}:.agents").first.strip
+    File.delete(File.join(root, '.git/objects', tree[0, 2], tree[2..]))
+  end
+end
