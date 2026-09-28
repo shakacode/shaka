@@ -1,0 +1,148 @@
+# frozen_string_literal: true
+
+require 'optparse'
+require_relative '../error'
+require_relative 'claude_usage'
+require_relative 'codex_usage'
+require_relative 'cost_estimate'
+require_relative 'cursor_usage'
+require_relative 'opencode_usage'
+require_relative 'pi_usage'
+require_relative 'usage_records'
+require_relative 'usage_errors'
+require_relative 'usage_table'
+require_relative 'usage_turns'
+require_relative 'usage_identity'
+
+module Shaka
+  # Read-only reporting of per-response usage records from a supported host.
+  class Usage
+    include UsageTable
+    include UsageTurns
+    include UsageIdentity
+
+    SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
+    METRIC_FIELDS = [
+      ['Input', 'input_tokens'],
+      ['Cached input', 'cached_input_tokens'],
+      ['Output', 'output_tokens'],
+      ['Reasoning output', 'reasoning_output_tokens'],
+      ['Cache writes', 'cache_write_input_tokens'],
+      ['Native total', 'total_tokens']
+    ].freeze
+    READERS = { 'codex' => CodexUsage, 'claude-code' => ClaudeUsage, 'cursor' => CursorUsage,
+                'opencode' => OpencodeUsage, 'pi' => PiUsage }.freeze
+    HOST_CONTEXT = { 'codex' => 'CODEX_THREAD_ID', 'claude-code' => 'CLAUDE_CODE_SESSION_ID',
+                     'cursor' => 'CURSOR_CONVERSATION_ID', 'opencode' => 'OPENCODE_SESSION_ID',
+                     'pi' => 'PI_CODING_AGENT' }.freeze
+
+    def self.run(arguments)
+      options = { files: [], turns: [], host: detected_host }
+      parser(options).parse!(arguments)
+      puts parser(options) if options[:help]
+      return 0 if options[:help]
+
+      raise OptionParser::InvalidArgument unless arguments.empty? && valid_mapping?(options)
+
+      new(options).print_report
+    rescue OptionParser::ParseError, Error => e
+      warn UsageErrors.message(e)
+      1
+    end
+
+    def self.parser(options)
+      OptionParser.new do |flags|
+        flags.banner = 'Usage: shaka usage --commit SHA[,SHA] --contribution NAME [options]'
+        source_options(flags, options)
+        flags.on('--commit SHA', 'Affected full commit SHAs, comma separated') { |v| options[:commit] = v }
+        flags.on('--contribution NAME', 'Contribution category (see guide)') { |v| options[:contribution] = v }
+        flags.on('--rate-root DIR', 'Implementation rate-card checkout') { |value| options[:rate_root] = value }
+        flags.on('-h', '--help') { options[:help] = true }
+      end
+    end
+
+    def self.source_options(flags, options)
+      flags.on('--host NAME', READERS.keys, 'codex, claude-code, cursor, opencode, or pi') { |v| options[:host] = v }
+      flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |v|
+        options[:files] << v
+      end
+      flags.on('--session ID', 'OpenCode session; needs --host opencode') { |v| options[:files] << "session:#{v}" }
+      flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
+      flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |v| options[:turns] << v }
+    end
+
+    def self.detected_host
+      found = HOST_CONTEXT.select { |host, variable| host == 'pi' ? ENV[variable] == 'true' : ENV.key?(variable) }.keys
+      found.size > 1 ? nil : found.first || 'codex'
+    end
+
+    def self.valid_mapping?(options)
+      commits = options[:commit].to_s.split(',')
+      options[:host] && !(options[:all_turns] && options[:turns].any?) &&
+        !commits.empty? && commits.all? { |commit| commit.match?(/\A[0-9a-f]{40}\z/) } &&
+        %w[implementation review integration shared-planning].include?(options[:contribution])
+    end
+
+    def initialize(options)
+      @options = options
+      reader = READERS.fetch(options[:host])
+      @inferred = options[:files].empty?
+      @options[:files] = reader.discover if @inferred
+      @source = reader.new(@options[:files], @options[:turns], all_turns: @options[:all_turns])
+      @responses = @source.responses.values
+    end
+
+    def report = "#{UsageRecords.begin_mark(record_identity)}\n#{report_body}#{UsageRecords::END_MARK}\n"
+
+    def report_body
+      <<~MARKDOWN
+        #{CostEstimate.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
+                                           rate_card: selected_rate_card).report.rstrip}
+
+        #{reviewer_coverage}
+        Native usage is PARTIAL. #{count}. Scope: #{turn_scope}.
+
+        <details>
+        <summary>Token detail</summary>
+
+        #{@options[:commit]} / #{@options[:contribution]}
+        SHARED source interval: #{interval}. Snapshot through the last observed response.
+        Source selection: #{@inferred ? 'host context' : 'explicit files'}.
+        #{@source.class::HOST} source versions: #{versions}.
+        #{@source.class::NOTE}
+
+        #{rows}
+
+        </details>
+      MARKDOWN
+    end
+
+    private
+
+    def selected_rate_card
+      RateCard.select(contribution: @options[:contribution], explicit_root: @options[:rate_root])
+    end
+
+    def turn_scope
+      return 'all turns in selected sources' if @options[:all_turns]
+
+      @options[:turns].empty? ? @source.class::LATEST_SCOPE : 'explicitly selected turns'
+    end
+
+    def count
+      @responses.empty? ? 'Responses: UNKNOWN (no readable per-response records)' : "#{@responses.size} responses"
+    end
+
+    def versions
+      @source.versions.empty? ? 'UNKNOWN' : @source.versions.uniq.map { |version| safe(version) }.join(', ')
+    end
+
+    def interval
+      timestamps.empty? ? 'UNKNOWN' : timestamps.minmax.join(' through ')
+    end
+
+    def safe(value)
+      value.is_a?(String) && value.match?(/\A[a-zA-Z0-9][a-zA-Z0-9._:-]{0,79}\z/) ? value : 'UNKNOWN'
+    end
+  end
+end
