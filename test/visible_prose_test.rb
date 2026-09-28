@@ -17,10 +17,10 @@ class VisibleProseTest < Minitest::Test
     assert_equal expected, paragraphs(RENDERED)
   end
 
-  def test_a_list_item_is_measured_whole_and_emoji_can_start_a_sentence
-    html = '<ul><li><p>First part.</p><p>✅ Second part.</p></li><li>Next item.</li></ul>'
+  def test_a_list_item_is_measured_whole_and_sentences_end_after_any_quote
+    html = '<ul><li><p>“First part.” Then.</p><p>✅ Second part.</p></li><li>Next item.</li></ul>'
 
-    assert_equal [['First part.', '✅ Second part.'], ['Next item.']], paragraphs(html)
+    assert_equal [['“First part.', 'Then.', '✅ Second part.'], ['Next item.']], paragraphs(html)
   end
 
   def test_nonbreaking_spaces_separate_words_and_inline_tags_do_not
