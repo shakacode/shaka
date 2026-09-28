@@ -23,11 +23,33 @@ module Shaka
       [content.merge('usage' => usage.except('carried').merge('carried' => kept.join("\n\n"))), stats]
     end
 
-    def identity(fields)
-      return unless fields.is_a?(Hash) && UsageRecords::FIELDS.all? { |key| fields.key?(key) }
-      return unless %w[sources responses].all? { |key| fields[key].is_a?(Array) }
+    TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
+    STAMP = /\A(?:UNKNOWN|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)\z/
+    CONTRIBUTIONS = %w[implementation review integration shared-planning].freeze
 
-      fields
+    def identity(fields)
+      fields if shape?(fields) && route?(fields) && lists?(fields)
+    end
+
+    def shape?(fields)
+      fields.is_a?(Hash) && UsageRecords::FIELDS.all? { |key| fields.key?(key) }
+    end
+
+    def route?(fields)
+      token?(fields['host']) && CONTRIBUTIONS.include?(fields['contribution']) &&
+        [true, false].include?(fields['complete']) && stamp?(fields['from']) && stamp?(fields['to'])
+    end
+
+    def lists?(fields)
+      array_of(fields['commits']) { |commit| commit.match?(/\A[0-9a-f]{40}\z/) } &&
+        %w[sources responses].all? { |key| array_of(fields[key]) { |item| token?(item) } }
+    end
+
+    def token?(value) = value.is_a?(String) && value.match?(TOKEN)
+    def stamp?(value) = value.is_a?(String) && value.match?(STAMP)
+
+    def array_of(value)
+      value.is_a?(Array) && value.all? { |item| item.is_a?(String) && yield(item) }
     end
 
     def identity!(fields)

@@ -46,8 +46,6 @@ module Shaka
 
     def display(column, key, unit) = shown(column, key, unit)
 
-    def narrative = narrative_for(snapshot)
-
     def narrative_for(data)
       ["Rate card: #{@rate_card.label}.", intro(data[:columns]),
        footer(data[:columns], data[:reasons])].compact.reject { |part| part.to_s.strip.empty? }.join("\n\n")

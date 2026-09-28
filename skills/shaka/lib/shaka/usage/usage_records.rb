@@ -58,8 +58,7 @@ module Shaka
     # Returns the content with carried records prepended to its usage body, and what happened.
     def carry(content, existing)
       stats = { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }
-      usage = UsageRecordCarry.structured_usage(content)
-      return UsageRecordCarry.apply(self, content, usage, existing, stats) if usage
+      return carry_structured(content, existing, stats) if UsageRecordCarry.structured_usage(content)
 
       usages = usage_details(content)
       usage = usages.first
@@ -68,6 +67,11 @@ module Shaka
       return [content, stats] if kept.empty?
 
       [with_usage_body(content, usage, [*kept, usage['body']].join("\n\n")), stats]
+    end
+
+    def carry_structured(content, existing, stats)
+      usage = content['usage'].except('carried')
+      UsageRecordCarry.apply(self, content.merge('usage' => usage), usage, existing, stats)
     end
 
     def carried(region, body, stats, fresh = nil)

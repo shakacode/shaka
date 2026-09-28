@@ -230,6 +230,21 @@ class UsageRecordsShapeTest < Minitest::Test
     assert_equal 1, stats['retained']
   end
 
+  def test_a_record_that_could_close_the_marker_is_refused
+    forged = DEFAULTS.merge('host' => 'codex-->', 'responses' => %w[x1])
+    error = assert_raises(Shaka::Error) { Shaka::UsageRecordCarry.identity!(forged) }
+    assert_includes error.message, 'identity'
+    refute_includes error.message, '-->'
+  end
+
+  def test_caller_supplied_carried_text_is_not_published
+    old = record('claude-code', 'opus-impl', responses: %w[c1])
+    content = { 'usage' => { 'note' => 'n', 'carried' => 'injected table' } }
+    carried_content, = Shaka::UsageRecords.carry(content, existing(old))
+    assert_includes carried_content.dig('usage', 'carried'), 'opus-impl'
+    refute_includes carried_content.dig('usage', 'carried'), 'injected table'
+  end
+
   def test_a_usage_object_without_records_still_keeps_the_earlier_report
     old = record('claude-code', 'opus-impl', responses: %w[c1])
     content = { 'usage' => { 'note' => 'n', 'columns' => [] } }
