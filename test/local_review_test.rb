@@ -1099,7 +1099,7 @@ class LocalReviewLoopTest < Minitest::Test
       assert_refused(fix, 'Record round 1')
       record_fix(fix)
       loop_round(fix, findings: 0)
-      assert_prior_round_prompt(File.read(File.join(@root, 'loop-trace')), fix)
+      assert_prior_round_prompt(File.read(@trace), fix)
       assert_equal [head, fix], ledger_heads
     end
   end
@@ -1108,6 +1108,9 @@ class LocalReviewLoopTest < Minitest::Test
     in_loop do |head|
       loop_round(head, findings: 0)
       assert_refused(head, 'commit the fix first')
+      loop_round(fix_commit, findings: 0)
+      git!(@root, 'checkout', '--quiet', head)
+      assert_refused(head, 'Round 1 already reviewed')
       @ledger = File.join(@root, 'ledger.json')
       assert_refused(head, 'outside the candidate checkout')
     end
@@ -1122,6 +1125,7 @@ class LocalReviewLoopTest < Minitest::Test
         @base = base
         @bin = bin
         @ledger = File.join(directory, 'ledger.json')
+        @trace = File.join(directory, 'loop-trace')
         yield head
       end
     end
@@ -1130,7 +1134,7 @@ class LocalReviewLoopTest < Minitest::Test
   def loop_round(head, findings:)
     write_executable(@bin, 'codex', <<~RUBY)
       #!/usr/bin/env ruby
-      File.write(#{File.join(@root, 'loop-trace').inspect}, STDIN.read)
+      File.write(#{@trace.inspect}, STDIN.read)
       File.write(ARGV.fetch(ARGV.index('-o') + 1), "x\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS #{findings}\\n")
     RUBY
     output, error, status = run_review(@root, @base, head, @bin, ledger: @ledger)

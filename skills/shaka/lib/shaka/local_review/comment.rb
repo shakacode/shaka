@@ -70,7 +70,7 @@ module Shaka
     def round_details
       fixed = {}
       @rounds.map do |round|
-        text = round.details(@repository, fixed.dup)
+        text = round.details(@repository, fixed)
         round.findings.select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
         text
       end
@@ -130,6 +130,7 @@ module Shaka
         @reviewer = ReviewerSelection.parse(field('reviewer')).values.map(&:downcase).join('/')
         @report = read_report
         @findings = LocalReviewFinding.list(spec['findings'], "round #{number} finding")
+        check_count!
       end
 
       # Code spans are never auto-linked, so the commit needs an explicit link to be clickable.
@@ -159,6 +160,14 @@ module Shaka
       def attestation = @report.strip.lines.last.strip
 
       private
+
+      # Every finding the report counts needs its disposition before the comment can go out.
+      def check_count!
+        counted = @report.match(CLOSING)[2].to_i
+        return if @findings.size == counted
+
+        raise Error, "Round #{@number}'s report counts #{counted} findings; #{@findings.size} were recorded."
+      end
 
       def outcome
         return '' if @findings.empty?

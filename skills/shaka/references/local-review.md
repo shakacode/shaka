@@ -223,7 +223,8 @@ shaka review publish OWNER/REPO NUMBER --content-file "$LEDGER"
 
 The ledger is the content file. Without one, the content JSON lists `rounds`. Copy each
 round's `head`, `reviewer`, `report`, `prompt_source`, and `criteria_ref` from its
-`shaka review run` result, and add its `findings` in the shape above.
+`shaka review run` result, and add its `findings` in the shape above. Publishing refuses a
+round whose findings do not match its report's `FINDINGS n`, so every finding has a disposition.
 Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
 `cost` out unless the host reports a priced route: never estimate a dollar figure for a
 subscription session. When `shaka reviewer` did not return `different_provider`, add

@@ -29,10 +29,10 @@ module Shaka
     def check_next!(base:, head:)
       return if rounds.empty?
 
-      measured = data['base']
-      raise Error, "The ledger's rounds measure the change against #{measured}; use a new ledger." unless
-        measured == base
-      raise Error, "Round #{rounds.size} already reviewed #{head}; commit the fix first." if last_head == head
+      raise Error, "The ledger's rounds measure the change against #{data['base']}; use a new ledger." unless
+        data['base'] == base
+
+      check_new_head!(head)
       return if recorded?(rounds.last)
 
       raise Error, "Record round #{rounds.size}'s findings with `shaka review record` before the next round."
@@ -75,6 +75,11 @@ module Shaka
     end
 
     def last_round = rounds.last || raise(Error, 'The ledger has no round to record.')
+
+    def check_new_head!(head)
+      reviewed = rounds.index { |round| round['head'] == head }
+      raise Error, "Round #{reviewed + 1} already reviewed #{head}; commit the fix first." if reviewed
+    end
 
     def recorded?(round) = round.key?('findings') || reported_count(round).zero?
 

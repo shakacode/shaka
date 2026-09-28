@@ -11,6 +11,7 @@ module LocalReviewCommentFixture
   HEAD = 'a' * 40
   EARLIER = 'b' * 40
   TRUSTED = 'c' * 40
+  NIT = { 'id' => 'F1', 'summary' => 'Missing test', 'class' => 'nit', 'disposition' => 'documented' }.freeze
 
   private
 
@@ -24,8 +25,8 @@ module LocalReviewCommentFixture
 
   def round(head = HEAD, **changes)
     { 'head' => head, 'reviewer' => 'openai/codex', 'report' => report(head), 'model' => 'gpt-5.5',
-      'prompt_source' => 'Shaka default', 'criteria_ref' => TRUSTED,
-      'tokens' => '41,200' }.merge(changes.transform_keys(&:to_s))
+      'prompt_source' => 'Shaka default', 'criteria_ref' => TRUSTED, 'tokens' => '41,200',
+      'findings' => [NIT] }.merge(changes.transform_keys(&:to_s))
   end
 
   def render(content) = Shaka::LocalReviewComment.render(content)
@@ -43,7 +44,7 @@ class LocalReviewCommentTest < Minitest::Test
 
     assert body.start_with?("# Local Adversarial Review\n\n| Round | Commit | Reviewer | Model |")
     assert_includes body, '| 1 | `aaaaaaa` | openai/codex | gpt-5.5 | UNKNOWN | ' \
-                          'Shaka default · criteria `ccccccc` | 1 | 41,200 | UNKNOWN |'
+                          'Shaka default · criteria `ccccccc` | 1 (0 fixed, 1 documented) | 41,200 | UNKNOWN |'
   end
 
   def test_collapses_each_report_and_closes_with_the_last_attestation
@@ -225,7 +226,7 @@ class LocalReviewDispositionTest < Minitest::Test
     first = round(EARLIER, report: report(EARLIER, findings: 2),
                            findings: [finding('F1', 'defect', 'fixed', commit: FIX),
                                       finding('F2', 'nit', 'documented', note: 'naming is out of scope')])
-    { 'rounds' => [first, round(report: report(body: "no findings\n", findings: 0))] }
+    { 'rounds' => [first, round(report: report(body: "no findings\n", findings: 0), findings: [])] }
   end
 
   # Break caught: a two-round loop must publish one comment whose last line is round 2's attestation.
@@ -254,6 +255,13 @@ class LocalReviewDispositionTest < Minitest::Test
     content['rounds'][1] = round(findings: [finding('F1', 'defect', 'fixed', commit: 'e' * 40)])
 
     assert_includes render(content), '· **returned after its fix in `ddddddd`**'
+  end
+
+  # Break caught: a round with findings published without saying what became of them.
+  def test_refuses_a_round_whose_findings_were_not_recorded
+    error = assert_raises(Shaka::Error) { render('rounds' => [round(findings: nil)]) }
+
+    assert_includes error.message, "Round 1's report counts 1 findings; 0 were recorded."
   end
 
   def test_refuses_fixing_a_nit_and_a_fix_without_its_commit
