@@ -129,6 +129,8 @@ end
 
 # Reads trusted limits through the opening check's guarded Git; an unreadable trusted commit is reported.
 def description_prose_limits(root, ref)
+  return [Shaka::ProseLimits.new, {}] unless ref
+
   limits = Shaka::OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
     Shaka::ProseLimits.from_ref(root: candidate_root, ref:)
   end

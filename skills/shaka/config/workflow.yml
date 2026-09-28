@@ -253,6 +253,8 @@ phases:
         and the walkthrough links each step to its lines. Keep the text in proportion to the change.
         `description` and `walkthrough` refuse visible prose past the trusted
         [prose limits](<{{package_root}}/docs/settings.md#prose_limits>), so pass `--ref` to both.
+        A refusal publishes nothing and quotes the long text; rewrite it, publish again, and note
+        the refusal in the description's review history details.
       - Before publishing the PR description, walkthrough, or final response, self-edit each summary
         against the [portable baseline](<{{package_root}}/skills/shaka/references/writing.md>):
         lead with the outcome its reader notices, keep one main idea per sentence, put each condition

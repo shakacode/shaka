@@ -29,6 +29,12 @@ class VisibleProseTest < Minitest::Test
     assert_equal 5, Shaka::VisibleProse.words(paragraphs(html).flatten.join(' '))
   end
 
+  def test_a_code_span_keeps_the_punctuation_that_ends_its_sentence
+    html = '<p>Call <code>empty?</code> Then stop at <code>done.</code> Next.</p>'
+
+    assert_equal [['Call Code?', 'Then stop at Code.', 'Next.']], paragraphs(html)
+  end
+
   def test_a_hard_line_break_keeps_its_sentence_together
     assert_equal [['First half second half.']], paragraphs("<p>First half<br>\nsecond half.</p>")
   end

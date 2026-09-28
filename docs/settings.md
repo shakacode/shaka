@@ -290,6 +290,12 @@ shows. Collapsed details, code, tables, headings, quotes, and link addresses do 
   changed line. A 6-line fix allows 174 words; a 100-line change allows 550.
 - The description also stops at `max_description_words`, however large the change.
 
+When text breaks a limit, nothing reaches GitHub. The command exits with an
+error that quotes each long sentence or paragraph. The agent rewrites the text
+and runs the command again, so you see only a version that passed. The agent
+notes each refusal in the description's collapsed review history, so you can
+tell how often the limits fire.
+
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
 links to the code, then publishes again. Shaka reads these values from the

@@ -23,7 +23,8 @@ When trusted `AGENTS.md` exists, the Shaka workflow instructs the agent to follo
 its writing preferences and any style file it explicitly links. Shaka's Ruby
 helpers do not automatically load a linked file or verify editorial style.
 
-Shaka also refuses to publish a description or walkthrough that reads as a wall
-of text. It checks sentence length, paragraph length, and total length against
-the size of the change, so the text points reviewers to the code. You can change
-these limits with [`prose_limits`](settings.md#prose_limits).
+Shaka also checks each description and walkthrough before publishing it. Text
+that reads as a wall is not published; the agent shortens it and tries again, and
+the description's collapsed review history notes each retry. The
+[`prose_limits`](settings.md#prose_limits) setting explains the checks and how to
+change them.
