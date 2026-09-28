@@ -65,6 +65,13 @@ class LocalReviewCommentTest < Minitest::Test
     assert_equal %w[current_head openai/codex], result.values_at('basis', 'reviewer')
   end
 
+  # Break caught: a supplied `\|` escaped only its pipe and split the row into an extra column.
+  def test_keeps_a_supplied_backslash_and_pipe_inside_one_cell
+    body = render('rounds' => [round(model: 'a\\|b')])
+
+    assert_includes body, '| a\\\\\\|b |'
+  end
+
   def test_names_missing_criteria_and_a_configured_prompt
     body = render('rounds' => [round(criteria_ref: nil, prompt_source: 'review.prompt_file .agents/p.md')])
 
@@ -100,6 +107,15 @@ class LocalReviewCommentTest < Minitest::Test
 
     raw = report(body: "Raw </details> tag.\n")
     assert_raises(Shaka::Error) { render('rounds' => [round(report: raw)]) }
+  end
+
+  # Break caught: an unclosed fence or comment rendered the closing details and attestation as hidden text.
+  def test_refuses_a_report_with_an_unclosed_fence_or_comment
+    ["```ruby\nputs 1\n", "Hidden <!-- note\n"].each do |body|
+      assert_raises(Shaka::Error) { render('rounds' => [round(report: report(body:))]) }
+    end
+    closed = report(body: "```ruby\nputs 1\n```\n<!-- note -->\n")
+    assert_includes render('rounds' => [round(report: closed)]), 'puts 1'
   end
 
   # Break caught: with no other provider configured, selection falls back without trying one.

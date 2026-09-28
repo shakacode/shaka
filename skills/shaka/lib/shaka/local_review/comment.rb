@@ -17,6 +17,10 @@ module Shaka
     CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
     # A report is published verbatim inside <details>; its own disclosure tags would close ours.
     DISCLOSURE_TAG = %r{</?(?:details|summary)\b}i
+    # An unclosed fence or HTML comment would swallow everything after it, attestation included.
+    CLOSED_FENCE = /^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1/m
+    FENCE = /^ {0,3}(?:```|~~~)/
+    OPEN_COMMENT = /<!--(?!.*-->)/m
 
     def self.render(content) = new(content).render
 
@@ -42,7 +46,8 @@ module Shaka
       [line(COLUMNS), line(['---'] * COLUMNS.size), *rows].join("\n")
     end
 
-    def line(cells) = "| #{cells.map { |cell| cell.gsub('|', '\\|') }.join(' | ')} |"
+    # Escaping backslashes first keeps a supplied `\|` from ending its cell early.
+    def line(cells) = "| #{cells.map { |cell| cell.gsub(/[\\|]/) { |char| "\\#{char}" } }.join(' | ')} |"
 
     def fallback_notice
       return [] if @fallback.nil?
@@ -132,10 +137,17 @@ module Shaka
         unless LocalReviewEvidence.valid?(text, head: @head, reviewer: @reviewer)
           raise Error, "Round #{@number} report does not close with REVIEWED #{@head} BY #{@reviewer}."
         end
-        raise Error, "Round #{@number} report contains details or summary tags." if
-          PublicationText.prose(text).match?(DISCLOSURE_TAG)
+
+        check_markup(text)
 
         text
+      end
+
+      def check_markup(text)
+        prose = PublicationText.prose(text)
+        raise Error, "Round #{@number} report contains details or summary tags." if prose.match?(DISCLOSURE_TAG)
+        raise Error, "Round #{@number} report has an unclosed code fence or HTML comment." if
+          text.gsub(CLOSED_FENCE, '').match?(FENCE) || prose.match?(OPEN_COMMENT)
       end
     end
   end
