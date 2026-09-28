@@ -239,10 +239,11 @@ Cover the change completely, then stop.
   four sentences, and keep most sentences under 25 words.
 - Use a list for parallel items, such as the guarantees a guard provides: one
   per bullet, each linked to its code. Keep reasoning in prose.
-- Add one small diagram when control passes through three or more components
-  or the change introduces states and transitions. GitHub renders a `mermaid`
-  code block in a review. Keep it to about ten nodes, label each edge with the
-  action, and let the prose carry the explanation. Skip it for a linear change.
+- Add one small diagram when control passes through three or more components,
+  or when a state can move to more than one next state. Skip it when one
+  sentence can state the sequence. GitHub renders a `mermaid` code block in a
+  review. Keep it to about ten nodes, label each edge with the action, and let
+  the prose carry the explanation.
 - Report validation as what it proves at this head: the behavior covered, the
   command, and its result. State each count once, and leave results from
   earlier heads to the description's review history.
