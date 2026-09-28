@@ -16,10 +16,14 @@ module Shaka
       def grants_merge_authority? = false
 
       def to_h
-        { 'mode' => mode, 'grants_policy' => false, 'grants_merge_authority' => false, 'root' => root,
+        { 'mode' => mode, 'grants_policy' => grants_policy?, 'grants_merge_authority' => grants_merge_authority?,
+          'root' => root,
           'common_git_dir' => common_git_dir, 'ref' => ref, 'trusted_source' => trusted_source,
           'status' => status, 'inventory' => inventory, 'blockers' => blockers }
       end
+
+      def inspect = "#<#{self.class} mode=#{mode} status=#{status}>"
+      alias_method :to_s, :inspect
     end
 
     # Read-only preflight of private candidate settings in one Git worktree.
@@ -35,11 +39,11 @@ module Shaka
         verify_worktree!
         sha = resolved_ref
         trusted = Layout.commit(root: @root, sha:, allow_missing: true)
-        tracked = git('ls-files', '--cached', '-z').split("\0")
+        indexed = git('ls-files', '--cached', '-z').split("\0")
         committed = committed_paths
-        inventory = PrivateInventory.new(root: @root, tracked: committed).scan
+        inventory = PrivateInventory.new(root: @root, committed:).scan
         @blockers.concat(inventory.blockers)
-        inspect_conflicts(trusted, tracked, inventory.entries)
+        inspect_conflicts(trusted, indexed, committed, inventory.entries)
         config = load_candidate(inventory, committed)
         result(sha, trusted, inventory, config)
       end
@@ -85,9 +89,9 @@ module Shaka
         output
       end
 
-      def inspect_conflicts(trusted, tracked, entries)
+      def inspect_conflicts(trusted, indexed, committed, entries)
         conflict!("#{Paths::CONTRACT} conflicts with private #{Paths::NEW_CONTRACT}") if legacy_collision?(entries)
-        private_tracked = tracked.select { |path| path.start_with?("#{PrivateInventory::DIRECTORY}/") }
+        private_tracked = (indexed | committed).select { |path| path.start_with?("#{PrivateInventory::DIRECTORY}/") }
         conflict!("#{PrivateInventory::DIRECTORY} contains tracked files: #{private_tracked.join(', ')}") unless
           private_tracked.empty?
         conflict!("Trusted default branch already has #{trusted.contract}") if trusted && entries.any?
@@ -103,7 +107,7 @@ module Shaka
         @conflict = true
       end
 
-      def load_candidate(inventory, tracked)
+      def load_candidate(inventory, committed)
         return if inventory.unsafe || @conflict
 
         entries = inventory.entries
@@ -114,13 +118,13 @@ module Shaka
           return
         end
 
-        validate_candidate(tracked)
+        validate_candidate(committed)
       end
 
-      def validate_candidate(tracked)
+      def validate_candidate(committed)
         config = RepositoryConfig.load(root: @root)
         inspect_optional_pair(config)
-        inspect_prompt_dependencies(config, tracked)
+        inspect_prompt_dependencies(config, committed)
         config
       rescue Error => e
         @blockers << e.message
@@ -133,11 +137,11 @@ module Shaka
         @blockers << 'Private validate-local and trigger-hosted-ci must be present together'
       end
 
-      def inspect_prompt_dependencies(config, tracked)
+      def inspect_prompt_dependencies(config, committed)
         RepositoryConfig.prompt_files(review: config.review, opening: config.opening_check).each do |label, path|
           resolved = File.realpath(File.join(@root, path))
           relative = Pathname.new(resolved).relative_path_from(Pathname.new(@root)).to_s
-          next if relative.start_with?("#{PrivateInventory::DIRECTORY}/") || tracked.include?(relative)
+          next if relative.start_with?("#{PrivateInventory::DIRECTORY}/") || committed.include?(relative)
 
           @blockers << "#{label} #{path} is outside #{PrivateInventory::DIRECTORY} and not tracked"
         end

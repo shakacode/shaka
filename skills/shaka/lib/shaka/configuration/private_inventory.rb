@@ -10,26 +10,36 @@ module Shaka
       DIRECTORY = File.dirname(Paths::NEW_CONTRACT)
       Result = Data.define(:entries, :blockers, :unsafe)
 
-      def initialize(root:, tracked:)
+      def initialize(root:, committed:)
         @root = root
-        @tracked = tracked
+        @committed = committed
         @entries = []
         @blockers = []
         @unsafe = false
       end
 
       def scan
-        agents = File.join(@root, Paths::DIRECTORY)
-        if File.symlink?(agents) || (File.exist?(agents) && !File.directory?(agents))
-          unsafe!(Paths::DIRECTORY, 'must be a real directory')
-        else
-          directory = File.join(@root, DIRECTORY)
-          visit(directory) if File.exist?(directory) || File.symlink?(directory)
-        end
+        scan_agents
         Result.new(entries: @entries.freeze, blockers: @blockers.freeze, unsafe: @unsafe)
       end
 
       private
+
+      def scan_agents
+        agents = File.join(@root, Paths::DIRECTORY)
+        return unsafe!(Paths::DIRECTORY, 'must be a real directory') if
+          File.symlink?(agents) || (File.exist?(agents) && !File.directory?(agents))
+
+        scan_private_directory
+      end
+
+      def scan_private_directory
+        directory = File.join(@root, DIRECTORY)
+        return unless File.exist?(directory) || File.symlink?(directory)
+
+        visit(directory)
+        unsafe!(DIRECTORY, 'must be a real directory') unless File.directory?(directory) && !File.symlink?(directory)
+      end
 
       def visit(path)
         relative = Pathname.new(path).relative_path_from(Pathname.new(@root)).to_s
@@ -66,7 +76,7 @@ module Shaka
 
         resolved = Pathname.new(target).relative_path_from(Pathname.new(@root)).to_s
         entry[:resolved_path] = resolved
-        return if resolved.start_with?("#{DIRECTORY}/") || @tracked.include?(resolved)
+        return if resolved.start_with?("#{DIRECTORY}/") || @committed.include?(resolved)
 
         @blockers << "#{relative} targets untracked file #{resolved} outside #{DIRECTORY}"
       rescue SystemCallError => e

@@ -292,3 +292,42 @@ class PrivateSourceWorktreeTest < Minitest::Test
     assert_equal File.realpath(File.join(clone, '.git')), result.common_git_dir
   end
 end
+
+class PrivateSourceBoundaryTest < Minitest::Test
+  include PrivateSourceFixture
+
+  def test_committed_private_config_conflicts_even_after_index_removal
+    with_private_repository do |root, ref|
+      path = '.agents/shaka/config.yml'
+      system('git', '-C', root, 'add', path, exception: true)
+      system('git', '-C', root, 'commit', '--quiet', '-m', 'private config', exception: true)
+      system('git', '-C', root, 'rm', '--cached', '--quiet', path, exception: true)
+      assert_equal 'conflicting', report(root, ref).status
+    end
+  end
+
+  def test_regular_file_at_private_directory_is_unsafe
+    with_git_repository do |root|
+      ref = commit_project(root)
+      FileUtils.mkdir_p(File.join(root, '.agents'))
+      File.write(File.join(root, '.agents/shaka'), 'not a directory')
+      assert_equal 'unsafe_file', report(root, ref).status
+    end
+  end
+
+  def test_result_display_does_not_include_candidate_config
+    with_private_repository do |root, ref|
+      result = report(root, ref)
+      refute_includes result.inspect, 'candidate_config'
+      refute_includes result.to_s, 'RepositoryConfig'
+    end
+  end
+
+  def test_symlinked_agents_root_is_unsafe
+    with_git_repository do |root|
+      ref = commit_project(root)
+      File.symlink('elsewhere', File.join(root, '.agents'))
+      assert_equal 'unsafe_file', report(root, ref).status
+    end
+  end
+end
