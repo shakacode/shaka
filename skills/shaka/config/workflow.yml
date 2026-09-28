@@ -155,10 +155,11 @@ phases:
         `claim` reported: the tracker's branch name when one was passed, otherwise the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
         `{host}`, `{issue}`, and `{description}`. If the seam omits `branches`, use
-        `{login}-{host}/{issue}-{description}`. Use a new worktree when the checkout is dirty or
-        another task occupies it; otherwise use a feature branch. Fetch this task's base fresh and
-        start new work from it; pull or rebase an existing upstream. Preserve user work. Run candidate code only in
-        the authorized isolated checkout.
+        `{login}-{host}/{issue}-{description}`. Fetch this task's base fresh. Start a new task in a
+        new worktree from that base. Continue a task in the worktree that already holds its branch,
+        creating that worktree when the branch is not checked out. Pull or rebase an existing
+        upstream. Edit in that worktree, and move the session into it before the first edit when the
+        host can. Preserve user work. Run candidate code only in the authorized isolated checkout.
       - Choose routine, reversible approaches yourself. Ask consequential questions with a
         recommendation, await required answers before dependent work, and continue independent work
         meanwhile. Retain decisions in the task or PR within its privacy; silence is not approval.
