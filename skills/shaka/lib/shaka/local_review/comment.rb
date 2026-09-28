@@ -53,14 +53,23 @@ module Shaka
 
     private
 
-    # A fix is evidence only once a later round has reviewed the head that contains it.
+    # A fix is evidence only once a later round has reviewed a new head. Without git, only these
+    # structural checks apply; `review run --ledger` checks the history itself.
     def build_rounds(specs)
       raise Error, 'Local review content needs at least one round.' if specs.empty?
 
       rounds = specs.each_with_index.map { |round, index| Round.new(round, index + 1) }
-      return rounds unless rounds.last.findings.any?(&:fixed?)
+      check_order!(rounds)
+      rounds
+    end
 
-      raise Error, "Round #{rounds.size} records fixes no later round reviewed; review the fix head first."
+    def check_order!(rounds)
+      raise Error, 'Two rounds review the same commit; each round reviews a new head.' unless
+        rounds.map(&:head).uniq.size == rounds.size
+      raise Error, "Round #{rounds.size} records fixes no later round reviewed; review the fix head first." if
+        rounds.last.findings.any?(&:fixed?)
+
+      rounds.each(&:check_fixes_follow!)
     end
 
     # A fence opened in one report and closed in the next hides the boundary between them, including
@@ -165,6 +174,12 @@ module Shaka
       end
 
       def attestation = @report.strip.lines.last.strip
+
+      def check_fixes_follow!
+        return unless @findings.any? { |finding| finding.fixed? && finding.commit == @head }
+
+        raise Error, "Round #{@number} records a fix in the commit it reviewed; commit the fix."
+      end
 
       private
 

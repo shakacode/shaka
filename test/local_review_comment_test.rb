@@ -280,6 +280,15 @@ class LocalReviewDispositionTest < Minitest::Test
     assert_includes render('rounds' => [fixed, round]), 'risk F1 — fixed in `ddddddd`'
   end
 
+  # Break caught: a direct content file claimed a fix in the reviewed commit, or re-reviewed one head.
+  def test_refuses_a_fix_in_the_reviewed_commit_and_a_repeated_head
+    own = round(EARLIER, report: report(EARLIER), findings: [finding('F1', 'defect', 'fixed', commit: EARLIER)])
+    repeated = round(EARLIER, report: report(EARLIER, findings: 0), findings: [])
+
+    assert_includes assert_raises(Shaka::Error) { render('rounds' => [own, round]) }.message, 'commit it reviewed'
+    assert_includes assert_raises(Shaka::Error) { render('rounds' => [repeated, repeated]) }.message, 'same commit'
+  end
+
   # Break caught: a fix recorded in the last round was published without any review of it.
   def test_refuses_a_last_round_whose_fixes_no_round_reviewed
     fixed = round(findings: [finding('F1', 'defect', 'fixed', commit: FIX)])
