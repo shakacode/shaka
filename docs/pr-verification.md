@@ -103,7 +103,7 @@ timestamps also change pixels. Say which regions the PR meant to change and
 explain any others.
 
 When animation, live data, or a different page structure keeps the captures from
-aligning, the agent says why and publishes the clearest labeled before-and-after
+aligning, or no image comparison tool is available, the agent says why and publishes the clearest labeled before-and-after
 pair instead. A short recording still shows timing and interaction. Check the
 difference image for private data, unrelated screen content, error pages, and
 loading placeholders, the same as its source captures.
