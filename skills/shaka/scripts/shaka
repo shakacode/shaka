@@ -261,12 +261,13 @@ begin
                Shaka::UsageDetails.require_rendered(described['details'])
                usage_records = nil
                carried = nil
+               attention = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
                  Shaka::DecisionLabels.guard(github, carried)
+                 attention = Shaka::DecisionLabels.sync(github, carried)
                  Shaka::Publication.description(carried)
                end
-               attention = Shaka::DecisionLabels.sync(github, carried)
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
                                                        model: options[:opening_model]).call(described['summary'])

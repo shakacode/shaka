@@ -41,6 +41,20 @@ class CliDescriptionDecisionsTest < Minitest::Test
     end
   end
 
+  def test_description_refuses_decisions_while_awaiting_merge_approval
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        env = { 'PR_LABEL' => 'awaiting-merge-approval' }
+        _output, error, status = run_description(dir, root:, ref: true, env:)
+
+        refute_predicate status, :success?
+        assert_includes error, 'awaiting-merge-approval'
+        refute_path_exists File.join(dir, 'published.md')
+      end
+    end
+  end
+
   def test_description_without_decisions_does_not_touch_labels
     with_repository do |root|
       commit(root)
@@ -74,36 +88,37 @@ class CliDescriptionDecisionsTest < Minitest::Test
     content
   end
 
-  def fake_gh
-    <<~'RUBY'
-      require 'json'
-      raw = STDIN.read
-      request = raw.empty? ? {} : JSON.parse(raw)
-      File.open(File.join(ENV.fetch('HOME'), 'gh-log'), 'a') { |file| file.puts ARGV.inspect }
-      path = ARGV[1].to_s
-      case path
-      when 'repos/owner/repo/pulls/1'
-        if ARGV.include?('PATCH')
-          File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
-          puts JSON.generate(request)
-        else
-          puts JSON.generate('body' => '', 'head' => { 'repo' => { 'full_name' => 'owner/repo' } },
-                             'base' => { 'repo' => { 'full_name' => 'owner/repo' } })
-        end
-      when 'markdown' then puts JSON.generate('<table></table>' * 10)
-      when 'graphql'
-        state = ENV.fetch('PR_STATE', 'OPEN')
-        puts JSON.generate('data' => { 'repository' => { 'pullRequest' => { 'state' => state } } })
-      when %r{issues/1/labels\?}
-        puts JSON.generate([])
-      when %r{issues/1/labels\z}
-        File.write(File.join(ENV.fetch('HOME'), 'labeled'), request.fetch('labels').join(','))
-        puts JSON.generate([{ 'name' => 'awaiting-answer' }])
-      when 'repos/owner/repo/labels/awaiting-answer'
-        puts JSON.generate('name' => 'awaiting-answer')
-      else
-        abort "unexpected gh request: #{ARGV.inspect} #{raw}"
-      end
-    RUBY
-  end
+  def fake_gh = DESCRIPTION_GH
 end
+
+DESCRIPTION_GH = <<~'RUBY'
+  require 'json'
+  raw = STDIN.read
+  request = raw.empty? ? {} : JSON.parse(raw)
+  File.open(File.join(ENV.fetch('HOME'), 'gh-log'), 'a') { |file| file.puts ARGV.inspect }
+  path = ARGV[1].to_s
+  case path
+  when 'repos/owner/repo/pulls/1'
+    if ARGV.include?('PATCH')
+      File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
+      puts JSON.generate(request)
+    else
+      puts JSON.generate('body' => '', 'head' => { 'repo' => { 'full_name' => 'owner/repo' } },
+                         'base' => { 'repo' => { 'full_name' => 'owner/repo' } })
+    end
+  when 'markdown' then puts JSON.generate('<table></table>' * 10)
+  when 'graphql'
+    state = ENV.fetch('PR_STATE', 'OPEN')
+    puts JSON.generate('data' => { 'repository' => { 'pullRequest' => { 'state' => state } } })
+  when %r{issues/1/labels\?}
+    name = ENV['PR_LABEL'].to_s
+    puts JSON.generate(name.empty? ? [] : [{ 'name' => name }])
+  when %r{issues/1/labels\z}
+    File.write(File.join(ENV.fetch('HOME'), 'labeled'), request.fetch('labels').join(','))
+    puts JSON.generate([{ 'name' => 'awaiting-answer' }])
+  when 'repos/owner/repo/labels/awaiting-answer'
+    puts JSON.generate('name' => 'awaiting-answer')
+  else
+    abort "unexpected gh request: #{ARGV.inspect} #{raw}"
+  end
+RUBY
