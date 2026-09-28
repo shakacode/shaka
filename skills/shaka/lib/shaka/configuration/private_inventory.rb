@@ -11,6 +11,13 @@ module Shaka
       DIRECTORY = File.dirname(Paths::NEW_CONTRACT)
       Result = Data.define(:entries, :blockers, :unsafe)
 
+      def self.private_path?(root:, path:)
+        prefix = path.split('/').first(2).join('/')
+        return true if prefix == DIRECTORY
+
+        prefix.casecmp?(DIRECTORY) && File.identical?(File.join(root, prefix), File.join(root, DIRECTORY))
+      end
+
       def initialize(root:, committed:)
         @root = root
         @committed = committed

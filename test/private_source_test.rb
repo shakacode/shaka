@@ -365,6 +365,19 @@ class PrivateSourceBoundaryTest < Minitest::Test
     end
   end
 
+  def test_case_alias_for_tracked_private_tree_conflicts
+    with_private_repository do |root, ref|
+      lower = File.join(root, '.agents/shaka')
+      upper = File.join(root, '.agents/Shaka')
+      skip 'case-sensitive filesystem' unless File.identical?(lower, upper)
+
+      blob = Open3.capture2('git', '-C', root, 'hash-object', '-w', File.join(lower, 'config.yml')).first.strip
+      system('git', '-C', root, 'update-index', '--add', '--cacheinfo', '100644', blob,
+             '.agents/Shaka/config.yml', exception: true)
+      assert_equal 'conflicting', report(root, ref).status
+    end
+  end
+
   def test_external_symlink_target_must_be_committed
     with_private_repository do |root, ref|
       File.write(File.join(root, 'helper.sh'), "#!/bin/sh\n")
@@ -379,6 +392,13 @@ end
 
 class PrivateSourceSymlinkChainTest < Minitest::Test
   include PrivateSourceFixture
+
+  def test_prompt_through_committed_directory_symlink_is_complete
+    with_private_repository do |root, ref|
+      create_directory_prompt(root)
+      assert_equal 'complete', report(root, ref).status
+    end
+  end
 
   def test_private_command_requires_every_external_hop_committed
     with_private_repository do |root, ref|
@@ -422,6 +442,16 @@ class PrivateSourceSymlinkChainTest < Minitest::Test
   end
 
   private
+
+  def create_directory_prompt(root)
+    FileUtils.mkdir_p(File.join(root, 'internal'))
+    File.write(File.join(root, 'internal/review.md'), 'prompt')
+    File.symlink('internal', File.join(root, 'docs'))
+    policy = config.merge('review' => review_policy('prompt_file' => 'docs/review.md'))
+    File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
+    commit_file(root, 'internal/review.md', 'prompt')
+    commit_file(root, 'docs', 'directory link')
+  end
 
   def create_chain(root, final:, middle:, first:, content:)
     File.write(File.join(root, final), content)

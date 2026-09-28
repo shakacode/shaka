@@ -91,12 +91,10 @@ module Shaka
 
       def inspect_conflicts(trusted, indexed, committed, entries)
         conflict!("#{Paths::CONTRACT} conflicts with private #{Paths::NEW_CONTRACT}") if legacy_collision?(entries)
-        private_tracked = (indexed | committed).select { |path| private_path?(path) }
+        private_tracked = (indexed | committed).select { |path| PrivateInventory.private_path?(root: @root, path:) }
         conflict!("tracked private files: #{private_tracked.join(', ')}") unless private_tracked.empty?
         conflict!("Trusted default branch already has #{trusted.contract}") if trusted && entries.any?
       end
-
-      def private_path?(path) = path.split('/').first(2).join('/') == PrivateInventory::DIRECTORY
 
       def legacy_collision?(entries)
         legacy = File.join(@root, Paths::CONTRACT)
