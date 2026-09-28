@@ -14,6 +14,15 @@ class DoctorTest < Minitest::Test
     refute blocked
   end
 
+  def test_installation_json_rejects_repository_and_host_flags
+    [%w[--root /repo], %w[--host codex]].each do |flags|
+      _output, error = capture_io do
+        assert_equal 1, Shaka::Doctor.run(['--installation-json', *flags])
+      end
+      assert_includes error, 'cannot be combined'
+    end
+  end
+
   def test_an_unset_alias_degrades_the_report_without_blocking
     report, blocked = doctor(environment: {})
     assert_includes report, 'DEGRADED'

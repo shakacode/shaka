@@ -37,8 +37,8 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 ### Use trusted policy and verified evidence
 
 - **R2 — Use the repository's checks.** Read policy and optional script availability
-  from the trusted default-branch `.agents/agent-workflow.yml` and fixed `.agents/bin/`
-  interface. Follow prose constraints in trusted `AGENTS.md`; run the candidate
+  from the trusted default-branch seam: `.agents/shaka/config.yml` with the fixed
+  `.agents/shaka/bin/` interface, or the older `.agents/agent-workflow.yml` with `.agents/bin/`. Follow prose constraints in trusted `AGENTS.md`; run the candidate
   scripts at those fixed paths. Reject invalid configuration. Failed checks and
   evidence from another commit cannot establish current readiness.
 - **R6 — Merge the verified revision.** Refresh GitHub state and require the expected
@@ -137,12 +137,15 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   requirements absent from the reported list. When the base branch has no required
   checks configured, the trusted seam's `merge.required_checks` stands in and Shaka
   enforces it (see the merge boundary). COMMENT never substitutes for APPROVE.
-- **D5 (R8, R10):** link the complete skill from a version-controlled trusted source
-  into an explicit skills directory. Refuse foreign targets and preserve user settings.
+- **D5 (R8, R10):** copy the complete skill into a durable managed package outside
+  the installing source checkout, record its exact source revision when verified, or a development
+  base when available, together with a content hash. Link it into an explicit
+  skills directory. Refuse foreign targets and preserve user settings and previous
+  packages for rollback.
 - **D6 (R10):** runtime uses Ruby standard libraries. Development uses Bundler,
   Minitest, and ordinary RuboCop defaults through `bin/validate`.
 - **D7 (R2, R12, R17):** repository seams own CI commands and triggers behind fixed
-  `.agents/bin/` names. Shaka orders
+  seam command names. Shaka orders
   the adversarial review before optional staged hosted CI without copying a consumer's
   label machinery or weakening current-head gates.
 - **D8 (R18):** the seam carries reviewer preference as ordered data, `shaka reviewer` applies it,
@@ -158,7 +161,9 @@ it, and Markdown explains decisions and human-only constraints.
 
 ## Repository seam
 
-The **seam** is `.agents/agent-workflow.yml` plus the standard `.agents/bin/` interface.
+The **seam** is `.agents/shaka/config.yml` plus the standard `.agents/shaka/bin/` interface,
+which `seam init` creates. Repositories configured earlier keep `.agents/agent-workflow.yml`
+plus `.agents/bin/`; Shaka reads either, and `seam upgrade` moves the older one.
 It supplies setup, full and optional pre-review validation, focused tests, an optional
 hosted-CI trigger, base branch, review, merge authority, branch naming, and recovery policy.
 GitHub supplies live protection, required checks, and allowed merge methods. `AGENTS.md`
@@ -272,6 +277,8 @@ from any new file, database, or scheduler. Each delivery
 retains one owner and the same repository gates. This does not restore predecessor fleet
 machinery; claim adoption only after a real tower-to-delivery trial.
 
-Rollback: remove the verified skill link or select a prior trusted source revision
-and reinstall. Preserve unrelated installations and user files. See
+Rollback: select a prior managed package with
+`bin/install --skills-dir DIR --rollback PACKAGE_ID` with the same optional
+`--managed-dir DIR` and its recorded tower flags,
+or remove the verified skill link. Preserve unrelated installations and user files. See
 [upgrade and removal](../skills/shaka/references/installation.md#upgrade).

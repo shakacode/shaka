@@ -49,6 +49,11 @@ module Shaka
 
     def to_h = @limits.dup
 
+    # Measures GitHub's rendering of body; the pull request supplies the change size.
+    def verify_publication!(github, body, kind:, pull:)
+      verify!(github.markdown(body), kind:, changed_lines: self.class.changed_lines(pull))
+    end
+
     # html is GitHub's rendering, so Markdown rules come from GitHub rather than a copy of them.
     def verify!(html, kind:, changed_lines:)
       paragraphs = VisibleProse.new(html).paragraphs

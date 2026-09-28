@@ -38,12 +38,20 @@ calls remain `UNKNOWN` when their records are absent.
 
 An interval associated with several commits is **SHARED**. Never divide its tokens
 into invented per-commit amounts. Preserve the original mapping after squash and
-associate the merged SHA without recounting it. Replace overlapping snapshots;
-retain earlier non-overlapping reports.
+associate the merged SHA without recounting it.
 
 The helper deduplicates response IDs across supplied files, including resumed or
 forked copies, and ignores cumulative snapshots. Conflicting counters,
 configuration, or interval metadata produce `UNKNOWN`.
+
+## Keep earlier reports when work changes hands
+
+Paste each report whole into the description's usage details; hidden markers at
+its first and last lines identify it. When `description` republishes a PR, it
+keeps earlier reports unless a newer report covers the same work, so a handoff
+between hosts or models keeps every contribution. Fork PRs never carry reports.
+The command prints how many reports it retained, replaced, and dropped. A newer
+report that kept only some counters can still replace an earlier report.
 
 ## Reading the result
 
@@ -174,7 +182,9 @@ helper report or attribute summary usage to a turn.
 The helper prices supported responses individually before summing. This handles
 model switches and context thresholds without charging cached input twice.
 Effort has no price multiplier. Unsupported models, missing counters, and
-contradictory records leave the estimate unknown.
+contradictory records leave that response unpriced. The column then sums the
+priced responses and marks the estimate `(partial)`, naming how many responses
+were left out and why; it is `UNKNOWN` only when no response could be priced.
 
 Implementation estimates read `skills/shaka/config/model-rates.yml` from the
 git checkout of the current directory, including a command started in a
@@ -188,7 +198,7 @@ report.
 
 | Scenario | Treatment |
 | --- | --- |
-| Standard Codex credits | Configured supported OpenAI model. Unknown when cache writes exist because their credit rate is unpublished. |
+| Standard Codex credits | Configured supported OpenAI model. A response with cache writes is unpriced because their credit rate is unpublished. |
 | Standard API-equivalent USD | Ordinary input excludes cache reads and writes, which use their own published rates. |
 | Cursor on-demand USD | Configured supported Grok model and recorded Fast/standard mode. Cache writes remain ordinary input because no separate rate is published. |
 | Anthropic list-price USD | Supported routed model first, otherwise supported configured model; standard speed and published Opus fast mode are priced. |

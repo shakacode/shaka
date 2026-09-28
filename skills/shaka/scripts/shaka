@@ -27,6 +27,7 @@ require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
+require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
 
@@ -139,10 +140,11 @@ rescue Shaka::Error => e
   [Shaka::ProseLimits.new, { 'prose_limits' => "Default prose limits apply: #{e.message}" }]
 end
 
-def walkthrough_body(options)
+def walkthrough_body(options, github)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
-  Shaka::Publication.walkthrough(content(options.fetch(:content_file)).merge('head' => options.fetch(:head)))
+  walkthrough = content(options.fetch(:content_file)).merge('head' => options.fetch(:head))
+  Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough), walkthrough, github)
 end
 
 def usage_banner
@@ -249,12 +251,15 @@ begin
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
                described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
-               body = Shaka::Publication.description(described)
-               published = github.description(body:, prose:)
+               usage_records = nil
+               published = github.description(prose:) do |pull|
+                 carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
+                 Shaka::Publication.description(carried)
+               end
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
                                                        model: options[:opening_model]).call(described['summary'])
-               published.merge('opening' => opening).merge(prose_note)
+               published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note)
              end
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
@@ -262,8 +267,8 @@ begin
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'
-             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options), seam_required_checks:,
-                                prose: Shaka::ProseLimits.new(seam&.prose_limits || {}))
+             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options, github),
+                                seam_required_checks:, prose: Shaka::ProseLimits.new(seam&.prose_limits || {}))
            when 'merge'
              head = options.fetch(:head)
              require_merge_ref!(options)

@@ -98,7 +98,7 @@ class UsageTest < Minitest::Test
     assert_includes report, 'gpt-test'
     assert_includes report, 'high'
     assert_includes report, '2 responses'
-    refute_includes report, '9999'
+    refute_includes without_usage_identity(report), '9999'
   end
 
   def test_explicit_turns_across_resumed_files_are_shared_without_recounting_responses
@@ -145,7 +145,7 @@ class UsageTest < Minitest::Test
     assert_metric report, 'Cached input', 40
     assert_includes report, 'Unreadable or unidentifiable records'
     refute_includes report, 'SENSITIVE'
-    refute_includes report, '9900'
+    refute_includes without_usage_identity(report), '9900'
   end
 
   def test_all_turns_counts_a_dedicated_task_once_and_discloses_scope
@@ -249,7 +249,7 @@ class UsageFailuresTest < Minitest::Test
                            usage('unattributed', turn, 9900)], '--all-turns')
       assert_includes report.split('<details>').first, 'Unreadable or unidentifiable records'
       assert_includes report, '| 100 |'
-      refute_includes report, '9900'
+      refute_includes without_usage_identity(report), '9900'
     end
   end
 
@@ -320,7 +320,7 @@ class UsageFailuresTest < Minitest::Test
     reports = [[original, changed], [changed, original]].map do |first, second|
       run_report([first, usage('same', 'current', 100), second, usage('same', 'current', 100)])
     end
-    assert_equal reports.first, reports.last
+    assert_equal(*reports.map { |report| without_usage_identity(report) })
     assert_metric reports.first, 'USD estimate', 'UNKNOWN'
     assert_includes reports.first, 'Conflicting response copies'
   end
@@ -368,5 +368,41 @@ class MetricAssertTest < Minitest::Test
   def test_rejects_extra_trailing_cells
     assert_raises(Minitest::Assertion) { assert_metric("| Input | 300 | 999 |\n", 'Input', 300) }
     assert_metric("| Input | 300 |\n", 'Input', 300)
+  end
+end
+
+# Each report carries a hidden identity so later description updates can keep or replace it.
+class UsageIdentityTest < Minitest::Test
+  include UsageFixture
+
+  # Break: without an identity, a later host cannot tell this report from a refreshed snapshot.
+  def test_report_is_marked_with_hashed_response_and_source_identity
+    report = run_report([context('current'), usage('r1', 'current', 100), usage('r2', 'current', 100)])
+    fields = JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])
+    assert_equal ['codex', 'implementation', [COMMIT], '2026-09-14T12:00:00Z', '2026-09-14T12:00:00Z'],
+                 fields.values_at('host', 'contribution', 'commits', 'from', 'to')
+    assert_equal [2, 1], [fields['responses'].uniq.size, fields['sources'].size]
+  end
+
+  # Break: a conflicting copy kept its ID with no counters and so covered an earlier measured report.
+  def test_identity_lists_only_responses_with_readable_counters
+    report = run_report([context('current'), usage('replayed', 'current', 100), usage('replayed', 'current', 200),
+                         usage('clean', 'current', 100)])
+    assert_equal 1, JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])['responses'].size
+  end
+
+  # Break: a negative counter rendered UNKNOWN yet counted as measured, so it could cover real usage.
+  def test_identity_leaves_out_responses_with_only_negative_counters
+    negative = usage('negative', 'current', -1)
+    negative[:payload][:usage].merge!(cached_input_tokens: -1, output_tokens: -1, reasoning_output_tokens: -1)
+    report = run_report([context('current'), negative, usage('clean', 'current', 100)])
+    fields = JSON.parse(report[/\A<!-- shaka:usage (.*) -->\n/, 1])
+    assert_equal [1, false], [fields['responses'].size, fields['complete']]
+  end
+
+  def test_report_identity_hides_response_ids_and_closes_the_record
+    report = run_report([context('current'), usage('r1', 'current', 100)])
+    refute_includes report.lines.first, 'r1'
+    assert_equal "<!-- shaka:usage:end -->\n", report.lines.last
   end
 end

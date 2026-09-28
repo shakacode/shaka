@@ -34,7 +34,7 @@ description's collapsed history, not in its visible sections.
 
 Aim for sentences under 25 words and paragraphs of about four sentences.
 `description` and `walkthrough` refuse text past the
-[prose limits](../../../docs/settings.md#prose_limits): long sentences, long
+[prose limits](https://github.com/shakacode/shaka/blob/main/docs/settings.md#prose_limits): long sentences, long
 paragraphs, or more visible words than the change warrants. Split the text,
 collapse supporting detail into `details`, or link to the code, then publish again.
 Record each refusal in the description's review history details: which text it

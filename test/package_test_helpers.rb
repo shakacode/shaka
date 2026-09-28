@@ -14,7 +14,7 @@ module PackageTestHelpers
   def setup
     @directory = Dir.mktmpdir('workflows-package')
     @home = File.join(@directory, 'gem home')
-    @environment = { 'GEM_HOME' => @home, 'GEM_PATH' => @home }
+    @environment = { 'GEM_HOME' => @home, 'GEM_PATH' => @home, 'HOME' => File.join(@directory, 'home') }
   end
 
   def teardown
