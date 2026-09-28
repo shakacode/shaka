@@ -15,7 +15,8 @@ class PublicationDecisionsTest < Minitest::Test
   def test_decisions_render_between_the_walkthrough_link_and_other_sections
     rendered = render('decisions' => ['Keep the label?', 'Which base?'],
                       'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }])
-    decisions = rendered.index("## Decisions for the maintainer\n\n- Keep the label?\n- Which base?\n")
+    marker = "<!-- shaka:decisions -->\n## Decisions for the maintainer\n\n- Keep the label?\n- Which base?\n"
+    decisions = rendered.index(marker)
     walkthrough = rendered.index('[Code Walkthrough](')
     outcome = rendered.index("## Outcome\n")
 

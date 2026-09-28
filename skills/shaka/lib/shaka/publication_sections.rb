@@ -18,7 +18,7 @@ module Shaka
       return [] if listed.empty?
 
       lines = listed.map { |item| "- #{PublicationText.single_line(item, 'decision')}" }
-      ["## #{DECISIONS_HEADING}\n\n#{lines.join("\n")}"]
+      ["<!-- shaka:decisions -->\n## #{DECISIONS_HEADING}\n\n#{lines.join("\n")}"]
     end
 
     def self.refuse_heading(sections)

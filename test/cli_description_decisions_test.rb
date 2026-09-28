@@ -70,7 +70,7 @@ class CliDescriptionDecisionsTest < Minitest::Test
   end
 
   def test_description_refuses_to_drop_decisions_that_are_already_published
-    body = "## Decisions for the maintainer\n\n- Which base?\n"
+    body = "<!-- shaka:decisions -->\n## Decisions for the maintainer\n\n- Which base?\n"
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|

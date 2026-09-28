@@ -27,13 +27,12 @@ module Shaka
     end
 
     def self.asks_for_decisions?(body)
-      heading = "## #{PublicationSections::DECISIONS_HEADING}"
       fenced = false
       body.to_s.each_line.any? do |line|
         fenced = !fenced if line.lstrip.start_with?('```', '~~~')
         next false if fenced
 
-        line.strip.casecmp?(heading)
+        line.strip == '<!-- shaka:decisions -->'
       end
     end
 
