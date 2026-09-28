@@ -269,6 +269,14 @@ class PrivateSourceSafetyTest < Minitest::Test
       assert_equal 'partial', report(root, ref).status
     end
   end
+
+  def test_missing_internal_prompt_is_partial
+    with_private_repository do |root, ref|
+      policy = config.merge('review' => review_policy('prompt_file' => '.agents/shaka/review.md'))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
+      assert_equal 'partial', report(root, ref).status
+    end
+  end
 end
 
 class PrivateSourceWorktreeTest < Minitest::Test
@@ -366,5 +374,41 @@ class PrivateSourceBoundaryTest < Minitest::Test
       system('git', '-C', root, 'commit', '--quiet', '-m', 'helper', exception: true)
       assert_equal 'complete', report(root, ref).status
     end
+  end
+end
+
+class PrivateSourceSymlinkChainTest < Minitest::Test
+  include PrivateSourceFixture
+
+  def test_private_command_requires_every_external_hop_committed
+    with_private_repository do |root, ref|
+      create_chain(root, final: 'final.sh', middle: 'middle.sh', first: nil, content: "#!/bin/sh\n")
+      File.symlink('../../../middle.sh', File.join(root, '.agents/shaka/bin/extra'))
+      result = report(root, ref)
+      assert_equal 'partial', result.status
+      assert_includes result.blockers.join(' '), 'middle.sh'
+      commit_file(root, 'middle.sh', 'middle link')
+      assert_equal 'complete', report(root, ref).status
+    end
+  end
+
+  def test_external_prompt_requires_every_hop_committed
+    with_private_repository do |root, ref|
+      create_chain(root, final: 'final.md', middle: 'middle.md', first: 'review.md', content: 'prompt')
+      write_review_prompt_policy(root)
+      assert_equal 'partial', report(root, ref).status
+      commit_file(root, 'middle.md', 'middle link')
+      assert_equal 'complete', report(root, ref).status
+    end
+  end
+
+  private
+
+  def create_chain(root, final:, middle:, first:, content:)
+    File.write(File.join(root, final), content)
+    File.symlink(final, File.join(root, middle))
+    File.symlink(middle, File.join(root, first)) if first
+    commit_file(root, final, 'final file')
+    commit_file(root, first, 'first link') if first
   end
 end

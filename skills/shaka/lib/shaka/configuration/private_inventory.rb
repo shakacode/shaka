@@ -2,6 +2,7 @@
 
 require 'pathname'
 require_relative 'paths'
+require_relative 'private_path_hops'
 
 module Shaka
   module Configuration
@@ -76,11 +77,18 @@ module Shaka
 
         resolved = Pathname.new(target).relative_path_from(Pathname.new(@root)).to_s
         entry[:resolved_path] = resolved
+        inspect_external_links(path, relative)
         return if resolved.start_with?("#{DIRECTORY}/") || @committed.include?(resolved)
 
         @blockers << "#{relative} targets untracked file #{resolved} outside #{DIRECTORY}"
       rescue SystemCallError => e
         unsafe!(relative, "has an unreadable symlink target: #{e.class}")
+      end
+
+      def inspect_external_links(path, relative)
+        PrivatePathHops.uncommitted(root: @root, path:, committed: @committed).each do |link|
+          @blockers << "#{relative} traverses untracked symlink #{link} outside #{DIRECTORY}"
+        end
       end
 
       def unsafe!(path, detail)

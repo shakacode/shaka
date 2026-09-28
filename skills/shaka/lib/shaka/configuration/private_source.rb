@@ -54,8 +54,8 @@ module Shaka
       def committed_paths = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split("\0")
 
       def resolved_ref
-        valid = @ref.is_a?(String) && @ref.match?(/\A[0-9a-f]{40,64}\z/)
-        raise Error, 'Private source ref must be an immutable commit SHA' unless valid
+        raise Error, 'Private source ref must be an immutable commit SHA' unless
+          @ref.is_a?(String) && @ref.match?(/\A[0-9a-f]{40,64}\z/)
 
         git('rev-parse', '--verify', '--end-of-options', "#{@ref}^{commit}").strip
       end
@@ -97,9 +97,7 @@ module Shaka
         conflict!("Trusted default branch already has #{trusted.contract}") if trusted && entries.any?
       end
 
-      def private_path?(path)
-        path == PrivateInventory::DIRECTORY || path.start_with?("#{PrivateInventory::DIRECTORY}/")
-      end
+      def private_path?(path) = path.split('/').first(2).join('/') == PrivateInventory::DIRECTORY
 
       def legacy_collision?(entries)
         legacy = File.join(@root, Paths::CONTRACT)
@@ -143,9 +141,8 @@ module Shaka
 
       def inspect_prompt_dependencies(config, committed)
         RepositoryConfig.prompt_files(review: config.review, opening: config.opening_check).each do |label, path|
-          next if committed_prompt?(path, committed)
-
-          @blockers << "#{label} #{path} is outside #{PrivateInventory::DIRECTORY} and not tracked"
+          @blockers << "#{label} #{path} is outside #{PrivateInventory::DIRECTORY} and not tracked" unless
+            committed_prompt?(path, committed)
         end
       end
 
@@ -154,7 +151,8 @@ module Shaka
         return true if lexical.start_with?("#{PrivateInventory::DIRECTORY}/")
 
         resolved = relative_path(File.realpath(File.join(@root, path)))
-        committed.include?(lexical) && committed.include?(resolved)
+        committed.include?(lexical) && committed.include?(resolved) &&
+          PrivatePathHops.uncommitted(root: @root, path:, committed:).empty?
       end
 
       def relative_path(path) = Pathname.new(path).relative_path_from(Pathname.new(@root)).to_s
