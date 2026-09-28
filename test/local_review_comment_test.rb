@@ -100,27 +100,6 @@ class LocalReviewCommentTest < Minitest::Test
     assert_includes error.message, "does not close with REVIEWED #{HEAD}"
   end
 
-  # A report's own closing tag would end the disclosure early and expose the rest of the comment.
-  def test_refuses_disclosure_tags_in_report_prose_but_allows_them_in_code
-    quoted = report(body: "Quoted `</details>` safely.\n")
-    assert_includes render('rounds' => [round(report: quoted)]), 'Quoted `</details>` safely.'
-
-    nested = report(body: "````markdown\n```html\n</details>\n```\n````\n")
-    assert_includes render('rounds' => [round(report: nested)]), "```html\n</details>"
-
-    raw = report(body: "Raw </details> tag.\n")
-    assert_raises(Shaka::Error) { render('rounds' => [round(report: raw)]) }
-  end
-
-  # Break caught: an unclosed fence or comment rendered the closing details and attestation as hidden text.
-  def test_refuses_a_report_with_an_unclosed_fence_or_comment
-    ["```ruby\nputs 1\n", "```text\nputs 1\n```ruby\n", "Hidden <!-- note\n"].each do |body|
-      assert_raises(Shaka::Error) { render('rounds' => [round(report: report(body:))]) }
-    end
-    closed = report(body: "```ruby\nputs 1\n````  \n~~~\nx\n~~~\n<!-- note -->\n")
-    assert_includes render('rounds' => [round(report: closed)]), 'puts 1'
-  end
-
   # Break caught: with no other provider configured, selection falls back without trying one.
   def test_explains_a_fallback_that_tried_no_other_reviewer
     body = render('rounds' => [round], 'fallback' => { 'outcome' => 'same_model', 'attempts' => [] })
@@ -134,13 +113,24 @@ end
 class LocalReviewPublishTest < Minitest::Test
   include LocalReviewCommentFixture
 
-  # Records the reply instead of calling GitHub.
+  ATTESTATION = "REVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 1".freeze
+  # GitHub's markdown API output for a well-formed one-round comment, trimmed to what the check reads.
+  RENDERED = "<h1>Local Adversarial Review</h1>\n<details>\n<summary>Round 1</summary>\n<p>ok</p>\n" \
+             "<p>#{ATTESTATION}</p>\n</details>\n<p>#{ATTESTATION}</p>".freeze
+  # What GitHub returned when a report opened a four-backtick fence and closed it with three.
+  SWALLOWED = "<details>\n<summary>Round 1</summary>\n<pre><code>code\n```\n\n#{ATTESTATION}\n\n" \
+              "&lt;/details&gt;\n\n#{ATTESTATION}\n</code></pre></details>".freeze
+
+  # Records the reply instead of calling GitHub, and renders Markdown as told.
   class FakeGitHub
     attr_reader :replies
 
-    def initialize
+    def initialize(html = RENDERED)
+      @html = html
       @replies = []
     end
+
+    def markdown(_body) = @html
 
     def reply(body:, key:)
       @replies << [key, body]
@@ -167,5 +157,19 @@ class LocalReviewPublishTest < Minitest::Test
     assert_equal 0, status
     assert_equal ['local-adversarial-review'], github.replies.map(&:first)
     assert github.replies.first.last.start_with?('# Local Adversarial Review')
+  end
+
+  # Break caught: a report's unclosed fence hid the closing details and the attestation, yet merge
+  # would still have read the raw last line as evidence.
+  def test_refuses_when_github_would_swallow_the_attestation
+    [SWALLOWED, RENDERED.sub('</details>', ''), RENDERED.sub('<details>', '<details><details>')].each do |html|
+      github = FakeGitHub.new(html)
+
+      status, _out, err = publish(github, 'rounds' => [round])
+
+      assert_equal 1, status
+      assert_empty github.replies
+      assert_includes err, 'leaves its markup open'
+    end
   end
 end

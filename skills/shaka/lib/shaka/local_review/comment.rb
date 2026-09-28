@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'cgi'
 require_relative '../error'
 require_relative '../publication'
 require_relative 'evidence'
@@ -15,14 +16,6 @@ module Shaka
     OUTCOMES = %w[different_provider same_provider same_model].freeze
     SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#add-a-second-reviewer'
     CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
-    # A report is published verbatim inside <details>; its own disclosure tags would close ours.
-    DISCLOSURE_TAG = %r{</?(?:details|summary)\b}i
-    # An unclosed fence or HTML comment would swallow everything after it, attestation included.
-    # A closing fence repeats at least the opening run and carries nothing else on its line.
-    CLOSED_FENCE = /^ {0,3}(?:(`{3,})[^\n]*\n.*?^ {0,3}\1`*|(~{3,})[^\n]*\n.*?^ {0,3}\2~*)[ \t]*$/m
-    FENCE = /^ {0,3}(?:```|~~~)/
-    OPEN_COMMENT = /<!--(?!.*-->)/m
-
     def self.render(content) = new(content).render
 
     def initialize(content)
@@ -38,6 +31,17 @@ module Shaka
     def render
       blocks = [TITLE, table, *fallback_notice, *@rounds.map(&:details), @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
+    end
+
+    # Reports are published verbatim, so a stray fence or disclosure tag in one can swallow the rest
+    # of the comment. GitHub's own rendering decides that; a regex over Markdown cannot.
+    def check_rendering!(html)
+      closing = %r{<p\b[^>]*>#{Regexp.escape(CGI.escapeHTML(@rounds.last.attestation))}</p>\s*\z}
+      disclosures = [html.scan(/<details\b/).size, html.scan('</details>').size]
+      return if html.match?(closing) && disclosures == [@rounds.size] * 2
+
+      raise Error, 'A review report leaves its markup open or adds disclosure tags, so GitHub would not show ' \
+                   'each round collapsed with the attestation last. Fix the report and publish again.'
     end
 
     private
@@ -139,18 +143,7 @@ module Shaka
           raise Error, "Round #{@number} report does not close with REVIEWED #{@head} BY #{@reviewer}."
         end
 
-        check_markup(text)
-
         text
-      end
-
-      # Closed fences go first, by their own length, so the other checks see only prose and inline code.
-      def check_markup(text)
-        unfenced = text.gsub(CLOSED_FENCE, '')
-        prose = PublicationText.prose(unfenced)
-        raise Error, "Round #{@number} report contains details or summary tags." if prose.match?(DISCLOSURE_TAG)
-        raise Error, "Round #{@number} report has an unclosed code fence or HTML comment." if
-          unfenced.match?(FENCE) || prose.match?(OPEN_COMMENT)
       end
     end
   end

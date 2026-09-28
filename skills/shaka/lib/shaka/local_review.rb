@@ -72,7 +72,9 @@ module Shaka
 
       comment = LocalReviewComment.new(JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8')))
       github = @github || GitHub.new(*@arguments)
-      puts JSON.pretty_generate(github.reply(body: comment.render, key: LocalReviewComment::KEY))
+      body = comment.render
+      comment.check_rendering!(github.markdown(body))
+      puts JSON.pretty_generate(github.reply(body:, key: LocalReviewComment::KEY))
       0
     end
 
