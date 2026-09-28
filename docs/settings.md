@@ -190,9 +190,34 @@ review:
       model_family: codex
 ```
 
-Use stable provider/family names; model releases do not require list updates.
-The agent prefers a different provider and chooses the review model and effort
-separately. Put custom review criteria in trusted `AGENTS.md`.
+Use stable provider/family names. The agent prefers a different provider. Put
+custom review criteria in trusted `AGENTS.md`.
+
+To control what a review costs, give an entry a `model` and an `effort`:
+
+```yaml
+  local_review_agents:
+    - provider: openai
+      model_family: codex
+      model: gpt-6-sol
+      effort: medium
+    - provider: anthropic
+      model_family: claude
+      effort: medium
+```
+
+Here every Codex review runs `gpt-6-sol` at medium effort. Without a `model`,
+Codex runs its built-in default, which has been `gpt-6-astra` at five times the
+token price, because the reviewer ignores your personal Codex configuration.
+Claude uses its CLI default model at medium effort. The review report records
+the effort it ran.
+
+Both settings are optional. A task can still ask for a different model or effort,
+which wins for that review. Shaka reads them from the default branch, so a PR
+cannot pick the model that reviews it. When a provider retires a named model, that
+reviewer's CLI fails until you update the entry. An effort is a lowercase level
+name such as `low`, `medium`, or `high`; the reviewer CLI decides which levels it
+accepts.
 Configured CI review jobs have separate waiting rules under
 [`review.ci_review_wait`](#reviewci_review_wait).
 See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).
