@@ -6,6 +6,7 @@ require 'json'
 require 'rbconfig'
 require_relative '../skills/shaka/lib/shaka/local_review/process'
 require_relative '../skills/shaka/lib/shaka/local_review/evidence'
+require_relative '../skills/shaka/lib/shaka/local_review/cli'
 
 class LocalReviewCodexTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -309,6 +310,21 @@ end
 # Codex runs with the user's configuration ignored, so the review names its model and effort.
 class LocalReviewCodexChoicesTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: a caller that builds the CLI directly skips the runner's check and injects
+  # another Codex configuration key through the effort.
+  def test_cli_refuses_an_effort_that_is_not_a_level_name_before_launch
+    Dir.mktmpdir('shaka-codex-cli') do |bin|
+      launched = File.join(bin, 'launched')
+      write_executable(bin, 'codex', "#!/bin/sh\ntouch #{launched}\n")
+      cli = Shaka::LocalReviewCli.new({ reviewer: 'openai/codex', effort: 'high" sandbox_mode="x', timeout_seconds: 5 },
+                                      root: bin, report: File.join(bin, 'report'), candidate_root: Dir.pwd, path: bin)
+      error = assert_raises(Shaka::Error) { cli.run('prompt') }
+
+      assert_includes error.message, 'must be a level name'
+      refute_path_exists launched
+    end
+  end
 
   # Break caught: a Codex review silently runs the CLI's built-in default model, because the
   # ignored user config also drops the reviewer's own model choice.

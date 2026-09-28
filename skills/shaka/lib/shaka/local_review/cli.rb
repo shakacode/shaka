@@ -3,6 +3,7 @@
 require 'json'
 require 'open3'
 require 'tempfile'
+require_relative '../repository_config/review_schema'
 require_relative '../usage/codex_usage'
 require_relative 'path_guard'
 require_relative 'process'
@@ -89,7 +90,10 @@ module Shaka
     end
 
     # --ignore-user-config also drops the user's model, so the CLI default runs unless one is named.
+    # The effort becomes configuration text, so this site checks it whatever the caller did.
     def codex_choices
+      RepositoryConfig::ReviewSchema.effort_level!(effort, 'Codex effort') if effort
+
       [*(['-m', @options[:model]] if @options[:model]),
        *(['-c', %(model_reasoning_effort="#{effort}")] if effort)]
     end

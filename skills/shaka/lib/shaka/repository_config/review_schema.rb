@@ -15,6 +15,8 @@ module Shaka
       CI_REVIEW_JOBS = 'ci_review_jobs'
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
       PROMPT_FILE = 'prompt_file'
+      # Codex reads the effort as configuration text, and every reviewer repeats it in the attestation.
+      EFFORT_LEVEL = /\A[a-z][a-z-]*\z/
       RENAMED = {
         'pace' => 'ci_review_wait',
         'ci_review_agents' => CI_REVIEW_JOBS,
@@ -41,6 +43,12 @@ module Shaka
         return unless old
 
         raise Error, "review.#{old} moved to review.#{RENAMED.fetch(old)}; see skills/shaka/references/migration.md"
+      end
+
+      def self.effort_level!(value, label)
+        return if value.is_a?(String) && value.match?(EFFORT_LEVEL)
+
+        raise Error, "#{label} must be a level name such as medium"
       end
 
       # Every prompt file the review section names, repository-wide and per reviewer.
