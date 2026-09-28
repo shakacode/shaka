@@ -27,6 +27,7 @@ require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
+require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
 
@@ -127,10 +128,11 @@ def require_merge_ref!(options)
   raise Shaka::Error, 'merge requires --ref so policy comes from a trusted commit'
 end
 
-def walkthrough_body(options)
+def walkthrough_body(options, github)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
-  Shaka::Publication.walkthrough(content(options.fetch(:content_file)).merge('head' => options.fetch(:head)))
+  walkthrough = content(options.fetch(:content_file)).merge('head' => options.fetch(:head))
+  Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough), walkthrough, github)
 end
 
 def usage_banner
@@ -249,7 +251,8 @@ begin
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'
-             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options), seam_required_checks:)
+             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options, github),
+                                seam_required_checks:)
            when 'merge'
              head = options.fetch(:head)
              require_merge_ref!(options)
