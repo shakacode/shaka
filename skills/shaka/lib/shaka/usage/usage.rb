@@ -153,15 +153,18 @@ module Shaka
     # say which fields were read, because readers legitimately leave some fields UNKNOWN.
     def record_identity
       { 'host' => @options[:host], 'sources' => @options[:files].map { |file| digest(file) }.uniq,
-        'responses' => identified_responses.map { |id| digest(id) }, 'contribution' => @options[:contribution],
+        'responses' => measured_responses.map { |id| response_digest(id) }, 'contribution' => @options[:contribution],
         'commits' => @options[:commit].split(','), 'complete' => complete? }.merge(interval_fields)
     end
 
     def complete? = measured_responses.size == @source.responses.size
 
-    # An aggregate, such as a Claude print result keyed by its session, is not one response;
-    # resumed runs share that key, so such reports are matched by source instead.
-    def identified_responses = measured_responses.reject { |id| @source.responses[id]['aggregate'] }
+    # A Claude print result is keyed by its session, which resumed runs share, so its identity
+    # is scoped to the result file: separate runs never cover each other, a re-read still does.
+    def response_digest(id)
+      source = @source.responses[id]['aggregate_source']
+      digest(source ? "#{source}\0#{id}" : id)
+    end
 
     def interval_fields
       from, to = timestamps.minmax

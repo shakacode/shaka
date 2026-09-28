@@ -18,7 +18,7 @@ module Shaka
 
     def print_snapshot(identity, record)
       { identity => { 'response_id' => identity, 'turn_id' => identity, 'timestamp' => record['timestamp'],
-                      'aggregate' => true,
+                      'aggregate_source' => @reading,
                       'configuration' => ['anthropic', 'UNKNOWN', print_model(record), record['effort']],
                       'billing_mode' => speed(record['usage']), 'usage' => tokens(record['usage']) } }
     end
@@ -121,7 +121,11 @@ module Shaka
       @responses = {}
       @versions = []
       @gaps = []
-      sources = files.map { |file| read(file) }
+      # A print result's identity is scoped to the file it came from.
+      sources = files.map do |file|
+        @reading = file
+        read(file)
+      end
       count_selected(sources, turns, all_turns)
     end
 
