@@ -14,6 +14,13 @@ The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
 Start a new chat if the skill does not appear. See [coding agents](coding-agents.md)
 for environment-specific setup.
 
+Installation keeps a managed copy of the Shaka skill and links your coding agent
+to it. You can remove the source checkout after installation; the skill and its
+workflow still work. On upgrade, Shaka keeps the previous copy. To roll back
+after removing the checkout, get a source checkout again and run its installer.
+See [install and maintain Shaka](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/installation.md)
+for the procedure.
+
 Use a source installation: the published gem is a name-reservation prerelease
 without the current workflow.
 
@@ -48,16 +55,19 @@ repository. See [repository setup](configure-repository.md).
 ## 3. Start a task
 
 ```text
-$shaka Fix search when the query contains an apostrophe.
+$shaka Fix search when the query contains an apostrophe. Go.
 ```
 
 Describe the outcome or supply a task link. Shaka recommends a model and effort
-level. To choose them up front:
+level. Add `Go` to start immediately when those settings are already active and
+your coding agent can confirm them. You can also choose them up front:
 
 ```text
 $shaka Fix search when the query contains an apostrophe. Use Sol, medium effort. Go.
 ```
 
 Choose an available model and activate it in your coding agent; the prompt does
-not switch it for you. Testing and review are already part of the workflow.
+not switch it for you. If its active settings differ from the recommendation or
+cannot be confirmed, Shaka pauses for your choice or confirmation. Testing and
+review are already part of the workflow.
 See [working with Shaka](working-with-shaka.md) for merge choices and feedback.

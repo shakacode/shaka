@@ -594,7 +594,7 @@ class LocalReviewRelativePathTest < Minitest::Test
     end
   end
 
-  def test_candidate_owned_executable_is_rejected_not_marked_unavailable
+  def test_candidate_owned_executable_is_filtered_before_review
     with_repository do |root, base, head, bin|
       candidate_bin = File.join(root, 'bin')
       FileUtils.mkdir_p(candidate_bin)
@@ -602,7 +602,7 @@ class LocalReviewRelativePathTest < Minitest::Test
       write_executable(candidate_bin, 'git', "#!/usr/bin/env ruby\nFile.write(ENV.fetch('MARKER'), 'ran')\n")
       path = "#{candidate_bin}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
       output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => path, 'MARKER' => marker })
-      assert_unsafe_executable_rejected(output, status)
+      assert_candidate_executable_filtered(output, status)
       refute_path_exists marker
     end
   end
@@ -620,17 +620,18 @@ class LocalReviewRelativePathTest < Minitest::Test
     end
   end
 
-  def test_external_symlink_to_candidate_executable_is_rejected
+  def test_external_symlink_to_candidate_executable_is_filtered
     with_repository do |root, base, head, bin|
       candidate = File.join(root, 'codex')
       write_executable(root, 'codex', "#!/bin/sh\nexit 0\n")
       File.symlink(candidate, File.join(bin, 'codex'))
-      output, _error, status = run_review(root, base, head, bin)
-      assert_unsafe_executable_rejected(output, status)
+      path = "#{bin}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
+      output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => path })
+      assert_candidate_executable_filtered(output, status)
     end
   end
 
-  def test_subdirectory_root_rejects_sibling_candidate_executable
+  def test_subdirectory_root_filters_sibling_candidate_executable
     with_repository do |root, base, head, bin|
       subdirectory = File.join(root, 'nested')
       candidate_bin = File.join(root, 'bin')
@@ -638,7 +639,7 @@ class LocalReviewRelativePathTest < Minitest::Test
       write_executable(candidate_bin, 'codex', "#!/bin/sh\nexit 0\n")
       path = "#{candidate_bin}:#{File.dirname(RbConfig.ruby)}:/usr/bin:/bin"
       output, _error, status = run_review(subdirectory, base, head, bin, env: { 'PATH' => path })
-      assert_unsafe_executable_rejected(output, status)
+      assert_candidate_executable_filtered(output, status)
     end
   end
 
@@ -688,12 +689,82 @@ class LocalReviewRelativePathTest < Minitest::Test
     File.symlink(dispatcher, codex)
   end
 
-  def assert_unsafe_executable_rejected(output, status)
+  def assert_candidate_executable_filtered(output, status)
     refute_predicate status, :success?
     result = JSON.parse(output)
-    assert_equal 'setup_failure', result.fetch('failure_stage')
-    assert_equal 'not_eligible', result.fetch('skip_evidence')
-    assert_includes result.fetch('reason'), 'inside candidate checkout'
+    assert_equal 'executable_missing', result.fetch('failure_stage')
+    assert_equal 'confirmed', result.fetch('skip_evidence')
+  end
+end
+
+class LocalReviewPathGuardIntegrationTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_selected_git_with_relative_shebang_fails_before_execution
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'git', "#!node\n")
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'Relative shebang interpreter'
+    end
+  end
+
+  def test_selected_reviewer_with_relative_shebang_fails_before_execution
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!node\n")
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'Relative shebang interpreter'
+    end
+  end
+
+  def test_external_git_symlink_to_candidate_uses_safe_review_commands
+    with_repository do |root, base, head, bin|
+      write_executable(root, 'git', "#!/bin/sh\nexit 0\n")
+      File.symlink(File.join(root, 'git'), File.join(bin, 'git'))
+      assert_safe_alternative_review(root, base, head, bin)
+    end
+  end
+
+  def test_candidate_backed_interpreter_uses_safe_review_commands
+    with_repository do |root, base, head, bin|
+      add_candidate_interpreter(root, bin, head)
+      assert_safe_alternative_review(root, base, head, bin)
+    end
+  end
+
+  def test_unrelated_candidate_link_does_not_block_safe_review
+    with_repository do |root, base, head, bin|
+      File.write(File.join(root, 'project-tool'), 'fixture')
+      File.symlink(File.join(root, 'project-tool'), File.join(bin, 'project-tool'))
+      assert_safe_alternative_review(root, base, head, bin)
+    end
+  end
+
+  private
+
+  def assert_safe_alternative_review(root, base, head, bin)
+    Dir.mktmpdir do |safe|
+      fake_codex(safe, head)
+      trace = File.join(safe, 'review-trace.json')
+      path = "#{bin}:#{safe}:#{ENV.fetch('PATH')}"
+      output, error, status = run_review(root, base, head, bin, env: { 'PATH' => path, 'REVIEW_TRACE' => trace })
+      result = assert_successful_review(output, error, status, head, 'openai/codex')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def add_candidate_interpreter(root, bin, head)
+    write_executable(root, 'node', "#!/bin/sh\nexit 1\n")
+    File.symlink(File.join(root, 'node'), File.join(bin, 'node'))
+    fake_codex(bin, head)
+    codex = File.join(bin, 'codex')
+    File.write(codex, File.read(codex).sub(/\A#![^\n]+/, '#!/usr/bin/env node'))
   end
 end
 
@@ -1139,6 +1210,7 @@ LocalReviewEvidenceTest.include(LocalReviewFixture)
 LocalReviewStdoutFailureTest.include(LocalReviewFixture)
 LocalReviewContextTest.include(LocalReviewFixture)
 LocalReviewRelativePathTest.include(LocalReviewFixture)
+LocalReviewPathGuardIntegrationTest.include(LocalReviewFixture)
 LocalReviewCaseIdentityTest.include(LocalReviewFixture)
 LocalReviewTimeoutTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)

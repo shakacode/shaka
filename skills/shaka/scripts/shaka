@@ -14,6 +14,7 @@ require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/merge_limits'
+require_relative '../lib/shaka/opening_publication'
 require_relative '../lib/shaka/squash_message'
 require_relative '../lib/shaka/prefix'
 require_relative '../lib/shaka/publication'
@@ -26,6 +27,7 @@ require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
+require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
 
@@ -120,10 +122,17 @@ def merge_limits(options)
                               confirmed_head: options[:confirmed_head])
 end
 
-def walkthrough_body(options)
+def require_merge_ref!(options)
+  return if options[:ref].is_a?(String) && !options[:ref].strip.empty?
+
+  raise Shaka::Error, 'merge requires --ref so policy comes from a trusted commit'
+end
+
+def walkthrough_body(options, github)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
-  Shaka::Publication.walkthrough(content(options.fetch(:content_file)).merge('head' => options.fetch(:head)))
+  walkthrough = content(options.fetch(:content_file)).merge('head' => options.fetch(:head))
+  Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough), walkthrough, github)
 end
 
 def usage_banner
@@ -139,6 +148,18 @@ def merge_flags(flags, options)
   flags.on('--review-waiver REASON', 'Merge without review evidence') { |value| options[:review_waiver] = value }
   flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits') { |sha| options[:confirmed_head] = sha }
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
+end
+
+def opening_flags(flags, options)
+  flags.on('--opening-reviewer ID', 'Configured provider/family for an opening check') do |value|
+    options[:opening_reviewer] = value
+  end
+  flags.on('--opening-model MODEL', 'Model for the opening reviewer') { |value| options[:opening_model] = value }
+end
+
+def trust_flags(flags, options)
+  flags.on('--root DIR', 'Repository root for trusted seam settings') { |value| options[:root] = value }
+  flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
 end
 
 options = {}
@@ -157,8 +178,8 @@ parser = OptionParser.new do |flags|
     options[:ci_review_wait] = value
   end
   merge_flags(flags, options)
-  flags.on('--root DIR', 'Repository root for trusted seam settings') { |value| options[:root] = value }
-  flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
+  trust_flags(flags, options)
+  opening_flags(flags, options)
   flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, none') do |value|
@@ -183,6 +204,17 @@ begin
   end
   raise Shaka::Error, '--thread is only for resolve.' if options[:thread] && command != 'resolve'
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
+  if options[:opening_reviewer] && command != 'description'
+    raise Shaka::Error, '--opening-reviewer is only for description.'
+  end
+  if options[:opening_model] && !options[:opening_reviewer]
+    raise Shaka::Error, '--opening-model requires --opening-reviewer.'
+  end
+
+  if options[:opening_model] && options[:opening_reviewer]
+    reviewer = Shaka::ReviewerSelection.parse(options[:opening_reviewer]).values.map(&:downcase).join('/')
+    raise Shaka::Error, '--opening-model is unsupported for openai/codex.' if reviewer == 'openai/codex'
+  end
 
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge].include?(command)
@@ -198,16 +230,32 @@ begin
              Shaka::PublicComments::Reader.new(github).call(issue_only:,
                                                             expected_head: issue_only ? nil : options[:head])
            when 'description'
-             described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
-             github.description(body: Shaka::Publication.description(described))
+             root = options[:root] || Dir.pwd
+             Shaka::OpeningPublication.with_safe_path(root:) do |_candidate_root, gh, neutral|
+               raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
+
+               github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
+                 Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
+               end)
+               described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
+               body = Shaka::Publication.description(described)
+               published = github.description(body:)
+               opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
+                                                       reviewer: options[:opening_reviewer],
+                                                       model: options[:opening_model]).call(described['summary'])
+               published.merge('opening' => opening)
+             end
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
                           key: options.fetch(:key), comment: options[:comment])
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'
-             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options), seam_required_checks:)
+             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options, github),
+                                seam_required_checks:)
            when 'merge'
+             head = options.fetch(:head)
+             require_merge_ref!(options)
              review = { required: seam&.review&.fetch('required'), waiver: options[:review_waiver],
                         root: options[:root] || Dir.pwd }
              squash_message = options[:squash_message] &&
@@ -215,7 +263,7 @@ begin
              Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],
                                       seam_wait: seam&.review&.fetch('ci_review_wait'), review:,
                                       seam_required_checks:).call(
-                                        head: options.fetch(:head),
+                                        head:,
                                         base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough),
                                         limits: merge_limits(options), squash_message:

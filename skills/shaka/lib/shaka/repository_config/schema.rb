@@ -7,6 +7,7 @@ require_relative '../review_prompt'
 require_relative 'branch_schema'
 require_relative 'command_schema'
 require_relative 'merge_schema'
+require_relative 'opening_schema'
 require_relative 'wip_schema'
 require_relative 'review_schema'
 require_relative 'validation'
@@ -18,26 +19,32 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip repo_prefix].freeze
+      OPTIONAL = %w[base_branch branches wip repo_prefix opening_check].freeze
 
       attr_reader :commands
 
-      def initialize(root:, data:, available_commands: nil, candidate_commands: true)
+      def initialize(root:, data:, available_commands: nil, candidate_commands: true,
+                     selection: Configuration::Layout::Selection.new(policy: Configuration::Layout::LEGACY,
+                                                                     candidate: Configuration::Layout::LEGACY))
         @root = root
         @data = data
         @available_commands = available_commands
         @candidate_commands = candidate_commands
+        @layout = selection.policy
+        @candidate_layout = selection.candidate
+        @config_path = @layout.contract
       end
 
       def validate
-        mapping!(@data, PATH)
+        mapping!(@data, @config_path)
         reject_retired_root_keys
-        keys!(@data, REQUIRED, OPTIONAL, PATH)
+        keys!(@data, REQUIRED, OPTIONAL, @config_path)
         validate_header
         validate_commands
+        # Validate opening_check before review prompt collection reads its prompt_file.
+        validate_optional
         validate_review
         validate_merge
-        validate_optional
       end
 
       private
@@ -53,12 +60,14 @@ module Shaka
       def validate_optional
         BranchSchema.new(@data['branches']).validate if @data.key?('branches')
         WipSchema.new(@data['wip']).validate if @data.key?('wip')
+        OpeningSchema.new(@data['opening_check']).validate if @data.key?('opening_check')
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
       end
 
       def validate_commands
         @commands = CommandSchema.new(root: @root, available_commands: @available_commands,
-                                      candidate_commands: @candidate_commands).validate
+                                      candidate_commands: @candidate_commands, layout: @layout,
+                                      candidate_layout: @candidate_layout).validate
       end
 
       def validate_review
@@ -74,7 +83,7 @@ module Shaka
 
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
       def local_prompt_files!(review)
-        ReviewSchema.prompt_files(review).each do |label, path|
+        RepositoryConfig.prompt_files(review:, opening: @data.fetch('opening_check', {})).each do |label, path|
           file = file!(path, label)
           error = ReviewPrompt.file_error(File.size(file)) { File.binread(file) }
           raise Error, "#{label} #{path} #{error}" if error

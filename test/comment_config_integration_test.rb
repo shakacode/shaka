@@ -3,7 +3,7 @@
 require 'tmpdir'
 require_relative 'comments_fixture'
 
-class CommentConfigIntegrationTest < Minitest::Test
+module CommentConfigIntegrationFixture
   include CommentsFixture
 
   def empty_machine
@@ -12,10 +12,11 @@ class CommentConfigIntegrationTest < Minitest::Test
     end
   end
 
-  def base_blob(contents)
-    response({ 'data' => { 'repository' => { 'object' =>
-             { '__typename' => 'Blob', 'text' => contents, 'byteSize' => contents.bytesize,
-               'isBinary' => false, 'isTruncated' => false } } } })
+  def base_blob(contents, new_layout: false)
+    object = { '__typename' => 'Blob', 'text' => contents, 'byteSize' => contents.bytesize,
+               'isBinary' => false, 'isTruncated' => false }
+    fields = new_layout ? { 'object' => nil, 'newObject' => object } : { 'object' => object, 'newObject' => nil }
+    response({ 'data' => { 'repository' => fields } })
   end
 
   def default_base(base = BASE)
@@ -27,10 +28,11 @@ class CommentConfigIntegrationTest < Minitest::Test
     [response([trusted]), response([]), response([]), thread_response([])]
   end
 
-  def pr_client(trusted, final_base: default_base, new_blob: nil)
+  def pr_client(trusted, final_base: default_base, new_blob: nil, new_layout: false, final_new_layout: new_layout)
     responses = [snapshot_response, repository_response('public'), default_base,
-                 base_blob("trusted_users: [maintainer]\n"), *pr_pages(trusted), snapshot_response, final_base]
-    responses << base_blob(new_blob) if new_blob
+                 base_blob("trusted_users: [maintainer]\n", new_layout:), *pr_pages(trusted), snapshot_response,
+                 final_base]
+    responses << base_blob(new_blob, new_layout: final_new_layout) if new_blob
     client(*responses, repository_response('public'))
   end
 
@@ -51,12 +53,25 @@ class CommentConfigIntegrationTest < Minitest::Test
     assert_base_expression(@calls[3])
     assert_equal 0, permission_call_count
   end
+end
+
+class CommentConfigIntegrationTest < Minitest::Test
+  include CommentConfigIntegrationFixture
 
   def test_public_pr_uses_repo_config_at_default_branch_not_candidate_head
     trusted = comment(id: 80, author: 'maintainer', body: 'Known reviewer')
     empty_machine do |path|
       github = pr_client(trusted)
       result = Shaka::PublicComments::Reader.new(github, machine_path: path).call(expected_head: HEAD)
+      assert_trusted_pr(result)
+    end
+  end
+
+  def test_public_pr_uses_new_allowlist_from_default_branch_not_candidate_head
+    trusted = comment(id: 84, author: 'maintainer', body: 'Known reviewer')
+    empty_machine do |path|
+      reader = Shaka::PublicComments::Reader.new(pr_client(trusted, new_layout: true), machine_path: path)
+      result = reader.call(expected_head: HEAD)
       assert_trusted_pr(result)
     end
   end
@@ -80,6 +95,18 @@ class CommentConfigIntegrationTest < Minitest::Test
       result = Shaka::PublicComments::Reader.new(github, machine_path: path).call(expected_head: HEAD)
 
       assert_equal ['Same reviewer'], bodies(result, 'issue_comments')
+    end
+  end
+
+  def test_allowlist_path_change_invalidates_the_loaded_trust_source
+    trusted = comment(id: 85, author: 'maintainer', body: 'Same reviewer')
+    empty_machine do |path|
+      github = pr_client(trusted, final_base: default_base('c' * 40),
+                                  new_blob: "trusted_users: [maintainer]\n", final_new_layout: true)
+      error = assert_raises(Shaka::Error) do
+        Shaka::PublicComments::Reader.new(github, machine_path: path).call(expected_head: HEAD)
+      end
+      assert_match(/Repository trust config changed/, error.message)
     end
   end
 

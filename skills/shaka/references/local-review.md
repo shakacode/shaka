@@ -11,22 +11,11 @@ shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort N
 Pass resolved revisions, not the words `HEAD` or `BASE`: the prompt interpolates what it is given,
 so a literal placeholder would publish an attestation reading `REVIEWED HEAD`.
 
-This command does not read repository settings. When the trusted seam sets `review.prompt_file`,
-or a `prompt_file` on the selected agent's `local_review_agents` entry, write that file from the trusted commit to a
-new temporary file outside the checkout and pass it with `--prompt-file "$PROMPT"`. Set `TRUSTED` to the verified
-default-branch commit first; `${TRUSTED:?}` stops the command if it is unset, because `git show`
-would otherwise read the file from the index, which the candidate controls:
-
-```bash
-TRUSTED=$(git rev-parse --verify 'origin/main^{commit}')
-PROMPT=$(mktemp)
-git show "${TRUSTED:?}:.agents/review-prompt.md" > "$PROMPT"
-```
-
-A `prompt_file` on the selected agent's `local_review_agents` entry replaces the repository-wide
-one. `git show` does not follow symlinks,
-so when the configured path is a symlink, read the file it points to. `shaka review run` does all
-of this itself when given `--criteria-ref`.
+This command does not read repository settings. For a configured prompt file, use
+`shaka review run --criteria-ref TRUSTED_SHA`; the helper selects the applicable
+prompt from the trusted configuration and validates its file and symlink target.
+Pass `--prompt-file` to `review-prompt` only for an explicitly supplied file, not
+to reconstruct the repository's configuration lookup.
 
 It scopes the review to `git diff BASE...HEAD` and gives the review instructions. By default
 they ask for correctness, contract drift, security and trust, test coverage, and simplification;

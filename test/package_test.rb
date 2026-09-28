@@ -14,7 +14,7 @@ class PackageTest < Minitest::Test
     %w[shaka rct mct-claude rct-claude].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
     run_gem('uninstall', 'shaka', '--all', '--executables', '--ignore-dependencies')
     refute_path_exists File.join(@home, 'bin', 'shaka')
-    refute_path_exists source
+    assert File.file?(File.join(source, 'SKILL.md'))
   end
 
   def test_built_gem_distributes_the_declared_license
@@ -103,7 +103,7 @@ class PackageTest < Minitest::Test
     skills = File.join(@directory, 'pilot skills')
     run_executable('shaka-install', '--skills-dir', skills, '--with-rct', '--with-claude-towers')
     source = File.realpath(File.join(skills, 'shaka'))
-    assert source.start_with?("#{File.realpath(@home)}/gems/"), source
+    assert source.start_with?("#{File.realpath(@environment.fetch('HOME'))}/.local/share/shaka/installs/"), source
     check_public_skills(skills, source)
     assert File.file?(File.join(source, 'SKILL.md'))
     assert File.file?(File.join(source, 'scripts', 'shaka'))

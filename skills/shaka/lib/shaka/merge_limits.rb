@@ -22,8 +22,8 @@ module Shaka
     def self.from_ref(root:, ref:, confirmed_head: nil)
       return new(confirmed_head:) unless ref
 
-      require_relative 'trusted_config_source'
-      new(TrustedConfigSource.load(root:, ref:).merge.fetch('limits'), confirmed_head:)
+      require_relative 'configuration'
+      new(Configuration.trusted(root:, ref:).merge.fetch('limits'), confirmed_head:)
     end
 
     # confirmed_head names the head a user approved past these limits; any other head needs a new decision.

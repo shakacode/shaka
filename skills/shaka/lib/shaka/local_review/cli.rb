@@ -4,7 +4,7 @@ require 'json'
 require 'open3'
 require 'tempfile'
 require_relative '../usage/codex_usage'
-require_relative 'executable'
+require_relative 'path_guard'
 require_relative 'process'
 
 module Shaka
@@ -17,6 +17,13 @@ module Shaka
 
       file = Tempfile.create(['shaka-review-diagnostic-', '.txt'])
       file.write(text)
+      file.close
+      file.path
+    end
+
+    def save_usage(output)
+      file = Tempfile.create(['shaka-review-usage-', '.json'])
+      file.write(output)
       file.close
       file.path
     end
@@ -36,7 +43,12 @@ module Shaka
 
     def reviewer_process(args, input = nil)
       LocalReviewProcess.capture(args, stdin_data: input, chdir: @root,
-                                       timeout: @options.fetch(:timeout_seconds))
+                                       timeout: @options.fetch(:timeout_seconds),
+                                       env: @path ? { 'PATH' => @path } : {})
+    end
+
+    def reviewer_executable(name)
+      LocalReviewPathGuard.safe_executable(@path || ENV.fetch('PATH', ''), name, @candidate_root)
     end
   end
 
@@ -44,11 +56,12 @@ module Shaka
   class LocalReviewCli
     include LocalReviewDiagnostic
 
-    def initialize(options, root:, report:, candidate_root:)
+    def initialize(options, root:, report:, candidate_root:, path: nil)
       @options = options
       @root = root
       @report = report
       @candidate_root = candidate_root
+      @path = path
     end
 
     def run(prompt)
@@ -62,7 +75,7 @@ module Shaka
     private
 
     def codex(prompt)
-      executable = LocalReviewExecutable.resolve('codex', candidate_root: @candidate_root)
+      executable = reviewer_executable('codex')
       return missing('codex') unless executable
 
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
@@ -71,12 +84,12 @@ module Shaka
       stdout, stderr, status = reviewer_process(args, prompt)
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?
 
-      @options[:usage] = CodexUsage.announced_session(stdout)
+      @options[:usage] = CodexUsage.announced_session(stdout) if @options.fetch(:capture_usage, true)
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
     end
 
     def claude(prompt)
-      executable = LocalReviewExecutable.resolve('claude', candidate_root: @candidate_root)
+      executable = reviewer_executable('claude')
       return missing('claude') unless executable
 
       output, stderr, status = claude_process(executable, prompt)
@@ -103,7 +116,7 @@ module Shaka
       return failure('claude -p reported an error', output) if result['is_error']
       return invalid('claude -p returned no review', output) unless valid_claude_result?(result)
 
-      @options[:usage] = save_usage(output)
+      @options[:usage] = save_usage(output) if @options.fetch(:capture_usage, true)
       File.write(@report, result.fetch('result'))
       nil
     end
@@ -111,7 +124,7 @@ module Shaka
     def valid_claude_result?(result) = result['result'].is_a?(String) && !result['result'].strip.empty?
 
     def grok(prompt)
-      executable = LocalReviewExecutable.resolve('grok', candidate_root: @candidate_root)
+      executable = reviewer_executable('grok')
       return missing('grok') unless executable
 
       file = prompt_file(prompt)
@@ -132,18 +145,11 @@ module Shaka
     end
 
     def grok_process(executable, prompt_path)
-      args = [executable, '--prompt-file', prompt_path, '-m', @options[:model]]
+      args = [executable, '--prompt-file', prompt_path, *(['-m', @options[:model]] if @options[:model])]
       args.push('--reasoning-effort', effort) if effort
       args.push('--output-format', 'plain', '--permission-mode', 'plan', '--disable-web-search', '--no-subagents')
       output, stderr, status = reviewer_process(args)
       status&.success? ? output : process_failure('grok', status, stderr, output)
-    end
-
-    def save_usage(output)
-      file = Tempfile.create(['shaka-review-usage-', '.json'])
-      file.write(output)
-      file.close
-      file.path
     end
 
     def missing(name) = outcome("#{name} is not on PATH", 'executable_missing', false)

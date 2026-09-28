@@ -5,6 +5,7 @@
 - [Getting started](getting-started.md) — install, configure, and run a task.
 - [Coding agents](coding-agents.md) — Codex, Claude Code, Cursor, OpenCode, and Pi.
 - [Working with Shaka](working-with-shaka.md) — merge policy, feedback, and resuming work.
+- [Architecture](architecture.md) — one owner, familiar records, and a small kernel.
 
 ## Configure and understand
 

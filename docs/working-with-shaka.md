@@ -9,9 +9,11 @@ agent could not infer:
 $shaka Add CSV export to the orders page. Reuse the filters shown on screen.
 ```
 
-Shaka checks for existing work and recommends a model and effort level. Supply
-an available model, effort, and “Go” to skip that question once the settings are
-active. See the [workflow](workflow.md).
+Shaka checks for existing work and recommends a model and effort level. Say
+“Go” to start without restating them when the recommended settings are already
+active. You can name a model or effort you prefer; Shaka pauses if it differs
+from the recommendation or cannot verify the active settings. See the
+[workflow](workflow.md).
 
 ## Choose a merge policy
 

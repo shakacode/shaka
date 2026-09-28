@@ -3,11 +3,11 @@
 This is an operational reference used by the installed Shaka skill in any
 repository. Read it when the workflow calls for planning, communication, PR
 publication, or resuming unfinished work. Shaka contributor instructions live in
-[contributor documentation](../../../contributing/README.md).
+[contributor documentation](https://github.com/shakacode/shaka/blob/main/contributing/README.md).
 
 Follow the installed Shaka workflow for execution order. Use this reference when
 planning a task, splitting PRs, writing delivery updates, or recovering unfinished
-work. For the product introduction, see [working with Shaka](../../../docs/working-with-shaka.md).
+work. For the product introduction, see [working with Shaka](https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md).
 
 ## When the agent asks questions
 
@@ -37,11 +37,16 @@ choice. Honor explicit user settings. Consider total planning, implementation,
 retries, and review; waiting or a tool error alone does not justify more effort.
 
 Use the workflow's `recommendation` and `checkpoint` commands. Proceed without
-another response only when the user explicitly supplied matching model and
-effort, clearly asked to start, and those settings are active and usable. Otherwise
-pause with one next action. Check the actual host setting on resume when available;
-a prompt cannot change the runner. Planning-only work returns its plan and usage
-without an implementation checkpoint.
+another response when the user clearly asks to start, the recommended model and
+effort are active and usable, and any settings the user supplied match the
+recommendation. A start word such as `go` does not require the user to restate
+active settings. Otherwise pause with one next action. Check the actual host
+setting on resume when available; a prompt cannot change the runner. Planning-only
+work returns its plan and usage without an implementation checkpoint.
+
+If the checkpoint reports `recommendation_missing`, supply the omitted model or
+effort recommendation and rerun it. This is an agent input to complete before
+bringing a decision to the user.
 
 Work solo unless delegation is authorized and useful. Obtain a fresh-context
 review before pushing meaningful implementation, using [reviewer selection](review.md#choose-a-local-reviewer).
@@ -113,7 +118,7 @@ When false, publish `UNKNOWN` for both Workspace and Thread. The publishing comm
 does not read this setting; check the content before submitting it. Retain the fields and
 public owner alias. The publisher does not enforce this setting; the agent must.
 A repository where even the owner alias is sensitive should not publish these notes.
-See [configuration](../../../docs/settings.md#wipinclude_locations).
+See [configuration](https://github.com/shakacode/shaka/blob/main/docs/settings.md#wipinclude_locations).
 
 **Resume as the original owner:** read the live note before writing. If it names
 another owner or tag, preserve local work without pushing, report the transfer,
@@ -209,19 +214,69 @@ reasoning in the walkthrough. File paths alone do not decide placement.
 
 ### How a walkthrough is ordered
 
-Start with the earlier behavior and what now works. Then explain changes in the
-order that makes them understandable: usually contract or data model, core
-behavior, integrations, and finally tests, documentation, and migration.
+Open with the behavior that changed and why it was needed; the mechanism comes
+after. A reviewer who stops early still gets the main point, and the reason for a
+change is usually the hardest part to reconstruct from the diff.
+
+Then explain changes in the order that makes them understandable: usually
+contract or data model, core behavior, integrations, and finally tests,
+documentation, and migration. Keep related parts together, explain each idea
+before the step that needs it, and say where a reviewer should look hardest.
 
 Explain unfamiliar terms on first use. Distinguish mechanical moves and generated
 output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
-Use commit-pinned code links. Cover the change completely, then stop.
+Cover the change completely, then stop.
+
+### Keep a walkthrough readable
+
+- Link each step to the lines it explains with a commit-pinned permalink to a
+  line range. One link per file leaves the reader searching. A change with no
+  lines to link, such as a binary asset or submodule pointer, takes a
+  commit-pinned file link instead.
+- Describe the code at this head, compared with the base branch. Leave out the
+  branch's own history: "was removed" or "now rejects" about an earlier commit
+  on the branch goes stale and means nothing to a reader of the diff.
+- Give each paragraph one idea and lead with it. Split a paragraph past about
+  four sentences, and keep most sentences under 25 words.
+- Use a list for parallel items, such as the guarantees a guard provides: one
+  per bullet, each linked to its code. Keep reasoning in prose.
+- Add one small diagram when control passes through three or more components,
+  or when a state can move to more than one next state. Even then, skip it
+  when one sentence can state the sequence. GitHub renders a `mermaid` code block in a
+  review. Keep it to about ten nodes, label each edge with the action, and let
+  the prose carry the explanation.
+- Report validation as what it proves at this head: the behavior covered, the
+  command, and its result. State each count once, and leave results from
+  earlier heads to the description's review history.
+
+For example, these three sentences state two guards, one of them twice:
+
+> Slash-bearing relative shebang interpreters are rejected before the command
+> runs. Guarded env shebangs reject environment assignments so a wrapper cannot
+> replace the sanitized PATH. Direct relative shebang interpreters, including
+> bare `#!node`, are rejected before launch.
+
+A list states each guard once, with its code link:
+
+> Before a selected wrapper runs, the interpreter guard rejects:
+>
+> - relative interpreters, including bare `#!node` (code link)
+> - `env` shebangs that assign variables, which could replace the sanitized
+>   PATH (code link)
+
+Code checks little of this. The `walkthrough` command refuses a walkthrough
+without a commit-pinned link to a changed file, or one that does not name each
+completed required and review check. It does not check the rules above or
+whole-diff coverage; they rest on the writer and on review, and
+`shaka enforcement` lists them as agent-enforced.
 
 ### Keep one current walkthrough
 
-Edit wording at the same revision in place. For a new commit, publish a walkthrough
-for that head and update the description's link. Keep review history in the
+Edit wording at the same revision in place. For a new commit, write a walkthrough
+from the whole PR diff at that head (`git diff BASE...HEAD`), not only the new
+commit, and update the description's link. Extending the previous
+walkthrough carries its repair history into the new one. Keep review history in the
 description's details rather than appending it to the walkthrough.
 
 The walkthrough command collapses your older walkthroughs after it confirms the new

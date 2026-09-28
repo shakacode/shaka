@@ -4,6 +4,7 @@ require_relative 'test_helper'
 require 'json'
 require 'yaml'
 require 'shaka/workflow_config'
+require 'shaka/workflow'
 
 class WorkflowConfigTest < Minitest::Test
   PHASE_IDS = %w[intake plan implement verify explain review finish].freeze
@@ -92,6 +93,16 @@ class WorkflowCommandTest < Minitest::Test
     assert_includes output, 'Done when:'
   end
 
+  def test_workflow_uses_resolved_configuration_paths
+    output, status = Open3.capture2e(COMMAND, 'workflow')
+
+    assert_predicate status, :success?, output
+    assert_includes output, 'run the reported scripts'
+    assert_includes output, 'resolved `validate` command'
+    refute_includes output, '.agents/bin/validate'
+    refute_includes output, '{{'
+  end
+
   def test_workflow_command_rejects_arguments
     output, status = Open3.capture2e(COMMAND, 'workflow', 'candidate.yml')
 
@@ -109,6 +120,14 @@ class WorkflowCommandTest < Minitest::Test
       assert File.file?(path), "#{path} is not a guide"
       assert_includes heading_slugs(path), anchor, "#{path} has no heading for ##{anchor}" if anchor
     end
+  end
+
+  def test_workflow_rejects_unknown_configuration_token
+    workflow = Shaka::Workflow.new([])
+
+    error = assert_raises(Shaka::Error) { workflow.send(:expand, '{{config_missing}}') }
+
+    assert_includes error.message, 'unknown template token'
   end
 
   private

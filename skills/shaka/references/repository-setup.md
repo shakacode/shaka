@@ -1,10 +1,10 @@
 # Configure a repository for Shaka
 
 Use this procedure when asked to set up Shaka in a repository. The
-[configuration reference](../../../docs/settings.md) defines every setting
+[configuration reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) defines every setting
 and standard script; keep those definitions there.
 
-1. Verify the repository identity, visibility, default branch, and `AGENTS.md`.
+1. Verify the repository identity, visibility, default branch, and any existing `AGENTS.md`.
 2. Inspect existing setup, test, validation, and CI commands. Reuse them in small
    `.agents/bin/` wrappers; include any existing fast validation or staged CI
    capability when useful. Shaka's own [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin) are examples.
@@ -22,8 +22,11 @@ and standard script; keep those definitions there.
    reports one check per workflow. Explain that Shaka, not GitHub, then enforces them.
    If the user wants no required checks, continue with merge preference `ask` and
    say that Auto merge needs at least one.
-4. Prepare the files with the trusted installed helper. For an existing
-   configuration, use the [migration procedure](migration.md).
+4. Prepare the files with the trusted installed helper. `seam init` still creates
+   version-one configuration in `.agents/`; an existing repository can use the
+   [layout upgrade procedure](migration.md#upgrade-the-configuration-layout)
+   when it wants to move to `.agents/shaka/`.
+   For an older contract shape, use the [migration procedure](migration.md#migrate-an-older-contract).
 5. Inspect the generated diff, run its checks, and commit it. When the default
    branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
    path to review it before publishing and hand it to the maintainer. A migration
@@ -33,7 +36,7 @@ For a repository whose commands and review job match this example, the initializ
 is:
 
 ```bash
-"$HOME/agent-tools/shaka/skills/shaka/scripts/shaka" seam init \
+"$HOME/.agents/skills/shaka/scripts/shaka" seam init \
   --root /path/to/repository \
   --setup-command "bin/setup" \
   --test-command "bundle exec rake test" \
@@ -42,8 +45,10 @@ is:
   --ci-review-job claude-review
 ```
 
-Replace every example command with the repository's actual command. If no CI
-review job exists, use `--review-policy none` and omit `--ci-review-job`. Meaningful
+Use the helper under the skills directory passed to `bin/install`; this example
+uses `~/.agents/skills`. Replace every example command with the repository's
+actual command. If no CI review job exists, use `--review-policy none` and omit
+`--ci-review-job`. Meaningful
 implementation still gets local review. The initializer refuses to overwrite
 conflicting files. When GitHub enforces no required checks, add
 `--required-check NAME` for each confirmed check.
@@ -88,14 +93,18 @@ Supply `--root`, `--setup-command`, `--test-command`, `--validate-command`, and
 `--review-policy`. Unless review policy is `none`, supply `--ci-review-job` for
 an actual job; repeat it for additional jobs. Supply `--required-check` for each
 check the user confirms when GitHub requires none; see
-[`merge.required_checks`](../../../docs/settings.md#mergerequired_checks). With no
+[`merge.required_checks`](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergerequired_checks). With no
 required checks at all, keep merge preference `ask`.
 
 The initializer writes the three required wrappers, `.agents/shaka.md`, and YAML
-with `version`, `review`, `merge`, and the default `branches.name`. It defaults to
-Ask. Add `--merge-preference auto` only with established authority, `--base-branch`
-for another base, and `--required-check` for seam-declared checks. Add optional reviewer entries, `repo_prefix`, and WIP settings
-by editing the YAML afterward. Point to requirements from `AGENTS.md`.
+with `version`, `review`, `merge`, the default `branches.name`, and
+`wip.include_locations: true`. It defaults to Ask. Add `--merge-preference auto`
+only with established authority, `--base-branch` for another base, and
+`--required-check` for seam-declared checks. Add optional reviewer entries and
+`repo_prefix` by editing the YAML afterward. Set `wip.include_locations` to
+`false` only when the user asks to hide the checkout path and session link.
+If the repository already uses `AGENTS.md`, it may point to its requirements
+there; Shaka does not require that file.
 
 Command arguments are parsed as argument lists. Put pipelines and other compound
 shell behavior in repository scripts rather than in command flags.

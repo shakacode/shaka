@@ -12,6 +12,7 @@ module Shaka
   # an ordinary answer when no other is available.
   class ReviewerSelection
     IDENTITY = %w[provider model_family].freeze
+    SUPPORTED_REVIEWERS = %w[openai/codex anthropic/claude xai/grok].freeze
     AVAILABLE = 'available'
     UNAVAILABLE = 'unavailable'
     SAME_PROVIDER = 'same provider as the implementation'

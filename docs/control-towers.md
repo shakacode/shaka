@@ -7,6 +7,9 @@ A **Repository Control Tower (RCT)** follows one repository's priorities and tas
 A **Master Control Tower (MCT)** coordinates RCTs and dependencies—for example, a
 library fix needed before an application upgrade.
 
+Each delivery still has one owner. The [architecture guide](architecture.md)
+explains where its records belong.
+
 Ask your agent to install the tower skills and establish the master. Then open a
 task in each repository and invoke its setup skill:
 

@@ -4,10 +4,14 @@ require 'open3'
 require_relative 'repository_config'
 require_relative 'review_prompt'
 require_relative 'trusted_path_resolver'
+require_relative 'configuration/layout'
+require_relative 'configuration/sources'
 
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
   class TrustedConfigSource
+    include Configuration::Sources
+
     def self.load(root:, ref: nil, candidate_commands: true)
       return RepositoryConfig.load(root:) unless ref
 
@@ -27,22 +31,29 @@ module Shaka
 
     def load(ref)
       sha = resolve(ref)
-      source, error, status = Open3.capture3('git', '-C', @root, 'show', "#{sha}:#{RepositoryConfig::PATH}")
-      raise Error, "Cannot read #{RepositoryConfig::PATH} at #{ref}: #{error.strip}" unless status.success?
-
-      config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha), sha:,
+      layout = Configuration::Layout.commit(root: @root, sha:, allow_missing: true) || Configuration::Layout::LEGACY
+      source = read_at_commit(root: @root, sha:, path: layout.contract, display_ref: ref)
+      config = RepositoryConfig.load(root: @root, source:, available_commands: optional_commands(sha, layout), sha:,
                                      candidate_commands: @candidate_commands)
-      validate_prompt_files(config.review, sha)
+      validate_prompt_files(config.review, config.opening_check, sha)
       config
+    end
+
+    def opening_prompt(config)
+      path = config.opening_check['prompt_file']
+      return unless path
+
+      resolved, = TrustedPathResolver.new(root: @root, sha: config.sha).resolve(path)
+      git_output(config.sha, resolved, '-p')
     end
 
     private
 
     # A prompt file the review runner would reject would stop every local review, including the one
     # for the PR that fixes it.
-    def validate_prompt_files(review, sha)
+    def validate_prompt_files(review, opening, sha)
       resolver = TrustedPathResolver.new(root: @root, sha:)
-      RepositoryConfig::ReviewSchema.prompt_files(review).each do |label, path|
+      RepositoryConfig.prompt_files(review:, opening:).each do |label, path|
         resolved, entry = resolver.resolve(path)
         is_blob = entry && entry.last == 'blob' && entry.first != TrustedPathResolver::SYMLINK.first
         raise Error, "#{label} does not name a file at #{sha}: #{path}" unless is_blob
@@ -68,13 +79,13 @@ module Shaka
       sha.strip
     end
 
-    def optional_commands(sha)
-      validate_command_directory(sha)
+    def optional_commands(sha, layout)
+      validate_command_directory(sha, layout)
       resolver = TrustedPathResolver.new(root: @root, sha:)
-      validate_required_commands(resolver, sha)
-      entries = command_entries(resolver)
-      validate_legacy_command_entries(resolver, entries, sha)
-      RepositoryConfig::CommandPaths::OPTIONAL.filter_map do |name, path|
+      validate_required_commands(resolver, sha, layout)
+      entries = command_entries(resolver, layout)
+      validate_legacy_command_entries(resolver, entries, sha, layout)
+      layout.optional.filter_map do |name, path|
         next unless entries.key?(path)
 
         validate_command_entry(entries.fetch(path), path, sha, resolver)
@@ -82,8 +93,8 @@ module Shaka
       end
     end
 
-    def validate_required_commands(resolver, sha)
-      RepositoryConfig::CommandPaths::REQUIRED.each_value do |path|
+    def validate_required_commands(resolver, sha, layout)
+      layout.required.each_value do |path|
         entry = resolver.entry(path)
         raise Error, "#{path} is missing at trusted ref #{sha}" unless entry
 
@@ -91,23 +102,24 @@ module Shaka
       end
     end
 
-    def validate_command_directory(sha)
-      type, error, status = Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{sha}:.agents/bin")
+    def validate_command_directory(sha, layout)
+      directory = layout.command_directory
+      type, error, status = Open3.capture3('git', '-C', @root, 'cat-file', '-t', "#{sha}:#{directory}")
       return if status.success? && type.strip == 'tree'
-      raise Error, ".agents/bin at #{sha} must be a real directory, not a symlink" if status.success?
+      raise Error, "#{directory} at #{sha} must be a real directory, not a symlink" if status.success?
 
-      raise Error, "Cannot inspect .agents/bin at #{sha}: #{error.strip}"
+      raise Error, "Cannot inspect #{directory} at #{sha}: #{error.strip}"
     end
 
-    def command_entries(resolver)
-      RepositoryConfig::CommandPaths::OPTIONAL.values.to_h do |path|
+    def command_entries(resolver, layout)
+      layout.optional.values.to_h do |path|
         [path, resolver.entry(path)]
       end.compact
     end
 
-    def validate_legacy_command_entries(resolver, entries, sha)
-      RepositoryConfig::CommandPaths::LEGACY_OPTIONAL.each do |name, legacy_path|
-        fixed_path = RepositoryConfig::CommandPaths::OPTIONAL.fetch(name)
+    def validate_legacy_command_entries(resolver, entries, sha, layout)
+      layout.legacy_optional.each do |name, legacy_path|
+        fixed_path = layout.optional.fetch(name)
         next unless resolver.entry(legacy_path) && !entries.key?(fixed_path)
 
         raise Error, "#{legacy_path} requires the standard entry point #{fixed_path} at trusted ref #{sha}"

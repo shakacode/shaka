@@ -23,9 +23,9 @@ when appropriate; a green job alone is not a completed review.
 
 ## Waiting for CI reviews
 
-Read the [CI review waiting setting](../../../docs/settings.md#reviewci_review_wait)
-from the trusted default-branch contract. That shared reference owns the values,
-default, and waiting rules; use it when deciding which reports must complete.
+Read the [CI review waiting setting](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewci_review_wait)
+from the trusted default-branch contract. The public guide explains the setting;
+the installed workflow and trusted seam govern if that guide changes.
 Pass the trusted SHA to `merge --ref`; use `--ci-review-wait MODE` only
 for a recorded task override.
 
@@ -143,10 +143,11 @@ subagent a CLI attempt.
 
 During planning, check whether each reviewer needed to satisfy the gate runs on draft pull
 requests, reading its trusted workflow rather than the seam: the standard reviewer workflow
-guards on `draft == false`, so the review-ready path is the usual one. Run
-`.agents/bin/validate-local` before review when the trusted seam reports it present; otherwise
-run `.agents/bin/validate`.
-The optional `.agents/bin/trigger-hosted-ci` requires `validate-local`; after batching fixes,
+guards on `draft == false`, so the review-ready path is the usual one. Run the
+trusted seam's `validate_local` command before review when it is available; otherwise
+run its `validate` command. Obtain both executable paths from
+`shaka seam check --root ROOT --ref TRUSTED_SHA` and run those paths from the candidate checkout.
+The optional `trigger_hosted_ci` command requires `validate_local`; after batching fixes,
 run the full `validate` script and then the trigger. This follows the React on Rails pattern: draft
 creation and review do not request its broad hosted matrix.
 
