@@ -44,6 +44,10 @@ module Shaka
       { 'state' => 'released', 'labels' => remaining }
     end
 
+    def refuse_merge_wait
+      refuse_merge_label(current_labels)
+    end
+
     # The attention labels the PR carries now, in GitHub's order.
     def current = current_labels.select { |name| attention?(name) }
 
