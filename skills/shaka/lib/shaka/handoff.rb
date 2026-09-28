@@ -3,11 +3,9 @@
 require_relative 'attention'
 require_relative 'error'
 require_relative 'merge_required_checks'
-require_relative 'public_comments/bounded_list'
-require_relative 'publishing'
 require_relative 'status'
-require_relative 'walkthrough_history'
-require_relative 'wip_details'
+require_relative 'handoff/walkthrough'
+require_relative 'handoff/wip_note'
 
 module Shaka
   # Reports what an agent still owes a PR before it ends a turn, and what a resumed session finds.
@@ -89,7 +87,7 @@ module Shaka
     def passing?(checks) = checks.is_a?(Array) && checks.all? { |check| passing_check?(check) }
 
     def walkthrough_fact(live)
-      revision = latest_walkthrough
+      revision = Walkthrough.new(@github).revision
       unless revision
         return owe('no walkthrough', 'Publish a walkthrough before asking for merge.') if merge_requested?
 
@@ -100,32 +98,12 @@ module Shaka
       owe("walkthrough #{revision[0, SHORT]}", "The walkthrough explains #{revision}; publish one for #{live}.")
     end
 
-    # Superseded walkthroughs are wrapped in a pointer, so only the current one still renders as a walkthrough.
-    # Only this account's reviews count, so a commenter's copied walkthrough cannot change what is owed.
-    def latest_walkthrough
-      path = "repos/#{@github.repository}/pulls/#{@github.number}/reviews"
-      reviews = PublicComments::BoundedList.new(@github, max_pages: 5, label: 'Review listing').call(path)
-      account = @github.api('user')['login']
-      current = reviews.reverse.find do |review|
-        review.dig('user', 'login') == account && review['state'] == 'COMMENTED' &&
-          WalkthroughText.rendered?(review['body'].to_s)
-      end
-      current && bound_revision(current)
-    end
-
-    # GitHub binds a review to its commit; the footer is editable text, so it only counts when it agrees.
-    def bound_revision(review)
-      commit = review['commit_id']
-      commit if commit.is_a?(String) && WalkthroughText.revision(review['body']) == commit
-    end
-
     def wip_fact(live)
       pull = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")
       recheck_head(pull.dig('head', 'sha'), live)
-      revision = WipDetails.revision(WipDetails.managed_region(pull['body'].to_s, Publishing::OPEN_MARK,
-                                                               Publishing::CLOSE_MARK))
-      return owe('no WIP', 'WIP Details is missing; publish it before stopping.') if revision.to_s.strip.empty?
-      return "WIP #{live[0, SHORT]}" if WipDetails.head(revision) == live
+      revision = WipNote.revision(pull['body'])
+      return owe('no WIP', 'WIP Details is missing; publish it before stopping.') unless revision
+      return "WIP #{live[0, SHORT]}" if WipNote.head(revision) == live
 
       owe('WIP stale', "WIP Details names #{revision}, not #{live}; refresh it.")
     end

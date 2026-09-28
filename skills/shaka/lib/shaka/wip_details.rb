@@ -20,35 +20,6 @@ module Shaka
       'next_action' => 'Next action'
     }.freeze
 
-    NOTE = %r{<details>\n<summary>#{SUMMARY}</summary>\n\n(.*?)\n\n</details>}m
-
-    # Reads the Revision cell back from a note this class rendered, or nil when the text holds no
-    # complete note: a partial or reordered table was not written by this class.
-    def self.revision(text)
-      # A body saved from GitHub's web editor comes back with CRLF line endings.
-      note = text.to_s.gsub("\r\n", "\n")[NOTE, 1] or return
-      cells = rows(note)
-      cells[FIELDS.keys.index('revision')].last if cells.map(&:first) == FIELDS.values
-    end
-
-    # Only text between one opening and one later closing marker is the helper's own; anyone who can
-    # edit the body can write elsewhere in it.
-    def self.managed_region(body, open_mark, close_mark)
-      open = body.index(open_mark)
-      close = body.index(close_mark)
-      single = body.scan(open_mark).one? && body.scan(close_mark).one?
-      return '' unless single && open < close
-
-      body[(open + open_mark.length)...close]
-    end
-
-    # Revision reads `BRANCH @ SHA`; only the part after the last ` @ ` is the head, whatever the branch is named.
-    def self.head(revision) = revision.to_s.split(' @ ').last.to_s.strip
-
-    def self.rows(note)
-      note.lines.drop(2).map { |line| line.chomp.match(/\A\| (.+?) \| (.*) \|\z/)&.captures || [] }
-    end
-
     def initialize(spec)
       @spec = spec
     end
