@@ -33,6 +33,7 @@ module Shaka
       @github = github
       @head = head
       @files = {}
+      @listings = {}
       @urls = {}
     end
 
@@ -87,6 +88,7 @@ module Shaka
 
     def file(name, path)
       @files[path] ||= begin
+        regular_file!(path)
         response = @github.api("repos/#{@github.repository}/contents/#{encoded(path)}?ref=#{@head}")
         unless response['type'] == 'file' && response['encoding'] == 'base64'
           raise Error, "#{path} is not a regular file under 1 MB at #{@head}."
@@ -96,6 +98,16 @@ module Shaka
       end
     rescue Error => e
       raise Error, "Walkthrough code link #{name}: #{e.message}"
+    end
+
+    # The contents API follows a symlink to its target's text, while the permalink would
+    # show the link itself, so only an entry the directory lists as a file qualifies.
+    def regular_file!(path)
+      directory = File.dirname(path)
+      suffix = directory == '.' ? '' : "/#{encoded(directory)}"
+      @listings[directory] ||= @github.api_list("repos/#{@github.repository}/contents#{suffix}?ref=#{@head}")
+      entry = @listings[directory].find { |item| item['name'] == File.basename(path) }
+      raise Error, "#{path} is not a regular file at #{@head}." unless entry && entry['type'] == 'file'
     end
 
     def encoded(path) = path.split('/').map { |segment| URI.encode_uri_component(segment) }.join('/')

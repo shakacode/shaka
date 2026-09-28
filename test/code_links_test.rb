@@ -31,7 +31,7 @@ module CodeLinksFixtures
         return 2
   PYTHON
 
-  FakeGitHub = Struct.new(:files, :requests) do
+  FakeGitHub = Struct.new(:files, :requests, :symlinks) do
     def repository = 'owner/repo'
 
     def api(path, **)
@@ -41,10 +41,18 @@ module CodeLinksFixtures
 
       { 'type' => 'file', 'encoding' => 'base64', 'content' => [files.fetch(name)].pack('m') }
     end
+
+    def api_list(path)
+      requests << path
+      directory = path[%r{/contents/?(.*)\?ref=}, 1]
+      (files.keys | symlinks).select { |name| File.dirname(name) == directory }.map do |name|
+        { 'name' => File.basename(name), 'type' => symlinks.include?(name) ? 'symlink' : 'file' }
+      end
+    end
   end
 
-  def github(files = { 'lib/package.rb' => PACKAGE, 'bin/tool.py' => SCRIPT })
-    FakeGitHub.new(files, [])
+  def github(files = { 'lib/package.rb' => PACKAGE, 'bin/tool.py' => SCRIPT }, symlinks = [])
+    FakeGitHub.new(files, [], symlinks)
   end
 
   def resolved_body(links, body, client = github)
@@ -101,7 +109,8 @@ class CodeLinksTest < Minitest::Test
     body = resolved_body(links, "Start at [s](code:stage).\n\n| Code |\n| --- |\n| [p](code:publish) |", client)
     assert_equal "Start at [s](#{BLOB}/lib/package.rb#L6-L9).\n\n| Code |\n| --- |\n" \
                  "| [p](#{BLOB}/lib/package.rb#L11-L13) |", body
-    assert_equal ["repos/owner/repo/contents/lib/package.rb?ref=#{HEAD}"], client.requests
+    assert_equal ["repos/owner/repo/contents/lib?ref=#{HEAD}", "repos/owner/repo/contents/lib/package.rb?ref=#{HEAD}"],
+                 client.requests
   end
 
   def test_code_spans_and_fences_keep_link_examples_literally
@@ -145,6 +154,15 @@ class CodeLinksRefusalTest < Minitest::Test
       error = assert_raises(Shaka::Error) { resolved_body(links, body) }
       assert_includes error.message, message
     end
+  end
+
+  def test_symlinked_path_is_refused_because_its_permalink_shows_the_link
+    # The contents API would return the target's text for the link path.
+    client = github({ 'lib/alias.rb' => PACKAGE, 'lib/package.rb' => PACKAGE }, ['lib/alias.rb'])
+    error = assert_raises(Shaka::Error) do
+      resolved_body({ 'x' => { 'path' => 'lib/alias.rb', 'from' => 'def stage' } }, '[x](code:x)', client)
+    end
+    assert_includes error.message, 'not a regular file'
   end
 
   def test_unreadable_file_names_the_link
