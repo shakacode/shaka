@@ -407,6 +407,16 @@ class PrivateSourceSymlinkChainTest < Minitest::Test
     end
   end
 
+  def test_committed_prompt_link_into_private_tree_is_complete
+    with_private_repository do |root, ref|
+      File.write(File.join(root, '.agents/shaka/review.md'), 'prompt')
+      File.symlink('.agents/shaka/review.md', File.join(root, 'review.md'))
+      write_review_prompt_policy(root)
+      commit_file(root, 'review.md', 'prompt link')
+      assert_equal 'complete', report(root, ref).status
+    end
+  end
+
   def test_private_command_requires_every_external_hop_committed
     with_private_repository do |root, ref|
       create_chain(root, final: 'final.sh', middle: 'middle.sh', first: nil, content: "#!/bin/sh\n")

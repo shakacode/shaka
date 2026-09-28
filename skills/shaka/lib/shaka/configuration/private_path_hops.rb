@@ -16,7 +16,8 @@ module Shaka
 
       def self.committed_path?(root:, path:, committed:)
         resolved = Pathname.new(File.realpath(File.join(root, path))).relative_path_from(Pathname.new(root)).to_s
-        committed.include?(resolved) && uncommitted(root:, path:, committed:).empty?
+        (resolved.start_with?("#{DIRECTORY}/") || committed.include?(resolved)) &&
+          uncommitted(root:, path:, committed:).empty?
       rescue SystemCallError
         false
       end
