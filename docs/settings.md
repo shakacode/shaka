@@ -282,8 +282,9 @@ prose_limits:
 
 The values above are the defaults. Set any key to a positive integer to change
 it; omitted keys keep their default. Each limit counts only the prose GitHub
-shows. Collapsed details, code blocks, tables, headings, quotes, and link addresses do
-not count, and an inline code span counts as one word.
+shows. Code blocks, tables, headings, quotes, link addresses, and the body of a
+collapsed details block do not count. A collapsed block's summary label counts,
+and an inline code span counts as one word.
 In a description, only the part Shaka manages counts; text that people or other tools
 add outside it is left alone.
 
