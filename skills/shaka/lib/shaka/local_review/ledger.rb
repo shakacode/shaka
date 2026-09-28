@@ -23,6 +23,10 @@ module Shaka
 
     def rounds = data.fetch('rounds')
 
+    def last_round_fixes
+      LocalReviewFinding.list(rounds.last['findings'], "round #{rounds.size} finding").select(&:fixed?).map(&:commit)
+    end
+
     def last_head = rounds.last&.fetch('head')
 
     # A round reviews a new commit on the same base, after the previous round's findings are recorded.

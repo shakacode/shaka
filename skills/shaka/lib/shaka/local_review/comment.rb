@@ -31,10 +31,7 @@ module Shaka
 
       @repository = repository
 
-      rounds = PublicationText.list(content['rounds'], 'rounds')
-      raise Error, 'Local review content needs at least one round.' if rounds.empty?
-
-      @rounds = rounds.each_with_index.map { |round, index| Round.new(round, index + 1) }
+      @rounds = build_rounds(PublicationText.list(content['rounds'], 'rounds'))
       @fallback = content['fallback']
     end
 
@@ -55,6 +52,16 @@ module Shaka
     end
 
     private
+
+    # A fix is evidence only once a later round has reviewed the head that contains it.
+    def build_rounds(specs)
+      raise Error, 'Local review content needs at least one round.' if specs.empty?
+
+      rounds = specs.each_with_index.map { |round, index| Round.new(round, index + 1) }
+      return rounds unless rounds.last.findings.any?(&:fixed?)
+
+      raise Error, "Round #{rounds.size} records fixes no later round reviewed; review the fix head first."
+    end
 
     # A fence opened in one report and closed in the next hides the boundary between them, including
     # the next round's own summary; balanced tags the reports supply cannot stand in for it.

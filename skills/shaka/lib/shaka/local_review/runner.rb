@@ -116,18 +116,28 @@ module Shaka
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
       @ledger.check_next!(base: @options[:base], head:)
-      [@ledger.last_head, *@ledger.prior_findings.select(&:fixed?).map(&:commit)].compact.uniq.each do |commit|
-        check_contains!(commit)
+      check_history! if @ledger.last_head
+    end
+
+    # The next round must hold the last reviewed head and every recorded fix, and each fix the last
+    # round records must come after the head it was found in, or the comment would call a finding
+    # fixed in a commit that is missing or predates it.
+    def check_history!
+      last = @ledger.last_head
+      [last, *@ledger.prior_findings.select(&:fixed?).map(&:commit)].uniq.each { |commit| contains!(commit, head) }
+      @ledger.last_round_fixes.each do |fix|
+        raise Shaka::Error, "Fix #{fix} is the head round #{@ledger.rounds.size} reviewed; commit the fix." if
+          fix == last
+
+        contains!(last, fix)
       end
     end
 
-    # The next round must hold the last reviewed head and every recorded fix, or the prompt and the
-    # comment would call a finding fixed in a commit this head lacks.
-    def check_contains!(commit)
-      capture(git_executable, '-C', root, 'merge-base', '--is-ancestor', commit, head)
+    def contains!(commit, descendant)
+      capture(git_executable, '-C', root, 'merge-base', '--is-ancestor', commit, descendant)
     rescue Shaka::Error
-      raise Shaka::Error, "#{head} does not build on #{commit}, which the ledger reviewed or records as a fix; " \
-                          'fix the history or use a new ledger.'
+      raise Shaka::Error, "#{descendant} does not build on #{commit}, which the ledger reviewed or records as " \
+                          'a fix; fix the history or use a new ledger.'
     end
 
     def record_round(result)

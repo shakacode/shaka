@@ -1084,65 +1084,8 @@ class LocalReviewCodexUsageTest < Minitest::Test
   end
 end
 
-class LocalReviewLoopTest < Minitest::Test
-  COMMAND = LocalReviewCodexTest::COMMAND
-
-  def teardown
-    Array(@results).each { |result| cleanup_artifacts(result) }
-  end
-
-  # Break caught: round 2 must check round 1's fixes without seeing why the author decided anything.
-  def test_ledger_records_rounds_and_feeds_prior_findings_to_the_next_round
-    in_loop do |head|
-      assert_equal 1, loop_round(head, findings: 1).fetch('round')
-      fix = fix_commit
-      assert_refused(fix, 'Record round 1')
-      record_fix(fix)
-      loop_round(fix, findings: 0)
-      assert_prior_round_prompt(File.read(@trace), fix)
-      assert_equal [head, fix], ledger_heads
-    end
-  end
-
-  def test_refuses_any_head_an_earlier_round_reviewed
-    in_loop do |head|
-      loop_round(head, findings: 0)
-      assert_refused(head, 'commit the fix first')
-      loop_round(fix_commit, findings: 0)
-      git!(@root, 'checkout', '--quiet', head)
-      assert_refused(head, 'Round 1 already reviewed')
-    end
-  end
-
-  # Break caught: a head from another branch lacks the fixes the ledger says were made.
-  def test_refuses_a_head_that_does_not_build_on_the_last_round
-    in_loop do |head|
-      loop_round(head, findings: 0)
-      git!(@root, 'checkout', '--quiet', '-b', 'other', @base)
-      assert_refused(fix_commit, 'does not build on')
-    end
-  end
-
-  # Break caught: the comment would call a finding fixed in a commit the reviewed head lacks.
-  def test_refuses_a_head_without_a_recorded_fix
-    in_loop do |head|
-      loop_round(head, findings: 1)
-      git!(@root, 'checkout', '--quiet', '-b', 'side')
-      side = fix_commit
-      git!(@root, 'checkout', '--quiet', '-')
-      record_fix(side)
-      commit!(@root, 'unrelated', 'Change something else')
-      assert_refused(git!(@root, 'rev-parse', 'HEAD').strip, "does not build on #{side}")
-    end
-  end
-
-  def test_refuses_a_ledger_inside_the_checkout
-    in_loop do |head|
-      @ledger = File.join(@root, 'ledger.json')
-      assert_refused(head, 'outside the candidate checkout')
-    end
-  end
-
+# Drives rounds of a review loop against one ledger outside the checkout.
+module LocalReviewLoopSteps
   private
 
   def in_loop
@@ -1193,8 +1136,8 @@ class LocalReviewLoopTest < Minitest::Test
     Tempfile.create(['record-', '.json']) do |file|
       file.write(JSON.generate('findings' => findings, 'tokens' => '1,000'))
       file.close
-      _out, error, status = Open3.capture3(COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file',
-                                           file.path)
+      arguments = ['review', 'record', '--ledger', @ledger, '--content-file', file.path]
+      _out, error, status = Open3.capture3(self.class::COMMAND, *arguments)
       assert_equal expect, status.success?, error
     end
   end
@@ -1204,6 +1147,77 @@ class LocalReviewLoopTest < Minitest::Test
     assert_includes prompt, "- [F1] defect: Wrong exit code (fixed in #{fix[0, 7]})"
     assert_includes prompt, "#{fix[0, 7]} Return the right exit code"
     refute_includes prompt, 'private reasoning'
+  end
+end
+
+class LocalReviewLoopTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  include LocalReviewLoopSteps
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  # Break caught: round 2 must check round 1's fixes without seeing why the author decided anything.
+  def test_ledger_records_rounds_and_feeds_prior_findings_to_the_next_round
+    in_loop do |head|
+      assert_equal 1, loop_round(head, findings: 1).fetch('round')
+      fix = fix_commit
+      assert_refused(fix, 'Record round 1')
+      record_fix(fix)
+      loop_round(fix, findings: 0)
+      assert_prior_round_prompt(File.read(@trace), fix)
+      assert_equal [head, fix], ledger_heads
+    end
+  end
+
+  def test_refuses_any_head_an_earlier_round_reviewed
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      assert_refused(head, 'commit the fix first')
+      loop_round(fix_commit, findings: 0)
+      git!(@root, 'checkout', '--quiet', head)
+      assert_refused(head, 'Round 1 already reviewed')
+    end
+  end
+
+  # Break caught: a head from another branch lacks the fixes the ledger says were made.
+  def test_refuses_a_head_that_does_not_build_on_the_last_round
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      git!(@root, 'checkout', '--quiet', '-b', 'other', @base)
+      assert_refused(fix_commit, 'does not build on')
+    end
+  end
+
+  # Break caught: the comment would call a finding fixed in a commit the reviewed head lacks.
+  def test_refuses_a_head_without_a_recorded_fix
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      git!(@root, 'checkout', '--quiet', '-b', 'side')
+      side = fix_commit
+      git!(@root, 'checkout', '--quiet', '-')
+      record_fix(side)
+      commit!(@root, 'unrelated', 'Change something else')
+      assert_refused(git!(@root, 'rev-parse', 'HEAD').strip, "does not build on #{side}")
+    end
+  end
+
+  # Break caught: a fix recorded as the head that found the finding claimed a fix nobody made.
+  def test_refuses_a_fix_that_is_the_reviewed_head
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record_fix(head)
+      assert_refused(fix_commit, 'is the head round 1 reviewed')
+    end
+  end
+
+  def test_refuses_a_ledger_inside_the_checkout
+    in_loop do |head|
+      @ledger = File.join(@root, 'ledger.json')
+      assert_refused(head, 'outside the candidate checkout')
+    end
   end
 end
 

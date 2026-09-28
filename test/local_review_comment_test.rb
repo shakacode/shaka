@@ -253,6 +253,7 @@ class LocalReviewDispositionTest < Minitest::Test
   def test_flags_a_finding_that_returns_after_its_fix
     content = looped
     content['rounds'][1] = round(findings: [finding('F1', 'defect', 'fixed', commit: 'e' * 40)])
+    content['rounds'] << round('e' * 40, report: report('e' * 40, findings: 0), findings: [])
 
     assert_includes render(content), '· **returned after its fix in `ddddddd`**'
   end
@@ -275,7 +276,14 @@ class LocalReviewDispositionTest < Minitest::Test
      finding('F1', 'risk', 'documented', commit: FIX)].each do |bad|
       assert_raises(Shaka::Error) { render('rounds' => [round(findings: [bad])]) }
     end
-    assert_includes render('rounds' => [round(findings: [finding('F1', 'risk', 'fixed', commit: FIX)])]),
-                    'risk F1 — fixed in `ddddddd`'
+    fixed = round(EARLIER, report: report(EARLIER), findings: [finding('F1', 'risk', 'fixed', commit: FIX)])
+    assert_includes render('rounds' => [fixed, round]), 'risk F1 — fixed in `ddddddd`'
+  end
+
+  # Break caught: a fix recorded in the last round was published without any review of it.
+  def test_refuses_a_last_round_whose_fixes_no_round_reviewed
+    fixed = round(findings: [finding('F1', 'defect', 'fixed', commit: FIX)])
+
+    assert_includes assert_raises(Shaka::Error) { render('rounds' => [fixed]) }.message, 'no later round reviewed'
   end
 end
