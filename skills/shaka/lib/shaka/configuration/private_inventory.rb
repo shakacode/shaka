@@ -39,20 +39,27 @@ module Shaka
 
       def scan_agents
         agents = File.join(@root, Paths::DIRECTORY)
-        return unsafe!(Paths::DIRECTORY, 'must be a real directory') if
-          File.symlink?(agents) || (File.exist?(agents) && !File.directory?(agents))
+        stat = File.lstat(agents)
+        return unsafe!(Paths::DIRECTORY, 'must be a real directory') unless stat.directory?
 
         scan_private_directory
+      rescue Errno::ENOENT
+        nil
+      rescue SystemCallError => e
+        unsafe!(Paths::DIRECTORY, "cannot be inventoried: #{e.class}")
       end
 
       def scan_private_directory
         directory = File.join(@root, DIRECTORY)
-        return unless File.exist?(directory) || File.symlink?(directory)
-
+        stat = File.lstat(directory)
         visit(directory)
-        return if @unsafe || (File.directory?(directory) && !File.symlink?(directory))
+        return if @unsafe || stat.directory?
 
         unsafe!(DIRECTORY, 'must be a real directory')
+      rescue Errno::ENOENT
+        nil
+      rescue SystemCallError => e
+        unsafe!(DIRECTORY, "cannot be inventoried: #{e.class}")
       end
 
       def visit(path)

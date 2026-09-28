@@ -61,6 +61,19 @@ module PrivateSourceFixture
     system('git', '-C', root, 'add', path, exception: true)
     system('git', '-C', root, 'commit', '--quiet', '-m', message, exception: true)
   end
+
+  def with_inaccessible_agents(root)
+    agents = File.join(File.realpath(root), '.agents')
+    lstat = File.method(:lstat)
+    File.define_singleton_method(:lstat) do |path|
+      raise Errno::EACCES, path if path == agents
+
+      lstat.call(path)
+    end
+    yield
+  ensure
+    File.define_singleton_method(:lstat, lstat) if lstat
+  end
 end
 
 class PrivateSourceStateTest < Minitest::Test
@@ -168,6 +181,24 @@ class PrivateSourceStateTest < Minitest::Test
   def expected_paths
     %w[.agents/shaka .agents/shaka/bin .agents/shaka/bin/setup .agents/shaka/bin/test
        .agents/shaka/bin/validate .agents/shaka/config.yml].sort
+  end
+end
+
+class PrivateSourceRefTest < Minitest::Test
+  include PrivateSourceFixture
+
+  def test_sha256_ref_must_not_be_an_abbreviated_commit_id
+    Dir.mktmpdir('shaka-sha256') do |root|
+      skip 'Git does not support SHA-256 repositories' unless
+        system('git', '-C', root, 'init', '--quiet', '--object-format=sha256')
+
+      system('git', '-C', root, 'config', 'user.name', 'Test', exception: true)
+      system('git', '-C', root, 'config', 'user.email', 'test@example.com', exception: true)
+      ref = commit_project(root)
+      assert_equal 64, ref.length
+      assert_raises(Shaka::Error) { report(root, ref[0, 40]) }
+      assert_equal 'absent', report(root, ref).status
+    end
   end
 end
 
@@ -293,6 +324,13 @@ class PrivateSourceWorktreeTest < Minitest::Test
   def test_normal_clone_discovers_its_own_git_directory
     with_private_repository do |root, ref|
       Dir.mktmpdir('shaka-clone') { |parent| assert_clone(root, ref, parent) }
+    end
+  end
+
+  def test_unborn_candidate_head_has_no_committed_paths
+    with_private_repository do |root, ref|
+      system('git', '-C', root, 'symbolic-ref', 'HEAD', 'refs/heads/orphan', exception: true)
+      assert_equal 'complete', report(root, ref).status
     end
   end
 
@@ -528,6 +566,16 @@ class PrivateSourceInputTest < Minitest::Test
       assert_equal expected, report(root, ref).status
     ensure
       File.chmod(0o644, path)
+    end
+  end
+
+  def test_inaccessible_agents_parent_is_unsafe_instead_of_absent
+    with_private_repository do |root, ref|
+      with_inaccessible_agents(root) do
+        result = report(root, ref)
+        assert_equal 'unsafe_file', result.status
+        assert_includes result.blockers.join(' '), '.agents cannot be inventoried'
+      end
     end
   end
 

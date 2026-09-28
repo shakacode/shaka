@@ -15,6 +15,13 @@ module Shaka
         end
       end
 
+      def committed(root:, git:)
+        _, _, status = Open3.capture3('git', '-C', root, 'rev-parse', '--verify', '--quiet', 'HEAD^{commit}')
+        return Set.new unless status.success?
+
+        parse(git.call('ls-tree', '-r', '-z', '--name-only', 'HEAD')).to_set
+      end
+
       def verify_trusted_tree!(sha:, git:)
         paths = parse(git.call('ls-tree', '-r', '-z', '--name-only', sha, Paths::DIRECTORY))
         [Paths::CONTRACT, Paths::NEW_CONTRACT].each do |path|

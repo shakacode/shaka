@@ -53,14 +53,17 @@ module Shaka
 
       private
 
-      def indexed_paths = PrivateGitPaths.parse(git('ls-files', '--cached', '-z'))
-      def committed_paths = PrivateGitPaths.parse(git('ls-tree', '-r', '-z', '--name-only', 'HEAD'))
+      def indexed_paths = PrivateGitPaths.parse(git('ls-files', '--cached', '-z')).to_set
+      def committed_paths = PrivateGitPaths.committed(root: @root, git: method(:git))
 
       def resolved_ref
         raise Error, 'Private source ref must be an immutable commit SHA' unless
           @ref.is_a?(String) && @ref.match?(/\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/)
 
-        git('rev-parse', '--verify', '--end-of-options', "#{@ref}^{commit}").strip
+        sha = git('rev-parse', '--verify', '--end-of-options', "#{@ref}^{commit}").strip
+        raise Error, 'Private source ref must be a full commit SHA' unless sha == @ref
+
+        sha
       end
 
       def result(sha, trusted, inventory, config)
