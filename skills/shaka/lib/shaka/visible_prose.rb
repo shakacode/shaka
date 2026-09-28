@@ -15,7 +15,8 @@ module Shaka
     CODE = %r{\A<(/?)code\b}i
     BREAK = /\A<br\b/i
     # A false split only shortens a sentence, so anything may start the next one, as in "iOS" or an emoji.
-    SENTENCE_END = /(?<=[.!?])["'”’)\]]*\s+/
+    # An ellipsis may end a sentence too.
+    SENTENCE_END = /(?<=[.!?…])["'”’)\]]*\s+/
 
     def self.words(text) = text.split(/[[:space:]]+/).count { |token| token.match?(/[[:alnum:]]/) }
 

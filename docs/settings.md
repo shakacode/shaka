@@ -282,7 +282,8 @@ prose_limits:
 
 The values above are the defaults. Set any key to a positive integer to change
 it; omitted keys keep their default. Each limit counts only the prose GitHub
-shows. Collapsed details, code, tables, headings, quotes, and link addresses do not count.
+shows. Collapsed details, code blocks, tables, headings, quotes, and link addresses do
+not count, and an inline code span counts as one word.
 In a description, only the part Shaka manages counts; text that people or other tools
 add outside it is left alone.
 
@@ -293,7 +294,7 @@ add outside it is left alone.
 - The description also stops at `max_description_words`, however large the change.
 
 When text breaks a limit, nothing reaches GitHub. The command exits with an
-error that quotes each long sentence or paragraph. The agent rewrites the text
+error that quotes up to three long sentences or paragraphs and counts the rest. The agent rewrites the text
 and runs the command again, so you see only a version that passed. The agent
 notes each refusal in the description's collapsed review history, so you can
 tell how often the limits fire.
