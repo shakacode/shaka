@@ -17,6 +17,8 @@ module Shaka
     OUTCOMES = %w[different_provider same_provider same_model].freeze
     SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#add-a-second-reviewer'
     CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
+    # A setup failure's reason can name a file on the reviewer's machine; a public PR must not show it.
+    LOCAL_PATH = %r{(?<![\w./-])(?:~|/)[^\s`'"]*}
     def self.render(content) = new(content).render
 
     def initialize(content)
@@ -91,7 +93,7 @@ module Shaka
 
       reviewer = PublicationText.single_line(attempt['reviewer'], 'fallback reviewer')
       stage = PublicationText.single_line(attempt['failure_stage'], 'fallback failure_stage')
-      reason = PublicationText.single_line(attempt['reason'], 'fallback reason')
+      reason = PublicationText.single_line(attempt['reason'], 'fallback reason').gsub(LOCAL_PATH, '[path]')
       "- `#{reviewer}`: `#{stage}`: #{reason}"
     end
 

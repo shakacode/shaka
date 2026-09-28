@@ -88,6 +88,16 @@ class LocalReviewCommentTest < Minitest::Test
     assert_includes body, '- `xai/grok`: `executable_missing`: grok is not on PATH'
   end
 
+  # Break caught: a setup failure's reason published a workstation path on a public PR.
+  def test_redacts_local_paths_from_fallback_reasons
+    reason = 'No such file or directory @ rb_sysopen - /home/alice/client/notes.md and ~/.codex/x'
+    attempts = [{ 'reviewer' => 'openai/codex', 'failure_stage' => 'setup_failure', 'reason' => reason }]
+    body = render('rounds' => [round], 'fallback' => { 'outcome' => 'same_provider', 'attempts' => attempts })
+
+    assert_includes body, 'rb_sysopen - [path] and [path]'
+    refute_includes body, 'alice'
+  end
+
   def test_a_different_provider_review_shows_no_fallback_notice
     body = render('rounds' => [round], 'fallback' => { 'outcome' => 'different_provider' })
 
