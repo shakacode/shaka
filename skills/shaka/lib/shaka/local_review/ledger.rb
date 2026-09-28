@@ -86,9 +86,6 @@ module Shaka
     # The count check keeps a finding from dropping out between the report and the comment.
     def check_findings!(round, number)
       findings = LocalReviewFinding.list(round['findings'], "round #{number} finding")
-      ids = findings.map(&:id)
-      raise Error, "Round #{number} repeats a finding id." unless ids.uniq == ids
-
       reported = reported_count(round)
       return if findings.size == reported
 

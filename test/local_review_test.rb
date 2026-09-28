@@ -1104,13 +1104,27 @@ class LocalReviewLoopTest < Minitest::Test
     end
   end
 
-  def test_refuses_a_ledger_inside_the_checkout_and_a_repeated_head
+  def test_refuses_any_head_an_earlier_round_reviewed
     in_loop do |head|
       loop_round(head, findings: 0)
       assert_refused(head, 'commit the fix first')
       loop_round(fix_commit, findings: 0)
       git!(@root, 'checkout', '--quiet', head)
       assert_refused(head, 'Round 1 already reviewed')
+    end
+  end
+
+  # Break caught: a head from another branch lacks the fixes the ledger says were made.
+  def test_refuses_a_head_that_does_not_build_on_the_last_round
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      git!(@root, 'checkout', '--quiet', '-b', 'other', @base)
+      assert_refused(fix_commit, 'does not build on')
+    end
+  end
+
+  def test_refuses_a_ledger_inside_the_checkout
+    in_loop do |head|
       @ledger = File.join(@root, 'ledger.json')
       assert_refused(head, 'outside the candidate checkout')
     end

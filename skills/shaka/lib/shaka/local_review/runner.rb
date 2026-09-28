@@ -116,6 +116,16 @@ module Shaka
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
       @ledger.check_next!(base: @options[:base], head:)
+      check_builds_on_last_round!
+    end
+
+    # A head that does not contain the last reviewed one may lack the fixes the ledger records.
+    def check_builds_on_last_round!
+      return unless @ledger.last_head
+
+      capture(git_executable, '-C', root, 'merge-base', '--is-ancestor', @ledger.last_head, head)
+    rescue Shaka::Error
+      raise Shaka::Error, "#{head} does not build on #{@ledger.last_head}, the last reviewed head; use a new ledger."
     end
 
     def record_round(result)

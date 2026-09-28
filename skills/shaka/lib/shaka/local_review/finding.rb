@@ -16,7 +16,11 @@ module Shaka
     attr_reader :id, :summary, :kind, :disposition, :commit, :note
 
     def self.list(value, label)
-      PublicationText.list(value, label).map { |finding| new(finding, label) }
+      findings = PublicationText.list(value, label).map { |finding| new(finding, label) }
+      ids = findings.map(&:id)
+      raise Error, "A #{label} id repeats; give each finding in a round its own id." unless ids.uniq == ids
+
+      findings
     end
 
     def initialize(spec, label)

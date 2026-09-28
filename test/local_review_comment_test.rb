@@ -264,6 +264,12 @@ class LocalReviewDispositionTest < Minitest::Test
     assert_includes error.message, "Round 1's report counts 1 findings; 0 were recorded."
   end
 
+  def test_refuses_a_repeated_finding_id_in_a_round
+    content = { 'rounds' => [round(report: report(findings: 2), findings: [NIT, NIT])] }
+
+    assert_includes assert_raises(Shaka::Error) { render(content) }.message, 'id repeats'
+  end
+
   def test_refuses_fixing_a_nit_and_a_fix_without_its_commit
     [finding('F1', 'nit', 'fixed', commit: FIX), finding('F1', 'defect', 'fixed'),
      finding('F1', 'risk', 'documented', commit: FIX)].each do |bad|
