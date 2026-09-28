@@ -258,11 +258,18 @@ IDs. Recovery-note session links follow their separate [publication rule](delive
 
 ## PR execution provenance
 
-The required `provenance` object records task source, workflow version, and
-requested, recommended, and active model/effort. `task_source` is `description`,
-`issue`, or `pull_request`; missing route metadata is `UNKNOWN`. The initial prompt
-is excluded. The renderer adds the public alias from `SHAKA_MACHINE_ALIAS`, or
-`UNKNOWN`; it never falls back to a hostname.
+The required `provenance` object records task source and requested, recommended,
+and active model/effort. `task_source` is `description`, `issue`, or `pull_request`;
+missing route metadata is `UNKNOWN`. The initial prompt is excluded. The renderer
+adds the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`; it never falls back
+to a hostname.
+
+The renderer also fills the workflow version, because every commit between releases
+shares one version number. It appends the commit the helper runs from, such as
+`0.1.0.pre.1-d2654cedfe52975917112c450ebbd7e1bb75afc2`. That commit is the revision
+the installer recorded, or the HEAD of a checkout the skill runs from directly.
+`-modified` follows it when the skill's files differ from that commit, and `-unknown`
+replaces it when no commit can be found.
 
 Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.
