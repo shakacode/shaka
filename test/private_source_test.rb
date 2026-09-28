@@ -347,6 +347,14 @@ class PrivateSourceWorktreeTest < Minitest::Test
     end
   end
 
+  def test_broken_candidate_head_fails_closed
+    with_private_repository do |root, ref|
+      branch = Open3.capture2('git', '-C', root, 'symbolic-ref', 'HEAD').first.strip
+      File.write(File.join(root, '.git', branch), '0' * ref.length)
+      assert_raises(Shaka::Error) { report(root, ref) }
+    end
+  end
+
   private
 
   def assert_linked(root, ref, parent)
