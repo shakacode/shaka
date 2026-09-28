@@ -3,11 +3,11 @@
 This is an operational reference used by the installed Shaka skill in any
 repository. Read it when the workflow calls for planning, communication, PR
 publication, or resuming unfinished work. Shaka contributor instructions live in
-[contributor documentation](../../../contributing/README.md).
+[contributor documentation](https://github.com/shakacode/shaka/blob/main/contributing/README.md).
 
 Follow the installed Shaka workflow for execution order. Use this reference when
 planning a task, splitting PRs, writing delivery updates, or recovering unfinished
-work. For the product introduction, see [working with Shaka](../../../docs/working-with-shaka.md).
+work. For the product introduction, see [working with Shaka](https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md).
 
 ## When the agent asks questions
 
@@ -118,7 +118,7 @@ When false, publish `UNKNOWN` for both Workspace and Thread. The publishing comm
 does not read this setting; check the content before submitting it. Retain the fields and
 public owner alias. The publisher does not enforce this setting; the agent must.
 A repository where even the owner alias is sensitive should not publish these notes.
-See [configuration](../../../docs/settings.md#wipinclude_locations).
+See [configuration](https://github.com/shakacode/shaka/blob/main/docs/settings.md#wipinclude_locations).
 
 **Resume as the original owner:** read the live note before writing. If it names
 another owner or tag, preserve local work without pushing, report the transfer,

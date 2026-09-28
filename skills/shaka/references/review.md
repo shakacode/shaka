@@ -23,9 +23,9 @@ when appropriate; a green job alone is not a completed review.
 
 ## Waiting for CI reviews
 
-Read the [CI review waiting setting](../../../docs/settings.md#reviewci_review_wait)
-from the trusted default-branch contract. That shared reference owns the values,
-default, and waiting rules; use it when deciding which reports must complete.
+Read the [CI review waiting setting](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewci_review_wait)
+from the trusted default-branch contract. The public guide explains the setting;
+the installed workflow and trusted seam govern if that guide changes.
 Pass the trusted SHA to `merge --ref`; use `--ci-review-wait MODE` only
 for a recorded task override.
 

@@ -8,7 +8,7 @@ is safe to delete, and missing or stale entries must not block `shaka seam check
 
 Use the catalog to identify duplicate prefixes and repositories whose settings
 need comparison. It reports duplicates; it does not enforce uniqueness or update
-repository policy. See the [product guide](../../../docs/repository-catalog.md).
+repository policy. See the [product guide](https://github.com/shakacode/shaka/blob/main/docs/repository-catalog.md).
 
 ## Location
 
@@ -41,7 +41,7 @@ For each registered root, refresh reads `origin` for identity and canonical URL,
 then loads the trusted default-branch seam from `origin/HEAD`, falling back to
 `origin/main` or `origin/master` when that symbolic ref is missing. It does not trust
 a candidate working tree. The effective prefix is the seam `repo_prefix` when
-present, otherwise the [documented fallback](../../../docs/settings.md#repo_prefix).
+present, otherwise the [documented fallback](https://github.com/shakacode/shaka/blob/main/docs/settings.md#repo_prefix).
 
 Stdout and `catalog.json` use the same object:
 

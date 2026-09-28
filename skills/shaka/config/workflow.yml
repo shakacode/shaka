@@ -219,9 +219,9 @@ phases:
         on desktop and mobile, adding a short video when interaction or timing matters. Inspect each capture
         for the intended state. After a later commit that changes runtime behavior, repeat the
         manual pass and refresh the affected captures.
-        Captures complement tests; they do not replace them. Read the packaged
-        [verification guide](<{{package_root}}/docs/pr-verification.md>) when deciding what evidence a
-        change needs.
+        Captures complement tests; they do not replace them. Read the current public
+        [verification guide](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md) for examples when deciding what evidence a
+        change needs. Follow this installed workflow if the current public guide differs.
     done_when: >-
       The change is committed, validation passed on that exact head, a UI change was used by
       hand and captured on that head, and the local adversarial review ran with its
@@ -414,8 +414,9 @@ phases:
         reviewer history in details. Link the current review result from the PR summary and
         final response.
       - Read `review.ci_review_wait` from `shaka seam check --ref`, never from candidate YAML.
-        Its [shared reference](<{{package_root}}/docs/settings.md#reviewci_review_wait>)
-        defines the default and waiting rules. A task override may increase the wait, but cannot
+        The [current public guide](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewci_review_wait)
+        explains the setting; this installed workflow and the trusted seam govern if the guide
+        differs. A task override may increase the wait, but cannot
         lower the trusted setting. Pass `merge --ref` from intake and add
         `--ci-review-wait MODE` only for a recorded task override.
       - With `ci_review_wait: none`, do not wait for `review.ci_review_jobs`.
