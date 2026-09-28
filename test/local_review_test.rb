@@ -272,16 +272,6 @@ class LocalReviewProviderFailureTest < Minitest::Test
     end
   end
 
-  def test_model_option_for_codex_is_a_setup_failure_not_silently_ignored
-    with_repository do |root, base, head, bin|
-      output, _error, status = run_review(root, base, head, bin, model: 'requested-model')
-      refute_predicate status, :success?
-      result = JSON.parse(output)
-      assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), '--model is unsupported for openai/codex'
-    end
-  end
-
   # Break caught: an unset MODEL variable launches claude --model "" and reads as a CLI failure.
   def test_empty_claude_model_is_a_setup_failure
     with_repository do |root, base, head, bin|
@@ -290,16 +280,6 @@ class LocalReviewProviderFailureTest < Minitest::Test
       result = JSON.parse(output)
       assert_equal 'setup_failure', result.fetch('failure_stage')
       assert_includes result.fetch('reason'), '--model must name a model'
-    end
-  end
-
-  def test_explicit_codex_effort_is_rejected_before_launch
-    with_repository do |root, base, head, bin|
-      output, _error, status = run_review(root, base, head, bin, effort: 'medium')
-      refute_predicate status, :success?
-      result = JSON.parse(output)
-      assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), '--effort is unsupported for openai/codex'
     end
   end
 
@@ -323,6 +303,48 @@ class LocalReviewProviderFailureTest < Minitest::Test
     assert_equal 'cli_failure', result.fetch('failure_stage')
     assert_equal 'requires_cause_review', result.fetch('skip_evidence')
     assert_includes File.read(result.fetch('diagnostic_path')), 'invalid-model'
+  end
+end
+
+# Codex runs with the user's configuration ignored, so the review names its model and effort.
+class LocalReviewCodexChoicesTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  # Break caught: a Codex review silently runs the CLI's built-in default model, because the
+  # ignored user config also drops the reviewer's own model choice.
+  def test_codex_run_passes_the_requested_model_and_effort_and_records_them
+    with_repository do |root, base, head, bin|
+      trace = File.join(root, 'codex-invocation.json')
+      fake_codex(bin, head, effort: 'medium')
+      output, error, status = run_review(root, base, head, bin, env: { 'REVIEW_TRACE' => trace },
+                                                                model: 'gpt-6-sol', effort: 'medium')
+      result = assert_successful_review(output, error, status, head, 'openai/codex')
+      assert_codex_choices(result, trace, 'gpt-6-sol', 'medium')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  # Break caught: an effort name becomes Codex configuration text, so anything but a bare level
+  # could set other configuration keys.
+  def test_codex_effort_must_be_a_bare_level_name
+    with_repository do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin, effort: 'high" sandbox_mode="danger-full-access')
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), '--effort must be a level name'
+    end
+  end
+
+  private
+
+  def assert_codex_choices(result, trace, model, effort)
+    args = JSON.parse(File.read(trace)).fetch('args')
+    assert_equal model, args.fetch(args.index('-m') + 1)
+    assert_includes args.each_cons(2).to_a, ['-c', %(model_reasoning_effort="#{effort}")]
+    assert_includes args, '--ignore-user-config'
+    assert_equal model, result.fetch('requested_model')
   end
 end
 
@@ -1090,7 +1112,7 @@ module LocalReviewFixture
 
   private
 
-  def fake_codex(bin, head)
+  def fake_codex(bin, head, effort: 'UNKNOWN')
     write_executable(bin, 'codex', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
@@ -1098,7 +1120,7 @@ module LocalReviewFixture
       File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read, cwd: Dir.pwd }))
       report = ARGV.fetch(ARGV.index('-o') + 1)
       isolated = ARGV.each_cons(2).include?(['-c', 'skills.include_instructions=false'])
-      review = isolated ? "no findings\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n" : 'Done / In progress / Blocked / Next'
+      review = isolated ? "no findings\\nREVIEWED #{head} BY openai/codex EFFORT #{effort} FINDINGS 0\\n" : 'Done / In progress / Blocked / Next'
       File.write(report, review)
     RUBY
   end
@@ -1205,6 +1227,7 @@ LocalReviewCodexTest.include(LocalReviewContextAssertion)
 LocalReviewCodexUsageTest.include(LocalReviewFixture)
 LocalReviewOtherCliTest.include(LocalReviewFixture)
 LocalReviewProviderFailureTest.include(LocalReviewFixture)
+LocalReviewCodexChoicesTest.include(LocalReviewFixture)
 LocalReviewClaudeProtocolTest.include(LocalReviewFixture)
 LocalReviewEvidenceTest.include(LocalReviewFixture)
 LocalReviewStdoutFailureTest.include(LocalReviewFixture)

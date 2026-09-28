@@ -113,6 +113,9 @@ module Shaka
     include LocalReviewCriteria
     include LocalReviewPromptFile
 
+    # Codex receives the effort inside configuration text, and every reviewer repeats it in the attestation.
+    EFFORT = /\A[a-z][a-z-]*\z/
+
     def initialize(options) = @options = options
 
     def run
@@ -189,8 +192,7 @@ module Shaka
 
     def validate_model!
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
-      raise Shaka::Error, '--model is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:model]
-      raise Shaka::Error, '--effort is unsupported for openai/codex' if reviewer == 'openai/codex' && @options[:effort]
+      raise Shaka::Error, '--effort must be a level name' if @options[:effort] && !@options[:effort].match?(EFFORT)
     end
 
     def validate_checkout!

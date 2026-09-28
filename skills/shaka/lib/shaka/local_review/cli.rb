@@ -80,12 +80,18 @@ module Shaka
 
       args = [executable, 'exec', '-s', 'read-only', '--ignore-rules', '--ignore-user-config',
               '-c', 'skills.include_instructions=false',
-              '--skip-git-repo-check', '--json', '-o', @report, '-']
+              '--skip-git-repo-check', '--json', '-o', @report, *codex_choices, '-']
       stdout, stderr, status = reviewer_process(args, prompt)
       return process_failure('codex exec', status, stderr, stdout) unless status&.success?
 
       @options[:usage] = CodexUsage.announced_session(stdout) if @options.fetch(:capture_usage, true)
       invalid('codex exec returned no review', stdout) unless File.size?(@report)
+    end
+
+    # --ignore-user-config also drops the user's model, so the CLI default runs unless one is named.
+    def codex_choices
+      [*(['-m', @options[:model]] if @options[:model]),
+       *(['-c', %(model_reasoning_effort="#{effort}")] if effort)]
     end
 
     def claude(prompt)

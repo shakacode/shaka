@@ -75,11 +75,17 @@ checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI 
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.
 
-Codex 0.154.0:
+Codex 0.157.1:
 
 ```bash
-shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex --criteria-ref "$TRUSTED"
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex \
+  --model gpt-6-sol --effort medium --criteria-ref "$TRUSTED"
 ```
+
+Name the model and effort. The ignored user configuration also drops the user's own model
+choice, so an unnamed model runs the CLI's built-in default, which has been `gpt-6-astra` at
+five times Sol's token price. `gpt-6-sol` at `medium` is the default choice for adversarial review;
+use a larger model or effort only when the change's risk calls for it.
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
@@ -88,9 +94,9 @@ whose local diagnostic establishes a real reviewer outage. A bad argument, setup
 report-validation failure does not qualify.
 
 The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config
--c skills.include_instructions=false --skip-git-repo-check --json -o REPORT -` from its neutral directory.
-Codex has no documented effort flag in this invocation, so the helper rejects `--effort` for
-`openai/codex` and records `EFFORT UNKNOWN` rather than asserting an unverified setting.
+-c skills.include_instructions=false --skip-git-repo-check --json -o REPORT -` from its neutral directory,
+adding `-m MODEL` for `--model` and `-c model_reasoning_effort="EFFORT"` for `--effort`. An effort
+must be a lowercase level name such as `medium`; without one the report records `EFFORT UNKNOWN`.
 `-s read-only` confines it, the ignore flags skip user/project rules and config, and the skills
 setting keeps installed skill descriptions out of the reviewer's instructions to prevent
 description-based routing to an unrelated installed skill. The report is created outside the checkout.
