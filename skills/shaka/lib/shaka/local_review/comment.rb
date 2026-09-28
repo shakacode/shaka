@@ -30,8 +30,6 @@ module Shaka
       @fallback = content['fallback']
     end
 
-    def head = @rounds.last.head
-
     def render
       blocks = [TITLE, table, *fallback_notice, *@rounds.map(&:details), @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"

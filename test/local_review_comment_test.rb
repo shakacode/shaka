@@ -111,7 +111,7 @@ class LocalReviewCommentTest < Minitest::Test
   end
 end
 
-# Publishes the rendered comment under one stable key, only for the head the PR carries.
+# Publishes the rendered comment under one stable key.
 class LocalReviewPublishTest < Minitest::Test
   include LocalReviewCommentFixture
 
@@ -119,12 +119,9 @@ class LocalReviewPublishTest < Minitest::Test
   class FakeGitHub
     attr_reader :replies
 
-    def initialize(head)
-      @head = head
+    def initialize
       @replies = []
     end
-
-    def snapshot = { 'headRefOid' => @head }
 
     def reply(body:, key:)
       @replies << [key, body]
@@ -144,22 +141,12 @@ class LocalReviewPublishTest < Minitest::Test
   end
 
   def test_publishes_under_the_local_review_key
-    github = FakeGitHub.new(HEAD)
+    github = FakeGitHub.new
 
     status, = publish(github, 'rounds' => [round])
 
     assert_equal 0, status
     assert_equal ['local-adversarial-review'], github.replies.map(&:first)
     assert github.replies.first.last.start_with?('# Local Adversarial Review')
-  end
-
-  def test_refuses_when_the_pull_request_head_differs_from_the_last_round
-    github = FakeGitHub.new(EARLIER)
-
-    status, _out, err = publish(github, 'rounds' => [round])
-
-    assert_equal 1, status
-    assert_empty github.replies
-    assert_includes err, "PR head is #{EARLIER}"
   end
 end

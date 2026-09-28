@@ -66,20 +66,14 @@ module Shaka
       0
     end
 
-    # The comment is review evidence for the head it attests, so it may only describe the pushed head.
+    # `merge` decides whether the attested commit covers the PR head, so publishing does not.
     def publish(parser)
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.length == 2 && @options[:content_file]
 
       comment = LocalReviewComment.new(JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8')))
       github = @github || GitHub.new(*@arguments)
-      require_pushed_head!(github, comment.head)
       puts JSON.pretty_generate(github.reply(body: comment.render, key: LocalReviewComment::KEY))
       0
-    end
-
-    def require_pushed_head!(github, head)
-      pushed = github.snapshot.fetch('headRefOid')
-      raise Shaka::Error, "The last review round covers #{head}, but the PR head is #{pushed}." unless pushed == head
     end
 
     def publish_parser
