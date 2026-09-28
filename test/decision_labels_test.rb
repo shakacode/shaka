@@ -54,15 +54,12 @@ class DecisionLabelsTest < Minitest::Test
     assert_equal [LABELS_PATH, 'POST', JSON.generate(labels: ['awaiting-answer'])], requests.last
   end
 
-  def test_a_non_empty_list_refuses_to_replace_awaiting_merge_approval
-    github = client(snapshot_response, labels_response('awaiting-merge-approval'))
-    error = assert_raises(Shaka::Error) do
-      Shaka::DecisionLabels.sync(github, { 'decisions' => ['Keep the label?'] })
-    end
+  def test_omitting_decisions_is_refused_when_the_body_already_asks
+    body = "## Decisions for the maintainer\n\n- Which base?\n"
+    error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
 
-    assert_includes error.message, 'awaiting-merge-approval'
-    writes = requests.reject { |path, method, _input| method == 'GET' || path.include?('graphql') }
-    assert_empty writes
+    assert_includes error.message, 'empty list'
+    assert_empty @calls
   end
 
   def test_an_empty_list_removes_only_awaiting_answer

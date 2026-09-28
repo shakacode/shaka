@@ -434,22 +434,25 @@ rules:
   - id: decisions-awaiting-answer
     phase: always
     quote: >-
-      publish `description` with a non-empty `decisions` list before the turn ends. That
-      publication renders Decisions for the maintainer and applies `awaiting-answer`. Publish
-      `decisions` as an empty list once the answer is in: the section is omitted and
-      `awaiting-answer` is removed. Do not publish a non-empty `decisions` list while the PR
-      waits for merge approval
+      That publication renders Decisions for the maintainer and applies `awaiting-answer`.
+      Publish `decisions` as an empty list once the answer is in: the section is omitted and
+      `awaiting-answer` is removed.
     enforced_by: code
     detector: >-
-      `description` renders `decisions` and `DecisionLabels.guard` checks that the pull request
-      is open and not `awaiting-merge-approval` before the body is written, so a blank decision
-      or a blocked wait never changes labels. After that write succeeds, `DecisionLabels.sync`
-      applies `awaiting-answer` for a non-empty list and removes only that label for an empty
-      list. A missing `decisions` key leaves labels alone. A label write that fails after the
-      body is stored leaves the section in place until the command is retried. Nothing requires
-      the agent to publish the list before a turn ends. `attention --state answer` can still set
-      the label with no section, and `attention --state resume`, `merge`, or `none` can remove
-      `awaiting-answer` while the Decisions section remains until the next description.
+      `description` renders a non-empty `decisions` list as that section. After the body is
+      stored, `DecisionLabels.sync` applies `awaiting-answer` or, for an empty list, removes only
+      that label. Omitting the key while the body already asks for decisions is refused before
+      the write. A label write that fails after the body is stored leaves the section until the
+      command is retried. Nothing requires the agent to publish the list before a turn ends.
+      `attention --state answer` can still set the label with no section, and `--state resume`,
+      `merge`, or `none` can remove it while the section remains.
+  - id: decisions-not-during-merge
+    phase: always
+    quote: Do not publish a non-empty `decisions` list while the PR waits for merge approval
+    enforced_by: code
+    detector: >-
+      `DecisionLabels.guard` refuses a non-empty list while `awaiting-merge-approval` is set,
+      before the body is written.
   - id: stop-time-handoff
     phase: always
     quote: Settle each owed item and run it again before stopping.

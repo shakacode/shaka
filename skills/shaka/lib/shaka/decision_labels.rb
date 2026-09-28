@@ -2,12 +2,16 @@
 
 require_relative 'attention'
 require_relative 'error'
+require_relative 'publication_sections'
 
 module Shaka
   # Keeps awaiting-answer aligned with the description's decisions list.
   class DecisionLabels
-    def self.guard(github, content)
+    def self.guard(github, content, existing_body = nil)
       decisions = list(content)
+      if decisions.nil? && existing_body.to_s.include?("## #{PublicationSections::DECISIONS_HEADING}")
+        raise Error, 'Pass decisions or an empty list; the pull request already asks for decisions.'
+      end
       return if decisions.nil? || decisions.empty?
       raise Error, 'Pull request is not open.' unless github.snapshot['state'] == 'OPEN'
 

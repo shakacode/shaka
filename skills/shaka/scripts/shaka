@@ -264,7 +264,7 @@ begin
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
                  rendered = Shaka::Publication.description(carried)
-                 Shaka::DecisionLabels.guard(github, carried)
+                 Shaka::DecisionLabels.guard(github, carried, pull['body'])
                  rendered
                end
                attention = Shaka::DecisionLabels.sync(github, carried)

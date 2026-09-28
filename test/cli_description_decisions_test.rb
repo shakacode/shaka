@@ -17,7 +17,7 @@ class CliDescriptionDecisionsTest < Minitest::Test
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        output, error, status = run_description(dir, root:, ref: true)
+        output, error, status = run_description(dir, root:)
 
         assert_predicate status, :success?, error
         assert_includes File.read(File.join(dir, 'published.md')), '## Decisions for the maintainer'
@@ -31,7 +31,7 @@ class CliDescriptionDecisionsTest < Minitest::Test
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        _output, error, status = run_description(dir, root:, ref: true, env: { 'PR_STATE' => 'CLOSED' })
+        _output, error, status = run_description(dir, root:, env: { 'PR_STATE' => 'CLOSED' })
 
         refute_predicate status, :success?
         assert_includes error, 'not open'
@@ -46,7 +46,7 @@ class CliDescriptionDecisionsTest < Minitest::Test
       commit(root)
       Dir.mktmpdir do |dir|
         env = { 'PR_LABEL' => 'awaiting-merge-approval' }
-        _output, error, status = run_description(dir, root:, ref: true, env:)
+        _output, error, status = run_description(dir, root:, env:)
 
         refute_predicate status, :success?
         assert_includes error, 'awaiting-merge-approval'
@@ -59,7 +59,7 @@ class CliDescriptionDecisionsTest < Minitest::Test
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        _output, error, status = run_description(dir, root:, ref: true, decisions: ['  '])
+        _output, error, status = run_description(dir, root:, decisions: ['  '])
 
         refute_predicate status, :success?
         assert_includes error, 'decision'
@@ -69,11 +69,25 @@ class CliDescriptionDecisionsTest < Minitest::Test
     end
   end
 
+  def test_description_refuses_to_drop_decisions_that_are_already_published
+    body = "## Decisions for the maintainer\n\n- Which base?\n"
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, decisions: false, env: { 'EXISTING_BODY' => body })
+
+        refute_predicate status, :success?
+        assert_includes error, 'empty list'
+        refute_path_exists File.join(dir, 'published.md')
+      end
+    end
+  end
+
   def test_description_without_decisions_does_not_touch_labels
     with_repository do |root|
       commit(root)
       Dir.mktmpdir do |dir|
-        _output, error, status = run_description(dir, root:, ref: true, decisions: false)
+        _output, error, status = run_description(dir, root:, decisions: false)
 
         assert_predicate status, :success?, error
         log = File.read(File.join(dir, 'gh-log'))
@@ -85,13 +99,12 @@ class CliDescriptionDecisionsTest < Minitest::Test
 
   private
 
-  def run_description(dir, root:, ref:, env: {}, decisions: true)
+  def run_description(dir, root:, env: {}, decisions: true)
     @decisions = decisions == true ? ['Which base?'] : decisions
     write_fake_commands(dir)
     content = File.join(dir, 'content.json')
     File.write(content, JSON.generate(description_content))
     options = ['--root', root, '--content-file', content, '--ref', fixture_ref(root)]
-    options.delete('--ref') unless ref
     Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }.merge(env),
                    COMMAND, 'description', 'owner/repo', '1', *options)
   end
@@ -117,7 +130,8 @@ DESCRIPTION_GH = <<~'RUBY'
       File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
       puts JSON.generate(request)
     else
-      puts JSON.generate('body' => '', 'head' => { 'repo' => { 'full_name' => 'owner/repo' } },
+      puts JSON.generate('body' => ENV.fetch('EXISTING_BODY', ''),
+                         'head' => { 'repo' => { 'full_name' => 'owner/repo' } },
                          'base' => { 'repo' => { 'full_name' => 'owner/repo' } })
     end
   when 'markdown' then puts JSON.generate('<table></table>' * 10)
