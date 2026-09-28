@@ -182,6 +182,7 @@ class LocalReviewPublishTest < Minitest::Test
     assert_equal 0, status
     assert_equal ['local-adversarial-review'], github.replies.map(&:first)
     assert github.replies.first.last.start_with?('# Local Adversarial Review')
+    assert_includes github.replies.first.last, "| 1 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
   end
 
   # Break caught: a report's unclosed fence hid the closing details and the attestation, yet merge

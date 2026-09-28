@@ -22,8 +22,13 @@ module Shaka
     LOCAL_PATH = %r{(?<![\w./-])(?:~|/).*}m
     def self.render(content) = new(content).render
 
-    def initialize(content)
+    # With the pull request's `repository`, each reviewed commit links to GitHub.
+    def initialize(content, repository: nil)
       raise Error, 'Local review content must be an object.' unless content.is_a?(Hash)
+      raise Error, 'Expected a GitHub repository in OWNER/REPO form.' unless
+        repository.nil? || repository.match?(%r{\A[\w-]+/[\w.-]+\z})
+
+      @repository = repository
 
       rounds = PublicationText.list(content['rounds'], 'rounds')
       raise Error, 'Local review content needs at least one round.' if rounds.empty?
@@ -61,7 +66,7 @@ module Shaka
     end
 
     def table
-      rows = @rounds.map { |round| line(round.cells) }
+      rows = @rounds.map { |round| line(round.cells(@repository)) }
       [line(COLUMNS), line(['---'] * COLUMNS.size), *rows].join("\n")
     end
 
@@ -115,9 +120,12 @@ module Shaka
         @report = read_report
       end
 
-      def cells
+      # Code spans are never auto-linked, so the commit needs an explicit link to be clickable.
+      def cells(repository = nil)
         effort, findings = @report.match(CLOSING).captures
-        [@number.to_s, "`#{@head[0, 7]}`", @reviewer, optional('model'), effort, prompt, findings,
+        commit = "`#{@head[0, 7]}`"
+        commit = "[#{commit}](https://github.com/#{repository}/commit/#{@head})" if repository
+        [@number.to_s, commit, @reviewer, optional('model'), effort, prompt, findings,
          optional('tokens'), optional('cost')]
       end
 

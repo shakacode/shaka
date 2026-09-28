@@ -70,7 +70,8 @@ module Shaka
     def publish(parser)
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.length == 2 && @options[:content_file]
 
-      comment = LocalReviewComment.new(JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8')))
+      content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
+      comment = LocalReviewComment.new(content, repository: @arguments.first)
       github = @github || GitHub.new(*@arguments)
       body = comment.render
       comment.check_rendering!(github.markdown(body))
