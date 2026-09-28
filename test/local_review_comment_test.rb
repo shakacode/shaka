@@ -115,11 +115,19 @@ class LocalReviewPublishTest < Minitest::Test
 
   ATTESTATION = "REVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 1".freeze
   # GitHub's markdown API output for a well-formed one-round comment, trimmed to what the check reads.
-  RENDERED = "<h1>Local Adversarial Review</h1>\n<details>\n<summary>Round 1</summary>\n<p>ok</p>\n" \
+  SUMMARY = '<summary>Round 1 · aaaaaaa · openai/codex · effort UNKNOWN · 1 finding</summary>'
+  RENDERED = "<h1>Local Adversarial Review</h1>\n<details>\n#{SUMMARY}\n<p>ok</p>\n" \
              "<p>#{ATTESTATION}</p>\n</details>\n<p>#{ATTESTATION}</p>".freeze
   # What GitHub returned when a report opened a four-backtick fence and closed it with three.
   SWALLOWED = "<details>\n<summary>Round 1</summary>\n<pre><code>code\n```\n\n#{ATTESTATION}\n\n" \
               "&lt;/details&gt;\n\n#{ATTESTATION}\n</code></pre></details>".freeze
+
+  # What GitHub returned when round 1's report opened a fence that round 2's report closed, then
+  # supplied a balanced replacement disclosure: tag counts and the last line both still look right.
+  CROSSED = "<details>\n<summary>Round 1 · bbbbbbb · openai/codex · effort UNKNOWN · 1 finding</summary>\n" \
+            "<pre><code>\n&lt;/details&gt;\n\n&lt;details&gt;\n&lt;summary&gt;Round 2 · aaaaaaa&lt;/summary&gt;\n" \
+            "</code></pre>\n</details>\n<details>\n<summary>Fake</summary>\n<p>x</p>\n</details>\n" \
+            "<p>#{ATTESTATION}</p>".freeze
 
   # Records the reply instead of calling GitHub, and renders Markdown as told.
   class FakeGitHub
@@ -171,5 +179,15 @@ class LocalReviewPublishTest < Minitest::Test
       assert_empty github.replies
       assert_includes err, 'leaves its markup open'
     end
+  end
+
+  # Break caught: a fence spanning two reports replaced the boundary between them with its own tags.
+  def test_refuses_when_a_report_replaces_the_next_rounds_disclosure
+    github = FakeGitHub.new(CROSSED)
+
+    status, = publish(github, 'rounds' => [round(EARLIER), round])
+
+    assert_equal 1, status
+    assert_empty github.replies
   end
 end

@@ -38,13 +38,23 @@ module Shaka
     def check_rendering!(html)
       closing = %r{<p\b[^>]*>#{Regexp.escape(CGI.escapeHTML(@rounds.last.attestation))}</p>\s*\z}
       disclosures = [html.scan(/<details\b/).size, html.scan('</details>').size]
-      return if html.match?(closing) && disclosures == [@rounds.size] * 2
+      return if html.match?(closing) && disclosures == [@rounds.size] * 2 && summaries_in_order?(html)
 
       raise Error, 'A review report leaves its markup open or adds disclosure tags, so GitHub would not show ' \
                    'each round collapsed with the attestation last. Fix the report and publish again.'
     end
 
     private
+
+    # A fence opened in one report and closed in the next hides the boundary between them, including
+    # the next round's own summary; balanced tags the reports supply cannot stand in for it.
+    def summaries_in_order?(html)
+      offset = 0
+      @rounds.all? do |round|
+        found = html.index("<summary>#{round.summary}</summary>", offset)
+        offset = found + 1 if found
+      end
+    end
 
     def table
       rows = @rounds.map { |round| line(round.cells) }
@@ -106,13 +116,14 @@ module Shaka
          optional('tokens'), optional('cost')]
       end
 
-      def details
+      def summary
         effort, findings = @report.match(CLOSING).captures
         noun = findings == '1' ? 'finding' : 'findings'
-        summary = PublicationText.summary_text("Round #{@number} · #{@head[0, 7]} · #{@reviewer} · " \
-                                               "effort #{effort} · #{findings} #{noun}", 'round summary')
-        "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n</details>"
+        PublicationText.summary_text("Round #{@number} · #{@head[0, 7]} · #{@reviewer} · " \
+                                     "effort #{effort} · #{findings} #{noun}", 'round summary')
       end
+
+      def details = "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n</details>"
 
       def attestation = @report.strip.lines.last.strip
 
