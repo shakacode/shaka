@@ -158,15 +158,14 @@ module Shaka
         return if cells.all? { |cell| cell.match?(/\A:?-+:?\z/) }
         return if indexes.each_value.any? { |index| cells[index].nil? }
 
-        { commit: unescape(cells[indexes['Commit']]), reviewer: unescape(cells[indexes['Reviewer']]),
-          model: unescape(cells[indexes['Model']]) }
+        { commit: cells[indexes['Commit']], reviewer: cells[indexes['Reviewer']],
+          model: cells[indexes['Model']] }
       end
 
       def table_rows
         @body.each_line.filter_map { |row| split_cells(row.rstrip) }
       end
 
-      # `\|` is one cell's escaped pipe. A trailing escaped pipe stays inside the last cell.
       def split_cells(row)
         return unless row.start_with?('|') && row.end_with?('|')
 

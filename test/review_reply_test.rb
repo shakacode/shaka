@@ -32,7 +32,6 @@ end
 class ReviewReplyTest < Minitest::Test
   include ReviewReplyFixture
 
-  HEAD = 'a' * 40
   OTHER = 'b' * 40
   URL = 'https://github.com/shakacode/shaka/pull/284#issuecomment-5860923804'
   HOSTED = 'https://github.com/shakacode/shaka/pull/284#issuecomment-5860935743'
@@ -97,7 +96,7 @@ class ReviewReplyTest < Minitest::Test
     assert_includes error.message, 'comment URL'
   end
 
-  def test_refuses_a_comment_that_is_not_on_this_pull_request
+  def test_refuses_a_review_comment_that_is_not_listed
     error = assert_raises(Shaka::Error) { compose({ 'reviews' => [URL] }, comments: []) }
 
     assert_includes error.message, 'not found'
