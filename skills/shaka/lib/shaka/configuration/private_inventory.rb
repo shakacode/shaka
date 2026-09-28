@@ -12,6 +12,10 @@ module Shaka
       Result = Data.define(:entries, :blockers, :unsafe)
 
       def self.private_path?(root:, path:)
+        return true if path == Paths::DIRECTORY
+        return true if path.casecmp?(Paths::DIRECTORY) &&
+                       File.identical?(File.join(root, path), File.join(root, Paths::DIRECTORY))
+
         prefix = path.split('/').first(2).join('/')
         return true if prefix == DIRECTORY
 

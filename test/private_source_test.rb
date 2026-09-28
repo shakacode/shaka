@@ -365,6 +365,13 @@ class PrivateSourceBoundaryTest < Minitest::Test
     end
   end
 
+  def test_tracked_submodule_at_agents_ancestor_conflicts
+    with_private_repository do |root, ref|
+      system('git', '-C', root, 'update-index', '--add', '--cacheinfo', '160000', ref, '.agents', exception: true)
+      assert_equal 'conflicting', report(root, ref).status
+    end
+  end
+
   def test_case_alias_for_tracked_private_tree_conflicts
     with_private_repository do |root, ref|
       lower = File.join(root, '.agents/shaka')
