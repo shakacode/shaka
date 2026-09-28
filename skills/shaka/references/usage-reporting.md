@@ -9,7 +9,8 @@ shaka usage --commit FULL_COMMIT_SHA --contribution implementation
 Include the helper's output in the PR, or in the final response when there is no
 PR. **Native** figures come from the host's records. **Estimated** figures apply a
 rate card to those records. `UNKNOWN` means the records do not establish a value;
-it never means zero.
+it never means zero. An estimate marked `(partial)` prices only the responses that
+could be priced; the report names how many were left out and why.
 
 ## Select the work being reported
 

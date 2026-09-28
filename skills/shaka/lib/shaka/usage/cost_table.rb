@@ -29,9 +29,14 @@ module Shaka
     def estimate_rows(columns)
       rows = []
       if credits_row?(columns)
-        rows << line(['Credits estimate', *columns.map { |column| show(column[:credits], 'credits') }])
+        rows << line(['Credits estimate', *columns.map { |column| shown(column, :credits, 'credits') }])
       end
-      rows << line(['USD estimate', *columns.map { |column| show(column[:api], '$') }])
+      rows << line(['USD estimate', *columns.map { |column| shown(column, :api, '$') }])
+    end
+
+    def shown(column, key, unit)
+      amount = show(column[key], unit)
+      column[:"#{key}_partial"] ? "#{amount} (partial)" : amount
     end
 
     def cost_headers(columns)
