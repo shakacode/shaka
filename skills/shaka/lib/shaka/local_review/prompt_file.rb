@@ -34,8 +34,14 @@ module Shaka
       agent = reviewer_settings(trusted_review || {})
       return unless agent
 
-      { model: RepositoryConfig::ReviewSchema::MODEL, effort: RepositoryConfig::ReviewSchema::EFFORT }
-        .each { |option, key| @options[option] ||= agent[key] if agent.key?(key) }
+      schema = RepositoryConfig::ReviewSchema
+      { model: schema::MODEL, effort: schema::EFFORT }.each do |option, key|
+        next unless agent.key?(key)
+        # This read skips the schema, so a YAML number must fail here as setup, not crash later.
+        raise Shaka::Error, "review.local_review_agents #{key} must be text" unless agent[key].is_a?(String)
+
+        @options[option] ||= agent[key]
+      end
     end
 
     def trusted_prompt_text

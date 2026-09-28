@@ -213,8 +213,9 @@ Claude uses its CLI default model at medium effort. The review report records
 the effort it ran.
 
 Both settings are optional. A task can still ask for a different model or effort,
-which wins for that review. Shaka reads them from the default branch, so a PR
-cannot pick the model that reviews it. When a provider retires a named model, that
+which wins for that review. The review helper reads them from the trusted
+default-branch commit the agent passes as `--criteria-ref`, so a PR cannot pick
+the model that reviews it; without that commit, the settings are not applied. When a provider retires a named model, that
 reviewer's CLI fails until you update the entry. An effort is a lowercase level
 name such as `low`, `medium`, or `high`; the reviewer CLI decides which levels it
 accepts.

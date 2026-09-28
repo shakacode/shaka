@@ -58,6 +58,18 @@ class ReviewAgentSettingsTest < Minitest::Test
     end
   end
 
+  # Break caught: a number in the trusted settings crashes the runner instead of reporting setup failure.
+  def test_a_non_text_trusted_setting_is_a_setup_failure
+    with_repository(codex_agent('effort' => 3)) do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'effort must be text'
+    end
+  end
+
   # Break caught: a PR picks the model that reviews it by editing its own seam.
   def test_candidate_settings_do_not_choose_the_reviewer_model
     with_repository do |root, base, _head, bin|
