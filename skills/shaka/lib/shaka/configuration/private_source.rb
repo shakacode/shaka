@@ -20,7 +20,8 @@ module Shaka
         { 'mode' => mode, 'grants_policy' => grants_policy?, 'grants_merge_authority' => grants_merge_authority?,
           'root' => root,
           'common_git_dir' => common_git_dir, 'ref' => ref, 'trusted_source' => trusted_source,
-          'status' => status, 'inventory' => inventory, 'blockers' => blockers }
+          'status' => status, 'inventory' => inventory.map { |entry| entry.transform_keys(&:to_s) },
+          'blockers' => blockers }
       end
 
       def inspect = "#<#{self.class} mode=#{mode} status=#{status}>"
@@ -40,7 +41,7 @@ module Shaka
         verify_worktree!
         sha = resolved_ref
         trusted = Layout.commit(root: @root, sha:, allow_missing: true)
-        indexed = git('ls-files', '--cached', '-z').split("\0")
+        indexed = indexed_paths
         committed = committed_paths
         inventory = PrivateInventory.new(root: @root, committed:).scan
         @blockers.concat(inventory.blockers)
@@ -51,7 +52,8 @@ module Shaka
 
       private
 
-      def committed_paths = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split("\0")
+      def indexed_paths = git('ls-files', '--cached', '-z').b.split("\0".b)
+      def committed_paths = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').b.split("\0".b)
 
       def resolved_ref
         raise Error, 'Private source ref must be an immutable commit SHA' unless
@@ -126,7 +128,7 @@ module Shaka
         inspect_optional_pair(config)
         inspect_prompt_dependencies(config, committed)
         config
-      rescue Error => e
+      rescue Error, SystemCallError => e
         @blockers << e.message
         nil
       end

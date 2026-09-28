@@ -490,3 +490,40 @@ class PrivateSourceSymlinkChainTest < Minitest::Test
     commit_file(root, first, 'first link') if first
   end
 end
+
+class PrivateSourceInputTest < Minitest::Test
+  include PrivateSourceFixture
+
+  def test_result_hash_uses_string_keys_for_inventory_entries
+    with_private_repository do |root, ref|
+      result = report(root, ref)
+      assert_equal '.agents/shaka', result.to_h.dig('inventory', 0, 'path')
+      refute result.to_h.fetch('inventory').first.key?(:path)
+    end
+  end
+
+  def test_unreadable_config_is_reported_as_partial
+    with_private_repository do |root, ref|
+      path = File.join(root, '.agents/shaka/config.yml')
+      File.chmod(0, path)
+      expected = File.readable?(path) ? 'complete' : 'partial'
+      assert_equal expected, report(root, ref).status
+    ensure
+      File.chmod(0o644, path)
+    end
+  end
+
+  def test_unrelated_non_utf8_git_path_does_not_abort_inventory
+    with_private_repository do |root, ref|
+      resolver = Class.new(Shaka::Configuration::PrivateSource) do
+        private
+
+        def git(*args)
+          output = super
+          %w[ls-files ls-tree].include?(args.first) ? output.b + "odd-\xFF\0".b : output
+        end
+      end
+      assert_equal 'complete', resolver.new(root:, ref:).resolve.status
+    end
+  end
+end
