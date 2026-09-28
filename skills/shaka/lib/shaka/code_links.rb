@@ -10,8 +10,11 @@ module Shaka
   # more than one line refuses publication instead of guessing.
   class CodeLinks
     # Fenced blocks and code spans show Markdown literally, so a link example there stays as
-    # written; matching them first leaves only prose references to resolve.
-    CODE = /^[ \t]*(?<fence>(?<mark>[`~])\k<mark>{2,}).*?^[ \t]*\k<fence>\k<mark>*[ \t]*$|(?<ticks>`+).*?(?<!`)\k<ticks>(?!`)/m
+    # written; matching them first leaves only prose references to resolve. Fences inside
+    # block quotes or lists are not recognized.
+    FENCE = /^[ \t]*(?<fence>(?<mark>[`~])\k<mark>{2,}).*?^[ \t]*\k<fence>\k<mark>*[ \t]*$/m
+    SPAN = /(?<ticks>`+).*?(?<!`)\k<ticks>(?!`)/m
+    CODE = Regexp.union(FENCE, SPAN)
     REFERENCE = /\]\(code:(?<name>[A-Za-z0-9_.-]+)\)/
     TOKEN = Regexp.union(CODE, REFERENCE)
 
