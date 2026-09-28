@@ -431,6 +431,22 @@ rules:
     note: >-
       `attention` does not read the merge preference, so it labels a PR in Auto mode as readily
       as in Ask mode.
+  - id: decisions-awaiting-answer
+    phase: always
+    quote: >-
+      publish `description` with a non-empty `decisions` list before the turn ends. That
+      publication renders Decisions for the maintainer and applies `awaiting-answer`. Publish
+      `decisions` as an empty list once the answer is in: the section is omitted and
+      `awaiting-answer` is removed. Do not publish a non-empty `decisions` list while the PR
+      waits for merge approval
+    enforced_by: code
+    detector: >-
+      `description` renders `decisions` as Decisions for the maintainer. `DecisionLabels.guard`
+      refuses a non-empty list while `awaiting-merge-approval` is set, and `DecisionLabels.sync`
+      applies `awaiting-answer` for a non-empty list and removes only that label for an empty
+      list. A missing `decisions` key leaves labels alone. Nothing requires the agent to publish
+      the list before a turn ends, and `attention --state answer` can still set the label with
+      no section.
   - id: stop-time-handoff
     phase: always
     quote: Settle each owed item and run it again before stopping.

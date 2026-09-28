@@ -3,6 +3,7 @@
 require 'uri'
 require_relative 'error'
 require_relative 'provenance'
+require_relative 'publication_sections'
 require_relative 'usage/usage_records'
 require_relative 'wip_details'
 
@@ -197,12 +198,7 @@ module Shaka
 
     private
 
-    def sections
-      PublicationText.list(@content['sections'], 'sections').map do |section|
-        heading = PublicationText.single_line(section['heading'], 'section heading')
-        "## #{heading}\n\n#{PublicationText.required(section['body'], "section #{heading}")}"
-      end
-    end
+    def sections = PublicationSections.render(@content)
 
     def top_links = PublicationLinks.top(@content)
 
