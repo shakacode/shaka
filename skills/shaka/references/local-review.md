@@ -158,7 +158,45 @@ the model's own output reports it. Check `--help` before relying on any of these
 
 A local review is **UNVERIFIED** until the owner publishes its report, including that closing
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
-tests, and publishes a concise summary tied to the reviewed commit. Record available native
+tests, then publishes the review after pushing:
+
+```bash
+shaka review publish OWNER/REPO NUMBER --content-file PATH
+```
+
+The content JSON lists `rounds`. Copy each round's `head`, `reviewer`, `report`,
+`prompt_source`, and `criteria_ref` from its `shaka review run` result.
+Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
+`cost` out unless the host reports a priced route: never estimate a dollar figure for a
+subscription session. When `shaka reviewer` did not return `different_provider`, add
+`fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
+`reviewer`, `failure_stage`, and `reason` from its `shaka review run` result. Leave
+`attempts` empty when selection tried no other reviewer. The helper replaces each `reason`
+from its first absolute or home-directory path onward with `[path]`, so a setup failure does
+not publish a local file location.
+
+```json
+{
+  "rounds": [
+    { "head": "SHA", "reviewer": "openai/codex", "report": "/tmp/shaka-review-x.md",
+      "prompt_source": "Shaka default", "criteria_ref": "TRUSTED_SHA",
+      "model": "gpt-5.5", "tokens": "41,200" }
+  ],
+  "fallback": { "outcome": "same_provider", "attempts": [
+    { "reviewer": "xai/grok", "failure_stage": "executable_missing", "reason": "grok is not on PATH" }
+  ] }
+}
+```
+
+The helper checks that each report closes with the attestation for its round. Reports are
+published verbatim, so before posting it asks GitHub to render the comment and refuses when an
+unclosed code fence or a stray disclosure tag in a report would hide the attestation. The
+check cannot stop two reports that together imitate a round's layout, for example a reviewer
+steered by the PR it reads. The attestation and the summary table stay authoritative, because
+the helper writes both itself. It renders a `Local Adversarial Review`
+comment: a summary table, any reviewer fallback notice, each report collapsed, and the last
+round's attestation as the final line, where `merge` reads it. Publishing again replaces
+that comment rather than adding another. Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
 reviewer's source; missing evidence is UNKNOWN. Do not publish raw sessions or private
 context. A recovery

@@ -63,14 +63,22 @@ module Shaka
 
     # A reviewer's own file wins over the repository-wide one.
     def configured_prompt_path(review)
-      agents = Array(review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS]).grep(Hash)
-      agent = agents.find { |entry| entry.values_at(*ReviewerSelection::IDENTITY).join('/').downcase == reviewer }
       prompt_file = RepositoryConfig::ReviewSchema::PROMPT_FILE
-      path = agent&.key?(prompt_file) ? agent[prompt_file] : review[prompt_file]
+      agent = reviewer_settings(review)
+      owner, path = agent&.key?(prompt_file) ? ["#{reviewer} ", agent[prompt_file]] : ['review.', review[prompt_file]]
       return if path.nil?
       raise Shaka::Error, "review #{prompt_file} must be a repository path" unless path.is_a?(String)
 
+      @prompt_source = "#{owner}#{prompt_file} #{path}"
       path
     end
+
+    def reviewer_settings(review)
+      agents = Array(review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS]).grep(Hash)
+      agents.find { |entry| entry.values_at(*ReviewerSelection::IDENTITY).join('/').downcase == reviewer }
+    end
+
+    # Names the instructions the reviewer received, for the published review summary.
+    def prompt_source = @prompt_source || 'Shaka default'
   end
 end

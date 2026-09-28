@@ -197,6 +197,21 @@ Configured CI review jobs have separate waiting rules under
 [`review.ci_review_wait`](#reviewci_review_wait).
 See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).
 
+### Add a second reviewer
+
+A review from the provider that wrote the change shares its blind spots. When the
+published review shows a **Reviewer fallback** notice, no listed reviewer from another
+provider could run on that machine. Install one of the listed CLIs and sign in once
+with the account that should pay for reviews:
+
+- Codex: install the `codex` CLI, then run `codex login`.
+- Claude Code: install the `claude` CLI, then run `claude` and sign in. Keep the
+  normal sign-in; Shaka does not use `--bare`, which ignores it.
+- Grok: install the `grok` CLI and sign in as its setup describes.
+
+Then list that provider in `local_review_agents`. The next review picks it, and the
+published review names it in its summary table instead of the fallback notice.
+
 ## `review.prompt_file`
 
 **Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**

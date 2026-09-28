@@ -388,7 +388,7 @@ class LocalReviewEvidenceTest < Minitest::Test
       output, error, status = run_review(root, base, head, bin,
                                          criteria_ref: base, env: { 'REVIEW_TRACE' => trace })
       result = assert_successful_review(output, error, status, head, 'openai/codex')
-      assert_criteria_prompt(trace, base)
+      assert_criteria_prompt(trace, base, result)
     ensure
       cleanup_artifacts(result)
     end
@@ -416,7 +416,8 @@ class LocalReviewEvidenceTest < Minitest::Test
 
   private
 
-  def assert_criteria_prompt(trace, base)
+  def assert_criteria_prompt(trace, base, result)
+    assert_equal base, result.fetch('criteria_ref')
     prompt = JSON.parse(File.read(trace)).fetch('prompt')
     assert_includes prompt, "FROM #{base}:AGENTS.md"
     assert_includes prompt, 'Trusted test criteria'

@@ -206,8 +206,9 @@ module Shaka
       return incomplete('Reviewer returned no matching review attestation', path) unless
         LocalReviewEvidence.valid?(text, head: head, reviewer: reviewer, effort: effort)
 
-      { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer,
-        'report' => path, 'usage' => @options[:usage] }.compact
+      { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer, 'report' => path,
+        'prompt_source' => prompt_source, 'criteria_ref' => (@options[:criteria_ref] if @criteria_supplied),
+        'usage' => @options[:usage] }.compact
     end
 
     def review_prompt

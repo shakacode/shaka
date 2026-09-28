@@ -407,7 +407,8 @@ phases:
         head-bound report, and returns `completed` or a staged `not_completed` result. A fresh
         host-model review uses `review check --head SHA --reviewer ID --report PATH`, whose
         `reported` result does not claim verified CLI execution. A local review is
-        UNVERIFIED until you publish its report, with its closing attestation line, to the PR. See
+        UNVERIFIED until you publish it with `review publish OWNER/REPO NUMBER --content-file PATH`,
+        which renders the Local Adversarial Review comment and keeps the attestation line last. See
         [invoke a reviewer locally](<{{package_root}}/skills/shaka/references/local-review.md>).
       - Independent review for this task is satisfied by a published local
         `REVIEWED SHA BY PROVIDER/FAMILY` attestation, or by a verified report from `review.ci_review_jobs`,

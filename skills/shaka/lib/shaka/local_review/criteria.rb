@@ -9,7 +9,9 @@ module Shaka
       ref = @options[:criteria_ref]
       return '' unless ref
 
-      applicable_criteria(ref).map do |path|
+      paths = applicable_criteria(ref)
+      @criteria_supplied = paths.any?
+      paths.map do |path|
         source = capture(git_executable, '-C', root, 'show', "#{ref}:#{path}")
         label = "TRUSTED CRITERIA #{marker}"
         "--- BEGIN #{label} FROM #{ref}:#{path} ---\n#{source}\n--- END #{label} ---\n\n"
