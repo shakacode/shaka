@@ -46,47 +46,13 @@ configuration, or interval metadata produce `UNKNOWN`.
 
 ## Keep earlier reports when work changes hands
 
-Paste each report whole into the description's usage details. Hidden markers at
-its first and last lines record the host, the commits, the contribution, the
-interval, and digests of the source IDs and of the response IDs whose counters
-are readable. They do not publish the IDs or local paths.
-
-When `description` republishes a PR, it keeps each earlier report from the
-managed region unless the new reports, in any usage section, cover its work.
-Carried reports join the first usage section. Only a pull request whose head
-branch is in the base repository carries reports, because anyone who can edit its
-description already has write access. A fork's author can edit its description,
-so a fork's reports are never carried.
-
-- A new report can cover an earlier one only when it has the same host and
-  contribution, names every commit the earlier report named, and read at least
-  one token counter for every response it selected. An integration
-  snapshot therefore never erases an implementation report, and a republish that
-  adds the squash SHA still replaces.
-- Such new reports cover an earlier report when together they hold every
-  response it counted. A partial overlap keeps both reports, so they may share
-  some responses. The identity records which responses had readable counters,
-  not which fields, because readers legitimately leave some fields `UNKNOWN`. A
-  refresh in which a response keeps only some of its counters can therefore
-  replace a report with more known totals.
-- A Claude `-p` result uses its session ID as the response ID, so two print runs
-  resumed into one session look like one response, and the later report replaces
-  the earlier one. `shaka review run` starts a fresh session for each review.
-- A new report without response IDs, such as one from a source that became
-  unreadable, never replaces a report that has them.
-- When the earlier report lacks response IDs, a new report covers it when they
-  share a source and their intervals overlap or either interval is `UNKNOWN`.
-
-A switch from Claude Code to Codex and back therefore keeps all three
-contributions, and a refreshed `--all-turns` snapshot replaces the earlier
-snapshots of the same session.
-
-The collapsed summary lists each report's USD estimate and adds no total, because
-the reports may be partial or shared. The command drops a carried report whose
-markers or `<details>` tags were edited out of shape, including one that lost its
-end marker or uses any tag form other than lowercase `<details>`. It prints how
-many reports it retained, replaced, and dropped, and refuses a description longer
-than GitHub's 65,536-character limit.
+Paste each report whole into the description's usage details; hidden markers at
+its first and last lines identify it. When `description` republishes a PR, it
+keeps earlier reports unless a newer report covers the same work, so a handoff
+between hosts or models keeps every contribution. Fork PRs never carry reports.
+The command prints how many reports it retained, replaced, and dropped. A newer
+report that kept only some counters, or print runs resumed into one Claude
+session, can still replace an earlier report.
 
 ## Reading the result
 
