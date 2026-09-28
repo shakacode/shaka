@@ -4,6 +4,7 @@ require 'open3'
 require_relative '../error'
 require_relative '../repository_config'
 require_relative 'layout'
+require_relative 'paths'
 require_relative 'private_inventory'
 
 module Shaka
