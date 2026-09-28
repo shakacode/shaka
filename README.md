@@ -5,6 +5,8 @@
 Shaka guides your agent through implementation, local testing, independent review,
 and delivery on GitHub. You describe the outcome; Shaka supplies the workflow.
 
+[Read the Shaka documentation](https://shaka.shakacode.com/).
+
 Shaka brings back a PR ready to merge, asks for a decision when needed, or merges
 automatically when authorized and required checks and approvals pass.
 
