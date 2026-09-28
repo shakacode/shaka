@@ -280,13 +280,11 @@ Connect your existing tools at these fixed paths:
 
 In the older layout, the same scripts live in `.agents/bin/`.
 
-A wrapper can call an existing command. Finding the root with Git keeps it working
-from any directory and in linked worktrees. For example:
+A wrapper can call an existing command. `seam init` generates each required wrapper;
+it finds the repository root with Git, so it works from any directory and in linked
+worktrees. To run a different command, change only its last line, for example:
 
 ```sh
-#!/bin/sh
-set -eu
-cd "$(git -C "$(dirname -- "$0")" rev-parse --show-toplevel)"
 exec bundle exec rake test "$@"
 ```
 
@@ -294,8 +292,9 @@ exec bundle exec rake test "$@"
 executable also works if its directory, environment, and arguments already match.
 
 Scripts must be executable and resolve within the repository. `.agents` and the
-directories holding the configuration and scripts must be real directories. Removing an optional check already on the
-default branch requires an explicit, maintainer-approved policy change.
+directories holding the configuration and scripts must be real directories.
+Removing an optional check already on the default branch requires an explicit,
+maintainer-approved policy change.
 
 ## `base_branch`
 
