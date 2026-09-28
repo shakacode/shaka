@@ -132,9 +132,9 @@ module Shaka
       end
 
       text = value.strip
-      # Angle brackets stay so the summary can escape them. Only this sequence closes the
+      # Angle brackets stay so the summary can escape them. These two sequences close the
       # comment that commented_table wraps around the cell.
-      raise Error, "Publication usage column #{index + 1} #{key} must not close a comment." if text.include?('-->')
+      raise Error, "Publication usage column #{index + 1} #{key} must not close a comment." if text.match?(/--!?>/)
 
       text.gsub(/[\\|]/) { |character| "\\#{character}" }
     end

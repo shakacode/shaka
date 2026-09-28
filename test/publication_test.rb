@@ -537,13 +537,13 @@ class PublicationUsageTableTest < Minitest::Test
   end
 
   def test_a_column_that_could_close_a_comment_is_refused
-    forged = 'usd--> <img>'
-    error = assert_raises(Shaka::Error) do
-      render(usage: { 'note' => 'n', 'columns' => [COLUMN.merge('usd' => forged)] })
+    ['usd--> <img>', 'x--!>'].each do |forged|
+      error = assert_raises(Shaka::Error) do
+        render(usage: { 'note' => 'n', 'columns' => [COLUMN.merge('usd' => forged)] })
+      end
+      assert_includes error.message, 'must not close a comment'
+      refute_includes error.message, forged
     end
-    assert_includes error.message, 'must not close a comment'
-    refute_includes error.message, '-->'
-    refute_includes error.message, '<img>'
   end
 
   def test_an_unknown_column_field_is_named
