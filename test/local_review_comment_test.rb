@@ -111,10 +111,10 @@ class LocalReviewCommentTest < Minitest::Test
 
   # Break caught: an unclosed fence or comment rendered the closing details and attestation as hidden text.
   def test_refuses_a_report_with_an_unclosed_fence_or_comment
-    ["```ruby\nputs 1\n", "Hidden <!-- note\n"].each do |body|
+    ["```ruby\nputs 1\n", "```text\nputs 1\n```ruby\n", "Hidden <!-- note\n"].each do |body|
       assert_raises(Shaka::Error) { render('rounds' => [round(report: report(body:))]) }
     end
-    closed = report(body: "```ruby\nputs 1\n```\n<!-- note -->\n")
+    closed = report(body: "```ruby\nputs 1\n````  \n~~~\nx\n~~~\n<!-- note -->\n")
     assert_includes render('rounds' => [round(report: closed)]), 'puts 1'
   end
 

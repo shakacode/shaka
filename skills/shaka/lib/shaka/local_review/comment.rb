@@ -18,7 +18,8 @@ module Shaka
     # A report is published verbatim inside <details>; its own disclosure tags would close ours.
     DISCLOSURE_TAG = %r{</?(?:details|summary)\b}i
     # An unclosed fence or HTML comment would swallow everything after it, attestation included.
-    CLOSED_FENCE = /^ {0,3}(`{3,}|~{3,}).*?^ {0,3}\1/m
+    # A closing fence repeats at least the opening run and carries nothing else on its line.
+    CLOSED_FENCE = /^ {0,3}(?:(`{3,})[^\n]*\n.*?^ {0,3}\1`*|(~{3,})[^\n]*\n.*?^ {0,3}\2~*)[ \t]*$/m
     FENCE = /^ {0,3}(?:```|~~~)/
     OPEN_COMMENT = /<!--(?!.*-->)/m
 
