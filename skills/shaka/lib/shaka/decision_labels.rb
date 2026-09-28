@@ -9,6 +9,7 @@ module Shaka
     def self.guard(github, content)
       decisions = list(content)
       return if decisions.nil? || decisions.empty?
+      raise Error, 'Pull request is not open.' unless github.snapshot['state'] == 'OPEN'
 
       Attention.new(github).refuse_merge_wait
     end

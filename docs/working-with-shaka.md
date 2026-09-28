@@ -46,8 +46,10 @@ it creates it: `awaiting-answer` in amber, `awaiting-merge-approval` in purple, 
 label that already exists. Creating a label needs write access; with triage access
 the agent can still apply labels someone else created.
 
-A description that includes those questions applies `awaiting-answer`. An empty decisions
-list removes that section and that label, and leaves the other two labels in place.
+A description that includes those questions applies `awaiting-answer` and removes
+`awaiting-resume`. It refuses to publish them while `awaiting-merge-approval` is set.
+An empty decisions list removes that section and `awaiting-answer`, and leaves the other
+two labels in place.
 
 To approve, tell the agent in chat. An **Approve** review on GitHub also counts
 when it comes from a login you named to the agent as a merge approver; GitHub does

@@ -19,6 +19,16 @@ class DecisionLabelsTest < Minitest::Test
     @calls.map { |argv, input| [argv[2], argv[argv.index('--method') + 1], input] }
   end
 
+  def test_guard_refuses_a_closed_pull_request_before_a_label_write
+    github = client(snapshot_response(state: 'CLOSED'))
+    error = assert_raises(Shaka::Error) do
+      Shaka::DecisionLabels.guard(github, { 'decisions' => ['Which base?'] })
+    end
+
+    assert_includes error.message, 'not open'
+    assert_equal 1, @calls.length
+  end
+
   def test_a_missing_decisions_key_leaves_labels_alone
     result = Shaka::DecisionLabels.sync(client, {})
 
