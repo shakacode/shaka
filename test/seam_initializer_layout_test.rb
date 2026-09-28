@@ -239,6 +239,19 @@ class SeamInitializerExistingLayoutTest < Minitest::Test
     end
   end
 
+  # Break: a root Git cannot resolve gets wrappers that fail, or that run the outer project.
+  def test_roots_that_are_not_a_git_worktree_root_are_refused
+    with_repository do |root|
+      FileUtils.rm_rf(File.join(root, '.git'))
+      assert_refused_without_writes(root, 'Cannot identify repository root')
+    end
+    with_repository do |outer|
+      root = FileUtils.mkdir_p(File.join(outer, 'nested')).first
+      FileUtils.cp_r(File.join(outer, 'bin'), root)
+      assert_refused_without_writes(root, '--root must be the Git worktree root')
+    end
+  end
+
   def test_permission_denial_writes_nothing_and_a_retry_succeeds
     skip 'chmod denial needs a non-root runner' if Process.uid.zero?
 

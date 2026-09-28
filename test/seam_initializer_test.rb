@@ -103,7 +103,9 @@ module SeamInitializerTestHelpers
   def with_noisy_git
     Dir.mktmpdir('shaka-fake-git') do |bin|
       git = File.join(bin, 'git')
-      File.write(git, "#!/bin/sh\nprintf 'main\\n'\nprintf 'warning\\n' >&2\n")
+      real = Open3.capture2('sh', '-c', 'command -v git').first.strip
+      File.write(git, "#!/bin/sh\ncase \"$*\" in *--show-toplevel*) exec #{real} \"$@\" ;; esac\n" \
+                      "printf 'main\\n'\nprintf 'warning\\n' >&2\n")
       File.chmod(0o755, git)
       yield({ 'PATH' => [bin, ENV.fetch('PATH', '')].join(File::PATH_SEPARATOR) })
     end

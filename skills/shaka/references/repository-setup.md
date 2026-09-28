@@ -100,9 +100,10 @@ The initializer writes `.agents/shaka/config.yml`, the three required wrappers i
 `.agents/shaka/bin/`, and the `.agents/shaka.md` pointer. The YAML holds `version`,
 `review`, `merge`, the default `branches.name`, and `wip.include_locations: true`.
 Each wrapper finds the repository root with Git, so it runs the same from any
-directory and from a linked worktree. The initializer refuses Shaka command names
-left in `.agents/bin/` without their configuration, leaves other `.agents/bin/`
-tools alone, and checks write access before writing anything. It defaults to Ask. Add `--merge-preference auto`
+directory and from a linked worktree; `--root` must therefore be the Git worktree
+root. The initializer refuses Shaka command names left in `.agents/bin/` without
+their configuration, leaves other `.agents/bin/` tools alone, and checks write
+access before writing anything. It defaults to Ask. Add `--merge-preference auto`
 only with established authority, `--base-branch` for another base, and
 `--required-check` for seam-declared checks. Add optional reviewer entries and
 `repo_prefix` by editing the YAML afterward. Set `wip.include_locations` to
