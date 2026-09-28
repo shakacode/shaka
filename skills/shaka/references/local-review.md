@@ -152,15 +152,15 @@ command plus `--file` of its stop-hook jsonl. Pass its report to
 `shaka review check --head "$HEAD" --reviewer xai/grok --report PATH`; the result is `reported`,
 not a claim that the Grok CLI launched. Parent-agent Cursor records exclude subagents.
 
-The Codex flags were exercised on a prior local review rather than read off `--help`. The
+The Codex flags were exercised on local reviews rather than read off `--help`; the model and effort flags were confirmed in Codex session logs. The
 Claude and Grok flags come from each CLI's `--help`. The helper's neutral directory prevents
 the reviewer host from loading candidate `AGENTS.md` and similar instructions; the candidate
 diff remains untrusted review data. Restrict execution for untrusted contributions under
 [what the helpers protect](delivery.md#what-the-helpers-protect). Codex's
 `--ignore-user-config` drops config-defined MCP servers, Grok manages them through
-`grok mcp`, and Claude's `--strict-mcp-config` without a config file loads none. Codex
-exposes no reasoning-effort flag on `exec review`, so record its effort as UNKNOWN unless
-the model's own output reports it. Check `--help` before relying on any of these; flags move.
+`grok mcp`, and Claude's `--strict-mcp-config` without a config file loads none. A Codex
+review records the effort passed with `--effort`, or UNKNOWN when none was named. Check `--help`
+before relying on any of these; flags move.
 
 A local review is **UNVERIFIED** until the owner publishes its report, including that closing
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
