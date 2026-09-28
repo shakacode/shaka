@@ -36,7 +36,7 @@ can complete the intended task. See the agent's
 | --- | --- |
 | Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both. |
 | Interaction, animation, or timing | A short recording, with screenshots where they help comparison. |
-| Page load, rendering, bundle size, or what a page loads or how it is cached or streamed | A comparison with the base as control and the change as experiment, from the repository's own benchmark or by default [ShakaPerf](https://github.com/shakacode/shakaperf#usage), and its verdict: improvement, wash, regression, or ambiguous. Any regression, and an ambiguous result or wash for a speed-up, go back for a fix or for the maintainer to accept. Without a comparison, the PR says the speed was not measured. |
+| Page load, rendering, bundle size, or what a page loads or how it is cached or streamed | A comparison with the base as control and the change as experiment, from the repository's own benchmark or by default [ShakaPerf](https://github.com/shakacode/shakaperf#usage), and its verdict: improvement, wash, regression, or ambiguous. Any regression or ambiguous result, and a wash for a speed-up, go back for a fix or for the maintainer to accept. Without a comparison, the PR says the speed was not measured. |
 | Backend or command-line behavior | Focused tests and concise before/after output. |
 
 Inspect screenshots for the intended state, not an error page, blank screen, or
