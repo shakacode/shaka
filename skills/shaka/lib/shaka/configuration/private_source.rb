@@ -5,6 +5,7 @@ require_relative '../error'
 require_relative '../repository_config'
 require_relative 'layout'
 require_relative 'paths'
+require_relative 'private_git_paths'
 require_relative 'private_inventory'
 
 module Shaka
@@ -52,8 +53,8 @@ module Shaka
 
       private
 
-      def indexed_paths = git('ls-files', '--cached', '-z').b.split("\0".b)
-      def committed_paths = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').b.split("\0".b)
+      def indexed_paths = PrivateGitPaths.parse(git('ls-files', '--cached', '-z'))
+      def committed_paths = PrivateGitPaths.parse(git('ls-tree', '-r', '-z', '--name-only', 'HEAD'))
 
       def resolved_ref
         raise Error, 'Private source ref must be an immutable commit SHA' unless

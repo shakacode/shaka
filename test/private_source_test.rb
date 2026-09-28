@@ -526,4 +526,15 @@ class PrivateSourceInputTest < Minitest::Test
       assert_equal 'complete', resolver.new(root:, ref:).resolve.status
     end
   end
+
+  def test_committed_unicode_prompt_path_matches_git_inventory
+    with_private_repository do |root, ref|
+      path = 'révision.md'
+      File.write(File.join(root, path), 'prompt')
+      policy = config.merge('review' => review_policy('prompt_file' => path))
+      File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(policy))
+      commit_file(root, path, 'unicode prompt')
+      assert_equal 'complete', report(root, ref).status
+    end
+  end
 end
