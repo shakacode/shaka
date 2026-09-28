@@ -171,9 +171,9 @@ Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UN
 subscription session. When `shaka reviewer` did not return `different_provider`, add
 `fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
 `reviewer`, `failure_stage`, and `reason` from its `shaka review run` result. Leave
-`attempts` empty when selection tried no other reviewer. The helper replaces absolute and
-home-directory paths in each `reason` with `[path]`, so a setup failure does not publish a
-local file location.
+`attempts` empty when selection tried no other reviewer. The helper replaces each `reason`
+from its first absolute or home-directory path onward with `[path]`, so a setup failure does
+not publish a local file location.
 
 ```json
 {
