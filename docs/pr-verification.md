@@ -95,9 +95,10 @@ explain any others.
 
 When animation, live data, or a different page structure keeps the captures from
 aligning, or no image comparison tool is available, the agent says why and
-publishes the clearest labeled before-and-after pair instead. A short recording still shows timing and interaction. Check the
-difference image for private data, unrelated screen content, error pages, and
-loading placeholders, the same as its source captures.
+publishes the clearest labeled before-and-after pair instead. A short recording
+still shows timing and interaction. Check the difference image for private data,
+unrelated screen content, error pages, and loading placeholders, the same as its
+source captures.
 
 ## Show whether it is faster or slower
 
