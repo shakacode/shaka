@@ -6,6 +6,7 @@ module Shaka
   # Renders description sections, including the decisions list that owns one heading.
   class PublicationSections
     DECISIONS_HEADING = 'Decisions for the maintainer'
+    MARKER = '<!-- shaka:decisions -->'
 
     def self.render(content)
       listed = PublicationText.list(content['sections'], 'sections')
@@ -18,7 +19,7 @@ module Shaka
       return [] if listed.empty?
 
       lines = listed.map { |item| "- #{PublicationText.single_line(item, 'decision')}" }
-      ["<!-- shaka:decisions -->\n## #{DECISIONS_HEADING}\n\n#{lines.join("\n")}"]
+      ["#{MARKER}\n## #{DECISIONS_HEADING}\n\n#{lines.join("\n")}"]
     end
 
     def self.refuse_heading(sections)

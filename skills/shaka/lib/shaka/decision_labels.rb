@@ -32,7 +32,7 @@ module Shaka
         fenced = !fenced if line.lstrip.start_with?('```', '~~~')
         next false if fenced
 
-        line.strip == '<!-- shaka:decisions -->'
+        line.strip == PublicationSections::MARKER
       end
     end
 

@@ -36,7 +36,7 @@ The agent labels a PR when it stops for you:
 
 | Label | What it waits for |
 | --- | --- |
-| `awaiting-answer` | Your answer to the questions in Decisions for the maintainer |
+| `awaiting-answer` | Your answer. A description with decisions lists the questions |
 | `awaiting-merge-approval` | Your merge or approval of the named commit; set only under **Ask** |
 | `awaiting-resume` | You to resume the agent; it paused with nothing set to wake it |
 
