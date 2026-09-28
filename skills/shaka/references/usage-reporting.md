@@ -9,9 +9,9 @@ shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 `--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
 Copy every column into the description `usage.columns` list and every `record` into
 `usage.records`. Each `record` includes that report's `columns`. The description
-renders one table: USD estimate, then Input, Cached input, Output, Reasoning output,
-and Cache writes, with numeric columns right-aligned. A repeated label gains a
-numeric suffix. Credits stay on each JSON column and in the Markdown report. A
+renders one table: Credits estimate, USD estimate, then Input, Cached input,
+Output, Reasoning output, and Cache writes, with numeric columns right-aligned.
+A repeated label gains a numeric suffix. A
 `details` item whose summary names usage is refused. Each record is also kept as a
 marked block holding that report's table, so a later host still has those figures.
 

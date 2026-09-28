@@ -24,6 +24,12 @@ class UsageFormatTest < Minitest::Test
     JSON.parse(run_report([context('current'), usage('current', 'current', 100)], '--format', 'json'))
   end
 
+  def test_json_with_no_responses_uses_unknown_not_zero
+    column = JSON.parse(run_report([], '--format', 'json')).fetch('columns').fetch(0)
+    assert_equal 'UNKNOWN', column.fetch('input')
+    assert_equal 'UNKNOWN', column.fetch('usd')
+  end
+
   def test_markdown_stays_the_default
     report = run_report([context('current'), usage('current', 'current', 100)])
     assert_includes report, '<!-- shaka:usage '

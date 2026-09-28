@@ -37,6 +37,7 @@ module Shaka
 
     SUMMARY = 'Usage and cost'
     METRICS = [
+      ['credits', 'Credits estimate'],
       ['usd', 'USD estimate'],
       ['input', 'Input'],
       ['cached_input', 'Cached input'],
@@ -44,7 +45,7 @@ module Shaka
       ['reasoning_output', 'Reasoning output'],
       ['cache_writes', 'Cache writes']
     ].freeze
-    COLUMN_KEYS = (%w[label provider model routed effort credits] + METRICS.map(&:first)).freeze
+    COLUMN_KEYS = (%w[label provider model routed effort] + METRICS.map(&:first)).freeze
     REQUIRED = %w[note columns].freeze
     OPTIONAL = %w[records carried].freeze
 

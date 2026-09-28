@@ -515,6 +515,7 @@ class PublicationUsageTableTest < Minitest::Test
   RENDERED = <<~TABLE.chomp
     | Metric | claude-opus-5-5 implementation | claude-opus-5-5 review |
     | --- | ---: | ---: |
+    | Credits estimate | UNKNOWN | UNKNOWN |
     | USD estimate | $3.269110 | $0.308079 |
     | Input | 100 | 6 |
     | Cached input | 7558810 | 96593 |

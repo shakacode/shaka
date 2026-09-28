@@ -386,9 +386,10 @@ phases:
       - Description provenance has exactly nine flat keys: `task_source`, `initial_prompt`,
         `workflow_version`, `requested_model`, `requested_effort`, `recommended_model`,
         `recommended_effort`, `active_model`, and `active_effort`. `initial_prompt` is `EXCLUDED`;
-        the other values use allowlisted text or `UNKNOWN`. The renderer ignores the supplied
-        `workflow_version` and publishes `Shaka::VERSION`, so a commit, the seam version `1`,
-        or a git describe is not what readers see. The renderer adds the public machine
+        the other values use allowlisted text or `UNKNOWN`. The supplied `workflow_version`
+        is still allowlist-checked, then ignored; the renderer publishes `Shaka::VERSION`,
+        so a commit, the seam version `1`, or a git describe is not what readers see.
+        The renderer adds the public machine
         alias from `SHAKA_MACHINE_ALIAS` and keeps the native usage table as the only observed route
         and token record.
     done_when: >-
