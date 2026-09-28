@@ -23,7 +23,7 @@ module LocalReviewCommentFixture
   end
 
   def round(head = HEAD, **changes)
-    { 'head' => head, 'reviewer' => 'openai/codex', 'report_file' => report(head), 'model' => 'gpt-5.5',
+    { 'head' => head, 'reviewer' => 'openai/codex', 'report' => report(head), 'model' => 'gpt-5.5',
       'prompt_source' => 'Shaka default', 'criteria_ref' => TRUSTED,
       'tokens' => '41,200' }.merge(changes.transform_keys(&:to_s))
   end
@@ -88,7 +88,7 @@ class LocalReviewCommentTest < Minitest::Test
   end
 
   def test_refuses_a_report_that_does_not_attest_its_round
-    error = assert_raises(Shaka::Error) { render('rounds' => [round(report_file: report(EARLIER))]) }
+    error = assert_raises(Shaka::Error) { render('rounds' => [round(report: report(EARLIER))]) }
 
     assert_includes error.message, "does not close with REVIEWED #{HEAD}"
   end
@@ -96,10 +96,10 @@ class LocalReviewCommentTest < Minitest::Test
   # A report's own closing tag would end the disclosure early and expose the rest of the comment.
   def test_refuses_disclosure_tags_in_report_prose_but_allows_them_in_code
     quoted = report(body: "Quoted `</details>` safely.\n")
-    assert_includes render('rounds' => [round(report_file: quoted)]), 'Quoted `</details>` safely.'
+    assert_includes render('rounds' => [round(report: quoted)]), 'Quoted `</details>` safely.'
 
     raw = report(body: "Raw </details> tag.\n")
-    assert_raises(Shaka::Error) { render('rounds' => [round(report_file: raw)]) }
+    assert_raises(Shaka::Error) { render('rounds' => [round(report: raw)]) }
   end
 
   # Break caught: with no other provider configured, selection falls back without trying one.

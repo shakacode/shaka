@@ -128,7 +128,7 @@ module Shaka
       end
 
       def read_report
-        path = field('report_file')
+        path = field('report')
         text = File.read(path, encoding: 'UTF-8')
         raise Error, "Round #{@number} report is not UTF-8." unless text.valid_encoding?
         unless LocalReviewEvidence.valid?(text, head: @head, reviewer: @reviewer)

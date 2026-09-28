@@ -164,8 +164,8 @@ tests, then publishes the review after pushing:
 shaka review publish OWNER/REPO NUMBER --content-file PATH
 ```
 
-The content JSON lists `rounds`, each with the reviewed `head`, `reviewer`, and `report_file`
-from `shaka review run`, plus the `prompt_source` and `criteria_ref` that command returned.
+The content JSON lists `rounds`. Copy each round's `head`, `reviewer`, `report`,
+`prompt_source`, and `criteria_ref` from its `shaka review run` result.
 Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
 `cost` out unless the host reports a priced route: never estimate a dollar figure for a
 subscription session. When `shaka reviewer` did not return `different_provider`, add
@@ -176,7 +176,7 @@ subscription session. When `shaka reviewer` did not return `different_provider`,
 ```json
 {
   "rounds": [
-    { "head": "SHA", "reviewer": "openai/codex", "report_file": "/tmp/shaka-review-x.md",
+    { "head": "SHA", "reviewer": "openai/codex", "report": "/tmp/shaka-review-x.md",
       "prompt_source": "Shaka default", "criteria_ref": "TRUSTED_SHA",
       "model": "gpt-5.5", "tokens": "41,200" }
   ],
