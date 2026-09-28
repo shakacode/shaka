@@ -8,23 +8,23 @@ require_relative 'private_inventory'
 
 module Shaka
   module Configuration
+    # Local report; candidate_config is deliberately omitted from its printable form.
+    PrivateSourceResult = Data.define(:root, :common_git_dir, :ref, :trusted_source, :status, :inventory,
+                                      :blockers, :candidate_config) do
+      def mode = 'private/local'
+      def grants_policy? = false
+      def grants_merge_authority? = false
+
+      def to_h
+        { 'mode' => mode, 'grants_policy' => false, 'grants_merge_authority' => false, 'root' => root,
+          'common_git_dir' => common_git_dir, 'ref' => ref, 'trusted_source' => trusted_source,
+          'status' => status, 'inventory' => inventory, 'blockers' => blockers }
+      end
+    end
+
     # Read-only preflight of private candidate settings in one Git worktree.
     class PrivateSource
-      DIRECTORY = File.dirname(Paths::NEW_CONTRACT)
-
-      Result = Data.define(:root, :common_git_dir, :ref, :trusted_source, :status, :inventory, :blockers,
-                           :candidate_config) do
-        def mode = 'private/local'
-        def grants_policy? = false
-        def grants_merge_authority? = false
-
-        def to_h
-          { 'mode' => mode, 'grants_policy' => false, 'grants_merge_authority' => false, 'root' => root,
-            'common_git_dir' => common_git_dir, 'ref' => ref, 'trusted_source' => trusted_source,
-            'status' => status, 'inventory' => inventory, 'blockers' => blockers }
-        end
-      end
-
+      Result = PrivateSourceResult
       def initialize(root:, ref:)
         @root = File.realpath(root)
         @ref = ref
@@ -36,14 +36,17 @@ module Shaka
         sha = resolved_ref
         trusted = Layout.commit(root: @root, sha:, allow_missing: true)
         tracked = git('ls-files', '--cached', '-z').split("\0")
-        inventory = PrivateInventory.new(root: @root, tracked:).scan
+        committed = committed_paths
+        inventory = PrivateInventory.new(root: @root, tracked: committed).scan
         @blockers.concat(inventory.blockers)
         inspect_conflicts(trusted, tracked, inventory.entries)
-        config = load_candidate(inventory.entries, tracked) unless inventory.unsafe || @conflict
+        config = load_candidate(inventory, committed)
         result(sha, trusted, inventory, config)
       end
 
       private
+
+      def committed_paths = git('ls-tree', '-r', '-z', '--name-only', 'HEAD').split("\0")
 
       def resolved_ref
         valid = @ref.is_a?(String) && @ref.match?(/\A[0-9a-f]{40,64}\z/)
@@ -84,8 +87,9 @@ module Shaka
 
       def inspect_conflicts(trusted, tracked, entries)
         conflict!("#{Paths::CONTRACT} conflicts with private #{Paths::NEW_CONTRACT}") if legacy_collision?(entries)
-        private_tracked = tracked.select { |path| path.start_with?("#{DIRECTORY}/") }
-        conflict!("#{DIRECTORY} contains tracked files: #{private_tracked.join(', ')}") unless private_tracked.empty?
+        private_tracked = tracked.select { |path| path.start_with?("#{PrivateInventory::DIRECTORY}/") }
+        conflict!("#{PrivateInventory::DIRECTORY} contains tracked files: #{private_tracked.join(', ')}") unless
+          private_tracked.empty?
         conflict!("Trusted default branch already has #{trusted.contract}") if trusted && entries.any?
       end
 
@@ -99,7 +103,10 @@ module Shaka
         @conflict = true
       end
 
-      def load_candidate(entries, tracked)
+      def load_candidate(inventory, tracked)
+        return if inventory.unsafe || @conflict
+
+        entries = inventory.entries
         return if entries.empty?
 
         unless entries.any? { |entry| entry[:path] == Paths::NEW_CONTRACT && entry[:type] == 'regular' }
@@ -130,9 +137,9 @@ module Shaka
         RepositoryConfig.prompt_files(review: config.review, opening: config.opening_check).each do |label, path|
           resolved = File.realpath(File.join(@root, path))
           relative = Pathname.new(resolved).relative_path_from(Pathname.new(@root)).to_s
-          next if relative.start_with?("#{DIRECTORY}/") || tracked.include?(relative)
+          next if relative.start_with?("#{PrivateInventory::DIRECTORY}/") || tracked.include?(relative)
 
-          @blockers << "#{label} #{path} is outside #{DIRECTORY} and not tracked"
+          @blockers << "#{label} #{path} is outside #{PrivateInventory::DIRECTORY} and not tracked"
         end
       end
     end

@@ -231,7 +231,16 @@ class PrivateSourceSafetyTest < Minitest::Test
       File.write(File.join(root, 'review.md'), 'private prompt')
       write_review_prompt_policy(root)
       assert_equal 'partial', report(root, ref).status
+    end
+  end
+
+  def test_staged_prompt_needs_a_commit
+    with_private_repository do |root, ref|
+      File.write(File.join(root, 'review.md'), 'private prompt')
+      write_review_prompt_policy(root)
       system('git', '-C', root, 'add', 'review.md', exception: true)
+      assert_equal 'partial', report(root, ref).status
+      system('git', '-C', root, 'commit', '--quiet', '-m', 'review prompt', exception: true)
       assert_equal 'complete', report(root, ref).status
     end
   end
@@ -242,6 +251,10 @@ class PrivateSourceSafetyTest < Minitest::Test
       assert_equal 'partial', report(root, ref).status
     end
   end
+end
+
+class PrivateSourceWorktreeTest < Minitest::Test
+  include PrivateSourceFixture
 
   def test_linked_worktree_uses_its_own_private_tree
     with_git_repository do |root|
