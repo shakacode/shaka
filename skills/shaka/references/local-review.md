@@ -75,20 +75,26 @@ checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI 
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
 is the evidence that the CLI actually ran.
 
-Codex 0.157.1:
+Codex 0.157.1, when the reviewer's trusted `local_review_agents` entry names a model and effort:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex \
   --criteria-ref "$TRUSTED"
 ```
 
-With `--criteria-ref`, the helper takes the model and effort from the reviewer's trusted
-`local_review_agents` entry. Add `--model` or `--effort` only for a task-specific choice, or when
-the entry names none, because a named option replaces the configured one for that review.
+When the entry names neither:
+
+```bash
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex \
+  --model gpt-6-sol --effort medium --criteria-ref "$TRUSTED"
+```
+
+With `--criteria-ref`, the helper takes the model and effort from that entry. A named `--model`
+or `--effort` replaces the configured one for that review, so add one only when the entry leaves
+it out or the task needs a different choice.
 When neither names a model, Codex runs its built-in default; see
 [reviewer model and effort](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewlocal_review_agents)
-for why that costs more. `gpt-6-sol` at `medium` is the default choice for adversarial review,
-so add `--model gpt-6-sol --effort medium` when the entry names no model;
+for why that costs more. `gpt-6-sol` at `medium` is the default choice for adversarial review;
 use a larger model or effort only when the change's risk calls for it.
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
@@ -110,17 +116,23 @@ run `shaka usage --host codex --file USAGE --commit HEAD --contribution review -
 on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
 `codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
 
-Claude Code:
+Claude Code, when the trusted entry names an effort:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude \
   --criteria-ref "$TRUSTED"
 ```
 
+When it names none:
+
+```bash
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude \
+  --effort medium --criteria-ref "$TRUSTED"
+```
+
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
 reviewer and cannot replace `claude -p`. It also is not evidence for `--unavailable`.
 Apply the same failure-cause check before marking `claude` unavailable.
-Add `--effort medium` when the trusted entry names no effort.
 
 The helper runs `claude -p --permission-mode plan --permission-prompts none --restricted
 --safe-mode --strict-mcp-config --effort EFFORT --output-format json -`. It rejects an error,
@@ -140,13 +152,18 @@ routed model. Without it, the CLI's default model runs. Check `--help` before re
 
 Grok 1.0.30:
 
-The Grok reviewer needs a model. Set `MODEL` to one the installed Grok CLI accepts, and
-leave out `--model` when the trusted entry names one. Add `--effort high` when the entry names
-no effort:
+The Grok reviewer needs a model. When the trusted entry names a model and effort:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer xai/grok \
-  --model "$MODEL" --criteria-ref "$TRUSTED"
+  --criteria-ref "$TRUSTED"
+```
+
+When it names neither, set `MODEL` to a model the installed Grok CLI accepts:
+
+```bash
+shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer xai/grok \
+  --model "$MODEL" --effort high --criteria-ref "$TRUSTED"
 ```
 
 The helper runs `grok --prompt-file PROMPT -m MODEL --reasoning-effort high --output-format plain
