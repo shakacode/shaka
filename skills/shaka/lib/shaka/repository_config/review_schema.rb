@@ -15,6 +15,8 @@ module Shaka
       CI_REVIEW_JOBS = 'ci_review_jobs'
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
       PROMPT_FILE = 'prompt_file'
+      MODEL = 'model'
+      EFFORT = 'effort'
       # Codex reads the effort as configuration text, and every reviewer repeats it in the attestation.
       EFFORT_LEVEL = /\A[a-z][a-z-]*\z/
       RENAMED = {
@@ -49,6 +51,12 @@ module Shaka
         return if value.is_a?(String) && value.match?(EFFORT_LEVEL)
 
         raise Error, "#{label} must be a level name such as medium"
+      end
+
+      # The model is passed to the reviewer CLI as one argument.
+      def self.model_name!(value, label)
+        raise Error, "#{label} must be a non-empty string" unless value.is_a?(String) && !value.strip.empty?
+        raise Error, "#{label} must not contain whitespace" if value.match?(/\s/)
       end
 
       # Every prompt file the review section names, repository-wide and per reviewer.
@@ -121,9 +129,11 @@ module Shaka
       def entry!(entry, index)
         label = "review.#{LOCAL_REVIEW_AGENTS}[#{index}]"
         mapping!(entry, label)
-        keys!(entry, IDENTITY, [PROMPT_FILE], label)
+        keys!(entry, IDENTITY, [PROMPT_FILE, MODEL, EFFORT], label)
         IDENTITY.each { |key| component!(entry[key], "#{label}.#{key}") }
         prompt_path!(entry[PROMPT_FILE], "#{label}.#{PROMPT_FILE}") if entry.key?(PROMPT_FILE)
+        self.class.model_name!(entry[MODEL], "#{label}.#{MODEL}") if entry.key?(MODEL)
+        self.class.effort_level!(entry[EFFORT], "#{label}.#{EFFORT}") if entry.key?(EFFORT)
       end
 
       # `shaka reviewer` reads identities as PROVIDER/MODEL_FAMILY and strips each part, so a
