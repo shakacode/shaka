@@ -26,8 +26,9 @@ Keep two roles distinct:
 - An operator creates the repository, configures protection, and grants access.
   Operator credentials stay outside the agent container.
 - A non-admin agent identity gets Write only on its active test repository.
-  In an organization, set its base repository permission to none. In a personal
-  account, use a separate collaborator identity with no other private-repository
+  In an organization, set its base repository permission to none and give it no
+  team or direct grants to other private repositories. In a personal account,
+  use a separate collaborator identity with no other private-repository
   grants. Verify effective access before each run. A reusable public-test
   credential is acceptable if policy permits, but remove and verify removal of
   its temporary repository grant after the run. Do not start another run while
@@ -54,11 +55,12 @@ link for Shaka's walkthrough.
 Before launch, verify the container's non-root/read-only-root setup, disposable
 workspace, trusted Shaka skill outside the candidate checkout, credential
 isolation, permitted network egress, denied off-list destinations, and authenticated
-Write access only to the target repository. Public repositories remain readable;
-private measured cells additionally require denied sibling reads. Do not relax a
-failed gate or substitute a model to keep the run moving. Treat a wrong initial
-failure, unsupported CLI, missing access, or empty
-reference-repair diff as a **harness error**, not a result for the candidate.
+Write access only to the target repository. Public repositories remain readable,
+but even public runs must prove that private-sibling API reads and clones fail.
+Private measured cells additionally require denied reads of every other private cell.
+Do not relax a failed gate or substitute a model to keep the run moving. Treat a
+wrong initial failure, unsupported CLI, missing access, or empty reference-repair
+diff as a **harness error**, not a result for the candidate.
 
 For an Ask delivery, grade the *current* PR head: local validation, the completed
 required hosted check, an independently read-back COMMENT walkthrough bound to
