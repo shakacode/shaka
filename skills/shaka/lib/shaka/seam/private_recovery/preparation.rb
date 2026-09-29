@@ -63,7 +63,7 @@ module Shaka
         entries = inventory_for(current).reject { |entry| entry['type'] == 'directory' }
         return false unless snapshot_entries_match?(entries, expected)
 
-        expected.all? { |relative, content| File.binread(File.join(current, relative)) == content }
+        expected.all? { |relative, content| File.binread(File.join(current, relative)) == content.b }
       end
 
       def snapshot_entries_match?(entries, expected)
@@ -74,7 +74,7 @@ module Shaka
       def matching_installed_file?(tree, entry, expected)
         relative = entry.fetch('path')
         entry['type'] == 'regular' && expected.key?(relative) &&
-          File.binread(File.join(tree, relative)) == expected.fetch(relative) &&
+          File.binread(File.join(tree, relative)) == expected.fetch(relative).b &&
           (entry.fetch('mode') & 0o777) == (relative.start_with?('bin/') ? 0o755 : 0o644)
       end
     end

@@ -113,6 +113,17 @@ class PrivateSetupTest < Minitest::Test
     end
   end
 
+  def test_non_ascii_command_resumes_after_denied_exclusion
+    with_setup do |root, ref|
+      selected = options.merge(test_command: 'bin/probe --label=tëst')
+      assert_raises(Shaka::Error) do
+        with_denied_exclusion { Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected).setup }
+      end
+      result = Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected).setup
+      assert_equal 'complete', result.fetch('status')
+    end
+  end
+
   def test_deferred_ci_wrappers_are_a_pair
     with_setup do |root, ref|
       partial = options.merge(validate_local_command: 'bin/probe')
