@@ -26,6 +26,8 @@ class UsageFormatTest < Minitest::Test
     assert_includes note, 'Rate card:'
     assert_includes note, 'Native usage is PARTIAL.'
     refute_match(/\d+ responses?\./, note)
+    # Break: the JSON note dropped the host caveat the Markdown report prints.
+    assert_includes note, 'Cached input is part of input; reasoning output is part of output.'
   end
 
   def json_report

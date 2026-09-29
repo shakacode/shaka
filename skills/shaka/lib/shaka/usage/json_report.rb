@@ -35,7 +35,8 @@ module Shaka
 
     def json_note(estimate, data, with_count: true)
       scope = with_count ? "#{count}. Scope: #{turn_scope}." : "Scope: #{turn_scope}."
-      [estimate.narrative_for(data), reviewer_coverage.strip, "Native usage is PARTIAL. #{scope}"].join("\n\n")
+      [estimate.narrative_for(data), @source.class::NOTE, reviewer_coverage.strip,
+       "Native usage is PARTIAL. #{scope}"].join("\n\n")
     end
 
     def json_columns(estimate, data)
