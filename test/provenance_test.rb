@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'shaka/provenance'
+require 'shaka/publication/provenance'
 
 class ExecutionProvenanceTest < Minitest::Test
   PUBLIC_PROVENANCE = { 'task_source' => 'description', 'initial_prompt' => 'EXCLUDED',

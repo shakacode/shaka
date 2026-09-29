@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'error'
+require_relative '../error'
 
 module Shaka
   # Renders the WIP Details note as one table, so every host publishes the same fields in the same shape.

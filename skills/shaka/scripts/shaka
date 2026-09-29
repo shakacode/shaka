@@ -10,15 +10,17 @@ require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/claim'
-require_relative '../lib/shaka/deployment_link'
+require_relative '../lib/shaka/decision_labels'
+require_relative '../lib/shaka/publication/deployment_link'
 require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/merge_limits'
 require_relative '../lib/shaka/opening_publication'
-require_relative '../lib/shaka/squash_message'
+require_relative '../lib/shaka/publication/squash_message'
 require_relative '../lib/shaka/prefix'
-require_relative '../lib/shaka/publication'
+require_relative '../lib/shaka/publication/publication'
+require_relative '../lib/shaka/review_reply'
 require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/repos'
 require_relative '../lib/shaka/review_prompt'
@@ -258,18 +260,26 @@ begin
                end)
                described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
                usage_records = nil
+               carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 Shaka::Publication.description(carried)
+                 rendered = Shaka::Publication.description(carried)
+                 Shaka::DecisionLabels.guard(github, carried, pull['body'])
+                 rendered
                end
+               attention = Shaka::DecisionLabels.sync(github, carried)
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
                                                        model: options[:opening_model]).call(described['summary'])
-               published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note)
+               published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note).tap do |result|
+                 result['attention'] = attention if attention
+               end
              end
            when 'reply'
-             github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
-                          key: options.fetch(:key), comment: options[:comment])
+             # A review lookup contacts GitHub, so a missing key fails before that lookup.
+             key = options.fetch(:key)
+             github.reply(body: Shaka::ReviewReply.compose(content(options.fetch(:content_file)), github),
+                          key: key, comment: options[:comment])
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'

@@ -5,6 +5,8 @@
 Shaka guides your agent through implementation, local testing, independent review,
 and delivery on GitHub. You describe the outcome; Shaka supplies the workflow.
 
+[Read the Shaka documentation](https://shaka.shakacode.com/).
+
 Shaka brings back a PR ready to merge, asks for a decision when needed, or merges
 automatically when authorized and required checks and approvals pass.
 
@@ -55,6 +57,9 @@ with simple prompts.
 
 Ruby 3.4 or later, Git, an authenticated [GitHub CLI](https://cli.github.com/), and
 [a coding agent](docs/coding-agents.md) that can load skills and run commands.
+Optional: ImageMagick 7, so agents can add a
+[difference image](docs/pr-verification.md#show-what-changed-between-captures)
+to UI changes.
 Shaka waits for CI checks that GitHub requires or that you list in its settings;
 see [before you start](docs/configure-repository.md#before-you-start).
 

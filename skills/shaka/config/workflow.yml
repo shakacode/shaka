@@ -218,8 +218,13 @@ phases:
       - For UI changes, meaning anything a person sees on screen other than command-line output,
         use the change by hand on the head you will push, and capture before and after screenshots
         on desktop and mobile, adding a short video when interaction or timing matters. Inspect each capture
-        for the intended state. After a later commit that changes runtime behavior, repeat the
-        manual pass and refresh the affected captures.
+        for the intended state. When a before and after pair shows the same route, viewport, scroll
+        position, data, and step at the same size, add a difference image marking the changed
+        pixels as the [difference-image procedure](<{{package_root}}/skills/shaka/references/visual-diff.md>)
+        shows, and label which changes are intended. When the pair cannot align, or no image
+        comparison tool is available, say why and publish the clearest labeled pair instead.
+        After a later commit that changes runtime behavior, repeat the
+        manual pass and refresh the affected captures, including their difference images.
         Captures complement tests; they do not replace them. Read the current public
         [verification guide](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md) for examples when deciding what evidence a
         change needs. Follow this installed workflow if the current public guide differs.
@@ -308,10 +313,10 @@ phases:
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `walkthrough`, required `deployment`, optional `sections`, required `table`,
-        required `provenance`, required `usage` (`note` and `columns` from `shaka usage --format json`),
-        and `wip` while the PR is unfinished. A `details` item whose summary names usage is refused;
-        walkthroughs also require `head`.
+        optional `walkthrough`, required `deployment`, optional `decisions`, optional `sections`,
+        required `table`, required `provenance`, required `usage` (`note` and `columns` from
+        `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
+        whose summary names usage is refused; walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range
@@ -355,7 +360,12 @@ phases:
         `squash-message` posts it as a new comment and deletes this account's earlier one.
         A merge queue takes no message, and `merge` reports that.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
-        answers an inline thread. Mark a settled inline thread resolved with `resolve`.
+        answers an inline thread. When a reply addresses a review, its `reviews` list holds
+        that pull request's comment URLs. The helper writes one opening line per URL from the
+        comment's closing attestation and round ledger. When that attestation is missing, the
+        provider, model, effort, and commit are UNKNOWN. A model or effort the attestation or
+        ledger leaves out, or that is not a plain token, is UNKNOWN. Mark a settled inline
+        thread resolved with `resolve`.
         Do not resolve a thread before this account has replied on it.
         Do not resolve a thread while its concern is open, its body was withheld, or the user asked to leave it open.
         The command refuses a missing thread and a thread that is already resolved.
@@ -571,10 +581,13 @@ phases:
         Ask gates pass is not a pending chat decision.
     done_when: The PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
-  Whenever the task has a PR and stops for a user answer, in any phase, run the saved helper's
-  `attention OWNER/REPO NUMBER --state answer` so GitHub lists it as `awaiting-answer`; run it
-  with `--state none` when work resumes. A wait for merge approval is not an answer: it keeps
-  `awaiting-merge-approval` as Finish describes. When the turn ends with work left and nothing
+  Whenever the task has a PR and stops for a user answer, in any phase, publish `description`
+  with a non-empty `decisions` list before the turn ends. That publication renders
+  Decisions for the maintainer and applies `awaiting-answer`. Publish `decisions` as an empty
+  list once the answer is in: the section is omitted and `awaiting-answer` is removed.
+  Do not publish a non-empty `decisions` list while the PR waits for merge approval: that wait
+  keeps `awaiting-merge-approval` as Finish describes. Run `attention` with `--state none`
+  when work resumes and no decision is still open. When the turn ends with work left and nothing
   will wake this session, such as checks still running under a host monitor that reports only
   failures, a host without background commands, or a planned pause, run it with
   `--state resume` and make WIP Details `Next action` the resume prompt: the host's Shaka

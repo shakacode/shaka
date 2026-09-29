@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require_relative 'error'
-require_relative 'usage/usage_records'
+require_relative '../error'
+require_relative '../usage/usage_records'
+require_relative 'text'
 
 module Shaka
   # Row order and label suffixes for the published usage table.

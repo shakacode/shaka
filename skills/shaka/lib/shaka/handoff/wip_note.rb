@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative '../publishing'
-require_relative '../wip_details'
+require_relative '../publication/publishing'
+require_relative '../publication/wip_details'
 
 module Shaka
   class Handoff

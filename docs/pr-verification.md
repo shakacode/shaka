@@ -34,7 +34,7 @@ can complete the intended task. See the agent's
 
 | Change | Useful evidence |
 | --- | --- |
-| Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both. |
+| Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both, plus a [difference image](#show-what-changed-between-captures) when they align. |
 | Interaction, animation, or timing | A short recording, with screenshots where they help comparison. |
 | Backend or command-line behavior | Focused tests and concise before/after output. |
 
@@ -66,6 +66,39 @@ Label the tested commit and behavior. After code changes, refresh affected
 evidence or explain which part still applies. When a capture cannot be published,
 the PR records why: `uploader_absent` (no attachment route is available),
 `uploader_denied` (the upload was refused), or `upload_failed:` with the error.
+
+## Show what changed between captures
+
+A difference image shows a reviewer where the pixels changed, so they need not
+compare two screenshots by eye. It also exposes a change nobody meant to make,
+such as a shifted footer beside the button the PR restyled.
+
+The two captures have to show the same rendered state: the same route, viewport,
+scroll position, test data, and interaction step, at the same image size. Capture
+a taller viewport instead of scrolling when the change sits below the fold. Make
+one comparison for each view the change affects, usually desktop and mobile.
+
+The agent inspects both captures first, then generates the difference with any
+image tool the project already has, such as ImageMagick, following the agent's
+[difference-image procedure](../skills/shaka/references/visual-diff.md). Unchanged
+pixels fade and changed ones turn red.
+
+Publish the difference beside its source captures in one PR comment, attached the
+same way as other captures. Label the compared revisions, the page and state, the
+viewport, and whether each changed region is intended, for example “Changed pixels,
+pricing page, desktop 1280x800, main 4396e9c to abc1234: new plan card intended,
+footer shift unintended.”
+
+A red region is not a defect by itself. Antialiasing, font rendering, and
+timestamps also change pixels. Say which regions the PR meant to change and
+explain any others.
+
+When animation, live data, or a different page structure keeps the captures from
+aligning, or no image comparison tool is available, the agent says why and
+publishes the clearest labeled before-and-after pair instead. A short recording
+still shows timing and interaction. Check the difference image for private data,
+unrelated screen content, error pages, and loading placeholders, the same as its
+source captures.
 
 ## Show whether it is faster or slower
 

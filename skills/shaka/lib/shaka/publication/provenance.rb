@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative 'error'
-require_relative 'version'
+require_relative '../error'
+require_relative '../version'
 
 module Shaka
   # Renders a small, allowlisted record of route-selection evidence for a public PR.
