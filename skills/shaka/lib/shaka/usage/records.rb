@@ -53,20 +53,26 @@ module Shaka
     def carried(region, body, stats, fresh = nil)
       fresh ||= text_records(body)
       stats['dropped'] += unterminated(region)
-      region.to_enum(:scan, BLOCK).filter_map do
-        text = Regexp.last_match[0]
-        outcome = outcome(text, parse(Regexp.last_match[1]), fresh, body)
+      blocks = parsed_blocks(region)
+      shaped = blocks.filter_map { |text, fields| fields if UsageRecordShape.report_shape?(text) }
+      blocks.filter_map do |text, fields|
+        outcome = outcome(text, fields, fresh, body, shaped)
         stats[outcome] += 1 if outcome
         text if outcome == 'retained'
       end
     end
 
+    def parsed_blocks(region)
+      region.to_enum(:scan, BLOCK).map { [Regexp.last_match[0], parse(Regexp.last_match[1])] }
+    end
+
     # A report already pasted into the new body is neither carried nor counted.
-    def outcome(text, fields, fresh, body)
+    def outcome(text, fields, fresh, body, others = [])
       return 'dropped' unless fields && UsageRecordShape.report_shape?(text)
       return if body.include?(text)
 
-      superseded?(fields, fresh) ? 'replaced' : 'retained'
+      replaced = superseded?(fields, fresh) || UsageRecordCarry.read_nothing_covered?(fields, fresh + others)
+      replaced ? 'replaced' : 'retained'
     end
 
     def unterminated(region) = region.scan(BEGIN_PREFIX).size - region.scan(BLOCK).size

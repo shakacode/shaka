@@ -23,6 +23,17 @@ module Shaka
       [content.merge('usage' => usage.except('carried').merge('carried' => kept.join("\n\n"))), stats]
     end
 
+    # A report that read no source records nothing about its commits. Once a complete report from
+    # the same host measured the same contribution and commits, the empty one only adds noise.
+    def read_nothing_covered?(old, reports)
+      return false unless old['sources'].empty? && old['responses'].empty?
+
+      reports.any? do |new|
+        new['host'] == old['host'] && new['complete'] == true && new['responses'].any? &&
+          UsageRecords.same_attribution?(old, new)
+      end
+    end
+
     TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
     STAMP = /\A(?:UNKNOWN|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)\z/
     CONTRIBUTIONS = %w[implementation review integration shared-planning].freeze

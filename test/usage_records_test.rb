@@ -270,3 +270,29 @@ class UsageRecordsCompletenessTest < Minitest::Test
     assert_includes carried(existing(old), incomplete), 'measured'
   end
 end
+
+# A report that read no source must not outlive a report that measured the same work.
+class UsageRecordsReadNothingTest < Minitest::Test
+  include UsageRecordsFixture
+
+  # Break: PR 307 kept three Cursor reports that read no source beside the Cursor report that measured
+  # those commits, because only the new Claude review was compared with them.
+  def test_a_report_that_read_nothing_gives_way_to_a_carried_one_that_measured_its_work
+    empty = record('cursor', 'read-nothing', sources: [], responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    measured = record('cursor', 'measured', responses: %w[g1], commits: [COMMIT, 'b' * 40])
+    review = record('claude-code', 'review', responses: %w[r1], sources: ['s2'], contribution: 'review')
+    content, stats = Shaka::UsageRecords.carry(described(review), existing(empty, measured))
+    body = content['details'].first['body']
+    refute_includes body, 'read-nothing'
+    assert_includes body, 'measured'
+    assert_equal({ 'retained' => 1, 'replaced' => 1, 'dropped' => 0 }, stats)
+  end
+
+  def test_a_report_that_read_nothing_stays_beside_other_work
+    empty = record('cursor', 'read-nothing', sources: [], responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    other = record('cursor', 'other-commit', responses: %w[g1], commits: ['b' * 40])
+    review_of_it = record('cursor', 'review-of-it', responses: %w[g2], contribution: 'review')
+    body = carried(existing(empty, other, review_of_it), record('codex', 'new', responses: %w[x1], sources: ['s3']))
+    assert_includes body, 'read-nothing'
+  end
+end
