@@ -489,23 +489,6 @@ class PublicationUsageTableTest < Minitest::Test
     refute_includes render(usage: usage_of(REVIEW, other)), 'Reasoning'
   end
 
-  # Break: eight review runs of one model became eight columns labeled review through review-8.
-  def test_reports_with_one_label_share_a_row
-    rendered = render(usage: usage_of(REVIEW, REVIEW.merge('usd' => '$0.001')))
-    assert_includes rendered, "| Report | USD | Input | Cached input |\n| --- | ---: | ---: | ---: |\n" \
-                              '| claude-opus-5-5 review ×2 | $0.31 | 12 | 193,186 |'
-    refute_includes rendered, '**Total**'
-    refute_includes rendered, 'not reported, so'
-  end
-
-  # Break: two models whose reports both chose the label `high review` shared one row.
-  def test_one_label_on_different_models_keeps_separate_rows
-    other = REVIEW.merge('model' => 'gpt-6-astra', 'routed' => 'UNKNOWN', 'effort' => 'high')
-    rendered = render(usage: usage_of(REVIEW, other))
-    assert_includes rendered, '| claude-opus-5-5 review (claude-opus-5-5 medium) |'
-    assert_includes rendered, '| claude-opus-5-5 review (gpt-6-astra high) |'
-  end
-
   def test_amounts_show_cents_and_partial_estimates_are_minimums
     tiny = COLUMN.merge('usd' => '$0.000412')
     assert_includes render(usage: usage_of(tiny)), '| <$0.01 |'
@@ -560,6 +543,41 @@ class PublicationUsageTableTest < Minitest::Test
     prose = { 'summary' => 'Usage and cost', 'body' => "| Metric | x |\n| --- | ---: |\n| USD estimate | $1 |" }
     error = assert_raises(Shaka::Error) { render(details: [prose]) }
     assert_includes error.message, 'usage object'
+  end
+end
+
+# Reports share a row only when they count the same thing the same way.
+class PublicationUsageRowGroupingTest < Minitest::Test
+  COLUMN = PublicationUsageTableTest::COLUMN
+  REVIEW = PublicationUsageTableTest::REVIEW
+
+  def render(usage:) = PublicationUsageTableTest.new('render').render(usage:)
+  def usage_of(*columns) = PublicationUsageTableTest.usage_of(*columns)
+
+  # Break: a Codex and a Pi report on one route added input counters that mean different things.
+  def test_reports_from_different_hosts_keep_separate_rows
+    usage = { 'note' => 'n', 'records' => [USAGE_RECORD.merge('columns' => [REVIEW]),
+                                           USAGE_RECORD.merge('host' => 'pi', 'columns' => [REVIEW])] }
+    rendered = render(usage:)
+    assert_includes rendered, '| claude-opus-5-5 review (claude-code claude-opus-5-5 medium) | $0.31 |'
+    assert_includes rendered, '| claude-opus-5-5 review (pi claude-opus-5-5 medium) | $0.31 |'
+  end
+
+  # Break: eight review runs of one model became eight columns labeled review through review-8.
+  def test_reports_with_one_label_share_a_row
+    rendered = render(usage: usage_of(REVIEW, REVIEW.merge('usd' => '$0.001')))
+    assert_includes rendered, "| Report | USD | Input | Cached input |\n| --- | ---: | ---: | ---: |\n" \
+                              '| claude-opus-5-5 review ×2 | $0.31 | 12 | 193,186 |'
+    refute_includes rendered, '**Total**'
+    refute_includes rendered, 'not reported, so'
+  end
+
+  # Break: two models whose reports both chose the label `high review` shared one row.
+  def test_one_label_on_different_models_keeps_separate_rows
+    other = REVIEW.merge('model' => 'gpt-6-astra', 'routed' => 'UNKNOWN', 'effort' => 'high')
+    rendered = render(usage: usage_of(REVIEW, other))
+    assert_includes rendered, '| claude-opus-5-5 review (claude-code claude-opus-5-5 medium) |'
+    assert_includes rendered, '| claude-opus-5-5 review (claude-code gpt-6-astra high) |'
   end
 end
 

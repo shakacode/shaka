@@ -14,7 +14,7 @@ module Shaka
       ['cache_writes', 'Cache writes']
     ].freeze
     COST = %w[usd credits].freeze
-    ROUTE = %w[label provider model routed effort].freeze
+    ROUTE = %w[host label provider model routed effort].freeze
     LEGEND = [
       [:unreported?, '— not reported'],
       [:minimum?, '+ some usage not reported, so the amount is a minimum'],
@@ -73,7 +73,7 @@ module Shaka
 
     def route_name(column)
       model = [column['routed'], column['model'], column['provider']].find { |value| value != 'UNKNOWN' }
-      [model, column['effort']].reject { |value| value.nil? || value == 'UNKNOWN' }.join(' ')
+      [column['host'], model, column['effort']].reject { |value| value.nil? || value == 'UNKNOWN' }.join(' ')
     end
 
     # Hosts count input differently (Codex includes cache reads, Claude excludes them), so

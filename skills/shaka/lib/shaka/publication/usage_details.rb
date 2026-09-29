@@ -69,8 +69,8 @@ module Shaka
 
     def detail
       checked
-      rows = UsageRows.new(@records.flat_map { |entry| entry['columns'] } + carried_columns,
-                           earlier: earlier_reports.any?)
+      fresh = @records.flat_map { |entry| hosted(entry['columns'], entry['identity']) }
+      rows = UsageRows.new(fresh + carried_columns, earlier: earlier_reports.any?)
       { 'summary' => [SUMMARY, rows.summary].compact.join(' · '), 'body' => body(rows) }
     end
 
@@ -119,9 +119,12 @@ module Shaka
     def carried_columns
       @carried.flat_map do |block|
         hidden = block[HIDDEN, 1]
-        hidden ? columns(parse_hidden(hidden)) : []
+        hidden ? hosted(columns(parse_hidden(hidden)), UsageRecords.text_records(block).first) : []
       end
     end
+
+    # Hosts count input differently, so rows only combine reports from one host.
+    def hosted(columns, identity) = columns.map { |column| column.merge('host' => identity.to_h['host']) }
 
     def parse_hidden(text)
       JSON.parse(text)

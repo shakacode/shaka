@@ -13,16 +13,16 @@ from those records, so everything it shows can be carried by a later publish. A
 `details` item whose summary names usage is refused.
 
 The description renders one table with a row per report label. Reports with the
-same label, provider, configured and routed model, and effort, such as eight review
-runs of one model, share a row marked `×8`; rows that share only a label also show
-their model and effort. With more than one row, a total row adds the USD and credit
-estimates; it leaves token counts blank, because hosts count input differently. The
-collapsed summary shows the USD total. Columns are USD, Credits, Input, Cached
-input, Output, Reasoning, and Cache writes; a column no report measured is left out.
-Amounts are rounded to cents and grouped by thousands for reading. A cell no report
-measured shows `—`, and `+` marks a minimum: a partial estimate, or a sum that left
-out an unmeasured report. The total can count a response twice when two kept reports
-partly overlap.
+same host, label, provider, configured and routed model, and effort, such as eight
+review runs of one model, share a row marked `×8`; rows that share only a label also
+show their host, model, and effort. With more than one row, a total row adds the USD
+and credit estimates; it leaves token counts blank, because hosts count input
+differently. The collapsed summary shows the USD total. Columns are USD, Credits,
+Input, Cached input, Output, Reasoning, and Cache writes; a column no report measured
+is left out. Amounts are rounded to cents and grouped by thousands for reading. A
+cell no report measured shows `—`, and `+` marks a minimum: a partial estimate, or a
+sum that left out an unmeasured report. The total can count a response twice when two
+kept reports partly overlap.
 
 Reports from before this table are listed below it and left out of the total, which
 then shows `+`. Each record is also kept as a hidden block holding its reported
@@ -80,9 +80,9 @@ report that kept only some counters can still replace an earlier report.
 
 ## Reading the result
 
-The report records commits, contribution, observed interval, source version,
-provider/model/effort, and token categories. Metric rows have one column per
-configuration. Configured and routed models remain distinct.
+The Markdown report records commits, contribution, observed interval, source
+version, provider/model/effort, and token categories. Its metric rows have one column
+per configuration. Configured and routed models remain distinct.
 
 | Host | Input and cache categories | Other limits |
 | --- | --- | --- |
