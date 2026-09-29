@@ -43,7 +43,8 @@ class RubyLauncherTest < Minitest::Test
   end
 
   def test_source_checkout_uses_path_ruby_without_project_ruby_options
-    environment = { 'RUBYOPT' => '-rproject_bundler_setup', 'BUNDLE_GEMFILE' => File.join(project, 'Gemfile') }
+    environment = { 'RUBYOPT' => '-rproject_bundler_setup', 'BUNDLE_GEMFILE' => File.join(project, 'Gemfile'),
+                    'CDPATH' => '.' }
     # A bare relative path, which Ruby would search for in its load path rather than here.
     output, status = Open3.capture2e(environment, 'skills/shaka/scripts/shaka', '--help',
                                      chdir: File.expand_path('..', __dir__))

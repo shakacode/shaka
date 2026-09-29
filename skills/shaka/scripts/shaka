@@ -22,10 +22,10 @@ case $script in
 esac
 # Ruby looks up a relative -r path in its load path, so this must be absolute. It stays
 # logical rather than physical: the helper reads its invoked path to find the host skill link.
-scripts=$(cd "$scripts" && pwd)
+scripts=$(CDPATH='' cd -- "$scripts" && pwd)
 
 ruby=${SHAKA_RUBY:-}
-package=$(cd -P "$scripts/../../.." && pwd -P)
+package=$(CDPATH='' cd -P -- "$scripts/../../.." && pwd -P)
 if [ -z "$ruby" ] && [ -f "$package/.shaka-install.json" ] && [ -f "$package/../.shaka-ruby" ]; then
   IFS= read -r ruby < "$package/../.shaka-ruby" || true
   if [ ! -x "$ruby" ]; then
