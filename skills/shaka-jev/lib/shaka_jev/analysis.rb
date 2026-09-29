@@ -12,7 +12,9 @@ require 'uri'
 module ShakaJev
   class Error < StandardError; end
 
-  # Fails closed unless GitHub reports that the target repository is public.
+  # Pilot boundary for sending evidence to TypeSafe. Public visibility alone does not
+  # make every excerpt safe; the caller must screen the packet before invoking Jev.
+  # Fail closed unless GitHub reports that the target repository is public.
   class PublicGitHubRepository
     def self.call(owner, repo, capture: method(:capture_with_timeout))
       output, status = capture.call({ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', "#{owner}/#{repo}",

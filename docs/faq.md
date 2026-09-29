@@ -84,6 +84,14 @@ may help you decide what to inspect; Shaka's normal checks and independent revie
 decide readiness. See the [small public evaluation](https://github.com/shakacode/shaka/blob/main/eval/jev-pr-analysis.md)
 for example inputs, outputs, and limits.
 
+The public-repository limit is a pilot boundary because the evidence packet is sent to
+TypeSafe. Public visibility is only a prerequisite: the agent must still screen every
+excerpt before sending it. This is not an inherent Jev limitation. We call the
+companion experimental because the evaluation used only three selected, short packets,
+found sensitivity to question wording, and did not measure whether Jev improves PR
+reviews. Private-PR support would need an explicit data-sharing decision and a way to
+handle sensitive evidence.
+
 ## Why did the agent ignore a PR comment?
 
 Shaka trusts the people who maintain the project: anyone with write access, plus
