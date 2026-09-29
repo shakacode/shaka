@@ -33,6 +33,13 @@ class WorkflowVersionMarkdownTest < Minitest::Test
     assert_equal "`#{VERSION}` (commit unknown, modified)", result(nil, modified: true).markdown
   end
 
+  def test_any_installable_version_can_fall_back
+    ['1.0.0+fork', "1.0.0-#{'x' * 60}"].each do |version|
+      rendered = Shaka::WorkflowVersion::Result.new(version:, commit: nil, modified: false, upstream: false).markdown
+      assert_equal "`#{version}` (commit unknown)", rendered
+    end
+  end
+
   def test_refuses_values_that_could_break_the_table
     assert_raises(Shaka::Error) { result("#{SHA} | x").markdown }
     assert_raises(Shaka::Error) { result("#{SHA} | x", upstream: false).markdown }

@@ -25,7 +25,8 @@ module Shaka
     # Remote spellings of REPOSITORY; a commit from any other source may exist only in a fork.
     UPSTREAM = %r{\A(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)shakacode/shaka(?:\.git)?/?\z}i
     COMMIT = /\A(?:\h{40}|\h{64})\z/
-    RELEASE = /\A[A-Za-z0-9][A-Za-z0-9._-]{0,39}\z/
+    # The installer's version grammar (Install::Version), so any installed package can fall back.
+    RELEASE = /\A[A-Za-z0-9][A-Za-z0-9._+-]*\z/
 
     # Renders the commit, linked when it came from REPOSITORY, or the release version when no
     # commit is known. Installation metadata is only type-checked, so each part is checked
