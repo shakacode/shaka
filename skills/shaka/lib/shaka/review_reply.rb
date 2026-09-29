@@ -153,7 +153,7 @@ module Shaka
       end
 
       def ledger_rows
-        rows = table_rows
+        rows = first_table
         header = rows.find { |cells| (COLUMNS - cells).empty? }
         return [] unless header
 
@@ -169,8 +169,16 @@ module Shaka
           model: cells[indexes['Model']] }
       end
 
-      def table_rows
-        @body.each_line.filter_map { |row| split_cells(row.rstrip) }
+      # The round ledger is the first table. A later table can sit inside the embedded report.
+      def first_table
+        rows = []
+        @body.each_line do |row|
+          cells = split_cells(row.rstrip)
+          break if rows.any? && cells.nil?
+
+          rows << cells if cells
+        end
+        rows
       end
 
       def split_cells(row)

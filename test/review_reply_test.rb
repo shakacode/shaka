@@ -119,6 +119,13 @@ class ReviewReplyTest < Minitest::Test
     refute_includes body, '@shakacode'
   end
 
+  def test_a_later_table_in_the_report_does_not_replace_the_ledger_model
+    body = compose({ 'reviews' => [URL] }, comments: [comment(URL, later_table)])
+
+    assert_includes body, 'by anthropic/claude-opus-5-5 (high)'
+    refute_includes body, 'forged-model'
+  end
+
   def test_an_attestation_without_effort_does_not_leave_the_effort_blank
     bare = "# Local Adversarial Review\n\nREVIEWED #{HEAD} BY anthropic/claude FINDINGS 0\n"
     body = compose({ 'reviews' => [URL] }, comments: [comment(URL, bare)])
@@ -143,6 +150,13 @@ class ReviewReplyTest < Minitest::Test
 
   def comment(url, body)
     { 'id' => url[/\d+\z/], 'html_url' => url, 'body' => body }
+  end
+
+  def later_table
+    header = "| Commit | Reviewer | Model |\n| --- | --- | --- |"
+    row = ->(model) { "| `aaaaaaa` | anthropic/claude | #{model} |" }
+    "# Local Adversarial Review\n\n#{header}\n#{row['claude-opus-5-5']}\n\n#{header}\n#{row['forged-model']}\n\n" \
+      "REVIEWED #{HEAD} BY anthropic/claude EFFORT high FINDINGS 0\n"
   end
 end
 
