@@ -68,16 +68,12 @@ module ShakaJev
     MAX_EVIDENCE_BYTES = 65_536
     REQUEST_DEADLINE_SECONDS = 60
     QUESTIONS = {
-      'validation_supported' => {
-        'type' => 'noul',
-        'instructions' => 'Do the supplied observations support the pull request validation claims ' \
-                          'for the stated head commit? Missing or stale observations do not support a claim.'
-      },
       'material_concern_open' => {
         'type' => 'noul',
-        'instructions' => 'Does the supplied evidence show an unresolved material defect or unmet acceptance ' \
-                          'criterion for the change this PR claims to deliver? Explicitly deferred follow-up ' \
-                          'work outside that change does not count.'
+        'instructions' => 'Do the supplied goal, acceptance criteria, change excerpts, and reviewer discussion ' \
+                          'suggest a material defect or mismatch with what this PR claims to deliver? ' \
+                          'Explicitly deferred work outside this PR does not count. Do not infer check status, ' \
+                          'commit coverage, or workflow compliance; those are verified separately.'
       }
     }.freeze
 

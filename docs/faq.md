@@ -78,16 +78,17 @@ without the implementation conversation.
 ## Can I try Jev on a pull request?
 
 Yes. Ask your agent to install the experimental [Shaka Jev companion](https://github.com/shakacode/shaka/blob/main/skills/shaka-jev/SKILL.md)
-and run it on a public PR. It uses your TypeSafe API key to score supplied validation
-and review evidence, then reports the input tokens and estimated input cost. The scores
-may help you decide what to inspect; Shaka's normal checks and independent review still
+and run it on a public PR. It uses your TypeSafe API key to assess whether supplied
+change excerpts appear to miss the PR's stated goal, then reports the input tokens and
+estimated input cost. The advisory score may help you decide what to inspect; Shaka's
+deterministic checks and independent review still
 decide readiness. See the [small public evaluation](https://github.com/shakacode/shaka/blob/main/eval/jev-pr-analysis.md)
 for example inputs, outputs, and limits.
 
 The public-repository limit is a pilot boundary because the evidence packet is sent to
 TypeSafe. Public visibility is only a prerequisite: the agent must still screen every
 excerpt before sending it. This is not an inherent Jev limitation. We call the
-companion experimental because the evaluation used only three selected, short packets,
+companion experimental because the evaluation used only selected, short packets,
 found sensitivity to question wording, and did not measure whether Jev improves PR
 reviews. Private-PR support would need an explicit data-sharing decision and a way to
 handle sensitive evidence.

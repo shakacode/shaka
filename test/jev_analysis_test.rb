@@ -8,11 +8,10 @@ require_relative '../skills/shaka-jev/lib/shaka_jev/analysis'
 class JevAnalysisTest < Minitest::Test
   HEAD = 'a' * 40
   URL = 'https://github.com/shakacode/shaka/pull/302'
-  EVIDENCE = 'Public validation and review evidence.'
+  EVIDENCE = 'Public goal, change excerpts, and reviewer discussion.'
   OUTPUT = {
     model: 'jev-1.13.0',
     answers: {
-      validation_supported: { type: 'noul', noul: 0.91 },
       material_concern_open: { type: 'noul', noul: 0.13 }
     },
     usage: { input_tokens: 2500, output_tokens: 25 }
@@ -96,7 +95,7 @@ class JevAnalysisTest < Minitest::Test
     observed = [sent.first.to_s, sent.last['Authorization'], payload.fetch('model'),
                 payload.fetch('questions').keys.sort]
     expected = ['https://api.typesafe.ai/v1/systemone', 'Bearer test-key', 'jev-latest',
-                %w[material_concern_open validation_supported]]
+                %w[material_concern_open]]
     assert_equal expected, observed
     assert_state(payload.fetch('state'))
   end
@@ -104,11 +103,11 @@ class JevAnalysisTest < Minitest::Test
   def assert_state(state) = [URL, HEAD, EVIDENCE].each { |part| assert_includes state, part }
 
   def invalid_answer(type:, noul:)
-    OUTPUT.merge(answers: OUTPUT.fetch(:answers).merge(validation_supported: { type: type, noul: noul }))
+    OUTPUT.merge(answers: OUTPUT.fetch(:answers).merge(material_concern_open: { type: type, noul: noul }))
   end
 
   def assert_result(result)
-    assert_in_delta 0.91, result.fetch('answers').fetch('validation_supported')
+    assert_in_delta 0.13, result.fetch('answers').fetch('material_concern_open')
     assert_equal 2500, result.fetch('input_tokens')
     assert_in_delta 0.000105, result.fetch('estimated_input_cost_usd'), 0.000000001
     assert_equal [URL, HEAD], result.values_at('pr_url', 'head')
