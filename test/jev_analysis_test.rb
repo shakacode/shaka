@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'rbconfig'
 require_relative '../skills/shaka-jev/lib/shaka_jev/analysis'
 
 class JevAnalysisTest < Minitest::Test
@@ -68,6 +69,30 @@ class JevAnalysisTest < Minitest::Test
     refute_match(/DNS failure/, error.message)
   end
 
+  def test_invalid_target_or_evidence_is_not_sent
+    client = ->(*) { flunk 'must not send' }
+    invalid = [{ pr_url: 'https://github.com/shakacode/shaka/issues/302' },
+               { head: 'abc123' }, { evidence: '   ' }, { evidence: 'x' * 65_537 }]
+    invalid.each do |change|
+      assert_raises(ShakaJev::Error) do
+        analyzer(api_key: 'test-key', client: client).call(**target, **change)
+      end
+    end
+  end
+
+  def test_command_reports_missing_options_and_unreadable_file_cleanly
+    command = [RbConfig.ruby, File.expand_path('../skills/shaka-jev/scripts/analyze', __dir__),
+               '--pr-url', URL, '--head', HEAD]
+    missing, missing_status = Open3.capture2e(*command)
+    unreadable, unreadable_status = Open3.capture2e(*command, '--evidence', '/no/such/evidence-file')
+
+    refute_predicate missing_status, :success?
+    refute_predicate unreadable_status, :success?
+    assert_match(/shaka-jev:/, missing)
+    assert_match(/shaka-jev:/, unreadable)
+    refute_match(/in `/, unreadable)
+  end
+
   private
 
   def assert_request(sent)
@@ -96,4 +121,21 @@ class JevAnalysisTest < Minitest::Test
   end
 
   def target = { pr_url: URL, head: HEAD, evidence: 'Public' }
+end
+
+class JevPublicGitHubRepositoryTest < Minitest::Test
+  def test_only_successful_public_metadata_is_accepted
+    cases = [[{ visibility: 'PUBLIC' }, true, true], [{ visibility: 'PRIVATE' }, true, false],
+             [{ visibility: 'PUBLIC' }, false, false]]
+    cases.each do |metadata, success, expected|
+      status = Struct.new(:success?).new(success)
+      capture = ->(*) { [JSON.generate(metadata), status] }
+      assert_equal expected, ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
+    end
+  end
+
+  def test_missing_github_cli_fails_closed
+    capture = ->(*) { raise Errno::ENOENT }
+    refute ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
+  end
 end

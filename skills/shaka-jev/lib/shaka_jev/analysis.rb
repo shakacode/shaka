@@ -13,9 +13,9 @@ module ShakaJev
 
   # Fails closed unless GitHub reports that the target repository is public.
   class PublicGitHubRepository
-    def self.call(owner, repo)
-      output, status = Open3.capture2({ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', "#{owner}/#{repo}",
-                                      '--json', 'visibility', err: File::NULL)
+    def self.call(owner, repo, capture: Open3.method(:capture2))
+      output, status = capture.call({ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', "#{owner}/#{repo}",
+                                    '--json', 'visibility', err: File::NULL)
       status.success? && JSON.parse(output)['visibility'] == 'PUBLIC'
     rescue JSON::ParserError, SystemCallError
       false
