@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/review_prompt'
+require 'shaka/local_review/finding'
 require 'tmpdir'
 
 # The instructions a locally invoked reviewer receives.
@@ -30,6 +31,17 @@ class ReviewPromptTest < Minitest::Test
     prompt = render('--effort', 'high')
 
     assert_includes prompt, 'REVIEWED abc1234 BY openai/codex EFFORT high FINDINGS <n>'
+  end
+
+  # Break caught: the review loop reads each finding's class, so a repository prompt cannot drop it.
+  def test_requires_a_class_on_every_finding_whatever_the_instructions
+    Dir.mktmpdir do |directory|
+      instructions = File.join(directory, 'prompt.md')
+      File.write(instructions, "Only check spelling.\n")
+
+      rules = render('--prompt-file', instructions)[/^Rules:\n.*?\n\n/m]
+      Shaka::LocalReviewFinding::CLASSES.each { |kind| assert_match(/\b#{kind}\b/, rules) }
+    end
   end
 
   def test_marks_unknown_effort_rather_than_omitting_it

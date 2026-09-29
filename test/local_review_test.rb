@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require 'fileutils'
 require 'json'
+require 'tempfile'
 require 'rbconfig'
 require_relative '../skills/shaka/lib/shaka/local_review/process'
 require_relative '../skills/shaka/lib/shaka/local_review/evidence'
@@ -1108,6 +1109,148 @@ class LocalReviewCodexUsageTest < Minitest::Test
   end
 end
 
+# Drives rounds of a review loop against one ledger outside the checkout.
+module LocalReviewLoopSteps
+  private
+
+  def in_loop
+    with_repository do |root, base, head, bin|
+      Dir.mktmpdir('shaka-ledger') do |directory|
+        @root = root
+        @base = base
+        @bin = bin
+        @ledger = File.join(directory, 'ledger.json')
+        @trace = File.join(directory, 'loop-trace')
+        yield head
+      end
+    end
+  end
+
+  def loop_round(head, findings:)
+    write_executable(@bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      File.write(#{@trace.inspect}, STDIN.read)
+      File.write(ARGV.fetch(ARGV.index('-o') + 1), "x\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS #{findings}\\n")
+    RUBY
+    output, error, status = run_review(@root, @base, head, @bin, ledger: @ledger)
+    (@results ||= []) << assert_successful_review(output, error, status, head, 'openai/codex')
+    @results.last
+  end
+
+  def assert_refused(head, message)
+    output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger)
+    refute_predicate status, :success?
+    assert_includes JSON.parse(output).fetch('reason'), message
+  end
+
+  # The requested model is kept apart from `model`, which only native usage may set.
+  def assert_ledger_rounds(heads)
+    rounds = JSON.parse(File.read(@ledger)).fetch('rounds')
+    assert_equal(heads, rounds.map { |round| round.fetch('head') })
+    refute(rounds.any? { |round| round.key?('model') })
+  end
+
+  def fix_commit
+    commit!(@root, 'fixed', 'Return the right exit code')
+    git!(@root, 'rev-parse', 'HEAD').strip
+  end
+
+  # A count that disagrees with the report is refused before the real record lands.
+  def record_fix(fix)
+    record([], expect: false)
+    record([{ 'id' => 'F1', 'summary' => 'Wrong exit code', 'class' => 'defect',
+              'disposition' => 'fixed', 'commit' => fix, 'note' => 'private reasoning' }])
+  end
+
+  def record(findings, expect: true)
+    Tempfile.create(['record-', '.json']) do |file|
+      file.write(JSON.generate('findings' => findings, 'tokens' => '1,000'))
+      file.close
+      arguments = ['review', 'record', '--ledger', @ledger, '--content-file', file.path]
+      _out, error, status = Open3.capture3(self.class::COMMAND, *arguments)
+      assert_equal expect, status.success?, error
+    end
+  end
+
+  def assert_prior_round_prompt(prompt, fix)
+    assert_match(/BEGIN PRIOR ROUND DATA [0-9a-f]{32}/, prompt)
+    assert_includes prompt, "- [F1] defect: Wrong exit code (fixed in #{fix[0, 7]})"
+    assert_includes prompt, "#{fix[0, 7]} Return the right exit code"
+    refute_includes prompt, 'private reasoning'
+  end
+end
+
+class LocalReviewLoopTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  include LocalReviewLoopSteps
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  # Break caught: round 2 must check round 1's fixes without seeing why the author decided anything.
+  def test_ledger_records_rounds_and_feeds_prior_findings_to_the_next_round
+    in_loop do |head|
+      assert_equal 1, loop_round(head, findings: 1).fetch('round')
+      fix = fix_commit
+      assert_refused(fix, 'Record round 1')
+      record_fix(fix)
+      loop_round(fix, findings: 0)
+      assert_prior_round_prompt(File.read(@trace), fix)
+      assert_ledger_rounds([head, fix])
+    end
+  end
+
+  def test_refuses_any_head_an_earlier_round_reviewed
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      assert_refused(head, 'commit the fix first')
+      loop_round(fix_commit, findings: 0)
+      git!(@root, 'checkout', '--quiet', head)
+      assert_refused(head, 'Round 1 already reviewed')
+    end
+  end
+
+  # Break caught: a head from another branch lacks the fixes the ledger says were made.
+  def test_refuses_a_head_that_does_not_build_on_the_last_round
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      git!(@root, 'checkout', '--quiet', '-b', 'other', @base)
+      assert_refused(fix_commit, 'does not build on')
+    end
+  end
+
+  # Break caught: the comment would call a finding fixed in a commit the reviewed head lacks.
+  def test_refuses_a_head_without_a_recorded_fix
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      git!(@root, 'checkout', '--quiet', '-b', 'side')
+      side = fix_commit
+      git!(@root, 'checkout', '--quiet', '-')
+      record_fix(side)
+      commit!(@root, 'unrelated', 'Change something else')
+      assert_refused(git!(@root, 'rev-parse', 'HEAD').strip, "does not build on #{side}")
+    end
+  end
+
+  # Break caught: a fix recorded as the head that found the finding claimed a fix nobody made.
+  def test_refuses_a_fix_that_is_the_reviewed_head
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record_fix(head)
+      assert_refused(fix_commit, 'is the head round 1 reviewed')
+    end
+  end
+
+  def test_refuses_a_ledger_inside_the_checkout
+    in_loop do |head|
+      @ledger = File.join(@root, 'ledger.json')
+      assert_refused(head, 'outside the candidate checkout')
+    end
+  end
+end
+
 module LocalReviewContextAssertion
   def assert_codex_invocation(trace, root, head)
     invocation = JSON.parse(File.read(trace))
@@ -1141,7 +1284,7 @@ module LocalReviewArguments
   def append_review_options(arguments, reviewer, options)
     default_effort = reviewer.downcase == 'openai/codex' ? nil : 'medium'
     arguments.push('--effort', options.fetch(:effort, default_effort)) if options.fetch(:effort, default_effort)
-    %w[model criteria-ref description-file timeout-seconds].each do |key|
+    %w[model criteria-ref description-file timeout-seconds ledger].each do |key|
       value = options[key.tr('-', '_').to_sym]
       arguments.push("--#{key}", value.to_s) if value
     end
@@ -1282,3 +1425,4 @@ LocalReviewTimeoutTest.include(LocalReviewFixture)
 LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
 LocalReviewAttestationCaseTest.include(LocalReviewFixture)
+LocalReviewLoopTest.include(LocalReviewFixture)

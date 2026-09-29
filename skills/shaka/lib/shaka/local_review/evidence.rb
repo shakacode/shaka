@@ -4,6 +4,8 @@ module Shaka
   # Shared commit and reviewer attestation checks for both evidence paths.
   module LocalReviewEvidence
     SHA = /\A[0-9a-f]{40}\z/
+    # The effort and finding count an attestation closes with.
+    CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
 
     def self.valid?(text, head:, reviewer:, effort: nil)
       return false unless text.valid_encoding?
