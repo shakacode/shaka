@@ -61,4 +61,17 @@ class FingerprintBoundaryTest < Minitest::Test
     @source.ref = 'main'
     assert_raises(Shaka::Error) { fingerprint }
   end
+
+  def test_missing_root_is_a_shaka_error
+    @source.root = File.join(@root, 'deleted')
+    assert_raises(Shaka::Error) { fingerprint }
+  end
+
+  def test_source_selection_requires_exactly_one_source
+    options = { root: @root, effective_settings: @settings, repository: 'shakacode/shaka',
+                installation: @installation }
+    builder = Shaka::Configuration::Fingerprint
+    assert_raises(Shaka::Error) { builder.build(**options) }
+    assert_raises(Shaka::Error) { builder.build(**options, private_source: @source, trusted_ref: 'a' * 40) }
+  end
 end

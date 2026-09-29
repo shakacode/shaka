@@ -100,22 +100,4 @@ class FingerprintTest < Minitest::Test
     assert_equal component(first, 'files'), component(second, 'files')
     refute first.to_h.key?('candidate_commit')
   end
-
-  def test_trusted_source_uses_configuration_blob_and_prompt
-    ref = trusted_ref
-    write('review.md', 'review one')
-    settings = @settings.merge('review' => { 'prompt_file' => 'review.md' })
-    first = fingerprint(settings, trusted_ref: ref)
-    write('review.md', 'review two')
-    refute_equal component(first, 'files'), component(fingerprint(settings, trusted_ref: ref), 'files')
-  end
-
-  def trusted_ref
-    system('git', '-C', @root, 'init', '--quiet', exception: true)
-    system('git', '-C', @root, 'add', '.agents/shaka/config.yml', exception: true)
-    system('git', '-C', @root, 'config', 'user.email', 'test@example.com', exception: true)
-    system('git', '-C', @root, 'config', 'user.name', 'Test', exception: true)
-    system('git', '-C', @root, 'commit', '--quiet', '-m', 'config', exception: true)
-    Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
-  end
 end

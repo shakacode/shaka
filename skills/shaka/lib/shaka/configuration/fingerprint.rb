@@ -18,6 +18,8 @@ module Shaka
 
       def self.build(root:, effective_settings:, repository:, installation:, **source)
         new(root:, effective_settings:, repository:, installation:, source:).build
+      rescue SystemCallError => e
+        raise Error, "Cannot fingerprint settings: #{e.class}"
       end
 
       def initialize(root:, effective_settings:, repository:, installation:, source:)
