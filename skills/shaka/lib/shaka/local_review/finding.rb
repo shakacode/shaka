@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
-require_relative '../publication'
+require_relative '../publication/text'
 require_relative 'evidence'
 
 module Shaka
