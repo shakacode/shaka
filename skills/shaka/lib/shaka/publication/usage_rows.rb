@@ -29,8 +29,8 @@ module Shaka
     def initialize(columns, earlier: false)
       @earlier = earlier
       @rows = report_rows(columns)
-      @rows << ['**Total**', total(columns)] if @rows.size > 1
       @metrics = METRICS.select { |key, _label| @rows.any? { |_label, amounts| amounts[key] } }
+      @rows << ['**Total**', total(columns)] if @rows.size > 1
     end
 
     def table
@@ -79,14 +79,16 @@ module Shaka
     # Hosts count input differently (Codex includes cache reads, Claude excludes them), so
     # token columns are not added across rows; only the cost estimates are.
     def total(columns)
-      sums(columns).to_h { |key, sum| [key, COST.include?(key) ? minimum(sum) : :blank] }
+      METRICS.to_h do |key, _label|
+        [key, COST.include?(key) ? minimum(column_sum(columns, key)) : :blank]
+      end
     end
 
     def minimum(sum) = sum && @earlier ? Amount.new(sum.value, true) : sum
 
-    def sums(group)
-      METRICS.to_h { |key, _label| [key, sum(group.map { |column| amount(column[key]) })] }
-    end
+    def sums(group) = METRICS.to_h { |key, _label| [key, column_sum(group, key)] }
+
+    def column_sum(columns, key) = sum(columns.map { |column| amount(column[key]) })
 
     def sum(amounts)
       known = amounts.compact

@@ -483,6 +483,12 @@ class PublicationUsageTableTest < Minitest::Test
     assert_includes credited, '| $3.27 | 1.50 |'
   end
 
+  # Break: the total row's blank token cells brought back columns no report measured.
+  def test_a_total_row_does_not_bring_back_unmeasured_columns
+    other = REVIEW.merge('label' => 'other review')
+    refute_includes render(usage: usage_of(REVIEW, other)), 'Reasoning'
+  end
+
   # Break: eight review runs of one model became eight columns labeled review through review-8.
   def test_reports_with_one_label_share_a_row
     rendered = render(usage: usage_of(REVIEW, REVIEW.merge('usd' => '$0.001')))
