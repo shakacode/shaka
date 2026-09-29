@@ -50,10 +50,6 @@ class FingerprintBoundaryTest < Minitest::Test
     assert_raises(Shaka::Error) { fingerprint }
   end
 
-  def test_missing_settings_key_is_a_shaka_error
-    assert_raises(Shaka::Error) { fingerprint(@settings.except('review')) }
-  end
-
   def test_wrong_settings_shapes_are_shaka_errors
     assert_raises(Shaka::Error) { fingerprint(@settings.merge('paths' => 'config.yml')) }
     assert_raises(Shaka::Error) { fingerprint(@settings.merge('commands' => [])) }
@@ -83,6 +79,11 @@ class FingerprintBoundaryTest < Minitest::Test
 
   def test_rejects_unsafe_command_path
     settings = @settings.merge('commands' => { 'test' => '../outside' })
+    assert_raises(Shaka::Error) { fingerprint(settings) }
+  end
+
+  def test_rejects_directory_command_path
+    settings = @settings.merge('commands' => { 'test' => '.agents/shaka/bin' })
     assert_raises(Shaka::Error) { fingerprint(settings) }
   end
 

@@ -104,4 +104,8 @@ class FingerprintTest < Minitest::Test
     assert_equal component(first, 'files'), component(second, 'files')
     refute first.to_h.key?('candidate_commit')
   end
+
+  def test_unknown_source_keyword_is_rejected
+    assert_raises(Shaka::Error) { fingerprint(@settings, trused_ref: 'a' * 40) }
+  end
 end

@@ -13,9 +13,9 @@ module Shaka
         @root = root
       end
 
-      def hashes(paths)
+      def hashes(paths, files_only: [])
         paths.map { |path| safe_path(path) }.uniq.sort.to_h do |path|
-          [path, FingerprintCanonical.digest('file', identity(path))]
+          [path, FingerprintCanonical.digest('file', identity(path, file_required: files_only.include?(path)))]
         end
       end
 
@@ -33,18 +33,24 @@ module Shaka
           path.split('/', -1).any? { |part| part.empty? || %w[. ..].include?(part) }
       end
 
-      def identity(path)
+      def identity(path, file_required:)
         full = File.join(@root, path)
         parent = File.realpath(File.dirname(full))
         raise Error, "#{path} traverses outside repository" unless parent == @root || parent.start_with?("#{@root}/")
 
         stat = File.lstat(full)
-        return { 'type' => 'directory', 'mode' => stat.mode & 0o777 } if stat.directory?
+        return directory_identity(path, stat, file_required) if stat.directory?
         return symlink_identity(path, full) if stat.symlink?
 
         regular_identity(path, full, stat)
       rescue SystemCallError => e
         raise Error, "Cannot fingerprint #{path}: #{e.class}"
+      end
+
+      def directory_identity(path, stat, file_required)
+        raise Error, "#{path} must be a file" if file_required
+
+        { 'type' => 'directory', 'mode' => stat.mode & 0o777 }
       end
 
       def regular_identity(path, full, stat)

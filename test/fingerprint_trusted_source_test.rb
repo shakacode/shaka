@@ -74,31 +74,42 @@ class FingerprintTrustedSourceTest < Minitest::Test
     refute_equal second, files(fingerprint(commit_prompt, settings))
   end
 
-  def test_trusted_symlink_prompt_with_utf8_target
+  def trusted_symlink_fixture
     commit_config('first')
     target = 'révision.md'
     File.write(File.join(@root, target), 'instructions')
     File.symlink(target, File.join(@root, 'review.md'))
     ref = commit_prompt_with_target(target)
     settings = @settings.merge('review' => { 'prompt_file' => 'review.md' })
+    [target, ref, settings]
+  end
+
+  def test_trusted_symlink_prompt_with_utf8_target
+    target, ref, settings = trusted_symlink_fixture
     first = files(fingerprint(ref, settings))
     File.write(File.join(@root, target), 'revised instructions')
     refute_equal first, files(fingerprint(commit_prompt_with_target(target), settings))
   end
 
+  def test_trusted_symlink_retarget_changes_identity_with_same_bytes
+    _target, ref, settings = trusted_symlink_fixture
+    replacement = 'copy.md'
+    File.write(File.join(@root, replacement), 'instructions')
+    File.delete(File.join(@root, 'review.md'))
+    File.symlink(replacement, File.join(@root, 'review.md'))
+    refute_equal files(fingerprint(ref, settings)), files(fingerprint(commit_prompt_with_target(replacement), settings))
+  end
+
   def commit_prompt_with_target(target)
-    system('git', '-C', @root, 'add', 'review.md', target, exception: true)
+    paths = ['review.md']
+    paths << target if target
+    system('git', '-C', @root, 'add', *paths, exception: true)
     system('git', '-C', @root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
            'commit', '--quiet', '-m', 'prompt', exception: true)
     Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
   end
 
-  def commit_prompt
-    system('git', '-C', @root, 'add', 'review.md', exception: true)
-    system('git', '-C', @root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
-           'commit', '--quiet', '-m', 'prompt', exception: true)
-    Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
-  end
+  def commit_prompt = commit_prompt_with_target(nil)
 
   def test_symbolic_ref_and_missing_configuration_are_rejected
     assert_raises(Shaka::Error) { fingerprint('main') }

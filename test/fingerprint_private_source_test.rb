@@ -51,6 +51,17 @@ class FingerprintPrivateSourceTest < Minitest::Test
     assert_raises(Shaka::Error) { fingerprint(source) }
   end
 
+  def test_symlink_replacement_after_preflight_requires_new_resolution
+    ref = Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
+    source = Shaka::Configuration.private_source(root: @root, ref:)
+    replacement = File.join(@root, 'uncommitted-script')
+    File.write(replacement, 'new')
+    command = File.join(@root, '.agents/shaka/bin/test')
+    File.delete(command)
+    File.symlink(replacement, command)
+    assert_raises(Shaka::Error) { fingerprint(source) }
+  end
+
   def fingerprint(source)
     Shaka::Configuration::Fingerprint.build(
       root: @root, effective_settings: source.candidate_config.to_h,

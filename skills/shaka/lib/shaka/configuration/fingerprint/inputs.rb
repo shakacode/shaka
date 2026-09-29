@@ -3,6 +3,7 @@
 require 'find'
 require_relative '../../repository_config'
 require_relative '../private_inventory'
+require_relative '../private_source'
 require_relative 'trusted_prompts'
 
 module Shaka
@@ -20,9 +21,10 @@ module Shaka
       def hashes
         candidate = candidate_paths
         prompts = prompt_paths
-        return @files.hashes(candidate + prompts) if @private_source
+        commands = @settings.fetch('commands').values
+        return @files.hashes(candidate + prompts, files_only: commands + prompts) if @private_source
 
-        merge_trusted(@files.hashes(candidate), prompts)
+        merge_trusted(@files.hashes(candidate, files_only: commands), prompts)
       rescue KeyError => e
         raise Error, "Effective settings lack #{e.key}"
       end
@@ -65,9 +67,22 @@ module Shaka
         current = Find.find(directory, ignore_error: false).map { |path| path.delete_prefix("#{@root}/") }
         raise Error, 'Private source changed since preflight; resolve it again' unless current.sort == recorded.sort
 
+        return verify_t1_source! if @private_source.is_a?(PrivateSourceResult)
+
+        verify_settings_snapshot!
+      end
+
+      def verify_settings_snapshot!
         before = FingerprintCanonical.normalize(@private_source.candidate_config.to_h)
         after = FingerprintCanonical.normalize(RepositoryConfig.load(root: @root).to_h)
         raise Error, 'Private settings changed since preflight; resolve them again' unless after == before
+      end
+
+      def verify_t1_source!
+        fresh = PrivateSource.new(root: @root, ref: @private_source.ref).resolve
+        unchanged = fresh.status == 'complete' && fresh.inventory == @private_source.inventory &&
+                    fresh.candidate_config.to_h == @private_source.candidate_config.to_h
+        raise Error, 'Private source changed since preflight; resolve it again' unless unchanged
       end
 
       def inventory_path(entry)
