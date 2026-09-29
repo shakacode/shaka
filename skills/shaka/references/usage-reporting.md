@@ -266,10 +266,12 @@ to a hostname.
 
 The renderer also fills the workflow version, because every commit between releases
 shares one version number. It appends the commit the helper runs from, such as
-`0.1.0.pre.1-d2654cedfe52975917112c450ebbd7e1bb75afc2`. That commit is the revision
-the installer recorded, or the HEAD of a checkout the skill runs from directly.
-`-modified` follows it when the skill's files differ from that commit, and `-unknown`
-replaces it when no commit can be found.
+`0.1.0.pre.1-d2654cedfe52975917112c450ebbd7e1bb75afc2`. For a managed installation,
+that commit is the revision the installer recorded; edits to the installed copy
+afterwards go undetected, as they do in `shaka doctor`. For a checkout the skill runs
+from directly, it is that checkout's HEAD. `-modified` follows it when the skill's
+files differed from that commit at installation, or differ now in a checkout.
+`-unknown` replaces it when no commit can be found.
 
 Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.
