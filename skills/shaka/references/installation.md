@@ -26,9 +26,9 @@ Ruby that runs it, and the installed `scripts/shaka` starts with that Ruby in ev
 project. It also ignores a project's `RUBYOPT`, Bundler setup, and installed gems,
 because Shaka needs only Ruby's standard library. Run the installer where
 `ruby --version` reports 3.4 or later; an older Ruby stops with that requirement.
-If that Ruby is removed, `scripts/shaka` stops and asks you to install again or
-set `SHAKA_RUBY` to another Ruby 3.4 interpreter. Without an installed package,
-`scripts/shaka` uses `ruby` from `PATH`.
+If that Ruby or its record is removed, `scripts/shaka` stops and asks you to
+install again or set `SHAKA_RUBY` to another Ruby 3.4 interpreter. Without an
+installed package, `scripts/shaka` uses `ruby` from `PATH`.
 
 Optional: [ImageMagick 7](https://imagemagick.org/script/download.php) lets agents
 show where a UI change moved pixels with a

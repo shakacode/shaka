@@ -28,10 +28,13 @@ scripts=$(CDPATH='' cd -- "$scripts" && pwd)
 
 ruby=${SHAKA_RUBY:-}
 package=$(CDPATH='' cd -P -- "$scripts/../../.." && pwd -P)
-if [ -z "$ruby" ] && [ -f "$package/.shaka-install.json" ] && [ -f "$package/../.shaka-ruby" ]; then
-  IFS= read -r ruby < "$package/../.shaka-ruby" || true
+# An installed package never falls back to PATH: that would be the project's Ruby.
+if [ -z "$ruby" ] && [ -f "$package/.shaka-install.json" ]; then
+  if [ -f "$package/../.shaka-ruby" ]; then
+    IFS= read -r ruby < "$package/../.shaka-ruby" || true
+  fi
   if [ ! -x "$ruby" ]; then
-    echo "Shaka was installed with Ruby ${ruby:-UNKNOWN}, which no longer runs." \
+    echo "Shaka cannot run the Ruby it was installed with (${ruby:-no record found})." \
       "Rerun bin/install with Ruby 3.4, or set SHAKA_RUBY to a Ruby 3.4 interpreter." >&2
     exit 1
   fi
