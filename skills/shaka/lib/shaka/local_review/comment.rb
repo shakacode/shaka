@@ -18,7 +18,7 @@ module Shaka
     COLUMNS = %w[Round Commit Reviewer Model Effort Prompt Findings Tokens Cost].freeze
     OUTCOMES = %w[different_provider same_provider same_model].freeze
     SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#add-a-second-reviewer'
-    CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
+    CLOSING = LocalReviewEvidence::CLOSING
     # A setup failure's reason can name a file on the reviewer's machine; a public PR must not show it.
     # A path can contain spaces, so everything from its first character on is dropped.
     LOCAL_PATH = %r{(?<![\w./-])(?:~|/).*}m

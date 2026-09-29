@@ -134,9 +134,12 @@ module Shaka
       end
     end
 
+    # `--is-ancestor` exits 1 only for "not an ancestor"; a timeout or unknown object keeps its own message.
     def contains!(commit, descendant)
       capture(git_executable, '-C', root, 'merge-base', '--is-ancestor', commit, descendant)
-    rescue Shaka::Error
+    rescue Shaka::Error => e
+      raise unless e.message.end_with?('failed (exit 1)')
+
       raise Shaka::Error, "#{descendant} does not build on #{commit}, which the ledger reviewed or records as " \
                           'a fix; fix the history or use a new ledger.'
     end

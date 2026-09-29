@@ -204,7 +204,9 @@ shaka review record --ledger "$LEDGER" --content-file FINDINGS.json
 `disposition` is `fixed`, with the fix commit's full SHA, or `documented`. The helper refuses a
 fixed nit, a count that differs from the report's `FINDINGS n`, and a repeated id. Give a
 finding the same `id` when a later round raises it again: the comment then flags a finding that
-returned after its fix, a sign the fixes are not converging. `model`, `tokens`, `cost`, and
+returned after its fix, a sign the fixes are not converging. Give a new finding an id no
+earlier round used: the outcome follows each id's latest disposition, so reusing one for a
+different problem can hide an unfixed defect. `model`, `tokens`, `cost`, and
 `estimate` are optional, as described below, and a top-level `fallback` sets the fallback notice.
 
 `review run` refuses the next round until the last round's findings are recorded. It also

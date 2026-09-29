@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative '../error'
+require_relative 'evidence'
 require_relative 'finding'
 
 module Shaka
@@ -9,8 +10,6 @@ module Shaka
   # what became of its findings. It stays outside the checkout until `review publish` renders it,
   # and it has the same shape as that command's content file.
   class LocalReviewLedger
-    COUNT = /FINDINGS (\d+)\s*\z/
-
     attr_reader :path
 
     # Only `review run` can start a ledger, so only it needs the checkout to keep the ledger out of.
@@ -97,10 +96,10 @@ module Shaka
     end
 
     def reported_count(round)
-      match = File.read(round.fetch('report'), encoding: 'UTF-8').match(COUNT)
+      match = File.read(round.fetch('report'), encoding: 'UTF-8').match(LocalReviewEvidence::CLOSING)
       raise Error, "Round report #{round['report']} has no FINDINGS count." unless match
 
-      match[1].to_i
+      match[2].to_i
     end
 
     def write(content)

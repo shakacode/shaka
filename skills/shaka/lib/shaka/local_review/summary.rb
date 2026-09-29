@@ -40,7 +40,8 @@ module Shaka
     INSTRUCTIONS = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md'
     RULES = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/lib/shaka/review_prompt.rb'
     NUMBER = /\A\d{1,3}(?:,\d{3})*\z|\A\d+\z/
-    MONEY = /\A\$?(\d+(?:\.\d+)?)\z/
+    # `shaka usage` marks an estimate that leaves some responses unpriced as `(partial)`.
+    MONEY = /\A\$?(\d+(?:\.\d+)?)( \(partial\))?\z/
 
     def initialize(rounds) = @rounds = rounds
 
@@ -61,11 +62,15 @@ module Shaka
 
     # A subscription session has no per-token bill, so its dollar figure is an API-equivalent estimate.
     def cost
-      amounts = @rounds.map { |round| price(round)[MONEY, 1] }
-      return 'cost UNKNOWN' if amounts.any?(&:nil?)
+      prices = @rounds.map { |round| price(round).match(MONEY) }
+      return 'cost UNKNOWN' if prices.any?(&:nil?)
 
+      format('$%<sum>.2f %<label>s', sum: prices.sum { |match| match[1].to_f }, label: cost_label(prices))
+    end
+
+    def cost_label(prices)
       label = @rounds.all? { |round| round.value('cost') } ? 'cost' : 'API-equivalent estimate'
-      format('$%<sum>.2f %<label>s', sum: amounts.sum(&:to_f), label:)
+      prices.any? { |match| match[2] } ? "#{label} (partial)" : label
     end
 
     def price(round) = (round.value('cost') || round.value('estimate')).to_s

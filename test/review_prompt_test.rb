@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/review_prompt'
+require 'shaka/local_review/finding'
 require 'tmpdir'
 
 # The instructions a locally invoked reviewer receives.
@@ -38,7 +39,8 @@ class ReviewPromptTest < Minitest::Test
       instructions = File.join(directory, 'prompt.md')
       File.write(instructions, "Only check spelling.\n")
 
-      assert_includes render('--prompt-file', instructions), 'Start every finding with one class: defect'
+      rules = render('--prompt-file', instructions)[/^Rules:\n.*?\n\n/m]
+      Shaka::LocalReviewFinding::CLASSES.each { |kind| assert_match(/\b#{kind}\b/, rules) }
     end
   end
 

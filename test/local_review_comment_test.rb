@@ -337,6 +337,8 @@ class LocalReviewSummaryTest < Minitest::Test
 
     assert_includes body, '| 41,200 | $0.17 est. |'
     assert_includes body, '**Total:** 2 rounds · 42,200 tokens · $0.37 API-equivalent estimate'
+    partial = render('rounds' => [round(estimate: '$0.17 (partial)')])
+    assert_includes partial, '$0.17 API-equivalent estimate (partial)'
   end
 
   def test_an_unpriced_round_leaves_the_total_cost_unknown
