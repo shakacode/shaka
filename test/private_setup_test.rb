@@ -137,6 +137,29 @@ class PrivateSetupTest < Minitest::Test
   end
 end
 
+class PrivateSetupOptionalTest < Minitest::Test
+  include PrivateSetupFixture
+
+  def test_optional_pair_interruption_remains_partial_and_resumes
+    with_setup do |root, ref|
+      selected = options.merge(validate_local_command: 'bin/probe', trigger_hosted_ci_command: 'bin/probe')
+      assert_interrupted_optional_setup(root, ref, selected)
+      assert_equal 'partial', recovery(root).inspect_checkout.fetch('status')
+      assert_equal 'complete', Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected).setup.fetch('status')
+    end
+  end
+
+  def assert_interrupted_optional_setup(root, ref, selected)
+    setup = Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected)
+    setup.define_singleton_method(:write_new_file) do |path, content|
+      raise Errno::EIO, path if path.end_with?('trigger-hosted-ci')
+
+      super(path, content)
+    end
+    assert_raises(Shaka::Error) { setup.setup }
+  end
+end
+
 class PrivateCommandTest < Minitest::Test
   include PrivateSetupFixture
 
@@ -268,6 +291,22 @@ class PrivateRecoveryTest < Minitest::Test
     refute_path_exists File.join(first.fetch('recovery'), 'current/local-note')
     assert_equal 'linked only', File.read(File.join(second.fetch('recovery'), 'current/local-note'))
     assert_equal 1, File.read(File.join(root, '.git/info/exclude')).scan('/.agents/shaka/').length
+  end
+end
+
+class PrivateRecoveryInterruptedTest < Minitest::Test
+  include PrivateSetupFixture
+
+  def test_missing_current_keeps_previous_during_refresh
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      storage = result.fetch('recovery')
+      FileUtils.mv(File.join(storage, 'current'), File.join(storage, 'previous'))
+      File.write(config_path(root), 'new edit')
+      recovery(root).inspect_checkout
+      assert_includes File.read(File.join(storage, 'previous/config.yml')), 'preference: ask'
+      assert_equal 'new edit', File.read(copy_path(result))
+    end
   end
 end
 

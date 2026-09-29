@@ -56,11 +56,19 @@ module Shaka
       def inventory_index(entries) = entries.to_h { |entry| [entry.fetch('path'), entry] }
 
       def complete_tree?
-        required = [Configuration::Paths::NEW_CONTRACT, *Configuration::Paths::NEW_REQUIRED_COMMANDS.values]
+        required = [Configuration::Paths::NEW_CONTRACT, *Configuration::Paths::NEW_REQUIRED_COMMANDS.values,
+                    *prepared_optional_paths]
         required.all? do |relative|
           path = File.join(@root, relative)
           File.file?(path) && !File.symlink?(path)
         end
+      end
+
+      def prepared_optional_paths
+        previous = File.join(@storage, 'previous')
+        snapshot = current_inventory || (File.directory?(previous) ? inventory_for(previous) : [])
+        installed = snapshot.map { |entry| File.join(PRIVATE_DIRECTORY, entry.fetch('path')) }
+        Configuration::Paths::NEW_OPTIONAL_COMMANDS.values & installed
       end
 
       def hidden_untracked(adopted)

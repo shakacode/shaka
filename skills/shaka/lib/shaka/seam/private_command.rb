@@ -81,10 +81,7 @@ module Shaka
       end
 
       def add_command_options(flags)
-        %w[setup validate test].each do |name|
-          flags.on("--#{name}-command COMMAND") { |value| @options[:"#{name}_command"] = value }
-        end
-        %w[validate-local trigger-hosted-ci].each do |name|
+        %w[setup validate test validate-local trigger-hosted-ci].each do |name|
           flags.on("--#{name}-command COMMAND") { |value| @options[:"#{name.tr('-', '_')}_command"] = value }
         end
       end
