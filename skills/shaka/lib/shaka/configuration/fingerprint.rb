@@ -49,12 +49,19 @@ module Shaka
 
       def validate_inputs!
         validate_repository!
-        raise Error, 'Effective settings must be a mapping' unless @settings.is_a?(Hash)
-
+        validate_settings!
         validate_installation!
         raise Error, 'Select exactly one settings source' if @private_source.nil? == @trusted_ref.nil?
 
         validate_private_source! if @private_source
+      end
+
+      def validate_settings!
+        raise Error, 'Effective settings must be a mapping' unless @settings.is_a?(Hash)
+
+        %w[paths commands review opening_check].each do |key|
+          raise Error, "Effective settings #{key} must be a mapping" unless @settings[key].is_a?(Hash)
+        end
       end
 
       def validate_repository!
@@ -120,7 +127,14 @@ module Shaka
       def private_paths
         return [] unless @private_source
 
-        @private_source.inventory.map { |entry| entry.fetch(:path) } - [config_path]
+        @private_source.inventory.map { |entry| inventory_path(entry) } - [config_path]
+      end
+
+      def inventory_path(entry)
+        path = entry[:path] if entry.is_a?(Hash)
+        raise Error, 'Private source inventory lacks path' unless path.is_a?(String)
+
+        path
       end
     end
   end

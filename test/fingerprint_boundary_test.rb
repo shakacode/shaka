@@ -44,6 +44,22 @@ class FingerprintBoundaryTest < Minitest::Test
     assert_raises(Shaka::Error) { fingerprint(@settings.except('review')) }
   end
 
+  def test_wrong_settings_shapes_are_shaka_errors
+    assert_raises(Shaka::Error) { fingerprint(@settings.merge('paths' => 'config.yml')) }
+    assert_raises(Shaka::Error) { fingerprint(@settings.merge('commands' => [])) }
+  end
+
+  def test_invalid_repository_and_installation_are_rejected
+    assert_raises(Shaka::Error) { fingerprint(repository: 'shaka') }
+    assert_raises(Shaka::Error) { fingerprint(installation: @installation.merge('schema_version' => 2)) }
+  end
+
+  def test_malformed_private_inventory_reports_its_source
+    @source.inventory << { 'path' => 'wrong key' }
+    error = assert_raises(Shaka::Error) { fingerprint }
+    assert_includes error.message, 'inventory'
+  end
+
   def test_invalid_encoding_is_a_shaka_error
     settings = @settings.merge('note' => "\xFF".b)
     assert_raises(Shaka::Error) { fingerprint(settings) }
