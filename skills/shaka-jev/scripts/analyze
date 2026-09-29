@@ -48,7 +48,7 @@ while :; do
           selected=$(resolve_file "$directory/ruby") || selected=
           case "$selected" in
             "$checkout"|"$checkout"/*|'') ;;
-            *) ruby=$selected ;;
+            *) ruby=$directory/ruby ;;
           esac
         fi
         ;;
