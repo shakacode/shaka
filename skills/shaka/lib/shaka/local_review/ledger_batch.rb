@@ -16,13 +16,18 @@ module Shaka
     # Indexes of the rounds that reviewed the last head.
     def batch = rounds.each_index.select { |index| rounds[index]['head'] == last_head }
 
-    def recorded_index(reviewer, candidates = batch)
-      raise Error, 'The ledger has no round to record.' if candidates.empty?
-      return candidates.last if reviewer.nil? && candidates.one?
-      raise Error, "Several reviewers read #{last_head}; pass --reviewer to record one." if reviewer.nil?
+    def recorded_index(reviewer)
+      raise Error, 'The ledger has no round to record.' if rounds.empty?
+      return sole_round if reviewer.nil?
 
-      candidates.find { |index| same_reviewer?(rounds[index], reviewer) } ||
+      batch.find { |index| same_reviewer?(rounds[index], reviewer) } ||
         raise(Error, "No round by #{reviewer} reviewed #{last_head}.")
+    end
+
+    def sole_round
+      raise Error, "Several reviewers read #{last_head}; pass --reviewer to record one." unless batch.one?
+
+      batch.first
     end
 
     # Another reviewer may join the last batch; any other repeat of a commit needs a fix first.

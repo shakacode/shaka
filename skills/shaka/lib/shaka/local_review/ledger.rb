@@ -58,20 +58,24 @@ module Shaka
     end
 
     # Reviewers of one commit run at once, so each append rereads the ledger under a lock and
-    # checks again that the round still joins the last commit or starts a new one.
+    # repeats the start checks: another round may have landed while this one ran.
     def append!(base:, round:)
       locked do
-        check_joins!(base, round['head'], round['reviewer'])
+        check_next!(base:, head: round['head'], reviewer: round['reviewer'])
         write(data.merge('base' => base, 'rounds' => rounds + [round]))
       end
     end
 
-    # Sets one last-batch round's findings and any usage the host reported for it. A batch with
-    # several reviewers needs `reviewer` to say whose round this is.
+    # Sets one last-batch round's findings and any usage the host reported for it, and returns its
+    # number. A batch with several reviewers needs `reviewer` to say whose round this is.
     def record!(content, reviewer: nil)
       raise Error, 'Record content must be an object.' unless content.is_a?(Hash)
 
-      locked { replace_round(recorded_index(reviewer), content) }
+      locked do
+        index = recorded_index(reviewer)
+        replace_round(index, content)
+        index + 1
+      end
     end
 
     private

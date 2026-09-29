@@ -1187,10 +1187,10 @@ module LocalReviewLoopSteps
       file.write(JSON.generate('findings' => []))
       file.close
       arguments = [self.class::COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file', file.path]
-      _out, error, status = Open3.capture3(*arguments)
-      assert_includes error, 'pass --reviewer'
-      refute_predicate status, :success?
-      assert_predicate Open3.capture3(*arguments, '--reviewer', 'anthropic/claude').last, :success?
+      assert_includes Open3.capture3(*arguments)[1], 'pass --reviewer'
+      output, error, status = Open3.capture3(*arguments, '--reviewer', 'anthropic/claude')
+      assert_predicate status, :success?, error
+      assert_equal 2, JSON.parse(output).fetch('round')
     end
   end
 

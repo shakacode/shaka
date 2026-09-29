@@ -85,8 +85,8 @@ module Shaka
         @arguments.empty? && @options[:ledger] && @options[:content_file]
 
       ledger = LocalReviewLedger.new(@options[:ledger])
-      ledger.record!(content, reviewer: @options[:reviewer])
-      puts JSON.pretty_generate('ledger' => ledger.path, 'round' => ledger.rounds.size)
+      round = ledger.record!(content, reviewer: @options[:reviewer])
+      puts JSON.pretty_generate('ledger' => ledger.path, 'round' => round)
       0
     end
 

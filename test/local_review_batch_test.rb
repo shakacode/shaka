@@ -45,9 +45,10 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     append(EARLIER, 'openai/codex', findings: 1)
     append(EARLIER, 'anthropic/claude', findings: 1)
 
-    assert_includes assert_raises(Shaka::Error) { record(nil, [NIT]) }.message, 'pass --reviewer'
-    assert_includes assert_raises(Shaka::Error) { record('xai/grok', [NIT]) }.message, 'No round by xai/grok'
-    record('openai/codex', [NIT])
+    { nil => 'pass --reviewer', 'xai/grok' => 'No round by xai/grok' }.each do |reviewer, message|
+      assert_includes assert_raises(Shaka::Error) { record(reviewer, [NIT]) }.message, message
+    end
+    assert_equal 1, record('openai/codex', [NIT])
     assert_equal([[NIT], nil], ledger.rounds.map { |round| round['findings'] })
   end
 
@@ -79,6 +80,15 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     error = assert_raises(Shaka::Error) { append(EARLIER, 'anthropic/claude', findings: 0) }
     assert_includes error.message, 'Round 1 already reviewed'
     assert_includes assert_raises(Shaka::Error) { append(HEAD, 'openai/codex', findings: 0) }.message, 'Round 2'
+  end
+
+  # Break caught: a new head landed after a late reviewer of the old head, leaving its findings unrecorded.
+  def test_a_new_head_cannot_land_after_an_unrecorded_late_round
+    append(EARLIER, 'openai/codex', findings: 0)
+    ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex')
+    append(EARLIER, 'anthropic/claude', findings: 1)
+
+    assert_includes assert_raises(Shaka::Error) { append(HEAD, 'openai/codex', findings: 0) }.message, 'Record round 2'
   end
 
   # Break caught: two reviewers started on one empty ledger with different bases mixed their diffs.
