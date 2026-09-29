@@ -201,7 +201,7 @@ hidden-grading cell:
 5. Capture final PR/check/review/merge state through the API and grade locally.
    On every exit, stop processes, cancel remaining sandbox jobs, retain evidence,
    and retain campaign repositories as evidence without granting later cells
-   access to solved ones; revoke their scoped tokens at campaign end. Token
+   access to solved ones; revoke each cell's scoped token after its run. Token
    creation/approval and access cleanup ownership are arranged before the batch.
 
 **One repository per measured cell, grouped in one campaign manifest.** This modifies
