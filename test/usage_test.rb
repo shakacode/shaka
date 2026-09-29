@@ -197,7 +197,7 @@ class UsageSinceTimeTest < Minitest::Test
 
     assert_metric report, 'Input', 200
     assert_includes report, '1 responses'
-    assert_includes report, "responses after #{START.iso8601}"
+    assert_includes report, "responses at or after #{START.iso8601} (whole-second sources include the cutoff second)"
     assert_selected_identity(report)
   end
 
@@ -209,6 +209,32 @@ class UsageSinceTimeTest < Minitest::Test
 
     assert_metric report, 'Input', 200
     assert_selected_identity(report)
+  end
+
+  def test_records_offset_timestamp_interval_in_utc
+    record = usage('offset', 'current', 200)
+    record[:timestamp] = '2026-09-14T13:00:01+01:00'
+
+    report = run_report([context('current'), record], '--since-time', START.iso8601)
+
+    assert_includes report, '2026-09-14T12:00:01Z through 2026-09-14T12:00:01Z'
+    identity = JSON.parse(report.match(/<!-- shaka:usage (\{[^\n]*\}) -->/)[1])
+    assert_equal '2026-09-14T12:00:01Z', identity.fetch('from')
+    assert_equal '2026-09-14T12:00:01Z', identity.fetch('to')
+  end
+
+  def test_orders_mixed_precision_interval_in_report_and_identity
+    whole = usage('whole', 'current', 100)
+    whole[:timestamp] = '2026-09-14T12:00:01Z'
+    precise = usage('precise', 'current', 200)
+    precise[:timestamp] = '2026-09-14T12:00:01.500Z'
+
+    report = run_report([context('current'), whole, precise], '--since-time', START.iso8601)
+
+    assert_metric report, 'Input', 300
+    assert_includes report, '2026-09-14T12:00:01Z through 2026-09-14T12:00:01.500Z'
+    identity = JSON.parse(report.match(/<!-- shaka:usage (\{[^\n]*\}) -->/)[1])
+    assert_equal ['2026-09-14T12:00:01Z', '2026-09-14T12:00:01.500Z'], identity.values_at('from', 'to')
   end
 
   def test_rejects_an_invalid_start_time

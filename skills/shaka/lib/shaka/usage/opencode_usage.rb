@@ -108,7 +108,7 @@ module Shaka
     end
 
     def response(info, configured)
-      return unless info['role'] == 'assistant' && turn?(info['id'])
+      return unless info['role'] == 'assistant'
 
       { 'response_id' => info['id'], 'turn_id' => info['parentID'],
         'timestamp' => iso(info.dig('time', 'completed') || info.dig('time', 'created')),

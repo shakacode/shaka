@@ -12,7 +12,7 @@ module Shaka
       source_file_options(flags, options)
       flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
       flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |value| options[:turns] << value }
-      flags.on('--since-time UTC', 'Count responses after task start in a shared session') do |value|
+      flags.on('--since-time UTC', 'Count responses from task start in a shared session') do |value|
         options[:since_time] = value
       end
     end

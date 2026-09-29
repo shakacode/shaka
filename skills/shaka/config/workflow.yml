@@ -353,6 +353,7 @@ phases:
         pr OWNER/REPO NUMBER --root DIR --ref SHA
         pr watch OWNER/REPO NUMBER --head SHA --root DIR --ref SHA
           [--baseline COMMENTS_JSON] [--interval SECONDS] [--timeout SECONDS] [--settle SECONDS]
+          [--ci-review-wait none|one|all] [--ci-review-not-required]
         comments OWNER/REPO NUMBER --head SHA
         comments OWNER/REPO ISSUE_NUMBER --issue
         description OWNER/REPO NUMBER --content-file PATH [--root DIR --ref SHA]
@@ -622,7 +623,11 @@ always: |-
   Without a baseline, watching starts with the comments already present. It polls the named
   head and exits when required checks finish and the trusted none/one/all CI review job threshold
   is terminal, or on a new trusted comment, a moved head, closure, or timeout. It ignores non-required
-  checks outside the configured CI review jobs. Its one `SHAKA_WAKE`
+  checks outside the configured CI review jobs. Pass a recorded task override with `--ci-review-wait`;
+  the command keeps the stricter of that value and the trusted seam setting. When the trusted
+  `review.required: meaningful_changes` rule permits omitting CI review for this task, record
+  that decision and pass `--ci-review-not-required` so the watcher waits only for required checks.
+  Its one `SHAKA_WAKE`
   line gives the reason to refresh the PR. On an error wake, inspect the error, refresh the PR,
   and restart the watcher or use the resume path above. By default it polls every 60 seconds,
   times out after one hour, and waits 15 seconds before a work wake. After a timeout with checks

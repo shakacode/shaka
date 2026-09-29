@@ -2,6 +2,8 @@
 
 require 'digest'
 require 'json'
+require 'time'
+require_relative 'options'
 
 module Shaka
   # Hidden identity that lets a later host tell this report from a refreshed snapshot.
@@ -11,7 +13,11 @@ module Shaka
     def timestamps
       @responses.filter_map do |record|
         stamp = record['timestamp']
-        stamp if stamp.is_a?(String) && stamp.match?(/\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z\z/)
+        next unless stamp.is_a?(String) && stamp.match?(UsageOptions::ISO_TIME)
+
+        Time.iso8601(stamp).utc.iso8601(stamp[/\.(\d+)/, 1]&.size || 0)
+      rescue ArgumentError
+        nil
       end
     end
 
@@ -34,7 +40,7 @@ module Shaka
     end
 
     def interval_fields
-      from, to = timestamps.minmax
+      from, to = timestamps.minmax_by { |stamp| Time.iso8601(stamp) }
       { 'from' => from || 'UNKNOWN', 'to' => to || 'UNKNOWN' }
     end
 

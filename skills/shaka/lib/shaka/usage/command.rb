@@ -122,7 +122,9 @@ module Shaka
 
     def turn_scope
       return 'all turns in selected sources' if @options[:all_turns]
-      return "responses after #{@options[:since_time]}" if @options[:since_time]
+      if @options[:since_time]
+        return "responses at or after #{@options[:since_time]} (whole-second sources include the cutoff second)"
+      end
 
       @options[:turns].empty? ? @source.class::LATEST_SCOPE : 'explicitly selected turns'
     end
@@ -136,7 +138,8 @@ module Shaka
     end
 
     def interval
-      timestamps.empty? ? 'UNKNOWN' : timestamps.minmax.join(' through ')
+      from, to = interval_fields.values_at('from', 'to')
+      from == 'UNKNOWN' ? 'UNKNOWN' : "#{from} through #{to}"
     end
 
     def safe(value)

@@ -56,7 +56,7 @@ module Shaka
 
         next_poll = [@timing.fetch(:interval), deadline - @clock.call].min
         next_poll = [next_poll, @ready_since + @timing.fetch(:settle) - @clock.call].min if @pending_reason
-        @sleeper.call(next_poll)
+        @sleeper.call([next_poll, 0].max)
       end
     end
 
@@ -95,7 +95,7 @@ module Shaka
     def new_comments?
       ids = comment_ids(@comments.call)
       fresh = ids - @seen
-      @seen = ids
+      @seen |= ids
       fresh.any?
     end
 

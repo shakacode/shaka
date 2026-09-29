@@ -3,6 +3,7 @@
 require 'json'
 require 'optparse'
 require_relative '../github'
+require_relative '../ci_review_wait'
 require_relative '../pr_watch'
 require_relative '../trusted_config_source'
 
@@ -29,12 +30,24 @@ module Shaka
         seam = TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
         settings = watch_settings(options, seam)
         PrWatch.new(GitHub.new(*arguments), head: options[:head],
-                                            ci_jobs: Array(seam.review['ci_review_jobs']), settings:)
+                                            ci_jobs: review_jobs(options, seam), settings:)
+      end
+
+      def review_jobs(options, seam)
+        return Array(seam.review['ci_review_jobs']) unless options[:ci_review_not_required]
+
+        unless seam.review['required'] == 'meaningful_changes'
+          raise Error, '--ci-review-not-required needs review.required: meaningful_changes.'
+        end
+
+        []
       end
 
       def watch_settings(options, seam)
         settings = options.slice(:interval, :timeout, :settle)
-        settings[:ci_review_wait] = seam.review['ci_review_wait']
+        settings[:ci_review_wait] = CiReviewWait.effective(
+          seam: seam.review['ci_review_wait'], override: options[:ci_review_wait]
+        )
         settings[:seam_required_checks] = seam.merge['required_checks']
         settings[:baseline] = baseline(options) if options[:baseline]
         settings
@@ -62,9 +75,15 @@ module Shaka
           %w[interval timeout settle].each do |name|
             flags.on("--#{name} SECONDS", Integer) { |value| options[name.to_sym] = value }
           end
+          review_wait_option(flags, options)
           baseline_option(flags, options)
           flags.on('-h', '--help') { options[:help] = true }
         end
+      end
+
+      def review_wait_option(flags, options)
+        flags.on('--ci-review-wait MODE', CiReviewWait::VALUES) { |value| options[:ci_review_wait] = value }
+        flags.on('--ci-review-not-required') { options[:ci_review_not_required] = true }
       end
 
       def baseline_option(flags, options)

@@ -5,11 +5,13 @@ require_relative '../error'
 require_relative 'options'
 
 module Shaka
-  # Narrows a shared native session to responses after the current task began.
+  # Narrows a shared native session to responses at or after the current task began.
   module UsageSinceTime
     private
 
     def select_since_time
+      raise Error, '--since-time cannot scope incomplete native sources.' unless @source.gaps.empty?
+
       cutoff = Time.iso8601(@options[:since_time])
       @selected_responses.select! do |_id, record|
         selected_after?(record, cutoff)
