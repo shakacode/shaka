@@ -11,6 +11,9 @@ Follow its installation instructions and confirm the skill is available.
 ```
 
 The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
+It also reports whether optional ImageMagick 7 is installed; with it, PRs for
+UI changes can include a
+[difference image](pr-verification.md#show-what-changed-between-captures).
 Start a new chat if the skill does not appear. See [coding agents](coding-agents.md)
 for environment-specific setup.
 
