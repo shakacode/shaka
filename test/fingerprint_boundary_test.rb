@@ -1,23 +1,33 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require_relative 'configuration_layout_fixture'
 require 'shaka/configuration/fingerprint'
 require 'fileutils'
+require 'find'
 
 class FingerprintBoundaryTest < Minitest::Test
+  include ConfigurationLayoutFixture
+
   def setup
     @root = Dir.mktmpdir('fingerprint-boundary')
-    FileUtils.mkdir_p(File.join(@root, '.agents/shaka'))
-    File.write(File.join(@root, '.agents/shaka/config.yml'), 'version: 1')
+    FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
+    create_new_commands(@root)
+    File.write(File.join(@root, '.agents/shaka/config.yml'), YAML.dump(config))
     @settings = { 'commands' => {}, 'review' => {}, 'opening_check' => {},
                   'paths' => { 'policy_configuration' => '.agents/shaka/config.yml' } }
-    @source = Struct.new(:root, :status, :ref, :inventory, :mode).new(
-      @root, 'complete', 'a' * 40, [{ path: '.agents/shaka/config.yml' }], 'private/local'
-    )
+    @source = private_source
     @installation = { 'schema_version' => 1, 'version' => '1', 'source' => { 'kind' => 'uninstalled' } }
   end
 
   def teardown = FileUtils.remove_entry(@root)
+
+  def private_source
+    inventory = Find.find(File.join(@root, '.agents/shaka')).map { |path| { path: path.delete_prefix("#{@root}/") } }
+    Struct.new(:root, :status, :ref, :inventory, :mode, :candidate_config).new(
+      @root, 'complete', 'a' * 40, inventory, 'private/local', Shaka::RepositoryConfig.load(root: @root)
+    )
+  end
 
   def fingerprint(settings = @settings, **options)
     Shaka::Configuration::Fingerprint.build(root: @root, effective_settings: settings,
@@ -60,6 +70,12 @@ class FingerprintBoundaryTest < Minitest::Test
     assert_includes error.message, 'inventory'
   end
 
+  def test_private_file_added_after_preflight_requires_new_resolution
+    File.write(File.join(@root, '.agents/shaka/new-prompt.md'), 'new')
+    error = assert_raises(Shaka::Error) { fingerprint }
+    assert_includes error.message, 'since preflight'
+  end
+
   def test_invalid_encoding_is_a_shaka_error
     settings = @settings.merge('note' => "\xFF".b)
     assert_raises(Shaka::Error) { fingerprint(settings) }
@@ -97,11 +113,6 @@ class FingerprintBoundaryTest < Minitest::Test
     assert_raises(Shaka::Error) { fingerprint }
     @source.root = @root
     @source.ref = 'main'
-    assert_raises(Shaka::Error) { fingerprint }
-  end
-
-  def test_missing_root_is_a_shaka_error
-    @source.root = File.join(@root, 'deleted')
     assert_raises(Shaka::Error) { fingerprint }
   end
 

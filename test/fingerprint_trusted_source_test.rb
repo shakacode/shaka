@@ -38,14 +38,66 @@ class FingerprintTrustedSourceTest < Minitest::Test
     assert_equal first.components.fetch('files'), second.components.fetch('files')
   end
 
-  def test_prompt_bytes_change_file_component
-    ref = commit_config('first')
+  def prompt_fixture
+    commit_config('first')
     path = File.join(@root, 'review.md')
     File.write(path, 'one')
     settings = @settings.merge('review' => { 'prompt_file' => 'review.md' })
-    first = fingerprint(ref, settings)
+    [path, commit_prompt, settings]
+  end
+
+  def files(result) = result.components.fetch('files')
+
+  def test_candidate_prompt_edit_or_deletion_keeps_trusted_file_component
+    path, ref, settings = prompt_fixture
+    first = files(fingerprint(ref, settings))
     File.write(path, 'two')
-    refute_equal first.components.fetch('files'), fingerprint(ref, settings).components.fetch('files')
+    assert_equal first, files(fingerprint(ref, settings))
+    File.delete(path)
+    assert_equal first, files(fingerprint(ref, settings))
+  end
+
+  def test_committed_prompt_change_updates_file_component
+    path, ref, settings = prompt_fixture
+    first = files(fingerprint(ref, settings))
+    File.write(path, 'two')
+    refute_equal first, files(fingerprint(commit_prompt, settings))
+  end
+
+  def test_shared_command_and_prompt_path_includes_candidate_and_trusted_bytes
+    path, ref, settings = prompt_fixture
+    settings = settings.merge('commands' => { 'test' => 'review.md' })
+    first = files(fingerprint(ref, settings))
+    File.write(path, 'two')
+    second = files(fingerprint(ref, settings))
+    refute_equal first, second
+    refute_equal second, files(fingerprint(commit_prompt, settings))
+  end
+
+  def test_trusted_symlink_prompt_with_utf8_target
+    commit_config('first')
+    target = 'révision.md'
+    File.write(File.join(@root, target), 'instructions')
+    File.symlink(target, File.join(@root, 'review.md'))
+    ref = commit_prompt_with_target(target)
+    settings = @settings.merge('review' => { 'prompt_file' => 'review.md' })
+    first = files(fingerprint(ref, settings))
+    File.write(File.join(@root, target), 'revised instructions')
+    refute_equal first, files(fingerprint(commit_prompt_with_target(target), settings))
+  end
+
+  def commit_prompt_with_target(target)
+    system('git', '-C', @root, 'add', 'review.md', target, exception: true)
+    system('git', '-C', @root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+           'commit', '--quiet', '-m', 'prompt', exception: true)
+    Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
+  end
+
+  def commit_prompt
+    system('git', '-C', @root, 'add', 'review.md', exception: true)
+    system('git', '-C', @root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+           'commit', '--quiet', '-m', 'prompt', exception: true)
+    Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
   end
 
   def test_symbolic_ref_and_missing_configuration_are_rejected

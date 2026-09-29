@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require_relative 'configuration_layout_fixture'
 require 'shaka/configuration/fingerprint'
 require 'fileutils'
+require 'find'
 
 class FingerprintTest < Minitest::Test
+  include ConfigurationLayoutFixture
+
   INSTALLATION = { 'schema_version' => 1, 'version' => '1.2', 'package_id' => 'package',
                    'source' => { 'kind' => 'revision', 'revision' => 'a' * 40,
                                  'content_sha256' => 'b' * 64 } }.freeze
@@ -12,9 +16,8 @@ class FingerprintTest < Minitest::Test
   def setup
     @root = Dir.mktmpdir('fingerprint')
     FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
-    write('.agents/shaka/config.yml', "version: 1\n")
-    write('.agents/shaka/bin/test', "#!/bin/sh\n")
-    File.chmod(0o755, at('.agents/shaka/bin/test'))
+    create_new_commands(@root)
+    write('.agents/shaka/config.yml', YAML.dump(config))
     @settings = { 'version' => 1, 'review' => {}, 'opening_check' => {},
                   'commands' => { 'test' => '.agents/shaka/bin/test' },
                   'paths' => { 'policy_configuration' => '.agents/shaka/config.yml' } }
@@ -28,10 +31,11 @@ class FingerprintTest < Minitest::Test
   def component(result, name) = result.components.fetch(name)
 
   def private_source
-    entries = %w[.agents/shaka .agents/shaka/config.yml .agents/shaka/bin .agents/shaka/bin/test]
-    inventory = entries.map { |path| { path: } }
-    Struct.new(:root, :status, :ref, :inventory, :mode).new(@root, 'complete', 'c' * 40,
-                                                            inventory, 'private/local')
+    entries = Find.find(at('.agents/shaka')).map { |path| { path: path.delete_prefix("#{@root}/") } }
+    snapshot = Shaka::RepositoryConfig.load(root: @root)
+    Struct.new(:root, :status, :ref, :inventory, :mode, :candidate_config).new(
+      @root, 'complete', 'c' * 40, entries, 'private/local', snapshot
+    )
   end
 
   def fingerprint(settings = @settings, installation: INSTALLATION, **source)
@@ -42,7 +46,7 @@ class FingerprintTest < Minitest::Test
 
   def test_semantic_hash_ignores_key_order_and_yaml_spelling
     first = fingerprint
-    write('.agents/shaka/config.yml', "version: 01 # changed spelling\n")
+    write('.agents/shaka/config.yml', "#{File.read(at('.agents/shaka/config.yml'))}# changed spelling\n")
     reordered = fingerprint(@settings.to_a.reverse.to_h)
     assert_equal first.digest, reordered.digest
     assert_equal 1, first.version
@@ -67,7 +71,7 @@ class FingerprintTest < Minitest::Test
 
   def test_executable_mode_changes_files
     first = component(fingerprint, 'files')
-    File.chmod(0o644, at('.agents/shaka/bin/test'))
+    File.chmod(0o700, at('.agents/shaka/bin/test'))
     refute_equal first, component(fingerprint, 'files')
   end
 

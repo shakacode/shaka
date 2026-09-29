@@ -41,6 +41,16 @@ class FingerprintPrivateSourceTest < Minitest::Test
     assert_false source.grants_policy?
   end
 
+  def test_config_change_after_preflight_requires_new_resolution
+    ref = Open3.capture2('git', '-C', @root, 'rev-parse', 'HEAD').first.strip
+    source = Shaka::Configuration.private_source(root: @root, ref:)
+    path = File.join(@root, '.agents/shaka/config.yml')
+    changed = YAML.safe_load_file(path)
+    changed.fetch('review')['ci_review_wait'] = 'all'
+    File.write(path, YAML.dump(changed))
+    assert_raises(Shaka::Error) { fingerprint(source) }
+  end
+
   def fingerprint(source)
     Shaka::Configuration::Fingerprint.build(
       root: @root, effective_settings: source.candidate_config.to_h,

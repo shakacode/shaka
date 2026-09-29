@@ -2,9 +2,9 @@
 
 require 'open3'
 require_relative '../error'
-require_relative '../repository_config'
 require_relative 'fingerprint/canonical'
 require_relative 'fingerprint/files'
+require_relative 'fingerprint/inputs'
 
 module Shaka
   module Configuration
@@ -116,25 +116,8 @@ module Shaka
       def full_sha?(value) = value.is_a?(String) && value.match?(/\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/)
 
       def file_hashes
-        paths = private_paths + @settings.fetch('commands').values
-        paths += RepositoryConfig.prompt_files(review: @settings.fetch('review'),
-                                               opening: @settings.fetch('opening_check')).map(&:last)
-        @files.hashes(paths)
-      rescue KeyError => e
-        raise Error, "Effective settings lack #{e.key}"
-      end
-
-      def private_paths
-        return [] unless @private_source
-
-        @private_source.inventory.map { |entry| inventory_path(entry) } - [config_path]
-      end
-
-      def inventory_path(entry)
-        path = entry[:path] if entry.is_a?(Hash)
-        raise Error, 'Private source inventory lacks path' unless path.is_a?(String)
-
-        path
+        FingerprintInputs.new(root: @root, settings: @settings, files: @files,
+                              private_source: @private_source, trusted_ref: @trusted_ref).hashes
       end
     end
   end
