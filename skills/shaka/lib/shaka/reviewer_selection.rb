@@ -3,13 +3,14 @@
 require_relative 'error'
 
 module Shaka
-  # Chooses which local reviewer to run first.
+  # Chooses which local reviewers to run on one head.
   #
   # What makes a review adversarial is the context, not the model: a fresh session that did not
   # produce the change reviews it honestly, even when it runs the model that wrote it. So there is
   # no disqualifying identity here and no blocker. A different provider is preferred because
   # different providers notice different things, and the implementation model in a fresh context is
-  # an ordinary answer when no other is available.
+  # an ordinary answer when no other is available. When a round runs several reviewers, the first
+  # still prefers a different provider and the rest follow the maintainer's list order.
   class ReviewerSelection
     IDENTITY = %w[provider model_family].freeze
     SUPPORTED_REVIEWERS = %w[openai/codex anthropic/claude xai/grok].freeze
@@ -34,14 +35,16 @@ module Shaka
       { 'provider' => provider.strip, 'model_family' => family.strip }
     end
 
-    def initialize(reviewers:, implementers:, unavailable: [])
+    def initialize(reviewers:, implementers:, unavailable: [], count: 1)
       @reviewers = reviewers || []
       @implementers = implementers
       @unavailable = unavailable
+      @count = count
     end
 
     def call
       raise Error, 'At least one implementer identity is required.' if @implementers.empty?
+      raise Error, 'The reviewer count must be at least 1.' unless @count.is_a?(Integer) && @count.positive?
 
       reasons = @reviewers.map { |entry| [entry, reason(entry)] }
       selected = pick(reasons)
@@ -71,6 +74,7 @@ module Shaka
       {
         'outcome' => outcome,
         'reviewer' => reviewer_for(outcome, selected),
+        'reviewers' => run_order(outcome, selected, reasons),
         'implementation_providers' => providers,
         'considered' => reasons.map { |entry, why| { 'reviewer' => identity(entry), 'reason' => why } },
         'note' => note(outcome, selected)
@@ -82,6 +86,16 @@ module Shaka
 
       # A failed implementation-model CLI does not rule out a fresh host context.
       'same_model'
+    end
+
+    # The preferred reviewer first, then other available entries in list order up to the count.
+    def run_order(outcome, selected, reasons)
+      return [{ 'reviewer' => implementer, 'outcome' => outcome }] unless selected
+
+      others = reasons.reject { |entry, why| entry.equal?(selected) || why == UNAVAILABLE }
+      [[selected, reasons.assoc(selected).last], *others].first(@count).map do |entry, why|
+        { 'reviewer' => identity(entry), 'outcome' => why == AVAILABLE ? 'different_provider' : 'same_provider' }
+      end
     end
 
     def reviewer_for(outcome, selected)

@@ -95,7 +95,7 @@ for the selected identity and record which CLI or fresh coding-agent session ran
 
 ```text
 shaka reviewer [--root DIR] [--ref REF] --implementer PROVIDER/FAMILY [--implementer ...]
-                                        [--unavailable PROVIDER/FAMILY ...]
+                                        [--unavailable PROVIDER/FAMILY ...] [--count N]
 ```
 
 Pass `--implementer` once per provider and model family that produced part of the change, counting
@@ -115,6 +115,14 @@ Three outcomes, none of them an error:
 | `different_provider` | Run this reviewer. Its provider did not implement the change. |
 | `same_provider` | Run this reviewer. No other provider is available, and its context is still fresh. |
 | `same_model` | Nothing listed is available. Run the implementation model in a fresh context, which is a valid review even if its CLI path failed. |
+
+`--count N` asks for up to N reviewers on the same head, listed in `reviewers` in run order. The
+first is the reviewer above; the rest are the other available entries in the seam's list order, so
+a Claude implementation with the default list gets Codex, then Claude in a fresh context. Fewer
+come back when fewer are available. Run them all on one committed head, wait for each to finish or
+record its `not_completed` result, publish each report, and fix every finding in one repair batch
+before reviewing the new head with the same set. One published attestation for the head satisfies
+`merge`; note a reviewer that did not complete on the PR.
 
 Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked
 provider. Missing local credentials for a provider are not a problem to solve here — if you have no
@@ -141,7 +149,7 @@ An omitted `--effort` records `EFFORT UNKNOWN` in the report while omitting the 
 Report, usage, and diagnostic tempfiles are private local evidence; inspect them as needed and
 remove them when the PR record no longer needs them.
 
-Record which reviewer ran, at which revision, in the chat and the PR review status line. If a
+Record which reviewers ran, at which revision, in the chat and the PR review status line. If a
 reviewer was skipped, record the helper's failure stage and reason rather than calling a Task or
 subagent a CLI attempt.
 

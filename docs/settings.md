@@ -99,6 +99,9 @@ Meaningful implementation also gets a local adversarial review before push:
 - Prefer a different provider and model. If other reviewers are unavailable, the
   current workflow allows the implementation model in a fresh session.
 - Address findings before pushing.
+- To have more than one reviewer read each round, such as Codex and a fresh Claude
+  session after Claude implemented, ask for it in the task. Their findings are fixed
+  together before the next round.
 
 `shaka review run` verifies the reviewer process completed and returned a report
 for the expected commit. `shaka review check` validates a supplied report but does

@@ -191,6 +191,11 @@ phases:
         or no-op work may omit review with a recorded reason, unless the trusted seam sets
         `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
+      - When the user asks for several local reviewers, pass `--count N` to `reviewer` and run
+        each reviewer in its `reviewers` list on the same committed head. Wait until every one
+        returns `completed` or a recorded `not_completed`, then fix all their findings as one
+        repair batch and review the new head with the same set. After two such rounds,
+        remaining nits start no further round.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
         comes from the default branch. Pass `--implementer` once per provider and model family that
@@ -201,7 +206,8 @@ phases:
         flag or model, and a report-validation failure are not availability evidence.
         Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
         failure is not availability evidence, even when `attempted` is true. It returns `different_provider`,
-        `same_provider`, or `same_model`, with a note to copy into the record. None is an error:
+        `same_provider`, or `same_model`, with a note to copy into the record, and a `reviewers`
+        list in run order. None is an error:
         when all listed paths fail, start a new host chat with the implementation model and no
         implementation conversation or Task/subagent context; its own failed CLI does not remove
         that fallback. Run a selected CLI through `shaka review run` as described in
@@ -212,7 +218,7 @@ phases:
         `shaka review check --head SHA --reviewer ID --report PATH`; this checks the attestation but
         does not verify a CLI launch. If no review completed, run `shaka review check --head SHA
         --not-run-reason TEXT`, retain its nonzero result, and explain the missing review on the PR
-        rather than calling it ready. Record which reviewer ran at which revision in the chat and
+        rather than calling it ready. Record which reviewers ran at which revision in the chat and
         the PR review status line. See
         [choose a local reviewer](<{{package_root}}/skills/shaka/references/review.md#choose-a-local-reviewer>).
       - For UI changes, meaning anything a person sees on screen other than command-line output,

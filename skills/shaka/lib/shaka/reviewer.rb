@@ -8,7 +8,7 @@ require_relative 'reviewer_selection'
 require_relative 'configuration'
 
 module Shaka
-  # Answers which listed reviewer satisfies the alternate-review gate for one change.
+  # Answers which listed reviewers satisfy the alternate-review gate for one change.
   class Reviewer
     def self.run(arguments)
       new(arguments).run
@@ -37,7 +37,8 @@ module Shaka
     def selection
       ReviewerSelection.new(reviewers: config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS],
                             implementers: identities(:implementers, required: true),
-                            unavailable: identities(:unavailable)).call
+                            unavailable: identities(:unavailable),
+                            count: @options.fetch(:count, 1)).call
     end
 
     def identities(key, required: false)
@@ -57,6 +58,7 @@ module Shaka
         flags.on('--root DIR', 'Repository root (default: current directory)') { |v| @options[:root] = v }
         flags.on('--ref REF', 'Read policy from this trusted Git commit') { |v| @options[:ref] = v }
         add_identity_options(flags)
+        flags.on('--count N', Integer, 'Reviewers to run on the same head (default: 1)') { |v| @options[:count] = v }
         flags.on('-h', '--help', 'Show usage') { @options[:help] = true }
       end
     end
