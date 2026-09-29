@@ -70,14 +70,15 @@ module Shaka
       def ignored_path?(path, ignored) = ignored.any? { |entry| path == entry || path.start_with?("#{entry}/") }
 
       def validate_skill_entry_points(skill, name)
-        required = name == 'shaka' ? %w[SKILL.md scripts/shaka] : ['SKILL.md']
+        entry_point = { 'shaka' => 'scripts/shaka', 'shaka-jev' => 'scripts/analyze' }[name]
+        required = ['SKILL.md', entry_point].compact
         required.each do |entry|
           path = File.join(skill, entry)
           raise ArgumentError, "Missing skill entry point: #{path}" unless File.file?(path)
         end
-        return unless name == 'shaka'
+        return unless entry_point
 
-        helper = File.join(skill, 'scripts/shaka')
+        helper = File.join(skill, entry_point)
         raise ArgumentError, "Skill helper is not executable: #{helper}" unless File.stat(helper).mode.anybits?(0o100)
       end
 

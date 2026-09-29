@@ -93,6 +93,7 @@ class InstallOptionalSkillsTest < Minitest::Test
       File.write(File.join(source(name), 'SKILL.md'), content)
     end
     write_helper
+    write_jev_helper
     version_dir = File.join(source('shaka'), 'lib/shaka')
     FileUtils.mkdir_p(version_dir)
     File.write(File.join(version_dir, 'version.rb'), "module Shaka\n  VERSION = '0.1.0.pre.1'\nend\n")
@@ -100,6 +101,13 @@ class InstallOptionalSkillsTest < Minitest::Test
 
   def write_helper
     helper = File.join(source('shaka'), 'scripts/shaka')
+    FileUtils.mkdir_p(File.dirname(helper))
+    File.write(helper, "#!/usr/bin/env ruby\n")
+    File.chmod(0o755, helper)
+  end
+
+  def write_jev_helper
+    helper = File.join(source('shaka-jev'), 'scripts/analyze')
     FileUtils.mkdir_p(File.dirname(helper))
     File.write(helper, "#!/usr/bin/env ruby\n")
     File.chmod(0o755, helper)

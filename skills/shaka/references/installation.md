@@ -130,8 +130,9 @@ git -C "$HOME/agent-tools/shaka" switch main
 git -C "$HOME/agent-tools/shaka" pull --ff-only
 ```
 
-Run `bin/install` from the chosen source with your original `--skills-dir` and
-optional tower flags. It validates a new managed copy before switching the links.
+Run `bin/install` from the chosen source with your original `--skills-dir`,
+`--with-jev` if installed, and optional tower flags. It validates a new managed
+copy before switching the links.
 Existing tasks that use the host link may pick up the new helper after the switch.
 Finish or pause them before upgrading, then start a new task with the new skill.
 The previous package remains in the managed directory you chose, which defaults
@@ -154,7 +155,8 @@ or from `shaka doctor --installation-json` before upgrading, then run:
 If you installed with `--managed-dir DIR`, add the same option and directory to
 this rollback command.
 
-Include the optional tower flags recorded in that package. If the current install
+Include `--with-jev` if that package includes Jev, along with its optional tower
+flags. If the current install
 has tower skills that the rollback package lacks, inspect and unlink those managed
 tower links first. The installer refuses a missing package or one whose contents
 do not match its own metadata. It does not independently prove who created a
