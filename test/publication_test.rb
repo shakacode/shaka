@@ -586,9 +586,10 @@ class PublicationUsageRecordTableTest < Minitest::Test
   def test_a_report_from_before_the_table_stays_visible_below_it
     legacy = "#{Shaka::UsageRecords.begin_mark(USAGE_RECORD)}\n| Metric | codex |\n| --- | --- |\n" \
              "| USD estimate | $1.000000 |\n#{Shaka::UsageRecords::END_MARK}"
-    rendered = render(usage: usage_of(COLUMN).merge('carried' => legacy))
+    rendered = render(usage: usage_of(COLUMN, REVIEW).merge('carried' => legacy))
     assert_operator rendered.index('| Report |'), :<, rendered.index('| USD estimate | $1.000000 |')
-    assert_includes rendered, '<summary>Usage and cost · $3.27+ estimated</summary>'
+    assert_includes rendered, '<summary>Usage and cost · $3.58+ estimated</summary>'
+    assert_includes rendered, '| **Total** | $3.58+ | 106+ |'
     assert_includes rendered, 'reports from before this table are listed below and not counted'
   end
 

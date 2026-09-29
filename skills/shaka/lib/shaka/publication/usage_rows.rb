@@ -28,7 +28,7 @@ module Shaka
     def initialize(columns, earlier: false)
       @earlier = earlier
       @rows = report_rows(columns)
-      @rows << ['**Total**', sums(columns)] if @rows.size > 1
+      @rows << ['**Total**', sums(columns).transform_values { |sum| minimum(sum) }] if @rows.size > 1
       @metrics = METRICS.select { |key, _label| @rows.any? { |_label, amounts| amounts[key] } }
     end
 
@@ -40,8 +40,7 @@ module Shaka
     end
 
     def summary
-      usd = @rows.last.last['usd']
-      usd &&= Amount.new(usd.value, true) if @earlier
+      usd = minimum(@rows.last.last['usd'])
       usd && "#{shown('usd', usd)} estimated"
     end
 
@@ -75,6 +74,8 @@ module Shaka
       model = [column['routed'], column['model'], column['provider']].find { |value| value != 'UNKNOWN' }
       [model, column['effort']].reject { |value| value.nil? || value == 'UNKNOWN' }.join(' ')
     end
+
+    def minimum(sum) = sum && @earlier ? Amount.new(sum.value, true) : sum
 
     def sums(group)
       METRICS.to_h { |key, _label| [key, sum(group.map { |column| amount(column[key]) })] }
