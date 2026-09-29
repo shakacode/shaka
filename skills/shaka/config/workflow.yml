@@ -272,9 +272,10 @@ phases:
     body: |-
       - Push the reviewed head, then open or adopt its PR. Open a new PR with an empty body
         (`gh pr create --body ''`) and let `description` fill it; any text outside the managed
-        region stays in the body. Publish the local review right after that with
-        `review publish OWNER/REPO NUMBER --content-file LEDGER`; nothing from the loop reaches
-        GitHub before the push, and publishing again updates the same comment. Use trusted `gh` for authorized
+        region stays in the body. When a local review ran, publish it right after that with
+        `review publish OWNER/REPO NUMBER --content-file PATH`, passing the ledger, or a content
+        file for a fresh host review; nothing from the loop reaches GitHub before the push, and
+        publishing again updates the same comment. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
