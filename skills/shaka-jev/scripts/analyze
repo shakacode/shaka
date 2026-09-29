@@ -23,7 +23,8 @@ begin
     raise OptionParser::InvalidArgument, parser.to_s
   end
 
-  evidence = File.read(options.fetch(:evidence), encoding: 'UTF-8')
+  evidence = File.binread(options.fetch(:evidence), ShakaJev::Analysis::MAX_EVIDENCE_BYTES + 1)
+                 .force_encoding(Encoding::UTF_8)
   result = ShakaJev::Analysis.new(api_key: ENV.fetch('TYPESAFE_API_KEY', '')).call(
     pr_url: options.fetch(:pr_url), head: options.fetch(:head), evidence: evidence
   )

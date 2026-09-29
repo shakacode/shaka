@@ -5,6 +5,7 @@ require 'json'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
+require_relative '../skills/shaka-jev/lib/shaka_jev/analysis'
 
 class JevCommandTest < Minitest::Test
   def test_missing_options_and_unreadable_file_have_clean_errors
@@ -28,6 +29,20 @@ class JevCommandTest < Minitest::Test
 
     refute_predicate status, :success?
     assert_match(/TYPESAFE_API_KEY is required/, output)
+  end
+
+  def test_oversized_evidence_is_rejected_before_network_access
+    Dir.mktmpdir do |dir|
+      evidence = File.join(dir, 'large-evidence.txt')
+      File.write(evidence, 'x' * (ShakaJev::Analysis::MAX_EVIDENCE_BYTES + 100))
+      command = [RbConfig.ruby, File.expand_path('../skills/shaka-jev/scripts/analyze', __dir__),
+                 '--pr-url', 'https://github.com/shakacode/shaka/pull/302', '--head', 'a' * 40,
+                 '--evidence', evidence]
+      output, status = Open3.capture2e({ 'TYPESAFE_API_KEY' => 'test-key' }, *command)
+
+      refute_predicate status, :success?
+      assert_match(/evidence exceeds 64 KiB/, output)
+    end
   end
 
   def test_invalid_api_key_does_not_leak_in_cli_output

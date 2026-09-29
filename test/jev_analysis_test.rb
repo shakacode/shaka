@@ -79,7 +79,7 @@ class JevAnalysisTest < Minitest::Test
 
   def test_invalid_target_or_evidence_is_not_sent
     client = ->(*) { flunk 'must not send' }
-    invalid = [{ pr_url: 'https://github.com/shakacode/shaka/issues/302' },
+    invalid = [{ pr_url: URL.sub('/pull/', '/issues/') }, { pr_url: URL.sub('/shakacode/', '/-shakacode/') },
                { head: 'abc123' }, { evidence: '   ' }, { evidence: 'x' * 65_537 },
                { evidence: (+"\xFF").force_encoding(Encoding::UTF_8) }]
     invalid.each do |change|
@@ -126,10 +126,7 @@ end
 
 class JevHttpTransportTest < Minitest::Test
   def test_bad_json_and_timeout_have_clean_errors
-    failures = [->(*) { Struct.new(:code, :body).new('200', '<html>') },
-                ->(*) { raise Net::ReadTimeout },
-                ->(*) { raise Net::HTTPHeaderSyntaxError, 'invalid Content-Length' }]
-    failures.each do |client|
+    transport_failures.each do |client|
       analysis = ShakaJev::Analysis.new(api_key: 'test-key', client: client, public_repository: ->(*) { true })
       error = assert_raises(ShakaJev::Error) do
         analysis.call(pr_url: JevAnalysisTest::URL, head: JevAnalysisTest::HEAD, evidence: 'Public')
@@ -149,6 +146,13 @@ class JevHttpTransportTest < Minitest::Test
   end
 
   private
+
+  def transport_failures
+    [->(*) { Struct.new(:code, :body).new('200', '<html>') },
+     ->(*) { raise Net::ReadTimeout },
+     ->(*) { raise Net::HTTPHeaderSyntaxError, 'invalid Content-Length' },
+     ->(*) { raise Zlib::DataError, 'invalid compressed body' }]
+  end
 
   def fake_transport(response)
     test = self
@@ -236,7 +240,38 @@ class JevPublicGitHubRepositoryTest < Minitest::Test
     refute ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
   end
 
+  def test_candidate_gh_is_skipped_and_type_safe_key_is_not_passed_to_github
+    with_candidate_gh do |candidate_gh|
+      observed = nil
+      capture = lambda do |*args, **|
+        observed = args
+        [JSON.generate(visibility: 'PUBLIC'), Struct.new(:success?).new(true)]
+      end
+      assert ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
+      assert_safe_lookup(observed, candidate_gh)
+    end
+  end
+
   private
+
+  def with_candidate_gh
+    Dir.mktmpdir('jev-candidate-', Dir.pwd) do |dir|
+      path = File.join(dir, 'gh')
+      File.write(path, "#!/bin/sh\nexit 99\n")
+      File.chmod(0o755, path)
+      original = ENV.fetch('PATH')
+      ENV['PATH'] = "#{dir}#{File::PATH_SEPARATOR}#{original}"
+      yield path
+    ensure
+      ENV['PATH'] = original
+    end
+  end
+
+  def assert_safe_lookup(observed, candidate_gh)
+    refute_equal candidate_gh, observed[1]
+    assert_nil observed.first.fetch('TYPESAFE_API_KEY')
+    refute_includes observed.first.fetch('PATH').split(File::PATH_SEPARATOR), File.dirname(candidate_gh)
+  end
 
   def assert_visibility(visibility, success:, expected:)
     status = Struct.new(:success?).new(success)
@@ -246,8 +281,15 @@ class JevPublicGitHubRepositoryTest < Minitest::Test
       [JSON.generate(visibility: visibility), status]
     end
     assert_equal expected, ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
-    assert_equal [{ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', 'shakacode/shaka', '--json',
-                  'visibility'], command.first
+    assert_capture_call(command.first)
     assert_equal File::NULL, command.last.fetch(:err)
+  end
+
+  def assert_capture_call(args)
+    assert_equal 'github.com', args.first.fetch('GH_HOST')
+    assert_nil args.first.fetch('TYPESAFE_API_KEY')
+    assert_equal ['repo', 'view', 'shakacode/shaka', '--json', 'visibility'], args.drop(2)
+    assert_equal 'gh', File.basename(args[1])
+    assert_path_exists args[1]
   end
 end

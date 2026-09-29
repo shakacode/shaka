@@ -8,6 +8,9 @@ require 'openssl'
 require 'socket'
 require 'timeout'
 require 'uri'
+require 'zlib'
+require_relative '../../../shaka/lib/shaka/opening_checkout'
+require_relative '../../../shaka/lib/shaka/local_review/path_guard'
 
 module ShakaJev
   class Error < StandardError; end
@@ -17,11 +20,24 @@ module ShakaJev
   # Fail closed unless GitHub reports that the target repository is public.
   class PublicGitHubRepository
     def self.call(owner, repo, capture: method(:capture_with_timeout))
-      output, status = capture.call({ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', "#{owner}/#{repo}",
+      gh, path = trusted_gh
+      return false unless gh
+
+      output, status = capture.call({ 'GH_HOST' => 'github.com', 'TYPESAFE_API_KEY' => nil, 'PATH' => path },
+                                    gh, 'repo', 'view', "#{owner}/#{repo}",
                                     '--json', 'visibility', err: File::NULL)
       status.success? && JSON.parse(output)['visibility'] == 'PUBLIC'
-    rescue JSON::ParserError, NoMethodError, TypeError, SystemCallError, Timeout::Error
+    rescue JSON::ParserError, NoMethodError, TypeError, SystemCallError, Timeout::Error, Shaka::Error
       false
+    end
+
+    def self.trusted_gh
+      root = Shaka::OpeningCheckout.root(Dir.pwd)
+      return unless root
+
+      path = Shaka::LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
+      gh = Shaka::LocalReviewPathGuard.safe_executable(path, 'gh', root)
+      [gh, path] if gh
     end
 
     def self.capture_with_timeout(*argv, timeout: 10, **)
@@ -75,7 +91,7 @@ module ShakaJev
       response = @client.call(ENDPOINT, request(pr_url, head, evidence))
       with_context(parse_response(response), pr_url, head, evidence)
     rescue JSON::ParserError, IOError, SystemCallError, Timeout::Error, SocketError,
-           OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError => e
+           OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Zlib::Error => e
       raise Error, "Jev request failed: #{e.class}"
     end
 
@@ -99,7 +115,7 @@ module ShakaJev
     end
 
     def validate_target!(pr_url, head)
-      match = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/pull/\d+\z}.match(pr_url)
+      match = %r{\Ahttps://github\.com/([A-Za-z0-9][\w.-]*)/([\w.-]+)/pull/\d+\z}.match(pr_url)
       raise Error, 'PR URL must be a GitHub pull request' unless match
       raise Error, 'head must be a full Git commit SHA' unless head.match?(/\A[0-9a-f]{40}\z/)
       raise Error, 'Repository could not be verified public' unless @public_repository.call(match[1], match[2])

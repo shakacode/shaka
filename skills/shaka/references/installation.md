@@ -162,16 +162,18 @@ package in the managed directory.
 
 ## Remove
 
-Inspect the link first and confirm it points to a managed Shaka package:
+Inspect each installed link and confirm it points to a managed Shaka package:
 
 ```bash
 ls -l "$HOME/.agents/skills/shaka"
+ls -l "$HOME/.agents/skills/shaka-jev" # only if installed with --with-jev
 ```
 
 Then remove that link:
 
 ```bash
 unlink "$HOME/.agents/skills/shaka"
+unlink "$HOME/.agents/skills/shaka-jev" # only if installed with --with-jev
 ```
 
 Use the appropriate directory for other environments. If you installed tower skills,
