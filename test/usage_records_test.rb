@@ -244,6 +244,12 @@ class UsageRecordsShapeTest < Minitest::Test
     refute_includes error.message, '-->'
   end
 
+  # Break: an unchecked extra identity field was written into the marker and could close it.
+  def test_extra_identity_fields_are_not_kept
+    forged = DEFAULTS.merge('host' => 'codex', 'responses' => %w[x1], 'extra' => '--></details>')
+    assert_equal forged.except('extra'), Shaka::UsageRecordCarry.identity!(forged)
+  end
+
   def test_caller_supplied_carried_text_is_not_published
     old = record('claude-code', 'opus-impl', responses: %w[c1])
     content = { 'usage' => { 'note' => 'n', 'carried' => 'injected table' } }

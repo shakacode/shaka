@@ -494,8 +494,10 @@ class PublicationUsageTableTest < Minitest::Test
 
   # Break: two models whose reports both chose the label `high review` shared one row.
   def test_one_label_on_different_models_keeps_separate_rows
-    other = REVIEW.merge('model' => 'gpt-6-astra', 'routed' => 'UNKNOWN')
-    assert_equal 2, render(usage: usage_of(REVIEW, other)).scan('| claude-opus-5-5 review |').size
+    other = REVIEW.merge('model' => 'gpt-6-astra', 'routed' => 'UNKNOWN', 'effort' => 'high')
+    rendered = render(usage: usage_of(REVIEW, other))
+    assert_includes rendered, '| claude-opus-5-5 review (claude-opus-5-5 medium) |'
+    assert_includes rendered, '| claude-opus-5-5 review (gpt-6-astra high) |'
   end
 
   def test_amounts_show_cents_and_partial_estimates_are_minimums
@@ -586,7 +588,8 @@ class PublicationUsageRecordTableTest < Minitest::Test
              "| USD estimate | $1.000000 |\n#{Shaka::UsageRecords::END_MARK}"
     rendered = render(usage: usage_of(COLUMN).merge('carried' => legacy))
     assert_operator rendered.index('| Report |'), :<, rendered.index('| USD estimate | $1.000000 |')
-    assert_includes rendered, '<summary>Usage and cost · $3.27 estimated</summary>'
+    assert_includes rendered, '<summary>Usage and cost · $3.27+ estimated</summary>'
+    assert_includes rendered, 'reports from before this table are listed below and not counted'
   end
 
   def test_unreadable_carried_columns_are_reported

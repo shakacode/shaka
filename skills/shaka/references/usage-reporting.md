@@ -14,7 +14,8 @@ from those records, so everything it shows can be carried by a later publish. A
 
 The description renders one table with a row per report label. Reports with the
 same label, provider, model, and effort, such as eight review runs of one model,
-share a row marked `×8`. A total
+share a row marked `×8`; rows that share only a label also show their model and
+effort. A total
 row follows when there is more than one row, and the collapsed summary shows the
 total USD estimate. Columns are USD, Credits, Input, Cached input, Output,
 Reasoning, and Cache writes; a column no report measured is left out. Amounts are
@@ -23,7 +24,8 @@ shows `—`, and `+` marks a minimum: a partial estimate, or a sum that left out
 unmeasured report. The total can count a response twice when two kept reports
 partly overlap.
 
-Each record is also kept as a hidden block holding its reported columns. A later
+Reports from before this table are listed below it and left out of the total, which
+then shows `+`. Each record is also kept as a hidden block holding its reported columns. A later
 publish that carries the block puts its row back in the table.
 
 Put that `usage` object in the PR, or the JSON report in the final response when

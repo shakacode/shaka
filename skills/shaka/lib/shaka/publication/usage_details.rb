@@ -69,7 +69,8 @@ module Shaka
 
     def detail
       checked
-      rows = UsageRows.new(@records.flat_map { |entry| entry['columns'] } + carried_columns)
+      rows = UsageRows.new(@records.flat_map { |entry| entry['columns'] } + carried_columns,
+                           earlier: earlier_reports.any?)
       { 'summary' => [SUMMARY, rows.summary].compact.join(' · '), 'body' => body(rows) }
     end
 

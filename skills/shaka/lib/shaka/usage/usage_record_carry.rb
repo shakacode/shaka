@@ -44,8 +44,9 @@ module Shaka
     STAMP = /\A(?:UNKNOWN|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)\z/
     CONTRIBUTIONS = %w[implementation review integration shared-planning].freeze
 
+    # Only the checked fields are kept, since the identity is written into an HTML comment.
     def identity(fields)
-      fields if shape?(fields) && route?(fields) && lists?(fields)
+      fields.slice(*UsageRecords::FIELDS) if shape?(fields) && route?(fields) && lists?(fields)
     end
 
     def shape?(fields)
