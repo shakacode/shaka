@@ -140,12 +140,13 @@ routed model. Without it, the CLI's default model runs. Check `--help` before re
 
 Grok 1.0.30:
 
-When the trusted entry names no model, add `--model` with a model the installed Grok CLI
-accepts, and `--effort high` when it names no effort:
+The Grok reviewer needs a model. Set `MODEL` to one the installed Grok CLI accepts, and
+leave out `--model` when the trusted entry names one. Add `--effort high` when the entry names
+no effort:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer xai/grok \
-  --criteria-ref "$TRUSTED"
+  --model "$MODEL" --criteria-ref "$TRUSTED"
 ```
 
 The helper runs `grok --prompt-file PROMPT -m MODEL --reasoning-effort high --output-format plain
