@@ -413,8 +413,8 @@ class UsageIdentityTest < Minitest::Test
   end
 
   def provenance
-    %w[task_source requested_model requested_effort recommended_model recommended_effort active_model active_effort
-       workflow_version].to_h { |key| [key, 'UNKNOWN'] }.merge('initial_prompt' => 'EXCLUDED', 'task_source' => 'issue')
+    %w[task_source requested_model requested_effort recommended_model recommended_effort active_model
+       active_effort].to_h { |key| [key, 'UNKNOWN'] }.merge('initial_prompt' => 'EXCLUDED', 'task_source' => 'issue')
   end
 
   def test_report_identity_hides_response_ids_and_closes_the_record

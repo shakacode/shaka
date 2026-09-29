@@ -33,6 +33,7 @@ require_relative '../lib/shaka/usage/usage'
 require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
+require_relative '../lib/shaka/workflow_version'
 
 if ARGV.first == 'usage'
   ARGV.shift
@@ -141,6 +142,14 @@ def description_prose_limits(root, ref)
   [limits, {}]
 rescue Shaka::Error => e
   [Shaka::ProseLimits.new, { 'prose_limits' => "Default prose limits apply: #{e.message}" }]
+end
+
+# The Git a description may run to read the helper's own commit, or nil when PATH offers
+# only one that could load candidate code; the workflow version then shows no commit.
+def vetted_git(candidate_root)
+  Shaka::LocalReviewPathGuard.safe_executable(ENV.fetch('PATH'), 'git', candidate_root)
+rescue Shaka::Error, SystemCallError
+  nil
 end
 
 def walkthrough_body(options, github)
@@ -252,8 +261,10 @@ begin
            when 'description'
              root = options[:root] || Dir.pwd
              prose, prose_note = description_prose_limits(root, options[:ref])
-             Shaka::OpeningPublication.with_safe_path(root:) do |_candidate_root, gh, neutral|
+             Shaka::OpeningPublication.with_safe_path(root:) do |candidate_root, gh, neutral|
                raise Shaka::Error, 'GitHub CLI is unavailable; install gh and authenticate.' unless gh
+
+               workflow_version = Shaka::WorkflowVersion.current(git: vetted_git(candidate_root))
 
                github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
@@ -263,7 +274,7 @@ begin
                carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 rendered = Shaka::Publication.description(carried)
+                 rendered = Shaka::Publication.description(carried, workflow_version)
                  Shaka::DecisionLabels.guard(github, carried, pull['body'])
                  rendered
                end

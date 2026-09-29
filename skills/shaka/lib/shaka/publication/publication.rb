@@ -11,18 +11,19 @@ require_relative '../publication_sections'
 module Shaka
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
-    def self.description(content)
-      new(content, require_tables: true).render(%i[top_links sections table provenance details wip])
+    def self.description(content, workflow_version = nil)
+      new(content, require_tables: true, workflow_version:).render(%i[top_links sections table provenance details wip])
     end
 
     def self.comment(content) = new(content).render([])
     def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
 
-    def initialize(content, require_tables: false)
+    def initialize(content, require_tables: false, workflow_version: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
       @require_tables = require_tables
+      @workflow_version = workflow_version
     end
 
     def render(parts, title: false)
@@ -110,7 +111,7 @@ module Shaka
       spec = @content.fetch('provenance') do
         raise Error, 'Publication description requires execution provenance.'
       end
-      [details_block(ExecutionProvenance.new(spec).detail)]
+      [details_block(ExecutionProvenance.new(spec, workflow_version: @workflow_version).detail)]
     end
 
     def details_block(detail)
