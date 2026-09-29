@@ -202,8 +202,8 @@ shaka review record --ledger "$LEDGER" --content-file FINDINGS.json
 `disposition` is `fixed`, with the fix commit's full SHA, or `documented`. The helper refuses a
 fixed nit, a count that differs from the report's `FINDINGS n`, and a repeated id. Give a
 finding the same `id` when a later round raises it again: the comment then flags a finding that
-returned after its fix, a sign the fixes are not converging. `model`, `tokens`, and `cost` are
-optional, as described below, and a top-level `fallback` sets the fallback notice.
+returned after its fix, a sign the fixes are not converging. `model`, `tokens`, `cost`, and
+`estimate` are optional, as described below, and a top-level `fallback` sets the fallback notice.
 
 `review run` refuses the next round until the last round's findings are recorded. It also
 refuses a head the ledger already reviewed, a head that lacks the last reviewed head or any
@@ -232,8 +232,9 @@ It also refuses two rounds of one commit and a fix recorded in the commit its ro
 content file without a ledger gets only these checks: publishing does not read Git history, so
 use `--ledger` when fixes must be proven to follow and reach the reviewed head.
 Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
-`cost` out unless the host reports a priced route: never estimate a dollar figure for a
-subscription session. When `shaka reviewer` did not return `different_provider`, add
+`cost` out unless the host reports a priced route. For a subscription session, put the
+`USD estimate` that `shaka usage` reports in `estimate` instead: the table marks it `est.` and
+the total calls it an API-equivalent estimate, never a bill. When `shaka reviewer` did not return `different_provider`, add
 `fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
 `reviewer`, `failure_stage`, and `reason` from its `shaka review run` result. Leave
 `attempts` empty when selection tried no other reviewer. The helper replaces each `reason`
@@ -259,9 +260,11 @@ unclosed code fence or a stray disclosure tag in a report would hide the attesta
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
 the helper writes both itself. It renders a `Local Adversarial Review`
-comment: a summary table, any reviewer fallback notice, each report collapsed with its
-findings' dispositions and linked fix commits, and the last
-round's attestation as the final line, where `merge` reads it. Publishing again replaces
+comment: a summary table; a total of rounds, tokens, and cost; why the loop stopped; what the
+Prompt column means; any reviewer fallback notice; each report collapsed with its findings'
+dispositions and fix commits; and the last
+round's attestation as the final line, where `merge` reads it. A commit GitHub does not have,
+such as one a rebase replaced, is named without a link. Publishing again replaces
 that comment rather than adding another. Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
 reviewer's source; missing evidence is UNKNOWN. Do not publish raw sessions or private

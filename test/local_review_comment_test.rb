@@ -151,12 +151,19 @@ class LocalReviewPublishTest < Minitest::Test
   class FakeGitHub
     attr_reader :replies
 
-    def initialize(html = RENDERED)
+    def initialize(html = RENDERED, missing: [])
       @html = html
+      @missing = missing
       @replies = []
     end
 
     def markdown(_body) = @html
+
+    def api(path)
+      raise Shaka::Error, 'No commit found' if @missing.any? { |sha| path.end_with?(sha) }
+
+      {}
+    end
 
     def reply(body:, key:)
       @replies << [key, body]
@@ -184,6 +191,15 @@ class LocalReviewPublishTest < Minitest::Test
     assert_equal ['local-adversarial-review'], github.replies.map(&:first)
     assert github.replies.first.last.start_with?('# Local Adversarial Review')
     assert_includes github.replies.first.last, "| 1 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
+  end
+
+  # Break caught: a round reviewed before a rebase linked a commit GitHub never received.
+  def test_names_a_commit_github_does_not_have_without_linking_it
+    content = { 'rounds' => [round(EARLIER, report: report(EARLIER)), round] }
+    body = Shaka::LocalReviewComment.new(content, repository: 'o/r', published: ->(sha) { sha != EARLIER }).render
+
+    assert_includes body, '| 1 | `bbbbbbb` (not on GitHub) |'
+    assert_includes body, "| 2 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
   end
 
   # Break caught: a report's unclosed fence hid the closing details and the attestation, yet merge
@@ -294,5 +310,38 @@ class LocalReviewDispositionTest < Minitest::Test
     fixed = round(findings: [finding('F1', 'defect', 'fixed', commit: FIX)])
 
     assert_includes assert_raises(Shaka::Error) { render('rounds' => [fixed]) }.message, 'no later round reviewed'
+  end
+end
+
+# The lines under the table: cost, why the loop stopped, and what the prompt column means.
+class LocalReviewSummaryTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  def test_totals_tokens_and_marks_an_api_equivalent_estimate
+    body = render('rounds' => [round(EARLIER, report: report(EARLIER), estimate: '$0.17'),
+                               round(estimate: '$0.20', tokens: '1,000')])
+
+    assert_includes body, '| 41,200 | $0.17 est. |'
+    assert_includes body, '**Total:** 2 rounds · 42,200 tokens · $0.37 API-equivalent estimate'
+  end
+
+  def test_an_unpriced_round_leaves_the_total_cost_unknown
+    assert_includes render('rounds' => [round]), '**Total:** 1 round · 41,200 tokens · cost UNKNOWN'
+  end
+
+  def test_says_why_the_loop_stopped
+    clean = round(report: report(body: "no findings\n", findings: 0), findings: [])
+
+    assert_includes render('rounds' => [clean]), '**Outcome:** the loop ended clean: round 1 found nothing.'
+    assert_includes render('rounds' => [round]),
+                    "**Outcome:** the loop ended with nothing left to fix: round 1's findings are documented, " \
+                    'not fixed (1 nit).'
+  end
+
+  def test_defines_the_prompt_column_and_links_the_criteria
+    body = Shaka::LocalReviewComment.new({ 'rounds' => [round] }, repository: 'o/r').render
+
+    assert_includes body, "criteria [`ccccccc`](https://github.com/o/r/blob/#{TRUSTED}/AGENTS.md)"
+    assert_includes body, '**Prompt:** `Shaka default` is Shaka\'s [review instructions]'
   end
 end

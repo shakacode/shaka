@@ -59,7 +59,7 @@ module Shaka
     def record!(content)
       raise Error, 'Record content must be an object.' unless content.is_a?(Hash)
 
-      round = last_round.merge(content.slice('findings', 'model', 'tokens', 'cost'))
+      round = last_round.merge(content.slice('findings', 'model', 'tokens', 'cost', 'estimate'))
       check_findings!(round, rounds.size)
       write(data.merge(content.slice('fallback'), 'rounds' => rounds[0...-1] + [round]))
     end

@@ -72,9 +72,8 @@ module Shaka
     def publish(parser)
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.length == 2 && @options[:content_file]
 
-      content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
-      comment = LocalReviewComment.new(content, repository: @arguments.first)
       github = @github || GitHub.new(*@arguments)
+      comment = review_comment(github)
       body = comment.render
       comment.check_rendering!(github.markdown(body))
       puts JSON.pretty_generate(github.reply(body:, key: LocalReviewComment::KEY))
@@ -97,6 +96,21 @@ module Shaka
         flags.on('--ledger PATH') { |value| @options[:ledger] = value }
         flags.on('--content-file PATH') { |value| @options[:content_file] = value }
         flags.on('-h', '--help') { @options[:help] = true }
+      end
+    end
+
+    def review_comment(github)
+      content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
+      LocalReviewComment.new(content, repository: @arguments.first, published: on_github(github))
+    end
+
+    # A commit GitHub does not know, such as one replaced by a rebase, returns an error.
+    def on_github(github)
+      lambda do |sha|
+        github.api("repos/#{@arguments.first}/commits/#{sha}")
+        true
+      rescue Shaka::Error
+        false
       end
     end
 
