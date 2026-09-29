@@ -66,7 +66,19 @@ class ReviewAgentSettingsTest < Minitest::Test
       result = JSON.parse(output)
 
       assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_includes result.fetch('reason'), 'effort must be text'
+      assert_includes result.fetch('reason'), 'effort must be a level name'
+    end
+  end
+
+  # Break caught: a trusted model with a space reaches the CLI instead of failing as setup.
+  def test_a_spaced_trusted_model_is_a_setup_failure
+    with_repository(codex_agent('model' => 'gpt 6')) do |root, base, head, bin|
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      result = JSON.parse(output)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_includes result.fetch('reason'), 'model must not contain whitespace'
     end
   end
 

@@ -53,6 +53,12 @@ module Shaka
         raise Error, "#{label} must be a level name such as medium"
       end
 
+      # The model is passed to the reviewer CLI as one argument.
+      def self.model_name!(value, label)
+        raise Error, "#{label} must be a non-empty string" unless value.is_a?(String) && !value.strip.empty?
+        raise Error, "#{label} must not contain whitespace" if value.match?(/\s/)
+      end
+
       # Every prompt file the review section names, repository-wide and per reviewer.
       def self.prompt_files(review)
         agents = Array(review[LOCAL_REVIEW_AGENTS])
@@ -126,14 +132,8 @@ module Shaka
         keys!(entry, IDENTITY, [PROMPT_FILE, MODEL, EFFORT], label)
         IDENTITY.each { |key| component!(entry[key], "#{label}.#{key}") }
         prompt_path!(entry[PROMPT_FILE], "#{label}.#{PROMPT_FILE}") if entry.key?(PROMPT_FILE)
-        model!(entry[MODEL], "#{label}.#{MODEL}") if entry.key?(MODEL)
+        self.class.model_name!(entry[MODEL], "#{label}.#{MODEL}") if entry.key?(MODEL)
         self.class.effort_level!(entry[EFFORT], "#{label}.#{EFFORT}") if entry.key?(EFFORT)
-      end
-
-      # The model is passed to the reviewer CLI as one argument.
-      def model!(value, label)
-        string!(value, label)
-        raise Error, "#{label} must not contain whitespace" if value.match?(/\s/)
       end
 
       # `shaka reviewer` reads identities as PROVIDER/MODEL_FAMILY and strips each part, so a
