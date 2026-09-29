@@ -196,6 +196,8 @@ shaka review publish OWNER/REPO NUMBER --content-file PATH
 
 The content JSON lists `rounds`. Copy each round's `head`, `reviewer`, `report`,
 `prompt_source`, and `criteria_ref` from its `shaka review run` result.
+Each PR keeps one review comment, and each publish replaces it. When several reviewers read each
+head, list every reviewer's rounds in one file, oldest first.
 Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
 `cost` out unless the host reports a priced route: never estimate a dollar figure for a
 subscription session. When `shaka reviewer` did not return `different_provider`, add
