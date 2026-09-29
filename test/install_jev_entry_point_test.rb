@@ -20,6 +20,13 @@ class InstallJevEntryPointTest < Minitest::Test
     end
   end
 
+  def test_missing_ruby_body_is_rejected
+    with_skill do |root, helper|
+      File.delete("#{helper}.rb")
+      assert_match(/Missing skill entry point/, assert_raises(ArgumentError) { entries(root) }.message)
+    end
+  end
+
   def test_jev_cannot_be_packaged_without_shaka
     with_skill do |root, _helper|
       error = assert_raises(ArgumentError) { Shaka::Install::Tree.new(['shaka-jev']).entries(root, 'shaka-jev') }
@@ -39,6 +46,7 @@ class InstallJevEntryPointTest < Minitest::Test
       File.write(File.join(skill, 'SKILL.md'), '# Jev')
       File.write(helper, "#!/usr/bin/env ruby\n")
       File.chmod(0o755, helper)
+      File.write("#{helper}.rb", "# frozen_string_literal: true\n")
       yield root, helper
     end
   end

@@ -111,6 +111,7 @@ class InstallOptionalSkillsTest < Minitest::Test
     FileUtils.mkdir_p(File.dirname(helper))
     File.write(helper, "#!/usr/bin/env ruby\n")
     File.chmod(0o755, helper)
+    File.write("#{helper}.rb", "# frozen_string_literal: true\n")
   end
 
   def source(name)

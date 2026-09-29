@@ -1,35 +1,64 @@
-#!/usr/bin/env ruby
-# frozen_string_literal: true
+#!/bin/sh
+set -eu
 
-require 'json'
-require 'optparse'
-require_relative '../lib/shaka_jev/analysis'
-
-options = {}
-parser = OptionParser.new do |flags|
-  flags.banner = 'Usage: analyze --pr-url URL --head SHA --evidence FILE'
-  flags.on('--pr-url URL', 'Public GitHub PR URL') { |value| options[:pr_url] = value }
-  flags.on('--head SHA', 'Exact commit being analyzed') { |value| options[:head] = value }
-  flags.on('--evidence FILE', 'Reviewed public-safe evidence packet') { |value| options[:evidence] = value }
-  flags.on('-h', '--help', 'Show usage') do
-    puts flags
-    exit
-  end
-end
-
-begin
-  parser.parse!
-  unless ARGV.empty? && options.values_at(:pr_url, :head, :evidence).all?
-    raise OptionParser::InvalidArgument, parser.to_s
-  end
-
-  evidence = File.binread(options.fetch(:evidence), ShakaJev::Analysis::MAX_EVIDENCE_BYTES + 1)
-                 .force_encoding(Encoding::UTF_8)
-  result = ShakaJev::Analysis.new(api_key: ENV.fetch('TYPESAFE_API_KEY', '')).call(
-    pr_url: options.fetch(:pr_url), head: options.fetch(:head), evidence: evidence
-  )
-  puts JSON.pretty_generate(result)
-rescue OptionParser::ParseError, ShakaJev::Error, SystemCallError, IOError => e
-  warn "shaka-jev: #{e.message}"
+fail() {
+  printf 'shaka-jev: cannot select a trusted Ruby executable\n' >&2
   exit 1
-end
+}
+
+resolve_file() {
+  file=$1
+  count=0
+  while [ -L "$file" ]; do
+    count=$((count + 1))
+    [ "$count" -le 16 ] || return 1
+    [ -x /usr/bin/readlink ] || return 1
+    target=$(/usr/bin/readlink "$file") || return 1
+    case "$target" in
+      /*) file=$target ;;
+      *) file=${file%/*}/$target ;;
+    esac
+  done
+  directory=$(CDPATH= cd -P "${file%/*}" 2>/dev/null && pwd -P) || return 1
+  printf '%s/%s\n' "$directory" "${file##*/}"
+}
+
+checkout=$(pwd -P) || fail
+while [ "$checkout" != / ] && [ ! -e "$checkout/.git" ]; do
+  checkout=${checkout%/*}
+  [ -n "$checkout" ] || checkout=/
+done
+[ -e "$checkout/.git" ] || fail
+
+remaining=${PATH-}
+safe_path=
+ruby=
+while :; do
+  case "$remaining" in
+    *:*) entry=${remaining%%:*}; remaining=${remaining#*:}; more=true ;;
+    *) entry=$remaining; more=false ;;
+  esac
+  directory=$(CDPATH= cd -P "${entry:-.}" 2>/dev/null && pwd -P) || directory=
+  if [ -n "$directory" ]; then
+    case "$directory" in
+      "$checkout"|"$checkout"/*) ;;
+      *)
+        safe_path=${safe_path:+$safe_path:}$directory
+        if [ -z "$ruby" ] && [ -f "$directory/ruby" ] && [ -x "$directory/ruby" ]; then
+          selected=$(resolve_file "$directory/ruby") || selected=
+          case "$selected" in
+            "$checkout"|"$checkout"/*|'') ;;
+            *) ruby=$selected ;;
+          esac
+        fi
+        ;;
+    esac
+  fi
+  [ "$more" = true ] || break
+done
+[ -n "$ruby" ] && [ -n "$safe_path" ] || fail
+case "$0" in */*) ;; *) fail ;; esac
+PATH=$safe_path
+export PATH
+unset RUBYOPT RUBYLIB
+exec "$ruby" "$0.rb" "$@"

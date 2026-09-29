@@ -72,8 +72,7 @@ module Shaka
       def validate_skill_entry_points(skill, name)
         validate_skill_dependency(name)
         entry_point = { 'shaka' => 'scripts/shaka', 'shaka-jev' => 'scripts/analyze' }[name]
-        required = ['SKILL.md', entry_point].compact
-        required.each do |entry|
+        required_skill_entries(name, entry_point).each do |entry|
           path = File.join(skill, entry)
           raise ArgumentError, "Missing skill entry point: #{path}" unless File.file?(path)
         end
@@ -81,6 +80,10 @@ module Shaka
 
         helper = File.join(skill, entry_point)
         raise ArgumentError, "Skill helper is not executable: #{helper}" unless File.stat(helper).mode.anybits?(0o100)
+      end
+
+      def required_skill_entries(name, entry_point)
+        ['SKILL.md', entry_point, (name == 'shaka-jev' ? 'scripts/analyze.rb' : nil)].compact
       end
 
       def validate_skill_dependency(name)
