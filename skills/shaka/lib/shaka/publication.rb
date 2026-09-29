@@ -173,7 +173,7 @@ module Shaka
 
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
-    def self.description(content, workflow_version: nil)
+    def self.description(content, workflow_version = nil)
       new(content, require_tables: true, workflow_version:).render(%i[top_links sections table provenance details wip])
     end
 

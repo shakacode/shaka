@@ -272,7 +272,7 @@ begin
                usage_records = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 Shaka::Publication.description(carried, workflow_version:)
+                 Shaka::Publication.description(carried, workflow_version)
                end
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
