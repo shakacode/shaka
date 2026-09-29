@@ -16,7 +16,7 @@ difference:
 
 ```sh
 magick identify -format '%f %wx%h\n' before-desktop.png after-desktop.png
-magick compare -metric AE -fuzz 2% before-desktop.png after-desktop.png diff-desktop.png
+magick compare -metric AE before-desktop.png after-desktop.png diff-desktop.png
 ```
 
 Compare the printed sizes yourself. `compare` still produces a result for images
@@ -24,7 +24,13 @@ of different sizes, and that result misleads the reviewer.
 
 `compare` fades unchanged pixels and paints changed ones red. It prints the changed
 pixel count and exits with status 1 when the images differ, so allow that exit in
-scripts. `-fuzz 2%` ignores near-identical colors from antialiasing.
+scripts.
+
+Keep this exact comparison as the evidence, because a subtle color or opacity
+change is often the point of the PR. When antialiasing or font rendering covers
+the image in red, add a second image made with `-fuzz 2%`, which treats nearly
+identical colors as equal, and label it as filtered. A filtered image can show no
+change where the exact one does.
 
 Attach the difference beside its source captures in one PR comment, as with any
 capture. Put the label in the comment text or alt text; ImageMagick's `montage`
