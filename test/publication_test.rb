@@ -617,14 +617,17 @@ end
 class PublicationUsagePricingTest < Minitest::Test
   COLUMN = PublicationUsageTableTest::COLUMN
   REVIEW = PublicationUsageTableTest::REVIEW
-  CURSOR = "Rate card: installed Shaka.\n\nCursor on-demand list prices, verified 2026-09-21."
+  CURSOR = "Rate card: installed Shaka.\n\nCursor on-demand list prices, verified 2026-09-21.\n\n" \
+           'Subagent usage is excluded.'
   ANTHROPIC = "Rate card: installed Shaka.\n\nAnthropic API list prices, verified 2026-09-23."
 
   def render(usage:) = PublicationUsageTableTest.new('render').render(usage:)
 
   def record(column, note: ANTHROPIC, **fields) = USAGE_RECORD.merge('columns' => [column], 'note' => note, **fields)
 
-  def pricing(rendered) = rendered[%r{<summary>How each estimate was priced</summary>\n\n(.*?)\n\n</details>}m, 1]
+  def pricing(rendered)
+    rendered[%r{<summary>How each report was measured and priced</summary>\n\n(.*?)\n\n</details>}m, 1]
+  end
 
   def test_each_note_lists_the_reports_it_priced
     grok = COLUMN.merge('label' => 'grok-4.7 implementation')
@@ -646,7 +649,7 @@ class PublicationUsagePricingTest < Minitest::Test
 
   def test_a_report_without_a_note_is_named
     notes = pricing(render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note: nil)] }))
-    assert_includes notes, 'No pricing note was recorded for claude'
+    assert_includes notes, 'No note was recorded for claude'
   end
 
   def test_a_note_that_could_close_its_comment_is_refused

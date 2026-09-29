@@ -25,11 +25,9 @@ module Shaka
                                                   rate_card: selected_rate_card)
       data = estimate.snapshot
       columns = json_columns(estimate, data)
-      {
-        'note' => json_note(estimate, data),
-        'columns' => columns,
-        'record' => record_identity.merge('columns' => columns, 'note' => estimate.narrative_for(data))
-      }
+      note = json_note(estimate, data)
+      # The record keeps the whole note, so a carried report keeps its prices and its coverage gaps.
+      { 'note' => note, 'columns' => columns, 'record' => record_identity.merge('columns' => columns, 'note' => note) }
     end
 
     private

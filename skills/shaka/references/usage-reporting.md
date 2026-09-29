@@ -7,7 +7,7 @@ shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 ```
 
 `--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
-Put each report's `record`, which includes its `columns` and its pricing `note`, into the description
+Put each report's `record`, which includes its `columns` and its `note`, into the description
 `usage.records` list, and one report's `note` into `usage.note`. The table is built
 from those records, so everything it shows can be carried by a later publish. A
 `details` item whose summary names usage is refused.
@@ -29,14 +29,14 @@ kept reports partly overlap.
 
 Reports from before this table are listed below it and left out of the total, which
 then shows `+`. Each record is also kept as a hidden block holding its reported
-columns and pricing note. A later publish that carries the block puts its row back in
+columns and note. A later publish that carries the block puts its row back in
 the table.
 
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
-A carried report keeps that price; nothing reprices it. A collapsed **How each estimate
-was priced** list under the table shows each report's rate card and the date its prices
-were verified, so a PR left open across a price change shows which rows used which
-prices. To price every row with current rates, rerun `shaka usage` for each report and
+A carried report keeps that price; nothing reprices it. A collapsed **How each report
+was measured and priced** list under the table shows each report's note: its rate card,
+the date its prices were verified, and what its sources left out. A PR left open across
+a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
 publish the new records.
 
 Put that `usage` object in the PR, or the JSON report in the final response when

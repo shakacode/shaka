@@ -5,11 +5,12 @@ require_relative 'text'
 
 module Shaka
   # Each report is priced once, when `shaka usage` runs, with the rate card of that moment.
-  # Its note travels with its record, so a carried row still says which prices produced it.
+  # Its note, with that rate card and the report's coverage gaps, travels with its record,
+  # so a carried row still says which prices produced it and what it left out.
   module UsagePricing
     # Kept as plain lines inside the comment: an escaped \n would read as a literal escape.
     HIDDEN = /^<!-- usage-note\n(.*?)\n-->$/m
-    SUMMARY = 'How each estimate was priced'
+    SUMMARY = 'How each report was measured and priced'
 
     module_function
 
@@ -35,7 +36,7 @@ module Shaka
       priced = pairs.select { |_label, note| note }.group_by(&:last)
       parts = priced.map { |note, group| "**#{labels(group)}**\n\n#{note}" }
       missing = pairs.select { |_label, note| note.nil? }
-      parts << "_No pricing note was recorded for #{labels(missing)}._" unless missing.empty?
+      parts << "_No note was recorded for #{labels(missing)}._" unless missing.empty?
       "<details>\n<summary>#{SUMMARY}</summary>\n\n#{parts.join("\n\n")}\n\n</details>"
     end
 
