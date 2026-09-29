@@ -17,7 +17,7 @@ module ShakaJev
       output, status = capture.call({ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', "#{owner}/#{repo}",
                                     '--json', 'visibility', err: File::NULL)
       status.success? && JSON.parse(output)['visibility'] == 'PUBLIC'
-    rescue JSON::ParserError, SystemCallError
+    rescue JSON::ParserError, NoMethodError, TypeError, SystemCallError
       false
     end
   end

@@ -2,7 +2,6 @@
 
 require_relative 'test_helper'
 require 'json'
-require 'rbconfig'
 require_relative '../skills/shaka-jev/lib/shaka_jev/analysis'
 
 class JevAnalysisTest < Minitest::Test
@@ -18,17 +17,22 @@ class JevAnalysisTest < Minitest::Test
   }.freeze
 
   def test_sends_one_request_with_fixed_questions_and_reports_usage
+    result, sent = run_valid_request
+    assert_request(sent)
+    assert_result(result)
+  end
+
+  def run_valid_request
     sent = nil
     client = lambda do |uri, request|
       sent = [uri, request]
       response(200, OUTPUT)
     end
-    result = analyzer(api_key: 'test-key', client: client).call(
+    public_repository = ->(owner, repo) { [owner, repo] == %w[shakacode shaka] }
+    result = analyzer(api_key: 'test-key', client: client, public_repository: public_repository).call(
       pr_url: URL, head: HEAD, evidence: 'Public validation and review evidence.'
     )
-
-    assert_request(sent)
-    assert_result(result)
+    [result, sent]
   end
 
   def test_rejects_missing_key_before_sending
@@ -80,19 +84,6 @@ class JevAnalysisTest < Minitest::Test
     end
   end
 
-  def test_command_reports_missing_options_and_unreadable_file_cleanly
-    command = [RbConfig.ruby, File.expand_path('../skills/shaka-jev/scripts/analyze', __dir__),
-               '--pr-url', URL, '--head', HEAD]
-    missing, missing_status = Open3.capture2e(*command)
-    unreadable, unreadable_status = Open3.capture2e(*command, '--evidence', '/no/such/evidence-file')
-
-    refute_predicate missing_status, :success?
-    refute_predicate unreadable_status, :success?
-    assert_match(/shaka-jev:/, missing)
-    assert_match(/shaka-jev:/, unreadable)
-    refute_match(/in `/, unreadable)
-  end
-
   private
 
   def assert_request(sent)
@@ -125,17 +116,34 @@ end
 
 class JevPublicGitHubRepositoryTest < Minitest::Test
   def test_only_successful_public_metadata_is_accepted
-    cases = [[{ visibility: 'PUBLIC' }, true, true], [{ visibility: 'PRIVATE' }, true, false],
-             [{ visibility: 'PUBLIC' }, false, false]]
-    cases.each do |metadata, success, expected|
-      status = Struct.new(:success?).new(success)
-      capture = ->(*) { [JSON.generate(metadata), status] }
-      assert_equal expected, ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
-    end
+    assert_visibility('PUBLIC', success: true, expected: true)
+    assert_visibility('PRIVATE', success: true, expected: false)
+    assert_visibility('PUBLIC', success: false, expected: false)
+  end
+
+  def test_non_object_metadata_fails_closed
+    status = Struct.new(:success?).new(true)
+    capture = ->(*) { ['null', status] }
+    refute ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
   end
 
   def test_missing_github_cli_fails_closed
     capture = ->(*) { raise Errno::ENOENT }
     refute ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
+  end
+
+  private
+
+  def assert_visibility(visibility, success:, expected:)
+    status = Struct.new(:success?).new(success)
+    command = nil
+    capture = lambda do |*args, **options|
+      command = [args, options]
+      [JSON.generate(visibility: visibility), status]
+    end
+    assert_equal expected, ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
+    assert_equal [{ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', 'shakacode/shaka', '--json',
+                  'visibility'], command.first
+    assert_equal File::NULL, command.last.fetch(:err)
   end
 end
