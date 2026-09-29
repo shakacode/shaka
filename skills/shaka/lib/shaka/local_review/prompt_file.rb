@@ -12,7 +12,8 @@ module Shaka
     def review_instructions
       script = File.expand_path('../../../scripts/shaka.rb', __dir__)
       with_prompt_arguments do |arguments|
-        capture(RbConfig.ruby, script, 'review-prompt', '--head', head,
+        # The same isolation as scripts/shaka: a project's RUBYOPT and gems stay out of Shaka's Ruby.
+        capture(RbConfig.ruby, '--disable-gems', '--disable-rubyopt', script, 'review-prompt', '--head', head,
                 '--base', @options[:base], '--reviewer', reviewer, '--effort', effort, *arguments)
       end
     end
