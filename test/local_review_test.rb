@@ -1172,6 +1172,28 @@ module LocalReviewLoopSteps
     end
   end
 
+  # Returns the prompt the Claude reviewer received.
+  def claude_round(head)
+    trace = File.join(File.dirname(@ledger), 'claude-trace')
+    fake_claude(@bin, head)
+    output, error, status = run_review(@root, @base, head, @bin, ledger: @ledger, reviewer: 'anthropic/claude',
+                                                                 env: { 'REVIEW_TRACE' => trace })
+    @results << assert_successful_review(output, error, status, head, 'anthropic/claude')
+    JSON.parse(File.read(trace)).fetch('prompt')
+  end
+
+  def assert_record_needs_reviewer
+    Tempfile.create(['record-', '.json']) do |file|
+      file.write(JSON.generate('findings' => []))
+      file.close
+      arguments = [self.class::COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file', file.path]
+      _out, error, status = Open3.capture3(*arguments)
+      assert_includes error, 'pass --reviewer'
+      refute_predicate status, :success?
+      assert_predicate Open3.capture3(*arguments, '--reviewer', 'anthropic/claude').last, :success?
+    end
+  end
+
   def assert_prior_round_prompt(prompt, fix)
     assert_match(/BEGIN PRIOR ROUND DATA [0-9a-f]{32}/, prompt)
     assert_includes prompt, "- [F1] defect: Wrong exit code (fixed in #{fix[0, 7]})"
@@ -1240,6 +1262,19 @@ class LocalReviewLoopTest < Minitest::Test
       loop_round(head, findings: 1)
       record_fix(head)
       assert_refused(fix_commit, 'is the head round 1 reviewed')
+    end
+  end
+
+  # Break caught: a second reviewer of a commit failed the fix-history check, saw the first
+  # reviewer's findings, or could not record its own round.
+  def test_another_reviewer_joins_the_last_commit
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record_fix(fix_commit)
+      git!(@root, 'checkout', '--quiet', head)
+      refute_includes claude_round(head), 'PRIOR ROUND DATA'
+      assert_ledger_rounds([head, head])
+      assert_record_needs_reviewer
     end
   end
 

@@ -93,13 +93,14 @@ module Shaka
       end
     end
 
-    # A finding whose id was marked fixed in an earlier round and comes back is flagged where it returns.
+    # A finding whose id was marked fixed on an earlier commit and comes back is flagged where it
+    # returns. Reviewers of one commit all read it before any of its fixes, so none of them is flagged.
     def round_details
       fixed = {}
-      @rounds.map do |round|
-        text = round.details(@links, fixed)
-        round.findings.select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
-        text
+      @rounds.chunk(&:head).flat_map do |_head, batch|
+        texts = batch.map { |round| round.details(@links, fixed) }
+        batch.flat_map(&:findings).select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
+        texts
       end
     end
 

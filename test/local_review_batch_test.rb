@@ -71,6 +71,16 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     assert_equal ['F1'], ledger.prior_findings(HEAD).map(&:id)
   end
 
+  # Break caught: a reviewer that finished after a newer commit was appended split its batch apart.
+  def test_a_late_round_cannot_rejoin_an_older_commit
+    append(EARLIER, 'openai/codex', findings: 0)
+    append(HEAD, 'openai/codex', findings: 0)
+
+    error = assert_raises(Shaka::Error) { append(EARLIER, 'anthropic/claude', findings: 0) }
+    assert_includes error.message, 'Round 1 already reviewed'
+    assert_includes assert_raises(Shaka::Error) { append(HEAD, 'openai/codex', findings: 0) }.message, 'Round 2'
+  end
+
   # Break caught: two reviewers finishing together each wrote the ledger they had read, losing a round.
   def test_concurrent_appends_keep_every_round
     readers = [ledger, ledger]
@@ -113,6 +123,16 @@ class LocalReviewBatchCommentTest < Minitest::Test
     body = render('rounds' => [round, clean('anthropic/claude')])
 
     assert_includes body, "Rounds 1–2's findings are documented nits or risks (1 nit)."
+  end
+
+  # Break caught: a finding both reviewers of one commit reported read as returning after its fix.
+  def test_both_reviewers_of_a_commit_may_report_a_finding_later_fixed
+    fixed = NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => HEAD)
+    first = round(EARLIER, report: report(EARLIER), findings: [fixed])
+    second = round(EARLIER, reviewer: 'anthropic/claude', findings: [fixed],
+                            report: report(EARLIER, reviewer: 'anthropic/claude'))
+
+    refute_includes render('rounds' => [first, second, clean('openai/codex')]), 'returned after its fix'
   end
 
   def test_refuses_one_reviewer_reading_a_commit_twice
