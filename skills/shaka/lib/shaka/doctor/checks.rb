@@ -3,6 +3,7 @@
 require 'json'
 require 'rubygems/version'
 require_relative '../error'
+require_relative '../ruby_requirement'
 require_relative '../configuration'
 require_relative 'check'
 require_relative 'machine_alias'
@@ -15,7 +16,7 @@ module Shaka
       include Check
 
       WRITER = %w[ADMIN MAINTAIN WRITE].freeze
-      RUBY = '3.4'
+      RUBY = RubyRequirement::MINIMUM
 
       def initialize(root:, host:, environment:, system:)
         @root = root
@@ -40,7 +41,7 @@ module Shaka
         return check('Ruby', 'healthy', running) if Gem::Version.new(running) >= Gem::Version.new(RUBY)
 
         check('Ruby', 'failed', "#{running} is older than the required #{RUBY}",
-              guidance: "Select Ruby #{RUBY} or newer for the shell that runs this skill.")
+              guidance: "Rerun bin/install with Ruby #{RUBY} or newer, or set SHAKA_RUBY to one.")
       end
 
       def github_cli

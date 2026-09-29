@@ -20,6 +20,8 @@ module Shaka
     # directory upward, and runs that plugin code. The target is a candidate checkout, so
     # it must supply none of them; the trusted global configuration still loads.
     OPENCODE_ENV = { 'OPENCODE_DISABLE_PROJECT_CONFIG' => 'true' }.freeze
+    # Helper calls in the session keep the Ruby this command runs under, not the target's own Ruby.
+    HELPER_ENV = { 'SHAKA_RUBY' => File.realpath(RbConfig.ruby) }.freeze
     # Codex runs from its own scratch session; OpenCode runs from the target checkout itself,
     # so only Codex can be told to leave its session root alone.
     SESSION_RULE = {
@@ -53,16 +55,15 @@ module Shaka
     def self.launch(target, task, host)
       return launch_codex(target, task) unless host == 'opencode'
 
-      exec(OPENCODE_ENV, 'opencode', target, '--prompt', prompt(target, task, host), chdir: target)
+      exec(OPENCODE_ENV.merge(HELPER_ENV), 'opencode', target, '--prompt', prompt(target, task, host), chdir: target)
     end
 
     def self.launch_codex(target, task)
       session = create_session(target)
       temporary = File.join(session, 'tmp')
-      exec({ 'TMPDIR' => temporary, 'TMPPREFIX' => "#{temporary}/zsh" },
-           'codex', '--cd', session, '--add-dir', target,
-           *SANDBOX, '-c', "shell_environment_policy.set.TMPDIR=#{JSON.generate(temporary)}",
-           '-c', "shell_environment_policy.set.TMPPREFIX=#{JSON.generate("#{temporary}/zsh")}",
+      environment = { 'TMPDIR' => temporary, 'TMPPREFIX' => "#{temporary}/zsh", **HELPER_ENV }
+      shell = environment.map { |name, value| "shell_environment_policy.set.#{name}=#{JSON.generate(value)}" }
+      exec(environment, 'codex', '--cd', session, '--add-dir', target, *SANDBOX, *shell.flat_map { ['-c', it] },
            prompt(target, task, 'codex'), chdir: session)
     rescue Error, SystemCallError
       FileUtils.remove_entry_secure(session) if session && File.directory?(session)
@@ -126,7 +127,7 @@ module Shaka
       <<~PROMPT
         Read and follow the trusted workflow at #{JSON.generate(skill)}.
         Work in target repository #{JSON.generate(target)}; run repository commands there.
-        Invoke trusted workflow helpers with Ruby #{JSON.generate(File.realpath(RbConfig.ruby))} and helper #{JSON.generate(File.realpath('../../scripts/shaka', __dir__))}.
+        Invoke trusted workflow helper #{JSON.generate(File.realpath('../../scripts/shaka', __dir__))}; it selects Shaka's own Ruby.
         Keep the repository's own toolchain for its application commands.
         #{SESSION_RULE.fetch(host)}
         The user supplied the task below as a JSON string; honor its scope and merge preference.

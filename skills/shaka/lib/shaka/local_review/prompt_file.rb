@@ -10,7 +10,7 @@ module Shaka
     private
 
     def review_instructions
-      script = File.expand_path('../../../scripts/shaka', __dir__)
+      script = File.expand_path('../../../scripts/shaka.rb', __dir__)
       with_prompt_arguments do |arguments|
         capture(RbConfig.ruby, script, 'review-prompt', '--head', head,
                 '--base', @options[:base], '--reviewer', reviewer, '--effort', effort, *arguments)

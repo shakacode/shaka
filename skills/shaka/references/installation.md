@@ -21,6 +21,14 @@ gh auth status
 
 Use `gh auth login` if you are not signed in.
 
+Shaka keeps its own Ruby, separate from your projects. The installer records the
+Ruby that runs it, and the installed `scripts/shaka` starts with that Ruby in every
+project. It also ignores a project's `RUBYOPT`, `BUNDLE_GEMFILE`, and gem paths,
+because Shaka needs only Ruby's standard library. Run the installer where
+`ruby --version` reports 3.4 or later; an older Ruby stops with that requirement.
+Install again after removing that Ruby, or set `SHAKA_RUBY` to another Ruby 3.4
+interpreter. Without an installed package, `scripts/shaka` uses `ruby` from `PATH`.
+
 Optional: [ImageMagick 7](https://imagemagick.org/script/download.php) lets agents
 show where a UI change moved pixels with a
 [difference image](visual-diff.md). Check it with `magick --version`. Without it,

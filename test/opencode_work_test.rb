@@ -48,7 +48,7 @@ module OpencodeWorkFixture
       #!/usr/bin/env ruby
       require 'json'
       File.write(ENV.fetch('WORK_CAPTURE'), JSON.generate(
-        argv: ARGV, cwd: Dir.pwd, project_config: ENV['OPENCODE_DISABLE_PROJECT_CONFIG']
+        argv: ARGV, cwd: Dir.pwd, project_config: ENV['OPENCODE_DISABLE_PROJECT_CONFIG'], shaka_ruby: ENV['SHAKA_RUBY']
       ))
     RUBY
     FileUtils.chmod(0o755, executable)
@@ -84,10 +84,10 @@ class OpencodeWorkTest < Minitest::Test
     refute_includes prompt, 'Keep this host session root unchanged'
   end
 
-  def test_prompt_pins_the_workflow_helper_and_launching_ruby
-    prompt = started('Fix the test')['argv'].last
-    assert_includes prompt, JSON.generate(File.realpath(RbConfig.ruby))
-    assert_includes prompt, JSON.generate(File.realpath(@command))
+  def test_session_pins_the_workflow_helper_and_launching_ruby
+    capture = started('Fix the test')
+    assert_equal File.realpath(RbConfig.ruby), capture['shaka_ruby']
+    assert_includes capture['argv'].last, JSON.generate(File.realpath(@command))
   end
 
   def test_help_names_the_host_option
