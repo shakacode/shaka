@@ -6,6 +6,9 @@ require 'json'
 require 'rbconfig'
 
 module OpencodeWorkFixture
+  # A project Gemfile the session's own commands must still see; the fake host runs under it too.
+  PROJECT_GEMFILE = File.expand_path('../Gemfile', __dir__)
+
   def setup
     @directory = Dir.mktmpdir('shaka-opencode-launcher-test')
     @target = File.join(@directory, 'consumer repo')
@@ -38,7 +41,7 @@ module OpencodeWorkFixture
 
   def launch(*, directory: @target, command: @command, temporary: File.join(@directory, 'temp'))
     environment = { 'PATH' => "#{@directory}/bin:#{ENV.fetch('PATH')}", 'WORK_CAPTURE' => @capture,
-                    'TMPDIR' => temporary }
+                    'TMPDIR' => temporary, 'BUNDLE_GEMFILE' => PROJECT_GEMFILE }
     Open3.capture3(environment, command, 'work', '--host', 'opencode', *, chdir: directory)
   end
 
@@ -48,7 +51,8 @@ module OpencodeWorkFixture
       #!/usr/bin/env ruby
       require 'json'
       File.write(ENV.fetch('WORK_CAPTURE'), JSON.generate(
-        argv: ARGV, cwd: Dir.pwd, project_config: ENV['OPENCODE_DISABLE_PROJECT_CONFIG']
+        argv: ARGV, cwd: Dir.pwd, project_config: ENV['OPENCODE_DISABLE_PROJECT_CONFIG'], shaka_ruby: ENV['SHAKA_RUBY'],
+        bundle_gemfile: ENV['BUNDLE_GEMFILE']
       ))
     RUBY
     FileUtils.chmod(0o755, executable)
@@ -84,10 +88,11 @@ class OpencodeWorkTest < Minitest::Test
     refute_includes prompt, 'Keep this host session root unchanged'
   end
 
-  def test_prompt_pins_the_workflow_helper_and_launching_ruby
-    prompt = started('Fix the test')['argv'].last
-    assert_includes prompt, JSON.generate(File.realpath(RbConfig.ruby))
-    assert_includes prompt, JSON.generate(File.realpath(@command))
+  def test_session_pins_the_workflow_helper_and_launching_ruby
+    capture = started('Fix the test')
+    assert_equal File.realpath(RbConfig.ruby), capture['shaka_ruby']
+    assert_equal PROJECT_GEMFILE, capture['bundle_gemfile'], 'project commands keep their Gemfile'
+    assert_includes capture['argv'].last, JSON.generate(File.realpath(@command))
   end
 
   def test_help_names_the_host_option
