@@ -3,11 +3,14 @@
 # SHAKA_RUBY wins. An installed package then uses the Ruby that ran bin/install, recorded
 # beside the packages. A source checkout uses `ruby` from PATH. The helper needs only Ruby's
 # standard library, so the project's Ruby and Bundler settings are cleared before it starts.
-# Apart from readlink for a linked script, only shell builtins run before Ruby.
+# Only shell builtins and the system readlink run before Ruby, so a project's PATH cannot
+# substitute a command here. Ruby preloads the version check, which older Rubies can parse.
 
+readlink=/usr/bin/readlink
+[ -x "$readlink" ] || readlink=/bin/readlink
 script=$0
 while [ -L "$script" ]; do
-  target=$(readlink "$script")
+  target=$("$readlink" "$script")
   case $target in
     /*) script=$target ;;
     *) script=${script%/*}/$target ;;
@@ -17,6 +20,9 @@ case $script in
   */*) scripts=${script%/*} ;;
   *) scripts=. ;;
 esac
+# Ruby looks up a relative -r path in its load path, so this must be absolute. It stays
+# logical rather than physical: the helper reads its invoked path to find the host skill link.
+scripts=$(cd "$scripts" && pwd)
 
 ruby=${SHAKA_RUBY:-}
 package=$(cd -P "$scripts/../../.." && pwd -P)
@@ -31,4 +37,4 @@ fi
 
 unset RUBYOPT RUBYLIB GEM_HOME GEM_PATH RUBYGEMS_GEMDEPS \
   BUNDLE_GEMFILE BUNDLE_BIN_PATH BUNDLER_SETUP BUNDLER_VERSION
-exec "${ruby:-ruby}" "$scripts/shaka.rb" "$@"
+exec "${ruby:-ruby}" -r "$scripts/../lib/shaka/ruby_requirement.rb" "$scripts/shaka.rb" "$@"

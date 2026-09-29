@@ -29,7 +29,7 @@ class RubyLauncherTest < Minitest::Test
     output, status = Open3.capture2e({ 'SHAKA_RUBY' => override }, File.join(@destination, 'scripts', 'shaka'),
                                      'workflow', chdir: project)
     assert_predicate status, :success?, output
-    assert_match(%r{\Aoverride /.+/scripts/shaka\.rb workflow$}, output)
+    assert_match(%r{\Aoverride -r /.+/lib/shaka/ruby_requirement\.rb /.+/scripts/shaka\.rb workflow$}, output)
   end
 
   def test_installed_helper_refuses_a_removed_recorded_ruby
@@ -44,7 +44,9 @@ class RubyLauncherTest < Minitest::Test
 
   def test_source_checkout_uses_path_ruby_without_project_ruby_options
     environment = { 'RUBYOPT' => '-rproject_bundler_setup', 'BUNDLE_GEMFILE' => File.join(project, 'Gemfile') }
-    output, status = Open3.capture2e(environment, SOURCE_HELPER, '--help', chdir: project)
+    # A bare relative path, which Ruby would search for in its load path rather than here.
+    output, status = Open3.capture2e(environment, 'skills/shaka/scripts/shaka', '--help',
+                                     chdir: File.expand_path('..', __dir__))
     assert_predicate status, :success?, output
     assert_includes output, 'Usage: shaka'
   end

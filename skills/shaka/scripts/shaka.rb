@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative '../lib/shaka/ruby_requirement'
-Shaka::RubyRequirement.check!
 
 require 'json'
 require 'optparse'

@@ -1,8 +1,12 @@
 # frozen_string_literal: true
 
+# Loading this file checks the running Ruby, so an older Ruby stops with a fix before it
+# parses code written for Ruby 3.4. Keep it parseable by any Ruby. The launcher preloads
+# it with -r, and a symlinked skill path can load it twice, so a second load does nothing.
+return if defined?(Shaka::RubyRequirement)
+
 module Shaka
-  # Stops an older Ruby with a fix before it reaches code written for Ruby 3.4.
-  # Keep this file loadable by any Ruby: the entry points require it before anything else.
+  # Names the Ruby Shaka needs and stops an older one.
   module RubyRequirement
     MINIMUM = '3.4'
 
@@ -16,3 +20,5 @@ module Shaka
     end
   end
 end
+
+Shaka::RubyRequirement.check!
