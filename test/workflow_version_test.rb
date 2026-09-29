@@ -36,11 +36,33 @@ class WorkflowVersionTest < Minitest::Test
     end
   end
 
+  def test_edits_hidden_by_index_flags_still_mark_a_checkout_modified
+    %w[--assume-unchanged --skip-worktree].each do |flag|
+      in_checkout do |root, head|
+        git(root, 'update-index', flag, 'skills/shaka/SKILL.md')
+        File.write(File.join(root, 'skills/shaka/SKILL.md'), "changed\n")
+        assert_equal "#{VERSION}-#{head}-modified",
+                     Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT), flag
+      end
+    end
+  end
+
   def test_changes_outside_the_skill_do_not_mark_a_checkout_modified
     in_checkout do |root, head|
       File.write(File.join(root, 'notes.txt'), "scratch\n")
       assert_equal "#{VERSION}-#{head}",
                    Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
+    end
+  end
+
+  def test_inherited_git_location_variables_do_not_redirect_a_checkout
+    in_checkout do |root, head|
+      Dir.mktmpdir do |other|
+        with_environment('GIT_DIR' => File.join(other, '.git'), 'GIT_WORK_TREE' => other) do
+          assert_equal "#{VERSION}-#{head}",
+                       Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
+        end
+      end
     end
   end
 
@@ -76,8 +98,16 @@ class WorkflowVersionTest < Minitest::Test
     end
   end
 
+  def with_environment(values)
+    saved = values.keys.to_h { |key| [key, ENV.fetch(key, nil)] }
+    values.each { |key, value| ENV[key] = value }
+    yield
+  ensure
+    saved.each { |key, value| ENV[key] = value }
+  end
+
   def git(root, *)
-    output, status = Open3.capture2(TEST_GIT, '-C', root, *)
+    output, status = Open3.capture2(Shaka::WorkflowVersion::GIT_ENVIRONMENT, TEST_GIT, '-C', root, *)
     assert_predicate status, :success?
     output
   end

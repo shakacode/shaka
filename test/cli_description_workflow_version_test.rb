@@ -18,7 +18,9 @@ class CliDescriptionWorkflowVersionTest < Minitest::Test
 
   # Break: every commit between releases published the same `0.1.0.pre.1`.
   def test_a_direct_checkout_publishes_its_head_commit
-    head, = Open3.capture2(TEST_GIT, '-C', ROOT, 'rev-parse', 'HEAD')
+    head, found = Open3.capture2(TEST_GIT, '-C', ROOT, 'rev-parse', 'HEAD')
+    skip 'this source tree is not a Git checkout' unless found.success?
+
     Dir.mktmpdir do |dir|
       _output, error, status = run_description(dir)
 

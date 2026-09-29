@@ -15,6 +15,9 @@ module Shaka
   module WorkflowVersion
     ROOT = File.expand_path('../../../..', __dir__)
     SKILL = 'skills/shaka'
+    # Inherited from a Git hook or wrapper, these would point Git at another repository.
+    GIT_ENVIRONMENT = %w[GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE GIT_PREFIX]
+                      .to_h { |name| [name, nil] }.freeze
 
     module_function
 
@@ -42,20 +45,25 @@ module Shaka
 
       head = run(git, root, 'rev-parse', '--verify', 'HEAD')
       status = run(git, root, 'status', '--porcelain', '--untracked-files=all', '--', SKILL)
-      return unless head && status
+      entries = run(git, root, 'ls-files', '-v', '--', SKILL)
+      return unless head && status && entries
 
-      status.empty? ? head : "#{head}-modified"
+      status.empty? && !index_flags?(entries) ? head : "#{head}-modified"
     end
+
+    # `git status` hides edits to assume-unchanged (lowercase tag) and skip-worktree (`S`)
+    # files, so any tag other than a plain cached `H` means status cannot vouch for them.
+    def index_flags?(entries) = entries.lines.any? { |line| !line.start_with?('H ') }
 
     # Runs from the helper's own directory: a `git` wrapper on PATH may load files relative
     # to its working directory, which is often a candidate checkout.
     def run(git, root, *)
-      output, status = Open3.capture2(git, *, chdir: root, err: File::NULL)
+      output, status = Open3.capture2(GIT_ENVIRONMENT, git, *, chdir: root, err: File::NULL)
       output.strip if status.success?
     rescue Errno::ENOENT
       nil
     end
 
-    private_class_method :read_identity, :commit, :checkout_commit, :run
+    private_class_method :read_identity, :commit, :checkout_commit, :index_flags?, :run
   end
 end
