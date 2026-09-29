@@ -126,6 +126,26 @@ class ProvenanceHistoryRefusalTest < Minitest::Test
     assert_refused(@body.sub('<!-- shaka:end -->', "#{@body[/<!-- shaka:provenance .*? -->/]}\n<!-- shaka:end -->"))
   end
 
+  # Break: a marker split across lines no longer matched, so its history restarted silently.
+  def test_a_marker_that_no_longer_parses_as_a_marker_is_refused
+    publish(HEADS[0])
+    publish(HEADS[1], 'active_effort' => 'high')
+    assert_refused(@body.sub('<!-- shaka:provenance ', "<!-- shaka:provenance\n"))
+    assert_refused(@body.sub(%r{ -->(?=\n\n</details>\n\n<details>\n<summary>Provenance history)}, ' --'))
+  end
+
+  # Every shape the Workflow version cell renders must read back, or the next publication refuses.
+  def test_unlinked_and_unknown_workflow_versions_round_trip
+    unlinked = Shaka::WorkflowVersion::Result.new(version: Shaka::VERSION, commit: 'd' * 40, modified: true,
+                                                  upstream: false)
+    unknown = Shaka::WorkflowVersion::Result.new(version: Shaka::VERSION, commit: nil, modified: true, upstream: false)
+    [workflow, unlinked, unknown, workflow].each_with_index { |version, index| publish(HEADS[index], version:) }
+
+    assert_equal 4, history_rows(@body).size
+    assert_includes @body, "`#{'d' * 40}` (modified)"
+    assert_includes @body, "`#{Shaka::VERSION}` (commit unknown, modified)"
+  end
+
   def test_a_fork_body_starts_a_new_history
     publish(HEADS[0])
     rendered = publish(HEADS[1], fork: true, 'active_effort' => 'high')

@@ -3,6 +3,7 @@
 require 'json'
 require_relative '../error'
 require_relative '../usage/records'
+require_relative 'provenance'
 
 module Shaka
   # Keeps one entry per change of workflow commit or route across a PR's publications, since
@@ -17,7 +18,6 @@ module Shaka
     # The entries after the first that a long-lived PR keeps.
     RECENT = 20
     HEAD = /\A\h{40}\z/
-    ROUTE = %r{\A(?:UNKNOWN|[A-Za-z0-9][A-Za-z0-9._:-]{0,79}) / (?:UNKNOWN|[A-Za-z0-9][A-Za-z0-9._:-]{0,79})\z}
     # The three shapes WorkflowVersion::Result#markdown renders.
     WORKFLOW = %r{\A(?:\[`\h{7}`\]\(https://github\.com/shakacode/shaka/commit/(?:\h{40}|\h{64})\)(?:\ \(modified\))?|
                   `(?:\h{40}|\h{64})`(?:\ \(modified\))?|
@@ -28,7 +28,7 @@ module Shaka
     # A fork author can edit the body, so a fork's history is never carried, as with usage.
     def carry(pull, current)
       entry = current.merge('head' => head(pull))
-      history = same_repository?(pull) ? previous(pull['body']) : { 'entries' => [], 'omitted' => 0 }
+      history = same_repository?(pull) ? previous(pull['body']) : fresh
       entries = history.fetch('entries')
       return history if entries.any? && changes(entries.last) == changes(entry)
 
@@ -60,15 +60,20 @@ module Shaka
     # A body published before this history existed starts a new one; a damaged history is
     # refused rather than rewritten, so no recorded entry disappears unnoticed.
     def previous(body)
-      region = UsageRecords.managed_region(body)
-      found = region.to_s.scan(MARK)
-      return { 'entries' => [], 'omitted' => 0 } if found.empty?
-      raise invalid unless found.size == 1
+      region = UsageRecords.managed_region(body).to_s
+      # Any opening counts, so a marker damaged past matching is refused rather than restarted.
+      openings = region.scan(PREFIX.strip).size
+      return fresh if openings.zero?
 
-      validated(JSON.parse(found.first.first))
+      json = region[MARK, 1]
+      raise invalid unless openings == 1 && json
+
+      validated(JSON.parse(json))
     rescue JSON::ParserError
       raise invalid
     end
+
+    def fresh = { 'entries' => [], 'omitted' => 0 }
 
     def validated(history)
       valid = history.is_a?(Hash) && history.keys.sort == %w[entries omitted] &&
@@ -85,7 +90,13 @@ module Shaka
     def valid_entry?(entry)
       entry.is_a?(Hash) && entry.keys.sort == FIELDS.sort && entry.values.all?(String) &&
         entry['head'].match?(HEAD) && entry['workflow'].match?(WORKFLOW) &&
-        ROUTES.all? { |route| entry[route].match?(ROUTE) }
+        ROUTES.all? { |route| valid_route?(entry[route]) }
+    end
+
+    # A route renders as `model / effort`, each an allowlisted provenance value.
+    def valid_route?(route)
+      parts = route.split(' / ', -1)
+      parts.size == 2 && parts.all? { |part| part.match?(ExecutionProvenance::SAFE_VALUE) }
     end
 
     def invalid
@@ -116,7 +127,7 @@ module Shaka
        '| --- | --- | --- | --- | --- |', *rows].join("\n")
     end
 
-    private_class_method :head, :same_repository?, :previous, :validated, :valid_entries?, :valid_entry?,
-                         :invalid, :changes, :bounded, :omission, :table
+    private_class_method :head, :same_repository?, :previous, :fresh, :validated, :valid_entries?, :valid_entry?,
+                         :valid_route?, :invalid, :changes, :bounded, :omission, :table
   end
 end
