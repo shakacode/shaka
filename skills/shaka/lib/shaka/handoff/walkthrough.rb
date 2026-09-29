@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../public_comments/bounded_list'
-require_relative '../walkthrough_history'
+require_relative '../walkthrough/history'
 
 module Shaka
   class Handoff

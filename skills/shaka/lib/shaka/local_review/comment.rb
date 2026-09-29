@@ -2,7 +2,7 @@
 
 require 'cgi'
 require_relative '../error'
-require_relative '../publication'
+require_relative '../publication/publication'
 require_relative '../reviewer_selection'
 require_relative 'evidence'
 

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'error'
+require_relative '../error'
 
 module Shaka
   # Resolves `deployment: auto` from the GitHub Deployments API. Providers word their

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'json'
-require_relative 'error'
-require_relative 'public_comments/bounded_list'
-require_relative 'public_comments/reply_guard'
+require_relative '../error'
+require_relative '../public_comments/bounded_list'
+require_relative '../public_comments/reply_guard'
 require_relative 'publication'
 
 module Shaka
