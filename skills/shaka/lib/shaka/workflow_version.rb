@@ -51,9 +51,12 @@ module Shaka
       identity ||= {}
       source = identity['source'] || {}
       commit, modified, repository = commit(source, root, git)
-      Result.new(version: identity['version'] || VERSION, commit:, modified: modified || false,
-                 upstream: repository.is_a?(String) && repository.match?(UPSTREAM))
+      Result.new(version: identity['version'] || VERSION, commit: matching(commit, COMMIT),
+                 modified: modified || false, upstream: !matching(repository, UPSTREAM).nil?)
     end
+
+    # Installation metadata is only type-checked, so a malformed value counts as unknown.
+    def matching(value, pattern) = (value if value.is_a?(String) && value.match?(pattern))
 
     def commit(source, root, git)
       case source['kind']
@@ -97,10 +100,10 @@ module Shaka
     def run(git, root, *)
       output, status = Open3.capture2(GIT_ENVIRONMENT, git, *, chdir: root, err: File::NULL)
       output.strip if status.success?
-    rescue Errno::ENOENT
+    rescue SystemCallError
       nil
     end
 
-    private_class_method :read_identity, :commit, :checkout_commit, :published_origin, :index_flags?, :run
+    private_class_method :read_identity, :matching, :commit, :checkout_commit, :published_origin, :index_flags?, :run
   end
 end
