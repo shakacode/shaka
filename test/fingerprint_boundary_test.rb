@@ -54,6 +54,15 @@ class FingerprintBoundaryTest < Minitest::Test
     assert_raises(Shaka::Error) { fingerprint(settings) }
   end
 
+  def test_rejects_command_through_parent_symlink_outside_repository
+    Dir.mktmpdir('outside-fingerprint') do |outside|
+      File.write(File.join(outside, 'test'), 'external')
+      File.symlink(outside, File.join(@root, 'link'))
+      settings = @settings.merge('commands' => { 'test' => 'link/test' })
+      assert_raises(Shaka::Error) { fingerprint(settings) }
+    end
+  end
+
   def test_rejects_wrong_worktree_and_symbolic_private_ref
     @source.root = Dir.tmpdir
     assert_raises(Shaka::Error) { fingerprint }
