@@ -29,8 +29,8 @@ module Shaka
       private
 
       def unsafe_path?(path)
-        path.empty? || path.start_with?('/') ||
-          path.split('/').any? { |part| part.empty? || %w[. ..].include?(part) }
+        path.empty? || path.start_with?('/') || path.include?("\0") ||
+          path.split('/', -1).any? { |part| part.empty? || %w[. ..].include?(part) }
       end
 
       def identity(path)

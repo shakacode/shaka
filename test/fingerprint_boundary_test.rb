@@ -63,6 +63,19 @@ class FingerprintBoundaryTest < Minitest::Test
     end
   end
 
+  def test_rejects_trailing_slash_on_directory_symlink
+    Dir.mktmpdir('outside-fingerprint') do |outside|
+      File.symlink(outside, File.join(@root, 'escape-dir'))
+      settings = @settings.merge('commands' => { 'test' => 'escape-dir/' })
+      assert_raises(Shaka::Error) { fingerprint(settings) }
+    end
+  end
+
+  def test_rejects_nul_byte_in_path
+    settings = @settings.merge('commands' => { 'test' => "test\0path" })
+    assert_raises(Shaka::Error) { fingerprint(settings) }
+  end
+
   def test_rejects_wrong_worktree_and_symbolic_private_ref
     @source.root = Dir.tmpdir
     assert_raises(Shaka::Error) { fingerprint }
