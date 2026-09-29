@@ -6,6 +6,7 @@ require 'net/http'
 require 'open3'
 require 'openssl'
 require 'socket'
+require 'timeout'
 require 'uri'
 
 module ShakaJev
@@ -13,12 +14,32 @@ module ShakaJev
 
   # Fails closed unless GitHub reports that the target repository is public.
   class PublicGitHubRepository
-    def self.call(owner, repo, capture: Open3.method(:capture2))
+    def self.call(owner, repo, capture: method(:capture_with_timeout))
       output, status = capture.call({ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', "#{owner}/#{repo}",
                                     '--json', 'visibility', err: File::NULL)
       status.success? && JSON.parse(output)['visibility'] == 'PUBLIC'
-    rescue JSON::ParserError, NoMethodError, TypeError, SystemCallError
+    rescue JSON::ParserError, NoMethodError, TypeError, SystemCallError, Timeout::Error
       false
+    end
+
+    def self.capture_with_timeout(*argv, timeout: 10, **)
+      Open3.popen2(*argv, **) do |stdin, stdout, wait|
+        stdin.close
+        begin
+          Timeout.timeout(timeout) { [stdout.read, wait.value] }
+        rescue Timeout::Error
+          stop(wait)
+          raise
+        end
+      end
+    end
+
+    def self.stop(wait)
+      Process.kill('KILL', wait.pid)
+    rescue Errno::ESRCH
+      nil
+    ensure
+      wait.join
     end
   end
 
@@ -71,8 +92,8 @@ module ShakaJev
       raise Error, 'TYPESAFE_API_KEY is required' if @api_key.empty?
       raise Error, 'TYPESAFE_API_KEY contains invalid characters' unless @api_key.match?(/\A[!-~]+\z/)
 
-      validate_target!(pr_url, head)
       validate_evidence!(evidence)
+      validate_target!(pr_url, head)
     end
 
     def validate_target!(pr_url, head)

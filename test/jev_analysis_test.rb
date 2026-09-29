@@ -2,11 +2,13 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'rbconfig'
 require_relative '../skills/shaka-jev/lib/shaka_jev/analysis'
 
 class JevAnalysisTest < Minitest::Test
   HEAD = 'a' * 40
   URL = 'https://github.com/shakacode/shaka/pull/302'
+  EVIDENCE = 'Public validation and review evidence.'
   OUTPUT = {
     model: 'jev-1.13.0',
     answers: {
@@ -30,7 +32,7 @@ class JevAnalysisTest < Minitest::Test
     end
     public_repository = ->(owner, repo) { [owner, repo] == %w[shakacode shaka] }
     result = analyzer(api_key: 'test-key', client: client, public_repository: public_repository).call(
-      pr_url: URL, head: HEAD, evidence: 'Public validation and review evidence.'
+      pr_url: URL, head: HEAD, evidence: EVIDENCE
     )
     [result, sent]
   end
@@ -99,9 +101,7 @@ class JevAnalysisTest < Minitest::Test
     assert_state(payload.fetch('state'))
   end
 
-  def assert_state(state)
-    [URL, HEAD, 'Public validation and review evidence.'].each { |part| assert_includes state, part }
-  end
+  def assert_state(state) = [URL, HEAD, EVIDENCE].each { |part| assert_includes state, part }
 
   def invalid_answer(type:, noul:)
     OUTPUT.merge(answers: OUTPUT.fetch(:answers).merge(validation_supported: { type: type, noul: noul }))
@@ -111,7 +111,8 @@ class JevAnalysisTest < Minitest::Test
     assert_in_delta 0.91, result.fetch('answers').fetch('validation_supported')
     assert_equal 2500, result.fetch('input_tokens')
     assert_in_delta 0.000105, result.fetch('estimated_input_cost_usd'), 0.000000001
-    assert_match(/\A[0-9a-f]{64}\z/, result.fetch('evidence_sha256'))
+    assert_equal [URL, HEAD], result.values_at('pr_url', 'head')
+    assert_equal Digest::SHA256.hexdigest(EVIDENCE), result.fetch('evidence_sha256')
   end
 
   def response(code, body) = Struct.new(:code, :body).new(code.to_s, JSON.generate(body))
@@ -124,6 +125,18 @@ class JevAnalysisTest < Minitest::Test
 end
 
 class JevHttpTransportTest < Minitest::Test
+  def test_bad_json_and_timeout_have_clean_errors
+    failures = [->(*) { Struct.new(:code, :body).new('200', '<html>') },
+                ->(*) { raise Net::ReadTimeout }]
+    failures.each do |client|
+      analysis = ShakaJev::Analysis.new(api_key: 'test-key', client: client, public_repository: ->(*) { true })
+      error = assert_raises(ShakaJev::Error) do
+        analysis.call(pr_url: JevAnalysisTest::URL, head: JevAnalysisTest::HEAD, evidence: 'Public')
+      end
+      assert_match(/Jev request failed/, error.message)
+    end
+  end
+
   def test_default_transport_requires_tls_and_bounded_timeouts
     response = Struct.new(:code, :body).new('200', JSON.generate(JevAnalysisTest::OUTPUT))
     with_http_start(fake_transport(response)) do
@@ -156,7 +169,55 @@ class JevHttpTransportTest < Minitest::Test
   end
 end
 
+class JevDefaultVisibilityTest < Minitest::Test
+  def test_default_analyzer_rejects_private_repository_before_sending
+    Dir.mktmpdir do |dir|
+      install_fake_gh(dir)
+      with_path(dir) { assert_private_rejected }
+    end
+  end
+
+  private
+
+  def assert_private_rejected
+    client = ->(*) { flunk 'must not send private evidence' }
+    error = assert_raises(ShakaJev::Error) do
+      ShakaJev::Analysis.new(api_key: 'test-key', client: client).call(
+        pr_url: JevAnalysisTest::URL, head: JevAnalysisTest::HEAD, evidence: 'Private'
+      )
+    end
+    assert_match(/verified public/, error.message)
+  end
+
+  def install_fake_gh(dir)
+    gh = File.join(dir, 'gh')
+    File.write(gh, "#!/bin/sh\nprintf '%s\\n' '{\"visibility\":\"PRIVATE\"}'\n")
+    File.chmod(0o755, gh)
+  end
+
+  def with_path(dir)
+    original = ENV.fetch('PATH')
+    ENV['PATH'] = "#{dir}#{File::PATH_SEPARATOR}#{original}"
+    yield
+  ensure
+    ENV['PATH'] = original
+  end
+end
+
 class JevPublicGitHubRepositoryTest < Minitest::Test
+  def test_stalled_github_lookup_fails_closed
+    capture = ->(*) { raise Timeout::Error }
+    refute ShakaJev::PublicGitHubRepository.call('shakacode', 'shaka', capture: capture)
+  end
+
+  def test_timed_out_subprocess_is_stopped
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    assert_raises(Timeout::Error) do
+      ShakaJev::PublicGitHubRepository.capture_with_timeout(RbConfig.ruby, '-e', 'sleep 30', timeout: 0.05)
+    end
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 10
+  end
+
   def test_only_successful_public_metadata_is_accepted
     assert_visibility('PUBLIC', success: true, expected: true)
     assert_visibility('PRIVATE', success: true, expected: false)
