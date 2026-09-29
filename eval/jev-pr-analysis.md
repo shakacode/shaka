@@ -1,6 +1,15 @@
 # Exploratory Jev PR analysis
 
-Jev may help triage a material mismatch between a PR's goal and its change, but we have not established that it improves Shaka delivery. On September 28, 2026, the TypeSafe Playground ran `jev-1.13.0` on two short public PR excerpts. The `jev-latest` alias resolved to that version for these calls and can change later. The cost uses [TypeSafe's published input rate](https://typesafe.ai/blog/introducing-system-one-models-and-jev). These packets did not contain diff excerpts, so they do **not** evaluate the companion's current question about the change itself. They illustrate question-wording sensitivity and approximate input cost only. The Playground used the state text quoted below; `scripts/analyze` adds its own PR/head/evidence prefix, so these scores and token counts are not measured CLI output.
+Jev may help triage a material mismatch between a PR's goal and its change, but we have not established that it improves Shaka delivery. On September 28, 2026, the TypeSafe Playground ran `jev-1.13.0` with the current `material_concern_open` question on a selected excerpt of public [PR #305](https://github.com/shakacode/shaka/pull/305), then on a clearly labeled counterfactual that contradicted its goal. The `jev-latest` alias resolved to that version for these calls and can change later. Cost estimates use [TypeSafe's published input rate](https://typesafe.ai/blog/introducing-system-one-models-and-jev). These are small, selected packets, not blind or complete PR reviews. The CLI adds its own PR/head/evidence prefix, so the scores and token counts are not measured CLI output.
+
+| Current-question case | Material concern open | Input tokens | Estimated input cost at $0.042/MTok |
+| --- | ---: | ---: | ---: |
+| #305, selected real goal and change excerpts | 0.13 | 626 | $0.00002629 |
+| Synthetic counterfactual lacking required alignment and fallback | 0.92 | 515 | $0.00002163 |
+
+The real packet stated #305's scoped goal, cited its alignment, labeling, and fallback changes in `docs/pr-verification.md` and `workflow.yml`, and noted that issue #300's later real-UI trial was outside this PR. The counterfactual kept the goal but replaced those changes with instructions to compare even mismatched image sizes and omit the fallback explanation. It explicitly identified itself as synthetic. The same question distinguished these two hand-picked cases; the counterfactual was not a defect in #305. The real packet also mentioned that reviewers found no material issue, which may have influenced the score. Neither case establishes calibration, false-positive rate, or reviewer benefit.
+
+Earlier Playground work used a different question about PR validation claims and two short packets with no diff excerpts. That question has been removed because Shaka and GitHub can check validation and commit coverage deterministically. The historical results below illustrate wording sensitivity only.
 
 | Case | Earlier material-concern question | Input tokens | Estimated input cost at $0.042/MTok |
 | --- | ---: | ---: | ---: |
