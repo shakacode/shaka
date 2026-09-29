@@ -191,13 +191,6 @@ phases:
         or no-op work may omit review with a recorded reason, unless the trusted seam sets
         `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
-      - When the user asks for several local reviewers, pass `--count N` to `reviewer` and run
-        each reviewer in its `reviewers` list on the same committed head. Wait until every one
-        returns `completed` or a recorded `not_completed`, then fix all their findings as one
-        repair batch. Review the new head by rerunning `reviewer` with the same count, adding
-        `--unavailable` for any reviewer that has since failed with qualifying evidence. After
-        two such rounds, decline remaining nits with a reason instead of fixing them, so the
-        reviewed head stays current.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
         comes from the default branch. Pass `--implementer` once per provider and model family that
@@ -223,6 +216,11 @@ phases:
         rather than calling it ready. Record which reviewers ran at which revision in the chat and
         the PR review status line. See
         [choose a local reviewer](<{{package_root}}/skills/shaka/references/review.md#choose-a-local-reviewer>).
+      - When the user asks for several local reviewers, pass `--count N` to `reviewer` and run
+        each reviewer in its `reviewers` list on the same committed head. Wait until every one
+        returns `completed` or a recorded `not_completed`, then fix all their findings as one
+        repair batch. Review the new head by rerunning `reviewer` with the same count, adding
+        `--unavailable` for any reviewer that has since failed with qualifying evidence.
       - For UI changes, meaning anything a person sees on screen other than command-line output,
         use the change by hand on the head you will push, and capture before and after screenshots
         on desktop and mobile, adding a short video when interaction or timing matters. Inspect each capture
