@@ -125,6 +125,8 @@ module Shaka
 
     def comment_ids(packet)
       COMMENT_KINDS.flat_map { |kind| packet.fetch(kind).map { |row| row.fetch('id') } }.uniq
+    rescue NoMethodError, TypeError, KeyError
+      raise Error, 'Malformed comment packet.'
     end
   end
 end

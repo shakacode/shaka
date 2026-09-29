@@ -176,6 +176,16 @@ class PrWatchBaselineTest < Minitest::Test
     end
   end
 
+  def test_malformed_comment_packet_fails_with_a_watcher_error
+    github = PrWatchTest::FakeGitHub.new([{ pr: { 'headRefOid' => 'a' * 40, 'state' => 'OPEN' },
+                                            required: [], checks: [] }])
+    baseline = { 'issue_comments' => [1], 'review_summaries' => [], 'inline_comments' => [] }
+    watcher = Shaka::PrWatch.new(github, head: 'a' * 40, ci_jobs: [], settings: { baseline: })
+
+    error = assert_raises(Shaka::Error) { watcher.call }
+    assert_equal 'Malformed comment packet.', error.message
+  end
+
   def test_refuses_a_saved_comment_read_from_another_head
     Dir.mktmpdir do |directory|
       path = File.join(directory, 'comments.json')

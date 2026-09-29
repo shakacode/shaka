@@ -613,13 +613,15 @@ always: |-
   invocation with the PR URL, such as `$shaka https://github.com/OWNER/REPO/pull/N` in Codex or
   `/shaka https://github.com/OWNER/REPO/pull/N` in Claude Code.
 
-  For pending checks, use the host's PR monitor when it wakes on their completion. Otherwise,
+  For pending required checks and configured CI review jobs, use the host's PR monitor when it
+  wakes on their completion. Otherwise,
   if the host can wake on a background command, run `pr watch OWNER/REPO NUMBER --head SHA
   --root DIR --ref SHA`. Save the last `comments --head SHA` JSON outside the checkout and pass
   it with `--baseline PATH` so comments arriving between that read and watcher startup count.
   Without a baseline, watching starts with the comments already present. It polls the named
   head and exits on terminal required and configured
-  CI review jobs, a new trusted comment, a moved head, closure, or timeout. Its one `SHAKA_WAKE`
+  CI review jobs, a new trusted comment, a moved head, closure, or timeout. It ignores non-required
+  checks outside the configured CI review jobs. Its one `SHAKA_WAKE`
   line gives the reason to refresh the PR. On an error wake, inspect the error, refresh the PR,
   and restart the watcher or use the resume path above. A monitor that reports failures only leaves the
   `awaiting-resume` path above for green checks.

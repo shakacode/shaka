@@ -78,7 +78,7 @@ module Shaka
       reader = READERS.fetch(options[:host])
       @inferred = options[:files].empty?
       @options[:files] = reader.discover if @inferred
-      all_turns = @options[:all_turns] || @options[:since_time]
+      all_turns = @options[:all_turns] || @options.key?(:since_time)
       @source = reader.new(@options[:files], @options[:turns], all_turns:)
       load_responses
     end
