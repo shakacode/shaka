@@ -4,6 +4,7 @@ require_relative 'attention'
 require_relative 'error'
 require_relative 'merge_required_checks'
 require_relative 'status'
+require_relative 'handoff/squash_note'
 require_relative 'handoff/walkthrough'
 require_relative 'handoff/wip_note'
 
@@ -52,7 +53,7 @@ module Shaka
     def open_facts(snapshot, live)
       checks = snapshot['requiredChecks']
       [label_fact(checks), checks_fact(checks, snapshot['requiredChecksUnavailable']), walkthrough_fact(live),
-       wip_fact(live)]
+       squash_fact(live), wip_fact(live)].compact
     end
 
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.
@@ -96,6 +97,18 @@ module Shaka
       return "walkthrough #{revision[0, SHORT]}" if revision == live
 
       owe("walkthrough #{revision[0, SHORT]}", "The walkthrough explains #{revision}; publish one for #{live}.")
+    end
+
+    # Checked here because this helper's current code runs even for a session that loaded an older Finish.
+    def squash_fact(live)
+      return unless merge_requested?
+
+      head = SquashNote.new(@github).head
+      message = "Post the squash commit message for #{live} with `squash-message` before the merge click."
+      return owe('no squash message', message) unless head
+      return "squash message #{head[0, SHORT]}" if live.start_with?(head)
+
+      owe("squash message #{head[0, SHORT]}", "The squash commit message names #{head}; post one for #{live}.")
     end
 
     def wip_fact(live)

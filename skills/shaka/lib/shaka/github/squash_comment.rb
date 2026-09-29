@@ -10,6 +10,10 @@ module Shaka
   module SquashComment
     SQUASH_MARK = '<!-- shaka:squash-message -->'
     COMMENT_PAGES = 20
+    HEAD = /\A#{Regexp.escape(SQUASH_MARK)}\n\*\*Squash commit message for `(\h{7,40})`\./
+
+    # The short head a posted comment names, or nil for a body `squash_comment` did not render.
+    def self.head(body) = body.to_s.gsub("\r\n", "\n")[HEAD, 1]
 
     def squash_comment(head:, message:)
       verify_head(head)
