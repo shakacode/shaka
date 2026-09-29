@@ -12,7 +12,7 @@ require_relative 'verification'
 
 module Shaka
   module Evidence
-    # JSON results travel with the task or PR. This command keeps no parallel ledger.
+    # Executes, binds, and verifies check results without a separate ledger.
     class Command
       include Options
 

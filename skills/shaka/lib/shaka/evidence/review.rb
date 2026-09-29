@@ -8,8 +8,7 @@ require_relative 'result'
 
 module Shaka
   module Evidence
-    # Adds content and settings identities to the review runner's existing result.
-    # A dirty checkout never becomes reusable review evidence: the runner showed base...HEAD.
+    # Adds content and settings identities to the review runner's result.
     class Review
       def self.start(options, action:)
         return unless options[:settings_ref]

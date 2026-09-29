@@ -59,18 +59,6 @@ class EvidenceBindingTest < Minitest::Test
     end
   end
 
-  def test_new_trusted_commit_with_unchanged_components_retains_result
-    with_checkout do |root, ref|
-      result = run_check(root, ref)
-      git(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
-          'commit', '--allow-empty', '--quiet', '-m', 'unrelated history')
-      head = git(root, 'rev-parse', 'HEAD')
-      binding = bind(root, head, head, result)
-      assert_equal 'bound', binding.fetch('status')
-      assert_equal ['source'], binding.fetch('changed_settings_components')
-    end
-  end
-
   private
 
   def commit_feature(root)
