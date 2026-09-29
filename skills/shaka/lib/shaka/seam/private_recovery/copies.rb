@@ -6,10 +6,13 @@ module Shaka
     class PrivateRecovery
       def restore(to:, id: nil, previous: false)
         target = inspection_target(to)
-        source = recovery_source(id, previous)
-        FileUtils.mkdir_p(File.dirname(target))
-        copy_tree(source, target)
-        { 'status' => 'restored_for_comparison', 'path' => target, 'source' => source }
+        directory = validated_storage(id)
+        with_storage_lock(storage: directory, create: false) do
+          source = recovery_source(id, previous)
+          FileUtils.mkdir_p(File.dirname(target))
+          copy_tree(source, target)
+          { 'status' => 'restored_for_comparison', 'path' => target, 'source' => source }
+        end
       end
 
       private
@@ -18,19 +21,29 @@ module Shaka
         target = File.expand_path(to)
         parent = existing_parent(target)
         actual_parent = File.realpath(parent)
-        forbidden = forbidden_roots
-        if [target, actual_parent].any? { |path| forbidden.any? { |dir| path == dir || path.start_with?("#{dir}/") } }
-          raise Error, 'Restore requires a separate inspection path outside the worktree'
-        end
+        assert_outside_worktrees!(target, actual_parent)
         raise Error, "Inspection destination already exists: #{to}" if File.exist?(target) || File.symlink?(target)
 
         target
+      end
+
+      def assert_outside_worktrees!(target, parent)
+        forbidden = forbidden_roots
+        if [target, parent].any? { |path| forbidden.any? { |dir| path == dir || path.start_with?("#{dir}/") } }
+          raise Error, 'Restore requires a separate inspection path outside the worktree'
+        end
+        raise Error, 'Restore requires a path outside every Git worktree' if inside_worktree?(parent)
       end
 
       def existing_parent(path)
         parent = File.dirname(path)
         parent = File.dirname(parent) until File.exist?(parent)
         parent
+      end
+
+      def inside_worktree?(parent)
+        _out, _error, status = Configuration::PrivateGitPaths.capture(parent, 'rev-parse', '--show-toplevel')
+        status.success?
       end
 
       def forbidden_roots
@@ -53,7 +66,8 @@ module Shaka
       end
 
       def validated_storage(id)
-        return @storage unless id
+        return @storage if !id && @storage
+        raise Error, 'No recovery copy for this worktree' unless id
 
         raise Error, 'Invalid recovery identity' unless id.match?(/\A[0-9a-f]{64}\z/)
 

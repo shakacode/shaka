@@ -25,11 +25,16 @@ module Shaka
         raise Error, "#{root} is not a Git worktree root" unless File.realpath(top) == @root
 
         @common_git_dir = File.realpath(File.expand_path(git('rev-parse', '--git-common-dir').strip, @root))
-        return unless assign_identity
-
         git_dir = File.realpath(File.expand_path(git('rev-parse', '--git-dir').strip, @root))
-        @storage = File.join(@common_git_dir, DIRECTORY, assigned_identity(git_dir))
+        @storage = storage_for(git_dir, assign_identity)
       end
+
+      def storage_for(git_dir, assign_identity)
+        identity = assign_identity ? assigned_identity(git_dir) : existing_identity(git_dir)
+        File.join(@common_git_dir, DIRECTORY, identity) if identity
+      end
+
+      private :storage_for
 
       def adoption_paths
         indexed = Configuration::PrivateGitPaths.parse(git('ls-files', '--cached', '-z'))
@@ -41,18 +46,16 @@ module Shaka
       end
 
       def inspect_checkout
+        tree = File.join(@root, PRIVATE_DIRECTORY)
+        assert_safe_tree!(tree)
         adopted = adoption_paths
         return report('adopted', adopted, compare_with_checkout) if adopted.any?
 
-        tree = File.join(@root, PRIVATE_DIRECTORY)
-        assert_safe_tree!(tree)
         return report('partial', [], compare_with_checkout) if File.directory?(tree) && !complete_tree?
 
         refresh_from_checkout(tree) if File.directory?(tree)
         report(File.directory?(tree) ? 'private' : 'absent', [], compare_with_checkout)
       end
-
-      def current_copy? = File.exist?(File.join(@storage, 'current')) || File.symlink?(File.join(@storage, 'current'))
 
       def list
         base = File.join(@common_git_dir, DIRECTORY)
@@ -67,29 +70,8 @@ module Shaka
 
       private
 
-      def assigned_identity(git_dir)
-        marker = File.join(git_dir, 'shaka-private-id')
-        raise Error, "Unsafe worktree identity: #{marker}" if File.symlink?(marker)
-        return read_identity(marker) if File.file?(marker)
-
-        identity = SecureRandom.hex(32)
-        File.open(marker, File::WRONLY | File::CREAT | File::EXCL, 0o600) { |file| file.write(identity) }
-        identity
-      rescue Errno::EEXIST
-        read_identity(marker)
-      rescue SystemCallError => e
-        raise Error, "Cannot assign worktree identity at #{marker}: #{e.message}"
-      end
-
-      def read_identity(marker)
-        identity = File.read(marker).strip
-        raise Error, "Invalid worktree identity at #{marker}" unless identity.match?(/\A[0-9a-f]{64}\z/)
-
-        identity
-      end
-
       def git(*)
-        output, error, status = Open3.capture3('git', '-C', @root, *)
+        output, error, status = Configuration::PrivateGitPaths.capture(@root, *)
         raise Error, "Cannot inspect Git: #{error.strip}" unless status.success?
 
         output
@@ -111,14 +93,18 @@ module Shaka
       end
 
       def assert_safe_tree!(tree)
-        return unless File.symlink?(tree) || (File.exist?(tree) && !File.directory?(tree))
+        [File.dirname(tree), tree].each do |path|
+          next unless File.symlink?(path) || (File.exist?(path) && !File.directory?(path))
 
-        raise Error, "Unsafe private directory: #{tree}"
+          raise Error, "Unsafe private directory: #{path}"
+        end
       end
 
       def refresh_from_checkout(tree)
-        safe_inventory
-        save_from(tree) if current_inventory != inventory_for(tree)
+        with_storage_lock do
+          safe_inventory
+          save_from(tree) if current_inventory != inventory_for(tree)
+        end
       end
 
       def read_manifest(base, id)
@@ -146,5 +132,6 @@ end
 require_relative 'private_recovery/preparation'
 require_relative 'private_recovery/copies'
 require_relative 'private_recovery/rotation'
+require_relative 'private_recovery/identity'
 require_relative 'private_recovery/inventory'
 require_relative 'private_recovery/exclusion'

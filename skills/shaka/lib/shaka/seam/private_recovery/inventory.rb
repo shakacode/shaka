@@ -57,11 +57,28 @@ module Shaka
 
       def complete_tree?
         required = [Configuration::Paths::NEW_CONTRACT, *Configuration::Paths::NEW_REQUIRED_COMMANDS.values,
-                    *prepared_optional_paths]
+                    *required_optional_paths]
         required.all? do |relative|
           path = File.join(@root, relative)
-          File.file?(path) && !File.symlink?(path)
-        end
+          File.file?(path) && !File.symlink?(path) &&
+            (relative == Configuration::Paths::NEW_CONTRACT || File.executable?(path))
+        end && valid_contract?
+      end
+
+      def valid_contract?
+        ref = git('rev-parse', '--verify', 'HEAD^{commit}').strip
+        Configuration.private_source(root: @root, ref:).status == 'complete'
+      rescue Error
+        false
+      end
+
+      def required_optional_paths
+        optional = Configuration::Paths::NEW_OPTIONAL_COMMANDS.values
+        present = optional.select { |relative| File.file?(File.join(@root, relative)) }
+        return optional if present.any?
+        return [] if File.file?(File.join(@storage, 'activated'))
+
+        prepared_optional_paths
       end
 
       def prepared_optional_paths

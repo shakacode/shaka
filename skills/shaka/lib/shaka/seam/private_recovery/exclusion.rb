@@ -22,12 +22,33 @@ module Shaka
         raise Error, "Unsafe exclude path: #{path}" if File.symlink?(path)
 
         existing = File.file?(path) ? File.binread(path) : ''
-        return if existing.lines.any? { |line| line.chomp == Configuration::Paths::PRIVATE_EXCLUDE_PATTERN }
+        if exclusion_rule?(existing)
+          raise Error, 'Private exclusion is ineffective; check repository ignore rules' unless private_path_ignored?
 
+          return
+        end
+
+        write_exclude(path, appended_rule(existing))
+        raise Error, 'Private exclusion is ineffective; check repository ignore rules' unless private_path_ignored?
+      end
+
+      def exclusion_rule?(content)
+        content.lines.any? { |line| line.rstrip == Configuration::Paths::PRIVATE_EXCLUDE_PATTERN }
+      end
+
+      def appended_rule(existing)
         content = existing.dup
         content << "\n" unless content.empty? || content.end_with?("\n")
         content << "#{Configuration::Paths::PRIVATE_EXCLUDE_PATTERN}\n"
-        write_exclude(path, content)
+      end
+
+      def private_path_ignored?
+        _output, error, status = Configuration::PrivateGitPaths.capture(
+          @root, 'check-ignore', '--no-index', '--quiet', '--', Configuration::Paths::NEW_CONTRACT
+        )
+        raise Error, "Cannot inspect Git exclusion: #{error.strip}" unless [0, 1].include?(status.exitstatus)
+
+        status.success?
       end
 
       def write_exclude(path, content)

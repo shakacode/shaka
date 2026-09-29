@@ -15,8 +15,10 @@ Replace the example commands with executable commands found in that repository.
 Supply `--ci-review-job NAME` with a matching review policy when a real CI review
 job exists. If the repository defers hosted CI, supply
 `--validate-local-command COMMAND` and `--trigger-hosted-ci-command COMMAND`
-together. The private generator reuses the normal new-layout wrappers, fixes merge
-preference to Ask, and cannot set fallback required checks. The agent must verify
+together. The private generator reuses the normal new-layout wrappers and records
+Ask because a local `merge.preference` cannot establish merge authority. An explicit
+task instruction may authorize Auto separately. Private setup cannot set fallback
+required checks because they require a trusted source. The agent must verify
 that `--ref` is the current default-branch commit; Ruby only checks that it is a
 full commit SHA. Private settings do not grant trusted policy,
 public-comment trust, or merge authority.
@@ -28,13 +30,18 @@ work or after outside Git updates; it captures edits to a complete private tree 
 team adoption before replacing any recovery copy. `shaka seam private list --root DIR`
 lists copies even after a linked worktree is deleted. To compare one, run
 `shaka seam private restore --root DIR --id ID --to /outside/inspection/path`.
-Restore never activates settings or writes into a worktree. A `previous` copy
-is also available with `--previous`. Each worktree gets an assigned local identity;
+Restore refuses destinations inside any Git worktree, so it is only for comparison.
+A `previous` copy
+is also available with `--previous`. If an interrupted rotation leaves no `current`,
+default restore uses `previous` and reports that source. Each worktree gets an assigned local identity;
 re-creating a deleted worktree at the same path starts a new copy without replacing
 the old one.
 
 If setup is denied or interrupted, the error names the failed path. Inspect the
-copy and retry setup after fixing access; a matching partial installation resumes.
+copy and retry setup with the same options after fixing access; a matching partial
+installation resumes. Changed options leave a differing prepared copy, so setup
+refuses to replace it. Compare that copy and move it to a safe location before
+starting fresh with corrected options.
 After `git clean -fdx`, setup refuses to replace a recovery copy that differs
 from the generated defaults. Run `private inspect` after editing private files
 and before cleaning: edits made since the last inspection cannot be recovered
@@ -52,6 +59,11 @@ The common Git directory is the recovery boundary: deleting it loses the copies.
 Direct edits overwritten by an outside Git update before `inspect` sees them may
 also be lost. An ignored private destination blocks the existing `seam upgrade`
 layout migration; compare it with the recovery copy before adopting team settings.
+If a required wrapper is missing, or an optional pair is incomplete during setup,
+`private inspect` reports `partial` and leaves the last complete recovery copy
+untouched. Compare and save any new edits separately before `git clean -fdx`;
+restore a complete tree before inspection can capture edits again. After setup
+completes, removing both optional wrappers is a supported private choice.
 
 ## Publish team configuration
 

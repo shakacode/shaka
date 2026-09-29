@@ -27,6 +27,10 @@ module PrivateSetupFixture
   def config_path(root) = File.join(root, '.agents/shaka/config.yml')
   def copy_path(result) = File.join(result.fetch('recovery'), 'current/config.yml')
 
+  def note_private_config(root, note)
+    File.open(config_path(root), 'a') { |file| file.puts "# #{note}" }
+  end
+
   def git(root, *)
     system('git', '-C', root, *, exception: true)
   end
@@ -140,6 +144,33 @@ end
 class PrivateSetupOptionalTest < Minitest::Test
   include PrivateSetupFixture
 
+  def test_interrupted_second_setup_does_not_inherit_completion_marker
+    with_setup do |root, ref|
+      selected = options.merge(validate_local_command: 'bin/probe', trigger_hosted_ci_command: 'bin/probe')
+      Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected).setup
+      git(root, 'clean', '-fdx')
+      assert_interrupted_optional_setup(root, ref, selected)
+      assert_equal 'partial', recovery(root).inspect_checkout.fetch('status')
+    end
+  end
+
+  def test_removing_both_optional_wrappers_after_setup_remains_complete
+    with_setup do |root, ref|
+      selected = options.merge(validate_local_command: 'bin/probe', trigger_hosted_ci_command: 'bin/probe')
+      result = Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected).setup
+      remove_optional_wrappers(root)
+      note_private_config(root, 'edited after removal')
+      assert_equal 'private', recovery(root).inspect_checkout.fetch('status')
+      assert_includes File.read(copy_path(result)), '# edited after removal'
+    end
+  end
+
+  def remove_optional_wrappers(root)
+    %w[validate-local trigger-hosted-ci].each do |name|
+      File.delete(File.join(root, '.agents/shaka/bin', name))
+    end
+  end
+
   def test_optional_pair_interruption_remains_partial_and_resumes
     with_setup do |root, ref|
       selected = options.merge(validate_local_command: 'bin/probe', trigger_hosted_ci_command: 'bin/probe')
@@ -147,6 +178,53 @@ class PrivateSetupOptionalTest < Minitest::Test
       assert_equal 'partial', recovery(root).inspect_checkout.fetch('status')
       assert_equal 'complete', Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected).setup.fetch('status')
     end
+  end
+
+  def test_deleted_one_optional_wrapper_does_not_replace_complete_copy
+    with_setup do |root, ref|
+      selected = options.merge(validate_local_command: 'bin/probe', trigger_hosted_ci_command: 'bin/probe')
+      result = Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected).setup
+      File.delete(File.join(root, '.agents/shaka/bin/validate-local'))
+      assert_equal 'partial', recovery(root).inspect_checkout.fetch('status')
+      assert_path_exists File.join(result.fetch('recovery'), 'current/bin/validate-local')
+    end
+  end
+
+  def test_nonexecutable_required_wrapper_does_not_replace_complete_copy
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      wrapper = File.join(root, '.agents/shaka/bin/test')
+      File.chmod(0o644, wrapper)
+      assert_equal 'partial', recovery(root).inspect_checkout.fetch('status')
+      assert File.executable?(File.join(result.fetch('recovery'), 'current/bin/test'))
+    end
+  end
+
+  def test_malformed_contract_does_not_replace_complete_copy
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      File.write(config_path(root), 'invalid: [')
+      assert_equal 'partial', recovery(root).inspect_checkout.fetch('status')
+      assert_includes File.read(copy_path(result)), 'preference: ask'
+    end
+  end
+
+  def test_uncommitted_external_review_prompt_does_not_replace_complete_copy
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      add_uncommitted_external_prompt(root)
+      assert_equal 'partial', Shaka::Configuration.private_source(root:, ref:).status
+      assert_equal 'partial', recovery(root).inspect_checkout.fetch('status')
+      refute_includes File.read(copy_path(result)), 'docs/review.md'
+    end
+  end
+
+  def add_uncommitted_external_prompt(root)
+    FileUtils.mkdir_p(File.join(root, 'docs'))
+    File.write(File.join(root, 'docs/review.md'), 'local prompt')
+    policy = YAML.safe_load_file(config_path(root))
+    policy['review'] = review_policy('prompt_file' => 'docs/review.md')
+    File.write(config_path(root), YAML.dump(policy))
   end
 
   def assert_interrupted_optional_setup(root, ref, selected)
@@ -157,6 +235,152 @@ class PrivateSetupOptionalTest < Minitest::Test
       super(path, content)
     end
     assert_raises(Shaka::Error) { setup.setup }
+  end
+end
+
+class PrivateIdentityTest < Minitest::Test
+  include PrivateSetupFixture
+
+  def test_concurrent_identity_assignment_uses_one_complete_marker
+    with_setup do |root, _ref|
+      locations = Array.new(2) { Thread.new { recovery(root).storage } }.map(&:value)
+      assert_equal locations.first, locations.last
+      assert_match(/\A[0-9a-f]{64}\z/, File.read(File.join(root, '.git/shaka-private-id')))
+    end
+  end
+
+  def test_stale_pending_identity_does_not_block_assignment
+    with_setup do |root, _ref|
+      File.write(File.join(root, '.git/shaka-private-id-pending-stale'), '')
+      assert_match(/\A[0-9a-f]{64}\z/, File.basename(recovery(root).storage))
+    end
+  end
+end
+
+class PrivateGitEnvironmentTest < Minitest::Test
+  include PrivateSetupFixture
+
+  def test_exported_repository_variables_cannot_redirect_recovery_or_preflight
+    with_setup do |root, ref|
+      other = "#{root}-git-environment"
+      FileUtils.mkdir_p(other)
+      git(other, 'init', '--quiet')
+      with_foreign_git_environment(root, other) do
+        assert_recovery_stays_in_root(root, ref, other)
+      end
+    ensure
+      FileUtils.rm_rf(other) if other
+    end
+  end
+
+  def assert_recovery_stays_in_root(root, ref, other)
+    result = setup_private(root, ref)
+    assert result.fetch('recovery').start_with?(File.join(File.realpath(root), '.git/'))
+    assert_equal 'complete', Shaka::Configuration.private_source(root:, ref:).status
+    refute_path_exists File.join(other, '.git/shaka')
+  end
+
+  def test_exported_repository_variables_do_not_hide_trusted_adoption
+    with_setup do |root, old_ref|
+      trusted = future_trusted_seam(root, old_ref)
+      other = "#{root}-foreign-git"
+      FileUtils.mkdir_p(other)
+      git(other, 'init', '--quiet')
+      with_foreign_git_environment(root, other) { assert_trusted_setup_refused(root, trusted) }
+    ensure
+      FileUtils.rm_rf(other) if other
+    end
+  end
+
+  def future_trusted_seam(root, old_ref)
+    write_private_seam(root)
+    git(root, 'add', '.agents/shaka')
+    git(root, 'commit', '-qm', 'trusted adoption')
+    trusted = head(root)
+    git(root, 'checkout', '-q', old_ref)
+    trusted
+  end
+
+  def assert_trusted_setup_refused(root, trusted)
+    assert_equal 'present', Shaka::Configuration.private_source(root:, ref: trusted).trusted_source
+    assert_raises(Shaka::Error) { setup_private(root, trusted) }
+    refute_path_exists File.join(root, '.git/shaka-private-id')
+  end
+
+  def with_foreign_git_environment(root, other)
+    original = %w[GIT_DIR GIT_COMMON_DIR GIT_WORK_TREE GIT_INDEX_FILE].to_h { |name| [name, ENV.fetch(name, nil)] }
+    ENV['GIT_DIR'] = File.join(other, '.git')
+    ENV['GIT_COMMON_DIR'] = File.join(other, '.git')
+    ENV['GIT_WORK_TREE'] = root
+    ENV['GIT_INDEX_FILE'] = File.join(other, '.git/index')
+    yield
+  ensure
+    original&.each { |name, value| ENV[name] = value }
+  end
+end
+
+class PrivateSetupRefusalTest < Minitest::Test
+  include PrivateSetupFixture
+
+  def test_trusted_configuration_refusal_creates_no_identity
+    with_setup do |root, _ref|
+      write_private_seam(root)
+      git(root, 'add', '.agents/shaka')
+      git(root, 'commit', '-qm', 'team setup')
+      assert_raises(Shaka::Error) { setup_private(root, head(root)) }
+      refute_path_exists File.join(root, '.git/shaka-private-id')
+    end
+  end
+
+  def test_staged_adoption_refusal_creates_no_identity
+    with_setup do |root, ref|
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
+      File.write(config_path(root), "team: true\n")
+      git(root, 'add', '.agents/shaka/config.yml')
+      assert_raises(Shaka::Error) { setup_private(root, ref) }
+      refute_path_exists File.join(root, '.git/shaka-private-id')
+    end
+  end
+
+  def test_existing_crlf_exclusion_is_not_duplicated
+    with_setup do |root, ref|
+      exclude = File.join(root, '.git/info/exclude')
+      File.write(exclude, "# existing\r\n/.agents/shaka/\r\n")
+      setup_private(root, ref)
+      assert_equal 1, File.read(exclude).scan('/.agents/shaka/').length
+    end
+  end
+
+  def test_untracked_legacy_contract_refuses_before_private_writes
+    with_setup do |root, ref|
+      FileUtils.mkdir_p(File.join(root, '.agents'))
+      File.write(File.join(root, '.agents/agent-workflow.yml'), "version: 1\n")
+      assert_raises(Shaka::Error) { setup_private(root, ref) }
+      refute_path_exists File.join(root, '.agents/shaka')
+      refute_path_exists File.join(root, '.git/shaka-private-id')
+      refute_includes File.read(File.join(root, '.git/info/exclude')), '/.agents/shaka/'
+    end
+  end
+
+  def test_later_exclusion_negation_blocks_setup_without_duplicate_rule
+    with_setup do |root, ref|
+      exclude = File.join(root, '.git/info/exclude')
+      rules = "/.agents/shaka/\n!/.agents/shaka/\n"
+      File.write(exclude, rules)
+      2.times { assert_raises(Shaka::Error) { setup_private(root, ref) } }
+      assert_equal rules, File.read(exclude)
+      refute_path_exists File.join(root, '.agents/shaka')
+    end
+  end
+
+  def test_higher_priority_negation_does_not_grow_exclusion_on_retry
+    with_setup do |root, ref|
+      exclude = File.join(root, '.git/info/exclude')
+      File.write(File.join(root, '.gitignore'), "!/.agents/shaka/\n")
+      2.times { assert_raises(Shaka::Error) { setup_private(root, ref) } }
+      assert_equal 1, File.read(exclude).scan('/.agents/shaka/').length
+      refute_path_exists File.join(root, '.agents/shaka')
+    end
   end
 end
 
@@ -180,6 +404,28 @@ class PrivateCommandTest < Minitest::Test
       assert_includes stderr, '--ref'
     end
   end
+
+  def test_failed_restore_creates_no_identity_or_unknown_storage
+    with_setup do |root, _ref|
+      inspection = "#{root}-missing-recovery"
+      marker = File.join(root, '.git/shaka-private-id')
+      unknown = 'a' * 64
+      assert_cli_restore_missing(root, inspection)
+      assert_raises(Shaka::Error) { recovery_without_identity(root).restore(to: inspection, id: unknown) }
+      refute_path_exists marker
+      refute_path_exists File.join(root, '.git/shaka/private-worktrees', unknown)
+      refute_path_exists inspection
+    end
+  end
+
+  def assert_cli_restore_missing(root, inspection)
+    _output, error = capture_io do
+      assert_equal 1, Shaka::Seam.run(['private', 'restore', '--root', root, '--to', inspection])
+    end
+    assert_includes error, 'No recovery copy'
+  end
+
+  def recovery_without_identity(root) = Shaka::Seam::PrivateRecovery.new(root:, assign_identity: false)
 end
 
 class PrivateSetupFailureTest < Minitest::Test
@@ -297,15 +543,139 @@ end
 class PrivateRecoveryInterruptedTest < Minitest::Test
   include PrivateSetupFixture
 
+  def test_setup_refuses_when_only_previous_copy_survives_clean
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      storage = result.fetch('recovery')
+      FileUtils.mv(File.join(storage, 'current'), File.join(storage, 'previous'))
+      git(root, 'clean', '-fdx')
+      assert_raises(Shaka::Error) { setup_private(root, ref) }
+      assert_includes File.read(File.join(storage, 'previous/config.yml')), 'preference: ask'
+    end
+  end
+
+  def test_restore_defaults_to_previous_when_current_is_missing
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      storage = result.fetch('recovery')
+      inspection = "#{root}-previous-fallback"
+      restored = restore_after_missing_current(root, storage, inspection)
+      assert_equal File.join(storage, 'previous'), restored.fetch('source')
+      assert_includes File.read(File.join(inspection, 'config.yml')), 'preference: ask'
+    ensure
+      FileUtils.rm_rf(inspection) if inspection
+    end
+  end
+
+  def restore_after_missing_current(root, storage, inspection)
+    FileUtils.mv(File.join(storage, 'current'), File.join(storage, 'previous'))
+    recovery(root).restore(to: inspection)
+  end
+
   def test_missing_current_keeps_previous_during_refresh
     with_setup do |root, ref|
       result = setup_private(root, ref)
       storage = result.fetch('recovery')
       FileUtils.mv(File.join(storage, 'current'), File.join(storage, 'previous'))
-      File.write(config_path(root), 'new edit')
+      note_private_config(root, 'new edit')
       recovery(root).inspect_checkout
       assert_includes File.read(File.join(storage, 'previous/config.yml')), 'preference: ask'
-      assert_equal 'new edit', File.read(copy_path(result))
+      assert_includes File.read(copy_path(result)), '# new edit'
+    end
+  end
+end
+
+class PrivateRecoveryConcurrencyTest < Minitest::Test
+  include PrivateSetupFixture
+
+  def test_two_inspections_keep_the_pre_edit_copy
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      note_private_config(root, 'edited once')
+      run_concurrent_inspections(root)
+      assert_includes File.read(File.join(result.fetch('recovery'), 'previous/config.yml')), 'preference: ask'
+      assert_includes File.read(copy_path(result)), '# edited once'
+    end
+  end
+
+  def run_concurrent_inspections(root)
+    first, started, release = paused_recovery(root)
+    a = Thread.new { first.inspect_checkout }
+    started.pop
+    b = Thread.new { recovery(root).inspect_checkout }
+    release << true
+    a.value
+    b.value
+  end
+
+  def test_restore_waits_for_copy_rotation
+    with_setup do |root, ref|
+      setup_private(root, ref)
+      note_private_config(root, 'rotated')
+      assert_restore_waits_for_rotation(root)
+    end
+  end
+
+  def assert_restore_waits_for_rotation(root)
+    started = Queue.new
+    release = Queue.new
+    rotating = paused_manifest_recovery(root, started, release)
+    worker = Thread.new { rotating.inspect_checkout }
+    started.pop
+    assert_locked_restore(root, release, worker)
+  ensure
+    release << true if release && worker&.alive?
+    worker&.join
+  end
+
+  def paused_manifest_recovery(root, started, release)
+    rotating = recovery(root)
+    rotating.define_singleton_method(:write_manifest) do |inventory|
+      started << true
+      release.pop
+      super(inventory)
+    end
+    rotating
+  end
+
+  def assert_locked_restore(root, release, worker)
+    inspection = "#{root}-rotation-inspection"
+    reader = Thread.new { recovery(root).restore(to: inspection) }
+    refute reader.join(0.05), 'restore should wait for the storage lock'
+    release << true
+    worker.value
+    assert_includes File.read(File.join(reader.value.fetch('path'), 'config.yml')), '# rotated'
+  ensure
+    release << true if worker&.alive?
+    reader&.join
+    FileUtils.rm_rf(inspection) if inspection
+  end
+
+  def paused_recovery(root)
+    started = Queue.new
+    release = Queue.new
+    first = recovery(root)
+    first.define_singleton_method(:save_from) do |tree|
+      started << true
+      release.pop
+      super(tree)
+    end
+    [first, started, release]
+  end
+end
+
+class PrivateRecoveryTargetTest < Minitest::Test
+  include PrivateSetupFixture
+
+  def test_restore_refuses_another_clones_worktree
+    with_setup do |root, ref|
+      setup_private(root, ref)
+      other = "#{root}-other-clone"
+      FileUtils.mkdir_p(other)
+      git(other, 'init', '--quiet')
+      assert_raises(Shaka::Error) { recovery(root).restore(to: File.join(other, '.agents/shaka')) }
+    ensure
+      FileUtils.rm_rf(other) if other
     end
   end
 end
@@ -316,25 +686,25 @@ class PrivateRecoveryRestoreTest < Minitest::Test
   def test_manifest_failure_rolls_back_rotation
     with_setup do |root, ref|
       result = setup_private(root, ref)
-      File.write(config_path(root), 'first edit')
+      note_private_config(root, 'first edit')
       recovery(root).inspect_checkout
       assert_manifest_failure_preserves_copies(root, result)
     end
   end
 
   def assert_manifest_failure_preserves_copies(root, result)
-    File.write(config_path(root), 'second edit')
+    note_private_config(root, 'second edit')
     reader = recovery(root)
     reader.define_singleton_method(:write_manifest) { |_inventory| raise Shaka::Error, 'manifest failed' }
     assert_raises(Shaka::Error) { reader.inspect_checkout }
-    assert_equal 'first edit', File.read(copy_path(result))
+    assert_includes File.read(copy_path(result)), '# first edit'
     assert_includes File.read(File.join(result.fetch('recovery'), 'previous/config.yml')), 'preference: ask'
   end
 
   def test_failed_rotation_preserves_current_and_previous
     with_setup do |root, ref|
       result = setup_private(root, ref)
-      File.write(config_path(root), 'first edit')
+      note_private_config(root, 'first edit')
       recovery(root).inspect_checkout
       assert_failed_rotation_preserves_copies(root, result)
     end
@@ -343,11 +713,11 @@ class PrivateRecoveryRestoreTest < Minitest::Test
   def assert_failed_rotation_preserves_copies(root, result)
     previous = File.join(result.fetch('recovery'), 'previous/config.yml')
     prior = File.read(previous)
-    File.write(config_path(root), 'second edit')
+    note_private_config(root, 'second edit')
     with_denied_rotation(result.fetch('recovery')) do
       assert_raises(Errno::EACCES) { recovery(root).inspect_checkout }
     end
-    assert_equal 'first edit', File.read(copy_path(result))
+    assert_includes File.read(copy_path(result)), '# first edit'
     assert_equal prior, File.read(previous)
   end
 
@@ -427,7 +797,7 @@ class PrivateAdoptionTest < Minitest::Test
   def test_outside_merge_overwrites_ignored_file_but_keeps_copy
     with_setup do |root, ref|
       result = setup_private(root, ref)
-      File.write(config_path(root), "personal: before pull\n")
+      note_private_config(root, 'personal: before pull')
       recovery(root).inspect_checkout
       adopt_from_team_branch(root)
       assert_adoption_preserves_copy(root, result)
@@ -446,13 +816,34 @@ class PrivateAdoptionTest < Minitest::Test
     end
   end
 
+  def test_adoption_refuses_symlinked_agents_ancestor_before_comparison
+    with_setup do |root, ref|
+      setup_private(root, ref)
+      external = replace_agents_with_external_link(root)
+      assert_raises(Shaka::Error) { recovery(root).inspect_checkout }
+    ensure
+      FileUtils.rm_rf(external) if external
+    end
+  end
+
+  def replace_agents_with_external_link(root)
+    File.write(File.join(root, '.agents/agent-workflow.yml'), "version: 1\n")
+    git(root, 'add', '.agents/agent-workflow.yml')
+    FileUtils.rm_rf(File.join(root, '.agents'))
+    external = "#{root}-external-agents"
+    FileUtils.mkdir_p(File.join(external, 'shaka'))
+    File.write(File.join(external, 'shaka/config.yml'), 'outside')
+    File.symlink(external, File.join(root, '.agents'))
+    external
+  end
+
   def assert_adoption_preserves_copy(root, result)
     assert_equal "team: after pull\n", File.read(config_path(root))
     report = recovery(root).inspect_checkout
     assert_equal 'adopted', report.fetch('status')
     assert_includes report.fetch('changed'), 'config.yml'
     assert_includes report.fetch('hidden_untracked'), '.agents/shaka/bin/setup'
-    assert_equal "personal: before pull\n", File.read(copy_path(result))
+    assert_includes File.read(copy_path(result)), '# personal: before pull'
   end
 
   def adopt_from_team_branch(root)
@@ -462,7 +853,7 @@ class PrivateAdoptionTest < Minitest::Test
     git(root, 'add', '-f', '.agents/shaka/config.yml')
     git(root, 'commit', '-qm', 'team adopts Shaka')
     git(root, 'checkout', '-q', branch)
-    File.write(config_path(root), "personal: before pull\n")
+    note_private_config(root, 'personal: before pull')
     git(root, 'merge', '--ff-only', 'team')
   end
 end

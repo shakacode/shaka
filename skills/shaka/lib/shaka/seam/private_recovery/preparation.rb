@@ -5,11 +5,12 @@ module Shaka
     # Preparation and partial-installation checks for the clone-local recovery copy.
     class PrivateRecovery
       def prepare(files)
-        assert_preparation_safe!
-
-        with_temporary_copy do |copy|
-          files.each { |path, content| write_prepared_file(copy, path, content) }
-          install_copy(copy, inventory_for(copy))
+        with_storage_lock do
+          assert_preparation_safe!
+          with_temporary_copy do |copy|
+            files.each { |path, content| write_prepared_file(copy, path, content) }
+            install_copy(copy, inventory_for(copy))
+          end
         end
         report('prepared', [], [])
       end

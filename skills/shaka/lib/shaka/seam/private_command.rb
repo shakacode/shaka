@@ -25,7 +25,7 @@ module Shaka
 
         parser = option_parser(operation)
         parser.parse!(@arguments)
-        raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty?
+        raise OptionParser::InvalidArgument, @arguments.join(' ') unless @arguments.empty?
 
         root = File.realpath(@options.fetch(:root, Dir.pwd))
         output = execute(operation, root)
@@ -48,7 +48,7 @@ module Shaka
       def recovery_for(operation, root)
         raise Error, '--to is required for private restore' if operation == 'restore' && !@options[:to]
 
-        needs_identity = operation == 'inspect' || (operation == 'restore' && !@options[:id])
+        needs_identity = operation == 'inspect'
         PrivateRecovery.new(root:, assign_identity: needs_identity)
       end
 

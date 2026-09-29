@@ -15,23 +15,39 @@ module Shaka
 
       def setup
         files = generated_files
-        validate_policies
+        refuse_trusted_or_adopted!
         recovery = PrivateRecovery.new(root: @root)
         resumable = preflight(recovery, files)
         activate(recovery, files, resumable)
         verify_complete!(recovery)
+        recovery.mark_activated!
         recovery.inspect_checkout.merge('status' => 'complete')
       rescue SystemCallError => e
-        raise Error, "Private setup interrupted at #{e.message}; inspect #{recovery&.storage} before retrying"
+        raise interrupted_error(e, recovery)
       end
 
       private
+
+      def interrupted_error(error, recovery)
+        guidance = recovery ? "; inspect #{recovery.storage} before retrying" : ''
+        Error.new("Private setup interrupted at #{error.message}#{guidance}")
+      end
 
       def merge_policy = { 'preference' => 'ask' }
 
       def validate_policies
         RepositoryConfig::ReviewSchema.new(review_policy).validate
         RepositoryConfig::MergeSchema.new(merge_policy).validate
+      end
+
+      def refuse_trusted_or_adopted!
+        validate_policies
+        refuse_legacy_configuration!
+        source = Configuration.private_source(root: @root, ref: @ref)
+        raise Error, 'Trusted Shaka configuration already exists; private setup is unavailable' if
+          source.trusted_source == 'present'
+
+        refuse_adoption!(PrivateRecovery.new(root: @root, assign_identity: false))
       end
 
       def preflight(recovery, files)
@@ -43,9 +59,6 @@ module Shaka
 
       def source_available?(recovery, files)
         source = Configuration.private_source(root: @root, ref: @ref)
-        raise Error, 'Trusted Shaka configuration already exists; private setup is unavailable' if
-          source.trusted_source == 'present'
-
         resumable = recovery.prepared_matches?(files)
         refuse_copy_replacement!(source, recovery, resumable)
         raise Error, "Private setup blocked (#{source.status}): #{source.blockers.join('; ')}" unless
@@ -55,7 +68,7 @@ module Shaka
       end
 
       def refuse_copy_replacement!(source, recovery, resumable)
-        return unless source.status == 'absent' && recovery.current_copy? && !resumable
+        return unless source.status == 'absent' && recovery.recovery_copy? && !resumable
 
         raise Error, "Existing recovery copy differs from proposed setup: #{recovery.storage}; compare before retrying"
       end
@@ -74,6 +87,7 @@ module Shaka
       def activate(recovery, files, resumable)
         recovery.prepare(files) unless resumable
         recovery.exclude!
+        recovery.mark_incomplete!
         write_files(files)
       end
 
