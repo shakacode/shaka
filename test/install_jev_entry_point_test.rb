@@ -20,9 +20,16 @@ class InstallJevEntryPointTest < Minitest::Test
     end
   end
 
+  def test_jev_cannot_be_packaged_without_shaka
+    with_skill do |root, _helper|
+      error = assert_raises(ArgumentError) { Shaka::Install::Tree.new(['shaka-jev']).entries(root, 'shaka-jev') }
+      assert_match(/requires shaka/, error.message)
+    end
+  end
+
   private
 
-  def entries(root) = Shaka::Install::Tree.new(['shaka-jev']).entries(root, 'shaka-jev')
+  def entries(root) = Shaka::Install::Tree.new(%w[shaka shaka-jev]).entries(root, 'shaka-jev')
 
   def with_skill
     Dir.mktmpdir('jev-entry-point') do |root|

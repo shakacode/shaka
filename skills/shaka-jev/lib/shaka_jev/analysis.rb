@@ -66,6 +66,7 @@ module ShakaJev
     ENDPOINT = URI('https://api.typesafe.ai/v1/systemone')
     INPUT_USD_PER_MILLION = 0.042 # https://typesafe.ai/blog/introducing-system-one-models-and-jev (2026-09-15)
     MAX_EVIDENCE_BYTES = 65_536
+    REQUEST_DEADLINE_SECONDS = 60
     QUESTIONS = {
       'validation_supported' => {
         'type' => 'noul',
@@ -80,15 +81,17 @@ module ShakaJev
       }
     }.freeze
 
-    def initialize(api_key:, client: method(:post), public_repository: PublicGitHubRepository.method(:call))
+    def initialize(api_key:, client: method(:post), public_repository: PublicGitHubRepository.method(:call),
+                   request_deadline_seconds: REQUEST_DEADLINE_SECONDS)
       @api_key = api_key.to_s
       @client = client
       @public_repository = public_repository
+      @request_deadline_seconds = request_deadline_seconds
     end
 
     def call(pr_url:, head:, evidence:)
       validate!(pr_url, head, evidence)
-      response = @client.call(ENDPOINT, request(pr_url, head, evidence))
+      response = Timeout.timeout(@request_deadline_seconds) { @client.call(ENDPOINT, request(pr_url, head, evidence)) }
       with_context(parse_response(response), pr_url, head, evidence)
     rescue JSON::ParserError, IOError, SystemCallError, Timeout::Error, SocketError,
            OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Zlib::Error => e
@@ -122,10 +125,11 @@ module ShakaJev
     end
 
     def validate_evidence!(evidence)
+      raise Error, 'evidence exceeds 64 KiB' if evidence.is_a?(String) && evidence.bytesize > MAX_EVIDENCE_BYTES
+
       valid = evidence.is_a?(String) && evidence.valid_encoding? &&
               evidence.encoding == Encoding::UTF_8 && !evidence.strip.empty?
       raise Error, 'evidence must be nonempty UTF-8 text' unless valid
-      raise Error, 'evidence exceeds 64 KiB' if evidence.bytesize > MAX_EVIDENCE_BYTES
     end
 
     def state(pr_url, head, evidence)

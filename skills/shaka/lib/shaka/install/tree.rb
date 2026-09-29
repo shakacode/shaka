@@ -70,6 +70,7 @@ module Shaka
       def ignored_path?(path, ignored) = ignored.any? { |entry| path == entry || path.start_with?("#{entry}/") }
 
       def validate_skill_entry_points(skill, name)
+        validate_skill_dependency(name)
         entry_point = { 'shaka' => 'scripts/shaka', 'shaka-jev' => 'scripts/analyze' }[name]
         required = ['SKILL.md', entry_point].compact
         required.each do |entry|
@@ -80,6 +81,12 @@ module Shaka
 
         helper = File.join(skill, entry_point)
         raise ArgumentError, "Skill helper is not executable: #{helper}" unless File.stat(helper).mode.anybits?(0o100)
+      end
+
+      def validate_skill_dependency(name)
+        return unless name == 'shaka-jev' && !@names.include?('shaka')
+
+        raise ArgumentError, 'shaka-jev requires shaka in the same package'
       end
 
       def copy_entry(path, source, target, directories)

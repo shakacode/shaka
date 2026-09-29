@@ -34,7 +34,7 @@ class JevCommandTest < Minitest::Test
   def test_oversized_evidence_is_rejected_before_network_access
     Dir.mktmpdir do |dir|
       evidence = File.join(dir, 'large-evidence.txt')
-      File.write(evidence, 'x' * (ShakaJev::Analysis::MAX_EVIDENCE_BYTES + 100))
+      File.write(evidence, ('x' * ShakaJev::Analysis::MAX_EVIDENCE_BYTES).concat('é'))
       command = [RbConfig.ruby, File.expand_path('../skills/shaka-jev/scripts/analyze', __dir__),
                  '--pr-url', 'https://github.com/shakacode/shaka/pull/302', '--head', 'a' * 40,
                  '--evidence', evidence]

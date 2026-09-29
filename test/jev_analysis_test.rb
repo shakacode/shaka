@@ -125,6 +125,18 @@ class JevAnalysisTest < Minitest::Test
 end
 
 class JevHttpTransportTest < Minitest::Test
+  def test_whole_request_has_a_deadline
+    client = ->(*) { sleep 5 }
+    analysis = ShakaJev::Analysis.new(api_key: 'test-key', client: client, public_repository: ->(*) { true },
+                                      request_deadline_seconds: 0.05)
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    error = assert_raises(ShakaJev::Error) do
+      analysis.call(pr_url: JevAnalysisTest::URL, head: JevAnalysisTest::HEAD, evidence: 'Public')
+    end
+    assert_match(/Timeout::Error/, error.message)
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 1
+  end
+
   def test_bad_json_and_timeout_have_clean_errors
     transport_failures.each do |client|
       analysis = ShakaJev::Analysis.new(api_key: 'test-key', client: client, public_repository: ->(*) { true })
