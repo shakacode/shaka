@@ -23,6 +23,17 @@ resolve_file() {
   printf '%s/%s\n' "$directory" "${file##*/}"
 }
 
+candidate_link_in_directory() {
+  for link in "$1"/* "$1"/.[!.]* "$1"/..?*; do
+    [ -L "$link" ] || continue
+    target=$(resolve_file "$link") || return 0
+    case "$target" in
+      "$checkout"|"$checkout"/*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
 checkout=$(pwd -P) || fail
 while [ "$checkout" != / ] && [ ! -e "$checkout/.git" ]; do
   checkout=${checkout%/*}
@@ -43,13 +54,15 @@ while :; do
     case "$directory" in
       "$checkout"|"$checkout"/*) ;;
       *)
-        safe_path=${safe_path:+$safe_path:}$directory
-        if [ -z "$ruby" ] && [ -f "$directory/ruby" ] && [ -x "$directory/ruby" ]; then
-          selected=$(resolve_file "$directory/ruby") || selected=
-          case "$selected" in
-            "$checkout"|"$checkout"/*|'') ;;
-            *) ruby=$directory/ruby ;;
-          esac
+        if ! candidate_link_in_directory "$directory"; then
+          safe_path=${safe_path:+$safe_path:}$directory
+          if [ -z "$ruby" ] && [ -f "$directory/ruby" ] && [ -x "$directory/ruby" ]; then
+            selected=$(resolve_file "$directory/ruby") || selected=
+            case "$selected" in
+              "$checkout"|"$checkout"/*|'') ;;
+              *) ruby=$directory/ruby ;;
+            esac
+          fi
         fi
         ;;
     esac
