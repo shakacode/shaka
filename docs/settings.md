@@ -215,10 +215,20 @@ the effort it ran.
 Both settings are optional. A task can still ask for a different model or effort,
 which wins for that review. The review helper reads them from the trusted
 default-branch commit the agent passes as `--criteria-ref`, so a PR cannot pick
-the model that reviews it; without that commit, the settings are not applied. When a provider retires a named model, that
-reviewer's CLI fails until you update the entry. An effort is a lowercase level
-name such as `low`, `medium`, or `high`; the reviewer CLI decides which levels it
-accepts.
+the model that reviews it; without that commit, the settings are not applied.
+When a provider retires a named model, that reviewer's CLI fails until you update
+the entry.
+
+Each reviewer CLI accepts its own effort levels:
+
+| Reviewer | Where the levels come from |
+| --- | --- |
+| Claude | `claude --help` lists them for `--effort`, such as `low` through `max` |
+| Codex | The model's documentation; Codex passes the level through as configuration |
+| Grok | The Grok CLI's `--reasoning-effort` option |
+
+Shaka checks only that an effort is a lowercase name, such as `medium` or
+`xhigh`. The reviewer CLI decides whether it accepts that level.
 Configured CI review jobs have separate waiting rules under
 [`review.ci_review_wait`](#reviewci_review_wait).
 See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).
