@@ -177,6 +177,29 @@ end
 class PrivateRecoveryTest < Minitest::Test
   include PrivateSetupFixture
 
+  def test_list_and_restore_by_id_do_not_assign_identity
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      linked = "#{root}-read-only"
+      git(root, 'worktree', 'add', '--quiet', '-b', 'read-only', linked)
+      inspection = "#{root}-read-only-inspection"
+      assert_read_only_commands(root, linked, result, inspection)
+    ensure
+      git(root, 'worktree', 'remove', '--force', linked) if linked && File.exist?(linked)
+      FileUtils.rm_rf(inspection) if inspection
+    end
+  end
+
+  def assert_read_only_commands(root, linked, result, inspection)
+    marker = File.join(root, '.git/worktrees/read-only/shaka-private-id')
+    output, = capture_io { assert_equal 0, Shaka::Seam.run(['private', 'list', '--root', linked]) }
+    assert_equal 1, JSON.parse(output).length
+    refute_path_exists marker
+    id = File.basename(result.fetch('recovery'))
+    capture_io { assert_equal 0, Shaka::Seam.run(['private', 'restore', '--root', linked, '--id', id, '--to', inspection]) }
+    refute_path_exists marker
+  end
+
   def test_linked_worktrees_keep_distinct_copies_after_deletion
     with_setup do |root, ref|
       linked = "#{root}-linked"
@@ -239,6 +262,24 @@ end
 
 class PrivateRecoveryRestoreTest < Minitest::Test
   include PrivateSetupFixture
+
+  def test_manifest_failure_rolls_back_rotation
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      File.write(config_path(root), 'first edit')
+      recovery(root).inspect_checkout
+      assert_manifest_failure_preserves_copies(root, result)
+    end
+  end
+
+  def assert_manifest_failure_preserves_copies(root, result)
+    File.write(config_path(root), 'second edit')
+    reader = recovery(root)
+    reader.define_singleton_method(:write_manifest) { |_inventory| raise Shaka::Error, 'manifest failed' }
+    assert_raises(Shaka::Error) { reader.inspect_checkout }
+    assert_equal 'first edit', File.read(copy_path(result))
+    assert_includes File.read(File.join(result.fetch('recovery'), 'previous/config.yml')), 'preference: ask'
+  end
 
   def test_failed_rotation_preserves_current_and_previous
     with_setup do |root, ref|

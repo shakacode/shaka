@@ -14,7 +14,7 @@ module Shaka
         move_for_rotation(copy, current, moves)
         write_manifest(inventory)
         FileUtils.rm_rf(aside)
-      rescue SystemCallError
+      rescue StandardError
         moves&.reverse_each { |from, to| File.rename(to, from) }
         raise
       end

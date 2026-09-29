@@ -55,11 +55,11 @@ module Shaka
 
       def inventory_index(entries) = entries.to_h { |entry| [entry.fetch('path'), entry] }
 
-      def complete_tree?(tree)
+      def complete_tree?
         required = [Configuration::Paths::NEW_CONTRACT, *Configuration::Paths::NEW_REQUIRED_COMMANDS.values]
         required.all? do |relative|
           path = File.join(@root, relative)
-          File.file?(path) && !File.symlink?(path) && path.start_with?("#{tree}/")
+          File.file?(path) && !File.symlink?(path)
         end
       end
 

@@ -82,6 +82,8 @@ module Shaka
         temporary = File.join(@storage, "manifest-#{SecureRandom.hex(6)}")
         File.write(temporary, JSON.pretty_generate(manifest))
         File.rename(temporary, File.join(@storage, 'manifest.json'))
+      ensure
+        FileUtils.rm_f(temporary) if defined?(temporary) && temporary
       end
 
       def copy_tree(source, destination)

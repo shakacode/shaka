@@ -38,13 +38,18 @@ module Shaka
       def execute(operation, root)
         return setup(root) if operation == 'setup'
 
-        recovery = PrivateRecovery.new(root:)
+        recovery = recovery_for(operation, root)
         return recovery.inspect_checkout if operation == 'inspect'
         return recovery.list if operation == 'list'
 
-        raise Error, '--to is required for private restore' unless @options[:to]
-
         recovery.restore(to: @options[:to], id: @options[:id], previous: @options.fetch(:previous, false))
+      end
+
+      def recovery_for(operation, root)
+        raise Error, '--to is required for private restore' if operation == 'restore' && !@options[:to]
+
+        needs_identity = operation == 'inspect' || (operation == 'restore' && !@options[:id])
+        PrivateRecovery.new(root:, assign_identity: needs_identity)
       end
 
       def setup(root)

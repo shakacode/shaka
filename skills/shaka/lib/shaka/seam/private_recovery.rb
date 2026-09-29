@@ -19,12 +19,14 @@ module Shaka
 
       attr_reader :root, :common_git_dir, :storage
 
-      def initialize(root:)
+      def initialize(root:, assign_identity: true)
         @root = File.realpath(root)
         top = git('rev-parse', '--show-toplevel').strip
         raise Error, "#{root} is not a Git worktree root" unless File.realpath(top) == @root
 
         @common_git_dir = File.realpath(File.expand_path(git('rev-parse', '--git-common-dir').strip, @root))
+        return unless assign_identity
+
         git_dir = File.realpath(File.expand_path(git('rev-parse', '--git-dir').strip, @root))
         @storage = File.join(@common_git_dir, DIRECTORY, assigned_identity(git_dir))
       end
@@ -44,7 +46,7 @@ module Shaka
 
         tree = File.join(@root, PRIVATE_DIRECTORY)
         assert_safe_tree!(tree)
-        return report('partial', [], compare_with_checkout) if File.directory?(tree) && !complete_tree?(tree)
+        return report('partial', [], compare_with_checkout) if File.directory?(tree) && !complete_tree?
 
         refresh_from_checkout(tree) if File.directory?(tree)
         report(File.directory?(tree) ? 'private' : 'absent', [], compare_with_checkout)
