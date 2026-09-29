@@ -7,9 +7,10 @@ shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 ```
 
 `--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
-Copy every column into the description `usage.columns` list and every `record` into
-`usage.records`. Each `record` includes that report's `columns`. A `details` item
-whose summary names usage is refused.
+Put each report's `record`, which includes its `columns`, into the description
+`usage.records` list, and one report's `note` into `usage.note`. The table is built
+from those records, so everything it shows can be carried by a later publish. A
+`details` item whose summary names usage is refused.
 
 The description renders one table with a row per report label. Reports that share
 a label, such as eight review runs of one model, share a row marked `×8`. A total
@@ -262,9 +263,7 @@ discounts, service tier, routing, account terms, and actual charges may differ.
 
 ## Publish the report
 
-Use a description `details` entry titled **Usage and cost**. Include the helper's
-tables, with known dollar estimates in the summary where useful. The helper puts
-cost above its expandable **Token detail** block and retains rate notes beside it.
+Publish through the description `usage` object described at the top of this guide.
 Keep the coverage note visible; do not replace unknown reviewer usage with zero.
 
 Check task coverage before publishing. Sources can contain unrelated work even

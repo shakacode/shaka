@@ -2,14 +2,13 @@
 
 # Fake model and GitHub commands for the command-level opening check tests.
 module CliOpeningCheckFakes
-  USAGE = {
-    'note' => 'Native usage is PARTIAL.',
-    'columns' => [{
-      'label' => 'codex', 'provider' => 'openai', 'model' => 'gpt-5.6-terra', 'routed' => 'UNKNOWN',
-      'effort' => 'medium', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
-      'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
-    }]
+  USAGE_COLUMN = {
+    'label' => 'codex', 'provider' => 'openai', 'model' => 'gpt-5.6-terra', 'routed' => 'UNKNOWN',
+    'effort' => 'medium', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
+    'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
   }.freeze
+  USAGE = { 'note' => 'Native usage is PARTIAL.',
+            'records' => [USAGE_RECORD.merge('columns' => [USAGE_COLUMN])] }.freeze
 
   private
 

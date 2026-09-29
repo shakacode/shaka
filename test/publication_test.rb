@@ -15,14 +15,13 @@ class PublicationRegressionTest < Minitest::Test
   TABLE = { 'columns' => %w[Check Commit Result], 'rows' => [%w[bin/validate abc123 pass]] }.freeze
   USAGE = { 'summary' => 'Usage',
             'body' => "| Provider | Native total |\n| --- | ---: |\n| openai | 1 |" }.freeze
-  USAGE_OBJECT = {
-    'note' => 'Native usage is PARTIAL.',
-    'columns' => [{
-      'label' => 'openai', 'provider' => 'openai', 'model' => 'gpt-test', 'routed' => 'UNKNOWN',
-      'effort' => 'high', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
-      'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
-    }]
+  USAGE_COLUMN = {
+    'label' => 'openai', 'provider' => 'openai', 'model' => 'gpt-test', 'routed' => 'UNKNOWN',
+    'effort' => 'high', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
+    'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
   }.freeze
+  USAGE_OBJECT = { 'note' => 'Native usage is PARTIAL.',
+                   'records' => [USAGE_RECORD.merge('columns' => [USAGE_COLUMN])] }.freeze
   WALKTHROUGH = 'https://github.com/shakacode/shaka/pull/137#pullrequestreview-5258565629'
 
   def description_content(**changes)
@@ -449,7 +448,11 @@ class PublicationUsageTableTest < Minitest::Test
                         'cached_input' => '96593', 'output' => 'UNKNOWN', 'reasoning_output' => 'UNKNOWN',
                         'cache_writes' => 'UNKNOWN').freeze
 
-  def render(usage: { 'note' => 'Native usage is PARTIAL.', 'columns' => [COLUMN, REVIEW] }, details: [])
+  def self.usage_of(*columns, note: 'n') = { 'note' => note, 'records' => [USAGE_RECORD.merge('columns' => columns)] }
+
+  def usage_of(*columns) = self.class.usage_of(*columns)
+
+  def render(usage: self.class.usage_of(COLUMN, REVIEW, note: 'Native usage is PARTIAL.'), details: [])
     Shaka::Publication.description(
       PublicationRegressionTest.new('render').description_content('usage' => usage, 'details' => details)
     )
@@ -476,14 +479,14 @@ class PublicationUsageTableTest < Minitest::Test
   # Break: a Credits row of UNKNOWN in every column told the reader nothing.
   def test_a_metric_no_report_measured_is_left_out
     refute_includes render, 'Credits'
-    credited = render(usage: { 'note' => 'n', 'columns' => [COLUMN.merge('credits' => '1.500000')] })
+    credited = render(usage: usage_of(COLUMN.merge('credits' => '1.500000')))
     assert_includes credited, '| Report | USD | Credits |'
     assert_includes credited, '| $3.27 | 1.50 |'
   end
 
   # Break: eight review runs of one model became eight columns labeled review through review-8.
   def test_reports_with_one_label_share_a_row
-    rendered = render(usage: { 'note' => 'n', 'columns' => [REVIEW, REVIEW.merge('usd' => '$0.001')] })
+    rendered = render(usage: usage_of(REVIEW, REVIEW.merge('usd' => '$0.001')))
     assert_includes rendered, "| Report | USD | Input | Cached input |\n| --- | ---: | ---: | ---: |\n" \
                               '| claude-opus-5-5 review ×2 | $0.31 | 12 | 193,186 |'
     refute_includes rendered, '**Total**'
@@ -492,42 +495,51 @@ class PublicationUsageTableTest < Minitest::Test
 
   def test_amounts_show_cents_and_partial_estimates_are_minimums
     tiny = COLUMN.merge('usd' => '$0.000412')
-    assert_includes render(usage: { 'note' => 'n', 'columns' => [tiny] }), '| <$0.01 |'
+    assert_includes render(usage: usage_of(tiny)), '| <$0.01 |'
     partial = COLUMN.merge('usd' => '$1234.5 (partial)')
-    rendered = render(usage: { 'note' => 'n', 'columns' => [partial] })
+    rendered = render(usage: usage_of(partial))
     assert_includes rendered, '| $1,234.50+ |'
     assert_includes rendered, '<summary>Usage and cost · $1,234.50+ estimated</summary>'
   end
 
   def test_no_estimate_leaves_the_summary_plain
     unknown = COLUMN.merge('usd' => 'UNKNOWN')
-    assert_includes render(usage: { 'note' => 'n', 'columns' => [unknown] }), '<summary>Usage and cost</summary>'
+    assert_includes render(usage: usage_of(unknown)), '<summary>Usage and cost</summary>'
   end
 
   def test_a_missing_column_metric_is_named
-    error = assert_raises(Shaka::Error) { render(usage: { 'note' => 'n', 'columns' => [COLUMN.except('output')] }) }
+    error = assert_raises(Shaka::Error) { render(usage: usage_of(COLUMN.except('output'))) }
     assert_includes error.message, 'output'
   end
 
   def test_a_column_that_could_close_a_comment_is_refused
     ['usd--> <img>', 'x--!>'].each do |forged|
       error = assert_raises(Shaka::Error) do
-        render(usage: { 'note' => 'n', 'columns' => [COLUMN.merge('usd' => forged)] })
+        render(usage: usage_of(COLUMN.merge('usd' => forged)))
       end
       assert_includes error.message, 'must not close a comment'
       refute_includes error.message, forged
     end
   end
 
+  # Break: a table published without records had nothing a later publish could carry.
+  def test_usage_without_recoverable_records_is_refused
+    [{ 'note' => 'n' }, { 'note' => 'n', 'records' => [] }].each do |usage|
+      assert_includes assert_raises(Shaka::Error) { render(usage:) }.message, 'records'
+    end
+    bare = { 'note' => 'n', 'records' => [USAGE_RECORD] }
+    assert_includes assert_raises(Shaka::Error) { render(usage: bare) }.message, 'columns'
+  end
+
   def test_an_unknown_column_field_is_named
     error = assert_raises(Shaka::Error) do
-      render(usage: { 'note' => 'n', 'columns' => [COLUMN.merge('native_total' => '1')] })
+      render(usage: usage_of(COLUMN.merge('native_total' => '1')))
     end
     assert_includes error.message, 'native_total'
   end
 
   def test_a_pipe_in_a_label_stays_inside_its_cell
-    rendered = render(usage: { 'note' => 'n', 'columns' => [COLUMN.merge('label' => 'a | b')] })
+    rendered = render(usage: usage_of(COLUMN.merge('label' => 'a | b')))
     assert_includes rendered, '| a \\| b |'
   end
 
@@ -545,14 +557,10 @@ class PublicationUsageRecordTableTest < Minitest::Test
   RENDERED = PublicationUsageTableTest::RENDERED
 
   def render(usage:) = PublicationUsageTableTest.new('render').render(usage:)
-
-  RECORD = { 'host' => 'claude-code', 'sources' => ['s1'], 'responses' => ['c1'],
-             'contribution' => 'implementation', 'commits' => ['a' * 40], 'complete' => true,
-             'from' => '2026-09-14T12:00:00Z', 'to' => '2026-09-14T13:00:00Z' }.freeze
+  def usage_of(*columns) = PublicationUsageTableTest.usage_of(*columns)
 
   def test_a_record_block_keeps_that_reports_columns_hidden
-    rendered = render(usage: { 'note' => 'n', 'columns' => [COLUMN],
-                               'records' => [RECORD.merge('columns' => [COLUMN])] })
+    rendered = render(usage: usage_of(COLUMN))
     block = rendered[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m]
     assert_includes block, '<!-- usage-columns [{"label":"claude-opus-5-5 implementation"'
     assert_includes block, '"usd":"$3.269110"'
@@ -562,24 +570,24 @@ class PublicationUsageRecordTableTest < Minitest::Test
   # Break: carried reports were shown as a second table under the first.
   def test_carried_record_columns_join_the_one_table
     hidden = "<!-- usage-columns #{JSON.generate([REVIEW])} -->"
-    block = "#{Shaka::UsageRecords.begin_mark(RECORD)}\n#{hidden}\n#{Shaka::UsageRecords::END_MARK}"
-    rendered = render(usage: { 'note' => 'n', 'columns' => [COLUMN], 'carried' => block })
+    block = "#{Shaka::UsageRecords.begin_mark(USAGE_RECORD)}\n#{hidden}\n#{Shaka::UsageRecords::END_MARK}"
+    rendered = render(usage: usage_of(COLUMN).merge('carried' => block))
     assert_includes rendered, RENDERED
     assert_includes rendered, block
   end
 
   def test_a_report_from_before_the_table_stays_visible_below_it
-    legacy = "#{Shaka::UsageRecords.begin_mark(RECORD)}\n| Metric | codex |\n| --- | --- |\n" \
+    legacy = "#{Shaka::UsageRecords.begin_mark(USAGE_RECORD)}\n| Metric | codex |\n| --- | --- |\n" \
              "| USD estimate | $1.000000 |\n#{Shaka::UsageRecords::END_MARK}"
-    rendered = render(usage: { 'note' => 'n', 'columns' => [COLUMN], 'carried' => legacy })
+    rendered = render(usage: usage_of(COLUMN).merge('carried' => legacy))
     assert_operator rendered.index('| Report |'), :<, rendered.index('| USD estimate | $1.000000 |')
     assert_includes rendered, '<summary>Usage and cost · $3.27 estimated</summary>'
   end
 
   def test_unreadable_carried_columns_are_reported
-    block = "#{Shaka::UsageRecords.begin_mark(RECORD)}\n<!-- usage-columns [ -->\n#{Shaka::UsageRecords::END_MARK}"
+    block = "#{Shaka::UsageRecords.begin_mark(USAGE_RECORD)}\n<!-- usage-columns [ -->\n#{Shaka::UsageRecords::END_MARK}"
     error = assert_raises(Shaka::Error) do
-      render(usage: { 'note' => 'n', 'columns' => [COLUMN], 'carried' => block })
+      render(usage: usage_of(COLUMN).merge('carried' => block))
     end
     assert_includes error.message, 'unreadable columns'
   end

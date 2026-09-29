@@ -53,14 +53,13 @@ module HandoffFixtures
                  'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'UNKNOWN',
                  'active_model' => 'UNKNOWN', 'active_effort' => 'UNKNOWN' }.freeze
   TABLE = { 'columns' => %w[Check Result], 'rows' => [%w[validate pass]] }.freeze
-  USAGE = {
-    'note' => 'Native usage is PARTIAL.',
-    'columns' => [{
-      'label' => 'anthropic', 'provider' => 'anthropic', 'model' => 'claude-opus-5-5', 'routed' => 'UNKNOWN',
-      'effort' => 'medium', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
-      'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
-    }]
+  USAGE_COLUMN = {
+    'label' => 'anthropic', 'provider' => 'anthropic', 'model' => 'claude-opus-5-5', 'routed' => 'UNKNOWN',
+    'effort' => 'medium', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
+    'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
   }.freeze
+  USAGE = { 'note' => 'Native usage is PARTIAL.',
+            'records' => [USAGE_RECORD.merge('columns' => [USAGE_COLUMN])] }.freeze
 
   def self.rendered(wip = WIP)
     Shaka::Publication.description(

@@ -15,8 +15,8 @@ module Shaka
     private
 
     def columns(value)
-      raise Error, 'Publication usage columns must be a list.' unless value.is_a?(Array)
-      raise Error, 'Publication usage columns must include at least one column.' if value.empty?
+      raise Error, 'Publication usage record columns must be a list.' unless value.is_a?(Array)
+      raise Error, 'Publication usage record columns must include at least one column.' if value.empty?
 
       value.map.with_index { |column, index| column_cells(column, index) }
     end
@@ -56,8 +56,8 @@ module Shaka
     include UsageColumnCheck
 
     SUMMARY = 'Usage and cost'
-    REQUIRED = %w[note columns].freeze
-    OPTIONAL = %w[records carried].freeze
+    REQUIRED = %w[note records].freeze
+    OPTIONAL = %w[carried].freeze
     # Each record's columns ride in a comment, so a later publish can put them back in the table.
     HIDDEN = /^<!-- usage-columns (.*) -->$/
 
@@ -69,7 +69,7 @@ module Shaka
 
     def detail
       checked
-      rows = UsageRows.new(@columns + carried_columns)
+      rows = UsageRows.new(@records.flat_map { |entry| entry['columns'] } + carried_columns)
       { 'summary' => [SUMMARY, rows.summary].compact.join(' · '), 'body' => body(rows) }
     end
 
@@ -89,7 +89,6 @@ module Shaka
       refuse_keys(@spec.keys - (REQUIRED + OPTIONAL), 'has unknown fields')
       refuse_keys(REQUIRED - @spec.keys, 'is missing fields')
       @note = note(@spec['note'])
-      @columns = columns(@spec['columns'])
       @carried = carried_blocks
       @records = records
     end
@@ -131,11 +130,12 @@ module Shaka
 
     def earlier_reports = @carried.grep_v(HIDDEN)
 
+    # Every row comes from a record, so a later publish can carry what this one showed.
     def records
-      return [] unless @spec.key?('records')
-
       value = @spec['records']
-      raise Error, 'Publication usage records must be a list.' unless value.is_a?(Array)
+      unless value.is_a?(Array) && !value.empty?
+        raise Error, 'Publication usage records must be a list with at least one record.'
+      end
 
       value.map { |fields| record_entry(fields) }
     end
@@ -145,14 +145,13 @@ module Shaka
 
       copied = fields.dup
       nested = copied.delete('columns')
-      { 'identity' => UsageRecordCarry.identity!(copied), 'columns' => nested.nil? ? nil : columns(nested) }
+      { 'identity' => UsageRecordCarry.identity!(copied), 'columns' => columns(nested) }
     end
 
     # Carried record blocks stay hidden and unchanged, so the next publish can read them again.
     def record_blocks
       fresh = @records.map do |entry|
-        columns = entry['columns']
-        hidden = columns ? "<!-- usage-columns #{JSON.generate(columns)} -->" : '<!-- retained usage record -->'
+        hidden = "<!-- usage-columns #{JSON.generate(entry['columns'])} -->"
         "#{UsageRecords.begin_mark(entry['identity'])}\n#{hidden}\n#{UsageRecords::END_MARK}"
       end
       @carried.grep(HIDDEN) + fresh

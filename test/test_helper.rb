@@ -11,6 +11,11 @@ end or raise 'git executable not found'
 $LOAD_PATH.unshift File.expand_path('../skills/shaka/lib', __dir__)
 require 'shaka/usage/usage_records'
 
+# The identity every usage record carries; tests add the columns they render.
+USAGE_RECORD = { 'host' => 'claude-code', 'sources' => ['s1'], 'responses' => ['c1'],
+                 'contribution' => 'implementation', 'commits' => ['a' * 40], 'complete' => true,
+                 'from' => '2026-09-14T12:00:00Z', 'to' => '2026-09-14T13:00:00Z' }.freeze
+
 module MetricAssert
   def assert_metric(haystack, label, *values)
     row = "| #{label} | #{values.join(' | ')} |"

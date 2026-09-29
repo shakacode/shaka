@@ -314,7 +314,7 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `walkthrough`, required `deployment`, optional `decisions`, optional `sections`,
-        required `table`, required `provenance`, required `usage` (`note` and `columns` from
+        required `table`, required `provenance`, required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
@@ -404,9 +404,8 @@ phases:
         a walkthrough is the behavior that changed. Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
-        or `shared-planning`. Pass `--format json` and put each report's `columns` into the
-        description `usage` object, with every report's `record` in `records`, so the helper
-        renders one table. Publish the local adversarial review as `--contribution review` from
+        or `shared-planning`. Pass `--format json` and put every report's `record`, which holds
+        its columns, in the description `usage` object's `records`, so the helper renders one table. Publish the local adversarial review as `--contribution review` from
         that run's `--file` or host context, rather than from the implementation session. Use
         `--all-turns` only when the session holds solely this task. Include
         available retry and contributor records, label shared intervals and UNKNOWN fields, and
