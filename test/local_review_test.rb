@@ -1293,6 +1293,29 @@ class LocalReviewLoopTest < Minitest::Test
     end
   end
 
+  # Break caught: the runner appended a round whose start checks read a ledger changed during the run.
+  def test_refuses_a_round_whose_ledger_changed_while_it_ran
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record([NIT_FINDING])
+      later = fix_commit
+      codex_editing_the_ledger(later)
+      assert_refused(later, 'changed while this round ran')
+    end
+  end
+
+  # A reviewer whose run edits round 1's recorded findings, as another session could meanwhile.
+  def codex_editing_the_ledger(head)
+    write_executable(@bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'json'
+      ledger = JSON.parse(File.read(#{@ledger.inspect}))
+      ledger['rounds'][0]['findings'][0]['note'] = 'changed mid-run'
+      File.write(#{@ledger.inspect}, JSON.generate(ledger))
+      File.write(ARGV.fetch(ARGV.index('-o') + 1), "x\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
+    RUBY
+  end
+
   def test_refuses_a_ledger_inside_the_checkout
     in_loop do |head|
       @ledger = File.join(@root, 'ledger.json')
