@@ -2,8 +2,6 @@
 
 require_relative 'test_helper'
 require 'fileutils'
-require 'json'
-require 'yaml'
 require_relative 'reviewer_command_fixture'
 
 # The command the workflow invokes, and the trusted-ref path that keeps a candidate branch from
