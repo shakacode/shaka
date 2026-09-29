@@ -6,6 +6,7 @@ require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/attention'
+require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
 require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
@@ -39,6 +40,11 @@ require_relative '../lib/shaka/workflow_version'
 if ARGV.first == 'usage'
   ARGV.shift
   exit Shaka::Usage.run(ARGV)
+end
+
+if ARGV.first == 'pr' && ARGV[1] == 'watch'
+  ARGV.shift(2)
+  exit Shaka::PrWatch::Command.run(ARGV)
 end
 
 if ARGV.first == 'issue-create'

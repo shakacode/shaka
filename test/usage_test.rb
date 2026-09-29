@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'time'
 require 'shaka/publication/publication'
 
 module UsageFixture
@@ -180,6 +181,62 @@ class UsageTest < Minitest::Test
     report = run_report([context('current')], raw_tail: replacement)
     assert_metric report, 'Configured model', 'UNKNOWN'
     assert_metric report, 'Input', 50
+  end
+end
+
+class UsageSinceCommitTest < Minitest::Test
+  include UsageFixture
+
+  def test_counts_only_later_responses_in_a_shared_session
+    sha, cutoff = boundary
+    records = [context('old'), timed_usage('previous-task', 'old', 900, cutoff - 1),
+               context('current'), timed_usage('current-task', 'current', 200, cutoff + 1)]
+
+    report = run_report(records, '--since-commit', sha)
+
+    assert_metric report, 'Input', 200
+    assert_includes report, '1 responses'
+    assert_includes report, "responses after commit #{sha}"
+  end
+
+  def test_rejects_a_non_commit_start_point
+    _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', COMMIT,
+                                            '--contribution', 'implementation', '--since-commit', 'bad')
+
+    refute_predicate status, :success?
+    assert_includes error, 'invalid options'
+  end
+
+  def test_refuses_an_unstamped_response_instead_of_reporting_zero
+    sha, = boundary
+    _output, error, status = unstamped_report(sha)
+
+    refute_predicate status, :success?
+    assert_includes error, '--since-commit needs a timestamp'
+  end
+
+  private
+
+  def boundary
+    sha, status = Open3.capture2('git', 'rev-parse', 'HEAD')
+    assert_predicate status, :success?
+    timestamp, status = Open3.capture2('git', 'show', '-s', '--format=%cI', sha.strip)
+    assert_predicate status, :success?
+    [sha.strip, Time.iso8601(timestamp.strip)]
+  end
+
+  def timed_usage(id, turn, input, at)
+    usage(id, turn, input).tap { |response| response[:timestamp] = at.iso8601 }
+  end
+
+  def unstamped_report(sha)
+    Dir.mktmpdir do |directory|
+      record = usage('unplaced', 'current', 100)
+      record.delete(:timestamp)
+      file = write_records(directory, [context('current'), record], {})
+      Open3.capture3(host_environment(directory), COMMAND, 'usage', '--file', file,
+                     '--commit', COMMIT, '--contribution', 'implementation', '--since-commit', sha)
+    end
   end
 end
 

@@ -8,6 +8,9 @@ phases:
   - id: intake
     title: Intake
     body: |-
+      - A new work item received after this chat's previous PR closes starts Intake again,
+        including the current workflow, claim, and checkpoint. Recommend a new chat for the
+        new task; when the user keeps this chat, separate its usage with a start point.
       - Identify the checkout from host context and Git remotes. If trusted `AGENTS.md`
         exists, read it for human-only constraints. Load the repository configuration
         selected at the current default-branch commit with the saved helper's
@@ -347,6 +350,7 @@ phases:
 
         ```text
         pr OWNER/REPO NUMBER --root DIR --ref SHA
+        pr watch OWNER/REPO NUMBER --head SHA --root DIR --ref SHA [--baseline COMMENTS_JSON]
         comments OWNER/REPO NUMBER --head SHA
         comments OWNER/REPO ISSUE_NUMBER --issue
         description OWNER/REPO NUMBER --content-file PATH [--root DIR --ref SHA]
@@ -360,7 +364,7 @@ phases:
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA [--ci-review-wait MODE] [--limits-confirmed-head SHA]
           [--review-waiver REASON] [--squash-message PATH]
-        usage --commit SHA --contribution CATEGORY
+        usage --commit SHA --contribution CATEGORY [--since-commit PREVIOUS_TASK_SHA]
         ```
 
         `pr` reports the native readiness snapshot and required checks; it is not an exit code.
@@ -607,6 +611,16 @@ always: |-
   `--state resume` and make WIP Details `Next action` the resume prompt: the host's Shaka
   invocation with the PR URL, such as `$shaka https://github.com/OWNER/REPO/pull/N` in Codex or
   `/shaka https://github.com/OWNER/REPO/pull/N` in Claude Code.
+
+  For pending checks, use the host's PR monitor when it wakes on their completion. Otherwise,
+  if the host can wake on a background command, run `pr watch OWNER/REPO NUMBER --head SHA
+  --root DIR --ref SHA`. Save the last `comments --head SHA` JSON outside the checkout and pass
+  it with `--baseline PATH` so comments arriving between that read and watcher startup count.
+  Without a baseline, watching starts with the comments already present. It polls the named
+  head and exits on terminal required and configured
+  CI review jobs, a new trusted comment, a moved head, closure, or timeout. Its one `SHAKA_WAKE`
+  line gives the reason to refresh the PR. A monitor that reports failures only leaves the
+  `awaiting-resume` path above for green checks.
 
   Before ending any turn on a task that owns an open PR, run the saved helper's
   `handoff OWNER/REPO NUMBER --head SHA --root DIR --ref SHA`. Its status line names the head,

@@ -14,6 +14,8 @@ require_relative 'usage_errors'
 require_relative 'usage_table'
 require_relative 'usage_turns'
 require_relative 'usage_identity'
+require_relative 'since_commit'
+require_relative 'options'
 
 module Shaka
   # Read-only reporting of per-response usage records from a supported host.
@@ -22,6 +24,8 @@ module Shaka
     include UsageTurns
     include UsageIdentity
     include UsageJsonReport
+    include UsageSinceCommit
+    extend UsageOptions
 
     SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
     METRIC_FIELDS = [
@@ -64,26 +68,9 @@ module Shaka
       end
     end
 
-    def self.source_options(flags, options)
-      flags.on('--host NAME', READERS.keys, 'codex, claude-code, cursor, opencode, or pi') { |v| options[:host] = v }
-      flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |v|
-        options[:files] << v
-      end
-      flags.on('--session ID', 'OpenCode session; needs --host opencode') { |v| options[:files] << "session:#{v}" }
-      flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
-      flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |v| options[:turns] << v }
-    end
-
     def self.detected_host
       found = HOST_CONTEXT.select { |host, variable| host == 'pi' ? ENV[variable] == 'true' : ENV.key?(variable) }.keys
       found.size > 1 ? nil : found.first || 'codex'
-    end
-
-    def self.valid_mapping?(options)
-      commits = options[:commit].to_s.split(',')
-      options[:host] && !(options[:all_turns] && options[:turns].any?) &&
-        !commits.empty? && commits.all? { |commit| commit.match?(/\A[0-9a-f]{40}\z/) } &&
-        %w[implementation review integration shared-planning].include?(options[:contribution])
     end
 
     def initialize(options)
@@ -91,7 +78,9 @@ module Shaka
       reader = READERS.fetch(options[:host])
       @inferred = options[:files].empty?
       @options[:files] = reader.discover if @inferred
-      @source = reader.new(@options[:files], @options[:turns], all_turns: @options[:all_turns])
+      all_turns = @options[:all_turns] || @options[:since_commit]
+      @source = reader.new(@options[:files], @options[:turns], all_turns:)
+      select_since_commit if @options[:since_commit]
       @responses = @source.responses.values
     end
 
@@ -128,6 +117,7 @@ module Shaka
 
     def turn_scope
       return 'all turns in selected sources' if @options[:all_turns]
+      return "responses after commit #{@options[:since_commit]}" if @options[:since_commit]
 
       @options[:turns].empty? ? @source.class::LATEST_SCOPE : 'explicitly selected turns'
     end

@@ -55,8 +55,14 @@ selects the latest turn. That is a snapshot, not necessarily the whole task.
 | `--file PATH` | Read a saved native source; repeat for additional sources |
 | `--turn ID` | Select specific turns; repeat as needed. Each host section below names the ID field |
 | `--all-turns` | Include a session dedicated entirely to this task; cannot combine with `--turn` |
+| `--since-commit SHA` | Include responses after that commit's time in a shared session; cannot combine with `--turn` or `--all-turns` |
 | `--commit SHA,SHA` | Associate the selected interval with several commits |
 | `--contribution CATEGORY` | `implementation`, `review`, `integration`, or `shared-planning` |
+
+`--since-commit` uses the commit's recorded time. A previous task's later closeout
+turns can still fall inside that interval; use explicit `--turn` IDs when the
+boundary must be exact, and mark an uncertain interval SHARED.
+If a response has no usable timestamp, the command fails instead of excluding it.
 
 A `--turn` ID that matches no readable response fails with the expected field
 instead of printing an empty table. A source with no readable responses still
