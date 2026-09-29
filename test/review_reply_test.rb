@@ -127,20 +127,6 @@ class ReviewReplyTest < Minitest::Test
     refute_includes body, '()'
   end
 
-  def test_reads_inline_comments_and_pull_request_reviews
-    discussion = 'https://github.com/shakacode/shaka/pull/284#discussion_r99'
-    review_url = 'https://github.com/shakacode/shaka/pull/284#pullrequestreview-77'
-    thread = comment(discussion, "# Thread note\n\nplain\n")
-    hosted = comment(review_url, "# Hosted review\n\nplain\n")
-    github = FakeReviews.new([], pulls: [thread], reviews: { '77' => hosted })
-    body = Shaka::ReviewReply.compose({ 'identity' => IDENTITY, 'summary' => 'Fixed the race.',
-                                        'reviews' => [discussion, review_url] }, github)
-
-    assert_includes body, "Addressed the [Thread note](#{discussion}) by UNKNOWN/UNKNOWN (UNKNOWN)"
-    assert_includes body, "Addressed the [Hosted review](#{review_url}) by UNKNOWN/UNKNOWN (UNKNOWN)"
-    assert_equal %i[api review], github.lookups
-  end
-
   def test_refuses_a_comment_url_for_another_repository
     other = 'https://github.com/other/repo/pull/284#issuecomment-1'
     error = assert_raises(Shaka::Error) { compose({ 'reviews' => [other] }) }
@@ -179,13 +165,56 @@ class FakeReviews
     @comments
   end
 
-  def api_list(*)
+  def api(path, **)
     @lookups << :api
-    @pulls
+    @pulls.find { |item| path.end_with?("/comments/#{item['id']}") } || {}
   end
 
   def review(id)
     @lookups << :review
     @reviews.fetch(id.to_s) { {} }
+  end
+end
+
+# Discussion comments are fetched by id and must belong to this pull request.
+class ReviewReplyLookupTest < Minitest::Test
+  IDENTITY = ReviewReplyTest::IDENTITY
+
+  def test_reads_inline_comments_and_pull_request_reviews
+    discussion, review_url = lookup_urls
+    github = FakeReviews.new([], pulls: [thread(discussion)], reviews: { '77' => note(review_url, 'Hosted review') })
+    body = compose(github, [discussion, review_url])
+
+    assert_includes body, "Addressed the [Thread note](#{discussion}) by UNKNOWN/UNKNOWN (UNKNOWN)"
+    assert_includes body, "Addressed the [Hosted review](#{review_url}) by UNKNOWN/UNKNOWN (UNKNOWN)"
+    assert_equal %i[api review], github.lookups
+  end
+
+  def test_refuses_a_discussion_comment_from_another_pull
+    discussion = lookup_urls.first
+    github = FakeReviews.new([], pulls: [thread(discussion, pull: 14)])
+    error = assert_raises(Shaka::Error) { compose(github, [discussion]) }
+
+    assert_includes error.message, 'not found'
+  end
+
+  private
+
+  def lookup_urls
+    ['https://github.com/shakacode/shaka/pull/284#discussion_r99',
+     'https://github.com/shakacode/shaka/pull/284#pullrequestreview-77']
+  end
+
+  def thread(url, pull: 284)
+    note(url, 'Thread note').merge('pull_request_url' => "https://api.github.com/repos/shakacode/shaka/pulls/#{pull}")
+  end
+
+  def note(url, heading)
+    { 'id' => url[/\d+\z/], 'html_url' => url, 'body' => "# #{heading}\n\nplain\n" }
+  end
+
+  def compose(github, reviews)
+    Shaka::ReviewReply.compose({ 'identity' => IDENTITY, 'summary' => 'Fixed the race.', 'reviews' => reviews },
+                               github)
   end
 end

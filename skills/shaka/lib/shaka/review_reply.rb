@@ -81,11 +81,18 @@ module Shaka
     def comments(fragment, id)
       case fragment
       when 'issuecomment' then @github.issue_comments
-      when 'discussion_r'
-        @github.api_list("repos/#{@github.repository}/pulls/#{@github.number}/comments")
-      else
-        [@github.review(id)]
+      when 'discussion_r' then [discussion_comment(id)]
+      else [@github.review(id)]
       end
+    end
+
+    # One request by id. A list stops after its first page, so a later comment looks missing.
+    def discussion_comment(id)
+      comment = @github.api("repos/#{@github.repository}/pulls/comments/#{id}")
+      return comment if comment.is_a?(Hash) &&
+                        comment['pull_request_url'].to_s.match?(%r{/pulls/#{@github.number}\z})
+
+      {}
     end
 
     # One published review comment, read back into the opening line.
