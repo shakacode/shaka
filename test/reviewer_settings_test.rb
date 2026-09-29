@@ -25,6 +25,14 @@ class ReviewerSettingsTest < Minitest::Test
     assert_includes notice.fetch('summary'), 'gpt-6-sol'
   end
 
+  def test_a_one_digit_model_change_is_not_called_a_typo
+    notice = notices('xai/grok', model: 'grok-4.8').fetch(0)
+
+    assert_equal 'degraded', notice.fetch('severity')
+    assert_includes notice.fetch('summary'), 'not a model Shaka knows'
+    refute_includes notice.fetch('summary'), 'typo'
+  end
+
   def test_a_transposed_effort_names_the_known_level
     notice = notices('openai/codex', effort: 'meduim').fetch(0)
 

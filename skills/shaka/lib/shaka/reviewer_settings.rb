@@ -122,12 +122,22 @@ module Shaka
       names.find { |name| one_edit?(value, name) }
     end
 
+    # Same length and one letter substitution, or one adjacent swap. A digit change is a
+    # different version, such as grok-4.8 beside grok-4.7, so it is not called a typo.
     def one_edit?(left, right)
       return false unless left.length == right.length
 
       indexes = left.chars.each_index.reject { |index| left[index] == right[index] }
-      indexes.length == 1 || transposed?(left, right, indexes)
+      return letter_change?(left, right, indexes.first) if indexes.length == 1
+
+      transposed?(left, right, indexes)
     end
+
+    def letter_change?(left, right, index)
+      letter?(left[index]) && letter?(right[index])
+    end
+
+    def letter?(char) = char.match?(/[A-Za-z]/)
 
     def transposed?(left, right, indexes)
       return false unless indexes.length == 2 && indexes[1] == indexes[0] + 1

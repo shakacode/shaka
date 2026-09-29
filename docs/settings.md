@@ -237,11 +237,11 @@ which wins for that review. The review helper reads them from the trusted
 default-branch commit the agent passes as `--criteria-ref`, so a PR cannot pick
 the model that reviews it; without that commit, the settings are not applied.
 When a configured model, or a Codex or Grok effort, is the same length as a name
-Shaka knows and one character off, or two adjacent letters are swapped,
+Shaka knows and one letter off, or two adjacent letters are swapped,
 `shaka doctor` and `shaka review run` say it looks like a typo of that name.
 That review still runs. A Claude effort other than `low`, `medium`, `high`,
 `xhigh`, or `max` stops the review before the CLI starts, including a near-miss
-such as `meduim`. A name Shaka does not know is reported too, and that review
+such as `meduim`, and `shaka doctor` fails. A name Shaka does not know is reported too, and that review
 still runs, so a model newer than this release is not blocked. Codex has one
 recommended model, recorded as `recommended_model` in
 `skills/shaka/lib/shaka/reviewer_settings.rb`. A known Codex model other than
