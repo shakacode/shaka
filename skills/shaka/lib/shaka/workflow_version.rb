@@ -14,9 +14,12 @@ module Shaka
   module WorkflowVersion
     ROOT = File.expand_path('../../../..', __dir__)
     SKILL = 'skills/shaka'
-    # Inherited from a Git hook or wrapper, these would point Git at another repository.
-    GIT_ENVIRONMENT = %w[GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE GIT_PREFIX]
-                      .to_h { |name| [name, nil] }.freeze
+    # `git rev-parse --local-env-vars`: inherited from a Git hook or wrapper, these would
+    # point Git at another repository's files, objects, or configuration.
+    GIT_ENVIRONMENT = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
+                         GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
+                         GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX
+                         GIT_SHALLOW_FILE GIT_COMMON_DIR].to_h { |name| [name, nil] }.freeze
 
     REPOSITORY = 'https://github.com/shakacode/shaka'
     # Remote spellings of REPOSITORY; a commit from any other source may exist only in a fork.

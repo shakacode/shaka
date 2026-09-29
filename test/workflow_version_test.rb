@@ -79,8 +79,10 @@ class WorkflowVersionTest < Minitest::Test
     in_checkout do |root, head|
       Dir.mktmpdir do |other|
         with_environment('GIT_DIR' => File.join(other, '.git'), 'GIT_WORK_TREE' => other) do
-          assert_equal result(head),
-                       Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
+          assert_equal result(head), current_checkout(root)
+        end
+        with_environment('GIT_OBJECT_DIRECTORY' => other, 'GIT_INDEX_FILE' => File.join(other, 'index')) do
+          assert_equal result(head), current_checkout(root)
         end
       end
     end
