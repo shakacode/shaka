@@ -2,7 +2,7 @@
 
 require_relative 'error'
 require_relative 'merge_review_evidence'
-require_relative 'publication'
+require_relative 'publication/publication'
 require_relative 'reviewer_selection'
 
 module Shaka

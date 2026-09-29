@@ -3,7 +3,7 @@
 require_relative 'test_helper'
 require 'tempfile'
 require 'shaka/local_review'
-require 'shaka/publication'
+require 'shaka/publication/publication'
 require 'shaka/review_reply'
 
 module ReviewReplyFixture
