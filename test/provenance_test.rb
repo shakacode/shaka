@@ -20,7 +20,8 @@ class ExecutionProvenanceTest < Minitest::Test
   end
 
   def test_the_helper_supplies_the_workflow_version
-    version = Shaka::WorkflowVersion::Result.new(version: '0.1.0.pre.1', commit: 'a' * 40, modified: false)
+    version = Shaka::WorkflowVersion::Result.new(version: '0.1.0.pre.1', commit: 'a' * 40, modified: false,
+                                                 upstream: true)
     body = Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, environment: {}, workflow_version: version)
                                      .detail.fetch('body')
 

@@ -7,10 +7,23 @@ class WorkflowVersionTest < Minitest::Test
   VERSION = Shaka::VERSION
   SHA = 'a' * 40
 
-  def result(commit, modified: false) = Shaka::WorkflowVersion::Result.new(version: VERSION, commit:, modified:)
+  def result(commit, modified: false, upstream: false)
+    Shaka::WorkflowVersion::Result.new(version: VERSION, commit:, modified:, upstream:)
+  end
 
-  def source(kind, revision: nil, base: nil)
-    { 'version' => VERSION, 'source' => { 'kind' => kind, 'revision' => revision, 'base_revision' => base } }
+  def source(kind, revision: nil, base: nil, repository: nil)
+    { 'version' => VERSION,
+      'source' => { 'kind' => kind, 'revision' => revision, 'base_revision' => base, 'repository' => repository } }
+  end
+
+  def test_a_checkout_is_upstream_only_when_its_origin_is_shakacode_shaka
+    in_checkout do |root, head|
+      git(root, 'remote', 'add', 'origin', 'https://github.com/someone/shaka.git')
+      assert_equal result(head), Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
+      git(root, 'remote', 'set-url', 'origin', 'git@github.com:shakacode/shaka.git')
+      assert_equal result(head, upstream: true),
+                   Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
+    end
   end
 
   def test_an_exact_installed_revision_names_its_commit

@@ -25,9 +25,10 @@ class CliDescriptionWorkflowVersionTest < Minitest::Test
       _output, error, status = run_description(dir)
 
       assert_predicate status, :success?, error
-      link = "[`#{head[0, 7]}`](https://github.com/shakacode/shaka/commit/#{head.strip})"
-      assert_match(/\| Workflow version \| #{Regexp.escape(link)}( \(modified\))? \|/,
-                   File.read(File.join(dir, 'published.md')))
+      # A fork or remote-less checkout shows the full commit unlinked; either form names HEAD.
+      head = head.strip
+      shown = Regexp.union("[`#{head[0, 7]}`](https://github.com/shakacode/shaka/commit/#{head})", "`#{head}`")
+      assert_match(/\| Workflow version \| #{shown}( \(modified\))? \|/, File.read(File.join(dir, 'published.md')))
     end
   end
 end

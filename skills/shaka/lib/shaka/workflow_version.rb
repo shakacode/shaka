@@ -19,12 +19,15 @@ module Shaka
                       .to_h { |name| [name, nil] }.freeze
 
     REPOSITORY = 'https://github.com/shakacode/shaka'
+    # Remote spellings of REPOSITORY; a commit from any other source may exist only in a fork.
+    UPSTREAM = %r{\A(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)shakacode/shaka(?:\.git)?/?\z}i
     COMMIT = /\A(?:\h{40}|\h{64})\z/
     RELEASE = /\A[A-Za-z0-9][A-Za-z0-9._-]{0,39}\z/
 
-    # Renders a linked commit, or the release version when no commit is known. Installation
-    # metadata is only type-checked, so each part is checked before it reaches the table.
-    Result = Data.define(:version, :commit, :modified) do
+    # Renders the commit, linked when it came from REPOSITORY, or the release version when no
+    # commit is known. Installation metadata is only type-checked, so each part is checked
+    # before it reaches the table.
+    Result = Data.define(:version, :commit, :modified, :upstream) do
       def markdown
         return "#{link}#{' (modified)' if modified}" if commit
 
@@ -38,7 +41,7 @@ module Shaka
       def link
         raise Error, 'Workflow commit is invalid.' unless commit.is_a?(String) && commit.match?(COMMIT)
 
-        "[`#{commit[0, 7]}`](#{REPOSITORY}/commit/#{commit})"
+        upstream ? "[`#{commit[0, 7]}`](#{REPOSITORY}/commit/#{commit})" : "`#{commit}`"
       end
     end
 
@@ -47,14 +50,15 @@ module Shaka
     def current(identity: read_identity, root: ROOT, git: nil)
       identity ||= {}
       source = identity['source'] || {}
-      commit, modified = commit(source, root, git)
-      Result.new(version: identity['version'] || VERSION, commit:, modified: modified || false)
+      commit, modified, repository = commit(source, root, git)
+      Result.new(version: identity['version'] || VERSION, commit:, modified: modified || false,
+                 upstream: repository.is_a?(String) && repository.match?(UPSTREAM))
     end
 
     def commit(source, root, git)
       case source['kind']
-      when 'revision' then [source['revision'], false]
-      when 'development' then [source['base_revision'], true]
+      when 'revision' then [source['revision'], false, source['repository']]
+      when 'development' then [source['base_revision'], true, source['repository']]
       when 'uninstalled' then git ? checkout_commit(root, git) : [nil, false]
       else [nil, false]
       end
@@ -74,7 +78,7 @@ module Shaka
       entries = run(git, root, 'ls-files', '-v', '--', SKILL)
       return [nil, false] unless head && status && entries
 
-      [head, !status.empty? || index_flags?(entries)]
+      [head, !status.empty? || index_flags?(entries), run(git, root, 'config', '--get', 'remote.origin.url')]
     end
 
     # `git status` hides edits to assume-unchanged (lowercase tag) and skip-worktree (`S`)

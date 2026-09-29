@@ -7,7 +7,9 @@ class WorkflowVersionMarkdownTest < Minitest::Test
   VERSION = Shaka::VERSION
   SHA = 'a' * 40
 
-  def result(commit, modified: false) = Shaka::WorkflowVersion::Result.new(version: VERSION, commit:, modified:)
+  def result(commit, modified: false, upstream: true)
+    Shaka::WorkflowVersion::Result.new(version: VERSION, commit:, modified:, upstream:)
+  end
 
   def test_a_known_commit_renders_as_a_link_without_the_version_number
     assert_equal "[`aaaaaaa`](https://github.com/shakacode/shaka/commit/#{SHA})", result(SHA).markdown
@@ -20,6 +22,12 @@ class WorkflowVersionMarkdownTest < Minitest::Test
     assert_equal "[`bbbbbbb`](https://github.com/shakacode/shaka/commit/#{sha})", result(sha).markdown
   end
 
+  # A commit from a fork or an unrecognized source may not exist upstream, so it is not linked.
+  def test_a_commit_from_another_source_shows_the_full_id_without_a_link
+    assert_equal "`#{SHA}`", result(SHA, upstream: false).markdown
+    assert_equal "`#{SHA}` (modified)", result(SHA, modified: true, upstream: false).markdown
+  end
+
   def test_an_unknown_commit_falls_back_to_the_version_number
     assert_equal "`#{VERSION}` (commit unknown)", result(nil).markdown
     assert_equal "`#{VERSION}` (commit unknown, modified)", result(nil, modified: true).markdown
@@ -27,8 +35,9 @@ class WorkflowVersionMarkdownTest < Minitest::Test
 
   def test_refuses_values_that_could_break_the_table
     assert_raises(Shaka::Error) { result("#{SHA} | x").markdown }
+    assert_raises(Shaka::Error) { result("#{SHA} | x", upstream: false).markdown }
     assert_raises(Shaka::Error) do
-      Shaka::WorkflowVersion::Result.new(version: "1.0\n| x", commit: nil, modified: false).markdown
+      Shaka::WorkflowVersion::Result.new(version: "1.0\n| x", commit: nil, modified: false, upstream: false).markdown
     end
   end
 end

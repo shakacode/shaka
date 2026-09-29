@@ -265,9 +265,12 @@ adds the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`; it never falls b
 to a hostname.
 
 The renderer also fills the workflow version with the commit the helper runs from,
-because every commit between releases shares one version number. The row shows the
-short commit as a link to it on GitHub, such as
+because every commit between releases shares one version number. When the helper came
+from `shakacode/shaka`, the row shows the short commit as a link to it on GitHub, such as
 [`d2654ce`](https://github.com/shakacode/shaka/commit/d2654cedfe52975917112c450ebbd7e1bb75afc2).
+A commit from a fork or an unrecognized source may not exist there, so the row shows its
+full ID without a link. The source is the repository the installer recorded, or a direct
+checkout's `origin` remote.
 For a managed installation, that commit is the revision the installer recorded; edits
 to the installed copy afterwards go undetected, as they do in `shaka doctor`. For a
 checkout the skill runs from directly, it is that checkout's HEAD. `(modified)`
