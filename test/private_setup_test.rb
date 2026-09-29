@@ -103,8 +103,10 @@ class PrivateSetupTest < Minitest::Test
   def test_interrupted_materialization_resumes
     with_setup do |root, ref|
       setup = Shaka::Seam::PrivateSetup.new(root:, ref:, options: options)
-      context = self
-      setup.define_singleton_method(:write_files) { |files| context.interrupt_after_first_file(files) }
+      setup.define_singleton_method(:write_new_file) do |path, content|
+        super(path, content)
+        raise Errno::EIO, path
+      end
       assert_raises(Shaka::Error) { setup.setup }
       assert_equal 'partial', recovery(root).inspect_checkout.fetch('status')
       assert_equal 'complete', setup_private(root, ref).fetch('status')
@@ -122,13 +124,18 @@ class PrivateSetupTest < Minitest::Test
       assert_path_exists File.join(root, '.agents/shaka/bin/trigger-hosted-ci')
     end
   end
+end
 
-  def interrupt_after_first_file(files)
-    path, content = files.first
-    FileUtils.mkdir_p(File.dirname(path))
-    File.write(path, content)
-    File.chmod(0o755, path)
-    raise Errno::EIO, path
+class PrivateCommandTest < Minitest::Test
+  include PrivateSetupFixture
+
+  def test_cli_rejects_missing_setup_ref_and_restore_destination
+    with_setup do |root, _ref|
+      [['setup', '--root', root], ['restore', '--root', root], ['unknown', '--root', root]].each do |args|
+        _stdout, stderr = capture_io { assert_equal 1, Shaka::Seam.run(['private', *args]) }
+        refute_empty stderr
+      end
+    end
   end
 end
 
@@ -219,13 +226,17 @@ class PrivateRecoveryTest < Minitest::Test
     assert_equal 'linked only', File.read(File.join(second.fetch('recovery'), 'current/local-note'))
     assert_equal 1, File.read(File.join(root, '.git/info/exclude')).scan('/.agents/shaka/').length
   end
+end
+
+class PrivateRecoveryRestoreTest < Minitest::Test
+  include PrivateSetupFixture
 
   def test_git_clean_keeps_copy_and_adoption_restore_only_compares
     with_setup do |root, ref|
       result = setup_private(root, ref)
       config = config_path(root)
       change_private_preference(root)
-      assert_previous_copy(result)
+      assert_previous_copy(root, result)
       assert_clean_preserves_edited_copy(root, ref, result, config)
       assert_comparison_restore(root, result)
     end
@@ -244,9 +255,14 @@ class PrivateRecoveryTest < Minitest::Test
     recovery(root).inspect_checkout
   end
 
-  def assert_previous_copy(result)
+  def assert_previous_copy(root, result)
     previous = File.join(result.fetch('recovery'), 'previous/config.yml')
     assert_includes File.read(previous), 'preference: ask'
+    inspection = "#{root}-previous-inspection"
+    recovery(root).restore(to: inspection, previous: true)
+    assert_equal File.read(previous), File.read(File.join(inspection, 'config.yml'))
+  ensure
+    FileUtils.rm_rf(inspection) if inspection
   end
 
   def assert_comparison_restore(root, result)

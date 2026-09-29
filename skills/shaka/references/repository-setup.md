@@ -35,14 +35,17 @@ the old one.
 
 If setup is denied or interrupted, the error names the failed path. Inspect the
 copy and retry setup after fixing access; a matching partial installation resumes.
-After `git clean -fdx`, setup refuses to replace a differing recovery copy with
-fresh defaults. Restore the copy to an outside inspection path, compare it, then
+After `git clean -fdx`, setup refuses to replace a recovery copy that differs
+from the generated defaults. Run `private inspect` after editing private files
+and before cleaning: edits made since the last inspection cannot be recovered
+once clean deletes them. Restore the copy to an outside inspection path, compare it, then
 copy the chosen files back into `.agents/shaka/` only when no tracked team settings
 exist. Run `private inspect` again and continue with the recovered seam. To start
 fresh instead, move the old common-Git recovery directory to a safe location
 before rerunning setup; that deliberate move removes it from `private list`.
 The clone-wide exclusion can hide newly added team files after adoption. Inspect
-all linked worktrees, stage intended team files explicitly, and remove the exact
+all linked worktrees, stage intended team files with `git add -f` while the rule
+is active, and remove the exact
 `/.agents/shaka/` rule from the common `info/exclude` once none still uses private
 settings. Keep any other exclusion lines.
 The common Git directory is the recovery boundary: deleting it loses the copies.
