@@ -62,7 +62,7 @@ selects the latest turn. That is a snapshot, not necessarily the whole task.
 Record the UTC start time before the new task begins. Use explicit `--turn` IDs
 when that time is unavailable or the boundary must be exact, and mark an uncertain
 interval SHARED.
-If a response has no usable timestamp, the command fails instead of excluding it.
+If a response has no usable timestamp with a timezone, the command fails instead of excluding it.
 
 A `--turn` ID that matches no readable response fails with the expected field
 instead of printing an empty table. A source with no readable responses still

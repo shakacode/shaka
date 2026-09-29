@@ -80,8 +80,7 @@ module Shaka
       @options[:files] = reader.discover if @inferred
       all_turns = @options[:all_turns] || @options[:since_time]
       @source = reader.new(@options[:files], @options[:turns], all_turns:)
-      select_since_time if @options[:since_time]
-      @responses = @source.responses.values
+      load_responses
     end
 
     def report = "#{UsageRecords.begin_mark(record_identity)}\n#{report_body}#{UsageRecords::END_MARK}\n"
@@ -110,6 +109,12 @@ module Shaka
     end
 
     private
+
+    def load_responses
+      @selected_responses = @source.responses.dup
+      select_since_time if @options[:since_time]
+      @responses = @selected_responses.values
+    end
 
     def selected_rate_card
       RateCard.select(contribution: @options[:contribution], explicit_root: @options[:rate_root])

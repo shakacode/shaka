@@ -52,6 +52,17 @@ class PrWatchTest < Minitest::Test
     assert_equal 'timeout', watch(frames, timeout: 2)
   end
 
+  def test_no_configured_checks_waits_for_a_real_wake
+    github = FakeGitHub.new([frame(required: [], checks: [])])
+    now = 0
+    adapters = { clock: -> { now }, sleeper: ->(seconds) { now += seconds },
+                 comments: -> { comments_packet(frame) } }
+    watcher = Shaka::PrWatch.new(github, head: HEAD, ci_jobs: [],
+                                         settings: { interval: 1, settle: 1, timeout: 2 }, adapters:)
+
+    assert_equal 'timeout', watcher.call
+  end
+
   def test_failed_checks_are_terminal_and_wake_the_agent
     frames = [frame(required: [check('validate', 'FAILURE', 'fail')],
                     checks: [check('claude-review', 'FAILURE', 'fail')])]
@@ -75,6 +86,18 @@ class PrWatchTest < Minitest::Test
     frames = [frame(comments: [1]), frame(comments: [1, 2]), frame(comments: [1, 2])]
 
     assert_equal 'trusted_comment', watch(frames)
+  end
+
+  def test_settle_window_wakes_before_the_next_regular_poll
+    github = FakeGitHub.new([frame(required: [check('validate', 'SUCCESS', 'pass')])])
+    now = 0
+    adapters = { clock: -> { now }, sleeper: ->(seconds) { now += seconds },
+                 comments: -> { comments_packet(frame) } }
+    watcher = Shaka::PrWatch.new(github, head: HEAD, ci_jobs: [],
+                                         settings: { interval: 60, settle: 15, timeout: 120 }, adapters:)
+
+    assert_equal 'checks_terminal', watcher.call
+    assert_equal 15, now
   end
 
   def test_saved_baseline_catches_a_comment_that_arrived_before_startup
@@ -143,6 +166,16 @@ class PrWatchTest < Minitest::Test
 end
 
 class PrWatchBaselineTest < Minitest::Test
+  def test_accepts_a_saved_comments_packet_for_the_expected_head
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, 'comments.json')
+      File.write(path, JSON.generate('head' => 'a' * 40, 'issue_comments' => [],
+                                     'review_summaries' => [], 'inline_comments' => []))
+
+      assert_equal 'a' * 40, Shaka::PrWatch::Command.baseline(baseline: path, head: 'a' * 40)['head']
+    end
+  end
+
   def test_refuses_a_saved_comment_read_from_another_head
     Dir.mktmpdir do |directory|
       path = File.join(directory, 'comments.json')

@@ -49,7 +49,9 @@ module Shaka
         return @pending_reason if settled?
         return @pending_reason || 'timeout' if @clock.call >= deadline
 
-        @sleeper.call([@timing.fetch(:interval), deadline - @clock.call].min)
+        next_poll = [@timing.fetch(:interval), deadline - @clock.call].min
+        next_poll = [next_poll, @ready_since + @timing.fetch(:settle) - @clock.call].min if @pending_reason
+        @sleeper.call(next_poll)
       end
     end
 
@@ -93,6 +95,8 @@ module Shaka
     end
 
     def terminal_checks?(required, checks)
+      return false if required.empty? && @ci_jobs.empty?
+
       terminal?(required) && @ci_jobs.all? do |name|
         rows = checks.select { |row| row['name'] == name }
         !rows.empty? && terminal?(rows)

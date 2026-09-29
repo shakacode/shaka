@@ -198,6 +198,7 @@ class UsageSinceTimeTest < Minitest::Test
     assert_metric report, 'Input', 200
     assert_includes report, '1 responses'
     assert_includes report, "responses after #{START.iso8601}"
+    assert_selected_identity(report)
   end
 
   def test_rejects_an_invalid_start_time
@@ -212,10 +213,30 @@ class UsageSinceTimeTest < Minitest::Test
     _output, error, status = unstamped_report
 
     refute_predicate status, :success?
-    assert_includes error, '--since-time needs a timestamp'
+    assert_includes error, '--since-time needs a zoned timestamp'
+  end
+
+  def test_refuses_a_response_timestamp_without_a_timezone
+    Dir.mktmpdir do |directory|
+      record = usage('unplaced', 'current', 100)
+      record[:timestamp] = '2026-09-14T12:00:01'
+      file = write_records(directory, [context('current'), record], {})
+      _output, error, status = Open3.capture3(host_environment(directory), COMMAND, 'usage', '--file', file,
+                                              '--commit', COMMIT, '--contribution', 'implementation',
+                                              '--since-time', START.iso8601)
+
+      refute_predicate status, :success?
+      assert_includes error, '--since-time needs a zoned timestamp'
+    end
   end
 
   private
+
+  def assert_selected_identity(report)
+    identity = JSON.parse(report.match(/<!-- shaka:usage (\{[^\n]*\}) -->/)[1])
+    assert_equal 1, identity.fetch('responses').size
+    assert identity.fetch('complete')
+  end
 
   def timed_usage(id, turn, input, at)
     usage(id, turn, input).tap { |response| response[:timestamp] = at.iso8601 }

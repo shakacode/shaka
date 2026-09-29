@@ -24,12 +24,12 @@ module Shaka
         'commits' => @options[:commit].split(','), 'complete' => complete? }.merge(interval_fields)
     end
 
-    def complete? = measured_responses.size == @source.responses.size
+    def complete? = measured_responses.size == @selected_responses.size
 
     # A Claude print result is keyed by its session, which resumed runs share, so its identity
     # also covers its counters: separate runs differ, while a copy or re-read of one run matches.
     def response_digest(id)
-      record = @source.responses[id]
+      record = @selected_responses[id]
       digest(record['aggregate'] ? "#{id}\0#{JSON.generate(record['usage'])}" : id)
     end
 
@@ -41,7 +41,7 @@ module Shaka
     # A response without a readable token counter cannot stand in for one an earlier report measured.
     def measured_responses
       fields = Usage::METRIC_FIELDS.map(&:last)
-      @source.responses.filter_map do |id, record|
+      @selected_responses.filter_map do |id, record|
         usage = record['usage']
         id if usage.is_a?(Hash) && usage.values_at(*fields).any? { |value| value.is_a?(Integer) && value >= 0 }
       end
