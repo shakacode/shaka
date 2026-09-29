@@ -53,9 +53,11 @@ link for Shaka's walkthrough.
 
 Before launch, verify the container's non-root/read-only-root setup, disposable
 workspace, trusted Shaka skill outside the candidate checkout, credential
-isolation, permitted network egress, denied off-list destinations, and target-only
-GitHub access. Do not relax a failed gate or substitute a model to keep the run
-moving. Treat a wrong initial failure, unsupported CLI, missing access, or empty
+isolation, permitted network egress, denied off-list destinations, and authenticated
+Write access only to the target repository. Public repositories remain readable;
+private measured cells additionally require denied sibling reads. Do not relax a
+failed gate or substitute a model to keep the run moving. Treat a wrong initial
+failure, unsupported CLI, missing access, or empty
 reference-repair diff as a **harness error**, not a result for the candidate.
 
 For an Ask delivery, grade the *current* PR head: local validation, the completed
