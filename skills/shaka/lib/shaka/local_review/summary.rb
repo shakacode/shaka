@@ -21,7 +21,8 @@ module Shaka
 
     def criteria(sha)
       code = "`#{sha[0, 7]}`"
-      @repository ? "[#{code}](https://github.com/#{@repository}/blob/#{sha}/AGENTS.md)" : code
+      # The criteria can come from nested AGENTS.md files alone, so the link opens the commit's tree.
+      @repository ? "[#{code}](https://github.com/#{@repository}/tree/#{sha})" : code
     end
 
     private
@@ -99,7 +100,7 @@ module Shaka
     def prompt
       "**Prompt:** `Shaka default` is Shaka's [review instructions](#{INSTRUCTIONS}) plus its " \
         "[fixed rules](#{RULES}); a `review.prompt_file` entry names the repository file used instead. " \
-        '`criteria SHA` means the reviewer also received the trusted `AGENTS.md` from that commit.'
+        '`criteria SHA` means the reviewer also received the trusted `AGENTS.md` files from that commit.'
     end
 
     def group(number) = number.to_s.reverse.scan(/\d{1,3}/).join(',').reverse

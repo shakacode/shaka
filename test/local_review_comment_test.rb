@@ -160,8 +160,8 @@ class LocalReviewPublishTest < Minitest::Test
     def markdown(_body) = @html
 
     def api(path)
-      raise Shaka::Error.new('No commit found', http_status: 422) if @missing.any? { |sha| path.end_with?(sha) }
-      raise Shaka::Error.new('Server error', http_status: 502) if @outage
+      raise Shaka::Error.new('Not Found', http_status: 404) if @missing.any? { |sha| path.end_with?(sha) }
+      raise Shaka::Error.new('Validation failed', http_status: 422) if @outage
 
       {}
     end
@@ -367,7 +367,7 @@ class LocalReviewSummaryTest < Minitest::Test
   def test_defines_the_prompt_column_and_links_the_criteria
     body = Shaka::LocalReviewComment.new({ 'rounds' => [round] }, repository: 'o/r').render
 
-    assert_includes body, "criteria [`ccccccc`](https://github.com/o/r/blob/#{TRUSTED}/AGENTS.md)"
+    assert_includes body, "criteria [`ccccccc`](https://github.com/o/r/tree/#{TRUSTED})"
     assert_includes body, '**Prompt:** `Shaka default` is Shaka\'s [review instructions]'
   end
 end
