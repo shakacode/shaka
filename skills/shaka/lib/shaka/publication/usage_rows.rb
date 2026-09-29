@@ -8,8 +8,8 @@ module Shaka
       'credits' => 'estimated OpenAI Codex plan credits, the unit Codex plans meter usage in',
       'input' => 'tokens sent to the model; Codex and Cursor count cached input here too, Claude does not',
       'cached_input' => 'input read back from the provider’s prompt cache, which is billed at a lower rate',
-      'output' => 'tokens the model wrote, including reasoning',
-      'reasoning_output' => 'the part of output spent reasoning before the answer',
+      'output' => 'tokens the model wrote; Codex, Claude, and Pi count reasoning here too, OpenCode does not',
+      'reasoning_output' => 'tokens the model spent reasoning before the answer',
       'cache_writes' => 'input stored in the prompt cache so later turns can reuse it'
     }.freeze
 

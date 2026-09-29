@@ -610,6 +610,7 @@ class PublicationUsageReadabilityTest < Minitest::Test
     assert_includes glossary, '**Codex credits**: estimated OpenAI Codex plan credits'
     assert_includes glossary, '**Cache writes**'
     refute_includes render(usage: usage_of(COLUMN)), '**Codex credits**'
+    assert_includes glossary, 'OpenCode does not'
   end
 end
 
