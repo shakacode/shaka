@@ -236,8 +236,17 @@ Both settings are optional. A task can still ask for a different model or effort
 which wins for that review. The review helper reads them from the trusted
 default-branch commit the agent passes as `--criteria-ref`, so a PR cannot pick
 the model that reviews it; without that commit, the settings are not applied.
-When a provider retires a named model, that reviewer's CLI fails until you update
-the entry.
+When a configured model or effort is one edit away from a name Shaka knows,
+`shaka doctor` fails and `shaka review run` stops before the CLI starts. The
+message names the similar model or effort. A name Shaka does not know is reported
+too, and that review still runs, so a model newer than this release is not blocked.
+Codex's recommended model is `gpt-6-sol`. A known Codex model other than that one
+is reported, and the review still runs. After the recommendation changes,
+a repository that still names the previous model gets that report. Claude and
+Grok have no single recommended model. Claude effort is `low`, `medium`, `high`,
+`xhigh`, or `max`, the levels `claude --help` lists. The names live in
+`skills/shaka/lib/shaka/reviewer_settings.rb`. Shaka does not read reviewer CLI
+error text, and it does not substitute another model.
 
 Each reviewer CLI accepts its own effort levels:
 
@@ -247,8 +256,9 @@ Each reviewer CLI accepts its own effort levels:
 | Codex | The model's documentation; Codex passes the level through as configuration |
 | Grok | The Grok CLI's `--reasoning-effort` option |
 
-Shaka checks only that an effort is a lowercase name, such as `medium` or
-`xhigh`. The reviewer CLI decides whether it accepts that level.
+Shaka checks a lowercase effort name, such as `medium` or `xhigh`, and the names
+in `reviewer_settings.rb`. Codex and Grok still accept a level outside that list;
+the notice says the CLI makes that decision. Claude's list is closed.
 Configured CI review jobs have separate waiting rules under
 [`review.ci_review_wait`](#reviewci_review_wait).
 See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).

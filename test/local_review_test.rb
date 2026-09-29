@@ -1075,6 +1075,56 @@ class LocalReviewAttestationCaseTest < Minitest::Test
   end
 end
 
+class LocalReviewSettingsTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_a_misspelled_model_fails_before_the_cli_starts
+    with_repository do |root, base, head, bin|
+      result = refused_review(root, base, head, bin, 'gpt-6-sll')
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      refute result.fetch('attempted')
+      assert_includes result.fetch('reason'), 'looks like a typo of `gpt-6-sol`'
+      assert_equal ['failed'], severities(result)
+    end
+  end
+
+  def test_an_unknown_model_still_runs_and_reports_the_notice
+    with_repository do |root, base, head, bin|
+      result = accepted_review(root, base, head, bin, 'gpt-9-nova')
+
+      assert_equal 'completed', result.fetch('status')
+      assert_includes result.fetch('config_notices').first.fetch('summary'), 'gpt-9-nova'
+    end
+  end
+
+  private
+
+  def refused_review(root, base, head, bin, model)
+    output, _error, status = launch(root, base, head, bin, model)
+    refute_predicate status, :success?
+    JSON.parse(output)
+  end
+
+  def accepted_review(root, base, head, bin, model)
+    output, error, status = launch(root, base, head, bin, model)
+    assert_predicate status, :success?, error
+    JSON.parse(output)
+  ensure
+    cleanup_artifacts(JSON.parse(output)) if output
+  end
+
+  def launch(root, base, head, bin, model)
+    trace = File.join(root, 'invocation.json')
+    fake_codex(bin, head)
+    output, error, status = run_review(root, base, head, bin, model:, env: { 'REVIEW_TRACE' => trace })
+    status.success? ? assert_path_exists(trace) : refute_path_exists(trace)
+    [output, error, status]
+  end
+
+  def severities(result) = result.fetch('config_notices').map { |notice| notice.fetch('severity') }
+end
+
 class LocalReviewCodexUsageTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -1523,6 +1573,7 @@ module LocalReviewFixture
 end
 
 LocalReviewCodexTest.include(LocalReviewFixture)
+LocalReviewSettingsTest.include(LocalReviewFixture)
 LocalReviewRubyIsolationTest.include(LocalReviewFixture)
 LocalReviewCodexTest.include(LocalReviewContextAssertion)
 LocalReviewCodexUsageTest.include(LocalReviewFixture)

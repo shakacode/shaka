@@ -115,7 +115,7 @@ class DoctorTest < Minitest::Test
     ready, = doctor
     broken, = doctor(environment: {}, responses: { view: ['', 'gh auth login required', false] })
     assert_equal check_names(ready), check_names(broken)
-    assert_equal 6, check_names(broken).length
+    assert_equal 7, check_names(broken).length
   end
 
   def test_the_worst_status_is_reported_first

@@ -32,7 +32,7 @@ class DoctorAccessTest < Minitest::Test
     elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
 
     assert blocked
-    assert_equal 6, check_names(report).length, 'a timeout ended the report'
+    assert_equal 7, check_names(report).length, 'a timeout ended the report'
     assert_includes report, 'Machine alias'
     assert_operator elapsed, :>=, 0.35, 'the two calls shared one deadline instead of one each'
     assert_operator elapsed, :<, 2, 'the calls were not bounded'

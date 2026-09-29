@@ -5,6 +5,7 @@ require 'securerandom'
 require 'tempfile'
 require 'tmpdir'
 require_relative '../reviewer_selection'
+require_relative '../reviewer_settings'
 require_relative 'cli'
 require_relative 'criteria'
 require_relative 'evidence'
@@ -229,7 +230,7 @@ module Shaka
 
     # Records what was asked for on every outcome; the routed model comes only from native usage.
     def with_requested_model(result)
-      @options[:model] ? result.merge('requested_model' => @options[:model]) : result
+      ReviewerSettings.attach(result, model: @options[:model], notices: @config_notices)
     end
 
     def run_report(prompt)
@@ -283,8 +284,7 @@ module Shaka
       @options[:reviewer] = ReviewerSelection.parse(@options.fetch(:reviewer)).values.map(&:downcase).join('/')
       raise Shaka::Error, 'Unsupported local reviewer' unless ReviewerSelection::SUPPORTED_REVIEWERS.include?(reviewer)
 
-      apply_trusted_settings!
-      validate_model!
+      apply_reviewer_settings!
     end
 
     def validate_model!

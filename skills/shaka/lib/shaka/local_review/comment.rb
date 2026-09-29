@@ -4,6 +4,7 @@ require 'cgi'
 require_relative '../error'
 require_relative '../publication/publication'
 require_relative '../reviewer_selection'
+require_relative '../reviewer_settings'
 require_relative 'evidence'
 require_relative 'finding'
 require_relative 'summary'
@@ -39,7 +40,7 @@ module Shaka
     end
 
     def render
-      blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice,
+      blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice, *settings_notice,
                 *LocalReviewBound.new(@rounds, @max_rounds).lines, *round_details,
                 @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
@@ -104,6 +105,13 @@ module Shaka
 
     # Escaping backslashes first keeps a supplied `\|` from ending its cell early.
     def line(cells) = "| #{cells.map { |cell| cell.gsub(/[\\|]/) { |char| "\\#{char}" } }.join(' | ')} |"
+
+    def settings_notice
+      text = @rounds.flat_map(&:setting_summaries).join(' ')
+      return [] if text.empty?
+
+      ["**Reviewer settings:** #{text}"]
+    end
 
     def fallback_notice
       return [] if @fallback.nil?
@@ -183,6 +191,11 @@ module Shaka
         raise Error, "Round #{@number} records a fix in the commit it reviewed; commit the fix."
       end
 
+      def setting_summaries
+        ReviewerSettings.notices(@reviewer, model: configured('model'), effort: attested_effort)
+                        .map { |notice| notice.fetch('summary') }
+      end
+
       private
 
       # Every finding the report counts needs its disposition before the comment can go out.
@@ -234,6 +247,16 @@ module Shaka
       def optional(name, default = 'UNKNOWN')
         value = @spec[name]
         value.nil? || (value.is_a?(String) && value.strip.empty?) ? default : field(name)
+      end
+
+      def configured(name)
+        value = optional(name)
+        value == 'UNKNOWN' ? nil : value
+      end
+
+      def attested_effort
+        effort, = @report.match(CLOSING).captures
+        effort == 'UNKNOWN' ? nil : effort
       end
 
       def read_report
