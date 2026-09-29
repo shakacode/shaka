@@ -1,7 +1,7 @@
 # Make a difference image
 
 Use an image tool that is already available. `command -v magick` shows whether
-ImageMagick 7 is installed. A project's own screenshot tests may also produce
+ImageMagick 7, an [optional prerequisite](installation.md#prerequisites), is installed. A project's own screenshot tests may also produce
 difference images; Playwright's `toHaveScreenshot`, for example, writes one when
 an assertion fails.
 

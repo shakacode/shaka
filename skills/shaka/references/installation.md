@@ -21,6 +21,11 @@ gh auth status
 
 Use `gh auth login` if you are not signed in.
 
+Optional: [ImageMagick 7](https://imagemagick.org/script/download.php) lets agents
+show where a UI change moved pixels with a
+[difference image](visual-diff.md). Check it with `magick --version`. Without it,
+agents publish labeled before and after screenshots instead.
+
 ## Install
 
 Review the source and installer, then clone into a directory outside the
