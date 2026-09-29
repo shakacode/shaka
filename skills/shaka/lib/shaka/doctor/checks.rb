@@ -110,7 +110,7 @@ module Shaka
       end
 
       def known_settings
-        check('Reviewer settings', 'healthy', 'configured reviewer models and efforts use names Shaka knows')
+        check('Reviewer settings', 'healthy', 'no reviewer model or effort notice')
       end
 
       def setting_summary(notices) = notices.map { |notice| notice.fetch('summary') }.join(' ')
