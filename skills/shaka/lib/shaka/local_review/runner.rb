@@ -144,7 +144,8 @@ module Shaka
       return result unless @ledger && result['status'] == 'completed'
 
       round = result.slice('head', 'reviewer', 'report', 'prompt_source', 'criteria_ref', 'usage')
-      round = round.merge('effort' => effort, 'model' => @options[:model]).compact
+      # The routed model comes from native usage through `review record`, never from the request.
+      round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
       @ledger.append!(base: @options[:base], round:)
       result.merge('ledger' => @ledger.path, 'round' => @ledger.rounds.size)
     end

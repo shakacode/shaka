@@ -69,7 +69,8 @@ module Shaka
 
     def price(round) = (round.value('cost') || round.value('estimate')).to_s
 
-    # A defect documented in any round, and not fixed later under the same id, is still open.
+    # A finding ever classed a defect stays open until a later round records its fix, so neither a
+    # clean last round nor a later reclassification hides it.
     def outcome
       open = unfixed_defects
       return "**Outcome:** the loop stopped with #{defects(open)} left for the maintainer." if open.positive?
@@ -80,8 +81,10 @@ module Shaka
     end
 
     def unfixed_defects
-      latest = @rounds.flat_map(&:findings).to_h { |finding| [finding.id, finding] }
-      latest.values.count { |finding| finding.kind == 'defect' && !finding.fixed? }
+      findings = @rounds.flat_map(&:findings)
+      defects = findings.select { |finding| finding.kind == 'defect' }.map(&:id)
+      latest = findings.to_h { |finding| [finding.id, finding] }
+      defects.uniq.count { |id| !latest.fetch(id).fixed? }
     end
 
     def defects(count) = "#{count} unfixed #{count == 1 ? 'defect' : 'defects'}"

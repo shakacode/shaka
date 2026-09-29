@@ -1118,7 +1118,12 @@ module LocalReviewLoopSteps
     assert_includes JSON.parse(output).fetch('reason'), message
   end
 
-  def ledger_heads = JSON.parse(File.read(@ledger)).fetch('rounds').map { |round| round.fetch('head') }
+  # The requested model is kept apart from `model`, which only native usage may set.
+  def assert_ledger_rounds(heads)
+    rounds = JSON.parse(File.read(@ledger)).fetch('rounds')
+    assert_equal(heads, rounds.map { |round| round.fetch('head') })
+    refute(rounds.any? { |round| round.key?('model') })
+  end
 
   def fix_commit
     commit!(@root, 'fixed', 'Return the right exit code')
@@ -1168,7 +1173,7 @@ class LocalReviewLoopTest < Minitest::Test
       record_fix(fix)
       loop_round(fix, findings: 0)
       assert_prior_round_prompt(File.read(@trace), fix)
-      assert_equal [head, fix], ledger_heads
+      assert_ledger_rounds([head, fix])
     end
   end
 

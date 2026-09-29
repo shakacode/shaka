@@ -344,7 +344,8 @@ class LocalReviewSummaryTest < Minitest::Test
     clean = round(report: report(body: "no findings\n", findings: 0), findings: [])
     earlier = round(EARLIER, report: report(EARLIER), findings: [defect])
 
-    [[round(findings: [defect])], [earlier, clean]].each do |rounds|
+    risk = round(report: report, findings: [defect.merge('class' => 'risk')])
+    [[round(findings: [defect])], [earlier, clean], [earlier, risk]].each do |rounds|
       assert_includes render('rounds' => rounds), '**Outcome:** the loop stopped with 1 unfixed defect left for'
     end
   end
