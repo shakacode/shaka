@@ -461,8 +461,8 @@ class PublicationUsageTableTest < Minitest::Test
   RENDERED = <<~TABLE.chomp
     | Report | USD | Input | Cached input | Output | Reasoning | Cache writes |
     | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-    | claude‑opus‑5‑5 implementation | $3.27 | 100 | 7,558,810 | 27,535 | 7,687 | 150,781 |
-    | claude‑opus‑5‑5 review | $0.31 | 6 | 96,593 | — | — | — |
+    | claude‑opus‑5‑5 implementation | $3.27 | 100 | 7.6M | 27.5K | 7.7K | 151K |
+    | claude‑opus‑5‑5 review | $0.31 | 6 | 96.6K | — | — | — |
     | **Total** | $3.58 |  |  |  |  |  |
   TABLE
 
@@ -568,7 +568,7 @@ class PublicationUsageRowGroupingTest < Minitest::Test
   def test_reports_with_one_label_share_a_row
     rendered = render(usage: usage_of(REVIEW, REVIEW.merge('usd' => '$0.001')))
     assert_includes rendered, "| Report | USD | Input | Cached input |\n| --- | ---: | ---: | ---: |\n" \
-                              '| claude‑opus‑5‑5 review ×2 | $0.31 | 12 | 193,186 |'
+                              '| claude‑opus‑5‑5 review ×2 | $0.31 | 12 | 193K |'
     refute_includes rendered, '**Total**'
     refute_includes rendered, 'not reported, so'
   end
@@ -594,6 +594,13 @@ class PublicationUsageReadabilityTest < Minitest::Test
     rendered = render(usage: usage_of(COLUMN))
     assert_includes rendered, "| claude\u2011opus\u20115\u20115 implementation |"
     assert_includes rendered, '"label":"claude-opus-5-5 implementation"'
+  end
+
+  # Break: 45,332,615-token cells widened the table past the page on desktop.
+  def test_token_counts_are_compact
+    rows = Shaka::UsageRows.new([])
+    shown = [999, 1000, 1500, 99_960, 639_114, 999_999, 45_332_615].map { |n| rows.send(:compact, n) }
+    assert_equal %w[999 1K 1.5K 100K 639K 1M 45.3M], shown
   end
 
   # Break: the maintainer could not tell what the Credits column counted.

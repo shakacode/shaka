@@ -20,8 +20,9 @@ and credit estimates; it leaves token counts blank, because hosts count input
 differently. The collapsed summary shows the USD total. Columns are USD, Codex
 credits, Input, Cached input, Output, Reasoning, and Cache writes; a column no report
 measured is left out, and a collapsed glossary under the table defines each column
-shown. Report names keep their hyphens from breaking the line. Amounts are rounded
-to cents and grouped by thousands for reading. A
+shown. Report names keep their hyphens from breaking the line. Dollar amounts are
+rounded to cents, and token counts are shortened to about three figures, such as
+45.3M; the hidden record keeps the exact counts. A
 cell no report measured shows `—`, and `+` marks a minimum: a partial estimate, or a
 sum that left out an unmeasured report. The total can count a response twice when two
 kept reports partly overlap.

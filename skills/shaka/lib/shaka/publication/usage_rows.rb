@@ -135,7 +135,7 @@ module Shaka
       text = case key
              when 'usd' then usd(amount.value)
              when 'credits' then format('%.2f', amount.value)
-             else grouped(amount.value.to_i)
+             else compact(amount.value.to_i)
              end
       amount.lower_bound ? "#{text}+" : text
     end
@@ -145,6 +145,15 @@ module Shaka
 
       whole, cents = format('%.2f', value).split('.')
       "$#{grouped(whole.to_i)}.#{cents}"
+    end
+
+    # Token counts reach tens of millions; three significant figures keep the table narrow.
+    def compact(number)
+      return number.to_s if number < 1000
+
+      value, suffix = number < 999_500 ? [number / 1e3, 'K'] : [number / 1e6, 'M']
+      digits = value < 100 ? 1 : 0
+      "#{format("%.#{digits}f", value).delete_suffix('.0')}#{suffix}"
     end
 
     def grouped(number) = number.to_s.reverse.scan(/\d{1,3}/).join(',').reverse
