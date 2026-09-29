@@ -28,7 +28,7 @@ module Shaka
       {
         'note' => json_note(estimate, data),
         'columns' => columns,
-        'record' => record_identity.merge('columns' => columns)
+        'record' => record_identity.merge('columns' => columns, 'note' => estimate.narrative_for(data))
       }
     end
 

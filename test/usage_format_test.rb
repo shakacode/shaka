@@ -20,6 +20,13 @@ class UsageFormatTest < Minitest::Test
     assert_includes document.fetch('note'), 'Native usage is PARTIAL.'
   end
 
+  # Break: a carried report kept its price but lost the rate card that produced it.
+  def test_the_record_keeps_its_own_pricing_note
+    note = json_report.dig('record', 'note')
+    assert_includes note, 'Rate card:'
+    refute_includes note, 'Native usage is PARTIAL.'
+  end
+
   def json_report
     JSON.parse(run_report([context('current'), usage('current', 'current', 100)], '--format', 'json'))
   end

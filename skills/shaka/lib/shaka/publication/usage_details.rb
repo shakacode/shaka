@@ -5,6 +5,7 @@ require_relative '../error'
 require_relative '../usage/usage_records'
 require_relative 'text'
 require_relative 'usage_rows'
+require_relative 'usage_pricing'
 
 module Shaka
   # Checks each usage column is the flat, single-line record `shaka usage --format json` prints.
@@ -77,7 +78,7 @@ module Shaka
     private
 
     def body(rows)
-      parts = [rows.table, rows.legend, rows.glossary]
+      parts = [rows.table, rows.legend, rows.glossary, UsagePricing.details(pricing_pairs)]
       parts << @note unless @note.empty?
       parts.concat(earlier_reports)
       parts.concat(record_blocks)
@@ -134,6 +135,16 @@ module Shaka
 
     def earlier_reports = @carried.grep_v(HIDDEN)
 
+    # One [label, note] pair per shown report, fresh and carried alike.
+    def pricing_pairs
+      fresh = @records.flat_map { |entry| entry['columns'].map { |column| [column['label'], entry['note']] } }
+      carried = @carried.grep(HIDDEN).flat_map do |block|
+        note = UsagePricing.from_block(block)
+        columns(parse_hidden(block[HIDDEN, 1])).map { |column| [column['label'], note] }
+      end
+      fresh + carried
+    end
+
     # Every row comes from a record, so a later publish can carry what this one showed.
     def records
       value = @spec['records']
@@ -149,14 +160,15 @@ module Shaka
 
       copied = fields.dup
       nested = copied.delete('columns')
-      { 'identity' => UsageRecordCarry.identity!(copied), 'columns' => columns(nested) }
+      note = UsagePricing.checked(copied.delete('note'))
+      { 'identity' => UsageRecordCarry.identity!(copied), 'columns' => columns(nested), 'note' => note }
     end
 
     # Carried record blocks stay hidden and unchanged, so the next publish can read them again.
     def record_blocks
       fresh = @records.map do |entry|
-        hidden = "<!-- usage-columns #{JSON.generate(entry['columns'])} -->"
-        "#{UsageRecords.begin_mark(entry['identity'])}\n#{hidden}\n#{UsageRecords::END_MARK}"
+        hidden = ["<!-- usage-columns #{JSON.generate(entry['columns'])} -->", UsagePricing.hidden(entry['note'])]
+        "#{UsageRecords.begin_mark(entry['identity'])}\n#{hidden.compact.join("\n")}\n#{UsageRecords::END_MARK}"
       end
       @carried.grep(HIDDEN) + fresh
     end

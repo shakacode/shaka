@@ -209,9 +209,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Provenance, usage with its column glossary, and the supplied details.
-    assert_equal 4, rendered.scan('</summary>').size
-    assert_equal 4, rendered.scan('</details>').size
+    # Provenance, usage with its glossary and pricing notes, and the supplied details.
+    assert_equal 5, rendered.scan('</summary>').size
+    assert_equal 5, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
@@ -610,6 +610,49 @@ class PublicationUsageReadabilityTest < Minitest::Test
     assert_includes glossary, '**Codex credits**: estimated OpenAI Codex plan credits'
     assert_includes glossary, '**Cache writes**'
     refute_includes render(usage: usage_of(COLUMN)), '**Codex credits**'
+  end
+end
+
+# Each estimate keeps the rate card that priced it, even after the PR changes hands.
+class PublicationUsagePricingTest < Minitest::Test
+  COLUMN = PublicationUsageTableTest::COLUMN
+  REVIEW = PublicationUsageTableTest::REVIEW
+  CURSOR = "Rate card: installed Shaka.\n\nCursor on-demand list prices, verified 2026-09-21."
+  ANTHROPIC = "Rate card: installed Shaka.\n\nAnthropic API list prices, verified 2026-09-23."
+
+  def render(usage:) = PublicationUsageTableTest.new('render').render(usage:)
+
+  def record(column, note: ANTHROPIC, **fields) = USAGE_RECORD.merge('columns' => [column], 'note' => note, **fields)
+
+  def pricing(rendered) = rendered[%r{<summary>How each estimate was priced</summary>\n\n(.*?)\n\n</details>}m, 1]
+
+  def test_each_note_lists_the_reports_it_priced
+    grok = COLUMN.merge('label' => 'grok-4.7 implementation')
+    usage = { 'note' => 'n', 'records' => [record(grok, note: CURSOR), record(REVIEW), record(REVIEW)] }
+    notes = pricing(render(usage:))
+    assert_includes notes, "**grok\u20114.7 implementation**\n\n#{CURSOR}"
+    assert_includes notes, "**claude\u2011opus\u20115\u20115 review ×2**\n\n#{ANTHROPIC}"
+  end
+
+  # Break: a later publish showed a carried row beside another report's rate card.
+  def test_a_carried_note_survives_the_next_publish
+    first = render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note: CURSOR)] })
+    block = first[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m]
+    later = render(usage: { 'note' => 'n', 'records' => [record(REVIEW, 'host' => 'codex')] }.merge('carried' => block))
+    notes = pricing(later)
+    assert_includes notes, "**claude\u2011opus\u20115\u20115 implementation**\n\n#{CURSOR}"
+    assert_includes notes, "**claude\u2011opus\u20115\u20115 review**\n\n#{ANTHROPIC}"
+  end
+
+  def test_a_report_without_a_note_is_named
+    notes = pricing(render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note: nil)] }))
+    assert_includes notes, 'No pricing note was recorded for claude'
+  end
+
+  def test_a_note_that_could_close_its_comment_is_refused
+    usage = { 'note' => 'n', 'records' => [record(COLUMN, note: 'prices --> <img>')] }
+    error = assert_raises(Shaka::Error) { render(usage:) }
+    assert_includes error.message, 'must not close a comment'
   end
 end
 
