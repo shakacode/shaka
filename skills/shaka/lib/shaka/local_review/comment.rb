@@ -5,40 +5,40 @@ require_relative '../error'
 require_relative '../publication/publication'
 require_relative '../reviewer_selection'
 require_relative 'evidence'
+require_relative 'finding'
+require_relative 'summary'
 
 module Shaka
   # Renders one pull request comment for a local adversarial review: a summary a reader skims,
-  # each report collapsed beneath it, and the last round's attestation as the closing line,
-  # which is where `merge` reads review evidence.
+  # each report and what became of its findings collapsed beneath it, and the last round's
+  # attestation as the closing line, which is where `merge` reads review evidence.
   class LocalReviewComment
     KEY = 'local-adversarial-review'
     TITLE = '# Local Adversarial Review'
     COLUMNS = %w[Round Commit Reviewer Model Effort Prompt Findings Tokens Cost].freeze
     OUTCOMES = %w[different_provider same_provider same_model].freeze
     SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#add-a-second-reviewer'
-    CLOSING = /EFFORT (\S+) FINDINGS (\d+)\s*\z/
+    CLOSING = LocalReviewEvidence::CLOSING
     # A setup failure's reason can name a file on the reviewer's machine; a public PR must not show it.
     # A path can contain spaces, so everything from its first character on is dropped.
     LOCAL_PATH = %r{(?<![\w./-])(?:~|/).*}m
     def self.render(content) = new(content).render
 
-    # With the pull request's `repository`, each reviewed commit links to GitHub.
-    def initialize(content, repository: nil)
+    # With the pull request's `repository`, each commit links to GitHub; `published` answers whether
+    # GitHub has a commit, so one lost to a rebase is named without a broken link.
+    def initialize(content, repository: nil, published: nil)
       raise Error, 'Local review content must be an object.' unless content.is_a?(Hash)
       raise Error, 'Expected a GitHub repository in OWNER/REPO form.' unless
         repository.nil? || repository.match?(%r{\A[\w-]+/[\w.-]+\z})
 
-      @repository = repository
-
-      rounds = PublicationText.list(content['rounds'], 'rounds')
-      raise Error, 'Local review content needs at least one round.' if rounds.empty?
-
-      @rounds = rounds.each_with_index.map { |round, index| Round.new(round, index + 1) }
+      @links = LocalReviewLinks.new(repository, published)
+      @rounds = build_rounds(PublicationText.list(content['rounds'], 'rounds'))
       @fallback = content['fallback']
     end
 
     def render
-      blocks = [TITLE, table, *fallback_notice, *@rounds.map(&:details), @rounds.last.attestation]
+      blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice, *round_details,
+                @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
     end
 
@@ -55,6 +55,25 @@ module Shaka
 
     private
 
+    # A fix is evidence only once a later round has reviewed a new head. Without git, only these
+    # structural checks apply; `review run --ledger` checks the history itself.
+    def build_rounds(specs)
+      raise Error, 'Local review content needs at least one round.' if specs.empty?
+
+      rounds = specs.each_with_index.map { |round, index| Round.new(round, index + 1) }
+      check_order!(rounds)
+      rounds
+    end
+
+    def check_order!(rounds)
+      raise Error, 'Two rounds review the same commit; each round reviews a new head.' unless
+        rounds.map(&:head).uniq.size == rounds.size
+      raise Error, "Round #{rounds.size} records fixes no later round reviewed; review the fix head first." if
+        rounds.last.findings.any?(&:fixed?)
+
+      rounds.each(&:check_fixes_follow!)
+    end
+
     # A fence opened in one report and closed in the next hides the boundary between them, including
     # the next round's own summary; balanced tags the reports supply cannot stand in for it.
     def summaries_in_order?(html)
@@ -65,8 +84,18 @@ module Shaka
       end
     end
 
+    # A finding whose id was marked fixed in an earlier round and comes back is flagged where it returns.
+    def round_details
+      fixed = {}
+      @rounds.map do |round|
+        text = round.details(@links, fixed)
+        round.findings.select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
+        text
+      end
+    end
+
     def table
-      rows = @rounds.map { |round| line(round.cells(@repository)) }
+      rows = @rounds.map { |round| line(round.cells(@links)) }
       [line(COLUMNS), line(['---'] * COLUMNS.size), *rows].join("\n")
     end
 
@@ -105,7 +134,7 @@ module Shaka
 
     # One reviewed commit, its reviewer settings, and the report whose attestation it carries.
     class Round
-      attr_reader :head
+      attr_reader :head, :findings
 
       def initialize(spec, number)
         raise Error, "Local review round #{number} must be an object." unless spec.is_a?(Hash)
@@ -118,16 +147,18 @@ module Shaka
         # Parsed as `merge` parses it, so a comment merge would ignore is never published.
         @reviewer = ReviewerSelection.parse(field('reviewer')).values.map(&:downcase).join('/')
         @report = read_report
+        @findings = LocalReviewFinding.list(spec['findings'], "round #{number} finding")
+        check_count!
       end
 
-      # Code spans are never auto-linked, so the commit needs an explicit link to be clickable.
-      def cells(repository = nil)
+      def cells(links)
         effort, findings = @report.match(CLOSING).captures
-        commit = "`#{@head[0, 7]}`"
-        commit = "[#{commit}](https://github.com/#{repository}/commit/#{@head})" if repository
-        [@number.to_s, commit, @reviewer, optional('model'), effort, prompt, findings,
-         optional('tokens'), optional('cost')]
+        [@number.to_s, links.commit(@head), @reviewer, optional('model'), effort, prompt(links),
+         findings + outcome, optional('tokens'), cost]
       end
+
+      # A supplied single-line value, or nil when the round leaves it out.
+      def value(name) = (field(name) unless @spec[name].nil? || @spec[name].to_s.strip.empty?)
 
       def summary
         effort, findings = @report.match(CLOSING).captures
@@ -136,20 +167,63 @@ module Shaka
                                      "effort #{effort} · #{findings} #{noun}", 'round summary')
       end
 
-      def details = "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n</details>"
+      def details(links, fixed_before = {})
+        "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n" \
+          "#{dispositions(links, fixed_before)}</details>"
+      end
 
       def attestation = @report.strip.lines.last.strip
 
+      def check_fixes_follow!
+        return unless @findings.any? { |finding| finding.fixed? && finding.commit == @head }
+
+        raise Error, "Round #{@number} records a fix in the commit it reviewed; commit the fix."
+      end
+
       private
 
-      def prompt
+      # Every finding the report counts needs its disposition before the comment can go out.
+      def check_count!
+        counted = @report.match(CLOSING)[2].to_i
+        return if @findings.size == counted
+
+        raise Error, "Round #{@number}'s report counts #{counted} findings; #{@findings.size} were recorded."
+      end
+
+      def outcome
+        return '' if @findings.empty?
+
+        fixed = @findings.count(&:fixed?)
+        " (#{fixed} fixed, #{@findings.size - fixed} documented)"
+      end
+
+      # A subscription session has no per-token bill; its API-equivalent estimate is marked as one.
+      def cost
+        estimate = value('estimate')
+        value('cost') || (estimate ? "#{estimate} est." : 'UNKNOWN')
+      end
+
+      def dispositions(links, fixed_before)
+        return '' if @findings.empty?
+
+        lines = @findings.map do |finding|
+          result = finding.fixed? ? "fixed in #{links.commit(finding.commit)}" : finding.label
+          line = "- `#{finding.id}` #{finding.kind}: #{finding.summary} — #{result}"
+          line += " — #{finding.note}" if finding.note
+          returned = fixed_before[finding.id]
+          returned ? "#{line} · **returned after its fix in #{links.commit(returned)}**" : line
+        end
+        "**Dispositions**\n\n#{lines.join("\n")}\n\n"
+      end
+
+      def prompt(links)
         source = optional('prompt_source', 'Shaka default')
         ref = @spec['criteria_ref']
         return "#{source} · criteria not supplied" if ref.nil?
         raise Error, "Round #{@number} criteria_ref must be a full commit SHA." unless
           ref.to_s.match?(LocalReviewEvidence::SHA)
 
-        "#{source} · criteria `#{ref[0, 7]}`"
+        "#{source} · criteria #{links.criteria(ref)}"
       end
 
       def field(name) = PublicationText.single_line(@spec[name], "round #{@number} #{name}").strip

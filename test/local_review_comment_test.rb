@@ -11,6 +11,7 @@ module LocalReviewCommentFixture
   HEAD = 'a' * 40
   EARLIER = 'b' * 40
   TRUSTED = 'c' * 40
+  NIT = { 'id' => 'F1', 'summary' => 'Missing test', 'class' => 'nit', 'disposition' => 'documented' }.freeze
 
   private
 
@@ -24,8 +25,8 @@ module LocalReviewCommentFixture
 
   def round(head = HEAD, **changes)
     { 'head' => head, 'reviewer' => 'openai/codex', 'report' => report(head), 'model' => 'gpt-5.5',
-      'prompt_source' => 'Shaka default', 'criteria_ref' => TRUSTED,
-      'tokens' => '41,200' }.merge(changes.transform_keys(&:to_s))
+      'prompt_source' => 'Shaka default', 'criteria_ref' => TRUSTED, 'tokens' => '41,200',
+      'findings' => [NIT] }.merge(changes.transform_keys(&:to_s))
   end
 
   def render(content) = Shaka::LocalReviewComment.render(content)
@@ -43,7 +44,7 @@ class LocalReviewCommentTest < Minitest::Test
 
     assert body.start_with?("# Local Adversarial Review\n\n| Round | Commit | Reviewer | Model |")
     assert_includes body, '| 1 | `aaaaaaa` | openai/codex | gpt-5.5 | UNKNOWN | ' \
-                          'Shaka default · criteria `ccccccc` | 1 | 41,200 | UNKNOWN |'
+                          'Shaka default · criteria `ccccccc` | 1 (0 fixed, 1 documented) | 41,200 | UNKNOWN |'
   end
 
   def test_collapses_each_report_and_closes_with_the_last_attestation
@@ -150,12 +151,22 @@ class LocalReviewPublishTest < Minitest::Test
   class FakeGitHub
     attr_reader :replies
 
-    def initialize(html = RENDERED)
+    def initialize(html = RENDERED, missing: [])
       @html = html
+      @missing = missing
       @replies = []
     end
 
     def markdown(_body) = @html
+
+    def api(path)
+      raise Shaka::Error.new('Not Found', http_status: 404) if @missing.any? { |sha| path.end_with?(sha) }
+      raise Shaka::Error.new('Validation failed', http_status: 422) if @outage
+
+      {}
+    end
+
+    attr_writer :outage
 
     def reply(body:, key:)
       @replies << [key, body]
@@ -185,6 +196,26 @@ class LocalReviewPublishTest < Minitest::Test
     assert_includes github.replies.first.last, "| 1 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
   end
 
+  # Break caught: a round reviewed before a rebase linked a commit GitHub never received.
+  def test_names_a_commit_github_does_not_have_without_linking_it
+    content = { 'rounds' => [round(EARLIER, report: report(EARLIER)), round] }
+    body = Shaka::LocalReviewComment.new(content, repository: 'o/r', published: ->(sha) { sha != EARLIER }).render
+
+    assert_includes body, '| 1 | `bbbbbbb` (not on GitHub) |'
+    assert_includes body, "| 2 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
+  end
+
+  # Break caught: a transient API failure labeled a pushed commit as missing from GitHub.
+  def test_a_failed_commit_lookup_stops_publication
+    github = FakeGitHub.new
+    github.outage = true
+
+    status, = publish(github, 'rounds' => [round])
+
+    assert_equal 1, status
+    assert_empty github.replies
+  end
+
   # Break caught: a report's unclosed fence hid the closing details and the attestation, yet merge
   # would still have read the raw last line as evidence.
   def test_refuses_when_github_would_swallow_the_attestation
@@ -207,5 +238,138 @@ class LocalReviewPublishTest < Minitest::Test
 
     assert_equal 1, status
     assert_empty github.replies
+  end
+end
+
+# Renders what became of each finding, round by round.
+class LocalReviewDispositionTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  FIX = 'd' * 40
+
+  def finding(id, kind, disposition, **extra)
+    { 'id' => id, 'summary' => "#{kind} #{id}", 'class' => kind, 'disposition' => disposition }
+      .merge(extra.transform_keys(&:to_s))
+  end
+
+  def looped
+    first = round(EARLIER, report: report(EARLIER, findings: 2),
+                           findings: [finding('F1', 'defect', 'fixed', commit: FIX),
+                                      finding('F2', 'nit', 'documented', note: 'naming is out of scope')])
+    { 'rounds' => [first, round(report: report(body: "no findings\n", findings: 0), findings: [])] }
+  end
+
+  # Break caught: a two-round loop must publish one comment whose last line is round 2's attestation.
+  def test_merge_accepts_a_two_round_loop_with_dispositions
+    body = Shaka::LocalReviewComment.new(looped, repository: 'o/r').render
+    github = Struct.new(:issue_comments) { def viewer_login = 'agent' }
+    comment = { 'user' => { 'login' => 'agent' }, 'body' => "<!-- shaka:reply:local-adversarial-review -->\n#{body}",
+                'html_url' => 'https://example.test/c/1' }
+
+    result = Shaka::MergeReviewEvidence.new(github.new([comment]), required: 'meaningful_changes').call(HEAD)
+
+    assert_equal %w[current_head openai/codex], result.values_at('basis', 'reviewer')
+    assert_looped(body)
+  end
+
+  def assert_looped(body)
+    assert_equal 2, body.scan("<details>\n<summary>Round ").size
+    assert_includes body, '| 2 (1 fixed, 1 documented) |'
+    assert_includes body, "- `F1` defect: defect F1 — fixed in [`ddddddd`](https://github.com/o/r/commit/#{FIX})"
+    assert_includes body, '- `F2` nit: nit F2 — documented nit — naming is out of scope'
+    assert body.end_with?("</details>\n\nREVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n")
+  end
+
+  def test_flags_a_finding_that_returns_after_its_fix
+    content = looped
+    content['rounds'][1] = round(findings: [finding('F1', 'defect', 'fixed', commit: 'e' * 40)])
+    content['rounds'] << round('e' * 40, report: report('e' * 40, findings: 0), findings: [])
+
+    assert_includes render(content), '· **returned after its fix in `ddddddd`**'
+  end
+
+  # Break caught: a round with findings published without saying what became of them.
+  def test_refuses_a_round_whose_findings_were_not_recorded
+    error = assert_raises(Shaka::Error) { render('rounds' => [round(findings: nil)]) }
+
+    assert_includes error.message, "Round 1's report counts 1 findings; 0 were recorded."
+  end
+
+  def test_refuses_a_repeated_finding_id_in_a_round
+    content = { 'rounds' => [round(report: report(findings: 2), findings: [NIT, NIT])] }
+
+    assert_includes assert_raises(Shaka::Error) { render(content) }.message, 'id repeats'
+  end
+
+  def test_refuses_fixing_a_nit_and_a_fix_without_its_commit
+    [finding('F1', 'nit', 'fixed', commit: FIX), finding('F1', 'defect', 'fixed'),
+     finding('F1', 'risk', 'documented', commit: FIX)].each do |bad|
+      assert_raises(Shaka::Error) { render('rounds' => [round(findings: [bad])]) }
+    end
+    fixed = round(EARLIER, report: report(EARLIER), findings: [finding('F1', 'risk', 'fixed', commit: FIX)])
+    assert_includes render('rounds' => [fixed, round]), 'risk F1 — fixed in `ddddddd`'
+  end
+
+  # Break caught: a direct content file claimed a fix in the reviewed commit, or re-reviewed one head.
+  def test_refuses_a_fix_in_the_reviewed_commit_and_a_repeated_head
+    own = round(EARLIER, report: report(EARLIER), findings: [finding('F1', 'defect', 'fixed', commit: EARLIER)])
+    repeated = round(EARLIER, report: report(EARLIER, findings: 0), findings: [])
+
+    assert_includes assert_raises(Shaka::Error) { render('rounds' => [own, round]) }.message, 'commit it reviewed'
+    assert_includes assert_raises(Shaka::Error) { render('rounds' => [repeated, repeated]) }.message, 'same commit'
+  end
+
+  # Break caught: a fix recorded in the last round was published without any review of it.
+  def test_refuses_a_last_round_whose_fixes_no_round_reviewed
+    fixed = round(findings: [finding('F1', 'defect', 'fixed', commit: FIX)])
+
+    assert_includes assert_raises(Shaka::Error) { render('rounds' => [fixed]) }.message, 'no later round reviewed'
+  end
+end
+
+# The lines under the table: cost, why the loop stopped, and what the prompt column means.
+class LocalReviewSummaryTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  def test_totals_tokens_and_marks_an_api_equivalent_estimate
+    body = render('rounds' => [round(EARLIER, report: report(EARLIER), estimate: '$0.17'),
+                               round(estimate: '$0.20', tokens: '1,000')])
+
+    assert_includes body, '| 41,200 | $0.17 est. |'
+    assert_includes body, '**Total:** 2 rounds · 42,200 tokens · $0.37 API-equivalent estimate'
+    partial = render('rounds' => [round(estimate: '$0.17 (partial)')])
+    assert_includes partial, '$0.17 API-equivalent estimate (partial)'
+  end
+
+  def test_an_unpriced_round_leaves_the_total_cost_unknown
+    assert_includes render('rounds' => [round]), '**Total:** 1 round · 41,200 tokens · cost UNKNOWN'
+  end
+
+  def test_says_why_the_loop_stopped
+    clean = round(report: report(body: "no findings\n", findings: 0), findings: [])
+
+    assert_includes render('rounds' => [clean]), '**Outcome:** the loop ended clean: round 1 found nothing.'
+    assert_includes render('rounds' => [round]),
+                    '**Outcome:** the loop ended with nothing left to fix. Round 1\'s findings are documented ' \
+                    'nits or risks (1 nit).'
+  end
+
+  # Break caught: a documented defect, in the last round or an earlier one, read as a clean finish.
+  def test_names_an_unfixed_defect_from_any_round
+    defect = { 'id' => 'F6', 'summary' => 'No history check', 'class' => 'defect', 'disposition' => 'documented' }
+    clean = round(report: report(body: "no findings\n", findings: 0), findings: [])
+    earlier = round(EARLIER, report: report(EARLIER), findings: [defect])
+
+    risk = round(report: report, findings: [defect.merge('class' => 'risk')])
+    [[round(findings: [defect])], [earlier, clean], [earlier, risk]].each do |rounds|
+      assert_includes render('rounds' => rounds), '**Outcome:** the loop stopped with 1 unfixed defect left for'
+    end
+  end
+
+  def test_defines_the_prompt_column_and_links_the_criteria
+    body = Shaka::LocalReviewComment.new({ 'rounds' => [round] }, repository: 'o/r').render
+
+    assert_includes body, "criteria [`ccccccc`](https://github.com/o/r/tree/#{TRUSTED})"
+    assert_includes body, '**Prompt:** `Shaka default` is Shaka\'s [review instructions]'
   end
 end

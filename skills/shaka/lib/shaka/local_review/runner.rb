@@ -8,6 +8,7 @@ require_relative '../reviewer_selection'
 require_relative 'cli'
 require_relative 'criteria'
 require_relative 'evidence'
+require_relative 'ledger'
 require_relative 'path_guard'
 require_relative 'process'
 require_relative 'prompt_file'
@@ -106,12 +107,75 @@ module Shaka
     end
   end
 
+  # Keeps a local review loop's rounds in a ledger and shows the reviewer what earlier rounds found.
+  module LocalReviewRounds
+    private
+
+    def open_ledger
+      return unless @options[:ledger]
+
+      @ledger = LocalReviewLedger.new(@options[:ledger], root:)
+      @ledger.check_next!(base: @options[:base], head:)
+      check_history! if @ledger.last_head
+    end
+
+    # The next round must hold the last reviewed head and each fix the last round records, and each
+    # fix must come after the head it was found in, or the comment would call a finding fixed in a
+    # commit that is missing or predates it. Earlier rounds' fixes are already inside the last head.
+    def check_history!
+      last = @ledger.last_head
+      contains!(last, head)
+      @ledger.last_round_fixes.each do |fix|
+        raise Shaka::Error, "Fix #{fix} is the head round #{@ledger.rounds.size} reviewed; commit the fix." if
+          fix == last
+
+        contains!(last, fix)
+        contains!(fix, head)
+      end
+    end
+
+    # `--is-ancestor` exits 1 only for "not an ancestor"; a timeout or unknown object keeps its own message.
+    def contains!(commit, descendant)
+      capture(git_executable, '-C', root, 'merge-base', '--is-ancestor', commit, descendant)
+    rescue Shaka::Error => e
+      raise unless e.message.end_with?('failed (exit 1)')
+
+      raise Shaka::Error, "#{descendant} does not build on #{commit}, which the ledger reviewed or records as " \
+                          'a fix; fix the history or use a new ledger.'
+    end
+
+    def record_round(result)
+      return result unless @ledger && result['status'] == 'completed'
+
+      round = result.slice('head', 'reviewer', 'report', 'prompt_source', 'criteria_ref', 'usage')
+      # The routed model comes from native usage through `review record`, never from the request.
+      round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
+      @ledger.append!(base: @options[:base], round:)
+      result.merge('ledger' => @ledger.path, 'round' => @ledger.rounds.size)
+    end
+
+    # Earlier rounds reach the reviewer as data: each finding's class and disposition, never the
+    # author's note, so the reviewer checks the fixes without anchoring on the author's reasons.
+    def prior_rounds(marker)
+      return '' unless @ledger&.rounds&.any?
+
+      findings = @ledger.prior_findings.map(&:prompt_line)
+      commits = capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{@ledger.last_head}..#{head}", '--')
+      'PRIOR ROUNDS: Earlier local rounds reviewed this change. Confirm each fix below resolves its finding, ' \
+        'and report it again with the same id if not. Do not raise documented findings again unless the ' \
+        "change made them worse. Then review the full diff fresh.\n\n--- BEGIN PRIOR ROUND DATA #{marker} ---\n" \
+        "Findings:\n#{findings.empty? ? 'none' : findings.join("\n")}\n\n" \
+        "Commits since #{@ledger.last_head}:\n#{commits}--- END PRIOR ROUND DATA #{marker} ---\n\n"
+    end
+  end
+
   # Checks the exact revision, launches a reviewer, and validates its report.
   class LocalReviewRunner
     include LocalReviewSourceContext
     include LocalReviewPathGuard
     include LocalReviewCriteria
     include LocalReviewPromptFile
+    include LocalReviewRounds
 
     def initialize(options) = @options = options
 
@@ -121,7 +185,8 @@ module Shaka
       git_executable
       validate!
       validate_tempdir!
-      with_requested_model(run_report(review_prompt))
+      open_ledger
+      with_requested_model(record_round(run_report(review_prompt)))
     rescue Shaka::Error, SystemCallError => e
       with_requested_model(setup_failure(e))
     end
@@ -217,7 +282,7 @@ module Shaka
       diff = capture(git_executable, '-C', root, 'diff', '--no-ext-diff', '--no-textconv',
                      "#{@options[:base]}...#{head}", '--')
       marker = SecureRandom.hex(16)
-      "#{output}\n\n#{source_context(marker)}#{trusted_criteria(marker)}" \
+      "#{output}\n\n#{source_context(marker)}#{trusted_criteria(marker)}#{prior_rounds(marker)}" \
         "--- BEGIN DIFF DATA #{marker} ---\n#{diff}\n--- END DIFF DATA #{marker} ---\n"
     end
 
