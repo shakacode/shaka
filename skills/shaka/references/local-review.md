@@ -234,7 +234,7 @@ different problem can hide an unfixed defect. `model`, `tokens`, `cost`, and
 `estimate` are optional, as described below, and a top-level `fallback` sets the fallback notice.
 
 `review run` refuses the next round until the last round's findings are recorded. It also
-refuses a head the ledger already reviewed, a head that lacks the last reviewed head or any
+refuses a head the ledger already reviewed, except another reviewer joining the last reviewed head, a head that lacks the last reviewed head or any
 recorded fix commit, a fix recorded as the head it was found in, and a different `--base`;
 after a rebase, start a new ledger. Publishing refuses a last round that records a fix, because
 no later round has reviewed it. The next round's prompt
@@ -242,6 +242,12 @@ lists, as review data, every earlier finding's id, class, summary, and latest di
 (`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the last
 reviewed head. It asks the reviewer to confirm each fix and to review the full diff fresh.
 It leaves out each `note`, so the reviewer does not anchor on the author's reasons.
+
+When several reviewers read each head, as `shaka reviewer --count` lists them, run them all
+against one ledger, at the same time if you like. Their rounds on one head form a batch: each
+reviewer's prompt lists findings from earlier heads only, and the next head waits until every
+round in the batch is recorded. Record each with `review record --reviewer ID`. Give one problem
+that two reviewers both report the same `id`.
 
 A round whose findings are all documented ends the loop. Push, open or adopt the pull request,
 then publish right away:
@@ -256,7 +262,8 @@ The ledger is the content file. Without one, the content JSON lists `rounds`. Co
 round's `head`, `reviewer`, `report`, `prompt_source`, and `criteria_ref` from its
 `shaka review run` result, and add its `findings` in the shape above. Publishing refuses a
 round whose findings do not match its report's `FINDINGS n`, so every finding has a disposition.
-It also refuses two rounds of one commit and a fix recorded in the commit its round reviewed. A
+It also refuses one reviewer reading a commit twice, rounds of one commit listed apart, and a
+fix recorded in the commit its round reviewed. A
 content file without a ledger gets only these checks: publishing does not read Git history, so
 use `--ledger` when fixes must be proven to follow and reach the reviewed head.
 Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave

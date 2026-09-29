@@ -115,8 +115,9 @@ module Shaka
       return unless @options[:ledger]
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
-      @ledger.check_next!(base: @options[:base], head:)
-      check_history! if @ledger.last_head
+      @ledger.check_next!(base: @options[:base], head:, reviewer: @options[:reviewer])
+      # Another reviewer of the last batch's commit reads history the batch's first round checked.
+      check_history! if @ledger.last_head && @ledger.last_head != head
     end
 
     # The next round must hold the last reviewed head and each fix the last round records, and each
@@ -157,15 +158,16 @@ module Shaka
     # Earlier rounds reach the reviewer as data: each finding's class and disposition, never the
     # author's note, so the reviewer checks the fixes without anchoring on the author's reasons.
     def prior_rounds(marker)
-      return '' unless @ledger&.rounds&.any?
+      previous = @ledger&.previous_head(head)
+      return '' unless previous
 
-      findings = @ledger.prior_findings.map(&:prompt_line)
-      commits = capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{@ledger.last_head}..#{head}", '--')
+      findings = @ledger.prior_findings(head).map(&:prompt_line)
+      commits = capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{previous}..#{head}", '--')
       'PRIOR ROUNDS: Earlier local rounds reviewed this change. Confirm each fix below resolves its finding, ' \
         'and report it again with the same id if not. Do not raise documented findings again unless the ' \
         "change made them worse. Then review the full diff fresh.\n\n--- BEGIN PRIOR ROUND DATA #{marker} ---\n" \
         "Findings:\n#{findings.empty? ? 'none' : findings.join("\n")}\n\n" \
-        "Commits since #{@ledger.last_head}:\n#{commits}--- END PRIOR ROUND DATA #{marker} ---\n\n"
+        "Commits since #{previous}:\n#{commits}--- END PRIOR ROUND DATA #{marker} ---\n\n"
     end
   end
 

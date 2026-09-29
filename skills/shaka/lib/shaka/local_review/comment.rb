@@ -66,12 +66,21 @@ module Shaka
     end
 
     def check_order!(rounds)
-      raise Error, 'Two rounds review the same commit; each round reviews a new head.' unless
-        rounds.map(&:head).uniq.size == rounds.size
+      check_commits!(rounds)
+      last = rounds.select { |round| round.head == rounds.last.head }
       raise Error, "Round #{rounds.size} records fixes no later round reviewed; review the fix head first." if
-        rounds.last.findings.any?(&:fixed?)
+        last.any? { |round| round.findings.any?(&:fixed?) }
 
       rounds.each(&:check_fixes_follow!)
+    end
+
+    # Several reviewers may read one commit, listed together, each once.
+    def check_commits!(rounds)
+      raise Error, 'Two rounds review the same commit with the same reviewer; each round reviews a new head.' unless
+        rounds.uniq { |round| [round.head, round.reviewer] }.size == rounds.size
+
+      heads = rounds.map(&:head).chunk(&:itself).map(&:first)
+      raise Error, 'Rounds of one commit must be listed together.' unless heads.uniq.size == heads.size
     end
 
     # A fence opened in one report and closed in the next hides the boundary between them, including
@@ -134,7 +143,7 @@ module Shaka
 
     # One reviewed commit, its reviewer settings, and the report whose attestation it carries.
     class Round
-      attr_reader :head, :findings
+      attr_reader :head, :reviewer, :findings
 
       def initialize(spec, number)
         raise Error, "Local review round #{number} must be an object." unless spec.is_a?(Hash)

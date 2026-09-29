@@ -85,22 +85,24 @@ module Shaka
         @arguments.empty? && @options[:ledger] && @options[:content_file]
 
       ledger = LocalReviewLedger.new(@options[:ledger])
-      ledger.record!(JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8')))
+      ledger.record!(content, reviewer: @options[:reviewer])
       puts JSON.pretty_generate('ledger' => ledger.path, 'round' => ledger.rounds.size)
       0
     end
 
     def record_parser
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka review record --ledger PATH --content-file PATH'
+        flags.banner = 'Usage: shaka review record --ledger PATH --content-file PATH [--reviewer ID]'
         flags.on('--ledger PATH') { |value| @options[:ledger] = value }
+        flags.on('--reviewer ID', 'Whose round, when several reviewed the last head') { |v| @options[:reviewer] = v }
         flags.on('--content-file PATH') { |value| @options[:content_file] = value }
         flags.on('-h', '--help') { @options[:help] = true }
       end
     end
 
+    def content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
+
     def review_comment(github)
-      content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
       LocalReviewComment.new(content, repository: @arguments.first, published: on_github(github))
     end
 
