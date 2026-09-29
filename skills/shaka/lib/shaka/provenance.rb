@@ -15,7 +15,7 @@ module Shaka
     def initialize(spec, environment: ENV, workflow_version: nil)
       @spec = spec
       @environment = environment
-      @workflow_version = workflow_version
+      @workflow_version = workflow_version || WorkflowVersion.current
     end
 
     def detail
@@ -33,7 +33,7 @@ module Shaka
       [
         ['Machine alias', machine_alias],
         ['Task source', values.fetch('task_source')],
-        ['Workflow version', @workflow_version || WorkflowVersion.current],
+        ['Workflow version', @workflow_version],
         ['Requested route', route(values, 'requested')],
         ['Recommended route', route(values, 'recommended')],
         ['Active setting', route(values, 'active')]

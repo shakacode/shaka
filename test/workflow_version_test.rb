@@ -23,7 +23,8 @@ class WorkflowVersionTest < Minitest::Test
 
   def test_a_direct_checkout_names_its_head_commit
     in_checkout do |root, head|
-      assert_equal "#{VERSION}-#{head}", Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:)
+      assert_equal "#{VERSION}-#{head}",
+                   Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
     end
   end
 
@@ -31,19 +32,27 @@ class WorkflowVersionTest < Minitest::Test
     in_checkout do |root, head|
       File.write(File.join(root, 'skills/shaka/SKILL.md'), "changed\n")
       assert_equal "#{VERSION}-#{head}-modified",
-                   Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:)
+                   Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
     end
   end
 
   def test_changes_outside_the_skill_do_not_mark_a_checkout_modified
     in_checkout do |root, head|
       File.write(File.join(root, 'notes.txt'), "scratch\n")
-      assert_equal "#{VERSION}-#{head}", Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:)
+      assert_equal "#{VERSION}-#{head}",
+                   Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
     end
   end
 
   def test_an_unidentifiable_copy_says_the_commit_is_unknown
     Dir.mktmpdir do |root|
+      assert_equal "#{VERSION}-unknown",
+                   Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
+    end
+  end
+
+  def test_a_direct_checkout_without_a_vetted_git_says_the_commit_is_unknown
+    in_checkout do |root, _head|
       assert_equal "#{VERSION}-unknown", Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:)
     end
   end
@@ -69,7 +78,7 @@ class WorkflowVersionTest < Minitest::Test
 
   def git(root, *)
     output, status = Open3.capture2(TEST_GIT, '-C', root, *)
-    assert status.success?
+    assert_predicate status, :success?
     output
   end
 end
