@@ -44,7 +44,8 @@ class WorkflowVersionSourceTest < Minitest::Test
   end
 
   def test_an_installation_from_a_fork_or_unknown_source_is_not_upstream
-    [nil, 'https://github.com/someone/shaka', 'git@github.com:shakacode/shaka-fork.git'].each do |repository|
+    [nil, 'https://github.com/someone/shaka', 'git@github.com:shakacode/shaka-fork.git',
+     'ssh://git@github.com/someone/shaka.git'].each do |repository|
       assert_equal result(SHA, upstream: false), Shaka::WorkflowVersion.current(identity: source(repository)),
                    repository.inspect
     end

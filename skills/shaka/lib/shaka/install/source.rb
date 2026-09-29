@@ -124,10 +124,10 @@ module Shaka
         nil
       end
 
-      # An HTTP user may be a token, so it goes; an ssh:// user names the SSH account and
-      # stays. The default SSH port is dropped so the URL matches the usual spelling.
+      # An HTTP user may be a token and an SSH user may name a person, so only the shared
+      # `git` account stays. The default SSH port is dropped so the URL matches the usual spelling.
       def without_secrets(address, ssh)
-        address.user = nil unless ssh
+        address.user = nil unless ssh && address.user == 'git'
         address.password = nil
         address.port = nil if ssh && address.port == 22
         address.query = nil

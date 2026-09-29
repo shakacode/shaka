@@ -12,17 +12,18 @@ class InstallSshOriginTest < Minitest::Test
     'ssh://github.com/shakacode/shaka.git' => 'ssh://github.com/shakacode/shaka.git',
     'ssh://git@github.com:22/shakacode/shaka.git' => 'ssh://git@github.com/shakacode/shaka.git',
     'ssh://git@example.com:2222/team/shaka.git' => 'ssh://git@example.com:2222/team/shaka.git',
-    'ssh://git:secret@example.com/team/shaka.git?token=other#x' => 'ssh://git@example.com/team/shaka.git'
+    'ssh://git:secret@example.com/team/shaka.git?token=other#x' => 'ssh://git@example.com/team/shaka.git',
+    'ssh://alice@example.com/team/shaka.git' => 'ssh://example.com/team/shaka.git'
   }.freeze
 
-  def test_ssh_origin_is_recorded_without_password_query_or_default_port
+  def test_ssh_origin_is_recorded_without_secrets_personal_user_or_default_port
     commit_source
     ORIGINS.each do |origin, recorded|
       use_origin(origin)
       install!
 
       assert_equal recorded, package_identity.fetch('source').fetch('repository'), origin
-      refute_includes JSON.generate(package_identity), 'secret'
+      refute_match(/secret|alice/, JSON.generate(package_identity))
     end
   end
 
