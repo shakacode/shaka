@@ -42,7 +42,7 @@ module Shaka
         verify_worktree!
         sha = resolved_ref
         PrivateGitPaths.verify_trusted_tree!(sha:, git: method(:git))
-        trusted = Layout.commit(root: @root, sha:, allow_missing: true)
+        trusted = Layout.commit(root: @root, sha:, allow_missing: true, git: PrivateGitPaths.method(:command))
         indexed = indexed_paths
         committed = committed_paths
         inventory = PrivateInventory.new(root: @root, committed:).scan
@@ -90,7 +90,7 @@ module Shaka
       def common_git_dir = File.realpath(File.expand_path(git('rev-parse', '--git-common-dir').strip, @root))
 
       def git(*args)
-        output, error, status = Open3.capture3('git', '-C', @root, *args)
+        output, error, status = PrivateGitPaths.capture(@root, *args)
         raise Error, "Cannot inspect private source: git #{args.first} failed: #{error.strip}" unless status.success?
 
         output

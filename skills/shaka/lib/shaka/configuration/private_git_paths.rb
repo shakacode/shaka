@@ -10,6 +10,16 @@ module Shaka
     module PrivateGitPaths
       module_function
 
+      # Git's repository-local variables override -C, including its index and object store.
+      GIT_ENVIRONMENT = %w[GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_CONFIG GIT_CONFIG_PARAMETERS GIT_CONFIG_COUNT
+                           GIT_OBJECT_DIRECTORY GIT_DIR GIT_WORK_TREE GIT_IMPLICIT_WORK_TREE GIT_GRAFT_FILE
+                           GIT_INDEX_FILE GIT_NO_REPLACE_OBJECTS GIT_REPLACE_REF_BASE GIT_PREFIX
+                           GIT_SHALLOW_FILE GIT_COMMON_DIR GIT_CEILING_DIRECTORIES]
+                        .to_h { |name| [name, nil] }.freeze
+
+      def command(*) = Open3.capture3(GIT_ENVIRONMENT, 'git', *)
+      def capture(root, *) = command('-C', root, *)
+
       def parse(output)
         output.b.split("\0".b).map do |path|
           native = path.dup.force_encoding(Encoding::UTF_8)
@@ -18,13 +28,13 @@ module Shaka
       end
 
       def committed(root:, git:)
-        _, _, status = Open3.capture3('git', '-C', root, 'rev-parse', '--verify', '--quiet', 'HEAD^{commit}')
+        _, _, status = capture(root, 'rev-parse', '--verify', '--quiet', 'HEAD^{commit}')
         return parse(git.call('ls-tree', '-r', '-z', '--name-only', 'HEAD')).to_set if status.success?
 
-        branch, _, symbolic = Open3.capture3('git', '-C', root, 'symbolic-ref', '--quiet', 'HEAD')
+        branch, _, symbolic = capture(root, 'symbolic-ref', '--quiet', 'HEAD')
         raise Error, 'Cannot inspect candidate HEAD' unless symbolic.success?
 
-        _, _, existing = Open3.capture3('git', '-C', root, 'show-ref', '--verify', '--quiet', branch.strip)
+        _, _, existing = capture(root, 'show-ref', '--verify', '--quiet', branch.strip)
         raise Error, 'Cannot inspect candidate HEAD' unless existing.exitstatus == 1
 
         Set.new

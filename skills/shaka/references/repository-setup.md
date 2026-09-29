@@ -1,5 +1,72 @@
 # Configure a repository for Shaka
 
+## Try Shaka privately in one clone
+
+When the trusted default branch has no Shaka seam, inspect the repository's existing
+commands and CI, then generate local settings with the installed helper:
+
+```bash
+shaka seam private setup --root /path/to/repository --ref DEFAULT_BRANCH_SHA \
+  --setup-command 'bin/setup' --test-command 'bin/test' \
+  --validate-command 'bin/validate' --review-policy none
+```
+
+Replace the example commands with executable commands found in that repository.
+Supply `--ci-review-job NAME` with a matching review policy when a real CI review
+job exists. If the repository defers hosted CI, supply
+`--validate-local-command COMMAND` and `--trigger-hosted-ci-command COMMAND`
+together. The private generator reuses the normal new-layout wrappers and records
+Ask because a local `merge.preference` cannot establish merge authority. An explicit
+task instruction may authorize Auto separately. Private setup cannot set fallback
+required checks because they require a trusted source. The agent must verify
+that `--ref` is the current default-branch commit; Ruby only checks that it is a
+full commit SHA. Private settings do not grant trusted policy,
+public-comment trust, or merge authority.
+
+Setup prepares a copy under the clone's common Git directory, adds the anchored
+`/.agents/shaka/` exclusion to its `info/exclude`, then writes the worktree's
+`.agents/shaka/` files. Run `shaka seam private inspect --root DIR` when resuming
+work or after outside Git updates; it captures edits to a complete private tree and reports tracked
+team adoption before replacing any recovery copy. `shaka seam private list --root DIR`
+lists copies even after a linked worktree is deleted. To compare one, run
+`shaka seam private restore --root DIR --id ID --to /outside/inspection/path`.
+Restore refuses destinations inside any Git worktree, so it is only for comparison.
+A `previous` copy
+is also available with `--previous`. If an interrupted rotation leaves no `current`,
+default restore uses `previous` and reports that source. Each worktree gets an assigned local identity;
+re-creating a deleted worktree at the same path starts a new copy without replacing
+the old one.
+
+If setup is denied or interrupted, the error names the failed path. Inspect the
+copy and retry setup with the same options after fixing access; a matching partial
+installation resumes. Changed options leave a differing prepared copy, so setup
+refuses to replace it. Compare that copy and move it to a safe location before
+starting fresh with corrected options.
+After `git clean -fdx`, setup refuses to replace a recovery copy that differs
+from the generated defaults. Run `private inspect` after editing private files
+and before cleaning: edits made since the last inspection cannot be recovered
+once clean deletes them. Restore the copy to an outside inspection path, compare it, then
+copy the chosen files back into `.agents/shaka/` only when no tracked team settings
+exist. Run `private inspect` again and continue with the recovered seam. To start
+fresh instead, move the old common-Git recovery directory to a safe location
+before rerunning setup; that deliberate move removes it from `private list`.
+The clone-wide exclusion can hide newly added team files after adoption. Inspect
+all linked worktrees, stage intended team files with `git add -f` while the rule
+is active, and remove the exact
+`/.agents/shaka/` rule from the common `info/exclude` once none still uses private
+settings. Keep any other exclusion lines.
+The common Git directory is the recovery boundary: deleting it loses the copies.
+Direct edits overwritten by an outside Git update before `inspect` sees them may
+also be lost. An ignored private destination blocks the existing `seam upgrade`
+layout migration; compare it with the recovery copy before adopting team settings.
+If a required wrapper is missing, or an optional pair is incomplete during setup,
+`private inspect` reports `partial` and leaves the last complete recovery copy
+untouched. Compare and save any new edits separately before `git clean -fdx`;
+restore a complete tree before inspection can capture edits again. After setup
+completes, removing both optional wrappers is a supported private choice.
+
+## Publish team configuration
+
 Use this procedure when asked to set up Shaka in a repository. The
 [configuration reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) defines every setting
 and standard script; keep those definitions there.

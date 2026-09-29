@@ -10,6 +10,7 @@ require_relative 'seam/migrator'
 require_relative 'seam/upgrader'
 require_relative 'seam/pointer'
 require_relative 'seam/policy_options'
+require_relative 'seam/private_command'
 require_relative 'configuration'
 
 module Shaka
@@ -32,6 +33,7 @@ module Shaka
     def run
       return Migrator.run(@arguments) if @arguments.first == 'migrate'
       return Upgrader.run(@arguments) if @arguments.first == 'upgrade'
+      return PrivateCommand.run(@arguments.drop(1)) if @arguments.first == 'private'
 
       parser = option_parser
       parser.parse!(@arguments)
@@ -98,6 +100,7 @@ module Shaka
         "shaka seam init --root DIR [options]\n       " \
         "shaka seam migrate --root DIR --from-ref SHA [--plan | --apply]\n       " \
         "shaka seam upgrade --root DIR [--apply --digest PREVIEW_DIGEST | --recover]\n       " \
+        "shaka seam private setup|inspect|list|restore --root DIR [options]\n       " \
         'shaka seam pointer'
     end
 
