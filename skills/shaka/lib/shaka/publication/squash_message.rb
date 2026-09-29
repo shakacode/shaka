@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative 'error'
+require_relative '../error'
 require_relative 'publication'
-require_relative 'public_comments/bounded_list'
+require_relative '../public_comments/bounded_list'
 
 module Shaka
   # The squash commit a PR lands as: `Title (#N)`, a plain-text body wrapped for `git log`,

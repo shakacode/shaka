@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'socket'
-require_relative '../provenance'
+require_relative '../publication/provenance'
 require_relative 'check'
 
 module Shaka

@@ -3,7 +3,7 @@
 require 'json'
 require 'optparse'
 require_relative 'error'
-require_relative 'publication'
+require_relative 'publication/publication'
 
 module Shaka
   # Renders the model checkpoint after the agent has assessed and selected settings.
