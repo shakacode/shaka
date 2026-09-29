@@ -9,11 +9,13 @@ fail() {
 resolve_file() {
   file=$1
   count=0
+  readlink=/usr/bin/readlink
+  [ -x "$readlink" ] || readlink=/bin/readlink
+  [ -x "$readlink" ] || return 1
   while [ -L "$file" ]; do
     count=$((count + 1))
     [ "$count" -le 16 ] || return 1
-    [ -x /usr/bin/readlink ] || return 1
-    target=$(/usr/bin/readlink "$file") || return 1
+    target=$("$readlink" "$file") || return 1
     case "$target" in
       /*) file=$target ;;
       *) file=${file%/*}/$target ;;
@@ -74,4 +76,4 @@ case "$0" in */*) ;; *) fail ;; esac
 PATH=$safe_path
 export PATH
 unset RUBYOPT RUBYLIB
-exec "$ruby" "$0.rb" "$@"
+exec "$ruby" --disable-gems --disable-rubyopt "$0.rb" "$@"

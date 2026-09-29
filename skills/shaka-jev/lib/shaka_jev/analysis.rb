@@ -2,6 +2,7 @@
 
 require 'digest'
 require 'json'
+require 'rbconfig'
 require 'net/http'
 require 'open3'
 require 'openssl'

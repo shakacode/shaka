@@ -22,11 +22,36 @@ class JevLauncherTest < Minitest::Test
     end
   end
 
+  def test_candidate_gem_home_cannot_load_code_before_cli_validation
+    Dir.mktmpdir('jev-gems-', Dir.pwd) do |candidate|
+      environment = candidate_gem_environment(candidate)
+      probe, = Open3.capture2e(environment, RbConfig.ruby, '-e', "require 'json'")
+      assert_includes probe, 'CANDIDATE GEM LOADED'
+
+      output, status = run_launcher(nil, environment)
+      assert_predicate status, :success?, output
+      assert_match(/Usage: analyze/, output)
+      refute_includes output, 'CANDIDATE GEM LOADED'
+    end
+  end
+
   private
 
-  def run_launcher(dir)
+  def candidate_gem_environment(candidate)
+    gem_home = File.join(candidate, 'gems')
+    FileUtils.mkdir_p(File.join(gem_home, 'gems/json-999/lib'))
+    FileUtils.mkdir_p(File.join(gem_home, 'specifications'))
+    File.write(File.join(gem_home, 'gems/json-999/lib/json.rb'), "warn 'CANDIDATE GEM LOADED'\n")
+    File.write(File.join(gem_home, 'specifications/json-999.gemspec'),
+               "Gem::Specification.new { |s| s.name = 'json'; s.version = '999'; s.files = ['lib/json.rb'] }\n")
+    inherited = ENV.keys.grep(/\A(?:BUNDLE|BUNDLER|RUBY|GEM)/).to_h { |key| [key, nil] }
+    inherited.merge('GEM_HOME' => gem_home, 'GEM_PATH' => gem_home)
+  end
+
+  def run_launcher(dir, environment = {})
     launcher = File.expand_path('../skills/shaka-jev/scripts/analyze', __dir__)
-    Open3.capture2e({ 'PATH' => "#{dir}#{File::PATH_SEPARATOR}#{ENV.fetch('PATH')}" }, launcher, '--help')
+    path = dir ? "#{dir}#{File::PATH_SEPARATOR}#{ENV.fetch('PATH')}" : ENV.fetch('PATH')
+    Open3.capture2e(environment.merge('PATH' => path), launcher, '--help')
   end
 
   def with_candidate_helper
