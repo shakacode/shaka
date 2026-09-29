@@ -14,6 +14,7 @@ require_relative '../lib/shaka/claim'
 require_relative '../lib/shaka/decision_labels'
 require_relative '../lib/shaka/publication/deployment_link'
 require_relative '../lib/shaka/doctor'
+require_relative '../lib/shaka/evidence/command'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/merge_limits'
@@ -94,6 +95,11 @@ end
 if ARGV.first == 'doctor'
   ARGV.shift
   exit Shaka::Doctor.run(ARGV)
+end
+
+if ARGV.first == 'evidence'
+  ARGV.shift
+  exit Shaka::Evidence::Command.run(ARGV)
 end
 
 if ARGV.first == 'claim'
