@@ -39,9 +39,12 @@ repository by its name, not node ID; a move after either identity check remains 
 procedure cannot eliminate.
 
 Search every issue and pull-request state; omit `--state`. Run two metadata-only searches with the
-same query, one for issues and one for pull requests. GitHub rejects a combined search that does
-not include `is:issue` or `is:pull-request`, so either search failing or hitting its limit fails
-the whole check. Ask GitHub to match titles and bodies, and return only number, URL, and state:
+same query, one for issues and one for pull requests. Keep them separate even when a combined
+search works for you: GitHub
+[returns HTTP 422](https://docs.github.com/en/rest/search/search#search-issues-and-pull-requests)
+for a combined search made with a GitHub App user access token. Either search failing or hitting
+its limit fails the whole check. Ask GitHub to match titles and bodies, and return only number,
+URL, and state:
 
 ```sh
 GH_HOST=github.com gh search issues --repo shakacode/shaka --match title,body --limit 1000 \
@@ -55,8 +58,8 @@ leading hyphen from becoming a CLI option. Options such as `--jq` placed after `
 text. The term rules above prevent GitHub from treating query text as an operator.
 This best-effort check can miss duplicates when GitHub has no matching indexed text; no results is
 not proof no issue exists. A result is a possible duplicate, not a confirmed match: share its
-returned URL, number, and state, name the search that returned it, and wait for the user to inspect
-it. That search is the issue-or-PR type. Do not request or fetch titles, issue or pull-request
+returned URL, number, and state, say whether the issue search or the pull-request search returned
+it, and wait for the user to inspect it. Do not request or fetch titles, issue or pull-request
 descriptions, or comments. If either search fails or returns 1,000 results, the whole check fails:
 report that and do not file an issue. If both searches return no candidates, share the query and
 the zero-result outcome, then ask whether the user authorizes creating the exact issue.
