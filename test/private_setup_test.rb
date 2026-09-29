@@ -137,6 +137,15 @@ class PrivateCommandTest < Minitest::Test
       end
     end
   end
+
+  def test_cli_rejects_flags_for_other_operations
+    with_setup do |root, ref|
+      _stdout, stderr = capture_io do
+        assert_equal 1, Shaka::Seam.run(['private', 'list', '--root', root, '--ref', ref])
+      end
+      assert_includes stderr, '--ref'
+    end
+  end
 end
 
 class PrivateSetupFailureTest < Minitest::Test
@@ -230,6 +239,38 @@ end
 
 class PrivateRecoveryRestoreTest < Minitest::Test
   include PrivateSetupFixture
+
+  def test_failed_rotation_preserves_current_and_previous
+    with_setup do |root, ref|
+      result = setup_private(root, ref)
+      File.write(config_path(root), 'first edit')
+      recovery(root).inspect_checkout
+      assert_failed_rotation_preserves_copies(root, result)
+    end
+  end
+
+  def assert_failed_rotation_preserves_copies(root, result)
+    previous = File.join(result.fetch('recovery'), 'previous/config.yml')
+    prior = File.read(previous)
+    File.write(config_path(root), 'second edit')
+    with_denied_rotation(result.fetch('recovery')) do
+      assert_raises(Errno::EACCES) { recovery(root).inspect_checkout }
+    end
+    assert_equal 'first edit', File.read(copy_path(result))
+    assert_equal prior, File.read(previous)
+  end
+
+  def with_denied_rotation(storage)
+    original = File.method(:rename)
+    File.define_singleton_method(:rename) do |from, to|
+      raise Errno::EACCES, from if from == File.join(storage, 'current') && to == File.join(storage, 'previous')
+
+      original.call(from, to)
+    end
+    yield
+  ensure
+    File.define_singleton_method(:rename, original)
+  end
 
   def test_git_clean_keeps_copy_and_adoption_restore_only_compares
     with_setup do |root, ref|

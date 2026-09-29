@@ -21,9 +21,11 @@ module Shaka
 
       def run
         operation = @arguments.shift
-        parser = option_parser
+        raise OptionParser::InvalidArgument, operation unless OPERATIONS.include?(operation)
+
+        parser = option_parser(operation)
         parser.parse!(@arguments)
-        raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty? && OPERATIONS.include?(operation)
+        raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty?
 
         root = File.realpath(@options.fetch(:root, Dir.pwd))
         output = execute(operation, root)
@@ -51,15 +53,19 @@ module Shaka
         PrivateSetup.new(root:, ref: @options[:ref], options: @options).setup
       end
 
-      def option_parser
+      def option_parser(operation)
         OptionParser.new do |flags|
           flags.banner = 'Usage: shaka seam private setup|inspect|list|restore --root DIR [options]'
-          add_setup_options(flags)
           flags.on('--root DIR') { |value| @options[:root] = value }
-          flags.on('--id ID') { |value| @options[:id] = value }
-          flags.on('--to PATH') { |value| @options[:to] = value }
-          flags.on('--previous') { @options[:previous] = true }
+          add_setup_options(flags) if operation == 'setup'
+          add_restore_options(flags) if operation == 'restore'
         end
+      end
+
+      def add_restore_options(flags)
+        flags.on('--id ID') { |value| @options[:id] = value }
+        flags.on('--to PATH') { |value| @options[:to] = value }
+        flags.on('--previous') { @options[:previous] = true }
       end
 
       def add_setup_options(flags)

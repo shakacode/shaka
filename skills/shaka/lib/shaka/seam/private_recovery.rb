@@ -143,5 +143,6 @@ end
 
 require_relative 'private_recovery/preparation'
 require_relative 'private_recovery/copies'
+require_relative 'private_recovery/rotation'
 require_relative 'private_recovery/inventory'
 require_relative 'private_recovery/exclusion'

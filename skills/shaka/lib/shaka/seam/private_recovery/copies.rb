@@ -76,17 +76,6 @@ module Shaka
         FileUtils.rm_rf(copy) if defined?(copy) && copy && File.exist?(copy)
       end
 
-      def install_copy(copy, inventory)
-        current = File.join(@storage, 'current')
-        previous = File.join(@storage, 'previous')
-        if File.exist?(current)
-          FileUtils.rm_rf(previous)
-          File.rename(current, previous)
-        end
-        File.rename(copy, current)
-        write_manifest(inventory)
-      end
-
       def write_manifest(inventory)
         manifest = { 'path' => @root, 'branch' => git('branch', '--show-current').strip,
                      'time' => Time.now.utc.iso8601, 'inventory' => inventory }
