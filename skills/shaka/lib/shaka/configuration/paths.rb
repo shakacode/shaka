@@ -12,6 +12,7 @@ module Shaka
       LEGACY_README = '.agents/README.md'
       REPOSITORY_ALLOWLIST = '.agents/trusted-github-actors.yml'
       NEW_CONTRACT = '.agents/shaka/config.yml'
+      PRIVATE_EXCLUDE_PATTERN = '/.agents/shaka/'
       NEW_COMMAND_DIRECTORY = '.agents/shaka/bin'
       NEW_REPOSITORY_ALLOWLIST = '.agents/shaka/trusted-github-actors.yml'
       MACHINE_ALLOWLIST = '~/.agents/trusted-github-actors.yml'
@@ -44,7 +45,7 @@ module Shaka
         POINTER: POINTER, LEGACY_README: LEGACY_README, REPOSITORY_ALLOWLIST: REPOSITORY_ALLOWLIST
       }.freeze
       GENERATED_FILES = [CONTRACT, POINTER, LEGACY_README, *COMMANDS.values,
-                         NEW_CONTRACT, *NEW_REQUIRED_COMMANDS.values].freeze
+                         NEW_CONTRACT, *NEW_REQUIRED_COMMANDS.values, *NEW_OPTIONAL_COMMANDS.values].freeze
 
       def self.at(root, relative) = File.join(root, relative)
     end
