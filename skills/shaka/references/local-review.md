@@ -69,7 +69,8 @@ public-safe text for a public PR. Do not supply implementation reasoning.
 
 Use full, immutable commit SHAs, for example `BASE=$(git merge-base origin/main HEAD)`,
 `HEAD=$(git rev-parse HEAD)`, and `TRUSTED=$(git rev-parse origin/main)` when `main` is the
-verified default branch. Without `--criteria-ref`, the reviewer gets neither the repository's
+verified default branch. Set `LEDGER` once per loop, as [the ledger section](#run-the-review-loop-with-a-ledger)
+describes; the examples pass it to every round. Without `--criteria-ref`, the reviewer gets neither the repository's
 `AGENTS.md` criteria nor its `review.prompt_file`, and uses Shaka's default instructions. The helper checks that the
 checkout is at `HEAD`, renders the review prompt with the diff, invokes the CLI with the flags below, and returns
 JSON with the report path or a concrete failure. Its process result, not a copied shell block,
@@ -79,7 +80,7 @@ Codex 0.157.1:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex \
-  --model gpt-6-sol --effort medium --criteria-ref "$TRUSTED"
+  --model gpt-6-sol --effort medium --criteria-ref "$TRUSTED" --ledger "$LEDGER"
 ```
 
 Name the model and effort. The ignored user configuration also drops the user's own model
@@ -110,7 +111,7 @@ Claude Code:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/claude --effort medium \
-  --criteria-ref "$TRUSTED"
+  --criteria-ref "$TRUSTED" --ledger "$LEDGER"
 ```
 
 A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
@@ -139,7 +140,7 @@ Set `MODEL` to a model the installed Grok CLI accepts before running:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer xai/grok \
-  --model "$MODEL" --effort high --criteria-ref "$TRUSTED"
+  --model "$MODEL" --effort high --criteria-ref "$TRUSTED" --ledger "$LEDGER"
 ```
 
 The helper runs `grok --prompt-file PROMPT -m MODEL --reasoning-effort high --output-format plain
@@ -247,7 +248,10 @@ not publish a local file location.
   "rounds": [
     { "head": "SHA", "reviewer": "openai/codex", "report": "/tmp/shaka-review-x.md",
       "prompt_source": "Shaka default", "criteria_ref": "TRUSTED_SHA",
-      "model": "gpt-5.5", "tokens": "41,200" }
+      "model": "gpt-5.5", "tokens": "41,200", "estimate": "$0.17",
+      "findings": [
+        { "id": "F1", "summary": "Rename run_all", "class": "nit", "disposition": "documented" }
+      ] }
   ],
   "fallback": { "outcome": "same_provider", "attempts": [
     { "reviewer": "xai/grok", "failure_stage": "executable_missing", "reason": "grok is not on PATH" }
