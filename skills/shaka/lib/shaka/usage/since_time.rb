@@ -13,11 +13,14 @@ module Shaka
       @selected_responses.select! do |_id, record|
         response_time(record) > cutoff
       end
+      raise Error, '--since-time selected no responses; check the task start time.' if @selected_responses.empty?
     rescue ArgumentError
       raise Error, '--since-time needs an ISO 8601 timestamp with a timezone.'
     end
 
     def response_time(record)
+      raise Error, '--since-time cannot split an aggregate usage record.' if record['aggregate']
+
       timestamp = record['timestamp']
       return Time.iso8601(timestamp) if timestamp.is_a?(String) && timestamp.match?(UsageOptions::ISO_TIME)
 

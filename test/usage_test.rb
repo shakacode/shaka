@@ -216,6 +216,15 @@ class UsageSinceTimeTest < Minitest::Test
     assert_includes error, '--since-time needs a zoned timestamp'
   end
 
+  def test_refuses_a_start_time_after_every_response
+    record = timed_usage('earlier', 'current', 100, START - 1)
+    output, error, status = run_raw_report([context('current'), record], START.iso8601)
+
+    refute_predicate status, :success?
+    assert_equal '', output
+    assert_includes error, '--since-time selected no responses'
+  end
+
   def test_refuses_a_response_timestamp_without_a_timezone
     Dir.mktmpdir do |directory|
       record = usage('unplaced', 'current', 100)
@@ -243,12 +252,16 @@ class UsageSinceTimeTest < Minitest::Test
   end
 
   def unstamped_report
+    record = usage('unplaced', 'current', 100)
+    record.delete(:timestamp)
+    run_raw_report([context('current'), record], START.iso8601)
+  end
+
+  def run_raw_report(records, start)
     Dir.mktmpdir do |directory|
-      record = usage('unplaced', 'current', 100)
-      record.delete(:timestamp)
-      file = write_records(directory, [context('current'), record], {})
+      file = write_records(directory, records, {})
       Open3.capture3(host_environment(directory), COMMAND, 'usage', '--file', file,
-                     '--commit', COMMIT, '--contribution', 'implementation', '--since-time', START.iso8601)
+                     '--commit', COMMIT, '--contribution', 'implementation', '--since-time', start)
     end
   end
 end
