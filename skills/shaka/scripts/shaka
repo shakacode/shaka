@@ -22,7 +22,11 @@ ruby=${SHAKA_RUBY:-}
 package=$(cd -P "$scripts/../../.." && pwd -P)
 if [ -z "$ruby" ] && [ -f "$package/.shaka-install.json" ] && [ -f "$package/../.shaka-ruby" ]; then
   IFS= read -r ruby < "$package/../.shaka-ruby" || true
-  [ -x "$ruby" ] || ruby=
+  if [ ! -x "$ruby" ]; then
+    echo "Shaka was installed with Ruby ${ruby:-UNKNOWN}, which no longer runs." \
+      "Rerun bin/install with Ruby 3.4, or set SHAKA_RUBY to a Ruby 3.4 interpreter." >&2
+    exit 1
+  fi
 fi
 
 unset RUBYOPT RUBYLIB GEM_HOME GEM_PATH RUBYGEMS_GEMDEPS \
