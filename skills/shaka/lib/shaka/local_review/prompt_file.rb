@@ -30,13 +30,37 @@ module Shaka
       end
     end
 
-    def trusted_prompt_text
-      ref = @options[:criteria_ref]
-      return unless ref && trusted_seam?(ref)
+    # The reviewer's trusted model and effort apply where the task named none.
+    def apply_trusted_settings!
+      agent = reviewer_settings(trusted_review || {})
+      return unless agent
 
-      path = configured_prompt_path(trusted_review_settings(ref))
+      schema = RepositoryConfig::ReviewSchema
+      { model: [schema::MODEL, :model_name!], effort: [schema::EFFORT, :effort_level!] }
+        .each do |option, (key, check)|
+          next if @options[option] || !agent.key?(key)
+
+          # This read skips the schema, so a bad value must fail here as setup, not later in the CLI.
+          schema.public_send(check, agent[key], "review.local_review_agents #{key}")
+          @options[option] = agent[key]
+        end
+    end
+
+    def trusted_prompt_text
+      review = trusted_review
+      return unless review
+
+      ref = @options[:criteria_ref]
+      path = configured_prompt_path(review)
       access = { executable: git_executable, capture: method(:capture), resolver: method(:bounded_git) }
       path && Configuration.prompt_at_commit(root:, ref:, path:, git_access: access)
+    end
+
+    def trusted_review
+      return @trusted_review if defined?(@trusted_review)
+
+      ref = @options[:criteria_ref]
+      @trusted_review = (trusted_review_settings(ref) if ref && trusted_seam?(ref))
     end
 
     # Reads only the review section, so the rest of the seam need not be valid for a review to run;

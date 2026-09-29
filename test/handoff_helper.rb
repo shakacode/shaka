@@ -9,6 +9,7 @@ require 'shaka/publication/publishing'
 class HandoffFakeGitHub
   LABELS = 'repos/owner/repo/issues/42/labels'
   REVIEWS = 'repos/owner/repo/pulls/42/reviews'
+  COMMENTS = 'repos/owner/repo/issues/42/comments'
 
   attr_reader :repository, :number
 
@@ -32,6 +33,7 @@ class HandoffFakeGitHub
   def api_list(path)
     return @pull[:labels].map { |name| { 'name' => name } } if path.start_with?(HandoffFakeGitHub::LABELS)
     return @pull[:reviews] if path.start_with?(HandoffFakeGitHub::REVIEWS)
+    return @pull[:comments] if path.start_with?(HandoffFakeGitHub::COMMENTS)
 
     raise "unexpected list #{path}"
   end
@@ -93,7 +95,7 @@ module HandoffHarness
 
   def handoff(expected: HEAD, woken_by: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
-                 reviews: [walkthrough(HEAD)], checks: [check('pass')] }
+                 reviews: [walkthrough(HEAD)], checks: [check('pass')], comments: [] }
     Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull))).call(head: expected, woken_by:)
   end
 end

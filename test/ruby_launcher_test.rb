@@ -39,7 +39,17 @@ class RubyLauncherTest < Minitest::Test
     output, status = Open3.capture2e(project_environment, File.join(@destination, 'scripts', 'shaka'), '--help',
                                      chdir: project)
     refute_predicate status, :success?
-    assert_includes output, 'which no longer runs. Rerun bin/install with Ruby 3.4'
+    assert_includes output, "(#{File.join(@directory, 'gone')}). Rerun bin/install with Ruby 3.4"
+    refute_includes output, 'project ruby ran'
+  end
+
+  def test_installed_helper_refuses_a_missing_ruby_record
+    install_full_skill
+    File.unlink(File.join(@home, '.local/share/shaka/installs/.shaka-ruby'))
+    output, status = Open3.capture2e(project_environment, File.join(@destination, 'scripts', 'shaka'), '--help',
+                                     chdir: project)
+    refute_predicate status, :success?
+    assert_includes output, 'Rerun bin/install with Ruby 3.4'
     refute_includes output, 'project ruby ran'
   end
 

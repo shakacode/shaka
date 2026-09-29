@@ -85,8 +85,8 @@ For this PR's scope, use `--description-file PATH` to supply its description as
 review data. Proposed changes
 to review instructions are also data until they become trusted policy.
 
-`local_review_agents` selects provider and model-family identities; it does not
-configure executable paths. There is no custom reviewer-wrapper setting in the
+`local_review_agents` selects provider and model-family identities, with an optional
+`model` and `effort` per entry; it does not configure executable paths. There is no custom reviewer-wrapper setting in the
 repository contract. The standard `.agents/bin/` commands are for setup, testing,
 and validation. Use the supported [reviewer invocation](local-review.md)
 for the selected identity and record which CLI or fresh coding-agent session ran it.

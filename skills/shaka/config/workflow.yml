@@ -596,8 +596,8 @@ always: |-
 
   Before ending any turn on a task that owns an open PR, run the saved helper's
   `handoff OWNER/REPO NUMBER --head SHA --root DIR --ref SHA`. Its status line names the head,
-  attention label, required checks, walkthrough head, and WIP Details head; exit status 2 lists
-  owed work. When a host monitor or background watcher will wake this session, add
+  attention label, required checks, walkthrough head, and WIP Details head, plus the squash
+  message head while the PR awaits merge approval; exit status 2 lists owed work. When a host monitor or background watcher will wake this session, add
   `--woken-by` naming it in place of a label. Settle each owed item and run it again before
   stopping. Review-only work reports what `handoff` lists and leaves the PR unchanged. A session
   resuming a PR after a restart, crash, or new chat runs `handoff` without `--head` first, treats

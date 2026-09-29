@@ -184,6 +184,7 @@ module Shaka
       @options[:reviewer] = ReviewerSelection.parse(@options.fetch(:reviewer)).values.map(&:downcase).join('/')
       raise Shaka::Error, 'Unsupported local reviewer' unless ReviewerSelection::SUPPORTED_REVIEWERS.include?(reviewer)
 
+      apply_trusted_settings!
       validate_model!
     end
 
