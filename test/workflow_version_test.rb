@@ -2,8 +2,11 @@
 
 require_relative 'test_helper'
 require 'shaka/workflow_version'
+require_relative 'workflow_version_fixture'
 
 class WorkflowVersionTest < Minitest::Test
+  include WorkflowVersionFixture
+
   VERSION = Shaka::VERSION
   SHA = 'a' * 40
 
@@ -16,13 +19,16 @@ class WorkflowVersionTest < Minitest::Test
       'source' => { 'kind' => kind, 'revision' => revision, 'base_revision' => base, 'repository' => repository } }
   end
 
-  def test_a_checkout_is_upstream_only_when_its_origin_is_shakacode_shaka
+  # Linked only when origin is shakacode/shaka and an origin branch already holds the commit.
+  def test_a_checkout_is_upstream_only_when_origin_is_shakacode_shaka_and_has_the_commit
     in_checkout do |root, head|
       git(root, 'remote', 'add', 'origin', 'https://github.com/someone/shaka.git')
-      assert_equal result(head), Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
+      git(root, 'update-ref', 'refs/remotes/origin/main', head)
+      assert_equal result(head), current_checkout(root)
       git(root, 'remote', 'set-url', 'origin', 'git@github.com:shakacode/shaka.git')
-      assert_equal result(head, upstream: true),
-                   Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
+      assert_equal result(head, upstream: true), current_checkout(root)
+      git(root, 'update-ref', '-d', 'refs/remotes/origin/main')
+      assert_equal result(head), current_checkout(root), 'an unpushed commit is not linked'
     end
   end
 
@@ -95,29 +101,5 @@ class WorkflowVersionTest < Minitest::Test
 
   private
 
-  def in_checkout
-    Dir.mktmpdir do |dir|
-      root = File.realpath(dir)
-      FileUtils.mkdir_p(File.join(root, 'skills/shaka'))
-      File.write(File.join(root, 'skills/shaka/SKILL.md'), "skill\n")
-      git(root, 'init', '-q')
-      git(root, 'add', '.')
-      git(root, '-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', 'init')
-      yield root, git(root, 'rev-parse', 'HEAD').strip
-    end
-  end
-
-  def with_environment(values)
-    saved = values.keys.to_h { |key| [key, ENV.fetch(key, nil)] }
-    values.each { |key, value| ENV[key] = value }
-    yield
-  ensure
-    saved.each { |key, value| ENV[key] = value }
-  end
-
-  def git(root, *)
-    output, status = Open3.capture2(Shaka::WorkflowVersion::GIT_ENVIRONMENT, TEST_GIT, '-C', root, *)
-    assert_predicate status, :success?
-    output
-  end
+  def current_checkout(root) = Shaka::WorkflowVersion.current(identity: source('uninstalled'), root:, git: TEST_GIT)
 end

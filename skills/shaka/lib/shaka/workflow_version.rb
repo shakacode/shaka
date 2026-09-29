@@ -78,7 +78,14 @@ module Shaka
       entries = run(git, root, 'ls-files', '-v', '--', SKILL)
       return [nil, false] unless head && status && entries
 
-      [head, !status.empty? || index_flags?(entries), run(git, root, 'config', '--get', 'remote.origin.url')]
+      [head, !status.empty? || index_flags?(entries), published_origin(git, root, head)]
+    end
+
+    # The origin URL, only when an origin branch already contains the commit: matching the URL
+    # alone would link a local, unpushed commit. Remote-tracking refs need no network call.
+    def published_origin(git, root, head)
+      held = run(git, root, 'for-each-ref', '--count=1', '--contains', head, 'refs/remotes/origin')
+      run(git, root, 'config', '--get', 'remote.origin.url') unless held.to_s.empty?
     end
 
     # `git status` hides edits to assume-unchanged (lowercase tag) and skip-worktree (`S`)
@@ -94,6 +101,6 @@ module Shaka
       nil
     end
 
-    private_class_method :read_identity, :commit, :checkout_commit, :index_flags?, :run
+    private_class_method :read_identity, :commit, :checkout_commit, :published_origin, :index_flags?, :run
   end
 end

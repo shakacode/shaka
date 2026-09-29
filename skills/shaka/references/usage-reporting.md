@@ -270,9 +270,11 @@ from `shakacode/shaka`, the row shows the short commit as a link to it on GitHub
 [`d2654ce`](https://github.com/shakacode/shaka/commit/d2654cedfe52975917112c450ebbd7e1bb75afc2).
 A commit from a fork or an unrecognized source may not exist there, so the row shows its
 full ID without a link. The source is the repository the installer recorded, or a direct
-checkout's `origin` remote.
+checkout's `origin` remote once one of its fetched `origin` branches contains the commit,
+so a local commit is linked only after it is pushed.
 For a managed installation, that commit is the revision the installer recorded; edits
-to the installed copy afterwards go undetected, as they do in `shaka doctor`. For a
+to the installed copy afterwards go undetected, as they do in `shaka doctor`, and a
+commit installed before it was pushed is linked anyway. For a
 checkout the skill runs from directly, it is that checkout's HEAD. `(modified)`
 follows the link when the skill's files differed from that commit at installation,
 or, in a checkout, when Git reports changes or flags a skill file to skip them. When
