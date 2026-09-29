@@ -12,8 +12,9 @@ class HandoffSquashMessageTest < Minitest::Test
   class Poster
     include Shaka::SquashComment
 
-    def render(head) = squash_comment_body(head, Shaka::SquashMessage.new({ 'title' => 'Fix', 'body' => 'Why.' },
-                                                                          number: 42))
+    def render(head)
+      squash_comment_body(head, Shaka::SquashMessage.new({ 'title' => 'Fix', 'body' => 'Why.' }, number: 42))
+    end
   end
 
   def squash_comment(head, id: 1, author: 'shaka-agent')
