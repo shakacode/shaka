@@ -165,9 +165,9 @@ If you installed with `--managed-dir DIR`, add the same option and directory to
 this rollback command.
 
 Include `--with-jev` if that package includes Jev, along with its optional tower
-flags. If the current install
-has tower skills that the rollback package lacks, inspect and unlink those managed
-tower links first. The installer refuses a missing package or one whose contents
+flags. If the current install has Jev or tower skills that the rollback package
+lacks, inspect and unlink those managed skill links first. The installer refuses
+a missing package or one whose contents
 do not match its own metadata. It does not independently prove who created a
 package in the managed directory.
 

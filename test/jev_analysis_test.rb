@@ -44,7 +44,8 @@ class JevAnalysisTest < Minitest::Test
   end
 
   def test_rejects_missing_response_fields_and_wrong_answer_type
-    malformed = [OUTPUT.merge(model: ''), OUTPUT.merge(usage: { input_tokens: -1 }), [], OUTPUT.except(:usage),
+    malformed = [OUTPUT.merge(model: ''), OUTPUT.merge(usage: { input_tokens: -1 }),
+                 OUTPUT.merge(usage: { input_tokens: 10**1000 }), [], OUTPUT.except(:usage),
                  invalid_answer(type: 'text', noul: 0.5), invalid_answer(type: 'noul', noul: 1.5)]
     malformed.each do |body|
       client = ->(*) { response(200, body) }

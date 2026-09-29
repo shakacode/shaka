@@ -71,8 +71,24 @@ while :; do
   fi
   [ "$more" = true ] || break
 done
-[ -n "$ruby" ] && [ -n "$safe_path" ] || fail
+[ -n "$safe_path" ] || fail
 case "$0" in */*) ;; *) fail ;; esac
+scripts=$(CDPATH= cd -P "${0%/*}" 2>/dev/null && pwd -P) || fail
+package=$(CDPATH= cd -P "$scripts/../../.." 2>/dev/null && pwd -P) || fail
+case "$package" in
+  "$checkout"|"$checkout"/*) ;;
+  *)
+    record=$package/../.shaka-ruby
+    if [ -f "$package/.shaka-install.json" ] && [ -f "$record" ]; then
+      IFS= read -r recorded < "$record" || fail
+      [ -f "$recorded" ] && [ -x "$recorded" ] || fail
+      selected=$(resolve_file "$recorded") || fail
+      case "$selected" in "$checkout"|"$checkout"/*) fail ;; esac
+      ruby=$recorded
+    fi
+    ;;
+esac
+[ -n "$ruby" ] || fail
 PATH=$safe_path
 export PATH
 unset RUBYOPT RUBYLIB

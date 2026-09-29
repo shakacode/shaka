@@ -170,8 +170,11 @@ module ShakaJev
     end
 
     def with_context(parsed, pr_url, head, evidence)
+      cost = parsed.fetch('input_tokens') * INPUT_USD_PER_MILLION / 1_000_000
+      raise Error, 'Invalid Jev usage' unless cost.finite?
+
       parsed.merge('pr_url' => pr_url, 'head' => head,
-                   'estimated_input_cost_usd' => parsed.fetch('input_tokens') * INPUT_USD_PER_MILLION / 1_000_000,
+                   'estimated_input_cost_usd' => cost,
                    'input_usd_per_million' => INPUT_USD_PER_MILLION,
                    'evidence_sha256' => Digest::SHA256.hexdigest(evidence))
     end
