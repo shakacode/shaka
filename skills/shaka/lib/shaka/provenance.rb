@@ -11,6 +11,8 @@ module Shaka
                 recommended_model recommended_effort active_model active_effort].freeze
     TASK_SOURCES = %w[description issue pull_request].freeze
     SAFE_VALUE = /\A(?:UNKNOWN|[A-Za-z0-9][A-Za-z0-9._:-]{0,79})\z/
+    # Same characters, but long enough for a version, a SHA-256 commit, and `-modified`.
+    WORKFLOW_VERSION = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,119}\z/
 
     def initialize(spec, environment: ENV, workflow_version: nil)
       @spec = spec
@@ -49,7 +51,8 @@ module Shaka
 
     # Installation metadata is only type-checked, so the computed value is allowlisted too.
     def workflow_version
-      raise Error, 'Publication provenance workflow version is invalid.' unless valid?(@workflow_version)
+      valid = @workflow_version.is_a?(String) && @workflow_version.match?(WORKFLOW_VERSION)
+      raise Error, 'Publication provenance workflow version is invalid.' unless valid
 
       @workflow_version
     end

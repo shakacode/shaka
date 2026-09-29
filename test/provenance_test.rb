@@ -27,6 +27,13 @@ class ExecutionProvenanceTest < Minitest::Test
     assert_includes body, "| Workflow version | 0.1.0.pre.1-#{'a' * 40} |"
   end
 
+  def test_accepts_a_modified_sha256_revision
+    version = "0.1.0.pre.1-#{'b' * 64}-modified"
+    body = Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, environment: {}, workflow_version: version).detail
+
+    assert_includes body.fetch('body'), "| Workflow version | #{version} |"
+  end
+
   def test_refuses_a_workflow_version_that_would_break_the_table
     error = assert_raises(Shaka::Error) do
       Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, environment: {}, workflow_version: "1.0 | x\n").detail

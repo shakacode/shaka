@@ -270,7 +270,8 @@ shares one version number. It appends the commit the helper runs from, such as
 that commit is the revision the installer recorded; edits to the installed copy
 afterwards go undetected, as they do in `shaka doctor`. For a checkout the skill runs
 from directly, it is that checkout's HEAD. `-modified` follows it when the skill's
-files differed from that commit at installation, or differ now in a checkout.
+files differed from that commit at installation, or, in a checkout, when Git reports
+changes or flags a skill file to skip them.
 `-unknown` replaces it when no commit can be found, including a development
 installation with no base commit, which reports `-unknown-modified`.
 
