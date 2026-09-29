@@ -196,7 +196,7 @@ phases:
         a dirty checkout leaves it provisional because the reviewer did not see those edits.
       - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
-        fixed-command and review JSON results. Missing or superseded results need the affected
+        repository validation and review JSON results. Missing or superseded results need the affected
         operation rerun; the helper does not infer earlier execution from current settings.
       - Meaningful implementation gets an adversarial review before you push, and its findings
         fixed first, so the pushed branch costs fewer CI runs and review rounds. What makes the

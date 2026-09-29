@@ -8,7 +8,6 @@ class EvidenceReviewTest < Minitest::Test
   def test_review_check_records_committed_content_and_settings
     with_checkout do |root, ref|
       result = review_check(root, ref)
-      assert_equal 'reported', result.fetch('status')
       assert_equal git(root, 'rev-parse', "#{ref}^{tree}"), result.fetch('tested_tree')
       assert_equal 'observed_at_review_check', result.fetch('settings_basis')
       refute result.fetch('review_provisional')

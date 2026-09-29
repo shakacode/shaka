@@ -35,7 +35,7 @@ module Shaka
       end
 
       def run
-        original_path = ENV.fetch('PATH', nil)
+        @original_path = ENV.fetch('PATH', nil)
         action = action!
         flags = parser(action)
         flags.parse!(@arguments)
@@ -45,7 +45,7 @@ module Shaka
         puts JSON.pretty_generate(result)
         %w[completed bound ready].include?(result.fetch('status')) ? 0 : 1
       ensure
-        ENV['PATH'] = original_path
+        ENV['PATH'] = @original_path
       end
 
       private
@@ -84,9 +84,9 @@ module Shaka
       def execute_run(context)
         root = context.fetch(:root)
         before_tree = CandidateTree.capture(root:)
-        output, error, process = Open3.capture3(File.join(root, context.fetch(:path)), *@arguments, chdir: root)
-        $stderr.write(output)
-        $stderr.write(error)
+        output, error, process = Open3.capture3({ 'PATH' => @original_path }, File.join(root, context.fetch(:path)),
+                                                *@arguments, chdir: root)
+        $stderr.write(output, error)
         after_tree = CandidateTree.capture(root:)
         _config, after_settings, after_kind = Inputs.capture(root:, ref: context.fetch(:ref),
                                                              repository: context.fetch(:repository),
