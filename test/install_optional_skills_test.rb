@@ -24,6 +24,7 @@ class InstallOptionalSkillsTest < Minitest::Test
     FileUtils.mkdir_p(library)
     FileUtils.cp(File.expand_path('../skills/shaka/lib/shaka/installer.rb', __dir__),
                  File.join(library, 'installer.rb'))
+    FileUtils.cp(File.expand_path('../skills/shaka/lib/shaka/ruby_requirement.rb', __dir__), library)
     FileUtils.cp_r(File.expand_path('../skills/shaka/lib/shaka/install', __dir__),
                    File.join(library, 'install'))
   end

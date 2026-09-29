@@ -1,18 +1,21 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../workflow_version'
 
 module Shaka
   # Renders a small, allowlisted record of route-selection evidence for a public PR.
+  # The helper supplies the workflow version itself, so the row names the code that ran.
   class ExecutionProvenance
-    FIELDS = %w[task_source initial_prompt workflow_version requested_model requested_effort
+    FIELDS = %w[task_source initial_prompt requested_model requested_effort
                 recommended_model recommended_effort active_model active_effort].freeze
     TASK_SOURCES = %w[description issue pull_request].freeze
     SAFE_VALUE = /\A(?:UNKNOWN|[A-Za-z0-9][A-Za-z0-9._:-]{0,79})\z/
 
-    def initialize(spec, environment: ENV)
+    def initialize(spec, environment: ENV, workflow_version: nil)
       @spec = spec
       @environment = environment
+      @workflow_version = workflow_version || WorkflowVersion.current
     end
 
     def detail
@@ -30,7 +33,7 @@ module Shaka
       [
         ['Machine alias', machine_alias],
         ['Task source', values.fetch('task_source')],
-        ['Workflow version', values.fetch('workflow_version')],
+        ['Workflow version', @workflow_version.markdown],
         ['Requested route', route(values, 'requested')],
         ['Recommended route', route(values, 'recommended')],
         ['Active setting', route(values, 'active')]

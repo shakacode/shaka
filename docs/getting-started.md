@@ -18,7 +18,8 @@ Start a new chat if the skill does not appear. See [coding agents](coding-agents
 for environment-specific setup.
 
 Installation keeps a managed copy of the Shaka skill and links your coding agent
-to it. You can remove the source checkout after installation; the skill and its
+to it. Shaka keeps using the Ruby that installed it, so a project that selects
+an older Ruby or loads Bundler cannot stop it. You can remove the source checkout after installation; the skill and its
 workflow still work. On upgrade, Shaka keeps the previous copy. To roll back
 after removing the checkout, get a source checkout again and run its installer.
 See [install and maintain Shaka](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/installation.md)

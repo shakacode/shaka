@@ -72,7 +72,7 @@ class PackageTest < Minitest::Test
     loaded = result.fetch('loaded_from')
     refute_empty loaded
     assert(loaded.all? { |path| path.start_with?(File.realpath(@home)) }, loaded)
-    assert_empty(loaded.grep(%r{/(?:github|work|merge)\.rb\z|/scripts/shaka\z}), loaded)
+    assert_empty(loaded.grep(%r{/(?:github|work|merge)\.rb\z|/scripts/shaka(?:\.rb)?\z}), loaded)
     result
   end
 

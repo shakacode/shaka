@@ -6,6 +6,7 @@ require_relative 'test_helper'
 require_relative 'repository_fixture'
 require_relative 'cli_opening_check_fakes'
 require 'json'
+require 'shaka/version'
 
 class OpeningRealpathWrapperTest < Minitest::Test
   include RepositoryConfigTestHelpers
@@ -57,6 +58,8 @@ class OpeningRealpathWrapperTest < Minitest::Test
     assert_predicate status, :success?, error
     assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
     assert_includes JSON.parse(output).dig('opening', 'reason'), 'git wrapper directory contains candidate-backed links'
+    assert_includes File.read(File.join(dir, 'published.md')),
+                    "| Workflow version | `#{Shaka::VERSION}` (commit unknown) |"
     refute_path_exists File.join(dir, 'candidate-executed')
   end
 

@@ -4,7 +4,6 @@ require_relative 'test_helper'
 require 'shaka/publication/publication'
 
 PUBLIC_PROVENANCE = { 'task_source' => 'description', 'initial_prompt' => 'EXCLUDED',
-                      'workflow_version' => 'v1.2.3',
                       'requested_model' => 'gpt-5.6-terra', 'requested_effort' => 'medium',
                       'recommended_model' => 'gpt-5.6-terra', 'recommended_effort' => 'medium',
                       'active_model' => 'gpt-5.6-terra', 'active_effort' => 'medium' }.freeze

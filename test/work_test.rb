@@ -78,7 +78,7 @@ class WorkTest < Minitest::Test
                   '-c', 'sandbox_workspace_write.exclude_tmpdir_env_var=true',
                   '-c', 'sandbox_workspace_write.network_access=false',
                   '-c', "shell_environment_policy.set.TMPDIR=#{JSON.generate("#{argv[1]}/tmp")}",
-                  '-c', "shell_environment_policy.set.TMPPREFIX=#{JSON.generate("#{argv[1]}/tmp/zsh")}"], argv[0...-1]
+                  '-c', "shell_environment_policy.set.TMPPREFIX=#{JSON.generate("#{argv[1]}/tmp/zsh")}"], argv[0...-3]
   end
 
   def test_prompt_uses_absolute_trusted_skill_and_preserves_task_text_without_shell_expansion
@@ -95,10 +95,10 @@ class WorkTest < Minitest::Test
     refute(Dir.glob("#{session}/**/*", File::FNM_DOTMATCH).any? { |path| File.symlink?(path) })
   end
 
-  def test_prompt_pins_the_workflow_helper_and_launching_ruby
-    prompt = started('Fix the test').fetch('argv').last
-    assert_includes prompt, JSON.generate(File.realpath(RbConfig.ruby))
-    assert_includes prompt, JSON.generate(File.realpath(@command))
+  def test_session_pins_the_workflow_helper_and_launching_ruby
+    argv = started('Fix the test').fetch('argv')
+    assert_includes argv, "shell_environment_policy.set.SHAKA_RUBY=#{JSON.generate(File.realpath(RbConfig.ruby))}"
+    assert_includes argv.last, JSON.generate(File.realpath(@command))
   end
 
   def test_prompt_keeps_the_codex_scratch_session_root_unchanged

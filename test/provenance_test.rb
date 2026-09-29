@@ -5,7 +5,6 @@ require 'shaka/publication/provenance'
 
 class ExecutionProvenanceTest < Minitest::Test
   PUBLIC_PROVENANCE = { 'task_source' => 'description', 'initial_prompt' => 'EXCLUDED',
-                        'workflow_version' => 'v1.2.3',
                         'requested_model' => 'gpt-5.6-terra', 'requested_effort' => 'medium',
                         'recommended_model' => 'gpt-5.6-terra', 'recommended_effort' => 'medium',
                         'active_model' => 'gpt-5.6-terra', 'active_effort' => 'medium' }.freeze
@@ -18,6 +17,23 @@ class ExecutionProvenanceTest < Minitest::Test
     assert_includes body, '| Machine alias | m5 |'
     refute_includes body, '| Initial prompt |'
     refute_includes body, '| Observed route |'
+  end
+
+  def test_the_helper_supplies_the_workflow_version
+    version = Shaka::WorkflowVersion::Result.new(version: '0.1.0.pre.1', commit: 'a' * 40, modified: false,
+                                                 upstream: true)
+    body = Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, environment: {}, workflow_version: version)
+                                     .detail.fetch('body')
+
+    assert_includes body, "| Workflow version | [`aaaaaaa`](https://github.com/shakacode/shaka/commit/#{'a' * 40}) |"
+  end
+
+  def test_refuses_an_agent_supplied_workflow_version
+    error = assert_raises(Shaka::Error) do
+      Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE.merge('workflow_version' => '0.1.0.pre.1')).detail
+    end
+
+    assert_includes error.message, 'allowlist'
   end
 
   def test_uses_unknown_when_machine_alias_is_unavailable

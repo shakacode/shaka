@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require_relative '../skills/shaka/lib/shaka/ruby_requirement'
+
 require 'optparse'
 require_relative '../skills/shaka/lib/shaka/installer'
 

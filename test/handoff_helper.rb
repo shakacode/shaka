@@ -48,7 +48,7 @@ module HandoffFixtures
 
   IDENTITY = { 'agent' => 'Claude Code', 'provider' => 'Anthropic', 'model' => 'claude-opus-5-5',
                'effort' => 'medium' }.freeze
-  PROVENANCE = { 'task_source' => 'issue', 'initial_prompt' => 'EXCLUDED', 'workflow_version' => 'v1',
+  PROVENANCE = { 'task_source' => 'issue', 'initial_prompt' => 'EXCLUDED',
                  'requested_model' => 'UNKNOWN', 'requested_effort' => 'UNKNOWN',
                  'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'UNKNOWN',
                  'active_model' => 'UNKNOWN', 'active_effort' => 'UNKNOWN' }.freeze
