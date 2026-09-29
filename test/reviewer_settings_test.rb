@@ -41,6 +41,14 @@ class ReviewerSettingsTest < Minitest::Test
     assert_includes notice.fetch('summary'), 'max'
   end
 
+  def test_a_claude_effort_one_character_off_still_fails
+    notice = notices('anthropic/claude', effort: 'meduim').fetch(0)
+
+    assert_equal 'failed', notice.fetch('severity')
+    assert_includes notice.fetch('summary'), 'medium'
+    assert_includes notice.fetch('summary'), 'not one of'
+  end
+
   def test_an_unknown_model_warns_and_names_the_recommendation
     notice = notices('openai/codex', model: 'gpt-9-nova').fetch(0)
 

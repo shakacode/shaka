@@ -89,8 +89,8 @@ module Shaka
       return if @effort.nil? || @entry.efforts.include?(@effort)
 
       suggestion = near_miss(@effort, @entry.efforts)
+      return closed_effort(suggestion) if @entry.closed_effort
       return typo('effort', @effort, suggestion) if suggestion
-      return closed_effort if @entry.closed_effort
 
       notice('degraded', "#{@identity} effort `#{@effort}` is not a level Shaka knows.",
              'Confirm the spelling. The reviewer CLI decides whether it accepts this level.')
@@ -111,10 +111,11 @@ module Shaka
              'Confirm the spelling. The review still runs with this value.')
     end
 
-    def closed_effort
+    def closed_effort(suggestion)
       listed = @entry.efforts.join(', ')
-      notice('failed', "#{@identity} effort `#{@effort}` is not one of #{listed}.",
-             'Use one of those levels. Claude rejects anything else.')
+      summary = "#{@identity} effort `#{@effort}` is not one of #{listed}."
+      summary = "#{@identity} effort `#{@effort}` looks like a typo of `#{suggestion}`. #{summary}" if suggestion
+      notice('failed', summary, 'Use one of those levels. Claude rejects anything else.')
     end
 
     def near_miss(value, names)

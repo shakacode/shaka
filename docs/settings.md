@@ -240,10 +240,11 @@ When a configured model or effort is the same length as a name Shaka knows and o
 character off, or two adjacent letters are swapped, `shaka doctor` and
 `shaka review run` say it looks like a typo of that name. The review still runs.
 A name Shaka does not know is reported too, and that review still runs, so a
-model newer than this release is not blocked. Codex's recommended model is
-`gpt-6-sol`. A known Codex model other than that one is reported, and the review
-still runs. After the recommendation changes, a repository that still names the
-previous model gets that report. Claude and Grok have no single recommended model.
+model newer than this release is not blocked. Codex has one recommended model,
+recorded as `recommended_model` in `skills/shaka/lib/shaka/reviewer_settings.rb`.
+A known Codex model other than that one is reported, and the review still runs.
+After that recommendation changes, a repository that still names the previous
+model gets that report. Claude and Grok have no single recommended model.
 A Claude effort other than `low`, `medium`, `high`, `xhigh`, or `max` stops the
 review before the CLI starts. Those are the levels `claude --help` lists. The
 names live in `skills/shaka/lib/shaka/reviewer_settings.rb`. Shaka does not read
