@@ -5,7 +5,7 @@ require 'fileutils'
 require 'rbconfig'
 
 class InstallClaudeTowersTest < Minitest::Test
-  SKILLS = { 'shaka' => 'shaka source', 'rct' => 'rct source',
+  SKILLS = { 'shaka' => 'shaka source', 'shaka-jev' => 'jev source', 'rct' => 'rct source',
              'mct-claude' => 'mct source', 'rct-claude' => 'rct-claude source' }.freeze
 
   def setup
@@ -52,6 +52,14 @@ class InstallClaudeTowersTest < Minitest::Test
 
   def test_default_install_omits_every_tower
     assert_predicate install.last, :success?
+    %w[shaka-jev rct mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
+  end
+
+  def test_jev_is_installed_only_when_requested
+    output, status = install('--with-jev')
+
+    assert_predicate status, :success?, output
+    assert_linked('shaka-jev')
     %w[rct mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
   end
 

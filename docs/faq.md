@@ -75,6 +75,15 @@ uses a listed reviewer from the same provider. When no listed reviewer is
 available, a fresh session with the implementation model reviews the change
 without the implementation conversation.
 
+## Can I try Jev on a pull request?
+
+Yes. Ask your agent to install the optional [Shaka Jev companion](https://github.com/shakacode/shaka/blob/main/skills/shaka-jev/SKILL.md)
+and run it on a public PR. It uses your TypeSafe API key to score supplied validation
+and review evidence, then reports the input tokens and estimated cost. The scores
+help you decide what to inspect; Shaka's normal checks and independent review still
+decide readiness. See the [small public evaluation](https://github.com/shakacode/shaka/blob/main/eval/jev-pr-analysis.md)
+for example inputs, outputs, and limits.
+
 ## Why did the agent ignore a PR comment?
 
 Shaka trusts the people who maintain the project: anyone with write access, plus
