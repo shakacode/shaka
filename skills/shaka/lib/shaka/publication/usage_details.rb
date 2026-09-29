@@ -104,7 +104,8 @@ module Shaka
     def note(value)
       raise Error, 'Publication usage note must be text.' unless value.is_a?(String)
 
-      PublicationText.checked(value.strip, 'usage note')
+      # The same checks as a record's note keep this one from closing the usage disclosure.
+      UsagePricing.checked(value).to_s
     end
 
     # Carry sets this from the published body; a record's columns join the table,

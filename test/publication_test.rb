@@ -679,6 +679,13 @@ class PublicationUsageSafetyTest < Minitest::Test
     end
   end
 
+  # Break: the top-level usage note skipped the checks a record note gets.
+  def test_the_top_level_note_is_checked_like_a_record_note
+    ['a </details> b', 'a --> b'].each do |note|
+      assert_raises(Shaka::Error) { render(usage: usage_of(COLUMN).merge('note' => note)) }
+    end
+  end
+
   # Break: a record copied twice into usage.records, even with a different note, doubled its cost.
   def test_a_record_listed_twice_counts_once
     record = USAGE_RECORD.merge('columns' => [COLUMN])
