@@ -1078,14 +1078,22 @@ end
 class LocalReviewSettingsTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
-  def test_a_misspelled_model_fails_before_the_cli_starts
+  def test_a_misspelled_model_still_runs_and_names_the_similar_model
     with_repository do |root, base, head, bin|
-      result = refused_review(root, base, head, bin, 'gpt-6-sll')
+      result = accepted_review(root, base, head, bin, 'gpt-6-sll')
+
+      assert_equal 'completed', result.fetch('status')
+      assert_includes result.fetch('config_notices').first.fetch('summary'), 'looks like a typo of `gpt-6-sol`'
+    end
+  end
+
+  def test_a_claude_effort_outside_the_list_stops_before_the_cli
+    with_repository do |root, base, head, bin|
+      result = refused_claude(root, base, head, bin)
 
       assert_equal 'setup_failure', result.fetch('failure_stage')
       refute result.fetch('attempted')
-      assert_includes result.fetch('reason'), 'looks like a typo of `gpt-6-sol`'
-      assert_equal ['failed'], severities(result)
+      assert_includes result.fetch('reason'), 'turbo'
     end
   end
 
@@ -1100,9 +1108,14 @@ class LocalReviewSettingsTest < Minitest::Test
 
   private
 
-  def refused_review(root, base, head, bin, model)
-    output, _error, status = launch(root, base, head, bin, model)
+  def refused_claude(root, base, head, bin)
+    trace = File.join(root, 'invocation.json')
+    fake_claude(bin, head)
+    output, _error, status = run_review(root, base, head, bin,
+                                        reviewer: 'anthropic/claude', effort: 'turbo',
+                                        env: { 'REVIEW_TRACE' => trace })
     refute_predicate status, :success?
+    refute_path_exists trace
     JSON.parse(output)
   end
 
@@ -1121,8 +1134,6 @@ class LocalReviewSettingsTest < Minitest::Test
     status.success? ? assert_path_exists(trace) : refute_path_exists(trace)
     [output, error, status]
   end
-
-  def severities(result) = result.fetch('config_notices').map { |notice| notice.fetch('severity') }
 end
 
 class LocalReviewCodexUsageTest < Minitest::Test

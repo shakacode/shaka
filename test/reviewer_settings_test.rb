@@ -20,7 +20,7 @@ class ReviewerSettingsTest < Minitest::Test
   def test_a_one_character_model_typo_names_the_known_model
     notice = notices('openai/codex', model: 'gpt-6-sll').fetch(0)
 
-    assert_equal 'failed', notice.fetch('severity')
+    assert_equal 'degraded', notice.fetch('severity')
     assert_includes notice.fetch('summary'), 'gpt-6-sll'
     assert_includes notice.fetch('summary'), 'gpt-6-sol'
   end
@@ -28,7 +28,7 @@ class ReviewerSettingsTest < Minitest::Test
   def test_a_transposed_effort_names_the_known_level
     notice = notices('openai/codex', effort: 'meduim').fetch(0)
 
-    assert_equal 'failed', notice.fetch('severity')
+    assert_equal 'degraded', notice.fetch('severity')
     assert_includes notice.fetch('summary'), 'meduim'
     assert_includes notice.fetch('summary'), 'medium'
   end
@@ -62,12 +62,21 @@ class ReviewerSettingsTest < Minitest::Test
     assert_empty notices('anthropic/claude', model: 'claude-opus-5-5', effort: 'max')
   end
 
-  def test_doctor_fails_a_misspelled_model
+  def test_doctor_warns_about_a_misspelled_model
     agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'model' => 'gpt-6-sll', 'effort' => 'medium' }]
     report, blocked = doctor_for(agents)
 
-    assert_includes report, '[FAILED] Reviewer settings'
+    assert_includes report, '[DEGRADED] Reviewer settings'
     assert_includes report, 'looks like a typo of `gpt-6-sol`'
+    refute blocked
+  end
+
+  def test_doctor_fails_a_claude_effort_outside_the_list
+    agents = [{ 'provider' => 'anthropic', 'model_family' => 'claude', 'effort' => 'turbo' }]
+    report, blocked = doctor_for(agents)
+
+    assert_includes report, '[FAILED] Reviewer settings'
+    assert_includes report, 'turbo'
     assert blocked
   end
 

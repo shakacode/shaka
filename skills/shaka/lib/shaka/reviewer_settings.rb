@@ -75,7 +75,7 @@ module Shaka
     end
 
     def model_notice
-      return if @model.nil? || @model == @entry.recommended_model || @entry.models.include?(@model)
+      return if @model.nil? || @entry.models.include?(@model)
 
       suggestion = near_miss(@model, @entry.models)
       return typo('model', @model, suggestion) if suggestion
@@ -107,8 +107,8 @@ module Shaka
     end
 
     def typo(kind, value, suggestion)
-      notice('failed', "#{@identity} #{kind} `#{value}` looks like a typo of `#{suggestion}`.",
-             'Correct review.local_review_agents before the review runs.')
+      notice('degraded', "#{@identity} #{kind} `#{value}` looks like a typo of `#{suggestion}`.",
+             'Confirm the spelling. The review still runs with this value.')
     end
 
     def closed_effort
