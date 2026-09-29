@@ -20,6 +20,8 @@ module Shaka
 
       text = PublicationText.checked(value.strip, 'usage record note')
       raise Error, 'Publication usage record note must not close a comment.' if text.match?(/--!?>/)
+      # Kept raw in the hidden record, a tag here would fail the carry shape check and drop the report.
+      raise Error, 'Publication usage record note must not contain < or >.' if text.match?(/[<>]/)
 
       text.empty? ? nil : text
     end
@@ -34,18 +36,14 @@ module Shaka
       return if pairs.empty?
 
       priced = pairs.select { |_label, note| note }.group_by(&:last)
-      parts = priced.map { |note, group| "**#{labels(group)}**\n\n#{inert(note)}" }
+      parts = priced.map { |note, group| "**#{labels(group)}**\n\n#{note}" }
       missing = pairs.select { |_label, note| note.nil? }
       parts << "_No note was recorded for #{labels(missing)}._" unless missing.empty?
       "<details>\n<summary>#{SUMMARY}</summary>\n\n#{parts.join("\n\n")}\n\n</details>"
     end
 
-    # Shown text cannot open or close HTML such as the surrounding disclosure.
-    def inert(text) = text.gsub('<', '&lt;').gsub('>', '&gt;')
-
-    # A report name also keeps its hyphens from breaking the line; a note keeps them, since its
-    # links need their real URLs.
-    def visible(label) = inert(label).tr('-', "\u2011")
+    # A report name keeps its hyphens from breaking the line; a note keeps real hyphens for its URLs.
+    def visible(label) = label.tr('-', "\u2011")
 
     def labels(group)
       names = group.map { |label, _note| visible(label) }

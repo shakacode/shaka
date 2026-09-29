@@ -167,7 +167,6 @@ module Shaka
       amount.lower_bound ? "#{text}+" : text
     end
 
-    # Angle brackets become entities so a value cannot open or close the surrounding disclosure.
     def escape(text) = UsagePricing.visible(text.gsub(/[\\|]/) { |character| "\\#{character}" })
   end
 end

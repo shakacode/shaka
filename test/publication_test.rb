@@ -632,7 +632,8 @@ class PublicationUsagePricingTest < Minitest::Test
   def test_each_note_lists_the_reports_it_priced
     grok = COLUMN.merge('label' => 'grok-4.7 implementation')
     usage = { 'note' => 'n',
-              'records' => [record(grok, note: CURSOR), record(REVIEW), record(REVIEW, 'responses' => ['c2'])] }
+              'records' => [record(grok, note: CURSOR, 'host' => 'cursor'), record(REVIEW),
+                            record(REVIEW, 'responses' => ['c2'])] }
     notes = pricing(render(usage:))
     assert_includes notes, "**grok\u20114.7 implementation**\n\n#{CURSOR}"
     assert_includes notes, "**claude\u2011opus\u20115\u20115 review ×2**\n\n#{ANTHROPIC}"
@@ -667,20 +668,22 @@ class PublicationUsageSafetyTest < Minitest::Test
   def render(usage:) = PublicationUsageTableTest.new('render').render(usage:)
   def usage_of(*columns) = PublicationUsageTableTest.usage_of(*columns)
 
-  # Break: a label or note holding </details> closed the usage disclosure early.
-  def test_angle_brackets_in_labels_and_notes_are_inert
-    record = USAGE_RECORD.merge('columns' => [COLUMN.merge('label' => 'x </details> y')], 'note' => 'a </details> b')
-    rendered = render(usage: { 'note' => 'n', 'records' => [record] })
-    assert_includes rendered, 'x &lt;/details&gt; y'
-    assert_includes rendered, 'a &lt;/details&gt; b'
-    shown = rendered.gsub(/<!--.*?-->/m, '')
-    assert_equal shown.scan('<details>').size, shown.scan('</details>').size
+  # Break: a label or note holding </details> closed the usage disclosure, and its raw copy in the
+  # hidden record failed the carry shape check on the next publish, dropping the report.
+  def test_angle_brackets_in_labels_and_notes_are_refused
+    label = USAGE_RECORD.merge('columns' => [COLUMN.merge('label' => 'x </details> y')])
+    note = USAGE_RECORD.merge('columns' => [COLUMN], 'note' => 'a </details> b')
+    [label, note].each do |record|
+      error = assert_raises(Shaka::Error) { render(usage: { 'note' => 'n', 'records' => [record] }) }
+      assert_includes error.message, 'must not contain < or >'
+    end
   end
 
-  # Break: a record copied twice into usage.records doubled its cost.
+  # Break: a record copied twice into usage.records, even with a different note, doubled its cost.
   def test_a_record_listed_twice_counts_once
     record = USAGE_RECORD.merge('columns' => [COLUMN])
-    rendered = render(usage: { 'note' => 'n', 'records' => [record, record] })
+    repriced = record.merge('note' => 'Rate card: a later one.')
+    rendered = render(usage: { 'note' => 'n', 'records' => [record, repriced] })
     assert_includes rendered, '<summary>Usage and cost · $3.27 estimated</summary>'
     refute_includes rendered, '×2'
   end

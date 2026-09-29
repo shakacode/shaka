@@ -47,6 +47,8 @@ module Shaka
       text = value.strip
       # These two sequences would close the comment that keeps a record's columns.
       raise Error, "Publication usage column #{index + 1} #{key} must not close a comment." if text.match?(/--!?>/)
+      # Kept raw in the hidden record, a tag here would fail the carry shape check and drop the report.
+      raise Error, "Publication usage column #{index + 1} #{key} must not contain < or >." if text.match?(/[<>]/)
 
       text
     end
@@ -159,8 +161,9 @@ module Shaka
         raise Error, 'Publication usage records must be a list with at least one record.'
       end
 
-      # A record copied twice is one report; counting it twice would double its cost.
-      value.map { |fields| record_entry(fields) }.uniq
+      # A record copied twice is one report, as carry treats one identity; counting it twice would
+      # double its cost.
+      value.map { |fields| record_entry(fields) }.uniq { |entry| entry['identity'] }
     end
 
     def record_entry(fields)
