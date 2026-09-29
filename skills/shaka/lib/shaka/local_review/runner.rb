@@ -118,6 +118,7 @@ module Shaka
       @ledger.check_next!(base: @options[:base], head:, reviewer: @options[:reviewer])
       # Another reviewer of the last batch's commit reads history the batch's first round checked.
       check_history! if @ledger.last_head && @ledger.last_head != head
+      @snapshot = @ledger.snapshot(head)
     end
 
     # The next round must hold the last reviewed head and each fix the last round records, and each
@@ -151,7 +152,7 @@ module Shaka
       round = result.slice('head', 'reviewer', 'report', 'prompt_source', 'criteria_ref', 'usage')
       # The routed model comes from native usage through `review record`, never from the request.
       round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
-      @ledger.append!(base: @options[:base], round:)
+      @ledger.append!(base: @options[:base], round:, snapshot: @snapshot)
       result.merge('ledger' => @ledger.path, 'round' => @ledger.rounds.size)
     end
 

@@ -248,7 +248,9 @@ When several reviewers read each head, as `shaka reviewer --count` lists them, r
 against one ledger, at the same time if you like. Their rounds on one head form a batch: each
 reviewer's prompt lists findings from earlier heads only, and the next head waits until every
 round in the batch is recorded. Record each with `review record --reviewer ID`. Give one problem
-that two reviewers both report the same `id`.
+that two reviewers both report the same `id`, and different problems different ids. A round
+whose start checks read a ledger that changed while it ran, other than by another reviewer of
+its commit, is refused; run it again.
 
 A round whose findings are all documented ends the loop. Push, open or adopt the pull request,
 then publish right away:

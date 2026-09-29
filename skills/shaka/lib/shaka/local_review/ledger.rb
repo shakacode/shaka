@@ -57,11 +57,18 @@ module Shaka
       end.values
     end
 
-    # Reviewers of one commit run at once, so each append rereads the ledger under a lock and
-    # repeats the start checks: another round may have landed while this one ran.
-    def append!(base:, round:)
+    # The rounds a run's start checks read: every round except those on its own commit.
+    def snapshot(head) = rounds.reject { |round| round['head'] == head }
+
+    # Reviewers of one commit run at once, so each append rereads the ledger under a lock. Only
+    # other reviewers of the same commit may have landed since `snapshot`; any other change means
+    # the start checks read a ledger that no longer exists.
+    def append!(base:, round:, snapshot: nil)
       locked do
         check_next!(base:, head: round['head'], reviewer: round['reviewer'])
+        raise Error, 'The ledger changed while this round ran; run the review again.' if
+          snapshot && snapshot(round['head']) != snapshot
+
         write(data.merge('base' => base, 'rounds' => rounds + [round]))
       end
     end

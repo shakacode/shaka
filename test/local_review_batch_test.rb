@@ -91,6 +91,20 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     assert_includes assert_raises(Shaka::Error) { append(HEAD, 'openai/codex', findings: 0) }.message, 'Record round 2'
   end
 
+  # Break caught: a fix recorded on the old head while the new head's review ran was never checked
+  # against the new head's history.
+  def test_an_append_refuses_a_ledger_that_changed_under_it
+    append(EARLIER, 'openai/codex', findings: 0)
+    snapshot = ledger.snapshot(HEAD)
+    append(EARLIER, 'anthropic/claude', findings: 1)
+    record('anthropic/claude', [NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX)])
+
+    error = assert_raises(Shaka::Error) do
+      ledger.append!(base: BASE, round: round_entry(HEAD, 'openai/codex', 0), snapshot:)
+    end
+    assert_includes error.message, 'changed while this round ran'
+  end
+
   # Break caught: two reviewers started on one empty ledger with different bases mixed their diffs.
   def test_an_append_rechecks_the_base
     append(EARLIER, 'openai/codex', findings: 0)

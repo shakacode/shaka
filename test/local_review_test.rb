@@ -1204,6 +1204,7 @@ end
 
 class LocalReviewLoopTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
+  NIT_FINDING = { 'id' => 'F1', 'summary' => 'Rename run_all', 'class' => 'nit', 'disposition' => 'documented' }.freeze
 
   include LocalReviewLoopSteps
 
@@ -1275,6 +1276,20 @@ class LocalReviewLoopTest < Minitest::Test
       refute_includes claude_round(head), 'PRIOR ROUND DATA'
       assert_ledger_rounds([head, head])
       assert_record_needs_reviewer
+    end
+  end
+
+  # Break caught: a reviewer joining a later commit saw its sibling's findings.
+  def test_a_reviewer_joining_a_later_commit_sees_only_earlier_findings
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record([NIT_FINDING])
+      later = fix_commit
+      loop_round(later, findings: 1)
+      record([NIT_FINDING.merge('id' => 'F2', 'summary' => 'Sibling finding')])
+      prompt = claude_round(later)
+      assert_includes prompt, '[F1] nit: Rename run_all'
+      refute_includes prompt, 'Sibling finding'
     end
   end
 
