@@ -22,9 +22,8 @@ class ConfigurationBoundaryTest < Minitest::Test
     workflow_config.rb seam/upgrade_plan.rb seam/upgrade_plan/inventory.rb seam/upgrade_plan/references.rb
     seam/upgrade_plan/reference_patterns.rb seam/private_recovery.rb seam/private_recovery/copies.rb
     seam/private_recovery/preparation.rb seam/private_recovery/rotation.rb
-    seam/upgrade_plan/reference_dependencies.rb seam/upgrade_plan/continued_references.rb seam/upgrader.rb
-    seam/upgrade_plan/symlink_chain.rb seam/private_recovery/exclusion.rb
-    seam/upgrader/filesystem.rb seam/upgrader/recovery.rb
+    seam/upgrade_plan/reference_dependencies.rb seam/upgrade_plan/continued_references.rb seam/upgrader/recovery.rb
+    seam/upgrade_plan/symlink_chain.rb seam/private_recovery/exclusion.rb seam/upgrader.rb seam/upgrader/filesystem.rb
   ].freeze
 
   def test_public_paths_remain_concrete_and_independent
