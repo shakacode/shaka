@@ -77,7 +77,7 @@ module Shaka
     private
 
     def body(rows)
-      parts = [rows.table, rows.legend]
+      parts = [rows.table, rows.legend, rows.glossary]
       parts << @note unless @note.empty?
       parts.concat(earlier_reports)
       parts.concat(record_blocks)

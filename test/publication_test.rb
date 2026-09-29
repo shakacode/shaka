@@ -209,8 +209,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    assert_equal 3, rendered.scan('</summary>').size
-    assert_equal 3, rendered.scan('</details>').size
+    # Provenance, usage with its column glossary, and the supplied details.
+    assert_equal 4, rendered.scan('</summary>').size
+    assert_equal 4, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
@@ -460,8 +461,8 @@ class PublicationUsageTableTest < Minitest::Test
   RENDERED = <<~TABLE.chomp
     | Report | USD | Input | Cached input | Output | Reasoning | Cache writes |
     | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-    | claude-opus-5-5 implementation | $3.27 | 100 | 7,558,810 | 27,535 | 7,687 | 150,781 |
-    | claude-opus-5-5 review | $0.31 | 6 | 96,593 | — | — | — |
+    | claude‑opus‑5‑5 implementation | $3.27 | 100 | 7,558,810 | 27,535 | 7,687 | 150,781 |
+    | claude‑opus‑5‑5 review | $0.31 | 6 | 96,593 | — | — | — |
     | **Total** | $3.58 |  |  |  |  |  |
   TABLE
 
@@ -479,7 +480,7 @@ class PublicationUsageTableTest < Minitest::Test
   def test_a_metric_no_report_measured_is_left_out
     refute_includes render, 'Credits'
     credited = render(usage: usage_of(COLUMN.merge('credits' => '1.500000')))
-    assert_includes credited, '| Report | USD | Credits |'
+    assert_includes credited, '| Report | USD | Codex credits |'
     assert_includes credited, '| $3.27 | 1.50 |'
   end
 
@@ -559,15 +560,15 @@ class PublicationUsageRowGroupingTest < Minitest::Test
     usage = { 'note' => 'n', 'records' => [USAGE_RECORD.merge('columns' => [REVIEW]),
                                            USAGE_RECORD.merge('host' => 'pi', 'columns' => [REVIEW])] }
     rendered = render(usage:)
-    assert_includes rendered, '| claude-opus-5-5 review (claude-code claude-opus-5-5 medium) | $0.31 |'
-    assert_includes rendered, '| claude-opus-5-5 review (pi claude-opus-5-5 medium) | $0.31 |'
+    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code claude‑opus‑5‑5 medium) | $0.31 |'
+    assert_includes rendered, '| claude‑opus‑5‑5 review (pi claude‑opus‑5‑5 medium) | $0.31 |'
   end
 
   # Break: eight review runs of one model became eight columns labeled review through review-8.
   def test_reports_with_one_label_share_a_row
     rendered = render(usage: usage_of(REVIEW, REVIEW.merge('usd' => '$0.001')))
     assert_includes rendered, "| Report | USD | Input | Cached input |\n| --- | ---: | ---: | ---: |\n" \
-                              '| claude-opus-5-5 review ×2 | $0.31 | 12 | 193,186 |'
+                              '| claude‑opus‑5‑5 review ×2 | $0.31 | 12 | 193,186 |'
     refute_includes rendered, '**Total**'
     refute_includes rendered, 'not reported, so'
   end
@@ -576,8 +577,32 @@ class PublicationUsageRowGroupingTest < Minitest::Test
   def test_one_label_on_different_models_keeps_separate_rows
     other = REVIEW.merge('model' => 'gpt-6-astra', 'routed' => 'UNKNOWN', 'effort' => 'high')
     rendered = render(usage: usage_of(REVIEW, other))
-    assert_includes rendered, '| claude-opus-5-5 review (claude-code claude-opus-5-5 medium) |'
-    assert_includes rendered, '| claude-opus-5-5 review (claude-code gpt-6-astra high) |'
+    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code claude‑opus‑5‑5 medium) |'
+    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code gpt‑6‑astra high) |'
+  end
+end
+
+# A reader new to these reports can read the table without guessing.
+class PublicationUsageReadabilityTest < Minitest::Test
+  COLUMN = PublicationUsageTableTest::COLUMN
+
+  def render(usage:) = PublicationUsageTableTest.new('render').render(usage:)
+  def usage_of(*columns) = PublicationUsageTableTest.usage_of(*columns)
+
+  # Break: GitHub wrapped claude-opus-5-5 at each hyphen in a narrow Report column.
+  def test_report_labels_do_not_break_at_hyphens
+    rendered = render(usage: usage_of(COLUMN))
+    assert_includes rendered, "| claude\u2011opus\u20115\u20115 implementation |"
+    assert_includes rendered, '"label":"claude-opus-5-5 implementation"'
+  end
+
+  # Break: the maintainer could not tell what the Credits column counted.
+  def test_the_glossary_explains_only_the_columns_shown
+    rendered = render(usage: usage_of(COLUMN.merge('credits' => '2.000000')))
+    glossary = rendered[%r{<summary>What the columns mean</summary>(.*?)</details>}m, 1]
+    assert_includes glossary, '**Codex credits**: estimated OpenAI Codex plan credits'
+    assert_includes glossary, '**Cache writes**'
+    refute_includes render(usage: usage_of(COLUMN)), '**Codex credits**'
   end
 end
 
@@ -595,7 +620,7 @@ class PublicationUsageRecordTableTest < Minitest::Test
     block = rendered[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m]
     assert_includes block, '<!-- usage-columns [{"label":"claude-opus-5-5 implementation"'
     assert_includes block, '"usd":"$3.269110"'
-    assert_equal 1, rendered.scan('| claude-opus-5-5 implementation |').size
+    assert_equal 1, rendered.scan('| claude‑opus‑5‑5 implementation |').size
   end
 
   # Break: carried reports were shown as a second table under the first.

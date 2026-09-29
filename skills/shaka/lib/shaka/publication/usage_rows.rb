@@ -1,12 +1,32 @@
 # frozen_string_literal: true
 
 module Shaka
+  # What each shown column counts, for a reader who has not seen these reports before.
+  module UsageGlossary
+    MEANINGS = {
+      'usd' => 'estimated cost at the provider’s published list prices, not an invoice',
+      'credits' => 'estimated OpenAI Codex plan credits, the unit Codex plans meter usage in',
+      'input' => 'tokens sent to the model; Codex and Cursor count cached input here too, Claude does not',
+      'cached_input' => 'input read back from the provider’s prompt cache, which is billed at a lower rate',
+      'output' => 'tokens the model wrote, including reasoning',
+      'reasoning_output' => 'the part of output spent reasoning before the answer',
+      'cache_writes' => 'input stored in the prompt cache so later turns can reuse it'
+    }.freeze
+
+    module_function
+
+    def for(metrics)
+      lines = metrics.map { |key, label| "- **#{label}**: #{MEANINGS.fetch(key)}." }
+      "<details>\n<summary>What the columns mean</summary>\n\n#{lines.join("\n")}\n\n</details>" unless lines.empty?
+    end
+  end
+
   # One row per report label, one column per metric any report measured, and a total.
   # Numbers are rounded for reading; the hidden record copies keep the reported text.
   class UsageRows
     METRICS = [
       ['usd', 'USD'],
-      ['credits', 'Credits'],
+      ['credits', 'Codex credits'],
       ['input', 'Input'],
       ['cached_input', 'Cached input'],
       ['output', 'Output'],
@@ -14,6 +34,8 @@ module Shaka
       ['cache_writes', 'Cache writes']
     ].freeze
     COST = %w[usd credits].freeze
+    # A non-breaking hyphen keeps names such as claude-opus-5-5 on one line.
+    NO_BREAK_HYPHEN = "\u2011"
     ROUTE = %w[host label provider model routed effort].freeze
     LEGEND = [
       [:unreported?, '— not reported'],
@@ -44,6 +66,8 @@ module Shaka
       usd = minimum(@rows.last.last['usd'])
       usd && "#{shown('usd', usd)} estimated"
     end
+
+    def glossary = UsageGlossary.for(@metrics)
 
     def legend
       cells = @rows.flat_map { |_label, amounts| @metrics.map { |key, _| amounts[key] } }
@@ -125,6 +149,6 @@ module Shaka
 
     def grouped(number) = number.to_s.reverse.scan(/\d{1,3}/).join(',').reverse
 
-    def escape(text) = text.gsub(/[\\|]/) { |character| "\\#{character}" }
+    def escape(text) = text.gsub(/[\\|]/) { |character| "\\#{character}" }.tr('-', NO_BREAK_HYPHEN)
   end
 end
