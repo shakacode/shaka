@@ -37,6 +37,10 @@ git clone https://github.com/shakacode/shaka.git "$HOME/agent-tools/shaka"
 "$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.agents/skills"
 ```
 
+Add `--with-jev` to install the experimental Jev companion alongside Shaka. It
+requires a TypeSafe API key when used and sends screened public PR evidence to
+TypeSafe. The default installation leaves it out.
+
 The installer copies the skill to `~/.local/share/shaka/installs/` and links Codex
 to that managed copy. The source checkout can then be removed; select a source
 checkout again when upgrading or rolling back. Open a new task in
