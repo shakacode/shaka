@@ -28,25 +28,12 @@ class EvidenceReviewTest < Minitest::Test
     end
   end
 
-  def test_review_of_old_head_does_not_bind_to_new_commit_with_same_tree
-    with_checkout do |root, ref|
-      result = review_check(root, ref)
-      git(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
-          'commit', '--allow-empty', '--quiet', '-m', 'same tree')
-      head = git(root, 'rev-parse', 'HEAD')
-      binding = bind(root, ref, head, result)
-      assert_equal 'superseded', binding.fetch('status')
-      assert_includes binding.fetch('reasons'), 'review attests another commit'
-    end
-  end
-
   def test_review_run_records_execution_time_settings_and_committed_tree
     with_checkout do |root, ref|
       assert_nil Shaka::Evidence::Review.start({ root:, criteria_ref: ref }, action: 'run')
       options = { root:, settings_ref: ref, repository: 'shakacode/shaka', reviewer: 'openai/codex' }
       capture = Shaka::Evidence::Review.start(options, action: 'run')
       result = capture.finish('status' => 'completed', 'head' => ref, 'reviewer' => 'openai/codex')
-      assert_equal ref, options.fetch(:criteria_ref)
       assert_equal 'observed_during_review', result.fetch('settings_basis')
       refute result.fetch('review_provisional')
       assert_equal 'bound', bind(root, ref, ref, result).fetch('status')

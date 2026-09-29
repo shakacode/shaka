@@ -31,10 +31,10 @@ module EvidenceFixture
         'commit', '--quiet', '-m', 'candidate')
   end
 
-  def run_check(root, ref, command: 'test', expected_exit: 0)
+  def run_check(root, ref, command: 'test', arguments: [], expected_exit: 0)
     output, _error = capture_io do
       assert_equal expected_exit, Shaka::Evidence::Command.run(
-        ['run', '--root', root, '--ref', ref, '--repository', 'shakacode/shaka', '--command', command]
+        ['run', '--root', root, '--ref', ref, '--repository', 'shakacode/shaka', '--command', command, *arguments]
       )
     end
     JSON.parse(output)

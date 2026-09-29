@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require_relative '../workflow_version'
 require_relative '../local_review/path_guard'
 require_relative 'candidate_tree'
 require_relative 'inputs'
@@ -86,7 +87,8 @@ module Shaka
       end
 
       def dirty?
-        output, error, status = Open3.capture3('git', '-C', @root, 'status', '--porcelain', '-z')
+        output, error, status = Open3.capture3(WorkflowVersion::GIT_ENVIRONMENT, 'git', '-C', @root,
+                                               'status', '--porcelain', '-z')
         raise Error, "Cannot inspect review checkout: #{error.strip}" unless status.success?
 
         !output.empty?

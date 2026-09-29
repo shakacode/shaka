@@ -3,6 +3,7 @@
 require 'open3'
 require_relative '../error'
 require_relative '../configuration/fingerprint/canonical'
+require_relative '../workflow_version'
 require_relative 'inputs'
 
 module Shaka
@@ -85,7 +86,8 @@ module Shaka
       end
 
       def self.commit_tree(root, head)
-        output, error, status = Open3.capture3('git', '-C', root, 'rev-parse', '--verify',
+        output, error, status = Open3.capture3(WorkflowVersion::GIT_ENVIRONMENT,
+                                               'git', '-C', root, 'rev-parse', '--verify',
                                                '--end-of-options', "#{head}^{tree}")
         raise Error, "Cannot read commit tree: #{error.strip}" unless status.success?
 

@@ -42,8 +42,10 @@ module Shaka
 
       def check_kind(kind, original, binding)
         binding['reasons'] << "expected #{kind} result" unless original['kind'] == kind
-        if kind == 'validation' && !@accepted.include?(original['command'])
-          binding['reasons'] << 'expected repository validation command'
+        if kind == 'validation'
+          binding['reasons'] << 'expected repository validation command' unless @accepted.include?(original['command'])
+          binding['reasons'] << 'repository validation used command arguments' unless
+            original.dig('task_overrides', 'arguments') == []
         end
         binding['status'] = 'superseded' unless binding['reasons'].empty?
         binding
