@@ -25,10 +25,13 @@ Keep two roles distinct:
 
 - An operator creates the repository, configures protection, and grants access.
   An operator may keep a reusable credential, but it stays outside the agent
-  container.
+  container. Follow the [sandbox protection recipe](https://github.com/shakacode/shaka/blob/main/internal/local-evaluation-proposal.md#7-local-isolation-github-identity-and-bounded-execution).
 - A non-admin agent identity gets Write only on its active test repository.
   Its credential, reusable or not, must lack Administration, Workflows, and
   check/status write permission; otherwise the hosted result is not trustworthy.
+  Before each run, verify live protection has a required check and no bypass for
+  the agent identity, its teams, or the Write role; `viewerCanMergeAsAdmin` must
+  be false.
   In an organization, set its base repository permission to none and give it no
   team or direct grants to other private repositories. In a personal account,
   use a separate collaborator identity with no other private-repository
