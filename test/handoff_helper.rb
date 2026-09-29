@@ -2,8 +2,8 @@
 
 require_relative 'test_helper'
 require 'shaka/handoff'
-require 'shaka/publication'
-require 'shaka/publishing'
+require 'shaka/publication/publication'
+require 'shaka/publication/publishing'
 
 # Answers the reads handoff makes, so each test states only the PR state it cares about.
 class HandoffFakeGitHub

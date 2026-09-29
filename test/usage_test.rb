@@ -2,7 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
-require 'shaka/publication'
+require 'shaka/publication/publication'
 
 module UsageFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)

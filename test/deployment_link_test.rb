@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'shaka/deployment_link'
+require 'shaka/publication/deployment_link'
 
 # Resolves `deployment: auto` from the GitHub Deployments API, the record behind
 # the "View deployment" button, instead of parsing provider comments.

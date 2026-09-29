@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'uri'
-require_relative 'error'
-require_relative 'required_checks'
-require_relative 'public_comments/bounded_list'
+require_relative '../error'
+require_relative '../required_checks'
+require_relative '../public_comments/bounded_list'
 
 module Shaka
   # Refuses a walkthrough that does not cite live diff and check evidence.

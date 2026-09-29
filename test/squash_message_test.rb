@@ -2,7 +2,7 @@
 
 require_relative 'github_helper'
 require_relative 'merge_test'
-require 'shaka/squash_message'
+require 'shaka/publication/squash_message'
 
 class SquashMessageTest < Minitest::Test
   def squash(body: 'Summary.', title: 'Write better squash commits', messages: [])

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'shaka/publication'
+require 'shaka/publication/publication'
 
 PUBLIC_PROVENANCE = { 'task_source' => 'description', 'initial_prompt' => 'EXCLUDED',
                       'requested_model' => 'gpt-5.6-terra', 'requested_effort' => 'medium',
