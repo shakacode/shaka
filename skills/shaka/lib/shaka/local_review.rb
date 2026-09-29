@@ -104,12 +104,15 @@ module Shaka
       LocalReviewComment.new(content, repository: @arguments.first, published: on_github(github))
     end
 
-    # A commit GitHub does not know, such as one replaced by a rebase, returns an error.
+    # GitHub answers 404 or 422 for a commit it does not have, such as one a rebase replaced. Any
+    # other failure stops publication, so a passing outage cannot mislabel a pushed commit.
     def on_github(github)
       lambda do |sha|
         github.api("repos/#{@arguments.first}/commits/#{sha}")
         true
-      rescue Shaka::Error
+      rescue Shaka::Error => e
+        raise unless [404, 422].include?(e.http_status)
+
         false
       end
     end

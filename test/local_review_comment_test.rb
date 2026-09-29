@@ -160,10 +160,13 @@ class LocalReviewPublishTest < Minitest::Test
     def markdown(_body) = @html
 
     def api(path)
-      raise Shaka::Error, 'No commit found' if @missing.any? { |sha| path.end_with?(sha) }
+      raise Shaka::Error.new('No commit found', http_status: 422) if @missing.any? { |sha| path.end_with?(sha) }
+      raise Shaka::Error.new('Server error', http_status: 502) if @outage
 
       {}
     end
+
+    attr_writer :outage
 
     def reply(body:, key:)
       @replies << [key, body]
@@ -200,6 +203,17 @@ class LocalReviewPublishTest < Minitest::Test
 
     assert_includes body, '| 1 | `bbbbbbb` (not on GitHub) |'
     assert_includes body, "| 2 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
+  end
+
+  # Break caught: a transient API failure labeled a pushed commit as missing from GitHub.
+  def test_a_failed_commit_lookup_stops_publication
+    github = FakeGitHub.new
+    github.outage = true
+
+    status, = publish(github, 'rounds' => [round])
+
+    assert_equal 1, status
+    assert_empty github.replies
   end
 
   # Break caught: a report's unclosed fence hid the closing details and the attestation, yet merge
