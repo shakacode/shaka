@@ -24,15 +24,19 @@ does not establish access to required checks, reviews, or Git push.
 Keep two roles distinct:
 
 - An operator creates the repository, configures protection, and grants access.
-  Operator credentials stay outside the agent container.
+  An operator may keep a reusable credential, but it stays outside the agent
+  container.
 - A non-admin agent identity gets Write only on its active test repository.
+  Its credential, reusable or not, must lack Administration, Workflows, and
+  check/status write permission; otherwise the hosted result is not trustworthy.
   In an organization, set its base repository permission to none and give it no
   team or direct grants to other private repositories. In a personal account,
   use a separate collaborator identity with no other private-repository
   grants. Verify effective access before each run. A reusable public-test
-  credential is acceptable if policy permits, but remove and verify removal of
-  its temporary repository grant after the run. Do not start another run while
-  an earlier grant remains. Store credentials outside source and logs.
+  credential is acceptable if policy permits and those limits hold. Remove its
+  temporary repository grant after the run and verify removal. Do not start
+  another run while an earlier grant remains. Store credentials outside source
+  and logs.
 
 Use a separate coding-agent sign-in for the sandbox if the host supports one.
 Do not mount a contributor's normal agent home, SSH keys, GitHub configuration,

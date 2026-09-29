@@ -306,9 +306,10 @@ API reads and clone attempts against
 a sibling private repository are denied from the agent container. Apply the same
 isolation to public qualification access. A public qualification may use a
 reusable, separately stored agent credential if its effective permissions are
-limited by no default repository access and temporary one-repository Write;
-remove that grant after the run and verify removal from both operator and agent
-views before another run. Keep the public-test identity and credential out of
+limited by no default repository access, temporary one-repository Write, and no
+Administration, Workflows, or check/status write. Remove that grant after the run
+and verify removal from both operator and agent views before another run. Keep
+the public-test identity and credential out of
 private measured cells. Apply a separately scoped private probe token and
 revoke that token before measured cells run. If the
 account remains able to discover or read sibling/probe repositories through any
