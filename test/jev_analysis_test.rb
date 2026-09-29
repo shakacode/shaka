@@ -42,11 +42,13 @@ class JevAnalysisTest < Minitest::Test
     end
   end
 
-  def test_rejects_malformed_model_output_without_a_verdict
-    malformed = OUTPUT.merge(answers: OUTPUT.fetch(:answers).merge(validation_supported: { type: 'noul', noul: 1.5 }))
-    client = ->(*) { response(200, malformed) }
-    error = assert_raises(ShakaJev::Error) { analyzer(api_key: 'test-key', client: client).call(**target) }
-    assert_match(/Invalid Jev answer/, error.message)
+  def test_rejects_missing_response_fields_and_wrong_answer_type
+    malformed = [OUTPUT.merge(model: ''), OUTPUT.merge(usage: { input_tokens: -1 }), [],
+                 invalid_answer(type: 'text', noul: 0.5), invalid_answer(type: 'noul', noul: 1.5)]
+    malformed.each do |body|
+      client = ->(*) { response(200, body) }
+      assert_raises(ShakaJev::Error) { analyzer(api_key: 'test-key', client: client).call(**target) }
+    end
   end
 
   def test_api_errors_expose_status_without_response_body
@@ -76,7 +78,8 @@ class JevAnalysisTest < Minitest::Test
   def test_invalid_target_or_evidence_is_not_sent
     client = ->(*) { flunk 'must not send' }
     invalid = [{ pr_url: 'https://github.com/shakacode/shaka/issues/302' },
-               { head: 'abc123' }, { evidence: '   ' }, { evidence: 'x' * 65_537 }]
+               { head: 'abc123' }, { evidence: '   ' }, { evidence: 'x' * 65_537 },
+               { evidence: (+"\xFF").force_encoding(Encoding::UTF_8) }]
     invalid.each do |change|
       assert_raises(ShakaJev::Error) do
         analyzer(api_key: 'test-key', client: client).call(**target, **change)
@@ -93,7 +96,15 @@ class JevAnalysisTest < Minitest::Test
     expected = ['https://api.typesafe.ai/v1/systemone', 'Bearer test-key', 'jev-latest',
                 %w[material_concern_open validation_supported]]
     assert_equal expected, observed
-    assert_includes payload.fetch('state'), HEAD
+    assert_state(payload.fetch('state'))
+  end
+
+  def assert_state(state)
+    [URL, HEAD, 'Public validation and review evidence.'].each { |part| assert_includes state, part }
+  end
+
+  def invalid_answer(type:, noul:)
+    OUTPUT.merge(answers: OUTPUT.fetch(:answers).merge(validation_supported: { type: type, noul: noul }))
   end
 
   def assert_result(result)
@@ -103,9 +114,7 @@ class JevAnalysisTest < Minitest::Test
     assert_match(/\A[0-9a-f]{64}\z/, result.fetch('evidence_sha256'))
   end
 
-  def response(code, body)
-    Struct.new(:code, :body).new(code.to_s, JSON.generate(body))
-  end
+  def response(code, body) = Struct.new(:code, :body).new(code.to_s, JSON.generate(body))
 
   def analyzer(api_key:, client:, public_repository: ->(*) { true })
     ShakaJev::Analysis.new(api_key: api_key, client: client, public_repository: public_repository)
