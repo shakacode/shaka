@@ -39,7 +39,7 @@ module Shaka
         action = action!
         flags = parser(action)
         flags.parse!(@arguments)
-        return puts(flags) && 0 if @options[:help]
+        return 0.tap { puts flags } if @options[:help]
 
         result = send({ 'run' => :run_fixed, 'bind' => :bind_result, 'verify' => :verify_results }.fetch(action))
         puts JSON.pretty_generate(result)
@@ -114,12 +114,15 @@ module Shaka
         root, ref, repository = common
         raise Error, 'bind accepts no command arguments' unless @arguments.empty?
 
-        original = JSON.parse(File.read(@options.fetch(:result), encoding: 'UTF-8'))
+        path = Result.local_file!(root, @options.fetch(:result))
+        original = JSON.parse(File.read(path, encoding: 'UTF-8'))
         Result.bind(original, root:, head: @options.fetch(:head), ref:, repository:)
       end
 
       def verify_results
         root, ref, repository = common
+        raise Error, 'verify accepts no command arguments' unless @arguments.empty?
+
         Verification.new(root:, ref:, repository:, head: @options.fetch(:head), paths: @options).run
       end
     end

@@ -12,14 +12,14 @@ module Shaka
     # A dirty checkout never becomes reusable review evidence: the runner showed base...HEAD.
     class Review
       def self.start(options, action:)
+        return unless options[:settings_ref]
+
+        raise Error, '--repository is required with --settings-ref' unless options[:repository]
+        raise Error, '--root is required with --settings-ref' unless options[:root]
+
         ref = reviewed_ref(options, action)
-        return unless ref && options[:root]
-
         root = safe_root(options[:root])
-        repository = options[:repository] || origin_repository(root)
-        return unless repository
-
-        new(root:, ref:, repository:, action:, options:).tap(&:capture_before)
+        new(root:, ref:, repository: options[:repository], action:, options:).tap(&:capture_before)
       end
 
       def self.safe_root(root)
@@ -33,7 +33,7 @@ module Shaka
 
       def self.reviewed_ref(options, action)
         align_refs!(options) if action == 'run'
-        options[:settings_ref] || options[:criteria_ref]
+        options[:settings_ref]
       end
 
       def self.align_refs!(options)
@@ -43,16 +43,6 @@ module Shaka
         end
 
         options[:criteria_ref] ||= options[:settings_ref]
-      end
-
-      def self.origin_repository(root)
-        return unless root
-
-        output, _error, status = Open3.capture3('git', '-C', root, 'remote', 'get-url', 'origin')
-        return unless status.success?
-
-        match = output.strip.match(%r{(?:github\.com[:/])([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?/?\z})
-        match && match[1]
       end
 
       def initialize(root:, ref:, repository:, action:, options:)

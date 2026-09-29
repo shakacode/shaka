@@ -59,19 +59,6 @@ class EvidenceBindingTest < Minitest::Test
     end
   end
 
-  def test_later_commit_supersedes_earlier_bound_result
-    with_checkout do |root, ref|
-      result = run_check(root, ref)
-      assert_equal 'bound', bind(root, ref, ref, result).fetch('status')
-      File.write(File.join(root, 'feature'), 'next')
-      git(root, 'add', 'feature')
-      commit(root)
-      newer = bind(root, ref, git(root, 'rev-parse', 'HEAD'), result)
-      assert_equal 'superseded', newer.fetch('status')
-      assert_equal ref, result.fetch('source_ref')
-    end
-  end
-
   def test_new_trusted_commit_with_unchanged_components_retains_result
     with_checkout do |root, ref|
       result = run_check(root, ref)

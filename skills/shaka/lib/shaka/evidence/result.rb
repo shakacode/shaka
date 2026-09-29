@@ -92,6 +92,21 @@ module Shaka
         output.strip
       end
 
+      def self.local_file!(root, path)
+        expanded = File.expand_path(path)
+        raise Error, 'Evidence result path is inside candidate checkout' if inside?(root, expanded)
+
+        resolved = File.realpath(expanded)
+        raise Error, 'Evidence result resolves inside candidate checkout' if inside?(root, resolved)
+
+        resolved
+      end
+
+      def self.inside?(root, path)
+        real_root = File.realpath(root)
+        path == real_root || path.start_with?("#{real_root}/")
+      end
+
       private :binding_result, :result_reasons, :completeness_reasons, :settings_reasons
     end
   end

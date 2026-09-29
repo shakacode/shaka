@@ -35,7 +35,7 @@ module Shaka
 
       parser = send(:"#{action}_parser")
       parser.parse!(@arguments)
-      return puts(parser) && 0 if @options[:help]
+      return 0.tap { puts parser } if @options[:help]
       return send(action, parser) if %w[record publish].include?(action)
 
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty?

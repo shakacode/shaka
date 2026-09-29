@@ -35,8 +35,12 @@ module Shaka
       def check(path, kind)
         return { 'status' => 'missing', 'path' => path, 'reasons' => ['result file missing'] } unless File.file?(path)
 
-        original = JSON.parse(File.read(path, encoding: 'UTF-8'))
+        original = JSON.parse(File.read(Result.local_file!(@root, path), encoding: 'UTF-8'))
         binding = Result.bind(original, root: @root, head: @head, ref: @ref, repository: @repository)
+        check_kind(kind, original, binding)
+      end
+
+      def check_kind(kind, original, binding)
         binding['reasons'] << "expected #{kind} result" unless original['kind'] == kind
         if kind == 'validation' && !@accepted.include?(original['command'])
           binding['reasons'] << 'expected repository validation command'

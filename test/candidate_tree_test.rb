@@ -42,6 +42,19 @@ class CandidateTreeTest < Minitest::Test
     end
   end
 
+  def test_sparse_checkout_preserves_absent_committed_paths
+    FileUtils.mkdir_p(File.join(@root, 'included'))
+    FileUtils.mkdir_p(File.join(@root, 'omitted'))
+    File.write(File.join(@root, 'included/file'), 'one')
+    File.write(File.join(@root, 'omitted/file'), 'two')
+    git('add', '-A')
+    git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-qm', 'sparse files')
+    git('sparse-checkout', 'init', '--cone')
+    git('sparse-checkout', 'set', 'included')
+
+    assert_equal git('rev-parse', 'HEAD^{tree}'), Shaka::Evidence::CandidateTree.capture(root: @root)
+  end
+
   private
 
   def assert_linked_capture_isolated(linked)
