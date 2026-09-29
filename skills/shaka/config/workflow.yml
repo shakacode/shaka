@@ -313,9 +313,9 @@ phases:
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `walkthrough`, required `deployment`, optional `sections`, required `table`,
-        required `provenance`, required usage `details` holding `usage` output, and `wip` while
-        the PR is unfinished; walkthroughs also require `head`.
+        optional `walkthrough`, required `deployment`, optional `decisions`, optional `sections`,
+        required `table`, required `provenance`, required usage `details` holding `usage` output,
+        and `wip` while the PR is unfinished; walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range
@@ -571,10 +571,13 @@ phases:
         Ask gates pass is not a pending chat decision.
     done_when: The PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
-  Whenever the task has a PR and stops for a user answer, in any phase, run the saved helper's
-  `attention OWNER/REPO NUMBER --state answer` so GitHub lists it as `awaiting-answer`; run it
-  with `--state none` when work resumes. A wait for merge approval is not an answer: it keeps
-  `awaiting-merge-approval` as Finish describes. When the turn ends with work left and nothing
+  Whenever the task has a PR and stops for a user answer, in any phase, publish `description`
+  with a non-empty `decisions` list before the turn ends. That publication renders
+  Decisions for the maintainer and applies `awaiting-answer`. Publish `decisions` as an empty
+  list once the answer is in: the section is omitted and `awaiting-answer` is removed.
+  Do not publish a non-empty `decisions` list while the PR waits for merge approval: that wait
+  keeps `awaiting-merge-approval` as Finish describes. Run `attention` with `--state none`
+  when work resumes and no decision is still open. When the turn ends with work left and nothing
   will wake this session, such as checks still running under a host monitor that reports only
   failures, a host without background commands, or a planned pause, run it with
   `--state resume` and make WIP Details `Next action` the resume prompt: the host's Shaka

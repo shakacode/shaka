@@ -96,7 +96,8 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 For Stopped because, use `awaiting merge approval` for an Ask handoff that waits
 for a GitHub merge click or approval; that stop also applies the
 `awaiting-merge-approval` label. Use `awaiting answer` for a stop that waits for
-a user answer; that stop applies `awaiting-answer`. Use `paused` for any other
+a user answer. Publish a non-empty `decisions` list so the description applies
+`awaiting-answer`. Use `paused` for any other
 deliberate stop, such as a named check wait or a blocker.
 
 Use safe filenames or counts for unfinished work; use `UNKNOWN` if the previous
