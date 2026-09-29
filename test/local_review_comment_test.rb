@@ -334,16 +334,19 @@ class LocalReviewSummaryTest < Minitest::Test
 
     assert_includes render('rounds' => [clean]), '**Outcome:** the loop ended clean: round 1 found nothing.'
     assert_includes render('rounds' => [round]),
-                    '**Outcome:** the loop ended with nothing left to fix. Round 1\'s findings are documented, ' \
-                    'not fixed (1 nit).'
+                    '**Outcome:** the loop ended with nothing left to fix. Round 1\'s findings are documented ' \
+                    'nits or risks (1 nit).'
   end
 
-  # Break caught: a documented defect was reported as nothing left to fix.
-  def test_names_an_unfixed_defect_the_loop_left
+  # Break caught: a documented defect, in the last round or an earlier one, read as a clean finish.
+  def test_names_an_unfixed_defect_from_any_round
     defect = { 'id' => 'F6', 'summary' => 'No history check', 'class' => 'defect', 'disposition' => 'documented' }
+    clean = round(report: report(body: "no findings\n", findings: 0), findings: [])
+    earlier = round(EARLIER, report: report(EARLIER), findings: [defect])
 
-    assert_includes render('rounds' => [round(findings: [defect])]),
-                    '**Outcome:** the loop stopped with 1 unfixed defect left for the maintainer.'
+    [[round(findings: [defect])], [earlier, clean]].each do |rounds|
+      assert_includes render('rounds' => rounds), '**Outcome:** the loop stopped with 1 unfixed defect left for'
+    end
   end
 
   def test_defines_the_prompt_column_and_links_the_criteria

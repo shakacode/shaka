@@ -69,24 +69,28 @@ module Shaka
 
     def price(round) = (round.value('cost') || round.value('estimate')).to_s
 
+    # A defect documented in any round, and not fixed later under the same id, is still open.
     def outcome
-      last = @rounds.last
-      return "**Outcome:** the loop ended clean: round #{@rounds.size} found nothing." if last.findings.empty?
+      open = unfixed_defects
+      return "**Outcome:** the loop stopped with #{defects(open)} left for the maintainer." if open.positive?
+      return "**Outcome:** the loop ended clean: round #{@rounds.size} found nothing." if @rounds.last.findings.empty?
 
-      kinds = LocalReviewFinding::CLASSES.filter_map do |kind|
-        count = last.findings.count { |finding| finding.kind == kind }
-        "#{count} #{kind}" if count.positive?
-      end
-      "**Outcome:** #{reason(last)} Round #{@rounds.size}'s findings are documented, not fixed " \
-        "(#{kinds.join(', ')})."
+      "**Outcome:** the loop ended with nothing left to fix. Round #{@rounds.size}'s findings are documented " \
+        "nits or risks (#{kinds(@rounds.last.findings)})."
     end
 
-    # A documented defect is the author's decision to leave it, so the comment says so plainly.
-    def reason(last)
-      defects = last.findings.count { |finding| finding.kind == 'defect' }
-      return 'the loop ended with nothing left to fix.' if defects.zero?
+    def unfixed_defects
+      latest = @rounds.flat_map(&:findings).to_h { |finding| [finding.id, finding] }
+      latest.values.count { |finding| finding.kind == 'defect' && !finding.fixed? }
+    end
 
-      "the loop stopped with #{defects} unfixed #{defects == 1 ? 'defect' : 'defects'} left for the maintainer."
+    def defects(count) = "#{count} unfixed #{count == 1 ? 'defect' : 'defects'}"
+
+    def kinds(findings)
+      LocalReviewFinding::CLASSES.filter_map do |kind|
+        count = findings.count { |finding| finding.kind == kind }
+        "#{count} #{kind}" if count.positive?
+      end.join(', ')
     end
 
     def prompt

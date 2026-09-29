@@ -198,7 +198,8 @@ phases:
         recorded, and refuses a head the ledger already reviewed. Fix defects, and risks whose
         fix is clearly correct, in new commits, then review the new head. Document nits and the
         remaining risks instead of fixing them; a round whose findings are all documented ends
-        the loop. The next round's prompt lists earlier findings and the commits since, without
+        the loop. A defect you decline to fix is documented too, and the comment reports it as
+        left for the maintainer. The next round's prompt lists earlier findings and the commits since, without
         your notes on them.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
