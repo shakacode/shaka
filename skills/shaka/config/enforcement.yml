@@ -528,9 +528,7 @@ rules:
       with "only for".
   - id: merge-limits-handoff-label
     phase: finish
-    quote: >-
-      Label that handoff `awaiting-merge-approval` with `attention --state merge`; confirming
-      the head is a merge approval.
+    quote: Label that handoff `awaiting-merge-approval` with `attention --state merge`
     enforced_by: agent
     note: >-
       Nothing checks which label an agent applies. `attention --state answer` labels an
