@@ -81,6 +81,15 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     assert_includes assert_raises(Shaka::Error) { append(HEAD, 'openai/codex', findings: 0) }.message, 'Round 2'
   end
 
+  # Break caught: two reviewers started on one empty ledger with different bases mixed their diffs.
+  def test_an_append_rechecks_the_base
+    append(EARLIER, 'openai/codex', findings: 0)
+    round = round_entry(EARLIER, 'anthropic/claude', 0)
+
+    error = assert_raises(Shaka::Error) { ledger.append!(base: 'f' * 40, round:) }
+    assert_includes error.message, 'use a new ledger'
+  end
+
   # Break caught: two reviewers finishing together each wrote the ledger they had read, losing a round.
   def test_concurrent_appends_keep_every_round
     readers = [ledger, ledger]
@@ -152,7 +161,7 @@ class LocalReviewBatchCommentTest < Minitest::Test
     fixed = round(findings: [NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => EARLIER)])
 
     error = assert_raises(Shaka::Error) { render('rounds' => [fixed, clean('anthropic/claude')]) }
-    assert_includes error.message, 'records fixes no later round reviewed'
+    assert_includes error.message, 'Round 1 records fixes no later round reviewed'
   end
 
   private

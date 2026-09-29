@@ -67,9 +67,8 @@ module Shaka
 
     def check_order!(rounds)
       check_commits!(rounds)
-      last = rounds.select { |round| round.head == rounds.last.head }
-      raise Error, "Round #{rounds.size} records fixes no later round reviewed; review the fix head first." if
-        last.any? { |round| round.findings.any?(&:fixed?) }
+      fixer = rounds.select { |round| round.head == rounds.last.head }.find { |round| round.findings.any?(&:fixed?) }
+      raise Error, "Round #{fixer.number} records fixes no later round reviewed; review the fix head first." if fixer
 
       rounds.each(&:check_fixes_follow!)
     end
@@ -144,7 +143,7 @@ module Shaka
 
     # One reviewed commit, its reviewer settings, and the report whose attestation it carries.
     class Round
-      attr_reader :head, :reviewer, :findings
+      attr_reader :head, :reviewer, :findings, :number
 
       def initialize(spec, number)
         raise Error, "Local review round #{number} must be an object." unless spec.is_a?(Hash)

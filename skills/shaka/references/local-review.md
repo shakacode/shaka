@@ -233,9 +233,9 @@ earlier round used: the outcome follows each id's latest disposition, so reusing
 different problem can hide an unfixed defect. `model`, `tokens`, `cost`, and
 `estimate` are optional, as described below, and a top-level `fallback` sets the fallback notice.
 
-`review run` refuses a new head until every round on the last head has its findings recorded. It
-also refuses a head the ledger already reviewed, except another reviewer joining the last reviewed
-head, a head that lacks the last reviewed head or any recorded fix commit, a fix recorded as the
+`review run` refuses a new head until every round on the last head has its findings recorded.
+Another reviewer may join the last reviewed head. It refuses any other head the ledger already
+reviewed, a head that lacks the last reviewed head or any recorded fix commit, a fix recorded as the
 head it was found in, and a different `--base`; after a rebase, start a new ledger. Publishing
 refuses a fix recorded by any round on the last head, because no later round has reviewed it.
 The next round's prompt
