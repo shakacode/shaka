@@ -1,12 +1,16 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'ci_review_wait'
+require_relative 'pr_watch/review_gate'
 require_relative 'public_comments'
 require_relative 'status'
 
 module Shaka
   # Polls one PR head without agent turns and exits when the owner has work to do.
   class PrWatch
+    include ReviewGate
+
     DEFAULT_INTERVAL = 60
     DEFAULT_TIMEOUT = 3600
     DEFAULT_SETTLE = 15
@@ -19,6 +23,7 @@ module Shaka
       @github = github
       @head = head
       @ci_jobs = ci_jobs
+      @ci_wait = CiReviewWait.normalize(settings[:ci_review_wait])
       @timing = timing(settings)
       @baseline = settings[:baseline]
       configure_adapters(adapters)
@@ -95,12 +100,9 @@ module Shaka
     end
 
     def terminal_checks?(required, checks)
-      return false if required.empty? && @ci_jobs.empty?
+      return false if required.empty? && (@ci_jobs.empty? || @ci_wait == 'none')
 
-      terminal?(required) && @ci_jobs.all? do |name|
-        rows = checks.select { |row| row['name'] == name }
-        !rows.empty? && terminal?(rows)
-      end
+      terminal?(required) && review_jobs_terminal?(checks)
     end
 
     def update_pending(new_comments, terminal)

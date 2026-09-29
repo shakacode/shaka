@@ -620,13 +620,14 @@ always: |-
   --root DIR --ref SHA`. Save the last `comments --head SHA` JSON outside the checkout and pass
   it with `--baseline PATH` so comments arriving between that read and watcher startup count.
   Without a baseline, watching starts with the comments already present. It polls the named
-  head and exits on terminal required and configured
-  CI review jobs, a new trusted comment, a moved head, closure, or timeout. It ignores non-required
+  head and exits when required checks finish and the trusted none/one/all CI review job threshold
+  is terminal, or on a new trusted comment, a moved head, closure, or timeout. It ignores non-required
   checks outside the configured CI review jobs. Its one `SHAKA_WAKE`
   line gives the reason to refresh the PR. On an error wake, inspect the error, refresh the PR,
   and restart the watcher or use the resume path above. By default it polls every 60 seconds,
   times out after one hour, and waits 15 seconds before a work wake. After a timeout with checks
-  still pending, restart it or use the resume path. A monitor that reports failures only leaves the
+  still pending, restart it or use the resume path. With no required checks or configured CI review
+  wait, it stays open for comments, head changes, closure, or timeout. A monitor that reports failures only leaves the
   `awaiting-resume` path above for green checks.
 
   Before ending any turn on a task that owns an open PR, run the saved helper's

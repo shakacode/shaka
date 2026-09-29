@@ -64,6 +64,7 @@ when that time is unavailable or the boundary must be exact, and mark an uncerta
 interval SHARED.
 If a response has no usable timestamp with a timezone, the command fails instead of excluding it.
 It also fails when the start time selects no responses or any selected source record is aggregate usage.
+For sources recording only whole seconds, it includes the full cutoff second so responses from the new task are not lost. That boundary can include an earlier response from the same second; treat its attribution as shared.
 
 A `--turn` ID that matches no readable response fails with the expected field
 instead of printing an empty table. A source with no readable responses still

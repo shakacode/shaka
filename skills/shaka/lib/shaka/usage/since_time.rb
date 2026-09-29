@@ -2,6 +2,7 @@
 
 require 'time'
 require_relative '../error'
+require_relative 'options'
 
 module Shaka
   # Narrows a shared native session to responses after the current task began.
@@ -11,11 +12,17 @@ module Shaka
     def select_since_time
       cutoff = Time.iso8601(@options[:since_time])
       @selected_responses.select! do |_id, record|
-        response_time(record) > cutoff
+        selected_after?(record, cutoff)
       end
       raise Error, '--since-time selected no responses; check the task start time.' if @selected_responses.empty?
     rescue ArgumentError
       raise Error, '--since-time needs an ISO 8601 timestamp with a timezone.'
+    end
+
+    def selected_after?(record, cutoff)
+      time = response_time(record)
+      threshold = record['timestamp'].include?('.') ? cutoff : Time.at(cutoff.to_i)
+      time >= threshold
     end
 
     def response_time(record)

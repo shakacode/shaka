@@ -201,6 +201,16 @@ class UsageSinceTimeTest < Minitest::Test
     assert_selected_identity(report)
   end
 
+  def test_keeps_a_whole_second_response_in_the_cutoff_second
+    records = [context('current'), timed_usage('earlier', 'current', 900, START - 1),
+               timed_usage('current', 'current', 200, START)]
+
+    report = run_report(records, '--since-time', (START + 0.5).iso8601(3))
+
+    assert_metric report, 'Input', 200
+    assert_selected_identity(report)
+  end
+
   def test_rejects_an_invalid_start_time
     _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', COMMIT,
                                             '--contribution', 'implementation', '--since-time', 'bad')

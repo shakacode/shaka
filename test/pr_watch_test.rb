@@ -212,24 +212,53 @@ class PrWatchTransitionsTest < Minitest::Test
     assert_equal 4, elapsed
   end
 
+  def test_one_review_wait_wakes_after_one_job_finishes
+    github = FakeGitHub.new([review_frame])
+    reason, = watch_with(github, reader: -> { comments_packet(frame) }, timeout: 3,
+                                 ci_jobs: %w[first second], ci_wait: 'one')
+
+    assert_equal 'checks_terminal', reason
+  end
+
+  def test_all_review_wait_keeps_waiting_for_second_job
+    github = FakeGitHub.new([review_frame])
+    reason, = watch_with(github, reader: -> { comments_packet(frame) }, timeout: 3,
+                                 ci_jobs: %w[first second], ci_wait: 'all')
+
+    assert_equal 'timeout', reason
+  end
+
+  def test_none_review_wait_ignores_pending_review_jobs
+    github = FakeGitHub.new([review_frame])
+    reason, = watch_with(github, reader: -> { comments_packet(frame) }, timeout: 3,
+                                 ci_jobs: %w[first second], ci_wait: 'none')
+
+    assert_equal 'checks_terminal', reason
+  end
+
   private
 
-  def watch_with(github, reader:, timeout:)
+  def review_frame
+    frame(required: [check('validate', 'SUCCESS', 'pass')],
+          checks: [check('first', 'SUCCESS', 'pass'), check('second', 'PENDING', 'pending')])
+  end
+
+  def watch_with(github, reader:, timeout:, ci_jobs: [], ci_wait: 'one')
     now = 0
     sleeper = lambda do |seconds|
       now += seconds
       github.advance
     end
     adapters = { clock: -> { now }, sleeper:, comments: reader }
-    settings = { interval: 1, settle: 1, timeout: }
-    watcher = Shaka::PrWatch.new(github, head: HEAD, ci_jobs: [], settings:, adapters:)
+    settings = { interval: 1, settle: 1, timeout:, ci_review_wait: ci_wait }
+    watcher = Shaka::PrWatch.new(github, head: HEAD, ci_jobs:, settings:, adapters:)
     [watcher.call, now]
   end
 end
 
 class PrWatchBaselineTest < Minitest::Test
   def test_command_uses_trusted_review_jobs_and_required_checks
-    seam = Struct.new(:review, :merge).new({ 'ci_review_jobs' => ['claude-review'] },
+    seam = Struct.new(:review, :merge).new({ 'ci_review_jobs' => ['claude-review'], 'ci_review_wait' => 'all' },
                                            { 'required_checks' => ['validate'] })
     options = { root: Dir.pwd, ref: 'a' * 40, head: 'b' * 40, interval: 7, timeout: 20, settle: 3 }
     with_trusted_config(seam) do
@@ -237,8 +266,8 @@ class PrWatchBaselineTest < Minitest::Test
       settings = Shaka::PrWatch::Command.watch_settings(options, seam)
 
       assert_equal ['claude-review'], watcher.instance_variable_get(:@ci_jobs)
-      assert_equal ['validate'], settings[:seam_required_checks]
-      assert_equal({ interval: 7, timeout: 20, settle: 3 }, settings.slice(:interval, :timeout, :settle))
+      assert_equal({ interval: 7, timeout: 20, settle: 3, ci_review_wait: 'all',
+                     seam_required_checks: ['validate'] }, settings)
     end
   end
 

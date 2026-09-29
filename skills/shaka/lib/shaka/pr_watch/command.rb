@@ -34,6 +34,7 @@ module Shaka
 
       def watch_settings(options, seam)
         settings = options.slice(:interval, :timeout, :settle)
+        settings[:ci_review_wait] = seam.review['ci_review_wait']
         settings[:seam_required_checks] = seam.merge['required_checks']
         settings[:baseline] = baseline(options) if options[:baseline]
         settings

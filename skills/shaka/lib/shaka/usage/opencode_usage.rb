@@ -125,7 +125,7 @@ module Shaka
     end
 
     def iso(millis)
-      Time.at(millis / 1000.0).utc.strftime('%Y-%m-%dT%H:%M:%SZ') if millis.is_a?(Integer) && millis >= 0
+      Time.at(Rational(millis, 1000)).utc.iso8601(3) if millis.is_a?(Integer) && millis >= 0
     end
 
     def parse(raw)
