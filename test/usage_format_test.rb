@@ -25,6 +25,7 @@ class UsageFormatTest < Minitest::Test
     note = json_report.dig('record', 'note')
     assert_includes note, 'Rate card:'
     assert_includes note, 'Native usage is PARTIAL.'
+    refute_match(/\d+ responses?\./, note)
   end
 
   def json_report

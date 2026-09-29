@@ -25,16 +25,17 @@ module Shaka
                                                   rate_card: selected_rate_card)
       data = estimate.snapshot
       columns = json_columns(estimate, data)
-      note = json_note(estimate, data)
-      # The record keeps the whole note, so a carried report keeps its prices and its coverage gaps.
-      { 'note' => note, 'columns' => columns, 'record' => record_identity.merge('columns' => columns, 'note' => note) }
+      # The record keeps prices and coverage gaps, so a carried report keeps both. It leaves out the
+      # response count, which its identity already lists, so repeated runs share one note.
+      record = record_identity.merge('columns' => columns, 'note' => json_note(estimate, data, with_count: false))
+      { 'note' => json_note(estimate, data), 'columns' => columns, 'record' => record }
     end
 
     private
 
-    def json_note(estimate, data)
-      [estimate.narrative_for(data), reviewer_coverage,
-       "Native usage is PARTIAL. #{count}. Scope: #{turn_scope}."].join("\n\n")
+    def json_note(estimate, data, with_count: true)
+      scope = with_count ? "#{count}. Scope: #{turn_scope}." : "Scope: #{turn_scope}."
+      [estimate.narrative_for(data), reviewer_coverage.strip, "Native usage is PARTIAL. #{scope}"].join("\n\n")
     end
 
     def json_columns(estimate, data)
