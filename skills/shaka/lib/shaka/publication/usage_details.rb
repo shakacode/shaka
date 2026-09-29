@@ -125,7 +125,14 @@ module Shaka
     end
 
     # Hosts count input differently, so rows only combine reports from one host.
-    def hosted(columns, identity) = columns.map { |column| column.merge('host' => identity.to_h['host']) }
+    def hosted(columns, identity)
+      unless identity
+        raise Error,
+              'A carried usage record has an unreadable identity; restore or remove it in the PR body.'
+      end
+
+      columns.map { |column| column.merge('host' => identity['host']) }
+    end
 
     def parse_hidden(text)
       JSON.parse(text)
@@ -152,7 +159,8 @@ module Shaka
         raise Error, 'Publication usage records must be a list with at least one record.'
       end
 
-      value.map { |fields| record_entry(fields) }
+      # A record copied twice is one report; counting it twice would double its cost.
+      value.map { |fields| record_entry(fields) }.uniq
     end
 
     def record_entry(fields)

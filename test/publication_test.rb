@@ -560,8 +560,8 @@ class PublicationUsageRowGroupingTest < Minitest::Test
     usage = { 'note' => 'n', 'records' => [USAGE_RECORD.merge('columns' => [REVIEW]),
                                            USAGE_RECORD.merge('host' => 'pi', 'columns' => [REVIEW])] }
     rendered = render(usage:)
-    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code claude‑opus‑5‑5 medium) | $0.31 |'
-    assert_includes rendered, '| claude‑opus‑5‑5 review (pi claude‑opus‑5‑5 medium) | $0.31 |'
+    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code anthropic claude‑opus‑5‑5 medium) | $0.31 |'
+    assert_includes rendered, '| claude‑opus‑5‑5 review (pi anthropic claude‑opus‑5‑5 medium) | $0.31 |'
   end
 
   # Break: eight review runs of one model became eight columns labeled review through review-8.
@@ -577,8 +577,8 @@ class PublicationUsageRowGroupingTest < Minitest::Test
   def test_one_label_on_different_models_keeps_separate_rows
     other = REVIEW.merge('model' => 'gpt-6-astra', 'routed' => 'UNKNOWN', 'effort' => 'high')
     rendered = render(usage: usage_of(REVIEW, other))
-    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code claude‑opus‑5‑5 medium) |'
-    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code gpt‑6‑astra high) |'
+    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code anthropic claude‑opus‑5‑5 medium) |'
+    assert_includes rendered, '| claude‑opus‑5‑5 review (claude‑code anthropic gpt‑6‑astra high) |'
   end
 end
 
@@ -598,8 +598,7 @@ class PublicationUsageReadabilityTest < Minitest::Test
 
   # Break: 45,332,615-token cells widened the table past the page on desktop.
   def test_token_counts_are_compact
-    rows = Shaka::UsageRows.new([])
-    shown = [999, 1000, 1500, 99_960, 639_114, 999_999, 45_332_615].map { |n| rows.send(:compact, n) }
+    shown = [999, 1000, 1500, 99_960, 639_114, 999_999, 45_332_615].map { |n| Shaka::UsageNumbers.compact(n) }
     assert_equal %w[999 1K 1.5K 100K 639K 1M 45.3M], shown
   end
 
@@ -632,7 +631,8 @@ class PublicationUsagePricingTest < Minitest::Test
 
   def test_each_note_lists_the_reports_it_priced
     grok = COLUMN.merge('label' => 'grok-4.7 implementation')
-    usage = { 'note' => 'n', 'records' => [record(grok, note: CURSOR), record(REVIEW), record(REVIEW)] }
+    usage = { 'note' => 'n',
+              'records' => [record(grok, note: CURSOR), record(REVIEW), record(REVIEW, 'responses' => ['c2'])] }
     notes = pricing(render(usage:))
     assert_includes notes, "**grok\u20114.7 implementation**\n\n#{CURSOR}"
     assert_includes notes, "**claude\u2011opus\u20115\u20115 review ×2**\n\n#{ANTHROPIC}"
@@ -657,6 +657,40 @@ class PublicationUsagePricingTest < Minitest::Test
     usage = { 'note' => 'n', 'records' => [record(COLUMN, note: 'prices --> <img>')] }
     error = assert_raises(Shaka::Error) { render(usage:) }
     assert_includes error.message, 'must not close a comment'
+  end
+end
+
+# Values from records and carried blocks cannot change the description's structure or totals.
+class PublicationUsageSafetyTest < Minitest::Test
+  COLUMN = PublicationUsageTableTest::COLUMN
+
+  def render(usage:) = PublicationUsageTableTest.new('render').render(usage:)
+  def usage_of(*columns) = PublicationUsageTableTest.usage_of(*columns)
+
+  # Break: a label or note holding </details> closed the usage disclosure early.
+  def test_angle_brackets_in_labels_and_notes_are_inert
+    record = USAGE_RECORD.merge('columns' => [COLUMN.merge('label' => 'x </details> y')], 'note' => 'a </details> b')
+    rendered = render(usage: { 'note' => 'n', 'records' => [record] })
+    assert_includes rendered, 'x &lt;/details&gt; y'
+    assert_includes rendered, 'a &lt;/details&gt; b'
+    shown = rendered.gsub(/<!--.*?-->/m, '')
+    assert_equal shown.scan('<details>').size, shown.scan('</details>').size
+  end
+
+  # Break: a record copied twice into usage.records doubled its cost.
+  def test_a_record_listed_twice_counts_once
+    record = USAGE_RECORD.merge('columns' => [COLUMN])
+    rendered = render(usage: { 'note' => 'n', 'records' => [record, record] })
+    assert_includes rendered, '<summary>Usage and cost · $3.27 estimated</summary>'
+    refute_includes rendered, '×2'
+  end
+
+  # Break: with one row and earlier reports below, the summary showed + but the table did not.
+  def test_one_row_with_earlier_reports_gets_a_minimum_total
+    legacy = "#{Shaka::UsageRecords.begin_mark(USAGE_RECORD)}\n| Metric | codex |\n| --- | --- |\n" \
+             "| USD estimate | $1.000000 |\n#{Shaka::UsageRecords::END_MARK}"
+    rendered = render(usage: usage_of(COLUMN).merge('carried' => legacy))
+    assert_includes rendered, '| **Total** | $3.27+ |'
   end
 end
 

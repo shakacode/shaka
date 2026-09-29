@@ -281,7 +281,7 @@ phases:
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
         specific things in summaries and sections. Keep blockers visible; put supporting checks,
-        review history, rollback, and usage in `details`. Avoid repeated status updates. Store useful
+        review history, and rollback in `details`, and usage in the `usage` object. Avoid repeated status updates. Store useful
         evidence once and retrieve it as needed; collapsing does not save tokens.
       - Point reviewers to the code instead of retelling it: the description links the walkthrough,
         and the walkthrough links each step to its lines. Keep the text in proportion to the change.

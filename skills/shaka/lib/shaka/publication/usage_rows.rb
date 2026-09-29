@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'usage_pricing'
+
 module Shaka
   # What each shown column counts, for a reader who has not seen these reports before.
   module UsageGlossary
@@ -19,6 +21,29 @@ module Shaka
       lines = metrics.map { |key, label| "- **#{label}**: #{MEANINGS.fetch(key)}." }
       "<details>\n<summary>What the columns mean</summary>\n\n#{lines.join("\n")}\n\n</details>" unless lines.empty?
     end
+  end
+
+  # Rounds amounts for reading; the hidden record keeps the reported text.
+  module UsageNumbers
+    module_function
+
+    def usd(value)
+      return '<$0.01' if value.positive? && value < 0.005
+
+      whole, cents = format('%.2f', value).split('.')
+      "$#{grouped(whole.to_i)}.#{cents}"
+    end
+
+    # Token counts reach tens of millions; three significant figures keep the table narrow.
+    def compact(number)
+      return number.to_s if number < 1000
+
+      value, suffix = number < 999_500 ? [number / 1e3, 'K'] : [number / 1e6, 'M']
+      digits = value < 100 ? 1 : 0
+      "#{format("%.#{digits}f", value).delete_suffix('.0')}#{suffix}"
+    end
+
+    def grouped(number) = number.to_s.reverse.scan(/\d{1,3}/).join(',').reverse
   end
 
   # One row per report label, one column per metric any report measured, and a total.
@@ -52,7 +77,8 @@ module Shaka
       @earlier = earlier
       @rows = report_rows(columns)
       @metrics = METRICS.select { |key, _label| @rows.any? { |_label, amounts| amounts[key] } }
-      @rows << ['**Total**', total(columns)] if @rows.size > 1
+      # With earlier reports below, even one row gets a total that shows it is a minimum.
+      @rows << ['**Total**', total(columns)] if @rows.size > 1 || @earlier
     end
 
     def table
@@ -96,8 +122,9 @@ module Shaka
     end
 
     def route_name(column)
-      model = [column['routed'], column['model'], column['provider']].find { |value| value != 'UNKNOWN' }
-      [column['host'], model, column['effort']].reject { |value| value.nil? || value == 'UNKNOWN' }.join(' ')
+      model = [column['routed'], column['model']].find { |value| value != 'UNKNOWN' }
+      [column['host'], column['provider'], model, column['effort']].reject { |value| value.nil? || value == 'UNKNOWN' }
+                                                                   .join(' ')
     end
 
     # Hosts count input differently (Codex includes cache reads, Claude excludes them), so
@@ -133,31 +160,14 @@ module Shaka
       return '—' unless amount
 
       text = case key
-             when 'usd' then usd(amount.value)
+             when 'usd' then UsageNumbers.usd(amount.value)
              when 'credits' then format('%.2f', amount.value)
-             else compact(amount.value.to_i)
+             else UsageNumbers.compact(amount.value.to_i)
              end
       amount.lower_bound ? "#{text}+" : text
     end
 
-    def usd(value)
-      return '<$0.01' if value.positive? && value < 0.005
-
-      whole, cents = format('%.2f', value).split('.')
-      "$#{grouped(whole.to_i)}.#{cents}"
-    end
-
-    # Token counts reach tens of millions; three significant figures keep the table narrow.
-    def compact(number)
-      return number.to_s if number < 1000
-
-      value, suffix = number < 999_500 ? [number / 1e3, 'K'] : [number / 1e6, 'M']
-      digits = value < 100 ? 1 : 0
-      "#{format("%.#{digits}f", value).delete_suffix('.0')}#{suffix}"
-    end
-
-    def grouped(number) = number.to_s.reverse.scan(/\d{1,3}/).join(',').reverse
-
-    def escape(text) = text.gsub(/[\\|]/) { |character| "\\#{character}" }.tr('-', NO_BREAK_HYPHEN)
+    # Angle brackets become entities so a value cannot open or close the surrounding disclosure.
+    def escape(text) = UsagePricing.visible(text.gsub(/[\\|]/) { |character| "\\#{character}" })
   end
 end

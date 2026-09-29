@@ -34,14 +34,21 @@ module Shaka
       return if pairs.empty?
 
       priced = pairs.select { |_label, note| note }.group_by(&:last)
-      parts = priced.map { |note, group| "**#{labels(group)}**\n\n#{note}" }
+      parts = priced.map { |note, group| "**#{labels(group)}**\n\n#{inert(note)}" }
       missing = pairs.select { |_label, note| note.nil? }
       parts << "_No note was recorded for #{labels(missing)}._" unless missing.empty?
       "<details>\n<summary>#{SUMMARY}</summary>\n\n#{parts.join("\n\n")}\n\n</details>"
     end
 
+    # Shown text cannot open or close HTML such as the surrounding disclosure.
+    def inert(text) = text.gsub('<', '&lt;').gsub('>', '&gt;')
+
+    # A report name also keeps its hyphens from breaking the line; a note keeps them, since its
+    # links need their real URLs.
+    def visible(label) = inert(label).tr('-', "\u2011")
+
     def labels(group)
-      names = group.map { |label, _note| label.tr('-', "\u2011") }
+      names = group.map { |label, _note| visible(label) }
       names.tally.map { |label, count| count > 1 ? "#{label} ×#{count}" : label }.join(', ')
     end
   end

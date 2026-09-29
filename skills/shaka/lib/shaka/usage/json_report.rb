@@ -54,12 +54,7 @@ module Shaka
         'credits' => estimate.display(column, :credits, 'credits'),
         'usd' => estimate.display(column, :api, '$')
       }
-      cells.merge(JSON_METRICS.to_h { |name, field| [name, token_total(group, field)] })
-    end
-
-    def token_total(group, field)
-      values = group.map { |record| record['usage'].is_a?(Hash) ? record['usage'][field] : nil }
-      countable?(values) ? values.sum.to_s : 'UNKNOWN'
+      cells.merge(JSON_METRICS.to_h { |name, field| [name, total_field(group, field).to_s] })
     end
   end
 end
