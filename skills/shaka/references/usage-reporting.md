@@ -12,8 +12,9 @@ Put each report's `record`, which includes its `columns`, into the description
 from those records, so everything it shows can be carried by a later publish. A
 `details` item whose summary names usage is refused.
 
-The description renders one table with a row per report label. Reports that share
-a label, such as eight review runs of one model, share a row marked `×8`. A total
+The description renders one table with a row per report label. Reports with the
+same label, provider, model, and effort, such as eight review runs of one model,
+share a row marked `×8`. A total
 row follows when there is more than one row, and the collapsed summary shows the
 total USD estimate. Columns are USD, Credits, Input, Cached input, Output,
 Reasoning, and Cache writes; a column no report measured is left out. Amounts are

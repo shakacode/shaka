@@ -72,7 +72,9 @@ module Shaka
       return 'dropped' unless fields && UsageRecordShape.report_shape?(text)
       return if body.include?(text)
 
-      replaced = superseded?(fields, fresh) || UsageRecordCarry.read_nothing_covered?(fields, fresh + others)
+      # An identical identity is the same report published again, whatever its completeness.
+      replaced = fresh.include?(fields) || superseded?(fields, fresh) ||
+                 UsageRecordCarry.read_nothing_covered?(fields, fresh + others)
       replaced ? 'replaced' : 'retained'
     end
 

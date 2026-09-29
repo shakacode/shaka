@@ -271,6 +271,16 @@ class UsageRecordsCompletenessTest < Minitest::Test
     assert_includes carried(existing(old), unflagged), 'measured'
   end
 
+  # Break: republishing the same incomplete structured record carried its old copy too, doubling the cost.
+  def test_the_same_incomplete_record_published_again_replaces_its_copy
+    identity = DEFAULTS.merge('host' => 'codex', 'responses' => %w[a], 'complete' => false)
+    old = "#{Shaka::UsageRecords.begin_mark(identity)}\n<!-- usage-columns [] -->\n#{Shaka::UsageRecords::END_MARK}"
+    content = { 'usage' => { 'note' => 'n', 'records' => [identity.merge('columns' => [])] } }
+    carried_content, stats = Shaka::UsageRecords.carry(content, existing(old))
+    refute carried_content['usage'].key?('carried')
+    assert_equal 1, stats['replaced']
+  end
+
   def test_incomplete_new_report_does_not_replace_measured_history
     old = record('codex', 'measured', responses: %w[a])
     incomplete = record('codex', 'incomplete', responses: %w[a], complete: false)
