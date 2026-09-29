@@ -26,7 +26,7 @@ module Shaka
     def commit(source, root, git)
       case source['kind']
       when 'revision' then source['revision']
-      when 'development' then [source['base_revision'], 'modified'].compact.join('-')
+      when 'development' then "#{source['base_revision'] || 'unknown'}-modified"
       when 'uninstalled' then git && checkout_commit(root, git)
       end
     end

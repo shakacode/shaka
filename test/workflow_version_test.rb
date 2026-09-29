@@ -18,7 +18,7 @@ class WorkflowVersionTest < Minitest::Test
   def test_a_development_installation_names_its_base_and_marks_it_modified
     assert_equal "#{VERSION}-#{SHA}-modified",
                  Shaka::WorkflowVersion.current(identity: source('development', base: SHA))
-    assert_equal "#{VERSION}-modified", Shaka::WorkflowVersion.current(identity: source('development'))
+    assert_equal "#{VERSION}-unknown-modified", Shaka::WorkflowVersion.current(identity: source('development'))
   end
 
   def test_a_direct_checkout_names_its_head_commit

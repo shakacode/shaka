@@ -271,7 +271,8 @@ that commit is the revision the installer recorded; edits to the installed copy
 afterwards go undetected, as they do in `shaka doctor`. For a checkout the skill runs
 from directly, it is that checkout's HEAD. `-modified` follows it when the skill's
 files differed from that commit at installation, or differ now in a checkout.
-`-unknown` replaces it when no commit can be found.
+`-unknown` replaces it when no commit can be found, including a development
+installation with no base commit, which reports `-unknown-modified`.
 
 Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.

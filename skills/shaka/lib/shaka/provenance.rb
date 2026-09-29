@@ -33,7 +33,7 @@ module Shaka
       [
         ['Machine alias', machine_alias],
         ['Task source', values.fetch('task_source')],
-        ['Workflow version', @workflow_version],
+        ['Workflow version', workflow_version],
         ['Requested route', route(values, 'requested')],
         ['Recommended route', route(values, 'recommended')],
         ['Active setting', route(values, 'active')]
@@ -45,6 +45,13 @@ module Shaka
       raise Error, 'Publication provenance machine alias is invalid.' unless valid?(value)
 
       value
+    end
+
+    # Installation metadata is only type-checked, so the computed value is allowlisted too.
+    def workflow_version
+      raise Error, 'Publication provenance workflow version is invalid.' unless valid?(@workflow_version)
+
+      @workflow_version
     end
 
     def validated
