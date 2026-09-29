@@ -100,6 +100,9 @@ module Shaka
         blob = out.strip
         raise Error, 'Trusted configuration blob is invalid' unless full_sha?(blob)
 
+        type, = Open3.capture2('git', '-C', @root, 'cat-file', '-t', blob)
+        raise Error, 'Trusted configuration must be a blob' unless type.strip == 'blob'
+
         blob
       end
 

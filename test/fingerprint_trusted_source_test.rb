@@ -52,4 +52,10 @@ class FingerprintTrustedSourceTest < Minitest::Test
     assert_raises(Shaka::Error) { fingerprint('main') }
     assert_raises(Shaka::Error) { fingerprint('a' * 40) }
   end
+
+  def test_configuration_path_must_name_a_blob
+    ref = commit_config('first')
+    settings = @settings.merge('paths' => { 'policy_configuration' => '.agents' })
+    assert_raises(Shaka::Error) { fingerprint(ref, settings) }
+  end
 end
