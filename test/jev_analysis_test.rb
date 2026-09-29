@@ -127,7 +127,8 @@ end
 class JevHttpTransportTest < Minitest::Test
   def test_bad_json_and_timeout_have_clean_errors
     failures = [->(*) { Struct.new(:code, :body).new('200', '<html>') },
-                ->(*) { raise Net::ReadTimeout }]
+                ->(*) { raise Net::ReadTimeout },
+                ->(*) { raise Net::HTTPHeaderSyntaxError, 'invalid Content-Length' }]
     failures.each do |client|
       analysis = ShakaJev::Analysis.new(api_key: 'test-key', client: client, public_repository: ->(*) { true })
       error = assert_raises(ShakaJev::Error) do

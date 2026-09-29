@@ -75,7 +75,7 @@ module ShakaJev
       response = @client.call(ENDPOINT, request(pr_url, head, evidence))
       with_context(parse_response(response), pr_url, head, evidence)
     rescue JSON::ParserError, IOError, SystemCallError, Timeout::Error, SocketError,
-           OpenSSL::SSL::SSLError, Net::HTTPBadResponse => e
+           OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError => e
       raise Error, "Jev request failed: #{e.class}"
     end
 
