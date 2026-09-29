@@ -264,16 +264,17 @@ missing route metadata is `UNKNOWN`. The initial prompt is excluded. The rendere
 adds the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`; it never falls back
 to a hostname.
 
-The renderer also fills the workflow version, because every commit between releases
-shares one version number. It appends the commit the helper runs from, such as
-`0.1.0.pre.1-d2654cedfe52975917112c450ebbd7e1bb75afc2`. For a managed installation,
-that commit is the revision the installer recorded; edits to the installed copy
-afterwards go undetected, as they do in `shaka doctor`. For a checkout the skill runs
-from directly, it is that checkout's HEAD. `-modified` follows it when the skill's
-files differed from that commit at installation, or, in a checkout, when Git reports
-changes or flags a skill file to skip them.
-`-unknown` replaces it when no commit can be found, including a development
-installation with no base commit, which reports `-unknown-modified`.
+The renderer also fills the workflow version with the commit the helper runs from,
+because every commit between releases shares one version number. The row shows the
+short commit as a link to it on GitHub, such as
+[`d2654ce`](https://github.com/shakacode/shaka/commit/d2654cedfe52975917112c450ebbd7e1bb75afc2).
+For a managed installation, that commit is the revision the installer recorded; edits
+to the installed copy afterwards go undetected, as they do in `shaka doctor`. For a
+checkout the skill runs from directly, it is that checkout's HEAD. `(modified)`
+follows the link when the skill's files differed from that commit at installation,
+or, in a checkout, when Git reports changes or flags a skill file to skip them. When
+no commit can be found, the row shows the release version instead, such as
+`0.1.0.pre.1` (commit unknown).
 
 Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.

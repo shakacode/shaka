@@ -58,7 +58,8 @@ class OpeningRealpathWrapperTest < Minitest::Test
     assert_predicate status, :success?, error
     assert_equal 'host_check', JSON.parse(output).dig('opening', 'status')
     assert_includes JSON.parse(output).dig('opening', 'reason'), 'git wrapper directory contains candidate-backed links'
-    assert_includes File.read(File.join(dir, 'published.md')), "| Workflow version | #{Shaka::VERSION}-unknown |"
+    assert_includes File.read(File.join(dir, 'published.md')),
+                    "| Workflow version | `#{Shaka::VERSION}` (commit unknown) |"
     refute_path_exists File.join(dir, 'candidate-executed')
   end
 

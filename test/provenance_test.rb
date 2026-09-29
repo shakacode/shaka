@@ -20,26 +20,11 @@ class ExecutionProvenanceTest < Minitest::Test
   end
 
   def test_the_helper_supplies_the_workflow_version
-    body = Shaka::ExecutionProvenance.new(
-      PUBLIC_PROVENANCE, environment: {}, workflow_version: "0.1.0.pre.1-#{'a' * 40}"
-    ).detail.fetch('body')
+    version = Shaka::WorkflowVersion::Result.new(version: '0.1.0.pre.1', commit: 'a' * 40, modified: false)
+    body = Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, environment: {}, workflow_version: version)
+                                     .detail.fetch('body')
 
-    assert_includes body, "| Workflow version | 0.1.0.pre.1-#{'a' * 40} |"
-  end
-
-  def test_accepts_a_modified_sha256_revision
-    version = "0.1.0.pre.1-#{'b' * 64}-modified"
-    body = Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, environment: {}, workflow_version: version).detail
-
-    assert_includes body.fetch('body'), "| Workflow version | #{version} |"
-  end
-
-  def test_refuses_a_workflow_version_that_would_break_the_table
-    error = assert_raises(Shaka::Error) do
-      Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, environment: {}, workflow_version: "1.0 | x\n").detail
-    end
-
-    assert_includes error.message, 'workflow version'
+    assert_includes body, "| Workflow version | [`aaaaaaa`](https://github.com/shakacode/shaka/commit/#{'a' * 40}) |"
   end
 
   def test_refuses_an_agent_supplied_workflow_version

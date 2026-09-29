@@ -143,7 +143,7 @@ rescue Shaka::Error => e
 end
 
 # The Git a description may run to read the helper's own commit, or nil when PATH offers
-# only one that could load candidate code; the workflow version then reports `-unknown`.
+# only one that could load candidate code; the workflow version then shows no commit.
 def vetted_git(candidate_root)
   Shaka::LocalReviewPathGuard.safe_executable(ENV.fetch('PATH'), 'git', candidate_root)
 rescue Shaka::Error, SystemCallError

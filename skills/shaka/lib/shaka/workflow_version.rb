@@ -7,11 +7,10 @@ require_relative 'doctor/installation_identity'
 
 module Shaka
   # Names the workflow code that is running. Every commit between releases shares one
-  # VERSION, so the value adds the commit it came from: the revision the managed installer
-  # recorded, or the HEAD of the checkout the helper runs from directly. `-modified` marks
-  # a copy whose skill files differ from that commit; `-unknown` marks one with no commit.
-  # Reading a checkout needs `git`, a Git executable the caller has vetted against the
-  # candidate checkout; without one a direct checkout reports `-unknown`.
+  # VERSION, so the commit identifies the code: the revision the managed installer recorded,
+  # or the HEAD of the checkout the helper runs from directly. `modified` marks a copy whose
+  # skill files differ from that commit. Reading a checkout needs `git`, a Git executable
+  # the caller has vetted against the candidate checkout; without one the commit is unknown.
   module WorkflowVersion
     ROOT = File.expand_path('../../../..', __dir__)
     SKILL = 'skills/shaka'
@@ -19,18 +18,45 @@ module Shaka
     GIT_ENVIRONMENT = %w[GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_INDEX_FILE GIT_PREFIX]
                       .to_h { |name| [name, nil] }.freeze
 
+    REPOSITORY = 'https://github.com/shakacode/shaka'
+    COMMIT = /\A(?:\h{40}|\h{64})\z/
+    RELEASE = /\A[A-Za-z0-9][A-Za-z0-9._-]{0,39}\z/
+
+    # Renders a linked commit, or the release version when no commit is known. Installation
+    # metadata is only type-checked, so each part is checked before it reaches the table.
+    Result = Data.define(:version, :commit, :modified) do
+      def markdown
+        return "#{link}#{' (modified)' if modified}" if commit
+
+        raise Error, 'Workflow version is invalid.' unless version.is_a?(String) && version.match?(RELEASE)
+
+        "`#{version}` (commit unknown#{', modified' if modified})"
+      end
+
+      private
+
+      def link
+        raise Error, 'Workflow commit is invalid.' unless commit.is_a?(String) && commit.match?(COMMIT)
+
+        "[`#{commit[0, 7]}`](#{REPOSITORY}/commit/#{commit})"
+      end
+    end
+
     module_function
 
     def current(identity: read_identity, root: ROOT, git: nil)
       identity ||= {}
-      "#{identity['version'] || VERSION}-#{commit(identity['source'] || {}, root, git) || 'unknown'}"
+      source = identity['source'] || {}
+      commit, modified = commit(source, root, git)
+      Result.new(version: identity['version'] || VERSION, commit:, modified: modified || false)
     end
 
     def commit(source, root, git)
       case source['kind']
-      when 'revision' then source['revision']
-      when 'development' then "#{source['base_revision'] || 'unknown'}-modified"
-      when 'uninstalled' then git && checkout_commit(root, git)
+      when 'revision' then [source['revision'], false]
+      when 'development' then [source['base_revision'], true]
+      when 'uninstalled' then git ? checkout_commit(root, git) : [nil, false]
+      else [nil, false]
       end
     end
 
@@ -41,14 +67,14 @@ module Shaka
     end
 
     def checkout_commit(root, git)
-      return unless run(git, root, 'rev-parse', '--show-toplevel') == File.realpath(root)
+      return [nil, false] unless run(git, root, 'rev-parse', '--show-toplevel') == File.realpath(root)
 
       head = run(git, root, 'rev-parse', '--verify', 'HEAD')
       status = run(git, root, 'status', '--porcelain', '--untracked-files=all', '--', SKILL)
       entries = run(git, root, 'ls-files', '-v', '--', SKILL)
-      return unless head && status && entries
+      return [nil, false] unless head && status && entries
 
-      status.empty? && !index_flags?(entries) ? head : "#{head}-modified"
+      [head, !status.empty? || index_flags?(entries)]
     end
 
     # `git status` hides edits to assume-unchanged (lowercase tag) and skip-worktree (`S`)
