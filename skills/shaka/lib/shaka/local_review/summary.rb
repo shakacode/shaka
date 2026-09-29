@@ -77,8 +77,16 @@ module Shaka
         count = last.findings.count { |finding| finding.kind == kind }
         "#{count} #{kind}" if count.positive?
       end
-      "**Outcome:** the loop ended with nothing left to fix: round #{@rounds.size}'s findings are " \
-        "documented, not fixed (#{kinds.join(', ')})."
+      "**Outcome:** #{reason(last)} Round #{@rounds.size}'s findings are documented, not fixed " \
+        "(#{kinds.join(', ')})."
+    end
+
+    # A documented defect is the author's decision to leave it, so the comment says so plainly.
+    def reason(last)
+      defects = last.findings.count { |finding| finding.kind == 'defect' }
+      return 'the loop ended with nothing left to fix.' if defects.zero?
+
+      "the loop stopped with #{defects} unfixed #{defects == 1 ? 'defect' : 'defects'} left for the maintainer."
     end
 
     def prompt
