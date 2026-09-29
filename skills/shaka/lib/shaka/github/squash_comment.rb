@@ -10,6 +10,11 @@ module Shaka
   module SquashComment
     SQUASH_MARK = '<!-- shaka:squash-message -->'
     COMMENT_PAGES = 20
+    HEAD = /\A#{Regexp.escape(SQUASH_MARK)}\n<!-- head (\h{40}) -->\n/
+
+    # The full head a posted comment names, or nil when its opening lines are not the ones
+    # `squash_comment` writes. The displayed short SHA is not enough: a fork can mint a head sharing it.
+    def self.head(body) = body.to_s.gsub("\r\n", "\n")[HEAD, 1]
 
     def squash_comment(head:, message:)
       verify_head(head)
@@ -27,6 +32,7 @@ module Shaka
       fence = '`' * [3, "#{message.headline}\n#{message.body}".scan(/`+/).map(&:length).max.to_i + 1].max
       <<~MARKDOWN
         #{SQUASH_MARK}
+        <!-- head #{head} -->
         **Squash commit message for `#{head[0, 7]}`.** Paste the title and the body into GitHub's squash merge boxes.
 
         #{fence}text
