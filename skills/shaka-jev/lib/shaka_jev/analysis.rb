@@ -69,6 +69,7 @@ module ShakaJev
 
     def validate!(pr_url, head, evidence)
       raise Error, 'TYPESAFE_API_KEY is required' if @api_key.empty?
+      raise Error, 'TYPESAFE_API_KEY contains invalid characters' unless @api_key.match?(/\A[!-~]+\z/)
 
       validate_target!(pr_url, head)
       validate_evidence!(evidence)

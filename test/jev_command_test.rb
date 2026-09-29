@@ -27,4 +27,15 @@ class JevCommandTest < Minitest::Test
     refute_predicate status, :success?
     assert_match(/TYPESAFE_API_KEY is required/, output)
   end
+
+  def test_invalid_api_key_does_not_leak_in_cli_output
+    command = [RbConfig.ruby, File.expand_path('../skills/shaka-jev/scripts/analyze', __dir__),
+               '--pr-url', 'https://github.com/shakacode/shaka/pull/302', '--head', 'a' * 40,
+               '--evidence', __FILE__]
+    output, status = Open3.capture2e({ 'TYPESAFE_API_KEY' => "test-key\rSECRET" }, *command)
+
+    refute_predicate status, :success?
+    assert_match(/TYPESAFE_API_KEY contains invalid characters/, output)
+    refute_match(/SECRET/, output)
+  end
 end
