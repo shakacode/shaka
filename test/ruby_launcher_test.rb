@@ -29,7 +29,8 @@ class RubyLauncherTest < Minitest::Test
     output, status = Open3.capture2e({ 'SHAKA_RUBY' => override }, File.join(@destination, 'scripts', 'shaka'),
                                      'workflow', chdir: project)
     assert_predicate status, :success?, output
-    assert_match(%r{\Aoverride -r /.+/lib/shaka/ruby_requirement\.rb /.+/scripts/shaka\.rb workflow$}, output)
+    preload = '-r /.+/lib/shaka/ruby_requirement\.rb'
+    assert_match(%r{\Aoverride --disable-gems --disable-rubyopt #{preload} /.+/scripts/shaka\.rb workflow$}, output)
   end
 
   def test_installed_helper_refuses_a_removed_recorded_ruby
