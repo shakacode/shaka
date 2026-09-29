@@ -281,6 +281,16 @@ or, in a checkout, when Git reports changes or flags a skill file to skip them. 
 no commit can be found, the row shows the release version instead, such as
 `0.1.0.pre.1` (commit unknown).
 
+The table shows the latest publication, so `description` also keeps a history in a hidden
+marker in the PR body. It adds an entry, recording the PR head, whenever the Workflow version
+cell or a route differs from the last entry; republishing the same values adds nothing. Once
+there are two entries, a collapsed **Provenance history** block lists them oldest first. It
+keeps the first entry and the 20 most recent, and says how many it omitted. The helper writes
+this history; a details item with that summary is refused, and so is a marker it cannot
+validate, which publishes nothing until the marker is restored or removed. A PR published
+before this history existed starts one at its next publication, and a fork's history is never
+carried, because the fork author can edit it.
+
 Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.
 Compare like tasks and coverage alongside quality, retries, delivery time, and

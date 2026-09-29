@@ -39,7 +39,7 @@ class CliDescriptionUsageTest < Minitest::Test
     existing = "<!-- shaka:begin -->\n<details>\n<summary>Usage</summary>\n\n" \
                "#{RenderedUsage.body("| Metric | Value |\n| --- | --- |\n| Total | 1 |")}\n\n" \
                "</details>\n<!-- shaka:end -->"
-    pull = { 'body' => existing, 'head' => REPO, 'base' => REPO }
+    pull = { 'body' => existing, 'head' => REPO.merge('sha' => 'c' * 40), 'base' => REPO }
     super.sub("puts JSON.generate('body' => '')", "puts #{JSON.generate(pull).inspect}")
   end
 end
