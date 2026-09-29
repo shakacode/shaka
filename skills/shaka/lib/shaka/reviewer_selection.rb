@@ -74,7 +74,7 @@ module Shaka
       {
         'outcome' => outcome,
         'reviewer' => reviewer_for(outcome, selected),
-        'reviewers' => run_order(outcome, selected, reasons),
+        'reviewers' => run_order(selected, reasons),
         'implementation_providers' => providers,
         'considered' => reasons.map { |entry, why| { 'reviewer' => identity(entry), 'reason' => why } },
         'note' => note(outcome, selected)
@@ -89,13 +89,11 @@ module Shaka
     end
 
     # The preferred reviewer first, then other available entries in list order up to the count.
-    def run_order(outcome, selected, reasons)
-      return [{ 'reviewer' => implementer, 'outcome' => outcome }] unless selected
+    def run_order(selected, reasons)
+      return [implementer] unless selected
 
-      others = reasons.reject { |entry, why| entry.equal?(selected) || why == UNAVAILABLE }
-      [[selected, reasons.assoc(selected).last], *others].first(@count).map do |entry, why|
-        { 'reviewer' => identity(entry), 'outcome' => why == AVAILABLE ? 'different_provider' : 'same_provider' }
-      end
+      others = reasons.reject { |entry, why| entry.equal?(selected) || why == UNAVAILABLE }.map(&:first)
+      [selected, *others].first(@count).map { |entry| identity(entry) }
     end
 
     def reviewer_for(outcome, selected)

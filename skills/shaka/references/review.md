@@ -117,12 +117,13 @@ Three outcomes, none of them an error:
 | `same_model` | Nothing listed is available. Run the implementation model in a fresh context, which is a valid review even if its CLI path failed. |
 
 `--count N` asks for up to N reviewers on the same head, listed in `reviewers` in run order. The
-first is the reviewer above; the rest are the other available entries in the seam's list order, so
-a Claude implementation with the default list gets Codex, then Claude in a fresh context. Fewer
-come back when fewer are available. Run them all on one committed head, wait for each to finish or
-record its `not_completed` result, publish each report, and fix every finding in one repair batch.
-For the new head, rerun `reviewer` with the same count, adding `--unavailable` for any reviewer that
-has since failed with qualifying evidence. After two rounds, remaining nits start no further round. One published attestation for the head satisfies
+first is the reviewer above, and `outcome` and `note` describe only it; the rest are the other
+available entries in the seam's list order, so a Claude implementation with the default list gets
+Codex, then Claude in a fresh context. Fewer come back when fewer are available. Run them all on one
+committed head, wait for each to finish or record its `not_completed` result, publish each report,
+and fix every finding in one repair batch. For the new head, rerun `reviewer` with the same count,
+adding `--unavailable` for any reviewer that has since failed with qualifying evidence. After two
+rounds, remaining nits start no further round. One published attestation for the head satisfies
 `merge`; note a reviewer that did not complete on the PR.
 
 Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked

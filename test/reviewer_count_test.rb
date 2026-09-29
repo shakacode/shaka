@@ -13,31 +13,34 @@ class ReviewerCountTest < Minitest::Test
             { 'provider' => 'xai', 'model_family' => 'grok' }].freeze
 
   def test_lists_the_single_reviewer_by_default
-    assert_equal [%w[openai/codex different_provider]], run_order(select(['anthropic/claude']))
+    assert_equal ['openai/codex'], select(['anthropic/claude']).fetch('reviewers')
   end
 
   # Claude implements; Codex and a fresh Claude both review the same head.
   def test_fills_later_slots_in_list_order_after_one_different_provider
     result = select(['anthropic/claude'], count: 2)
 
-    assert_equal 'openai/codex', result.fetch('reviewer')
-    assert_equal [%w[openai/codex different_provider], %w[anthropic/claude same_provider]], run_order(result)
+    assert_equal 'different_provider', result.fetch('outcome')
+    assert_equal %w[openai/codex anthropic/claude], result.fetch('reviewers')
   end
 
   def test_skips_unavailable_entries_when_filling_slots
     result = select(['anthropic/claude'], unavailable: ['anthropic/claude'], count: 2)
 
-    assert_equal [%w[openai/codex different_provider], %w[xai/grok different_provider]], run_order(result)
+    assert_equal %w[openai/codex xai/grok], result.fetch('reviewers')
   end
 
   def test_runs_only_the_available_reviewers_when_fewer_than_requested
     result = select(['anthropic/claude'], unavailable: %w[openai/codex xai/grok], count: 3)
 
-    assert_equal [%w[anthropic/claude same_provider]], run_order(result)
+    assert_equal ['anthropic/claude'], result.fetch('reviewers')
   end
 
   def test_same_model_fallback_is_the_only_reviewer
-    assert_equal [%w[openai/codex same_model]], run_order(select(['openai/codex'], reviewers: nil, count: 2))
+    result = select(['openai/codex'], reviewers: nil, count: 2)
+
+    assert_equal 'same_model', result.fetch('outcome')
+    assert_equal ['openai/codex'], result.fetch('reviewers')
   end
 
   def test_requires_a_positive_count
@@ -50,7 +53,7 @@ class ReviewerCountTest < Minitest::Test
     with_repository do |root|
       result = reviewer(root, '--implementer', 'anthropic/claude', '--count', '2')
 
-      assert_equal(%w[openai/codex anthropic/claude], result.fetch('reviewers').map { |row| row.fetch('reviewer') })
+      assert_equal(%w[openai/codex anthropic/claude], result.fetch('reviewers'))
     end
   end
 
@@ -74,6 +77,4 @@ class ReviewerCountTest < Minitest::Test
       count:
     ).call
   end
-
-  def run_order(result) = result.fetch('reviewers').map { |row| row.values_at('reviewer', 'outcome') }
 end
