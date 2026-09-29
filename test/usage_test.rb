@@ -209,6 +209,16 @@ class UsageSinceTimeTest < Minitest::Test
     assert_includes error, 'invalid options'
   end
 
+  def test_rejects_start_time_combined_with_other_turn_selection
+    [['--all-turns'], ['--turn', 'current']].each do |selection|
+      _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', COMMIT,
+                                              '--contribution', 'implementation', '--since-time', START.iso8601,
+                                              *selection)
+      refute_predicate status, :success?
+      assert_includes error, 'invalid options'
+    end
+  end
+
   def test_refuses_an_unstamped_response_instead_of_reporting_zero
     _output, error, status = unstamped_report
 

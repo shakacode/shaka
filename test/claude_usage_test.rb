@@ -396,3 +396,20 @@ class ClaudeUsageIdentityTest < Minitest::Test
     end
   end
 end
+
+class ClaudeUsageSinceTimeTest < Minitest::Test
+  include ClaudeUsageFixture
+
+  def test_start_time_refuses_an_aggregate_print_result
+    Dir.mktmpdir do |directory|
+      file = print_result_file(directory, timestamp: '2026-09-14T12:00:01Z')
+      output, error, status = Open3.capture3(NO_HOST, COMMAND, 'usage', '--host', 'claude-code', '--file', file,
+                                             '--commit', COMMIT, '--contribution', 'review',
+                                             '--since-time', '2026-09-14T12:00:00Z')
+
+      refute_predicate status, :success?
+      assert_equal '', output
+      assert_includes error, '--since-time cannot split an aggregate usage record'
+    end
+  end
+end

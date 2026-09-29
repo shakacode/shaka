@@ -228,6 +228,20 @@ class PrWatchTransitionsTest < Minitest::Test
 end
 
 class PrWatchBaselineTest < Minitest::Test
+  def test_command_uses_trusted_review_jobs_and_required_checks
+    seam = Struct.new(:review, :merge).new({ 'ci_review_jobs' => ['claude-review'] },
+                                           { 'required_checks' => ['validate'] })
+    options = { root: Dir.pwd, ref: 'a' * 40, head: 'b' * 40, interval: 7, timeout: 20, settle: 3 }
+    with_trusted_config(seam) do
+      watcher = Shaka::PrWatch::Command.watcher(['owner/repo', '42'], options)
+      settings = Shaka::PrWatch::Command.watch_settings(options, seam)
+
+      assert_equal ['claude-review'], watcher.instance_variable_get(:@ci_jobs)
+      assert_equal ['validate'], settings[:seam_required_checks]
+      assert_equal({ interval: 7, timeout: 20, settle: 3 }, settings.slice(:interval, :timeout, :settle))
+    end
+  end
+
   def test_accepts_a_saved_comments_packet_for_the_expected_head
     Dir.mktmpdir do |directory|
       path = File.join(directory, 'comments.json')
@@ -258,5 +272,16 @@ class PrWatchBaselineTest < Minitest::Test
       end
       assert_includes error.message, 'expected PR head'
     end
+  end
+
+  private
+
+  def with_trusted_config(seam)
+    source = Shaka::TrustedConfigSource
+    original = source.method(:from_ref)
+    source.define_singleton_method(:from_ref) { |**_args| seam }
+    yield
+  ensure
+    source.define_singleton_method(:from_ref, original)
   end
 end

@@ -351,7 +351,8 @@ phases:
 
         ```text
         pr OWNER/REPO NUMBER --root DIR --ref SHA
-        pr watch OWNER/REPO NUMBER --head SHA --root DIR --ref SHA [--baseline COMMENTS_JSON]
+        pr watch OWNER/REPO NUMBER --head SHA --root DIR --ref SHA
+          [--baseline COMMENTS_JSON] [--interval SECONDS] [--timeout SECONDS] [--settle SECONDS]
         comments OWNER/REPO NUMBER --head SHA
         comments OWNER/REPO ISSUE_NUMBER --issue
         description OWNER/REPO NUMBER --content-file PATH [--root DIR --ref SHA]
@@ -623,7 +624,9 @@ always: |-
   CI review jobs, a new trusted comment, a moved head, closure, or timeout. It ignores non-required
   checks outside the configured CI review jobs. Its one `SHAKA_WAKE`
   line gives the reason to refresh the PR. On an error wake, inspect the error, refresh the PR,
-  and restart the watcher or use the resume path above. A monitor that reports failures only leaves the
+  and restart the watcher or use the resume path above. By default it polls every 60 seconds,
+  times out after one hour, and waits 15 seconds before a work wake. After a timeout with checks
+  still pending, restart it or use the resume path. A monitor that reports failures only leaves the
   `awaiting-resume` path above for green checks.
 
   Before ending any turn on a task that owns an open PR, run the saved helper's
