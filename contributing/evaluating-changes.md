@@ -15,8 +15,8 @@ login, or coding-agent subscription. Public repositories test public GitHub
 delivery mechanics; they do not test private-organization features or hide prior
 solutions from later agents.
 
-Prepare Docker, Git, a coding agent, and a GitHub CLI whose **final agent image**
-supports the trusted Shaka helper's exact commands. In particular, exercise
+Prepare Docker, Git, a coding agent, and a GitHub CLI. Check that the CLI inside
+the **final agent image** supports the trusted Shaka helper's exact commands. Exercise
 `gh pr checks --required --json name,state,bucket,link` there before a model call.
 Check authenticated integration separately; a CLI help or parsing check alone
 does not establish access to required checks, reviews, or Git push.
@@ -69,9 +69,10 @@ Retain public evaluation repositories and PRs as historical evidence. Add their
 exact links, revisions, hypothesis, and qualified/unqualified outcome to the
 [experiment index](https://github.com/shakacode/shaka/blob/main/eval/README.md) before repeating a case. Retention does
 not retain temporary Write grants, run-only credentials, containers, or network
-access. Verify access removal from both operator and agent views. Keep a public
-test identity and reusable credential out of private measured cells; use
-separately scoped credentials and isolated cells when the approved experiment
+access. Verify access removal from both operator and agent views. Retain private
+measured-cell repositories too, but never expose a solved cell to a later agent.
+Keep a public test identity and reusable credential out of private measured cells;
+use separately scoped credentials and isolated cells when the approved experiment
 needs hidden evidence.
 
 ## First value case: PR #250

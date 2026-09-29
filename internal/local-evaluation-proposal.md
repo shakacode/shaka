@@ -9,12 +9,13 @@ was approved after Fable 5.1 review. Its two public qualification repositories m
 qualify mechanics only; measured comparisons require private repositories.
 Approval alone provisions no credentials, resources, or paid runs.
 
-**Maintainer decision recorded September 28, 2026:** retain public evaluation
-repositories and PRs as history; remove temporary access and run-only credentials
-after each run. The
+**Maintainer decision recorded September 28, 2026:** retain evaluation
+repositories and PRs as history, including future private measured cells. Remove
+temporary access and run-only credentials after each run. Retained private cells
+remain inaccessible to agents in later cells. The
 [contributor guide](../contributing/evaluating-changes.md) and
 [experiment index](../eval/README.md) describe current practice and the proposed
-PR #250 case. Where this historical proposal says to delete public repositories
+PR #250 case. Where this historical proposal says to delete repositories
 or requires a new token for every public qualification, that later decision
 supersedes it. Private measured cells still need independent read isolation.
 
@@ -199,9 +200,9 @@ hidden-grading cell:
    `FAIL`. Preflight proves marker mutation/deletion detection and Ask event capture.
 5. Capture final PR/check/review/merge state through the API and grade locally.
    On every exit, stop processes, cancel remaining sandbox jobs, retain evidence,
-   and retain campaign repositories as evidence; revoke their scoped tokens at
-   campaign end. Token creation/approval and access cleanup ownership are arranged
-   before the batch.
+   and retain campaign repositories as evidence without granting later cells
+   access to solved ones; revoke their scoped tokens at campaign end. Token
+   creation/approval and access cleanup ownership are arranged before the batch.
 
 **One repository per measured cell, grouped in one campaign manifest.** This modifies
 Fable's one-repository-per-campaign suggestion: resetting branches does not hide
@@ -299,8 +300,9 @@ For an organization sandbox, the machine user must be an organization member
 with access limited to these repositories, not merely an outside collaborator.
 Set the organization's default member repository permission to **No permission**;
 give the machine user no team, role, or direct sibling-repository grants; and inject
-no alternate login session, SSH key, or credential inside a private measured
-cell. Preflight must prove that both API reads and clone attempts against
+no login session, SSH key, stored `gh` credential, or credential other than the
+current cell's PAT inside a private measured cell. Preflight must prove that both
+API reads and clone attempts against
 a sibling private repository are denied from the agent container. Apply the same
 isolation to public qualification access. A public qualification may use a
 reusable, separately stored agent credential if its effective permissions are
