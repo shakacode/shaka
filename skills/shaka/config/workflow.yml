@@ -196,7 +196,8 @@ phases:
         returns `completed` or a recorded `not_completed`, then fix all their findings as one
         repair batch. Review the new head by rerunning `reviewer` with the same count, adding
         `--unavailable` for any reviewer that has since failed with qualifying evidence. After
-        two such rounds, remaining nits start no further round.
+        two such rounds, decline remaining nits with a reason instead of fixing them, so the
+        reviewed head stays current.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
         comes from the default branch. Pass `--implementer` once per provider and model family that

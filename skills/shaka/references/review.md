@@ -123,8 +123,9 @@ Codex, then Claude in a fresh context. Fewer come back when fewer are available.
 committed head, wait for each to finish or record its `not_completed` result, publish each report,
 and fix every finding in one repair batch. For the new head, rerun `reviewer` with the same count,
 adding `--unavailable` for any reviewer that has since failed with qualifying evidence. After two
-rounds, remaining nits start no further round. One published attestation for the head satisfies
-`merge`; note a reviewer that did not complete on the PR.
+rounds, decline remaining nits with a reason instead of fixing them, so the reviewed head stays
+current. One published attestation for the head satisfies `merge`; note a reviewer that did not
+complete on the PR.
 
 Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked
 provider. Missing local credentials for a provider are not a problem to solve here — if you have no
