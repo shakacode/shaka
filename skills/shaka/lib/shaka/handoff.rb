@@ -106,7 +106,7 @@ module Shaka
       head = SquashNote.new(@github).head
       message = "Post the squash commit message for #{live} with `squash-message` before the merge click."
       return owe('no squash message', message) unless head
-      return "squash message #{head[0, SHORT]}" if live.start_with?(head)
+      return "squash message #{head[0, SHORT]}" if head == live
 
       owe("squash message #{head[0, SHORT]}", "The squash commit message names #{head}; post one for #{live}.")
     end

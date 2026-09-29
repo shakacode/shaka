@@ -43,6 +43,13 @@ class HandoffSquashMessageTest < Minitest::Test
     assert owed?(awaiting_merge(comments: [squash_comment(OLD)]), "post one for #{HEAD}")
   end
 
+  # A fork author can mint a commit sharing the seven characters the comment displays.
+  def test_a_squash_message_for_a_head_sharing_only_its_prefix_is_owed
+    twin = HEAD[0, 7] + ('b' * 33)
+
+    assert owed?(awaiting_merge(comments: [squash_comment(twin)]), "post one for #{HEAD}")
+  end
+
   def test_the_latest_squash_message_wins
     comments = [squash_comment(HEAD, id: 1), squash_comment(OLD, id: 2)]
 
