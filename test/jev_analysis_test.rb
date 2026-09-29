@@ -43,7 +43,7 @@ class JevAnalysisTest < Minitest::Test
   end
 
   def test_rejects_missing_response_fields_and_wrong_answer_type
-    malformed = [OUTPUT.merge(model: ''), OUTPUT.merge(usage: { input_tokens: -1 }), [],
+    malformed = [OUTPUT.merge(model: ''), OUTPUT.merge(usage: { input_tokens: -1 }), [], OUTPUT.except(:usage),
                  invalid_answer(type: 'text', noul: 0.5), invalid_answer(type: 'noul', noul: 1.5)]
     malformed.each do |body|
       client = ->(*) { response(200, body) }
@@ -121,6 +121,39 @@ class JevAnalysisTest < Minitest::Test
   end
 
   def target = { pr_url: URL, head: HEAD, evidence: 'Public' }
+end
+
+class JevHttpTransportTest < Minitest::Test
+  def test_default_transport_requires_tls_and_bounded_timeouts
+    response = Struct.new(:code, :body).new('200', JSON.generate(JevAnalysisTest::OUTPUT))
+    with_http_start(fake_transport(response)) do
+      result = ShakaJev::Analysis.new(api_key: 'test-key', public_repository: ->(*) { true }).call(
+        pr_url: JevAnalysisTest::URL, head: JevAnalysisTest::HEAD, evidence: 'Public'
+      )
+      assert_equal 'jev-1.13.0', result.fetch('model')
+    end
+  end
+
+  private
+
+  def fake_transport(response)
+    test = self
+    http = Object.new
+    http.define_singleton_method(:request) { |_| response }
+    lambda do |host, port, **options, &block|
+      test.assert_equal ['api.typesafe.ai', 443], [host, port]
+      test.assert_equal({ use_ssl: true, open_timeout: 10, read_timeout: 30 }, options)
+      block.call(http)
+    end
+  end
+
+  def with_http_start(replacement)
+    original = Net::HTTP.method(:start)
+    Net::HTTP.define_singleton_method(:start, replacement)
+    yield
+  ensure
+    Net::HTTP.define_singleton_method(:start, original)
+  end
 end
 
 class JevPublicGitHubRepositoryTest < Minitest::Test

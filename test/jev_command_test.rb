@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require 'json'
 require 'open3'
 require 'rbconfig'
+require 'tmpdir'
 
 class JevCommandTest < Minitest::Test
   def test_missing_options_and_unreadable_file_have_clean_errors
@@ -37,5 +39,26 @@ class JevCommandTest < Minitest::Test
     refute_predicate status, :success?
     assert_match(/TYPESAFE_API_KEY contains invalid characters/, output)
     refute_match(/SECRET/, output)
+  end
+
+  def test_success_reads_evidence_and_prints_result
+    Dir.mktmpdir do |dir|
+      evidence = File.join(dir, 'evidence.txt')
+      File.write(evidence, "Public evidence.\n")
+      output, status = run_success(evidence)
+      assert_predicate status, :success?, output
+      assert_equal 'jev-test', JSON.parse(output).fetch('model')
+      assert_match(/\A[0-9a-f]{64}\z/, JSON.parse(output).fetch('evidence_sha256'))
+    end
+  end
+
+  private
+
+  def run_success(evidence)
+    command = [RbConfig.ruby, File.expand_path('../skills/shaka-jev/scripts/analyze', __dir__),
+               '--pr-url', 'https://github.com/shakacode/shaka/pull/302', '--head', 'a' * 40,
+               '--evidence', evidence]
+    fake = File.expand_path('support/jev_cli_fake.rb', __dir__)
+    Open3.capture2e({ 'TYPESAFE_API_KEY' => 'test-key', 'RUBYOPT' => "-r#{fake}" }, *command)
   end
 end
