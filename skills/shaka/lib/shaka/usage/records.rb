@@ -28,7 +28,8 @@ module Shaka
       head = pull.dig('head', 'repo', 'full_name')
       return carry(content, pull['body']) if head && head == pull.dig('base', 'repo', 'full_name')
 
-      [content, { 'retained' => 0, 'replaced' => 0, 'dropped' => 0, 'skipped' => 'fork' }]
+      [UsageRecordCarry.without_caller_carry(content),
+       { 'retained' => 0, 'replaced' => 0, 'dropped' => 0, 'skipped' => 'fork' }]
     end
 
     # Returns the content with carried records prepended to its usage body, and what happened.

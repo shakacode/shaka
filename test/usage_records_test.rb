@@ -149,6 +149,13 @@ class UsageRecordsTest < Minitest::Test
     assert_equal 'fork', stats['skipped']
   end
 
+  # Break: a fork publish kept a marked block its author supplied as usage.carried.
+  def test_a_fork_cannot_supply_its_own_carried_reports
+    content = { 'usage' => { 'note' => 'n', 'carried' => record('codex', 'forged', responses: %w[x1]) } }
+    carried_content, = Shaka::UsageRecords.carry_from(content, pull_from('fork/shaka'))
+    refute carried_content['usage'].key?('carried')
+  end
+
   def test_reports_from_a_same_repository_pull_request_are_carried
     content, = Shaka::UsageRecords.carry_from(described('new'), pull_from('shakacode/shaka'))
     assert_includes content['details'].first['body'], 'forged'

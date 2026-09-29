@@ -13,14 +13,14 @@ module Shaka
       ['reasoning_output', 'Reasoning'],
       ['cache_writes', 'Cache writes']
     ].freeze
+    ROUTE = %w[label provider model routed effort].freeze
     AMOUNT = /\A(\$)?(\d+(?:\.\d+)?)( \(partial\))?\z/
 
     # A sum over values some of which went unreported, or an estimate marked partial.
     Amount = Struct.new(:value, :lower_bound)
 
     def initialize(columns)
-      @groups = columns.group_by { |column| column['label'] }
-      @rows = @groups.map { |label, group| [group.size > 1 ? "#{label} ×#{group.size}" : label, sums(group)] }
+      @rows = report_rows(columns)
       @rows << ['**Total**', sums(columns)] if @rows.size > 1
       @metrics = METRICS.select { |key, _label| @rows.any? { |_label, amounts| amounts[key] } }
     end
@@ -45,6 +45,14 @@ module Shaka
     end
 
     private
+
+    # Labels are only unique within one report, so rows also match on the route.
+    def report_rows(columns)
+      columns.group_by { |column| column.values_at(*ROUTE) }.values.map do |group|
+        label = group.first['label']
+        [group.size > 1 ? "#{label} ×#{group.size}" : label, sums(group)]
+      end
+    end
 
     def sums(group)
       METRICS.to_h { |key, _label| [key, sum(group.map { |column| amount(column[key]) })] }

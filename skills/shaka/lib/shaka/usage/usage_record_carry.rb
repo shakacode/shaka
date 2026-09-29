@@ -12,6 +12,12 @@ module Shaka
       usage if usage.is_a?(Hash)
     end
 
+    # Only carry may fill `carried`, and only from a same-repository PR body it checked.
+    def without_caller_carry(content)
+      usage = structured_usage(content)
+      usage ? content.merge('usage' => usage.except('carried')) : content
+    end
+
     def apply(records, content, usage, existing, stats)
       fresh = Array(usage['records']).map { |fields| identity!(without_columns(fields)) }
       region = records.managed_region(existing)

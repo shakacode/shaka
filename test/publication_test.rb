@@ -492,6 +492,12 @@ class PublicationUsageTableTest < Minitest::Test
     refute_includes rendered, 'not reported, so'
   end
 
+  # Break: two models whose reports both chose the label `high review` shared one row.
+  def test_one_label_on_different_models_keeps_separate_rows
+    other = REVIEW.merge('model' => 'gpt-6-astra', 'routed' => 'UNKNOWN')
+    assert_equal 2, render(usage: usage_of(REVIEW, other)).scan('| claude-opus-5-5 review |').size
+  end
+
   def test_amounts_show_cents_and_partial_estimates_are_minimums
     tiny = COLUMN.merge('usd' => '$0.000412')
     assert_includes render(usage: usage_of(tiny)), '| <$0.01 |'
