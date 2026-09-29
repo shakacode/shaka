@@ -36,7 +36,7 @@ The agent labels a PR when it stops for you:
 
 | Label | What it waits for |
 | --- | --- |
-| `awaiting-answer` | Your answer to a question the agent asked in chat |
+| `awaiting-answer` | Your answer. A description with decisions lists the questions |
 | `awaiting-merge-approval` | Your merge or approval of the named commit; set only under **Ask** |
 | `awaiting-resume` | You to resume the agent; it paused with nothing set to wake it |
 
@@ -45,6 +45,11 @@ it creates it: `awaiting-answer` in amber, `awaiting-merge-approval` in purple, 
 `awaiting-resume` in blue, each with a description. Recolor or reword them freely; the agent never changes a
 label that already exists. Creating a label needs write access; with triage access
 the agent can still apply labels someone else created.
+
+A description that includes those questions applies `awaiting-answer` and removes
+`awaiting-resume`. It refuses to publish them while `awaiting-merge-approval` is set.
+An empty decisions list removes that section and `awaiting-answer`, and leaves the other
+two labels in place.
 
 To approve, tell the agent in chat. An **Approve** review on GitHub also counts
 when it comes from a login you named to the agent as a merge approver; GitHub does

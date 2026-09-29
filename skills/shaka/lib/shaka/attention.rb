@@ -12,7 +12,7 @@ module Shaka
     COLORS = { 'awaiting-answer' => 'F9A03F', 'awaiting-merge-approval' => '8250DF',
                'awaiting-resume' => '1D76DB' }.freeze
     DESCRIPTIONS = {
-      'awaiting-answer' => 'The agent asked a question in chat and is waiting for your answer',
+      'awaiting-answer' => 'Decisions for the maintainer are waiting for your answer',
       'awaiting-merge-approval' => 'Ready under Ask: merge this commit or approve it so the agent merges',
       'awaiting-resume' => 'Paused with nothing to wake the agent; resume from WIP Details'
     }.freeze
@@ -24,14 +24,28 @@ module Shaka
       @github = github
     end
 
-    def call(state:)
+    def call(state:, refuse_merge: false)
       raise Error, "State must be one of: #{STATES.join(', ')}." unless STATES.include?(state)
 
       wanted = LABELS[state]
       raise Error, 'Pull request is not open.' if wanted && @github.snapshot['state'] != 'OPEN'
 
-      keep_only(wanted)
+      keep_only(wanted, refuse_merge:)
       { 'state' => state, 'labels' => [wanted].compact }
+    end
+
+    # Drops awaiting-answer and leaves awaiting-merge-approval and awaiting-resume in place.
+    def release_answer
+      name = LABELS.fetch('answer')
+      current = current_labels
+      present = current.find { |label| label.casecmp?(name) }
+      @github.api(path(present), method: 'DELETE', expected: Array) if present
+      remaining = current.select { |label| attention?(label) && !label.casecmp?(name) }
+      { 'state' => 'released', 'labels' => remaining }
+    end
+
+    def refuse_merge_wait
+      refuse_merge_label(current_labels)
     end
 
     # The attention labels the PR carries now, in GitHub's order.
@@ -41,9 +55,16 @@ module Shaka
 
     def path(label = nil) = ["repos/#{@github.repository}/issues/#{@github.number}/labels", label].compact.join('/')
 
+    def refuse_merge_label(current)
+      return unless current.any? { |name| name.casecmp?(LABELS.fetch('merge')) }
+
+      raise Error, 'awaiting-merge-approval is already set; clear that wait before publishing decisions.'
+    end
+
     # Deletes every other attention label, then adds the wanted one when it is missing.
-    def keep_only(wanted)
+    def keep_only(wanted, refuse_merge: false)
       current = current_labels
+      refuse_merge_label(current) if refuse_merge
       missing = wanted && current.none? { |name| name.casecmp?(wanted) }
       ensure_repository_label(wanted) if missing
       remove_other_attention_labels(current, wanted)

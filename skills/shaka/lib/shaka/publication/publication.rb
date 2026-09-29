@@ -6,6 +6,7 @@ require_relative 'links'
 require_relative 'usage_details'
 require_relative 'provenance'
 require_relative 'wip_details'
+require_relative '../publication_sections'
 
 module Shaka
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
@@ -34,12 +35,7 @@ module Shaka
 
     private
 
-    def sections
-      PublicationText.list(@content['sections'], 'sections').map do |section|
-        heading = PublicationText.single_line(section['heading'], 'section heading')
-        "## #{heading}\n\n#{PublicationText.required(section['body'], "section #{heading}")}"
-      end
-    end
+    def sections = PublicationSections.render(@content)
 
     def top_links = PublicationLinks.top(@content)
 

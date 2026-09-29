@@ -10,6 +10,7 @@ require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
 require_relative '../lib/shaka/claim'
+require_relative '../lib/shaka/decision_labels'
 require_relative '../lib/shaka/publication/deployment_link'
 require_relative '../lib/shaka/doctor'
 require_relative '../lib/shaka/enforcement'
@@ -259,14 +260,20 @@ begin
                described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
                Shaka::UsageDetails.require_rendered(described['details'])
                usage_records = nil
+               carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 Shaka::Publication.description(carried)
+                 rendered = Shaka::Publication.description(carried)
+                 Shaka::DecisionLabels.guard(github, carried, pull['body'])
+                 rendered
                end
+               attention = Shaka::DecisionLabels.sync(github, carried)
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
                                                        model: options[:opening_model]).call(described['summary'])
-               published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note)
+               published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note).tap do |result|
+                 result['attention'] = attention if attention
+               end
              end
            when 'reply'
              github.reply(body: Shaka::Publication.comment(content(options.fetch(:content_file))),
