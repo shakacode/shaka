@@ -9,8 +9,9 @@ was approved after Fable 5.1 review. Its two public qualification repositories m
 qualify mechanics only; measured comparisons require private repositories.
 Approval alone provisions no credentials, resources, or paid runs.
 
-**Later operating decision:** retain public evaluation repositories and PRs as
-history; remove temporary access and run-only credentials after each run. The
+**Maintainer decision recorded September 28, 2026:** retain public evaluation
+repositories and PRs as history; remove temporary access and run-only credentials
+after each run. The
 [contributor guide](../contributing/evaluating-changes.md) and
 [experiment index](../eval/README.md) describe current practice and the proposed
 PR #250 case. Where this historical proposal says to delete public repositories
@@ -286,7 +287,7 @@ fine-grained PAT selected for that cell's repository: Contents and Pull requests
 read/write, Actions read, and
 implicit Metadata read; no Administration, Workflows, or check/status write access.
 Denying bypass does not remove the merge API from Contents write: Ask authority is
-intentionally a detection-and-failure control in these disposable sandboxes, not a
+intentionally a detection-and-failure control in these isolated test repositories, not a
 token-level prevention control. Any direct merge or observed merge attempt fails grading; this
 design makes no production authority-isolation claim.
 Denying Workflows changes does not protect test scripts; §5's verifier checks those.
@@ -304,8 +305,9 @@ a sibling private repository are denied from the agent container. Apply the same
 isolation to public qualification access. A public qualification may use a
 reusable, separately stored agent credential if its effective permissions are
 limited by no default repository access and temporary one-repository Write;
-remove that grant after the run. Do not carry that credential into a private
-measured cell. Apply a separately scoped private probe token and
+remove that grant after the run and verify removal from both operator and agent
+views before another run. Keep the public-test identity and credential out of
+private measured cells. Apply a separately scoped private probe token and
 revoke that token before measured cells run. If the
 account remains able to discover or read sibling/probe repositories through any
 credential available to the runner, stop rather than measure. The membership

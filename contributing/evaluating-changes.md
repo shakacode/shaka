@@ -26,10 +26,12 @@ Keep two roles distinct:
 - An operator creates the repository, configures protection, and grants access.
   Operator credentials stay outside the agent container.
 - A non-admin agent identity gets Write only on its active test repository.
-  Set its organization base repository permission to none, avoid sibling-repo
-  grants, and verify the effective access before each run. The GitHub credential
-  may be reusable if organization policy permits, but the temporary repository
-  grant is removed after the run. Store credentials outside source and logs.
+  In an organization, set its base repository permission to none. In a personal
+  account, use a separate collaborator identity with no other private-repository
+  grants. Verify effective access before each run. A reusable public-test
+  credential is acceptable if policy permits, but remove and verify removal of
+  its temporary repository grant after the run. Do not start another run while
+  an earlier grant remains. Store credentials outside source and logs.
 
 Use a separate coding-agent sign-in for the sandbox if the host supports one.
 Do not mount a contributor's normal agent home, SSH keys, GitHub configuration,
@@ -67,9 +69,10 @@ Retain public evaluation repositories and PRs as historical evidence. Add their
 exact links, revisions, hypothesis, and qualified/unqualified outcome to the
 [experiment index](https://github.com/shakacode/shaka/blob/main/eval/README.md) before repeating a case. Retention does
 not retain temporary Write grants, run-only credentials, containers, or network
-access. A later measured case must not reuse a public solved fixture as if its
-solution were hidden; use separately isolated private cells when the approved
-experiment needs hidden evidence.
+access. Verify access removal from both operator and agent views. Keep a public
+test identity and reusable credential out of private measured cells; use
+separately scoped credentials and isolated cells when the approved experiment
+needs hidden evidence.
 
 ## First value case: PR #250
 
@@ -77,8 +80,8 @@ experiment needs hidden evidence.
 `.agents/writing-style.md` from the trusted default-branch commit. Its tests and
 CLI check demonstrate the loader mechanism, not that automatic loading improves
 writing or saves maintainer effort. The cheaper comparison is an `AGENTS.md`
-pointer to the same style guide. The PR is on hold and must not be merged as a
-side effect of its evaluation.
+pointer to the same style guide. Do not merge the PR as a side effect of its
+evaluation; the [experiment index](https://github.com/shakacode/shaka/blob/main/eval/README.md) records its live status.
 
 An offline smoke check against one pinned trusted ref found no `writing_style`
 field with the baseline helper and a guide with the candidate helper. That
@@ -103,6 +106,5 @@ assess whether the published writing follows the style, how many corrections a
 maintainer made, and whether either arm missed delivery gates. One paired task
 is a feasibility observation, not proof of broad value.
 
-The next test has not run. Agree on its fixture, model, budget, and permitted
-repository visibility before provisioning resources or calling a model. Record
-the result even if it is negative or inconclusive.
+Before a model test, agree on its fixture, model, budget, and permitted repository
+visibility. Record the result even if it is negative or inconclusive.
