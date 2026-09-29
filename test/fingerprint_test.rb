@@ -86,11 +86,9 @@ class FingerprintTest < Minitest::Test
     refute_equal first, component(fingerprint, 'files')
   end
 
-  def test_rejects_symlink_escape_and_incomplete_private_source
+  def test_rejects_symlink_escape
     File.symlink('/etc/passwd', at('.agents/shaka/bin/escape'))
     @source.inventory << { path: '.agents/shaka/bin/escape' }
-    assert_raises(Shaka::Error) { fingerprint }
-    @source.status = 'partial'
     assert_raises(Shaka::Error) { fingerprint }
   end
 

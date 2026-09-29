@@ -38,6 +38,8 @@ module Shaka
         raise Error, 'Fingerprint input has invalid UTF-8' unless encoded.valid_encoding?
 
         encoded
+      rescue Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError
+        raise Error, 'Fingerprint input has invalid UTF-8'
       end
 
       def normalize_float(value)

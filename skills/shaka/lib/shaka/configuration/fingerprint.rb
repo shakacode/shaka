@@ -71,6 +71,7 @@ module Shaka
       def validate_private_source!
         raise Error, 'Private source preflight is not complete' unless @private_source.status == 'complete'
         raise Error, 'Private source belongs to another worktree' unless File.realpath(@private_source.root) == @root
+        raise Error, 'Private source ref must be a full commit SHA' unless full_sha?(@private_source.ref)
       end
 
       def source_identity
@@ -103,14 +104,16 @@ module Shaka
       def full_sha?(value) = value.is_a?(String) && value.match?(/\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/)
 
       def file_hashes
-        paths = private_paths || @settings.fetch('commands').values
+        paths = private_paths + @settings.fetch('commands').values
         paths += RepositoryConfig.prompt_files(review: @settings.fetch('review'),
                                                opening: @settings.fetch('opening_check')).map(&:last)
         @files.hashes(paths)
+      rescue KeyError => e
+        raise Error, "Effective settings lack #{e.key}"
       end
 
       def private_paths
-        return unless @private_source
+        return [] unless @private_source
 
         @private_source.inventory.map { |entry| entry.fetch(:path) } - [config_path]
       end
