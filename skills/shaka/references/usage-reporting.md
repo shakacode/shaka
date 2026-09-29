@@ -13,20 +13,20 @@ from those records, so everything it shows can be carried by a later publish. A
 `details` item whose summary names usage is refused.
 
 The description renders one table with a row per report label. Reports with the
-same label, provider, model, and effort, such as eight review runs of one model,
-share a row marked `×8`; rows that share only a label also show their model and
-effort. A total
-row follows when there is more than one row, and the collapsed summary shows the
-total USD estimate. Columns are USD, Credits, Input, Cached input, Output,
-Reasoning, and Cache writes; a column no report measured is left out. Amounts are
-rounded to cents and grouped by thousands for reading. A cell no report measured
-shows `—`, and `+` marks a minimum: a partial estimate, or a sum that left out an
-unmeasured report. The total can count a response twice when two kept reports
+same label, provider, configured and routed model, and effort, such as eight review
+runs of one model, share a row marked `×8`; rows that share only a label also show
+their model and effort. With more than one row, a total row adds the USD and credit
+estimates; it leaves token counts blank, because hosts count input differently. The
+collapsed summary shows the USD total. Columns are USD, Credits, Input, Cached
+input, Output, Reasoning, and Cache writes; a column no report measured is left out.
+Amounts are rounded to cents and grouped by thousands for reading. A cell no report
+measured shows `—`, and `+` marks a minimum: a partial estimate, or a sum that left
+out an unmeasured report. The total can count a response twice when two kept reports
 partly overlap.
 
 Reports from before this table are listed below it and left out of the total, which
-then shows `+`. Each record is also kept as a hidden block holding its reported columns. A later
-publish that carries the block puts its row back in the table.
+then shows `+`. Each record is also kept as a hidden block holding its reported
+columns. A later publish that carries the block puts its row back in the table.
 
 Put that `usage` object in the PR, or the JSON report in the final response when
 there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a

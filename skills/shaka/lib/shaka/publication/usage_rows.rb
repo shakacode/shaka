@@ -13,6 +13,7 @@ module Shaka
       ['reasoning_output', 'Reasoning'],
       ['cache_writes', 'Cache writes']
     ].freeze
+    COST = %w[usd credits].freeze
     ROUTE = %w[label provider model routed effort].freeze
     LEGEND = [
       [:unreported?, '— not reported'],
@@ -28,7 +29,7 @@ module Shaka
     def initialize(columns, earlier: false)
       @earlier = earlier
       @rows = report_rows(columns)
-      @rows << ['**Total**', sums(columns).transform_values { |sum| minimum(sum) }] if @rows.size > 1
+      @rows << ['**Total**', total(columns)] if @rows.size > 1
       @metrics = METRICS.select { |key, _label| @rows.any? { |_label, amounts| amounts[key] } }
     end
 
@@ -53,7 +54,7 @@ module Shaka
     private
 
     def unreported?(cells) = cells.include?(nil)
-    def minimum?(cells) = cells.compact.any?(&:lower_bound)
+    def minimum?(cells) = cells.grep(Amount).any?(&:lower_bound)
     def earlier?(_cells) = @earlier
 
     # Labels are only unique within one report, so rows also match on the route.
@@ -73,6 +74,12 @@ module Shaka
     def route_name(column)
       model = [column['routed'], column['model'], column['provider']].find { |value| value != 'UNKNOWN' }
       [model, column['effort']].reject { |value| value.nil? || value == 'UNKNOWN' }.join(' ')
+    end
+
+    # Hosts count input differently (Codex includes cache reads, Claude excludes them), so
+    # token columns are not added across rows; only the cost estimates are.
+    def total(columns)
+      sums(columns).to_h { |key, sum| [key, COST.include?(key) ? minimum(sum) : :blank] }
     end
 
     def minimum(sum) = sum && @earlier ? Amount.new(sum.value, true) : sum
@@ -96,6 +103,7 @@ module Shaka
     end
 
     def shown(key, amount)
+      return '' if amount == :blank
       return '—' unless amount
 
       text = case key

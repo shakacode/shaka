@@ -462,7 +462,7 @@ class PublicationUsageTableTest < Minitest::Test
     | --- | ---: | ---: | ---: | ---: | ---: | ---: |
     | claude-opus-5-5 implementation | $3.27 | 100 | 7,558,810 | 27,535 | 7,687 | 150,781 |
     | claude-opus-5-5 review | $0.31 | 6 | 96,593 | — | — | — |
-    | **Total** | $3.58 | 106 | 7,655,403 | 27,535+ | 7,687+ | 150,781+ |
+    | **Total** | $3.58 |  |  |  |  |  |
   TABLE
 
   # Break: PR 307 published one column per report, so nine reports scrolled sideways,
@@ -471,7 +471,7 @@ class PublicationUsageTableTest < Minitest::Test
     rendered = render
     assert_includes rendered, RENDERED
     assert_includes rendered, '<summary>Usage and cost · $3.58 estimated</summary>'
-    assert_includes rendered, '_— not reported; + some usage not reported, so the amount is a minimum._'
+    assert_includes rendered, '_— not reported._'
     assert_operator rendered.index('| Report |'), :<, rendered.index('Native usage is PARTIAL.')
   end
 
@@ -589,7 +589,7 @@ class PublicationUsageRecordTableTest < Minitest::Test
     rendered = render(usage: usage_of(COLUMN, REVIEW).merge('carried' => legacy))
     assert_operator rendered.index('| Report |'), :<, rendered.index('| USD estimate | $1.000000 |')
     assert_includes rendered, '<summary>Usage and cost · $3.58+ estimated</summary>'
-    assert_includes rendered, '| **Total** | $3.58+ | 106+ |'
+    assert_includes rendered, '| **Total** | $3.58+ |  |'
     assert_includes rendered, 'reports from before this table are listed below and not counted'
   end
 
