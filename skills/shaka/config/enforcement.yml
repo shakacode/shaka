@@ -526,6 +526,14 @@ rules:
       whether a user confirmed that head, or whether a rebase changed behavior, so passing the
       flag honestly is the agent's alone. The scan does not reach this rule, which restricts
       with "only for".
+  - id: merge-limits-handoff-label
+    phase: finish
+    quote: Label that handoff `awaiting-merge-approval` with `attention --state merge`
+    enforced_by: agent
+    note: >-
+      Nothing checks which label an agent applies. `attention --state answer` labels an
+      over-limits handoff as readily as `--state merge`, and `handoff` accepts either as the one
+      attention label.
   - id: named-merge-approver
     phase: finish
     quote: Comment trust alone grants no approval.
