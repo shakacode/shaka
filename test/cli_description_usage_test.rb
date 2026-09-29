@@ -23,7 +23,7 @@ class CliDescriptionUsageTest < Minitest::Test
       _output, error, status = run_description(dir)
 
       refute_predicate status, :success?
-      assert_includes error, 'shaka usage'
+      assert_includes error, 'usage object'
       refute_path_exists File.join(dir, 'published.md')
     end
   end
@@ -40,6 +40,7 @@ class CliDescriptionUsageTest < Minitest::Test
                "#{RenderedUsage.body("| Metric | Value |\n| --- | --- |\n| Total | 1 |")}\n\n" \
                "</details>\n<!-- shaka:end -->"
     pull = { 'body' => existing, 'head' => REPO, 'base' => REPO }
-    super.sub("puts JSON.generate('body' => '')", "puts #{JSON.generate(pull).inspect}")
+    encoded = JSON.generate(pull).unpack1('H*')
+    super.sub("puts JSON.generate('body' => '')", "puts [#{encoded.dump}].pack('H*')")
   end
 end

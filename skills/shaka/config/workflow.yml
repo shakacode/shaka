@@ -294,7 +294,7 @@ phases:
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
         specific things in summaries and sections. Keep blockers visible; put supporting checks,
-        review history, rollback, and usage in `details`. Avoid repeated status updates. Store useful
+        review history, and rollback in `details`, and usage in the `usage` object. Avoid repeated status updates. Store useful
         evidence once and retrieve it as needed; collapsing does not save tokens.
       - Point reviewers to the code instead of retelling it: the description links the walkthrough,
         and the walkthrough links each step to its lines. Keep the text in proportion to the change.
@@ -327,8 +327,9 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `walkthrough`, required `deployment`, optional `decisions`, optional `sections`,
-        required `table`, required `provenance`, required usage `details` holding `usage` output,
-        and `wip` while the PR is unfinished; walkthroughs also require `head`.
+        required `table`, required `provenance`, required `usage` (`note` and `records` from
+        `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
+        whose summary names usage is refused; walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range
@@ -416,7 +417,9 @@ phases:
         a walkthrough is the behavior that changed. Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
-        or `shared-planning`. Publish the local adversarial review as `--contribution review` from
+        or `shared-planning`. Pass `--format json` and put every report's `record`, which holds
+        its columns, in the description `usage` object's `records`, so the helper renders one
+        table. Publish the local adversarial review as `--contribution review` from
         that run's `--file` or host context, rather than from the implementation session. Use
         `--all-turns` only when the session holds solely this task. Include
         available retry and contributor records, label shared intervals and UNKNOWN fields, and
