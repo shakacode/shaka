@@ -190,9 +190,45 @@ review:
       model_family: codex
 ```
 
-Use stable provider/family names; model releases do not require list updates.
-The agent prefers a different provider and chooses the review model and effort
-separately. Put custom review criteria in trusted `AGENTS.md`.
+Use stable provider/family names. The agent prefers a different provider. Put
+custom review criteria in trusted `AGENTS.md`.
+
+To control what a review costs, give an entry a `model` and an `effort`:
+
+```yaml
+  local_review_agents:
+    - provider: openai
+      model_family: codex
+      model: gpt-6-sol
+      effort: medium
+    - provider: anthropic
+      model_family: claude
+      effort: medium
+```
+
+Here every Codex review runs `gpt-6-sol` at medium effort. Without a `model`,
+Codex runs its built-in default, which has been `gpt-6-astra` at five times the
+token price, because the reviewer ignores your personal Codex configuration.
+Claude uses its CLI default model at medium effort. The review report records
+the effort it ran.
+
+Both settings are optional. A task can still ask for a different model or effort,
+which wins for that review. The review helper reads them from the trusted
+default-branch commit the agent passes as `--criteria-ref`, so a PR cannot pick
+the model that reviews it; without that commit, the settings are not applied.
+When a provider retires a named model, that reviewer's CLI fails until you update
+the entry.
+
+Each reviewer CLI accepts its own effort levels:
+
+| Reviewer | Where the levels come from |
+| --- | --- |
+| Claude | `claude --help` lists them for `--effort`, such as `low` through `max` |
+| Codex | The model's documentation; Codex passes the level through as configuration |
+| Grok | The Grok CLI's `--reasoning-effort` option |
+
+Shaka checks only that an effort is a lowercase name, such as `medium` or
+`xhigh`. The reviewer CLI decides whether it accepts that level.
 Configured CI review jobs have separate waiting rules under
 [`review.ci_review_wait`](#reviewci_review_wait).
 See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).

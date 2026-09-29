@@ -9,6 +9,7 @@ require 'shaka/publication/publishing'
 class HandoffFakeGitHub
   LABELS = 'repos/owner/repo/issues/42/labels'
   REVIEWS = 'repos/owner/repo/pulls/42/reviews'
+  COMMENTS = 'repos/owner/repo/issues/42/comments'
 
   attr_reader :repository, :number
 
@@ -32,6 +33,7 @@ class HandoffFakeGitHub
   def api_list(path)
     return @pull[:labels].map { |name| { 'name' => name } } if path.start_with?(HandoffFakeGitHub::LABELS)
     return @pull[:reviews] if path.start_with?(HandoffFakeGitHub::REVIEWS)
+    return @pull[:comments] if path.start_with?(HandoffFakeGitHub::COMMENTS)
 
     raise "unexpected list #{path}"
   end
@@ -48,7 +50,7 @@ module HandoffFixtures
 
   IDENTITY = { 'agent' => 'Claude Code', 'provider' => 'Anthropic', 'model' => 'claude-opus-5-5',
                'effort' => 'medium' }.freeze
-  PROVENANCE = { 'task_source' => 'issue', 'initial_prompt' => 'EXCLUDED', 'workflow_version' => 'v1',
+  PROVENANCE = { 'task_source' => 'issue', 'initial_prompt' => 'EXCLUDED',
                  'requested_model' => 'UNKNOWN', 'requested_effort' => 'UNKNOWN',
                  'recommended_model' => 'UNKNOWN', 'recommended_effort' => 'UNKNOWN',
                  'active_model' => 'UNKNOWN', 'active_effort' => 'UNKNOWN' }.freeze
@@ -88,7 +90,7 @@ module HandoffHarness
 
   def handoff(expected: HEAD, woken_by: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
-                 reviews: [walkthrough(HEAD)], checks: [check('pass')] }
+                 reviews: [walkthrough(HEAD)], checks: [check('pass')], comments: [] }
     Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull))).call(head: expected, woken_by:)
   end
 end

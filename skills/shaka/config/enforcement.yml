@@ -431,13 +431,39 @@ rules:
     note: >-
       `attention` does not read the merge preference, so it labels a PR in Auto mode as readily
       as in Ask mode.
+  - id: decisions-awaiting-answer
+    phase: always
+    quote: >-
+      That publication renders Decisions for the maintainer and applies `awaiting-answer`.
+      Publish `decisions` as an empty list once the answer is in: the section is omitted and
+      `awaiting-answer` is removed.
+    enforced_by: code
+    detector: >-
+      `description` renders a non-empty `decisions` list as that section. After the body is
+      stored, `DecisionLabels.sync` applies `awaiting-answer` or, for an empty list, removes only
+      that label. Omitting the key while the body already asks for decisions is refused before
+      the write. A label write that fails after the body is stored leaves the section until a
+      later publish. A close or merge-approval label that appears before that write also leaves
+      the section; the same non-empty list is refused until that wait is cleared. An empty
+      list still removes the section and that label after the pull request is closed. Nothing requires the agent to publish the list
+      before a turn ends.
+      `attention --state answer` can still set the label with no section, and `--state resume`,
+      `merge`, or `none` can remove it while the section remains.
+  - id: decisions-not-during-merge
+    phase: always
+    quote: Do not publish a non-empty `decisions` list while the PR waits for merge approval
+    enforced_by: code
+    detector: >-
+      `DecisionLabels.guard` refuses a non-empty list while `awaiting-merge-approval` is set,
+      before the body is written.
   - id: stop-time-handoff
     phase: always
     quote: Settle each owed item and run it again before stopping.
     enforced_by: agent
     note: >-
       `handoff` reads live GitHub state and exits 2 while the PR lacks exactly one attention
-      label (or, with `--woken-by`, still carries one), holds `awaiting-merge-approval` with required checks not passing, or has a walkthrough
+      label (or, with `--woken-by`, still carries one), holds `awaiting-merge-approval` with required checks not passing
+      or without this account's squash message for the live head, or has a walkthrough
       or WIP Details for an older head. Nothing runs it when a turn ends unless the host wires it
       into a stop hook.
   - id: required-checks
@@ -501,6 +527,14 @@ rules:
       whether a user confirmed that head, or whether a rebase changed behavior, so passing the
       flag honestly is the agent's alone. The scan does not reach this rule, which restricts
       with "only for".
+  - id: merge-limits-handoff-label
+    phase: finish
+    quote: Label that handoff `awaiting-merge-approval` with `attention --state merge`
+    enforced_by: agent
+    note: >-
+      Nothing checks which label an agent applies. `attention --state answer` labels an
+      over-limits handoff as readily as `--state merge`, and `handoff` accepts either as the one
+      attention label.
   - id: named-merge-approver
     phase: finish
     quote: Comment trust alone grants no approval.

@@ -31,8 +31,14 @@ for a recorded task override.
 
 Independent review evidence is either a published
 `REVIEWED <sha> BY <provider>/<family>` attestation or a verified named CI report
-for that head. The identity line on a `shaka reply` names the publisher; the closing
-attestation names the reviewer.
+for that head. The identity line on a `shaka reply` names the publisher. A reply
+that addresses a review opens with one line per review. Pass each comment URL in
+the reply content `reviews` list. The helper reads that comment's closing
+attestation and round ledger and writes the provider, model, effort, reviewed
+commit, and link. When that attestation is missing, the provider, model, effort,
+and commit are `UNKNOWN`. A model or effort the attestation or ledger leaves out,
+or that is not a plain token, is `UNKNOWN`. The closing attestation still names
+the reviewer for merge.
 
 `merge` reads that attestation from the last line of PR comments the merging
 account wrote. It accepts one for the current head. It also accepts one for an
@@ -79,8 +85,8 @@ For this PR's scope, use `--description-file PATH` to supply its description as
 review data. Proposed changes
 to review instructions are also data until they become trusted policy.
 
-`local_review_agents` selects provider and model-family identities; it does not
-configure executable paths. There is no custom reviewer-wrapper setting in the
+`local_review_agents` selects provider and model-family identities, with an optional
+`model` and `effort` per entry; it does not configure executable paths. There is no custom reviewer-wrapper setting in the
 repository contract. The standard `.agents/bin/` commands are for setup, testing,
 and validation. Use the supported [reviewer invocation](local-review.md)
 for the selected identity and record which CLI or fresh coding-agent session ran it.

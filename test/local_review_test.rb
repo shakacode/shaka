@@ -120,6 +120,31 @@ class LocalReviewCodexTest < Minitest::Test
   end
 end
 
+# Break caught: review run starts a nested helper Ruby that a project's RUBYOPT reaches.
+class LocalReviewRubyIsolationTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_review_prompt_helper_ignores_project_ruby_options
+    with_repository do |root, base, head, bin|
+      fake_codex(bin, head)
+      environment = { 'RUBYOPT' => project_ruby_options(root), 'REVIEW_TRACE' => "#{root}/trace.json" }
+      output, error, status = run_review(root, base, head, bin, env: environment)
+      assert_predicate status, :success?, error
+      result = assert_completed(output, head, 'openai/codex')
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  private
+
+  def project_ruby_options(root)
+    path = File.join(root, 'project_ruby_options.rb')
+    File.write(path, "abort 'project RUBYOPT reached Shaka' if $PROGRAM_NAME.end_with?('shaka.rb')\n")
+    "-r#{path}"
+  end
+end
+
 class LocalReviewOtherCliTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -1383,6 +1408,7 @@ module LocalReviewFixture
 end
 
 LocalReviewCodexTest.include(LocalReviewFixture)
+LocalReviewRubyIsolationTest.include(LocalReviewFixture)
 LocalReviewCodexTest.include(LocalReviewContextAssertion)
 LocalReviewCodexUsageTest.include(LocalReviewFixture)
 LocalReviewOtherCliTest.include(LocalReviewFixture)

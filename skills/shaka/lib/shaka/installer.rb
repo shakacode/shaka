@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'rbconfig'
 require 'shellwords'
 require_relative 'install/tree'
 require_relative 'install/source'
@@ -9,6 +10,8 @@ require_relative 'install/links'
 module Shaka
   # Installs a checkout independent copy and points one host's skills directory to it.
   class Installer
+    RUBY_RECORD = '.shaka-ruby'
+
     def initialize(source_root:, skills_dir:, names:, rollback: nil, managed_dir: nil)
       @source_alias = File.expand_path(source_root)
       @source_root = File.realpath(source_root)
@@ -24,6 +27,7 @@ module Shaka
       source = Install::Source.new(@source_root, @names, tree)
       package = Install::Package.new(@managed, source, @names, tree)
       target = @rollback ? package.existing(@rollback) : package.prepare(@source_root)
+      record_ruby
       Install::Links.new(@skills_dir, @managed, @source_root, @names).switch_all(target)
       announce(target)
     end
@@ -36,6 +40,15 @@ module Shaka
     end
 
     private
+
+    # The installed helper starts with this Ruby, so the Ruby a project selects cannot stop it.
+    def record_ruby
+      path = File.join(@managed, RUBY_RECORD)
+      staged = "#{path}.#{Process.pid}"
+      File.write(staged, "#{File.realpath(RbConfig.ruby)}\n")
+      File.chmod(0o644, staged)
+      File.rename(staged, path)
+    end
 
     def canonical(path)
       expanded = File.expand_path(path)

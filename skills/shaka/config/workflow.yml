@@ -325,9 +325,9 @@ phases:
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `walkthrough`, required `deployment`, optional `sections`, required `table`,
-        required `provenance`, required usage `details` holding `usage` output, and `wip` while
-        the PR is unfinished; walkthroughs also require `head`.
+        optional `walkthrough`, required `deployment`, optional `decisions`, optional `sections`,
+        required `table`, required `provenance`, required usage `details` holding `usage` output,
+        and `wip` while the PR is unfinished; walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range
@@ -371,7 +371,12 @@ phases:
         `squash-message` posts it as a new comment and deletes this account's earlier one.
         A merge queue takes no message, and `merge` reports that.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
-        answers an inline thread. Mark a settled inline thread resolved with `resolve`.
+        answers an inline thread. When a reply addresses a review, its `reviews` list holds
+        that pull request's comment URLs. The helper writes one opening line per URL from the
+        comment's closing attestation and round ledger. When that attestation is missing, the
+        provider, model, effort, and commit are UNKNOWN. A model or effort the attestation or
+        ledger leaves out, or that is not a plain token, is UNKNOWN. Mark a settled inline
+        thread resolved with `resolve`.
         Do not resolve a thread before this account has replied on it.
         Do not resolve a thread while its concern is open, its body was withheld, or the user asked to leave it open.
         The command refuses a missing thread and a thread that is already resolved.
@@ -426,12 +431,13 @@ phases:
         `CODEX_THREAD_ID`, Claude Code asks the host for this session's metadata and publishes
         the `link` it returns, and any host the guide does not cover, or that reports no link,
         uses `UNKNOWN`.
-      - Description provenance has exactly nine flat keys: `task_source`, `initial_prompt`,
-        `workflow_version`, `requested_model`, `requested_effort`, `recommended_model`,
-        `recommended_effort`, `active_model`, and `active_effort`. `initial_prompt` is `EXCLUDED`;
-        the other values use allowlisted text or `UNKNOWN`. The renderer adds the public machine
-        alias from `SHAKA_MACHINE_ALIAS` and keeps the native usage table as the only observed route
-        and token record.
+      - Description provenance has exactly eight flat keys: `task_source`, `initial_prompt`,
+        `requested_model`, `requested_effort`, `recommended_model`, `recommended_effort`,
+        `active_model`, and `active_effort`. `initial_prompt` is `EXCLUDED`; the other values use
+        allowlisted text or `UNKNOWN`. The renderer adds the public machine alias from
+        `SHAKA_MACHINE_ALIAS` and the workflow version, which names the commit the helper runs
+        from and links it when that commit came from `shakacode/shaka`, and keeps the native
+        usage table as the only observed route and token record.
     done_when: >-
       The PR description, walkthrough, and usage describe the current head; a UI change has
       that head's captures or a recorded blocked reason published on the PR; and a
@@ -525,7 +531,9 @@ phases:
         completed feedback before merge and report pending optional reviews.
       - `merge` refuses a PR over the trusted `merge.limits` for changed files, changed lines, or
         commits, or whose size GitHub does not report. That refusal switches Auto to Ask: report
-        the counts and hand the PR back. Pass `--limits-confirmed-head SHA` only for a head the
+        the counts and hand the PR back. Label that handoff `awaiting-merge-approval` with
+        `attention --state merge`, because the user's confirmation of the head approves its
+        merge. Pass `--limits-confirmed-head SHA` only for a head the
         user confirmed in this task after seeing the counts; asking you to merge a named head, or an
         Ask approval of it, is that confirmation. A confirmation carries to the head a clean rebase produces, or a
         conflict resolution that changes no behavior the walkthrough describes. Any other new
@@ -583,10 +591,13 @@ phases:
         Ask gates pass is not a pending chat decision.
     done_when: The PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
-  Whenever the task has a PR and stops for a user answer, in any phase, run the saved helper's
-  `attention OWNER/REPO NUMBER --state answer` so GitHub lists it as `awaiting-answer`; run it
-  with `--state none` when work resumes. A wait for merge approval is not an answer: it keeps
-  `awaiting-merge-approval` as Finish describes. When the turn ends with work left and nothing
+  Whenever the task has a PR and stops for a user answer, in any phase, publish `description`
+  with a non-empty `decisions` list before the turn ends. That publication renders
+  Decisions for the maintainer and applies `awaiting-answer`. Publish `decisions` as an empty
+  list once the answer is in: the section is omitted and `awaiting-answer` is removed.
+  Do not publish a non-empty `decisions` list while the PR waits for merge approval: that wait
+  keeps `awaiting-merge-approval` as Finish describes. Run `attention` with `--state none`
+  when work resumes and no decision is still open. When the turn ends with work left and nothing
   will wake this session, such as checks still running under a host monitor that reports only
   failures, a host without background commands, or a planned pause, run it with
   `--state resume` and make WIP Details `Next action` the resume prompt: the host's Shaka
@@ -595,8 +606,8 @@ always: |-
 
   Before ending any turn on a task that owns an open PR, run the saved helper's
   `handoff OWNER/REPO NUMBER --head SHA --root DIR --ref SHA`. Its status line names the head,
-  attention label, required checks, walkthrough head, and WIP Details head; exit status 2 lists
-  owed work. When a host monitor or background watcher will wake this session, add
+  attention label, required checks, walkthrough head, and WIP Details head, plus the squash
+  message head while the PR awaits merge approval; exit status 2 lists owed work. When a host monitor or background watcher will wake this session, add
   `--woken-by` naming it in place of a label. Settle each owed item and run it again before
   stopping. Review-only work reports what `handoff` lists and leaves the PR unchanged. A session
   resuming a PR after a restart, crash, or new chat runs `handoff` without `--head` first, treats

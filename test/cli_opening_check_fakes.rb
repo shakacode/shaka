@@ -43,7 +43,7 @@ module CliOpeningCheckFakes
   end
 
   def description_content
-    provenance = %w[task_source initial_prompt workflow_version requested_model requested_effort
+    provenance = %w[task_source initial_prompt requested_model requested_effort
                     recommended_model recommended_effort active_model active_effort].to_h { |key| [key, 'UNKNOWN'] }
     provenance['task_source'] = 'issue'
     provenance['initial_prompt'] = 'EXCLUDED'
