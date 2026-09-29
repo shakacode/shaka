@@ -10,7 +10,8 @@ phases:
     body: |-
       - A new work item received after this chat's previous PR closes starts Intake again,
         including the current workflow, claim, and checkpoint. Recommend a new chat for the
-        new task; when the user keeps this chat, separate its usage with a start point.
+        new task; when the user keeps this chat, record its UTC start time before work and
+        use that start point to separate its usage.
       - Identify the checkout from host context and Git remotes. If trusted `AGENTS.md`
         exists, read it for human-only constraints. Load the repository configuration
         selected at the current default-branch commit with the saved helper's
@@ -364,7 +365,7 @@ phases:
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA [--ci-review-wait MODE] [--limits-confirmed-head SHA]
           [--review-waiver REASON] [--squash-message PATH]
-        usage --commit SHA --contribution CATEGORY [--since-commit PREVIOUS_TASK_SHA]
+        usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
         ```
 
         `pr` reports the native readiness snapshot and required checks; it is not an exit code.
@@ -619,7 +620,8 @@ always: |-
   Without a baseline, watching starts with the comments already present. It polls the named
   head and exits on terminal required and configured
   CI review jobs, a new trusted comment, a moved head, closure, or timeout. Its one `SHAKA_WAKE`
-  line gives the reason to refresh the PR. A monitor that reports failures only leaves the
+  line gives the reason to refresh the PR. On an error wake, inspect the error, refresh the PR,
+  and restart the watcher or use the resume path above. A monitor that reports failures only leaves the
   `awaiting-resume` path above for green checks.
 
   Before ending any turn on a task that owns an open PR, run the saved helper's

@@ -184,58 +184,50 @@ class UsageTest < Minitest::Test
   end
 end
 
-class UsageSinceCommitTest < Minitest::Test
+class UsageSinceTimeTest < Minitest::Test
   include UsageFixture
 
-  def test_counts_only_later_responses_in_a_shared_session
-    sha, cutoff = boundary
-    records = [context('old'), timed_usage('previous-task', 'old', 900, cutoff - 1),
-               context('current'), timed_usage('current-task', 'current', 200, cutoff + 1)]
+  START = Time.iso8601('2026-09-14T12:00:00Z')
 
-    report = run_report(records, '--since-commit', sha)
+  def test_counts_only_later_responses_in_a_shared_session
+    records = [context('old'), timed_usage('previous-task', 'old', 900, START - 1),
+               context('current'), timed_usage('current-task', 'current', 200, START + 1)]
+
+    report = run_report(records, '--since-time', START.iso8601)
 
     assert_metric report, 'Input', 200
     assert_includes report, '1 responses'
-    assert_includes report, "responses after commit #{sha}"
+    assert_includes report, "responses after #{START.iso8601}"
   end
 
-  def test_rejects_a_non_commit_start_point
+  def test_rejects_an_invalid_start_time
     _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', COMMIT,
-                                            '--contribution', 'implementation', '--since-commit', 'bad')
+                                            '--contribution', 'implementation', '--since-time', 'bad')
 
     refute_predicate status, :success?
     assert_includes error, 'invalid options'
   end
 
   def test_refuses_an_unstamped_response_instead_of_reporting_zero
-    sha, = boundary
-    _output, error, status = unstamped_report(sha)
+    _output, error, status = unstamped_report
 
     refute_predicate status, :success?
-    assert_includes error, '--since-commit needs a timestamp'
+    assert_includes error, '--since-time needs a timestamp'
   end
 
   private
-
-  def boundary
-    sha, status = Open3.capture2('git', 'rev-parse', 'HEAD')
-    assert_predicate status, :success?
-    timestamp, status = Open3.capture2('git', 'show', '-s', '--format=%cI', sha.strip)
-    assert_predicate status, :success?
-    [sha.strip, Time.iso8601(timestamp.strip)]
-  end
 
   def timed_usage(id, turn, input, at)
     usage(id, turn, input).tap { |response| response[:timestamp] = at.iso8601 }
   end
 
-  def unstamped_report(sha)
+  def unstamped_report
     Dir.mktmpdir do |directory|
       record = usage('unplaced', 'current', 100)
       record.delete(:timestamp)
       file = write_records(directory, [context('current'), record], {})
       Open3.capture3(host_environment(directory), COMMAND, 'usage', '--file', file,
-                     '--commit', COMMIT, '--contribution', 'implementation', '--since-commit', sha)
+                     '--commit', COMMIT, '--contribution', 'implementation', '--since-time', START.iso8601)
     end
   end
 end

@@ -3,6 +3,8 @@
 module Shaka
   # CLI source selection and validation shared by every native usage reader.
   module UsageOptions
+    ISO_TIME = /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/
+
     def source_options(flags, options)
       flags.on('--host NAME', Usage::READERS.keys, 'codex, claude-code, cursor, opencode, or pi') do |value|
         options[:host] = value
@@ -10,8 +12,8 @@ module Shaka
       source_file_options(flags, options)
       flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
       flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |value| options[:turns] << value }
-      flags.on('--since-commit SHA', 'Count responses after this commit time in a shared session') do |value|
-        options[:since_commit] = value
+      flags.on('--since-time UTC', 'Count responses after task start in a shared session') do |value|
+        options[:since_time] = value
       end
     end
 
@@ -33,9 +35,9 @@ module Shaka
 
     def valid_selection?(options)
       return false if options[:all_turns] && options[:turns].any?
-      return true unless options[:since_commit]
+      return true unless options[:since_time]
 
-      !options[:all_turns] && options[:turns].empty? && options[:since_commit].match?(/\A[0-9a-f]{40}\z/)
+      !options[:all_turns] && options[:turns].empty? && options[:since_time].match?(ISO_TIME)
     end
   end
 end

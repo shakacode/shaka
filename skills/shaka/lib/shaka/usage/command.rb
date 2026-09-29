@@ -14,7 +14,7 @@ require_relative 'usage_errors'
 require_relative 'usage_table'
 require_relative 'usage_turns'
 require_relative 'usage_identity'
-require_relative 'since_commit'
+require_relative 'since_time'
 require_relative 'options'
 
 module Shaka
@@ -24,7 +24,7 @@ module Shaka
     include UsageTurns
     include UsageIdentity
     include UsageJsonReport
-    include UsageSinceCommit
+    include UsageSinceTime
     extend UsageOptions
 
     SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
@@ -78,9 +78,9 @@ module Shaka
       reader = READERS.fetch(options[:host])
       @inferred = options[:files].empty?
       @options[:files] = reader.discover if @inferred
-      all_turns = @options[:all_turns] || @options[:since_commit]
+      all_turns = @options[:all_turns] || @options[:since_time]
       @source = reader.new(@options[:files], @options[:turns], all_turns:)
-      select_since_commit if @options[:since_commit]
+      select_since_time if @options[:since_time]
       @responses = @source.responses.values
     end
 
@@ -117,7 +117,7 @@ module Shaka
 
     def turn_scope
       return 'all turns in selected sources' if @options[:all_turns]
-      return "responses after commit #{@options[:since_commit]}" if @options[:since_commit]
+      return "responses after #{@options[:since_time]}" if @options[:since_time]
 
       @options[:turns].empty? ? @source.class::LATEST_SCOPE : 'explicitly selected turns'
     end

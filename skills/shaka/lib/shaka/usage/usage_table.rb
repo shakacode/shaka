@@ -63,7 +63,7 @@ module Shaka
     end
 
     def context_row
-      return unless @inferred && @options[:turns].empty? && !@options[:since_commit]
+      return unless @inferred && @options[:turns].empty? && !@options[:since_time]
 
       @source.context_configuration if @source.respond_to?(:context_configuration)
     end

@@ -47,8 +47,7 @@ module Shaka
         result = observe
         return result if result
         return @pending_reason if settled?
-        return @pending_reason if @pending_reason && @clock.call >= deadline
-        return 'timeout' if @clock.call >= deadline
+        return @pending_reason || 'timeout' if @clock.call >= deadline
 
         @sleeper.call([@timing.fetch(:interval), deadline - @clock.call].min)
       end
