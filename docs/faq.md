@@ -79,7 +79,7 @@ without the implementation conversation.
 
 Yes. Ask your agent to install the optional [Shaka Jev companion](https://github.com/shakacode/shaka/blob/main/skills/shaka-jev/SKILL.md)
 and run it on a public PR. It uses your TypeSafe API key to score supplied validation
-and review evidence, then reports the input tokens and estimated cost. The scores
+and review evidence, then reports the input tokens and estimated input cost. The scores
 help you decide what to inspect; Shaka's normal checks and independent review still
 decide readiness. See the [small public evaluation](https://github.com/shakacode/shaka/blob/main/eval/jev-pr-analysis.md)
 for example inputs, outputs, and limits.

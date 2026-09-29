@@ -3,10 +3,24 @@
 require 'digest'
 require 'json'
 require 'net/http'
+require 'open3'
+require 'openssl'
+require 'socket'
 require 'uri'
 
 module ShakaJev
   class Error < StandardError; end
+
+  # Fails closed unless GitHub reports that the target repository is public.
+  class PublicGitHubRepository
+    def self.call(owner, repo)
+      output, status = Open3.capture2({ 'GH_HOST' => 'github.com' }, 'gh', 'repo', 'view', "#{owner}/#{repo}",
+                                      '--json', 'visibility', err: File::NULL)
+      status.success? && JSON.parse(output)['visibility'] == 'PUBLIC'
+    rescue JSON::ParserError, SystemCallError
+      false
+    end
+  end
 
   # One advisory Jev request over an evidence packet the caller has already screened.
   class Analysis
@@ -27,25 +41,31 @@ module ShakaJev
       }
     }.freeze
 
-    def initialize(api_key:, client: method(:post))
+    def initialize(api_key:, client: method(:post), public_repository: PublicGitHubRepository.method(:call))
       @api_key = api_key.to_s
       @client = client
+      @public_repository = public_repository
     end
 
     def call(pr_url:, head:, evidence:)
       validate!(pr_url, head, evidence)
+      response = @client.call(ENDPOINT, request(pr_url, head, evidence))
+      with_context(parse_response(response), pr_url, head, evidence)
+    rescue JSON::ParserError, IOError, SystemCallError, Timeout::Error, SocketError,
+           OpenSSL::SSL::SSLError, Net::HTTPBadResponse => e
+      raise Error, "Jev request failed: #{e.class}"
+    end
+
+    private
+
+    def request(pr_url, head, evidence)
       request = Net::HTTP::Post.new(ENDPOINT)
       request['Authorization'] = "Bearer #{@api_key}"
       request['Content-Type'] = 'application/json'
       request.body = JSON.generate('model' => 'jev-latest', 'state' => state(pr_url, head, evidence),
                                    'questions' => QUESTIONS)
-      response = @client.call(ENDPOINT, request)
-      with_context(parse_response(response), pr_url, head, evidence)
-    rescue JSON::ParserError, IOError, SystemCallError, Timeout::Error => e
-      raise Error, "Jev request failed: #{e.class}"
+      request
     end
-
-    private
 
     def validate!(pr_url, head, evidence)
       raise Error, 'TYPESAFE_API_KEY is required' if @api_key.empty?
@@ -55,8 +75,10 @@ module ShakaJev
     end
 
     def validate_target!(pr_url, head)
-      raise Error, 'PR URL must be a GitHub pull request' unless pr_url.match?(%r{\Ahttps://github\.com/[^/]+/[^/]+/pull/\d+\z})
+      match = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/pull/\d+\z}.match(pr_url)
+      raise Error, 'PR URL must be a GitHub pull request' unless match
       raise Error, 'head must be a full Git commit SHA' unless head.match?(/\A[0-9a-f]{40}\z/)
+      raise Error, 'Repository could not be verified public' unless @public_repository.call(match[1], match[2])
     end
 
     def validate_evidence!(evidence)
@@ -108,7 +130,7 @@ module ShakaJev
 
     def with_context(parsed, pr_url, head, evidence)
       parsed.merge('pr_url' => pr_url, 'head' => head,
-                   'estimated_cost_usd' => parsed.fetch('input_tokens') * INPUT_USD_PER_MILLION / 1_000_000,
+                   'estimated_input_cost_usd' => parsed.fetch('input_tokens') * INPUT_USD_PER_MILLION / 1_000_000,
                    'input_usd_per_million' => INPUT_USD_PER_MILLION,
                    'evidence_sha256' => Digest::SHA256.hexdigest(evidence))
     end

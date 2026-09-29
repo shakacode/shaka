@@ -22,7 +22,7 @@ class JevAnalysisTest < Minitest::Test
       sent = [uri, request]
       response(200, OUTPUT)
     end
-    result = ShakaJev::Analysis.new(api_key: 'test-key', client: client).call(
+    result = analyzer(api_key: 'test-key', client: client).call(
       pr_url: URL, head: HEAD, evidence: 'Public validation and review evidence.'
     )
 
@@ -33,26 +33,39 @@ class JevAnalysisTest < Minitest::Test
   def test_rejects_missing_key_before_sending
     client = ->(*) { flunk 'must not send' }
     assert_raises(ShakaJev::Error) do
-      ShakaJev::Analysis.new(api_key: '', client: client).call(pr_url: URL, head: HEAD, evidence: 'Public')
+      analyzer(api_key: '', client: client).call(pr_url: URL, head: HEAD, evidence: 'Public')
     end
   end
 
   def test_rejects_malformed_model_output_without_a_verdict
-    client = ->(*) { response(200, { answers: { validation_supported: { noul: 0.8 } } }) }
-    assert_raises(ShakaJev::Error) do
-      ShakaJev::Analysis.new(api_key: 'test-key', client: client).call(pr_url: URL, head: HEAD,
-                                                                       evidence: 'Public')
-    end
+    malformed = OUTPUT.merge(answers: OUTPUT.fetch(:answers).merge(validation_supported: { type: 'noul', noul: 1.5 }))
+    client = ->(*) { response(200, malformed) }
+    error = assert_raises(ShakaJev::Error) { analyzer(api_key: 'test-key', client: client).call(**target) }
+    assert_match(/Invalid Jev answer/, error.message)
   end
 
   def test_api_errors_expose_status_without_response_body
     client = ->(*) { response(401, { secret: 'must not appear' }) }
     error = assert_raises(ShakaJev::Error) do
-      ShakaJev::Analysis.new(api_key: 'test-key', client: client).call(pr_url: URL, head: HEAD,
-                                                                       evidence: 'Public')
+      analyzer(api_key: 'test-key', client: client).call(**target)
     end
     assert_match(/401/, error.message)
     refute_match(/secret/, error.message)
+  end
+
+  def test_private_or_unverifiable_repository_is_not_sent
+    client = ->(*) { flunk 'must not send' }
+    error = assert_raises(ShakaJev::Error) do
+      analyzer(api_key: 'test-key', client: client, public_repository: ->(*) { false }).call(**target)
+    end
+    assert_match(/verified public/, error.message)
+  end
+
+  def test_network_error_is_reported_without_backtrace
+    client = ->(*) { raise SocketError, 'DNS failure' }
+    error = assert_raises(ShakaJev::Error) { analyzer(api_key: 'test-key', client: client).call(**target) }
+    assert_match(/Jev request failed: SocketError/, error.message)
+    refute_match(/DNS failure/, error.message)
   end
 
   private
@@ -70,11 +83,17 @@ class JevAnalysisTest < Minitest::Test
   def assert_result(result)
     assert_in_delta 0.91, result.fetch('answers').fetch('validation_supported')
     assert_equal 2500, result.fetch('input_tokens')
-    assert_in_delta 0.000105, result.fetch('estimated_cost_usd'), 0.000000001
+    assert_in_delta 0.000105, result.fetch('estimated_input_cost_usd'), 0.000000001
     assert_match(/\A[0-9a-f]{64}\z/, result.fetch('evidence_sha256'))
   end
 
   def response(code, body)
     Struct.new(:code, :body).new(code.to_s, JSON.generate(body))
   end
+
+  def analyzer(api_key:, client:, public_repository: ->(*) { true })
+    ShakaJev::Analysis.new(api_key: api_key, client: client, public_repository: public_repository)
+  end
+
+  def target = { pr_url: URL, head: HEAD, evidence: 'Public' }
 end
