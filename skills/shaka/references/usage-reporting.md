@@ -63,7 +63,7 @@ Record the UTC start time before the new task begins. Use explicit `--turn` IDs
 when that time is unavailable or the boundary must be exact, and mark an uncertain
 interval SHARED.
 If a response has no usable timestamp with a timezone, the command fails instead of excluding it.
-It also fails when the start time selects no responses or the source provides only aggregate usage.
+It also fails when the start time selects no responses or any selected source record is aggregate usage.
 
 A `--turn` ID that matches no readable response fails with the expected field
 instead of printing an empty table. A source with no readable responses still

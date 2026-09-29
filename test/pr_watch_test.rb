@@ -5,9 +5,31 @@ require 'shaka/pr_watch'
 require 'shaka/pr_watch/command'
 require 'open3'
 
-class PrWatchTest < Minitest::Test
+module PrWatchFixtures
   HEAD = 'a' * 40
   MOVED = 'b' * 40
+
+  private
+
+  def check(name, state, bucket) = { 'name' => name, 'state' => state, 'bucket' => bucket }
+
+  def frame(**values)
+    defaults = { head: HEAD, state: 'OPEN', required: [check('validate', 'PENDING', 'pending')],
+                 checks: [], comments: [], excluded: [] }
+    current = defaults.merge(values)
+    { pr: { 'headRefOid' => current[:head], 'state' => current[:state] }, required: current[:required],
+      checks: current[:checks], comments: current[:comments], excluded: current[:excluded] }
+  end
+
+  def comments_packet(frame)
+    { 'issue_comments' => frame[:comments].map { |id| { 'id' => id } },
+      'review_summaries' => [], 'inline_comments' => [],
+      'excluded_interactions' => frame[:excluded].map { |id| { 'id' => id } } }
+  end
+end
+
+class PrWatchTest < Minitest::Test
+  include PrWatchFixtures
 
   class FakeGitHub
     attr_reader :reads
@@ -135,16 +157,6 @@ class PrWatchTest < Minitest::Test
 
   private
 
-  def check(name, state, bucket) = { 'name' => name, 'state' => state, 'bucket' => bucket }
-
-  def frame(**values)
-    defaults = { head: HEAD, state: 'OPEN', required: [check('validate', 'PENDING', 'pending')],
-                 checks: [], comments: [], excluded: [] }
-    current = defaults.merge(values)
-    { pr: { 'headRefOid' => current[:head], 'state' => current[:state] }, required: current[:required],
-      checks: current[:checks], comments: current[:comments], excluded: current[:excluded] }
-  end
-
   def watch(frames, timeout: 10, baseline: nil)
     github = FakeGitHub.new(frames)
     now = 0
@@ -157,11 +169,61 @@ class PrWatchTest < Minitest::Test
     adapters = { clock: -> { now }, sleeper: tick, comments: reader }
     Shaka::PrWatch.new(github, head: HEAD, ci_jobs: ['claude-review'], settings:, adapters:).call
   end
+end
 
-  def comments_packet(frame)
-    { 'issue_comments' => frame[:comments].map { |id| { 'id' => id } },
-      'review_summaries' => [], 'inline_comments' => [],
-      'excluded_interactions' => frame[:excluded].map { |id| { 'id' => id } } }
+class PrWatchTransitionsTest < Minitest::Test
+  include PrWatchFixtures
+
+  FakeGitHub = PrWatchTest::FakeGitHub
+
+  def test_head_move_after_checks_read_wakes_before_comments
+    github = Class.new(FakeGitHub) do
+      def snapshot
+        current = super
+        reads == 4 ? current.merge('headRefOid' => 'b' * 40) : current
+      end
+    end.new([frame])
+    adapters = { comments: -> { comments_packet(frame) }, sleeper: ->(_seconds) { flunk 'missed head move' } }
+    watcher = Shaka::PrWatch.new(github, head: HEAD, ci_jobs: [], settings: {}, adapters:)
+
+    assert_equal 'head_moved', watcher.call
+  end
+
+  def test_new_review_comment_wakes_when_its_id_matches_an_issue_comment
+    github = FakeGitHub.new([frame])
+    calls = 0
+    reader = lambda do
+      calls += 1
+      packet = comments_packet(frame(comments: [1]))
+      packet['review_summaries'] = [{ 'id' => 1 }] if calls > 1
+      packet
+    end
+    assert_equal 'trusted_comment', watch_with(github, reader:, timeout: 3).first
+  end
+
+  def test_pending_checks_clear_a_terminal_wake_before_it_settles
+    frames = %w[pass pending pending pass pass].map do |state|
+      row = state == 'pass' ? check('validate', 'SUCCESS', 'pass') : check('validate', 'PENDING', 'pending')
+      frame(required: [row])
+    end
+    reason, elapsed = watch_with(FakeGitHub.new(frames), reader: -> { comments_packet(frame) }, timeout: 8)
+
+    assert_equal 'checks_terminal', reason
+    assert_equal 4, elapsed
+  end
+
+  private
+
+  def watch_with(github, reader:, timeout:)
+    now = 0
+    sleeper = lambda do |seconds|
+      now += seconds
+      github.advance
+    end
+    adapters = { clock: -> { now }, sleeper:, comments: reader }
+    settings = { interval: 1, settle: 1, timeout: }
+    watcher = Shaka::PrWatch.new(github, head: HEAD, ci_jobs: [], settings:, adapters:)
+    [watcher.call, now]
   end
 end
 
