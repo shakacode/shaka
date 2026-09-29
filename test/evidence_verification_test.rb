@@ -39,19 +39,6 @@ class EvidenceVerificationTest < Minitest::Test
     end
   end
 
-  def test_focused_test_result_cannot_satisfy_repository_validation
-    with_checkout do |root, ref|
-      validation = run_check(root, ref, command: 'test')
-      review = review_check(root, ref)
-      with_results(validation:, review:) do |paths|
-        verdict = verify(root, ref, **paths)
-        assert_equal 'not_ready', verdict.fetch('status')
-        reasons = verdict.fetch('checks').fetch('validation').first.fetch('reasons')
-        assert_includes reasons, 'expected repository validation command'
-      end
-    end
-  end
-
   def test_validate_with_arguments_cannot_satisfy_repository_validation
     with_checkout do |root, ref|
       validation = run_check(root, ref, command: 'validate', arguments: ['test/one_test.rb'])

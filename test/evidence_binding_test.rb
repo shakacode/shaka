@@ -46,6 +46,9 @@ class EvidenceBindingTest < Minitest::Test
       assert_equal 'superseded', binding.fetch('status')
       assert_includes binding.fetch('reasons'), 'missing tested tree'
       assert_includes binding.fetch('reasons'), 'missing or invalid settings identity'
+      result = run_check(root, ref)
+      result['command'] = 'validate'
+      assert_includes bind(root, ref, ref, result).fetch('reasons'), 'validation command differs from settings command'
     end
   end
 
@@ -53,6 +56,7 @@ class EvidenceBindingTest < Minitest::Test
     with_checkout do |root, ref|
       File.write(File.join(root, '.agents/bin/test'), "#!/bin/sh\necho changed > changed\n")
       result = run_check(root, ref, expected_exit: 1)
+      assert_raises(Shaka::Error) { Shaka::Evidence::Result.commit_tree(root, result.fetch('tested_tree')) }
       assert_equal 'not_completed', result.fetch('status')
       assert result.fetch('inputs_changed')
       refute_equal result.fetch('tested_tree'), result.fetch('tree_after')
