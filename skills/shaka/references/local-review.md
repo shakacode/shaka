@@ -240,8 +240,8 @@ head it was found in, and a different `--base`; after a rebase, start a new ledg
 refuses a fix recorded by any round on the last head, because no later round has reviewed it.
 The next round's prompt
 lists, as review data, every earlier finding's id, class, summary, and latest disposition
-(`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the last
-reviewed head. It asks the reviewer to confirm each fix and to review the full diff fresh.
+(`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the newest
+reviewed head before this one. It asks the reviewer to confirm each fix and to review the full diff fresh.
 It leaves out each `note`, so the reviewer does not anchor on the author's reasons.
 
 When several reviewers read each head, as `shaka reviewer --count` lists them, run them all

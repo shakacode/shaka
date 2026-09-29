@@ -26,7 +26,7 @@ module Shaka
 
     def rounds = data.fetch('rounds')
 
-    def last_round_fixes
+    def last_batch_fixes
       batch.flat_map do |index|
         LocalReviewFinding.list(rounds[index]['findings'], "round #{index + 1} finding").select(&:fixed?)
       end.map(&:commit)

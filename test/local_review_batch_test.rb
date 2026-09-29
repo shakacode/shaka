@@ -58,7 +58,7 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     append(EARLIER, 'anthropic/claude', findings: 1)
     record('anthropic/claude', [NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX)])
 
-    assert_equal [FIX], ledger.last_round_fixes
+    assert_equal [FIX], ledger.last_batch_fixes
   end
 
   # Break caught: the second reviewer of a commit anchored on the first reviewer's findings.

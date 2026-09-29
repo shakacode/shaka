@@ -121,13 +121,13 @@ module Shaka
       @snapshot = @ledger.snapshot(head)
     end
 
-    # The next round must hold the last reviewed head and each fix the last round records, and each
+    # The next round must hold the last reviewed head and each fix the last batch records, and each
     # fix must come after the head it was found in, or the comment would call a finding fixed in a
     # commit that is missing or predates it. Earlier rounds' fixes are already inside the last head.
     def check_history!
       last = @ledger.last_head
       contains!(last, head)
-      @ledger.last_round_fixes.each do |fix|
+      @ledger.last_batch_fixes.each do |fix|
         raise Shaka::Error, "Fix #{fix} is the head round #{@ledger.rounds.size} reviewed; commit the fix." if
           fix == last
 
