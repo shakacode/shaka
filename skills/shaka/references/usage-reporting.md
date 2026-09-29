@@ -8,13 +8,21 @@ shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 
 `--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
 Copy every column into the description `usage.columns` list and every `record` into
-`usage.records`. Each `record` includes that report's `columns`. The description
-renders one table: Credits estimate, USD estimate, then Input, Cached input,
-Output, Reasoning output, and Cache writes, with numeric columns right-aligned.
-A repeated label gains a numeric suffix. A
-`details` item whose summary names usage is refused. Each record is also kept as a
-commented block holding that report's table. A later publish shows the table when
-it carries the block, so the current summary does not list the same amount twice.
+`usage.records`. Each `record` includes that report's `columns`. A `details` item
+whose summary names usage is refused.
+
+The description renders one table with a row per report label. Reports that share
+a label, such as eight review runs of one model, share a row marked `×8`. A total
+row follows when there is more than one row, and the collapsed summary shows the
+total USD estimate. Columns are USD, Credits, Input, Cached input, Output,
+Reasoning, and Cache writes; a column no report measured is left out. Amounts are
+rounded to cents and grouped by thousands for reading. A cell no report measured
+shows `—`, and `+` marks a minimum: a partial estimate, or a sum that left out an
+unmeasured report. The total can count a response twice when two kept reports
+partly overlap.
+
+Each record is also kept as a hidden block holding its reported columns. A later
+publish that carries the block puts its row back in the table.
 
 Put that `usage` object in the PR, or the JSON report in the final response when
 there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
@@ -59,7 +67,10 @@ configuration, or interval metadata produce `UNKNOWN`.
 Pass each JSON `record` through in `usage.records`. When `description` republishes
 a PR, it keeps earlier reports unless a newer record covers the same work, so a
 handoff between hosts or models keeps every contribution. The kept text is the
-earlier marked report, placed under the rendered table. Fork PRs never carry reports.
+earlier marked report: a record's row rejoins the table, and a report from before
+the table existed stays below it. A report that read no source gives way to a
+complete report from the same host that measured the same contribution and commits.
+Fork PRs never carry reports.
 The command prints how many reports it retained, replaced, and dropped. A newer
 report that kept only some counters can still replace an earlier report.
 

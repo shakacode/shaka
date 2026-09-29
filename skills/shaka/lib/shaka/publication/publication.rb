@@ -116,7 +116,6 @@ module Shaka
     def details_block(detail)
       summary = PublicationText.summary_text(detail['summary'], 'details summary')
       body = PublicationText.required(detail['body'], "details #{summary}")
-      summary = PublicationText.usage_cost_summary(summary, body)
       "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
     end
 
