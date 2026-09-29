@@ -14,16 +14,16 @@ class ConfigurationBoundaryTest < Minitest::Test
   OTHER_FILE_IO = %w[
     checkpoint.rb doctor.rb doctor/installation_identity.rb doctor/cursor_stop_hook.rb
     enforcement_config.rb installer.rb install/link_lock.rb install/package.rb install/package_verification.rb
-    install/source.rb install/tree.rb install/version.rb
+    install/source.rb install/tree.rb install/version.rb local_review/ledger.rb
     local_review.rb local_review/cli.rb local_review/comment.rb local_review/path_guard.rb local_review/shebang.rb
     local_review/report_check.rb local_review/runner.rb merge_tree_proof.rb opening_parse.rb opening_check.rb
     opening_verdict_cache.rb recommendation.rb repos/home.rb review_prompt.rb usage/claude_usage.rb usage/codex_usage.rb
     usage/cursor_usage_store.rb usage/opencode_usage.rb usage/pi_usage.rb usage/rate_card.rb
     workflow_config.rb seam/upgrade_plan.rb seam/upgrade_plan/inventory.rb seam/upgrade_plan/references.rb
-    seam/upgrade_plan/reference_patterns.rb
-    seam/upgrade_plan/reference_dependencies.rb seam/upgrade_plan/continued_references.rb seam/upgrader.rb
-    seam/upgrade_plan/symlink_chain.rb
-    seam/upgrader/filesystem.rb seam/upgrader/recovery.rb
+    seam/upgrade_plan/reference_patterns.rb seam/private_recovery.rb seam/private_recovery/copies.rb
+    seam/private_recovery/preparation.rb seam/private_recovery/rotation.rb seam/private_recovery/identity.rb
+    seam/upgrade_plan/reference_dependencies.rb seam/upgrade_plan/continued_references.rb seam/upgrader/recovery.rb
+    seam/upgrade_plan/symlink_chain.rb seam/private_recovery/exclusion.rb seam/upgrader.rb seam/upgrader/filesystem.rb
   ].freeze
 
   def test_public_paths_remain_concrete_and_independent

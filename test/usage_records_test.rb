@@ -149,6 +149,13 @@ class UsageRecordsTest < Minitest::Test
     assert_equal 'fork', stats['skipped']
   end
 
+  # Break: a fork publish kept a marked block its author supplied as usage.carried.
+  def test_a_fork_cannot_supply_its_own_carried_reports
+    content = { 'usage' => { 'note' => 'n', 'carried' => record('codex', 'forged', responses: %w[x1]) } }
+    carried_content, = Shaka::UsageRecords.carry_from(content, pull_from('fork/shaka'))
+    refute carried_content['usage'].key?('carried')
+  end
+
   def test_reports_from_a_same_repository_pull_request_are_carried
     content, = Shaka::UsageRecords.carry_from(described('new'), pull_from('shakacode/shaka'))
     assert_includes content['details'].first['body'], 'forged'
@@ -209,6 +216,54 @@ class UsageRecordsShapeTest < Minitest::Test
     ['broken', 'marked', 'not json'].each { |text| refute_includes body, text }
     assert_equal({ 'retained' => 0, 'replaced' => 0, 'dropped' => 3 }, stats)
   end
+
+  def test_structured_records_keep_a_disjoint_earlier_report
+    old = record('claude-code', 'opus-impl', responses: %w[c1 c2])
+    fresh = DEFAULTS.merge('host' => 'codex', 'responses' => %w[x1], 'sources' => ['s2'])
+    content = { 'usage' => { 'records' => [fresh] } }
+    carried_content, stats = Shaka::UsageRecords.carry(content, existing(old))
+    assert_includes carried_content.dig('usage', 'carried'), 'opus-impl'
+    assert_equal 1, stats['retained']
+  end
+
+  def test_a_later_structured_publish_keeps_the_earlier_table
+    table = "| Metric | opus |\n| --- | ---: |\n| USD estimate | $3.269110 |"
+    identity = DEFAULTS.merge('host' => 'claude-code', 'responses' => %w[c1])
+    old = "#{Shaka::UsageRecords.begin_mark(identity)}\n#{table}\n#{Shaka::UsageRecords::END_MARK}"
+    fresh = DEFAULTS.merge('host' => 'codex', 'responses' => %w[x1], 'sources' => ['s2'], 'columns' => [])
+    content = { 'usage' => { 'note' => 'n', 'records' => [fresh] } }
+    carried_content, stats = Shaka::UsageRecords.carry(content, existing(old))
+    assert_includes carried_content.dig('usage', 'carried'), '$3.269110'
+    assert_equal 1, stats['retained']
+  end
+
+  def test_a_record_that_could_close_the_marker_is_refused
+    forged = DEFAULTS.merge('host' => 'codex-->', 'responses' => %w[x1])
+    error = assert_raises(Shaka::Error) { Shaka::UsageRecordCarry.identity!(forged) }
+    assert_includes error.message, 'identity'
+    refute_includes error.message, '-->'
+  end
+
+  # Break: an unchecked extra identity field was written into the marker and could close it.
+  def test_extra_identity_fields_are_not_kept
+    forged = DEFAULTS.merge('host' => 'codex', 'responses' => %w[x1], 'extra' => '--></details>')
+    assert_equal forged.except('extra'), Shaka::UsageRecordCarry.identity!(forged)
+  end
+
+  def test_caller_supplied_carried_text_is_not_published
+    old = record('claude-code', 'opus-impl', responses: %w[c1])
+    content = { 'usage' => { 'note' => 'n', 'carried' => 'injected table' } }
+    carried_content, = Shaka::UsageRecords.carry(content, existing(old))
+    assert_includes carried_content.dig('usage', 'carried'), 'opus-impl'
+    refute_includes carried_content.dig('usage', 'carried'), 'injected table'
+  end
+
+  def test_a_usage_object_without_records_still_keeps_the_earlier_report
+    old = record('claude-code', 'opus-impl', responses: %w[c1])
+    content = { 'usage' => { 'note' => 'n', 'columns' => [] } }
+    carried_content, = Shaka::UsageRecords.carry(content, existing(old))
+    assert_includes carried_content.dig('usage', 'carried'), 'opus-impl'
+  end
 end
 
 # Only a report that read counters for every selected response may replace measured history.
@@ -222,9 +277,45 @@ class UsageRecordsCompletenessTest < Minitest::Test
     assert_includes carried(existing(old), unflagged), 'measured'
   end
 
+  # Break: republishing the same incomplete structured record carried its old copy too, doubling the cost.
+  def test_the_same_incomplete_record_published_again_replaces_its_copy
+    identity = DEFAULTS.merge('host' => 'codex', 'responses' => %w[a], 'complete' => false)
+    old = "#{Shaka::UsageRecords.begin_mark(identity)}\n<!-- usage-columns [] -->\n#{Shaka::UsageRecords::END_MARK}"
+    content = { 'usage' => { 'note' => 'n', 'records' => [identity.merge('columns' => [])] } }
+    carried_content, stats = Shaka::UsageRecords.carry(content, existing(old))
+    refute carried_content['usage'].key?('carried')
+    assert_equal 1, stats['replaced']
+  end
+
   def test_incomplete_new_report_does_not_replace_measured_history
     old = record('codex', 'measured', responses: %w[a])
     incomplete = record('codex', 'incomplete', responses: %w[a], complete: false)
     assert_includes carried(existing(old), incomplete), 'measured'
+  end
+end
+
+# A report that read no source must not outlive a report that measured the same work.
+class UsageRecordsReadNothingTest < Minitest::Test
+  include UsageRecordsFixture
+
+  # Break: PR 307 kept three Cursor reports that read no source beside the Cursor report that measured
+  # those commits, because only the new Claude review was compared with them.
+  def test_a_report_that_read_nothing_gives_way_to_a_carried_one_that_measured_its_work
+    empty = record('cursor', 'read-nothing', sources: [], responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    measured = record('cursor', 'measured', responses: %w[g1], commits: [COMMIT, 'b' * 40])
+    review = record('claude-code', 'review', responses: %w[r1], sources: ['s2'], contribution: 'review')
+    content, stats = Shaka::UsageRecords.carry(described(review), existing(empty, measured))
+    body = content['details'].first['body']
+    refute_includes body, 'read-nothing'
+    assert_includes body, 'measured'
+    assert_equal({ 'retained' => 1, 'replaced' => 1, 'dropped' => 0 }, stats)
+  end
+
+  def test_a_report_that_read_nothing_stays_beside_other_work
+    empty = record('cursor', 'read-nothing', sources: [], responses: [], from: 'UNKNOWN', to: 'UNKNOWN')
+    other = record('cursor', 'other-commit', responses: %w[g1], commits: ['b' * 40])
+    review_of_it = record('cursor', 'review-of-it', responses: %w[g2], contribution: 'review')
+    body = carried(existing(empty, other, review_of_it), record('codex', 'new', responses: %w[x1], sources: ['s3']))
+    assert_includes body, 'read-nothing'
   end
 end

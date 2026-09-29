@@ -3,11 +3,44 @@
 Report available usage for each task's commits and contributions:
 
 ```text
-shaka usage --commit FULL_COMMIT_SHA --contribution implementation
+shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 ```
 
-Include the helper's output in the PR, or in the final response when there is no
-PR. **Native** figures come from the host's records. **Estimated** figures apply a
+`--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
+Put each report's `record`, which includes its `columns` and its `note`, into the description
+`usage.records` list, and one report's `note` into `usage.note`. The table is built
+from those records, so everything it shows can be carried by a later publish. A
+`details` item whose summary names usage is refused.
+
+The description renders one table with a row per report label. Reports with the
+same host, label, provider, configured and routed model, and effort, such as eight
+review runs of one model, share a row marked `×8`; rows that share only a label also
+show their host, model, and effort. With more than one row, a total row adds the USD
+and credit estimates; it leaves token counts blank, because hosts count input
+differently. The collapsed summary shows the USD total. Columns are USD, Codex
+credits, Input, Cached input, Output, Reasoning, and Cache writes; a column no report
+measured is left out, and a collapsed glossary under the table defines each column
+shown. Report names keep their hyphens from breaking the line. Dollar amounts are
+rounded to cents, and token counts are shortened to about three figures, such as
+45.3M; the hidden record keeps the exact counts. A
+cell no report measured shows `—`, and `+` marks a minimum: a partial estimate, or a
+sum that left out an unmeasured report. The total can count a response twice when two
+kept reports partly overlap.
+
+Reports from before this table are listed below it and left out of the total, which
+then shows `+`. Each record is also kept as a hidden block holding its reported
+columns and note. A later publish that carries the block puts its row back in
+the table.
+
+Each report is priced once, when `shaka usage` runs, with the rate card installed then.
+A carried report keeps that price; nothing reprices it. A collapsed **How each report
+was measured and priced** list under the table shows each report's note: its rate card,
+the date its prices were verified, and what its sources left out. A PR left open across
+a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
+publish the new records.
+
+Put that `usage` object in the PR, or the JSON report in the final response when
+there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
 rate card to those records. `UNKNOWN` means the records do not establish a value;
 it never means zero.
 
@@ -46,20 +79,21 @@ configuration, or interval metadata produce `UNKNOWN`.
 
 ## Keep earlier reports when work changes hands
 
-Paste each report whole into the description's usage details; hidden markers at
-its first and last lines identify it. `description` refuses usage details that
-hold no marked report, so a hand-written table fails even when an earlier report
-would be carried. When `description` republishes a PR, it
-keeps earlier reports unless a newer report covers the same work, so a handoff
-between hosts or models keeps every contribution. Fork PRs never carry reports.
+Pass each JSON `record` through in `usage.records`. When `description` republishes
+a PR, it keeps earlier reports unless a newer record covers the same work, so a
+handoff between hosts or models keeps every contribution. The kept text is the
+earlier marked report: a record's row rejoins the table, and a report from before
+the table existed stays below it. A report that read no source gives way to a
+complete report from the same host that measured the same contribution and commits.
+Fork PRs never carry reports.
 The command prints how many reports it retained, replaced, and dropped. A newer
 report that kept only some counters can still replace an earlier report.
 
 ## Reading the result
 
-The report records commits, contribution, observed interval, source version,
-provider/model/effort, and token categories. Metric rows have one column per
-configuration. Configured and routed models remain distinct.
+The Markdown report records commits, contribution, observed interval, source
+version, provider/model/effort, and token categories. Its metric rows have one column
+per configuration. Configured and routed models remain distinct.
 
 | Host | Input and cache categories | Other limits |
 | --- | --- | --- |
@@ -243,9 +277,7 @@ discounts, service tier, routing, account terms, and actual charges may differ.
 
 ## Publish the report
 
-Use a description `details` entry titled **Usage and cost**. Include the helper's
-tables, with known dollar estimates in the summary where useful. The helper puts
-cost above its expandable **Token detail** block and retains rate notes beside it.
+Publish through the description `usage` object described at the top of this guide.
 Keep the coverage note visible; do not replace unknown reviewer usage with zero.
 
 Check task coverage before publishing. Sources can contain unrelated work even

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module Shaka
   # Refuses explicit turns that name nothing in a source that has readable turns.
   module UsageTurns
@@ -11,7 +13,7 @@ module Shaka
     def print_report
       missing = unmatched_turns
       if missing.empty?
-        puts report
+        puts @options[:format] == 'json' ? JSON.pretty_generate(json_document) : report
         return 0
       end
 

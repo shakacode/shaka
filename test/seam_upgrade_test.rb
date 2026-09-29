@@ -60,6 +60,16 @@ class SeamUpgradePreviewTest < Minitest::Test
     end
   end
 
+  def test_ignored_private_destination_still_blocks_layout_upgrade
+    with_repository do |root|
+      File.open(File.join(root, '.git/info/exclude'), 'a') { |file| file.puts('/.agents/shaka/') }
+      FileUtils.mkdir_p(File.join(root, '.agents/shaka'))
+      File.write(File.join(root, '.agents/shaka/config.yml'), 'private')
+      assert_blocker(root, 'partial migration')
+      assert_equal 'private', File.read(File.join(root, '.agents/shaka/config.yml'))
+    end
+  end
+
   def test_ambiguous_custom_root_blocks
     with_repository do |root|
       write_wrapper(root, 'setup', "#!/bin/sh\nroot=$(custom_dirname \"$0\")/../..\nexit 0\n")

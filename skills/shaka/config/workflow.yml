@@ -191,6 +191,16 @@ phases:
         or no-op work may omit review with a recorded reason, unless the trusted seam sets
         `review.required: always`. Fixing a finding changes the head, so
         revalidate and review the new one.
+      - Run the loop locally and keep it in one ledger: pass `review run --ledger PATH` with a
+        path outside the checkout. The prompt asks the reviewer to class each finding as a
+        `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
+        disposition with `review record`; the next `review run` refuses to start until they are
+        recorded, and refuses a head the ledger already reviewed. Fix defects, and risks whose
+        fix is clearly correct, in new commits, then review the new head. Document nits and the
+        remaining risks instead of fixing them; a round whose findings are all documented ends
+        the loop. A defect you decline to fix is documented too, and the comment reports it as
+        left for the maintainer. The next round's prompt lists earlier findings and the commits since, without
+        your notes on them.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
         comes from the default branch. Pass `--implementer` once per provider and model family that
@@ -262,7 +272,10 @@ phases:
     body: |-
       - Push the reviewed head, then open or adopt its PR. Open a new PR with an empty body
         (`gh pr create --body ''`) and let `description` fill it; any text outside the managed
-        region stays in the body. Use trusted `gh` for authorized
+        region stays in the body. When a local review ran, publish it right after that with
+        `review publish OWNER/REPO NUMBER --content-file PATH`, passing the ledger, or a content
+        file for a fresh host review; nothing from the loop reaches GitHub before the push, and
+        publishing again updates the same comment. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
@@ -281,7 +294,7 @@ phases:
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
         specific things in summaries and sections. Keep blockers visible; put supporting checks,
-        review history, rollback, and usage in `details`. Avoid repeated status updates. Store useful
+        review history, and rollback in `details`, and usage in the `usage` object. Avoid repeated status updates. Store useful
         evidence once and retrieve it as needed; collapsing does not save tokens.
       - Point reviewers to the code instead of retelling it: the description links the walkthrough,
         and the walkthrough links each step to its lines. Keep the text in proportion to the change.
@@ -314,8 +327,9 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `walkthrough`, required `deployment`, optional `decisions`, optional `sections`,
-        required `table`, required `provenance`, required usage `details` holding `usage` output,
-        and `wip` while the PR is unfinished; walkthroughs also require `head`.
+        required `table`, required `provenance`, required `usage` (`note` and `records` from
+        `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
+        whose summary names usage is refused; walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range
@@ -403,7 +417,9 @@ phases:
         a walkthrough is the behavior that changed. Read the packaged
         [reasoning and tie-breakers](<{{package_root}}/skills/shaka/references/delivery.md#why-the-description-and-the-walkthrough-differ>).
       - Report usage with `usage` for each task, choosing `implementation`, `review`, `integration`,
-        or `shared-planning`. Publish the local adversarial review as `--contribution review` from
+        or `shared-planning`. Pass `--format json` and put every report's `record`, which holds
+        its columns, in the description `usage` object's `records`, so the helper renders one
+        table. Publish the local adversarial review as `--contribution review` from
         that run's `--file` or host context, rather than from the implementation session. Use
         `--all-turns` only when the session holds solely this task. Include
         available retry and contributor records, label shared intervals and UNKNOWN fields, and
@@ -443,13 +459,14 @@ phases:
         to every public comment you read.
       - To run a chosen CLI reviewer locally, use the saved helper's `review run --root DIR
         --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME] [--model NAME]
-        [--criteria-ref TRUSTED_SHA]`.
+        [--criteria-ref TRUSTED_SHA] [--ledger PATH]`.
         It renders the diff, launches a restricted reviewer process, checks its exit and
         head-bound report, and returns `completed` or a staged `not_completed` result. A fresh
         host-model review uses `review check --head SHA --reviewer ID --report PATH`, whose
         `reported` result does not claim verified CLI execution. A local review is
         UNVERIFIED until you publish it with `review publish OWNER/REPO NUMBER --content-file PATH`,
-        which renders the Local Adversarial Review comment and keeps the attestation line last. See
+        which renders the Local Adversarial Review comment, with each round's findings and what
+        became of them, and keeps the attestation line last. See
         [invoke a reviewer locally](<{{package_root}}/skills/shaka/references/local-review.md>).
       - Independent review for this task is satisfied by a published local
         `REVIEWED SHA BY PROVIDER/FAMILY` attestation, or by a verified report from `review.ci_review_jobs`,

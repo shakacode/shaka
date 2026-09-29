@@ -271,7 +271,6 @@ begin
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
                described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
-               Shaka::UsageDetails.require_rendered(described['details'])
                usage_records = nil
                carried = nil
                published = github.description(prose:) do |pull|

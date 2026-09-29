@@ -16,15 +16,15 @@ module ProvenanceHistoryFixture
     Shaka::WorkflowVersion::Result.new(version: Shaka::VERSION, commit:, modified:, upstream: true)
   end
 
-  def content(usage: PublicationRegressionTest::USAGE, **routes)
+  def content(usage: PublicationRegressionTest::USAGE_OBJECT, **routes)
     { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
       'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
       'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE.merge(routes),
-      'details' => [usage] }
+      'usage' => usage, 'details' => [] }
   end
 
   # Publishes as `shaka description` does: usage carries first, and the next call reads this body.
-  def publish(head, version: workflow, fork: false, usage: PublicationRegressionTest::USAGE, **routes)
+  def publish(head, version: workflow, fork: false, usage: PublicationRegressionTest::USAGE_OBJECT, **routes)
     pull = pull_for(head, fork:)
     carried, = Shaka::UsageRecords.carry_from(content(usage:, **routes), pull)
     rendered = Shaka::Publication.description(carried, version, pull)
@@ -78,14 +78,12 @@ class ProvenanceHistoryTest < Minitest::Test
 
   def test_history_survives_a_publication_that_carries_usage
     publish(HEADS[0])
-    later = { 'summary' => 'Usage',
-              'body' => RenderedUsage.body("| Provider | Native total |\n| --- | ---: |\n| openai | 2 |")
-                                     .sub('"r1"', '"r2"') }
-    rendered = publish(HEADS[1], usage: later, 'active_effort' => 'high')
+    record = USAGE_RECORD.merge('responses' => ['c2'], 'columns' => [PublicationRegressionTest::USAGE_COLUMN])
+    rendered = publish(HEADS[1], usage: { 'note' => 'Later.', 'records' => [record] }, 'active_effort' => 'high')
 
     assert_equal 2, history_rows(rendered).size
-    assert_includes rendered, '| openai | 1 |'
-    assert_includes rendered, '| openai | 2 |'
+    assert_includes rendered, '"responses":["c1"]'
+    assert_includes rendered, '"responses":["c2"]'
   end
 
   def test_entries_beyond_the_bound_are_omitted_and_the_first_is_kept
@@ -156,7 +154,7 @@ class ProvenanceHistoryRefusalTest < Minitest::Test
   end
 
   def test_a_supplied_history_details_item_is_refused
-    details = [PublicationRegressionTest::USAGE, { 'summary' => 'Provenance history', 'body' => 'rows' }]
+    details = [{ 'summary' => 'Provenance history', 'body' => 'rows' }]
     error = assert_raises(Shaka::Error) do
       Shaka::Publication.description(content.merge('details' => details), workflow, pull_for(HEADS[0]))
     end

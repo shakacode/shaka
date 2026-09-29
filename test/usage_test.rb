@@ -401,13 +401,14 @@ class UsageIdentityTest < Minitest::Test
     assert_equal [1, false], [fields['responses'].size, fields['complete']]
   end
 
-  # The description gate must accept whatever the renderer prints, including an UNKNOWN count.
-  def test_description_accepts_the_rendered_report
+  # A pasted helper report is still a details item. The description takes the usage object.
+  def test_description_refuses_a_pasted_usage_report
     [[context('current'), usage('r1', 'current', 100)], [context('current')]].each do |records|
       content = { 'identity' => { 'agent' => 'Codex' }, 'summary' => 'A summary.', 'deployment' => 'none',
                   'table' => { 'columns' => %w[Check], 'rows' => [%w[pass]] }, 'provenance' => provenance,
                   'details' => [{ 'summary' => 'Usage and cost', 'body' => run_report(records) }] }
-      assert_includes Shaka::Publication.description(content), '<!-- shaka:usage:end -->'
+      error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+      assert_includes error.message, 'usage object'
     end
   end
 

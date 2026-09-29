@@ -83,12 +83,13 @@ module Shaka
 
     def details
       items = PublicationText.list(@content['details'], 'details')
-      rendered = items.map { |detail| details_block(detail) }
       if @require_tables
-        UsageDetails.require_rendered(items)
+        refuse_free_form_usage(items)
         refuse_free_form_wip(items)
         refuse_supplied_history(items)
       end
+      rendered = items.map { |detail| details_block(detail) }
+      rendered.unshift(details_block(UsageDetails.new(@content['usage']).detail)) if @require_tables
       rendered
     end
 
@@ -99,6 +100,12 @@ module Shaka
     end
 
     # Hand-written notes are what made each host publish a different shape.
+    def refuse_free_form_usage(items)
+      return unless items.any? { |item| item.is_a?(Hash) && UsageDetails.usage_summary?(item['summary']) }
+
+      raise Error, 'Publication usage must be supplied as the usage object, not a details item.'
+    end
+
     def refuse_free_form_wip(items)
       return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(WipDetails::SUMMARY) }
 
@@ -130,7 +137,6 @@ module Shaka
     def details_block(detail)
       summary = PublicationText.summary_text(detail['summary'], 'details summary')
       body = PublicationText.required(detail['body'], "details #{summary}")
-      summary = PublicationText.usage_cost_summary(summary, body)
       "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
     end
 
