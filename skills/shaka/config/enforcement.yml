@@ -140,9 +140,18 @@ rules:
       recommendation.
     enforced_by: agent
     note: >-
-      `checkpoint` answers `pause` unless the reported conditions hold, so an honestly reported
-      intake cannot skip the turn. It reads only the fields the agent sends it: invented active
-      settings that agree with the recommendation still produce `proceed`.
+      With immediate start and neither requested setting, `checkpoint` accepts current settings
+      regardless of host observations or recommended availability. Otherwise the reported
+      settings checks apply. Value and recommendation checks still apply in both cases.
+      It reads only the fields the agent sends it; it does not inspect the host.
+  - id: keep-current-settings
+    phase: plan
+    quote: do not change settings or ask for confirmation
+    enforced_by: agent
+    note: >-
+      With immediate start and neither requested setting, Ruby permits proceeding without
+      reported active settings. The agent keeps the host settings and reports observations;
+      Ruby neither changes those settings nor controls the agent's questions.
   - id: no-native-stacks
     phase: plan
     quote: do not create or merge them

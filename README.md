@@ -25,9 +25,10 @@ Use Sol, medium effort. Go.
 ```
 
 Replace the example link and choose a model available in your coding agent.
-You can also say `Go` without restating model or effort: Shaka starts when its
-recommendation matches the model and effort your agent reports as active. If they
-differ or the agent cannot confirm them, Shaka asks you to choose or confirm.
+You can also say `Go` without naming model or effort: Shaka starts with your
+agent's current settings. When your agent can report them, Shaka briefly notes
+how they compare with its recommendation. Unknown or differing settings do not
+require confirmation in this case.
 It still brings you decisions that need your input.
 
 ## Why use it?
