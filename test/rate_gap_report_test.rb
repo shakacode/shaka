@@ -228,11 +228,21 @@ class RateGapTransportTest < Minitest::Test
   end
 
   def test_rate_limit_issues_are_not_pricing_reports
-    ['Rate limit errors with gpt-7', 'gpt-7: rate limit exceeded', 'Rate-limit costs for gpt-7'].each do |title|
+    ['Rate limit errors with gpt-7', 'gpt-7: rate limit exceeded', 'Rate-limit cost for gpt-7',
+     'Add rate limits for gpt-7', 'gpt-7 rate limiting inflates cost', 'Rate-limited cost for gpt-7',
+     'Ratelimit cost for gpt-7', 'Throttling costs for gpt-7'].each do |title|
       @github.issues = [{ 'title' => title, 'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
       @github.requests.clear
       assert_includes base_model_report('GPT-7'), '/issues/999'
       assert_equal 2, @github.requests.size
+    end
+  end
+
+  def test_plural_cost_titles_reuse_legacy_reports
+    ['gpt-7 costs are UNKNOWN', 'Update gpt-7 costs'].each do |title|
+      @github.issues = [{ 'title' => title, 'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
+      assert_includes base_model_report('GPT-7'), '/issues/88'
+      assert_empty @github.requests
     end
   end
 

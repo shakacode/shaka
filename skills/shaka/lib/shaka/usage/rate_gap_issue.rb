@@ -4,8 +4,8 @@ module Shaka
   # Public-only issue rendering and recognition for missing rates.
   module RateGapIssue
     BILLING = /api|credits|standard|fast/i
-    MODEL_END = /(?=\s*(?:\z|[<>"',;|])|\s+(?:cost|rates?|pricing|price)\b)/i
-    TITLE_END = /(?=\s*(?:\z|[<>"',;|]|[.:](?:\s|\z)|\((?:#{BILLING})\))|\s+(?:cost|rates?|pricing|price)\b)/i
+    MODEL_END = /(?=\s*(?:\z|[<>"',;|])|\s+(?:costs?|rates?|pricing|price)\b)/i
+    TITLE_END = /(?=\s*(?:\z|[<>"',;|]|[.:](?:\s|\z)|\((?:#{BILLING})\))|\s+(?:costs?|rates?|pricing|price)\b)/i
 
     def matching_issue?(entry, marker, model)
       body = entry['body']
@@ -18,9 +18,9 @@ module Shaka
     end
 
     def pricing_title?(title)
-      return false if title.match?(/\brate[ -]+limits?\b/i)
+      return false if title.match?(/\brate[ -]*limit(?:s|ed|ing)?\b|\bthrottl(?:e|ed|es|ing)\b/i)
 
-      title.match?(/\b(?:cost|prices?|pricing)\b|\b(?:missing|add)\b.*\brates?\b/i)
+      title.match?(/\b(?:costs?|prices?|pricing)\b|\b(?:missing|add)\b.*\brates?\b/i)
     end
 
     def public_model?(catalog, model) = model_match?(catalog, model, MODEL_END)
