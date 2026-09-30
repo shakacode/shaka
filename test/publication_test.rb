@@ -187,6 +187,12 @@ class PublicationStructureTest < Minitest::Test
     assert_includes error.message, 'single line'
   end
 
+  # Break: escaping only the pipe turned a\|b into a\\|b, and GitHub treated that pipe as a column break.
+  def test_a_backslash_before_a_pipe_stays_inside_its_check_cell
+    rendered = render('table' => { 'columns' => %w[Check Result], 'rows' => [['bin/validate', 'a\\|b']] })
+    assert_includes rendered, '| bin/validate | a\\\\\\|b |'
+  end
+
   def test_a_real_newline_in_a_heading_column_or_details_summary_is_refused
     [{ 'sections' => [{ 'heading' => "A\nB", 'body' => 'Why.' }] },
      { 'table' => { 'columns' => ["A\nB"], 'rows' => [] } },

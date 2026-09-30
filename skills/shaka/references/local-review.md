@@ -3,6 +3,45 @@
 First [select a reviewer](review.md#choose-a-local-reviewer) using trusted policy.
 Use this reference for CLI execution and report validation.
 
+## Reviewer model and effort
+
+Repository `model` and `effort` settings come from the reviewer's entry in the
+trusted default-branch configuration supplied with `--criteria-ref`. Candidate
+PR settings cannot select their own reviewer. Without that ref, repository
+settings are not applied. Explicit `--model` or `--effort` arguments override the
+configured value for that review.
+
+When no model or effort is specified, the reviewer uses its CLI defaults. Codex
+runs with user configuration disabled, so personal Codex settings do not select
+the review model. Pin a model when predictable cost matters.
+
+`shaka doctor` checks configured reviewer settings. `shaka review run` checks
+the requested settings before launch, and adds a **Reviewer settings** notice to the published local review when
+settings need attention. Relay that notice to the maintainer.
+
+The catalog in `skills/shaka/lib/shaka/reviewer_settings.rb` defines known names
+and the recommended Codex model for this Shaka release:
+
+- Likely spelling mistakes and unknown models produce warnings and still run.
+  Newer model names can therefore run before the catalog knows them.
+- A known Codex model other than `recommended_model` produces a warning and
+  still runs. Claude and Grok have no single recommended model.
+- Unknown Codex or Grok effort names produce warnings and still run. Effort
+  names use lowercase, such as `medium` or `xhigh`.
+- Shaka accepts only `low`, `medium`, `high`, `xhigh`, and `max` for Claude
+  effort. Another value fails doctor and stops review before the CLI starts.
+
+The spelling check recognizes a one-letter substitution or an adjacent-character
+swap in a same-length name. A digit substitution is treated as an unknown name,
+not a spelling mistake. Both warnings allow execution.
+
+Shaka does not interpret reviewer CLI error text or retry with a substitute
+model. Check the provider's model documentation and CLI help when a requested
+setting fails. The closed Claude effort list requires a Shaka update to accept
+any additional level introduced by that CLI.
+
+## Run the selected reviewer
+
 Render the prompt for the selected reviewer:
 ```text
 shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME] [--prompt-file PATH]
@@ -95,7 +134,7 @@ or `--effort` replaces the configured one for that review, so add one only when 
 it out or the task needs a different choice.
 When neither names a model, Codex runs its built-in default; see
 [reviewer model and effort](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewlocal_review_agents)
-for why that costs more. `gpt-6-sol` at `medium` is the default choice for adversarial review;
+for choosing a model and effort. `gpt-6-sol` at `medium` is the default choice for adversarial review;
 use a larger model or effort only when the change's risk calls for it.
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
