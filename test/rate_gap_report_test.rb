@@ -92,7 +92,7 @@ class RateGapReportTest < Minitest::Test
   end
 
   def failing_credit_catalog(url)
-    raise IOError, 'private catalog error' if url.include?('learn.chatgpt.com')
+    raise IOError, 'private catalog error' if url == 'https://learn.chatgpt.com/docs/pricing'
 
     'gpt-99-sol'
   end
@@ -125,7 +125,7 @@ class RateGapReportTest < Minitest::Test
   end
 
   def test_unpublished_credit_scenario_does_not_file_a_second_issue
-    catalog = ->(url) { url.include?('learn.chatgpt.com') ? 'other models' : 'gpt-99-sol' }
+    catalog = ->(url) { url == 'https://learn.chatgpt.com/docs/pricing' ? 'other models' : 'gpt-99-sol' }
     reporter = Shaka::RateGapReport.new([record], inclusive_input: true, rate_card: Shaka::RateCard.installed,
                                                   github: @github, catalog:)
     assert_includes reporter.report, 'not verified'
