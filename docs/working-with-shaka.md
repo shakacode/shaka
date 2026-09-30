@@ -1,5 +1,8 @@
 # Working with Shaka
 
+See [expected experience](expected-experience.md) for private versus team setup,
+evidence changes, permission failures, recovery, and current pilot limits.
+
 ## Give it an outcome
 
 Describe the result or provide an issue or task link. Include constraints the

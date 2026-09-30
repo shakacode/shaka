@@ -38,7 +38,12 @@ Shaka from that fork. Keep upstream configured so we can pull updates
 and submit improvements back to shakacode/shaka.
 ```
 
-## 2. Configure your repository
+## 2. Choose your setup path
+
+Already configured? Start a task below. To share settings with your team, use
+the setup prompt here. To try Shaka privately in one clone, read the
+[expected experience and current limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
+first. Private setup tools exist, but the seamless new-user path remains unproven.
 
 Shaka waits for your CI checks. If GitHub does not require any, for example on a
 private repository on the GitHub Free plan, setup lists them in the Shaka settings
@@ -54,7 +59,8 @@ and suggest the settings. Keep merge policy ask.
 The agent connects your existing commands to Shaka through a configuration file
 and standard scripts—the repository **seam**. Review and merge its setup PR
 before starting work. Shaka also offers setup when invoked in an unconfigured
-repository. See [repository setup](configure-repository.md).
+repository. This is the team setup path; it is not a requirement of the intended
+private trial. See [repository setup](configure-repository.md).
 
 ## 3. Start a task
 
