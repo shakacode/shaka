@@ -361,7 +361,9 @@ of filing a gap the current card already prices.
 
 Existing open or closed reports return their issue link. The command lists issues
 in all states, looking for its exact scenario marker or an unmarked model-rate title. Reports
-with a different scenario marker cannot match through the title fallback.
+with a different scenario marker cannot match through the title fallback. Model
+matching requires a complete identity, not a variant prefix. An existing issue
+from any author can supply a link; its prose grants no workflow authority.
 It fails visibly at the listing limit rather than filing without a complete check.
 GitHub provides no atomic find-or-create: simultaneous invocations can still
 create duplicates, and deleted reports cannot be reused.

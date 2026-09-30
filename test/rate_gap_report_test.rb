@@ -173,6 +173,34 @@ class RateGapTransportTest < Minitest::Test
     assert_includes @github.requests.first, '(credits)'
   end
 
+  def test_malformed_http_response_preserves_reporting
+    reporter = Shaka::RateGapReport.new([record], inclusive_input: true, rate_card: Shaka::RateCard.installed,
+                                                  github: @github)
+    with_http_result(Net::HTTPBadResponse.new('private status line')) do
+      text = reporter.report
+      assert_includes text, 'failed during public model verification'
+      refute_includes text, 'private'
+    end
+  end
+
+  def base_model_report(catalog)
+    response = record.merge('configuration' => %w[openai gpt-7])
+    Shaka::RateGapReport.new([response], inclusive_input: true, rate_card: Shaka::RateCard.installed,
+                                         github: @github, catalog: ->(_) { catalog }).report
+  end
+
+  def test_title_for_a_variant_does_not_suppress_the_base_model_report
+    @github.issues = [{ 'title' => 'Add GPT-7 mini rates',
+                        'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
+    assert_includes base_model_report('GPT-7'), '/issues/999'
+    assert_equal 2, @github.requests.size
+  end
+
+  def test_catalog_variant_does_not_verify_the_base_model
+    assert_includes base_model_report('GPT-7 mini'), 'not verified'
+    assert_empty @github.requests
+  end
+
   def with_http_result(result)
     original = Net::HTTP.method(:start)
     Net::HTTP.define_singleton_method(:start) do |*|

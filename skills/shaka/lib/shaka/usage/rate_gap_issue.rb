@@ -3,6 +3,8 @@
 module Shaka
   # Public-only issue rendering and recognition for missing rates.
   module RateGapIssue
+    MODEL_END = /(?=\s*(?:\z|[<>"',;|]|(?:cost|rates?|pricing|price)\b))/i
+
     def matching_issue?(entry, marker, model)
       body = entry['body']
       if body.is_a?(String) && body.include?('<!-- shaka-missing-rate: ')
@@ -14,9 +16,9 @@ module Shaka
     end
 
     def public_model?(catalog, model)
-      # Match canonical names or the display name's spaces (for example, Grok 4.7).
+      # A complete identity can use display spaces, but never a variant's prefix.
       name = Regexp.escape(model).gsub('\\-', '[- ]')
-      catalog.is_a?(String) && catalog.match?(/(?<![a-z0-9.-])#{name}(?![a-z0-9.-])/i)
+      catalog.is_a?(String) && catalog.match?(/(?<![a-z0-9._:-])#{name}(?![a-z0-9._:-])#{MODEL_END}/i)
     end
 
     def catalog_url(gap)
@@ -61,6 +63,8 @@ module Shaka
       raise Error, 'Public catalog unavailable' unless response.is_a?(Net::HTTPSuccess)
 
       response.body
+    rescue StandardError
+      raise Error, 'Public catalog unavailable'
     end
   end
 end
