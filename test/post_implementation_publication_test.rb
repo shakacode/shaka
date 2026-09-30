@@ -56,6 +56,17 @@ class PostImplementationPublicationTest < Minitest::Test
     end
   end
 
+  def test_nonobject_and_incomplete_results_fail_without_a_backtrace
+    with_result do |valid, path|
+      [nil, true, 42, [1], valid.except('report'), valid.merge('report' => nil)].each do |result|
+        github, status = publish(result, path)
+
+        assert_equal 1, status
+        assert_empty github.bodies
+      end
+    end
+  end
+
   private
 
   def attach_private_usage(result, path)

@@ -13,7 +13,7 @@ module Shaka
 
     def self.run(arguments, github: nil)
       new(arguments, github:).run
-    rescue OptionParser::ParseError, SystemCallError, JSON::ParserError, Shaka::Error => e
+    rescue OptionParser::ParseError, SystemCallError, JSON::ParserError, KeyError, TypeError, Shaka::Error => e
       warn "shaka: #{e.message}"
       1
     end
@@ -55,12 +55,12 @@ module Shaka
       raise Error, 'publish needs OWNER/REPO NUMBER' unless @arguments.size == 2
 
       result = JSON.parse(File.read(@options.fetch(:content_file), encoding: 'UTF-8'))
-      github = @github || GitHub.new(*@arguments)
-      head = result['head']
-      github.verify_head(head)
-      raise Error, 'Checkpoint is not for the live PR head' unless result['head'] == head
+      raise Error, 'Checkpoint result must be an object' unless result.is_a?(Hash)
 
       validate_result!(result)
+      github = @github || GitHub.new(*@arguments)
+      head = result.fetch('head')
+      github.verify_head(head)
 
       github.reply(body: render(result, head), key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
     end
