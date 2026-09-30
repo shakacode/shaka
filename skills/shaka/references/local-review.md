@@ -101,8 +101,8 @@ use a larger model or effort only when the change's risk calls for it.
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
 Use that flag only when `shaka review run` reports `executable_missing`, or after a `cli_failure`
-whose local diagnostic establishes a real reviewer outage. A bad argument, setup failure, or
-report-validation failure does not qualify.
+whose local diagnostic establishes a real reviewer outage. A bad argument, setup failure,
+dirty worktree, or report-validation failure does not qualify.
 
 The helper runs `codex exec -s read-only --ignore-rules --ignore-user-config
 -c skills.include_instructions=false --skip-git-repo-check --json -o REPORT -` from its neutral directory,

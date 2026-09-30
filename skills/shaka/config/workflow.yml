@@ -196,8 +196,9 @@ phases:
       - Commit the validated change before reviewing it. The reviewer reads `git diff BASE...HEAD`,
         so the work has to be a revision it can name and attest to; the push waits for Explain.
         Pass `--settings-ref TRUSTED_SHA --repository OWNER/REPO` to `review run`, and also
-        `--root DIR` to `review check`. A review result captures the committed tree and settings;
-        a dirty checkout leaves it provisional because the reviewer did not see those edits.
+        `--root DIR` to `review check`. A review result captures the committed tree and settings.
+        `review run` refuses a dirty checkout as `dirty_worktree`; a `review check` from one stays
+        provisional because the reviewer did not see those edits.
       - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
         repository validation and review JSON results. Missing or superseded results need the affected

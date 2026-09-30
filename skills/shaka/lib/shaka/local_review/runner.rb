@@ -169,6 +169,33 @@ module Shaka
     end
   end
 
+  # Confirms the checkout is the reviewed commit with nothing uncommitted, which a review of HEAD cannot attest.
+  module LocalReviewCheckout
+    class DirtyWorktree < Shaka::Error; end
+
+    private
+
+    def validate_checkout!
+      top = capture(git_executable, '-C', root, 'rev-parse', '--show-toplevel').strip
+      raise Shaka::Error, 'Resolved Git checkout differs from --root' unless File.realpath(top) == root
+
+      actual = capture(git_executable, '-C', root, 'rev-parse', 'HEAD').strip
+      raise Shaka::Error, "Checkout HEAD is #{actual}, not #{head}" unless actual == head
+
+      refuse_dirty_checkout!
+    end
+
+    def refuse_dirty_checkout!
+      changes = capture(git_executable, '-C', root, 'status', '--porcelain').lines.map { |line| line[3..].strip }
+      return if changes.empty?
+
+      more = changes.size > 5 ? ", and #{changes.size - 5} more" : nil
+      raise DirtyWorktree, "Commit or remove uncommitted changes before review: #{changes.first(5).join(', ')}#{more}"
+    end
+
+    def failure_stage(error) = error.is_a?(DirtyWorktree) ? 'dirty_worktree' : 'setup_failure'
+  end
+
   # Checks the exact revision, launches a reviewer, and validates its report.
   class LocalReviewRunner
     include LocalReviewSourceContext
@@ -176,6 +203,7 @@ module Shaka
     include LocalReviewCriteria
     include LocalReviewPromptFile
     include LocalReviewRounds
+    include LocalReviewCheckout
 
     def initialize(options) = @options = options
 
@@ -211,7 +239,7 @@ module Shaka
 
     def setup_failure(error)
       { 'status' => 'not_completed', 'head' => head, 'reviewer' => @options[:reviewer],
-        'attempted' => @attempted || false, 'failure_stage' => 'setup_failure',
+        'attempted' => @attempted || false, 'failure_stage' => failure_stage(error),
         'skip_evidence' => 'not_eligible', 'reason' => error.message }
     end
 
@@ -257,14 +285,6 @@ module Shaka
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
 
       RepositoryConfig::ReviewSchema.effort_level!(@options[:effort], '--effort') if @options[:effort]
-    end
-
-    def validate_checkout!
-      top = capture(git_executable, '-C', root, 'rev-parse', '--show-toplevel').strip
-      raise Shaka::Error, 'Resolved Git checkout differs from --root' unless File.realpath(top) == root
-
-      actual = capture(git_executable, '-C', root, 'rev-parse', 'HEAD').strip
-      raise Shaka::Error, "Checkout HEAD is #{actual}, not #{head}" unless actual == head
     end
 
     def validate_report(path)
