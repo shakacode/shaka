@@ -29,17 +29,18 @@ Shaka configuration in the feature diff. Keep merge policy ask.
 
 This prompt describes the intended trial. It is not yet a demonstrated seamless
 new-user path. The [T5 acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
-records a verified maintainer-led feature PR with interventions. The evaluated
+records a verified maintainer-led feature PR with interventions, using source
+`947d2cb7f599f26b7291ec00f87189121e7c12bc` (managed version `0.1.0.pre.1`). The evaluated
 version's entry workflow still selected team setup, and reviewer selection,
 walkthrough, and handoff operations failed when reading an absent team seam.
 An agent also edited private settings to suppress local locations in public WIP Details.
 
-The [private setup procedure](../skills/shaka/references/repository-setup.md#try-shaka-privately-in-one-clone)
+The [private setup procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/repository-setup.md#try-shaka-privately-in-one-clone)
 exists, including recovery copies and exclusions. Its availability does not mean
-every delivery operation supports that source. Report an unsupported operation
-and preserve its failure; a manual fallback must be disclosed. Do not call that
-run a completed new-user acceptance trial. The report identifies the evaluated
-source; a newer installation needs its own validation before these limits are removed.
+every delivery operation supports that source. Expect an unsupported operation
+to be reported with its failure and any manual fallback disclosed. A guided run
+with interventions does not establish seamless new-user acceptance.
+A newer installation needs its own validation before these limits are removed.
 
 ## Run an ordinary task
 
@@ -73,7 +74,7 @@ it does not prove tests or review happened.
 | --- | --- |
 | Validation fails | Fix the demonstrated problem, then rerun the affected checks. The PR stays unverified until they complete. |
 | The candidate changes after tests or review | Check whether the evidence still covers the candidate; rerun affected work when it is stale. |
-| Material command or review settings change | Reassess affected evidence. Do not carry a pass from different settings forward as current. |
+| Material command or review settings change | The workflow requires reassessing affected evidence. Live consumer settings transitions remain untested; do not assume an earlier pass is current. |
 | A result is missing, a reviewer is unavailable, or CI is still running | Show the gap explicitly. Missing or stale evidence cannot satisfy a required gate. |
 | An optional reviewer is pending | Disclose it and follow the configured waiting choice; required gates still apply. |
 
@@ -85,12 +86,12 @@ Privacy still requires the agent to inspect the publication.
 
 ## Decide whether to merge
 
-| Your instruction | Expected outcome |
-| --- | --- |
-| No merge instruction, or Ask | The agent returns the ready PR for your decision. |
-| Explicitly authorize the agent to merge this task | That authorization persists within its scope; routine revalidation does not require asking again. |
-| Auto | The agent merges only after applicable checks, reviews, approvals, and repository restrictions are satisfied. |
-| Planning only, review only, or PR only | Stop at the requested outcome. |
+The default is Ask: expect the ready PR back for your decision. The
+[merge policy guide](working-with-shaka.md#choose-a-merge-policy) explains Ask,
+Auto, and approval after a branch update. The workflow tells the agent to retain
+explicit task merge authorization within its scope; that persistence remains
+untested in a live consumer trial. Planning-only, review-only, and PR-only
+requests stop at their requested outcome.
 
 Authorization does not bypass GitHub approval rules or release restrictions.
 Changes that alter behavior after approval can need renewed approval of the new
@@ -101,8 +102,8 @@ Merging a feature PR does not by itself publish a package or deploy a release.
 
 | Scenario | Expected experience and recovery limit |
 | --- | --- |
-| Resume the same task with a PR | Open WIP Details and return to the owning chat, or give a new chat the PR URL after the previous owner stops. Refresh live PR state and evidence before continuing. |
-| Resume before a PR exists | Supply the task and checkout. The agent inspects local work; there is no PR record from which to recover missing choices. |
+| Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. Fresh-chat acceptance remains untested. |
+| Resume before a PR exists | Supply the task and checkout. The intended path is local inspection; there is no PR record from which to recover missing choices. Fresh-chat acceptance remains untested. |
 | Use a linked worktree with private setup | Each worktree has its own local settings identity and recovery copy in the common Git directory. Host permissions must allow the required writes. |
 | An outside pull adds team settings | Inspect adoption and compare saved private settings. Default-branch team policy governs; do not overwrite it with the private copy. |
 | Clean or delete a private worktree | Previously captured settings may be restored outside a checkout for comparison. Uncaptured edits and deletion of the common Git directory cannot be recovered from those copies. |
