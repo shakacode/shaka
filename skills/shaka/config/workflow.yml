@@ -719,6 +719,9 @@ always: |-
   [issue-offer procedure](<{{package_root}}/skills/shaka/references/shaka-issue-offer.md>)
   to offer an issue. Workers must report possible issue-offer gaps to the root task owner and keep
   the current task moving.
+  A maintainer can opt in to missing-cost-rate issues with `usage --report-missing-rates`.
+  That command verifies the current public card and model catalog, reuses existing reports,
+  and files synthetic reproductions. This R19 exception does not authorize other issue offers.
   For issue offers, do not search or file outside this procedure.
   Before search and filing, the root task owner must verify the fixed public repository identity
   and stop on mismatch.

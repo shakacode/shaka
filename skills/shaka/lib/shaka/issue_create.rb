@@ -98,7 +98,7 @@ module Shaka
       0
     end
 
-    private_class_method :create, :validate_text, :verify_repository!, :create_issue, :require_success!,
-                         :issue_url, :gh, :help
+    private_class_method :validate_text, :create_issue, :require_success!,
+                         :issue_url, :help
   end
 end

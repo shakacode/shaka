@@ -16,9 +16,10 @@ require_relative 'usage_turns'
 require_relative 'usage_identity'
 require_relative 'since_time'
 require_relative 'options'
+require_relative 'rate_gap_report'
 
 module Shaka
-  # Read-only reporting of per-response usage records from a supported host.
+  # Reports per-response usage, with explicit opt-in for missing-rate issues.
   class Usage
     include UsageTable
     include UsageTurns

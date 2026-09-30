@@ -3,6 +3,11 @@
 Follow this procedure when the Shaka workflow's **Always** guidance says to offer an issue for a
 worthwhile, verified product gap. Only the root task owner runs it; workers report possible gaps to
 that owner.
+Opt-in missing-cost-rate reporting follows the narrow R19 exception in
+[usage reporting](usage-reporting.md#opt-in-to-missing-rate-issues). Its Ruby command
+checks the public repository, current card, public identity, and existing reports.
+Other offers follow the approval procedure below.
+
 Respect a user request to skip offers for the current task. Keep the current task moving while the
 user considers the offer.
 

@@ -1,0 +1,138 @@
+# frozen_string_literal: true
+
+require_relative 'missing_rates_test'
+require_relative '../skills/shaka/lib/shaka/usage/rate_gap_report'
+
+class RateGapReportTest < Minitest::Test
+  class GitHub
+    attr_accessor :issues, :card, :failure
+    attr_reader :calls, :requests
+
+    def initialize
+      @issues = []
+      @calls = []
+      @requests = []
+      @card = File.read(Shaka::RateCard::INSTALLED_PATH)
+    end
+
+    def verify_repository!
+      @calls << :identity
+      raise Shaka::Error, '/private/token secret' if @failure == :identity
+    end
+
+    def gh(*arguments)
+      path = arguments.last
+      @calls << path
+      raise Shaka::Error, 'private transcript' if @failure == :read
+      return 'invalid json' if @failure == :json
+      return JSON.generate([]) if @failure == :empty
+      return JSON.generate([{ sha: 'a' * 40 }]) if path.include?('commits?')
+      return JSON.generate({ encoding: 'base64', content: [@card].pack('m0') }) if path.include?('contents/')
+
+      JSON.generate(@issues)
+    end
+
+    def create(request)
+      verify_repository!
+      raise Shaka::Error, '/private/source' if @failure == :create
+
+      @requests << request
+      title, body = request.split("\n", 2)
+      @issues << { 'title' => title, 'body' => body, 'html_url' => 'https://github.com/shakacode/shaka/issues/999' }
+      @issues.last['html_url']
+    end
+  end
+
+  def record
+    { 'configuration' => %w[openai gpt-99-sol],
+      'usage' => { 'input_tokens' => 100, 'cached_input_tokens' => 0,
+                   'cache_write_input_tokens' => 0, 'output_tokens' => 10 } }
+  end
+
+  def setup
+    @github = GitHub.new
+  end
+
+  def report(records = [record], catalog: 'gpt-99-sol')
+    Shaka::RateGapReport.new(records, inclusive_input: true, rate_card: Shaka::RateCard.installed,
+                                      github: @github, catalog: ->(_url) { catalog }).report
+  end
+
+  def test_public_safe_reproduction_and_repeat_runs_reuse_links
+    assert_includes report, '/issues/999'
+    assert_equal 2, @github.requests.size
+    report
+    assert_equal 2, @github.requests.size
+    assert_equal :identity, @github.calls.first
+  end
+
+  def test_filed_text_is_a_public_safe_synthetic_reproduction
+    response = record
+    response['prompt'] = '/private/customer transcript native-id'
+    response['usage']['input_tokens'] = 987_654
+    report([response])
+    body = @github.requests.first
+    %w[private customer transcript native-id 987654 987_654].each { |text| refute_includes body, text }
+    assert_includes body, 'input_tokens=100'
+    assert_includes body, 'reviewed PR'
+    assert_includes body, 'a' * 40
+  end
+
+  def test_closed_legacy_report_is_reused
+    @github.issues = [{ 'title' => 'Add gpt-99-sol cost rates', 'state' => 'closed',
+                        'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
+    assert_includes report, '/issues/88'
+    assert_empty @github.requests
+  end
+
+  def test_stale_installation_checks_current_card_and_does_not_file
+    @github.card = @github.card.sub('    gpt-6.1-sol:', '    gpt-99-sol:')
+    assert_includes report, 'already prices'
+    assert_empty @github.requests
+    assert(@github.calls.any? { |call| call.to_s.include?("ref=#{'a' * 40}") })
+  end
+
+  def test_unknown_public_model_does_not_file
+    assert_includes report(catalog: 'gpt-99-sol-private'), 'not verified'
+    assert_empty @github.requests
+  end
+
+  def test_unpublished_credit_scenario_does_not_file_a_second_issue
+    catalog = ->(url) { url.include?('learn.chatgpt.com') ? 'other models' : 'gpt-99-sol' }
+    reporter = Shaka::RateGapReport.new([record], inclusive_input: true, rate_card: Shaka::RateCard.installed,
+                                                  github: @github, catalog:)
+    assert_includes reporter.report, 'not verified'
+    assert_equal 1, @github.requests.size
+    assert_includes @github.requests.first, '(api)'
+  end
+
+  def test_every_github_failure_is_visible_and_redacted
+    %i[identity read json empty create].each do |failure|
+      @github.failure = failure
+      text = report
+      assert_includes text, 'failed during'
+      assert_includes text, 'estimates remain unchanged'
+      refute_includes text, 'private'
+      assert_empty @github.requests
+    end
+  end
+
+  def test_invalid_current_card_and_untrusted_issue_url_fail_without_filing
+    @github.card = 'openai: malformed'
+    assert_includes report, 'failed during trusted rate-card read'
+    @github.card = File.read(Shaka::RateCard::INSTALLED_PATH)
+    @github.issues = [{ 'title' => 'gpt-99-sol pricing', 'html_url' => 'https://private.example/' }]
+    assert_includes report, 'failed during duplicate lookup'
+    assert_empty @github.requests
+  end
+
+  def test_listing_limit_and_catalog_failure_do_not_file
+    @github.issues = Array.new(100) { { 'title' => 'unrelated' } }
+    assert_includes report, 'failed during duplicate lookup'
+    @github.issues = []
+    reporter = Shaka::RateGapReport.new([record], inclusive_input: true, rate_card: Shaka::RateCard.installed,
+                                                  github: @github, catalog: ->(_) { raise IOError, 'private' })
+    assert_includes reporter.report, 'failed during public model verification'
+    assert_empty @github.requests
+  end
+end

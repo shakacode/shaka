@@ -74,10 +74,18 @@ module Shaka
       [{ 'configuration' => context_row, 'usage' => {} }]
     end
 
+    def missing_rate_note
+      return unless @options[:report_missing_rates]
+
+      @missing_rate_note ||= RateGapReport.new(cost_responses, inclusive_input: @source.class::INCLUSIVE_INPUT,
+                                                               rate_card: selected_rate_card).report
+    end
+
     def reviewer_coverage
       local = local_review_included? ? 'included below' : 'UNKNOWN'
       gaps = @source.gaps.uniq.join('; ')
-      "Local adversarial reviewer usage: #{local}. External reviewer/tool-model usage: UNKNOWN. #{gaps}"
+      coverage = "Local adversarial reviewer usage: #{local}. External reviewer/tool-model usage: UNKNOWN. #{gaps}"
+      [missing_rate_note, coverage].compact.join("\n\n")
     end
 
     def local_review_included?

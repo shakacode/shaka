@@ -298,7 +298,7 @@ Keep the coverage note visible; do not replace unknown reviewer usage with zero.
 Check task coverage before publishing. Sources can contain unrelated work even
 when a launcher began with a single task. Select relevant turns rather than using
 `--all-turns` in that case. The reader prints aggregate metadata only and does not
-modify sessions or publish to GitHub.
+modify sessions. GitHub publication is off unless you enable the missing-rate option below.
 
 Never publish raw sessions, prompts, tool output, source paths, or turn/response
 IDs. Recovery-note session links follow their separate [publication rule](delivery.md#recover-an-unfinished-pr).
@@ -342,3 +342,31 @@ Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.
 Compare like tasks and coverage alongside quality, retries, delivery time, and
 developer attention before drawing savings conclusions.
+
+## Opt in to missing-rate issues
+
+Add `--report-missing-rates` to a `shaka usage` command to let it file confirmed
+pricing omissions in the fixed public `shakacode/shaka` repository. Leave this flag
+out for read-only reporting. It is a maintainer choice for each invocation.
+
+The command checks complete billing inputs, the current default-branch rate card,
+and the official public model catalog (the Codex credit pricing list for credits).
+Cursor Fast requires its public Fast model entry. Unknown identity, malformed counters,
+unpublished credits, unsupported billing modes, and native-cost gaps do not
+qualify. Anthropic fast-mode support is left for manual evaluation when its
+public pricing is unknown. A stale installation produces an update note instead
+of filing a gap the current card already prices.
+
+Existing open or closed reports return their issue link. The command lists issues
+in all states, looking for its scenario marker or an earlier model-rate title.
+It fails visibly at the listing limit rather than filing without a complete check.
+GitHub provides no atomic find-or-create: simultaneous invocations can still
+create duplicates, and deleted reports cannot be reused.
+
+Filed text contains public provider/model identity, the scenario, immutable card
+revision, public catalog link, and synthetic reproduction. It includes no native
+usage counters, IDs, prompts, paths, or private links. The report keeps UNKNOWN
+estimates; repository, catalog, listing, and filing failures add a redacted note
+and leave ordinary usage output available. Before retrying an uncertain filing,
+inspect Shaka issues. A rate fix must verify official prices, link its source,
+test the pricing behavior, and deliver a reviewed PR.

@@ -63,7 +63,13 @@ module Shaka
     end
 
     def self.load_file(path, candidate:)
-      source = File.read(path, encoding: 'UTF-8')
+      load_source(File.read(path, encoding: 'UTF-8'), candidate:)
+    rescue SystemCallError => e
+      raise Error, rate_card_error(e)
+    end
+    private_class_method :load_file
+
+    def self.load_source(source, candidate: false)
       RepositoryConfig::DuplicateKeys.check(source, filename: PATH)
       data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
       raise Error, "#{PATH} must be a mapping" unless data.is_a?(Hash)
@@ -72,7 +78,6 @@ module Shaka
     rescue Psych::Exception, KeyError, SystemCallError => e
       raise Error, rate_card_error(e)
     end
-    private_class_method :load_file
 
     def self.rate_card_error(error)
       return "#{PATH} is missing #{error.key}" if error.is_a?(KeyError)

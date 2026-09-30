@@ -118,8 +118,11 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   inspection. Get separate approval for the exact issue text, repeat the search,
   and return for review and approval if candidates change. File the unchanged draft
   only after candidates are cleared. Exclude private context; stop on identity
-  mismatch, search failure or limit, or unresolved candidates. Never create an
-  issue automatically. See the [issue-offer procedure](../skills/shaka/references/shaka-issue-offer.md).
+  mismatch, search failure or limit, or unresolved candidates. Automatic filing is
+  permitted only for confirmed missing cost-rate entries when a maintainer opts in.
+  Check the current trusted card, reuse existing reports, and publish only public
+  model identity and a synthetic reproduction. Reporting failures leave usage
+  available and costs UNKNOWN. Other issues require the approvals above. See the [issue-offer procedure](../skills/shaka/references/shaka-issue-offer.md).
 
 ## Design
 

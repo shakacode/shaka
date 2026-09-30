@@ -139,7 +139,8 @@ requirements.
 Publish tested changes as bounded PRs, preferably below 500 changed lines each.
 Explain necessary larger changes; split independent work instead of hiding size.
 Required evidence is the PR's current commit, actual validation results, and review.
-No extra closeout audit, receipt, automatic issue, heartbeat, or parallel tracker.
+No extra closeout audit, receipt, heartbeat, or parallel tracker. Automatic issues
+are limited to the opt-in missing-cost-rate exception in R19.
 Report available model, reasoning effort, and token evidence on the PR by commit;
 mark shared or unavailable attribution explicitly, as specified in the pilot plan.
 Do not close the pilot until its required real-use acceptance is established.

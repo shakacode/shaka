@@ -10,10 +10,17 @@ module Shaka
         options[:host] = value
       end
       source_file_options(flags, options)
+      missing_rate_option(flags, options)
       flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
       flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |value| options[:turns] << value }
       flags.on('--since-time UTC', 'Count responses from task start in a shared session') do |value|
         options[:since_time] = value
+      end
+    end
+
+    def missing_rate_option(flags, options)
+      flags.on('--report-missing-rates', 'Opt in to public Shaka issues for verified pricing omissions') do
+        options[:report_missing_rates] = true
       end
     end
 

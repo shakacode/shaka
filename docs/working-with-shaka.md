@@ -148,3 +148,12 @@ Tell your agent in chat what you would like Shaka to do better. For example:
 “Shaka asks too many setup questions—can we simplify that?”
 
 The agent helps refine the idea and asks before filing an issue.
+
+### Report missing cost rates
+
+Usage reporting is read-only by default. You can ask your agent to enable
+[missing-rate reporting](../skills/shaka/references/usage-reporting.md#opt-in-to-missing-rate-issues)
+for a usage command. Shaka checks the current public rate card and official
+model catalog before filing a synthetic reproduction, and reuses existing
+reports. An outdated installation gets an update note. Estimates stay UNKNOWN
+until a verified rate is available; reporting failures leave the usage report usable.
