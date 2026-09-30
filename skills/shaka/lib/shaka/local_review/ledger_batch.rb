@@ -79,7 +79,8 @@ module Shaka
       raise Error, "Put each reviewer's usage under `usage`, keyed by reviewer." if
         !batch.one? && content.keys.intersect?(USAGE)
       return unless content.key?('usage')
-      raise Error, 'Record usage must map each reviewer to its usage.' unless content['usage'].is_a?(Hash)
+      raise Error, 'Record usage must map each reviewer to its usage.' unless
+        content['usage'].is_a?(Hash) && content['usage'].values.all?(Hash)
 
       check_reviewers!('usage', content['usage'].keys)
     end

@@ -103,7 +103,8 @@ class LocalReviewTriageTest < Minitest::Test
     append(EARLIER, 'openai/codex', findings: 0)
     append(EARLIER, 'anthropic/claude', findings: 0)
 
-    { { tokens: '5' } => 'keyed by reviewer', { usage: { 'openai/codx' => {} } } => 'Usage names openai/codx' }
+    { { tokens: '5' } => 'keyed by reviewer', { usage: { 'openai/codx' => {} } } => 'Usage names openai/codx',
+      { usage: { 'openai/codex' => '5' } } => 'map each reviewer' }
       .each do |extra, message|
         assert_includes assert_raises(Shaka::Error) { record([], **extra) }.message, message
       end

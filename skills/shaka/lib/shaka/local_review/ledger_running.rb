@@ -71,12 +71,14 @@ module Shaka
       write(entries.empty? ? data.except('running') : data.merge('running' => entries))
     end
 
+    # Any live review blocks a record: one of this commit is still reading it, and one of a newer
+    # commit would find the ledger changed under it.
     def check_nothing_running!
-      waiting = live(last_head)
+      waiting = running.select { |entry| live?(entry) }
       return if waiting.empty?
 
       raise Error, "Wait for #{waiting.map { |entry| entry['reviewer'] }.join(' and ')} to finish reviewing " \
-                   "#{last_head} before recording."
+                   "#{waiting.map { |entry| entry['head'] }.uniq.join(' and ')} before recording."
     end
   end
 end
