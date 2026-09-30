@@ -143,8 +143,8 @@ resumed context with your agreement and new direction. It keeps unrelated newer
 work and findings that still matter. If the snapshot is incomplete or another
 writer is active, it explains the limitation before changing code.
 
-The current PR describes the replacement. Expandable summaries link the earlier
-attempt and its reviews; human comments remain intact. Rewind does not undo
+The current PR describes the replacement. Expandable summaries identify the earlier
+attempt and link its published reviews; human comments remain intact. Rewind does not undo
 external effects such as deployments, and the replacement still needs validation
 and review. This is an agent procedure, not an automatic restore command.
 See the [return-point procedure](../skills/shaka/references/return-points.md) for
