@@ -31,4 +31,15 @@ class CliDescriptionWorkflowVersionTest < Minitest::Test
       assert_match(/\| Workflow version \| #{shown}( \(modified\))? \|/, File.read(File.join(dir, 'published.md')))
     end
   end
+
+  # The first publication records its PR head, so a later route change knows where it began.
+  def test_a_first_publication_records_its_head_for_the_provenance_history
+    Dir.mktmpdir do |dir|
+      _output, error, status = run_description(dir)
+
+      assert_predicate status, :success?, error
+      assert_match(/<!-- shaka:provenance \{"entries":\[\{.*"head":"#{'c' * 40}"\}\],"omitted":0\} -->/,
+                   File.read(File.join(dir, 'published.md')))
+    end
+  end
 end

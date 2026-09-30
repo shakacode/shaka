@@ -287,7 +287,7 @@ begin
                carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 rendered = Shaka::Publication.description(carried, workflow_version)
+                 rendered = Shaka::Publication.description(carried, workflow_version, pull)
                  Shaka::DecisionLabels.guard(github, carried, pull['body'])
                  rendered
                end

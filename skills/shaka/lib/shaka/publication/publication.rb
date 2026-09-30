@@ -5,25 +5,29 @@ require_relative 'text'
 require_relative 'links'
 require_relative 'usage_details'
 require_relative 'provenance'
+require_relative 'provenance_history'
 require_relative 'wip_details'
 require_relative '../publication_sections'
 
 module Shaka
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
-    def self.description(content, workflow_version = nil)
-      new(content, require_tables: true, workflow_version:).render(%i[top_links sections table provenance details wip])
+    # With the pull request being replaced, the provenance history carries forward from its body.
+    def self.description(content, workflow_version = nil, pull = nil)
+      new(content, require_tables: true, workflow_version:, pull:)
+        .render(%i[top_links sections table provenance details wip])
     end
 
     def self.comment(content) = new(content).render([])
     def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
 
-    def initialize(content, require_tables: false, workflow_version: nil)
+    def initialize(content, require_tables: false, workflow_version: nil, pull: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
       @require_tables = require_tables
       @workflow_version = workflow_version
+      @pull = pull
     end
 
     def render(parts, title: false)
@@ -82,6 +86,7 @@ module Shaka
       if @require_tables
         refuse_free_form_usage(items)
         refuse_free_form_wip(items)
+        refuse_supplied_history(items)
       end
       rendered = items.map { |detail| details_block(detail) }
       rendered.unshift(details_block(UsageDetails.new(@content['usage']).detail)) if @require_tables
@@ -107,11 +112,26 @@ module Shaka
       raise Error, 'Publication WIP Details must be supplied as the wip object, not a details item.'
     end
 
+    # Only the helper writes the history, from the previous body.
+    def refuse_supplied_history(items)
+      return unless items.any? do |item|
+        item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(ProvenanceHistory::SUMMARY)
+      end
+
+      raise Error, 'Publication provenance history is carried from the PR body, not supplied as a details item.'
+    end
+
     def provenance
       spec = @content.fetch('provenance') do
         raise Error, 'Publication description requires execution provenance.'
       end
-      [details_block(ExecutionProvenance.new(spec, workflow_version: @workflow_version).detail)]
+      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version)
+      return [details_block(execution.detail)] unless @pull
+
+      history = ProvenanceHistory.carry(@pull, execution.entry)
+      detail = execution.detail
+      marked = detail.merge('body' => "#{detail['body']}\n\n#{ProvenanceHistory.marker(history)}")
+      [details_block(marked), *ProvenanceHistory.detail(history)&.then { |item| details_block(item) }]
     end
 
     def details_block(detail)

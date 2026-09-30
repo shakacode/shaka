@@ -22,6 +22,13 @@ module Shaka
       { 'summary' => 'Execution provenance', 'body' => table }
     end
 
+    # The values a provenance history entry compares, as the table renders them.
+    def entry
+      values = validated
+      { 'workflow' => @workflow_version.markdown, 'requested' => route(values, 'requested'),
+        'recommended' => route(values, 'recommended'), 'active' => route(values, 'active') }
+    end
+
     private
 
     def table

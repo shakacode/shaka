@@ -151,7 +151,7 @@ DESCRIPTION_GH = <<~'RUBY'
       puts JSON.generate(request)
     else
       puts JSON.generate('body' => ENV.fetch('EXISTING_BODY', ''),
-                         'head' => { 'repo' => { 'full_name' => 'owner/repo' } },
+                         'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => 'owner/repo' } },
                          'base' => { 'repo' => { 'full_name' => 'owner/repo' } })
     end
   when 'markdown' then puts JSON.generate('<table></table>' * 10)
