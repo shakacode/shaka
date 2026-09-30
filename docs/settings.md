@@ -195,77 +195,47 @@ before continuing.
 
 ## `review.local_review_agents`
 
-**Optional.** Ordered reviewer preferences, not required local installations.
-Without a list, selection falls back to a fresh review context using the
-implementation identity.
+**Optional.** Choose which reviewers Shaka tries first. Put a reviewer from a
+different provider first to get another perspective on the change. Each reviewer
+needs its CLI installed and signed in on the machine doing the review.
+
+Ask your agent:
+
+> Use Claude first for local review, then Codex. Set Codex to gpt-6-sol at medium
+> effort so review costs are predictable.
+
+For example:
 
 ```yaml
 review:
-  required: meaningful_changes
-  ci_review_jobs: [claude-review]
   local_review_agents:
     - provider: anthropic
       model_family: claude
-    - provider: openai
-      model_family: codex
-```
-
-Use stable provider/family names. The agent prefers a different provider. Put
-custom review criteria in trusted `AGENTS.md`.
-
-To control what a review costs, give an entry a `model` and an `effort`:
-
-```yaml
-  local_review_agents:
     - provider: openai
       model_family: codex
       model: gpt-6-sol
       effort: medium
-    - provider: anthropic
-      model_family: claude
-      effort: medium
 ```
 
-Here every Codex review runs `gpt-6-sol` at medium effort. Without a `model`,
-Codex runs its built-in default, which has been `gpt-6-astra` at five times the
-token price, because the reviewer ignores your personal Codex configuration.
-Claude uses its CLI default model at medium effort. The review report records
-the effort it ran.
+Here Claude uses its CLI default model and effort. Codex uses `gpt-6-sol` at
+medium effort. Set `model` and `effort` to control review cost; leaving them out
+uses the reviewer's defaults. A task can request a different model or effort for
+one review. Without a reviewer list, Shaka uses a fresh review context with the
+model that implemented the change.
 
-Both settings are optional. A task can still ask for a different model or effort,
-which wins for that review. The review helper reads them from the trusted
-default-branch commit the agent passes as `--criteria-ref`, so a PR cannot pick
-the model that reviews it; without that commit, the settings are not applied.
-When a configured model, or a Codex or Grok effort, is the same length as a name
-Shaka knows and one letter off, or two adjacent letters are swapped,
-`shaka doctor` and `shaka review run` say it looks like a typo of that name.
-That review still runs. A Claude effort other than `low`, `medium`, `high`,
-`xhigh`, or `max` stops the review before the CLI starts, including a near-miss
-such as `meduim`, and `shaka doctor` fails. A name Shaka does not know is reported too, and that review
-still runs, so a model newer than this release is not blocked. Codex has one
-recommended model, recorded as `recommended_model` in
-`skills/shaka/lib/shaka/reviewer_settings.rb`. A known Codex model other than
-that one is reported, and the review still runs. After that recommendation
-changes, a repository that still names the previous model gets that report.
-Claude and Grok have no single recommended model. The names live in that file.
-Shaka does not read reviewer CLI error text, and it does not substitute another
-model.
+Shaka flags unfamiliar settings, likely typos, and Codex models that differ from
+its recommendation. You'll see the warning in the repository health check and
+a **Reviewer settings** notice on the published local review. Check the spelling
+and confirm that the model and effort are available to your reviewer. Shaka
+keeps your chosen model; it does not substitute another one.
 
-Each reviewer CLI accepts its own effort levels:
+Most warnings allow the review to run. An unsupported Claude effort stops it;
+choose `low`, `medium`, `high`, `xhigh`, or `max` to continue.
 
-| Reviewer | Where the levels come from |
-| --- | --- |
-| Claude | `claude --help` lists them for `--effort`, such as `low` through `max` |
-| Codex | The model's documentation; Codex passes the level through as configuration |
-| Grok | The Grok CLI's `--reasoning-effort` option |
-
-Shaka checks a lowercase effort name, such as `medium` or `xhigh`. A Codex or
-Grok effort outside the names in `reviewer_settings.rb` is reported and still
-runs, including a near-miss such as `meduim`. Claude's list is closed, so an
-effort outside it stops the review.
-Configured CI review jobs have separate waiting rules under
+Put project-specific review criteria in `AGENTS.md`. For review execution and
+setting checks, see the [local review reference](../skills/shaka/references/local-review.md#reviewer-model-and-effort).
+To choose how many hosted review reports to wait for, use
 [`review.ci_review_wait`](#reviewci_review_wait).
-See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).
 
 ### Add a second reviewer
 
