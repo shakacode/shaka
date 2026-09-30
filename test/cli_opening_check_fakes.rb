@@ -56,6 +56,7 @@ module CliOpeningCheckFakes
     provenance['task_source'] = 'issue'
     provenance['initial_prompt'] = 'EXCLUDED'
     { 'identity' => { 'agent' => 'Codex' }, 'summary' => self.class::SUMMARY, 'deployment' => 'none',
+      'steps_besides_merging' => 'none',
       'table' => { 'columns' => %w[Check Result], 'rows' => [%w[validate pass]] },
       'provenance' => provenance, 'usage' => USAGE, 'details' => [] }
   end

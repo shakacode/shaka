@@ -8,6 +8,7 @@ require_relative 'provenance'
 require_relative 'provenance_history'
 require_relative 'wip_details'
 require_relative 'settings'
+require_relative 'steps_besides_merging'
 require_relative '../publication_sections'
 
 module Shaka
@@ -44,7 +45,8 @@ module Shaka
 
     def sections = PublicationSections.render(@content)
 
-    def top_links = PublicationLinks.top(@content)
+    # The steps besides merging sit under the headline links so a reader cannot miss them.
+    def top_links = [*PublicationLinks.top(@content), *StepsBesidesMerging.render(@content)]
 
     def table
       spec = @content['table']

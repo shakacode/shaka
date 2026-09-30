@@ -202,6 +202,10 @@ deployment's `environment_url`, the same link GitHub shows as "View deployment";
 it renders nothing when the head has none. Supply a URL yourself only when the
 preview appears solely in a provider comment or CI log. The helper links it beside
 the walkthrough.
+Set the required `steps_besides_merging` field to `none` or a list of work the change
+needs outside its merge, such as a secret to set before merge or a backfill to run after
+it. The helper renders the list as a table under those links, where a maintainer sees it
+before the checks, and refuses a description that leaves the field out.
 Also link to the current review result. Self-edit the content JSON before
 publication; let the helper render headings, tables, and details.
 

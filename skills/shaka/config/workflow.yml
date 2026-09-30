@@ -324,6 +324,15 @@ phases:
       - Publish a speed-affecting change's comparison result, any maintainer acceptance, or its
         unmeasured note on its PR. Label a result with the revisions it compared, and an
         unmeasured note with the head it covers, marked as not measured.
+      - Before publishing, read the diff for steps besides merging: anything that has to exist
+        or happen outside the code for the change to work once deployed. Look for new or renamed
+        environment variables, `secrets.*` and `vars.*` references in workflows, GitHub App
+        installs and permissions, third-party configuration, DNS, data migrations or backfills,
+        feature flags, and deploy order across repositories. Supply each as a
+        `steps_besides_merging` item with `when` (`before merge` or `after merge`), `step`,
+        `who`, `where`, and `verify`, or `none` after checking found nothing. The helper renders
+        them as a table under the headline links and refuses a missing answer; whether the list
+        is complete is the agent's report.
       - Use the review-ready path unless a needed reviewer's trusted workflow shows it reviews drafts.
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
@@ -360,7 +369,7 @@ phases:
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `walkthrough`, required `deployment`, optional `decisions`, optional `sections`,
+        optional `walkthrough`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
         required `table`, required `provenance`, required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
@@ -572,7 +581,8 @@ phases:
         consequences. Trust, authentication, permission, release, deployment, destructive-migration,
         and merge-guard changes require explicit human review. Small diffs do not prove low risk.
         Uncertain authority, consequential risk, or a base neither the trusted seam nor the
-        default branch establishes switches Auto to Ask; safety failures block.
+        default branch establishes switches Auto to Ask; safety failures block. So does an open
+        `before merge` step besides merging until the user confirms it is done.
       - Refresh `pr` and inspect required check states. Never accept missing, failed, pending, or stale
         required checks, and never bypass protection. An empty required set is acceptable only in Ask
         mode; say in the handoff that no check gates the PR. Wait when independent review is not yet
@@ -596,7 +606,8 @@ phases:
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
         click, run `attention OWNER/REPO NUMBER --state merge` to label the PR
         `awaiting-merge-approval`, run `squash-message` for that head so the last comment holds
-        the commit title and body to paste into the squash merge boxes, name the expected head SHA, and tell the user they may use
+        the commit title and body to paste into the squash merge boxes, name the expected head SHA,
+        list each open step besides merging with its timing and who does it, and tell the user they may use
         GitHub's currently offered merge control for that SHA and then archive this chat. If GitHub
         shows a different head or offers no allowed merge method, tell them not to merge. Do not
         bypass protection. Do not ask whether you should merge. Ask does not treat that GitHub click
@@ -637,7 +648,9 @@ phases:
         the `WIP Details` note after GitHub confirms the outcome, except after an Ask
         GitHub merge click, which leaves the note in place on purpose. Review-only work leaves
         the description alone. Report every PR link and outcome, brief validation, and remaining
-        work or blocker.
+        work or blocker. After the report, list again every `before merge` or `after merge` step
+        besides merging that is still open, with who does it, so a merged PR does not leave one
+        behind; say `none` when the description recorded none.
       - When the task is genuinely finished in a prose-capable chat, put exactly
         `This chat is ready for archiving.` on the last line. Do not use it for a task transfer,
         blocker, pending chat decision, or machine-only format. A remaining GitHub merge click after

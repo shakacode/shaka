@@ -66,6 +66,7 @@ module HandoffFixtures
   def self.rendered(wip = WIP)
     Shaka::Publication.description(
       'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE, 'deployment' => 'none',
+      'steps_besides_merging' => 'none',
       'provenance' => PROVENANCE, 'usage' => USAGE, 'details' => [], 'wip' => wip
     )
   end

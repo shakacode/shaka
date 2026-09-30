@@ -19,6 +19,7 @@ module ProvenanceHistoryFixture
   def content(usage: PublicationRegressionTest::USAGE_OBJECT, **routes)
     { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
       'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
+      'steps_besides_merging' => 'none',
       'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE.merge(routes),
       'usage' => usage, 'details' => [] }
   end
