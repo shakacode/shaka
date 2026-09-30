@@ -4,17 +4,16 @@ require_relative 'test_helper'
 require 'shaka/post_implementation'
 
 class PostImplementationPublicationTest < Minitest::Test
-  class GitHub
+  class GitHub < Shaka::GitHub
     attr_reader :bodies
 
     def initialize(head)
+      super('example/test', '1')
       @head = head
       @bodies = []
     end
 
-    def verify_head(head)
-      raise Shaka::Error, 'stale' unless head == @head
-    end
+    def snapshot = { 'state' => 'OPEN', 'headRefOid' => @head }
 
     def reply(body:, key:)
       @bodies << [body, key]

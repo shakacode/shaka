@@ -54,21 +54,23 @@ module Shaka
     def publish
       raise Error, 'publish needs OWNER/REPO NUMBER' unless @arguments.size == 2
 
-      result = JSON.parse(File.read(@options.fetch(:content_file), encoding: 'UTF-8'))
-      raise Error, 'Checkpoint result must be an object' unless result.is_a?(Hash)
-
-      validate_result!(result)
+      result = publication_result
       github = @github || GitHub.new(*@arguments)
       head = result.fetch('head')
-      github.verify_head(head)
+      live = github.snapshot.values_at('state', 'headRefOid')
+      raise Error, 'Checkpoint is not for the live open PR head' unless live == ['OPEN', head]
 
       github.reply(body: render(result, head), key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
     end
 
-    def validate_result!(result)
+    def publication_result
+      result = JSON.parse(File.read(@options.fetch(:content_file), encoding: 'UTF-8'))
+      raise Error, 'Checkpoint result must be an object' unless result.is_a?(Hash)
       raise Error, 'Not a product checkpoint result' unless result['purpose'] == 'post_implementation'
       raise Error, 'Checkpoint has no execution identity' unless
         result['execution_id'].to_s.match?(/\A[0-9a-f]{8}\z/)
+
+      result
     end
 
     def render(result, head)
