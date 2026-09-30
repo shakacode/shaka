@@ -306,7 +306,8 @@ problem once, and map every reviewer that reported it to that reviewer's own num
 
 The helper refuses a finding without `reviewers` when the batch has several rounds, one
 reviewer's number claimed by two findings, and a count that differs from any reviewer's
-`FINDINGS n`, so each reviewer's individual findings map one to one onto the triage. The
+`FINDINGS n`. It does not read the numbers inside a report, so match each number to the
+report yourself; the checks make each reviewer's findings map one to one by count. The
 published comment's **Findings** section, before the reports, gives each commit's triage: every
 finding once, the reviewers and numbers it came from, and its outcome. Under each report of a
 commit several reviewers read, it shows which of that reviewer's findings became which finding.
