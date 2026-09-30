@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
 require 'open3'
+require_relative '../error'
 
 module Shaka
   # Captures a reviewer process with a deadline and terminates its process group on timeout.
   module LocalReviewProcess
+    # Keeps denied cleanup visible after a timed-out parent has exited.
+    class CleanupError < Error
+      def success? = false
+    end
+
     DrainTimeout = Struct.new(:process_status) do
       def success? = false
     end
@@ -35,11 +41,19 @@ module Shaka
         return nil
       end
 
-      drained = join_before_deadline(threads, Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2)
-      return waiter.value if drained
+      return waiter.value if join_before_deadline(threads, Process.clock_gettime(Process::CLOCK_MONOTONIC) + 2)
 
       terminate(waiter)
       DrainTimeout.new(waiter.value)
+    rescue Errno::EPERM => e
+      cleanup_error(waiter, exited, timeout, e)
+    end
+
+    def self.cleanup_error(waiter, exited, timeout, error)
+      raise error unless waiter.join(0)
+
+      phase = exited ? 'output drain timed out after 2s' : "timed out after #{timeout}s"
+      raise CleanupError, "#{phase}; process group cleanup denied (#{error.message})"
     end
 
     def self.write_input(stdin, data)
