@@ -3,6 +3,7 @@
 require 'rbconfig'
 require 'tempfile'
 require_relative '../configuration'
+require_relative '../reviewer_settings'
 
 module Shaka
   # Reads the repository's review instructions from the same trusted commit as its criteria.
@@ -44,6 +45,13 @@ module Shaka
           schema.public_send(check, agent[key], "review.local_review_agents #{key}")
           @options[option] = agent[key]
         end
+    end
+
+    def apply_reviewer_settings!
+      apply_trusted_settings!
+      validate_model!
+      @config_notices = ReviewerSettings.notices(reviewer, model: @options[:model], effort: @options[:effort])
+      ReviewerSettings.refuse!(@config_notices)
     end
 
     def trusted_prompt_text

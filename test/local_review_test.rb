@@ -1075,6 +1075,67 @@ class LocalReviewAttestationCaseTest < Minitest::Test
   end
 end
 
+class LocalReviewSettingsTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_a_misspelled_model_still_runs_and_names_the_similar_model
+    with_repository do |root, base, head, bin|
+      result = accepted_review(root, base, head, bin, 'gpt-6-sll')
+
+      assert_equal 'completed', result.fetch('status')
+      assert_includes result.fetch('config_notices').first.fetch('summary'), 'looks like a typo of `gpt-6-sol`'
+    end
+  end
+
+  def test_a_claude_effort_outside_the_list_stops_before_the_cli
+    with_repository do |root, base, head, bin|
+      result = refused_claude(root, base, head, bin)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      refute result.fetch('attempted')
+      assert_includes result.fetch('reason'), 'turbo'
+    end
+  end
+
+  def test_an_unknown_model_still_runs_and_reports_the_notice
+    with_repository do |root, base, head, bin|
+      result = accepted_review(root, base, head, bin, 'gpt-9-nova')
+
+      assert_equal 'completed', result.fetch('status')
+      assert_includes result.fetch('config_notices').first.fetch('summary'), 'gpt-9-nova'
+    end
+  end
+
+  private
+
+  def refused_claude(root, base, head, bin)
+    trace = File.join(root, 'invocation.json')
+    fake_claude(bin, head)
+    output, _error, status = run_review(root, base, head, bin,
+                                        reviewer: 'anthropic/claude', effort: 'turbo',
+                                        env: { 'REVIEW_TRACE' => trace })
+    refute_predicate status, :success?
+    refute_path_exists trace
+    JSON.parse(output)
+  end
+
+  def accepted_review(root, base, head, bin, model)
+    output, error, status = launch(root, base, head, bin, model)
+    assert_predicate status, :success?, error
+    JSON.parse(output)
+  ensure
+    cleanup_artifacts(JSON.parse(output)) if output
+  end
+
+  def launch(root, base, head, bin, model)
+    trace = File.join(root, 'invocation.json')
+    fake_codex(bin, head)
+    output, error, status = run_review(root, base, head, bin, model:, env: { 'REVIEW_TRACE' => trace })
+    status.success? ? assert_path_exists(trace) : refute_path_exists(trace)
+    [output, error, status]
+  end
+end
+
 class LocalReviewCodexUsageTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -1523,6 +1584,7 @@ module LocalReviewFixture
 end
 
 LocalReviewCodexTest.include(LocalReviewFixture)
+LocalReviewSettingsTest.include(LocalReviewFixture)
 LocalReviewRubyIsolationTest.include(LocalReviewFixture)
 LocalReviewCodexTest.include(LocalReviewContextAssertion)
 LocalReviewCodexUsageTest.include(LocalReviewFixture)
