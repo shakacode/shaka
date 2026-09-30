@@ -2,6 +2,7 @@
 
 require 'optparse'
 require_relative 'post_implementation_runner'
+require_relative 'post_implementation/history'
 require_relative 'github'
 require_relative 'usage/codex_usage'
 require_relative 'usage/claude_usage'
@@ -39,6 +40,8 @@ module Shaka
 
     def present(result, action)
       puts JSON.pretty_generate(result)
+      return 1 if result.dig('earlier_checkpoints', 'unavailable')&.any?
+
       %w[completed opted_out].include?(result['status']) || action == 'publish' ? 0 : 1
     end
 
@@ -60,7 +63,8 @@ module Shaka
       live = github.snapshot.values_at('state', 'headRefOid')
       raise Error, 'Checkpoint is not for the live open PR head' unless live == ['OPEN', head]
 
-      github.reply(body: render(result, head), key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
+      published = github.reply(body: render(result, head), key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
+      published.merge('earlier_checkpoints' => PostImplementationHistory.new(github).collapse(published))
     end
 
     def publication_result

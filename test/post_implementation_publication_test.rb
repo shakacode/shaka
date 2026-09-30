@@ -3,7 +3,7 @@
 require_relative 'test_helper'
 require 'shaka/post_implementation'
 
-class PostImplementationPublicationTest < Minitest::Test
+module PostImplementationPublicationFixture
   class GitHub < Shaka::GitHub
     attr_reader :bodies
 
@@ -15,67 +15,15 @@ class PostImplementationPublicationTest < Minitest::Test
 
     def snapshot = { 'state' => 'OPEN', 'headRefOid' => @head }
 
+    def viewer_login = 'test-author'
+
+    def issue_comments = [@published]
+
     def reply(body:, key:)
       @bodies << [body, key]
-      { 'url' => 'https://github.com/example/test/pull/1#issuecomment-1' }
-    end
-  end
-
-  def test_publication_keeps_execution_metadata_without_private_native_content
-    with_result do |result, path|
-      attach_private_usage(result, path)
-      github, status = publish(result, path)
-
-      assert_equal 0, status
-      assert_includes github.bodies.first.first, 'observed-model'
-      refute_includes github.bodies.first.first, 'PRIVATE TRANSCRIPT'
-    end
-  end
-
-  def test_stale_head_and_technical_evidence_cannot_be_published_as_checkpoint
-    with_result do |result, path|
-      result['head'] = 'b' * 40
-      github, status = publish(result, path)
-
-      assert_equal 1, status
-      assert_empty github.bodies
-      result['head'] = 'a' * 40
-      result['purpose'] = 'technical_review'
-      assert_equal 1, publish(result, path).last
-    end
-  end
-
-  def test_another_execution_does_not_overwrite_the_earlier_conclusion
-    with_result do |result, path|
-      first, = publish(result, path)
-      result['execution_id'] = 'def56789'
-      second, = publish(result, path)
-
-      refute_equal first.bodies.first.last, second.bodies.first.last
-    end
-  end
-
-  def test_nonobject_and_incomplete_results_fail_without_a_backtrace
-    with_result do |valid, path|
-      [nil, true, 42, [1], valid.except('report'), valid.merge('report' => nil)].each do |result|
-        github, status = publish(result, path)
-
-        assert_equal 1, status
-        assert_empty github.bodies
-      end
-    end
-  end
-
-  def test_oversized_report_read_is_bounded_and_cannot_publish
-    with_result do |result, path|
-      File.write(result.fetch('report'), 'x' * 1_000_000)
-      github, status = publish(result, path)
-      assert_equal 1, status
-      assert_empty github.bodies
-      error = bounded_read do
-        assert_raises(Shaka::Error) { Shaka::PostImplementationReport.read(result.fetch('report'), head: 'a' * 40) }
-      end
-      assert_includes error.message, 'exceeds 100 KB'
+      @published = { 'id' => 1, 'created_at' => '2026-09-30T00:00:00Z', 'user' => { 'login' => viewer_login },
+                     'body' => "<!-- shaka:reply:#{key} -->\n#{body}",
+                     'html_url' => 'https://github.com/example/test/pull/1#issuecomment-1' }
     end
   end
 
@@ -113,13 +61,96 @@ class PostImplementationPublicationTest < Minitest::Test
     end
   end
 
-  def publish(result, path)
+  def publish(result, path, github: GitHub.new('a' * 40))
     File.write(path, JSON.generate(result))
-    github = GitHub.new('a' * 40)
     status = nil
-    capture_io do
+    output = capture_io do
       status = Shaka::PostImplementation.run(['publish', 'example/test', '1', '--content-file', path], github:)
+    end.first
+    [github, status, output]
+  end
+end
+
+class PostImplementationPublicationTest < Minitest::Test
+  include PostImplementationPublicationFixture
+
+  def test_publication_keeps_execution_metadata_without_private_native_content
+    with_result do |result, path|
+      attach_private_usage(result, path)
+      github, status = publish(result, path)
+
+      assert_equal 0, status
+      assert_includes github.bodies.first.first, 'observed-model'
+      refute_includes github.bodies.first.first, 'PRIVATE TRANSCRIPT'
     end
-    [github, status]
+  end
+
+  def test_stale_head_and_technical_evidence_cannot_be_published_as_checkpoint
+    with_result do |result, path|
+      result['head'] = 'b' * 40
+      github, status = publish(result, path)
+
+      assert_equal 1, status
+      assert_empty github.bodies
+      result['head'] = 'a' * 40
+      result['purpose'] = 'technical_review'
+      assert_equal 1, publish(result, path)[1]
+    end
+  end
+
+  def test_another_execution_does_not_overwrite_the_earlier_conclusion
+    with_result do |result, path|
+      first, = publish(result, path)
+      result['execution_id'] = 'def56789'
+      second, = publish(result, path)
+
+      refute_equal first.bodies.first.last, second.bodies.first.last
+    end
+  end
+
+  def test_nonobject_and_incomplete_results_fail_without_a_backtrace
+    with_result do |valid, path|
+      [nil, true, 42, [1], valid.except('report'), valid.merge('report' => nil)].each do |result|
+        github, status = publish(result, path)
+
+        assert_equal 1, status
+        assert_empty github.bodies
+      end
+    end
+  end
+
+  def test_oversized_report_read_is_bounded_and_cannot_publish
+    with_result do |result, path|
+      File.write(result.fetch('report'), 'x' * 1_000_000)
+      github, status = publish(result, path)
+      assert_equal 1, status
+      assert_empty github.bodies
+      error = bounded_read do
+        assert_raises(Shaka::Error) { Shaka::PostImplementationReport.read(result.fetch('report'), head: 'a' * 40) }
+      end
+      assert_includes error.message, 'exceeds 100 KB'
+    end
+  end
+end
+
+class PostImplementationPublicationHistoryTest < Minitest::Test
+  include PostImplementationPublicationFixture
+
+  def test_publication_confirms_history_updates
+    with_result do |result, path|
+      outcome = publish(result, path)
+      assert_equal({ 'collapsed' => [], 'unavailable' => [] }, JSON.parse(outcome[2]).fetch('earlier_checkpoints'))
+    end
+  end
+
+  def test_history_failure_is_explicit_after_the_new_report_is_published
+    with_result do |result, path|
+      github = GitHub.new('a' * 40)
+      github.define_singleton_method(:issue_comments) { raise Shaka::Error, 'Listing unavailable' }
+      outcome = publish(result, path, github:)
+      assert_equal 1, outcome[1]
+      assert_equal 1, github.bodies.size
+      assert_equal ['Listing unavailable'], JSON.parse(outcome[2]).dig('earlier_checkpoints', 'unavailable')
+    end
   end
 end

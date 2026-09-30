@@ -65,6 +65,12 @@ checks the live open PR head and retains separate executions on that PR, includi
 native usage metadata when available. Requested settings are labeled separately
 from observed model and usage; absent observations remain UNKNOWN.
 
+Older reports from the publishing account link to its newest product validation,
+with their original conclusions retained in collapsed history and human annotations
+preserved. Retrying a publication updates those links without nesting the history.
+If a history update fails, publication returns a nonzero status and identifies the
+unavailable update; the new report stays published so the same execution can be retried.
+
 ## Act on the conclusion
 
 Publish the reviewed head, conclusion, observed benefit and cost, and alternative
