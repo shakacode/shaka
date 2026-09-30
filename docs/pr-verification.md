@@ -28,7 +28,7 @@ the agent; Ruby does not verify that it happened or assess its quality.
 For example, a settings page may satisfy the task but introduce an interface most
 users never need. The agent can recommend extending an existing setting instead
 before more work builds around that page. Maintainers can customize the
-[default review prompt](../skills/shaka/references/post-implementation-validation.md#customize-for-the-project)
+[default review prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/post-implementation-validation.md#customize-for-the-project)
 with their audience and architectural priorities.
 
 ## Change one behavior at a time
