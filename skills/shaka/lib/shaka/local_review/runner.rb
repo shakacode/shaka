@@ -115,10 +115,9 @@ module Shaka
       return unless @options[:ledger]
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
-      @ledger.start!(base: @options[:base], head:, reviewer: @options[:reviewer])
+      @ledger.start!(base: @options[:base], head:, reviewer: @options[:reviewer], expires: mark_expiry)
       @started = true
-      # Another reviewer of the last batch's commit reads history the batch's first round checked.
-      check_history! if @ledger.last_head && @ledger.last_head != head
+      check_history! if @ledger.last_head
       @snapshot = @ledger.snapshot(head)
     end
 
@@ -146,6 +145,9 @@ module Shaka
       raise Shaka::Error, "#{descendant} does not build on #{commit}, which the ledger reviewed or records as " \
                           'a fix; fix the history or use a new ledger.'
     end
+
+    # The running mark outlives the reviewer's timeout by a margin for setup and the report check.
+    def mark_expiry = Time.now.to_i + @options[:timeout_seconds].to_i + 300
 
     # A run that ended without appending its round stops holding up the batch's record.
     def finish_ledger

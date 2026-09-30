@@ -30,6 +30,9 @@ module Shaka
     # Every round of the last batch gets the findings its reviewer reported, from one triage.
     def recorded_rounds(content)
       findings = PublicationText.list(content['findings'], 'recorded finding')
+      # One triage lists each problem once, so an id repeated across reviewers is two problems.
+      LocalReviewFinding.list(findings.map { |finding| finding.is_a?(Hash) ? finding.except('reviewers') : finding },
+                              'recorded finding')
       rounds.each_with_index.map do |round, index|
         batch.include?(index) ? triaged(round, index, findings, content) : round
       end

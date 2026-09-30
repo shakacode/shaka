@@ -68,6 +68,23 @@ class LocalReviewTriageTest < Minitest::Test
     assert_includes error.message, 'Wait for anthropic/claude to finish reviewing'
   end
 
+  # Break caught: a killed review whose process id was reused blocked recording forever.
+  def test_an_expired_mark_does_not_block_recording
+    append(EARLIER, 'openai/codex', findings: 0)
+    ledger.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude', expires: Time.now.to_i - 1)
+
+    assert_equal [1], record([])
+  end
+
+  # Break caught: two problems given one id by different reviewers hid one of them.
+  def test_one_id_names_one_problem_across_reviewers
+    append(EARLIER, 'openai/codex', findings: 1)
+    append(EARLIER, 'anthropic/claude', findings: 1)
+    findings = [NIT.merge('reviewers' => ['openai/codex']), NIT.merge('reviewers' => ['anthropic/claude'])]
+
+    assert_includes assert_raises(Shaka::Error) { record(findings) }.message, 'id repeats'
+  end
+
   def test_an_append_clears_its_running_mark
     ledger.start!(base: BASE, head: EARLIER, reviewer: 'openai/codex')
     append(EARLIER, 'openai/codex', findings: 0)

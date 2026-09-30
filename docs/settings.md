@@ -275,7 +275,8 @@ The first reviewer comes from a provider that did not write the change whenever 
 can run, here Codex. The others follow the list order, so the second is Claude in a
 fresh session, without the implementation conversation. If Codex had written the
 change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
-missing or signed out, it skips that reviewer, and fewer run.
+missing or signed out, it skips that reviewer, and the next listed one takes its place;
+fewer run only when the list runs out.
 
 Each extra reviewer adds its own review cost to every commit it reads. The PR's
 review comment shows every reviewer's rounds, and one review of the final commit is
