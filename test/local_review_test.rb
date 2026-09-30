@@ -1275,12 +1275,12 @@ class LocalReviewCapRunnerTest < Minitest::Test
 
   def test_trusted_cap_wins_over_candidate_settings_and_is_saved_for_publication
     in_loop do |_head|
-      trusted = trusted_cap_commit
-      loop_round(trusted, findings: 0, criteria_ref: trusted)
+      settings_sha = cap_settings_sha
+      loop_round(settings_sha, findings: 0, criteria_ref: settings_sha)
       File.write(File.join(@root, '.agents/agent-workflow.yml'), "review:\n  local_max_rounds: 99\n")
       head = fix_commit
       FileUtils.rm(@trace)
-      output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger, criteria_ref: trusted)
+      output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger, criteria_ref: settings_sha)
       assert_cap_refusal(output, status, 1)
     end
   end
@@ -1290,19 +1290,20 @@ class LocalReviewCapRunnerTest < Minitest::Test
       loop_round(head, findings: 1)
       record([{ 'id' => 'F1', 'summary' => 'Wrong exit code', 'class' => 'defect',
                 'disposition' => 'documented' }])
-      trusted = trusted_cap_commit
+      settings_sha = cap_settings_sha
       FileUtils.rm(@trace)
-      output, _error, status = run_review(@root, @base, trusted, @bin, ledger: @ledger, criteria_ref: trusted)
+      output, _error, status = run_review(@root, @base, settings_sha, @bin, ledger: @ledger, criteria_ref: settings_sha)
       assert_cap_refusal(output, status, 1)
     end
   end
 
-  def trusted_cap_commit
+  def cap_settings_sha
     path = File.join(@root, '.agents/agent-workflow.yml')
     FileUtils.mkdir_p(File.dirname(path))
     File.write(path, "review:\n  local_max_rounds: 1\n")
     git!(@root, 'add', '.')
-    git!(@root, 'commit', '--quiet', '-m', 'Set trusted round cap')
+    git!(@root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
+         'commit', '--quiet', '-m', 'Set trusted round cap')
     git!(@root, 'rev-parse', 'HEAD').strip
   end
 
