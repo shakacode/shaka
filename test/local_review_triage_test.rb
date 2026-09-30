@@ -104,10 +104,20 @@ class LocalReviewTriageTest < Minitest::Test
     append(EARLIER, 'anthropic/claude', findings: 0)
 
     { { tokens: '5' } => 'keyed by reviewer', { usage: { 'openai/codx' => {} } } => 'Usage names openai/codx',
-      { usage: { 'openai/codex' => '5' } } => 'map each reviewer' }
+      { usage: { 'openai/codex' => '5' } } => 'map each reviewer',
+      { model: 'x', usage: { 'openai/codex' => {} } } => 'keyed by reviewer' }
       .each do |extra, message|
         assert_includes assert_raises(Shaka::Error) { record([], **extra) }.message, message
       end
+  end
+
+  # Break caught: adding usage after triage erased the recorded findings.
+  def test_a_usage_only_record_keeps_the_findings
+    append(EARLIER, 'openai/codex', findings: 1)
+    record([NIT])
+    ledger.record!({ 'tokens' => '9' })
+
+    assert_equal([[NIT], '9'], ledger.rounds.first.values_at('findings', 'tokens'))
   end
 
   def test_usage_is_recorded_for_each_reviewer

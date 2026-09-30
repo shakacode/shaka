@@ -30,11 +30,11 @@ module Shaka
     end
 
     # Every round of the last batch gets the findings its reviewer reported, from one triage.
+    # A record without `findings` adds usage and keeps the findings already recorded.
     def recorded_rounds(content)
-      findings = PublicationText.list(content['findings'], 'recorded finding')
+      findings = content.key?('findings') ? PublicationText.list(content['findings'], 'recorded finding') : nil
       # One triage lists each problem once, so an id repeated across reviewers is two problems.
-      LocalReviewFinding.list(findings.map { |finding| finding.is_a?(Hash) ? finding.except('reviewers') : finding },
-                              'recorded finding')
+      check_unique_ids!(findings) if findings
       check_usage!(content)
       rounds.each_with_index.map do |round, index|
         batch.include?(index) ? triaged(round, index, findings, content) : round
@@ -42,8 +42,8 @@ module Shaka
     end
 
     def triaged(round, index, findings, content)
-      mine = findings.select { |finding| reported?(finding, round) }.map { |finding| finding.except('reviewers') }
-      round = round.merge({ 'findings' => mine }, usage_for(content, round['reviewer']))
+      mine = findings&.select { |finding| reported?(finding, round) }&.map { |finding| finding.except('reviewers') }
+      round = round.merge({ 'findings' => mine || round['findings'] }.compact, usage_for(content, round['reviewer']))
       check_findings!(round, index + 1)
       round
     end
@@ -76,13 +76,19 @@ module Shaka
 
     # Usage that fits no round would be dropped, so refuse it instead.
     def check_usage!(content)
+      usage = content['usage']
       raise Error, "Put each reviewer's usage under `usage`, keyed by reviewer." if
-        !batch.one? && content.keys.intersect?(USAGE)
-      return unless content.key?('usage')
+        (!batch.one? || usage) && content.keys.intersect?(USAGE)
+      return unless usage
       raise Error, 'Record usage must map each reviewer to its usage.' unless
-        content['usage'].is_a?(Hash) && content['usage'].values.all?(Hash)
+        usage.is_a?(Hash) && usage.values.all?(Hash)
 
-      check_reviewers!('usage', content['usage'].keys)
+      check_reviewers!('usage', usage.keys)
+    end
+
+    def check_unique_ids!(findings)
+      LocalReviewFinding.list(findings.map { |finding| finding.is_a?(Hash) ? finding.except('reviewers') : finding },
+                              'recorded finding')
     end
 
     def joins?(round, head, reviewer) = head == last_head && !same_reviewer?(round, reviewer)
