@@ -173,6 +173,21 @@ every mode. A task can increase the wait, but cannot lower the repository minimu
 The agent counts verified reports. The merge helper permits optional pending
 checks (`UNSTABLE`) for `none` and `one`; `all` requires `CLEAN`.
 
+## `review.local_max_rounds`
+
+**Optional. Default: `5`.** A positive integer, validated by `shaka seam check`.
+
+This bounds completed rounds in one local review ledger. For example, `3` lets
+an initial review and two follow-up reviews run before the helper refuses another.
+The runner reads the setting from the trusted review commit, not candidate changes.
+
+If the cap leaves an unfixed defect, the agent stops before pushing and tells you.
+You can reassess the task, split it, or choose to push anyway. An authorized push
+publishes a visible **Loop bound reached** section listing unresolved defects,
+the rounds in which they appeared, and any that returned after a recorded fix.
+It includes a prompt to reassess contradictory requirements, excessive scope,
+or impossible constraints. Ruby bounds review rounds; the agent handles your push decision.
+
 ## `review.local_review_agents`
 
 **Optional.** Ordered reviewer preferences, not required local installations.

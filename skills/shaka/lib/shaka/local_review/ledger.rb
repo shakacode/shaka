@@ -4,12 +4,15 @@ require 'json'
 require_relative '../error'
 require_relative 'evidence'
 require_relative 'finding'
+require_relative '../repository_config/review_schema'
 
 module Shaka
   # Private record of a local review loop: each round's commit, reviewer settings, report, and
   # what became of its findings. It stays outside the checkout until `review publish` renders it,
   # and it has the same shape as that command's content file.
   class LocalReviewLedger
+    class RoundCap < Error; end
+
     attr_reader :path
 
     # Only `review run` can start a ledger, so only it needs the checkout to keep the ledger out of.
@@ -29,7 +32,8 @@ module Shaka
     def last_head = rounds.last&.fetch('head')
 
     # A round reviews a new commit on the same base, after the previous round's findings are recorded.
-    def check_next!(base:, head:)
+    def check_next!(base:, head:, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
+      check_cap!(max_rounds)
       return if rounds.empty?
 
       raise Error, "The ledger's rounds measure the change against #{data['base']}; use a new ledger." unless
@@ -50,8 +54,8 @@ module Shaka
       end.values
     end
 
-    def append!(base:, round:)
-      write(data.merge('base' => base, 'rounds' => rounds + [round]))
+    def append!(base:, round:, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
+      write(data.merge('base' => base, 'local_max_rounds' => max_rounds, 'rounds' => rounds + [round]))
     end
 
     # Sets the last round's findings and any usage the host reported for it.
@@ -64,6 +68,11 @@ module Shaka
     end
 
     private
+
+    def check_cap!(max_rounds)
+      raise RoundCap, "Local review round cap (#{max_rounds}) reached; reassess the task before pushing." if
+        rounds.size >= max_rounds
+    end
 
     def data
       @data ||= if File.exist?(@path)

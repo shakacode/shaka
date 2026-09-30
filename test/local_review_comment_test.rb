@@ -196,6 +196,16 @@ class LocalReviewPublishTest < Minitest::Test
     assert_includes github.replies.first.last, "| 1 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
   end
 
+  def test_publishes_a_cap_warning_and_keeps_the_attestation_last
+    defect = NIT.merge('class' => 'defect')
+    github = FakeGitHub.new
+    status, = publish(github, 'local_max_rounds' => 1, 'rounds' => [round(findings: [defect])])
+    assert_equal 0, status
+    body = github.replies.first.last
+    assert_includes body.split('<details>').first, '## Loop bound reached'
+    assert_equal ATTESTATION, body.lines.last.strip
+  end
+
   # Break caught: a round reviewed before a rebase linked a commit GitHub never received.
   def test_names_a_commit_github_does_not_have_without_linking_it
     content = { 'rounds' => [round(EARLIER, report: report(EARLIER)), round] }
@@ -270,6 +280,39 @@ class LocalReviewDispositionTest < Minitest::Test
 
     assert_equal %w[current_head openai/codex], result.values_at('basis', 'reviewer')
     assert_looped(body)
+  end
+
+  def test_cap_warning_is_visible_and_preserves_merge_evidence
+    content = looped.merge('local_max_rounds' => 2)
+    content['rounds'][0]['findings'][1] = finding('F2', 'defect', 'documented')
+    content['rounds'][1] = round(findings: [finding('F1', 'defect', 'documented')])
+    body = render(content)
+    visible = body.split('<details>').first
+    assert_cap_visible(visible)
+    assert_cap_merge_evidence(body)
+  end
+
+  def assert_cap_visible(visible)
+    assert_includes visible, '## Loop bound reached'
+    assert_includes visible, '`F1`: defect F1 — rounds 1, 2'
+    assert_includes visible, '`F2`: defect F2 — rounds 1'
+    assert_includes visible, '**returned after being marked fixed**'
+    assert_includes visible, 'Reassess the task: is a requirement contradictory'
+    assert_includes visible, 'Propose a revised task definition or split.'
+  end
+
+  def assert_cap_merge_evidence(body)
+    assert_equal "REVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 1", body.lines.last.strip
+    github = Struct.new(:issue_comments) { def viewer_login = 'agent' }
+    comment = { 'user' => { 'login' => 'agent' }, 'body' => body, 'html_url' => 'https://example.test/c/1' }
+    result = Shaka::MergeReviewEvidence.new(github.new([comment]), required: 'meaningful_changes').call(HEAD)
+    assert_equal 'current_head', result.fetch('basis')
+  end
+
+  def test_no_cap_warning_before_the_bound_or_after_all_defects_are_fixed
+    refute_includes render(looped.merge('local_max_rounds' => 2)), 'Loop bound reached'
+    content = { 'rounds' => [round(findings: [finding('F1', 'defect', 'documented')])] }
+    refute_includes render(content.merge('local_max_rounds' => 2)), 'Loop bound reached'
   end
 
   def assert_looped(body)

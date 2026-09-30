@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative '../reviewer_selection'
 require_relative 'validation'
+require_relative 'review_limit'
 
 module Shaka
   class RepositoryConfig
@@ -78,6 +79,7 @@ module Shaka
         enum!(@review['required'])
         validate_check
         validate_review_wait
+        ReviewLimit.from(@review)
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
         prompt_path!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
       end
