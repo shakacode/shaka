@@ -12,9 +12,9 @@ module Shaka
   module LocalReviewLedgerRunning
     # Checks a round may start and marks its reviewer running. Another commit waits until every
     # review of the current one has finished.
-    def start!(base:, head:, reviewer:)
+    def start!(base:, head:, reviewer:, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
       locked do
-        check_next!(base:, head:, reviewer:)
+        check_next!(base:, head:, reviewer:, max_rounds:)
         check_not_running!(head, reviewer)
         write_running(running + [hold(head, reviewer)])
       end

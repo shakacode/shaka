@@ -6,6 +6,7 @@ require_relative 'evidence'
 require_relative 'finding'
 require_relative 'ledger_batch'
 require_relative 'ledger_running'
+require_relative '../repository_config/review_schema'
 
 module Shaka
   # Private record of a local review loop: each round's commit, reviewer settings, report, and
@@ -16,6 +17,8 @@ module Shaka
   class LocalReviewLedger
     include LocalReviewLedgerBatch
     include LocalReviewLedgerRunning
+
+    class RoundCap < Error; end
 
     attr_reader :path
 
@@ -42,8 +45,10 @@ module Shaka
     def previous_head(head) = rounds.reverse.find { |round| round['head'] != head }&.fetch('head')
 
     # A round reviews a new commit on the same base, after the previous batch's findings are
-    # recorded, or joins the last batch with a reviewer that has not read that commit.
-    def check_next!(base:, head:, reviewer:)
+    # recorded, or joins the last batch with a reviewer that has not read that commit. The cap
+    # counts reviewed commits, so another reviewer of the last one does not use a turn.
+    def check_next!(base:, head:, reviewer:, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
+      check_cap!(max_rounds) unless !rounds.empty? && head == last_head
       check_joins!(base, head, reviewer)
       check_batch_recorded! unless rounds.empty? || head == last_head
     end
@@ -64,13 +69,13 @@ module Shaka
     # Reviewers of one commit run at once, so each append rereads the ledger under a lock. Only
     # other reviewers of the same commit may have landed since `snapshot`; any other change means
     # the start checks read a ledger that no longer exists.
-    def append!(base:, round:, snapshot: nil)
+    def append!(base:, round:, snapshot: nil, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
       locked do
-        check_next!(base:, head: round['head'], reviewer: round['reviewer'])
+        check_next!(base:, head: round['head'], reviewer: round['reviewer'], max_rounds:)
         raise Error, 'The ledger changed while this round ran; run the review again.' if
           snapshot && snapshot(round['head']) != snapshot
 
-        write(data.merge('base' => base, 'rounds' => rounds + [round]))
+        write(data.merge('base' => base, 'local_max_rounds' => max_rounds, 'rounds' => rounds + [round]))
         clear_running
       end
     end
@@ -91,6 +96,13 @@ module Shaka
     end
 
     private
+
+    def check_cap!(max_rounds)
+      return if rounds.map { |round| round['head'] }.uniq.size < max_rounds
+
+      write(data.merge('local_max_rounds' => max_rounds))
+      raise RoundCap, "Local review round cap (#{max_rounds}) reached; reassess the task before pushing."
+    end
 
     def data
       @data ||= if File.exist?(@path)

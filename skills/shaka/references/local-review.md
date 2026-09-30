@@ -225,6 +225,8 @@ shaka review record --ledger "$LEDGER" --content-file FINDINGS.json
 }
 ```
 
+Finding notes are published in the comment. Keep every `note` public-safe.
+
 `disposition` is `fixed`, with the fix commit's full SHA, or `documented`. The helper refuses a
 fixed nit, a count that differs from the report's `FINDINGS n`, and a repeated id. Give a
 finding the same `id` when a later round raises it again: the comment then flags a finding that
@@ -268,8 +270,17 @@ count that differs from any reviewer's `FINDINGS n`. Once a batch is recorded, n
 join it. A round whose start checks read a ledger that changed while it ran, other than by
 another reviewer of its commit, is refused; run it again.
 
-A round whose findings are all documented ends the loop. Push, open or adopt the pull request,
-then publish right away:
+The trusted `review.local_max_rounds` (default 5) caps the commits reviewed in this ledger; several reviewers of one commit count once.
+`review run` refuses the next round with `failure_stage: round_cap` before launching a reviewer.
+The ledger records the cap used, and publication uses that value; older ledgers default to 5.
+If the cap leaves an unfixed defect, stop before pushing and tell the user. Push only if they
+choose to. The comment shows a visible **Loop bound reached** section with unresolved defects,
+the rounds they appeared in, returned defects, and a ready task-reassessment prompt.
+If the cap prevents review of a last-round fix, stop before pushing and tell the user.
+Publication still refuses that fix because no later round reviewed it; reassess the task.
+
+Otherwise, a round whose findings are all documented ends the loop. Push, open or adopt the
+pull request, then publish right away:
 
 ```bash
 shaka review publish OWNER/REPO NUMBER --content-file "$LEDGER"

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../publication/managed_region'
 
 module Shaka
   # Carries earlier usage reports when the new description supplies structured records.
@@ -20,7 +21,7 @@ module Shaka
 
     def apply(records, content, usage, existing, stats)
       fresh = Array(usage['records']).map { |fields| identity!(without_columns(fields)) }
-      region = records.managed_region(existing)
+      region = Publishing.managed_region(existing)
       return [content, stats] unless region
 
       kept = records.carried(region, '', stats, fresh)
