@@ -5,8 +5,8 @@ require_relative 'local_review_comment_test'
 require 'tmpdir'
 require 'shaka/local_review'
 
-# Several reviewers read one commit before its findings are recorded and fixed together.
-class LocalReviewBatchLedgerTest < Minitest::Test
+# A ledger outside any checkout, with rounds whose reports close with real attestations.
+module LocalReviewLedgerSteps
   include LocalReviewCommentFixture
 
   BASE = 'd' * 40
@@ -21,6 +21,29 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     super
     FileUtils.rm_rf(@directory)
   end
+
+  private
+
+  def ledger = Shaka::LocalReviewLedger.new(@path)
+
+  def append(head, reviewer, findings:)
+    ledger.append!(base: BASE, round: round_entry(head, reviewer, findings))
+  end
+
+  def round_entry(head, reviewer, findings)
+    { 'head' => head, 'reviewer' => reviewer, 'report' => report(head, reviewer:, findings:) }
+  end
+
+  def record(findings, **extra) = ledger.record!({ 'findings' => findings }.merge(extra.transform_keys(&:to_s)))
+
+  def fixed(reviewers)
+    NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX, 'reviewers' => reviewers)
+  end
+end
+
+# Several reviewers read one commit before its findings are recorded and fixed together.
+class LocalReviewBatchLedgerTest < Minitest::Test
+  include LocalReviewLedgerSteps
 
   def test_another_reviewer_joins_the_last_commit_before_findings_are_recorded
     append(EARLIER, 'openai/codex', findings: 1)
@@ -37,39 +60,27 @@ class LocalReviewBatchLedgerTest < Minitest::Test
 
     error = assert_raises(Shaka::Error) { ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex') }
     assert_includes error.message, 'Record round 2'
-    record('anthropic/claude', [NIT])
+    record([NIT.merge('reviewers' => ['anthropic/claude'])])
     ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex')
-  end
-
-  def test_recording_one_of_several_reviewers_needs_its_identity
-    append(EARLIER, 'openai/codex', findings: 1)
-    append(EARLIER, 'anthropic/claude', findings: 1)
-
-    { nil => 'pass --reviewer', 'xai/grok' => 'No round by xai/grok' }.each do |reviewer, message|
-      assert_includes assert_raises(Shaka::Error) { record(reviewer, [NIT]) }.message, message
-    end
-    assert_equal 1, record('openai/codex', [NIT])
-    assert_equal([[NIT], nil], ledger.rounds.map { |round| round['findings'] })
   end
 
   # Break caught: the next head skipped a fix that only the second reviewer's round recorded.
   def test_the_next_head_must_hold_fixes_from_every_reviewer_of_the_last_commit
     append(EARLIER, 'openai/codex', findings: 0)
     append(EARLIER, 'anthropic/claude', findings: 1)
-    record('anthropic/claude', [NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX)])
+    record([fixed(['anthropic/claude'])])
 
     assert_equal [FIX], ledger.last_batch_fixes
   end
 
-  # Break caught: the second reviewer of a commit anchored on the first reviewer's findings.
-  def test_reviewers_of_one_commit_see_only_earlier_commits_findings
+  # Break caught: a reviewer joining the last commit was shown no commits since the one before.
+  def test_a_reviewer_joining_the_last_commit_reads_from_the_commit_before
     append(EARLIER, 'openai/codex', findings: 1)
-    record(nil, [NIT])
+    record([NIT])
     append(HEAD, 'openai/codex', findings: 1)
-    record(nil, [NIT.merge('id' => 'F2')])
 
     assert_equal EARLIER, ledger.previous_head(HEAD)
-    assert_equal ['F1'], ledger.prior_findings(HEAD).map(&:id)
+    assert_equal ['F1'], ledger.prior_findings.map(&:id)
   end
 
   # Break caught: a reviewer that finished after a newer commit was appended split its batch apart.
@@ -97,7 +108,7 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     append(EARLIER, 'openai/codex', findings: 0)
     snapshot = ledger.snapshot(HEAD)
     append(EARLIER, 'anthropic/claude', findings: 1)
-    record('anthropic/claude', [NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX)])
+    record([fixed(['anthropic/claude'])])
 
     error = assert_raises(Shaka::Error) do
       ledger.append!(base: BASE, round: round_entry(HEAD, 'openai/codex', 0), snapshot:)
@@ -124,20 +135,6 @@ class LocalReviewBatchLedgerTest < Minitest::Test
 
     assert_equal %w[openai/codex anthropic/claude].sort, ledger.rounds.map { |round| round['reviewer'] }.sort
   end
-
-  private
-
-  def ledger = Shaka::LocalReviewLedger.new(@path)
-
-  def append(head, reviewer, findings:)
-    ledger.append!(base: BASE, round: round_entry(head, reviewer, findings))
-  end
-
-  def round_entry(head, reviewer, findings)
-    { 'head' => head, 'reviewer' => reviewer, 'report' => report(head, reviewer:, findings:) }
-  end
-
-  def record(reviewer, findings) = ledger.record!({ 'findings' => findings }, reviewer:)
 end
 
 # A published comment lists every reviewer of a commit together.

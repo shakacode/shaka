@@ -262,9 +262,10 @@ phases:
         [choose a local reviewer](<{{package_root}}/skills/shaka/references/review.md#choose-a-local-reviewer>).
       - `reviewer` returns up to the trusted `review.local_review_count` reviewers, one by
         default; a user who asks for a different number in this task gets `--count N`.
-        When it lists several, run each on the same committed head with one shared `--ledger`.
-        Wait until every one returns `completed` or a recorded `not_completed`, then fix all
-        their findings as one repair batch. Review the new head by rerunning `reviewer`, adding
+        When it lists several, start each on the same committed head with one shared `--ledger`.
+        Wait until every one returns `completed` or a recorded `not_completed`, then triage all
+        their findings together in one `review record`, one entry per problem naming the
+        reviewers that reported it, and fix them as one repair batch. Review the new head by rerunning `reviewer`, adding
         `--unavailable` for any reviewer that has since failed with qualifying evidence.
       - For UI changes, meaning anything a person sees on screen other than command-line output,
         use the change by hand on the head you will push, and capture before and after screenshots

@@ -5,14 +5,17 @@ require_relative '../error'
 require_relative 'evidence'
 require_relative 'finding'
 require_relative 'ledger_batch'
+require_relative 'ledger_running'
 
 module Shaka
   # Private record of a local review loop: each round's commit, reviewer settings, report, and
   # what became of its findings. It stays outside the checkout until `review publish` renders it,
   # and it has the same shape as that command's content file. Rounds that share a commit form a
-  # batch: several reviewers read that commit before its findings are recorded and fixed together.
+  # batch: several reviewers read that commit, and once none is still running, one record triages
+  # all their findings together.
   class LocalReviewLedger
     include LocalReviewLedgerBatch
+    include LocalReviewLedgerRunning
 
     attr_reader :path
 
@@ -45,12 +48,10 @@ module Shaka
       check_batch_recorded! unless rounds.empty? || head == last_head
     end
 
-    # The newest disposition of every finding from earlier batches, keyed by the id rounds share.
-    # Rounds on `head` are left out, so reviewers of one commit do not see each other's findings.
-    def prior_findings(head = nil)
+    # The newest disposition of every finding so far, keyed by the id rounds share. A commit's
+    # rounds are recorded only after all of them finish, so no reviewer sees a sibling's findings.
+    def prior_findings
       rounds.each_with_index.with_object({}) do |(round, index), latest|
-        next if round['head'] == head
-
         LocalReviewFinding.list(round['findings'], "round #{index + 1} finding").each do |finding|
           latest[finding.id] = finding
         end
@@ -70,18 +71,21 @@ module Shaka
           snapshot && snapshot(round['head']) != snapshot
 
         write(data.merge('base' => base, 'rounds' => rounds + [round]))
+        clear_running(round['head'], round['reviewer'])
       end
     end
 
-    # Sets one last-batch round's findings and any usage the host reported for it, and returns its
-    # number. A batch with several reviewers needs `reviewer` to say whose round this is.
-    def record!(content, reviewer: nil)
+    # Records what became of every finding on the last commit in one triage, once none of its
+    # reviews is still running, and returns the round numbers it recorded. With several
+    # reviewers, each finding names the ones that reported it, so a shared finding is one entry.
+    def record!(content)
       raise Error, 'Record content must be an object.' unless content.is_a?(Hash)
+      raise Error, 'The ledger has no round to record.' if rounds.empty?
 
       locked do
-        index = recorded_index(reviewer)
-        replace_round(index, content)
-        index + 1
+        check_nothing_running!
+        write(data.merge(content.slice('fallback'), 'rounds' => recorded_rounds(content)))
+        batch.map { |index| index + 1 }
       end
     end
 
@@ -97,12 +101,6 @@ module Shaka
                 else
                   { 'rounds' => [] }
                 end
-    end
-
-    def replace_round(index, content)
-      round = rounds[index].merge(content.slice('findings', 'model', 'tokens', 'cost', 'estimate'))
-      check_findings!(round, index + 1)
-      write(data.merge(content.slice('fallback'), 'rounds' => rounds.dup.tap { |all| all[index] = round }))
     end
 
     def check_joins!(base, head, reviewer)

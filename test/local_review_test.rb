@@ -1182,15 +1182,19 @@ module LocalReviewLoopSteps
     JSON.parse(File.read(trace)).fetch('prompt')
   end
 
-  def assert_record_needs_reviewer
+  # Codex reported one finding and Claude none; one record triages both rounds.
+  def assert_one_triage
+    assert_includes record_batch(self.class::NIT_FINDING)[1], 'must name the reviewers'
+    output, error, status = record_batch(self.class::NIT_FINDING.merge('reviewers' => ['openai/codex']))
+    assert_predicate status, :success?, error
+    assert_equal [1, 2], JSON.parse(output).fetch('rounds')
+  end
+
+  def record_batch(finding)
     Tempfile.create(['record-', '.json']) do |file|
-      file.write(JSON.generate('findings' => []))
+      file.write(JSON.generate('findings' => [finding]))
       file.close
-      arguments = [self.class::COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file', file.path]
-      assert_includes Open3.capture3(*arguments)[1], 'pass --reviewer'
-      output, error, status = Open3.capture3(*arguments, '--reviewer', 'anthropic/claude')
-      assert_predicate status, :success?, error
-      assert_equal 2, JSON.parse(output).fetch('round')
+      Open3.capture3(self.class::COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file', file.path)
     end
   end
 
@@ -1271,25 +1275,23 @@ class LocalReviewLoopTest < Minitest::Test
   def test_another_reviewer_joins_the_last_commit
     in_loop do |head|
       loop_round(head, findings: 1)
-      record_fix(fix_commit)
-      git!(@root, 'checkout', '--quiet', head)
       refute_includes claude_round(head), 'PRIOR ROUND DATA'
       assert_ledger_rounds([head, head])
-      assert_record_needs_reviewer
+      refute JSON.parse(File.read(@ledger)).key?('running')
+      assert_one_triage
     end
   end
 
-  # Break caught: a reviewer joining a later commit saw its sibling's findings.
-  def test_a_reviewer_joining_a_later_commit_sees_only_earlier_findings
+  # Break caught: a reviewer joining a later commit was shown the commits since that same commit.
+  def test_a_reviewer_joining_a_later_commit_reads_from_the_commit_before
     in_loop do |head|
       loop_round(head, findings: 1)
       record([NIT_FINDING])
       later = fix_commit
       loop_round(later, findings: 1)
-      record([NIT_FINDING.merge('id' => 'F2', 'summary' => 'Sibling finding')])
       prompt = claude_round(later)
       assert_includes prompt, '[F1] nit: Rename run_all'
-      refute_includes prompt, 'Sibling finding'
+      assert_includes prompt, "Commits since #{head}"
     end
   end
 

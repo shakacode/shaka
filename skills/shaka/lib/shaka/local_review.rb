@@ -86,16 +86,15 @@ module Shaka
       raise OptionParser::InvalidArgument, parser.to_s unless
         @arguments.empty? && @options[:ledger] && @options[:content_file]
 
-      round = LocalReviewLedger.new(@options[:ledger]).record!(content, reviewer: @options[:reviewer])
-      puts JSON.pretty_generate('ledger' => File.expand_path(@options[:ledger]), 'round' => round)
+      recorded = LocalReviewLedger.new(@options[:ledger]).record!(content)
+      puts JSON.pretty_generate('ledger' => File.expand_path(@options[:ledger]), 'rounds' => recorded)
       0
     end
 
     def record_parser
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka review record --ledger PATH --content-file PATH [--reviewer ID]'
+        flags.banner = 'Usage: shaka review record --ledger PATH --content-file PATH'
         flags.on('--ledger PATH') { |value| @options[:ledger] = value }
-        flags.on('--reviewer ID', 'Whose round, when several reviewed the head') { |v| @options[:reviewer] = v }
         flags.on('--content-file PATH') { |value| @options[:content_file] = value }
         flags.on('-h', '--help') { @options[:help] = true }
       end

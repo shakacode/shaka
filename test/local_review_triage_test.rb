@@ -1,0 +1,65 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require_relative 'local_review_batch_test'
+
+# The reviews of one commit are recorded in one triage, only after every one of them finishes.
+class LocalReviewTriageTest < Minitest::Test
+  include LocalReviewLedgerSteps
+
+  # Break caught: two reviewers' reports of one problem were triaged twice.
+  def test_one_triage_records_every_reviewer_of_a_commit
+    append(EARLIER, 'openai/codex', findings: 1)
+    append(EARLIER, 'anthropic/claude', findings: 1)
+
+    assert_includes assert_raises(Shaka::Error) { record([NIT]) }.message, 'must name the reviewers'
+    assert_equal [1, 2], record([NIT.merge('reviewers' => %w[openai/codex anthropic/claude])])
+    assert_equal([[NIT], [NIT]], ledger.rounds.map { |round| round['findings'] })
+  end
+
+  # Break caught: a batch was triaged while one of its reviewers was still reading the commit.
+  def test_recording_waits_for_every_running_review
+    append(EARLIER, 'openai/codex', findings: 0)
+    ledger.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
+
+    assert_includes assert_raises(Shaka::Error) { record([]) }.message, 'Wait for anthropic/claude'
+    ledger.finish!(head: EARLIER, reviewer: 'anthropic/claude')
+    assert_equal [1], record([])
+  end
+
+  def test_a_review_whose_process_exited_does_not_block_recording
+    append(EARLIER, 'openai/codex', findings: 0)
+    ledger.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
+    exited = Process.spawn('true')
+    Process.wait(exited)
+    data = JSON.parse(File.read(@path))
+    data['running'].first['pid'] = exited
+    File.write(@path, JSON.generate(data))
+
+    assert_equal [1], record([])
+  end
+
+  def test_an_append_clears_its_running_mark
+    ledger.start!(base: BASE, head: EARLIER, reviewer: 'openai/codex')
+    append(EARLIER, 'openai/codex', findings: 0)
+
+    refute JSON.parse(File.read(@path)).key?('running')
+  end
+
+  # Break caught: a reviewer started after triage, so its findings were triaged apart.
+  def test_a_reviewer_cannot_join_a_triaged_commit
+    append(EARLIER, 'openai/codex', findings: 0)
+    record([])
+
+    error = assert_raises(Shaka::Error) { ledger.check_next!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude') }
+    assert_includes error.message, 'already recorded'
+  end
+
+  def test_usage_is_recorded_for_each_reviewer
+    append(EARLIER, 'openai/codex', findings: 0)
+    append(EARLIER, 'anthropic/claude', findings: 0)
+    record([], usage: { 'openai/codex' => { 'tokens' => '5,000' } })
+
+    assert_equal(['5,000', nil], ledger.rounds.map { |round| round['tokens'] })
+  end
+end

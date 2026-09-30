@@ -254,7 +254,8 @@ published review names it in its summary table instead of the fallback notice.
 
 **Optional. Default: 1.** How many reviewers from `local_review_agents` read each
 commit before its findings are fixed. With 2 or more, the reviewers run at the same
-time, and their findings are fixed together before they all review the next commit.
+time. Once all of them finish, their reports are triaged together, so a problem two
+reviewers both found is recorded and fixed once, and they all review the next commit.
 
 Claude implements, and Codex and a fresh Claude session both review:
 

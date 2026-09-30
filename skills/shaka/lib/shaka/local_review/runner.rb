@@ -115,7 +115,7 @@ module Shaka
       return unless @options[:ledger]
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
-      @ledger.check_next!(base: @options[:base], head:, reviewer: @options[:reviewer])
+      @ledger.start!(base: @options[:base], head:, reviewer: @options[:reviewer])
       # Another reviewer of the last batch's commit reads history the batch's first round checked.
       check_history! if @ledger.last_head && @ledger.last_head != head
       @snapshot = @ledger.snapshot(head)
@@ -146,6 +146,13 @@ module Shaka
                           'a fix; fix the history or use a new ledger.'
     end
 
+    # A run that ended without appending its round stops holding up the batch's record.
+    def finish_ledger
+      @ledger.finish!(head:, reviewer: @options[:reviewer]) if @ledger && !@appended
+    rescue Shaka::Error, SystemCallError
+      nil
+    end
+
     def record_round(result)
       return result unless @ledger && result['status'] == 'completed'
 
@@ -153,6 +160,7 @@ module Shaka
       # The routed model comes from native usage through `review record`, never from the request.
       round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
       @ledger.append!(base: @options[:base], round:, snapshot: @snapshot)
+      @appended = true
       result.merge('ledger' => @ledger.path, 'round' => @ledger.rounds.size)
     end
 
@@ -162,7 +170,7 @@ module Shaka
       previous = @ledger&.previous_head(head)
       return '' unless previous
 
-      findings = @ledger.prior_findings(head).map(&:prompt_line)
+      findings = @ledger.prior_findings.map(&:prompt_line)
       commits = capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{previous}..#{head}", '--')
       'PRIOR ROUNDS: Earlier local rounds reviewed this change. Confirm each fix below resolves its finding, ' \
         'and report it again with the same id if not. Do not raise documented findings again unless the ' \
@@ -213,17 +221,23 @@ module Shaka
 
     def run
       @attempted = false
+      with_requested_model(outcome)
+    ensure
+      finish_ledger
+    end
+
+    private
+
+    def outcome
       validate_path!
       git_executable
       validate!
       validate_tempdir!
       open_ledger
-      with_requested_model(record_round(run_report(review_prompt)))
+      record_round(run_report(review_prompt))
     rescue Shaka::Error, SystemCallError => e
-      with_requested_model(setup_failure(e))
+      setup_failure(e)
     end
-
-    private
 
     # Records what was asked for on every outcome; the routed model comes only from native usage.
     def with_requested_model(result)

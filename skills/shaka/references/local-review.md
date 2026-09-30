@@ -244,13 +244,29 @@ lists, as review data, every earlier finding's id, class, summary, and latest di
 reviewed head before this one. It asks the reviewer to confirm each fix and to review the full diff fresh.
 It leaves out each `note`, so the reviewer does not anchor on the author's reasons.
 
-When several reviewers read each head, as `shaka reviewer --count` lists them, run them all
-against one ledger, at the same time if you like. Their rounds on one head form a batch: each
-reviewer's prompt lists findings from earlier heads only, and the next head waits until every
-round in the batch is recorded. Record each with `review record --reviewer ID`. Give one problem
-that two reviewers both report the same `id`, and different problems different ids. A round
-whose start checks read a ledger that changed while it ran, other than by another reviewer of
-its commit, is refused; run it again.
+When several reviewers read each head, as `shaka reviewer` lists them, start them all against
+one ledger before recording anything; they can run at the same time. Their rounds on one head
+form a batch. While a review runs, the ledger marks it running, and `review record` refuses the
+batch until every running review has finished. Record the whole batch in one triage: list each
+problem once, and give it a `reviewers` list naming every reviewer that reported it, so a
+problem both found gets one entry and one fix. Put each reviewer's usage under `usage`, keyed
+by reviewer:
+
+```json
+{
+  "findings": [
+    { "id": "F1", "summary": "Exit code is 0 on a failed push", "class": "defect",
+      "disposition": "fixed", "commit": "FULL_FIX_SHA",
+      "reviewers": ["openai/codex", "anthropic/claude"] }
+  ],
+  "usage": { "openai/codex": { "model": "gpt-6-sol", "tokens": "41,200" } }
+}
+```
+
+The helper refuses a finding without `reviewers` when the batch has several rounds, and a
+count that differs from any reviewer's `FINDINGS n`. Once a batch is recorded, no reviewer can
+join it. A round whose start checks read a ledger that changed while it ran, other than by
+another reviewer of its commit, is refused; run it again.
 
 A round whose findings are all documented ends the loop. Push, open or adopt the pull request,
 then publish right away:
