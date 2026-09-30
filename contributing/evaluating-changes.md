@@ -6,6 +6,45 @@ tracks these evaluations. Record each attempt in the [experiment index](https://
 including failed harness runs. A green test, a completed PR, and an improvement in
 human attention or cost are different claims.
 
+## Simple default: one matched pair
+
+Ask: “Run the same task with and without this change. Give each arm one hour,
+keep everything else matched, and compare the resulting PRs.”
+
+Start with one task and two fresh sessions: baseline and candidate. Use the same
+starting code, fixture, prompt, model, effort, review criteria, and delivery mode.
+Change only the skill or plugin revision being evaluated. Do not build a larger
+benchmark matrix before this pair produces useful evidence.
+
+Give **each arm one hour**, starting with its first model turn. The clock includes
+both fixed turns, local validation, hosted CI waits, publication, and the final
+handoff. The default turns are intake without implementation, then completion.
+Record a different limit before launch when the task needs it, and apply that
+limit equally to both arms. Keep time and spending limits separate:
+
+- Default soft stop: **$10 API-equivalent per arm**, using a recorded rate card
+  and conservative accounting when usage details are missing.
+- Default incremental metered API authorization: **$0**. Subscription access is
+  not an assertion that inference is free; record reported usage separately.
+- No extra live reviewer calls, subagents, model substitutions, or automatic
+  retries unless separately declared and authorized for both arms.
+
+These are run-card defaults, not a new automated runner. Set and verify the
+actual driver's deadline before launch; changing this guide changes no process
+already running.
+
+Use the preflight and isolation gates below. Independent grading follows the
+sessions and does not repair an arm's code or supply an extra turn. A deadline
+with unfinished work is **limit reached**, not proof that the implementation is
+wrong. Identify the missing gate and retain completed evidence. Extending a
+completed attempt is a separately recorded follow-up, not a revision of its
+original limit or result.
+
+Compare correctness first, then PR quality, walkthrough usefulness, elapsed
+time, usage, and maintainer corrections. Report better, worse, no material
+difference, or inconclusive, with the evidence and remaining unknowns. One pair
+does not establish a general improvement or a causal time/cost saving.
+
 ## Set up a sandbox
 
 ShakaCode contributors can use a team-authorized evaluation organization. Other
@@ -100,11 +139,22 @@ field with the baseline helper and a guide with the candidate helper. That
 check used no model and did not exercise a fresh consumer delivery; it does not
 resolve the value question.
 
-Pin the historical comparison to the PR's base `ceb9989d249e04b70e5d6871f384ae2ce2a89269`
-and candidate `e387b5da92f979bc7571d6e3a4ed91bc8eb0e02e`, then refresh their
-live status before execution. If the candidate changes, treat that as a new
-revision. Current-main compatibility and merge readiness require their own
-checks; a result against the historical base does not establish either.
+The [first model pair](https://github.com/shakacode/shaka/pull/250#issuecomment-5906768008)
+replayed the complex multiple-reviewer task behind PR #326. It used baseline
+`682527f1cbf5dee5bede78be9717e665073eb20b` and candidate
+`9e25abeb67afcc351425663a4115e9eaf48cbdf1`, with the same explicit guide pointer in
+both arms. Each had a 30-minute limit: the baseline reached green checks and a
+walkthrough but timed out before its final Ask marker. The candidate completed
+Ask in 28m11s, but independent grading found an inaccurate selected-round receipt
+in its generated code. Loader benefit remains inconclusive; neither speed nor
+green checks establish better accepted output.
+
+Those attempts keep their original limits. A new pair uses the one-hour default
+above and its own recorded repositories and outcomes. Refresh live revisions
+before execution; a changed candidate is a new revision. Current-main
+compatibility and merge readiness require separate checks. The earlier offline
+smoke used historical base `ceb9989` and candidate `e387b5d`; it is not evidence
+for the later candidate.
 
 Use a fresh consumer task that requires a PR description and walkthrough, with
 the same trusted style file and task prompt in every arm. First qualify the
