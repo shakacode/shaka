@@ -42,38 +42,6 @@ class WorkflowConfigurationTest < Minitest::Test
     refute_includes JSON.generate(result), SECRET_VALUE
   end
 
-  CALLER_WORKFLOW = <<~YAML
-    on:
-      workflow_call:
-        secrets:
-          token:
-            required: true
-    jobs:
-      call:
-        steps:
-          - run: echo ${{ secrets.token }}
-  YAML
-  ENVIRONMENT = <<~YAML.chomp
-    jobs:
-      deploy:
-        environment: production
-        steps:
-          - run: echo ${{ secrets.DEPLOY_KEY }}
-  YAML
-
-  def test_a_caller_supplied_workflow_secret_is_not_a_repository_secret
-    result = check(files: [file_row], contents: { WORKFLOW => CALLER_WORKFLOW }, repo: user_repo, secrets: [])
-
-    assert_equal 'clear', result['status']
-  end
-
-  def test_an_environment_secret_is_not_missing_when_that_environment_has_it
-    result = check(files: [file_row], contents: { WORKFLOW => ENVIRONMENT }, repo: user_repo, secrets: [],
-                   environment_secrets: { 'production' => [{ 'name' => 'DEPLOY_KEY' }] })
-
-    assert_equal 'clear', result['status']
-  end
-
   def test_a_404_on_the_secret_list_is_unverified
     result = check(files: [file_row], contents: { WORKFLOW => '${{ secrets.DEPLOY_KEY }}' },
                    repo: user_repo, secrets: :missing)
@@ -110,6 +78,89 @@ class WorkflowConfigurationTest < Minitest::Test
   def file_row = { 'filename' => WORKFLOW, 'status' => 'modified' }
   def user_repo = { 'private' => false, 'owner' => { 'type' => 'User' } }
   def org_repo = { 'private' => false, 'owner' => { 'type' => 'Organization' } }
+end
+
+class WorkflowConfigurationScopeTest < Minitest::Test
+  WORKFLOW = WorkflowConfigurationTest::WORKFLOW
+  REUSE = '.github/workflows/reuse.yml'
+  CALLER_WORKFLOW = <<~YAML
+    on:
+      workflow_call:
+        secrets:
+          token:
+            required: true
+    jobs:
+      call:
+        steps:
+          - run: echo ${{ secrets.token }}
+  YAML
+  ENVIRONMENT = <<~YAML
+    jobs:
+      deploy:
+        environment: production
+        steps:
+          - run: echo ${{ secrets.DEPLOY_KEY }}
+  YAML
+  SPLIT_ENVIRONMENTS = <<~YAML
+    jobs:
+      stage:
+        environment: staging
+        steps:
+          - run: echo ${{ secrets.PROD_KEY }}
+      ship:
+        environment: production
+        steps:
+          - run: echo ${{ secrets.SHIP_KEY }}
+  YAML
+
+  def test_a_caller_supplied_workflow_secret_is_not_a_repository_secret
+    result = check(files: [file_row], contents: { WORKFLOW => CALLER_WORKFLOW }, repo: user_repo, secrets: [])
+
+    assert_equal 'clear', result['status']
+  end
+
+  def test_an_environment_secret_is_not_missing_when_that_environment_has_it
+    result = check(files: [file_row], contents: { WORKFLOW => ENVIRONMENT }, repo: user_repo, secrets: [],
+                   environment_secrets: { 'production' => [{ 'name' => 'DEPLOY_KEY' }] })
+
+    assert_equal 'clear', result['status']
+  end
+
+  def test_a_secret_name_matches_without_regard_to_case
+    result = check(files: [file_row], contents: { WORKFLOW => '${{ secrets.deploy_key }}' },
+                   repo: user_repo, secrets: [{ 'name' => 'DEPLOY_KEY' }])
+
+    assert_equal 'clear', result['status']
+  end
+
+  def test_a_caller_secret_does_not_hide_the_same_name_in_another_workflow
+    files = [file_row, { 'filename' => REUSE, 'status' => 'modified' }]
+    result = check(files:, contents: { WORKFLOW => '${{ secrets.TOKEN }}', REUSE => CALLER_WORKFLOW },
+                   repo: user_repo, secrets: [])
+
+    assert_equal ['secrets.TOKEN'], result['missing']
+  end
+
+  def test_an_environment_secret_does_not_cover_a_different_job
+    result = check(files: [file_row], contents: { WORKFLOW => SPLIT_ENVIRONMENTS }, repo: user_repo, secrets: [],
+                   environment_secrets: production_and_staging)
+
+    assert_equal ['secrets.PROD_KEY'], result['missing']
+  end
+
+  private
+
+  def check(**options)
+    Shaka::WorkflowConfiguration.new(RouteGitHub.new(options)).call(pull)
+  end
+
+  def pull = { 'headRefOid' => WorkflowConfigurationTest::SHA, 'headRepository' => { 'nameWithOwner' => 'owner/repo' } }
+  def file_row = { 'filename' => WORKFLOW, 'status' => 'modified' }
+  def user_repo = { 'private' => false, 'owner' => { 'type' => 'User' } }
+
+  def production_and_staging
+    { 'production' => [{ 'name' => 'PROD_KEY' }, { 'name' => 'SHIP_KEY' }], 'staging' => [] }
+  end
 end
 
 # Serves the name lists a workflow check reads. Secret and variable values stay in the route table.
@@ -163,7 +214,7 @@ class RouteGitHub
     @paths << path
     return list(@routes[path]) if @routes[path].is_a?(Array) && @routes[path].first.is_a?(String)
     return @routes.fetch(path) if @routes.key?(path)
-    return encoded(@contents.fetch(WorkflowConfigurationTest::WORKFLOW)) if path.include?('/contents/')
+    return encoded(workflow_text(path)) if path.include?('/contents/')
 
     raise "unexpected #{path}"
   end
@@ -174,6 +225,13 @@ class RouteGitHub
     raise Shaka::Error.new('missing', http_status: 404) if rows == :missing
 
     { key => rows }
+  end
+
+  def workflow_text(path)
+    key = @contents.keys.select { |name| path.include?(name) }.max_by(&:length)
+    raise "unexpected #{path}" unless key
+
+    @contents.fetch(key)
   end
 
   def encoded(text) = { 'encoding' => 'base64', 'content' => [text].pack('m') }

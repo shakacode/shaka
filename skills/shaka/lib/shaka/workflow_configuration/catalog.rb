@@ -70,7 +70,7 @@ module Shaka
       def split(kind, names, known, complete, uncertain)
         groups = { true => [], false => [] }
         names.each do |name|
-          next if known.include?(name)
+          next if known.any? { |item| item.casecmp?(name) }
 
           groups[complete && !uncertain.include?(name)] << "#{kind}.#{name}"
         end
@@ -86,7 +86,7 @@ module Shaka
       def catalogs(kind, wanted, access, environments)
         repo_state, repo_names = repo_catalog(kind)
         lists = [[repo_state, repo_names]]
-        return lists if repo_state == :ok && wanted.all? { |name| repo_names.include?(name) }
+        return lists if repo_state == :ok && wanted.all? { |name| repo_names.any? { |item| item.casecmp?(name) } }
 
         lists << org_catalog(kind, access) << environment_catalog(kind, environments)
       end

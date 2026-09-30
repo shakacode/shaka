@@ -34,27 +34,25 @@ module Shaka
     private
 
     def compare(texts)
-      files = texts.map { |text| WorkflowFile.read(text) }
-      refs = referenced(files)
-      return [[], []] if refs.values.all?(&:empty?)
+      scopes = texts.flat_map { |text| WorkflowFile.read(text).scopes }
+      return [[], []] if scopes.empty?
 
-      divide(refs, files, @catalog.repository_access)
+      divide(scopes, @catalog.repository_access)
     end
 
-    def referenced(files)
-      files.each_with_object({ 'secrets' => [], 'vars' => [] }) do |file, found|
-        file.references.each { |kind, names| found[kind].concat(names) }
-        found['secrets'] -= file.caller_secrets
-      end
+    def divide(scopes, access)
+      missing = []
+      pending = []
+      scopes.each { |item| append_scope(item, access, missing, pending) }
+      [missing.uniq, (pending.uniq - missing)]
     end
 
-    def divide(refs, files, access)
-      environments = files.flat_map(&:environments).uniq
-      uncertain = files.reject(&:parsed?).flat_map { |file| file.references.values.flatten }
-      refs.each_with_object([[], []]) do |(kind, names), result|
-        missing, pending = @catalog.classify(kind, names.uniq, access, environments:, uncertain:)
-        result[0].concat(missing)
-        result[1].concat(pending)
+    def append_scope(item, access, missing, pending)
+      [['secrets', item.secrets], ['vars', item.vars]].each do |kind, names|
+        found, held = @catalog.classify(kind, names, access, environments: item.environments,
+                                                             uncertain: item.uncertain ? names : [])
+        missing.concat(found)
+        pending.concat(held)
       end
     end
 
