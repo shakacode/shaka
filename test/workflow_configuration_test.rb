@@ -101,6 +101,16 @@ class WorkflowConfigurationScopeTest < Minitest::Test
         steps:
           - run: echo ${{ secrets.DEPLOY_KEY }}
   YAML
+  SHARED_NAME = "env:\n  REGION: ${{ vars.REGION }}\njobs:\n  build:\n    steps:\n      - run: ${{ secrets.REGION }}\n"
+  WORKFLOW_AND_JOB = <<~YAML
+    env:
+      KEY: ${{ secrets.DEPLOY_KEY }}
+    jobs:
+      deploy:
+        environment: production
+        steps:
+          - run: echo ${{ secrets.DEPLOY_KEY }}
+  YAML
   SPLIT_ENVIRONMENTS = <<~YAML
     jobs:
       stage:
@@ -139,6 +149,27 @@ class WorkflowConfigurationScopeTest < Minitest::Test
                    repo: user_repo, secrets: [])
 
     assert_equal ['secrets.TOKEN'], result['missing']
+  end
+
+  def test_a_lowercase_github_token_is_not_a_repository_secret
+    result = check(files: [file_row], contents: { WORKFLOW => '${{ secrets.github_token }}' },
+                   repo: user_repo, secrets: [])
+
+    assert_equal 'clear', result['status']
+  end
+
+  def test_a_workflow_variable_is_checked_when_a_job_uses_the_same_name
+    result = check(files: [file_row], contents: { WORKFLOW => SHARED_NAME }, repo: user_repo,
+                   secrets: [{ 'name' => 'REGION' }], variables: [])
+
+    assert_equal ['vars.REGION'], result['missing']
+  end
+
+  def test_a_workflow_secret_is_not_covered_by_a_job_environment
+    result = check(files: [file_row], contents: { WORKFLOW => WORKFLOW_AND_JOB }, repo: user_repo, secrets: [],
+                   environment_secrets: { 'production' => [{ 'name' => 'DEPLOY_KEY' }] })
+
+    assert_equal ['secrets.DEPLOY_KEY'], result['missing']
   end
 
   def test_an_environment_secret_does_not_cover_a_different_job

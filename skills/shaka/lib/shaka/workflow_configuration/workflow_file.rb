@@ -20,14 +20,13 @@ module Shaka
         @document = document
       end
 
-      def parsed? = !@document.nil?
+      def workflow? = @document.is_a?(Hash)
       def references = References.collect(@text)
 
       def scopes
-        return [scope(references['secrets'], references['vars'], [], true)] unless parsed?
+        return [text_scope(@document.nil?)] unless workflow?
 
-        jobs = job_scopes
-        [outside_scope(jobs), *jobs].compact
+        [outside_scope, *job_scopes].compact
       end
 
       def caller_secrets
@@ -57,13 +56,25 @@ module Shaka
         scope(secrets, found['vars'], environment ? [environment] : [], false)
       end
 
-      def outside_scope(jobs)
-        used = jobs.flat_map { |item| item.secrets + item.vars }
-        secrets = reject_caller(references['secrets'] - used)
-        vars = references['vars'] - used
-        return if secrets.empty? && vars.empty?
+      def outside_scope
+        found = outside_names
+        secrets = reject_caller(found['secrets'])
+        return if secrets.empty? && found['vars'].empty?
 
-        scope(secrets, vars, [], false)
+        scope(secrets, found['vars'], [], false)
+      end
+
+      def outside_names
+        rest = @document.except('jobs')
+        parsed = References.collect(string_values(rest).join("\n"))
+        comments = comment_names
+        { 'secrets' => (parsed['secrets'] + comments['secrets']).uniq,
+          'vars' => (parsed['vars'] + comments['vars']).uniq }
+      end
+
+      def comment_names
+        parsed = References.collect(string_values(@document).join("\n"))
+        { 'secrets' => references['secrets'] - parsed['secrets'], 'vars' => references['vars'] - parsed['vars'] }
       end
 
       def reject_caller(names)
@@ -77,6 +88,10 @@ module Shaka
         when Array then value.flat_map { |item| string_values(item) }
         else []
         end
+      end
+
+      def text_scope(uncertain)
+        scope(references['secrets'], references['vars'], [], uncertain)
       end
 
       def scope(secrets, vars, environments, uncertain)

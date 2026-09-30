@@ -12,7 +12,7 @@ module Shaka
       def collect(text)
         found = { 'secrets' => [], 'vars' => [] }
         text.to_s.scan(PATTERN) do |kind, name|
-          next if kind == 'secrets' && name == TOKEN
+          next if kind == 'secrets' && name.casecmp?(TOKEN)
 
           found[kind] << name
         end
