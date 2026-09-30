@@ -37,7 +37,8 @@ module LocalReviewLedgerSteps
   def record(findings, **extra) = ledger.record!({ 'findings' => findings }.merge(extra.transform_keys(&:to_s)))
 
   def fixed(reviewers)
-    NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX, 'reviewers' => reviewers)
+    numbers = reviewers.to_h { |reviewer| [reviewer, '1'] }
+    NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX, 'reviewers' => numbers)
   end
 end
 
@@ -60,7 +61,7 @@ class LocalReviewBatchLedgerTest < Minitest::Test
 
     error = assert_raises(Shaka::Error) { ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex') }
     assert_includes error.message, 'Record round 2'
-    record([NIT.merge('reviewers' => ['anthropic/claude'])])
+    record([NIT.merge('reviewers' => { 'anthropic/claude' => '1' })])
     ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex')
   end
 
@@ -171,6 +172,20 @@ class LocalReviewBatchCommentTest < Minitest::Test
     body = render('rounds' => [round(findings: [defect]), clean('anthropic/claude')], 'local_max_rounds' => 2)
 
     refute_includes body, 'Loop bound reached'
+  end
+
+  # Break caught: a commit's reviews gave no path from each reviewer's findings to one triage.
+  def test_a_commit_with_several_reviewers_shows_each_mapping_then_one_triage
+    codex = round(findings: [NIT.merge('reported_as' => '1')])
+    claude = round(reviewer: 'anthropic/claude', report: report(HEAD, reviewer: 'anthropic/claude'),
+                   findings: [NIT.merge('reported_as' => '2')])
+    body = render('rounds' => [codex, claude])
+
+    assert_includes body, '**Collated as:** `#1` → `F1`'
+    assert_includes body, '**Collated as:** `#2` → `F1`'
+    assert_includes body, "**Triage of `aaaaaaa`**\n\n- `F1` nit: Missing test — documented nit — " \
+                          'reported by openai/codex #1, anthropic/claude #2'
+    assert_equal 1, body.scan('- `F1` nit').size
   end
 
   def test_refuses_one_reviewer_reading_a_commit_twice

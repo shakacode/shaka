@@ -12,9 +12,22 @@ class LocalReviewTriageTest < Minitest::Test
     append(EARLIER, 'openai/codex', findings: 1)
     append(EARLIER, 'anthropic/claude', findings: 1)
 
-    assert_includes assert_raises(Shaka::Error) { record([NIT]) }.message, 'must name the reviewers'
-    assert_equal [1, 2], record([NIT.merge('reviewers' => %w[openai/codex anthropic/claude])])
-    assert_equal([[NIT], [NIT]], ledger.rounds.map { |round| round['findings'] })
+    both = { 'openai/codex' => '1', 'anthropic/claude' => '2' }
+
+    assert_includes assert_raises(Shaka::Error) { record([NIT]) }.message, 'must map each reviewer'
+    assert_equal [1, 2], record([NIT.merge('reviewers' => both)])
+    assert_equal(%w[1 2], ledger.rounds.map { |round| round['findings'].first['reported_as'] })
+  end
+
+  # Break caught: one reviewer finding counted toward two collated findings, hiding another of its findings.
+  def test_each_individual_finding_is_collated_once
+    append(EARLIER, 'openai/codex', findings: 2)
+    append(EARLIER, 'anthropic/claude', findings: 0)
+    findings = [NIT.merge('reviewers' => { 'openai/codex' => '1' }),
+                NIT.merge('id' => 'F2', 'reviewers' => { 'openai/codex' => '1' })]
+
+    error = assert_raises(Shaka::Error) { record(findings) }
+    assert_includes error.message, 'openai/codex finding #1 is collated into two'
   end
 
   # Break caught: a misspelled or empty reviewer list dropped its finding without an error.
@@ -22,7 +35,8 @@ class LocalReviewTriageTest < Minitest::Test
     append(EARLIER, 'openai/codex', findings: 1)
     append(EARLIER, 'anthropic/claude', findings: 0)
 
-    { ['openai/codx'] => 'names openai/codx', [] => 'must name the reviewers' }.each do |named, message|
+    unmapped = [{}, ['openai/codex'], { 'openai/codex' => '' }].to_h { |named| [named, 'must map each reviewer'] }
+    unmapped.merge({ 'openai/codx' => '1' } => 'names openai/codx').each do |named, message|
       assert_includes assert_raises(Shaka::Error) { record([NIT.merge('reviewers' => named)]) }.message, message
     end
   end
@@ -31,7 +45,8 @@ class LocalReviewTriageTest < Minitest::Test
   def test_one_id_names_one_problem_across_reviewers
     append(EARLIER, 'openai/codex', findings: 1)
     append(EARLIER, 'anthropic/claude', findings: 1)
-    findings = [NIT.merge('reviewers' => ['openai/codex']), NIT.merge('reviewers' => ['anthropic/claude'])]
+    findings = [NIT.merge('reviewers' => { 'openai/codex' => '1' }),
+                NIT.merge('reviewers' => { 'anthropic/claude' => '1' })]
 
     assert_includes assert_raises(Shaka::Error) { record(findings) }.message, 'id repeats'
   end

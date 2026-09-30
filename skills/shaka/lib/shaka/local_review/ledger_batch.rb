@@ -7,6 +7,8 @@ module Shaka
   # Which ledger rounds form the last batch: the reviewers that read the last reviewed commit.
   module LocalReviewLedgerBatch
     USAGE = %w[model tokens cost estimate].freeze
+    # A reviewer's own finding number or short label, such as `1` or `P2-3`.
+    LABEL = /\A[\w.-]{1,20}\z/
 
     private
 
@@ -34,7 +36,10 @@ module Shaka
     def recorded_rounds(content)
       findings = content.key?('findings') ? PublicationText.list(content['findings'], 'recorded finding') : nil
       # One triage lists each problem once, so an id repeated across reviewers is two problems.
-      check_unique_ids!(findings) if findings
+      if findings
+        check_unique_ids!(findings)
+        check_collation!(findings)
+      end
       check_usage!(content)
       rounds.each_with_index.map do |round, index|
         batch.include?(index) ? triaged(round, index, findings, content) : round
@@ -42,25 +47,49 @@ module Shaka
     end
 
     def triaged(round, index, findings, content)
-      mine = findings&.select { |finding| reported?(finding, round) }&.map { |finding| finding.except('reviewers') }
+      mine = findings&.select { |finding| reported?(finding, round) }&.map { |finding| individual(finding, round) }
       round = round.merge({ 'findings' => mine || round['findings'] }.compact, usage_for(content, round['reviewer']))
       check_findings!(round, index + 1)
       round
     end
 
-    # With one round, a finding need not name its reviewer; any name it gives must be in the batch.
+    # With one round, a finding need not name its reviewer.
     def reported?(finding, round)
       named = finding['reviewers']
-      return true if named.nil? && batch.one?
+      named.nil? ? batch.one? : named.keys.any? { |reviewer| same_reviewer?(round, reviewer) }
+    end
 
-      check_reviewers!(finding['id'], named)
-      named.any? { |reviewer| same_reviewer?(round, reviewer) }
+    # The copy of a collated finding kept in one reporter's round, with that reviewer's own number.
+    def individual(finding, round)
+      label = finding['reviewers']&.find { |reviewer, _| same_reviewer?(round, reviewer) }&.last
+      finding.except('reviewers').merge('reported_as' => label).compact
+    end
+
+    # Each finding maps every reviewer that reported it to that reviewer's own finding number, and
+    # no reviewer's number is claimed twice. With each reviewer's `FINDINGS n` matched, every
+    # individual finding then belongs to exactly one collated finding.
+    def check_collation!(findings)
+      claimed = findings.flat_map { |finding| claims(finding) }
+      repeated = claimed.tally.find { |_, count| count > 1 }&.first
+      raise Error, "#{repeated.first} finding ##{repeated.last} is collated into two findings." if repeated
+    end
+
+    def claims(finding)
+      named = finding['reviewers']
+      return [] if named.nil? && batch.one?
+
+      mapping!(finding['id'], named)
+      named.map { |reviewer, label| [reviewer.downcase, label] }
+    end
+
+    def mapping!(id, named)
+      raise Error, "Finding #{id} must map each reviewer that reported it to that reviewer's finding number." unless
+        named.is_a?(Hash) && !named.empty? && named.values.all? { |label| label.is_a?(String) && label.match?(LABEL) }
+
+      check_reviewers!(id, named.keys)
     end
 
     def check_reviewers!(id, named)
-      raise Error, "Finding #{id} must name the reviewers that reported it." unless
-        named.is_a?(Array) && !named.empty?
-
       stray = named.reject { |reviewer| batch.any? { |index| same_reviewer?(rounds[index], reviewer.to_s) } }
       return if stray.empty?
 

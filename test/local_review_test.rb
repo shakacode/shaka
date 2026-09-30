@@ -1245,8 +1245,8 @@ module LocalReviewLoopSteps
 
   # Codex reported one finding and Claude none; one record triages both rounds.
   def assert_one_triage
-    assert_includes record_batch(self.class::NIT_FINDING)[1], 'must name the reviewers'
-    output, error, status = record_batch(self.class::NIT_FINDING.merge('reviewers' => ['openai/codex']))
+    assert_includes record_batch(self.class::NIT_FINDING)[1], 'must map each reviewer'
+    output, error, status = record_batch(self.class::NIT_FINDING.merge('reviewers' => { 'openai/codex' => '1' }))
     assert_predicate status, :success?, error
     assert_equal [1, 2], JSON.parse(output).fetch('rounds')
   end

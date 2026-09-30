@@ -9,6 +9,7 @@ require_relative 'evidence'
 require_relative 'finding'
 require_relative 'summary'
 require_relative 'bound'
+require_relative 'triage'
 
 module Shaka
   # Renders one pull request comment for a local adversarial review: a summary a reader skims,
@@ -100,8 +101,8 @@ module Shaka
     # returns. Reviewers of one commit all read it before any of its fixes, so none of them is flagged.
     def round_details
       fixed = {}
-      @rounds.chunk(&:head).flat_map do |_head, batch|
-        texts = batch.map { |round| round.details(@links, fixed) }
+      @rounds.chunk(&:head).flat_map do |head, batch|
+        texts = LocalReviewTriage.details(head, batch, @links, fixed)
         batch.flat_map(&:findings).select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
         texts
       end
@@ -187,9 +188,11 @@ module Shaka
                                      "effort #{effort} · #{findings} #{noun}", 'round summary')
       end
 
-      def details(links, fixed_before = {})
-        "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n" \
-          "#{dispositions(links, fixed_before)}</details>"
+      # A reviewer of a commit that several reviewed shows how its findings were collated; the
+      # commit's triage then gives each finding's outcome once.
+      def details(links, fixed_before = {}, collated: false)
+        after = collated ? LocalReviewTriage.collated_as(self) : dispositions(links, fixed_before)
+        "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n#{after}</details>"
       end
 
       def attestation = @report.strip.lines.last.strip
@@ -231,13 +234,7 @@ module Shaka
       def dispositions(links, fixed_before)
         return '' if @findings.empty?
 
-        lines = @findings.map do |finding|
-          result = finding.fixed? ? "fixed in #{links.commit(finding.commit)}" : finding.label
-          line = "- `#{finding.id}` #{finding.kind}: #{finding.summary} — #{result}"
-          line += " — #{finding.note}" if finding.note
-          returned = fixed_before[finding.id]
-          returned ? "#{line} · **returned after its fix in #{links.commit(returned)}**" : line
-        end
+        lines = @findings.map { |finding| LocalReviewTriage.line(finding, links, fixed_before) }
         "**Dispositions**\n\n#{lines.join("\n")}\n\n"
       end
 

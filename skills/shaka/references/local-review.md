@@ -289,24 +289,27 @@ When several reviewers read each head, as `shaka reviewer` lists them, start the
 one ledger before recording anything; they can run at the same time. Their rounds on one head
 form a batch. While a review runs, the ledger marks it running, and `review record` refuses the
 batch until every running review has finished. Record the whole batch in one triage: list each
-problem once, and give it a `reviewers` list naming every reviewer that reported it, so a
-problem both found gets one entry and one fix. Put each reviewer's usage under `usage`, keyed
-by reviewer:
+problem once, and map every reviewer that reported it to that reviewer's own number for it in
+`reviewers`, so a problem both found gets one entry and one fix. Put each reviewer's usage under
+`usage`, keyed by reviewer. Here Codex's finding 1 and Claude's finding 2 are the same problem:
 
 ```json
 {
   "findings": [
     { "id": "F1", "summary": "Exit code is 0 on a failed push", "class": "defect",
       "disposition": "fixed", "commit": "FULL_FIX_SHA",
-      "reviewers": ["openai/codex", "anthropic/claude"] }
+      "reviewers": { "openai/codex": "1", "anthropic/claude": "2" } }
   ],
   "usage": { "openai/codex": { "model": "gpt-6-sol", "tokens": "41,200" } }
 }
 ```
 
-The helper refuses a finding without `reviewers` when the batch has several rounds, and a
-count that differs from any reviewer's `FINDINGS n`. Once a batch is recorded, no reviewer can
-join it. A round whose start checks read a ledger that changed while it ran, other than by
+The helper refuses a finding without `reviewers` when the batch has several rounds, one
+reviewer's number claimed by two findings, and a count that differs from any reviewer's
+`FINDINGS n`, so each reviewer's individual findings map one to one onto the triage. The
+published comment shows, under each reviewer's report, which of its findings became which
+finding, then the commit's triage with each finding's outcome once. Once a batch is recorded,
+no reviewer can join it. A round whose start checks read a ledger that changed while it ran, other than by
 another reviewer of its commit, is refused; run it again.
 
 The trusted `review.local_max_rounds` (default 5) caps the commits reviewed in this ledger; several reviewers of one commit count once.
