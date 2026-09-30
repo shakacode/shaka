@@ -148,7 +148,7 @@ class RateGapReportTest < Minitest::Test
     @github.card = 'openai: malformed'
     assert_includes report, 'failed during trusted rate-card read'
     @github.card = File.read(Shaka::RateCard::INSTALLED_PATH)
-    @github.issues = [{ 'title' => 'gpt-99-sol pricing', 'html_url' => 'https://private.example/' }]
+    @github.issues = [{ 'title' => 'Missing gpt-99-sol pricing', 'html_url' => 'https://private.example/' }]
     assert_includes report, 'failed during duplicate lookup'
     assert_empty @github.requests
   end
@@ -220,7 +220,7 @@ class RateGapTransportTest < Minitest::Test
   end
 
   def test_common_punctuation_in_a_legacy_title_is_recognized
-    ['Missing rates: gpt-7 (api)', 'Add pricing for gpt-7.', 'gpt-7: add rates'].each do |title|
+    ['Missing rates: gpt-7 (api)', 'Missing pricing for gpt-7.', 'gpt-7: add rates'].each do |title|
       @github.issues = [{ 'title' => title, 'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
       assert_includes base_model_report('GPT-7'), '/issues/88'
       assert_empty @github.requests
@@ -238,8 +238,18 @@ class RateGapTransportTest < Minitest::Test
     end
   end
 
+  def test_cost_display_bugs_do_not_suppress_missing_rates
+    ['gpt-7 costs are double-counted in the markdown table', 'Pricing column misaligned for gpt-7',
+     'Update gpt-7 costs'].each do |title|
+      @github.issues = [{ 'title' => title, 'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
+      @github.requests.clear
+      assert_includes base_model_report('GPT-7'), '/issues/999'
+      assert_equal 2, @github.requests.size
+    end
+  end
+
   def test_plural_cost_titles_reuse_legacy_reports
-    ['gpt-7 costs are UNKNOWN', 'Update gpt-7 costs'].each do |title|
+    ['gpt-7 costs are UNKNOWN', 'Add gpt-7 cost rates'].each do |title|
       @github.issues = [{ 'title' => title, 'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
       assert_includes base_model_report('GPT-7'), '/issues/88'
       assert_empty @github.requests

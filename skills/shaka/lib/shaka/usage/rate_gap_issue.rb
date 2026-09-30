@@ -20,7 +20,9 @@ module Shaka
     def pricing_title?(title)
       return false if title.match?(/\brate[ -]*limit(?:s|ed|ing)?\b|\bthrottl(?:e|ed|es|ing)\b/i)
 
-      title.match?(/\b(?:costs?|prices?|pricing)\b|\b(?:missing|add)\b.*\brates?\b/i)
+      pricing = title.match?(/\b(?:costs?|rates?|prices?|pricing)\b/i)
+      omission = title.match?(/\b(?:missing|unknown|unpriced)\b/i)
+      pricing && (omission || title.match?(/\b(?:add|update)\b.*\brates?\b/i))
     end
 
     def public_model?(catalog, model) = model_match?(catalog, model, MODEL_END)
