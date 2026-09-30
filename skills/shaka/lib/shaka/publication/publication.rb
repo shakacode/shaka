@@ -82,8 +82,7 @@ module Shaka
       table_line(cells.map { |cell| PublicationText.single_line(cell.to_s, 'table cell') })
     end
 
-    # Escaping pipes keeps a cell from silently adding a column.
-    def table_line(cells) = "| #{cells.map { |cell| cell.gsub('|', '\\|') }.join(' | ')} |"
+    def table_line(cells) = "| #{cells.map { |cell| PublicationText.table_cell(cell) }.join(' | ')} |"
 
     def details
       items = PublicationText.list(@content['details'], 'details')

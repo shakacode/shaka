@@ -40,6 +40,9 @@ module Shaka
       text
     end
 
+    # Escaping a backslash before a pipe keeps a cell's own `\|` from ending the cell early.
+    def table_cell(text) = text.gsub(/[\\|]/) { |character| "\\#{character}" }
+
     def checked(value, field)
       return value unless prose(value).match?(ESCAPE)
 
