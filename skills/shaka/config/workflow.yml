@@ -128,10 +128,17 @@ phases:
         send true once the user agrees, and omit it when the user named the task.
         It answers proceed, or pause with the next action. When the reason is
         `recommendation_missing`, complete the recommendation and rerun the checkpoint; the
-        missing input is the agent's to supply. Proceed without another response when
+        missing input is the agent's to supply. When immediate start is unambiguous and the
+        user supplied neither model nor effort, proceed with the current host settings.
+        A start word such as `go` accepts those settings even when the host cannot report
+        them or they differ from the recommendation. Keep the recommendation advisory in
+        this case; do not change settings or ask for confirmation. When the host reports
+        model or effort, briefly note the observed values and whether each matches the
+        recommendation; mark unreported values UNKNOWN without guessing.
+        When the user supplied either setting, apply the settings checks below.
+        Proceed without another response when
         immediate start is unambiguous, the recommended settings are active and usable in the host,
-        and any settings the user supplied match the recommendation. A start word such as `go`
-        does not require the user to restate active settings. For a pause that needs a user
+        and any settings the user supplied match the recommendation. For a pause that needs a user
         decision, explain the next action and wait for ready. On resumption verify the settings
         when possible; a prompt cannot change the runner. Differing settings stay the user's
         decision; unreported active settings need the user's confirmation; unavailable settings
@@ -155,6 +162,10 @@ phases:
         transferred ownership to this task, report it and stop for the user's decision instead
         of starting a second writer. On hosts without that facility, the claim result remains the
         portable collision check.
+      - Before staging, run `shaka evidence guard --root DIR --ref TRUSTED_SHA --repository OWNER/REPO
+        --base BASE --head SHA`. Repeat before push. The read-only feature guard rejects Shaka configuration
+        changes without unstaging unrelated edits. Use `--flow setup` or `--flow migration` for a deliberate
+        separate configuration PR. Ruby validates the flow flag; the agent keeps configuration work separate.
       - Confirm destination and branch. Name the feature branch with the `branch_name` that
         `claim` reported: the tracker's branch name when one was passed, otherwise the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
@@ -196,12 +207,17 @@ phases:
       - Commit the validated change before reviewing it. The reviewer reads `git diff BASE...HEAD`,
         so the work has to be a revision it can name and attest to; the push waits for Explain.
         Pass `--settings-ref TRUSTED_SHA --repository OWNER/REPO` to `review run`, and also
-        `--root DIR` to `review check`. A review result captures the committed tree and settings;
-        a dirty checkout leaves it provisional because the reviewer did not see those edits.
+        `--root DIR` to `review check`. A review result captures the committed tree and settings.
+        `review run` refuses a dirty checkout as `dirty_worktree`; a `review check` from one stays
+        provisional because the reviewer did not see those edits.
       - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
         repository validation and review JSON results. Missing or superseded results need the affected
         operation rerun; the helper does not infer earlier execution from current settings.
+        Supply those results to `description` with `--validation-result PATH --review-result PATH`,
+        plus `--root DIR --ref TRUSTED_SHA`. It checks the live PR diff and renders a redacted settings block.
+        For a separate configuration PR, also pass `--publication-flow setup` or `migration`. Unfinished
+        descriptions without results show UNKNOWN and cannot establish readiness.
       - Meaningful implementation gets an adversarial review before you push, and its findings
         fixed first, so the pushed branch costs fewer CI runs and review rounds. What makes the
         review adversarial is the context, not the model: a fresh session that did not produce the
@@ -315,6 +331,15 @@ phases:
       - Publish a speed-affecting change's comparison result, any maintainer acceptance, or its
         unmeasured note on its PR. Label a result with the revisions it compared, and an
         unmeasured note with the head it covers, marked as not measured.
+      - Before publishing, read the diff for steps besides merging: anything that has to exist
+        or happen outside the code for the change to work once deployed. Look for new or renamed
+        environment variables, `secrets.*` and `vars.*` references in workflows, GitHub App
+        installs and permissions, third-party configuration, DNS, data migrations or backfills,
+        feature flags, and deploy order across repositories. Supply each as a
+        `steps_besides_merging` item with `when` (`before merge` or `after merge`), `step`,
+        `who`, `where`, and `verify`, or `none` after checking found nothing. The helper renders
+        them as a table under the headline links and refuses a missing answer; whether the list
+        is complete is the agent's report.
       - Use the review-ready path unless a needed reviewer's trusted workflow shows it reviews drafts.
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
@@ -351,7 +376,7 @@ phases:
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `walkthrough`, required `deployment`, optional `decisions`, optional `sections`,
+        optional `walkthrough`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
         required `table`, required `provenance`, required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
@@ -542,6 +567,18 @@ phases:
   - id: finish
     title: Finish
     body: |-
+      - Before calling implementation merge-ready, perform
+        [post-implementation validation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>):
+        did we build the right thing? Compare the finished result with the original problem,
+        intended audience, and expected value, including actual complexity, scope drift,
+        file/commit churn, and simpler alternatives. This complements technical review.
+        Publish the head-bound conclusion and reasoning in the final walkthrough or a dedicated
+        PR comment: Proceed, Simplify/reframe, or Do not merge. Revisit it after changes that
+        affect the result or its cost; an earlier conclusion is not evidence for a different approach.
+        Substantive unresolved concerns block merge readiness and Auto; do not submit a merge
+        while they remain. Repair or reframe within authorized scope, then repeat affected
+        validation and review; a changed goal or disputed value needs a maintainer decision.
+        Review-only work keeps its requested stopping point.
       - Reassess scope and authority for the final head, including the base the PR actually
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Default to Ask unless
@@ -551,7 +588,8 @@ phases:
         consequences. Trust, authentication, permission, release, deployment, destructive-migration,
         and merge-guard changes require explicit human review. Small diffs do not prove low risk.
         Uncertain authority, consequential risk, or a base neither the trusted seam nor the
-        default branch establishes switches Auto to Ask; safety failures block.
+        default branch establishes switches Auto to Ask; safety failures block. So does an open
+        `before merge` step besides merging until the user confirms it is done.
       - Refresh `pr` and inspect required check states. Never accept missing, failed, pending, or stale
         required checks, and never bypass protection. An empty required set is acceptable only in Ask
         mode; say in the handoff that no check gates the PR. Wait when independent review is not yet
@@ -575,7 +613,8 @@ phases:
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
         click, run `attention OWNER/REPO NUMBER --state merge` to label the PR
         `awaiting-merge-approval`, run `squash-message` for that head so the last comment holds
-        the commit title and body to paste into the squash merge boxes, name the expected head SHA, and tell the user they may use
+        the commit title and body to paste into the squash merge boxes, name the expected head SHA,
+        list each open step besides merging with its timing and who does it, and tell the user they may use
         GitHub's currently offered merge control for that SHA and then archive this chat. If GitHub
         shows a different head or offers no allowed merge method, tell them not to merge. Do not
         bypass protection. Do not ask whether you should merge. Ask does not treat that GitHub click
@@ -616,13 +655,25 @@ phases:
         the `WIP Details` note after GitHub confirms the outcome, except after an Ask
         GitHub merge click, which leaves the note in place on purpose. Review-only work leaves
         the description alone. Report every PR link and outcome, brief validation, and remaining
-        work or blocker.
+        work or blocker. After the report, list again every `before merge` or `after merge` step
+        besides merging that is still open, with who does it, so a merged PR does not leave one
+        behind; say `none` when the description recorded none.
       - When the task is genuinely finished in a prose-capable chat, put exactly
         `This chat is ready for archiving.` on the last line. Do not use it for a task transfer,
         blocker, pending chat decision, or machine-only format. A remaining GitHub merge click after
         Ask gates pass is not a pending chat decision.
-    done_when: The PR is merged or handed to GitHub's merge control with the report sent.
+    done_when: >-
+      Post-implementation validation justifies the final result with no substantive concern
+      unresolved, and the PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
+  During implementation or review, unexpected breadth, growing abstractions or coupling,
+  repeated fixes creating new defects, or non-converging local/CI feedback triggers
+  [post-implementation validation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>)
+  before another repair round. Use two repair rounds without convergence as a default signal,
+  not a budget that permits known defects or requires waiting through obvious scope drift.
+  Record the observed cost and reconsider the approach before continuing; an early review
+  does not replace the final checkpoint.
+
   Whenever the task has a PR and stops for a user answer, in any phase, publish `description`
   with a non-empty `decisions` list before the turn ends. That publication renders
   Decisions for the maintainer and applies `awaiting-answer`. Publish `decisions` as an empty

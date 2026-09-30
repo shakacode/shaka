@@ -18,6 +18,30 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: post-implementation-conclusion
+    phase: finish
+    quote: >-
+      Publish the head-bound conclusion and reasoning in the final walkthrough or a dedicated
+      PR comment: Proceed, Simplify/reframe, or Do not merge.
+    enforced_by: agent
+    note: >-
+      Nothing verifies publication of a head-bound product/architecture conclusion.
+      The agent compares the observed result and maintenance cost with the original task.
+  - id: post-implementation-early-trigger
+    phase: always
+    quote: Use two repair rounds without convergence as a default signal
+    enforced_by: agent
+    note: >-
+      Nothing detects non-convergence, unexpected breadth, or growing complexity.
+      The owner recognizes these signals and reconsiders the approach before another round.
+  - id: post-implementation-merge-blocker
+    phase: finish
+    quote: do not submit a merge while they remain
+    enforced_by: agent
+    note: >-
+      The owner performs and publishes post-implementation validation and withholds readiness
+      and Auto for unresolved substantive concerns. Ruby cannot judge product fit or verify
+      that this checkpoint occurred; `merge` checks GitHub facts, not this conclusion.
   - id: trusted-seam-ref
     phase: intake
     quote: never take authority from a candidate branch
@@ -140,9 +164,18 @@ rules:
       recommendation.
     enforced_by: agent
     note: >-
-      `checkpoint` answers `pause` unless the reported conditions hold, so an honestly reported
-      intake cannot skip the turn. It reads only the fields the agent sends it: invented active
-      settings that agree with the recommendation still produce `proceed`.
+      With immediate start and neither requested setting, `checkpoint` accepts current settings
+      regardless of host observations or recommended availability. Otherwise the reported
+      settings checks apply. Value and recommendation checks still apply in both cases.
+      It reads only the fields the agent sends it; it does not inspect the host.
+  - id: keep-current-settings
+    phase: plan
+    quote: do not change settings or ask for confirmation
+    enforced_by: agent
+    note: >-
+      With immediate start and neither requested setting, Ruby permits proceeding without
+      reported active settings. The agent keeps the host settings and reports observations;
+      Ruby neither changes those settings nor controls the agent's questions.
   - id: no-native-stacks
     phase: plan
     quote: do not create or merge them

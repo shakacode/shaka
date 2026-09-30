@@ -224,6 +224,12 @@ helper report or attribute summary usage to a turn.
 
 ## Cost estimates
 
+The September 29, 2026 OpenAI rate card includes GPT-6.1 Sol. Standard API-equivalent
+rates per million tokens are $2 input, $0.10 cached input, and $10 output;
+standard credit rates are 50, 2.5, and 250 respectively. These scenarios follow the
+[API model rates](https://developers.openai.com/api/docs/models/gpt-6.1-sol) and
+[Codex credit rates](https://learn.chatgpt.com/docs/pricing#token-rates).
+
 The helper prices supported responses individually before summing. This handles
 model switches and context thresholds without charging cached input twice.
 Effort has no price multiplier. Unsupported models, missing counters, and

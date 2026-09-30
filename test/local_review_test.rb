@@ -1365,8 +1365,51 @@ module LocalReviewArguments
   end
 end
 
+# Break caught: a round reviews uncommitted edits it cannot attest, so the fix has no commit to name.
+class LocalReviewDirtyWorktreeTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_modified_tracked_file_is_refused_before_the_cli_launches
+    assert_refused_before_launch('example.txt')
+  end
+
+  def test_untracked_file_is_refused_before_the_cli_launches
+    assert_refused_before_launch('notes.txt')
+  end
+
+  def test_untracked_file_is_refused_when_status_hides_untracked_files
+    assert_refused_before_launch('notes.txt', config: %w[status.showUntrackedFiles no])
+  end
+
+  private
+
+  def assert_refused_before_launch(name, config: nil)
+    with_repository do |root, base, head, bin|
+      git!(root, 'config', *config) if config
+      trace = File.join(bin, 'invocation.json')
+      fake_codex(bin, head)
+      File.write(File.join(root, name), "uncommitted\n")
+      output, _error, status = run_review(root, base, head, bin, env: { 'REVIEW_TRACE' => trace })
+      refute_predicate status, :success?
+      assert_refusal(JSON.parse(output), name)
+      refute_path_exists trace, 'the reviewer launched'
+    end
+  end
+
+  def assert_refusal(result, name)
+    assert_equal 'dirty_worktree', result.fetch('failure_stage')
+    assert_equal 'not_eligible', result.fetch('skip_evidence')
+    refute result.fetch('attempted')
+    assert_includes result.fetch('reason'), name
+  end
+end
+
 module LocalReviewFixture
   include LocalReviewArguments
+
+  # Candidate-owned files tests place in the checkout; ignoring them keeps it clean, as review requires.
+  CANDIDATE_FIXTURES = %w[/bin/ /codex /git /node /project-tool /project_ruby_options.rb /pr-description.txt
+                          /ruby-path-trace.txt].freeze
 
   private
 
@@ -1450,14 +1493,19 @@ module LocalReviewFixture
   def with_repository
     Dir.mktmpdir('shaka-local-review') do |root|
       Dir.mktmpdir('shaka-review-cli') do |bin|
-        git!(root, 'init')
-        File.write(File.join(root, 'AGENTS.md'), "Trusted test criteria\n")
+        init_candidate!(root)
         commit!(root, 'before', 'base')
         base = git!(root, 'rev-parse', 'HEAD').strip
         commit!(root, 'after', 'change')
         yield root, base, git!(root, 'rev-parse', 'HEAD').strip, bin
       end
     end
+  end
+
+  def init_candidate!(root)
+    git!(root, 'init')
+    File.write(File.join(root, '.git', 'info', 'exclude'), CANDIDATE_FIXTURES.join("\n"))
+    File.write(File.join(root, 'AGENTS.md'), "Trusted test criteria\n")
   end
 
   def commit!(root, contents, message)
@@ -1499,3 +1547,4 @@ LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
 LocalReviewAttestationCaseTest.include(LocalReviewFixture)
 LocalReviewLoopTest.include(LocalReviewFixture)
+LocalReviewDirtyWorktreeTest.include(LocalReviewFixture)

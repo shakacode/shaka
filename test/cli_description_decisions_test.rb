@@ -152,8 +152,9 @@ DESCRIPTION_GH = <<~'RUBY'
     else
       puts JSON.generate('body' => ENV.fetch('EXISTING_BODY', ''),
                          'head' => { 'sha' => 'c' * 40, 'repo' => { 'full_name' => 'owner/repo' } },
-                         'base' => { 'repo' => { 'full_name' => 'owner/repo' } })
+                         'base' => { 'repo' => { 'full_name' => 'owner/repo' } }, 'changed_files' => 0)
     end
+  when %r{pulls/1/files\?} then puts '[]'
   when 'markdown' then puts JSON.generate('<table></table>' * 10)
   when 'graphql'
     state = ENV.fetch('PR_STATE', 'OPEN')

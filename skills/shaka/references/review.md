@@ -141,8 +141,10 @@ report's exact-head attestation, not a CLI launch; name this weaker evidence in 
 and a nonempty report attesting to the requested commit and reviewer. A nonzero result says
 `not_completed` with an explicit `failure_stage` and reason. `executable_missing` permits a skip;
 `cli_failure` permits one only after inspecting the local diagnostic and establishing a credential,
-quota, or provider failure rather than an invalid flag/model. Neither `report_validation` nor
-`setup_failure` permits a skip. The `skip_evidence` field says `confirmed`,
+quota, or provider failure rather than an invalid flag/model. A checkout with uncommitted or
+untracked files returns `dirty_worktree` before any reviewer starts: commit the fix, or ignore or
+remove the files, and run again. None of `report_validation`, `setup_failure`, and `dirty_worktree`
+permits a skip. The `skip_evidence` field says `confirmed`,
 `requires_cause_review`, or `not_eligible` accordingly. Do not publish raw diagnostics, which may
 contain secrets. If every CLI path fails, run the implementation model in a fresh host context and
 use `shaka review check` on its report.

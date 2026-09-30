@@ -38,13 +38,13 @@ class CheckpointTest < Minitest::Test
     end
   end
 
-  def test_go_without_explicit_settings_keeps_conflict_and_active_guards
+  def test_explicit_model_or_effort_keeps_settings_guards
     cases = [
       [default_content.except('requested_effort').merge('requested_model' => 'gpt-5.6-sol'), 'settings_conflict'],
       [default_content.except('requested_model').merge('requested_effort' => 'high'), 'settings_conflict'],
-      [default_content.except('requested_model', 'requested_effort').merge('active_effort' => 'high'),
+      [default_content.except('requested_model').merge('active_effort' => 'high'),
        'settings_inactive'],
-      [default_content.except('requested_model', 'requested_effort', 'active_model', 'active_effort'),
+      [default_content.except('requested_effort', 'active_model', 'active_effort'),
        'settings_unverified']
     ]
 

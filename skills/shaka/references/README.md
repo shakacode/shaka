@@ -16,6 +16,7 @@ the workflow reaches that decision:
 | Migrate existing settings | [Migration](migration.md) |
 | Plan, split PRs, write updates, or recover work | [Delivery and communication](delivery.md) |
 | Select reviewers and handle findings | [Review](review.md) |
+| Reconsider the finished result before merge | [Post-implementation validation](post-implementation-validation.md) |
 | Launch a reviewer CLI | [Local review](local-review.md) |
 | Resolve PR comments, including late reports | [Comment settlement](comment-settlement.md) |
 | Write PR descriptions and replies | [Writing](writing.md) |

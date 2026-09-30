@@ -63,15 +63,15 @@ $shaka Fix search when the query contains an apostrophe. Go.
 ```
 
 Describe the outcome or supply a task link. Shaka recommends a model and effort
-level. Add `Go` to start immediately when those settings are already active and
-your coding agent can confirm them. You can also choose them up front:
+level. Add `Go` without naming either to start with your coding agent's current
+settings. You can also choose them up front:
 
 ```text
 $shaka Fix search when the query contains an apostrophe. Use Sol, medium effort. Go.
 ```
 
 Choose an available model and activate it in your coding agent; the prompt does
-not switch it for you. If its active settings differ from the recommendation or
-cannot be confirmed, Shaka pauses for your choice or confirmation. Testing and
+not switch it for you. When you name either setting, Shaka pauses if the settings
+differ from its recommendation or cannot be confirmed. Testing and
 review are already part of the workflow.
 See [working with Shaka](working-with-shaka.md) for merge choices and feedback.

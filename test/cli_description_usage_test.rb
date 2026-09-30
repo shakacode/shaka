@@ -39,9 +39,9 @@ class CliDescriptionUsageTest < Minitest::Test
     existing = "<!-- shaka:begin -->\n<details>\n<summary>Usage</summary>\n\n" \
                "#{RenderedUsage.body("| Metric | Value |\n| --- | --- |\n| Total | 1 |")}\n\n" \
                "</details>\n<!-- shaka:end -->"
-    pull = { 'body' => existing, 'head' => REPO.merge('sha' => 'c' * 40), 'base' => REPO }
+    pull = { 'body' => existing, 'head' => REPO.merge('sha' => 'c' * 40), 'base' => REPO, 'changed_files' => 0 }
     encoded = JSON.generate(pull).unpack1('H*')
-    replaced = super.sub("puts JSON.generate('body' => '', 'head' => { 'sha' => 'c' * 40 })",
+    replaced = super.sub("puts JSON.generate('body' => '', 'head' => { 'sha' => 'c' * 40 }, 'changed_files' => 0)",
                          "puts [#{encoded.dump}].pack('H*')")
     raise 'fake gh pull response was not replaced' if replaced == super
 
