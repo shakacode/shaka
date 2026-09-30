@@ -162,6 +162,10 @@ phases:
         transferred ownership to this task, report it and stop for the user's decision instead
         of starting a second writer. On hosts without that facility, the claim result remains the
         portable collision check.
+      - Before staging, run `shaka evidence guard --root DIR --ref TRUSTED_SHA --repository OWNER/REPO
+        --base BASE --head SHA`. Repeat before push. The read-only feature guard rejects Shaka configuration
+        changes without unstaging unrelated edits. Use `--flow setup` or `--flow migration` for a deliberate
+        separate configuration PR. Ruby validates the flow flag; the agent keeps configuration work separate.
       - Confirm destination and branch. Name the feature branch with the `branch_name` that
         `claim` reported: the tracker's branch name when one was passed, otherwise the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),
@@ -209,6 +213,10 @@ phases:
         --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
         repository validation and review JSON results. Missing or superseded results need the affected
         operation rerun; the helper does not infer earlier execution from current settings.
+        Supply those results to `description` with `--validation-result PATH --review-result PATH`,
+        plus `--root DIR --ref TRUSTED_SHA`. It checks the live PR diff and renders a redacted settings block.
+        For a separate configuration PR, also pass `--publication-flow setup` or `migration`. Unfinished
+        descriptions without results show UNKNOWN and cannot establish readiness.
       - Meaningful implementation gets an adversarial review before you push, and its findings
         fixed first, so the pushed branch costs fewer CI runs and review rounds. What makes the
         review adversarial is the context, not the model: a fresh session that did not produce the

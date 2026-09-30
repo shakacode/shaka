@@ -77,8 +77,9 @@ module CliOpeningCheckFakes
           File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
           puts JSON.generate(request)
         else
-          puts JSON.generate('body' => '', 'head' => { 'sha' => 'c' * 40 })
+          puts JSON.generate('body' => '', 'head' => { 'sha' => 'c' * 40 }, 'changed_files' => 0)
         end
+      when %r{pulls/1/files?} then puts '[]'
       when 'markdown' then puts JSON.generate('<table></table>' * 10)
       else abort "unexpected gh request: \#{ARGV.inspect}"
       end

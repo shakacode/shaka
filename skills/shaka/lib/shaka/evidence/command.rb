@@ -9,6 +9,7 @@ require_relative 'inputs'
 require_relative 'options'
 require_relative 'result'
 require_relative 'verification'
+require_relative '../configuration/feature_guard'
 
 module Shaka
   module Evidence
@@ -16,6 +17,8 @@ module Shaka
     class Command
       include Options
 
+      ACTIONS = { 'run' => :run_fixed, 'bind' => :bind_result, 'verify' => :verify_results,
+                  'guard' => :guard_feature }.freeze
       NAMES = %w[setup test validate validate_local trigger_hosted_ci].freeze
       Execution = Data.define(:process, :before_tree, :after_tree, :after_settings, :after_kind)
 
@@ -41,21 +44,14 @@ module Shaka
         flags.parse!(@arguments)
         return 0.tap { puts flags } if @options[:help]
 
-        result = send({ 'run' => :run_fixed, 'bind' => :bind_result, 'verify' => :verify_results }.fetch(action))
+        result = send(ACTIONS.fetch(action))
         puts JSON.pretty_generate(result)
-        %w[completed bound ready].include?(result.fetch('status')) ? 0 : 1
+        %w[completed bound ready clear].include?(result.fetch('status')) ? 0 : 1
       ensure
         ENV['PATH'] = @original_path
       end
 
       private
-
-      def action!
-        action = @arguments.shift
-        return action if %w[run bind verify].include?(action)
-
-        raise OptionParser::InvalidArgument, 'Usage: shaka evidence (run|bind|verify) [options]'
-      end
 
       def common
         root = File.realpath(@options.fetch(:root))
@@ -77,8 +73,9 @@ module Shaka
         raise Error, "Unknown fixed command #{name}" unless NAMES.include?(name)
 
         task_overrides = { 'command' => name, 'arguments' => @arguments }
-        config, settings, kind = Inputs.capture(root:, ref:, repository:, task_overrides:)
-        { root:, ref:, repository:, name:, task_overrides:, settings:, kind:, path: config.command(name) }
+        config, settings, kind, public_settings = Inputs.capture(root:, ref:, repository:, task_overrides:)
+        { root:, ref:, repository:, name:, task_overrides:, settings:, kind:, public_settings:,
+          path: config.command(name) }
       end
 
       def execute_run(context)
@@ -99,7 +96,8 @@ module Shaka
         { 'kind' => 'validation', 'command' => context.fetch(:name),
           'status' => execution.process.success? && !changed ? 'completed' : 'not_completed',
           'exit_code' => execution.process.exitstatus, 'tested_tree' => execution.before_tree,
-          'settings' => context.fetch(:settings), 'inputs_changed' => changed,
+          'public_settings' => context.fetch(:public_settings), 'settings' => context.fetch(:settings),
+          'inputs_changed' => changed,
           'tree_after' => execution.after_tree, 'settings_after' => execution.after_settings,
           'repository' => context.fetch(:repository), 'source_ref' => context.fetch(:ref),
           'source_kind' => context.fetch(:kind), 'task_overrides' => context.fetch(:task_overrides) }
@@ -117,6 +115,14 @@ module Shaka
         path = Result.local_file!(root, @options.fetch(:result))
         original = JSON.parse(File.read(path, encoding: 'UTF-8'))
         Result.bind(original, root:, head: @options.fetch(:head), ref:, repository:)
+      end
+
+      def guard_feature
+        root, = common
+        raise Error, 'guard accepts no command arguments' unless @arguments.empty?
+
+        Configuration::FeatureGuard.check(root:, base: @options.fetch(:base), head: @options.fetch(:head),
+                                          flow: @options.fetch(:flow, 'feature'))
       end
 
       def verify_results

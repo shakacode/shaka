@@ -7,27 +7,29 @@ require_relative 'usage_details'
 require_relative 'provenance'
 require_relative 'provenance_history'
 require_relative 'wip_details'
+require_relative 'settings'
 require_relative '../publication_sections'
 
 module Shaka
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
     # With the pull request being replaced, the provenance history carries forward from its body.
-    def self.description(content, workflow_version = nil, pull = nil)
-      new(content, require_tables: true, workflow_version:, pull:)
+    def self.description(content, workflow_version = nil, pull = nil, settings = nil)
+      new(content, require_tables: true, workflow_version:, pull:, settings:)
         .render(%i[top_links sections table provenance details wip])
     end
 
     def self.comment(content) = new(content).render([])
     def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
 
-    def initialize(content, require_tables: false, workflow_version: nil, pull: nil)
+    def initialize(content, require_tables: false, workflow_version: nil, pull: nil, settings: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
       @require_tables = require_tables
       @workflow_version = workflow_version
       @pull = pull
+      @settings = settings || PublicationSettings.new
     end
 
     def render(parts, title: false)
@@ -83,27 +85,24 @@ module Shaka
 
     def details
       items = PublicationText.list(@content['details'], 'details')
-      if @require_tables
-        refuse_free_form_usage(items)
-        refuse_free_form_wip(items)
-        refuse_supplied_history(items)
-      end
+      validate_details(items) if @require_tables
+      items = [@settings.detail, *items] if @require_tables
       rendered = items.map { |detail| details_block(detail) }
       rendered.unshift(details_block(UsageDetails.new(@content['usage']).detail)) if @require_tables
       rendered
+    end
+
+    def validate_details(items)
+      UsageDetails.refuse_free_form!(items)
+      refuse_free_form_wip(items)
+      refuse_supplied_history(items)
+      PublicationSettings.refuse_free_form!(items)
     end
 
     # The note is optional because it disappears once GitHub confirms the outcome.
     def wip
       spec = @content['wip']
       spec.nil? ? [] : [details_block(WipDetails.new(spec).detail)]
-    end
-
-    # Hand-written notes are what made each host publish a different shape.
-    def refuse_free_form_usage(items)
-      return unless items.any? { |item| item.is_a?(Hash) && UsageDetails.usage_summary?(item['summary']) }
-
-      raise Error, 'Publication usage must be supplied as the usage object, not a details item.'
     end
 
     def refuse_free_form_wip(items)

@@ -57,9 +57,8 @@ module Shaka
       def capture_before
         @candidate_before = CandidateTree.capture(root: @root)
         @dirty_before = dirty?
-        _config, @settings_before, @source_kind = Inputs.capture(root: @root, ref: @ref,
-                                                                 repository: @repository,
-                                                                 task_overrides: @task_overrides)
+        _config, @settings_before, @source_kind, @public_settings =
+          Inputs.capture(root: @root, ref: @ref, repository: @repository, task_overrides: @task_overrides)
       end
 
       def finish(result)
@@ -77,7 +76,8 @@ module Shaka
       private
 
       def result_fields(candidate_after, settings_after, commit_tree, changed)
-        { 'kind' => 'review', 'tested_tree' => commit_tree, 'settings' => @settings_before,
+        { 'public_settings' => @public_settings, 'kind' => 'review', 'tested_tree' => commit_tree,
+          'settings' => @settings_before,
           'candidate_tree_before' => @candidate_before, 'candidate_tree_after' => candidate_after,
           'settings_after' => settings_after, 'inputs_changed' => changed,
           'review_provisional' => @dirty_before || @candidate_before != commit_tree,

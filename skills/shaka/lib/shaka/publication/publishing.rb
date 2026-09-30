@@ -5,6 +5,7 @@ require_relative '../error'
 require_relative '../public_comments/bounded_list'
 require_relative '../public_comments/reply_guard'
 require_relative 'publication'
+require_relative 'feature_guard'
 
 module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written
@@ -22,7 +23,7 @@ module Shaka
       existing = current['body'].to_s
       merged = check_length(merge(existing, publishable(block_given? ? yield(current) : body)))
       verify_rendering(merged)
-      check_unchanged(existing)
+      check_unchanged(existing, current)
       confirmed(api(pull_path, method: 'PATCH', fields: { body: merged }), merged)
     end
 
@@ -95,11 +96,7 @@ module Shaka
     # This update rewrites the whole body, so an edit that landed while it was prepared
     # would be erased. Re-reading narrows that window; it does not close it, because
     # GitHub offers no compare-and-swap for a pull request body.
-    def check_unchanged(existing)
-      return if pull['body'].to_s == existing
-
-      raise Error, 'The description changed while this update was prepared; publish again from the current body.'
-    end
+    def check_unchanged(existing, original) = FeaturePublication.unchanged!(self, existing, original)
 
     # Rewriting an ambiguous region would delete whatever sits between the wrong markers.
     def check_region(existing, opens, closes)
