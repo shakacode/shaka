@@ -12,7 +12,7 @@ module Shaka
       KEY = 'post_implementation'
       KEYS = %w[enabled reviewer model effort prompt_file].freeze
       EFFORTS = { 'openai/codex' => %w[low medium high xhigh max],
-                  'anthropic/claude' => %w[low medium high max],
+                  'anthropic/claude' => %w[low medium high xhigh max],
                   'xai/grok' => %w[low medium high] }.freeze
       DEFAULTS = { 'reviewer' => 'openai/codex', 'model' => 'gpt-6.1-sol', 'effort' => 'medium' }.freeze
 

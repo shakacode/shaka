@@ -67,6 +67,25 @@ class PostImplementationTest < Minitest::Test
     end
   end
 
+  def test_claude_xhigh_reaches_the_cli
+    settings = { 'reviewer' => 'anthropic/claude', 'effort' => 'xhigh' }
+    with_repository({ 'post_implementation' => settings }) do |root, base, head, bin|
+      fake_claude(bin, head)
+      result, status = run_checkpoint(root, base, head, bin)
+      assert_predicate status, :success?, result.inspect
+      assert_equal 'xhigh', option(checkpoint_trace(root), '--effort')
+    end
+  end
+
+  def test_codex_max_reaches_the_cli
+    with_repository({ 'post_implementation' => { 'effort' => 'max' } }) do |root, base, head, bin|
+      fake_checkpoint(bin, head)
+      result, status = run_checkpoint(root, base, head, bin)
+      assert_predicate status, :success?, result.inspect
+      assert_includes checkpoint_trace(root).fetch('args'), 'model_reasoning_effort="max"'
+    end
+  end
+
   def test_candidate_configuration_never_selects_execution_settings
     with_repository do |root, base, _head, bin|
       change_candidate_policy(root)

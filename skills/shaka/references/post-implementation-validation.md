@@ -46,7 +46,7 @@ Both configured and task-selected prompt files come from `--ref`; candidate file
 cannot supply instructions. Changing provider drops an inherited model belonging
 to the previous provider unless the task explicitly names a model. Claude otherwise
 uses its CLI default; Grok requires a named model. Effort values accepted here are
-Codex: `low`, `medium`, `high`, `xhigh`, `max`; Claude: `low`, `medium`, `high`, `max`;
+Codex: `low`, `medium`, `high`, `xhigh`, `max`; Claude: `low`, `medium`, `high`, `xhigh`, `max`;
 Grok: `low`, `medium`, `high`. Model availability and effort support also depend on
 the installed CLI and selected model; CLI rejection is an explicit failure.
 
