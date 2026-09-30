@@ -13,7 +13,7 @@ module Shaka
     DISPOSITIONS = %w[fixed documented].freeze
     ID = /\A[\w.-]{1,40}\z/
 
-    attr_reader :id, :summary, :kind, :disposition, :commit, :note
+    attr_reader :id, :summary, :kind, :disposition, :commit, :note, :reported_as
 
     def self.list(value, label)
       findings = PublicationText.list(value, label).map { |finding| new(finding, label) }
@@ -34,7 +34,7 @@ module Shaka
       @kind = choice(spec['class'], CLASSES, 'class')
       @disposition = choice(spec['disposition'], DISPOSITIONS, 'disposition')
       @commit = spec['commit']
-      @note = spec['note'] && text(spec, 'note')
+      @note, @reported_as = optional_texts(spec)
       check_commit!
     end
 
@@ -46,6 +46,9 @@ module Shaka
     def prompt_line = "- [#{@id}] #{@kind}: #{@summary} (#{label})"
 
     private
+
+    # `reported_as` is the reporting reviewer's own number, which ties its report to the triage.
+    def optional_texts(spec) = %w[note reported_as].map { |field| spec[field] && text(spec, field) }
 
     def text(spec, field) = PublicationText.single_line(spec[field], "#{@label} #{@id} #{field}").strip
 

@@ -13,7 +13,7 @@ module Shaka
 
     def lines
       unresolved = LocalReviewSummary.new(@rounds).unresolved_defects
-      return [] if @rounds.size < @max_rounds || unresolved.empty?
+      return [] if @rounds.map(&:head).uniq.size < @max_rounds || unresolved.empty?
 
       ['## Loop bound reached', "Local review reached the round cap (#{@max_rounds}) with unresolved defects:",
        unresolved.map { |finding| defect_line(finding) }.join("\n"), prompt(unresolved)]

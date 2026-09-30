@@ -103,6 +103,8 @@ Meaningful implementation also gets a local adversarial review before push:
 - Prefer a different provider and model. If other reviewers are unavailable, the
   current workflow allows the implementation model in a fresh session.
 - Address findings before pushing.
+- To have several reviewers read each commit, set
+  [`review.local_review_count`](#reviewlocal_review_count).
 
 `shaka review run` verifies the reviewer process completed and returned a report
 for the expected commit. `shaka review check` validates a supplied report but does
@@ -181,8 +183,11 @@ checks (`UNSTABLE`) for `none` and `one`; `all` requires `CLEAN`.
 
 **Optional. Default: `5`.** A positive integer, validated by `shaka seam check`.
 
-This bounds completed rounds in one local review ledger. For example, `3` lets
+This bounds the commits reviewed in one local review ledger. For example, `3` lets
 an initial review and two follow-up reviews run before the helper refuses another.
+With [`local_review_count`](#reviewlocal_review_count) above 1, all the reviewers of one
+commit together use one of these turns, so `3` with two reviewers allows six reviews
+across three commits.
 The runner reads the setting from the supplied trusted `--settings-ref` (or
 `--criteria-ref`). Without a reference, it uses the default of five.
 
@@ -296,6 +301,40 @@ with the account that should pay for reviews:
 
 Then list that provider in `local_review_agents`. The next review picks it, and the
 published review names it in its summary table instead of the fallback notice.
+
+## `review.local_review_count`
+
+**Optional. Default: 1.** How many reviewers from `local_review_agents` read each
+commit before its findings are fixed. With 2 or more, the reviewers run at the same
+time. `shaka review record` refuses while any review it started is still running,
+and then records all their findings in one triage, so a problem two reviewers
+both found is recorded and fixed once.
+
+Claude implements, and Codex and a fresh Claude session both review:
+
+```yaml
+review:
+  required: meaningful_changes
+  ci_review_jobs: [claude-review]
+  local_review_count: 2
+  local_review_agents:
+    - provider: anthropic
+      model_family: claude
+    - provider: openai
+      model_family: codex
+```
+
+The first reviewer comes from a provider that did not write the change whenever one
+can run, here Codex. The others follow the list order, so the second is Claude in a
+fresh session, without the implementation conversation. If Codex had written the
+change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
+missing or signed out, fewer reviewers read that commit, and from the next commit the next
+listed reviewer takes its place.
+
+Each extra reviewer adds its own review cost to every commit it reads. The PR's
+review comment shows every reviewer's rounds, and one review of the final commit is
+enough for `shaka merge`. A task can ask for a different number, which wins for that
+task.
 
 ## `review.prompt_file`
 

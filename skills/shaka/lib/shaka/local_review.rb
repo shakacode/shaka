@@ -86,9 +86,8 @@ module Shaka
       raise OptionParser::InvalidArgument, parser.to_s unless
         @arguments.empty? && @options[:ledger] && @options[:content_file]
 
-      ledger = LocalReviewLedger.new(@options[:ledger])
-      ledger.record!(JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8')))
-      puts JSON.pretty_generate('ledger' => ledger.path, 'round' => ledger.rounds.size)
+      recorded = LocalReviewLedger.new(@options[:ledger]).record!(content)
+      puts JSON.pretty_generate('ledger' => File.expand_path(@options[:ledger]), 'rounds' => recorded)
       0
     end
 
@@ -101,8 +100,9 @@ module Shaka
       end
     end
 
+    def content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
+
     def review_comment(github)
-      content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
       LocalReviewComment.new(content, repository: @arguments.first, published: on_github(github))
     end
 

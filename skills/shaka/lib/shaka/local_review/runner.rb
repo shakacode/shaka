@@ -117,17 +117,19 @@ module Shaka
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
       @max_rounds = RepositoryConfig::ReviewLimit.from(trusted_review || {})
-      @ledger.check_next!(base: @options[:base], head:, max_rounds: @max_rounds)
+      @ledger.start!(base: @options[:base], head:, reviewer: @options[:reviewer], max_rounds: @max_rounds)
+      @started = true
       check_history! if @ledger.last_head
+      @snapshot = @ledger.snapshot(head)
     end
 
-    # The next round must hold the last reviewed head and each fix the last round records, and each
+    # The next round must hold the last reviewed head and each fix the last batch records, and each
     # fix must come after the head it was found in, or the comment would call a finding fixed in a
     # commit that is missing or predates it. Earlier rounds' fixes are already inside the last head.
     def check_history!
       last = @ledger.last_head
       contains!(last, head)
-      @ledger.last_round_fixes.each do |fix|
+      @ledger.last_batch_fixes.each do |fix|
         raise Shaka::Error, "Fix #{fix} is the head round #{@ledger.rounds.size} reviewed; commit the fix." if
           fix == last
 
@@ -146,28 +148,37 @@ module Shaka
                           'a fix; fix the history or use a new ledger.'
     end
 
+    # A run that ended without appending its round stops holding up the batch's record.
+    def finish_ledger
+      @ledger.finish! if @started && !@appended
+    rescue Shaka::Error, SystemCallError
+      nil
+    end
+
     def record_round(result)
       return result unless @ledger && result['status'] == 'completed'
 
       round = result.slice('head', 'reviewer', 'report', 'prompt_source', 'criteria_ref', 'usage')
       # The routed model comes from native usage through `review record`, never from the request.
       round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
-      @ledger.append!(base: @options[:base], round:, max_rounds: @max_rounds)
+      @ledger.append!(base: @options[:base], round:, snapshot: @snapshot, max_rounds: @max_rounds)
+      @appended = true
       result.merge('ledger' => @ledger.path, 'round' => @ledger.rounds.size)
     end
 
     # Earlier rounds reach the reviewer as data: each finding's class and disposition, never the
     # author's note, so the reviewer checks the fixes without anchoring on the author's reasons.
     def prior_rounds(marker)
-      return '' unless @ledger&.rounds&.any?
+      previous = @ledger&.previous_head(head)
+      return '' unless previous
 
       findings = @ledger.prior_findings.map(&:prompt_line)
-      commits = capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{@ledger.last_head}..#{head}", '--')
+      commits = capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{previous}..#{head}", '--')
       'PRIOR ROUNDS: Earlier local rounds reviewed this change. Confirm each fix below resolves its finding, ' \
         'and report it again with the same id if not. Do not raise documented findings again unless the ' \
         "change made them worse. Then review the full diff fresh.\n\n--- BEGIN PRIOR ROUND DATA #{marker} ---\n" \
         "Findings:\n#{findings.empty? ? 'none' : findings.join("\n")}\n\n" \
-        "Commits since #{@ledger.last_head}:\n#{commits}--- END PRIOR ROUND DATA #{marker} ---\n\n"
+        "Commits since #{previous}:\n#{commits}--- END PRIOR ROUND DATA #{marker} ---\n\n"
     end
   end
 
@@ -216,17 +227,23 @@ module Shaka
 
     def run
       @attempted = false
+      with_requested_model(outcome)
+    ensure
+      finish_ledger
+    end
+
+    private
+
+    def outcome
       validate_path!
       git_executable
       validate!
       validate_tempdir!
       open_ledger
-      with_requested_model(record_round(run_report(review_prompt)))
+      record_round(run_report(review_prompt))
     rescue Shaka::Error, SystemCallError => e
-      with_requested_model(setup_failure(e))
+      setup_failure(e)
     end
-
-    private
 
     # Records what was asked for on every outcome; the routed model comes only from native usage.
     def with_requested_model(result)

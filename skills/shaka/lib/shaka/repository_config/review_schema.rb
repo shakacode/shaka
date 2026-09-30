@@ -15,6 +15,7 @@ module Shaka
       IDENTITY = ReviewerSelection::IDENTITY
       CI_REVIEW_JOBS = 'ci_review_jobs'
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
+      LOCAL_REVIEW_COUNT = 'local_review_count'
       PROMPT_FILE = 'prompt_file'
       MODEL = 'model'
       EFFORT = 'effort'

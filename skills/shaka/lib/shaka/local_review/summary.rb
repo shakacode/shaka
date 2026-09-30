@@ -88,10 +88,21 @@ module Shaka
     def outcome
       open = unresolved_defects.size
       return "**Outcome:** the loop stopped with #{defects(open)} left for the maintainer." if open.positive?
-      return "**Outcome:** the loop ended clean: round #{@rounds.size} found nothing." if @rounds.last.findings.empty?
 
-      "**Outcome:** the loop ended with nothing left to fix. Round #{@rounds.size}'s findings are documented " \
-        "nits or risks (#{kinds(@rounds.last.findings)})."
+      # A finding several reviewers reported is one finding of the triage.
+      findings = last_batch.flat_map(&:findings).uniq(&:id)
+      return "**Outcome:** the loop ended clean: #{last_label} found nothing." if findings.empty?
+
+      "**Outcome:** the loop ended with nothing left to fix. #{last_label.capitalize}'s findings are documented " \
+        "nits or risks (#{kinds(findings)})."
+    end
+
+    # Every reviewer of the last commit, so a clean round does not hide its sibling's findings.
+    def last_batch = @rounds.select { |round| round.head == @rounds.last.head }
+
+    def last_label
+      first = @rounds.size - last_batch.size + 1
+      first == @rounds.size ? "round #{first}" : "rounds #{first}–#{@rounds.size}"
     end
 
     def defects(count) = "#{count} unfixed #{count == 1 ? 'defect' : 'defects'}"
