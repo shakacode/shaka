@@ -28,19 +28,25 @@ module Shaka
     end
 
     def report
-      local = gaps(@rate_card)
-      return 'Missing-rate reporting: no qualifying omissions.' if local.empty?
+      safely do
+        local = gaps(@rate_card)
+        next 'Missing-rate reporting: no qualifying omissions.' if local.empty?
 
-      revision, current, issues = snapshot
-      local.map { |gap| report_gap(gap, revision, current, issues) }.join("\n")
-    rescue Error, SystemCallError, JSON::ParserError, ArgumentError, KeyError, Timeout::Error, IOError,
-           SocketError, OpenSSL::SSL::SSLError
-      # Transport errors can echo local paths, secrets, or native source text. Publish the stage only.
-      "Missing-rate reporting failed during #{@stage}; usage estimates remain unchanged. " \
-      'Inspect Shaka issues before retrying.'
+        revision, current, issues = snapshot
+        local.map { |gap| safely { report_gap(gap, revision, current, issues) } }.join("\n")
+      end
     end
 
     private
+
+    def safely
+      yield
+    rescue Error, SystemCallError, JSON::ParserError, ArgumentError, KeyError, Timeout::Error, IOError,
+           SocketError, OpenSSL::SSL::SSLError
+      # Preserve completed results; error details can contain private source data.
+      "Missing-rate reporting failed during #{@stage}; usage estimates remain unchanged. " \
+      'Inspect Shaka issues before retrying.'
+    end
 
     def snapshot
       @stage = 'repository verification'
@@ -51,13 +57,9 @@ module Shaka
       [revision, current, existing_issues]
     end
 
-    def gaps(card)
-      MissingRates.new(@responses, inclusive_input: @inclusive_input, rate_card: card).gaps
-    end
+    def gaps(card) = MissingRates.new(@responses, inclusive_input: @inclusive_input, rate_card: card).gaps
 
-    def api(path)
-      JSON.parse(@github.gh('api', "repos/#{REPOSITORY}/#{path}"))
-    end
+    def api(path) = JSON.parse(@github.gh('api', "repos/#{REPOSITORY}/#{path}"))
 
     def current_card
       revision = current_revision

@@ -372,6 +372,7 @@ Filed text contains public provider/model identity, the scenario, immutable card
 revision, public catalog link, and synthetic reproduction. It includes no native
 usage counters, IDs, prompts, paths, or private links. The report keeps UNKNOWN
 estimates; repository, catalog, listing, and filing failures add a redacted note
-and leave ordinary usage output available. Before retrying an uncertain filing,
+and leave ordinary usage output available. A later failure preserves links to
+issues already filed in the same invocation. Before retrying an uncertain filing,
 inspect Shaka issues. A rate fix must verify official prices, link its source,
 test the pricing behavior, and deliver a reviewed PR.

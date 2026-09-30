@@ -3,7 +3,9 @@
 module Shaka
   # Public-only issue rendering and recognition for missing rates.
   module RateGapIssue
-    MODEL_END = /(?=\s*(?:\z|[<>"',;|]|(?:cost|rates?|pricing|price)\b))/i
+    BILLING = /api|credits|standard|fast/i
+    MODEL_END = /(?=\s*(?:\z|[<>"',;|])|\s+(?:cost|rates?|pricing|price)\b)/i
+    TITLE_END = /(?=\s*(?:\z|[<>"',;|]|[.:](?:\s|\z)|\((?:#{BILLING})\))|\s+(?:cost|rates?|pricing|price)\b)/i
 
     def matching_issue?(entry, marker, model)
       body = entry['body']
@@ -12,13 +14,15 @@ module Shaka
       end
 
       title = entry['title']
-      public_model?(title, model) && title.match?(/\b(?:rate|rates|pricing|price|cost)\b/i)
+      model_match?(title, model, TITLE_END) && title.match?(/\b(?:rate|rates|pricing|price|cost)\b/i)
     end
 
-    def public_model?(catalog, model)
+    def public_model?(catalog, model) = model_match?(catalog, model, MODEL_END)
+
+    def model_match?(catalog, model, ending)
       # A complete identity can use display spaces, but never a variant's prefix.
       name = Regexp.escape(model).gsub('\\-', '[- ]')
-      catalog.is_a?(String) && catalog.match?(/(?<![a-z0-9._:-])#{name}(?![a-z0-9._:-])#{MODEL_END}/i)
+      catalog.is_a?(String) && catalog.match?(/(?<![a-z0-9._:-])#{name}#{ending}/i)
     end
 
     def catalog_url(gap)

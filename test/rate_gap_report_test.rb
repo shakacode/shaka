@@ -34,7 +34,7 @@ module RateGapReportFixture
 
     def create(request)
       verify_repository!
-      raise Shaka::Error, '/private/source' if @failure == :create
+      raise Shaka::Error, '/private/source' if @failure == :create || (@failure == :second_create && @requests.any?)
 
       @requests << request
       title, body = request.split("\n", 2)
@@ -80,6 +80,29 @@ class RateGapReportTest < Minitest::Test
     assert_includes body, 'input_tokens=100'
     assert_includes body, 'reviewed PR'
     assert_includes body, 'a' * 40
+  end
+
+  def test_a_later_catalog_failure_keeps_the_created_issue_link
+    reporter = Shaka::RateGapReport.new([record], inclusive_input: true, rate_card: Shaka::RateCard.installed,
+                                                  github: @github, catalog: method(:failing_credit_catalog))
+    text = reporter.report
+    assert_includes text, '/issues/999'
+    assert_includes text, 'failed during public model verification'
+    refute_includes text, 'private'
+  end
+
+  def failing_credit_catalog(url)
+    raise IOError, 'private catalog error' if url.include?('learn.chatgpt.com')
+
+    'gpt-99-sol'
+  end
+
+  def test_a_later_filing_failure_keeps_the_created_issue_link
+    @github.failure = :second_create
+    text = report
+    assert_includes text, '/issues/999'
+    assert_includes text, 'failed during issue creation'
+    assert_equal 1, @github.requests.size
   end
 
   def test_closed_legacy_report_is_reused
@@ -194,6 +217,14 @@ class RateGapTransportTest < Minitest::Test
                         'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
     assert_includes base_model_report('GPT-7'), '/issues/999'
     assert_equal 2, @github.requests.size
+  end
+
+  def test_common_punctuation_in_a_legacy_title_is_recognized
+    ['Missing rates: gpt-7 (api)', 'Add pricing for gpt-7.', 'gpt-7: add rates'].each do |title|
+      @github.issues = [{ 'title' => title, 'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
+      assert_includes base_model_report('GPT-7'), '/issues/88'
+      assert_empty @github.requests
+    end
   end
 
   def test_catalog_variant_does_not_verify_the_base_model
