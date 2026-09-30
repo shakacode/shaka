@@ -158,7 +158,7 @@ phases:
       - Before staging, run `shaka evidence guard --root DIR --ref TRUSTED_SHA --repository OWNER/REPO
         --base BASE --head SHA`. Repeat before push. The read-only feature guard rejects Shaka configuration
         changes without unstaging unrelated edits. Use `--flow setup` or `--flow migration` for a deliberate
-        separate configuration PR.
+        separate configuration PR. Ruby validates the flow flag; the agent keeps configuration work separate.
       - Confirm destination and branch. Name the feature branch with the `branch_name` that
         `claim` reported: the tracker's branch name when one was passed, otherwise the trusted seam
         `branches.name`. Allowed placeholders are `{login}` (the GitHub account for this task),

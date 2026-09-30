@@ -13,6 +13,9 @@ module Shaka
       SHA = /\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/
 
       def self.bind(result, root:, head:, ref:, repository:)
+        raise Error, 'Evidence result must be an object' unless result.is_a?(Hash)
+        raise Error, 'Head must be a full commit SHA' unless head.to_s.match?(SHA)
+
         new(result, root:, head:, ref:, repository:).bind
       end
 
@@ -25,15 +28,19 @@ module Shaka
       end
 
       def bind
-        raise Error, 'Evidence result must be an object' unless @result.is_a?(Hash)
-        raise Error, 'Head must be a full commit SHA' unless @head.to_s.match?(SHA)
-
         tree = self.class.commit_tree(@root, @head)
-        _config, settings, source_kind = Inputs.capture(root: @root, ref: @ref, repository: @repository,
-                                                        task_overrides: @result.fetch('task_overrides', {}))
+        settings, source_kind, public_settings = resolved_settings
         changed = self.class.component_changes(@result['settings'], settings)
         reasons = result_reasons(tree) + settings_reasons(source_kind, changed)
+        reasons.concat(PublicSettings.binding_reasons(@result['public_settings'], public_settings,
+                                                      @result['source_ref']))
         binding_result(tree, changed, reasons)
+      end
+
+      def resolved_settings
+        _config, *values = Inputs.capture(root: @root, ref: @ref, repository: @repository,
+                                          task_overrides: @result.fetch('task_overrides', {}))
+        values
       end
 
       def binding_result(tree, changed, reasons)
@@ -117,7 +124,7 @@ module Shaka
         path == real_root || path.start_with?("#{real_root}/")
       end
 
-      private :binding_result, :result_reasons, :completeness_reasons, :settings_reasons
+      private :resolved_settings, :binding_result, :result_reasons, :completeness_reasons, :settings_reasons
     end
   end
 end

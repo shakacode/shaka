@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../doctor/installation_identity'
+require_relative '../configuration/paths'
 
 module Shaka
   module Evidence
@@ -46,7 +47,7 @@ module Shaka
 
       def source_values(kind, ref, path)
         { 'source' => kind, 'source.revision' => ref,
-          'source.layout' => path == '.agents/shaka/config.yml' ? 'new' : 'legacy',
+          'source.layout' => path == Configuration::Paths::NEW_CONTRACT ? 'new' : 'legacy',
           'source.configuration' => kind == 'private/local' ? 'ABSENT' : 'trusted/team' }
       end
 
@@ -56,6 +57,14 @@ module Shaka
           installation.dig('source', 'repository') == 'shakacode/shaka'
         { 'installation.source' => installation.dig('source', 'kind'),
           'installation.version' => installation['version'], 'installation.revision' => revision }
+      end
+
+      def binding_reasons(snapshot, current, source_ref)
+        return [] unless snapshot
+
+        unchanged = snapshot.is_a?(Hash) && snapshot.except('source.revision') == current.except('source.revision') &&
+                    snapshot['source.revision'] == source_ref
+        unchanged ? [] : ['public settings snapshot differs from settings checked']
       end
 
       # Reapply the allowlist at publication: result JSON is data, never markup.

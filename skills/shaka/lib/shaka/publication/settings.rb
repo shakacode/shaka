@@ -62,7 +62,8 @@ module Shaka
 
     def detail
       status = @verdict ? 'Bound to the current candidate commit.' : 'UNKNOWN: rerun missing evidence.'
-      { 'summary' => SUMMARY, 'body' => [status, NOTE, HEADER, '| --- | --- | --- | --- |', *rows].join("\n") }
+      table = [HEADER, '| --- | --- | --- | --- |', *rows].join("\n")
+      { 'summary' => SUMMARY, 'body' => [status, NOTE, table].join("\n\n") }
     end
 
     private

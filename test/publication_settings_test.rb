@@ -54,6 +54,16 @@ class PublicationSettingsTest < Minitest::Test
     end
   end
 
+  def test_editing_only_public_settings_cannot_publish_false_values
+    with_checkout do |root, ref|
+      validation = run_check(root, ref, command: 'validate')
+      validation.fetch('public_settings')['merge.preference'] = 'ask'
+      with_results(validation, review_check(root, ref)) do |options|
+        assert_raises(Shaka::Error) { prepare(root, ref, options) }
+      end
+    end
+  end
+
   def test_unknown_settings_are_visible_on_unfinished_descriptions
     body = Shaka::PublicationSettings.new.detail.fetch('body')
     assert_includes body, 'UNKNOWN: rerun missing evidence'
