@@ -7,6 +7,7 @@ class PublicationDecisionsTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
+        'steps_besides_merging' => 'none',
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes)
     )

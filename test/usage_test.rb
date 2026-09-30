@@ -534,6 +534,7 @@ class UsageIdentityTest < Minitest::Test
   def test_description_refuses_a_pasted_usage_report
     [[context('current'), usage('r1', 'current', 100)], [context('current')]].each do |records|
       content = { 'identity' => { 'agent' => 'Codex' }, 'summary' => 'A summary.', 'deployment' => 'none',
+                  'steps_besides_merging' => 'none',
                   'table' => { 'columns' => %w[Check], 'rows' => [%w[pass]] }, 'provenance' => provenance,
                   'details' => [{ 'summary' => 'Usage and cost', 'body' => run_report(records) }] }
       error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }

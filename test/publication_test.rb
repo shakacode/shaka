@@ -25,7 +25,8 @@ class PublicationRegressionTest < Minitest::Test
 
   def description_content(**changes)
     { 'identity' => IDENTITY, 'summary' => 'A summary.', 'walkthrough' => WALKTHROUGH, 'table' => TABLE,
-      'deployment' => 'none', 'provenance' => PUBLIC_PROVENANCE, 'usage' => USAGE_OBJECT,
+      'deployment' => 'none',
+      'steps_besides_merging' => 'none', 'provenance' => PUBLIC_PROVENANCE, 'usage' => USAGE_OBJECT,
       'details' => [] }.merge(changes)
   end
 
@@ -115,6 +116,7 @@ class PublicationStructureTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
+        'steps_besides_merging' => 'none',
         'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE,
         'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes)
@@ -178,6 +180,7 @@ class PublicationStructureTest < Minitest::Test
   def test_a_real_newline_in_a_cell_cannot_split_the_row
     content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
+                'steps_besides_merging' => 'none',
                 'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] },
                 'provenance' => PUBLIC_PROVENANCE }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
@@ -231,7 +234,8 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def render(walkthrough: PublicationRegressionTest::WALKTHROUGH)
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
-        'walkthrough' => walkthrough, 'deployment' => 'none', 'table' => PublicationRegressionTest::TABLE,
+        'walkthrough' => walkthrough, 'deployment' => 'none',
+        'steps_besides_merging' => 'none', 'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE, 'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
     )
   end
@@ -259,6 +263,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
+        'steps_besides_merging' => 'none',
         'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
@@ -300,7 +305,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
-                'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
+                'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [], 'steps_besides_merging' => 'none' }
     rendered = Shaka::Publication.description(content)
 
     assert_includes rendered, '<summary>Execution provenance</summary>'
@@ -313,6 +318,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
   def test_description_refuses_missing_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
+                'steps_besides_merging' => 'none',
                 'table' => PublicationRegressionTest::TABLE,
                 'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
@@ -331,6 +337,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => DEPLOYMENT,
+        'steps_besides_merging' => 'none',
         'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes)
