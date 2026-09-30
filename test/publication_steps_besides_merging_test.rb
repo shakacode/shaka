@@ -31,6 +31,11 @@ class PublicationStepsBesidesMergingTest < Minitest::Test
     assert_operator steps, :<, rendered.index('## Decisions for the maintainer')
   end
 
+  def test_an_escaped_pipe_in_a_cell_cannot_split_the_row
+    rendered = render('steps_besides_merging' => [STEP.merge('step' => 'Set a\\|b')])
+    assert_includes rendered, '| before merge | Set a\\\\\\|b | Maintainer |'
+  end
+
   def test_none_omits_the_section_after_the_agent_checked
     refute_includes render, 'Steps besides merging'
   end

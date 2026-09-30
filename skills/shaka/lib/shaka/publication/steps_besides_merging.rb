@@ -40,8 +40,8 @@ module Shaka
       line(cells)
     end
 
-    # Escaping pipes keeps a cell from silently adding a column.
-    def line(cells) = "| #{cells.map { |cell| cell.gsub('|', '\\|') }.join(' | ')} |"
+    # Escaping pipes, and the backslashes before them, keeps a cell from silently adding a column.
+    def line(cells) = "| #{cells.map { |cell| cell.gsub(/[\\|]/) { |character| "\\#{character}" } }.join(' | ')} |"
 
     def refuse_heading(sections)
       return unless sections.is_a?(Array)
