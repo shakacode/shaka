@@ -25,12 +25,27 @@ module Shaka
 
     def self.outcomes(copies) = copies.map { |item| [item.kind, item.disposition, item.commit] }.uniq.size
 
-    # The rounds of one commit. With several reviewers: each report with how its findings were
-    # collated, then the commit's triage.
-    def self.details(head, batch, links, fixed)
-      return [batch.first.details(links, fixed)] if batch.one?
+    # Every commit's triage, in order and before the reports, so a reader sees what each reviewer
+    # reported, how the findings were collated, and what became of each without opening a report.
+    def self.section(rounds, links)
+      fixed = {}
+      blocks = rounds.chunk(&:head).filter_map do |head, batch|
+        text = new(head, batch, links).render(fixed) unless batch.flat_map(&:findings).empty?
+        remember_fixes(batch, fixed)
+        text
+      end
+      blocks.empty? ? [] : ['## Findings', *blocks]
+    end
 
-      batch.map { |round| round.details(links, fixed, collated: true) } + [new(head, batch, links).render(fixed)]
+    # Records each fix a commit's triage made, so a later commit flags a finding that returned.
+    def self.remember_fixes(batch, fixed)
+      batch.flat_map(&:findings).select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
+    end
+
+    # A commit's reports. Under a report of a commit several reviewers read, which of its findings
+    # became which finding; a lone reviewer's report keeps its dispositions.
+    def self.details(batch, links, fixed)
+      batch.map { |round| round.details(links, fixed, collated: !batch.one?) }
     end
 
     # Under one reviewer's collapsed report: its own findings and the finding each became.

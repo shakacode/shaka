@@ -42,7 +42,8 @@ module Shaka
 
     def render
       blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice, *settings_notice,
-                *LocalReviewBound.new(@rounds, @max_rounds).lines, *round_details,
+                *LocalReviewBound.new(@rounds, @max_rounds).lines, *LocalReviewTriage.section(@rounds, @links),
+                *round_details,
                 @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
     end
@@ -102,9 +103,9 @@ module Shaka
     # returns. Reviewers of one commit all read it before any of its fixes, so none of them is flagged.
     def round_details
       fixed = {}
-      @rounds.chunk(&:head).flat_map do |head, batch|
-        texts = LocalReviewTriage.details(head, batch, @links, fixed)
-        batch.flat_map(&:findings).select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
+      @rounds.chunk(&:head).flat_map do |_head, batch|
+        texts = LocalReviewTriage.details(batch, @links, fixed)
+        LocalReviewTriage.remember_fixes(batch, fixed)
         texts
       end
     end

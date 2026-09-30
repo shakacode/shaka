@@ -183,8 +183,9 @@ class LocalReviewBatchCommentTest < Minitest::Test
 
     assert_includes body, '**Collated as:** `#1` → `F1`'
     assert_includes body, '**Collated as:** `#2` → `F1`'
-    assert_includes body, "**Triage of `aaaaaaa`**\n\n- `F1` nit: Missing test — documented nit — " \
+    assert_includes body, "## Findings\n\n**Triage of `aaaaaaa`**\n\n- `F1` nit: Missing test — documented nit — " \
                           'reported by openai/codex #1, anthropic/claude #2'
+    assert_operator body.index('## Findings'), :<, body.index('<details>')
     assert_equal 1, body.scan('- `F1` nit').size
   end
 
@@ -202,6 +203,15 @@ class LocalReviewBatchCommentTest < Minitest::Test
     error = assert_raises(Shaka::Error) { render('rounds' => [round, claude]) }
 
     assert_includes error.message, 'Finding F1 has two outcomes'
+  end
+
+  # Break caught: a lone reviewer's findings appeared only inside its collapsed report.
+  def test_lists_every_commit_with_findings_before_the_reports
+    body = render('rounds' => [round(EARLIER, report: report(EARLIER)), clean('openai/codex')])
+    findings = body[body.index('## Findings')...body.index('<details>')]
+
+    assert_includes findings, '**Triage of `bbbbbbb`**'
+    refute_includes findings, 'aaaaaaa'
   end
 
   def test_refuses_one_reviewer_reading_a_commit_twice
