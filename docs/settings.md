@@ -201,36 +201,77 @@ needs its CLI installed and signed in on the machine doing the review.
 
 Ask your agent:
 
-> Use Claude first for local review, then Codex. Set Codex to gpt-6-sol at medium
-> effort so review costs are predictable.
-
-For example:
+> Configure local reviews to try Claude, Codex, then Grok. Use the explicit
+> models and medium effort shown below.
 
 ```yaml
 review:
   local_review_agents:
     - provider: anthropic
       model_family: claude
+      model: claude-opus-5-5
+      effort: medium
     - provider: openai
       model_family: codex
       model: gpt-6-sol
       effort: medium
+    - provider: xai
+      model_family: grok
+      model: grok-4.7
+      effort: medium
 ```
 
-Here Claude uses its CLI default model and effort. Codex uses `gpt-6-sol` at
-medium effort. Set `model` and `effort` to control review cost; leaving them out
-uses the reviewer's defaults. A task can request a different model or effort for
-one review. Without a reviewer list, Shaka uses a fresh review context with the
-model that implemented the change.
+Shaka prefers a different provider from the one that implemented the change,
+then follows your list order among available reviewers. These settings choose
+one local reviewer; they do not require all three to review every change.
 
-Shaka flags unfamiliar settings, likely typos, and Codex models that differ from
-its recommendation. You'll see the warning in the repository health check and
+### Model and effort values
+
+Use these provider and family pairs for Shaka's supported local reviewer CLIs:
+
+| Reviewer | `provider` | `model_family` | Effort values Shaka recognizes |
+| --- | --- | --- | --- |
+| Claude Code | `anthropic` | `claude` | `low`, `medium`, `high`, `xhigh`, `max` |
+| Codex | `openai` | `codex` | `low`, `medium`, `high`, `xhigh` |
+| Grok | `xai` | `grok` | `low`, `medium`, `high` |
+
+Choose a `model` available to that reviewer's CLI. The example names above are
+examples, not a closed list: newer names can run with a warning. Model names
+cannot contain spaces. Effort names use lowercase.
+
+Claude accepts only its listed effort values in Shaka. Codex and Grok values
+outside the table produce a warning and still reach the CLI, which decides
+whether they are supported.
+
+Set `model` and `effort` to control review cost. Omit either to use the reviewer's
+default for that setting; Grok requires a model from the configuration or the
+task. A task can request a different model or effort for one review. Without a
+reviewer list, Shaka uses a fresh review context with the model that implemented
+the change.
+
+### Use these settings from Cursor
+
+The same repository settings apply when you work in
+[Cursor](coding-agents.md). In a Cursor Agent chat, ask:
+
+> /shaka Configure local reviews to prefer Grok 4.7 at medium effort, with
+> Claude at medium effort as the next choice.
+
+Cursor is the coding host. Reviewer entries identify the model provider and
+reviewer CLI, so use `xai` / `grok` for Grok, including when your implementation
+was written in Cursor. Shaka's local review runner supports the three CLIs in
+the table; Cursor is not a fourth reviewer CLI.
+
+### Understand a reviewer warning
+
+For these reviewers, Shaka flags unfamiliar model and effort names, likely
+typos, and Codex models that differ from its recommendation. You'll see the warning in the repository health check and
 a **Reviewer settings** notice on the published local review. Check the spelling
 and confirm that the model and effort are available to your reviewer. Shaka
 keeps your chosen model; it does not substitute another one.
 
 Most warnings allow the review to run. An unsupported Claude effort stops it;
-choose `low`, `medium`, `high`, `xhigh`, or `max` to continue.
+choose one of Claude’s listed effort values to continue.
 
 Put project-specific review criteria in `AGENTS.md`. For review execution and
 setting checks, see the [local review reference](../skills/shaka/references/local-review.md#reviewer-model-and-effort).
