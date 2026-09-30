@@ -14,7 +14,7 @@ module Shaka
   # Renders the publication surfaces so headings, spacing, tables and details are Ruby's.
   class Publication
     # With the pull request being replaced, the provenance history carries forward from its body.
-    def self.description(content, workflow_version = nil, pull = nil, settings: nil)
+    def self.description(content, workflow_version = nil, pull = nil, settings = nil)
       new(content, require_tables: true, workflow_version:, pull:, settings:)
         .render(%i[top_links sections table provenance details wip])
     end

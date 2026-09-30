@@ -12,6 +12,7 @@ module Shaka
         'source.layout' => %w[legacy new],
         'installation.source' => %w[revision development uninstalled],
         'merge.preference' => %w[ask auto],
+        'merge.private_trial_default' => %w[ask],
         'review.required' => %w[always meaningful_changes],
         'review.ci_review_wait' => %w[none one all],
         'overrides.command' => %w[setup test validate validate_local trigger_hosted_ci],
@@ -33,7 +34,7 @@ module Shaka
         snapshot = setting_values(config.to_h)
         snapshot.merge!(source_values(kind, ref, config.config_path), installation_values(installation))
         task_overrides.each { |key, value| snapshot["overrides.#{key}"] = value }
-        snapshot['merge.preference'] = 'ask' if kind == 'private/local'
+        snapshot['merge.private_trial_default'] = 'ask' if kind == 'private/local'
         REDACTED.each { |field| snapshot[field] = 'REDACTED' }
         snapshot['defaults_changed'] = 'UNKNOWN'
         sanitize(snapshot)

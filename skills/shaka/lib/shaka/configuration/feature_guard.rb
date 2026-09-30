@@ -35,6 +35,11 @@ module Shaka
         { 'status' => 'clear', 'flow' => @flow, 'configuration_changes' => changed.any? }
       end
 
+      def self.configuration?(path)
+        LEGACY.include?(path) || [Paths::COMMAND_DIRECTORY,
+                                  '.agents/shaka'].include?(path) || path.start_with?('.agents/shaka/', '.agents/bin/')
+      end
+
       private
 
       def changed_paths
@@ -45,11 +50,7 @@ module Shaka
                  git('diff', '--cached', '--name-only', '--no-renames', '-z', 'HEAD', '--'),
                  git('diff', '--name-only', '--no-renames', '-z', '--'),
                  git('ls-files', '--others', '--exclude-standard', '-z')]
-        paths.flat_map { |output| output.split("\0") }.uniq.select { |path| configuration?(path) }
-      end
-
-      def configuration?(path)
-        LEGACY.include?(path) || path == '.agents/shaka' || path.start_with?('.agents/shaka/', '.agents/bin/')
+        paths.flat_map { |output| output.split("\0") }.uniq.select { |path| self.class.configuration?(path) }
       end
 
       def git(*)

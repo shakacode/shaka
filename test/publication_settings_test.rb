@@ -70,9 +70,17 @@ class PublicationSettingsTest < Minitest::Test
   end
 
   def prepare(root, ref, options, head: ref)
-    pull = { 'head' => { 'sha' => head }, 'base' => { 'sha' => ref } }
-    Shaka::PublicationSettings.prepare(root:, ref:, repository: 'shakacode/shaka', pull:,
-                                       options: options.merge(root:))
+    pull = { 'changed_files' => 0, 'head' => { 'sha' => head }, 'base' => { 'sha' => ref } }
+    Shaka::PublicationSettings.prepare(root:, ref:, pull:,
+                                       options: options.merge(root:), github: empty_diff)
+  end
+
+  def empty_diff
+    Object.new.tap do |github|
+      def github.repository = 'shakacode/shaka'
+      def github.number = 1
+      def github.api_list(_path) = []
+    end
   end
 
   def with_results(validation, review)

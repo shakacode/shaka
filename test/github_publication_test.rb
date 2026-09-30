@@ -76,6 +76,15 @@ class GitHubDescriptionTest < Minitest::Test
     assert_equal updated, sent_body
   end
 
+  def test_description_refuses_a_head_change_while_rendering
+    first = { 'body' => '', 'head' => { 'sha' => 'a' * 40 } }
+    second = first.merge('head' => { 'sha' => 'b' * 40 })
+    github = client(response(first), RENDERED, html_response('<p>ok</p>'), response(second))
+    error = assert_raises(Shaka::Error) { github.description(body: BODY) }
+    assert_includes error.message, 'PR revision changed'
+    assert_equal 4, @calls.size
+  end
+
   # Break: carried usage records grow the body until GitHub rejects it with an opaque error.
   def test_description_over_the_github_body_limit_is_refused_before_writing
     github = client(pull_response(''))

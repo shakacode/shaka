@@ -298,8 +298,8 @@ begin
                carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], repository:, pull:, options:)
-                 rendered = Shaka::Publication.description(carried, workflow_version, pull, settings:)
+                 settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
+                 rendered = Shaka::Publication.description(carried, workflow_version, pull, settings)
                  Shaka::DecisionLabels.guard(github, carried, pull['body'])
                  rendered
                end

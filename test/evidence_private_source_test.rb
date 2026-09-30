@@ -9,6 +9,8 @@ class EvidencePrivateSourceTest < Minitest::Test
     with_private_checkout do |root, ref, _private_dir|
       result = run_check(root, ref)
       assert_equal 'private/local', result.fetch('source_kind')
+      assert_equal 'new', result.dig('public_settings', 'source.layout')
+      assert_equal 'ask', result.dig('public_settings', 'merge.private_trial_default')
       assert_equal 'completed', result.fetch('status')
       assert_equal 'bound', bind(root, ref, ref, result).fetch('status')
     end

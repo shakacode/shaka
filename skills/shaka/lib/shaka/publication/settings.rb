@@ -2,7 +2,7 @@
 
 require_relative '../evidence/verification'
 require_relative '../evidence/public_settings'
-require_relative '../configuration/feature_guard'
+require_relative 'feature_guard'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -17,9 +17,11 @@ module Shaka
       raise Error, 'Shaka settings must come from validation/review results, not a details item.'
     end
 
-    def self.prepare(root:, ref:, repository:, pull:, options:)
+    def self.prepare(root:, ref:, pull:, options:, github:)
+      FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
+      repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current = current_settings(root:, ref:, repository:, pull:, options:) if ref && options[:root]
+      current = current_settings(root:, ref:, repository:) if verdict
       new(verdict:, current:)
     end
 
@@ -35,10 +37,7 @@ module Shaka
       verdict
     end
 
-    def self.current_settings(root:, ref:, repository:, pull:, options:)
-      Configuration::FeatureGuard.check(root:, base: pull.dig('base', 'sha') || options[:base] || ref,
-                                        head: pull.dig('head', 'sha') || 'HEAD',
-                                        flow: options.fetch(:publication_flow, 'feature'))
+    def self.current_settings(root:, ref:, repository:)
       _config, _settings, _kind, current = Evidence::Inputs.capture(root:, ref:, repository:)
       current
     end
@@ -57,8 +56,8 @@ module Shaka
     end
 
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
-           'It does not prove earlier checks ran. Private trials default to Ask; explicit user authorization ' \
-           'and live required gates still govern merging.'
+           'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
+           'Private trials default to Ask; explicit user authorization and live required gates govern merging.'
     HEADER = '| Setting | Before push: validation | Review | Current merge input (not evidence) |'
 
     def detail
