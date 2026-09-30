@@ -38,15 +38,6 @@ module Shaka
         arrays_of(path) { |body| names_from(body, key) }
       end
 
-      def org_entries(path, key)
-        arrays_of(path) { |body| entries_from(body, key) }
-      end
-
-      def repositories(path)
-        state, rows = arrays_of(path) { |body| repository_names(body) }
-        rows if state == :ok
-      end
-
       private
 
       def arrays(path)
@@ -77,19 +68,6 @@ module Shaka
 
       def names_from(body, key) = list_rows(body, key).map { |row| name_of(row) }
 
-      def entries_from(body, key)
-        list_rows(body, key).map { |row| { 'name' => name_of(row), 'visibility' => row['visibility'] } }
-      end
-
-      def repository_names(body)
-        list_rows(body, 'repositories').map do |row|
-          full_name = row['full_name']
-          raise Error, 'GitHub repository list is malformed.' unless full_name.is_a?(String)
-
-          full_name
-        end
-      end
-
       def list_rows(body, key)
         rows = body[key] if body.is_a?(Hash)
         raise Error, 'GitHub name list is malformed.' unless rows.is_a?(Array) && rows.size <= PAGE_SIZE
@@ -110,7 +88,7 @@ module Shaka
       def rescue_denied
         yield
       rescue Error => e
-        return :denied if e.http_status == 403
+        return :denied if [403, 404].include?(e.http_status)
 
         raise
       end

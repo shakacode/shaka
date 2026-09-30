@@ -30,7 +30,7 @@ module Shaka
     def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
       @target = MergeTarget.required!(head, base, limits)
       @submission.message = squash_message
-      initial = @github.snapshot
+      initial = (@checked_pull = @github.snapshot)
       verify_snapshot(initial, head, @target)
       evidence = verify_reviews(head, base, walkthrough, verify_gate)
       current = @github.snapshot
@@ -50,7 +50,7 @@ module Shaka
       gate
     end
 
-    def verify_workflow_names = WorkflowMergeStop.new(@github, @merge_preference).call
+    def verify_workflow_names = WorkflowMergeStop.new(@github, @merge_preference, @checked_pull).call
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
     # GitHub cannot catch a seam check that fails while these are read, so it is read again.
@@ -147,9 +147,10 @@ module Shaka
 
   # Stops Auto merge when a changed workflow names a secret or variable the repository cannot see.
   class WorkflowMergeStop
-    def initialize(github, preference)
+    def initialize(github, preference, pull)
       @github = github
       @preference = preference
+      @pull = pull
     end
 
     def call
@@ -164,7 +165,7 @@ module Shaka
     private
 
     def names
-      report = @github.workflow_configuration(@github.snapshot)
+      report = @github.workflow_configuration(@pull)
       missing = report['missing'] if report.is_a?(Hash)
       raise Error, 'Workflow name evidence is missing.' unless missing.is_a?(Array)
 

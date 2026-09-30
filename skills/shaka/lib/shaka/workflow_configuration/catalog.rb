@@ -3,7 +3,6 @@
 require 'uri'
 require_relative '../error'
 require_relative 'pages'
-require_relative 'verdict'
 
 module Shaka
   class WorkflowConfiguration
@@ -41,26 +40,14 @@ module Shaka
         return { metadata: :denied, org: false, private: nil } if body == :denied
         raise Error, 'GitHub repository metadata is malformed.' unless body.is_a?(Hash)
 
-        { metadata: :ok, org: body.dig('owner', 'type') == 'Organization', private: privacy(body['private']) }
+        { metadata: :ok, org: body.dig('owner', 'type') == 'Organization' }
       end
 
-      def classify(kind, names, access)
+      def classify(kind, names, access, environments:, uncertain:)
         return [[], []] if names.empty?
 
-        state, found = repo_catalog(kind)
-        rest = names.reject { |name| state == :ok && found.include?(name) }
-        return [[], []] if rest.empty?
-
-        org_state, entries = org_catalog(kind, access)
-        Verdict.new(kind, self).divide(rest, repo_state: state, org_state:, entries:, access:)
-      end
-
-      def visible(entry, access, kind)
-        case entry['visibility']
-        when 'all' then true
-        when 'private' then privacy(access[:private])
-        when 'selected' then selected_repository(entry['name'], kind)
-        end
+        known, complete = known_names(kind, names, access, environments)
+        split(kind, names.uniq, known, complete, uncertain)
       end
 
       private
@@ -80,6 +67,30 @@ module Shaka
         @pages.decode_text(body)
       end
 
+      def split(kind, names, known, complete, uncertain)
+        groups = { true => [], false => [] }
+        names.each do |name|
+          next if known.include?(name)
+
+          groups[complete && !uncertain.include?(name)] << "#{kind}.#{name}"
+        end
+        [groups[true], groups[false]]
+      end
+
+      def known_names(kind, wanted, access, environments)
+        lists = catalogs(kind, wanted, access, environments)
+        known = lists.flat_map { |state, names| state == :ok ? names : [] }
+        [known, lists.all? { |state,| %i[ok skipped].include?(state) }]
+      end
+
+      def catalogs(kind, wanted, access, environments)
+        repo_state, repo_names = repo_catalog(kind)
+        lists = [[repo_state, repo_names]]
+        return lists if repo_state == :ok && wanted.all? { |name| repo_names.include?(name) }
+
+        lists << org_catalog(kind, access) << environment_catalog(kind, environments)
+      end
+
       def repo_catalog(kind)
         @pages.named("repos/#{repository}/actions/#{api_kind(kind)}", api_kind(kind))
       end
@@ -88,25 +99,24 @@ module Shaka
         return [:denied, []] if access[:metadata] == :denied
         return [:skipped, []] unless access[:org]
 
-        @pages.org_entries("orgs/#{owner}/actions/#{api_kind(kind)}", api_kind(kind))
+        @pages.named("repos/#{repository}/actions/organization-#{api_kind(kind)}", api_kind(kind))
       end
 
-      def selected_repository(name, kind)
-        path = "orgs/#{owner}/actions/#{api_kind(kind)}/#{URI.encode_uri_component(name)}/repositories"
-        names = @pages.repositories(path)
-        return nil unless names
+      def environment_catalog(kind, environments)
+        return [:ok, []] if environments.empty?
 
-        names.any? { |full_name| full_name.casecmp?(repository) }
-      end
+        names = []
+        environments.each do |environment|
+          encoded = URI.encode_uri_component(environment)
+          state, found = @pages.named("repos/#{repository}/environments/#{encoded}/#{api_kind(kind)}", api_kind(kind))
+          return [state, names] unless state == :ok
 
-      def privacy(value)
-        return value if [true, false].include?(value)
-
-        nil
+          names.concat(found)
+        end
+        [:ok, names]
       end
 
       def api_kind(kind) = kind == 'secrets' ? 'secrets' : 'variables'
-      def owner = repository.split('/', 2).first
     end
   end
 end

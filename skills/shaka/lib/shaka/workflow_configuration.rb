@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'uri'
 require_relative 'error'
 require_relative 'workflow_configuration/references'
+require_relative 'workflow_configuration/workflow_file'
 require_relative 'workflow_configuration/catalog'
 
 module Shaka
@@ -34,21 +34,25 @@ module Shaka
     private
 
     def compare(texts)
-      refs = referenced(texts)
+      files = texts.map { |text| WorkflowFile.read(text) }
+      refs = referenced(files)
       return [[], []] if refs.values.all?(&:empty?)
 
-      divide(refs, @catalog.repository_access)
+      divide(refs, files, @catalog.repository_access)
     end
 
-    def referenced(texts)
-      texts.each_with_object({ 'secrets' => [], 'vars' => [] }) do |text, found|
-        self.class.references(text).each { |kind, names| found[kind].concat(names) }
+    def referenced(files)
+      files.each_with_object({ 'secrets' => [], 'vars' => [] }) do |file, found|
+        file.references.each { |kind, names| found[kind].concat(names) }
+        found['secrets'] -= file.caller_secrets
       end
     end
 
-    def divide(refs, access)
+    def divide(refs, files, access)
+      environments = files.flat_map(&:environments).uniq
+      uncertain = files.reject(&:parsed?).flat_map { |file| file.references.values.flatten }
       refs.each_with_object([[], []]) do |(kind, names), result|
-        missing, pending = @catalog.classify(kind, names.uniq, access)
+        missing, pending = @catalog.classify(kind, names.uniq, access, environments:, uncertain:)
         result[0].concat(missing)
         result[1].concat(pending)
       end

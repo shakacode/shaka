@@ -738,6 +738,13 @@ class MergeWorkflowNamesTest < Minitest::Test
     assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('state')
   end
 
+  def test_the_merge_command_passes_preference_inside_the_review_hash
+    source = File.read(File.expand_path('../skills/shaka/scripts/shaka.rb', __dir__))
+    call = source[/Shaka::Merge\.new\(.*?\)\.call/m]
+
+    refute_includes call, 'merge_preference:'
+  end
+
   def test_auto_merge_does_not_stop_when_names_are_only_unverified
     @client.workflow_names = { 'status' => 'unverified', 'missing' => [], 'unverified' => ['secrets.DEPLOY_KEY'] }
     merge = Shaka::Merge.new(@client, review: { merge_preference: 'auto' })
