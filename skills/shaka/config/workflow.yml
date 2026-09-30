@@ -542,6 +542,18 @@ phases:
   - id: finish
     title: Finish
     body: |-
+      - Before calling implementation merge-ready, perform
+        [post-implementation validation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>):
+        did we build the right thing? Compare the finished result with the original problem,
+        intended audience, and expected value, including actual complexity, scope drift,
+        file/commit churn, and simpler alternatives. This complements technical review.
+        Publish the head-bound conclusion and reasoning in the final walkthrough or a dedicated
+        PR comment: Proceed, Simplify/reframe, or Do not merge. Revisit it after changes that
+        affect the result or its cost; an earlier conclusion is not evidence for a different approach.
+        Substantive unresolved concerns block merge readiness and Auto; do not submit a merge
+        while they remain. Repair or reframe within authorized scope, then repeat affected
+        validation and review; a changed goal or disputed value needs a maintainer decision.
+        Review-only work keeps its requested stopping point.
       - Reassess scope and authority for the final head, including the base the PR actually
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Default to Ask unless
@@ -621,8 +633,18 @@ phases:
         `This chat is ready for archiving.` on the last line. Do not use it for a task transfer,
         blocker, pending chat decision, or machine-only format. A remaining GitHub merge click after
         Ask gates pass is not a pending chat decision.
-    done_when: The PR is merged or handed to GitHub's merge control with the report sent.
+    done_when: >-
+      Post-implementation validation justifies the final result with no substantive concern
+      unresolved, and the PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
+  During implementation or review, unexpected breadth, growing abstractions or coupling,
+  repeated fixes creating new defects, or non-converging local/CI feedback triggers
+  [post-implementation validation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>)
+  before another repair round. Use two repair rounds without convergence as a default signal,
+  not a budget that permits known defects or requires waiting through obvious scope drift.
+  Record the observed cost and reconsider the approach before continuing; an early review
+  does not replace the final checkpoint.
+
   Whenever the task has a PR and stops for a user answer, in any phase, publish `description`
   with a non-empty `decisions` list before the turn ends. That publication renders
   Decisions for the maintainer and applies `awaiting-answer`. Publish `decisions` as an empty

@@ -68,7 +68,12 @@ guarantees and evidence that losing them is acceptable; fewer lines alone do not
 leaving failures, leaked resources, or weakened safeguards. Report a brief recommendation
 (proceed, simplify, evaluate first, or defer), with evidence and the smallest useful
 alternative. Separate value observations from demonstrated defects. Surface changed
-assumptions for the maintainer's existing decision; add no score or approval gate.
+assumptions for the maintainer's existing decision; add no score or new approval gate
+to this initial value assessment. Before merge readiness, the
+[post-implementation checkpoint](skills/shaka/references/post-implementation-validation.md)
+reconsiders the finished result and blocks unresolved substantive concerns. It uses
+the existing maintainer decision path rather than requiring another approval on a
+justified change.
 
 ## Trust model
 
