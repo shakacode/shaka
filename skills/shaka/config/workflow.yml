@@ -174,16 +174,30 @@ phases:
     title: Verify
     body: |-
       - Before review run the resolved `validate_local` command when present in the trusted seam,
-        otherwise its resolved `validate` command, plus focused checks. Defer full validation and
+        otherwise its resolved `validate` command, plus focused checks. Run each fixed command through
+        `shaka evidence run --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --command NAME [-- ARGS]`
+        and retain its JSON result outside the candidate checkout. The result records the complete
+        nonignored candidate tree and settings before and after execution. Defer full validation and
         the resolved `trigger_hosted_ci` command when local validation exists until the repair batch is
         complete. For an asynchronous check, wait for completion
         and inspect its final exit status and output before reporting a pass; a running session or
         partial green output is not a completed check. Recover missing completion evidence or report
         it as unknown.
       - Never defer always-on required, security, or trust checks.
-      - Record commands, results, and the tested revision. Fix failures and reverify changed heads.
+      - Record commands, results, and the tested revision. After committing, use `shaka evidence bind
+        --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --head SHA --result PATH` for each
+        earlier result. Only an exact candidate tree and unchanged material settings components
+        bind it; retain the original tested tree in the result. Rerun an affected check when binding
+        reports superseded evidence. Fix failures and reverify changed heads.
       - Commit the validated change before reviewing it. The reviewer reads `git diff BASE...HEAD`,
         so the work has to be a revision it can name and attest to; the push waits for Explain.
+        Pass `--settings-ref TRUSTED_SHA --repository OWNER/REPO` to `review run`, and also
+        `--root DIR` to `review check`. A review result captures the committed tree and settings;
+        a dirty checkout leaves it provisional because the reviewer did not see those edits.
+      - Before push and publication, use `shaka evidence verify --root DIR --ref TRUSTED_SHA
+        --repository OWNER/REPO --head SHA --validation PATH --review PATH` with the actual
+        repository validation and review JSON results. Missing or superseded results need the affected
+        operation rerun; the helper does not infer earlier execution from current settings.
       - Meaningful implementation gets an adversarial review before you push, and its findings
         fixed first, so the pushed branch costs fewer CI runs and review rounds. What makes the
         review adversarial is the context, not the model: a fresh session that did not produce the
