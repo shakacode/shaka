@@ -72,6 +72,7 @@ module Shaka
 
     def check_order!(rounds)
       check_commits!(rounds)
+      LocalReviewTriage.check!(rounds)
       fixer = rounds.select { |round| round.head == rounds.last.head }.find { |round| round.findings.any?(&:fixed?) }
       raise Error, "Round #{fixer.number} records fixes no later round reviewed; review the fix head first." if fixer
 

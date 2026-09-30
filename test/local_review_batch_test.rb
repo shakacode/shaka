@@ -195,6 +195,15 @@ class LocalReviewBatchCommentTest < Minitest::Test
     assert_includes render('rounds' => [round, claude]), 'documented nits or risks (1 nit).'
   end
 
+  # Break caught: a content file gave one shared finding two outcomes, and the triage showed only one.
+  def test_refuses_two_outcomes_for_one_finding_of_a_commit
+    fixed = NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => EARLIER)
+    claude = round(reviewer: 'anthropic/claude', report: report(HEAD, reviewer: 'anthropic/claude'), findings: [fixed])
+    error = assert_raises(Shaka::Error) { render('rounds' => [round, claude]) }
+
+    assert_includes error.message, 'Finding F1 has two outcomes'
+  end
+
   def test_refuses_one_reviewer_reading_a_commit_twice
     error = assert_raises(Shaka::Error) { render('rounds' => [clean('openai/codex'), clean('OpenAI/Codex')]) }
 

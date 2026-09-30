@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../error'
+
 module Shaka
   # Renders how the reviews of one commit were collated: which of each reviewer's own findings
   # became which finding, then what became of each finding, once.
@@ -11,6 +13,17 @@ module Shaka
       returned = fixed_before[finding.id]
       returned ? "#{line} · **returned after its fix in #{links.commit(returned)}**" : line
     end
+
+    # The rounds of one commit share one triage, so a finding they share has one outcome. A ledger
+    # always records it that way; a hand-written content file might not.
+    def self.check!(rounds)
+      rounds.chunk(&:head).each do |head, batch|
+        split = batch.flat_map(&:findings).group_by(&:id).find { |_, copies| outcomes(copies) > 1 }
+        raise Error, "Finding #{split.first} has two outcomes in the reviews of #{head[0, 7]}." if split
+      end
+    end
+
+    def self.outcomes(copies) = copies.map { |item| [item.kind, item.disposition, item.commit] }.uniq.size
 
     # The rounds of one commit. With several reviewers: each report with how its findings were
     # collated, then the commit's triage.
