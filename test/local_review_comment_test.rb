@@ -39,6 +39,18 @@ end
 class LocalReviewCommentTest < Minitest::Test
   include LocalReviewCommentFixture
 
+  def test_a_requested_model_notice_survives_the_routed_model
+    body = render('rounds' => [round(model: 'gpt-6-sol', requested_model: 'gpt-6-sll')])
+
+    assert_includes body, '**Reviewer settings:** openai/codex model `gpt-6-sll` looks like a typo of `gpt-6-sol`.'
+  end
+
+  def test_a_requested_effort_notice_uses_the_request
+    body = render('rounds' => [round(effort: 'meduim')])
+
+    assert_includes body, 'effort `meduim` looks like a typo of `medium`'
+  end
+
   def test_names_a_configured_model_that_differs_from_the_recommendation
     body = render('rounds' => [round(model: 'gpt-6-astra')])
 

@@ -27,7 +27,8 @@ module Shaka
       end
 
       def call
-        [ruby_runtime, github_cli, repository_access, repository_seam, reviewer_settings, alias_check,
+        seam = repository_seam
+        [ruby_runtime, github_cli, repository_access, seam, reviewer_settings(seam), alias_check,
          UsageSourceCheck.new(host: @host, system: @system).call]
       end
 
@@ -89,14 +90,21 @@ module Shaka
         value if value.is_a?(String) && !value.empty?
       end
 
-      def reviewer_settings
+      def reviewer_settings(seam)
+        return seam_settings unless seam[:status] == 'healthy'
+
         notices = configured_notices
         return known_settings if notices.empty?
 
         check('Reviewer settings', setting_status(notices), setting_summary(notices),
               guidance: setting_guidance(notices))
-      rescue Shaka::Error => e
+      rescue Shaka::Error, SystemCallError => e
         check('Reviewer settings', 'failed', "not checked: #{first_line(e.message)}",
+              guidance: 'Repair the repository seam, then run doctor again.')
+      end
+
+      def seam_settings
+        check('Reviewer settings', 'degraded', 'not checked: repository seam is not healthy',
               guidance: 'Repair the repository seam, then run doctor again.')
       end
 
@@ -105,9 +113,7 @@ module Shaka
         Array(config.review['local_review_agents']).flat_map { |entry| notices_for(entry) }
       end
 
-      def setting_status(notices)
-        notices.any? { |notice| notice.fetch('severity') == 'failed' } ? 'failed' : 'degraded'
-      end
+      def setting_status(notices) = notices.any? { |n| n.fetch('severity') == 'failed' } ? 'failed' : 'degraded'
 
       def known_settings
         check('Reviewer settings', 'healthy', 'no reviewer model or effort notice')
@@ -124,9 +130,8 @@ module Shaka
         ReviewerSettings.notices(identity, model: entry['model'], effort: entry['effort'])
       end
 
-      # This reads the working tree, so it answers whether this checkout's contract is usable.
-      # It deliberately does not restate the seam's commands or merge preference: doctor takes
-      # no authority from the seam, and the workflow revalidates policy from a trusted ref.
+      # This reads the working tree. Doctor takes no authority from the seam, and the workflow
+      # revalidates policy from a trusted ref.
       def repository_seam
         return missing_seam unless Configuration.contract_entry?(@root)
 

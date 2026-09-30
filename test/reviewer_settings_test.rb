@@ -96,6 +96,18 @@ class ReviewerSettingsTest < Minitest::Test
     assert blocked
   end
 
+  def test_an_unreadable_seam_still_reports_every_check
+    with_repository do |root|
+      File.chmod(0o000, File.join(root, '.agents/agent-workflow.yml'))
+      report, blocked = doctor(root:)
+
+      assert_includes report, '[DEGRADED] Reviewer settings'
+      assert_includes report, 'repository seam is not healthy'
+      assert_includes report, 'Machine alias'
+      assert blocked
+    end
+  end
+
   def test_doctor_warns_when_a_known_model_is_not_the_recommendation
     agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'model' => 'gpt-6-astra' }]
     report, blocked = doctor_for(agents)

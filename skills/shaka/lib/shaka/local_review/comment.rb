@@ -192,7 +192,7 @@ module Shaka
       end
 
       def setting_summaries
-        ReviewerSettings.notices(@reviewer, model: configured('model'), effort: attested_effort)
+        ReviewerSettings.notices(@reviewer, model: notice_model, effort: notice_effort)
                         .map { |notice| notice.fetch('summary') }
       end
 
@@ -253,6 +253,11 @@ module Shaka
         value = optional(name)
         value == 'UNKNOWN' ? nil : value
       end
+
+      # The ledger keeps the request apart from the model native usage records later.
+      def notice_model = configured('requested_model') || configured('model')
+
+      def notice_effort = configured('effort') || attested_effort
 
       def attested_effort
         effort, = @report.match(CLOSING).captures
