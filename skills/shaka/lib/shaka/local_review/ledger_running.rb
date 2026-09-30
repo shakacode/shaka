@@ -6,13 +6,12 @@ module Shaka
   # Marks the reviews still running on a commit, so its findings are recorded only after every
   # reviewer finishes and one triage sees all of them.
   module LocalReviewLedgerRunning
-    # Checks a round may start and marks its reviewer running, owned by this process.
+    # Checks a round may start and marks its reviewer running, owned by this process. Another
+    # commit waits until every review of the current one has finished.
     def start!(base:, head:, reviewer:)
       locked do
         check_next!(base:, head:, reviewer:)
-        raise Error, "#{reviewer} is already reviewing #{head}; wait for that review." if
-          live(head).any? { |entry| entry['reviewer'].to_s.casecmp?(reviewer.to_s) }
-
+        check_not_running!(head, reviewer)
         write_running(running + [{ 'head' => head, 'reviewer' => reviewer, 'pid' => Process.pid }])
       end
     end
@@ -23,6 +22,15 @@ module Shaka
     private
 
     def running = data.fetch('running', [])
+
+    # One review of a commit per reviewer at a time, and no new commit while another is being read.
+    def check_not_running!(head, reviewer)
+      elsewhere = running.find { |entry| entry['head'] != head && alive?(entry['pid']) }
+      raise Error, "Wait for #{elsewhere['reviewer']} to finish reviewing #{elsewhere['head']}." if elsewhere
+      return unless live(head).any? { |entry| entry['reviewer'].to_s.casecmp?(reviewer.to_s) }
+
+      raise Error, "#{reviewer} is already reviewing #{head}; wait for that review."
+    end
 
     def live(head) = running.select { |entry| entry['head'] == head && alive?(entry['pid']) }
 

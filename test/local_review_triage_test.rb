@@ -59,6 +59,15 @@ class LocalReviewTriageTest < Minitest::Test
     end
   end
 
+  # Break caught: a new commit's review overtook a reviewer still reading the last commit.
+  def test_a_new_commit_waits_for_reviews_of_the_last_one
+    append(EARLIER, 'openai/codex', findings: 0)
+    ledger.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
+
+    error = assert_raises(Shaka::Error) { ledger.start!(base: BASE, head: HEAD, reviewer: 'openai/codex') }
+    assert_includes error.message, 'Wait for anthropic/claude to finish reviewing'
+  end
+
   def test_an_append_clears_its_running_mark
     ledger.start!(base: BASE, head: EARLIER, reviewer: 'openai/codex')
     append(EARLIER, 'openai/codex', findings: 0)
