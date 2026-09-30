@@ -11,7 +11,7 @@ module Shaka
     module_function
 
     def read(path, head:)
-      text = File.binread(path)
+      text = File.binread(path, 100_001)
       raise Error, 'Checkpoint report exceeds 100 KB' if text.bytesize > 100_000
 
       report = JSON.parse(text)

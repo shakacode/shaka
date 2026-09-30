@@ -32,7 +32,7 @@ module Shaka
       flags.parse!(@arguments)
       return 0.tap { puts flags } if @options[:help]
 
-      raise Error, '--content-file is required' unless @options[:content_file]
+      raise Error, '--content-file is required' if action == 'publish' && !@options[:content_file]
 
       present(action == 'run' ? execute : publish, action)
     end

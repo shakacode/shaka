@@ -66,7 +66,32 @@ class PostImplementationPublicationTest < Minitest::Test
     end
   end
 
+  def test_oversized_report_read_is_bounded_and_cannot_publish
+    with_result do |result, path|
+      File.write(result.fetch('report'), 'x' * 1_000_000)
+      github, status = publish(result, path)
+      assert_equal 1, status
+      assert_empty github.bodies
+      error = bounded_read do
+        assert_raises(Shaka::Error) { Shaka::PostImplementationReport.read(result.fetch('report'), head: 'a' * 40) }
+      end
+      assert_includes error.message, 'exceeds 100 KB'
+    end
+  end
+
   private
+
+  def bounded_read
+    read = File.method(:binread)
+    File.define_singleton_method(:binread) do |file, length|
+      raise 'Unbounded report read' unless length == 100_001
+
+      read.call(file, length)
+    end
+    yield
+  ensure
+    File.define_singleton_method(:binread, read)
+  end
 
   def attach_private_usage(result, path)
     usage = File.join(File.dirname(path), 'usage.json')

@@ -49,15 +49,20 @@ module PostImplementationFixture
     RUBY
   end
 
-  def run_checkpoint(root, base, head, bin, *options)
+  def checkpoint_packet(bin)
     packet = File.join(bin, 'packet.json')
     File.write(packet, JSON.generate(problem: 'Restore the missing-check error', audience: 'Maintainers',
                                      outcome: 'Fail before submission', validation: 'Focused tests pass',
                                      repair_history: 'No repairs'))
+    ['--content-file', packet]
+  end
+
+  def run_checkpoint(root, base, head, bin, *options)
+    packet_options = options.delete(:without_packet) ? [] : checkpoint_packet(bin)
     output, error, status = Open3.capture3(
       { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(root, 'trace.json') },
       COMMAND, 'post-implementation', 'run', '--root', root, '--base', base, '--head', head,
-      '--ref', base, '--content-file', packet, *options
+      '--ref', base, *packet_options, *options
     )
     parse_result(output, error, status)
   end

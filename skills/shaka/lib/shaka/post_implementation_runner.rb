@@ -66,6 +66,8 @@ module Shaka
     end
 
     def review_prompt
+      return '' if @disabled || @options[:opt_out]
+
       marker = SecureRandom.hex(16)
       diff = capture(git_executable, '-C', root, 'diff', '--no-ext-diff', '--no-textconv',
                      "#{@options[:base]}...#{head}", '--')
@@ -85,7 +87,7 @@ module Shaka
     end
 
     def packet
-      path = @options.fetch(:content_file)
+      path = packet_path
       raise Error, 'Checkpoint packet exceeds 100 KB' if File.size(path) > 100_000
 
       data = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -95,6 +97,10 @@ module Shaka
       data.slice(*PACKET_KEYS)
     rescue JSON::ParserError => e
       raise Error, "Malformed checkpoint packet: #{e.message}"
+    end
+
+    def packet_path
+      @options[:content_file] || raise(Error, '--content-file is required unless the checkpoint is opted out')
     end
 
     def checkpoint_instructions
