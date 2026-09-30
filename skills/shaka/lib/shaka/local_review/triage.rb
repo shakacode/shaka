@@ -29,12 +29,12 @@ module Shaka
     # reported, how the findings were collated, and what became of each without opening a report.
     def self.section(rounds, links)
       fixed = {}
-      blocks = rounds.chunk(&:head).filter_map do |head, batch|
-        text = new(head, batch, links).render(fixed) unless batch.flat_map(&:findings).empty?
+      blocks = rounds.chunk(&:head).map do |head, batch|
+        text = new(head, batch, links).render(fixed)
         remember_fixes(batch, fixed)
         text
       end
-      blocks.empty? ? [] : ['## Findings', *blocks]
+      ['## Findings', *blocks]
     end
 
     # Records each fix a commit's triage made, so a later commit flags a finding that returned.
@@ -64,8 +64,8 @@ module Shaka
 
     def render(fixed_before)
       findings = @batch.flat_map(&:findings).uniq(&:id)
-      title = "**Triage of #{@links.commit(@head)}**"
-      return "#{title}: no findings." if findings.empty?
+      title = "**Triage of #{@links.commit(@head)}** · #{counts}"
+      return title if findings.empty?
 
       lines = findings.map do |finding|
         "#{self.class.line(finding, @links, fixed_before)} — reported by #{reporters(finding.id)}"
@@ -74,6 +74,14 @@ module Shaka
     end
 
     private
+
+    # Every reviewer of the commit and how many findings it reported, including none.
+    def counts
+      @batch.map do |round|
+        size = round.findings.size
+        "#{round.reviewer}: #{size} #{size == 1 ? 'finding' : 'findings'}"
+      end.join(' · ')
+    end
 
     def reporters(id)
       @batch.filter_map do |round|

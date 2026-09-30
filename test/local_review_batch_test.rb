@@ -176,14 +176,11 @@ class LocalReviewBatchCommentTest < Minitest::Test
 
   # Break caught: a commit's reviews gave no path from each reviewer's findings to one triage.
   def test_a_commit_with_several_reviewers_shows_each_mapping_then_one_triage
-    codex = round(findings: [NIT.merge('reported_as' => '1')])
-    claude = round(reviewer: 'anthropic/claude', report: report(HEAD, reviewer: 'anthropic/claude'),
-                   findings: [NIT.merge('reported_as' => '2')])
-    body = render('rounds' => [codex, claude])
+    body = render('rounds' => [round(findings: [NIT.merge('reported_as' => '1')]), claude_reporting('2')])
 
-    assert_includes body, '**Collated as:** `#1` → `F1`'
-    assert_includes body, '**Collated as:** `#2` → `F1`'
-    assert_includes body, "## Findings\n\n**Triage of `aaaaaaa`**\n\n- `F1` nit: Missing test — documented nit — " \
+    %w[1 2].each { |number| assert_includes body, "**Collated as:** `##{number}` → `F1`" }
+    assert_includes body, "## Findings\n\n**Triage of `aaaaaaa`** · openai/codex: 1 finding · " \
+                          "anthropic/claude: 1 finding\n\n- `F1` nit: Missing test — documented nit — " \
                           'reported by openai/codex #1, anthropic/claude #2'
     assert_operator body.index('## Findings'), :<, body.index('<details>')
     assert_equal 1, body.scan('- `F1` nit').size
@@ -205,13 +202,15 @@ class LocalReviewBatchCommentTest < Minitest::Test
     assert_includes error.message, 'Finding F1 has two outcomes'
   end
 
-  # Break caught: a lone reviewer's findings appeared only inside its collapsed report.
-  def test_lists_every_commit_with_findings_before_the_reports
-    body = render('rounds' => [round(EARLIER, report: report(EARLIER)), clean('openai/codex')])
+  # Break caught: a lone reviewer's findings appeared only inside its collapsed report, and a clean
+  # commit did not show which reviewers read it.
+  def test_lists_every_commit_before_the_reports
+    rounds = [round(EARLIER, report: report(EARLIER)), clean('openai/codex'), clean('anthropic/claude')]
+    body = render('rounds' => rounds)
     findings = body[body.index('## Findings')...body.index('<details>')]
 
-    assert_includes findings, '**Triage of `bbbbbbb`**'
-    refute_includes findings, 'aaaaaaa'
+    assert_includes findings, "**Triage of `bbbbbbb`** · openai/codex: 1 finding\n\n- `F1` nit"
+    assert_includes findings, '**Triage of `aaaaaaa`** · openai/codex: 0 findings · anthropic/claude: 0 findings'
   end
 
   def test_refuses_one_reviewer_reading_a_commit_twice
@@ -235,6 +234,11 @@ class LocalReviewBatchCommentTest < Minitest::Test
   end
 
   private
+
+  def claude_reporting(number)
+    round(reviewer: 'anthropic/claude', report: report(HEAD, reviewer: 'anthropic/claude'),
+          findings: [NIT.merge('reported_as' => number)])
+  end
 
   def clean(reviewer, head = HEAD)
     round(head, reviewer:, report: report(head, body: "no findings\n", reviewer:, findings: 0), findings: [])
