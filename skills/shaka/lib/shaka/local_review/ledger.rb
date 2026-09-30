@@ -70,8 +70,10 @@ module Shaka
     private
 
     def check_cap!(max_rounds)
-      raise RoundCap, "Local review round cap (#{max_rounds}) reached; reassess the task before pushing." if
-        rounds.size >= max_rounds
+      return if rounds.size < max_rounds
+
+      write(data.merge('local_max_rounds' => max_rounds))
+      raise RoundCap, "Local review round cap (#{max_rounds}) reached; reassess the task before pushing."
     end
 
     def data

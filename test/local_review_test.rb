@@ -1202,50 +1202,6 @@ class LocalReviewLoopTest < Minitest::Test
     end
   end
 
-  def test_refuses_a_sixth_round_without_launching_the_reviewer
-    in_loop do |head|
-      5.times do |index|
-        loop_round(head, findings: 0)
-        commit!(@root, "fix #{index}", 'Fix another defect')
-        head = git!(@root, 'rev-parse', 'HEAD').strip
-      end
-      FileUtils.rm(@trace)
-      output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger)
-      assert_cap_refusal(output, status, 5)
-    end
-  end
-
-  def test_trusted_cap_wins_over_candidate_settings_and_is_saved_for_publication
-    in_loop do |_head|
-      trusted = trusted_cap_commit
-      loop_round(trusted, findings: 0, criteria_ref: trusted)
-      File.write(File.join(@root, '.agents/agent-workflow.yml'), "review:\n  local_max_rounds: 99\n")
-      head = fix_commit
-      FileUtils.rm(@trace)
-      output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger, criteria_ref: trusted)
-      assert_cap_refusal(output, status, 1)
-    end
-  end
-
-  def trusted_cap_commit
-    path = File.join(@root, '.agents/agent-workflow.yml')
-    FileUtils.mkdir_p(File.dirname(path))
-    File.write(path, "review:\n  local_max_rounds: 1\n")
-    git!(@root, 'add', '.')
-    git!(@root, 'commit', '--quiet', '-m', 'Set trusted round cap')
-    git!(@root, 'rev-parse', 'HEAD').strip
-  end
-
-  def assert_cap_refusal(output, status, cap)
-    result = JSON.parse(output)
-    refute_predicate status, :success?
-    assert_equal 'round_cap', result.fetch('failure_stage')
-    refute result.fetch('attempted')
-    assert_includes result.fetch('reason'), "Local review round cap (#{cap}) reached"
-    refute_path_exists @trace
-    assert_equal cap, JSON.parse(File.read(@ledger)).fetch('local_max_rounds')
-  end
-
   def test_refuses_any_head_an_earlier_round_reviewed
     in_loop do |head|
       loop_round(head, findings: 0)
@@ -1292,6 +1248,72 @@ class LocalReviewLoopTest < Minitest::Test
       @ledger = File.join(@root, 'ledger.json')
       assert_refused(head, 'outside the candidate checkout')
     end
+  end
+end
+
+class LocalReviewCapRunnerTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  include LocalReviewLoopSteps
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  def test_refuses_a_sixth_round_without_launching_the_reviewer
+    in_loop do |head|
+      5.times do |index|
+        loop_round(head, findings: 0)
+        commit!(@root, "fix #{index}", 'Fix another defect')
+        head = git!(@root, 'rev-parse', 'HEAD').strip
+      end
+      FileUtils.rm(@trace)
+      output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger)
+      assert_cap_refusal(output, status, 5)
+    end
+  end
+
+  def test_trusted_cap_wins_over_candidate_settings_and_is_saved_for_publication
+    in_loop do |_head|
+      trusted = trusted_cap_commit
+      loop_round(trusted, findings: 0, criteria_ref: trusted)
+      File.write(File.join(@root, '.agents/agent-workflow.yml'), "review:\n  local_max_rounds: 99\n")
+      head = fix_commit
+      FileUtils.rm(@trace)
+      output, _error, status = run_review(@root, @base, head, @bin, ledger: @ledger, criteria_ref: trusted)
+      assert_cap_refusal(output, status, 1)
+    end
+  end
+
+  def test_saves_a_lowered_trusted_cap_even_when_the_round_is_refused
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record([{ 'id' => 'F1', 'summary' => 'Wrong exit code', 'class' => 'defect',
+                'disposition' => 'documented' }])
+      trusted = trusted_cap_commit
+      FileUtils.rm(@trace)
+      output, _error, status = run_review(@root, @base, trusted, @bin, ledger: @ledger, criteria_ref: trusted)
+      assert_cap_refusal(output, status, 1)
+    end
+  end
+
+  def trusted_cap_commit
+    path = File.join(@root, '.agents/agent-workflow.yml')
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, "review:\n  local_max_rounds: 1\n")
+    git!(@root, 'add', '.')
+    git!(@root, 'commit', '--quiet', '-m', 'Set trusted round cap')
+    git!(@root, 'rev-parse', 'HEAD').strip
+  end
+
+  def assert_cap_refusal(output, status, cap)
+    result = JSON.parse(output)
+    refute_predicate status, :success?
+    assert_equal 'round_cap', result.fetch('failure_stage')
+    refute result.fetch('attempted')
+    assert_includes result.fetch('reason'), "Local review round cap (#{cap}) reached"
+    refute_path_exists @trace
+    assert_equal cap, JSON.parse(File.read(@ledger)).fetch('local_max_rounds')
   end
 end
 
@@ -1518,4 +1540,5 @@ LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
 LocalReviewAttestationCaseTest.include(LocalReviewFixture)
 LocalReviewLoopTest.include(LocalReviewFixture)
+LocalReviewCapRunnerTest.include(LocalReviewFixture)
 LocalReviewDirtyWorktreeTest.include(LocalReviewFixture)

@@ -236,8 +236,8 @@ phases:
         left for the maintainer. The next round's prompt lists earlier findings and the commits since, without
         your notes on them.
       - The trusted `review.local_max_rounds` bounds the ledger (default 5). If the last round at
-        the cap leaves an unfixed defect, stop before pushing and tell the user which defects
-        remain. Do not push unless the user chooses to. Reassess the task or split it with the
+        the cap leaves an unfixed defect or blocks review of a fix, stop before pushing and tell
+        the user which defects remain. Do not push unless the user chooses to. Reassess the task or split it with the
         maintainer; an authorized push publishes the visible Loop bound reached section and
         its ready task-reassessment prompt.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer

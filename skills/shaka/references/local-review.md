@@ -248,8 +248,9 @@ It leaves out each `note`, so the reviewer does not anchor on the author's reaso
 The trusted `review.local_max_rounds` (default 5) caps completed rounds in this ledger.
 `review run` refuses the next round with `failure_stage: round_cap` before launching a reviewer.
 The ledger records the cap used, and publication uses that value; older ledgers default to 5.
-If the cap leaves an unfixed defect, stop before pushing and tell the user. Push only if they
-choose to. That comment shows a visible **Loop bound reached** section with unresolved defects,
+If the cap leaves an unfixed defect or blocks review of a fix, stop before pushing and tell the user. Push only if they
+choose to. A last round that records a fix still cannot publish: no later round reviewed it.
+For unresolved defects, the comment shows a visible **Loop bound reached** section with unresolved defects,
 the rounds they appeared in, returned defects, and a ready task-reassessment prompt.
 
 Otherwise, a round whose findings are all documented ends the loop. Push, open or adopt the
