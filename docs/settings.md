@@ -254,8 +254,7 @@ published review names it in its summary table instead of the fallback notice.
 
 **Optional. Default: 1.** How many reviewers from `local_review_agents` read each
 commit before its findings are fixed. With 2 or more, the reviewers run at the same
-time, and their findings are fixed together in one commit before they all review the
-next one.
+time, and their findings are fixed together before they all review the next commit.
 
 Claude implements, and Codex and a fresh Claude session both review:
 
@@ -271,11 +270,11 @@ review:
       model_family: codex
 ```
 
-The first reviewer is always from a provider that did not write the change, here
-Codex. The others follow the list order, so the second is Claude in a fresh session,
-without the implementation conversation. If Codex had written the change, the order
-would be Claude, then Codex. A reviewer whose CLI is missing or signed out is skipped,
-and fewer reviewers run.
+The first reviewer comes from a provider that did not write the change whenever one
+can run, here Codex. The others follow the list order, so the second is Claude in a
+fresh session, without the implementation conversation. If Codex had written the
+change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
+missing or signed out, it skips that reviewer, and fewer run.
 
 Each extra reviewer adds its own review cost to every commit it reads. The PR's
 review comment shows every reviewer's rounds, and one review of the final commit is

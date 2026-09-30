@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require_relative 'reviewer_command_fixture'
 require 'shaka/reviewer_selection'
+require 'shaka/seam/field_classifier'
 
 # Running several local reviewers on one head, so every finding lands in one repair batch.
 class ReviewerCountTest < Minitest::Test
@@ -87,6 +88,16 @@ class ReviewerCountTest < Minitest::Test
       refute_predicate status, :success?
       assert_includes error, 'review.local_review_count must be a whole number of at least 1'
     end
+  end
+
+  # Break caught: upgrading a seam blocked on the count as an unknown review key.
+  def test_migration_retains_the_count
+    data = { 'version' => 1, 'merge' => { 'preference' => 'ask' },
+             'review' => { 'required' => 'none', 'local_review_count' => 2 } }
+    result = Shaka::Seam::FieldClassifier.new(data).call
+
+    assert_empty result.blocking
+    assert_equal 2, result.established.dig('review', 'local_review_count')
   end
 
   private
