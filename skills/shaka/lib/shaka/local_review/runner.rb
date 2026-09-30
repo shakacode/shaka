@@ -116,6 +116,7 @@ module Shaka
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
       @ledger.start!(base: @options[:base], head:, reviewer: @options[:reviewer])
+      @started = true
       # Another reviewer of the last batch's commit reads history the batch's first round checked.
       check_history! if @ledger.last_head && @ledger.last_head != head
       @snapshot = @ledger.snapshot(head)
@@ -148,7 +149,7 @@ module Shaka
 
     # A run that ended without appending its round stops holding up the batch's record.
     def finish_ledger
-      @ledger.finish!(head:, reviewer: @options[:reviewer]) if @ledger && !@appended
+      @ledger.finish! if @started && !@appended
     rescue Shaka::Error, SystemCallError
       nil
     end

@@ -71,7 +71,7 @@ module Shaka
           snapshot && snapshot(round['head']) != snapshot
 
         write(data.merge('base' => base, 'rounds' => rounds + [round]))
-        clear_running(round['head'], round['reviewer'])
+        clear_running
       end
     end
 

@@ -1270,31 +1270,6 @@ class LocalReviewLoopTest < Minitest::Test
     end
   end
 
-  # Break caught: a second reviewer of a commit failed the fix-history check, saw the first
-  # reviewer's findings, or could not record its own round.
-  def test_another_reviewer_joins_the_last_commit
-    in_loop do |head|
-      loop_round(head, findings: 1)
-      refute_includes claude_round(head), 'PRIOR ROUND DATA'
-      assert_ledger_rounds([head, head])
-      refute JSON.parse(File.read(@ledger)).key?('running')
-      assert_one_triage
-    end
-  end
-
-  # Break caught: a reviewer joining a later commit was shown the commits since that same commit.
-  def test_a_reviewer_joining_a_later_commit_reads_from_the_commit_before
-    in_loop do |head|
-      loop_round(head, findings: 1)
-      record([NIT_FINDING])
-      later = fix_commit
-      loop_round(later, findings: 1)
-      prompt = claude_round(later)
-      assert_includes prompt, '[F1] nit: Rename run_all'
-      assert_includes prompt, "Commits since #{head}"
-    end
-  end
-
   # Break caught: the runner appended a round whose start checks read a ledger changed during the run.
   def test_refuses_a_round_whose_ledger_changed_while_it_ran
     in_loop do |head|
@@ -1322,6 +1297,52 @@ class LocalReviewLoopTest < Minitest::Test
     in_loop do |head|
       @ledger = File.join(@root, 'ledger.json')
       assert_refused(head, 'outside the candidate checkout')
+    end
+  end
+end
+
+# Several reviewers of one commit share the loop's ledger.
+class LocalReviewLoopBatchTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+  NIT_FINDING = LocalReviewLoopTest::NIT_FINDING
+
+  include LocalReviewLoopSteps
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  # Break caught: a second reviewer of a commit failed the fix-history check, saw the first
+  # reviewer's findings, or could not record its own round.
+  def test_another_reviewer_joins_the_last_commit
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      refute_includes claude_round(head), 'PRIOR ROUND DATA'
+      assert_ledger_rounds([head, head])
+      refute JSON.parse(File.read(@ledger)).key?('running')
+      assert_one_triage
+    end
+  end
+
+  # Break caught: a reviewer joining a later commit was shown the commits since that same commit.
+  def test_a_reviewer_joining_a_later_commit_reads_from_the_commit_before
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record([NIT_FINDING])
+      later = fix_commit
+      loop_round(later, findings: 1)
+      prompt = claude_round(later)
+      assert_includes prompt, '[F1] nit: Rename run_all'
+      assert_includes prompt, "Commits since #{head}"
+    end
+  end
+
+  # Break caught: a reviewer that failed left its running mark, so the batch could never be recorded.
+  def test_a_failed_review_clears_its_running_mark
+    in_loop do |head|
+      write_executable(@bin, 'codex', "#!/bin/sh\nexit 1\n")
+      refute_predicate run_review(@root, @base, head, @bin, ledger: @ledger).last, :success?
+      refute JSON.parse(File.read(@ledger)).key?('running')
     end
   end
 end
@@ -1549,4 +1570,5 @@ LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
 LocalReviewAttestationCaseTest.include(LocalReviewFixture)
 LocalReviewLoopTest.include(LocalReviewFixture)
+LocalReviewLoopBatchTest.include(LocalReviewFixture)
 LocalReviewDirtyWorktreeTest.include(LocalReviewFixture)

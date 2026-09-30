@@ -42,12 +42,21 @@ module Shaka
       round
     end
 
-    # With one round, a finding need not name its reviewer.
+    # With one round, a finding need not name its reviewer; any name it gives must be in the batch.
     def reported?(finding, round)
       named = finding['reviewers']
-      raise Error, "Finding #{finding['id']} must name the reviewers that reported it." if named.nil? && !batch.one?
+      return true if named.nil? && batch.one?
 
-      named.nil? || Array(named).any? { |reviewer| same_reviewer?(round, reviewer) }
+      check_reviewers!(finding['id'], named)
+      named.any? { |reviewer| same_reviewer?(round, reviewer) }
+    end
+
+    def check_reviewers!(id, named)
+      raise Error, "Finding #{id} must name the reviewers that reported it." unless
+        named.is_a?(Array) && !named.empty?
+
+      stray = named.reject { |reviewer| batch.any? { |index| same_reviewer?(rounds[index], reviewer) } }
+      raise Error, "Finding #{id} names #{stray.join(', ')}, which did not review #{last_head}." if stray.any?
     end
 
     # Usage for one reviewer's round: under `usage` by reviewer, or at the top level for one round.

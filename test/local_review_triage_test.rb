@@ -23,7 +23,7 @@ class LocalReviewTriageTest < Minitest::Test
     ledger.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
 
     assert_includes assert_raises(Shaka::Error) { record([]) }.message, 'Wait for anthropic/claude'
-    ledger.finish!(head: EARLIER, reviewer: 'anthropic/claude')
+    ledger.finish!
     assert_equal [1], record([])
   end
 
@@ -37,6 +37,26 @@ class LocalReviewTriageTest < Minitest::Test
     File.write(@path, JSON.generate(data))
 
     assert_equal [1], record([])
+  end
+
+  # Break caught: a refused second run of one reviewer cleared the live run's mark.
+  def test_a_second_run_of_one_reviewer_on_a_commit_is_refused_and_leaves_the_mark
+    append(EARLIER, 'openai/codex', findings: 0)
+    ledger.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
+
+    error = assert_raises(Shaka::Error) { ledger.start!(base: BASE, head: EARLIER, reviewer: 'Anthropic/Claude') }
+    assert_includes error.message, 'already reviewing'
+    assert_includes assert_raises(Shaka::Error) { record([]) }.message, 'Wait for anthropic/claude'
+  end
+
+  # Break caught: a misspelled or empty reviewer list dropped its finding without an error.
+  def test_every_finding_names_reviewers_of_the_batch
+    append(EARLIER, 'openai/codex', findings: 1)
+    append(EARLIER, 'anthropic/claude', findings: 0)
+
+    { ['openai/codx'] => 'names openai/codx', [] => 'must name the reviewers' }.each do |named, message|
+      assert_includes assert_raises(Shaka::Error) { record([NIT.merge('reviewers' => named)]) }.message, message
+    end
   end
 
   def test_an_append_clears_its_running_mark
