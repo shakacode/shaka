@@ -8,6 +8,7 @@ require_relative 'local_review/comment'
 require_relative 'local_review/ledger'
 require_relative 'local_review/runner'
 require_relative 'local_review/report_check'
+require_relative 'evidence/review'
 
 module Shaka
   # Entry point for process-verified reviews and explicitly weaker host reports.
@@ -34,7 +35,7 @@ module Shaka
 
       parser = send(:"#{action}_parser")
       parser.parse!(@arguments)
-      return show_help(parser) if @options[:help]
+      return 0.tap { puts parser } if @options[:help]
       return send(action, parser) if %w[record publish].include?(action)
 
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty?
@@ -52,7 +53,8 @@ module Shaka
     def run_parser
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review run --root DIR --base SHA --head SHA --reviewer ID'
-        %w[root base head reviewer effort model criteria-ref description-file timeout-seconds ledger].each do |key|
+        %w[root base head reviewer effort model criteria-ref settings-ref repository description-file timeout-seconds
+           ledger].each do |key|
           flags.on("--#{key} VALUE") { |value| @options[key.tr('-', '_').to_sym] = value }
         end
         flags.on('-h', '--help') { @options[:help] = true }
@@ -60,12 +62,12 @@ module Shaka
     end
 
     def dispatch(action)
-      action == 'run' ? LocalReviewRunner.new(@options).run : LocalReviewReportCheck.new(@options).run
-    end
-
-    def show_help(parser)
-      puts parser
-      0
+      original_path = ENV.fetch('PATH', nil)
+      evidence = Evidence::Review.start(@options, action:)
+      result = action == 'run' ? LocalReviewRunner.new(@options).run : LocalReviewReportCheck.new(@options).run
+      evidence ? evidence.finish(result) : result
+    ensure
+      ENV['PATH'] = original_path
     end
 
     # `merge` decides whether the attested commit covers the PR head, so publishing does not.
@@ -130,10 +132,9 @@ module Shaka
     def check_parser
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review check --head SHA (--reviewer ID --report PATH | --not-run-reason TEXT)'
-        flags.on('--head SHA') { |value| @options[:head] = value }
-        flags.on('--reviewer ID') { |value| @options[:reviewer] = value }
-        flags.on('--report PATH') { |value| @options[:report] = value }
-        flags.on('--not-run-reason TEXT') { |value| @options[:not_run_reason] = value }
+        %w[head reviewer report not-run-reason root settings-ref repository].each do |key|
+          flags.on("--#{key} VALUE") { |value| @options[key.tr('-', '_').to_sym] = value }
+        end
         flags.on('-h', '--help') { @options[:help] = true }
       end
     end

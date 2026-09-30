@@ -8,11 +8,14 @@ require_relative 'cost_estimate'
 require_relative 'cursor_usage'
 require_relative 'opencode_usage'
 require_relative 'pi_usage'
+require_relative 'json_report'
 require_relative 'usage_records'
 require_relative 'usage_errors'
 require_relative 'usage_table'
 require_relative 'usage_turns'
 require_relative 'usage_identity'
+require_relative 'since_time'
+require_relative 'options'
 
 module Shaka
   # Read-only reporting of per-response usage records from a supported host.
@@ -20,6 +23,9 @@ module Shaka
     include UsageTable
     include UsageTurns
     include UsageIdentity
+    include UsageJsonReport
+    include UsageSinceTime
+    extend UsageOptions
 
     SETTING_LABELS = ['Provider', 'Configured model', 'Routed model', 'Effort'].freeze
     METRIC_FIELDS = [
@@ -37,7 +43,7 @@ module Shaka
                      'pi' => 'PI_CODING_AGENT' }.freeze
 
     def self.run(arguments)
-      options = { files: [], turns: [], host: detected_host }
+      options = { files: [], turns: [], host: detected_host, format: 'markdown' }
       parser(options).parse!(arguments)
       puts parser(options) if options[:help]
       return 0 if options[:help]
@@ -54,6 +60,7 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka usage --commit SHA[,SHA] --contribution NAME [options]'
         source_options(flags, options)
+        UsageJsonReport.format_option(flags, options)
         flags.on('--commit SHA', 'Affected full commit SHAs, comma separated') { |v| options[:commit] = v }
         flags.on('--contribution NAME', 'Contribution category (see guide)') { |v| options[:contribution] = v }
         flags.on('--rate-root DIR', 'Implementation rate-card checkout') { |value| options[:rate_root] = value }
@@ -61,26 +68,9 @@ module Shaka
       end
     end
 
-    def self.source_options(flags, options)
-      flags.on('--host NAME', READERS.keys, 'codex, claude-code, cursor, opencode, or pi') { |v| options[:host] = v }
-      flags.on('--file PATH', 'Native transcript or export file; repeat for contributors/resumes') do |v|
-        options[:files] << v
-      end
-      flags.on('--session ID', 'OpenCode session; needs --host opencode') { |v| options[:files] << "session:#{v}" }
-      flags.on('--all-turns', 'Only for sources dedicated to this task') { options[:all_turns] = true }
-      flags.on('--turn ID', 'Select a native turn; repeat for a shared interval') { |v| options[:turns] << v }
-    end
-
     def self.detected_host
       found = HOST_CONTEXT.select { |host, variable| host == 'pi' ? ENV[variable] == 'true' : ENV.key?(variable) }.keys
       found.size > 1 ? nil : found.first || 'codex'
-    end
-
-    def self.valid_mapping?(options)
-      commits = options[:commit].to_s.split(',')
-      options[:host] && !(options[:all_turns] && options[:turns].any?) &&
-        !commits.empty? && commits.all? { |commit| commit.match?(/\A[0-9a-f]{40}\z/) } &&
-        %w[implementation review integration shared-planning].include?(options[:contribution])
     end
 
     def initialize(options)
@@ -88,8 +78,9 @@ module Shaka
       reader = READERS.fetch(options[:host])
       @inferred = options[:files].empty?
       @options[:files] = reader.discover if @inferred
-      @source = reader.new(@options[:files], @options[:turns], all_turns: @options[:all_turns])
-      @responses = @source.responses.values
+      all_turns = @options[:all_turns] || @options.key?(:since_time)
+      @source = reader.new(@options[:files], @options[:turns], all_turns:)
+      load_responses
     end
 
     def report = "#{UsageRecords.begin_mark(record_identity)}\n#{report_body}#{UsageRecords::END_MARK}\n"
@@ -119,12 +110,21 @@ module Shaka
 
     private
 
+    def load_responses
+      @selected_responses = @source.responses.dup
+      select_since_time if @options[:since_time]
+      @responses = @selected_responses.values
+    end
+
     def selected_rate_card
       RateCard.select(contribution: @options[:contribution], explicit_root: @options[:rate_root])
     end
 
     def turn_scope
       return 'all turns in selected sources' if @options[:all_turns]
+      if @options[:since_time]
+        return "responses at or after #{@options[:since_time]} (whole-second sources include the cutoff second)"
+      end
 
       @options[:turns].empty? ? @source.class::LATEST_SCOPE : 'explicitly selected turns'
     end
@@ -138,7 +138,8 @@ module Shaka
     end
 
     def interval
-      timestamps.empty? ? 'UNKNOWN' : timestamps.minmax.join(' through ')
+      from, to = interval_fields.values_at('from', 'to')
+      from == 'UNKNOWN' ? 'UNKNOWN' : "#{from} through #{to}"
     end
 
     def safe(value)

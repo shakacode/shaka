@@ -6,6 +6,7 @@ require 'json'
 require 'optparse'
 require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/attention'
+require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
 require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
@@ -14,6 +15,7 @@ require_relative '../lib/shaka/claim'
 require_relative '../lib/shaka/decision_labels'
 require_relative '../lib/shaka/publication/deployment_link'
 require_relative '../lib/shaka/doctor'
+require_relative '../lib/shaka/evidence/command'
 require_relative '../lib/shaka/enforcement'
 require_relative '../lib/shaka/merge'
 require_relative '../lib/shaka/merge_limits'
@@ -39,6 +41,11 @@ require_relative '../lib/shaka/workflow_version'
 if ARGV.first == 'usage'
   ARGV.shift
   exit Shaka::Usage.run(ARGV)
+end
+
+if ARGV.first == 'pr' && ARGV[1] == 'watch'
+  ARGV.shift(2)
+  exit Shaka::PrWatch::Command.run(ARGV)
 end
 
 if ARGV.first == 'issue-create'
@@ -94,6 +101,11 @@ end
 if ARGV.first == 'doctor'
   ARGV.shift
   exit Shaka::Doctor.run(ARGV)
+end
+
+if ARGV.first == 'evidence'
+  ARGV.shift
+  exit Shaka::Evidence::Command.run(ARGV)
 end
 
 if ARGV.first == 'claim'
@@ -271,12 +283,11 @@ begin
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
                described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
-               Shaka::UsageDetails.require_rendered(described['details'])
                usage_records = nil
                carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 rendered = Shaka::Publication.description(carried, workflow_version)
+                 rendered = Shaka::Publication.description(carried, workflow_version, pull)
                  Shaka::DecisionLabels.guard(github, carried, pull['body'])
                  rendered
                end

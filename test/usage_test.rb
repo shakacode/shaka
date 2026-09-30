@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'json'
+require 'time'
 require 'shaka/publication/publication'
 
 module UsageFixture
@@ -180,6 +181,134 @@ class UsageTest < Minitest::Test
     report = run_report([context('current')], raw_tail: replacement)
     assert_metric report, 'Configured model', 'UNKNOWN'
     assert_metric report, 'Input', 50
+  end
+end
+
+class UsageSinceTimeTest < Minitest::Test
+  include UsageFixture
+
+  START = Time.iso8601('2026-09-14T12:00:00Z')
+
+  def test_counts_only_later_responses_in_a_shared_session
+    records = [context('old'), timed_usage('previous-task', 'old', 900, START - 1),
+               context('current'), timed_usage('current-task', 'current', 200, START + 1)]
+
+    report = run_report(records, '--since-time', START.iso8601)
+
+    assert_metric report, 'Input', 200
+    assert_includes report, '1 responses'
+    assert_includes report, "responses at or after #{START.iso8601} (whole-second sources include the cutoff second)"
+    assert_selected_identity(report)
+  end
+
+  def test_keeps_a_whole_second_response_in_the_cutoff_second
+    records = [context('current'), timed_usage('earlier', 'current', 900, START - 1),
+               timed_usage('current', 'current', 200, START)]
+
+    report = run_report(records, '--since-time', (START + 0.5).iso8601(3))
+
+    assert_metric report, 'Input', 200
+    assert_selected_identity(report)
+  end
+
+  def test_records_offset_timestamp_interval_in_utc
+    record = usage('offset', 'current', 200)
+    record[:timestamp] = '2026-09-14T13:00:01+01:00'
+
+    report = run_report([context('current'), record], '--since-time', START.iso8601)
+
+    assert_includes report, '2026-09-14T12:00:01Z through 2026-09-14T12:00:01Z'
+    identity = JSON.parse(report.match(/<!-- shaka:usage (\{[^\n]*\}) -->/)[1])
+    assert_equal '2026-09-14T12:00:01Z', identity.fetch('from')
+    assert_equal '2026-09-14T12:00:01Z', identity.fetch('to')
+  end
+
+  def test_orders_mixed_precision_interval_in_report_and_identity
+    whole = usage('whole', 'current', 100)
+    whole[:timestamp] = '2026-09-14T12:00:01Z'
+    precise = usage('precise', 'current', 200)
+    precise[:timestamp] = '2026-09-14T12:00:01.500Z'
+
+    report = run_report([context('current'), whole, precise], '--since-time', START.iso8601)
+
+    assert_metric report, 'Input', 300
+    assert_includes report, '2026-09-14T12:00:01Z through 2026-09-14T12:00:01.500Z'
+    identity = JSON.parse(report.match(/<!-- shaka:usage (\{[^\n]*\}) -->/)[1])
+    assert_equal ['2026-09-14T12:00:01Z', '2026-09-14T12:00:01.500Z'], identity.values_at('from', 'to')
+  end
+
+  def test_rejects_an_invalid_start_time
+    _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', COMMIT,
+                                            '--contribution', 'implementation', '--since-time', 'bad')
+
+    refute_predicate status, :success?
+    assert_includes error, 'invalid options'
+  end
+
+  def test_rejects_start_time_combined_with_other_turn_selection
+    [['--all-turns'], ['--turn', 'current']].each do |selection|
+      _output, error, status = Open3.capture3(COMMAND, 'usage', '--commit', COMMIT,
+                                              '--contribution', 'implementation', '--since-time', START.iso8601,
+                                              *selection)
+      refute_predicate status, :success?
+      assert_includes error, 'invalid options'
+    end
+  end
+
+  def test_refuses_an_unstamped_response_instead_of_reporting_zero
+    _output, error, status = unstamped_report
+
+    refute_predicate status, :success?
+    assert_includes error, '--since-time needs a zoned timestamp'
+  end
+
+  def test_refuses_a_start_time_after_every_response
+    record = timed_usage('earlier', 'current', 100, START - 1)
+    output, error, status = run_raw_report([context('current'), record], START.iso8601)
+
+    refute_predicate status, :success?
+    assert_equal '', output
+    assert_includes error, '--since-time selected no responses'
+  end
+
+  def test_refuses_a_response_timestamp_without_a_timezone
+    Dir.mktmpdir do |directory|
+      record = usage('unplaced', 'current', 100)
+      record[:timestamp] = '2026-09-14T12:00:01'
+      file = write_records(directory, [context('current'), record], {})
+      _output, error, status = Open3.capture3(host_environment(directory), COMMAND, 'usage', '--file', file,
+                                              '--commit', COMMIT, '--contribution', 'implementation',
+                                              '--since-time', START.iso8601)
+
+      refute_predicate status, :success?
+      assert_includes error, '--since-time needs a zoned timestamp'
+    end
+  end
+
+  private
+
+  def assert_selected_identity(report)
+    identity = JSON.parse(report.match(/<!-- shaka:usage (\{[^\n]*\}) -->/)[1])
+    assert_equal 1, identity.fetch('responses').size
+    assert identity.fetch('complete')
+  end
+
+  def timed_usage(id, turn, input, at)
+    usage(id, turn, input).tap { |response| response[:timestamp] = at.iso8601 }
+  end
+
+  def unstamped_report
+    record = usage('unplaced', 'current', 100)
+    record.delete(:timestamp)
+    run_raw_report([context('current'), record], START.iso8601)
+  end
+
+  def run_raw_report(records, start)
+    Dir.mktmpdir do |directory|
+      file = write_records(directory, records, {})
+      Open3.capture3(host_environment(directory), COMMAND, 'usage', '--file', file,
+                     '--commit', COMMIT, '--contribution', 'implementation', '--since-time', start)
+    end
   end
 end
 
@@ -401,13 +530,14 @@ class UsageIdentityTest < Minitest::Test
     assert_equal [1, false], [fields['responses'].size, fields['complete']]
   end
 
-  # The description gate must accept whatever the renderer prints, including an UNKNOWN count.
-  def test_description_accepts_the_rendered_report
+  # A pasted helper report is still a details item. The description takes the usage object.
+  def test_description_refuses_a_pasted_usage_report
     [[context('current'), usage('r1', 'current', 100)], [context('current')]].each do |records|
       content = { 'identity' => { 'agent' => 'Codex' }, 'summary' => 'A summary.', 'deployment' => 'none',
                   'table' => { 'columns' => %w[Check], 'rows' => [%w[pass]] }, 'provenance' => provenance,
                   'details' => [{ 'summary' => 'Usage and cost', 'body' => run_report(records) }] }
-      assert_includes Shaka::Publication.description(content), '<!-- shaka:usage:end -->'
+      error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
+      assert_includes error.message, 'usage object'
     end
   end
 

@@ -2,6 +2,8 @@
 
 require 'digest'
 require 'json'
+require 'time'
+require_relative 'options'
 
 module Shaka
   # Hidden identity that lets a later host tell this report from a refreshed snapshot.
@@ -11,7 +13,11 @@ module Shaka
     def timestamps
       @responses.filter_map do |record|
         stamp = record['timestamp']
-        stamp if stamp.is_a?(String) && stamp.match?(/\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z\z/)
+        next unless stamp.is_a?(String) && stamp.match?(UsageOptions::ISO_TIME)
+
+        Time.iso8601(stamp).utc.iso8601(stamp[/\.(\d+)/, 1]&.size || 0)
+      rescue ArgumentError
+        nil
       end
     end
 
@@ -24,24 +30,24 @@ module Shaka
         'commits' => @options[:commit].split(','), 'complete' => complete? }.merge(interval_fields)
     end
 
-    def complete? = measured_responses.size == @source.responses.size
+    def complete? = measured_responses.size == @selected_responses.size
 
     # A Claude print result is keyed by its session, which resumed runs share, so its identity
     # also covers its counters: separate runs differ, while a copy or re-read of one run matches.
     def response_digest(id)
-      record = @source.responses[id]
+      record = @selected_responses[id]
       digest(record['aggregate'] ? "#{id}\0#{JSON.generate(record['usage'])}" : id)
     end
 
     def interval_fields
-      from, to = timestamps.minmax
+      from, to = timestamps.minmax_by { |stamp| Time.iso8601(stamp) }
       { 'from' => from || 'UNKNOWN', 'to' => to || 'UNKNOWN' }
     end
 
     # A response without a readable token counter cannot stand in for one an earlier report measured.
     def measured_responses
       fields = Usage::METRIC_FIELDS.map(&:last)
-      @source.responses.filter_map do |id, record|
+      @selected_responses.filter_map do |id, record|
         usage = record['usage']
         id if usage.is_a?(Hash) && usage.values_at(*fields).any? { |value| value.is_a?(Integer) && value >= 0 }
       end

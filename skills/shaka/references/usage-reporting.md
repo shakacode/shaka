@@ -3,11 +3,44 @@
 Report available usage for each task's commits and contributions:
 
 ```text
-shaka usage --commit FULL_COMMIT_SHA --contribution implementation
+shaka usage --commit FULL_COMMIT_SHA --contribution implementation --format json
 ```
 
-Include the helper's output in the PR, or in the final response when there is no
-PR. **Native** figures come from the host's records. **Estimated** figures apply a
+`--format json` prints `note`, `columns`, and `record`. Markdown stays the default.
+Put each report's `record`, which includes its `columns` and its `note`, into the description
+`usage.records` list, and one report's `note` into `usage.note`. The table is built
+from those records, so everything it shows can be carried by a later publish. A
+`details` item whose summary names usage is refused.
+
+The description renders one table with a row per report label. Reports with the
+same host, label, provider, configured and routed model, and effort, such as eight
+review runs of one model, share a row marked `×8`; rows that share only a label also
+show their host, model, and effort. With more than one row, a total row adds the USD
+and credit estimates; it leaves token counts blank, because hosts count input
+differently. The collapsed summary shows the USD total. Columns are USD, Codex
+credits, Input, Cached input, Output, Reasoning, and Cache writes; a column no report
+measured is left out, and a collapsed glossary under the table defines each column
+shown. Report names keep their hyphens from breaking the line. Dollar amounts are
+rounded to cents, and token counts are shortened to about three figures, such as
+45.3M; the hidden record keeps the exact counts. A
+cell no report measured shows `—`, and `+` marks a minimum: a partial estimate, or a
+sum that left out an unmeasured report. The total can count a response twice when two
+kept reports partly overlap.
+
+Reports from before this table are listed below it and left out of the total, which
+then shows `+`. Each record is also kept as a hidden block holding its reported
+columns and note. A later publish that carries the block puts its row back in
+the table.
+
+Each report is priced once, when `shaka usage` runs, with the rate card installed then.
+A carried report keeps that price; nothing reprices it. A collapsed **How each report
+was measured and priced** list under the table shows each report's note: its rate card,
+the date its prices were verified, and what its sources left out. A PR left open across
+a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
+publish the new records.
+
+Put that `usage` object in the PR, or the JSON report in the final response when
+there is no PR. **Native** figures come from the host's records. **Estimated** figures apply a
 rate card to those records. `UNKNOWN` means the records do not establish a value;
 it never means zero.
 
@@ -22,8 +55,17 @@ selects the latest turn. That is a snapshot, not necessarily the whole task.
 | `--file PATH` | Read a saved native source; repeat for additional sources |
 | `--turn ID` | Select specific turns; repeat as needed. Each host section below names the ID field |
 | `--all-turns` | Include a session dedicated entirely to this task; cannot combine with `--turn` |
+| `--since-time UTC` | Include responses at or after the task began in a shared session; whole-second sources include the start second. Cannot combine with `--turn` or `--all-turns` |
 | `--commit SHA,SHA` | Associate the selected interval with several commits |
 | `--contribution CATEGORY` | `implementation`, `review`, `integration`, or `shared-planning` |
+
+Record the UTC start time before the new task begins. Use explicit `--turn` IDs
+when that time is unavailable or the boundary must be exact, and mark an uncertain
+interval SHARED.
+The start time and native response timestamps may use `Z` or a numeric timezone offset; the report presents their interval in UTC.
+The command fails if a response has no usable timestamp with a timezone, or if any native source is incomplete. A failed export, unreadable record, or missing response identity could undercount the selected interval.
+It also fails when the start time selects no responses or any selected source record is aggregate usage.
+For sources recording only whole seconds, it includes the full cutoff second so responses from the new task are not lost. That boundary can include an earlier response from the same second; treat its attribution as shared.
 
 A `--turn` ID that matches no readable response fails with the expected field
 instead of printing an empty table. A source with no readable responses still
@@ -46,20 +88,21 @@ configuration, or interval metadata produce `UNKNOWN`.
 
 ## Keep earlier reports when work changes hands
 
-Paste each report whole into the description's usage details; hidden markers at
-its first and last lines identify it. `description` refuses usage details that
-hold no marked report, so a hand-written table fails even when an earlier report
-would be carried. When `description` republishes a PR, it
-keeps earlier reports unless a newer report covers the same work, so a handoff
-between hosts or models keeps every contribution. Fork PRs never carry reports.
+Pass each JSON `record` through in `usage.records`. When `description` republishes
+a PR, it keeps earlier reports unless a newer record covers the same work, so a
+handoff between hosts or models keeps every contribution. The kept text is the
+earlier marked report: a record's row rejoins the table, and a report from before
+the table existed stays below it. A report that read no source gives way to a
+complete report from the same host that measured the same contribution and commits.
+Fork PRs never carry reports.
 The command prints how many reports it retained, replaced, and dropped. A newer
 report that kept only some counters can still replace an earlier report.
 
 ## Reading the result
 
-The report records commits, contribution, observed interval, source version,
-provider/model/effort, and token categories. Metric rows have one column per
-configuration. Configured and routed models remain distinct.
+The Markdown report records commits, contribution, observed interval, source
+version, provider/model/effort, and token categories. Its metric rows have one column
+per configuration. Configured and routed models remain distinct.
 
 | Host | Input and cache categories | Other limits |
 | --- | --- | --- |
@@ -243,9 +286,7 @@ discounts, service tier, routing, account terms, and actual charges may differ.
 
 ## Publish the report
 
-Use a description `details` entry titled **Usage and cost**. Include the helper's
-tables, with known dollar estimates in the summary where useful. The helper puts
-cost above its expandable **Token detail** block and retains rate notes beside it.
+Publish through the description `usage` object described at the top of this guide.
 Keep the coverage note visible; do not replace unknown reviewer usage with zero.
 
 Check task coverage before publishing. Sources can contain unrelated work even
@@ -280,6 +321,16 @@ follows the link when the skill's files differed from that commit at installatio
 or, in a checkout, when Git reports changes or flags a skill file to skip them. When
 no commit can be found, the row shows the release version instead, such as
 `0.1.0.pre.1` (commit unknown).
+
+The table shows the latest publication, so `description` also keeps a history in a hidden
+marker in the PR body. It adds an entry, recording the PR head, whenever the Workflow version
+cell or a route differs from the last entry; republishing the same values adds nothing. Once
+there are two entries, a collapsed **Provenance history** block lists them oldest first. It
+keeps the first entry and the 20 most recent, and says how many it omitted. The helper writes
+this history; a details item with that summary is refused, and so is a marker it cannot
+validate, which publishes nothing until the marker is restored or removed. A PR published
+before this history existed starts one at its next publication, and a fork's history is never
+carried, because the fork author can edit it.
 
 Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.

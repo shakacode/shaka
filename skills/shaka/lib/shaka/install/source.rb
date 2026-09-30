@@ -111,20 +111,28 @@ module Shaka
         value = git('config', '--get', 'remote.origin.url')
         return value if value&.match?(/\Agit@[^:]+:.+/)
 
-        web_remote(value)
+        url_remote(value)
       end
 
-      def web_remote(value)
-        address = URI.parse(value) if value
-        return unless address.is_a?(URI::HTTP) && address.host
+      def url_remote(value)
+        return unless value
 
-        address.user = nil
+        address = URI.parse(value)
+        ssh = address.scheme&.casecmp?('ssh')
+        without_secrets(address, ssh) if (address.is_a?(URI::HTTP) || ssh) && address.host
+      rescue URI::InvalidURIError
+        nil
+      end
+
+      # An HTTP user may be a token and an SSH user may name a person, so only the shared
+      # `git` account stays. The default SSH port is dropped so the URL matches the usual spelling.
+      def without_secrets(address, ssh)
+        address.user = nil unless ssh && address.user == 'git'
         address.password = nil
+        address.port = nil if ssh && address.port == 22
         address.query = nil
         address.fragment = nil
         address.to_s
-      rescue URI::InvalidURIError
-        nil
       end
     end
   end

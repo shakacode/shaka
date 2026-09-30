@@ -3,6 +3,7 @@
 require_relative 'test_helper'
 require 'json'
 require 'open3'
+require 'time'
 
 module OpencodeUsageFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -85,6 +86,48 @@ module OpencodeUsageFixture
 
   def stub_environment(directory)
     { 'PATH' => "#{directory}:#{ENV.fetch('PATH')}" }
+  end
+end
+
+class OpencodeSinceTimeTest < Minitest::Test
+  include OpencodeUsageFixture
+
+  def test_keeps_a_response_after_a_cutoff_in_the_same_second
+    Dir.mktmpdir do |directory|
+      millis = 1_789_660_292_357
+      file = same_second_export(directory, millis)
+      cutoff = Time.at(Rational(millis - 100, 1000)).utc.iso8601(3)
+
+      output = report('--host', 'opencode', '--file', file, '--since-time', cutoff)
+
+      assert_metric output, 'Input', 475
+    end
+  end
+
+  def test_refuses_to_undercount_a_response_without_an_identity_or_parent_turn
+    %i[id parent].each do |missing|
+      Dir.mktmpdir do |directory|
+        file = same_second_export(directory, 1_789_660_292_357, missing:)
+        args = ['usage', '--host', 'opencode', '--file', file, '--commit', COMMIT,
+                '--contribution', 'implementation', '--since-time', '2026-09-17T15:51:32.057Z']
+        output, error, status = Open3.capture3(CLEAR, COMMAND, *args)
+
+        assert_equal [false, '', true],
+                     [status.success?, output, error.include?('--since-time cannot scope incomplete native sources')]
+      end
+    end
+  end
+
+  private
+
+  def same_second_export(directory, millis, missing: nil)
+    later = assistant_message('resp-new', NEW_USER, millis - 1, millis, tokens(475, 0, 20))
+    earlier = assistant_message(missing == :id ? nil : 'resp-earlier', missing == :parent ? nil : NEW_USER,
+                                millis - 200, millis - 157,
+                                tokens(900, 0, 20))
+    document = single_fixture(later)
+    document['messages'].insert(1, earlier)
+    write_export(directory, document)
   end
 end
 

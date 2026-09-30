@@ -2,6 +2,7 @@
 
 require 'json'
 require 'time'
+require_relative 'usage_record_carry'
 require_relative 'usage_record_shape'
 
 module Shaka
@@ -27,12 +28,15 @@ module Shaka
       head = pull.dig('head', 'repo', 'full_name')
       return carry(content, pull['body']) if head && head == pull.dig('base', 'repo', 'full_name')
 
-      [content, { 'retained' => 0, 'replaced' => 0, 'dropped' => 0, 'skipped' => 'fork' }]
+      [UsageRecordCarry.without_caller_carry(content),
+       { 'retained' => 0, 'replaced' => 0, 'dropped' => 0, 'skipped' => 'fork' }]
     end
 
     # Returns the content with carried records prepended to its usage body, and what happened.
     def carry(content, existing)
       stats = { 'retained' => 0, 'replaced' => 0, 'dropped' => 0 }
+      return carry_structured(content, existing, stats) if UsageRecordCarry.structured_usage(content)
+
       usages = usage_details(content)
       usage = usages.first
       region = managed_region(existing)
@@ -42,23 +46,36 @@ module Shaka
       [with_usage_body(content, usage, [*kept, usage['body']].join("\n\n")), stats]
     end
 
-    def carried(region, body, stats)
-      fresh = text_records(body)
+    def carry_structured(content, existing, stats)
+      usage = content['usage'].except('carried')
+      UsageRecordCarry.apply(self, content.merge('usage' => usage), usage, existing, stats)
+    end
+
+    def carried(region, body, stats, fresh = nil)
+      fresh ||= text_records(body)
       stats['dropped'] += unterminated(region)
-      region.to_enum(:scan, BLOCK).filter_map do
-        text = Regexp.last_match[0]
-        outcome = outcome(text, parse(Regexp.last_match[1]), fresh, body)
+      blocks = parsed_blocks(region)
+      shaped = blocks.filter_map { |text, fields| fields if UsageRecordShape.report_shape?(text) }
+      blocks.filter_map do |text, fields|
+        outcome = outcome(text, fields, fresh, body, shaped)
         stats[outcome] += 1 if outcome
         text if outcome == 'retained'
       end
     end
 
+    def parsed_blocks(region)
+      region.to_enum(:scan, BLOCK).map { [Regexp.last_match[0], parse(Regexp.last_match[1])] }
+    end
+
     # A report already pasted into the new body is neither carried nor counted.
-    def outcome(text, fields, fresh, body)
+    def outcome(text, fields, fresh, body, others = [])
       return 'dropped' unless fields && UsageRecordShape.report_shape?(text)
       return if body.include?(text)
 
-      superseded?(fields, fresh) ? 'replaced' : 'retained'
+      # An identical identity is the same report published again, whatever its completeness.
+      replaced = fresh.include?(fields) || superseded?(fields, fresh) ||
+                 UsageRecordCarry.read_nothing_covered?(fields, fresh + others)
+      replaced ? 'replaced' : 'retained'
     end
 
     def unterminated(region) = region.scan(BEGIN_PREFIX).size - region.scan(BLOCK).size
@@ -71,11 +88,7 @@ module Shaka
     end
 
     def parse(json)
-      fields = JSON.parse(json)
-      return unless fields.is_a?(Hash) && FIELDS.all? { |key| fields.key?(key) }
-      return unless %w[sources responses].all? { |key| fields[key].is_a?(Array) }
-
-      fields
+      UsageRecordCarry.identity(JSON.parse(json))
     rescue JSON::ParserError
       nil
     end

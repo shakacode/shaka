@@ -308,7 +308,8 @@ round's attestation as the final line, where `merge` reads it. A commit GitHub d
 such as one a rebase replaced, is named without a link. Publishing again replaces
 that comment rather than adding another. Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
-reviewer's source; missing evidence is UNKNOWN. Do not publish raw sessions or private
+reviewer's source; missing evidence is UNKNOWN. Add `--format json` to each `shaka usage`
+command in this guide and put its `record` in the description's `usage.records`. Do not publish raw sessions or private
 context. A recovery
 note's `Thread` field follows its [publication
 rule](delivery.md#recover-an-unfinished-pr).

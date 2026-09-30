@@ -2,6 +2,14 @@
 
 # Fake model and GitHub commands for the command-level opening check tests.
 module CliOpeningCheckFakes
+  USAGE_COLUMN = {
+    'label' => 'codex', 'provider' => 'openai', 'model' => 'gpt-5.6-terra', 'routed' => 'UNKNOWN',
+    'effort' => 'medium', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN', 'input' => '1',
+    'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN', 'cache_writes' => 'UNKNOWN'
+  }.freeze
+  USAGE = { 'note' => 'Native usage is PARTIAL.',
+            'records' => [USAGE_RECORD.merge('columns' => [USAGE_COLUMN])] }.freeze
+
   private
 
   def run_description(dir, root: self.class::ROOT, reviewer: nil, model: nil, ref: nil)
@@ -49,9 +57,7 @@ module CliOpeningCheckFakes
     provenance['initial_prompt'] = 'EXCLUDED'
     { 'identity' => { 'agent' => 'Codex' }, 'summary' => self.class::SUMMARY, 'deployment' => 'none',
       'table' => { 'columns' => %w[Check Result], 'rows' => [%w[validate pass]] },
-      'provenance' => provenance,
-      'details' => [{ 'summary' => 'Usage',
-                      'body' => RenderedUsage.body("| Metric | Value |\n| --- | --- |\n| Total | 1 |") }] }
+      'provenance' => provenance, 'usage' => USAGE, 'details' => [] }
   end
 
   def write_executable(dir, name, source)
@@ -63,14 +69,15 @@ module CliOpeningCheckFakes
   def fake_gh
     <<~RUBY
       require 'json'
-      request = JSON.parse(STDIN.read)
+      raw = STDIN.read
+      request = raw.strip.empty? ? {} : JSON.parse(raw)
       case ARGV[1]
       when 'repos/owner/repo/pulls/1'
         if ARGV.include?('PATCH')
           File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
           puts JSON.generate(request)
         else
-          puts JSON.generate('body' => '')
+          puts JSON.generate('body' => '', 'head' => { 'sha' => 'c' * 40 })
         end
       when 'markdown' then puts JSON.generate('<table></table>' * 10)
       else abort "unexpected gh request: \#{ARGV.inspect}"
