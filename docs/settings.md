@@ -181,8 +181,9 @@ checks (`UNSTABLE`) for `none` and `one`; `all` requires `CLEAN`.
 
 This bounds the commits reviewed in one local review ledger. For example, `3` lets
 an initial review and two follow-up reviews run before the helper refuses another.
-With [`local_review_count`](#reviewlocal_review_count) above 1, every reviewer of one
-commit counts as one review.
+With [`local_review_count`](#reviewlocal_review_count) above 1, all the reviewers of one
+commit together use one of these turns, so `3` with two reviewers allows six reviews
+across three commits.
 The runner reads the setting from the supplied trusted `--settings-ref` (or
 `--criteria-ref`). Without a reference, it uses the default of five.
 
