@@ -18,7 +18,7 @@ class ConfigurationBoundaryTest < Minitest::Test
     local_review.rb local_review/cli.rb local_review/comment.rb local_review/path_guard.rb local_review/shebang.rb
     local_review/report_check.rb local_review/runner.rb merge_tree_proof.rb opening_parse.rb opening_check.rb
     opening_verdict_cache.rb recommendation.rb repos/home.rb review_prompt.rb usage/claude_usage.rb usage/codex_usage.rb
-    usage/cursor_usage_store.rb usage/opencode_usage.rb usage/pi_usage.rb usage/rate_card.rb
+    usage/cursor_usage_store.rb usage/opencode_usage.rb usage/pi_usage.rb usage/rate_card.rb pr_watch/command.rb
     workflow_config.rb seam/upgrade_plan.rb seam/upgrade_plan/inventory.rb seam/upgrade_plan/references.rb
     seam/upgrade_plan/reference_patterns.rb seam/private_recovery.rb seam/private_recovery/copies.rb
     seam/private_recovery/preparation.rb seam/private_recovery/rotation.rb seam/private_recovery/identity.rb

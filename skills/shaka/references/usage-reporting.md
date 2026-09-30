@@ -55,8 +55,17 @@ selects the latest turn. That is a snapshot, not necessarily the whole task.
 | `--file PATH` | Read a saved native source; repeat for additional sources |
 | `--turn ID` | Select specific turns; repeat as needed. Each host section below names the ID field |
 | `--all-turns` | Include a session dedicated entirely to this task; cannot combine with `--turn` |
+| `--since-time UTC` | Include responses at or after the task began in a shared session; whole-second sources include the start second. Cannot combine with `--turn` or `--all-turns` |
 | `--commit SHA,SHA` | Associate the selected interval with several commits |
 | `--contribution CATEGORY` | `implementation`, `review`, `integration`, or `shared-planning` |
+
+Record the UTC start time before the new task begins. Use explicit `--turn` IDs
+when that time is unavailable or the boundary must be exact, and mark an uncertain
+interval SHARED.
+The start time and native response timestamps may use `Z` or a numeric timezone offset; the report presents their interval in UTC.
+The command fails if a response has no usable timestamp with a timezone, or if any native source is incomplete. A failed export, unreadable record, or missing response identity could undercount the selected interval.
+It also fails when the start time selects no responses or any selected source record is aggregate usage.
+For sources recording only whole seconds, it includes the full cutoff second so responses from the new task are not lost. That boundary can include an earlier response from the same second; treat its attribution as shared.
 
 A `--turn` ID that matches no readable response fails with the expected field
 instead of printing an empty table. A source with no readable responses still

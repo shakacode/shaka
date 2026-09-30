@@ -116,7 +116,6 @@ module Shaka
 
     def response(payload)
       return unless payload.is_a?(Hash) && EVENTS.include?(payload['hook_event_name'])
-      return unless turn?(payload['generation_id'])
 
       @versions << payload['cursor_version'] if payload['cursor_version'].is_a?(String)
       record(payload)

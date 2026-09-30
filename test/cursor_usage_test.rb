@@ -278,6 +278,15 @@ class CursorUsageFailuresTest < Minitest::Test
     end
   end
 
+  def test_missing_generation_id_is_disclosed_to_time_scoped_reports
+    Dir.mktmpdir do |directory|
+      file = write_records(directory, [stored(NEW, 100), stored(nil, 900)])
+      reader = Shaka::CursorUsage.new([file], [], all_turns: true)
+
+      assert_includes reader.gaps, 'Unreadable or unidentifiable records'
+    end
+  end
+
   def test_hook_ignores_non_stop_payloads_and_empty_stdin
     Dir.mktmpdir do |directory|
       env = CLEAR.merge('CURSOR_USAGE_DIR' => directory)
