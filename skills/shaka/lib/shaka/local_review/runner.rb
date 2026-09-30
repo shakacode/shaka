@@ -186,7 +186,8 @@ module Shaka
     end
 
     def refuse_dirty_checkout!
-      changes = capture(git_executable, '-C', root, 'status', '--porcelain').lines.map { |line| line[3..].strip }
+      changes = capture(git_executable, '-C', root, 'status', '--porcelain', '--untracked-files=all')
+                .lines.map { |line| line[3..].strip }
       return if changes.empty?
 
       more = changes.size > 5 ? ", and #{changes.size - 5} more" : nil

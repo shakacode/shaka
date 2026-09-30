@@ -1304,10 +1304,15 @@ class LocalReviewDirtyWorktreeTest < Minitest::Test
     assert_refused_before_launch('notes.txt')
   end
 
+  def test_untracked_file_is_refused_when_status_hides_untracked_files
+    assert_refused_before_launch('notes.txt', config: %w[status.showUntrackedFiles no])
+  end
+
   private
 
-  def assert_refused_before_launch(name)
+  def assert_refused_before_launch(name, config: nil)
     with_repository do |root, base, head, bin|
+      git!(root, 'config', *config) if config
       trace = File.join(bin, 'invocation.json')
       fake_codex(bin, head)
       File.write(File.join(root, name), "uncommitted\n")
