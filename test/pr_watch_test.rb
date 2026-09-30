@@ -50,6 +50,10 @@ class PrWatchTest < Minitest::Test
       frame.fetch(:required)
     end
 
+    def workflow_configuration(_pull = nil)
+      { 'status' => 'clear', 'missing' => [], 'unverified' => [] }
+    end
+
     def configured_required_checks = []
     def checks = frame.fetch(:checks)
     def advance = @index = [(@index || 0) + 1, @frames.length - 1].min

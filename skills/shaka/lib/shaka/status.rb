@@ -12,12 +12,14 @@ module Shaka
     end
 
     def call
-      head = @github.snapshot['headRefOid']
+      pull = @github.snapshot
+      head = pull['headRefOid']
       checks = required_checks
+      names = @github.workflow_configuration(pull)
       current = @github.snapshot
       raise Error, 'PR head changed while reading status; retry.' unless current['headRefOid'] == head
 
-      current.merge(checks)
+      current.merge(checks).merge('workflowNames' => names)
     end
 
     private

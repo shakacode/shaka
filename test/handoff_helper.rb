@@ -23,6 +23,10 @@ class HandoffFakeGitHub
   def required_checks = @pull[:checks]
   def configured_required_checks = []
 
+  def workflow_configuration(_pull = nil)
+    @pull.fetch(:workflow_names, { 'status' => 'clear', 'missing' => [], 'unverified' => [] })
+  end
+
   def api(path, **)
     return { 'login' => 'shaka-agent' } if path == 'user'
     raise "unexpected read #{path}" unless path == 'repos/owner/repo/pulls/42'

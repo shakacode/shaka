@@ -21,6 +21,7 @@ class CliSeamRequiredChecksTest < Minitest::Test
     when /\\Apr checks .*--required/ then warn "no required checks reported on the 'main' branch"; exit 1
     when /\\Apr checks/ then puts JSON.generate([{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }])
     when %r{\\Aapi repos/owner/repo/rules/branches/main} then puts '[]'
+    when %r{\\Aapi repos/owner/repo/pulls/1/files} then puts '[]'
     else warn "unexpected gh \#{args}"; exit 2
     end
   RUBY

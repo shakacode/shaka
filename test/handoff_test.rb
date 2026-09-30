@@ -132,6 +132,16 @@ class HandoffTest < Minitest::Test
 
     assert_empty result['owed']
   end
+
+  def test_a_missing_workflow_name_is_named_for_the_ask_handoff
+    names = { 'status' => 'missing', 'missing' => ['secrets.DEPLOY_KEY'], 'unverified' => ['vars.REGION'] }
+    result = handoff(workflow_names: names)
+
+    assert_empty result['owed']
+    assert_includes result['status'], 'missing workflow names secrets.DEPLOY_KEY'
+    assert_includes result['status'], 'unverified workflow names vars.REGION'
+    assert(result['notes'].any? { |item| item.include?('Ask handoff') })
+  end
 end
 
 # Handoff reads only evidence Shaka controls: commit-bound reviews and its own description region.

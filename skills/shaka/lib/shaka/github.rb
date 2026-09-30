@@ -13,6 +13,7 @@ require_relative 'github/required_check_rules'
 require_relative 'github/review_evidence_reads'
 require_relative 'github/squash_comment'
 require_relative 'github/prose_description'
+require_relative 'workflow_configuration'
 
 module Shaka
   # The native pull-request evidence a publication decision depends on.
@@ -80,6 +81,8 @@ module Shaka
 
       result
     end
+
+    def workflow_configuration(pull) = WorkflowConfiguration.new(self).call(pull)
 
     def review(id)
       api("#{reviews_path}/#{positive_integer(id)}")

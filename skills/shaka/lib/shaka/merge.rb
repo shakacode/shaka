@@ -8,6 +8,7 @@ require_relative 'required_checks'
 require_relative 'merge_review_evidence'
 require_relative 'merge_required_checks'
 require_relative 'merge_limits'
+require_relative 'workflow_configuration'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
@@ -17,6 +18,8 @@ module Shaka
     # `review` takes MergeReviewEvidence's `required`, `waiver`, and checkout `root`.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
       @github = github
+      review = review.dup
+      @merge_preference = review.delete(:merge_preference)
       @seam_required_checks = seam_required_checks
       @ci_review_wait = CiReviewWait.effective(seam: seam_wait, override: ci_review_wait)
       @review_evidence = MergeReviewEvidence.new(github, **review)
@@ -41,10 +44,13 @@ module Shaka
     private
 
     def verify_gate
+      verify_workflow_names
       gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
       verify_checks(gate.fetch('checks'))
       gate
     end
+
+    def verify_workflow_names = WorkflowMergeStop.new(@github, @merge_preference).call
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
     # GitHub cannot catch a seam check that fails while these are read, so it is read again.
@@ -136,6 +142,33 @@ module Shaka
       return if review['state'] == 'COMMENTED' && review['body'].is_a?(String) && !review['body'].strip.empty?
 
       raise Error, 'Walkthrough must be a submitted COMMENT review with a nonempty body'
+    end
+  end
+
+  # Stops Auto merge when a changed workflow names a secret or variable the repository cannot see.
+  class WorkflowMergeStop
+    def initialize(github, preference)
+      @github = github
+      @preference = preference
+    end
+
+    def call
+      return unless @preference == 'auto'
+
+      missing = names
+      return if missing.empty?
+
+      raise Error, "Auto merge stopped because these workflow names are missing: #{missing.join(', ')}"
+    end
+
+    private
+
+    def names
+      report = @github.workflow_configuration(@github.snapshot)
+      missing = report['missing'] if report.is_a?(Hash)
+      raise Error, 'Workflow name evidence is missing.' unless missing.is_a?(Array)
+
+      missing
     end
   end
 end
