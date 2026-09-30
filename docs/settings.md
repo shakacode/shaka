@@ -99,9 +99,8 @@ Meaningful implementation also gets a local adversarial review before push:
 - Prefer a different provider and model. If other reviewers are unavailable, the
   current workflow allows the implementation model in a fresh session.
 - Address findings before pushing.
-- To have more than one reviewer read each round, such as Codex and a fresh Claude
-  session after Claude implemented, ask for it in the task. Their findings are fixed
-  together before the next round.
+- To have several reviewers read each commit, set
+  [`review.local_review_count`](#reviewlocal_review_count).
 
 `shaka review run` verifies the reviewer process completed and returned a report
 for the expected commit. `shaka review check` validates a supplied report but does
@@ -250,6 +249,38 @@ with the account that should pay for reviews:
 
 Then list that provider in `local_review_agents`. The next review picks it, and the
 published review names it in its summary table instead of the fallback notice.
+
+## `review.local_review_count`
+
+**Optional. Default: 1.** How many reviewers from `local_review_agents` read each
+commit before its findings are fixed. With 2 or more, the reviewers run at the same
+time, and their findings are fixed together in one commit before they all review the
+next one.
+
+Claude implements, and Codex and a fresh Claude session both review:
+
+```yaml
+review:
+  required: meaningful_changes
+  ci_review_jobs: [claude-review]
+  local_review_count: 2
+  local_review_agents:
+    - provider: anthropic
+      model_family: claude
+    - provider: openai
+      model_family: codex
+```
+
+The first reviewer is always from a provider that did not write the change, here
+Codex. The others follow the list order, so the second is Claude in a fresh session,
+without the implementation conversation. If Codex had written the change, the order
+would be Claude, then Codex. A reviewer whose CLI is missing or signed out is skipped,
+and fewer reviewers run.
+
+Each extra reviewer adds its own review cost to every commit it reads. The PR's
+review comment shows every reviewer's rounds, and one review of the final commit is
+enough for `shaka merge`. A task can ask for a different number, which wins for that
+task.
 
 ## `review.prompt_file`
 

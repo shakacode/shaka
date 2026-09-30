@@ -67,7 +67,36 @@ class ReviewerCountTest < Minitest::Test
     end
   end
 
+  # Break caught: a maintainer's standing count was ignored unless each task passed --count.
+  def test_command_reads_the_count_from_the_seam
+    with_repository do |root|
+      set_count(root, 2)
+
+      assert_equal %w[openai/codex anthropic/claude],
+                   reviewer(root, '--implementer', 'anthropic/claude').fetch('reviewers')
+      assert_equal ['openai/codex'],
+                   reviewer(root, '--implementer', 'anthropic/claude', '--count', '1').fetch('reviewers')
+    end
+  end
+
+  def test_the_seam_rejects_a_count_below_one
+    with_repository do |root|
+      set_count(root, 0)
+      _, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, '--implementer', 'anthropic/claude')
+
+      refute_predicate status, :success?
+      assert_includes error, 'review.local_review_count must be a whole number of at least 1'
+    end
+  end
+
   private
+
+  def set_count(root, count)
+    path = File.join(root, '.agents/agent-workflow.yml')
+    settings = YAML.safe_load_file(path)
+    settings['review']['local_review_count'] = count
+    File.write(path, YAML.dump(settings))
+  end
 
   def select(implementers, unavailable: [], reviewers: ROSTER, count: 1)
     Shaka::ReviewerSelection.new(

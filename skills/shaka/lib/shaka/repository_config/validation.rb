@@ -43,6 +43,10 @@ module Shaka
         raise Error, "#{label} repeats #{repeated.first}" if repeated
       end
 
+      def positive_integer!(value, label)
+        raise Error, "#{label} must be a whole number of at least 1" unless value.is_a?(Integer) && value.positive?
+      end
+
       def enum!(value, allowed, message)
         raise Error, message unless allowed.include?(value)
       end

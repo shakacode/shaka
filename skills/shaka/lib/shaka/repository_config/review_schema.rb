@@ -14,6 +14,7 @@ module Shaka
       IDENTITY = ReviewerSelection::IDENTITY
       CI_REVIEW_JOBS = 'ci_review_jobs'
       LOCAL_REVIEW_AGENTS = 'local_review_agents'
+      LOCAL_REVIEW_COUNT = 'local_review_count'
       PROMPT_FILE = 'prompt_file'
       MODEL = 'model'
       EFFORT = 'effort'
@@ -80,6 +81,7 @@ module Shaka
         validate_review_wait
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
         prompt_path!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
+        positive_integer!(@review[LOCAL_REVIEW_COUNT], 'review.local_review_count') if @review.key?(LOCAL_REVIEW_COUNT)
       end
 
       private

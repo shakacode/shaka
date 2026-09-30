@@ -35,11 +35,15 @@ module Shaka
     private
 
     def selection
-      ReviewerSelection.new(reviewers: config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS],
+      review = config.review
+      ReviewerSelection.new(reviewers: review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS],
                             implementers: identities(:implementers, required: true),
                             unavailable: identities(:unavailable),
-                            count: @options.fetch(:count, 1)).call
+                            count: @options.fetch(:count) { count(review) }).call
     end
+
+    # A task's --count wins; otherwise the trusted seam's standing count, or one reviewer.
+    def count(review) = review.fetch(RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT, 1)
 
     def identities(key, required: false)
       values = @options.fetch(key, [])

@@ -7,6 +7,8 @@ review:
   ci_review_jobs:
     - claude-review
   ci_review_wait: one
+  # Codex and a fresh Claude session review each commit together; see docs/settings.md.
+  local_review_count: 2
   # Optional local reviewer preferences; see docs/settings.md.
   local_review_agents:
     - provider: anthropic

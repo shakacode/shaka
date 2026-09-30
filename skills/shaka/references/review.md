@@ -116,16 +116,18 @@ Three outcomes, none of them an error:
 | `same_provider` | Run this reviewer. No other provider is available, and its context is still fresh. |
 | `same_model` | Nothing listed is available. Run the implementation model in a fresh context, which is a valid review even if its CLI path failed. |
 
-`--count N` asks for up to N reviewers on the same head, listed in `reviewers` in run order. The
-first is the reviewer above, and `outcome` and `note` describe only it; the rest are the other
-available entries in the seam's list order, so a Claude implementation with the default list gets
-Codex, then Claude in a fresh context. Fewer come back when fewer are available. Run them all on one
-committed head, wait for each to finish or record its `not_completed` result, and fix every finding
-in one repair batch. Keep all of them in one ledger, as [the loop
+`reviewer` lists up to the trusted seam's
+[`review.local_review_count`](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewlocal_review_count)
+reviewers for the same head, one by default, in `reviewers` in run order; `--count N` overrides that
+for one task. The first is the reviewer above, and `outcome` and `note` describe only it; the rest
+are the other available entries in the seam's list order, so a Claude implementation with the
+default list gets Codex, then Claude in a fresh context. Fewer come back when fewer are available.
+Run them all on one committed head, wait for each to finish or record its `not_completed` result,
+and fix every finding in one repair batch. Keep all of them in one ledger, as [the loop
 guide](local-review.md#run-the-review-loop-with-a-ledger) describes, so one comment publishes every
-reviewer's rounds. For the new head, rerun `reviewer` with the same count, adding `--unavailable`
-for any reviewer that has since failed with qualifying evidence. One published attestation for the
-head satisfies `merge`; note a reviewer that did not complete on the PR.
+reviewer's rounds. For the new head, rerun `reviewer`, adding `--unavailable` for any reviewer that
+has since failed with qualifying evidence. One published attestation for the head satisfies `merge`;
+note a reviewer that did not complete on the PR.
 
 Move on immediately when an entry is unavailable; do not wait for credits or retry a blocked
 provider. Missing local credentials for a provider are not a problem to solve here — if you have no
