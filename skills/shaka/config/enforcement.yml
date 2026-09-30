@@ -18,6 +18,14 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: confirmed-return-points
+    phase: always
+    quote: preserve the abandoned attempt before restoring owned code and context
+    enforced_by: agent
+    note: >-
+      Ruby does not capture or restore snapshots, verify human agreement, or carry findings
+      across attempts. The agent preserves code and context through the referenced procedure;
+      existing validation and review commands still check their own revision-bound evidence.
   - id: local-review-cap-push
     phase: verify
     quote: Do not push unless the user chooses to.

@@ -124,6 +124,32 @@ An optional `Agent:` prefix distinguishes notes from finished wording.
 Take turns writing to the same checkout. With separate worktrees, hand over a
 final diff for the agent to reconcile. Keep raw notes in the local backup.
 
+### Return to an earlier agreement
+
+If an approach feels wrong, ask the agent to restart from a named agreement:
+
+```text
+Return to C2. Keep the acceptance criteria, use the existing parser,
+discard the abstraction, and retain the failing edge case we discovered.
+```
+
+The agent records C1 for an unambiguous intake and later return points when you
+confirm new direction. Each identifies what you agreed to and the recoverable
+code state. Asking a question alone does not establish one, and saying “Go”
+needs no extra confirmation. Your Ask or Auto preference still applies.
+
+The agent preserves the rejected attempt, restores owned work, and leads the
+resumed context with your agreement and new direction. It keeps unrelated newer
+work and findings that still matter. If the snapshot is incomplete or another
+writer is active, it explains the limitation before changing code.
+
+The current PR describes the replacement. Expandable summaries link the earlier
+attempt and its reviews; human comments remain intact. Rewind does not undo
+external effects such as deployments, and the replacement still needs validation
+and review. This is an agent procedure, not an automatic restore command.
+See the [return-point procedure](../skills/shaka/references/return-points.md) for
+preservation rules and the real-use evaluation still needed.
+
 ## Resume unfinished work
 
 Open the PR's **WIP Details** to find the owning chat, last known state, and next
