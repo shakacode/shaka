@@ -16,7 +16,11 @@ class CheckpointCurrentSettingsTest < Minitest::Test
   end
 
   def test_current_settings_still_require_start_and_established_value
-    assert_equal 'pause', checkpoint('immediate_start' => false).fetch('status')
+    [{}, { 'active_effort' => 'high' }, { 'settings_available' => false }].each do |observations|
+      result = checkpoint(observations.merge('immediate_start' => false))
+      assert_equal 'immediate_start_not_authorized', result.fetch('reason')
+      assert_equal 'Reply ready to begin implementation.', result.fetch('action')
+    end
     assert_equal 'value_not_established', checkpoint('value_established' => false).fetch('reason')
     assert_equal 'recommendation_missing', checkpoint('recommended_effort' => nil).fetch('reason')
   end

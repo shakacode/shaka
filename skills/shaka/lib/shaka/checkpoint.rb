@@ -31,8 +31,7 @@ module Shaka
       options = {}
       parser = option_parser(options)
       parser.parse!(arguments)
-      puts parser if options[:help]
-      return if options[:help]
+      return puts(parser) if options[:help]
 
       raise OptionParser::InvalidArgument, parser.to_s unless arguments.empty? && options[:path]
 
@@ -103,6 +102,7 @@ module Shaka
 
     def pause_reason
       return 'value_not_established' unless value_established?
+      return 'immediate_start_not_authorized' if recommendation_present? && current_settings?
 
       settings_pause_reason
     end
