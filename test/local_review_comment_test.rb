@@ -51,8 +51,14 @@ class LocalReviewCommentTest < Minitest::Test
     assert_includes body, 'effort `meduim` looks like a typo of `medium`'
   end
 
+  def test_a_routed_model_without_a_request_stays_quiet
+    body = render('rounds' => [round(model: 'gpt-5.5')])
+
+    refute_includes body, '**Reviewer settings:**'
+  end
+
   def test_names_a_configured_model_that_differs_from_the_recommendation
-    body = render('rounds' => [round(model: 'gpt-6-astra')])
+    body = render('rounds' => [round(requested_model: 'gpt-6-astra')])
 
     assert_includes body, '**Reviewer settings:** openai/codex is set to `gpt-6-astra`. ' \
                           'Shaka recommends `gpt-6-sol` for that reviewer.'

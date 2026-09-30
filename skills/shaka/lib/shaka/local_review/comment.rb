@@ -254,8 +254,8 @@ module Shaka
         value == 'UNKNOWN' ? nil : value
       end
 
-      # The ledger keeps the request apart from the model native usage records later.
-      def notice_model = configured('requested_model') || configured('model')
+      # `model` is the routed model from native usage, so only an explicit request is a setting.
+      def notice_model = configured('requested_model')
 
       def notice_effort = configured('effort') || attested_effort
 

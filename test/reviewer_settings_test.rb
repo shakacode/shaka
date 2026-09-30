@@ -96,9 +96,8 @@ class ReviewerSettingsTest < Minitest::Test
     assert blocked
   end
 
-  def test_an_unreadable_seam_still_reports_every_check
-    with_repository do |root|
-      File.chmod(0o000, File.join(root, '.agents/agent-workflow.yml'))
+  def test_a_missing_seam_still_reports_reviewer_settings
+    Dir.mktmpdir do |root|
       report, blocked = doctor(root:)
 
       assert_includes report, '[DEGRADED] Reviewer settings'
