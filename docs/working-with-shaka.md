@@ -10,9 +10,11 @@ $shaka Add CSV export to the orders page. Reuse the filters shown on screen.
 ```
 
 Shaka checks for existing work and recommends a model and effort level. Say
-“Go” to start without restating them when the recommended settings are already
-active. You can name a model or effort you prefer; Shaka pauses if it differs
-from the recommendation or cannot verify the active settings. See the
+“Go” without naming either to start with your agent's current settings. Shaka
+briefly compares reported settings with its recommendation when available;
+unknown or differing settings do not require confirmation in this case.
+If you name a model or effort, Shaka checks that preference and pauses when
+the settings differ from its recommendation or cannot be verified. See the
 [workflow](workflow.md).
 
 ## Choose a merge policy

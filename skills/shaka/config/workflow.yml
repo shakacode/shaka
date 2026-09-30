@@ -128,10 +128,17 @@ phases:
         send true once the user agrees, and omit it when the user named the task.
         It answers proceed, or pause with the next action. When the reason is
         `recommendation_missing`, complete the recommendation and rerun the checkpoint; the
-        missing input is the agent's to supply. Proceed without another response when
+        missing input is the agent's to supply. When immediate start is unambiguous and the
+        user supplied neither model nor effort, proceed with the current host settings.
+        A start word such as `go` accepts those settings even when the host cannot report
+        them or they differ from the recommendation. Keep the recommendation advisory in
+        this case; do not change settings or ask for confirmation. When the host reports
+        model or effort, briefly note the observed values and whether each matches the
+        recommendation; mark unreported values UNKNOWN without guessing.
+        When the user supplied either setting, apply the settings checks below.
+        Proceed without another response when
         immediate start is unambiguous, the recommended settings are active and usable in the host,
-        and any settings the user supplied match the recommendation. A start word such as `go`
-        does not require the user to restate active settings. For a pause that needs a user
+        and any settings the user supplied match the recommendation. For a pause that needs a user
         decision, explain the next action and wait for ready. On resumption verify the settings
         when possible; a prompt cannot change the runner. Differing settings stay the user's
         decision; unreported active settings need the user's confirmation; unavailable settings

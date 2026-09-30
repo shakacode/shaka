@@ -31,8 +31,7 @@ module Shaka
       options = {}
       parser = option_parser(options)
       parser.parse!(arguments)
-      puts parser if options[:help]
-      return if options[:help]
+      return puts(parser) if options[:help]
 
       raise OptionParser::InvalidArgument, parser.to_s unless arguments.empty? && options[:path]
 
@@ -70,8 +69,8 @@ module Shaka
     private
 
     def proceed?
-      value_established? && matching_settings? && active_settings? &&
-        immediate_start? && settings_available?
+      value_established? && recommendation_present? && immediate_start? &&
+        (current_settings? || (matching_settings? && active_settings? && settings_available?))
     end
 
     # Absent means the user named the task, which already establishes its value.
@@ -83,13 +82,14 @@ module Shaka
     end
 
     def matching_settings?
-      recommendation_present? &&
-        %w[model effort].all? do |setting|
-          requested = @content["requested_#{setting}"]
-          requested.nil? || (requested.is_a?(String) && requested.strip.empty?) ||
-            requested == @content["recommended_#{setting}"]
-        end
+      %w[model effort].all? do |setting|
+        requested = @content["requested_#{setting}"]
+        omitted_setting?(requested) || requested == @content["recommended_#{setting}"]
+      end
     end
+
+    def current_settings? = %w[requested_model requested_effort].all? { |field| omitted_setting?(@content[field]) }
+    def omitted_setting?(value) = value.nil? || (value.is_a?(String) && value.strip.empty?)
 
     def active_settings?
       active_settings_reported? && @content['active_model'] == @content['recommended_model'] &&
@@ -102,6 +102,7 @@ module Shaka
 
     def pause_reason
       return 'value_not_established' unless value_established?
+      return 'immediate_start_not_authorized' if recommendation_present? && current_settings?
 
       settings_pause_reason
     end
