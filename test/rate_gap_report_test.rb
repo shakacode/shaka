@@ -3,7 +3,7 @@
 require_relative 'missing_rates_test'
 require_relative '../skills/shaka/lib/shaka/usage/rate_gap_report'
 
-class RateGapReportTest < Minitest::Test
+module RateGapReportFixture
   class GitHub
     attr_accessor :issues, :card, :failure
     attr_reader :calls, :requests
@@ -57,6 +57,10 @@ class RateGapReportTest < Minitest::Test
     Shaka::RateGapReport.new(records, inclusive_input: true, rate_card: Shaka::RateCard.installed,
                                       github: @github, catalog: ->(_url) { catalog }).report
   end
+end
+
+class RateGapReportTest < Minitest::Test
+  include RateGapReportFixture
 
   def test_public_safe_reproduction_and_repeat_runs_reuse_links
     assert_includes report, '/issues/999'
@@ -134,5 +138,50 @@ class RateGapReportTest < Minitest::Test
                                                   github: @github, catalog: ->(_) { raise IOError, 'private' })
     assert_includes reporter.report, 'failed during public model verification'
     assert_empty @github.requests
+  end
+end
+
+class RateGapTransportTest < Minitest::Test
+  include RateGapReportFixture
+
+  def test_dns_failure_in_the_real_catalog_reader_preserves_reporting
+    reporter = Shaka::RateGapReport.new([record], inclusive_input: true, rate_card: Shaka::RateCard.installed,
+                                                  github: @github)
+    with_http_result(SocketError.new('private resolver detail')) do
+      text = reporter.report
+      assert_includes text, 'failed during public model verification'
+      refute_includes text, 'private'
+    end
+  end
+
+  def test_non_success_http_response_preserves_reporting
+    reporter = Shaka::RateGapReport.new([record], inclusive_input: true, rate_card: Shaka::RateCard.installed,
+                                                  github: @github)
+    with_http_result(Net::HTTPNotFound.new('1.1', '404', 'Not found')) do
+      assert_includes reporter.report, 'failed during public model verification'
+      assert_empty @github.requests
+    end
+  end
+
+  def test_different_scenarios_do_not_reuse_an_automatically_filed_title
+    report(catalog: 'gpt-99-sol')
+    api_only = @github.issues.first
+    @github.issues = [api_only]
+    @github.requests.clear
+    report
+    assert_equal 1, @github.requests.size
+    assert_includes @github.requests.first, '(credits)'
+  end
+
+  def with_http_result(result)
+    original = Net::HTTP.method(:start)
+    Net::HTTP.define_singleton_method(:start) do |*|
+      raise result if result.is_a?(Exception)
+
+      result
+    end
+    yield
+  ensure
+    Net::HTTP.define_singleton_method(:start, original)
   end
 end

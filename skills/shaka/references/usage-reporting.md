@@ -347,7 +347,9 @@ developer attention before drawing savings conclusions.
 
 Add `--report-missing-rates` to a `shaka usage` command to let it file confirmed
 pricing omissions in the fixed public `shakacode/shaka` repository. Leave this flag
-out for read-only reporting. It is a maintainer choice for each invocation.
+out for read-only reporting. The agent obtains explicit maintainer opt-in before
+adding it. Ruby checks the flag, not conversational authorization or maintainer
+identity; that choice is enforced by the agent.
 
 The command checks complete billing inputs, the current default-branch rate card,
 and the official public model catalog (the Codex credit pricing list for credits).
@@ -358,7 +360,8 @@ public pricing is unknown. A stale installation produces an update note instead
 of filing a gap the current card already prices.
 
 Existing open or closed reports return their issue link. The command lists issues
-in all states, looking for its scenario marker or an earlier model-rate title.
+in all states, looking for its exact scenario marker or an unmarked model-rate title. Reports
+with a different scenario marker cannot match through the title fallback.
 It fails visibly at the listing limit rather than filing without a complete check.
 GitHub provides no atomic find-or-create: simultaneous invocations can still
 create duplicates, and deleted reports cannot be reused.

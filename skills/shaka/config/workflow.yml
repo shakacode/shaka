@@ -720,6 +720,8 @@ always: |-
   to offer an issue. Workers must report possible issue-offer gaps to the root task owner and keep
   the current task moving.
   A maintainer can opt in to missing-cost-rate issues with `usage --report-missing-rates`.
+  Add this flag only when the maintainer explicitly asks to enable missing-rate reporting.
+  Ruby checks the flag; the agent obtains the maintainer opt-in.
   That command verifies the current public card and model catalog, reuses existing reports,
   and files synthetic reproductions. This R19 exception does not authorize other issue offers.
   For issue offers, do not search or file outside this procedure.

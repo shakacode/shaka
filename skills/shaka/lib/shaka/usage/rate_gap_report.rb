@@ -33,7 +33,8 @@ module Shaka
 
       revision, current, issues = snapshot
       local.map { |gap| report_gap(gap, revision, current, issues) }.join("\n")
-    rescue Error, SystemCallError, JSON::ParserError, ArgumentError, KeyError, Timeout::Error, IOError, OpenSSL::SSL::SSLError
+    rescue Error, SystemCallError, JSON::ParserError, ArgumentError, KeyError, Timeout::Error, IOError,
+           SocketError, OpenSSL::SSL::SSLError
       # Transport errors can echo local paths, secrets, or native source text. Publish the stage only.
       "Missing-rate reporting failed during #{@stage}; usage estimates remain unchanged. " \
       'Inspect Shaka issues before retrying.'

@@ -681,3 +681,10 @@ rules:
       comments; let the user inspect candidate links.
     enforced_by: agent
     note: The fixed `gh search` field list is part of the procedure; no command blocks other reads.
+  - id: missing-rate-explicit-opt-in
+    phase: always
+    quote: Add this flag only when the maintainer explicitly asks to enable missing-rate reporting.
+    enforced_by: agent
+    note: >-
+      Ruby checks the reporting flag, not conversational authorization or maintainer identity.
+      The agent obtains explicit opt-in before adding it; reporting code verifies public inputs.

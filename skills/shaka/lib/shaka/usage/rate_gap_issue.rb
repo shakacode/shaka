@@ -4,7 +4,10 @@ module Shaka
   # Public-only issue rendering and recognition for missing rates.
   module RateGapIssue
     def matching_issue?(entry, marker, model)
-      return true if entry['body'].is_a?(String) && entry['body'].lines.map(&:strip).include?(marker)
+      body = entry['body']
+      if body.is_a?(String) && body.include?('<!-- shaka-missing-rate: ')
+        return body.lines.map(&:strip).include?(marker)
+      end
 
       title = entry['title']
       public_model?(title, model) && title.match?(/\b(?:rate|rates|pricing|price|cost)\b/i)
