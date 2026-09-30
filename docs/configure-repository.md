@@ -1,5 +1,10 @@
 # Configure a repository
 
+Use shared configuration when your team wants repository-wide settings. For a
+local trial without a setup PR, see the
+[private-trial experience and limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience).
+The procedures below publish team configuration.
+
 ## Before you start
 
 Shaka waits for your CI checks before it calls a PR ready, and before it merges one

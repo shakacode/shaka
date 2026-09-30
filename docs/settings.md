@@ -6,6 +6,10 @@ layout keep them in `.agents/agent-workflow.yml`. Ask your agent to
 Policy comes from the default branch; settings changed in a PR do not govern
 that PR.
 
+Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/agent-workflow.yml) for a
+commented example with explicit defaults and repository-specific review choices.
+Optional settings that would pin a branch, model, or prompt stay commented.
+
 ## `merge.preference`
 
 **Required.** Values: `ask` or `auto`. Setup defaults to `ask`.

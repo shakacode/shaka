@@ -40,6 +40,11 @@ and submit improvements back to shakacode/shaka.
 
 ## 2. Configure your repository
 
+Already configured? Start a task below. To share settings with your team, use
+the setup prompt here. To try Shaka privately in one clone, read the
+[expected experience and current limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
+first. Private setup tools exist, but the seamless new-user path remains unproven.
+
 Shaka waits for your CI checks. If GitHub does not require any, for example on a
 private repository on the GitHub Free plan, setup lists them in the Shaka settings
 instead. See [before you start](configure-repository.md#before-you-start).

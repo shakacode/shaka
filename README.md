@@ -85,6 +85,7 @@ maintainer triage.
 
 - [Architecture](docs/architecture.md) — why Shaka keeps one owner and little state.
 - [Getting started](docs/getting-started.md) — install, configure, and run a task.
+- [Expected experience](docs/expected-experience.md) — scenarios, outcomes, and current pilot limits.
 - [Working with Shaka](docs/working-with-shaka.md) — merge policy, feedback, and resuming work.
 - [Repository setup](docs/configure-repository.md) and [settings](docs/settings.md).
 - [Documentation index](docs/README.md) — all product guides.
