@@ -14,7 +14,6 @@ review:
     - claude-review
   ci_review_wait: one # Default: wait for one configured hosted review report.
   # local_max_rounds: 5 # Current default; enable after upgrading older Shaka installations.
-  # local_review_count: 2 # Codex plus a fresh Claude per commit; enable after upgrading older Shaka installations.
   # prompt_file: .agents/review-prompt.md # Omitted: skills/shaka/config/review-prompt.md.
   local_review_agents: # Repository preference order; omitted: fresh implementation-model review.
     - provider: anthropic
