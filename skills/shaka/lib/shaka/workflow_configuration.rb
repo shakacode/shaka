@@ -34,7 +34,7 @@ module Shaka
     private
 
     def compare(texts)
-      scopes = texts.flat_map { |text| WorkflowFile.read(text).scopes }
+      scopes = texts.flat_map { |text| WorkflowFile.parse(text).scopes }
       return [[], []] if scopes.empty?
 
       divide(scopes, @catalog.repository_access)

@@ -9,7 +9,7 @@ module Shaka
     class WorkflowFile
       NAME = /\A[A-Za-z_][A-Za-z0-9_]*\z/
 
-      def self.read(text)
+      def self.parse(text)
         new(text, YAML.safe_load(text.to_s, permitted_classes: [], aliases: false))
       rescue Psych::Exception
         new(text, nil)
