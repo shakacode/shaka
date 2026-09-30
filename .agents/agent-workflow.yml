@@ -1,21 +1,56 @@
-# Shaka settings for this repository. See docs/settings.md.
+# Shaka settings for this repository; also a browsable configuration example.
+# Reference: docs/settings.md. Explicit values below preserve effective policy.
+# Required choices (review jobs, reviewers, merge preference) are repository-specific.
+# Optional settings with no fixed default stay commented rather than pinning a choice.
+# Policy comes from the trusted default branch; edits do not govern their own PR.
 ---
 version: 1 # Configuration format, independent of the Shaka release version.
-repo_prefix: SHAKA
+repo_prefix: SHAKA # Omitted: derive a label from the repository name.
+# base_branch: main # Omitted: follow the repository's default branch.
+
 review:
-  required: meaningful_changes
-  ci_review_jobs:
+  required: meaningful_changes # Repository choice: meaningful_changes, always, or none.
+  ci_review_jobs: # Repository jobs, required unless review.required is none.
     - claude-review
-  ci_review_wait: one
-  # Optional local reviewer preferences; see docs/settings.md.
-  local_review_agents:
+  ci_review_wait: one # Default: wait for one configured hosted review report.
+  # local_max_rounds: 5 # Current default; enable after upgrading older Shaka installations.
+  # prompt_file: .agents/review-prompt.md # Omitted: skills/shaka/config/review-prompt.md.
+  local_review_agents: # Repository preference order; omitted: fresh implementation-model review.
     - provider: anthropic
       model_family: claude
+      # model and effort omitted: use this reviewer's CLI defaults.
+      # prompt_file omitted: inherit review.prompt_file, then Shaka's packaged prompt.
     - provider: openai
       model_family: codex
     - provider: xai
       model_family: grok
+      # Grok needs a model from configuration or the task to run.
+
 merge:
-  preference: ask
+  preference: ask # Setup default: hand the verified PR back for merging.
+  # required_checks: [validate] # Omitted: no fallback list; live GitHub gates come first.
+  limits: # Defaults; exceeding a limit requires confirmation of the commit to merge.
+    max_changed_files: 29
+    max_changed_lines: 999 # Additions plus deletions.
+    max_commits: 9
+
 branches:
-  name: '{login}-{host}/{issue}-{description}'
+  name: '{login}-{host}/{issue}-{description}' # Default branch-name template.
+
+wip:
+  include_locations: true # Default: publish workspace and session link in WIP Details.
+
+opening_check:
+  external_enabled: true # Default: try a configured local reviewer for the PR opening.
+  # prompt_file: .agents/opening-prompt.md # Omitted: skills/shaka/config/opening-prompt.md.
+
+prose_limits: # Defaults for visible PR descriptions and walkthroughs.
+  max_sentence_words: 35
+  max_paragraph_words: 100
+  max_description_words: 300
+  words_per_changed_line: 4 # Proportional budget adds 150 words before applying this factor.
+
+# Commands are executable files, not YAML settings: .agents/bin/{setup,test,validate}.
+# Optional: .agents/bin/validate-local and .agents/bin/trigger-hosted-ci (requires validate-local).
+# Public-comment trust lives beside this file in trusted-github-actors.yml.
+# New repositories use .agents/shaka/config.yml; this supported older layout stays valid.
