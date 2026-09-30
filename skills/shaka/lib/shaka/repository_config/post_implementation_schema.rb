@@ -16,6 +16,8 @@ module Shaka
                   'xai/grok' => %w[low medium high] }.freeze
       DEFAULTS = { 'reviewer' => 'openai/codex', 'model' => 'gpt-6.1-sol', 'effort' => 'medium' }.freeze
 
+      def self.reviewer(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
+
       def initialize(settings) = @settings = settings
 
       def validate
@@ -23,7 +25,7 @@ module Shaka
         mapping!(@settings, label)
         keys!(@settings, [], KEYS, label)
         validate_enabled(label)
-        reviewer = @settings.fetch('reviewer', DEFAULTS.fetch('reviewer'))
+        reviewer = self.class.reviewer(@settings.fetch('reviewer', DEFAULTS.fetch('reviewer')))
         raise Error, "#{label}.reviewer must be a supported provider/family" unless EFFORTS.key?(reviewer)
 
         validate_choices(label, reviewer)

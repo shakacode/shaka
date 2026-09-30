@@ -38,13 +38,16 @@ module Shaka
       choices = defaults.merge(settings).merge(
         @options.slice(:reviewer, :model, :effort, :prompt_file).transform_keys(&:to_s)
       )
+      choices['reviewer'] = RepositoryConfig::PostImplementationSchema.reviewer(choices.fetch('reviewer'))
       choices.delete('model') if discard_model?(settings, choices, defaults)
       choices
     end
 
     def discard_model?(settings, choices, defaults)
       return false if @options.key?(:model)
-      return true if choices['reviewer'] != settings.fetch('reviewer', defaults['reviewer'])
+
+      configured = RepositoryConfig::PostImplementationSchema.reviewer(settings.fetch('reviewer', defaults['reviewer']))
+      return true if choices['reviewer'] != configured
 
       choices['reviewer'] != defaults['reviewer'] && !settings.key?('model')
     end

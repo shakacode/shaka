@@ -47,6 +47,26 @@ class PostImplementationTest < Minitest::Test
     end
   end
 
+  def test_capitalized_trusted_identity_keeps_its_model_when_task_changes_only_case
+    settings = { 'reviewer' => 'Anthropic/Claude', 'model' => 'sonnet' }
+    with_repository({ 'post_implementation' => settings }) do |root, base, head, bin|
+      fake_claude(bin, head)
+      result, status = run_checkpoint(root, base, head, bin, '--reviewer', 'ANTHROPIC/CLAUDE')
+      assert_predicate status, :success?, result.inspect
+      assert_equal 'anthropic/claude', result.fetch('reviewer')
+      assert_equal 'sonnet', option(checkpoint_trace(root), '--model')
+    end
+  end
+
+  def test_capitalized_task_identity_uses_the_existing_reviewer_parser
+    with_repository do |root, base, head, bin|
+      fake_claude(bin, head)
+      result, status = run_checkpoint(root, base, head, bin, '--reviewer', 'Anthropic/Claude', '--model', 'sonnet')
+      assert_predicate status, :success?, result.inspect
+      assert_equal 'anthropic/claude', result.fetch('reviewer')
+    end
+  end
+
   def test_candidate_configuration_never_selects_execution_settings
     with_repository do |root, base, _head, bin|
       change_candidate_policy(root)
@@ -161,7 +181,7 @@ class PostImplementationSchemaTest < Minitest::Test
   include RepositoryConfigTestHelpers
 
   def test_trusted_schema_accepts_and_resolves_checkpoint_prompt
-    settings = { 'reviewer' => 'anthropic/claude', 'model' => 'sonnet', 'effort' => 'high',
+    settings = { 'reviewer' => 'Anthropic/Claude', 'model' => 'sonnet', 'effort' => 'high',
                  'prompt_file' => '.agents/checkpoint.md' }
     with_repository('review' => review_policy('post_implementation' => settings)) do |root|
       File.write(File.join(root, '.agents/checkpoint.md'), 'Compare actual outcome and cost')
