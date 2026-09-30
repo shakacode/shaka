@@ -13,6 +13,24 @@ result.” Details can hold commands, tested commits, and a recording of the men
 Shaka uses your existing tests and validation commands, plus browser tools when
 needed. Required GitHub checks and approvals still apply.
 
+## Reconsider the finished result
+
+Before calling a change ready to merge, Shaka asks whether the result solves the
+original problem for the intended users and earns its maintenance cost. It compares
+the actual scope and complexity with the plan and considers simpler alternatives.
+Unexpected growth or repeated repairs can prompt this review earlier.
+
+The final walkthrough or a separate PR comment explains one conclusion:
+**Proceed**, **Simplify/reframe**, or **Do not merge**. Substantive unresolved concerns
+hold readiness and Auto even when technical checks pass. This judgment rests with
+the agent; Ruby does not verify that it happened or assess its quality.
+
+For example, a settings page may satisfy the task but introduce an interface most
+users never need. The agent can recommend extending an existing setting instead
+before more work builds around that page. Maintainers can customize the
+[default review prompt](../skills/shaka/references/post-implementation-validation.md#customize-for-the-project)
+with their audience and architectural priorities.
+
 ## Change one behavior at a time
 
 The agent writes a focused test, confirms it fails because the behavior is broken
