@@ -6,6 +6,8 @@ require_relative '../publication/text'
 module Shaka
   # Which ledger rounds form the last batch: the reviewers that read the last reviewed commit.
   module LocalReviewLedgerBatch
+    USAGE = %w[model tokens cost estimate].freeze
+
     private
 
     def check_batch_recorded!
@@ -33,6 +35,7 @@ module Shaka
       # One triage lists each problem once, so an id repeated across reviewers is two problems.
       LocalReviewFinding.list(findings.map { |finding| finding.is_a?(Hash) ? finding.except('reviewers') : finding },
                               'recorded finding')
+      check_usage!(content)
       rounds.each_with_index.map do |round, index|
         batch.include?(index) ? triaged(round, index, findings, content) : round
       end
@@ -58,15 +61,27 @@ module Shaka
       raise Error, "Finding #{id} must name the reviewers that reported it." unless
         named.is_a?(Array) && !named.empty?
 
-      stray = named.reject { |reviewer| batch.any? { |index| same_reviewer?(rounds[index], reviewer) } }
-      raise Error, "Finding #{id} names #{stray.join(', ')}, which did not review #{last_head}." if stray.any?
+      stray = named.reject { |reviewer| batch.any? { |index| same_reviewer?(rounds[index], reviewer.to_s) } }
+      return if stray.empty?
+
+      raise Error, "#{id == 'usage' ? 'Usage' : "Finding #{id}"} names #{stray.join(', ')}, which did not review " \
+                   "#{last_head}."
     end
 
     # Usage for one reviewer's round: under `usage` by reviewer, or at the top level for one round.
     def usage_for(content, reviewer)
-      keys = %w[model tokens cost estimate]
-      named = content['usage'].is_a?(Hash) && content['usage'].find { |name, _| name.casecmp?(reviewer) }&.last
-      (named || (batch.one? ? content : {})).slice(*keys)
+      named = content.fetch('usage', {}).find { |name, _| name.casecmp?(reviewer) }&.last
+      (named || (batch.one? ? content : {})).slice(*USAGE)
+    end
+
+    # Usage that fits no round would be dropped, so refuse it instead.
+    def check_usage!(content)
+      raise Error, "Put each reviewer's usage under `usage`, keyed by reviewer." if
+        !batch.one? && content.keys.intersect?(USAGE)
+      return unless content.key?('usage')
+      raise Error, 'Record usage must map each reviewer to its usage.' unless content['usage'].is_a?(Hash)
+
+      check_reviewers!('usage', content['usage'].keys)
     end
 
     def joins?(round, head, reviewer) = head == last_head && !same_reviewer?(round, reviewer)

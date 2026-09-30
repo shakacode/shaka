@@ -85,6 +85,7 @@ module Shaka
       locked do
         check_nothing_running!
         write(data.merge(content.slice('fallback'), 'rounds' => recorded_rounds(content)))
+        prune_running
         batch.map { |index| index + 1 }
       end
     end

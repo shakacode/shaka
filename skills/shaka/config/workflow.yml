@@ -229,7 +229,8 @@ phases:
         path outside the checkout. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
         disposition with `review record`; the next `review run` refuses to start until they are
-        recorded, and refuses a head the ledger already reviewed. Fix defects, and risks whose
+        recorded, and refuses a head the ledger already reviewed unless another reviewer joins
+        it before that record. Fix defects, and risks whose
         fix is clearly correct, in new commits, then review the new head. Document nits and the
         remaining risks instead of fixing them; a round whose findings are all documented ends
         the loop. A defect you decline to fix is documented too, and the comment reports it as

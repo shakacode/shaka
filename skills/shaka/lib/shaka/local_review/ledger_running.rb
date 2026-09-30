@@ -1,30 +1,40 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+require 'securerandom'
 require_relative '../error'
 
 module Shaka
   # Marks the reviews still running on a commit, so its findings are recorded only after every
-  # reviewer finishes and one triage sees all of them.
+  # reviewer finishes and one triage sees all of them. A running review holds a file lock of its
+  # own for as long as it runs; the system releases it when the process exits, even when killed,
+  # so a mark whose lock is free belongs to a review that is no longer running.
   module LocalReviewLedgerRunning
-    # Checks a round may start and marks its reviewer running, owned by this process. Another
-    # commit waits until every review of the current one has finished.
-    # `expires` bounds the mark by the run's own timeout, so a killed run whose process id is reused
-    # stops blocking once its review could no longer be running.
-    def start!(base:, head:, reviewer:, expires: Time.now.to_i + 3600)
+    # Checks a round may start and marks its reviewer running. Another commit waits until every
+    # review of the current one has finished.
+    def start!(base:, head:, reviewer:)
       locked do
         check_next!(base:, head:, reviewer:)
         check_not_running!(head, reviewer)
-        write_running(running + [{ 'head' => head, 'reviewer' => reviewer, 'pid' => Process.pid,
-                                   'expires' => expires }])
+        write_running(running + [hold(head, reviewer)])
       end
     end
 
-    # Clears this process's mark after a run that ended without a round, such as a failed reviewer.
+    # Clears this ledger's marks after a run that ended without a round, such as a failed reviewer.
     def finish! = locked { clear_running }
 
     private
 
     def running = data.fetch('running', [])
+
+    # Takes a lock file only this run holds, and returns the mark that names it.
+    def hold(head, reviewer)
+      path = "#{@path}.running-#{SecureRandom.hex(8)}"
+      file = File.new(path, File::RDWR | File::CREAT | File::EXCL, 0o600)
+      file.flock(File::LOCK_EX)
+      (@held ||= {})[path] = file
+      { 'head' => head, 'reviewer' => reviewer, 'lock' => path }
+    end
 
     # One review of a commit per reviewer at a time, and no new commit while another is being read.
     def check_not_running!(head, reviewer)
@@ -37,31 +47,36 @@ module Shaka
 
     def live(head) = running.select { |entry| entry['head'] == head && live?(entry) }
 
-    def live?(entry) = entry['expires'].to_i > Time.now.to_i && alive?(entry['pid'])
+    # A mark is live while some process holds its lock file.
+    def live?(entry)
+      File.open(entry['lock'].to_s, File::RDWR) { |file| !file.flock(File::LOCK_EX | File::LOCK_NB) }
+    rescue SystemCallError
+      false
+    end
 
-    # Only the process that set a mark clears it, so a refused or duplicate run leaves others alone.
-    def clear_running = write_running(running.reject { |entry| entry['pid'] == Process.pid })
+    # Releases this ledger's own marks, then drops every mark whose review has ended.
+    def clear_running
+      (@held || {}).each_value(&:close)
+      @held = {}
+      prune_running
+    end
+
+    def prune_running
+      ended, live = running.partition { |entry| !live?(entry) }
+      ended.each { |entry| FileUtils.rm_f(entry['lock'].to_s) }
+      write_running(live)
+    end
 
     def write_running(entries)
       write(entries.empty? ? data.except('running') : data.merge('running' => entries))
     end
 
-    # A review whose process exited without clearing its mark, such as one killed, no longer blocks.
     def check_nothing_running!
       waiting = live(last_head)
       return if waiting.empty?
 
       raise Error, "Wait for #{waiting.map { |entry| entry['reviewer'] }.join(' and ')} to finish reviewing " \
                    "#{last_head} before recording."
-    end
-
-    def alive?(pid)
-      Process.kill(0, Integer(pid))
-      true
-    rescue Errno::ESRCH, ArgumentError, TypeError
-      false
-    rescue Errno::EPERM
-      true
     end
   end
 end
