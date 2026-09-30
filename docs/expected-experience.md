@@ -28,10 +28,9 @@ Shaka configuration in the feature diff. Keep merge policy ask.
 ```
 
 This prompt describes the intended trial. It is not yet a demonstrated seamless
-new-user path. The [T5 acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
-records a verified maintainer-led feature PR with interventions, using source
-`947d2cb7f599f26b7291ec00f87189121e7c12bc` (managed version `0.1.0.pre.1`). The evaluated
-version's entry workflow still selected team setup, and reviewer selection,
+new-user path. The [first-task acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
+identifies the evaluated installation and records a verified maintainer-led
+feature PR with interventions. Its entry workflow still selected team setup, and reviewer selection,
 walkthrough, and handoff operations failed when reading an absent team seam.
 An agent also edited private settings to suppress local locations in public WIP Details.
 
@@ -67,7 +66,8 @@ that a reviewer completed. See [PR verification](pr-verification.md).
 ## Understand the PR's settings and evidence
 
 Expand the settings block to see the source and effective choices used for the
-candidate. Private values are redacted. A settings block describes the run;
+candidate. The publication helper redacts selected settings values; this is not a
+general privacy scan. A settings block describes the run;
 it does not prove tests or review happened.
 
 | What changes or fails | Expected response |
@@ -95,8 +95,7 @@ requests stop at their requested outcome.
 
 Authorization does not bypass GitHub approval rules or release restrictions.
 Changes that alter behavior after approval can need renewed approval of the new
-commit. See [merge choices](working-with-shaka.md#choose-a-merge-policy).
-Merging a feature PR does not by itself publish a package or deploy a release.
+commit. Merging a feature PR does not by itself publish a package or deploy a release.
 
 ## Resume or change your checkout
 
@@ -119,21 +118,15 @@ Expect the failed operation and path to be reported, with no claim of completion
 Use the host's supported permission mechanism for the necessary operation, then
 retry and verify it. Shaka does not create a sandbox or grant filesystem access.
 
-T5 exercised actual Codex workspace and Claude Code permission profiles. Codex
-workspace writes succeeded, but protected Git identity writes blocked private
-setup in normal and linked worktrees; successful approval/retry remains untested.
-Claude sessions denied setup without permission and completed supplemental setup
-with explicit Bash allowances. An unrestricted session proves no sandbox outcome.
+Codex workspace permissions can allow ordinary project edits while denying the
+protected Git writes needed by private setup. That denial was observed in normal
+and linked worktrees; successful approval/retry remains untested. Claude Code
+also needs permission for setup; supplemental checks completed with explicit Bash
+allowances. An unrestricted session proves no sandbox outcome.
 
 ## What the pilot has established
 
-T5 delivered a verified consumer feature PR and demonstrated candidate-bound
-evidence and publication privacy for that PR. Supplemental checks exercised
-worktrees, outside-pull adoption, recovery, and migration collisions.
-
-A genuinely new participant completing a small feature in a fresh chat without
-setup interventions remains untested. Fresh-chat resumption, live settings
-transitions, persistent consumer merge authorization, and successful Codex
-permission recovery also remain unproven. The [acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
-separates passed, partial, and untested cases. These limits support guided trials;
-they do not establish broad rollout readiness.
+A verified consumer feature PR demonstrates guided delivery. The linked acceptance
+report separates passed, partial, and untested cases, including supplemental
+recovery and migration checks. These results support guided trials; they do not
+establish broad rollout readiness.
