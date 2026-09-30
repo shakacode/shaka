@@ -68,7 +68,9 @@ module Shaka
       return title if findings.empty?
 
       lines = findings.map do |finding|
-        "#{self.class.line(finding, @links, fixed_before)} — reported by #{reporters(finding.id)}"
+        found = reporters(finding.id)
+        "#{self.class.line(finding, @links, fixed_before)} — #{found.size == 1 ? 'reporter' : 'reporters'}: " \
+          "#{found.join(', ')}"
       end
       "#{title}\n\n#{lines.join("\n")}"
     end
@@ -83,13 +85,14 @@ module Shaka
       end.join(' · ')
     end
 
+    # A reviewer's own number stays in code, where GitHub does not read `#1` as issue 1.
     def reporters(id)
       @batch.filter_map do |round|
         finding = round.findings.find { |item| item.id == id }
         next unless finding
 
-        finding.reported_as ? "#{round.reviewer} ##{finding.reported_as}" : round.reviewer
-      end.join(', ')
+        finding.reported_as ? "#{round.reviewer} `##{finding.reported_as}`" : round.reviewer
+      end
     end
   end
 end

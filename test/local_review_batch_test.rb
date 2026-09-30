@@ -181,7 +181,7 @@ class LocalReviewBatchCommentTest < Minitest::Test
     %w[1 2].each { |number| assert_includes body, "**Collated as:** `##{number}` → `F1`" }
     assert_includes body, "## Findings\n\n**Triage of `aaaaaaa`** · openai/codex: 1 finding · " \
                           "anthropic/claude: 1 finding\n\n- `F1` nit: Missing test — documented nit — " \
-                          'reported by openai/codex #1, anthropic/claude #2'
+                          'reporters: openai/codex `#1`, anthropic/claude `#2`'
     assert_operator body.index('## Findings'), :<, body.index('<details>')
     assert_equal 1, body.scan('- `F1` nit').size
   end
