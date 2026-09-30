@@ -47,12 +47,17 @@ module Shaka
 
     def live(head) = running.select { |entry| entry['head'] == head && live?(entry) }
 
-    # A mark is live while some process holds its lock file.
+    # A mark is live while some process holds its lock file. Only this ledger's own lock files
+    # count, so a mark naming another path is ended and nothing outside the ledger is touched.
     def live?(entry)
-      File.open(entry['lock'].to_s, File::RDWR) { |file| !file.flock(File::LOCK_EX | File::LOCK_NB) }
+      return false unless own_lock?(entry)
+
+      File.open(entry['lock'], File::RDWR) { |file| !file.flock(File::LOCK_EX | File::LOCK_NB) }
     rescue SystemCallError
       false
     end
+
+    def own_lock?(entry) = entry['lock'].to_s.match?(/\A#{Regexp.escape(@path)}\.running-\h{16}\z/)
 
     # Releases this ledger's own marks, then drops every mark whose review has ended.
     def clear_running
@@ -63,7 +68,7 @@ module Shaka
 
     def prune_running
       ended, live = running.partition { |entry| !live?(entry) }
-      ended.each { |entry| FileUtils.rm_f(entry['lock'].to_s) }
+      ended.select { |entry| own_lock?(entry) }.each { |entry| FileUtils.rm_f(entry['lock']) }
       write_running(live)
     end
 

@@ -17,39 +17,6 @@ class LocalReviewTriageTest < Minitest::Test
     assert_equal([[NIT], [NIT]], ledger.rounds.map { |round| round['findings'] })
   end
 
-  # Break caught: a batch was triaged while one of its reviewers was still reading the commit.
-  def test_recording_waits_for_every_running_review
-    append(EARLIER, 'openai/codex', findings: 0)
-    run = ledger
-    run.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
-
-    assert_includes assert_raises(Shaka::Error) { record([]) }.message, 'Wait for anthropic/claude'
-    run.finish!
-    assert_equal [1], record([])
-  end
-
-  # Break caught: a review killed before it cleared its mark blocked the batch forever.
-  def test_a_review_whose_process_exited_does_not_block_recording
-    append(EARLIER, 'openai/codex', findings: 0)
-    start_in_another_process(EARLIER, 'anthropic/claude')
-
-    assert_equal [1], record([])
-    refute JSON.parse(File.read(@path)).key?('running')
-    assert_empty Dir.glob("#{@path}.running-*")
-  end
-
-  # Break caught: a refused second run of one reviewer cleared the live run's mark.
-  def test_a_second_run_of_one_reviewer_on_a_commit_is_refused_and_leaves_the_mark
-    append(EARLIER, 'openai/codex', findings: 0)
-    run = ledger
-    run.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
-
-    error = assert_raises(Shaka::Error) { ledger.start!(base: BASE, head: EARLIER, reviewer: 'Anthropic/Claude') }
-    assert_includes error.message, 'already reviewing'
-    assert_includes assert_raises(Shaka::Error) { record([]) }.message, 'Wait for anthropic/claude'
-    run.finish!
-  end
-
   # Break caught: a misspelled or empty reviewer list dropped its finding without an error.
   def test_every_finding_names_reviewers_of_the_batch
     append(EARLIER, 'openai/codex', findings: 1)
@@ -60,17 +27,6 @@ class LocalReviewTriageTest < Minitest::Test
     end
   end
 
-  # Break caught: a new commit's review overtook a reviewer still reading the last commit.
-  def test_a_new_commit_waits_for_reviews_of_the_last_one
-    append(EARLIER, 'openai/codex', findings: 0)
-    run = ledger
-    run.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
-
-    error = assert_raises(Shaka::Error) { ledger.start!(base: BASE, head: HEAD, reviewer: 'openai/codex') }
-    assert_includes error.message, 'Wait for anthropic/claude to finish reviewing'
-    run.finish!
-  end
-
   # Break caught: two problems given one id by different reviewers hid one of them.
   def test_one_id_names_one_problem_across_reviewers
     append(EARLIER, 'openai/codex', findings: 1)
@@ -78,15 +34,6 @@ class LocalReviewTriageTest < Minitest::Test
     findings = [NIT.merge('reviewers' => ['openai/codex']), NIT.merge('reviewers' => ['anthropic/claude'])]
 
     assert_includes assert_raises(Shaka::Error) { record(findings) }.message, 'id repeats'
-  end
-
-  def test_an_append_clears_its_running_mark
-    run = ledger
-    run.start!(base: BASE, head: EARLIER, reviewer: 'openai/codex')
-    run.append!(base: BASE, round: round_entry(EARLIER, 'openai/codex', 0))
-
-    refute JSON.parse(File.read(@path)).key?('running')
-    assert_empty Dir.glob("#{@path}.running-*")
   end
 
   # Break caught: a reviewer started after triage, so its findings were triaged apart.
@@ -126,6 +73,77 @@ class LocalReviewTriageTest < Minitest::Test
     record([], usage: { 'openai/codex' => { 'tokens' => '5,000' } })
 
     assert_equal(['5,000', nil], ledger.rounds.map { |round| round['tokens'] })
+  end
+end
+
+# A review marks itself running, so its commit is triaged only after it finishes.
+class LocalReviewRunningMarkTest < Minitest::Test
+  include LocalReviewLedgerSteps
+
+  # Break caught: a batch was triaged while one of its reviewers was still reading the commit.
+  def test_recording_waits_for_every_running_review
+    append(EARLIER, 'openai/codex', findings: 0)
+    run = ledger
+    run.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
+
+    assert_includes assert_raises(Shaka::Error) { record([]) }.message, 'Wait for anthropic/claude'
+    run.finish!
+    assert_equal [1], record([])
+  end
+
+  # Break caught: a review killed before it cleared its mark blocked the batch forever.
+  def test_a_review_whose_process_exited_does_not_block_recording
+    append(EARLIER, 'openai/codex', findings: 0)
+    start_in_another_process(EARLIER, 'anthropic/claude')
+
+    assert_equal [1], record([])
+    refute JSON.parse(File.read(@path)).key?('running')
+    assert_empty Dir.glob("#{@path}.running-*")
+  end
+
+  # Break caught: a refused second run of one reviewer cleared the live run's mark.
+  def test_a_second_run_of_one_reviewer_on_a_commit_is_refused_and_leaves_the_mark
+    append(EARLIER, 'openai/codex', findings: 0)
+    run = ledger
+    run.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
+
+    error = assert_raises(Shaka::Error) { ledger.start!(base: BASE, head: EARLIER, reviewer: 'Anthropic/Claude') }
+    assert_includes error.message, 'already reviewing'
+    assert_includes assert_raises(Shaka::Error) { record([]) }.message, 'Wait for anthropic/claude'
+    run.finish!
+  end
+
+  # Break caught: a new commit's review overtook a reviewer still reading the last commit.
+  def test_a_new_commit_waits_for_reviews_of_the_last_one
+    append(EARLIER, 'openai/codex', findings: 0)
+    run = ledger
+    run.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
+
+    error = assert_raises(Shaka::Error) { ledger.start!(base: BASE, head: HEAD, reviewer: 'openai/codex') }
+    assert_includes error.message, 'Wait for anthropic/claude to finish reviewing'
+    run.finish!
+  end
+
+  # Break caught: a mark naming a file outside the ledger had that file deleted as a stale lock.
+  def test_pruning_touches_only_the_ledgers_own_lock_files
+    append(EARLIER, 'openai/codex', findings: 0)
+    outside = File.join(@directory, 'keep.txt')
+    File.write(outside, 'data')
+    File.write(@path, JSON.generate(JSON.parse(File.read(@path)).merge(
+                                      'running' => [{ 'head' => EARLIER, 'reviewer' => 'x/y', 'lock' => outside }]
+                                    )))
+    record([])
+
+    assert_path_exists outside
+  end
+
+  def test_an_append_clears_its_running_mark
+    run = ledger
+    run.start!(base: BASE, head: EARLIER, reviewer: 'openai/codex')
+    run.append!(base: BASE, round: round_entry(EARLIER, 'openai/codex', 0))
+
+    refute JSON.parse(File.read(@path)).key?('running')
+    assert_empty Dir.glob("#{@path}.running-*")
   end
 
   private
