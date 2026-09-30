@@ -188,6 +188,13 @@ class LocalReviewBatchCommentTest < Minitest::Test
     assert_equal 1, body.scan('- `F1` nit').size
   end
 
+  # Break caught: the outcome counted a finding both reviewers reported once per reviewer.
+  def test_outcome_counts_a_shared_finding_once
+    claude = round(reviewer: 'anthropic/claude', report: report(HEAD, reviewer: 'anthropic/claude'))
+
+    assert_includes render('rounds' => [round, claude]), 'documented nits or risks (1 nit).'
+  end
+
   def test_refuses_one_reviewer_reading_a_commit_twice
     error = assert_raises(Shaka::Error) { render('rounds' => [clean('openai/codex'), clean('OpenAI/Codex')]) }
 

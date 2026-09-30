@@ -89,7 +89,8 @@ module Shaka
       open = unresolved_defects.size
       return "**Outcome:** the loop stopped with #{defects(open)} left for the maintainer." if open.positive?
 
-      findings = last_batch.flat_map(&:findings)
+      # A finding several reviewers reported is one finding of the triage.
+      findings = last_batch.flat_map(&:findings).uniq(&:id)
       return "**Outcome:** the loop ended clean: #{last_label} found nothing." if findings.empty?
 
       "**Outcome:** the loop ended with nothing left to fix. #{last_label.capitalize}'s findings are documented " \
