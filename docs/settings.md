@@ -304,6 +304,43 @@ instructions, reports which `AGENTS.md` criteria it used, and ends with the
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.
 
+## `review.post_implementation`
+
+**Optional.** Choose who checks whether the finished change solves the intended
+problem and earns its maintenance cost. This is a separate product judgment from
+technical review. With no settings, Shaka invokes Codex at medium effort using its
+[default product prompt](../skills/shaka/config/post-implementation-prompt.md).
+
+For example, to ask Claude Sonnet to reconsider each finished change with your
+project's audience in mind:
+
+```yaml
+review:
+  required: meaningful_changes
+  ci_review_jobs: [claude-review]
+  post_implementation:
+    reviewer: anthropic/claude
+    model: sonnet
+    effort: high
+    prompt_file: .agents/product-checkpoint.md
+```
+
+The prompt file and repository choices come from the trusted default branch.
+A task's explicit choices take precedence. The
+[checkpoint procedure](../skills/shaka/references/post-implementation-validation.md#run-the-checkpoint)
+owns defaults, command syntax, supported efforts, and failure outcomes.
+
+The PR records the conclusion, reasons, execution settings, and available native
+usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
+unresolved substantive concerns block readiness and Auto; green technical checks
+and changed settings do not clear them. Earlier executions stay visible on the PR.
+An explicit `enabled: false` opts out and requires a visible note.
+
+Ruby validates settings, execution outcome, report shape, and head binding.
+The reviewer judges product fit. The task owner supplies the original problem and
+evidence, handles concerns, and establishes merge readiness; `merge` does not
+require a product checkpoint report.
+
 ## `opening_check`
 
 **Optional.** By default, the coding agent tries a separate local reviewer from

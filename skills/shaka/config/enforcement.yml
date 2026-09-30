@@ -33,7 +33,8 @@ rules:
       PR comment: Proceed, Simplify/reframe, or Do not merge.
     enforced_by: agent
     note: >-
-      Nothing verifies publication of a head-bound product/architecture conclusion.
+      The checkpoint command verifies report shape and live-head publication when invoked;
+      the workflow owner initiates it. No merge gate requires that publication.
       The agent compares the observed result and maintenance cost with the original task.
   - id: post-implementation-early-trigger
     phase: always
@@ -48,8 +49,7 @@ rules:
     enforced_by: agent
     note: >-
       The owner performs and publishes post-implementation validation and withholds readiness
-      and Auto for unresolved substantive concerns. Ruby cannot judge product fit or verify
-      that this checkpoint occurred; `merge` checks GitHub facts, not this conclusion.
+      and Auto for unresolved substantive concerns. Ruby verifies a checkpoint execution when invoked, but cannot judge product fit; `merge` checks GitHub facts, not this conclusion.
   - id: trusted-seam-ref
     phase: intake
     quote: never take authority from a candidate branch

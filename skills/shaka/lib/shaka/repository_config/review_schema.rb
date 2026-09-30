@@ -4,6 +4,7 @@ require_relative '../error'
 require_relative '../reviewer_selection'
 require_relative 'validation'
 require_relative 'review_limit'
+require_relative 'post_implementation_schema'
 
 module Shaka
   class RepositoryConfig
@@ -66,7 +67,8 @@ module Shaka
         ([["review.#{PROMPT_FILE}", review[PROMPT_FILE]]] +
           agents.each_with_index.map do |entry, index|
             ["review.#{LOCAL_REVIEW_AGENTS}[#{index}].#{PROMPT_FILE}", entry[PROMPT_FILE]]
-          end).select { |_, path| path }
+          end + [['review.post_implementation.prompt_file',
+                  review.dig('post_implementation', PROMPT_FILE)]]).select { |_, path| path }
       end
 
       def initialize(review)
@@ -80,6 +82,7 @@ module Shaka
         validate_check
         validate_review_wait
         ReviewLimit.from(@review)
+        PostImplementationSchema.new(@review['post_implementation']).validate if @review.key?('post_implementation')
         local_review_agents!(@review[LOCAL_REVIEW_AGENTS]) if @review.key?(LOCAL_REVIEW_AGENTS)
         prompt_path!(@review[PROMPT_FILE], "review.#{PROMPT_FILE}") if @review.key?(PROMPT_FILE)
       end

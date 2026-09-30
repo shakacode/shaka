@@ -568,7 +568,10 @@ phases:
     body: |-
       - Before calling implementation merge-ready, perform
         [post-implementation validation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>):
-        did we build the right thing? Compare the finished result with the original problem,
+        Use `post-implementation run` with a public-safe evidence packet and the verified
+        default-branch `--ref`, then publish its result on this PR. The companion procedure
+        defines trusted settings, explicit task overrides, failures, and opt-outs.
+        Did we build the right thing? Compare the finished result with the original problem,
         intended audience, and expected value, including actual complexity, scope drift,
         file/commit churn, and simpler alternatives. This complements technical review.
         Publish the head-bound conclusion and reasoning in the final walkthrough or a dedicated
