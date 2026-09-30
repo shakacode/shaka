@@ -18,6 +18,14 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: local-review-cap-push
+    phase: verify
+    quote: Do not push unless the user chooses to.
+    enforced_by: agent
+    note: >-
+      `review run --ledger` refuses another round at the trusted cap with failure_stage round_cap.
+      The ledger saves that cap for the visible publication warning. Nothing intercepts Git push
+      or verifies the user's choice; the agent stops and tells the user about unresolved defects.
   - id: post-implementation-conclusion
     phase: finish
     quote: >-

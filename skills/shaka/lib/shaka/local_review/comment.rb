@@ -7,6 +7,7 @@ require_relative '../reviewer_selection'
 require_relative 'evidence'
 require_relative 'finding'
 require_relative 'summary'
+require_relative 'bound'
 
 module Shaka
   # Renders one pull request comment for a local adversarial review: a summary a reader skims,
@@ -34,10 +35,12 @@ module Shaka
       @links = LocalReviewLinks.new(repository, published)
       @rounds = build_rounds(PublicationText.list(content['rounds'], 'rounds'))
       @fallback = content['fallback']
+      @max_rounds = RepositoryConfig::ReviewLimit.from(content)
     end
 
     def render
-      blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice, *round_details,
+      blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice,
+                *LocalReviewBound.new(@rounds, @max_rounds).lines, *round_details,
                 @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
     end

@@ -115,7 +115,8 @@ module Shaka
       return unless @options[:ledger]
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
-      @ledger.check_next!(base: @options[:base], head:)
+      @max_rounds = RepositoryConfig::ReviewLimit.from(trusted_review || {})
+      @ledger.check_next!(base: @options[:base], head:, max_rounds: @max_rounds)
       check_history! if @ledger.last_head
     end
 
@@ -150,7 +151,7 @@ module Shaka
       round = result.slice('head', 'reviewer', 'report', 'prompt_source', 'criteria_ref', 'usage')
       # The routed model comes from native usage through `review record`, never from the request.
       round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
-      @ledger.append!(base: @options[:base], round:)
+      @ledger.append!(base: @options[:base], round:, max_rounds: @max_rounds)
       result.merge('ledger' => @ledger.path, 'round' => @ledger.rounds.size)
     end
 
@@ -194,7 +195,11 @@ module Shaka
       raise DirtyWorktree, "Commit or remove uncommitted changes before review: #{changes.first(5).join(', ')}#{more}"
     end
 
-    def failure_stage(error) = error.is_a?(DirtyWorktree) ? 'dirty_worktree' : 'setup_failure'
+    def failure_stage(error)
+      return 'round_cap' if error.is_a?(LocalReviewLedger::RoundCap)
+
+      error.is_a?(DirtyWorktree) ? 'dirty_worktree' : 'setup_failure'
+    end
   end
 
   # Checks the exact revision, launches a reviewer, and validates its report.
