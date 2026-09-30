@@ -70,12 +70,14 @@ module Shaka
 
     def revised_body(body, latest)
       mark, content = body.split("\n", 2)
+      identity = content[/\A🤖 [^\n]+\n\n/] || ''
+      content = content.delete_prefix(identity)
       revised = if content.start_with?("#{MARKER} ")
                   retarget(content, latest)
                 else
                   wrap(content, latest)
                 end
-      "#{mark}\n#{revised}" if revised
+      "#{mark}\n#{identity}#{revised}" if revised
     end
 
     def retarget(content, latest)

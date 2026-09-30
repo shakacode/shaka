@@ -68,6 +68,16 @@ class PostImplementationHistoryTest < Minitest::Test
     assert_equal 1, prior['body'].scan('<details>').size
   end
 
+  def test_model_identifier_stays_above_the_pointer_after_collapse_and_retarget
+    identity = "🤖 claude · anthropic · observed-model · high\n\n"
+    github = prepared_history(body: "#{identity}Original conclusion")
+    prior = github.comments[1]
+    github.comments[3] = comment(3)
+    collapse(github, github.comments[3])
+
+    assert prior['body'].start_with?("#{mark}#{identity}#{Shaka::PostImplementationHistory::MARKER}")
+  end
+
   def test_repeating_the_newest_publication_is_idempotent
     github = prepared_history
     assert_empty collapse(github, github.comments[2])['collapsed']
@@ -128,8 +138,8 @@ class PostImplementationHistoryTest < Minitest::Test
 
   private
 
-  def prepared_history
-    github = GitHub.new([comment(1), comment(2)])
+  def prepared_history(body: 'Original conclusion')
+    github = GitHub.new([comment(1, body:), comment(2)])
     collapse(github, github.comments[2])
     github
   end

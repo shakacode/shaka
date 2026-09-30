@@ -65,8 +65,11 @@ checks the live open PR head and retains separate executions on that PR, includi
 native usage metadata when available. Requested settings are labeled separately
 from observed model and usage; absent observations remain UNKNOWN.
 
+The first visible line identifies the reviewer and its natively observed model and
+effort; missing observations remain UNKNOWN. Requested settings stay separately labeled.
+
 Older reports from the publishing account link to its newest product validation,
-with their original conclusions retained in collapsed history and human annotations
+keeping any model identifier first, with their original conclusions retained in collapsed history and human annotations
 preserved. Retrying a publication updates those links without nesting the history.
 If a history update fails, publication returns a nonzero status and identifies the
 unavailable update; the new report stays published so the same execution can be retried.

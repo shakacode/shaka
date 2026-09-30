@@ -78,13 +78,21 @@ module Shaka
     end
 
     def render(result, head)
-      title = "## Post-implementation validation\n\nHead: `#{head}`\n\n"
+      title = "#{identity_text(result)}\n\n## Post-implementation validation\n\nHead: `#{head}`\n\n"
       return title + "**Opted out:** #{result.fetch('reason')}\n" if result['status'] == 'opted_out'
       unless result['status'] == 'completed'
         return title + "**Not completed.** #{result.fetch('reason')}\n\nReadiness remains blocked.\n"
       end
 
       title + completed_body(result, head)
+    end
+
+    def identity_text(result)
+      configuration = result['usage'] && native_usage(result, result['usage']).last&.fetch('configuration')
+      provider, family = result.fetch('reviewer', 'UNKNOWN/UNKNOWN').split('/', 2)
+      PublicationText.identity('agent' => family, 'provider' => provider,
+                               'model' => configuration && (configuration[2] || configuration[1]),
+                               'effort' => configuration && configuration[3])
     end
 
     def completed_body(result, head)
