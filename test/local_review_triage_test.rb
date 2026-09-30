@@ -68,6 +68,19 @@ class LocalReviewTriageTest < Minitest::Test
     assert_equal([[NIT], '9'], ledger.rounds.first.values_at('findings', 'tokens'))
   end
 
+  # Break caught: a second reviewer of a commit used up a turn of the round cap.
+  def test_the_round_cap_counts_commits_not_reviewers
+    append(EARLIER, 'openai/codex', findings: 0)
+    ledger.check_next!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude', max_rounds: 1)
+    append(EARLIER, 'anthropic/claude', findings: 0)
+    ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex', max_rounds: 2)
+
+    error = assert_raises(Shaka::LocalReviewLedger::RoundCap) do
+      ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex', max_rounds: 1)
+    end
+    assert_includes error.message, 'round cap (1)'
+  end
+
   def test_usage_is_recorded_for_each_reviewer
     append(EARLIER, 'openai/codex', findings: 0)
     append(EARLIER, 'anthropic/claude', findings: 0)

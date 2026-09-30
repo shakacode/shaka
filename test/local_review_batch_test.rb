@@ -165,6 +165,14 @@ class LocalReviewBatchCommentTest < Minitest::Test
     refute_includes render('rounds' => [first, second, clean('openai/codex')]), 'returned after its fix'
   end
 
+  # Break caught: two reviewers of one commit showed the loop bound as if two commits were reviewed.
+  def test_the_loop_bound_counts_commits
+    defect = NIT.merge('class' => 'defect')
+    body = render('rounds' => [round(findings: [defect]), clean('anthropic/claude')], 'local_max_rounds' => 2)
+
+    refute_includes body, 'Loop bound reached'
+  end
+
   def test_refuses_one_reviewer_reading_a_commit_twice
     error = assert_raises(Shaka::Error) { render('rounds' => [clean('openai/codex'), clean('OpenAI/Codex')]) }
 
