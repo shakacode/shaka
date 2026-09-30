@@ -200,6 +200,17 @@ def trust_flags(flags, options)
   flags.on('--ref REF', 'Trusted commit for seam settings') { |value| options[:ref] = value }
 end
 
+def settings_flags(flags, options)
+  flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
+  %w[validation review].each do |kind|
+    flags.on("--#{kind}-result PATH", 'Existing settings-bound result') { |path| (options[kind.to_sym] ||= []) << path }
+  end
+  flags.on('--publication-flow FLOW', Shaka::Configuration::FeatureGuard::FLOWS,
+           'Separate setup/migration flow') do |flow|
+    options[:publication_flow] = flow
+  end
+end
+
 options = {}
 parser = OptionParser.new do |flags|
   flags.banner = usage_banner
@@ -216,9 +227,9 @@ parser = OptionParser.new do |flags|
     options[:ci_review_wait] = value
   end
   merge_flags(flags, options)
+  settings_flags(flags, options)
   trust_flags(flags, options)
   opening_flags(flags, options)
-  flags.on('--base BRANCH', 'Base branch the change was validated against') { |value| options[:base] = value }
   flags.on('--issue', 'Read issue comments instead of PR comments') { options[:issue_only] = true }
   flags.on('--state STATE', Shaka::Attention::STATES, 'Decision the PR awaits: answer, merge, resume, none') do |value|
     options[:state] = value
@@ -287,7 +298,8 @@ begin
                carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 rendered = Shaka::Publication.description(carried, workflow_version, pull)
+                 settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], repository:, pull:, options:)
+                 rendered = Shaka::Publication.description(carried, workflow_version, pull, settings:)
                  Shaka::DecisionLabels.guard(github, carried, pull['body'])
                  rendered
                end

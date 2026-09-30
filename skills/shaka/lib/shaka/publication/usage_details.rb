@@ -56,6 +56,13 @@ module Shaka
 
   # Renders the PR usage table so every host publishes the same rows and alignment.
   class UsageDetails
+    # Hand-written notes are what made each host publish a different shape.
+    def self.refuse_free_form!(items)
+      return unless items.any? { |item| item.is_a?(Hash) && UsageDetails.usage_summary?(item['summary']) }
+
+      raise Error, 'Publication usage must be supplied as the usage object, not a details item.'
+    end
+
     include UsageColumnCheck
 
     SUMMARY = 'Usage and cost'
