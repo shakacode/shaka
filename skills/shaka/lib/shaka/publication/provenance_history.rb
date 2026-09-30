@@ -2,7 +2,7 @@
 
 require 'json'
 require_relative '../error'
-require_relative '../usage/records'
+require_relative 'managed_region'
 require_relative 'provenance'
 
 module Shaka
@@ -60,7 +60,7 @@ module Shaka
     # A body published before this history existed starts a new one; a damaged history is
     # refused rather than rewritten, so no recorded entry disappears unnoticed.
     def previous(body)
-      region = UsageRecords.managed_region(body).to_s
+      region = Publishing.managed_region(body).to_s
       # Any opening counts, so a marker damaged past matching is refused rather than restarted.
       openings = region.scan(PREFIX.strip).size
       return fresh if openings.zero?

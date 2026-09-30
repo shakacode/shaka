@@ -6,13 +6,12 @@ require_relative '../public_comments/bounded_list'
 require_relative '../public_comments/reply_guard'
 require_relative 'publication'
 require_relative 'feature_guard'
+require_relative 'managed_region'
 
 module Shaka
   # Publishes rendered Markdown, checking GitHub's own rendering before anything is written
   # and confirming the stored bytes afterwards.
   module Publishing
-    OPEN_MARK = '<!-- shaka:begin -->'
-    CLOSE_MARK = '<!-- shaka:end -->'
     ESCAPE = /\\[nrt]/
     REPLY_PAGES = 20
     SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/

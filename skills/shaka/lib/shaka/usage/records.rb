@@ -12,7 +12,6 @@ module Shaka
   module UsageRecords
     BEGIN_PREFIX = '<!-- shaka:usage '
     END_MARK = '<!-- shaka:usage:end -->'
-    REGION = /<!-- shaka:begin -->(.*?)<!-- shaka:end -->/m
     # A block ends before any later begin marker, so a lost end marker cannot swallow the next report.
     OPENING = Regexp.escape(BEGIN_PREFIX)
     BLOCK = /#{OPENING}([^\n]*) -->\n(?:(?!#{OPENING}).)*?#{Regexp.escape(END_MARK)}/m
@@ -39,7 +38,7 @@ module Shaka
 
       usages = usage_details(content)
       usage = usages.first
-      region = managed_region(existing)
+      region = Publishing.managed_region(existing)
       kept = usage && region ? carried(region, usages.map { |item| item['body'].to_s }.join("\n\n"), stats) : []
       return [content, stats] if kept.empty?
 
@@ -130,13 +129,6 @@ module Shaka
       Time.iso8601(stamp)
     rescue ArgumentError, TypeError
       nil
-    end
-
-    def managed_region(existing)
-      text = existing.to_s
-      return unless text.scan('<!-- shaka:begin -->').size == 1 && text.scan('<!-- shaka:end -->').size == 1
-
-      text[REGION, 1]
     end
 
     # Carried reports join the first usage section; every usage section holds new reports.
