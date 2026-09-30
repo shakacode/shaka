@@ -4,9 +4,15 @@
 # output per million tokens. Anthropic prices are input, cache read, 5-minute cache
 # write, 1-hour cache write, and output per million tokens. Retired models are omitted.
 openai:
-  verified: "2026-09-23"
+  verified: "2026-09-29"
   threshold: 272000
   models:
+    # Sol 6.1 rates verified 2026-09-29:
+    # https://developers.openai.com/api/docs/models/gpt-6.1-sol
+    # https://learn.chatgpt.com/docs/pricing#token-rates
+    gpt-6.1-sol:
+      credits: ["50", "2.5", "250"]
+      api: ["2", "0.1", "10"]
     gpt-5.6-terra:
       credits: ["50", "5", "300"]
       api: ["2", "0.2", "12"]
