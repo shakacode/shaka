@@ -129,6 +129,19 @@ class LocalReviewRunningMarkTest < Minitest::Test
     run.finish!
   end
 
+  # Break caught: a record through another spelling of the ledger's directory missed a running review.
+  def test_recording_through_a_linked_directory_still_waits
+    append(EARLIER, 'openai/codex', findings: 0)
+    run = ledger
+    run.start!(base: BASE, head: EARLIER, reviewer: 'anthropic/claude')
+    linked = File.join(@directory, 'linked')
+    File.symlink(@directory, linked)
+    other = Shaka::LocalReviewLedger.new(File.join(linked, 'ledger.json'))
+
+    assert_includes assert_raises(Shaka::Error) { other.record!({ 'findings' => [] }) }.message, 'Wait for'
+    run.finish!
+  end
+
   # Break caught: a review killed before it cleared its mark blocked the batch forever.
   def test_a_review_whose_process_exited_does_not_block_recording
     append(EARLIER, 'openai/codex', findings: 0)

@@ -23,9 +23,11 @@ module Shaka
     attr_reader :path
 
     # Only `review run` can start a ledger, so only it needs the checkout to keep the ledger out of.
+    # The path resolves its directory's links, so every spelling of one ledger, such as `/tmp` and
+    # `/private/tmp` on macOS, names the same running marks.
     def initialize(path, root: nil)
-      @path = File.expand_path(path)
-      directory = File.realpath(File.dirname(@path))
+      directory = File.realpath(File.dirname(File.expand_path(path)))
+      @path = File.join(directory, File.basename(path))
       raise Error, '--ledger must be outside the candidate checkout' if
         root && (directory == root || directory.start_with?("#{root}/"))
     end
