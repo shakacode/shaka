@@ -71,9 +71,7 @@ module Shaka
                   review.dig('post_implementation', PROMPT_FILE)]]).select { |_, path| path }
       end
 
-      def initialize(review)
-        @review = review
-      end
+      def initialize(review) = @review = review
 
       # A seam with no native gate still declares its reviewer order, because
       # `required: none` drops the repository's named check, not the alternate-review baseline.
