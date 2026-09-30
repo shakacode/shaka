@@ -98,10 +98,11 @@ module Shaka
       @stage = 'duplicate lookup'
       marker = "<!-- shaka-missing-rate: #{Digest::SHA256.hexdigest(gap.join('/'))} -->"
       issue = issues.find { |entry| matching_issue?(entry, marker, gap[1]) }
-      return existing_url(issue) if issue
       unless gaps(current).include?(gap)
-        return 'Missing-rate reporting: current Shaka already prices this scenario; update the installation.'
+        note = 'Missing-rate reporting: current Shaka already prices this scenario; update the installation.'
+        return [issue && existing_url(issue), note].compact.join("\n")
       end
+      return existing_url(issue) if issue
 
       file_gap(gap, revision, marker)
     end

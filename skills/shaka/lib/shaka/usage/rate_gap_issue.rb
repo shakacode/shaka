@@ -4,7 +4,7 @@ module Shaka
   # Public-only issue rendering and recognition for missing rates.
   module RateGapIssue
     BILLING = /api|credits|standard|fast/i
-    MODEL_END = /(?=\s*(?:\z|[<>"',;|])|\s+(?:costs?|rates?|pricing|price)\b)/i
+    MODEL_END = /(?=(?:\z|[<>"',;|])|\s+(?:costs?|rates?|pricing|price)\b)/i
     TITLE_END = /(?=\s*(?:\z|[<>"',;|]|[.:](?:\s|\z)|\((?:#{BILLING})\))|\s+(?:costs?|rates?|pricing|price)\b)/i
 
     def matching_issue?(entry, marker, model)

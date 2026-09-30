@@ -119,6 +119,16 @@ class RateGapReportTest < Minitest::Test
     assert(@github.calls.any? { |call| call.to_s.include?("ref=#{'a' * 40}") })
   end
 
+  def test_stale_installation_returns_the_closed_link_and_update_note
+    @github.card = @github.card.sub('    gpt-6.1-sol:', '    gpt-99-sol:')
+    @github.issues = [{ 'title' => 'Add gpt-99-sol cost rates', 'state' => 'closed',
+                        'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
+    text = report
+    assert_includes text, '/issues/88'
+    assert_includes text, 'update the installation'
+    assert_empty @github.requests
+  end
+
   def test_unknown_public_model_does_not_file
     assert_includes report(catalog: 'gpt-99-sol-private'), 'not verified'
     assert_empty @github.requests
@@ -245,6 +255,13 @@ class RateGapTransportTest < Minitest::Test
       @github.requests.clear
       assert_includes base_model_report('GPT-7'), '/issues/999'
       assert_equal 2, @github.requests.size
+    end
+  end
+
+  def test_markup_and_separators_cannot_verify_a_variant_prefix
+    ['<td>GPT-7 <em>mini</em></td>', 'GPT-7 | mini'].each do |catalog|
+      assert_includes base_model_report(catalog), 'not verified'
+      assert_empty @github.requests
     end
   end
 
