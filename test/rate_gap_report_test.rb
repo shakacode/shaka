@@ -227,6 +227,15 @@ class RateGapTransportTest < Minitest::Test
     end
   end
 
+  def test_rate_limit_issues_are_not_pricing_reports
+    ['Rate limit errors with gpt-7', 'gpt-7: rate limit exceeded', 'Rate-limit costs for gpt-7'].each do |title|
+      @github.issues = [{ 'title' => title, 'html_url' => 'https://github.com/shakacode/shaka/issues/88' }]
+      @github.requests.clear
+      assert_includes base_model_report('GPT-7'), '/issues/999'
+      assert_equal 2, @github.requests.size
+    end
+  end
+
   def test_catalog_variant_does_not_verify_the_base_model
     assert_includes base_model_report('GPT-7 mini'), 'not verified'
     assert_empty @github.requests

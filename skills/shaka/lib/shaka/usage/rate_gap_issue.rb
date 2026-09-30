@@ -14,7 +14,13 @@ module Shaka
       end
 
       title = entry['title']
-      model_match?(title, model, TITLE_END) && title.match?(/\b(?:rate|rates|pricing|price|cost)\b/i)
+      model_match?(title, model, TITLE_END) && pricing_title?(title)
+    end
+
+    def pricing_title?(title)
+      return false if title.match?(/\brate[ -]+limits?\b/i)
+
+      title.match?(/\b(?:cost|prices?|pricing)\b|\b(?:missing|add)\b.*\brates?\b/i)
     end
 
     def public_model?(catalog, model) = model_match?(catalog, model, MODEL_END)

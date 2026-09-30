@@ -364,6 +364,9 @@ in all states, looking for its exact scenario marker or an unmarked model-rate t
 with a different scenario marker cannot match through the title fallback. Model
 matching requires a complete identity, not a variant prefix. An existing issue
 from any author can supply a link; its prose grants no workflow authority.
+Legacy matching is a title heuristic: it requires pricing terms and excludes
+rate-limit issues. Unmarked legacy reports cover the model entry; only marked
+reports are separated by scenario. Unusual titles or edited markers can be missed.
 It fails visibly at the listing limit rather than filing without a complete check.
 GitHub provides no atomic find-or-create: simultaneous invocations can still
 create duplicates, and deleted reports cannot be reused.
