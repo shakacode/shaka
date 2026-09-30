@@ -120,6 +120,15 @@ class LocalReviewRunningMarkTest < Minitest::Test
     assert_equal [1], record([])
   end
 
+  # Break caught: recording while the first reviews of a ledger ran said the ledger was empty.
+  def test_recording_before_the_first_rounds_names_the_running_reviews
+    run = ledger
+    run.start!(base: BASE, head: EARLIER, reviewer: 'openai/codex')
+
+    assert_includes assert_raises(Shaka::Error) { record([]) }.message, 'Wait for openai/codex'
+    run.finish!
+  end
+
   # Break caught: a review killed before it cleared its mark blocked the batch forever.
   def test_a_review_whose_process_exited_does_not_block_recording
     append(EARLIER, 'openai/codex', findings: 0)

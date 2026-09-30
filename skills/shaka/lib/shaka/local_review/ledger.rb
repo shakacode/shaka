@@ -85,10 +85,12 @@ module Shaka
     # reviewers, each finding names the ones that reported it, so a shared finding is one entry.
     def record!(content)
       raise Error, 'Record content must be an object.' unless content.is_a?(Hash)
-      raise Error, 'The ledger has no round to record.' if rounds.empty?
 
       locked do
+        # Reviews still running explain an empty ledger better than the ledger does.
         check_nothing_running!
+        raise Error, 'The ledger has no round to record.' if rounds.empty?
+
         write(data.merge(content.slice('fallback'), 'rounds' => recorded_rounds(content)))
         prune_running
         batch.map { |index| index + 1 }
