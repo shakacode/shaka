@@ -70,7 +70,7 @@ module Shaka
 
     # Usage for one reviewer's round: under `usage` by reviewer, or at the top level for one round.
     def usage_for(content, reviewer)
-      named = content.fetch('usage', {}).find { |name, _| name.casecmp?(reviewer) }&.last
+      named = (content['usage'] || {}).find { |name, _| name.casecmp?(reviewer) }&.last
       (named || (batch.one? ? content : {})).slice(*USAGE)
     end
 
@@ -78,8 +78,8 @@ module Shaka
     def check_usage!(content)
       usage = content['usage']
       raise Error, "Put each reviewer's usage under `usage`, keyed by reviewer." if
-        (!batch.one? || usage) && content.keys.intersect?(USAGE)
-      return unless usage
+        (!batch.one? || content.key?('usage')) && content.keys.intersect?(USAGE)
+      return unless content.key?('usage')
       raise Error, 'Record usage must map each reviewer to its usage.' unless
         usage.is_a?(Hash) && usage.values.all?(Hash)
 

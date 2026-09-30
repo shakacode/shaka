@@ -254,8 +254,8 @@ published review names it in its summary table instead of the fallback notice.
 
 **Optional. Default: 1.** How many reviewers from `local_review_agents` read each
 commit before its findings are fixed. With 2 or more, the reviewers run at the same
-time. `shaka review record` refuses until every review started on that commit has
-finished, and then records all their findings in one triage, so a problem two reviewers
+time. `shaka review record` refuses while any review it started is still running,
+and then records all their findings in one triage, so a problem two reviewers
 both found is recorded and fixed once.
 
 Claude implements, and Codex and a fresh Claude session both review:

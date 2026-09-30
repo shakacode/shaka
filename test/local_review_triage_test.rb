@@ -52,7 +52,8 @@ class LocalReviewTriageTest < Minitest::Test
 
     { { tokens: '5' } => 'keyed by reviewer', { usage: { 'openai/codx' => {} } } => 'Usage names openai/codx',
       { usage: { 'openai/codex' => '5' } } => 'map each reviewer',
-      { model: 'x', usage: { 'openai/codex' => {} } } => 'keyed by reviewer' }
+      { model: 'x', usage: { 'openai/codex' => {} } } => 'keyed by reviewer',
+      { usage: nil } => 'map each reviewer' }
       .each do |extra, message|
         assert_includes assert_raises(Shaka::Error) { record([], **extra) }.message, message
       end
