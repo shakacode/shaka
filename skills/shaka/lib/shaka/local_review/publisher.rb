@@ -47,7 +47,7 @@ module Shaka
       return 'Commit subject unavailable.' if text.empty?
 
       # A commit subject is data, not Markdown that may hide the generated review layout.
-      "<code>#{CGI.escapeHTML(text)}</code>"
+      "<code>#{text.each_char.map { |char| "&##{char.ord};" }.join}</code>"
     end
   end
 end

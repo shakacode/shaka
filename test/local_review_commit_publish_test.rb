@@ -63,12 +63,14 @@ class LocalReviewCommitPublishTest < Minitest::Test
   def test_commit_subject_cannot_add_disclosures_or_a_heading
     github = Timeline.new
     def github.api(path)
-      super.merge('message' => '<details># Subject `code`</details>')
+      super.merge('message' => '<details># Subject `code` [link](https://example.test) *all* ![x](image)</details>')
     end
     assert_equal 0, publish(github, 'rounds' => [clean(HEAD, 'openai/codex')]).first
 
     body = github.replies.first.last
-    assert_includes body, '&lt;details&gt;'
+    assert_includes body, '&#60;'
+    assert_includes body, '&#91;'
+    refute_includes body, '[link]'
     assert_equal 1, body.scan('<details>').size
   end
 
@@ -79,8 +81,9 @@ class LocalReviewCommitPublishTest < Minitest::Test
     end
     assert_equal 0, publish(github, 'rounds' => [clean(HEAD, 'openai/codex')]).first
 
-    assert_includes github.replies.first.last,
-                    '<code>Don&#39;t notify @someone https://example.test</code>'
+    literal = "Don't notify @someone https://example.test"
+    rendered_subject = github.replies.first.last[%r{<code>(.*?)</code>}, 1]
+    assert_equal literal, CGI.unescapeHTML(rendered_subject)
   end
 
   private
@@ -100,7 +103,7 @@ class LocalReviewCommitPublishTest < Minitest::Test
   def assert_commit_entry(body, index)
     head = [EARLIER, HEAD][index]
     assert_equal 2, body.scan('<details>').size
-    assert_includes body, index.zero? ? 'Add review publication' : 'Clarify review documentation'
+    assert_includes CGI.unescapeHTML(body), index.zero? ? 'Add review publication' : 'Clarify review documentation'
     refute_includes body, '**Total:**'
     assert_equal "REVIEWED #{head} BY anthropic/claude EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip
   end
