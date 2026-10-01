@@ -239,8 +239,9 @@ prompt source, criteria commit, and usage path. The table's Model column shows a
 native usage: the top-level CLI model, one canonical aggregate model, or a `shared:` list when
 aggregate usage reports several models. The list records model usage without assigning a primary
 model or claiming which model wrote the review. If an aggregate entry lacks a canonical name, the
-round leaves Model unknown so a later complete usage record can supply it. The separate `shaka
-usage` report keeps Routed model unknown for mixed-token pricing because aggregate tokens cannot
+round shows the top-level model with `other models unknown`, when present; otherwise it leaves
+Model unknown so a later complete usage record can supply it. The separate `shaka usage` report
+leaves Routed model unknown whenever aggregate tokens span multiple entries, because they cannot
 be assigned to one model's rate. The ledger stays private until you publish it.
 
 The prompt asks for a class on every finding. Handle each by class:

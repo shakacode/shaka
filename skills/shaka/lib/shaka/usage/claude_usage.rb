@@ -7,21 +7,25 @@ module Shaka
   # Claude CLI `-p --output-format json` writes one result object instead of JSONL.
   module ClaudePrintResult
     class << self
-      # Prefer the CLI's top-level model; aggregate usage is safe only when exactly one model ran.
+      # A multi-entry token aggregate has no single model that can safely price it.
       def routed_model(record)
         return unless record.is_a?(Hash)
 
-        present_name(record['model']) || model_usage(record['modelUsage'])
+        usage = record['modelUsage']
+        return if usage.is_a?(Hash) && usage.size > 1
+
+        present_name(record['model']) || model_usage(usage)
       end
 
-      # Aggregate usage describes the whole review; mark a mixed-model round as shared.
+      # Aggregate usage describes the whole review; preserve partial model evidence explicitly.
       def model_attribution(record)
         return unless record.is_a?(Hash)
 
         usage = record['modelUsage']
-        return aggregate_model_attribution(usage) if usage.is_a?(Hash) && usage.size > 1
+        direct = present_name(record['model'])
+        return aggregate_model_attribution(usage, direct) if usage.is_a?(Hash) && usage.size > 1
 
-        present_name(record['model']) || shared_model_usage(record['modelUsage'])
+        direct || shared_model_usage(usage)
       end
 
       private
@@ -43,12 +47,16 @@ module Shaka
         models.one? ? models.first : "shared: #{models.join(', ')}"
       end
 
-      def aggregate_model_attribution(usage)
+      def aggregate_model_attribution(usage, direct)
         models = canonical_models(usage)
-        return if models.any?(&:nil?)
+        return incomplete_model_attribution(direct) if models.any?(&:nil?)
 
-        models = models.uniq.sort
+        models = (models + [direct]).compact.uniq.sort
         models.one? ? models.first : "shared: #{models.join(', ')}"
+      end
+
+      def incomplete_model_attribution(direct)
+        "#{direct} (other models unknown)" if direct
       end
 
       def canonical_models(usage)

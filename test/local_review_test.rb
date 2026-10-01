@@ -1795,6 +1795,11 @@ class LocalReviewClaudeModelTest < Minitest::Test
     assert_equal 'shared: claude-opus-5-5, claude-sonnet-4-5', Shaka::ClaudePrintResult.model_attribution(record)
   end
 
+  def test_keeps_top_level_model_when_aggregate_names_are_incomplete
+    record = { 'model' => MODEL, 'modelUsage' => INCOMPLETE_USAGE }
+    assert_equal "#{MODEL} (other models unknown)", Shaka::ClaudePrintResult.model_attribution(record)
+  end
+
   def test_allows_recorded_model_to_fill_incomplete_aggregate_attribution
     with_claude_ledger(INCOMPLETE_USAGE) do |result, ledger|
       refute result.key?('model')
