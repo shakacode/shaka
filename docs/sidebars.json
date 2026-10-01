@@ -2,6 +2,7 @@
   "docsSidebar": [
     "README",
     "getting-started",
+    "trying-pr-versions",
     "expected-experience",
     "working-with-shaka",
     "pr-verification",

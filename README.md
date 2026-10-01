@@ -84,6 +84,7 @@ maintainer triage.
 ## Documentation
 
 - [Architecture](docs/architecture.md) — why Shaka keeps one owner and little state.
+- [Try a Shaka PR](docs/trying-pr-versions.md) — evaluate an unmerged version on real work.
 - [Getting started](docs/getting-started.md) — install, configure, and run a task.
 - [Expected experience](docs/expected-experience.md) — scenarios, outcomes, and current pilot limits.
 - [Working with Shaka](docs/working-with-shaka.md) — merge policy, feedback, and resuming work.

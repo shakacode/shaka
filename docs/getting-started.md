@@ -80,3 +80,5 @@ not switch it for you. When you name either setting, Shaka pauses if the setting
 differ from its recommendation or cannot be confirmed. Testing and
 review are already part of the workflow.
 See [working with Shaka](working-with-shaka.md) for merge choices and feedback.
+
+To evaluate an unmerged workflow change, [try a Shaka PR on real work](trying-pr-versions.md).
