@@ -235,8 +235,10 @@ tests, then publishes the review after pushing.
 Keep every round in one ledger, a JSON file outside the checkout, for example
 `LEDGER="$(mktemp -d)/review-ledger.json"`. Pass `--ledger "$LEDGER"` to each
 `shaka review run`: a completed round adds its head, reviewer, effort, requested model, report,
-prompt source, criteria commit, and usage path. The table's Model column shows only the routed
-model you record from native usage. The ledger stays private until you publish it.
+prompt source, criteria commit, and usage path. The table's Model column shows attribution from
+native usage: the top-level CLI model, a canonical aggregate model, or a `shared:` list when the
+round used several models. Incomplete shared attribution is labeled `shared models unavailable`.
+The ledger stays private until you publish it.
 
 The prompt asks for a class on every finding. Handle each by class:
 

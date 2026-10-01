@@ -31,7 +31,7 @@ module Shaka
     end
 
     def capture_claude_usage(result, output)
-      @options[:routed_model] = ClaudePrintResult.routed_model(result)
+      @options[:observed_model] = ClaudePrintResult.model_attribution(result)
       @options[:usage] = save_usage(output) if @options.fetch(:capture_usage, true)
     end
 

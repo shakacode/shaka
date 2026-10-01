@@ -48,8 +48,7 @@ module Shaka
 
     def triaged(round, index, findings, content)
       mine = findings&.select { |finding| reported?(finding, round) }&.map { |finding| individual(finding, round) }
-      usage = usage_for(content, round['reviewer'])
-      usage['model'] = round['model'] if round.key?('model')
+      usage = usage_for(content, round['reviewer']).merge(round.slice('model'))
       round = round.merge({ 'findings' => mine || round['findings'] }.compact, usage)
       check_findings!(round, index + 1)
       round

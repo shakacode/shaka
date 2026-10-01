@@ -317,7 +317,7 @@ module Shaka
 
       { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer, 'report' => path,
         'prompt_source' => prompt_source, 'criteria_ref' => (@options[:criteria_ref] if @criteria_supplied),
-        'model' => @options[:routed_model], 'usage' => @options[:usage] }.compact
+        'model' => @options[:observed_model], 'usage' => @options[:usage] }.compact
     end
 
     def review_prompt

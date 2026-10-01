@@ -14,6 +14,16 @@ module Shaka
         present_name(record['model']) || model_usage(record['modelUsage'])
       end
 
+      # Aggregate usage describes the whole review; mark a mixed-model round as shared.
+      def model_attribution(record)
+        return unless record.is_a?(Hash)
+
+        usage = record['modelUsage']
+        return aggregate_model_attribution(usage) if usage.is_a?(Hash) && usage.size > 1
+
+        present_name(record['model']) || shared_model_usage(record['modelUsage'])
+      end
+
       private
 
       def model_usage(usage)
@@ -21,6 +31,30 @@ module Shaka
 
         entry = usage.values.first
         present_name(entry['canonicalModel']) if entry.is_a?(Hash)
+      end
+
+      def shared_model_usage(usage)
+        models = canonical_models(usage)
+        return unless models
+
+        return if models.any?(&:nil?)
+
+        models = models.uniq.sort
+        models.one? ? models.first : "shared: #{models.join(', ')}"
+      end
+
+      def aggregate_model_attribution(usage)
+        models = canonical_models(usage)
+        return 'shared models unavailable' if models.any?(&:nil?)
+
+        models = models.uniq.sort
+        models.one? ? models.first : "shared: #{models.join(', ')}"
+      end
+
+      def canonical_models(usage)
+        return unless usage.is_a?(Hash) && !usage.empty?
+
+        usage.values.map { |entry| present_name(entry['canonicalModel']) if entry.is_a?(Hash) }
       end
 
       def present_name(value)
