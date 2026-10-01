@@ -58,13 +58,22 @@ class ReviewWorkflowTest < Minitest::Test
     output, status, summary = run_result([result], comments: [report])
 
     assert_predicate status, :success?, output
-    assert_includes summary, '**VERIFIED**'
+    assert_includes summary, '**REPORT POSTED**'
     assert_includes summary, 'a' * 40
+  end
+
+  def test_failure_messages_cannot_be_mistaken_for_completed_reports
+    ["Could not review #{'a' * 40}; no findings count is available",
+     "Unable to post findings: 403 for #{'a' * 40}"].each do |body|
+      _output, status, summary = run_result([result], comments: [report.merge('body' => body)])
+      refute_predicate status, :success?
+      assert_includes summary, 'UNAVAILABLE'
+    end
   end
 
   def test_old_wrong_head_and_other_author_reports_fail
     [report.merge('created_at' => '2026-09-29T00:00:00Z'),
-     report.merge('body' => "Review of #{'b' * 40}: no findings"),
+     report.merge('body' => "REVIEWED #{'b' * 40} BY anthropic/claude FINDINGS 0"),
      report.merge('user' => { 'login' => 'other[bot]' })].each do |comment|
       _output, status, = run_result([result], comments: [comment])
       refute_predicate status, :success?
