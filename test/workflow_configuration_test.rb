@@ -140,12 +140,12 @@ class WorkflowConfigurationScopeTest < Minitest::Test
     assert_equal [[], ['vars.REGION']], result.values_at('missing', 'unverified')
   end
 
-  # On push no caller supplies the declared secret, so declaring it must not report clear.
-  def test_a_declared_caller_secret_is_still_reported_when_the_workflow_has_another_trigger
+  # On push no caller supplies the declared secret, so it is checked like any other name.
+  def test_a_declared_caller_secret_is_missing_when_the_workflow_has_another_trigger
     mixed = { WORKFLOW => CALLER_WORKFLOW.sub("on:\n", "on:\n  push:\n") }
     result = check(files: [file_row], contents: mixed, repo: user_repo, secrets: [])
 
-    assert_equal ['secrets.token'], result['unverified']
+    assert_equal ['secrets.token'], result['missing']
   end
 
   def test_an_environment_secret_is_not_missing_when_that_environment_has_it

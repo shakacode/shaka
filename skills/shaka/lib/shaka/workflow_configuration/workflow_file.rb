@@ -77,9 +77,8 @@ module Shaka
         { 'secrets' => references['secrets'] - parsed['secrets'], 'vars' => references['vars'] - parsed['vars'] }
       end
 
-      # A caller supplies a declared secret only when nothing else can start the workflow.
       def reject_caller(names)
-        return names unless triggers == ['workflow_call']
+        return names unless reusable?
 
         names.reject { |name| caller_secrets.any? { |declared| declared.casecmp?(name) } }
       end
@@ -111,8 +110,9 @@ module Shaka
         end
       end
 
-      # A caller in another repository brings its own names, so this repository's lists cannot settle them.
-      def reusable? = triggers.include?('workflow_call')
+      # Only a caller starts this workflow, and it brings its own names, so this repository's lists
+      # cannot settle them. Another trigger runs it here, where its names are checked like any other.
+      def reusable? = triggers == ['workflow_call']
 
       def caller_secret_map
         return unless @document.is_a?(Hash)
