@@ -62,6 +62,15 @@ class TrialPrepareTest < Minitest::Test
     assert_raises(Shaka::Error) { prepare(repository: 'elsewhere/shaka') }
   end
 
+  def test_refuses_inherited_git_overrides_before_writing
+    previous = ENV.fetch('GIT_DIR', nil)
+    ENV['GIT_DIR'] = File.join(@source, '.git')
+    assert_raises(Shaka::Error) { prepare }
+    refute_path_exists @directory
+  ensure
+    ENV['GIT_DIR'] = previous
+  end
+
   def test_identifies_an_explicitly_selected_fork_source
     result = prepare(fork: true, source_repository: 'contributor/shaka')
     assert_equal 'contributor/shaka', result['source_repository']

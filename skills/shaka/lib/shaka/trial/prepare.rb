@@ -109,6 +109,9 @@ module Shaka
       end
 
       def project_root(root)
+        overrides = WorkflowVersion::GIT_ENVIRONMENT.keys.select { ENV.key?(it) }
+        raise Error, "Clear inherited Git overrides first: #{overrides.join(', ')}." unless overrides.empty?
+
         output, _error, status = Open3.capture3('git', '-C', root, 'rev-parse', '--show-toplevel')
         File.realpath(status.success? ? output.strip : root)
       end

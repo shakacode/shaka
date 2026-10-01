@@ -19,7 +19,10 @@ source checkouts belong outside the target checkout. Normal skill links are not
 switched. The command verifies an open PR in `shakacode/shaka`, fetches its head,
 and uses the bootstrap's existing installer to copy it, without running the
 candidate installer or helper. A moving head fails preparation; retry to select
-the new revision. This first version prepares a prompt; it does not launch a host.
+the new revision. Run outside Git hooks after clearing inherited Git overrides
+such as GIT_DIR or GIT_WORK_TREE. Fetching ignores global/system Git configuration;
+network settings available only there may need a different environment.
+This first version prepares a prompt; it does not launch a host.
 
 Inspect the returned `source_repository`, `source_fork`, `candidate_head`, `skill`,
 `helper`, `report_helper`, and
