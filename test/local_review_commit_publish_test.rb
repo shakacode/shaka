@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'local_review_comment_test'
+require_relative 'github_helper'
 
 class LocalReviewCommitPublishTest < Minitest::Test
   include LocalReviewCommentFixture
@@ -27,7 +28,7 @@ class LocalReviewCommitPublishTest < Minitest::Test
 
   def test_two_reviewers_per_commit_leave_two_idempotent_timeline_comments
     github = publish_loop
-    assert_equal [EARLIER, HEAD].map { |sha| "local-adversarial-review-#{sha}" }, github.replies.map(&:first)
+    assert_equal [EARLIER, HEAD].map { |sha| "local-review-#{sha}" }, github.replies.map(&:first)
     github.replies.each_with_index { |(_, body), index| assert_commit_entry(body, index) }
   end
 
@@ -69,6 +70,17 @@ class LocalReviewCommitPublishTest < Minitest::Test
     body = github.replies.first.last
     assert_includes body, '&lt;details&gt;'
     assert_equal 1, body.scan('<details>').size
+  end
+
+  def test_commit_subject_is_literal_text_including_quotes_mentions_and_urls
+    github = Timeline.new
+    def github.api(path)
+      super.merge('message' => "Don't notify @someone https://example.test")
+    end
+    assert_equal 0, publish(github, 'rounds' => [clean(HEAD, 'openai/codex')]).first
+
+    assert_includes github.replies.first.last,
+                    '<code>Don&#39;t notify @someone https://example.test</code>'
   end
 
   private
@@ -113,5 +125,22 @@ class LocalReviewCommitPublishTest < Minitest::Test
 
   def clean(head, reviewer)
     round(head, reviewer:, findings: [], report: report(head, reviewer:, findings: 0))
+  end
+end
+
+# The API client validates reply keys before any request; the timeline fake does not.
+class LocalReviewCommitPublicationKeyTest < Minitest::Test
+  include LocalReviewCommentFixture
+  include GitHubHelper
+
+  def test_generated_commit_key_passes_real_reply_validation
+    comment = Shaka::LocalReviewCommitComment.new({ 'rounds' => [round] }, head: HEAD, subject: ->(_) { 'Subject' })
+    body = comment.render
+    posted = "<!-- shaka:reply:#{comment.key} -->\n#{body}"
+    github = client(response({ 'id' => 1, 'number' => 42, 'body' => '' }),
+                    response({ 'login' => 'agent' }), response([]), html_response('<table></table>'),
+                    response({ 'id' => 9, 'body' => posted }))
+
+    assert_equal 9, github.reply(body:, key: comment.key)['id']
   end
 end

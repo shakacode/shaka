@@ -13,7 +13,7 @@ module Shaka
       @subject = subject
     end
 
-    def key = "#{KEY}-#{@rounds.last.head}"
+    def key = "local-review-#{@rounds.last.head}"
 
     def render
       blocks = [TITLE, reason, table, *fallback_notice, *settings_notice, *bound,
