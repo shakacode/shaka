@@ -253,8 +253,26 @@ coverage. Do not add a monitor, extra audit, or tracker for this handoff.
 
 ## Review contexts
 
-Use a fresh reviewer context that did not implement or design the change. The
-current CLI runner launches a separate process. A subagent inheriting the
-implementation conversation is not an independent review; a fresh host session
-can produce a report for `shaka review check`. A current-host subagent is not a
+Use a fresh reviewer context that did not implement or design the change. Prefer
+a reviewer CLI run through `shaka review run`, because it is separate from the
+implementer in ways a current-host Task or subagent is not:
+
+- **Prompt.** The helper builds the prompt from the review criteria at the trusted
+  commit. A subagent gets its brief from the agent whose work is under review.
+- **Sandbox.** The CLI starts in an empty directory without edit access or the
+  checkout's instructions, skills, and hooks. A subagent runs in the candidate
+  checkout with the host's tools, so candidate files can steer it.
+- **Provider.** The CLI can come from a provider that did not write the change.
+  A subagent uses the host's provider.
+- **Record.** The run leaves its exit status, a report bound to the reviewed
+  commit, and its own usage transcript. A subagent returns prose, and its tokens
+  are counted with the parent session.
+
+The CLI reviewer reads less. Codex and Grok can read files at the reviewed commit
+through Git; the restricted Claude reviewer sees only the diff and reports missing
+context. A subagent can read the whole checkout and run its tests.
+
+A current-host Task or subagent is therefore not an independent review, and not a
 substitute for an available reviewer selected from trusted repository settings.
+This holds even when the host gives the subagent a fresh context. When no listed
+CLI can run, a fresh host session can produce a report for `shaka review check`.
