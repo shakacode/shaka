@@ -117,12 +117,12 @@ module Shaka
         expanded = File.expand_path(path)
         ancestor = expanded
         ancestor = File.dirname(ancestor) until File.exist?(ancestor) || File.symlink?(ancestor)
-        File.join(File.realpath(ancestor), expanded.delete_prefix(ancestor).delete_prefix('/'))
+        File.expand_path(File.join(File.realpath(ancestor), expanded.delete_prefix(ancestor).delete_prefix('/')))
       end
 
       def refuse_overlap(path = @directory)
-        return unless path == @root || path.start_with?("#{@root}/") ||
-                      @root.start_with?("#{path}/")
+        return unless path == @root || path.start_with?(File.join(@root, '')) ||
+                      @root.start_with?(File.join(path, ''))
 
         raise Error, 'Trial packages must be outside the target project checkout.'
       end

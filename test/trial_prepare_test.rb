@@ -51,6 +51,12 @@ class TrialPrepareTest < Minitest::Test
     refute_path_exists @directory
   end
 
+  def test_refuses_an_existing_storage_directory_containing_the_project
+    @directory = @tmp
+    assert_raises(Shaka::Error) { prepare }
+    refute_path_exists File.join(@tmp, 'installs')
+  end
+
   def test_refuses_private_or_foreign_candidate_metadata
     assert_raises(Shaka::Error) { prepare(private: true) }
     assert_raises(Shaka::Error) { prepare(repository: 'elsewhere/shaka') }

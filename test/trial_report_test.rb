@@ -128,6 +128,17 @@ class TrialReportCommandTest < TrialReportFixture
     end
   end
 
+  def test_cli_rejects_github_root_urls_without_a_backtrace
+    Tempfile.create(['trial-report', '.json']) do |file|
+      file.write(JSON.generate('id' => 'root-link', 'candidate_head' => HEAD, 'verdict' => 'revise',
+                               'private_result' => true, 'summary' => 'See https://github.com/.'))
+      file.flush
+      _output, error = cli(file.path, status: 1)
+      assert_match(/\Ashaka trial:/, error)
+      assert_empty calls
+    end
+  end
+
   def test_cli_publishes_a_report_from_json
     content = { 'id' => 'cli-example', 'candidate_head' => HEAD, 'verdict' => 'revise',
                 'summary' => 'Useful with one correction.', 'result_url' => 'https://github.com/team/project/pull/7' }

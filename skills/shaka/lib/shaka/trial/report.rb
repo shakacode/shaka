@@ -83,12 +83,15 @@ module Shaka
       def verify_summary_links
         @summary.scan(%r{https?://github\.com/[^\s)<>\[\]`"|]+}i).each do |url|
           path = URI::DEFAULT_PARSER.unescape(URI.parse(url.sub(/[.,;:!?]+\z/, '')).path)
-          repository = path.split('/')[1, 2].join('/')
+          repository = Array(path.split('/')[1, 2]).join('/')
           public_repository!(repository)
         end
       end
 
       def public_repository!(repository)
+        raise Error, 'Supply full GitHub repository URLs in the summary.' unless
+          repository.match?(%r{\A[\w-]+/[\w.-]+\z})
+
         metadata = @results.api("repos/#{repository}")
         return if metadata['private'] == false && metadata['visibility'] == 'public'
 
