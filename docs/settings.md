@@ -10,6 +10,8 @@ Browse [this repository’s configuration](https://github.com/shakacode/shaka/bl
 commented example with explicit defaults and repository-specific review choices.
 Optional settings that would pin a branch, model, or prompt stay commented.
 
+For documentation and PR style, see [writing preferences](writing-preferences.md).
+
 ## `merge.preference`
 
 **Required.** Values: `ask` or `auto`. Setup defaults to `ask`.
