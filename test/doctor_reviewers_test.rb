@@ -65,6 +65,17 @@ class DoctorReviewersTest < Minitest::Test
     end
   end
 
+  def test_optional_installed_providers_do_not_satisfy_configured_review_count
+    review = review_policy('local_review_count' => 2, 'local_review_agents' => agents)
+    with_repository('review' => review) do |root|
+      report, blocked = doctor(root:, executable: ->(name, *) { name == 'grok' })
+
+      assert_includes report, '0 providers available; 2 reviewers requested'
+      assert_includes report, 'grok on PATH (optional)'
+      refute blocked
+    end
+  end
+
   private
 
   def with_reviewers(count:, available:)

@@ -53,7 +53,7 @@ module Shaka
 
     def self.option_parser(options)
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka doctor [--root DIR] [--installation-json]'
+        flags.banner = 'Usage: shaka doctor [--root DIR] [--host NAME] [--installation-json]'
         flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
         flags.on('--host NAME', Usage::READERS.keys, Usage::READERS.keys.join(', ')) do |value|
           options[:host] = value
@@ -85,7 +85,7 @@ module Shaka
 
     def report
       ["Shaka doctor: #{overall.upcase}", context, installation_summary, '',
-       *ordered.map { |item| render(item) }].join("\n")
+       *ordered.map { |item| render(item) }, '', next_step].join("\n")
     end
 
     private
@@ -138,6 +138,13 @@ module Shaka
       lines = ["[#{item.fetch(:status).upcase}] #{item.fetch(:name)} — #{item.fetch(:summary)}"]
       lines << "    Next: #{item[:guidance]}" if item[:guidance]
       lines.join("\n")
+    end
+
+    def next_step
+      return 'Next step: resolve the FAILED checks above, then rerun `shaka doctor`.' if blocked?
+
+      'Next step: give your coding agent a small task with Shaka. Run `shaka` for example prompts. ' \
+        'Follow any setup advice above when you want another reviewer.'
     end
   end
 end

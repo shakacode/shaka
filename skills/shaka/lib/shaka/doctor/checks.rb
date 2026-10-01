@@ -52,7 +52,7 @@ module Shaka
         return check('GitHub CLI', 'healthy', first_line(out)) if ok
 
         check('GitHub CLI', 'failed', "gh does not run: #{first_line(error)}",
-              guidance: 'Install the GitHub CLI. Publication and merge need it.')
+              guidance: 'Install https://cli.github.com/, then run `gh auth login` to publish PRs.')
       end
 
       # This answers authentication and permission together, for the one repository that
@@ -145,10 +145,10 @@ module Shaka
 
       # A missing contract is distinct from a present but unusable file.
       def missing_seam
-        legacy = Configuration::Paths::CONTRACT
-        modern = Configuration::Paths::NEW_CONTRACT
-        check('Repository seam', 'failed', "this root has no #{legacy} or #{modern} regular file",
-              guidance: 'Run `shaka seam init` here, or point `--root` at the repository you meant.')
+        paths = [Configuration::Paths::CONTRACT, Configuration::Paths::NEW_CONTRACT].join(' or ')
+        check('Repository seam', 'failed', "this root has no #{paths} regular file",
+              guidance: 'Ask your coding agent: Configure this repository for Shaka using its existing checks ' \
+                        'and merge policy ask. Or point `--root` at the checkout you meant.')
       end
 
       # A command that cannot even launch is this check's answer, never an aborted report.
