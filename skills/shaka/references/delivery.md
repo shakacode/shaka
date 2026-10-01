@@ -144,9 +144,9 @@ still allows a race. Maintainer confirmation prevents competing owners.
 
 ## Reject an approach and restart
 
-Use [confirmed return points](return-points.md) to name the earlier agreement,
+Use [human attention checkpoints](return-points.md) to identify earlier human guidance,
 preserve the abandoned code and context, and resume with new steering. Requesting
-attention alone establishes no agreement. Keep the existing Ask/Auto decision path
+attention alone records no human guidance. Keep the existing Ask/Auto decision path
 and WIP note; summarize superseded attempts in the description's details while
 carrying surviving material findings into the active review.
 

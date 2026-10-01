@@ -57,8 +57,8 @@ phases:
         `PR #NUMBER` in place of the issue identifier.
       - Before writing to an unfinished PR, whether resuming or adopting it, follow the
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
-      - Record a named intake return point after an unambiguous initiating instruction,
-        following [confirmed agreements](<{{package_root}}/skills/shaka/references/return-points.md>).
+      - Record a named initial human attention checkpoint after an unambiguous initiating instruction,
+        following [human attention checkpoints](<{{package_root}}/skills/shaka/references/return-points.md>).
         Capture the revision and recoverable worktree state alongside the scope the human
         confirmed; mark incomplete snapshots not restorable. Existing start authorization
         needs no extra confirmation.
@@ -673,7 +673,7 @@ phases:
       unresolved, and the PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
   When the human confirms new direction worth returning to, record the next named
-  return point through [confirmed agreements](<{{package_root}}/skills/shaka/references/return-points.md>).
+  human attention checkpoint through [human attention checkpoints](<{{package_root}}/skills/shaka/references/return-points.md>).
   A request for attention alone confirms nothing. For a requested rewind, preserve
   the abandoned attempt before restoring owned code and context, retain applicable
   discoveries, refresh live authority, and verify the replacement through this workflow.

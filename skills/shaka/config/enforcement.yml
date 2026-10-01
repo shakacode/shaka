@@ -23,7 +23,7 @@ rules:
     quote: preserve the abandoned attempt before restoring owned code and context
     enforced_by: agent
     note: >-
-      Ruby does not capture or restore snapshots, verify human agreement, or carry findings
+      Ruby does not capture or restore snapshots, verify human confirmation, or carry findings
       across attempts. The agent preserves code and context through the referenced procedure;
       existing validation and review commands still check their own revision-bound evidence.
   - id: local-review-cap-push
