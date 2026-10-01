@@ -16,7 +16,7 @@ module Shaka
 
       report = JSON.parse(text)
       validate(report, head:)
-      report.slice('head', 'conclusion', 'reasons', 'concerns', 'alternative')
+      report.slice('head', 'conclusion', 'reasons', 'concerns', 'alternative', 'summary', 'next_action')
     rescue JSON::ParserError => e
       raise Error, "Malformed checkpoint report: #{e.message}"
     end
@@ -26,9 +26,20 @@ module Shaka
         report.is_a?(Hash) && report['head'] == head
       raise Error, 'Checkpoint report has an invalid conclusion' unless CONCLUSIONS.include?(report['conclusion'])
 
+      evidence_fields!(report)
+      summary_fields!(report)
+    end
+
+    def evidence_fields!(report)
       %w[reasons concerns].each { |key| strings!(report[key], key) }
       raise Error, 'Checkpoint needs reasons and a simpler alternative' if
         report['reasons'].empty? || !text?(report['alternative'])
+    end
+
+    def summary_fields!(report)
+      %w[summary next_action].each do |key|
+        raise Error, "Checkpoint #{key} must be non-empty text" if report.key?(key) && !text?(report[key])
+      end
     end
 
     def strings!(list, label)

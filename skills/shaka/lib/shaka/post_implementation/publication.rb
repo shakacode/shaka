@@ -1,0 +1,120 @@
+# frozen_string_literal: true
+
+require_relative '../post_implementation_report'
+require_relative '../publication/text'
+require_relative '../usage/codex_usage'
+require_relative '../usage/claude_usage'
+
+module Shaka
+  # Presents the checkpoint's action without confusing configuration with observations.
+  class PostImplementationPublication
+    ACTIONS = {
+      'Proceed' => ['Proceed after required checks and approvals.',
+                    'Complete technical validation and required approvals.'],
+      'Simplify/reframe' => ['Revise before merging.', 'Revise the approach, then revalidate and review.'],
+      'Do not merge' => ['Do not merge; decide whether to close or replace.',
+                         'Bring the close-or-replace decision to the maintainer.']
+    }.freeze
+
+    def initialize(result, head:)
+      @result = result
+      @head = head
+      @usage = native_usage
+      @configuration = @usage.last&.fetch('configuration') || []
+    end
+
+    def render
+      body = @result['status'] == 'completed' ? completed_body : incomplete_body
+      "#{identity}\n\n## Post-implementation validation\n\n#{body}"
+    end
+
+    private
+
+    def identity
+      provider, family = @result.fetch('reviewer', 'UNKNOWN/UNKNOWN').split('/', 2)
+      PublicationText.identity('agent' => family, 'provider' => provider,
+                               'model' => model_text, 'effort' => effort_text)
+    end
+
+    def model_text
+      observed = known(@configuration[2])
+      configured = known(@configuration[1])
+      requested = known(@result['requested_model'])
+      parts = ["observed model: #{observed || 'UNKNOWN'}"]
+      parts << "configured model: #{configured}" if configured && configured != observed
+      parts << "requested model: #{requested}" if requested && ![observed, configured].include?(requested)
+      parts.join('; ')
+    end
+
+    def effort_text
+      recorded = known(@configuration[3])
+      requested = known(@result['effort'])
+      parts = ["recorded effort: #{recorded || 'UNKNOWN'}"]
+      parts << "requested effort: #{requested}" if requested && requested != recorded
+      parts.join('; ')
+    end
+
+    def known(value)
+      value.strip if value.is_a?(String) && !value.strip.empty? && !value.strip.casecmp?('UNKNOWN')
+    end
+
+    def completed_body
+      report = PostImplementationReport.read(@result.fetch('report'), head: @head)
+      action, next_action = recommendation(report)
+      summary = report.fetch('summary', report.fetch('reasons').first)
+      ["**Recommendation: #{action}**", summary,
+       "**Next action (task owner):** #{report.fetch('next_action', next_action)}",
+       *report_evidence(report, summary)].join("\n\n")
+    end
+
+    def report_evidence(report, summary)
+      concerns = report.fetch('concerns')
+      ["Head: `#{@head}` · Conclusion: **#{report.fetch('conclusion')}**",
+       "Unresolved concerns: #{concerns.empty? ? 'none' : concerns.join('; ')}",
+       *report.fetch('reasons').reject { |reason| reason == summary },
+       "Simpler alternative: #{report.fetch('alternative')}", execution_details,
+       'Ruby verified report shape and head binding. The reviewer judged value; the task owner handles concerns ' \
+       'and merge readiness. This does not attest to technical review.']
+    end
+
+    def recommendation(report)
+      if report['conclusion'] == 'Proceed' && !report['concerns'].empty?
+        return ['Resolve concerns before merging.', 'Resolve substantive concerns, then repeat affected review.']
+      end
+
+      ACTIONS.fetch(report.fetch('conclusion'))
+    end
+
+    def incomplete_body
+      opted_out = @result['status'] == 'opted_out'
+      action, next_action = if opted_out
+                              ['Checkpoint opted out; no product review completed.',
+                               'Verify opt-out authority and remaining gates.']
+                            else
+                              ['Review not completed; readiness remains blocked.',
+                               'Resolve the execution failure and rerun the checkpoint.']
+                            end
+      "**Recommendation: #{action}**\n\n#{@result.fetch('reason')}\n\n" \
+        "**Next action (task owner):** #{next_action}\n\nHead: `#{@head}`"
+    end
+
+    def execution_details
+      "<details><summary>Execution details and native usage</summary>\n\n" \
+        "Prompt: #{@result.fetch('prompt_source')}.\n\n#{usage_text}\n\n</details>"
+    end
+
+    def usage_text
+      return 'Native usage: UNKNOWN (no readable provider record).' if @usage.empty?
+
+      "```json\n#{JSON.pretty_generate(@usage)}\n```"
+    end
+
+    def native_usage
+      return [] unless @result['usage']
+
+      reader = @result['reviewer'] == 'openai/codex' ? CodexUsage : ClaudeUsage
+      source = reader.new([@result['usage']], [], all_turns: true)
+      source.responses.values.map { |entry| entry.slice('configuration', 'usage') }
+    end
+  end
+end

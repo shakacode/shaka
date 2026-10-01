@@ -57,16 +57,21 @@ reports for another head return `not_completed` and a nonzero exit. Inspect the 
 even when the command fails, and publish the blocked outcome rather than calling it
 complete. Successful execution returns `completed`; that status does not mean Proceed.
 
-The report contains the head, conclusion, reasons, unresolved concerns, and simpler
-alternative. Ruby verifies their shape and marks `ready` false for either blocking
+The report contains the head, conclusion, reasons, unresolved concerns, simpler
+alternative, a short `summary`, and the task owner's `next_action`. The runner requests
+the last two fields; older reports without them remain publishable using the first
+reason and a conclusion-based next action. Ruby verifies supplied fields and marks `ready` false for either blocking
 conclusion or any unresolved concern. A `ready: true` result means this run raised
 no blocker; the owner still resolves all earlier substantive concerns. Publishing
 checks the live open PR head and retains separate executions on that PR, including
 native usage metadata when available. Requested settings are labeled separately
 from observed model and usage; absent observations remain UNKNOWN.
 
-The first visible line identifies the reviewer and its natively observed model and
-effort; missing observations remain UNKNOWN. Requested settings stay separately labeled.
+The first visible line identifies the reviewer, observed model, and recorded effort.
+Known configuration or requested settings appear there too when observations are
+missing or differ. `observed model: UNKNOWN` stays explicit when only a configured
+model is available; requesting a model does not prove which model served the review.
+Missing recorded effort stays UNKNOWN, with requested effort labeled separately.
 
 Older reports from the publishing account link to its newest product validation,
 keeping any model identifier first, with their original conclusions retained in collapsed history and human annotations
@@ -76,14 +81,27 @@ unavailable update; the new report stays published so the same execution can be 
 
 ## Act on the conclusion
 
-Publish the reviewed head, conclusion, observed benefit and cost, and alternative
-considered in the final walkthrough or a clearly titled PR comment. Keep it brief
-and distinguish demonstrated defects from value judgments. For example:
+The published comment leads with a recommendation, short reason, and next action
+for the task owner. The head, checkpoint conclusion, and unresolved concerns follow
+before supporting analysis. A completed execution with concerns does not recommend
+merging. Failed executions stay blocked; an opt-out states that no product review
+completed. Keep demonstrated defects separate from value judgments and missing evidence.
 
-> Post-implementation validation — `abc1234` — **Proceed**. Maintainers now see
-> the missing-check error before submission. One existing check handles it; no
-> dependency or new configuration was added. A guide sentence alone would leave
-> the demonstrated silent failure intact.
+For [PR #354's reviewed head](https://github.com/shakacode/shaka/pull/354#issuecomment-5922898266),
+the useful summary is:
+
+> OpenAI/Codex · configured model: gpt-6.1-sol · observed model: UNKNOWN
+>
+> **Recommendation: Revise before merging.** Keep the missing-configuration
+> safeguard; remove unused scans from watching and repeated check verification.
+>
+> **Next action (task owner):** Revise this PR, then revalidate and review.
+
+The watcher discards configuration results, so removing that dependency preserves
+its demonstrated guarantees. Keep fresh checks for explicit status, Ask handoff,
+and Auto submission, along with job-scoped environments, caller-secret exclusions,
+names-only reporting, and unverified permission responses. Checker fixes belong to
+#348/#354; this example is bound to the earlier report, not a current readiness claim.
 
 **Proceed** means the result remains justified and appropriately scoped; technical
 validation and required reviews still apply. **Simplify/reframe** means the goal
@@ -93,7 +111,27 @@ substantive concern remains. Green checks or merge authority do not resolve it.
 
 Repair within the authorized goal, then revalidate and review affected behavior.
 Bring a changed goal or disputed value to the maintainer through the existing
-decision path. An early conclusion needs a final reconsideration; after later
+decision path. Keep the PR out of `awaiting-merge-approval` while substantive
+concerns remain. For a maintainer decision, publish non-empty description `decisions`
+and use the existing `awaiting-answer` path; otherwise continue the authorized repair.
+The task owner reconciles these states. Ruby does not infer them from this report.
+
+State whether a simpler alternative revises this PR or replaces it. Name retained
+benefits, lost guarantees, and evidence that any loss is acceptable. A bounded
+revision reuses the existing task. When replacement is justified, offer a detailed
+issue proposal describing the smaller fix, original problem, acceptance criteria,
+source links, and why the original PR should close. Follow the applicable issue-offer
+and authorization procedure; proposing replacement authorizes neither filing nor closure.
+
+Use explicit actions rather than a numeric scale for now: revise, resolve concerns,
+proceed after remaining gates, or bring a close-or-replace decision. The proposed
+1–5 scale adds judgments about recommendation strength and confidence that the
+current conclusions do not distinguish. These action labels answer the demonstrated
+reader question with less interpretation. A project prompt may request a score in
+its prose summary; Ruby does not parse scores or use them as thresholds. Neither a
+favorable score nor a recommendation bypasses substantive concerns or required gates.
+
+An early conclusion needs a final reconsideration; after later
 changes, reassess any changed outcome or cost and bind the current conclusion to
 the final head. A technical review, or a favorable score from an optional service,
 does not substitute for this judgment.
