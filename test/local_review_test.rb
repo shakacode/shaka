@@ -1753,6 +1753,10 @@ class LocalReviewClaudeModelTest < Minitest::Test
     'claude-opus-5-5' => { 'canonicalModel' => 'claude-opus-5-5' },
     'claude-sonnet-4-5' => { 'canonicalModel' => 'claude-sonnet-4-5' }
   }.freeze
+  INCOMPLETE_USAGE = {
+    'claude-haiku-4-5' => {},
+    'claude-opus-5-5' => { 'canonicalModel' => MODEL }
+  }.freeze
 
   include LocalReviewClaudeModelFixture
 
@@ -1789,5 +1793,14 @@ class LocalReviewClaudeModelTest < Minitest::Test
   def test_marks_shared_usage_even_when_claude_reports_a_top_level_model
     record = { 'model' => MODEL, 'modelUsage' => AMBIGUOUS_USAGE }
     assert_equal 'shared: claude-opus-5-5, claude-sonnet-4-5', Shaka::ClaudePrintResult.model_attribution(record)
+  end
+
+  def test_allows_recorded_model_to_fill_incomplete_aggregate_attribution
+    with_claude_ledger(INCOMPLETE_USAGE) do |result, ledger|
+      refute result.key?('model')
+      record_claude_usage(ledger, MODEL)
+      rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+      assert_equal MODEL, rounds.first.fetch('model')
+    end
   end
 end

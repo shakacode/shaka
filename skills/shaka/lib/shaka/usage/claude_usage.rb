@@ -45,7 +45,7 @@ module Shaka
 
       def aggregate_model_attribution(usage)
         models = canonical_models(usage)
-        return 'shared models unavailable' if models.any?(&:nil?)
+        return if models.any?(&:nil?)
 
         models = models.uniq.sort
         models.one? ? models.first : "shared: #{models.join(', ')}"

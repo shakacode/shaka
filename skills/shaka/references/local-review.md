@@ -236,9 +236,12 @@ Keep every round in one ledger, a JSON file outside the checkout, for example
 `LEDGER="$(mktemp -d)/review-ledger.json"`. Pass `--ledger "$LEDGER"` to each
 `shaka review run`: a completed round adds its head, reviewer, effort, requested model, report,
 prompt source, criteria commit, and usage path. The table's Model column shows attribution from
-native usage: the top-level CLI model, a canonical aggregate model, or a `shared:` list when the
-round used several models. Incomplete shared attribution is labeled `shared models unavailable`.
-The ledger stays private until you publish it.
+native usage: the top-level CLI model, one canonical aggregate model, or a `shared:` list when
+aggregate usage reports several models. The list records model usage without assigning a primary
+model or claiming which model wrote the review. If an aggregate entry lacks a canonical name, the
+round leaves Model unknown so a later complete usage record can supply it. The separate `shaka
+usage` report keeps Routed model unknown for mixed-token pricing because aggregate tokens cannot
+be assigned to one model's rate. The ledger stays private until you publish it.
 
 The prompt asks for a class on every finding. Handle each by class:
 
