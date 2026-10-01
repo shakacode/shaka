@@ -51,8 +51,16 @@ module Shaka
         models = canonical_models(usage)
         return incomplete_model_attribution(direct) if models.any?(&:nil?)
 
+        direct = canonical_direct_model(direct, usage)
         models = (models + [direct]).compact.uniq.sort
         models.one? ? models.first : "shared: #{models.join(', ')}"
+      end
+
+      def canonical_direct_model(direct, usage)
+        return direct unless direct
+
+        entry = usage[direct]
+        entry.is_a?(Hash) ? present_name(entry['canonicalModel']) || direct : direct
       end
 
       def incomplete_model_attribution(direct)

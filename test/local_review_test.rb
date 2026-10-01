@@ -1795,6 +1795,13 @@ class LocalReviewClaudeModelTest < Minitest::Test
     assert_equal 'shared: claude-opus-5-5, claude-sonnet-4-5', Shaka::ClaudePrintResult.model_attribution(record)
   end
 
+  def test_canonicalizes_top_level_alias_before_listing_shared_models
+    usage = { 'claude-opus-5-5[1m]' => { 'canonicalModel' => MODEL },
+              'claude-haiku-4-5' => { 'canonicalModel' => 'claude-haiku-4-5' } }
+    record = { 'model' => 'claude-opus-5-5[1m]', 'modelUsage' => usage }
+    assert_equal 'shared: claude-haiku-4-5, claude-opus-5-5', Shaka::ClaudePrintResult.model_attribution(record)
+  end
+
   def test_keeps_top_level_model_when_aggregate_names_are_incomplete
     record = { 'model' => MODEL, 'modelUsage' => INCOMPLETE_USAGE }
     assert_equal "#{MODEL} (other models unknown)", Shaka::ClaudePrintResult.model_attribution(record)
