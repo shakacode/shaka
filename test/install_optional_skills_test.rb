@@ -4,12 +4,12 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'rbconfig'
 
-class InstallClaudeTowersTest < Minitest::Test
-  SKILLS = { 'shaka' => 'shaka source', 'rct' => 'rct source',
+class InstallOptionalSkillsTest < Minitest::Test
+  SKILLS = { 'shaka' => 'shaka source', 'shaka-jev' => 'jev source', 'rct' => 'rct source',
              'mct-claude' => 'mct source', 'rct-claude' => 'rct-claude source' }.freeze
 
   def setup
-    @directory = Dir.mktmpdir('workflows-claude-towers')
+    @directory = Dir.mktmpdir('workflows-optional-skills')
     @installer = File.join(@directory, 'source', 'bin', 'install')
     @skills_dir = File.join(@directory, 'isolated profile', 'skills')
     @home = File.join(@directory, 'home')
@@ -51,9 +51,21 @@ class InstallClaudeTowersTest < Minitest::Test
     %w[mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
   end
 
-  def test_default_install_omits_every_tower
+  def test_default_install_omits_optional_skills
     assert_predicate install.last, :success?
+    %w[shaka-jev rct mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
+  end
+
+  def test_jev_is_installed_only_when_requested
+    output, status = install('--with-jev')
+
+    assert_predicate status, :success?, output
+    assert_linked('shaka-jev')
     %w[rct mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
+
+    output, status = install('--with-jev')
+    assert_predicate status, :success?, output
+    assert_linked('shaka-jev')
   end
 
   # A partial install would leave one tower skill linked and the other silently missing.
@@ -82,6 +94,7 @@ class InstallClaudeTowersTest < Minitest::Test
       File.write(File.join(source(name), 'SKILL.md'), content)
     end
     write_helper
+    write_jev_helper
     version_dir = File.join(source('shaka'), 'lib/shaka')
     FileUtils.mkdir_p(version_dir)
     File.write(File.join(version_dir, 'version.rb'), "module Shaka\n  VERSION = '0.1.0.pre.1'\nend\n")
@@ -92,6 +105,14 @@ class InstallClaudeTowersTest < Minitest::Test
     FileUtils.mkdir_p(File.dirname(helper))
     File.write(helper, "#!/usr/bin/env ruby\n")
     File.chmod(0o755, helper)
+  end
+
+  def write_jev_helper
+    helper = File.join(source('shaka-jev'), 'scripts/analyze')
+    FileUtils.mkdir_p(File.dirname(helper))
+    File.write(helper, "#!/usr/bin/env ruby\n")
+    File.chmod(0o755, helper)
+    File.write("#{helper}.rb", "# frozen_string_literal: true\n")
   end
 
   def source(name)

@@ -14,6 +14,7 @@ Gem::Specification.new do |spec|
   spec.metadata['rubygems_mfa_required'] = 'true'
   spec.metadata['documentation_uri'] = "#{spec.homepage}/blob/main/docs/getting-started.md"
   spec.files = Dir['skills/rct/SKILL.md', 'skills/mct-claude/SKILL.md', 'skills/rct-claude/SKILL.md',
+                   'skills/shaka-jev/SKILL.md', 'skills/shaka-jev/lib/**/*.rb', 'skills/shaka-jev/scripts/*',
                    'skills/shaka/SKILL.md', 'skills/shaka/references/*.md',
                    'skills/shaka/config/*.yml', 'skills/shaka/config/*.md', 'skills/shaka/lib/**/*.rb',
                    'skills/shaka/scripts/*', 'bin/install', 'exe/*', 'docs/**/*.md',

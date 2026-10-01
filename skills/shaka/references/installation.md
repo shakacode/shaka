@@ -45,6 +45,10 @@ git clone https://github.com/shakacode/shaka.git "$HOME/agent-tools/shaka"
 "$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.agents/skills"
 ```
 
+Add `--with-jev` to install the experimental Jev companion alongside Shaka. It
+requires a TypeSafe API key when used. The agent must screen the PR evidence
+before sending it to TypeSafe. The default installation leaves it out.
+
 The installer copies the skill to `~/.local/share/shaka/installs/` and links Codex
 to that managed copy. The source checkout can then be removed; select a source
 checkout again when upgrading or rolling back. Open a new task in
@@ -134,8 +138,9 @@ git -C "$HOME/agent-tools/shaka" switch main
 git -C "$HOME/agent-tools/shaka" pull --ff-only
 ```
 
-Run `bin/install` from the chosen source with your original `--skills-dir` and
-optional tower flags. It validates a new managed copy before switching the links.
+Run `bin/install` from the chosen source with your original `--skills-dir`,
+`--with-jev` if installed, and optional tower flags. It validates a new managed
+copy before switching the links.
 Existing tasks that use the host link may pick up the new helper after the switch.
 Finish or pause them before upgrading, then start a new task with the new skill.
 The previous package remains in the managed directory you chose, which defaults
@@ -158,24 +163,27 @@ or from `shaka doctor --installation-json` before upgrading, then run:
 If you installed with `--managed-dir DIR`, add the same option and directory to
 this rollback command.
 
-Include the optional tower flags recorded in that package. If the current install
-has tower skills that the rollback package lacks, inspect and unlink those managed
-tower links first. The installer refuses a missing package or one whose contents
+Include `--with-jev` if that package includes Jev, along with its optional tower
+flags. If the current install has Jev or tower skills that the rollback package
+lacks, inspect and unlink those managed skill links first. The installer refuses
+a missing package or one whose contents
 do not match its own metadata. It does not independently prove who created a
 package in the managed directory.
 
 ## Remove
 
-Inspect the link first and confirm it points to a managed Shaka package:
+Inspect each installed link and confirm it points to a managed Shaka package:
 
 ```bash
 ls -l "$HOME/.agents/skills/shaka"
+ls -l "$HOME/.agents/skills/shaka-jev" # only if installed with --with-jev
 ```
 
 Then remove that link:
 
 ```bash
 unlink "$HOME/.agents/skills/shaka"
+unlink "$HOME/.agents/skills/shaka-jev" # only if installed with --with-jev
 ```
 
 Use the appropriate directory for other environments. If you installed tower skills,

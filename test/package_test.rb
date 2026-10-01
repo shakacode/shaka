@@ -11,7 +11,8 @@ class PackageTest < Minitest::Test
     run_gem('install', '--local', '--no-document', archive)
     check_commands
     source = install_skill
-    %w[shaka rct mct-claude rct-claude].each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
+    links = %w[shaka shaka-jev rct mct-claude rct-claude]
+    links.each { |name| File.unlink(File.join(@directory, 'pilot skills', name)) }
     run_gem('uninstall', 'shaka', '--all', '--executables', '--ignore-dependencies')
     refute_path_exists File.join(@home, 'bin', 'shaka')
     assert File.file?(File.join(source, 'SKILL.md'))
@@ -85,11 +86,16 @@ class PackageTest < Minitest::Test
 
   def check_public_skills(skills, source)
     check_shaka_skill(File.realpath(File.join(skills, 'shaka')), source)
+    check_jev_skill(File.realpath(File.join(skills, 'shaka-jev')))
     %w[rct mct-claude rct-claude].each do |name|
       tower = File.realpath(File.join(skills, name))
       assert File.file?(File.join(tower, 'SKILL.md')), name
       assert_equal File.dirname(source), File.dirname(tower)
     end
+  end
+
+  def check_jev_skill(jev)
+    assert File.executable?(File.join(jev, 'scripts/analyze')) && File.file?(File.join(jev, 'scripts/analyze.rb'))
   end
 
   def check_shaka_skill(shaka, source)
@@ -101,7 +107,7 @@ class PackageTest < Minitest::Test
 
   def install_skill
     skills = File.join(@directory, 'pilot skills')
-    run_executable('shaka-install', '--skills-dir', skills, '--with-rct', '--with-claude-towers')
+    run_executable('shaka-install', '--skills-dir', skills, '--with-rct', '--with-claude-towers', '--with-jev')
     source = File.realpath(File.join(skills, 'shaka'))
     assert source.start_with?("#{File.realpath(@environment.fetch('HOME'))}/.local/share/shaka/installs/"), source
     check_public_skills(skills, source)

@@ -11,12 +11,15 @@ managed_dir = nil
 rollback = nil
 with_rct = false
 with_claude_towers = false
+with_jev = false
 parser = OptionParser.new do |options|
-  options.banner = 'Usage: bin/install --skills-dir DIR [--managed-dir DIR] [--with-rct] [--with-claude-towers]'
+  options.banner = 'Usage: bin/install --skills-dir DIR [--managed-dir DIR] ' \
+                   '[--with-rct] [--with-claude-towers] [--with-jev]'
   options.on('--skills-dir DIR', 'Explicit host skills directory') { |value| skills_dir = value }
   options.on('--managed-dir DIR', 'Durable directory for copied packages') { |value| managed_dir = value }
   options.on('--with-rct', 'Also install the Codex repository control tower') { with_rct = true }
   options.on('--with-claude-towers', 'Also install the Claude Code control towers') { with_claude_towers = true }
+  options.on('--with-jev', 'Also install optional Jev PR analysis') { with_jev = true }
   options.on('--rollback PACKAGE_ID', 'Switch to a previous managed copy') { |value| rollback = value }
   options.on('-h', '--help', 'Show this help') do
     puts options
@@ -32,6 +35,7 @@ begin
   raise OptionParser::InvalidArgument, ARGV.join(' ') unless ARGV.empty?
 
   names = ['shaka']
+  names << 'shaka-jev' if with_jev
   names << 'rct' if with_rct
   names.push('mct-claude', 'rct-claude') if with_claude_towers
   invoked_root = File.expand_path('..', File.dirname($PROGRAM_NAME))

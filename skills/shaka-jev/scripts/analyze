@@ -1,0 +1,95 @@
+#!/bin/sh
+set -eu
+
+fail() {
+  printf 'shaka-jev: cannot select a trusted Ruby executable\n' >&2
+  exit 1
+}
+
+resolve_file() {
+  file=$1
+  count=0
+  readlink=/usr/bin/readlink
+  [ -x "$readlink" ] || readlink=/bin/readlink
+  [ -x "$readlink" ] || return 1
+  while [ -L "$file" ]; do
+    count=$((count + 1))
+    [ "$count" -le 16 ] || return 1
+    target=$("$readlink" "$file") || return 1
+    case "$target" in
+      /*) file=$target ;;
+      *) file=${file%/*}/$target ;;
+    esac
+  done
+  directory=$(CDPATH= cd -P "${file%/*}" 2>/dev/null && pwd -P) || return 1
+  printf '%s/%s\n' "$directory" "${file##*/}"
+}
+
+candidate_link_in_directory() {
+  for link in "$1"/* "$1"/.[!.]* "$1"/..?*; do
+    [ -L "$link" ] || continue
+    target=$(resolve_file "$link") || return 0
+    case "$target" in
+      "$checkout"|"$checkout"/*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+checkout=$(pwd -P) || fail
+while [ "$checkout" != / ] && [ ! -e "$checkout/.git" ]; do
+  checkout=${checkout%/*}
+  [ -n "$checkout" ] || checkout=/
+done
+[ -e "$checkout/.git" ] || fail
+
+remaining=${PATH-}
+safe_path=
+ruby=
+while :; do
+  case "$remaining" in
+    *:*) entry=${remaining%%:*}; remaining=${remaining#*:}; more=true ;;
+    *) entry=$remaining; more=false ;;
+  esac
+  directory=$(CDPATH= cd -P "${entry:-.}" 2>/dev/null && pwd -P) || directory=
+  if [ -n "$directory" ]; then
+    case "$directory" in
+      "$checkout"|"$checkout"/*) ;;
+      *)
+        if ! candidate_link_in_directory "$directory"; then
+          safe_path=${safe_path:+$safe_path:}$directory
+          if [ -z "$ruby" ] && [ -f "$directory/ruby" ] && [ -x "$directory/ruby" ]; then
+            selected=$(resolve_file "$directory/ruby") || selected=
+            case "$selected" in
+              "$checkout"|"$checkout"/*|'') ;;
+              *) ruby=$directory/ruby ;;
+            esac
+          fi
+        fi
+        ;;
+    esac
+  fi
+  [ "$more" = true ] || break
+done
+[ -n "$safe_path" ] || fail
+case "$0" in */*) ;; *) fail ;; esac
+scripts=$(CDPATH= cd -P "${0%/*}" 2>/dev/null && pwd -P) || fail
+package=$(CDPATH= cd -P "$scripts/../../.." 2>/dev/null && pwd -P) || fail
+case "$package" in
+  "$checkout"|"$checkout"/*) ;;
+  *)
+    record=$package/../.shaka-ruby
+    if [ -f "$package/.shaka-install.json" ] && [ -f "$record" ]; then
+      IFS= read -r recorded < "$record" || fail
+      [ -f "$recorded" ] && [ -x "$recorded" ] || fail
+      selected=$(resolve_file "$recorded") || fail
+      case "$selected" in "$checkout"|"$checkout"/*) fail ;; esac
+      ruby=$recorded
+    fi
+    ;;
+esac
+[ -n "$ruby" ] || fail
+PATH=$safe_path
+export PATH
+unset RUBYOPT RUBYLIB
+exec "$ruby" --disable-gems --disable-rubyopt "$0.rb" "$@"
