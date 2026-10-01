@@ -9,6 +9,7 @@ require_relative '../reviewer_settings'
 require_relative 'check'
 require_relative 'machine_alias'
 require_relative 'usage_source'
+require_relative 'reviewer_clis'
 
 module Shaka
   class Doctor
@@ -24,17 +25,17 @@ module Shaka
         @host = host
         @environment = environment
         @system = system
+        @reviewer_clis = ReviewerClis.new(root:, host:, environment:, system:)
       end
 
       def call
         seam = repository_seam
-        [ruby_runtime, github_cli, repository_access, seam, reviewer_settings(seam), alias_check,
+        [ruby_runtime, github_cli, repository_access, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
+         MachineAlias.new(@environment, host_name: @system.host_name).call,
          UsageSourceCheck.new(host: @host, system: @system).call]
       end
 
       private
-
-      def alias_check = MachineAlias.new(@environment, host_name: @system.host_name).call
 
       # An older Ruby runs this command and then fails somewhere less obvious, so the declared
       # prerequisite is checked rather than merely printed.
