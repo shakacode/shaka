@@ -262,10 +262,10 @@ class ValidateWorkflowTest < Minitest::Test
   end
 
   def install_validation_scripts(root)
-    FileUtils.cp(File.expand_path('../bin/docs-only-change', __dir__), File.join(root, 'bin/docs-only-change'))
-    FileUtils.cp(File.expand_path('../bin/check-docs-navigation', __dir__), File.join(root, 'bin/check-docs-navigation'))
+    %w[bin/docs-only-change bin/check-docs-navigation .agents/bin/validate].each do |path|
+      FileUtils.cp(File.expand_path("../#{path}", __dir__), File.join(root, path))
+    end
     File.write(File.join(root, 'docs/sidebars.json'), '{"docsSidebar":["guide"]}')
-    FileUtils.cp(File.expand_path('../.agents/bin/validate', __dir__), File.join(root, '.agents/bin/validate'))
     File.write(File.join(root, 'bin/validate'), "#!/bin/sh\necho FULL_VALIDATION\n")
     FileUtils.chmod(0o755, File.join(root, 'bin/validate'))
   end
