@@ -11,7 +11,8 @@ and [Working with Shaka](working-with-shaka.md).
 
 Use [shared repository setup](configure-repository.md) for team settings, or start
 a task if the repository is already configured. The private-trial option below
-avoids a team setup PR but still has delivery limitations.
+avoids a team setup PR but still has delivery limitations. Private setup grants
+neither team policy nor permission to merge.
 
 ### Private trials: available tools, incomplete guided experience
 

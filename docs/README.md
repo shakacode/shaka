@@ -11,6 +11,8 @@ checks, review, and a clear pull request. You choose who merges it.
 3. Use the [practical tips](working-with-shaka.md#useful-tips) or [FAQ](faq.md)
    when you want to plan first, pick settings, or understand a pause.
 
+<a id="configure-and-understand"></a>
+
 ## Set up when you need to
 
 Ask the agent to handle configuration. These guides explain your choices:
