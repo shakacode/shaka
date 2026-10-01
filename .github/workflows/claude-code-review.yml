@@ -110,7 +110,7 @@ jobs:
           fi
           if ! jq -e --arg head "$REVIEW_HEAD" --arg started "$REVIEW_STARTED_AT" '
             [.[][] | select(.user.login == "claude[bot]" and .created_at >= $started) |
-             select((.body // "") | test("(?m)^REVIEWED " + $head + " BY anthropic/claude FINDINGS [0-9]+[[:blank:]]*$"))] |
+             select((.body // "") | test("(^|\\n)REVIEWED " + $head + " BY anthropic/claude FINDINGS [0-9]+[[:space:]]*\\z"))] |
             length > 0
           ' "$comments" > /dev/null; then
             unavailable "No Claude report with the required closing attestation was posted for this head during this run." error

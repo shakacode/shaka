@@ -64,7 +64,8 @@ class ReviewWorkflowTest < Minitest::Test
 
   def test_failure_messages_cannot_be_mistaken_for_completed_reports
     ["Could not review #{'a' * 40}; no findings count is available",
-     "Unable to post findings: 403 for #{'a' * 40}"].each do |body|
+     "Unable to post findings: 403 for #{'a' * 40}",
+     "REVIEWED #{'a' * 40} BY anthropic/claude FINDINGS 0\nReview could not be completed"].each do |body|
       _output, status, summary = run_result([result], comments: [report.merge('body' => body)])
       refute_predicate status, :success?
       assert_includes summary, 'UNAVAILABLE'

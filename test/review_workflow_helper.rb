@@ -9,7 +9,7 @@ module ReviewWorkflowHelper
 
   def report
     { 'user' => { 'login' => 'claude[bot]' }, 'created_at' => '2026-09-30T00:01:00Z',
-      'body' => "REVIEWED #{'a' * 40} BY anthropic/claude FINDINGS 0" }
+      'body' => "Review complete.\n\nREVIEWED #{'a' * 40} BY anthropic/claude FINDINGS 0\n" }
   end
 
   def install_github(comments)
