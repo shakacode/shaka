@@ -47,6 +47,22 @@ If a project has no usable checks, decide with the agent whether to add them or
 report limited verification. Routine tasks should not require editing configuration
 or PATH by hand.
 
+## Two reviewers per commit
+
+Ask your agent to use [two local reviewers](settings.md#reviewlocal_review_count)
+when you want different providers to check each commit. Each commit's review
+comment explains why it exists, names the reviewers and their finding counts,
+and shows one collated list of problems. Expand a report to see which findings
+became entries in that list; a shared problem is fixed once.
+
+Two reviewers cost more, and the extra findings vary. In [PR #326](https://github.com/shakacode/shaka/pull/326),
+rounds 1–25 found 7 problems only Codex reported (all fixed), 51 only Claude
+reported (31 fixed), and 4 reported by both. In the last 7 reviewed commits,
+Codex used 2.28 million tokens and found nothing; Claude used 1.26 million and
+found 22 problems, including 2 defects. This is one PR's evidence, not an
+established efficiency advantage. Start with one reviewer unless the extra
+coverage is worth the cost to your project.
+
 ## Understand the PR's settings and evidence
 
 Expand the settings block to see whether the validation and review results match
