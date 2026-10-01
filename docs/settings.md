@@ -390,7 +390,7 @@ review:
     reviewer: anthropic/claude
     model: sonnet
     effort: high
-    prompt_file: .agents/product-checkpoint.md
+    prompt_file: .agents/shaka/product-checkpoint.md
 ```
 
 The prompt file and repository choices come from the trusted default branch.
