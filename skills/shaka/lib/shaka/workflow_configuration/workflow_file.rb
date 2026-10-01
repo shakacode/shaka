@@ -53,7 +53,7 @@ module Shaka
         return if secrets.empty? && found['vars'].empty?
 
         environment = environment_name(job)
-        scope(secrets, found['vars'], environment ? [environment] : [], false)
+        scope(secrets, found['vars'], environment ? [environment] : [], reusable?)
       end
 
       def outside_scope
@@ -61,7 +61,7 @@ module Shaka
         secrets = reject_caller(found['secrets'])
         return if secrets.empty? && found['vars'].empty?
 
-        scope(secrets, found['vars'], [], false)
+        scope(secrets, found['vars'], [], reusable?)
       end
 
       def outside_names
@@ -77,7 +77,10 @@ module Shaka
         { 'secrets' => references['secrets'] - parsed['secrets'], 'vars' => references['vars'] - parsed['vars'] }
       end
 
+      # A caller supplies a declared secret only when nothing else can start the workflow.
       def reject_caller(names)
+        return names unless triggers == ['workflow_call']
+
         names.reject { |name| caller_secrets.any? { |declared| declared.casecmp?(name) } }
       end
 
@@ -98,10 +101,22 @@ module Shaka
         Scope.new(secrets, vars, environments, uncertain)
       end
 
+      # YAML reads a bare `on` key as true.
+      def trigger = @document['on'] || @document[true]
+
+      def triggers
+        case trigger
+        when Hash then trigger.keys
+        else Array(trigger)
+        end
+      end
+
+      # A caller in another repository brings its own names, so this repository's lists cannot settle them.
+      def reusable? = triggers.include?('workflow_call')
+
       def caller_secret_map
         return unless @document.is_a?(Hash)
 
-        trigger = @document['on'] || @document[true]
         call = trigger['workflow_call'] if trigger.is_a?(Hash)
         secrets = call['secrets'] if call.is_a?(Hash)
         secrets if secrets.is_a?(Hash)
