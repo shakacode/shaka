@@ -176,6 +176,12 @@ file or turn selection does not borrow the current chat's model environment.
 Doctor fails when the stop hook is absent from `~/.cursor/hooks.json`. A missing
 file for the current conversation only degrades, as expected before its first stop.
 
+`shaka usage` in that conversation remembers the selection, and `shaka description`
+remembers the pull request when the report is Cursor. After the stop hook writes
+the record, it fills that published row, including effort from the hook payload.
+A later session does not have to republish it. The update runs only for a request
+this conversation stored, and a failed update leaves the description unchanged.
+
 ## What the OpenCode reader includes
 
 Name a session with `--host opencode --session ses_ID`; find it with
@@ -298,7 +304,8 @@ Keep the coverage note visible; do not replace unknown reviewer usage with zero.
 Check task coverage before publishing. Sources can contain unrelated work even
 when a launcher began with a single task. Select relevant turns rather than using
 `--all-turns` in that case. The reader prints aggregate metadata only and does not
-modify sessions or publish to GitHub.
+modify sessions. It does not publish to GitHub. The Cursor stop hook can update a
+description this conversation already published, as the Cursor section describes.
 
 Never publish raw sessions, prompts, tool output, source paths, or turn/response
 IDs. Recovery-note session links follow their separate [publication rule](delivery.md#recover-an-unfinished-pr).

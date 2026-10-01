@@ -238,7 +238,9 @@ preserving existing hooks:
 
 Start a new chat after changing hooks. User-level hooks run from `~/.cursor`, so
 this relative path reaches the installed skill. The hook saves aggregate usage
-fields; it does not save prompt text. [Usage reporting](usage-reporting.md#what-the-cursor-reader-includes)
+fields; it does not save prompt text. When this conversation already published a
+description, the hook then fills that description's Cursor usage row.
+[Usage reporting](usage-reporting.md#what-the-cursor-reader-includes)
 explains what is counted.
 
 ## OpenCode
