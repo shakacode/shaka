@@ -11,6 +11,12 @@ Before publishing, reread each summary for these points:
 - Delete greetings, praise, repeated explanations, and claims of significance
   that add no information.
 
+For advisory reviews, put the current-head recommendation, main reason, and task
+owner's next action before the analysis. Name model settings with their provenance;
+a configured model is not proof of a served model. Keep unresolved blockers visible.
+State whether a simpler alternative revises this PR or replaces it, and explain
+the disposition. Supporting usage and history can remain collapsed.
+
 For example, replace “Adds validation of the configured base parameter” with
 “Shaka now rejects an invalid base branch before the agent starts work.” A code
 walkthrough can then explain the validation and its edge cases.

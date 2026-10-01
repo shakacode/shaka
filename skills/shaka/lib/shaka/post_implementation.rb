@@ -3,9 +3,8 @@
 require 'optparse'
 require_relative 'post_implementation_runner'
 require_relative 'post_implementation/history'
+require_relative 'post_implementation/publication'
 require_relative 'github'
-require_relative 'usage/codex_usage'
-require_relative 'usage/claude_usage'
 
 module Shaka
   # Runs and publishes one product checkpoint on the existing PR.
@@ -63,8 +62,13 @@ module Shaka
       live = github.snapshot.values_at('state', 'headRefOid')
       raise Error, 'Checkpoint is not for the live open PR head' unless live == ['OPEN', head]
 
-      published = github.reply(body: render(result, head), key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
+      published = publish_body(github, result, head)
       published.merge('earlier_checkpoints' => PostImplementationHistory.new(github).collapse(published))
+    end
+
+    def publish_body(github, result, head)
+      body = PostImplementationPublication.new(result, head:).render
+      github.reply(body:, key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
     end
 
     def publication_result
@@ -75,54 +79,6 @@ module Shaka
         result['execution_id'].to_s.match?(/\A[0-9a-f]{8}\z/)
 
       result
-    end
-
-    def render(result, head)
-      title = "#{identity_text(result)}\n\n## Post-implementation validation\n\nHead: `#{head}`\n\n"
-      return title + "**Opted out:** #{result.fetch('reason')}\n" if result['status'] == 'opted_out'
-      unless result['status'] == 'completed'
-        return title + "**Not completed.** #{result.fetch('reason')}\n\nReadiness remains blocked.\n"
-      end
-
-      title + completed_body(result, head)
-    end
-
-    def identity_text(result)
-      configuration = result['usage'] && native_usage(result, result['usage']).last&.fetch('configuration')
-      provider, family = result.fetch('reviewer', 'UNKNOWN/UNKNOWN').split('/', 2)
-      PublicationText.identity('agent' => family, 'provider' => provider,
-                               'model' => configuration && (configuration[2] || configuration[1]),
-                               'effort' => configuration && configuration[3])
-    end
-
-    def completed_body(result, head)
-      report = PostImplementationReport.read(result.fetch('report'), head:)
-      concerns = report.fetch('concerns')
-      ["**#{report.fetch('conclusion')}**", *report.fetch('reasons'),
-       "Simpler alternative: #{report.fetch('alternative')}",
-       "Unresolved concerns: #{concerns.empty? ? 'none' : concerns.join('; ')}",
-       settings_text(result), usage_text(result),
-       'Ruby verified report shape and head binding. The reviewer judged value; the task owner handles concerns ' \
-       'and merge readiness. This does not attest to technical review.'].join("\n\n")
-    end
-
-    def settings_text(result)
-      "Reviewer: #{result.fetch('reviewer')}; requested model: #{result.fetch('requested_model', 'CLI default')}; " \
-        "effort: #{result.fetch('effort')}; prompt: #{result.fetch('prompt_source')}."
-    end
-
-    def usage_text(result)
-      usage = result['usage']
-      return 'Observed model and usage: UNKNOWN (provider supplied no native record).' unless usage
-
-      "<details><summary>Native execution usage</summary>\n\n```json\n" \
-        "#{JSON.pretty_generate(native_usage(result, usage))}\n```\n\n</details>"
-    end
-
-    def native_usage(result, path)
-      reader = result['reviewer'] == 'openai/codex' ? CodexUsage : ClaudeUsage
-      source = reader.new([path], [], all_turns: true)
-      source.responses.values.map { |entry| entry.slice('configuration', 'usage') }
     end
 
     def parser(action)
