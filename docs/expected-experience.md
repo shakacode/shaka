@@ -49,13 +49,13 @@ or PATH by hand.
 
 ## Two reviewers per commit
 
-Ask your agent to use [two local reviewers](settings.md#reviewlocal_review_count)
-when you want different providers to check each commit. Each commit's review
+Configure [two local reviewers](settings.md#reviewlocal_review_count) from different
+providers when you want both to check each commit. Each commit's review
 comment explains why it exists, names the reviewers and their finding counts,
 and shows one collated list of problems. Expand a report to see which findings
 became entries in that list; a shared problem is fixed once.
 
-Two reviewers cost more, and the extra findings vary. In [PR #326](https://github.com/shakacode/shaka/pull/326),
+Two reviewers cost more, and the extra findings vary. The [PR #326 follow-up](https://github.com/shakacode/shaka/issues/361) records that
 rounds 1–25 found 7 problems only Codex reported (all fixed), 51 only Claude
 reported (31 fixed), and 4 reported by both. In the last 7 reviewed commits,
 Codex used 2.28 million tokens and found nothing; Claude used 1.26 million and
