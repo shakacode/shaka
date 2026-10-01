@@ -6,6 +6,28 @@ require_relative 'response_count'
 module Shaka
   # Claude CLI `-p --output-format json` writes one result object instead of JSONL.
   module ClaudePrintResult
+    class << self
+      # Prefer the CLI's top-level model; aggregate usage is safe only when exactly one model ran.
+      def routed_model(record)
+        return unless record.is_a?(Hash)
+
+        present_name(record['model']) || model_usage(record['modelUsage'])
+      end
+
+      private
+
+      def model_usage(usage)
+        return unless usage.is_a?(Hash) && usage.size == 1
+
+        entry = usage.values.first
+        present_name(entry['canonicalModel']) if entry.is_a?(Hash)
+      end
+
+      def present_name(value)
+        value if value.is_a?(String) && !value.strip.empty?
+      end
+    end
+
     private
 
     def print_object(record)
@@ -23,21 +45,7 @@ module Shaka
                       'billing_mode' => speed(record['usage']), 'usage' => tokens(record['usage']) } }
     end
 
-    # Prefer a top-level model when a CLI writes one; otherwise one modelUsage canonical name.
-    def print_model(record)
-      present_name(record['model']) || present_name(canonical_model(record['modelUsage']))
-    end
-
-    def canonical_model(usage)
-      return unless usage.is_a?(Hash) && usage.size == 1
-
-      entry = usage.values.first
-      entry['canonicalModel'] if entry.is_a?(Hash)
-    end
-
-    def present_name(value)
-      value if value.is_a?(String) && !value.strip.empty?
-    end
+    def print_model(record) = ClaudePrintResult.routed_model(record)
 
     def read(file)
       File.open(file, encoding: 'UTF-8') do |io|

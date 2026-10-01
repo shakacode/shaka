@@ -8,6 +8,7 @@ require 'rbconfig'
 require_relative '../skills/shaka/lib/shaka/local_review/process'
 require_relative '../skills/shaka/lib/shaka/local_review/evidence'
 require_relative '../skills/shaka/lib/shaka/local_review/cli'
+require_relative '../skills/shaka/lib/shaka/local_review/comment'
 
 class LocalReviewCodexTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -1585,12 +1586,13 @@ module LocalReviewFixture
     RUBY
   end
 
-  def fake_claude(bin, head, effort: 'medium', findings: 'no findings')
+  def fake_claude(bin, head, effort: 'medium', findings: 'no findings', model_usage: nil)
     write_executable(bin, 'claude', <<~RUBY)
       #!/usr/bin/env ruby
       require 'json'
-      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
-      puts JSON.generate({ is_error: false, result: "#{findings}\\nREVIEWED #{head} BY anthropic/claude EFFORT #{effort} FINDINGS 0" })
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read })) if ENV['REVIEW_TRACE']
+      puts JSON.generate({ is_error: false, result: "#{findings}\\nREVIEWED #{head} BY anthropic/claude EFFORT #{effort} FINDINGS 0",
+                           modelUsage: #{model_usage.inspect} })
     RUBY
   end
 
@@ -1702,3 +1704,72 @@ LocalReviewLoopTest.include(LocalReviewFixture)
 LocalReviewLoopBatchTest.include(LocalReviewFixture)
 LocalReviewCapRunnerTest.include(LocalReviewFixture)
 LocalReviewDirtyWorktreeTest.include(LocalReviewFixture)
+
+module LocalReviewClaudeModelFixture
+  include LocalReviewFixture
+
+  private
+
+  def with_claude_ledger(model_usage)
+    with_repository do |root, base, head, bin|
+      Dir.mktmpdir('shaka-ledger') do |directory|
+        context = { root:, base:, head:, bin:, ledger: File.join(directory, 'ledger.json') }
+        result = start_claude_review(context, model_usage)
+        (@results ||= []) << result
+        yield result, context[:ledger]
+      end
+    end
+  end
+
+  def start_claude_review(context, model_usage)
+    fake_claude(context[:bin], context[:head], model_usage:)
+    output, error, status = run_review(context[:root], context[:base], context[:head], context[:bin],
+                                       ledger: context[:ledger], reviewer: 'anthropic/claude')
+    assert_successful_review(output, error, status, context[:head], 'anthropic/claude')
+  end
+
+  def record_claude_usage(ledger, model)
+    Tempfile.create(['record-', '.json']) do |file|
+      file.write(JSON.generate('findings' => [], 'usage' => { 'anthropic/claude' => { 'model' => model } }))
+      file.close
+      _output, error, status = Open3.capture3(self.class::COMMAND, 'review', 'record', '--ledger', ledger,
+                                              '--content-file', file.path)
+      assert_predicate status, :success?, error
+    end
+  end
+end
+
+class LocalReviewClaudeModelTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+  MODEL = 'claude-opus-5-5'
+  OPUS_USAGE = { 'claude-opus-5-5' => { 'canonicalModel' => MODEL } }.freeze
+  AMBIGUOUS_USAGE = {
+    'claude-opus-5-5' => { 'canonicalModel' => 'claude-opus-5-5' },
+    'claude-sonnet-4-5' => { 'canonicalModel' => 'claude-sonnet-4-5' }
+  }.freeze
+
+  include LocalReviewClaudeModelFixture
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  def test_publishes_the_observed_model_and_keeps_it_through_triage
+    with_claude_ledger(OPUS_USAGE) do |result, ledger|
+      assert_equal MODEL, result.fetch('model')
+      record_claude_usage(ledger, 'UNKNOWN')
+      rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+      assert_equal MODEL, rounds.first.fetch('model')
+      assert_includes Shaka::LocalReviewComment.render('rounds' => rounds), "| anthropic/claude | #{MODEL} |"
+    end
+  end
+
+  def test_leaves_multi_model_usage_unknown_in_result_ledger_and_comment
+    with_claude_ledger(AMBIGUOUS_USAGE) do |result, ledger|
+      refute result.key?('model')
+      rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+      refute rounds.first.key?('model')
+      assert_includes Shaka::LocalReviewComment.render('rounds' => rounds), '| anthropic/claude | UNKNOWN |'
+    end
+  end
+end

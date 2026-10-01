@@ -158,8 +158,8 @@ module Shaka
     def record_round(result)
       return result unless @ledger && result['status'] == 'completed'
 
-      round = result.slice('head', 'reviewer', 'report', 'prompt_source', 'criteria_ref', 'usage')
-      # The routed model comes from native usage through `review record`, never from the request.
+      round = result.slice('head', 'reviewer', 'report', 'prompt_source', 'criteria_ref', 'model', 'usage')
+      # The observed model comes from Claude's result or native usage, never from the request.
       round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
       @ledger.append!(base: @options[:base], round:, snapshot: @snapshot, max_rounds: @max_rounds)
       @appended = true
@@ -317,7 +317,7 @@ module Shaka
 
       { 'status' => 'completed', 'head' => head, 'reviewer' => reviewer, 'report' => path,
         'prompt_source' => prompt_source, 'criteria_ref' => (@options[:criteria_ref] if @criteria_supplied),
-        'usage' => @options[:usage] }.compact
+        'model' => @options[:routed_model], 'usage' => @options[:usage] }.compact
     end
 
     def review_prompt
