@@ -30,22 +30,24 @@ module Shaka
     end
 
     def process_failure(command, status, stderr, stdout)
-      exit_reason = if status.nil?
-                      "timed out after #{@options.fetch(:timeout_seconds)}s"
-                    elsif status.is_a?(LocalReviewProcess::DrainTimeout)
-                      "output drain timed out after 2s (process exited #{status.process_status.exitstatus})"
-                    elsif status.signaled?
-                      "killed by signal #{status.termsig}"
-                    else
-                      "exited #{status.exitstatus}"
-                    end
-      failure("#{command} #{exit_reason}", [stderr, stdout].reject(&:empty?).join("\n"))
+      failure("#{command} #{process_exit_reason(status)}", [stderr, stdout].reject(&:empty?).join("\n"))
+    end
+
+    def process_exit_reason(status)
+      return status.message if status.is_a?(LocalReviewProcess::CleanupError)
+      return "timed out after #{@options.fetch(:timeout_seconds)}s" if status.nil?
+      return "output drain timed out after 2s (process exited #{status.process_status.exitstatus})" if
+        status.is_a?(LocalReviewProcess::DrainTimeout)
+
+      status.signaled? ? "killed by signal #{status.termsig}" : "exited #{status.exitstatus}"
     end
 
     def reviewer_process(args, input = nil)
       LocalReviewProcess.capture(args, stdin_data: input, chdir: @root,
                                        timeout: @options.fetch(:timeout_seconds),
                                        env: @path ? { 'PATH' => @path } : {})
+    rescue LocalReviewProcess::CleanupError => e
+      ['', e.message, e]
     end
 
     def reviewer_executable(name)

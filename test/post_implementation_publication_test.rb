@@ -1,0 +1,157 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'shaka/post_implementation'
+
+module PostImplementationPublicationFixture
+  class GitHub < Shaka::GitHub
+    attr_reader :bodies
+
+    def initialize(head)
+      super('example/test', '1')
+      @head = head
+      @bodies = []
+    end
+
+    def snapshot = { 'state' => 'OPEN', 'headRefOid' => @head }
+
+    def viewer_login = 'test-author'
+
+    def issue_comments = [@published]
+
+    def reply(body:, key:)
+      @bodies << [body, key]
+      @published = { 'id' => 1, 'created_at' => '2026-09-30T00:00:00Z', 'user' => { 'login' => viewer_login },
+                     'body' => "<!-- shaka:reply:#{key} -->\n#{body}",
+                     'html_url' => 'https://github.com/example/test/pull/1#issuecomment-1' }
+    end
+  end
+
+  private
+
+  def bounded_read
+    read = File.method(:binread)
+    File.define_singleton_method(:binread) do |file, length|
+      raise 'Unbounded report read' unless length == 100_001
+
+      read.call(file, length)
+    end
+    yield
+  ensure
+    File.define_singleton_method(:binread, read)
+  end
+
+  def attach_private_usage(result, path)
+    usage = File.join(File.dirname(path), 'usage.json')
+    File.write(usage, JSON.generate(type: 'result', result: 'PRIVATE TRANSCRIPT', session_id: 'test',
+                                    model: 'observed-model', usage: { input_tokens: 17, output_tokens: 2 }))
+    result['usage'] = usage
+    result['reviewer'] = 'anthropic/claude'
+  end
+
+  def with_result
+    Dir.mktmpdir do |root|
+      report = File.join(root, 'report.json')
+      File.write(report, JSON.generate(head: 'a' * 40, conclusion: 'Proceed', reasons: ['Useful change'],
+                                       concerns: [], alternative: 'No change leaves the bug'))
+      result = { 'purpose' => 'post_implementation', 'status' => 'completed', 'head' => 'a' * 40,
+                 'report' => report, 'reviewer' => 'openai/codex', 'effort' => 'medium',
+                 'prompt_source' => 'Shaka default', 'execution_id' => 'abc12345' }
+      yield result, File.join(root, 'result.json')
+    end
+  end
+
+  def publish(result, path, github: GitHub.new('a' * 40))
+    File.write(path, JSON.generate(result))
+    status = nil
+    output = capture_io do
+      status = Shaka::PostImplementation.run(['publish', 'example/test', '1', '--content-file', path], github:)
+    end.first
+    [github, status, output]
+  end
+end
+
+class PostImplementationPublicationTest < Minitest::Test
+  include PostImplementationPublicationFixture
+
+  def test_publication_keeps_execution_metadata_without_private_native_content
+    with_result do |result, path|
+      attach_private_usage(result, path)
+      github, status = publish(result, path)
+
+      assert_equal 0, status
+      assert github.bodies.first.first.start_with?("🤖 claude · anthropic · observed-model · UNKNOWN\n\n")
+      refute_includes github.bodies.first.first, 'PRIVATE TRANSCRIPT'
+    end
+  end
+
+  def test_stale_head_and_technical_evidence_cannot_be_published_as_checkpoint
+    with_result do |result, path|
+      result['head'] = 'b' * 40
+      github, status = publish(result, path)
+
+      assert_equal 1, status
+      assert_empty github.bodies
+      result['head'] = 'a' * 40
+      result['purpose'] = 'technical_review'
+      assert_equal 1, publish(result, path)[1]
+    end
+  end
+
+  def test_another_execution_does_not_overwrite_the_earlier_conclusion
+    with_result do |result, path|
+      first, = publish(result, path)
+      result['execution_id'] = 'def56789'
+      second, = publish(result, path)
+
+      refute_equal first.bodies.first.last, second.bodies.first.last
+    end
+  end
+
+  def test_nonobject_and_incomplete_results_fail_without_a_backtrace
+    with_result do |valid, path|
+      [nil, true, 42, [1], valid.except('report'), valid.merge('report' => nil)].each do |result|
+        github, status = publish(result, path)
+
+        assert_equal 1, status
+        assert_empty github.bodies
+      end
+    end
+  end
+
+  def test_oversized_report_read_is_bounded_and_cannot_publish
+    with_result do |result, path|
+      File.write(result.fetch('report'), 'x' * 1_000_000)
+      github, status = publish(result, path)
+      assert_equal 1, status
+      assert_empty github.bodies
+      error = bounded_read do
+        assert_raises(Shaka::Error) { Shaka::PostImplementationReport.read(result.fetch('report'), head: 'a' * 40) }
+      end
+      assert_includes error.message, 'exceeds 100 KB'
+    end
+  end
+end
+
+class PostImplementationPublicationHistoryTest < Minitest::Test
+  include PostImplementationPublicationFixture
+
+  def test_publication_confirms_history_updates
+    with_result do |result, path|
+      outcome = publish(result, path)
+      assert outcome[0].bodies.first.first.start_with?("🤖 codex · openai · UNKNOWN · UNKNOWN\n\n")
+      assert_equal({ 'collapsed' => [], 'unavailable' => [] }, JSON.parse(outcome[2]).fetch('earlier_checkpoints'))
+    end
+  end
+
+  def test_history_failure_is_explicit_after_the_new_report_is_published
+    with_result do |result, path|
+      github = GitHub.new('a' * 40)
+      github.define_singleton_method(:issue_comments) { raise Shaka::Error, 'Listing unavailable' }
+      outcome = publish(result, path, github:)
+      assert_equal 1, outcome[1]
+      assert_equal 1, github.bodies.size
+      assert_equal ['Listing unavailable'], JSON.parse(outcome[2]).dig('earlier_checkpoints', 'unavailable')
+    end
+  end
+end

@@ -64,6 +64,7 @@ module Shaka
         sha = capture.call(git, '-C', root, 'rev-parse', '--verify', '--end-of-options', "#{ref}^{commit}").strip
         layout = Layout.commit(root:, sha:, allow_missing: true, git: probe) || Layout::LEGACY
         source = capture.call(git, '-C', root, 'show', "#{sha}:#{layout.contract}")
+        RepositoryConfig::DuplicateKeys.check(source, filename: layout.contract)
         data = YAML.safe_load(source, permitted_classes: [], permitted_symbols: [], aliases: false)
         review = data.is_a?(Hash) ? data['review'] : nil
         review.is_a?(Hash) ? review : {}

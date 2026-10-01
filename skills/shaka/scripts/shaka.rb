@@ -28,6 +28,7 @@ require_relative '../lib/shaka/recommendation'
 require_relative '../lib/shaka/repos'
 require_relative '../lib/shaka/review_prompt'
 require_relative '../lib/shaka/local_review'
+require_relative '../lib/shaka/post_implementation'
 require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
@@ -71,6 +72,11 @@ end
 if ARGV.first == 'review-prompt'
   ARGV.shift
   exit Shaka::ReviewPrompt.run(ARGV)
+end
+
+if ARGV.first == 'post-implementation'
+  ARGV.shift
+  exit Shaka::PostImplementation.run(ARGV)
 end
 
 if ARGV.first == 'review'
