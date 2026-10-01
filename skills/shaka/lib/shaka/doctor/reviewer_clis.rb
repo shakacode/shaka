@@ -54,6 +54,8 @@ module Shaka
       end
 
       def warnings(entries, count)
+        return [] if entries.empty?
+
         providers = entries.select { |entry| entry[:installed] }.map { |entry| entry[:provider] }.uniq
         lines = []
         lines << "#{providers.size} provider#{'s' unless providers.one?} available; #{count} reviewers requested." if

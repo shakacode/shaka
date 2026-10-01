@@ -54,6 +54,17 @@ class DoctorReviewersTest < Minitest::Test
     end
   end
 
+  def test_no_configured_reviewers_keeps_fresh_host_review_healthy
+    review = review_policy
+    review.delete('local_review_agents')
+    with_repository('review' => review) do |root|
+      report, blocked = doctor(root:)
+      assert_includes report, '[HEALTHY] Reviewer CLIs'
+      assert_includes report, 'fresh host review remains available'
+      refute blocked
+    end
+  end
+
   private
 
   def with_reviewers(count:, available:)
