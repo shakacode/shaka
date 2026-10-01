@@ -43,7 +43,7 @@ module Shaka
     end
 
     def self.clear_publication(id)
-      update(id) { |request| request.delete('publication') }
+      update(id) { |request| drop_filled(request) }
     rescue Error, SystemCallError, JSON::ParserError
       nil
     end
@@ -68,6 +68,12 @@ module Shaka
 
     class << self
       private
+
+      def drop_filled(request)
+        records = Array(request.dig('publication', 'usage', 'records'))
+        request['selections'] = Array(request['selections']).reject { |item| CursorUsageReplay.applies?(item, records) }
+        request.delete('publication')
+      end
 
       def pin(request, generation)
         publication = request['publication']
@@ -140,16 +146,16 @@ module Shaka
     def self.documents(request, conversation, generation)
       records = Array(request.dig('publication', 'usage', 'records'))
       Array(request['selections']).filter_map do |selection|
-        read(selection, conversation, generation) if selected(selection, records)
+        read(selection, conversation, generation) if applies?(selection, records)
       end
+    end
+
+    def self.applies?(selection, records)
+      selection.is_a?(Hash) && records.any? { |record| same_work?(record, selection) }
     end
 
     class << self
       private
-
-      def selected(selection, records)
-        selection.is_a?(Hash) && records.any? { |record| same_work?(record, selection) }
-      end
 
       def same_work?(record, selection)
         record.is_a?(Hash) && record['host'] == 'cursor' &&

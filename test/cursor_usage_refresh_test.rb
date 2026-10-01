@@ -242,6 +242,10 @@ class CursorUsageRefreshCarryTest < Minitest::Test
     end
   end
 
+  def test_a_filled_selection_is_not_kept_for_a_later_description
+    Dir.mktmpdir { |directory| assert_filled_selection_dropped(directory) }
+  end
+
   def test_a_retry_counts_the_generation_from_the_failed_stop
     Dir.mktmpdir do |directory|
       body = retried_body(directory)
@@ -251,6 +255,13 @@ class CursorUsageRefreshCarryTest < Minitest::Test
   end
 
   private
+
+  def assert_filled_selection_dropped(directory)
+    refreshed_body(directory)
+    request = JSON.parse(File.read(File.join(directory, 'pending', "#{SESSION}.json")))
+    assert_nil request['publication']
+    refute_includes Array(request['selections']).map { |item| item['commit'] }, COMMIT
+  end
 
   def edited_body(directory)
     usage = JSON.parse(empty_usage(directory))

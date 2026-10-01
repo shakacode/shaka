@@ -179,12 +179,13 @@ file for the current conversation only degrades, as expected before its first st
 `shaka usage` in that conversation remembers the selection, and `shaka description`
 remembers the pull request when the report is Cursor. After the stop hook writes
 the record, it fills that published row once, including effort from the hook payload.
-A later session does not have to republish it. A row added or edited after
-publication stays, and a remembered selection for other work is not added. The
-conversation stores the last description it published. A retry after a failed
-update still counts the first stop's generation when the selection asked for the
-latest one. The update runs only for a request this conversation stored, and a
-failed update leaves the description unchanged.
+A later session does not have to republish it. A non-Cursor row added or edited
+after publication stays, and a remembered selection for other work is not added.
+The conversation stores the last description it published, and a filled selection
+is not replayed for a later one. A retry after a failed update still counts the
+first stop's generation when the selection asked for the latest one. The update
+runs only for a request this conversation stored, and a failed update leaves the
+description unchanged.
 
 ## What the OpenCode reader includes
 
