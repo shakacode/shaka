@@ -42,6 +42,12 @@ module Shaka
       nil
     end
 
+    def self.clear_publication(id)
+      update(id) { |request| request.delete('publication') }
+    rescue Error, SystemCallError, JSON::ParserError
+      nil
+    end
+
     def self.read(id)
       path = path_for(id)
       return unless File.file?(path)
@@ -113,6 +119,49 @@ module Shaka
     end
   end
 
+  # Replays only selections that name a Cursor record already on the published description.
+  class CursorUsageReplay
+    def self.documents(request, conversation)
+      records = Array(request.dig('publication', 'usage', 'records'))
+      Array(request['selections']).filter_map do |selection|
+        read(selection, conversation) if selected(selection, records)
+      end
+    end
+
+    class << self
+      private
+
+      def selected(selection, records)
+        selection.is_a?(Hash) && records.any? { |record| same_work?(record, selection) }
+      end
+
+      def same_work?(record, selection)
+        record.is_a?(Hash) && record['host'] == 'cursor' &&
+          record['contribution'] == selection['contribution'] &&
+          Array(record['commits']).include?(selection['commit'])
+      end
+
+      def read(selection, conversation)
+        require_relative 'usage'
+        Usage.new(options(selection, conversation)).json_document
+      rescue Error
+        nil
+      end
+
+      def options(selection, conversation)
+        { files: files(selection, conversation), turns: Array(selection['turns']), host: 'cursor', format: 'json',
+          commit: selection['commit'], contribution: selection['contribution'],
+          all_turns: selection['all_turns'] == true, since_time: selection['since_time'] }.compact
+      end
+
+      def files(selection, conversation)
+        return Array(selection['files']) unless selection['inferred']
+
+        [File.join(CursorUsageStore.home, "#{conversation}.jsonl")]
+      end
+    end
+  end
+
   # Fills a published Cursor usage row once the stop hook has written the working turn.
   class CursorUsageRefresh
     OPENING = "<details>\n<summary>#{UsageDetails::SUMMARY}".freeze
@@ -126,8 +175,11 @@ module Shaka
       return unless request && request['conversation_id'] == id
 
       usage = refreshed_usage(request, id)
-      publish(request['publication'], usage) if usage
-    rescue Error, SystemCallError, JSON::ParserError
+      return unless usage
+
+      publish(request['publication'], usage)
+      CursorUsageRequest.clear_publication(id)
+    rescue StandardError
       nil
     end
 
@@ -143,33 +195,8 @@ module Shaka
         publication = request['publication']
         return unless publication.is_a?(Hash) && publication['usage'].is_a?(Hash)
 
-        documents = replay_all(request, conversation)
+        documents = CursorUsageReplay.documents(request, conversation)
         merge_usage(publication['usage'], documents) unless documents.empty?
-      end
-
-      def replay_all(request, conversation)
-        Array(request['selections']).filter_map { |selection| replay(selection, conversation) }
-      end
-
-      def replay(selection, conversation)
-        return unless selection.is_a?(Hash)
-
-        require_relative 'usage'
-        Usage.new(replay_options(selection, conversation)).json_document
-      rescue Error
-        nil
-      end
-
-      def replay_options(selection, conversation)
-        { files: files_for(selection, conversation), turns: Array(selection['turns']), host: 'cursor', format: 'json',
-          commit: selection['commit'], contribution: selection['contribution'],
-          all_turns: selection['all_turns'] == true, since_time: selection['since_time'] }.compact
-      end
-
-      def files_for(selection, conversation)
-        return Array(selection['files']) unless selection['inferred']
-
-        [File.join(CursorUsageStore.home, "#{conversation}.jsonl")]
       end
 
       def merge_usage(usage, documents)
@@ -208,7 +235,12 @@ module Shaka
 
       def publish(publication, usage)
         github = GitHub.new(publication['repository'], publication['number'])
-        github.description { |pull| refreshed_region(pull['body'], usage) }
+        github.description { |pull| refreshed_region(pull['body'], usage_for(pull, usage)) }
+      end
+
+      def usage_for(pull, usage)
+        updated, = UsageRecords.carry_from({ 'usage' => usage.except('carried') }, pull)
+        updated.fetch('usage')
       end
 
       def refreshed_region(body, usage)

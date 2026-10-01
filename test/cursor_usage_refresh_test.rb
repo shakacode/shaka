@@ -35,10 +35,12 @@ module CursorUsageRefreshFixture
 
   private
 
-  def published_pull(usage)
+  def published_pull(usage, extra: nil)
     block = Shaka::UsageDetailsBlock.markdown('note' => usage['note'], 'records' => [usage['record']])
+    block = block.sub("</details>\n", "#{extra}\n</details>\n") if extra
     body = "<!-- shaka:begin -->\nA summary.\n\n#{block}\n<!-- shaka:end -->"
-    { 'body' => body, 'head' => { 'sha' => HEAD }, 'base' => { 'sha' => BASE } }
+    repo = { 'full_name' => 'owner/repo' }
+    { 'body' => body, 'head' => { 'sha' => HEAD, 'repo' => repo }, 'base' => { 'sha' => BASE, 'repo' => repo } }
   end
 
   def bind_pull_request(directory, usage)
@@ -138,6 +140,91 @@ class CursorUsageRefreshTest < Minitest::Test
       assert_equal GENERATION, JSON.parse(saved.lines.first)['generation_id']
       refute_match(/SENSITIVE/, saved)
     end
+  end
+
+  def test_stop_hook_keeps_a_row_added_after_publication
+    Dir.mktmpdir do |directory|
+      usage = JSON.parse(empty_usage(directory))
+      log = File.join(directory, 'gh.log')
+      bind_pull_request(directory, usage)
+      _out, err, status = run_hook(hook_env(directory, published_pull(usage, extra: kept_report), log))
+      assert_predicate status, :success?, err
+      assert_includes patched_body(log), 'kept-source'
+    end
+  end
+
+  def test_stop_hook_leaves_other_work_off_the_pull_request
+    Dir.mktmpdir do |directory|
+      usage = JSON.parse(empty_usage(directory))
+      remember_other_work(directory)
+      log = File.join(directory, 'gh.log')
+      bind_pull_request(directory, usage)
+      _out, err, status = run_hook(hook_env(directory, published_pull(usage), log))
+      assert_predicate status, :success?, err
+      refute_includes patched_body(log), 'e' * 40
+    end
+  end
+
+  def test_a_later_stop_does_not_update_the_pull_request
+    Dir.mktmpdir do |directory|
+      usage = JSON.parse(empty_usage(directory))
+      log = File.join(directory, 'gh.log')
+      bind_pull_request(directory, usage)
+      env = hook_env(directory, published_pull(usage), log)
+      2.times { run_hook(env) }
+      patches = File.readlines(log, chomp: true).count { |line| JSON.parse(line)['argv'].include?('PATCH') }
+      assert_equal 1, patches
+    end
+  end
+
+  def test_a_broken_selection_still_saves_the_stop_record
+    Dir.mktmpdir { |directory| assert_broken_selection_saved(directory) }
+  end
+
+  private
+
+  def assert_broken_selection_saved(directory)
+    usage = JSON.parse(empty_usage(directory))
+    bind_pull_request(directory, usage)
+    break_selection(directory)
+    _out, err, status = run_hook(hook_env(directory, published_pull(usage), File.join(directory, 'gh.log')))
+    assert_predicate status, :success?, err
+    assert_saved(directory)
+  end
+
+  def assert_saved(directory)
+    saved = File.read(File.join(directory, "#{SESSION}.jsonl"))
+    assert_equal GENERATION, JSON.parse(saved.lines.first)['generation_id']
+    assert JSON.parse(File.read(File.join(directory, 'pending', "#{SESSION}.json")))['publication']
+  end
+
+  def kept_report
+    fields = { 'host' => 'claude-code', 'sources' => ['kept-source'], 'responses' => ['kept-response'],
+               'contribution' => 'review', 'commits' => ['d' * 40], 'complete' => true,
+               'from' => '2026-09-14T12:00:00Z', 'to' => '2026-09-14T13:00:00Z' }
+    "#{Shaka::UsageRecords.begin_mark(fields)}\n<!-- usage-columns #{kept_column} -->\n#{Shaka::UsageRecords::END_MARK}"
+  end
+
+  def kept_column
+    JSON.generate([{ 'label' => 'kept-review', 'provider' => 'anthropic', 'model' => 'claude',
+                     'routed' => 'UNKNOWN', 'effort' => 'medium', 'credits' => 'UNKNOWN', 'usd' => 'UNKNOWN',
+                     'input' => '1', 'cached_input' => '0', 'output' => '0', 'reasoning_output' => 'UNKNOWN',
+                     'cache_writes' => 'UNKNOWN' }])
+  end
+
+  def remember_other_work(directory)
+    with_cursor(directory) do
+      Shaka::CursorUsageRefresh.remember(
+        { host: 'cursor', commit: 'e' * 40, contribution: 'review', files: [], turns: [] }, inferred: false
+      )
+    end
+  end
+
+  def break_selection(directory)
+    path = File.join(directory, 'pending', "#{SESSION}.json")
+    request = JSON.parse(File.read(path))
+    request['selections'].first['since_time'] = 1
+    File.write(path, "#{JSON.generate(request)}\n")
   end
 end
 
