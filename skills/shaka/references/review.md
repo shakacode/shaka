@@ -257,16 +257,17 @@ Use a fresh reviewer context that did not implement or design the change. Prefer
 a reviewer CLI run through `shaka review run`, because it is separate from the
 implementer in ways a current-host Task or subagent is not:
 
-- **Prompt.** The helper builds the prompt from the review criteria at the trusted
-  commit. A subagent gets its brief from the agent whose work is under review.
+- **Prompt.** The helper writes the prompt, and with `--criteria-ref` it takes the
+  review criteria from the trusted commit. A subagent gets its brief from the agent
+  whose work is under review.
 - **Sandbox.** The CLI starts in an empty directory without edit access or the
   checkout's instructions, skills, and hooks. A subagent runs in the candidate
   checkout with the host's tools, so candidate files can steer it.
 - **Provider.** The CLI can come from a provider that did not write the change.
   A subagent uses the host's provider.
-- **Record.** The run leaves its exit status, a report bound to the reviewed
-  commit, and its own usage transcript. A subagent returns prose, and its tokens
-  are counted with the parent session.
+- **Record.** The run leaves its exit status and a report bound to the reviewed
+  commit. Codex and Claude runs also leave their own usage transcript. A subagent
+  returns prose, and its tokens are counted with the parent session.
 
 The CLI reviewer reads less. Codex and Grok can read files at the reviewed commit
 through Git; the restricted Claude reviewer sees only the diff and reports missing
