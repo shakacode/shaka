@@ -216,7 +216,7 @@ green checks establish better accepted output.
 
 Those attempts keep their original limits. A new pair uses the one-hour default
 above and its own recorded repositories and outcomes. The
-[one-hour follow-up](../eval/reports/pr250-pr326-one-hour.md) delivered both arms
+[one-hour follow-up](https://github.com/shakacode/shaka/blob/main/eval/reports/pr250-pr326-one-hour.md) delivered both arms
 and passed independent checks, with explicit harness limitations. Its qualitative
 writing comparison found mixed differences and no established loader benefit.
 Refresh live revisions
