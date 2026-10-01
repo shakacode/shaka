@@ -8,7 +8,7 @@ module Shaka
     # Reads caller-supplied secret names and environment names out of one workflow file.
     class WorkflowFile
       NAME = /\A[A-Za-z_][A-Za-z0-9_]*\z/
-      IN_ENVIRONMENT = %w[steps env].freeze
+      BEFORE_ENVIRONMENT = %w[name if runs-on strategy concurrency environment].freeze
 
       def self.parse(text)
         new(text, YAML.safe_load(text.to_s, permitted_classes: [], aliases: false))
@@ -46,14 +46,14 @@ module Shaka
         jobs.values.flat_map { |job| job.is_a?(Hash) ? job_scope(job) : [] }
       end
 
-      # GitHub reads keys such as runs-on before a job's environment applies, so the environment
-      # settles only the names in steps and env. The rest stay uncertain when the repository lacks them.
+      # GitHub reads the keys that decide whether and where a job runs before its environment applies,
+      # so the environment cannot settle a name used there. It stays uncertain when the repository lacks it.
       def job_scope(job)
         environment = environment_name(job)
         return [names_scope(job, [], reusable?)].compact unless environment
 
-        [names_scope(job.slice(*IN_ENVIRONMENT), [environment], reusable?),
-         names_scope(job.except(*IN_ENVIRONMENT), [], true)].compact
+        [names_scope(job.except(*BEFORE_ENVIRONMENT), [environment], reusable?),
+         names_scope(job.slice(*BEFORE_ENVIRONMENT), [], true)].compact
       end
 
       def names_scope(value, environments, uncertain)

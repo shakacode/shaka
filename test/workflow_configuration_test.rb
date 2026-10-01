@@ -165,11 +165,12 @@ class WorkflowConfigurationScopeTest < Minitest::Test
 
   # GitHub picks the runner before the environment applies, so the environment cannot vouch for that name.
   def test_an_environment_does_not_settle_a_name_read_before_the_job_starts
-    early = { WORKFLOW => "jobs:\n  ship:\n    environment: production\n    runs-on: ${{ secrets.SHIP_KEY }}\n" }
+    job = "    runs-on: ${{ secrets.SHIP_KEY }}\n    outputs:\n      r: ${{ secrets.NOWHERE }}\n"
+    early = { WORKFLOW => "jobs:\n  ship:\n    environment: production\n#{job}" }
     result = check(files: [file_row], contents: early, repo: user_repo, secrets: [],
                    environment_secrets: PRODUCTION_AND_STAGING)
 
-    assert_equal [[], ['secrets.SHIP_KEY']], result.values_at('missing', 'unverified')
+    assert_equal [['secrets.NOWHERE'], ['secrets.SHIP_KEY']], result.values_at('missing', 'unverified')
   end
 
   def test_an_environment_secret_does_not_cover_a_different_job
