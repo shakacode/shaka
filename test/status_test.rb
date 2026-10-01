@@ -16,6 +16,15 @@ class StatusTest < Minitest::Test
     assert_equal({ 'status' => 'clear', 'missing' => [], 'unverified' => [] }, result['workflowNames'])
   end
 
+  def test_status_skips_workflow_names_for_a_caller_that_does_not_use_them
+    checks = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    github = client(snapshot_response, response(checks), snapshot_response)
+    result = Shaka::Status.new(github, workflow_names: false).call
+
+    assert_equal checks, result['requiredChecks']
+    refute result.key?('workflowNames')
+  end
+
   def test_status_reports_seam_required_checks_when_github_enforces_none
     empty = ['', "no required checks reported on the 'main' branch\n", STATUS.new(1)]
     head = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' },

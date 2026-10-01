@@ -38,8 +38,10 @@ module MergeFixtures
     end
 
     def configured_required_checks = []
+    def workflow_reads = @workflow_reads || 0
 
     def workflow_configuration(_pull = nil)
+      @workflow_reads = workflow_reads + 1
       @workflow_names || { 'status' => 'clear', 'missing' => [], 'unverified' => [] }
     end
 
@@ -750,5 +752,15 @@ class MergeWorkflowNamesTest < Minitest::Test
     merge = Shaka::Merge.new(@client, review: { merge_preference: 'auto' })
 
     assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('state')
+  end
+
+  # Seam checks are read twice to catch a late failure; the names cannot change for one head.
+  def test_auto_merge_reads_workflow_names_once_when_seam_checks_are_read_twice
+    @client.checks = []
+    @client.head_checks = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'], review: { merge_preference: 'auto' })
+
+    assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('state')
+    assert_equal 1, @client.workflow_reads
   end
 end

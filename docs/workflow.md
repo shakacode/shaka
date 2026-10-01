@@ -55,6 +55,40 @@ what counts as review evidence.
 Its [source map](../skills/shaka/config/enforcement.yml) describes enforcement;
 it does not prove a task followed every step.
 
+## Workflow secret and variable names
+
+A workflow that names a secret your repository lacks fails only after it merges.
+When a PR adds or changes a file in `.github/workflows/`, `shaka pr` and
+`shaka handoff` report each `secrets.NAME` and `vars.NAME` the repository
+cannot see. Under `merge.preference: auto`, a missing name stops the merge. Under
+`ask`, the handoff names it and the merge stays your decision.
+
+For example, a PR adds `${{ secrets.DEPLOY_KEY }}` to a deploy job, and no
+repository, organization, or environment secret has that name. The handoff reports
+`missing workflow names secrets.DEPLOY_KEY`, so you can add the secret before merging.
+
+Ruby reads names and never values. It looks for a name in the repository, in the
+organization secrets and variables shared with it, and in the environment a job
+names. A name is `unverified`, and does not stop a merge, when
+GitHub answers 403 or 404 for a list or a workflow file. The token may lack
+permission, so the check cannot tell a missing name from a hidden one.
+
+The check matches text. It does not evaluate workflows, so it has these limits:
+
+- It finds only the dot form. `secrets['DEPLOY_KEY']` and names built by an
+  expression are not found, and a workflow that uses only those reports `clear`.
+- A name in a YAML comment counts as a reference.
+- An environment set by an expression, such as `${{ inputs.target }}`, is looked up
+  under that literal text. GitHub returns 404, and the job's names are `unverified`.
+- A workflow that is not valid YAML is still scanned, and its names are `unverified`.
+- `secrets.GITHUB_TOKEN` is skipped. So is a secret a reusable workflow declares
+  under `on.workflow_call.secrets`, because its caller supplies it.
+- Workflows the PR leaves unchanged or deletes are not checked. Composite actions
+  and reusable workflows in other repositories are not checked.
+
+Shaka prints names in command output and does not post them to the PR. The watcher
+(`shaka pr watch`) skips this check, because it waits only on checks and comments.
+
 ## Customize the instructions
 
 Put commands and merge choices in [settings](settings.md). Use `AGENTS.md` for

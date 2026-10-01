@@ -50,9 +50,8 @@ class PrWatchTest < Minitest::Test
       frame.fetch(:required)
     end
 
-    def workflow_configuration(_pull = nil)
-      { 'status' => 'clear', 'missing' => [], 'unverified' => [] }
-    end
+    # Watching decides nothing from workflow names, so a poll that reads them fails every test here.
+    def workflow_configuration(_pull = nil) = raise(Shaka::Error, 'watch read workflow names')
 
     def configured_required_checks = []
     def checks = frame.fetch(:checks)

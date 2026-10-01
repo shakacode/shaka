@@ -18,11 +18,10 @@ module Shaka
     # `review` takes MergeReviewEvidence's `required`, `waiver`, and checkout `root`.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
       @github = github
-      review = review.dup
-      @merge_preference = review.delete(:merge_preference)
+      @merge_preference = review[:merge_preference]
       @seam_required_checks = seam_required_checks
       @ci_review_wait = CiReviewWait.effective(seam: seam_wait, override: ci_review_wait)
-      @review_evidence = MergeReviewEvidence.new(github, **review)
+      @review_evidence = MergeReviewEvidence.new(github, **review.except(:merge_preference))
       @submission = MergeSubmission.new(github)
     end
 
@@ -30,8 +29,7 @@ module Shaka
     def call(head:, base:, walkthrough:, limits: MergeLimits.new, squash_message: nil)
       @target = MergeTarget.required!(head, base, limits)
       @submission.message = squash_message
-      initial = (@checked_pull = @github.snapshot)
-      verify_snapshot(initial, head, @target)
+      initial = checked_pull(head)
       evidence = verify_reviews(head, base, walkthrough, verify_gate)
       current = @github.snapshot
       return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
@@ -44,13 +42,18 @@ module Shaka
     private
 
     def verify_gate
-      verify_workflow_names
       gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
       verify_checks(gate.fetch('checks'))
       gate
     end
 
-    def verify_workflow_names = WorkflowMergeStop.new(@github, @merge_preference, @checked_pull).call
+    # Names belong to the checked head, so one read serves the whole merge; checks can change and are reread.
+    def checked_pull(head)
+      pull = @github.snapshot
+      verify_snapshot(pull, head, @target)
+      WorkflowMergeStop.new(@github, @merge_preference, pull).call
+      pull
+    end
 
     # The walkthrough explains the change; the attestation records that a separate review ran.
     # GitHub cannot catch a seam check that fails while these are read, so it is read again.
