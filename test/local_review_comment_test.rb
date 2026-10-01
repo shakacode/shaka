@@ -216,7 +216,7 @@ class LocalReviewPublishTest < Minitest::Test
     status, = publish(github, 'rounds' => [round])
 
     assert_equal 0, status
-    assert_equal ['local-adversarial-review'], github.replies.map(&:first)
+    assert_equal ["local-adversarial-review-#{HEAD}"], github.replies.map(&:first)
     assert github.replies.first.last.start_with?('# Local Adversarial Review')
     assert_includes github.replies.first.last, "| 1 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
   end

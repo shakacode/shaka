@@ -327,7 +327,9 @@ phases:
         region stays in the body. When a local review ran, publish it right after that with
         `review publish OWNER/REPO NUMBER --content-file PATH`, passing the ledger, or a content
         file for a fresh host review; nothing from the loop reaches GitHub before the push, and
-        publishing again updates the same comment. Use trusted `gh` for authorized
+        each reviewed commit gets its own timeline comment. Publishing again updates that
+        commit's comment in place. Copy the returned loop summary into the description's review
+        history details; keep native usage in `usage.records`. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
