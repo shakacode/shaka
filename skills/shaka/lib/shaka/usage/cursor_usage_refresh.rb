@@ -42,15 +42,23 @@ module Shaka
       nil
     end
 
+    def self.stamp_selections(id, generation)
+      return unless File.file?(path_for(id))
+
+      update(id) { |request| CursorUsagePending.stamp(request, generation) }
+    rescue Error, SystemCallError, JSON::ParserError
+      nil
+    end
+
     def self.clear_publication(id)
-      update(id) { |request| drop_filled(request) }
+      update(id) { |request| CursorUsagePending.drop_filled(request) }
     rescue Error, SystemCallError, JSON::ParserError
       nil
     end
 
     def self.pin_generation(id, generation)
       pinned = nil
-      update(id) { |request| pinned = pin(request, generation) }
+      update(id) { |request| pinned = CursorUsagePending.pin(request, generation) }
       pinned
     rescue Error, SystemCallError, JSON::ParserError
       nil
@@ -68,20 +76,6 @@ module Shaka
 
     class << self
       private
-
-      def drop_filled(request)
-        records = Array(request.dig('publication', 'usage', 'records'))
-        request['selections'] = Array(request['selections']).reject { |item| CursorUsageReplay.applies?(item, records) }
-        request.delete('publication')
-      end
-
-      def pin(request, generation)
-        publication = request['publication']
-        return unless publication.is_a?(Hash) && generation.is_a?(String)
-        return unless generation.match?(CursorUsageStore::IDENTITY)
-
-        publication['generation'] ||= generation
-      end
 
       def publication(repository, number, usage)
         unless repository.is_a?(String) && repository.match?(%r{\A[\w.-]+/[\w.-]+\z})
@@ -141,6 +135,37 @@ module Shaka
     end
   end
 
+  # Stamps and clears the pending Cursor request without owning its file.
+  class CursorUsagePending
+    def self.stamp(request, generation)
+      return unless generation.is_a?(String) && generation.match?(CursorUsageStore::IDENTITY)
+
+      Array(request['selections']).each { |selection| stamp_one(selection, generation) }
+    end
+
+    def self.drop_filled(request)
+      records = Array(request.dig('publication', 'usage', 'records'))
+      request['selections'] = Array(request['selections']).reject { |item| CursorUsageReplay.applies?(item, records) }
+      request.delete('publication')
+    end
+
+    def self.pin(request, generation)
+      publication = request['publication']
+      return unless publication.is_a?(Hash) && generation.is_a?(String)
+      return unless generation.match?(CursorUsageStore::IDENTITY)
+
+      publication['generation'] ||= generation
+    end
+
+    def self.stamp_one(selection, generation)
+      return unless selection.is_a?(Hash)
+      return if Array(selection['turns']).any? || selection['all_turns'] == true || selection['since_time']
+
+      selection['generation'] ||= generation
+    end
+    private_class_method :stamp_one
+  end
+
   # Replays only selections that name a Cursor record already on the published description.
   class CursorUsageReplay
     def self.documents(request, conversation, generation)
@@ -180,7 +205,7 @@ module Shaka
         listed = Array(selection['turns'])
         return listed unless listed.empty? && selection['all_turns'] != true && !selection['since_time']
 
-        [generation].compact
+        [selection['generation'] || generation].compact
       end
 
       def files(selection, conversation)
@@ -200,15 +225,8 @@ module Shaka
 
     def self.after_write(record)
       id = record['conversation_id']
-      request = CursorUsageRequest.read(id)
-      return unless request && request['conversation_id'] == id
-
-      generation = CursorUsageRequest.pin_generation(id, record['generation_id'])
-      usage = refreshed_usage(request, id, generation)
-      return unless usage
-
-      publish(request['publication'], usage)
-      CursorUsageRequest.clear_publication(id)
+      CursorUsageRequest.stamp_selections(id, record['generation_id'])
+      refresh(CursorUsageRequest.read(id), id, record)
     rescue StandardError
       nil
     end
@@ -220,6 +238,17 @@ module Shaka
 
     class << self
       private
+
+      def refresh(request, id, record)
+        return unless request && request['conversation_id'] == id
+
+        generation = CursorUsageRequest.pin_generation(id, record['generation_id'])
+        usage = refreshed_usage(request, id, generation)
+        return unless usage
+
+        publish(request['publication'], usage)
+        CursorUsageRequest.clear_publication(id)
+      end
 
       def refreshed_usage(request, conversation, generation)
         publication = request['publication']

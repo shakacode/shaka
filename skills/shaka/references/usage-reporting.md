@@ -182,8 +182,9 @@ the record, it fills that published row once, including effort from the hook pay
 A later session does not have to republish it. A non-Cursor row added or edited
 after publication stays, and a remembered selection for other work is not added.
 The conversation stores the last description it published, and a filled selection
-is not replayed for a later one. A retry after a failed update still counts the
-first stop's generation when the selection asked for the latest one. The update
+is not replayed for a later one. The first stop after a selection is remembered
+stamps that generation, so a retry or a later description still counts it when
+the selection asked for the latest one. The update
 runs only for a request this conversation stored, and a failed update leaves the
 description unchanged.
 

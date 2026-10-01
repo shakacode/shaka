@@ -242,6 +242,14 @@ class CursorUsageRefreshCarryTest < Minitest::Test
     end
   end
 
+  def test_a_selection_keeps_the_generation_stamped_before_publish
+    Dir.mktmpdir do |directory|
+      body = stamped_body(directory)
+      assert_includes body, '"input":"100"'
+      refute_includes body, '"input":"999"'
+    end
+  end
+
   def test_a_filled_selection_is_not_kept_for_a_later_description
     Dir.mktmpdir { |directory| assert_filled_selection_dropped(directory) }
   end
@@ -255,6 +263,13 @@ class CursorUsageRefreshCarryTest < Minitest::Test
   end
 
   private
+
+  def stamped_body(directory)
+    usage = JSON.parse(empty_usage(directory))
+    run_hook(hook_env(directory, published_pull(usage), File.join(directory, 'early.log')))
+    bind_pull_request(directory, usage)
+    patched_after(directory, published_pull(usage), generation_id: LATER, input_tokens: 999)
+  end
 
   def assert_filled_selection_dropped(directory)
     refreshed_body(directory)
