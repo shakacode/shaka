@@ -23,7 +23,7 @@ the workflow reaches that decision:
 | Write PR descriptions and replies | [Writing](writing.md) |
 | Assess documentation changes | [Documentation verification](documentation-verification.md) |
 | Choose tests and evidence | [Verification](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md) |
-| Show where a UI change moved pixels | [Difference image](visual-diff.md) |
+| Explain visible changes on the new capture | [Annotated screenshots and optional pixel diagnostics](visual-diff.md) |
 | Report model, token, and cost evidence | [Usage reporting](usage-reporting.md) |
 | Offer an issue for a verified Shaka gap | [Issue offers](shaka-issue-offer.md) |
 | Read public issue and review discussions | [Public comments](public-comments-safety.md) |

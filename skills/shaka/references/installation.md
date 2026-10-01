@@ -30,10 +30,9 @@ If that Ruby or its record is removed, `scripts/shaka` stops and asks you to
 install again or set `SHAKA_RUBY` to another Ruby 3.4 interpreter. Without an
 installed package, `scripts/shaka` uses `ruby` from `PATH`.
 
-Optional: [ImageMagick 7](https://imagemagick.org/script/download.php) lets agents
-show where a UI change moved pixels with a
-[difference image](visual-diff.md). Check it with `magick --version`. Without it,
-agents publish labeled before and after screenshots instead.
+Optional: [ImageMagick 7](https://imagemagick.org/script/download.php) can draw
+[annotations and pixel diagnostics](visual-diff.md). Check it with `magick --version`.
+Agents can also use an existing editor or browser overlay; ImageMagick is not required.
 
 ## Install
 

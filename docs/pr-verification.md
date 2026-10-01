@@ -52,7 +52,7 @@ can complete the intended task. See the agent's
 
 | Change | Useful evidence |
 | --- | --- |
-| Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both, plus a [difference image](#show-what-changed-between-captures) when they align. |
+| Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both, with [annotations explaining meaningful changes](#show-what-changed-between-captures). |
 | Interaction, animation, or timing | A short recording, with screenshots where they help comparison. |
 | Backend or command-line behavior | Focused tests and concise before/after output. |
 
@@ -87,36 +87,26 @@ the PR records why: `uploader_absent` (no attachment route is available),
 
 ## Show what changed between captures
 
-A difference image shows a reviewer where the pixels changed, so they need not
-compare two screenshots by eye. It also exposes a change nobody meant to make,
-such as a shifted footer beside the button the PR restyled.
+See the resulting UI with a few numbered boxes, highlights, or arrows explaining
+what changed. The original before and after captures stay available, so a reviewer
+can inspect the change beyond those callouts.
 
-The two captures have to show the same rendered state: the same route, viewport,
-scroll position, test data, and interaction step, at the same image size. Capture
-a taller viewport instead of scrolling when the change sits below the fold. Make
-one comparison for each view the change affects, usually desktop and mobile.
+For example, when three sidebar links are added, three boxes on the new screenshot
+identify them. A pixel difference can instead highlight every following row because
+it moved. For a removed element, a labeled before crop supplies the missing context.
 
-The agent inspects both captures first, then generates the difference with any
-image tool the project already has, such as ImageMagick, following the agent's
-[difference-image procedure](../skills/shaka/references/visual-diff.md). Unchanged
-pixels fade and changed ones turn red.
+The agent compares the whole affected view before choosing annotations and labels
+both intended and unexpected changes. Callouts explain the comparison; they do not
+prove that the UI works. The [visual-evidence procedure](../skills/shaka/references/visual-diff.md)
+provides the agent's capture, annotation, and publication steps.
 
-Publish the difference beside its source captures in one PR comment, attached the
-same way as other captures. Label the compared revisions, the page and state, the
-viewport, and whether each changed region is intended, for example “Changed pixels,
-pricing page, desktop 1280x800, main 4396e9c to abc1234: new plan card intended,
-footer shift unintended.”
+Comparable captures use the same route, viewport, theme, scroll position, test data,
+and interaction step. When layout changes, animation, or live data prevent alignment,
+the comparison explains that limit. A short recording remains useful for timing and interaction.
 
-A red region is not a defect by itself. Antialiasing, font rendering, and
-timestamps also change pixels. Say which regions the PR meant to change and
-explain any others.
-
-When animation, live data, or a different page structure keeps the captures from
-aligning, or no image comparison tool is available, the agent says why and
-publishes the clearest labeled before-and-after pair instead. A short recording
-still shows timing and interaction. Check the difference image for private data,
-unrelated screen content, error pages, and loading placeholders, the same as its
-source captures.
+Pixel differences are optional diagnostic evidence, kept in expandable details when
+useful for investigating subtle color, opacity, or unintended changes. Rendering
+noise and moved content can dominate them; a highlighted pixel is not itself a defect.
 
 ## Show whether it is faster or slower
 

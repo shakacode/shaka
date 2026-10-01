@@ -55,8 +55,8 @@ merge choices, feedback, and resuming work.
 Ruby 3.4 or later, Git, an authenticated [GitHub CLI](https://cli.github.com/), and
 [a coding agent](docs/coding-agents.md) that can load skills and run commands.
 The installation prompt lets your agent check these for you. Optional ImageMagick 7
-lets it add [difference images](docs/pr-verification.md#show-what-changed-between-captures)
-to UI evidence.
+can draw [screenshot annotations and pixel diagnostics](docs/pr-verification.md#show-what-changed-between-captures).
+Agents can also annotate with an existing editor or browser overlay.
 
 Shaka is a public pilot. See [status and limitations](docs/expected-experience.md)
 for demonstrated behavior. In particular, private setup tools exist, but a seamless
