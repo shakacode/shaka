@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Run inside the final Linux agent container before adding credentials.
+# The grandchild exits without its parent waiting for it; PID 1 must reap it.
+def abandon_child(reader, writer)
+  reader.close
+  writer.puts(fork do
+    writer.close
+    exit!
+  end)
+  exit!
+end
+
+def orphan_pid
+  reader, writer = IO.pipe
+  parent = fork { abandon_child(reader, writer) }
+  writer.close
+  pid = Integer(reader.read)
+  reader.close
+  Process.wait(parent)
+  pid
+end
+
+def present?(pid)
+  Process.kill(0, pid)
+  true
+rescue Errno::ESRCH
+  false
+end
+
+abort 'Run this check inside the final Linux agent container.' unless RUBY_PLATFORM.include?('linux')
+
+pid = orphan_pid
+deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
+sleep 0.05 while present?(pid) && Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+abort 'process_reaping=FAIL: exited descendant remains; create the container with --init.' if present?(pid)
+
+puts 'process_reaping=PASS'

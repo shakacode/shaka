@@ -19,6 +19,13 @@ PR #250 case. Where this historical proposal says to delete repositories
 or requires a new token for every public qualification, that later decision
 supersedes it. Private measured cells still need independent read isolation.
 
+**Maintainer decision recorded September 30, 2026:** use the contributor guide's
+[simple one-pair default](../contributing/evaluating-changes.md#simple-default-one-matched-pair),
+with one hour per arm including CI and handoff. Choose any task-specific limit
+before launch and keep both arms matched; time and spending limits are separate.
+This supersedes the proposed 30-minute cap and derived wall-time estimates below
+for future runs, not the limits or outcomes of completed attempts.
+
 This is an experiment design, not a product feature or proof of completed pilot
 acceptance. [Issue #206](https://github.com/shakacode/shaka/issues/206) tracks skill
 and plugin evaluation; [requirements](requirements.md) retain real-use acceptance.
