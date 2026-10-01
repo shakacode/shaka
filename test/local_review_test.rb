@@ -1815,4 +1815,13 @@ class LocalReviewClaudeModelTest < Minitest::Test
       assert_equal MODEL, rounds.first.fetch('model')
     end
   end
+
+  def test_later_model_usage_replaces_unknown_attribution
+    with_claude_ledger(INCOMPLETE_USAGE) do |_, ledger|
+      record_claude_usage(ledger, 'UNKNOWN')
+      record_claude_usage(ledger, MODEL)
+      rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+      assert_equal MODEL, rounds.first.fetch('model')
+    end
+  end
 end
