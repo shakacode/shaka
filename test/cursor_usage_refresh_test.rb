@@ -35,8 +35,8 @@ module CursorUsageRefreshFixture
 
   private
 
-  def published_pull(usage, extra: nil)
-    block = Shaka::UsageDetailsBlock.markdown('note' => usage['note'], 'records' => [usage['record']])
+  def published_pull(usage, extra: nil, records: nil)
+    block = Shaka::UsageDetailsBlock.markdown('note' => usage['note'], 'records' => records || [usage['record']])
     block = block.sub("</details>\n", "#{extra}\n</details>\n") if extra
     body = "<!-- shaka:begin -->\nA summary.\n\n#{block}\n<!-- shaka:end -->"
     repo = { 'full_name' => 'owner/repo' }
@@ -53,7 +53,7 @@ module CursorUsageRefreshFixture
     cursor_env(directory).merge('PATH' => "#{bin_dir(directory, pull, log)}:#{ENV.fetch('PATH')}")
   end
 
-  def run_hook(env) = Open3.capture3(env, HOOK, stdin_data: JSON.generate(payload))
+  def run_hook(env, **overrides) = Open3.capture3(env, HOOK, stdin_data: JSON.generate(payload.merge(overrides)))
 
   def patched_body(log)
     calls = File.readlines(log, chomp: true).map { |line| JSON.parse(line) }
@@ -225,6 +225,75 @@ class CursorUsageRefreshTest < Minitest::Test
     request = JSON.parse(File.read(path))
     request['selections'].first['since_time'] = 1
     File.write(path, "#{JSON.generate(request)}\n")
+  end
+end
+
+# A live edit and a failed first stop must not be overwritten by the snapshot.
+class CursorUsageRefreshCarryTest < Minitest::Test
+  include CursorUsageRefreshFixture
+
+  LATER = '00000000-0000-4000-8000-000000000003'
+
+  def test_stop_hook_keeps_an_edited_non_cursor_row
+    Dir.mktmpdir do |directory|
+      body = edited_body(directory)
+      assert_includes body, '"input":"9"'
+      refute_includes body, '"input":"7"'
+    end
+  end
+
+  def test_a_retry_counts_the_generation_from_the_failed_stop
+    Dir.mktmpdir do |directory|
+      body = retried_body(directory)
+      assert_includes body, '"input":"100"'
+      refute_includes body, '"input":"999"'
+    end
+  end
+
+  private
+
+  def edited_body(directory)
+    usage = JSON.parse(empty_usage(directory))
+    bind_edited(directory, usage)
+    patched_after(directory, edited_pull(usage))
+  end
+
+  def bind_edited(directory, usage)
+    records = [usage['record'], edited_record]
+    with_cursor(directory) do
+      Shaka::CursorUsageRefresh.bind('owner/repo', 42, 'note' => usage['note'], 'records' => records)
+    end
+  end
+
+  def edited_pull(usage)
+    pull = published_pull(usage, records: [usage['record'], edited_record])
+    pull['body'] = pull['body'].sub('"input":"7"', '"input":"9"')
+    pull
+  end
+
+  def edited_record
+    column = CliOpeningCheckFakes::USAGE_COLUMN.merge('label' => 'snapshot-claude', 'input' => '7')
+    USAGE_RECORD.merge('host' => 'claude-code', 'columns' => [column])
+  end
+
+  def retried_body(directory)
+    usage = JSON.parse(empty_usage(directory))
+    bind_pull_request(directory, usage)
+    fail_once(directory, published_pull(usage))
+    patched_after(directory, published_pull(usage), generation_id: LATER, input_tokens: 999)
+  end
+
+  def fail_once(directory, pull)
+    failed = hook_env(directory, pull, File.join(directory, 'fail.log'))
+    failed['PATH'] = "#{failing_gh(directory)}:#{ENV.fetch('PATH')}"
+    run_hook(failed)
+  end
+
+  def patched_after(directory, pull, **overrides)
+    log = File.join(directory, 'gh.log')
+    _out, err, status = run_hook(hook_env(directory, pull, log), **overrides)
+    assert_predicate status, :success?, err
+    patched_body(log)
   end
 end
 

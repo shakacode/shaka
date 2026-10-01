@@ -48,6 +48,14 @@ module Shaka
       nil
     end
 
+    def self.pin_generation(id, generation)
+      pinned = nil
+      update(id) { |request| pinned = pin(request, generation) }
+      pinned
+    rescue Error, SystemCallError, JSON::ParserError
+      nil
+    end
+
     def self.read(id)
       path = path_for(id)
       return unless File.file?(path)
@@ -60,6 +68,14 @@ module Shaka
 
     class << self
       private
+
+      def pin(request, generation)
+        publication = request['publication']
+        return unless publication.is_a?(Hash) && generation.is_a?(String)
+        return unless generation.match?(CursorUsageStore::IDENTITY)
+
+        publication['generation'] ||= generation
+      end
 
       def publication(repository, number, usage)
         unless repository.is_a?(String) && repository.match?(%r{\A[\w.-]+/[\w.-]+\z})
@@ -121,10 +137,10 @@ module Shaka
 
   # Replays only selections that name a Cursor record already on the published description.
   class CursorUsageReplay
-    def self.documents(request, conversation)
+    def self.documents(request, conversation, generation)
       records = Array(request.dig('publication', 'usage', 'records'))
       Array(request['selections']).filter_map do |selection|
-        read(selection, conversation) if selected(selection, records)
+        read(selection, conversation, generation) if selected(selection, records)
       end
     end
 
@@ -141,17 +157,24 @@ module Shaka
           Array(record['commits']).include?(selection['commit'])
       end
 
-      def read(selection, conversation)
+      def read(selection, conversation, generation)
         require_relative 'usage'
-        Usage.new(options(selection, conversation)).json_document
+        Usage.new(options(selection, conversation, generation)).json_document
       rescue Error
         nil
       end
 
-      def options(selection, conversation)
-        { files: files(selection, conversation), turns: Array(selection['turns']), host: 'cursor', format: 'json',
+      def options(selection, conversation, generation)
+        { files: files(selection, conversation), turns: turns(selection, generation), host: 'cursor', format: 'json',
           commit: selection['commit'], contribution: selection['contribution'],
           all_turns: selection['all_turns'] == true, since_time: selection['since_time'] }.compact
+      end
+
+      def turns(selection, generation)
+        listed = Array(selection['turns'])
+        return listed unless listed.empty? && selection['all_turns'] != true && !selection['since_time']
+
+        [generation].compact
       end
 
       def files(selection, conversation)
@@ -174,7 +197,8 @@ module Shaka
       request = CursorUsageRequest.read(id)
       return unless request && request['conversation_id'] == id
 
-      usage = refreshed_usage(request, id)
+      generation = CursorUsageRequest.pin_generation(id, record['generation_id'])
+      usage = refreshed_usage(request, id, generation)
       return unless usage
 
       publish(request['publication'], usage)
@@ -191,11 +215,11 @@ module Shaka
     class << self
       private
 
-      def refreshed_usage(request, conversation)
+      def refreshed_usage(request, conversation, generation)
         publication = request['publication']
         return unless publication.is_a?(Hash) && publication['usage'].is_a?(Hash)
 
-        documents = CursorUsageReplay.documents(request, conversation)
+        documents = CursorUsageReplay.documents(request, conversation, generation)
         merge_usage(publication['usage'], documents) unless documents.empty?
       end
 
@@ -239,8 +263,13 @@ module Shaka
       end
 
       def usage_for(pull, usage)
-        updated, = UsageRecords.carry_from({ 'usage' => usage.except('carried') }, pull)
+        fresh = usage.merge('records' => cursor_records(usage))
+        updated, = UsageRecords.carry_from({ 'usage' => fresh.except('carried') }, pull)
         updated.fetch('usage')
+      end
+
+      def cursor_records(usage)
+        Array(usage['records']).select { |record| record.is_a?(Hash) && record['host'] == 'cursor' }
       end
 
       def refreshed_region(body, usage)
