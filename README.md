@@ -10,26 +10,25 @@ and delivery on GitHub. You describe the outcome; Shaka supplies the workflow.
 Shaka brings back a PR ready to merge, asks for a decision when needed, or merges
 automatically when authorized and required checks and approvals pass.
 
-## Example prompts
+<a id="example-prompts"></a>
+<a id="get-started"></a>
+
+## Start with a small task
+
+[Install Shaka and ask it to configure your repository](docs/getting-started.md).
+The agent prepares shared settings using your existing checks. You review the
+choices and merge the first setup PR, then give it a task:
 
 ```text
 $shaka Fix search when the query contains an apostrophe.
+Keep merge policy ask. Go.
 ```
 
-Shaka checks for existing work, considers whether the change is worth doing, and
-recommends a model and effort level. You can also give it an issue or task link:
-
-```text
-$shaka https://linear.app/your-team/issue/APP-123/fix-search
-Use Sol, medium effort. Go.
-```
-
-Replace the example link and choose a model available in your coding agent.
-You can also say `Go` without naming model or effort: Shaka starts with your
-agent's current settings. When your agent can report them, Shaka briefly notes
-how they compare with its recommendation. Unknown or differing settings do not
-require confirmation in this case.
-It still brings you decisions that need your input.
+Examples use Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode; in Pi,
+load the installed skill. You can describe an outcome or provide an issue link.
+`Go` starts with your agent's current model and effort settings.
+[Working with Shaka](docs/working-with-shaka.md) covers practical prompts,
+merge choices, feedback, and resuming work.
 
 ## Why use it?
 
@@ -49,20 +48,20 @@ It still brings you decisions that need your input.
 - **Use your existing tools.** Shaka works with your coding agent, repository scripts,
   and GitHub.
 
-## Get started
+<a id="requirements"></a>
 
-[Install Shaka and configure your repository](docs/getting-started.md)
-with simple prompts.
-
-### Requirements
+## What you need
 
 Ruby 3.4 or later, Git, an authenticated [GitHub CLI](https://cli.github.com/), and
 [a coding agent](docs/coding-agents.md) that can load skills and run commands.
-Optional: ImageMagick 7, so agents can add a
-[difference image](docs/pr-verification.md#show-what-changed-between-captures)
-to UI changes.
-Shaka waits for CI checks that GitHub requires or that you list in its settings;
-see [before you start](docs/configure-repository.md#before-you-start).
+The installation prompt lets your agent check these for you. Optional ImageMagick 7
+lets it add [difference images](docs/pr-verification.md#show-what-changed-between-captures)
+to UI evidence.
+
+Shaka is a public pilot. See [status and limitations](docs/expected-experience.md)
+for demonstrated behavior. In particular, private setup tools exist, but a seamless
+new-user private trial remains unproven.
+
 
 ## How it works
 
@@ -83,12 +82,9 @@ maintainer triage.
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) — why Shaka keeps one owner and little state.
-- [Try a Shaka PR](docs/trying-pr-versions.md) — evaluate an unmerged version on real work.
-- [Getting started](docs/getting-started.md) — install, configure, and run a task.
-- [Expected experience](docs/expected-experience.md) — scenarios, outcomes, and current pilot limits.
-- [Working with Shaka](docs/working-with-shaka.md) — merge policy, feedback, and resuming work.
-- [Repository setup](docs/configure-repository.md) and [settings](docs/settings.md).
-- [Documentation index](docs/README.md) — all product guides.
+- [Start here](docs/getting-started.md) — install, configure, and run a first task.
+- [Working with Shaka](docs/working-with-shaka.md) — results, decisions, and useful tips.
+- [FAQ](docs/faq.md) — answers to common questions.
+- [Documentation index](docs/README.md) — setup, verification, settings, and advanced guides.
 
 [Skill references](skills/shaka/references/README.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)

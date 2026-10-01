@@ -1,4 +1,13 @@
-# Getting started
+# Start here
+
+Give your coding agent a task. Shaka guides it through implementation, checks,
+independent review, and a pull request you can understand and decide whether to merge.
+Start with a small fix in a project you know.
+
+Examples use `$shaka` in Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode;
+in Pi, load the installed Shaka skill. See [coding agents](coding-agents.md).
+
+<a id="getting-started"></a>
 
 ## 1. Install Shaka
 
@@ -11,22 +20,47 @@ Follow its installation instructions and confirm the skill is available.
 ```
 
 The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
-It also reports whether optional ImageMagick 7 is installed; with it, PRs for
-UI changes can include a
-[difference image](pr-verification.md#show-what-changed-between-captures).
-Start a new chat if the skill does not appear. See [coding agents](coding-agents.md)
-for environment-specific setup.
+It installs a managed copy outside your projects. Start a new chat if the skill
+does not appear. Use a source installation: the published gem is a
+name-reservation prerelease without the current workflow.
 
-Installation keeps a managed copy of the Shaka skill and links your coding agent
-to it. Shaka keeps using the Ruby that installed it, so a project that selects
-an older Ruby or loads Bundler cannot stop it. You can remove the source checkout after installation; the skill and its
-workflow still work. On upgrade, Shaka keeps the previous copy. To roll back
-after removing the checkout, get a source checkout again and run its installer.
-See [install and maintain Shaka](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/installation.md)
-for the procedure.
+## 2. Configure your repository
 
-Use a source installation: the published gem is a name-reservation prerelease
-without the current workflow.
+Open a chat in your project and ask:
+
+```text
+$shaka Configure this repository for Shaka. Reuse its existing checks,
+explain the choices I need to make, and keep merge policy ask.
+```
+
+The agent prepares shared settings and scripts in a **setup PR**. They connect
+Shaka to your project's commands and record its review and merge choices.
+**Review the choices and merge this first setup PR yourself on GitHub.**
+Then start your feature task. If the repository is already configured, skip this step.
+You can ask the agent to change settings later; you do not need to maintain them by hand.
+See [repository setup](configure-repository.md) for details.
+
+Want to try Shaka in one clone without shared setup? Private setup tools exist,
+but the seamless new-user path remains unproven. Read the
+[private-trial limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
+before choosing that option.
+
+## 3. Start a task
+
+```text
+$shaka Fix search when the query contains an apostrophe.
+Keep merge policy ask. Go.
+```
+
+Replace the example with a small outcome or an issue link. `Go` lets the agent
+start with its current model and effort settings. It handles routine work and
+asks when a missing choice, access problem, or consequential decision needs you.
+
+Look for a PR explaining what changed, what was tested and reviewed, and any
+remaining gaps. With **Ask**, you decide whether to merge; **Auto** lets the agent
+merge after the required checks, review, and approvals.
+[Working with Shaka](working-with-shaka.md) covers these choices, useful prompts,
+feedback, and resuming a task.
 
 ### Use a personal fork
 
@@ -38,47 +72,5 @@ Shaka from that fork. Keep upstream configured so we can pull updates
 and submit improvements back to shakacode/shaka.
 ```
 
-## 2. Configure your repository
-
-Already configured? Start a task below. To share settings with your team, use
-the setup prompt here. To try Shaka privately in one clone, read the
-[expected experience and current limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
-first. Private setup tools exist, but the seamless new-user path remains unproven.
-
-Shaka waits for your CI checks. If GitHub does not require any, for example on a
-private repository on the GitHub Free plan, setup lists them in the Shaka settings
-instead. See [before you start](configure-repository.md#before-you-start).
-
-Open a chat in your project:
-
-```text
-$shaka Configure this repository for Shaka. Inspect its existing checks
-and suggest the settings. Keep merge policy ask.
-```
-
-The agent connects your existing commands to Shaka through a configuration file
-and standard scripts—the repository **seam**. Review and merge its setup PR
-before starting work. Shaka also offers setup when invoked in an unconfigured
-repository. See [repository setup](configure-repository.md).
-
-## 3. Start a task
-
-```text
-$shaka Fix search when the query contains an apostrophe. Go.
-```
-
-Describe the outcome or supply a task link. Shaka recommends a model and effort
-level. Add `Go` without naming either to start with your coding agent's current
-settings. You can also choose them up front:
-
-```text
-$shaka Fix search when the query contains an apostrophe. Use Sol, medium effort. Go.
-```
-
-Choose an available model and activate it in your coding agent; the prompt does
-not switch it for you. When you name either setting, Shaka pauses if the settings
-differ from its recommendation or cannot be confirmed. Testing and
-review are already part of the workflow.
-See [working with Shaka](working-with-shaka.md) for merge choices and feedback.
-
+For later maintenance, ask the agent to [upgrade your installation](migration.md).
 To evaluate an unmerged workflow change, [try a Shaka PR on real work](trying-pr-versions.md).

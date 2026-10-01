@@ -1,95 +1,5 @@
 # Working with Shaka
 
-See [expected experience](expected-experience.md) for private versus team setup,
-evidence changes, permission failures, recovery, and current pilot limits.
-
-## Give it an outcome
-
-Describe the result or provide an issue or task link. Include constraints the
-agent could not infer:
-
-```text
-$shaka Add CSV export to the orders page. Reuse the filters shown on screen.
-```
-
-Shaka checks for existing work and recommends a model and effort level. Say
-“Go” without naming either to start with your agent's current settings. Shaka
-briefly compares reported settings with its recommendation when available;
-unknown or differing settings do not require confirmation in this case.
-If you name a model or effort, Shaka checks that preference and pauses when
-the settings differ from its recommendation or cannot be verified. See the
-[workflow](workflow.md).
-
-## Choose a merge policy
-
-| Policy | What happens |
-| --- | --- |
-| **Ask** (default) | Review the ready PR, then merge it on GitHub or approve it so the agent merges. |
-| **Auto** | The agent merges after required checks, review, and approvals. |
-
-Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
-Repository restrictions and required approvals still apply. Trust, authentication,
-release, and other consequential changes need explicit human review. Put additional
-project restrictions in `AGENTS.md`. A PR past the
-[size limits](settings.md#mergelimits) goes back to you before the agent merges it.
-
-You can also request planning only, review only, or a PR without merging.
-
-## Find PRs waiting on you
-
-The agent labels a PR when it stops for you:
-
-| Label | What it waits for |
-| --- | --- |
-| `awaiting-answer` | Your answer. A description with decisions lists the questions |
-| `awaiting-merge-approval` | Your merge or approval of the named commit; set only under **Ask** |
-| `awaiting-resume` | You to resume the agent; it paused with nothing set to wake it |
-
-You don't create these labels. The first time the agent needs one in a repository,
-it creates it: `awaiting-answer` in amber, `awaiting-merge-approval` in purple, and
-`awaiting-resume` in blue, each with a description. Recolor or reword them freely; the agent never changes a
-label that already exists. Creating a label needs write access; with triage access
-the agent can still apply labels someone else created.
-
-A description that includes those questions applies `awaiting-answer` and removes
-`awaiting-resume`. It refuses to publish them while `awaiting-merge-approval` is set.
-An empty decisions list removes that section and `awaiting-answer`, and leaves the other
-two labels in place.
-
-To approve, tell the agent in chat. An **Approve** review on GitHub also counts
-when it comes from a login you named to the agent as a merge approver; GitHub does
-not let the account that opened the PR approve it. Return to the chat so the agent
-can act on the approval. If GitHub requires updating the branch first, the agent
-rebases, revalidates, and merges without asking again. When a branch rule requires
-GitHub approval of the new commit, it asks for that approval. When the rebase changes
-behavior, with or without conflicts, it explains the difference and asks you to
-approve the new commit. While it waits for either approval, the PR keeps its
-`awaiting-merge-approval` label.
-
-A PR carries at most one of these labels. The agent removes it when work resumes.
-Search `is:open label:awaiting-answer`, `is:open label:awaiting-merge-approval`, or
-`is:open label:awaiting-resume` to see your queue. Nothing but the agent clears these labels, so one can go stale
-if the agent stops before work resumes; remove it by hand.
-
-To resume an `awaiting-resume` PR, or any PR whose chat was lost to a crash or restart,
-paste the **Next action** from its WIP Details into a new chat, such as
-`$shaka https://github.com/OWNER/REPO/pull/N` in Codex. The agent runs `shaka handoff`
-first to read the PR's live state, then continues.
-
-## Squash with a useful commit message
-
-When a PR is ready for your merge, the agent posts the squash commit message as the
-PR's last comment, just above the merge button: a title such as `Add CSV export (#42)`
-and a short plain-text body that says what changed and why, followed by the branch
-commits' `Co-authored-by` lines. Each block has a copy button; paste them into
-GitHub's squash merge boxes. When the head changes, the agent posts a new comment
-and deletes the old one. When the agent merges under **Auto**, it sends the same
-message itself, except through a merge queue, which uses the repository default.
-
-GitHub fills those boxes from a repository setting, by default with every branch
-commit's title. To start from the PR title and an empty body instead, set **Settings →
-General → Pull Requests → Allow squash merging** to **Default to pull request title**.
-
 ## What you get
 
 The agent reproduces bugs, tests new behavior, runs your checks, and handles
@@ -102,6 +12,64 @@ See [PR verification](pr-verification.md).
 
 The agent handles routine choices and asks about decisions affecting the product,
 scope, or risk.
+
+Your agent's permissions, project commands, and GitHub rules determine what it
+can complete. Missing tests, unavailable reviewers, and access failures should
+appear as concrete gaps, never as a claim of success. See the
+[pilot status and limitations](expected-experience.md).
+
+## Give it an outcome
+
+Describe the result or provide an issue or task link. Include constraints the
+agent could not infer:
+
+```text
+$shaka Add CSV export to the orders page. Reuse the filters shown on screen.
+Keep merge policy ask. Go.
+```
+
+Examples use Codex's `$shaka`. Use `/shaka` in Claude Code, Cursor, or OpenCode;
+in Pi, load the installed skill. [Install and configure Shaka](getting-started.md)
+if this is your first task.
+
+Shaka checks for existing work and recommends a model and effort level. `Go`
+without naming either starts with your agent's current settings, even if they
+differ from that recommendation or cannot be reported.
+
+## Choose a merge policy
+
+| Policy | What happens |
+| --- | --- |
+| **Ask** (default) | Review the ready PR, then merge it on GitHub or approve it so the agent merges. |
+| **Auto** | The agent merges after required checks, review, and approvals. |
+
+Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
+Repository restrictions and required approvals still apply. Trust, authentication,
+release, and other consequential changes need explicit human review. A PR past the
+[size limits](settings.md#mergelimits) goes back to you before the agent merges it.
+Merging a feature PR does not by itself publish a package or deploy a release.
+
+## Useful tips
+
+- **Start small.** Pick a fix whose result you can recognize. Say what should happen
+  and what should stay the same; let Shaka manage the checks and review.
+- **Plan before committing to an approach.** Ask for a plan when scope or tradeoffs
+  are unclear:
+
+  ```text
+  $shaka Plan CSV export for the orders page. Compare a simple download with
+  a background export. Planning only; do not implement or open a PR yet.
+  ```
+
+- **Choose settings when you need to.** Activate a model in your coding agent, then
+  name it in your prompt, for example `Use Sol, medium effort. Go.` A prompt cannot
+  switch the model. Naming either setting can trigger a pause if it is unavailable,
+  unverified, or differs from Shaka's recommendation.
+- **Set a stopping point.** Ask for review only or a PR without merging when that
+  is the outcome you want.
+- **Keep public PRs public-safe.** Tell the agent before publication if local paths
+  or chat links should be hidden. [WIP settings](settings.md#wipinclude_locations)
+  control those fields; the agent still needs to inspect all published content.
 
 ## Give feedback
 
@@ -135,6 +103,11 @@ is reachable. In Codex, `codex://threads/...` takes you back to the original cha
 to pick up where the agent stopped. Before another agent takes over, confirm the previous one has
 stopped or handed off; a timestamp cannot prove it.
 
+To recover after a crash or in a new chat, paste the **Next action** from WIP Details,
+such as `$shaka https://github.com/OWNER/REPO/pull/N`. The agent checks the live PR
+before continuing. If no PR exists, supply the original task and checkout.
+See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
+
 ## Split a large change
 
 Ask for independently useful changes as separate PRs. For example, a React on
@@ -151,3 +124,21 @@ Tell your agent in chat what you would like Shaka to do better. For example:
 “Shaka asks too many setup questions—can we simplify that?”
 
 The agent helps refine the idea and asks before filing an issue.
+
+## Find PRs waiting on you
+
+| Search on GitHub | Your next action |
+| --- | --- |
+| `is:open label:awaiting-answer` | Answer the questions in the PR description. |
+| `is:open label:awaiting-merge-approval` | Merge or approve the named commit under Ask. |
+| `is:open label:awaiting-resume` | Paste the WIP Details next action into the agent chat. |
+
+The agent manages these labels; a stopped agent can leave one stale.
+See [approval and label details](pr-verification.md#approval-and-attention-labels)
+when you need them.
+
+## Squash with a useful commit message
+
+For a squash merge, copy the title and body from the agent's last PR comment into
+GitHub's merge boxes. See [squash merge details](pr-verification.md#squash-merge-details)
+for repository defaults and automatic merges.

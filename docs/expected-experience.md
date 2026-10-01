@@ -1,23 +1,18 @@
-# What to expect from Shaka
+# Pilot status and limitations
 
-Shaka guides your coding agent from a task to a tested, reviewed PR. Your agent
-runs the work; its permissions, your project commands, and GitHub rules determine
-what it can complete. Start with [installation](getting-started.md), then choose
-the setup path below.
+Shaka has demonstrated guided delivery of a consumer feature PR. This page records
+what that evidence supports and what remains unproven; it does not establish broad
+rollout readiness. For everyday use, start with [Start here](getting-started.md)
+and [Working with Shaka](working-with-shaka.md).
+
+<a id="what-to-expect-from-shaka"></a>
 
 ## Choose how to start
 
-| Your situation | Expected experience | What you need to do |
-| --- | --- | --- |
-| The default branch already has Shaka settings | The agent reads those settings, reuses project commands, and starts the feature without another setup PR. | Describe the outcome and any constraints. |
-| You want the team to use Shaka | The agent proposes shared settings and command wrappers in a separate setup PR. Feature work follows after that PR merges. | Review the choices and merge the first setup PR yourself. |
-| You want to try it in one clone without changing team configuration | Private setup can generate ignored local wrappers and settings using existing project commands. The feature diff should contain no Shaka configuration. | Request a private trial explicitly; read the current limitations below. |
-| Your project has no usable tests or validation command | The agent identifies the gap rather than inventing passing evidence. | Decide whether adding checks belongs in this task or whether the PR must report limited verification. |
-
-Shared configuration is the repository **seam**: it connects project commands
-and settings to Shaka. Team policy comes from the default branch, not a feature
-PR. Private setup is local operational configuration; it grants neither team
-policy nor permission to merge.
+Use [shared repository setup](configure-repository.md) for team settings, or start
+a task if the repository is already configured. The private-trial option below
+avoids a team setup PR but still has delivery limitations. Private setup grants
+neither team policy nor permission to merge.
 
 ### Private trials: available tools, incomplete guided experience
 
@@ -43,25 +38,11 @@ A newer installation needs its own validation before these limits are removed.
 
 ## Run an ordinary task
 
-```text
-$shaka Fix search when the query contains an apostrophe. Go.
-```
-
-The agent confirms the repository and task, checks for existing work, and explains
-scope, risk, and its model recommendation. `Go` without a named model or effort
-accepts the current host settings. Naming either setting can require confirmation
-when it differs or the host cannot report it. A prompt does not switch models.
-
-Expect questions when the participant, checkout, desired behavior, or a consequential
-choice is missing. Existing scripts and CI should supply routine setup and check
-commands. The agent should not ask you to edit PATH or write configuration by hand
-as an ordinary task step. If access, dependencies, or unsupported configuration
-prevent progress, expect a concrete blocker and the next action.
-
-The normal result is a feature PR with an outcome summary, validation results,
-independent review, a code walkthrough, available usage, and remaining decisions.
-Tests show which behavior was exercised; a green review job alone does not prove
-that a reviewer completed. See [PR verification](pr-verification.md).
+The [working guide](working-with-shaka.md#give-it-an-outcome) now covers task
+prompts, model choices, and [what you get](working-with-shaka.md#what-you-get).
+If a project has no usable checks, decide with the agent whether to add them or
+report limited verification. Routine tasks should not require editing configuration
+or PATH by hand.
 
 ## Understand the PR's settings and evidence
 
@@ -86,16 +67,10 @@ Privacy still requires the agent to inspect the publication.
 
 ## Decide whether to merge
 
-The default is Ask: expect the ready PR back for your decision. The
-[merge policy guide](working-with-shaka.md#choose-a-merge-policy) explains Ask,
-Auto, and approval after a branch update. The workflow tells the agent to retain
-explicit task merge authorization within its scope; that persistence remains
-untested in a live consumer trial. Planning-only, review-only, and PR-only
-requests stop at their requested outcome.
-
-Authorization does not bypass GitHub approval rules or release restrictions.
-Changes that alter behavior after approval can need renewed approval of the new
-commit. Merging a feature PR does not by itself publish a package or deploy a release.
+See [merge choices](working-with-shaka.md#choose-a-merge-policy) for Ask, Auto,
+and required approvals. The workflow instructs the agent to retain explicit task
+merge authorization within its scope; that persistence remains untested in a live
+consumer trial.
 
 ## Resume or change your checkout
 
