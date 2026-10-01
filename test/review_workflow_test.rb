@@ -3,8 +3,11 @@
 require_relative 'test_helper'
 require 'json'
 require 'yaml'
+require_relative 'review_workflow_helper'
 
 class ReviewWorkflowTest < Minitest::Test
+  include ReviewWorkflowHelper
+
   def setup
     @directory = Dir.mktmpdir('review-result')
     @summary = File.join(@directory, 'summary.md')
@@ -61,7 +64,8 @@ class ReviewWorkflowTest < Minitest::Test
 
   def test_old_wrong_head_and_other_author_reports_fail
     [report.merge('created_at' => '2026-09-29T00:00:00Z'),
-     report.merge('body' => 'b' * 40), report.merge('user' => { 'login' => 'other[bot]' })].each do |comment|
+     report.merge('body' => "Review of #{'b' * 40}: no findings"),
+     report.merge('user' => { 'login' => 'other[bot]' })].each do |comment|
       _output, status, = run_result([result], comments: [comment])
       refute_predicate status, :success?
     end
@@ -87,43 +91,19 @@ class ReviewWorkflowTest < Minitest::Test
     File.write(File.join(@directory, 'gh'), "#!/bin/sh\nexit 1\n")
     File.write(@execution, JSON.generate([result]))
     environment = result_environment([result])
-    _output, status = Open3.capture2e(environment, 'bash', '-c', @script)
+    output, status = Open3.capture2e(environment, 'bash', '-c', @script)
 
     refute_predicate status, :success?
+    assert_includes output, 'Could not verify the PR report'
   end
 
-  private
-
-  def result
-    { type: 'result', subtype: 'success', is_error: false, num_turns: 2 }
-  end
-
-  def report
-    { 'user' => { 'login' => 'claude[bot]' }, 'created_at' => '2026-09-30T00:01:00Z',
-      'body' => "Review of #{'a' * 40}: no findings" }
-  end
-
-  def install_github(comments)
-    File.write(File.join(@directory, 'comments.json'), JSON.generate([comments]))
-    command = File.join(@directory, 'gh')
-    File.write(command, "#!/bin/sh\ncat '#{@directory}/comments.json'\n")
-    File.chmod(0o700, command)
-  end
-
-  def run_result(data = nil, outcome: 'success', comments: [])
-    File.write(@execution, data.is_a?(String) ? data : JSON.generate(data)) unless data.nil?
-    File.write(@summary, '')
-    install_github(comments)
-    environment = result_environment(data, outcome)
+  def test_missing_run_start_cannot_accept_a_report
+    install_github([report])
+    File.write(@execution, JSON.generate([result]))
+    environment = result_environment([result]).merge('REVIEW_STARTED_AT' => '')
     output, status = Open3.capture2e(environment, 'bash', '-c', @script)
-    [output, status, File.read(@summary)]
-  end
 
-  def result_environment(data, outcome = 'success')
-    { 'BASH_ENV' => nil, 'PATH' => "#{@directory}:#{ENV.fetch('PATH')}",
-      'GITHUB_REPOSITORY' => 'o/r', 'REVIEW_PR' => '1',
-      'REVIEW_STARTED_AT' => '2026-09-30T00:00:00Z', 'EXECUTION_FILE' => data.nil? ? '' : @execution,
-      'REVIEW_OUTCOME' => outcome,
-      'REVIEW_HEAD' => 'a' * 40, 'GITHUB_STEP_SUMMARY' => @summary }
+    refute_predicate status, :success?
+    assert_includes output, 'Could not verify the PR report'
   end
 end
