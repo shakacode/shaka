@@ -26,6 +26,10 @@ module Shaka
                                                        published: ->(sha) { !commit(sha).nil? },
                                                        subject: ->(sha) { subject(sha) })
       body = comment.render
+      size = "<!-- shaka:reply:#{comment.key} -->\n#{body}".length
+      raise Error, "Review comment for #{head[0, 7]} exceeds GitHub’s 65536-character limit; shorten its reports." if
+        size > 65_536
+
       comment.check_rendering!(@github.markdown(body))
       [comment.key, body]
     end

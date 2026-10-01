@@ -147,3 +147,35 @@ class LocalReviewCommitPublicationKeyTest < Minitest::Test
     assert_equal 9, github.reply(body:, key: comment.key)['id']
   end
 end
+
+# The API limit includes the reply marker, and a later oversized report must cause no writes.
+class LocalReviewCommitSizeTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  def test_reply_marker_counts_toward_the_limit_before_any_timeline_write
+    github = LocalReviewCommitPublishTest::Timeline.new
+    def github.api(_path) = { 'message' => 'Subject' }
+    content = near_limit_content
+    assert_operator comment(content).render.length, :<=, 65_536
+
+    error = assert_raises(Shaka::Error) { Shaka::LocalReviewPublisher.new(content, github, 'o/r').publish }
+    assert_includes error.message, HEAD[0, 7]
+    assert_empty github.replies
+  end
+
+  private
+
+  def near_limit_content
+    last = round(report: report(body: ''))
+    content = { 'rounds' => [round(EARLIER), last] }
+    marker = "<!-- shaka:reply:local-review-#{HEAD} -->\n"
+    padding = 65_536 - marker.length - comment(content).render.length + 1
+    last['report'] = report(body: 'x' * padding)
+    content
+  end
+
+  def comment(content)
+    subject = ->(_) { '<code>&#83;&#117;&#98;&#106;&#101;&#99;&#116;</code>' }
+    Shaka::LocalReviewCommitComment.new(content, head: HEAD, repository: 'o/r', published: ->(_) { true }, subject:)
+  end
+end
