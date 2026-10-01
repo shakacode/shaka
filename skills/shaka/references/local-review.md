@@ -137,7 +137,7 @@ When neither names a model, Codex runs its built-in default; see
 for choosing a model and effort. `gpt-6-sol` at `medium` is the default choice for adversarial review;
 use a larger model or effort only when the change's risk calls for it.
 
-A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
+A current-host Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
 Use that flag only when `shaka review run` reports `executable_missing`, or after a `cli_failure`
 whose local diagnostic establishes a real reviewer outage. A bad argument, setup failure,
@@ -170,7 +170,7 @@ shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer anthropic/cla
   --effort medium --criteria-ref "$TRUSTED" --ledger "$LEDGER"
 ```
 
-A Cursor Task or subagent that selects a Claude model is not this `anthropic/claude` local
+A current-host Task or subagent that selects a Claude model is not this `anthropic/claude` local
 reviewer and cannot replace `claude -p`. It also is not evidence for `--unavailable`.
 Apply the same failure-cause check before marking `claude` unavailable.
 
