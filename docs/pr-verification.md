@@ -130,3 +130,48 @@ The PR reports the verdict: improvement, wash, regression, or ambiguous. It name
 pages, metrics, sample count, and the base and change commits. Any regression or
 ambiguous result, and a wash for an intended speed-up, go back for a fix or for the
 maintainer to accept. When no comparison can run, the PR says the speed was not measured.
+
+## Approval and attention labels
+
+[Working with Shaka](working-with-shaka.md#find-prs-waiting-on-you) lists the labels
+and your next action.
+
+You don't create these labels. The first time the agent needs one in a repository,
+it creates it: `awaiting-answer` in amber, `awaiting-merge-approval` in purple, and
+`awaiting-resume` in blue, each with a description. Recolor or reword them freely; the agent never changes a
+label that already exists. Creating a label needs write access; with triage access
+the agent can still apply labels someone else created.
+
+A description that includes those questions applies `awaiting-answer` and removes
+`awaiting-resume`. It refuses to publish them while `awaiting-merge-approval` is set.
+An empty decisions list removes that section and `awaiting-answer`, and leaves the other
+two labels in place.
+
+To approve, tell the agent in chat. An **Approve** review on GitHub also counts
+when it comes from a login you named to the agent as a merge approver; GitHub does
+not let the account that opened the PR approve it. Return to the chat so the agent
+can act on the approval. If GitHub requires updating the branch first, the agent
+rebases, revalidates, and merges without asking again. When a branch rule requires
+GitHub approval of the new commit, it asks for that approval. When the rebase changes
+behavior, with or without conflicts, it explains the difference and asks you to
+approve the new commit. While it waits for either approval, the PR keeps its
+`awaiting-merge-approval` label.
+
+A PR carries at most one of these labels. The agent removes it when work resumes.
+Search `is:open label:awaiting-answer`, `is:open label:awaiting-merge-approval`, or
+`is:open label:awaiting-resume` to see your queue. Nothing but the agent clears these labels, so one can go stale
+if the agent stops before work resumes; remove it by hand.
+
+## Squash merge details
+
+When a PR is ready for your merge, the agent posts the squash commit message as the
+PR's last comment, just above the merge button: a title such as `Add CSV export (#42)`
+and a short plain-text body that says what changed and why, followed by the branch
+commits' `Co-authored-by` lines. Each block has a copy button; paste them into
+GitHub's squash merge boxes. When the head changes, the agent posts a new comment
+and deletes the old one. When the agent merges under **Auto**, it sends the same
+message itself, except through a merge queue, which uses the repository default.
+
+GitHub fills those boxes from a repository setting, by default with every branch
+commit's title. To start from the PR title and an empty body instead, set **Settings →
+General → Pull Requests → Allow squash merging** to **Default to pull request title**.

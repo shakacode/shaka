@@ -1,27 +1,49 @@
 {
   "docsSidebar": [
     "README",
-    "getting-started",
-    "trying-pr-versions",
-    "expected-experience",
+    {
+      "type": "doc",
+      "id": "getting-started",
+      "label": "Start here"
+    },
     "working-with-shaka",
-    "pr-verification",
+    "faq",
     {
       "type": "category",
-      "label": "Set up a repository",
-      "collapsed": false,
-      "items": ["configure-repository", "settings", "coding-agents", "migration"]
+      "label": "Setup",
+      "collapsed": true,
+      "items": [
+        "configure-repository",
+        "coding-agents",
+        "migration"
+      ]
     },
     {
       "type": "category",
       "label": "Reference",
-      "collapsed": false,
-      "items": ["architecture", "workflow", "repository-catalog", "writing-preferences", "faq"]
+      "collapsed": true,
+      "items": [
+        "pr-verification",
+        {
+          "type": "doc",
+          "id": "expected-experience",
+          "label": "Pilot status and limitations"
+        },
+        "settings",
+        "writing-preferences",
+        "workflow"
+      ]
     },
     {
       "type": "category",
       "label": "Advanced",
-      "items": ["control-towers"]
+      "collapsed": true,
+      "items": [
+        "architecture",
+        "repository-catalog",
+        "control-towers",
+        "trying-pr-versions"
+      ]
     },
     {
       "type": "link",

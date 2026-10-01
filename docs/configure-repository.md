@@ -34,8 +34,27 @@ test, and validation commands. Explain the review and merge choices.
 Use merge policy ask.
 ```
 
-The agent inspects your project, confirms missing choices, prepares Shaka's files,
-and reads any existing project instructions:
+The agent inspects your project, reads existing instructions, and prepares a
+separate setup PR using your commands. You review the choices and **merge this
+first setup PR yourself on GitHub** before starting feature work. Until it merges,
+Shaka cannot use those proposed settings to choose a reviewer or merge for you.
+The agent reviews the setup PR and names the commit for you to merge.
+
+To change a choice later, ask:
+
+```text
+$shaka Configure this repository to wait for all configured CI reviewers.
+Keep merge policy ask.
+```
+
+You do not need to edit configuration files by hand. See [settings](settings.md)
+for choices and defaults; let the skill handle command syntax and setup steps.
+
+## Files the agent prepares
+
+The configuration records project choices; the scripts connect existing checks;
+the comment allowlist identifies trusted reviewers. This inventory is useful when
+reviewing the setup PR.
 
 | File | Purpose |
 | --- | --- |
@@ -57,17 +76,5 @@ Repositories configured before this layout keep `.agents/agent-workflow.yml` and
 the [layout upgrade](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/migration.md#upgrade-the-configuration-layout)
 does it in one reviewed step. Shaka's own repository still uses the older layout.
 
-You merge the first setup PR yourself on GitHub. Until it merges, the default branch
-has no trusted settings, so Shaka cannot choose a reviewer from them or merge
-on your behalf. The agent reviews the PR, then gives it back with the commit to merge.
-
-To change a choice later:
-
-```text
-$shaka Configure this repository to wait for all configured CI reviewers.
-Keep merge policy ask.
-```
-
-See [settings](settings.md) for values and defaults. Shaka's own
-[configuration](https://github.com/shakacode/shaka/blob/main/.agents/agent-workflow.yml) and [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin)
-provide working examples.
+Shaka's own [configuration](https://github.com/shakacode/shaka/blob/main/.agents/agent-workflow.yml)
+and [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin) provide working examples.
