@@ -8,6 +8,7 @@ module Shaka
     # Reads caller-supplied secret names and environment names out of one workflow file.
     class WorkflowFile
       NAME = /\A[A-Za-z_][A-Za-z0-9_]*\z/
+      IN_ENVIRONMENT = %w[steps env].freeze
 
       def self.parse(text)
         new(text, YAML.safe_load(text.to_s, permitted_classes: [], aliases: false))
@@ -42,18 +43,23 @@ module Shaka
         jobs = @document['jobs'] if @document.is_a?(Hash)
         return [] unless jobs.is_a?(Hash)
 
-        jobs.values.filter_map { |job| job_scope(job) }
+        jobs.values.flat_map { |job| job.is_a?(Hash) ? job_scope(job) : [] }
       end
 
+      # GitHub reads keys such as runs-on before a job's environment applies, so the environment
+      # settles only the names in steps and env. The rest stay uncertain when the repository lacks them.
       def job_scope(job)
-        return unless job.is_a?(Hash)
-
-        found = References.collect(string_values(job).join("\n"))
-        secrets = reject_caller(found['secrets'])
-        return if secrets.empty? && found['vars'].empty?
-
         environment = environment_name(job)
-        scope(secrets, found['vars'], environment ? [environment] : [], reusable?)
+        return [names_scope(job, [], reusable?)].compact unless environment
+
+        [names_scope(job.slice(*IN_ENVIRONMENT), [environment], reusable?),
+         names_scope(job.except(*IN_ENVIRONMENT), [], true)].compact
+      end
+
+      def names_scope(value, environments, uncertain)
+        found = References.collect(string_values(value).join("\n"))
+        secrets = reject_caller(found['secrets'])
+        scope(secrets, found['vars'], environments, uncertain) unless secrets.empty? && found['vars'].empty?
       end
 
       def outside_scope

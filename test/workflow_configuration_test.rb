@@ -80,20 +80,22 @@ class WorkflowConfigurationTest < Minitest::Test
   def org_repo = { 'private' => false, 'owner' => { 'type' => 'Organization' } }
 end
 
-class WorkflowConfigurationScopeTest < Minitest::Test
+# Runs the check against routed GitHub responses.
+module WorkflowCheck
   WORKFLOW = WorkflowConfigurationTest::WORKFLOW
-  REUSE = '.github/workflows/reuse.yml'
-  CALLER_WORKFLOW = <<~YAML
-    on:
-      workflow_call:
-        secrets:
-          token:
-            required: true
-    jobs:
-      call:
-        steps:
-          - run: echo ${{ secrets.token }}
-  YAML
+
+  def check(**options)
+    Shaka::WorkflowConfiguration.new(RouteGitHub.new(options)).call(pull)
+  end
+
+  def pull = { 'headRefOid' => WorkflowConfigurationTest::SHA, 'headRepository' => { 'nameWithOwner' => 'owner/repo' } }
+  def file_row = { 'filename' => WORKFLOW, 'status' => 'modified' }
+  def user_repo = { 'private' => false, 'owner' => { 'type' => 'User' } }
+end
+
+class WorkflowConfigurationScopeTest < Minitest::Test
+  include WorkflowCheck
+
   ENVIRONMENT = <<~YAML
     jobs:
       deploy:
@@ -126,28 +128,6 @@ class WorkflowConfigurationScopeTest < Minitest::Test
   PRODUCTION_AND_STAGING = { 'production' => [{ 'name' => 'PROD_KEY' }, { 'name' => 'SHIP_KEY' }],
                              'staging' => [] }.freeze
 
-  def test_a_caller_supplied_workflow_secret_is_not_a_repository_secret
-    result = check(files: [file_row], contents: { WORKFLOW => CALLER_WORKFLOW }, repo: user_repo, secrets: [])
-
-    assert_equal 'clear', result['status']
-  end
-
-  # A caller in another repository supplies its own variables, so this repository cannot tell.
-  def test_a_reusable_workflow_name_the_caller_may_supply_is_unverified
-    text = "#{CALLER_WORKFLOW}      - run: echo ${{ vars.REGION }}\n"
-    result = check(files: [file_row], contents: { WORKFLOW => text }, repo: user_repo, secrets: [], variables: [])
-
-    assert_equal [[], ['vars.REGION']], result.values_at('missing', 'unverified')
-  end
-
-  # On push no caller supplies the declared secret, so it is checked like any other name.
-  def test_a_declared_caller_secret_is_missing_when_the_workflow_has_another_trigger
-    mixed = { WORKFLOW => CALLER_WORKFLOW.sub("on:\n", "on:\n  push:\n") }
-    result = check(files: [file_row], contents: mixed, repo: user_repo, secrets: [])
-
-    assert_equal ['secrets.token'], result['missing']
-  end
-
   def test_an_environment_secret_is_not_missing_when_that_environment_has_it
     result = check(files: [file_row], contents: { WORKFLOW => ENVIRONMENT }, repo: user_repo, secrets: [],
                    environment_secrets: { 'production' => [{ 'name' => 'DEPLOY_KEY' }] })
@@ -160,14 +140,6 @@ class WorkflowConfigurationScopeTest < Minitest::Test
                    repo: user_repo, secrets: [{ 'name' => 'DEPLOY_KEY' }])
 
     assert_equal 'clear', result['status']
-  end
-
-  def test_a_caller_secret_does_not_hide_the_same_name_in_another_workflow
-    files = [file_row, { 'filename' => REUSE, 'status' => 'modified' }]
-    result = check(files:, contents: { WORKFLOW => '${{ secrets.TOKEN }}', REUSE => CALLER_WORKFLOW },
-                   repo: user_repo, secrets: [])
-
-    assert_equal ['secrets.TOKEN'], result['missing']
   end
 
   def test_a_lowercase_github_token_is_not_a_repository_secret
@@ -191,22 +163,68 @@ class WorkflowConfigurationScopeTest < Minitest::Test
     assert_equal ['secrets.DEPLOY_KEY'], result['missing']
   end
 
+  # GitHub picks the runner before the environment applies, so the environment cannot vouch for that name.
+  def test_an_environment_does_not_settle_a_name_read_before_the_job_starts
+    early = { WORKFLOW => "jobs:\n  ship:\n    environment: production\n    runs-on: ${{ secrets.SHIP_KEY }}\n" }
+    result = check(files: [file_row], contents: early, repo: user_repo, secrets: [],
+                   environment_secrets: PRODUCTION_AND_STAGING)
+
+    assert_equal [[], ['secrets.SHIP_KEY']], result.values_at('missing', 'unverified')
+  end
+
   def test_an_environment_secret_does_not_cover_a_different_job
     result = check(files: [file_row], contents: { WORKFLOW => SPLIT_ENVIRONMENTS }, repo: user_repo, secrets: [],
                    environment_secrets: PRODUCTION_AND_STAGING)
 
     assert_equal ['secrets.PROD_KEY'], result['missing']
   end
+end
 
-  private
+class WorkflowConfigurationCallerTest < Minitest::Test
+  include WorkflowCheck
 
-  def check(**options)
-    Shaka::WorkflowConfiguration.new(RouteGitHub.new(options)).call(pull)
+  REUSE = '.github/workflows/reuse.yml'
+  CALLER_WORKFLOW = <<~YAML
+    on:
+      workflow_call:
+        secrets:
+          token:
+            required: true
+    jobs:
+      call:
+        steps:
+          - run: echo ${{ secrets.token }}
+  YAML
+
+  def test_a_caller_supplied_workflow_secret_is_not_a_repository_secret
+    result = check(files: [file_row], contents: { WORKFLOW => CALLER_WORKFLOW }, repo: user_repo, secrets: [])
+
+    assert_equal 'clear', result['status']
   end
 
-  def pull = { 'headRefOid' => WorkflowConfigurationTest::SHA, 'headRepository' => { 'nameWithOwner' => 'owner/repo' } }
-  def file_row = { 'filename' => WORKFLOW, 'status' => 'modified' }
-  def user_repo = { 'private' => false, 'owner' => { 'type' => 'User' } }
+  # A caller in another repository supplies its own variables, so this repository cannot tell.
+  def test_a_reusable_workflow_name_the_caller_may_supply_is_unverified
+    text = "#{CALLER_WORKFLOW}      - run: echo ${{ vars.REGION }}\n"
+    result = check(files: [file_row], contents: { WORKFLOW => text }, repo: user_repo, secrets: [], variables: [])
+
+    assert_equal [[], ['vars.REGION']], result.values_at('missing', 'unverified')
+  end
+
+  # On push no caller supplies the declared secret, so it is checked like any other name.
+  def test_a_declared_caller_secret_is_missing_when_the_workflow_has_another_trigger
+    mixed = { WORKFLOW => CALLER_WORKFLOW.sub("on:\n", "on:\n  push:\n") }
+    result = check(files: [file_row], contents: mixed, repo: user_repo, secrets: [])
+
+    assert_equal ['secrets.token'], result['missing']
+  end
+
+  def test_a_caller_secret_does_not_hide_the_same_name_in_another_workflow
+    files = [file_row, { 'filename' => REUSE, 'status' => 'modified' }]
+    result = check(files:, contents: { WORKFLOW => '${{ secrets.TOKEN }}', REUSE => CALLER_WORKFLOW },
+                   repo: user_repo, secrets: [])
+
+    assert_equal ['secrets.TOKEN'], result['missing']
+  end
 end
 
 # Serves the name lists a workflow check reads. Secret and variable values stay in the route table.

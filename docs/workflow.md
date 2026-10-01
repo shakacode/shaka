@@ -87,9 +87,9 @@ The check matches text. It does not evaluate workflows, so it has these limits:
   and a secret declared under `on.workflow_call.secrets` is skipped.
 - A workflow with `workflow_call` and another trigger is checked like any other. A
   name only its callers supply reports `missing`.
-- A job's environment covers every name in that job. GitHub reads some keys, such as
-  `runs-on`, before the environment applies, so a name used there can report `clear`
-  and still be absent at run time.
+- A job's environment settles only the names in that job's `steps` and `env`.
+  GitHub reads other keys, such as `runs-on`, before the environment applies. A name
+  used there that the repository and organization lack is `unverified`.
 - Workflows the PR leaves unchanged or deletes are not checked. Composite actions
   and reusable workflows in other repositories are not checked.
 
