@@ -61,6 +61,10 @@ class LocalEvaluationProbeContainerPlanTest < Minitest::Test
     refute(command.any? { |argument| argument.include?('.ssh') || argument.include?('docker.sock') })
   end
 
+  def test_create_plan_reaps_exited_descendants
+    assert_includes @container.create_command('shaka-slice0-probe-test'), '--init'
+  end
+
   def test_lifecycle_commands_use_only_the_disposable_name_and_local_image
     assert_equal ['docker', 'build', '--tag', 'shaka-slice0-probe:local',
                   File.join(ROOT, 'eval/docker/slice-0-probe')], @container.build_command

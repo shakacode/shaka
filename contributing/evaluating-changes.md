@@ -6,6 +6,26 @@ tracks these evaluations. Record each attempt in the [experiment index](https://
 including failed harness runs. A green test, a completed PR, and an improvement in
 human attention or cost are different claims.
 
+## Know which question the run answers
+
+Replaying a solved task means starting fresh eval repositories from code before
+its solution. The original PR supplies a task and an evaluator-only reference;
+the agents independently solve that task. It does not reopen the original PR.
+
+Record three conclusions separately:
+
+| Question | Evidence | Possible conclusion |
+| --- | --- | --- |
+| Does the harness work? | Correct seed and initial failure, working tools, isolation, bounded execution, valid graders and cleanup | Qualified, qualified with stated limits, or harness error |
+| Did each agent deliver? | Correct implementation, tests, current-head checks, walkthrough and requested handoff | Delivered, implementation failed, or limit reached |
+| Does the proposed Shaka change help? | Comparison against its stated benefit: understandable PRs, fewer maintainer corrections, or measured cost | Better, worse, no material difference, or inconclusive |
+
+A harness error may leave useful implementation evidence, but it cannot establish
+an improvement in Shaka. A valid grader tests documented public behavior, including
+equivalent interfaces the task permits. If a grader assumption is wrong, preserve
+its first result, explain the correction, and apply the corrected probe to both
+unchanged outputs. Do not count that correction as an agent repair or a new trial.
+
 ## Simple default: one matched pair
 
 Ask: “Run the same task with and without this change. Give each arm one hour,
@@ -86,6 +106,51 @@ or Docker socket into the agent. A reusable sandbox sign-in is an operator
 choice: document where it is stored and how to revoke it. It may still require
 reauthorization later.
 
+### Check process cleanup before authentication
+
+Create Linux agent containers with Docker's `--init` so PID 1 reaps exited
+descendants. The existing `eval/bin/slice-0-probe-container` helper does this;
+an operator-owned replay driver must do it too. Run the following in the final
+container, replacing `EVAL_CONTAINER` with its name, before adding credentials:
+
+```bash
+docker exec -i EVAL_CONTAINER ruby < eval/bin/check-process-reaping
+```
+
+Require `process_reaping=PASS`. The check creates an orphaned child, waits up to
+five seconds for PID 1 to reap it, and fails if it remains. A failure means the
+container needs correcting before a model turn; do not ask the evaluated agent
+to add a temporary reaper or weaken process-cleanup tests.
+
+### Prepare trust settings before pinning the seed
+
+A copied source repository may name teams belonging to its original owner.
+The public-comment reader rejects those teams when the eval repository has a
+different owner. Prepare the fixture's trust file for the destination before
+creating its seed commit. For a team-free public eval, replace the example logins
+with the designated operator and eval identity:
+
+```yaml
+trusted_users: [operator-login, eval-login]
+trusted_bots: []
+trusted_metadata_bots: []
+trusted_teams: []
+```
+
+Use the trust-file path selected by the pinned Shaka version: legacy fixtures
+use `.agents/trusted-github-actors.yml`; migrated fixtures use
+`.agents/shaka/trusted-github-actors.yml`. If the test requires a team, name a
+real team in the destination organization and verify membership access. Do not
+copy a contributor's machine allowlist or grant a production team eval access.
+
+Both arms use the same prepared trust settings. Include that change when pinning
+the seed tree, including ignored files. After repository setup, use the trusted
+`shaka comments OWNER/REPO PR_NUMBER --head INITIAL_SHA` to verify a controlled
+comment from the eval identity is admitted. Repeat from the operator after
+temporary Write is removed; the explicit fixture entry preserves readable history.
+This authenticated check is separate from offline YAML validation. Do not modify
+an existing experiment's trusted seed to rescue a failed read.
+
 ## Declare the run before spending a model turn
 
 Record the hypothesis and decision it could change, the exact baseline and
@@ -150,7 +215,11 @@ in its generated code. Loader benefit remains inconclusive; neither speed nor
 green checks establish better accepted output.
 
 Those attempts keep their original limits. A new pair uses the one-hour default
-above and its own recorded repositories and outcomes. Refresh live revisions
+above and its own recorded repositories and outcomes. The
+[one-hour follow-up](../eval/reports/pr250-pr326-one-hour.md) delivered both arms
+and passed independent checks, with explicit harness limitations. Its qualitative
+writing comparison found mixed differences and no established loader benefit.
+Refresh live revisions
 before execution; a changed candidate is a new revision. Current-main
 compatibility and merge readiness require separate checks. The earlier offline
 smoke used historical base `ceb9989` and candidate `e387b5d`; it is not evidence

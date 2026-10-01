@@ -90,7 +90,7 @@ module Shaka
       def fixture = File.join(@root, 'eval/fixtures/local_evaluation/probe')
 
       def security_options
-        ['--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+        ['--init', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
          '--network', 'bridge', '--pids-limit', '256', '--memory', '1g', '--cpus', '2',
          '--tmpfs', '/home/shaka:rw,noexec,nosuid,nodev,mode=0700,uid=100,gid=101',
          '--tmpfs', '/usr/local/bundle:rw,exec,nosuid,nodev,mode=0700,uid=100,gid=101',
