@@ -11,7 +11,7 @@ class LocalReviewCommitPublishTest < Minitest::Test
     def markdown(body)
       summaries = body.scan(%r{<summary>.*?</summary>}).join("\n")
       details = body.scan('<details>').join + summaries + body.scan('</details>').join
-      "#{details}<p>#{body.lines.last.strip}</p>"
+      "#{details}<table></table><p>#{body.lines.last.strip}</p>"
     end
 
     def api(path)
@@ -177,5 +177,21 @@ class LocalReviewCommitSizeTest < Minitest::Test
   def comment(content)
     subject = ->(_) { '<code>&#83;&#117;&#98;&#106;&#101;&#99;&#116;</code>' }
     Shaka::LocalReviewCommitComment.new(content, head: HEAD, repository: 'o/r', published: ->(_) { true }, subject:)
+  end
+end
+
+class LocalReviewReplyPreflightTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  def test_a_later_reply_rendering_failure_prevents_all_writes
+    github = LocalReviewCommitPublishTest::Timeline.new
+    def github.markdown(body)
+      html = super
+      body.include?('Bad \n report') ? html.sub('<table>', '<p>Bad \n report</p><table>') : html
+    end
+    content = { 'rounds' => [round(EARLIER), round(report: report(body: 'Bad \n report'))] }
+    error = assert_raises(Shaka::Error) { Shaka::LocalReviewPublisher.new(content, github, 'o/r').publish }
+    assert_includes error.message, 'literal escape sequence'
+    assert_empty github.replies
   end
 end

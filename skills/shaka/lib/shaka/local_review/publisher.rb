@@ -30,7 +30,7 @@ module Shaka
       raise Error, "Review comment for #{head[0, 7]} exceeds GitHub’s 65536-character limit; shorten its reports." if
         size > 65_536
 
-      comment.check_rendering!(@github.markdown(body))
+      comment.check_rendering!(@github.verify_rendering(body))
       [comment.key, body]
     end
 

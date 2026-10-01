@@ -174,6 +174,8 @@ class LocalReviewPublishTest < Minitest::Test
 
   # Records the reply instead of calling GitHub, and renders Markdown as told.
   class FakeGitHub
+    include Shaka::Publishing
+
     attr_reader :replies
 
     def initialize(html = RENDERED, missing: [])
@@ -182,7 +184,7 @@ class LocalReviewPublishTest < Minitest::Test
       @replies = []
     end
 
-    def markdown(_body) = @html
+    def markdown(_body) = "<table></table>#{@html}"
 
     def api(path)
       raise Shaka::Error.new('Not Found', http_status: 404) if @missing.any? { |sha| path.end_with?(sha) }
