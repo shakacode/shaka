@@ -1,0 +1,31 @@
+{
+  "docsSidebar": [
+    "README",
+    "getting-started",
+    "expected-experience",
+    "working-with-shaka",
+    "pr-verification",
+    {
+      "type": "category",
+      "label": "Set up a repository",
+      "collapsed": false,
+      "items": ["configure-repository", "settings", "coding-agents", "migration"]
+    },
+    {
+      "type": "category",
+      "label": "Reference",
+      "collapsed": false,
+      "items": ["architecture", "workflow", "repository-catalog", "writing-preferences", "faq"]
+    },
+    {
+      "type": "category",
+      "label": "Advanced",
+      "items": ["control-towers"]
+    },
+    {
+      "type": "link",
+      "label": "Skill references (GitHub)",
+      "href": "https://github.com/shakacode/shaka/tree/main/skills/shaka/references"
+    }
+  ]
+}

@@ -75,6 +75,17 @@ class ValidateWorkflowTest < Minitest::Test
     FileUtils.remove_entry(root) if root && File.exist?(root)
   end
 
+  def test_documentation_fast_path_rejects_a_page_missing_from_navigation
+    root = validation_fixture
+    File.write(File.join(root, 'docs/new.md'), "# New guide\n")
+    output, status = run_local_validation(root)
+
+    refute_predicate status, :success?
+    assert_includes output, 'Missing from docs/sidebars.json: new'
+  ensure
+    FileUtils.remove_entry(root) if root && File.exist?(root)
+  end
+
   def test_local_validation_rejects_staged_whitespace_hidden_by_the_working_tree
     root = validation_fixture
     guide = File.join(root, 'docs/guide.md')
@@ -252,6 +263,8 @@ class ValidateWorkflowTest < Minitest::Test
 
   def install_validation_scripts(root)
     FileUtils.cp(File.expand_path('../bin/docs-only-change', __dir__), File.join(root, 'bin/docs-only-change'))
+    FileUtils.cp(File.expand_path('../bin/check-docs-navigation', __dir__), File.join(root, 'bin/check-docs-navigation'))
+    File.write(File.join(root, 'docs/sidebars.json'), '{"docsSidebar":["guide"]}')
     FileUtils.cp(File.expand_path('../.agents/bin/validate', __dir__), File.join(root, '.agents/bin/validate'))
     File.write(File.join(root, 'bin/validate'), "#!/bin/sh\necho FULL_VALIDATION\n")
     FileUtils.chmod(0o755, File.join(root, 'bin/validate'))

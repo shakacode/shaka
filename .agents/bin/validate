@@ -30,6 +30,7 @@ if git -C "$root" show "${base}:bin/docs-only-change" >"$classifier" 2>/dev/null
       exit 1
     fi
   done <"$inventory"
+  ruby "$root/bin/check-docs-navigation"
   exit 0
 fi
 

@@ -43,7 +43,9 @@ jobs:
 
       - name: Report documentation-only validation
         if: steps.changes.outputs.docs_only == 'true'
-        run: echo "Documentation-only change; Ruby tests and RuboCop skipped."
+        run: |
+          ruby bin/check-docs-navigation
+          echo "Documentation-only change; Ruby tests and RuboCop skipped."
 
       - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
         if: steps.changes.outputs.docs_only != 'true'
