@@ -63,7 +63,7 @@ module Shaka
       action, next_action = recommendation(report)
       summary = report.fetch('summary', report.fetch('reasons').first)
       ["**Recommendation: #{action}**", summary,
-       "**Next action (task owner):** #{report.fetch('next_action', next_action)}",
+       "**Next action (task owner):** #{owner_action(report, next_action)}",
        *report_evidence(report, summary)].join("\n\n")
     end
 
@@ -83,6 +83,12 @@ module Shaka
       end
 
       ACTIONS.fetch(report.fetch('conclusion'))
+    end
+
+    def owner_action(report, fallback)
+      return fallback unless report['conclusion'] == 'Proceed' && report['concerns'].empty?
+
+      report.fetch('next_action', fallback)
     end
 
     def incomplete_body

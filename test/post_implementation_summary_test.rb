@@ -91,9 +91,9 @@ class PostImplementationSummaryTest < Minitest::Test
                             'next_action' => 'Revise this PR, then revalidate.', 'reasons' => ['Maintenance evidence'])
       body = rendered(result, path)
       assert_includes body, '**Recommendation: Revise before merging.**'
-      assert_includes body, '**Next action (task owner):** Revise this PR, then revalidate.'
+      assert_includes body, '**Next action (task owner):** Revise the approach, then revalidate and review.'
       assert_operator body.index('Keep the safeguard'), :<, body.index('Maintenance evidence')
-      assert_operator body.index('Revise this PR'), :<, body.index('Maintenance evidence')
+      assert_operator body.index('Next action (task owner)'), :<, body.index('Maintenance evidence')
     end
   end
 
@@ -115,6 +115,23 @@ class PostImplementationSummaryTest < Minitest::Test
         assert_equal 1, status
         assert_empty github.bodies
       end
+    end
+  end
+
+  def test_reviewer_action_cannot_override_a_blocking_result
+    [{ 'conclusion' => 'Proceed', 'concerns' => ['Audience mismatch remains'] },
+     { 'conclusion' => 'Simplify/reframe' }, { 'conclusion' => 'Do not merge' }].each do |blocker|
+      with_result do |result, path|
+        change_report(result, blocker.merge('next_action' => 'Merge now.'))
+        refute_includes rendered(result, path), '**Next action (task owner):** Merge now.'
+      end
+    end
+  end
+
+  def test_unblocked_review_keeps_the_specific_owner_action
+    with_result do |result, path|
+      change_report(result, 'next_action' => 'Complete the required approval.')
+      assert_includes rendered(result, path), '**Next action (task owner):** Complete the required approval.'
     end
   end
 

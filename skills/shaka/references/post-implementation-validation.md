@@ -67,6 +67,11 @@ checks the live open PR head and retains separate executions on that PR, includi
 native usage metadata when available. Requested settings are labeled separately
 from observed model and usage; absent observations remain UNKNOWN.
 
+For a blocking conclusion or unresolved concerns, Ruby publishes the existing
+conclusion-based owner action rather than the reviewer's `next_action`. It uses the
+specific reviewer action only for **Proceed** with no concerns. The owner still
+checks the meaning of the free-form summary and analysis; Ruby does not judge that prose.
+
 The first visible line identifies the reviewer, observed model, and recorded effort.
 Known configuration or requested settings appear there too when observations are
 missing or differ. `observed model: UNKNOWN` stays explicit when only a configured
