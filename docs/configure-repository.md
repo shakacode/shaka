@@ -53,7 +53,8 @@ for choices and defaults; let the skill handle command syntax and setup steps.
 ## Files the agent prepares
 
 The configuration records project choices; the scripts connect existing checks;
-the comment allowlist identifies trusted reviewers. This inventory is useful when
+the comment allowlist identifies whose public comments the agent may read.
+This inventory is useful when
 reviewing the setup PR.
 
 | File | Purpose |
