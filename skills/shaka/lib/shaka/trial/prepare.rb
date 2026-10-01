@@ -42,6 +42,7 @@ module Shaka
         Reference.public_candidate!(pull)
         raise Error, 'Select an open Shaka PR for a new trial.' unless pull['state'] == 'open'
 
+        @source = pull.dig('head', 'repo') || {}
         Reference.head(pull.dig('head', 'sha'))
       end
 
@@ -67,6 +68,8 @@ module Shaka
         skill = File.join(package, 'skills/shaka/SKILL.md')
         helper = File.join(package, 'skills/shaka/scripts/shaka')
         { 'candidate_url' => @url, 'candidate_head' => head, 'skill' => skill, 'helper' => helper,
+          'source_repository' => @source.fetch('full_name', 'UNKNOWN'),
+          'source_fork' => @source.fetch('fork', 'UNKNOWN'),
           'report_helper' => report_helper, 'startup_prompt' => prompt(skill, head) }
       end
 
@@ -74,8 +77,11 @@ module Shaka
         <<~PROMPT
           Use the explicitly selected Shaka trial skill at #{JSON.generate(skill)}.
           This task opts into #{@url} at #{head}; keep this exact helper for the whole task.
+          Candidate source: #{JSON.generate(@source.fetch('full_name', 'UNKNOWN'))}.
+          Fork source: #{JSON.generate(@source.fetch('fork', 'UNKNOWN'))}; this is explicitly selected experimental code.
           Work in #{JSON.generate(@root)}. Preserve the project's trusted settings and merge policy.
-          In the resulting PR, identify the trial source and tested revision alongside workflow provenance.
+          In the resulting PR body, record #{@url} and this exact workflow commit URL:
+          https://github.com/#{Reference::REPOSITORY}/commit/#{head}
           At completion, report what helped, corrections needed, and a keep/revise/drop verdict.
           For authorized feedback publication, use #{JSON.generate(report_helper)} trial report;
           read its packaged references/pr-trials.md for the report JSON format.

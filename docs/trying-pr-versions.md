@@ -38,13 +38,13 @@ or drop. Review the summary for private details before publishing.
 ```
 
 For private work, authorize a public-safe summary with no project link or private
-context. The reporting command rejects private or unverifiable GitHub repository
-links; you and your agent still review prose and other links for confidentiality.
+context. The reporting command checks explicit http(s)://github.com/OWNER/REPO
+URLs and rejects private or unverifiable repositories; you and your agent still review prose and other links for confidentiality.
 See the [agent trial procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/pr-trials.md)
 for preparation and reporting commands.
 
-The candidate gets the existing `eval-required` label when a report is published
-while it is open. Maintainers can also apply it before asking for volunteers.
+Maintainers apply the existing `eval-required` label before asking for volunteers.
+Testers can report without permission to manage labels.
 A few linked examples and keep/revise/drop recommendations can inform adoption.
 They are anecdotes, and the maintainer still decides whether to merge. Neither a
 report nor a vote grants merge authority.

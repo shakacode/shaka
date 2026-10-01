@@ -9,6 +9,9 @@ module Shaka
   module Trial
     # Preparation is local; report is the explicit authorization to publish field feedback.
     module Command
+      ERRORS = [Error, ArgumentError, SystemCallError, OptionParser::ParseError,
+                JSON::ParserError, URI::InvalidURIError].freeze
+
       def self.run(arguments)
         action = arguments.shift
         options, parser = options(arguments, action)
@@ -18,7 +21,7 @@ module Shaka
         result = execute(action, arguments.first, options)
         puts JSON.pretty_generate(result)
         0
-      rescue Error, ArgumentError, SystemCallError, OptionParser::ParseError, JSON::ParserError => e
+      rescue *ERRORS => e
         warn "shaka trial: #{e.message}"
         1
       end

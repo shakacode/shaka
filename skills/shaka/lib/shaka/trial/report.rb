@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'uri'
+require 'digest'
+require_relative '../public_comments/bounded_list'
 require_relative 'reference'
 require_relative '../github'
 require_relative '../publication/text'
@@ -26,20 +28,18 @@ module Shaka
         verify_commit
         verify_result
         verify_summary_links
-        mark_evaluation if pull['state'] == 'open'
-        @github.reply(body: body, key: "field-trial-#{@id}-#{@head}")
+        key = "field-trial-#{Digest::SHA256.hexdigest("#{@id}:#{@head}")[0, 52]}"
+        @github.reply(body: body, key: key)
       end
 
       private
 
       def verify_commit
-        commit = @github.api("repos/#{Reference::REPOSITORY}/commits/#{@head}")
-        raise Error, 'Reported Shaka revision is unavailable.' unless commit['sha'] == @head
-      end
+        commits = PublicComments::BoundedList.new(@github, max_pages: 3, label: 'Trial candidate commits')
+                                             .call("repos/#{Reference::REPOSITORY}/pulls/#{@number}/commits")
+        return if commits.any? { |commit| commit['sha'] == @head }
 
-      def mark_evaluation
-        @github.api("repos/#{Reference::REPOSITORY}/issues/#{@number}/labels",
-                    method: 'POST', fields: { labels: ['eval-required'] }, expected: Array)
+        raise Error, 'Reported revision is not in the candidate PR; a force-pushed trial needs manual feedback.'
       end
 
       def validate
@@ -81,8 +81,8 @@ module Shaka
       end
 
       def verify_summary_links
-        @summary.scan(%r{https?://github\.com/[^\s)<>]+}i).each do |url|
-          path = URI::DEFAULT_PARSER.unescape(URI.parse(url).path)
+        @summary.scan(%r{https?://github\.com/[^\s)<>\[\]`"|]+}i).each do |url|
+          path = URI::DEFAULT_PARSER.unescape(URI.parse(url.sub(/[.,;:!?]+\z/, '')).path)
           repository = path.split('/')[1, 2].join('/')
           public_repository!(repository)
         end

@@ -21,7 +21,8 @@ and uses the bootstrap's existing installer to copy it, without running the
 candidate installer or helper. A moving head fails preparation; retry to select
 the new revision. This first version prepares a prompt; it does not launch a host.
 
-Inspect the returned `candidate_head`, `skill`, `helper`, `report_helper`, and
+Inspect the returned `source_repository`, `source_fork`, `candidate_head`, `skill`,
+`helper`, `report_helper`, and
 `startup_prompt`. Give the user the startup prompt for a fresh chat. Stop the
 preparation there; do not switch the running task's helper. In the fresh chat,
 resolve the explicitly selected skill outside the project, read its workflow,
@@ -63,15 +64,19 @@ shaka trial report https://github.com/shakacode/shaka/pull/359 \
 
 `id` is a public name of 1–48 letters, digits, or hyphens, starting with a letter or
 digit. Verdicts are `keep`, `revise`, or `drop`. Use a nonempty public-safe summary.
-The helper verifies that a public result PR records the exact Shaka commit URL
-in its body. It checks repository visibility before publishing GitHub links,
-adds `eval-required` to an open candidate, and publishes a tester-attributed comment.
+The helper checks that the tested revision is still in the candidate PR's commit
+list and that a public result PR records its exact Shaka commit URL. It checks
+explicit http(s)://github.com/OWNER/REPO URLs for repository visibility, then
+publishes a tester-attributed comment. Maintainers apply `eval-required` before
+collecting trials; reporting needs comment permission, not label permission.
+If a force-push removes the tested revision, retain the local preparation record
+and publish explicitly self-reported feedback manually after maintainer review.
 It does not independently prove which instructions an agent followed.
 
 For private results, omit `result_url` and set `"private_result": true`. Keep
 private links and context in the private result PR; publish only an authorized
-public-safe summary. GitHub link checks cannot classify confidential prose or
-links to other services. A failed check publishes no feedback comment.
+public-safe summary. These checks do not cover shorthand references, www.github.com, gists, raw-file
+URLs, confidential prose, or other services; review those before publication. A failed check publishes no feedback comment.
 
 Reuse the same id and revision to update a report. A new id or revision retains a
 separate report, so repeated trials can show different outcomes. There is no

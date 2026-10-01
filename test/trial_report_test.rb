@@ -4,13 +4,13 @@ require_relative 'test_helper'
 require 'shaka/trial/command'
 require 'tempfile'
 
-class TrialReportTest < Minitest::Test
+class TrialReportFixture < Minitest::Test
   URL = 'https://github.com/shakacode/shaka/pull/359'
   HEAD = 'a' * 40
 
   def setup
     @calls = []
-    @labels = []
+    @candidate_commit = HEAD
     @private = false
     @body = "Workflow version: https://github.com/shakacode/shaka/commit/#{HEAD}"
     build_client
@@ -19,8 +19,10 @@ class TrialReportTest < Minitest::Test
   def build_client
     owner = self
     @github = Object.new
+    @github.define_singleton_method(:api_list) { |path| owner.api(path) }
     @github.define_singleton_method(:api) { |*args, **kwargs| owner.api(*args, **kwargs) }
     @github.define_singleton_method(:reply) do |**kwargs|
+      Shaka::GitHub.allocate.send(:reply_mark, kwargs[:key])
       owner.calls << kwargs
       { 'body' => kwargs[:body] }
     end
@@ -29,12 +31,9 @@ class TrialReportTest < Minitest::Test
   attr_reader :calls
 
   def api(path, **options)
-    unless options.empty?
-      @labels << options.fetch(:fields)
-      assert_equal Array, options.fetch(:expected)
-      return []
-    end
+    raise 'Reporting should not require label permissions' unless options.empty?
     return { 'sha' => HEAD } if path.include?('/commits/')
+    return [{ 'sha' => @candidate_commit }] if path.include?('/commits?')
     return { 'state' => 'open', 'base' => { 'repo' => { 'full_name' => 'shakacode/shaka', 'private' => false } } } if
       path == 'repos/shakacode/shaka/pulls/359'
     return { 'private' => @private, 'visibility' => @private ? 'private' : 'public' } if path == 'repos/team/project'
@@ -42,13 +41,33 @@ class TrialReportTest < Minitest::Test
     { 'body' => @body }
   end
 
-  def test_reports_a_public_result_with_exact_revision_and_applies_evaluation_label
+  private
+
+  def cli(path, status: 0)
+    original = Shaka::GitHub.method(:new)
+    client = @github
+    Shaka::GitHub.define_singleton_method(:new) { |*| client }
+    capture_io do
+      assert_equal status, Shaka::Trial::Command.run(['report', URL, '--content-file', path])
+    end
+  ensure
+    Shaka::GitHub.define_singleton_method(:new, original)
+  end
+
+  def report(extra = {})
+    content = { 'id' => 'example', 'candidate_head' => HEAD, 'verdict' => 'keep',
+                'summary' => 'Useful; needed one correction.' }.merge(extra)
+    Shaka::Trial::Report.new(URL, content, github: @github, results: @github).run
+  end
+end
+
+class TrialReportTest < TrialReportFixture
+  def test_reports_a_public_result_without_label_permissions
     result = report('result_url' => 'https://github.com/team/project/pull/7')
     assert_includes result['body'], HEAD
     assert_includes result['body'], 'team/project/pull/7'
     assert_includes result['body'], 'keep'
-    assert_equal [{ labels: ['eval-required'] }], @labels
-    assert_match(/field-trial-example-/, calls.last[:key])
+    assert_operator calls.last[:key].length, :<=, 64
   end
 
   def test_refuses_a_private_result_before_any_comment_is_written
@@ -80,7 +99,33 @@ class TrialReportTest < Minitest::Test
       report('private_result' => true, 'summary' => 'See HTTPS://GitHub.com/team/project/pull/7')
     end
     assert_empty calls
-    assert_empty @labels
+  end
+
+  def test_rejects_a_revision_outside_the_candidate_pr
+    @candidate_commit = 'b' * 40
+    assert_raises(Shaka::Error) { report('private_result' => true) }
+    assert_empty calls
+  end
+
+  def test_supports_long_trial_ids_and_markdown_github_links
+    result = report('id' => 'a' * 48, 'summary' => 'See `https://github.com/team/project/pull/7`.',
+                    'result_url' => 'https://github.com/team/project/pull/7')
+    assert_includes result['body'], 'a' * 48
+    assert_operator calls.last[:key].length, :<=, 64
+  end
+end
+
+class TrialReportCommandTest < TrialReportFixture
+  def test_cli_handles_malformed_summary_links_without_a_backtrace
+    Tempfile.create(['trial-report', '.json']) do |file|
+      file.write(JSON.generate('id' => 'bad-link', 'candidate_head' => HEAD, 'verdict' => 'revise',
+                               'private_result' => true, 'summary' => 'See https://github.com/team/project/{'))
+      file.flush
+      output, error = cli(file.path, status: 1)
+      assert_empty output
+      assert_includes error, 'shaka trial:'
+      assert_empty calls
+    end
   end
 
   def test_cli_publishes_a_report_from_json
@@ -89,27 +134,9 @@ class TrialReportTest < Minitest::Test
     Tempfile.create(['trial-report', '.json']) do |file|
       file.write(JSON.generate(content))
       file.flush
-      output = cli(file.path)
+      output, error = cli(file.path)
+      assert_empty error
       assert_includes JSON.parse(output)['body'], 'revise'
     end
-  end
-
-  private
-
-  def cli(path)
-    original = Shaka::GitHub.method(:new)
-    client = @github
-    Shaka::GitHub.define_singleton_method(:new) { |*| client }
-    capture_io do
-      assert_equal 0, Shaka::Trial::Command.run(['report', URL, '--content-file', path])
-    end.first
-  ensure
-    Shaka::GitHub.define_singleton_method(:new, original)
-  end
-
-  def report(extra = {})
-    content = { 'id' => 'example', 'candidate_head' => HEAD, 'verdict' => 'keep',
-                'summary' => 'Useful; needed one correction.' }.merge(extra)
-    Shaka::Trial::Report.new(URL, content, github: @github, results: @github).run
   end
 end

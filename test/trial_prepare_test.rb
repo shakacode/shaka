@@ -56,6 +56,13 @@ class TrialPrepareTest < Minitest::Test
     assert_raises(Shaka::Error) { prepare(repository: 'elsewhere/shaka') }
   end
 
+  def test_identifies_an_explicitly_selected_fork_source
+    result = prepare(fork: true, source_repository: 'contributor/shaka')
+    assert_equal 'contributor/shaka', result['source_repository']
+    assert_true result['source_fork']
+    assert_includes result['startup_prompt'], 'contributor/shaka'
+  end
+
   private
 
   def git(*) = Open3.capture3(TEST_GIT, '-C', @source, *)[0]
@@ -81,10 +88,11 @@ class TrialPrepareTest < Minitest::Test
     result
   end
 
-  def github(head: @head, private: false, repository: 'shakacode/shaka')
+  def github(head: @head, private: false, repository: 'shakacode/shaka',
+             source_repository: 'shakacode/shaka', fork: false)
     github = Object.new
     github.define_singleton_method(:api) do |*|
-      { 'head' => { 'sha' => head }, 'state' => 'open',
+      { 'head' => { 'sha' => head, 'repo' => { 'full_name' => source_repository, 'fork' => fork } }, 'state' => 'open',
         'base' => { 'repo' => { 'full_name' => repository, 'private' => private } } }
     end
     github
