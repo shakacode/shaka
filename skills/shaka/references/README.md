@@ -11,6 +11,7 @@ the workflow reaches that decision:
 
 | Task | Reference |
 | --- | --- |
+| Try an unmerged Shaka version on real work | [PR trials](pr-trials.md) |
 | Install, upgrade, or remove Shaka | [Installation](installation.md) |
 | Configure or inspect a repository | [Setup](repository-setup.md) and shared [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) |
 | Migrate existing settings | [Migration](migration.md) |

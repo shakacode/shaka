@@ -35,6 +35,7 @@ require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
 require_relative '../lib/shaka/walkthrough/code_links'
+require_relative '../lib/shaka/trial/command'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
 require_relative '../lib/shaka/workflow_version'
@@ -52,6 +53,11 @@ end
 if ARGV.first == 'issue-create'
   ARGV.shift
   exit Shaka::IssueCreate.run(ARGV)
+end
+
+if ARGV.first == 'trial'
+  ARGV.shift
+  exit Shaka::Trial::Command.run(ARGV)
 end
 
 if ARGV.first == 'work'

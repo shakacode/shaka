@@ -22,14 +22,15 @@ module Shaka
       refuse_overlap
     end
 
-    def run
+    def run(announce: true, link: true)
       tree = Install::Tree.new(@names, source_root: @source_root, source_alias: @source_alias)
       source = Install::Source.new(@source_root, @names, tree)
       package = Install::Package.new(@managed, source, @names, tree)
       target = @rollback ? package.existing(@rollback) : package.prepare(@source_root)
       record_ruby
-      Install::Links.new(@skills_dir, @managed, @source_root, @names).switch_all(target)
-      announce(target)
+      Install::Links.new(@skills_dir, @managed, @source_root, @names).switch_all(target) if link
+      announce(target) if announce
+      target
     end
 
     def announce(target)

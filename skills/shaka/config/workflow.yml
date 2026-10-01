@@ -12,6 +12,10 @@ phases:
         including the current workflow, claim, and checkpoint. Recommend a new chat for the
         new task; when the user keeps this chat, record its UTC start time before work and
         use that start point to separate its usage.
+      - For an explicit request to try a Shaka tool PR on a separate project task,
+        follow [PR trial preparation](references/pr-trials.md) before starting that task.
+        Return the pinned startup prompt for a fresh chat; preparation does not switch
+        this running task's helper. A plain PR URL remains the work item.
       - Identify the checkout from host context and Git remotes. If trusted `AGENTS.md`
         exists, read it for human-only constraints. Load the repository configuration
         selected at the current default-branch commit with the saved helper's
