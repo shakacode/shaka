@@ -72,7 +72,7 @@ module Shaka
       ["Head: `#{@head}` · Conclusion: **#{report.fetch('conclusion')}**",
        "Unresolved concerns: #{concerns.empty? ? 'none' : concerns.join('; ')}",
        *report.fetch('reasons').reject { |reason| reason == summary },
-       "Simpler alternative: #{report.fetch('alternative')}", execution_details,
+       "Alternative considered: #{report.fetch('alternative')}", execution_details,
        'Ruby verified report shape and head binding. The reviewer judged value; the task owner handles concerns ' \
        'and merge readiness. This does not attest to technical review.']
     end

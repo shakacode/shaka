@@ -87,6 +87,15 @@ class PostImplementationPublicationTest < Minitest::Test
     end
   end
 
+  def test_alternative_label_fits_a_report_that_proposes_no_change
+    with_result do |result, path|
+      github, = publish(result, path)
+
+      assert_includes github.bodies.first.first, 'Alternative considered: No change leaves the bug'
+      refute_includes github.bodies.first.first, 'Simpler alternative:'
+    end
+  end
+
   def test_stale_head_and_technical_evidence_cannot_be_published_as_checkpoint
     with_result do |result, path|
       result['head'] = 'b' * 40
