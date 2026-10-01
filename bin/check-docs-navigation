@@ -25,6 +25,7 @@ end
 begin
   root = ARGV.fetch(0, File.expand_path('../docs', __dir__))
   navigation = JSON.parse(File.read(File.join(root, 'sidebars.json')))
+  raise ArgumentError, 'Expected a sidebar object' unless navigation.is_a?(Hash)
   ids = document_ids(navigation.fetch('docsSidebar'))
   pages = Dir.glob('**/*.{md,mdx}', base: root).map { |file| file.sub(/\.(md|mdx)\z/, '') }
   missing = pages - ids
