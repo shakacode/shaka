@@ -89,6 +89,16 @@ class ReviewWorkflowTest < Minitest::Test
     refute_includes summary, 'private input'
   end
 
+  def test_failed_execution_still_names_denied_tools_without_inputs
+    denied = result.merge(is_error: true, subtype: 'error_max_turns',
+                          permission_denials: [{ tool_name: 'Bash', tool_input: { command: 'private input' } }])
+    _output, status, summary = run_result([denied], outcome: 'failure')
+    refute_predicate status, :success?
+    assert_includes summary, 'UNAVAILABLE'
+    assert_includes summary, 'Bash'
+    refute_includes summary, 'private input'
+  end
+
   def test_a_bot_comment_without_a_findings_count_does_not_satisfy_review
     comment = report.merge('body' => "Could not review #{'a' * 40}")
     _output, status, = run_result([result], comments: [comment])

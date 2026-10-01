@@ -79,6 +79,15 @@ jobs:
             printf '## Claude review\n\n**UNAVAILABLE** for %s. %s\n' "$REVIEW_HEAD" "$1" >> "$GITHUB_STEP_SUMMARY"
             echo "::$2::Claude review UNAVAILABLE: $1"
           }
+          if [ -n "$EXECUTION_FILE" ] && [ -f "$EXECUTION_FILE" ]; then
+            jq -r -s '
+            flatten | map(select(type == "object" and .type == "result")) | last |
+            (.permission_denials // []) | map(.tool_name // "UNKNOWN" |
+              if type == "string" then gsub("[^A-Za-z0-9_.:-]"; "?") else "UNKNOWN" end) |
+            group_by(.) | map("- " + .[0] + ": " + (length | tostring) + " denied call(s)") | .[]
+            ' "$EXECUTION_FILE" >> "$GITHUB_STEP_SUMMARY" 2>/dev/null ||
+              printf 'Denied tool names unavailable from this execution file.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [ "$REVIEW_OUTCOME" != "success" ]; then
             unavailable "The review action did not complete. Inspect its error before retrying." error
             exit 1
@@ -95,12 +104,6 @@ jobs:
             unavailable "Execution is missing, malformed, failed, or incomplete. Read the action output; do not count this as a completed review." error
             exit 1
           fi
-          jq -r -s '
-            flatten | map(select(type == "object" and .type == "result")) | last |
-            (.permission_denials // []) | map(.tool_name // "UNKNOWN" |
-              if type == "string" then gsub("[^A-Za-z0-9_.:-]"; "?") else "UNKNOWN" end) |
-            group_by(.) | map("- " + .[0] + ": " + (length | tostring) + " denied call(s)") | .[]
-          ' "$EXECUTION_FILE" >> "$GITHUB_STEP_SUMMARY"
           comments=$(mktemp)
           trap 'rm -f "$comments"' EXIT
           if [ -z "$REVIEW_STARTED_AT" ] || ! gh api --paginate --slurp \
