@@ -16,8 +16,9 @@ green checks, or an agent's proposed approach alone confirms nothing. Record exa
 what the human accepted: objective, approach, next action, or finished result.
 Existing `go` authorization can confirm intake without another confirmation turn.
 
-Keep one compact checkpoint in the existing task record, with a public-safe summary
-on its PR when useful. If the host cannot retain it durably, save it outside
+Keep one compact checkpoint in the existing task record. Once a PR exists, publish
+the public-safe checkpoint list described below. If the host cannot retain the record
+durably, save it outside
 disposable checkouts in approved private local storage and name that location in
 the owning chat. Keep private context out of public summaries, including details.
 
