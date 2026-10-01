@@ -70,6 +70,12 @@ class DocsOnlyChangeTestSupport < Minitest::Test
 end
 
 class DocsOnlyChangeTest < DocsOnlyChangeTestSupport
+  def test_accepts_declarative_sidebar_data
+    write('docs/sidebars.json', '{"docsSidebar":["guide"]}')
+    output, status = classify
+    assert_predicate status, :success?, output
+  end
+
   def test_accepts_readme_and_docs_changes
     write('README.md', "Hello human\n")
     write('docs/guide.md', "Better guide\n")
