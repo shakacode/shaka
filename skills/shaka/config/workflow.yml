@@ -229,7 +229,8 @@ phases:
         path outside the checkout. The prompt asks the reviewer to class each finding as a
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
         disposition with `review record`; the next `review run` refuses to start until they are
-        recorded, and refuses a head the ledger already reviewed. Fix defects, and risks whose
+        recorded, and refuses a head the ledger already reviewed unless another reviewer joins
+        it before that record. Fix defects, and risks whose
         fix is clearly correct, in new commits, then review the new head. Document nits and the
         remaining risks instead of fixing them; a round whose findings are all documented ends
         the loop. A defect you decline to fix is documented too, and the comment reports it as
@@ -251,20 +252,31 @@ phases:
         flag or model, and a report-validation failure are not availability evidence.
         Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
         failure is not availability evidence, even when `attempted` is true. It returns `different_provider`,
-        `same_provider`, or `same_model`, with a note to copy into the record. None is an error:
+        `same_provider`, or `same_model`, with a note to copy into the record, and a `reviewers`
+        list in run order. None is an error:
         when all listed paths fail, start a new host chat with the implementation model and no
         implementation conversation or Task/subagent context; its own failed CLI does not remove
         that fallback. Run a selected CLI through `shaka review run` as described in
         [invoke a reviewer locally](<{{package_root}}/skills/shaka/references/local-review.md>);
         do not substitute a current-host Cursor Task, subagent, or more expensive same-provider model
         when a listed different provider is available. A current-host Task or subagent is neither
-        availability evidence nor a substitute. For a fresh host review, check its report with
+        availability evidence nor a substitute. When `shaka doctor` or `shaka review run` reports a
+        reviewer model or effort notice, tell the user that notice before continuing the review.
+        For a fresh host review, check its report with
         `shaka review check --head SHA --reviewer ID --report PATH`; this checks the attestation but
         does not verify a CLI launch. If no review completed, run `shaka review check --head SHA
         --not-run-reason TEXT`, retain its nonzero result, and explain the missing review on the PR
-        rather than calling it ready. Record which reviewer ran at which revision in the chat and
+        rather than calling it ready. Record which reviewers ran at which revision in the chat and
         the PR review status line. See
         [choose a local reviewer](<{{package_root}}/skills/shaka/references/review.md#choose-a-local-reviewer>).
+      - `reviewer` returns up to the trusted `review.local_review_count` reviewers, one by default;
+        a user who asks for a different number in this task gets `--count N`. When it lists several,
+        start each on the same committed head with one shared `--ledger`. Wait until every one
+        returns `completed` or a recorded `not_completed`, then triage all their findings together
+        in one `review record`, one entry per problem mapping each reviewer that reported it to its
+        own finding number, and fix them as one repair batch. Review the new head by rerunning
+        `reviewer`, adding `--unavailable` for any reviewer that has since failed with qualifying
+        evidence.
       - For UI changes, meaning anything a person sees on screen other than command-line output,
         use the change by hand on the head you will push, and capture before and after screenshots
         on desktop and mobile, adding a short video when interaction or timing matters. Inspect each capture

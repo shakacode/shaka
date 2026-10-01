@@ -1075,6 +1075,67 @@ class LocalReviewAttestationCaseTest < Minitest::Test
   end
 end
 
+class LocalReviewSettingsTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_a_misspelled_model_still_runs_and_names_the_similar_model
+    with_repository do |root, base, head, bin|
+      result = accepted_review(root, base, head, bin, 'gpt-6-sll')
+
+      assert_equal 'completed', result.fetch('status')
+      assert_includes result.fetch('config_notices').first.fetch('summary'), 'looks like a typo of `gpt-6-sol`'
+    end
+  end
+
+  def test_a_claude_effort_outside_the_list_stops_before_the_cli
+    with_repository do |root, base, head, bin|
+      result = refused_claude(root, base, head, bin)
+
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      refute result.fetch('attempted')
+      assert_includes result.fetch('reason'), 'turbo'
+    end
+  end
+
+  def test_an_unknown_model_still_runs_and_reports_the_notice
+    with_repository do |root, base, head, bin|
+      result = accepted_review(root, base, head, bin, 'gpt-9-nova')
+
+      assert_equal 'completed', result.fetch('status')
+      assert_includes result.fetch('config_notices').first.fetch('summary'), 'gpt-9-nova'
+    end
+  end
+
+  private
+
+  def refused_claude(root, base, head, bin)
+    trace = File.join(root, 'invocation.json')
+    fake_claude(bin, head)
+    output, _error, status = run_review(root, base, head, bin,
+                                        reviewer: 'anthropic/claude', effort: 'turbo',
+                                        env: { 'REVIEW_TRACE' => trace })
+    refute_predicate status, :success?
+    refute_path_exists trace
+    JSON.parse(output)
+  end
+
+  def accepted_review(root, base, head, bin, model)
+    output, error, status = launch(root, base, head, bin, model)
+    assert_predicate status, :success?, error
+    JSON.parse(output)
+  ensure
+    cleanup_artifacts(JSON.parse(output)) if output
+  end
+
+  def launch(root, base, head, bin, model)
+    trace = File.join(root, 'invocation.json')
+    fake_codex(bin, head)
+    output, error, status = run_review(root, base, head, bin, model:, env: { 'REVIEW_TRACE' => trace })
+    status.success? ? assert_path_exists(trace) : refute_path_exists(trace)
+    [output, error, status]
+  end
+end
+
 class LocalReviewCodexUsageTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
@@ -1172,6 +1233,32 @@ module LocalReviewLoopSteps
     end
   end
 
+  # Returns the prompt the Claude reviewer received.
+  def claude_round(head)
+    trace = File.join(File.dirname(@ledger), 'claude-trace')
+    fake_claude(@bin, head)
+    output, error, status = run_review(@root, @base, head, @bin, ledger: @ledger, reviewer: 'anthropic/claude',
+                                                                 env: { 'REVIEW_TRACE' => trace })
+    @results << assert_successful_review(output, error, status, head, 'anthropic/claude')
+    JSON.parse(File.read(trace)).fetch('prompt')
+  end
+
+  # Codex reported one finding and Claude none; one record triages both rounds.
+  def assert_one_triage
+    assert_includes record_batch(self.class::NIT_FINDING)[1], 'must map each reviewer'
+    output, error, status = record_batch(self.class::NIT_FINDING.merge('reviewers' => { 'openai/codex' => '1' }))
+    assert_predicate status, :success?, error
+    assert_equal [1, 2], JSON.parse(output).fetch('rounds')
+  end
+
+  def record_batch(finding)
+    Tempfile.create(['record-', '.json']) do |file|
+      file.write(JSON.generate('findings' => [finding]))
+      file.close
+      Open3.capture3(self.class::COMMAND, 'review', 'record', '--ledger', @ledger, '--content-file', file.path)
+    end
+  end
+
   def assert_prior_round_prompt(prompt, fix)
     assert_match(/BEGIN PRIOR ROUND DATA [0-9a-f]{32}/, prompt)
     assert_includes prompt, "- [F1] defect: Wrong exit code (fixed in #{fix[0, 7]})"
@@ -1182,6 +1269,7 @@ end
 
 class LocalReviewLoopTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
+  NIT_FINDING = { 'id' => 'F1', 'summary' => 'Rename run_all', 'class' => 'nit', 'disposition' => 'documented' }.freeze
 
   include LocalReviewLoopSteps
 
@@ -1243,10 +1331,79 @@ class LocalReviewLoopTest < Minitest::Test
     end
   end
 
+  # Break caught: the runner appended a round whose start checks read a ledger changed during the run.
+  def test_refuses_a_round_whose_ledger_changed_while_it_ran
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record([NIT_FINDING])
+      later = fix_commit
+      codex_editing_the_ledger(later)
+      assert_refused(later, 'changed while this round ran')
+    end
+  end
+
+  # A reviewer whose run edits round 1's recorded findings, as another session could meanwhile.
+  def codex_editing_the_ledger(head)
+    write_executable(@bin, 'codex', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'json'
+      ledger = JSON.parse(File.read(#{@ledger.inspect}))
+      ledger['rounds'][0]['findings'][0]['note'] = 'changed mid-run'
+      File.write(#{@ledger.inspect}, JSON.generate(ledger))
+      File.write(ARGV.fetch(ARGV.index('-o') + 1), "x\\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\\n")
+    RUBY
+  end
+
   def test_refuses_a_ledger_inside_the_checkout
     in_loop do |head|
       @ledger = File.join(@root, 'ledger.json')
       assert_refused(head, 'outside the candidate checkout')
+    end
+  end
+end
+
+# Several reviewers of one commit share the loop's ledger.
+class LocalReviewLoopBatchTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+  NIT_FINDING = LocalReviewLoopTest::NIT_FINDING
+
+  include LocalReviewLoopSteps
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  # Break caught: a second reviewer of a commit failed the fix-history check, saw the first
+  # reviewer's findings, or could not record its own round.
+  def test_another_reviewer_joins_the_last_commit
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      refute_includes claude_round(head), 'PRIOR ROUND DATA'
+      assert_ledger_rounds([head, head])
+      refute JSON.parse(File.read(@ledger)).key?('running')
+      assert_one_triage
+    end
+  end
+
+  # Break caught: a reviewer joining a later commit was shown the commits since that same commit.
+  def test_a_reviewer_joining_a_later_commit_reads_from_the_commit_before
+    in_loop do |head|
+      loop_round(head, findings: 1)
+      record([NIT_FINDING])
+      later = fix_commit
+      loop_round(later, findings: 1)
+      prompt = claude_round(later)
+      assert_includes prompt, '[F1] nit: Rename run_all'
+      assert_includes prompt, "Commits since #{head}"
+    end
+  end
+
+  # Break caught: a reviewer that failed left its running mark, so the batch could never be recorded.
+  def test_a_failed_review_clears_its_running_mark
+    in_loop do |head|
+      write_executable(@bin, 'codex', "#!/bin/sh\nexit 1\n")
+      refute_predicate run_review(@root, @base, head, @bin, ledger: @ledger).last, :success?
+      refute JSON.parse(File.read(@ledger)).key?('running')
     end
   end
 end
@@ -1523,6 +1680,7 @@ module LocalReviewFixture
 end
 
 LocalReviewCodexTest.include(LocalReviewFixture)
+LocalReviewSettingsTest.include(LocalReviewFixture)
 LocalReviewRubyIsolationTest.include(LocalReviewFixture)
 LocalReviewCodexTest.include(LocalReviewContextAssertion)
 LocalReviewCodexUsageTest.include(LocalReviewFixture)
@@ -1541,5 +1699,6 @@ LocalReviewEmptyReportTest.include(LocalReviewFixture)
 LocalReviewStatusTest.include(LocalReviewFixture)
 LocalReviewAttestationCaseTest.include(LocalReviewFixture)
 LocalReviewLoopTest.include(LocalReviewFixture)
+LocalReviewLoopBatchTest.include(LocalReviewFixture)
 LocalReviewCapRunnerTest.include(LocalReviewFixture)
 LocalReviewDirtyWorktreeTest.include(LocalReviewFixture)

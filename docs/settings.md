@@ -6,6 +6,10 @@ layout keep them in `.agents/agent-workflow.yml`. Ask your agent to
 Policy comes from the default branch; settings changed in a PR do not govern
 that PR.
 
+Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/agent-workflow.yml) for a
+commented example with explicit defaults and repository-specific review choices.
+Optional settings that would pin a branch, model, or prompt stay commented.
+
 ## `merge.preference`
 
 **Required.** Values: `ask` or `auto`. Setup defaults to `ask`.
@@ -99,6 +103,8 @@ Meaningful implementation also gets a local adversarial review before push:
 - Prefer a different provider and model. If other reviewers are unavailable, the
   current workflow allows the implementation model in a fresh session.
 - Address findings before pushing.
+- To have several reviewers read each commit, set
+  [`review.local_review_count`](#reviewlocal_review_count).
 
 `shaka review run` verifies the reviewer process completed and returned a report
 for the expected commit. `shaka review check` validates a supplied report but does
@@ -177,8 +183,11 @@ checks (`UNSTABLE`) for `none` and `one`; `all` requires `CLEAN`.
 
 **Optional. Default: `5`.** A positive integer, validated by `shaka seam check`.
 
-This bounds completed rounds in one local review ledger. For example, `3` lets
+This bounds the commits reviewed in one local review ledger. For example, `3` lets
 an initial review and two follow-up reviews run before the helper refuses another.
+With [`local_review_count`](#reviewlocal_review_count) above 1, all the reviewers of one
+commit together use one of these turns, so `3` with two reviewers allows six reviews
+across three commits.
 The runner reads the setting from the supplied trusted `--settings-ref` (or
 `--criteria-ref`). Without a reference, it uses the default of five.
 
@@ -195,63 +204,88 @@ before continuing.
 
 ## `review.local_review_agents`
 
-**Optional.** Ordered reviewer preferences, not required local installations.
-Without a list, selection falls back to a fresh review context using the
-implementation identity.
+**Optional.** Choose which reviewers Shaka tries first. Put a reviewer from a
+different provider first to get another perspective on the change. Each reviewer
+needs its CLI installed and signed in on the machine doing the review.
+
+Ask your agent:
+
+> Configure local reviews to try Claude, Codex, then Grok. Use the explicit
+> models and medium effort shown below.
 
 ```yaml
 review:
-  required: meaningful_changes
-  ci_review_jobs: [claude-review]
   local_review_agents:
     - provider: anthropic
       model_family: claude
-    - provider: openai
-      model_family: codex
-```
-
-Use stable provider/family names. The agent prefers a different provider. Put
-custom review criteria in trusted `AGENTS.md`.
-
-To control what a review costs, give an entry a `model` and an `effort`:
-
-```yaml
-  local_review_agents:
+      model: claude-opus-5-5
+      effort: medium
     - provider: openai
       model_family: codex
       model: gpt-6-sol
       effort: medium
-    - provider: anthropic
-      model_family: claude
+    - provider: xai
+      model_family: grok
+      model: grok-4.7
       effort: medium
 ```
 
-Here every Codex review runs `gpt-6-sol` at medium effort. Without a `model`,
-Codex runs its built-in default, which has been `gpt-6-astra` at five times the
-token price, because the reviewer ignores your personal Codex configuration.
-Claude uses its CLI default model at medium effort. The review report records
-the effort it ran.
+Shaka prefers a different provider from the one that implemented the change,
+then follows your list order among available reviewers. These settings choose
+one local reviewer; they do not require all three to review every change.
 
-Both settings are optional. A task can still ask for a different model or effort,
-which wins for that review. The review helper reads them from the trusted
-default-branch commit the agent passes as `--criteria-ref`, so a PR cannot pick
-the model that reviews it; without that commit, the settings are not applied.
-When a provider retires a named model, that reviewer's CLI fails until you update
-the entry.
+### Model and effort values
 
-Each reviewer CLI accepts its own effort levels:
+Use these provider and family pairs for Shaka's supported local reviewer CLIs:
 
-| Reviewer | Where the levels come from |
-| --- | --- |
-| Claude | `claude --help` lists them for `--effort`, such as `low` through `max` |
-| Codex | The model's documentation; Codex passes the level through as configuration |
-| Grok | The Grok CLI's `--reasoning-effort` option |
+| Reviewer | `provider` | `model_family` | Effort values Shaka recognizes |
+| --- | --- | --- | --- |
+| Claude Code | `anthropic` | `claude` | `low`, `medium`, `high`, `xhigh`, `max` |
+| Codex | `openai` | `codex` | `low`, `medium`, `high`, `xhigh` |
+| Grok | `xai` | `grok` | `low`, `medium`, `high` |
 
-Shaka checks only that an effort is a lowercase name, such as `medium` or
-`xhigh`. The reviewer CLI decides whether it accepts that level.
-Configured CI review jobs have separate waiting rules under
+Choose a `model` available to that reviewer's CLI. The example names above are
+examples, not a closed list: newer names can run with a warning. Model names
+cannot contain spaces. Effort names use lowercase.
+
+Claude accepts only its listed effort values in Shaka. Codex and Grok values
+outside the table produce a warning and still reach the CLI, which decides
+whether they are supported.
+
+Set `model` and `effort` to control review cost. Omit either to use the reviewer's
+default for that setting; Grok requires a model from the configuration or the
+task. A task can request a different model or effort for one review. Without a
+reviewer list, Shaka uses a fresh review context with the model that implemented
+the change.
+
+### Use these settings from Cursor
+
+The same repository settings apply when you work in
+[Cursor](coding-agents.md). In a Cursor Agent chat, ask:
+
+> /shaka Configure local reviews to prefer Grok 4.7 at medium effort, with
+> Claude at medium effort as the next choice.
+
+Cursor is the coding host. Reviewer entries identify the model provider and
+reviewer CLI, so use `xai` / `grok` for Grok, including when your implementation
+was written in Cursor. Shaka's local review runner supports the three CLIs in
+the table; Cursor is not a fourth reviewer CLI.
+
+### Understand a reviewer warning
+
+For these reviewers, Shaka flags unfamiliar model and effort names, likely
+typos, and Codex models that differ from its recommendation. You'll see the warning in the repository health check and
+a **Reviewer settings** notice on the published local review. Check the spelling
+and confirm that the model and effort are available to your reviewer. Shaka
+keeps your chosen model; it does not substitute another one.
+
+Most warnings allow the review to run. An unsupported Claude effort stops it;
+choose one of Claude’s listed effort values to continue.
+
+Put project-specific review criteria in `AGENTS.md`. For review execution and
+setting checks, see the [local review reference](../skills/shaka/references/local-review.md#reviewer-model-and-effort).
+To choose how many hosted review reports to wait for, use
 [`review.ci_review_wait`](#reviewci_review_wait).
-See [reviewer selection](../skills/shaka/references/review.md#choose-a-local-reviewer).
 
 ### Add a second reviewer
 
@@ -267,6 +301,40 @@ with the account that should pay for reviews:
 
 Then list that provider in `local_review_agents`. The next review picks it, and the
 published review names it in its summary table instead of the fallback notice.
+
+## `review.local_review_count`
+
+**Optional. Default: 1.** How many reviewers from `local_review_agents` read each
+commit before its findings are fixed. With 2 or more, the reviewers run at the same
+time. `shaka review record` refuses while any review it started is still running,
+and then records all their findings in one triage, so a problem two reviewers
+both found is recorded and fixed once.
+
+Claude implements, and Codex and a fresh Claude session both review:
+
+```yaml
+review:
+  required: meaningful_changes
+  ci_review_jobs: [claude-review]
+  local_review_count: 2
+  local_review_agents:
+    - provider: anthropic
+      model_family: claude
+    - provider: openai
+      model_family: codex
+```
+
+The first reviewer comes from a provider that did not write the change whenever one
+can run, here Codex. The others follow the list order, so the second is Claude in a
+fresh session, without the implementation conversation. If Codex had written the
+change, the order would be Claude, then Codex. When the agent finds a reviewer's CLI
+missing or signed out, fewer reviewers read that commit, and from the next commit the next
+listed reviewer takes its place.
+
+Each extra reviewer adds its own review cost to every commit it reads. The PR's
+review comment shows every reviewer's rounds, and one review of the final commit is
+enough for `shaka merge`. A task can ask for a different number, which wins for that
+task.
 
 ## `review.prompt_file`
 

@@ -24,7 +24,7 @@ module LocalReviewCommentFixture
   end
 
   def round(head = HEAD, **changes)
-    { 'head' => head, 'reviewer' => 'openai/codex', 'report' => report(head), 'model' => 'gpt-5.5',
+    { 'head' => head, 'reviewer' => 'openai/codex', 'report' => report(head), 'model' => 'gpt-6-sol',
       'prompt_source' => 'Shaka default', 'criteria_ref' => TRUSTED, 'tokens' => '41,200',
       'findings' => [NIT] }.merge(changes.transform_keys(&:to_s))
   end
@@ -39,11 +39,36 @@ end
 class LocalReviewCommentTest < Minitest::Test
   include LocalReviewCommentFixture
 
+  def test_a_requested_model_notice_survives_the_routed_model
+    body = render('rounds' => [round(model: 'gpt-6-sol', requested_model: 'gpt-6-sll')])
+
+    assert_includes body, '**Reviewer settings:** openai/codex model `gpt-6-sll` looks like a typo of `gpt-6-sol`.'
+  end
+
+  def test_a_requested_effort_notice_uses_the_request
+    body = render('rounds' => [round(effort: 'meduim')])
+
+    assert_includes body, 'effort `meduim` looks like a typo of `medium`'
+  end
+
+  def test_a_routed_model_without_a_request_stays_quiet
+    body = render('rounds' => [round(model: 'gpt-5.5')])
+
+    refute_includes body, '**Reviewer settings:**'
+  end
+
+  def test_names_a_configured_model_that_differs_from_the_recommendation
+    body = render('rounds' => [round(requested_model: 'gpt-6-astra')])
+
+    assert_includes body, '**Reviewer settings:** openai/codex is set to `gpt-6-astra`. ' \
+                          'Shaka recommends `gpt-6-sol` for that reviewer.'
+  end
+
   def test_opens_with_a_title_and_a_summary_row_for_the_round
     body = render('rounds' => [round])
 
     assert body.start_with?("# Local Adversarial Review\n\n| Round | Commit | Reviewer | Model |")
-    assert_includes body, '| 1 | `aaaaaaa` | openai/codex | gpt-5.5 | UNKNOWN | ' \
+    assert_includes body, '| 1 | `aaaaaaa` | openai/codex | gpt-6-sol | UNKNOWN | ' \
                           'Shaka default · criteria `ccccccc` | 1 (0 fixed, 1 documented) | 41,200 | UNKNOWN |'
   end
 

@@ -4,10 +4,12 @@ require 'cgi'
 require_relative '../error'
 require_relative '../publication/publication'
 require_relative '../reviewer_selection'
+require_relative '../reviewer_settings'
 require_relative 'evidence'
 require_relative 'finding'
 require_relative 'summary'
 require_relative 'bound'
+require_relative 'triage'
 
 module Shaka
   # Renders one pull request comment for a local adversarial review: a summary a reader skims,
@@ -39,8 +41,9 @@ module Shaka
     end
 
     def render
-      blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice,
-                *LocalReviewBound.new(@rounds, @max_rounds).lines, *round_details,
+      blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice, *settings_notice,
+                *LocalReviewBound.new(@rounds, @max_rounds).lines, *LocalReviewTriage.section(@rounds, @links),
+                *round_details,
                 @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
     end
@@ -69,12 +72,21 @@ module Shaka
     end
 
     def check_order!(rounds)
-      raise Error, 'Two rounds review the same commit; each round reviews a new head.' unless
-        rounds.map(&:head).uniq.size == rounds.size
-      raise Error, "Round #{rounds.size} records fixes no later round reviewed; review the fix head first." if
-        rounds.last.findings.any?(&:fixed?)
+      check_commits!(rounds)
+      LocalReviewTriage.check!(rounds)
+      fixer = rounds.select { |round| round.head == rounds.last.head }.find { |round| round.findings.any?(&:fixed?) }
+      raise Error, "Round #{fixer.number} records fixes no later round reviewed; review the fix head first." if fixer
 
       rounds.each(&:check_fixes_follow!)
+    end
+
+    # Several reviewers may read one commit, listed together, each once.
+    def check_commits!(rounds)
+      raise Error, 'Two rounds review the same commit with the same reviewer; each round reviews a new head.' unless
+        rounds.uniq { |round| [round.head, round.reviewer] }.size == rounds.size
+
+      heads = rounds.map(&:head).chunk(&:itself).map(&:first)
+      raise Error, 'Rounds of one commit must be listed together.' unless heads.uniq.size == heads.size
     end
 
     # A fence opened in one report and closed in the next hides the boundary between them, including
@@ -87,13 +99,14 @@ module Shaka
       end
     end
 
-    # A finding whose id was marked fixed in an earlier round and comes back is flagged where it returns.
+    # A finding whose id was marked fixed on an earlier commit and comes back is flagged where it
+    # returns. Reviewers of one commit all read it before any of its fixes, so none of them is flagged.
     def round_details
       fixed = {}
-      @rounds.map do |round|
-        text = round.details(@links, fixed)
-        round.findings.select(&:fixed?).each { |finding| fixed[finding.id] = finding.commit }
-        text
+      @rounds.chunk(&:head).flat_map do |_head, batch|
+        texts = LocalReviewTriage.details(batch, @links, fixed)
+        LocalReviewTriage.remember_fixes(batch, fixed)
+        texts
       end
     end
 
@@ -104,6 +117,13 @@ module Shaka
 
     # Escaping backslashes first keeps a supplied `\|` from ending its cell early.
     def line(cells) = "| #{cells.map { |cell| cell.gsub(/[\\|]/) { |char| "\\#{char}" } }.join(' | ')} |"
+
+    def settings_notice
+      text = @rounds.flat_map(&:setting_summaries).join(' ')
+      return [] if text.empty?
+
+      ["**Reviewer settings:** #{text}"]
+    end
 
     def fallback_notice
       return [] if @fallback.nil?
@@ -137,7 +157,7 @@ module Shaka
 
     # One reviewed commit, its reviewer settings, and the report whose attestation it carries.
     class Round
-      attr_reader :head, :findings
+      attr_reader :head, :reviewer, :findings, :number
 
       def initialize(spec, number)
         raise Error, "Local review round #{number} must be an object." unless spec.is_a?(Hash)
@@ -170,9 +190,11 @@ module Shaka
                                      "effort #{effort} · #{findings} #{noun}", 'round summary')
       end
 
-      def details(links, fixed_before = {})
-        "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n" \
-          "#{dispositions(links, fixed_before)}</details>"
+      # A reviewer of a commit that several reviewed shows how its findings were collated; the
+      # commit's triage then gives each finding's outcome once.
+      def details(links, fixed_before = {}, collated: false)
+        after = collated ? LocalReviewTriage.collated_as(self) : dispositions(links, fixed_before)
+        "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n#{after}</details>"
       end
 
       def attestation = @report.strip.lines.last.strip
@@ -181,6 +203,11 @@ module Shaka
         return unless @findings.any? { |finding| finding.fixed? && finding.commit == @head }
 
         raise Error, "Round #{@number} records a fix in the commit it reviewed; commit the fix."
+      end
+
+      def setting_summaries
+        ReviewerSettings.notices(@reviewer, model: notice_model, effort: notice_effort)
+                        .map { |notice| notice.fetch('summary') }
       end
 
       private
@@ -209,13 +236,7 @@ module Shaka
       def dispositions(links, fixed_before)
         return '' if @findings.empty?
 
-        lines = @findings.map do |finding|
-          result = finding.fixed? ? "fixed in #{links.commit(finding.commit)}" : finding.label
-          line = "- `#{finding.id}` #{finding.kind}: #{finding.summary} — #{result}"
-          line += " — #{finding.note}" if finding.note
-          returned = fixed_before[finding.id]
-          returned ? "#{line} · **returned after its fix in #{links.commit(returned)}**" : line
-        end
+        lines = @findings.map { |finding| LocalReviewTriage.line(finding, links, fixed_before) }
         "**Dispositions**\n\n#{lines.join("\n")}\n\n"
       end
 
@@ -234,6 +255,21 @@ module Shaka
       def optional(name, default = 'UNKNOWN')
         value = @spec[name]
         value.nil? || (value.is_a?(String) && value.strip.empty?) ? default : field(name)
+      end
+
+      def configured(name)
+        value = optional(name)
+        value == 'UNKNOWN' ? nil : value
+      end
+
+      # `model` is the routed model from native usage, so only an explicit request is a setting.
+      def notice_model = configured('requested_model')
+
+      def notice_effort = configured('effort') || attested_effort
+
+      def attested_effort
+        effort, = @report.match(CLOSING).captures
+        effort == 'UNKNOWN' ? nil : effort
       end
 
       def read_report

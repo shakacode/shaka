@@ -4,48 +4,59 @@ require 'json'
 require_relative '../error'
 require_relative 'evidence'
 require_relative 'finding'
+require_relative 'ledger_batch'
+require_relative 'ledger_running'
 require_relative '../repository_config/review_schema'
 
 module Shaka
   # Private record of a local review loop: each round's commit, reviewer settings, report, and
   # what became of its findings. It stays outside the checkout until `review publish` renders it,
-  # and it has the same shape as that command's content file.
+  # and it has the same shape as that command's content file. Rounds that share a commit form a
+  # batch: several reviewers read that commit, and once none is still running, one record triages
+  # all their findings together.
   class LocalReviewLedger
+    include LocalReviewLedgerBatch
+    include LocalReviewLedgerRunning
+
     class RoundCap < Error; end
 
     attr_reader :path
 
     # Only `review run` can start a ledger, so only it needs the checkout to keep the ledger out of.
+    # The path resolves its directory's links, so every spelling of one ledger, such as `/tmp` and
+    # `/private/tmp` on macOS, names the same running marks.
     def initialize(path, root: nil)
-      @path = File.expand_path(path)
-      directory = File.realpath(File.dirname(@path))
+      directory = File.realpath(File.dirname(File.expand_path(path)))
+      @path = File.join(directory, File.basename(path))
       raise Error, '--ledger must be outside the candidate checkout' if
         root && (directory == root || directory.start_with?("#{root}/"))
     end
 
     def rounds = data.fetch('rounds')
 
-    def last_round_fixes
-      LocalReviewFinding.list(rounds.last['findings'], "round #{rounds.size} finding").select(&:fixed?).map(&:commit)
+    def last_batch_fixes
+      batch.flat_map do |index|
+        LocalReviewFinding.list(rounds[index]['findings'], "round #{index + 1} finding").select(&:fixed?)
+      end.map(&:commit)
     end
 
     def last_head = rounds.last&.fetch('head')
 
-    # A round reviews a new commit on the same base, after the previous round's findings are recorded.
-    def check_next!(base:, head:, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
-      check_cap!(max_rounds)
-      return if rounds.empty?
+    # The newest head reviewed before this one: the last batch's commit, or for another reviewer
+    # joining the last batch, the batch before it.
+    def previous_head(head) = rounds.reverse.find { |round| round['head'] != head }&.fetch('head')
 
-      raise Error, "The ledger's rounds measure the change against #{data['base']}; use a new ledger." unless
-        data['base'] == base
-
-      check_new_head!(head)
-      return if recorded?(rounds.last)
-
-      raise Error, "Record round #{rounds.size}'s findings with `shaka review record` before the next round."
+    # A round reviews a new commit on the same base, after the previous batch's findings are
+    # recorded, or joins the last batch with a reviewer that has not read that commit. The cap
+    # counts reviewed commits, so another reviewer of the last one does not use a turn.
+    def check_next!(base:, head:, reviewer:, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
+      check_cap!(max_rounds) unless !rounds.empty? && head == last_head
+      check_joins!(base, head, reviewer)
+      check_batch_recorded! unless rounds.empty? || head == last_head
     end
 
-    # The newest disposition of every finding so far, keyed by the id rounds share.
+    # The newest disposition of every finding so far, keyed by the id rounds share. A commit's
+    # rounds are recorded only after all of them finish, so no reviewer sees a sibling's findings.
     def prior_findings
       rounds.each_with_index.with_object({}) do |(round, index), latest|
         LocalReviewFinding.list(round['findings'], "round #{index + 1} finding").each do |finding|
@@ -54,23 +65,44 @@ module Shaka
       end.values
     end
 
-    def append!(base:, round:, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
-      write(data.merge('base' => base, 'local_max_rounds' => max_rounds, 'rounds' => rounds + [round]))
+    # The rounds a run's start checks read: every round except those on its own commit.
+    def snapshot(head) = rounds.reject { |round| round['head'] == head }
+
+    # Reviewers of one commit run at once, so each append rereads the ledger under a lock. Only
+    # other reviewers of the same commit may have landed since `snapshot`; any other change means
+    # the start checks read a ledger that no longer exists.
+    def append!(base:, round:, snapshot: nil, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
+      locked do
+        check_next!(base:, head: round['head'], reviewer: round['reviewer'], max_rounds:)
+        raise Error, 'The ledger changed while this round ran; run the review again.' if
+          snapshot && snapshot(round['head']) != snapshot
+
+        write(data.merge('base' => base, 'local_max_rounds' => max_rounds, 'rounds' => rounds + [round]))
+        clear_running
+      end
     end
 
-    # Sets the last round's findings and any usage the host reported for it.
+    # Records what became of every finding on the last commit in one triage, once none of its
+    # reviews is still running, and returns the round numbers it recorded. With several
+    # reviewers, each finding names the ones that reported it, so a shared finding is one entry.
     def record!(content)
       raise Error, 'Record content must be an object.' unless content.is_a?(Hash)
 
-      round = last_round.merge(content.slice('findings', 'model', 'tokens', 'cost', 'estimate'))
-      check_findings!(round, rounds.size)
-      write(data.merge(content.slice('fallback'), 'rounds' => rounds[0...-1] + [round]))
+      locked do
+        # Reviews still running explain an empty ledger better than the ledger does.
+        check_nothing_running!
+        raise Error, 'The ledger has no round to record.' if rounds.empty?
+
+        write(data.merge(content.slice('fallback'), 'rounds' => recorded_rounds(content)))
+        prune_running
+        batch.map { |index| index + 1 }
+      end
     end
 
     private
 
     def check_cap!(max_rounds)
-      return if rounds.size < max_rounds
+      return if rounds.map { |round| round['head'] }.uniq.size < max_rounds
 
       write(data.merge('local_max_rounds' => max_rounds))
       raise RoundCap, "Local review round cap (#{max_rounds}) reached; reassess the task before pushing."
@@ -88,11 +120,20 @@ module Shaka
                 end
     end
 
-    def last_round = rounds.last || raise(Error, 'The ledger has no round to record.')
+    def check_joins!(base, head, reviewer)
+      return if rounds.empty?
+      raise Error, "The ledger's rounds measure the change against #{data['base']}; use a new ledger." unless
+        data['base'] == base
 
-    def check_new_head!(head)
-      reviewed = rounds.index { |round| round['head'] == head }
-      raise Error, "Round #{reviewed + 1} already reviewed #{head}; commit the fix first." if reviewed
+      check_new_head!(head, reviewer)
+    end
+
+    def locked
+      File.open("#{@path}.lock", File::RDWR | File::CREAT, 0o600) do |lock|
+        lock.flock(File::LOCK_EX)
+        @data = nil
+        yield
+      end
     end
 
     def recorded?(round) = round.key?('findings') || reported_count(round).zero?

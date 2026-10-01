@@ -3,6 +3,45 @@
 First [select a reviewer](review.md#choose-a-local-reviewer) using trusted policy.
 Use this reference for CLI execution and report validation.
 
+## Reviewer model and effort
+
+Repository `model` and `effort` settings come from the reviewer's entry in the
+trusted default-branch configuration supplied with `--criteria-ref`. Candidate
+PR settings cannot select their own reviewer. Without that ref, repository
+settings are not applied. Explicit `--model` or `--effort` arguments override the
+configured value for that review.
+
+When no model or effort is specified, the reviewer uses its CLI defaults. Codex
+runs with user configuration disabled, so personal Codex settings do not select
+the review model. Pin a model when predictable cost matters.
+
+`shaka doctor` checks configured reviewer settings. `shaka review run` checks
+the requested settings before launch, and adds a **Reviewer settings** notice to the published local review when
+settings need attention. Relay that notice to the maintainer.
+
+The catalog in `skills/shaka/lib/shaka/reviewer_settings.rb` defines known names
+and the recommended Codex model for this Shaka release:
+
+- Likely spelling mistakes and unknown models produce warnings and still run.
+  Newer model names can therefore run before the catalog knows them.
+- A known Codex model other than `recommended_model` produces a warning and
+  still runs. Claude and Grok have no single recommended model.
+- Unknown Codex or Grok effort names produce warnings and still run. Effort
+  names use lowercase, such as `medium` or `xhigh`.
+- Shaka accepts only `low`, `medium`, `high`, `xhigh`, and `max` for Claude
+  effort. Another value fails doctor and stops review before the CLI starts.
+
+The spelling check recognizes a one-letter substitution or an adjacent-character
+swap in a same-length name. A digit substitution is treated as an unknown name,
+not a spelling mistake. Both warnings allow execution.
+
+Shaka does not interpret reviewer CLI error text or retry with a substitute
+model. Check the provider's model documentation and CLI help when a requested
+setting fails. The closed Claude effort list requires a Shaka update to accept
+any additional level introduced by that CLI.
+
+## Run the selected reviewer
+
 Render the prompt for the selected reviewer:
 ```text
 shaka review-prompt --head SHA --base REF --reviewer PROVIDER/FAMILY [--effort NAME] [--prompt-file PATH]
@@ -95,7 +134,7 @@ or `--effort` replaces the configured one for that review, so add one only when 
 it out or the task needs a different choice.
 When neither names a model, Codex runs its built-in default; see
 [reviewer model and effort](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewlocal_review_agents)
-for why that costs more. `gpt-6-sol` at `medium` is the default choice for adversarial review;
+for choosing a model and effort. `gpt-6-sol` at `medium` is the default choice for adversarial review;
 use a larger model or effort only when the change's risk calls for it.
 
 A Cursor Task or subagent that selects a Codex model is not this `openai/codex` local
@@ -235,17 +274,48 @@ earlier round used: the outcome follows each id's latest disposition, so reusing
 different problem can hide an unfixed defect. `model`, `tokens`, `cost`, and
 `estimate` are optional, as described below, and a top-level `fallback` sets the fallback notice.
 
-`review run` refuses the next round until the last round's findings are recorded. It also
-refuses a head the ledger already reviewed, a head that lacks the last reviewed head or any
-recorded fix commit, a fix recorded as the head it was found in, and a different `--base`;
-after a rebase, start a new ledger. Publishing refuses a last round that records a fix, because
-no later round has reviewed it. The next round's prompt
+`review run` refuses a new head until every round on the last head has its findings recorded.
+Another reviewer may join the last reviewed head. It refuses any other head the ledger already
+reviewed, a head that lacks the last reviewed head or any recorded fix commit, a fix recorded as the
+head it was found in, and a different `--base`; after a rebase, start a new ledger. Publishing
+refuses a fix recorded by any round on the last head, because no later round has reviewed it.
+The next round's prompt
 lists, as review data, every earlier finding's id, class, summary, and latest disposition
-(`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the last
-reviewed head. It asks the reviewer to confirm each fix and to review the full diff fresh.
+(`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the newest
+reviewed head before this one. It asks the reviewer to confirm each fix and to review the full diff fresh.
 It leaves out each `note`, so the reviewer does not anchor on the author's reasons.
 
-The trusted `review.local_max_rounds` (default 5) caps completed rounds in this ledger.
+When several reviewers read each head, as `shaka reviewer` lists them, start them all against
+one ledger before recording anything; they can run at the same time. Their rounds on one head
+form a batch. While a review runs, the ledger marks it running, and `review record` refuses the
+batch until every running review has finished. Record the whole batch in one triage: list each
+problem once, and map every reviewer that reported it to that reviewer's own number for it in
+`reviewers`, so a problem both found gets one entry and one fix. Put each reviewer's usage under
+`usage`, keyed by reviewer. Here Codex's finding 1 and Claude's finding 2 are the same problem:
+
+```json
+{
+  "findings": [
+    { "id": "F1", "summary": "Exit code is 0 on a failed push", "class": "defect",
+      "disposition": "fixed", "commit": "FULL_FIX_SHA",
+      "reviewers": { "openai/codex": "1", "anthropic/claude": "2" } }
+  ],
+  "usage": { "openai/codex": { "model": "gpt-6-sol", "tokens": "41,200" } }
+}
+```
+
+The helper refuses a finding without `reviewers` when the batch has several rounds, one
+reviewer's number claimed by two findings, and a count that differs from any reviewer's
+`FINDINGS n`. It does not read the numbers inside a report, so match each number to the
+report yourself; the checks make each reviewer's findings map one to one by count. The
+published comment's **Findings** section, before the reports, gives each commit's triage: each
+reviewer and its finding count, then every finding once, the reviewers and numbers it came from,
+and its outcome. Under each report of a
+commit several reviewers read, it shows which of that reviewer's findings became which finding.
+Once a batch is recorded, no reviewer can join it. A round whose start checks read a ledger that changed while it ran, other than by
+another reviewer of its commit, is refused; run it again.
+
+The trusted `review.local_max_rounds` (default 5) caps the commits reviewed in this ledger; several reviewers of one commit count once.
 `review run` refuses the next round with `failure_stage: round_cap` before launching a reviewer.
 The ledger records the cap used, and publication uses that value; older ledgers default to 5.
 If the cap leaves an unfixed defect, stop before pushing and tell the user. Push only if they
@@ -267,7 +337,8 @@ The ledger is the content file. Without one, the content JSON lists `rounds`. Co
 round's `head`, `reviewer`, `report`, `prompt_source`, and `criteria_ref` from its
 `shaka review run` result, and add its `findings` in the shape above. Publishing refuses a
 round whose findings do not match its report's `FINDINGS n`, so every finding has a disposition.
-It also refuses two rounds of one commit and a fix recorded in the commit its round reviewed. A
+It also refuses one reviewer reading a commit twice, rounds of one commit listed apart, and a
+fix recorded in the commit its round reviewed. A
 content file without a ledger gets only these checks: publishing does not read Git history, so
 use `--ledger` when fixes must be proven to follow and reach the reviewed head.
 Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave

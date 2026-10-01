@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'text'
 
 module Shaka
   # Renders the WIP Details note as one table, so every host publishes the same fields in the same shape.
@@ -47,15 +48,13 @@ module Shaka
       raise Error, "Publication wip #{problem}: #{keys.join(', ')}#{advice}." unless keys.empty?
     end
 
-    # Escaping pipes keeps a value from silently adding a column; escaping backslashes first
-    # keeps a value's own backslash from pairing with that escape.
     def cell(key)
       value = @spec[key]
       unless value.is_a?(String) && !value.strip.empty? && !value.match?(/[\r\n]/)
         raise Error, "Publication wip #{key} must be single-line nonempty text."
       end
 
-      value.strip.gsub(/[\\|]/) { |character| "\\#{character}" }
+      PublicationText.table_cell(value.strip)
     end
   end
 end
