@@ -392,7 +392,55 @@ same content file to update posted entries and finish the rest.
 
 The result's `comments` lists the published entries, and `summary` gives totals across the loop
 and its outcome. Copy that summary into the PR description's review history details; native
-usage records still belong in `usage.records`. Record available native
+usage records still belong in `usage.records`.
+
+After publishing, collapse older owned Shaka review comments:
+
+```sh
+shaka review collapse OWNER/REPO NUMBER
+```
+
+The command links earlier Shaka local review comments from the publishing account
+to its newest visible report for the current PR head. Findings and reports remain
+expandable, and closing attestations stay readable by `merge`. Active reports for the same
+commit stay visible; already archived reports link to the current one. Collapsing history does not resolve findings or native threads;
+comments by other accounts stay intact. Carry still-applicable material findings
+into the current review summary before cleanup.
+
+The result lists confirmed edits and unavailable cleanup. A failed edit returns a
+nonzero exit without undoing the published reports; inspect the failure before retrying.
+Without a visible owned current-head report, cleanup skips without failing. If the
+PR returns to a previously archived head, republish its report before cleanup.
+Both legacy and per-commit Shaka review keys are recognized. Cleanup works with
+the per-commit publisher and can run independently after publishing.
+
+After assessing completed CI feedback, also minimize obsolete bot review reports
+and notices with GitHub's native **outdated** disclosure. Read them with `shaka comments`
+at the current head first. Select reports that earlier commits have superseded and
+notices, such as a past rate-limit warning, that no longer help the reader. Carry
+still-applicable findings into the current summary; leave current review reports
+and discussions with unaddressed material concerns visible. A different SHA alone
+does not establish that findings are resolved. The agent makes this assessment;
+Ruby does not parse each bot's report format or decide which comments are obsolete.
+
+```sh
+shaka review collapse OWNER/REPO NUMBER --head FULL_CURRENT_SHA \
+  --bot-comment ISSUE_COMMENT_ID --bot-comment ANOTHER_ISSUE_COMMENT_ID
+```
+
+This selection mode minimizes only the specified bot issue comments admitted by
+the trusted comment reader. It needs no local Shaka report or per-commit publisher.
+Ruby checks bot identity, comment identity and content, an open PR at the expected
+head, permission to minimize, and GitHub's stored minimization state. It preserves
+the body and any existing minimization reason; human comments, native review
+summaries and inline threads are outside this mode. The result lists confirmed
+changes, already minimized comments and failures; failures return nonzero. A head
+change after a confirmed mutation appears as both a confirmed change and a failure,
+so the result retains the actual edit and reports the changed context. Head
+and body checks cannot make GitHub's minimization mutation atomic with concurrent
+changes. Inspect reported failures before retrying; no automatic rollback occurs.
+
+Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
 reviewer's source; missing evidence is UNKNOWN. Add `--format json` to each `shaka usage`
 command in this guide and put its `record` in the description's `usage.records`. Do not publish raw sessions or private

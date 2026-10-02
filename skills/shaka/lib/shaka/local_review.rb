@@ -5,6 +5,7 @@ require 'optparse'
 require_relative 'error'
 require_relative 'github'
 require_relative 'local_review/publisher'
+require_relative 'local_review/history'
 require_relative 'local_review/ledger'
 require_relative 'local_review/runner'
 require_relative 'local_review/report_check'
@@ -14,6 +15,8 @@ module Shaka
   # Entry point for process-verified reviews and explicitly weaker host reports.
   class LocalReview
     def self.run(arguments, github: nil)
+      return LocalReviewHistory.run(arguments.drop(1), github:) if arguments.first == 'collapse'
+
       new(arguments, github:).run
     rescue OptionParser::ParseError, SystemCallError, JSON::ParserError, Shaka::Error => e
       warn "shaka: #{e.message}"
@@ -26,7 +29,7 @@ module Shaka
       @github = github
     end
 
-    ACTIONS = %w[run check record publish].freeze
+    ACTIONS = %w[run check record publish collapse].freeze
 
     def run
       action = @arguments.shift
