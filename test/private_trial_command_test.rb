@@ -15,6 +15,7 @@ class PrivateTrialCommandTest < Minitest::Test
       Dir.mktmpdir do |directory|
         prepare_github(directory, ref)
         assert_native_commands(directory, root, ref)
+        assert_native_watch(directory, root, ref)
         assert_merge_still_requires_trusted_policy(directory, root, ref)
       end
     end
@@ -52,6 +53,14 @@ class PrivateTrialCommandTest < Minitest::Test
     _output, error, status = invoke('merge', directory, root, ref)
     refute_predicate status, :success?
     assert_includes error, '.agents/agent-workflow.yml'
+  end
+
+  def assert_native_watch(directory, root, ref)
+    arguments = [COMMAND, 'pr', 'watch', 'owner/repo', '1', '--root', root, '--ref', ref,
+                 '--head', ref, '--settle', '1', '--interval', '1']
+    output, error, status = Open3.capture3({ 'PATH' => "#{directory}:#{ENV.fetch('PATH')}" }, *arguments)
+    assert_predicate status, :success?, "#{error}\n#{output}"
+    assert_equal "SHAKA_WAKE checks_terminal\n", output
   end
 
   def invoke(command, directory, root, ref)

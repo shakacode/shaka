@@ -16,10 +16,13 @@ module PrivateTrialGitHub
                [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
              when 'graphql'
                { 'data' => { 'repository' => { 'pullRequest' =>
-                 { 'headRefOid' => head, 'state' => 'OPEN', 'baseRefName' => 'main' } } } }
+                 { 'headRefOid' => head, 'state' => 'OPEN', 'baseRefName' => 'main',
+                   'reviewThreads' => { 'nodes' => [], 'pageInfo' => { 'hasNextPage' => false } } } } } }
+             when 'repos/owner/repo' then { 'visibility' => 'private' }
              when 'user' then { 'login' => 'shaka-agent' }
              when 'markdown' then '<p>Feature verified.</p><table></table>'
              when %r{/pulls/1/files} then [{ 'filename' => 'README.md' }]
+             when %r{/pulls/1/comments} then []
              when %r{/pulls/1/reviews/7} then reviews.fetch(0)
              when %r{/pulls/1/reviews}
                if ARGV.include?('POST')
