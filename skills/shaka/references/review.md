@@ -272,6 +272,7 @@ implementer in ways a current-host Task or subagent is not:
 The CLI reviewer reads less. Codex and Grok can read files at the reviewed commit
 through Git; the restricted Claude reviewer sees only the diff and reports missing
 context. A subagent can read the whole checkout and run its tests.
+[Invoke a reviewer locally](local-review.md) lists each CLI's flags and what they restrict.
 
 A current-host Task or subagent is therefore not an independent review, and not a
 substitute for an available reviewer selected from trusted repository settings.
