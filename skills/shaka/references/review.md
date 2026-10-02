@@ -37,9 +37,8 @@ the reply content `reviews` list. The helper reads that comment's closing
 attestation and round ledger and writes the provider, model, effort, reviewed
 commit, and link. Without that attestation, the opening says “Responded” and names
 the GitHub author when available; it omits execution fields. This also avoids
-claiming a repair when a hosted review needs only clarification. A local-review
-model or effort the attestation or ledger leaves out, or that is not a plain token,
-is `UNKNOWN`. The closing attestation still names
+claiming a repair when a hosted review needs only clarification. A missing or non-token local-review model, or a non-token recorded effort, is
+`UNKNOWN`. The closing attestation still names
 the reviewer for merge.
 
 `merge` reads that attestation from the last line of PR comments the merging
