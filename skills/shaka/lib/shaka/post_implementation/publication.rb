@@ -71,6 +71,7 @@ module Shaka
 
     def supporting_analysis(report, summary)
       ["<details>\n<summary>Supporting analysis and execution details</summary>",
+       "Conclusion: **#{report.fetch('conclusion')}**",
        *report.fetch('reasons').reject { |reason| reason == summary },
        "Alternative considered: #{report.fetch('alternative')}",
        "Prompt: #{@result.fetch('prompt_source')}.", usage_text,

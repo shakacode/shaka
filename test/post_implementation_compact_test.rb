@@ -31,10 +31,11 @@ class PostImplementationCompactTest < Minitest::Test
       with_result do |result, path|
         change_report(result, 'conclusion' => conclusion, 'summary' => 'The approach needs attention.',
                               'concerns' => ['Existing notes cannot be recovered.'])
-        visible = rendered(result, path).split('<details>', 2).first
+        visible, details = rendered(result, path).split('<details>', 2)
 
         assert_includes visible, 'Existing notes cannot be recovered.'
         refute_includes visible, 'Proceed after required checks and approvals.'
+        assert_includes details, "Conclusion: **#{conclusion}**"
       end
     end
   end
