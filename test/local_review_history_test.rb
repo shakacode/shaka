@@ -53,6 +53,12 @@ module LocalReviewHistoryFixture
     collapse(github, github.comments[2])
   end
 
+  def legacy_history
+    github = GitHub.new([comment(1, key: 'local-adversarial-review'), comment(2, head: HEAD)])
+    collapse(github, github.comments[2])
+    github
+  end
+
   def replace_after_listing(github)
     github.listing = github.comments.values.map(&:dup)
     github.comments[1]['body'] = comment(1, head: HEAD)['body']
@@ -71,6 +77,7 @@ module LocalReviewHistoryFixture
   end
 
   def assert_archived(body, latest)
+    assert_includes body, '🤖 Codex · openai · fixture-model · medium'
     assert_includes body, url(latest)
     assert_includes body, 'Documented risk: still inspect the retained parser.'
     assert_includes body, '<summary>Earlier local review</summary>'
@@ -83,7 +90,8 @@ module LocalReviewHistoryFixture
   def url(id) = "https://github.com/example/test/pull/1#issuecomment-#{id}"
 
   def comment(id, head: PRIOR, login: 'ada', key: "local-review-#{head}")
-    body = "<!-- shaka:reply:#{key} -->\n# Local Adversarial Review\n\n" \
+    body = "<!-- shaka:reply:#{key} -->\n🤖 Codex · openai · fixture-model · medium\n\n" \
+           "# Local Adversarial Review\n\n" \
            "Documented risk: still inspect the retained parser.\n\n" \
            "REVIEWED #{head} BY anthropic/claude EFFORT medium FINDINGS 1\n"
     { 'id' => id, 'created_at' => '2026-10-01T00:00:00Z', 'user' => { 'login' => login }, 'body' => body }
@@ -166,23 +174,6 @@ class LocalReviewHistoryTest < Minitest::Test
     refute_includes github.comments[2]['body'], 'Earlier local review'
   end
 
-  def test_returning_to_an_earlier_head_retargets_history_and_collapses_later_reports
-    github = prepared_history
-    add_new_review(github)
-    republish_previous_head(github)
-
-    assert_archived(github.comments[1]['body'], 2)
-    assert_includes github.comments[3]['body'], url(2)
-  end
-
-  def test_returned_head_without_republication_keeps_history_intact
-    github = prepared_history
-    add_new_review(github)
-    github.head = HEAD
-
-    assert_includes collapse(github, github.comments[2])['skipped'], 'left intact'
-  end
-
   def test_quoting_the_history_marker_inside_a_current_report_does_not_archive_it
     prior = comment(1)
     latest = comment(2, head: HEAD)
@@ -229,5 +220,37 @@ class LocalReviewCollapseCommandTest < Minitest::Test
       assert_equal 1, Shaka::LocalReview.run(['collapse', 'example/test', '1'], github:)
     end
     assert_includes JSON.parse(out)['unavailable'].join, 'Update failed'
+  end
+end
+
+class LocalReviewRestoredHeadTest < Minitest::Test
+  include LocalReviewHistoryFixture
+
+  def test_returning_to_an_earlier_head_retargets_history_and_collapses_later_reports
+    github = prepared_history
+    add_new_review(github)
+    republish_previous_head(github)
+
+    assert_archived(github.comments[1]['body'], 2)
+    assert_includes github.comments[3]['body'], url(2)
+  end
+
+  def test_archived_legacy_report_for_the_current_head_retargets_to_the_active_per_commit_report
+    github = legacy_history
+    prior = github.comments[1]
+    github.head = PRIOR
+    github.comments[3] = comment(3)
+    collapse(github, github.comments[3])
+
+    assert_archived(prior['body'], 3)
+    refute_includes github.comments[3]['body'], 'Earlier local review'
+  end
+
+  def test_returned_head_without_republication_keeps_history_intact
+    github = prepared_history
+    add_new_review(github)
+    github.head = HEAD
+
+    assert_includes collapse(github, github.comments[2])['skipped'], 'left intact'
   end
 end

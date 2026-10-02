@@ -386,7 +386,6 @@ round's attestation as the final line, where `merge` reads it. A commit GitHub d
 such as one a rebase replaced, is named without a link. Publishing again replaces
 that comment rather than adding another.
 
-
 After publishing, collapse older owned review comments:
 
 ```sh
@@ -395,8 +394,8 @@ shaka review collapse OWNER/REPO NUMBER
 
 The command links earlier Shaka local review comments from the publishing account
 to its newest visible report for the current PR head. Findings and reports remain
-expandable, and closing attestations stay readable by `merge`. Reports for the same
-commit stay visible. Collapsing history does not resolve findings or native threads;
+expandable, and closing attestations stay readable by `merge`. Active reports for the same
+commit stay visible; already archived reports link to the current one. Collapsing history does not resolve findings or native threads;
 comments by other accounts stay intact. Carry still-applicable material findings
 into the current review summary before cleanup.
 

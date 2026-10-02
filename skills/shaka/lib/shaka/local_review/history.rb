@@ -48,7 +48,7 @@ module Shaka
     def owned?(comment) = super && !attestation(comment['body'].to_s).nil?
 
     def earlier?(comment, latest)
-      attestation(comment['body'])[1] != attestation(latest['body'])[1]
+      !active?(comment) || attestation(comment['body'])[1] != attestation(latest['body'])[1]
     end
 
     # Returning to a reviewed head can make its comment older than the existing pointer.
