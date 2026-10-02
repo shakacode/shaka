@@ -5,10 +5,15 @@
 The agent reproduces bugs, tests new behavior, runs your checks, and handles
 independent review findings before pushing.
 
-The PR shows the result and verification. Screenshots show UI changes; a code
-walkthrough explains implementation choices. Expandable sections hold usage
-estimates, detailed checks, and **WIP Details** for unfinished work.
-See [PR verification](pr-verification.md).
+The PR description explains the outcome and decisions that need your attention.
+A code walkthrough explains implementation choices and alternatives, with links
+to the reviewed code. Tests, review findings, and screenshots help you evaluate
+the result. Expandable sections hold usage estimates, detailed checks, and
+**WIP Details** for unfinished work.
+
+Use that record to decide whether to merge, then return to it when evaluating
+the approach or how the work was checked. See
+[how to read a PR for your decision](pr-verification.md#read-a-pr-for-your-decision).
 
 The agent handles routine choices and asks about decisions affecting the product,
 scope, or risk.

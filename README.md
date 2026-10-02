@@ -1,9 +1,11 @@
 # Shaka
 
-**Give your coding agent a task. Get a tested, reviewed PR that's easy to understand.**
+**Make agent-written PRs easier to understand and evaluate.**
 
-Shaka guides your agent through implementation, local testing, independent review,
-and delivery on GitHub. You describe the outcome; Shaka supplies the workflow.
+Shaka guides your coding agent from task to pull request, with explanations,
+verification evidence, and review decisions you can inspect before merging and
+revisit afterward. It supplies the workflow for implementation, testing,
+independent review, and delivery on GitHub.
 
 [Read the Shaka documentation](https://shaka.shakacode.com/).
 
@@ -32,21 +34,24 @@ merge choices, feedback, and resuming work.
 
 ## Why use it?
 
-- **Spend less time directing the process.** Describe the outcome. Shaka supplies
-  the steps through testing, review, and PR delivery.
-- **Catch problems before hitting CI.** Test and review locally, including adversarial
-  reviews and before-and-after screenshots for UI changes. Fix problems before pushing.
-- **Make review easier.** Get a PR that's easy to review with a clear description. Screenshots
-  show visible changes; a code walkthrough explains implementation choices.
-- **See what a PR cost.** See available token usage and estimated cost, including
-  implementation and local review data.
-- **Control merging.** Choose **Ask** to merge yourself or **Auto** to let the agent
-  merge after required checks and approvals. Consequential changes need human review.
-- **Resume unfinished work easily.** WIP Details on the PR identify the owning agent chat,
-  where it stopped, and what comes next. Supported chat links take you back to the
-  owning conversation.
-- **Use your existing tools.** Shaka works with your coding agent, repository scripts,
-  and GitHub.
+- **Understand the change.** Read the outcome in the PR description, then follow
+  a code walkthrough explaining implementation choices and alternatives.
+- **Evaluate the evidence.** Inspect tests, independent review findings, and
+  before-and-after screenshots for UI changes. Missing verification stays visible.
+- **Revisit decisions after merging.** Use the recorded rationale and review
+  responses to assess the approach and how concerns were handled.
+- **Inspect the process.** See which revision was tested and reviewed, along with
+  available model, usage, and cost information. The
+  [enforcement guide](docs/workflow.md#what-is-enforced) explains what code checks
+  and what relies on agent judgment.
+- **Control merging.** Choose **Ask** to merge yourself or approve the agent's merge,
+  or **Auto** to let it merge after required checks and approvals.
+  Consequential changes need human review.
+- **Spend less time directing the process.** Shaka uses your coding agent,
+  repository scripts, and GitHub. WIP Details identify unfinished work and the
+  next action when you need to resume.
+
+[Learn how to read a Shaka PR](docs/pr-verification.md#read-a-pr-for-your-decision).
 
 <a id="requirements"></a>
 
