@@ -20,11 +20,14 @@ class PublicationStepsBesidesMergingTest < Minitest::Test
   end
 
   def test_steps_render_as_a_table_after_the_walkthrough_link_and_before_decisions
-    rendered = render('steps_besides_merging' => [STEP], 'decisions' => ['Which base?'])
+    after = STEP.merge('when' => 'after merge', 'step' => 'Run the docs dispatch',
+                       'where' => 'Docs site', 'verify' => 'The site shows the merged docs')
+    rendered = render('steps_besides_merging' => [STEP, after], 'decisions' => ['Which base?'])
     table = "| When | Step | Who | Where | How to verify |\n| --- | --- | --- | --- | --- |\n" \
             '| before merge | Set DOCS_DISPATCH_APP_ID and DOCS_DISPATCH_APP_KEY | Maintainer | ' \
-            "shakacode/shaka Actions secrets | `gh secret list` shows both names |\n"
-    steps = rendered.index("<!-- shaka:steps-besides-merging -->\n## Steps besides merging\n\n#{table}")
+            "shakacode/shaka Actions secrets | `gh secret list` shows both names |\n" \
+            "| after merge | Run the docs dispatch | Maintainer | Docs site | The site shows the merged docs |\n"
+    steps = rendered.index("<!-- shaka:steps-besides-merging -->\n## Before and after merge\n\n#{table}")
 
     refute_nil steps
     assert_operator rendered.index('[Code Walkthrough]('), :<, steps
@@ -37,7 +40,7 @@ class PublicationStepsBesidesMergingTest < Minitest::Test
   end
 
   def test_none_omits_the_section_after_the_agent_checked
-    refute_includes render, 'Steps besides merging'
+    refute_includes render, 'Before and after merge'
   end
 
   def test_a_missing_answer_is_refused_so_the_check_cannot_be_skipped
@@ -62,7 +65,7 @@ class PublicationStepsBesidesMergingTest < Minitest::Test
 
   def test_a_hand_written_section_is_refused
     error = assert_raises(Shaka::Error) do
-      render('sections' => [{ 'heading' => 'Steps besides merging', 'body' => '- Set a secret.' }])
+      render('sections' => [{ 'heading' => 'Before and after merge', 'body' => '- Set a secret.' }])
     end
     assert_includes error.message, 'steps_besides_merging'
   end

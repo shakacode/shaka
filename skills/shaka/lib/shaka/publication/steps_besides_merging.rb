@@ -7,7 +7,7 @@ module Shaka
   # Renders the work a PR needs outside its merge, such as a secret to set or a backfill to run.
   module StepsBesidesMerging
     KEY = 'steps_besides_merging'
-    HEADING = 'Steps besides merging'
+    HEADING = 'Before and after merge'
     MARKER = '<!-- shaka:steps-besides-merging -->'
     TIMES = ['before merge', 'after merge'].freeze
     COLUMNS = { 'when' => 'When', 'step' => 'Step', 'who' => 'Who', 'where' => 'Where',
