@@ -21,7 +21,7 @@ module Shaka
       FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current = current_settings(root:, ref:, repository:) if verdict
+      current = current_settings(root:, ref:, repository:) if ref
       new(verdict:, current:)
     end
 
@@ -46,6 +46,9 @@ module Shaka
       @verdict = verdict
       @current = current
     end
+
+    # An unknown policy cannot authorize publishing locations, even on unfinished PRs.
+    def include_locations? = @current&.fetch('wip.include_locations', false) == true
 
     def rows
       snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]

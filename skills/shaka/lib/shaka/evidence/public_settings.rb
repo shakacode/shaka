@@ -14,7 +14,7 @@ module Shaka
         'installation.source' => %w[revision development uninstalled],
         'merge.preference' => %w[ask auto],
         'merge.private_trial_default' => %w[ask],
-        'review.required' => %w[always meaningful_changes],
+        'review.required' => %w[always meaningful_changes none],
         'review.ci_review_wait' => %w[none one all],
         'overrides.command' => %w[setup test validate validate_local trigger_hosted_ci],
         'overrides.effort' => %w[none minimal low medium high xhigh max ultra],
@@ -48,7 +48,7 @@ module Shaka
       def source_values(kind, ref, path)
         { 'source' => kind, 'source.revision' => ref,
           'source.layout' => path == Configuration::Paths::NEW_CONTRACT ? 'new' : 'legacy',
-          'source.configuration' => kind == 'private/local' ? 'ABSENT' : 'trusted/team' }
+          'source.configuration' => kind }
       end
 
       def installation_values(installation)
@@ -78,7 +78,7 @@ module Shaka
         **NUMBERS.to_h { |field| [field, ->(value) { value.is_a?(Integer) && value.between?(0, 1_000_000) }] },
         'source.revision' => ->(value) { value.to_s.match?(/\A[0-9a-f]{40}(?:[0-9a-f]{24})?\z/) },
         'installation.revision' => ->(value) { value.to_s.match?(/\A[0-9a-f]{40}(?:[0-9a-f]{24})?\z/) },
-        'source.configuration' => ->(value) { %w[ABSENT trusted/team].include?(value) },
+        'source.configuration' => ->(value) { %w[ABSENT private/local trusted/team].include?(value) },
         'installation.version' => lambda do |value|
           value.to_s.match?(/\A\d+\.\d+\.\d+(?:[.-](?:pre|rc|beta|alpha)[.-]?\d+)*\z/)
         end

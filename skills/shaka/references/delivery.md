@@ -119,10 +119,11 @@ session's metadata, and copy its `link` verbatim. The host session ID differs fr
 disabled app links, and other hosts use `UNKNOWN` until a supported locator exists.
 A link's availability depends on the owner's machine being reachable.
 
-**Privacy:** the trusted `wip.include_locations` setting defaults to `true`.
-When false, publish `UNKNOWN` for both Workspace and Thread. The publishing command
-does not read this setting; check the content before submitting it. Retain the fields and
-public owner alias. The publisher does not enforce this setting; the agent must.
+**Privacy:** team `wip.include_locations` defaults to `true`; generated private
+trials select `false`. Supply the selected default-branch `--ref` to `description`.
+The renderer replaces Workspace and Thread with `REDACTED` when the setting is
+false or unavailable, including before validation/review results exist. Retain the
+fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.
 See [configuration](https://github.com/shakacode/shaka/blob/main/docs/settings.md#wipinclude_locations).
 

@@ -35,6 +35,8 @@ module Shaka
 
       def merge_policy = { 'preference' => 'ask' }
 
+      def config_hash = super.merge('wip' => { 'include_locations' => false })
+
       def validate_policies
         RepositoryConfig::ReviewSchema.new(review_policy).validate
         RepositoryConfig::MergeSchema.new(merge_policy).validate
