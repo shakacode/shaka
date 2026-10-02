@@ -3,7 +3,10 @@
 Design slice for [issue #395](https://github.com/shakacode/shaka/issues/395).
 This document inventories shipped behavior and proposes bounded changes. It adds
 no runtime behavior, retention guarantee, export command, or training integration.
-The issue owns acceptance; this design does not complete it.
+[Requirements](requirements.md) owns pilot scope and acceptance. This design
+supports its R10 maintenance, R11 evidence, R13 presentation, and R16 recovery
+requirements. Issue #395 owns this extension's acceptance checklist; this design
+does not complete either checklist or expand the pilot's real-use claims.
 
 ## What the current records preserve
 
@@ -43,7 +46,7 @@ That record demonstrates presentation duplication. It does not establish that
 any recommendation caused an unnecessary or harmful change. In particular,
 `documented risk` does not establish acceptance or an evidence-backed rejection.
 
-Proposed compact view of that evidence, without inventing dispositions:
+Proposed visible excerpt of that evidence, without inventing dispositions:
 
 > **Local review · 2beb795 — no new findings in the final round**
 >
@@ -62,10 +65,18 @@ Show required action only when evidence supplies one. Keep unresolved defects,
 decisions, significant risks, stale evidence, and returned findings visible.
 Material legacy ambiguity stays visible until explicitly assessed; a renderer
 does not infer settlement from a note or a clean final review.
+In the presentation-only slice, keep every legacy documented defect and risk
+visible. The six other documented findings in this example are explicitly nits
+in the original record and move into history without a recommendation-quality
+judgment. This conservative interim view cannot settle legacy risks; attributed
+assessments become available in the history slice.
 
 Render each finding's current disposition once, either in the current view or
 the history disclosure. Earlier decisions remain historical events beneath that
-disclosure. Preserve original reports verbatim there, including natural repetition.
+disclosure. Preserve original reports verbatim in the private bundle. Public
+history contains marked, redacted copies when privacy requires it; retain source
+identity and availability without publishing private content. Original source
+material may naturally repeat a claim, but generated disposition prose appears once.
 Use one outer disclosure with specific nested labels for reports and execution
 metadata. Group identical settings with run IDs and retain exceptions.
 
