@@ -48,11 +48,13 @@ class ExecutionProvenanceTest < Minitest::Test
     assert_includes body, '| Machine alias | UNKNOWN |'
   end
 
-  def test_known_absence_of_a_user_request_is_not_unknown
+  def test_hides_known_absence_of_a_user_request_but_retains_it_in_metadata
     spec = PUBLIC_PROVENANCE.merge('requested_model' => nil, 'requested_effort' => nil)
     provenance = Shaka::ExecutionProvenance.new(spec)
 
-    assert_includes provenance.detail.fetch('body'), '| User-requested model / effort | Not specified |'
+    refute_includes provenance.detail.fetch('body'), '| User-requested model / effort |'
+    assert_includes provenance.detail.fetch('body'), '| Recommended model / effort | gpt-5.6-terra / medium |'
+    assert_includes provenance.detail.fetch('body'), '| Active model / effort | gpt-5.6-terra / medium |'
     assert_equal 'Not specified', provenance.entry.fetch('requested')
   end
 
