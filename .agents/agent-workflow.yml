@@ -9,6 +9,7 @@ repo_prefix: SHAKA # Omitted: derive a label from the repository name.
 # base_branch: main # Omitted: follow the repository's default branch.
 
 review:
+  local_review_count: 2
   required: meaningful_changes # Repository choice: meaningful_changes, always, or none.
   ci_review_jobs: # Repository jobs, required unless review.required is none.
     - claude-review
