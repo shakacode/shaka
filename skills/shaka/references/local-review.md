@@ -445,7 +445,7 @@ model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --co
 reviewer's source; missing evidence is UNKNOWN. Add `--format json` to each `shaka usage`
 command in this guide and put its `record` in the description's `usage.records`. Do not publish raw sessions or private
 context. A recovery
-note's `Thread` field follows its [publication
+note's Chat link follows its [publication
 rule](delivery.md#recover-an-unfinished-pr).
 
 Automated review comments are advice, not merge permission. Required GitHub

@@ -408,6 +408,7 @@ class PublicationWipDetailsTest < Minitest::Test
     assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
     labels = lines.drop(2).map { |line| line.split(' | ').first.delete_prefix('| ') }
     assert_equal Shaka::WipDetails::FIELDS.values, labels
+    assert_includes lines, '| Chat link | UNKNOWN |'
     assert_includes lines, '| Stopped because | paused |'
   end
 

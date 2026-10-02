@@ -24,7 +24,7 @@ module Shaka
       # The Value column in field order, or nil for a partial or reordered table WipDetails did not render.
       def cells(note)
         rows = note.lines.drop(2).map { |line| line.chomp.match(ROW)&.captures || [] }
-        rows.map(&:last) if rows.map(&:first) == WipDetails::FIELDS.values
+        rows.map(&:last) if WipDetails::RECOGNIZED_HEADINGS.include?(rows.map(&:first))
       end
 
       # Revision reads `BRANCH @ SHA`; only the part after the last ` @ ` is the head, whatever the branch is named.
