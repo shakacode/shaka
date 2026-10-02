@@ -1,6 +1,6 @@
-<a id="pilot-status-and-limitations"></a>
-
 # What to expect from Shaka
+
+<a id="pilot-status-and-limitations"></a>
 
 Use Shaka with your repository's checks and review rules. This guide explains
 setup choices, what happens when verification is incomplete, and how to resume
