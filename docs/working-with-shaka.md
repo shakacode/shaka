@@ -20,7 +20,7 @@ scope, or risk.
 
 Your agent's permissions, project commands, and GitHub rules determine what it
 can complete. Missing tests, unavailable reviewers, and access failures should
-appear as concrete gaps, never as a claim of success. See the
+appear as concrete gaps, never as a claim of success. See
 [what to expect from Shaka](expected-experience.md).
 
 ## Give it an outcome
