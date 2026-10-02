@@ -14,8 +14,14 @@ review:
   ci_review_jobs: # Repository jobs, required unless review.required is none.
     - claude-review
   ci_review_wait: one # Default: wait for one configured hosted review report.
-  # local_max_rounds: 5 # Current default; enable after upgrading older Shaka installations.
-  # prompt_file: .agents/review-prompt.md # Omitted: skills/shaka/config/review-prompt.md.
+  local_max_rounds: 5 # Default: maximum committed heads in one local review ledger.
+  # prompt_file: .agents/shaka/review-prompt.md # Omitted: skills/shaka/config/review-prompt.md.
+  post_implementation: # Explicit defaults for the finished-result checkpoint.
+    enabled: true
+    reviewer: openai/codex
+    model: gpt-6.1-sol
+    effort: medium
+    # prompt_file: .agents/shaka/product-checkpoint.md # Omitted: Shaka's packaged prompt.
   local_review_agents: # Repository preference order; omitted: fresh implementation-model review.
     - provider: anthropic
       model_family: claude
@@ -43,7 +49,7 @@ wip:
 
 opening_check:
   external_enabled: true # Default: try a configured local reviewer for the PR opening.
-  # prompt_file: .agents/opening-prompt.md # Omitted: skills/shaka/config/opening-prompt.md.
+  # prompt_file: .agents/shaka/opening-prompt.md # Omitted: skills/shaka/config/opening-prompt.md.
 
 prose_limits: # Defaults for visible PR descriptions and walkthroughs.
   max_sentence_words: 35
@@ -51,7 +57,7 @@ prose_limits: # Defaults for visible PR descriptions and walkthroughs.
   max_description_words: 300
   words_per_changed_line: 4 # Proportional budget adds 150 words before applying this factor.
 
-# Commands are executable files, not YAML settings: .agents/bin/{setup,test,validate}.
-# Optional: .agents/bin/validate-local and .agents/bin/trigger-hosted-ci (requires validate-local).
+# Commands are executable files, not YAML settings: .agents/shaka/bin/{setup,test,validate}.
+# Optional: .agents/shaka/bin/validate-local and .agents/shaka/bin/trigger-hosted-ci (requires validate-local).
 # Public-comment trust lives beside this file in trusted-github-actors.yml.
-# New repositories use .agents/shaka/config.yml; this supported older layout stays valid.
+# Older repositories may keep .agents/agent-workflow.yml and .agents/bin/.

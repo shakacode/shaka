@@ -6,9 +6,9 @@ layout keep them in `.agents/agent-workflow.yml`. Ask your agent to
 Policy comes from the default branch; settings changed in a PR do not govern
 that PR.
 
-Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/agent-workflow.yml) for a
+Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
-Optional settings that would pin a branch, model, or prompt stay commented.
+Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
 
 ## `merge.preference`
 

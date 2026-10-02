@@ -91,8 +91,8 @@ and standard script; keep those definitions there.
 1. Verify the repository identity, visibility, default branch, and any existing `AGENTS.md`.
 2. Inspect existing setup, test, validation, and CI commands. Reuse them in small
    `.agents/shaka/bin/` wrappers; include any existing fast validation or staged CI
-   capability when useful. Shaka's own [scripts](https://github.com/shakacode/shaka/tree/main/.agents/bin) are examples
-   in the older `.agents/bin/` location.
+   capability when useful. Shaka's own [scripts](https://github.com/shakacode/shaka/tree/main/.agents/shaka/bin) are examples
+   in `.agents/shaka/bin/`.
 3. Establish review jobs from their actual workflows and merge authority from
    the user's instructions. Keep Ask when no broader authority exists. Check whether
    GitHub requires checks on the base branch: count `required_status_checks` rules
