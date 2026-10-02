@@ -346,7 +346,7 @@ begin
                               Shaka::SquashMessage.for(github, content(options[:squash_message]))
              Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],
                                       seam_wait: seam&.review&.fetch('ci_review_wait'), review:,
-                                      seam_required_checks:).call(
+                                      merge_policy: seam.merge).call(
                                         head:,
                                         base: options.fetch(:base),
                                         walkthrough: options.fetch(:walkthrough),

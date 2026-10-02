@@ -173,7 +173,7 @@ class MergeNativeGateTest < Minitest::Test
   def test_refuses_bypass_capable_or_unknown_actor
     [true, nil].each do |value|
       @client.snapshots = [snapshot.merge('viewerCanMergeAsAdmin' => value)]
-      assert_blocked(/protection must be enforced/)
+      assert_blocked(/Admin capability caused refusal|Admin actor capability is unknown/)
     end
   end
 
@@ -284,7 +284,7 @@ class MergeCheckTest < Minitest::Test
   def test_seam_required_checks_gate_merge_when_github_enforces_none
     @client.checks = []
     @client.head_checks = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
-    merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+    merge = Shaka::Merge.new(@client, merge_policy: { 'required_checks' => ['checks'] })
 
     assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17)['state']
   end
@@ -292,7 +292,7 @@ class MergeCheckTest < Minitest::Test
   def test_a_seam_required_check_missing_from_the_head_blocks
     @client.checks = []
     @client.head_checks = [{ 'name' => 'lint', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
-    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+    @merge = Shaka::Merge.new(@client, merge_policy: { 'required_checks' => ['checks'] })
 
     assert_blocked(/Required check is not passing.*"name" => "checks", "state" => "MISSING"/)
   end
@@ -303,7 +303,7 @@ class MergeCheckTest < Minitest::Test
     @client.head_checks = [[{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }],
                            [{ 'name' => 'checks', 'state' => 'FAILURE', 'bucket' => 'fail' }]]
     @client.snapshots = [snapshot, snapshot.merge('mergeStateStatus' => 'UNSTABLE')]
-    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+    @merge = Shaka::Merge.new(@client, merge_policy: { 'required_checks' => ['checks'] })
 
     assert_blocked(/Required check is not passing/)
   end
@@ -311,7 +311,7 @@ class MergeCheckTest < Minitest::Test
   def test_a_failing_seam_required_check_blocks
     @client.checks = []
     @client.head_checks = [{ 'name' => 'checks', 'state' => 'FAILURE', 'bucket' => 'fail' }]
-    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+    @merge = Shaka::Merge.new(@client, merge_policy: { 'required_checks' => ['checks'] })
 
     assert_blocked(/Required check is not passing/)
   end
@@ -319,7 +319,7 @@ class MergeCheckTest < Minitest::Test
   def test_native_required_checks_are_not_replaced_by_the_seam_list
     @client.checks = [{ 'name' => 'Validate', 'state' => 'FAILURE', 'bucket' => 'fail' }]
     @client.head_checks = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
-    @merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'])
+    @merge = Shaka::Merge.new(@client, merge_policy: { 'required_checks' => ['checks'] })
 
     assert_blocked(/Required check is not passing/)
   end

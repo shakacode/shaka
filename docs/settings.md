@@ -27,6 +27,28 @@ Set a task's preference with `Use merge policy auto`. This is a task instruction
 editing the PR's settings does not change its own merge authority. Required human
 approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-policy).
 
+## `merge.allow_admin_actor`
+
+**Optional.** Boolean, default `false`. Allow an admin-capable GitHub account to
+submit the normal protected merge or enqueue operation through Shaka.
+
+```yaml
+merge:
+  preference: ask
+  allow_admin_actor: true
+```
+
+For example, enable this when your maintainer account has admin capability and
+Shaka refuses its merge solely for that capability. The setting takes effect
+once it reaches the default branch; a candidate PR cannot authorize itself.
+
+When omitted or `false`, Shaka refuses an actor whose GitHub
+`viewerCanMergeAsAdmin` capability is `true`. An unknown capability always blocks.
+With `true`, every existing head, base, walkthrough, review, check, approval,
+size, and native-state gate still applies. Shaka uses the normal merge or queue
+operation without an admin bypass flag and leaves protection and queue settings
+unchanged. Merge evidence records the effective setting, capability, and decision.
+
 ## `merge.required_checks`
 
 **Optional.** CI checks that must pass before Shaka treats a PR as ready. Use it

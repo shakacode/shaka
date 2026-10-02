@@ -20,7 +20,7 @@ module Shaka
         'overrides.effort' => %w[none minimal low medium high xhigh max ultra],
         'overrides.reviewer' => %w[anthropic/claude openai/codex xai/grok]
       }.freeze
-      BOOLEANS = %w[wip.include_locations opening_check.external_enabled].freeze
+      BOOLEANS = %w[merge.allow_admin_actor wip.include_locations opening_check.external_enabled].freeze
       NUMBERS = %w[merge.limits.max_changed_files merge.limits.max_changed_lines merge.limits.max_commits
                    prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
                    prose_limits.words_per_changed_line].freeze

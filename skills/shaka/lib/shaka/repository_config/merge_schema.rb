@@ -21,8 +21,11 @@ module Shaka
         retired = %w[method release].find { |key| @merge.key?(key) }
         raise Error, "merge.#{retired} is no longer configurable; see skills/shaka/references/migration.md" if retired
 
-        keys!(@merge, ['preference'], ['limits', REQUIRED_CHECKS], 'merge')
+        keys!(@merge, ['preference'], ['limits', REQUIRED_CHECKS, 'allow_admin_actor'], 'merge')
         enum!(@merge['preference'], %w[ask auto], 'merge.preference must be ask or auto')
+        if @merge.key?('allow_admin_actor')
+          enum!(@merge['allow_admin_actor'], [true, false], 'merge.allow_admin_actor must be a boolean')
+        end
         MergeLimits.validate!(@merge['limits']) if @merge.key?('limits')
         name_list!(@merge[REQUIRED_CHECKS], "merge.#{REQUIRED_CHECKS}", 'check names') if @merge.key?(REQUIRED_CHECKS)
       end

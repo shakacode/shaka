@@ -198,7 +198,9 @@ and acceptable risk. Changes to execution trust, authentication, permissions,
 release/deployment, destructive migrations, or merge guards require human review.
 Small size does not prove low risk. Unclear authority needs a decision; a safety
 failure blocks submission. Require observable native checks enforced for the actor;
-unknown or bypass-capable identities block. When GitHub has no required checks configured
+unknown identities block. Admin-capable identities block unless the trusted seam
+explicitly enables [merge.allow_admin_actor](../docs/settings.md#mergeallow_admin_actor);
+that opt-in retains every other gate and grants no protection bypass. When GitHub has no required checks configured
 on the base branch, as on a private repository on the GitHub Free plan, the trusted seam's
 `merge.required_checks` stands in for them and Shaka alone enforces it (maintainer decision
 on #235). Leave repository queue settings and armed

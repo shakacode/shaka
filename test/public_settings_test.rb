@@ -30,6 +30,13 @@ class PublicSettingsTest < Minitest::Test
     assert_equal 'UNKNOWN', public['source']
   end
 
+  def test_admin_actor_setting_preserves_boolean_evidence
+    [true, false].each do |value|
+      public = Shaka::Evidence::PublicSettings.sanitize('merge.allow_admin_actor' => value)
+      assert_equal value, public['merge.allow_admin_actor']
+    end
+  end
+
   def test_private_trial_reports_ask_and_public_installation_identity_only
     with_checkout do |root, ref|
       config = Shaka::Configuration.trusted(root:, ref:)

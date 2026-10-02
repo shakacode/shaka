@@ -90,10 +90,14 @@ module Shaka
       @base_branch = @data['base_branch']
       @review = with_default_review_wait(@data.fetch('review'))
       merge = @data.fetch('merge')
-      @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
+      @merge = merge_settings(merge)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
       @opening_check = { 'external_enabled' => true }.merge(@data.fetch('opening_check', {}))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
+    end
+
+    def merge_settings(merge)
+      { 'allow_admin_actor' => false }.merge(merge).merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
     end
 
     def with_default_review_wait(review)

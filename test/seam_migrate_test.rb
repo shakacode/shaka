@@ -135,6 +135,16 @@ class SeamMigratePlanTest < Minitest::Test
     end
   end
 
+  def test_admin_actor_opt_in_is_retained
+    with_legacy_repository('control_plane_flow_shape.yml') do |root|
+      sha = rewrite_yaml(root) { |data| data.merge('merge' => data['merge'].merge('allow_admin_actor' => true)) }
+      report = migrate_report(root, sha)
+
+      assert_includes report.fetch('retained'), 'merge.allow_admin_actor'
+      assert report.dig('established', 'merge', 'allow_admin_actor')
+    end
+  end
+
   def test_plan_blocks_invalid_seam_required_checks
     with_legacy_repository('control_plane_flow_shape.yml') do |root|
       sha = rewrite_yaml(root) { |data| data.merge('merge' => data['merge'].merge('required_checks' => [])) }

@@ -639,6 +639,8 @@ phases:
         helper checks GitHub readiness; you establish local verification, authority, and acceptable
         consequences. Trust, authentication, permission, release, deployment, destructive-migration,
         and merge-guard changes require explicit human review. Small diffs do not prove low risk.
+        The [admin actor setting](https://github.com/shakacode/shaka/blob/main/docs/settings.md#mergeallow_admin_actor)
+        governs admin-capability refusal.
         Uncertain authority, consequential risk, or a base neither the trusted seam nor the
         default branch establishes switches Auto to Ask; safety failures block. So does an open
         `before merge` step besides merging until the user confirms it is done.

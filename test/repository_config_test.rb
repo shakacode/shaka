@@ -334,3 +334,27 @@ class RepositoryConfigRequiredChecksTest < Minitest::Test
     end
   end
 end
+
+class RepositoryConfigAdminActorTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+
+  def test_admin_actor_setting_defaults_to_false_and_accepts_booleans
+    with_repository do |root|
+      refute Shaka::RepositoryConfig.load(root:).merge.fetch('allow_admin_actor')
+    end
+    [true, false].each do |value|
+      with_repository('merge' => merge_policy.merge('allow_admin_actor' => value)) do |root|
+        assert_equal value, Shaka::RepositoryConfig.load(root:).merge.fetch('allow_admin_actor')
+      end
+    end
+  end
+
+  def test_admin_actor_setting_rejects_non_booleans
+    [nil, 'true', 1, [], {}].each do |value|
+      with_repository('merge' => merge_policy.merge('allow_admin_actor' => value)) do |root|
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+        assert_includes error.message, 'merge.allow_admin_actor must be a boolean'
+      end
+    end
+  end
+end
