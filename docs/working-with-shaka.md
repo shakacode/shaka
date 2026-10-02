@@ -100,6 +100,39 @@ An optional `Agent:` prefix distinguishes notes from finished wording.
 Take turns writing to the same checkout. With separate worktrees, hand over a
 final diff for the agent to reconcile. Keep raw notes in the local backup.
 
+### Revise earlier guidance and try again
+
+If an attempt goes in the wrong direction, return to earlier human guidance,
+adjust it, and ask for a fresh result. A **human attention checkpoint** records
+that guidance and the code state it applies to. C1, C2, and later numbers identify
+these points within one task; each appears on the PR with a name, guidance, and
+code revision so you can tell them apart.
+
+```text
+Return to C2 — Parser direction. Keep the acceptance criteria, use the
+existing parser, discard the abstraction, and retain the failing edge case.
+```
+
+C1 records your initial request. Later checkpoints record your steering or review;
+an agent proposal, question, or passing check alone establishes none. Revised
+steering gets a new checkpoint linked to the earlier one. Saying “Go” needs no
+extra confirmation, and your Ask or Auto preference still applies.
+
+The agent first preserves the rejected attempt and relevant uncommitted work.
+By default, it adds a corrective commit to the existing branch to restore owned
+code; newer commits remain in history. It then implements your revised guidance
+with unrelated newer work and relevant findings preserved. If the snapshot is
+incomplete or another writer is active, it explains the limitation before restoring.
+
+The PR describes the active attempt and puts superseded work in expandable
+summaries with published review links. Human comments remain intact. A final
+squash merge leaves the resulting change on the base branch while the PR retains
+the attempt history. Rewind does not undo deployments or other external effects;
+the replacement still needs validation and review.
+
+This is an agent procedure. See the [human attention checkpoint procedure](../skills/shaka/references/return-points.md)
+for preservation rules and the real-use evaluation still needed.
+
 ## Resume unfinished work
 
 Open the PR's **WIP Details** to find the owning chat, last known state, and next

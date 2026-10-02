@@ -61,6 +61,11 @@ phases:
         `PR #NUMBER` in place of the issue identifier.
       - Before writing to an unfinished PR, whether resuming or adopting it, follow the
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
+      - Record a named initial human attention checkpoint after an unambiguous initiating instruction,
+        following [human attention checkpoints](<{{package_root}}/skills/shaka/references/return-points.md>).
+        Capture the revision and recoverable worktree state alongside the scope the human
+        confirmed; mark incomplete snapshots not restorable. Existing start authorization
+        needs no extra confirmation.
     done_when: >-
       The task, its checkout, trusted instructions, and merge preference are known, or an
       evidence-backed no-change outcome was reported and the task stopped before Plan.
@@ -691,6 +696,13 @@ phases:
       Post-implementation validation justifies the final result with no substantive concern
       unresolved, and the PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
+  When the human confirms new direction worth returning to, record the next named
+  human attention checkpoint through [human attention checkpoints](<{{package_root}}/skills/shaka/references/return-points.md>).
+  A request for attention alone confirms nothing. For a requested rewind, preserve
+  the abandoned attempt before restoring owned code and context, retain applicable
+  discoveries, refresh live authority, and verify the replacement through this workflow.
+  Keep superseded history accessible and surviving concerns visible.
+
   During implementation or review, unexpected breadth, growing abstractions or coupling,
   repeated fixes creating new defects, or non-converging local/CI feedback triggers
   [post-implementation validation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>)

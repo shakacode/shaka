@@ -142,6 +142,14 @@ checkout is reachable; record it as `UNKNOWN` when it is not.
 The note records state. It is not a lock or authorization, and the read/write gap
 still allows a race. Maintainer confirmation prevents competing owners.
 
+## Reject an approach and restart
+
+Use [human attention checkpoints](return-points.md) to identify earlier human guidance,
+preserve the abandoned code and context, and resume with new steering. Requesting
+attention alone records no human guidance. Keep the existing Ask/Auto decision path
+and WIP note; summarize superseded attempts in the description's details while
+carrying surviving material findings into the active review.
+
 ## When a task needs several PRs
 
 Default to one PR. Split for useful separate outcomes, different risks, or a diff
