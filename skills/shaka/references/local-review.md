@@ -394,7 +394,19 @@ threads, and comments by other accounts stay intact. Carry still-applicable mate
 findings into the current review summary before publishing. The `earlier_reviews`
 result lists confirmed edits and unavailable cleanup; a cleanup failure returns a
 nonzero exit without undoing the new report. Retry publication after inspecting the
-reported failure. Both legacy and per-commit Shaka review comment keys are recognized.
+reported failure. When no owned review covers the current PR head, cleanup is skipped without failing
+publication. Both legacy and per-commit Shaka review comment keys are recognized.
+Today’s single-comment publisher replaces its prior report, so routine history
+cleanup needs the per-commit publisher proposed in
+[PR #364](https://github.com/shakacode/shaka/pull/364).
+
+To clean up existing per-commit reports independently of publication, run:
+
+```sh
+shaka review collapse OWNER/REPO NUMBER
+```
+
+This also lets a per-commit publisher invoke cleanup after all its reports are posted.
 
 Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the

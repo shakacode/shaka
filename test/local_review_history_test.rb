@@ -2,7 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/github'
-require 'shaka/local_review/history'
+require 'shaka/local_review'
 
 module LocalReviewHistoryFixture
   HEAD = 'a' * 40
@@ -45,6 +45,12 @@ module LocalReviewHistoryFixture
       @reads[id] += 1
       row['body'] += "\nHuman edit" if changed && @reads[id] == 2
     end
+  end
+
+  def republish_previous_head(github)
+    github.head = HEAD
+    github.comments[2]['body'] = comment(2, head: HEAD)['body']
+    collapse(github, github.comments[2])
   end
 
   def replace_after_listing(github)
@@ -146,7 +152,8 @@ class LocalReviewHistoryTest < Minitest::Test
     result = collapse(github, prior)
 
     assert_empty result['collapsed']
-    assert_includes result['unavailable'].join, 'current PR head'
+    assert_empty result['unavailable']
+    assert_includes result['skipped'], 'left intact'
     assert_empty github.writes
   end
 
@@ -157,6 +164,31 @@ class LocalReviewHistoryTest < Minitest::Test
     assert_empty result['collapsed']
     assert_includes github.comments[1]['body'], url(2)
     refute_includes github.comments[2]['body'], 'Earlier local review'
+  end
+
+  def test_returning_to_an_earlier_head_retargets_history_and_collapses_later_reports
+    github = prepared_history
+    add_new_review(github)
+    republish_previous_head(github)
+
+    assert_archived(github.comments[1]['body'], 2)
+    assert_includes github.comments[3]['body'], url(2)
+  end
+
+  def test_returned_head_without_republication_keeps_history_intact
+    github = prepared_history
+    add_new_review(github)
+    github.head = HEAD
+
+    assert_includes collapse(github, github.comments[2])['skipped'], 'left intact'
+  end
+
+  def test_collapse_command_reports_confirmed_cleanup
+    github = GitHub.new([comment(1), comment(2, head: HEAD)])
+    out, = capture_io do
+      assert_equal 0, Shaka::LocalReview.run(['collapse', 'example/test', '1'], github:)
+    end
+    assert_equal [1], JSON.parse(out)['collapsed']
   end
 
   def test_a_report_that_changed_to_the_current_head_before_first_read_is_not_collapsed

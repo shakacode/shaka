@@ -26,7 +26,7 @@ module Shaka
       @github = github
     end
 
-    ACTIONS = %w[run check record publish].freeze
+    ACTIONS = %w[run check record publish collapse].freeze
 
     def run
       action = @arguments.shift
@@ -36,7 +36,7 @@ module Shaka
       parser = send(:"#{action}_parser")
       parser.parse!(@arguments)
       return 0.tap { puts parser } if @options[:help]
-      return send(action, parser) if %w[record publish].include?(action)
+      return send(action, parser) if %w[record publish collapse].include?(action)
 
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.empty?
 
@@ -78,6 +78,21 @@ module Shaka
       published = LocalReviewPublication.new(github, content, @arguments.first).publish
       puts JSON.pretty_generate(published)
       published.dig('earlier_reviews', 'unavailable').empty? ? 0 : 1
+    end
+
+    def collapse(parser)
+      raise OptionParser::InvalidArgument, parser.to_s unless @arguments.length == 2
+
+      result = LocalReviewHistory.new(@github || GitHub.new(*@arguments)).collapse
+      puts JSON.pretty_generate(result)
+      result['unavailable'].empty? ? 0 : 1
+    end
+
+    def collapse_parser
+      OptionParser.new do |flags|
+        flags.banner = 'Usage: shaka review collapse OWNER/REPO NUMBER'
+        flags.on('-h', '--help') { @options[:help] = true }
+      end
     end
 
     def record(parser)

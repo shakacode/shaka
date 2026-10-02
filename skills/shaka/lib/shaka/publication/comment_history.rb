@@ -7,13 +7,13 @@ module Shaka
   class CommentHistory
     def initialize(github) = @github = github
 
-    def collapse(published)
+    def collapse(published = nil)
       report = { 'collapsed' => [], 'unavailable' => [] }
       comments = history_comments(published)
       latest = latest_comment(comments)
-      comments.select { |comment| earlier?(comment, latest) }.each do |comment|
-        fold_one(comment, latest, report)
-      end
+      return report.merge('skipped' => 'No current report found; history was left intact.') unless latest
+
+      comments.each { |comment| fold_one(comment, latest, report) if earlier?(comment, latest) }
       report
     rescue Error => e
       report['unavailable'] << e.message
@@ -28,7 +28,7 @@ module Shaka
 
       comments = @github.issue_comments.select { |comment| owned?(comment) }
       raise Error, 'Published history comment is absent from comment listing.' unless
-        comments.any? { |comment| comment['id'] == published['id'] }
+        published.nil? || comments.any? { |comment| comment['id'] == published['id'] }
 
       comments
     end
@@ -89,10 +89,12 @@ module Shaka
       pointer = /\A#{Regexp.escape(self.class::MARKER)} #{Regexp.escape(url_prefix)}(\d+)(?=\n|\z)/
       match = content.match(pointer) || raise(Error, 'Collapsed history comment pointer is malformed.')
       # An overlapping publication may already have linked a newer comment.
-      return if match[1].to_i >= latest
+      return if keep_pointer?(match[1].to_i, latest)
 
       content.sub(pointer, "#{self.class::MARKER} #{url_prefix}#{latest}")
     end
+
+    def keep_pointer?(previous, latest) = previous >= latest
 
     def wrap(content, latest)
       archived = WalkthroughText.archive(content.rstrip)

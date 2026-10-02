@@ -196,7 +196,7 @@ class LocalReviewPublishTest < Minitest::Test
     def markdown(_body) = @html
 
     def api(path)
-      return { 'head' => { 'sha' => LocalReviewCommentFixture::HEAD } } if path.end_with?('/pulls/7')
+      return { 'head' => { 'sha' => @head || LocalReviewCommentFixture::HEAD } } if path.end_with?('/pulls/7')
 
       raise Shaka::Error.new('Not Found', http_status: 404) if @missing.any? { |sha| path.end_with?(sha) }
       raise Shaka::Error.new('Validation failed', http_status: 422) if @outage
@@ -204,7 +204,7 @@ class LocalReviewPublishTest < Minitest::Test
       {}
     end
 
-    attr_writer :outage, :listing_failure
+    attr_writer :outage, :listing_failure, :head
 
     def reply(body:, key:)
       @replies << [key, body]
@@ -226,12 +226,21 @@ class LocalReviewPublishTest < Minitest::Test
   def test_publishes_under_the_local_review_key
     github = FakeGitHub.new
 
-    status, = publish(github, 'rounds' => [round])
+    status, out, = publish(github, 'rounds' => [round])
 
     assert_equal 0, status
+    assert_equal({ 'collapsed' => [], 'unavailable' => [] }, JSON.parse(out)['earlier_reviews'])
     assert_equal ['local-adversarial-review'], github.replies.map(&:first)
-    assert github.replies.first.last.start_with?('# Local Adversarial Review')
     assert_includes github.replies.first.last, "| 1 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
+  end
+
+  def test_publishing_a_noncurrent_review_succeeds_without_collapsing_history
+    github = FakeGitHub.new
+    github.head = 'c' * 40
+    status, out, = publish(github, 'rounds' => [round])
+
+    assert_equal 0, status
+    assert_includes JSON.parse(out).dig('earlier_reviews', 'skipped'), 'left intact'
   end
 
   def test_failed_history_cleanup_leaves_the_new_review_published_and_returns_nonzero

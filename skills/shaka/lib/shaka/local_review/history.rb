@@ -15,16 +15,21 @@ module Shaka
 
     def latest_comment(comments)
       head = @github.api("repos/#{@github.repository}/pulls/#{@github.number}").dig('head', 'sha')
-      latest = comments.select { |comment| attestation(comment['body'])[1] == head }
-                       .max_by { |comment| order(comment) }
-      latest || raise(Error, 'No owned local review covers the current PR head; history was left intact.')
+      comments.select { |comment| attestation(comment['body'])[1] == head && active?(comment) }
+              .max_by { |comment| order(comment) }
     end
+
+    # A restored head needs its previously archived report republished before it can be current.
+    def active?(comment) = !comment['body'].match?(/^#{Regexp.escape(MARKER)} /o)
 
     def owned?(comment) = super && !attestation(comment['body'].to_s).nil?
 
     def earlier?(comment, latest)
-      super && attestation(comment['body'])[1] != attestation(latest['body'])[1]
+      attestation(comment['body'])[1] != attestation(latest['body'])[1]
     end
+
+    # Returning to a reviewed head can make its comment older than the existing pointer.
+    def keep_pointer?(previous, latest) = previous == latest
 
     def attestation(body) = body.match(ATTESTATION)
 
