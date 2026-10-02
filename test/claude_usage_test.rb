@@ -86,7 +86,8 @@ class ClaudeUsageTest < Minitest::Test
   # silently underprice an Opus+Haiku review.
   def test_print_mode_with_two_models_does_not_guess_a_rate
     Dir.mktmpdir do |directory|
-      extra = { modelUsage: { 'claude-haiku-4-5' => { 'canonicalModel' => 'claude-haiku-4-5' },
+      extra = { model: 'claude-opus-5',
+                modelUsage: { 'claude-haiku-4-5' => { 'canonicalModel' => 'claude-haiku-4-5' },
                               'claude-opus-5[1m]' => { 'canonicalModel' => 'claude-opus-5' } } }
       output = report('--host', 'claude-code', '--file', print_result_file(directory, extra),
                       '--contribution', 'review')

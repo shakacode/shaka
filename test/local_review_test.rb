@@ -8,6 +8,7 @@ require 'rbconfig'
 require_relative '../skills/shaka/lib/shaka/local_review/process'
 require_relative '../skills/shaka/lib/shaka/local_review/evidence'
 require_relative '../skills/shaka/lib/shaka/local_review/cli'
+require_relative '../skills/shaka/lib/shaka/local_review/comment'
 
 class LocalReviewCodexTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -1555,8 +1556,24 @@ class LocalReviewDirtyWorktreeTest < Minitest::Test
   end
 end
 
+module LocalReviewClaudeFixtureHelper
+  private
+
+  def fake_claude(bin, head, **options)
+    write_executable(bin, 'claude', <<~RUBY)
+      #!/usr/bin/env ruby
+      require 'json'
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read })) if ENV['REVIEW_TRACE']
+      puts JSON.generate({ is_error: false, result: "#{options.fetch(:findings, 'no findings')}\\nREVIEWED #{head} BY anthropic/claude EFFORT #{options.fetch(:effort, 'medium')} FINDINGS 0",
+                           model: #{options[:model].inspect},
+                           modelUsage: #{options[:model_usage].inspect} })
+    RUBY
+  end
+end
+
 module LocalReviewFixture
   include LocalReviewArguments
+  include LocalReviewClaudeFixtureHelper
 
   # Candidate-owned files tests place in the checkout; ignoring them keeps it clean, as review requires.
   CANDIDATE_FIXTURES = %w[/bin/ /codex /git /node /project-tool /project_ruby_options.rb /pr-description.txt
@@ -1582,15 +1599,6 @@ module LocalReviewFixture
       #!/usr/bin/env ruby
       report = ARGV.fetch(ARGV.index('-o') + 1)
       File.write(report, 'no attestation')
-    RUBY
-  end
-
-  def fake_claude(bin, head, effort: 'medium', findings: 'no findings')
-    write_executable(bin, 'claude', <<~RUBY)
-      #!/usr/bin/env ruby
-      require 'json'
-      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate({ args: ARGV, prompt: STDIN.read }))
-      puts JSON.generate({ is_error: false, result: "#{findings}\\nREVIEWED #{head} BY anthropic/claude EFFORT #{effort} FINDINGS 0" })
     RUBY
   end
 
@@ -1702,3 +1710,118 @@ LocalReviewLoopTest.include(LocalReviewFixture)
 LocalReviewLoopBatchTest.include(LocalReviewFixture)
 LocalReviewCapRunnerTest.include(LocalReviewFixture)
 LocalReviewDirtyWorktreeTest.include(LocalReviewFixture)
+
+module LocalReviewClaudeModelFixture
+  include LocalReviewFixture
+
+  private
+
+  def with_claude_ledger(model_usage, model: nil)
+    with_repository do |root, base, head, bin|
+      Dir.mktmpdir('shaka-ledger') do |directory|
+        context = { root:, base:, head:, bin:, ledger: File.join(directory, 'ledger.json') }
+        result = start_claude_review(context, model_usage, model:)
+        (@results ||= []) << result
+        yield result, context[:ledger]
+      end
+    end
+  end
+
+  def start_claude_review(context, model_usage, model: nil)
+    fake_claude(context[:bin], context[:head], model:, model_usage:)
+    output, error, status = run_review(context[:root], context[:base], context[:head], context[:bin],
+                                       ledger: context[:ledger], reviewer: 'anthropic/claude')
+    assert_successful_review(output, error, status, context[:head], 'anthropic/claude')
+  end
+
+  def record_claude_usage(ledger, model)
+    Tempfile.create(['record-', '.json']) do |file|
+      file.write(JSON.generate('findings' => [], 'usage' => { 'anthropic/claude' => { 'model' => model } }))
+      file.close
+      _output, error, status = Open3.capture3(self.class::COMMAND, 'review', 'record', '--ledger', ledger,
+                                              '--content-file', file.path)
+      assert_predicate status, :success?, error
+    end
+  end
+end
+
+class LocalReviewClaudeModelTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+  MODEL = 'claude-opus-5-5'
+  OPUS_USAGE = { 'claude-opus-5-5' => { 'canonicalModel' => MODEL } }.freeze
+  AMBIGUOUS_USAGE = {
+    'claude-opus-5-5' => { 'canonicalModel' => 'claude-opus-5-5' },
+    'claude-sonnet-4-5' => { 'canonicalModel' => 'claude-sonnet-4-5' }
+  }.freeze
+  INCOMPLETE_USAGE = {
+    'claude-haiku-4-5' => {},
+    'claude-opus-5-5' => { 'canonicalModel' => MODEL }
+  }.freeze
+
+  include LocalReviewClaudeModelFixture
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  def test_publishes_the_observed_model_and_keeps_it_through_triage
+    with_claude_ledger(OPUS_USAGE) do |result, ledger|
+      assert_equal MODEL, result.fetch('model')
+      record_claude_usage(ledger, 'UNKNOWN')
+      rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+      assert_equal MODEL, rounds.first.fetch('model')
+      assert_includes Shaka::LocalReviewComment.render('rounds' => rounds), "| anthropic/claude | #{MODEL} |"
+    end
+  end
+
+  def test_publishes_shared_model_usage_and_keeps_it_through_triage
+    with_claude_ledger(AMBIGUOUS_USAGE, model: MODEL) do |result, ledger|
+      model = 'shared: claude-opus-5-5, claude-sonnet-4-5'
+      assert_equal model, result.fetch('model')
+      record_claude_usage(ledger, 'UNKNOWN')
+      rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+      assert_equal model, rounds.first.fetch('model')
+      assert_includes Shaka::LocalReviewComment.render('rounds' => rounds), "| anthropic/claude | #{model} |"
+    end
+  end
+
+  def test_uses_the_top_level_model_when_aggregate_usage_is_absent
+    record = { 'model' => MODEL }
+    assert_equal MODEL, Shaka::ClaudePrintResult.model_attribution(record)
+  end
+
+  def test_marks_shared_usage_even_when_claude_reports_a_top_level_model
+    record = { 'model' => MODEL, 'modelUsage' => AMBIGUOUS_USAGE }
+    assert_equal 'shared: claude-opus-5-5, claude-sonnet-4-5', Shaka::ClaudePrintResult.model_attribution(record)
+  end
+
+  def test_canonicalizes_top_level_alias_before_listing_shared_models
+    usage = { 'claude-opus-5-5[1m]' => { 'canonicalModel' => MODEL },
+              'claude-haiku-4-5' => { 'canonicalModel' => 'claude-haiku-4-5' } }
+    record = { 'model' => 'claude-opus-5-5[1m]', 'modelUsage' => usage }
+    assert_equal 'shared: claude-haiku-4-5, claude-opus-5-5', Shaka::ClaudePrintResult.model_attribution(record)
+  end
+
+  def test_keeps_top_level_model_when_aggregate_names_are_incomplete
+    record = { 'model' => MODEL, 'modelUsage' => INCOMPLETE_USAGE }
+    assert_equal "#{MODEL} (other models unknown)", Shaka::ClaudePrintResult.model_attribution(record)
+  end
+
+  def test_allows_recorded_model_to_fill_incomplete_aggregate_attribution
+    with_claude_ledger(INCOMPLETE_USAGE) do |result, ledger|
+      refute result.key?('model')
+      record_claude_usage(ledger, MODEL)
+      rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+      assert_equal MODEL, rounds.first.fetch('model')
+    end
+  end
+
+  def test_later_model_usage_replaces_unknown_attribution
+    with_claude_ledger(INCOMPLETE_USAGE) do |_, ledger|
+      record_claude_usage(ledger, 'UNKNOWN')
+      record_claude_usage(ledger, MODEL)
+      rounds = JSON.parse(File.read(ledger)).fetch('rounds')
+      assert_equal MODEL, rounds.first.fetch('model')
+    end
+  end
+end

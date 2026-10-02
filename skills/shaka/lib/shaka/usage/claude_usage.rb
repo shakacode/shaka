@@ -6,6 +6,78 @@ require_relative 'response_count'
 module Shaka
   # Claude CLI `-p --output-format json` writes one result object instead of JSONL.
   module ClaudePrintResult
+    class << self
+      # A multi-entry token aggregate has no single model that can safely price it.
+      def routed_model(record)
+        return unless record.is_a?(Hash)
+
+        usage = record['modelUsage']
+        return if usage.is_a?(Hash) && usage.size > 1
+
+        present_name(record['model']) || model_usage(usage)
+      end
+
+      # Aggregate usage describes the whole review; preserve partial model evidence explicitly.
+      def model_attribution(record)
+        return unless record.is_a?(Hash)
+
+        usage = record['modelUsage']
+        direct = present_name(record['model'])
+        return aggregate_model_attribution(usage, direct) if usage.is_a?(Hash) && usage.size > 1
+
+        direct || shared_model_usage(usage)
+      end
+
+      private
+
+      def model_usage(usage)
+        return unless usage.is_a?(Hash) && usage.size == 1
+
+        entry = usage.values.first
+        present_name(entry['canonicalModel']) if entry.is_a?(Hash)
+      end
+
+      def shared_model_usage(usage)
+        models = canonical_models(usage)
+        return unless models
+
+        return if models.any?(&:nil?)
+
+        models = models.uniq.sort
+        models.one? ? models.first : "shared: #{models.join(', ')}"
+      end
+
+      def aggregate_model_attribution(usage, direct)
+        models = canonical_models(usage)
+        return incomplete_model_attribution(direct) if models.any?(&:nil?)
+
+        direct = canonical_direct_model(direct, usage)
+        models = (models + [direct]).compact.uniq.sort
+        models.one? ? models.first : "shared: #{models.join(', ')}"
+      end
+
+      def canonical_direct_model(direct, usage)
+        return direct unless direct
+
+        entry = usage[direct]
+        entry.is_a?(Hash) ? present_name(entry['canonicalModel']) || direct : direct
+      end
+
+      def incomplete_model_attribution(direct)
+        "#{direct} (other models unknown)" if direct
+      end
+
+      def canonical_models(usage)
+        return unless usage.is_a?(Hash) && !usage.empty?
+
+        usage.values.map { |entry| present_name(entry['canonicalModel']) if entry.is_a?(Hash) }
+      end
+
+      def present_name(value)
+        value if value.is_a?(String) && !value.strip.empty?
+      end
+    end
+
     private
 
     def print_object(record)
@@ -23,21 +95,7 @@ module Shaka
                       'billing_mode' => speed(record['usage']), 'usage' => tokens(record['usage']) } }
     end
 
-    # Prefer a top-level model when a CLI writes one; otherwise one modelUsage canonical name.
-    def print_model(record)
-      present_name(record['model']) || present_name(canonical_model(record['modelUsage']))
-    end
-
-    def canonical_model(usage)
-      return unless usage.is_a?(Hash) && usage.size == 1
-
-      entry = usage.values.first
-      entry['canonicalModel'] if entry.is_a?(Hash)
-    end
-
-    def present_name(value)
-      value if value.is_a?(String) && !value.strip.empty?
-    end
+    def print_model(record) = ClaudePrintResult.routed_model(record)
 
     def read(file)
       File.open(file, encoding: 'UTF-8') do |io|

@@ -5,6 +5,7 @@ require 'open3'
 require 'tempfile'
 require_relative '../repository_config/review_schema'
 require_relative '../usage/codex_usage'
+require_relative '../usage/claude_usage'
 require_relative 'path_guard'
 require_relative 'process'
 
@@ -27,6 +28,11 @@ module Shaka
       file.write(output)
       file.close
       file.path
+    end
+
+    def capture_claude_usage(result, output)
+      @options[:observed_model] = ClaudePrintResult.model_attribution(result)
+      @options[:usage] = save_usage(output) if @options.fetch(:capture_usage, true)
     end
 
     def process_failure(command, status, stderr, stdout)
@@ -128,7 +134,7 @@ module Shaka
       return failure('claude -p reported an error', output) if result['is_error']
       return invalid('claude -p returned no review', output) unless valid_claude_result?(result)
 
-      @options[:usage] = save_usage(output) if @options.fetch(:capture_usage, true)
+      capture_claude_usage(result, output)
       File.write(@report, result.fetch('result'))
       nil
     end

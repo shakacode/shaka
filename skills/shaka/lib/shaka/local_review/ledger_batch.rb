@@ -48,10 +48,21 @@ module Shaka
 
     def triaged(round, index, findings, content)
       mine = findings&.select { |finding| reported?(finding, round) }&.map { |finding| individual(finding, round) }
-      round = round.merge({ 'findings' => mine || round['findings'] }.compact, usage_for(content, round['reviewer']))
+      usage = merged_usage(round, content)
+      round = round.merge({ 'findings' => mine || round['findings'] }.compact, usage)
       check_findings!(round, index + 1)
       round
     end
+
+    def merged_usage(round, content)
+      usage = usage_for(content, round['reviewer'])
+      # A later native record can replace the placeholder, but never known round attribution.
+      return usage if round['model'] == 'UNKNOWN' && known_model?(usage['model'])
+
+      usage.merge(round.slice('model'))
+    end
+
+    def known_model?(model) = model.is_a?(String) && !model.strip.empty? && model != 'UNKNOWN'
 
     # With one round, a finding need not name its reviewer.
     def reported?(finding, round)
