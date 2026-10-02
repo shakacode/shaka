@@ -386,7 +386,7 @@ round's attestation as the final line, where `merge` reads it. A commit GitHub d
 such as one a rebase replaced, is named without a link. Publishing again replaces
 that comment rather than adding another.
 
-After publishing, collapse older owned review comments:
+After publishing, collapse older owned Shaka review comments:
 
 ```sh
 shaka review collapse OWNER/REPO NUMBER
@@ -407,6 +407,30 @@ Both legacy and per-commit Shaka review keys are recognized. Today’s single-co
 publisher replaces its report, so routine multi-comment cleanup needs the per-commit
 publisher proposed in [PR #364](https://github.com/shakacode/shaka/pull/364).
 Cleanup also works independently of that publisher.
+
+After assessing completed CI feedback, also minimize obsolete bot review reports
+and notices with GitHub's native **outdated** disclosure. Read them with `shaka comments`
+at the current head first. Select reports that earlier commits have superseded and
+notices, such as a past rate-limit warning, that no longer help the reader. Carry
+still-applicable findings into the current summary; leave current review reports
+and discussions with unaddressed material concerns visible. A different SHA alone
+does not establish that findings are resolved. The agent makes this assessment;
+Ruby does not parse each bot's report format or decide which comments are obsolete.
+
+```sh
+shaka review collapse OWNER/REPO NUMBER --head FULL_CURRENT_SHA \
+  --bot-comment ISSUE_COMMENT_ID --bot-comment ANOTHER_ISSUE_COMMENT_ID
+```
+
+This selection mode minimizes only the specified bot issue comments admitted by
+the trusted comment reader. It needs no local Shaka report or per-commit publisher.
+Ruby checks bot identity, comment identity and content, an open PR at the expected
+head, permission to minimize, and GitHub's stored minimization state. It preserves
+the body and any existing minimization reason; human comments, native review
+summaries and inline threads are outside this mode. The result separates confirmed
+changes, already minimized comments and failures; failures return nonzero. Head
+and body checks cannot make GitHub's minimization mutation atomic with concurrent
+changes. Inspect reported failures before retrying; no automatic rollback occurs.
 
 Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the

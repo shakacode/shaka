@@ -3,6 +3,7 @@
 require 'optparse'
 require_relative '../publication/comment_history'
 require_relative '../merge_review_evidence'
+require_relative 'bot_history'
 
 module Shaka
   # Earlier reports retain their findings and their closing merge attestation.
@@ -14,16 +15,43 @@ module Shaka
     ATTESTATION = MergeReviewEvidence::ATTESTATION
 
     def self.run(arguments, github: nil)
-      help = false
-      parser = OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka review collapse OWNER/REPO NUMBER'
-        flags.on('-h', '--help') { help = true }
-      end
-      parser.parse!(arguments)
-      return 0.tap { puts parser } if help
-      raise OptionParser::InvalidArgument, parser.to_s unless arguments.length == 2
+      options = parse_options(arguments)
+      return 0 unless options
 
-      publish_result(new(github || GitHub.new(*arguments)).collapse)
+      github ||= GitHub.new(*arguments)
+      result = if options[:ids].empty?
+                 new(github).collapse
+               else
+                 BotReviewHistory.new(github).collapse(options[:ids], head: options[:head])
+               end
+      publish_result(result)
+    end
+
+    def self.parse_options(arguments)
+      options = { ids: [] }
+      parser = option_parser(options)
+      parser.parse!(arguments)
+      return nil.tap { puts parser } if options[:help]
+
+      check_options(arguments, options, parser)
+      options
+    end
+
+    def self.option_parser(options)
+      OptionParser.new do |flags|
+        flags.banner = 'Usage: shaka review collapse OWNER/REPO NUMBER'
+        flags.on('-h', '--help') { options[:help] = true }
+        flags.on('--bot-comment ID', /\A[1-9]\d*\z/, 'Obsolete bot issue comment; repeat to select several') do |id|
+          options[:ids] << id.to_i
+        end
+        flags.on('--head SHA', /\A[0-9a-f]{40}\z/) { |sha| options[:head] = sha }
+      end
+    end
+
+    def self.check_options(arguments, options, parser)
+      raise OptionParser::InvalidArgument, parser.to_s unless arguments.length == 2
+      raise OptionParser::MissingArgument, '--head for --bot-comment' if options[:ids].any? && !options[:head]
+      raise OptionParser::InvalidArgument, '--head requires --bot-comment' if options[:head] && options[:ids].empty?
     end
 
     def self.publish_result(result)
