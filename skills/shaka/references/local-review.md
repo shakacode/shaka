@@ -350,7 +350,7 @@ use `--ledger` when fixes must be proven to follow and reach the reviewed head.
 Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
 `cost` out unless the host reports a priced route. For a subscription session, put the
 `USD estimate` that `shaka usage` reports in `estimate` instead: the table marks it `est.` and
-the total calls it an API-equivalent estimate, never a bill. When `shaka reviewer` did not return `different_provider`, add
+the returned loop summary calls it an API-equivalent estimate, never a bill. When `shaka reviewer` did not return `different_provider`, add
 `fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
 `reviewer`, `failure_stage`, and `reason` from its `shaka review run` result. Leave
 `attempts` empty when selection tried no other reviewer. The helper replaces each `reason`
@@ -378,13 +378,21 @@ published verbatim, so before posting it asks GitHub to render the comment and r
 unclosed code fence or a stray disclosure tag in a report would hide the attestation. The
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
-the helper writes both itself. It renders a `Local Adversarial Review`
-comment: a summary table; a total of rounds, tokens, and cost; why the loop stopped; what the
-Prompt column means; any reviewer fallback notice; each report collapsed with its findings'
-dispositions and fix commits; and the last
-round's attestation as the final line, where `merge` reads it. A commit GitHub does not have,
-such as one a rebase replaced, is named without a link. Publishing again replaces
-that comment rather than adding another. Record available native
+the helper writes both itself. It posts one `Local Adversarial Review` comment per reviewed
+commit, in ledger order. Each opens with the findings from the previous triage that it fixes,
+or its GitHub commit subject when no finding caused it. A summary table names each reviewer
+and its finding count. The commit's Findings block gives each collated finding one outcome;
+each report is collapsed with its "Collated as" mapping when several reviewers read it.
+The last reviewer's attestation closes the comment, where `merge` reads it.
+A commit GitHub does not have, such as one a rebase replaced, is named without a link or subject.
+Each comment's key includes the full commit SHA, so republishing edits that commit's entry
+without overwriting other commits' reviews or the legacy loop comment. All comments are
+rendered and checked before any is posted; after a partial GitHub write failure, retry the
+same content file to update posted entries and finish the rest.
+
+The result's `comments` lists the published entries, and `summary` gives totals across the loop
+and its outcome. Copy that summary into the PR description's review history details; native
+usage records still belong in `usage.records`. Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
 reviewer's source; missing evidence is UNKNOWN. Add `--format json` to each `shaka usage`
 command in this guide and put its `record` in the description's `usage.records`. Do not publish raw sessions or private
