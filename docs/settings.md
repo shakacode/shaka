@@ -560,13 +560,14 @@ wip:
   include_locations: true
 ```
 
-Include the checkout path and session link in **WIP Details**. `seam init` writes
-this value. Set it to `false` to publish both as `UNKNOWN`; ownership, state, and
-next action remain visible.
+Include the checkout path and session link in **WIP Details**. Both team setup and
+private trials write `true`. The description renderer replaces both
+location fields with `REDACTED` when the selected setting is false or unavailable;
+ownership, state, next action, and the current commit remain visible.
 
-Locations can reveal local names or identifiers. The agent must inspect them for
-private information before publishing; Ruby does not check for it. Expandable
-sections on public PRs are public too.
+Locations can reveal local names or identifiers. When locations are enabled,
+the agent must inspect them before publishing. Other supplied prose still needs
+inspection for private information. Expandable sections on public PRs are public too.
 
 ## `repo_prefix`
 

@@ -265,6 +265,14 @@ class PrWatchTransitionsTest < Minitest::Test
 end
 
 class PrWatchBaselineTest < Minitest::Test
+  def test_missing_review_configuration_cannot_omit_review_or_add_required_checks
+    options = { root: Dir.pwd, ref: 'a' * 40, head: 'b' * 40 }
+    assert_nil Shaka::PrWatch::Command.watch_settings(options, nil)[:seam_required_checks]
+    assert_raises(Shaka::Error) do
+      Shaka::PrWatch::Command.review_jobs({ ci_review_not_required: true }, nil)
+    end
+  end
+
   def test_command_uses_trusted_review_jobs_and_required_checks
     seam = Struct.new(:review, :merge).new({ 'ci_review_jobs' => ['claude-review'], 'ci_review_wait' => 'one' },
                                            { 'required_checks' => ['validate'] })

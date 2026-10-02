@@ -21,8 +21,9 @@ module Shaka
       'next_action' => 'Next action'
     }.freeze
 
-    def initialize(spec)
+    def initialize(spec, include_locations: true)
       @spec = spec
+      @include_locations = include_locations
     end
 
     def detail
@@ -49,6 +50,8 @@ module Shaka
     end
 
     def cell(key)
+      return 'REDACTED' if !@include_locations && %w[workspace thread].include?(key)
+
       value = @spec[key]
       unless value.is_a?(String) && !value.strip.empty? && !value.match?(/[\r\n]/)
         raise Error, "Publication wip #{key} must be single-line nonempty text."

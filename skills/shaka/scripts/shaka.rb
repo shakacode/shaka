@@ -286,7 +286,8 @@ begin
 
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge handoff].include?(command)
-    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
+    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
+                                               private_trial: command != 'merge')
   end
   seam_required_checks = seam&.merge&.fetch('required_checks', nil)
   result = case command

@@ -37,7 +37,7 @@ class PublicSettingsTest < Minitest::Test
       public = Shaka::Evidence::PublicSettings.capture(config:, kind: 'private/local', ref:,
                                                        task_overrides: {}, installation:)
       assert_equal 'ask', public['merge.private_trial_default']
-      assert_equal 'ABSENT', public['source.configuration']
+      assert_equal 'private/local', public['source.configuration']
       assert_equal 'REDACTED', public['installation.revision']
       refute_includes JSON.generate(public), 'b' * 64
     end
