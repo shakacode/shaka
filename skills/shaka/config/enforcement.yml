@@ -539,18 +539,18 @@ rules:
     quote: never bypass protection
     enforced_by: agent
     note: >-
-      `Merge#verify_actor_capability` refuses unknown capability and requires a trusted opt-in
-      for admin-capable actors. Its readiness snapshots cannot guarantee native enforcement
-      for an exempt actor or prevent changes after the final read. The agent honors the
-      prohibition on bypass; GitHub enforces rules where they apply to the account. See
-      docs/settings.md#mergeallow_admin_actor for the setting and enforcement boundary.
+      The helper checks readiness before normal merge or queue submission. It does not
+      refuse an account solely because GitHub permits it to bypass protection. Readiness
+      snapshots cannot guarantee native enforcement for an exempt account or prevent
+      changes after the final read. The agent honors the prohibition on bypass;
+      GitHub enforces rules where they apply to the account.
   - id: no-ask-mode-bypass
     phase: finish
     quote: Do not bypass protection.
     enforced_by: agent
     note: >-
       This one governs what the agent tells a maintainer when Ask gates pass and the merge click
-      is theirs. `merge` refuses a bypass it would perform itself, and nothing reads advice.
+      is theirs. Nothing reads that advice; GitHub enforces rules where they apply to the account.
   - id: no-merge-permission-question
     phase: finish
     quote: Do not ask whether you should merge.

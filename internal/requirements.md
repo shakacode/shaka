@@ -197,12 +197,11 @@ The helper checks GitHub facts; the owner establishes authority, local verificat
 and acceptable risk. Changes to execution trust, authentication, permissions,
 release/deployment, destructive migrations, or merge guards require human review.
 Small size does not prove low risk. Unclear authority needs a decision; a safety
-failure blocks submission. Require observable native checks enforced for the actor;
-unknown identities block. Admin-capable identities block unless the trusted seam
-explicitly enables [merge.allow_admin_actor](../docs/settings.md#mergeallow_admin_actor);
-that opt-in retains every other Shaka gate and requests no protection bypass.
-Native enforcement for an opted-in actor depends on the repository’s rules;
-readiness can change after Shaka’s last snapshot. When GitHub has no required checks configured
+failure blocks submission. Trust maintainers authorized to merge, including accounts
+that GitHub permits to bypass protection; no separate account opt-in is required.
+The helper checks readiness before submitting the normal merge or enqueue operation.
+GitHub applies the repository's rules to the account as configured; readiness can
+change after the helper's last snapshot. When GitHub has no required checks configured
 on the base branch, as on a private repository on the GitHub Free plan, the trusted seam's
 `merge.required_checks` stands in for them and Shaka alone enforces it (maintainer decision
 on #235). Leave repository queue settings and armed

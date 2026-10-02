@@ -40,35 +40,20 @@ class CliMergeAdminActorTest < Minitest::Test
     end
   RUBY_SCRIPT
 
-  def test_trusted_opt_in_allows_cli_submission_despite_candidate_opt_out
-    with_merge_repository(true) do |root, ref, mutation|
-      write_candidate(root, false)
+  def test_admin_actor_can_merge_without_account_configuration
+    with_merge_repository do |root, ref, mutation|
       output, error, status = run_merge(root, ref, mutation)
 
       assert_predicate status, :success?, error
-      assert JSON.parse(output).dig('actor_capability', 'allow_admin_actor')
+      assert_equal 'MERGED', JSON.parse(output)['state']
       assert_path_exists mutation
-    end
-  end
-
-  def test_candidate_opt_in_cannot_authorize_submission
-    [nil, false].each do |setting|
-      with_merge_repository(setting) do |root, ref, mutation|
-        write_candidate(root, true)
-        _output, error, status = run_merge(root, ref, mutation)
-
-        refute_predicate status, :success?
-        assert_includes error, 'Admin capability caused refusal'
-        refute_path_exists mutation
-      end
     end
   end
 
   private
 
-  def with_merge_repository(setting)
-    policy = merge_policy.merge('allow_admin_actor' => setting).compact
-    with_repository('merge' => policy,
+  def with_merge_repository
+    with_repository('merge' => merge_policy,
                     'review' => review_policy('required' => 'none').except('ci_review_jobs')) do |root|
       commit_repository(root)
       ref, = Open3.capture3('git', '-C', root, 'rev-parse', 'HEAD')
@@ -90,13 +75,6 @@ class CliMergeAdminActorTest < Minitest::Test
     FileUtils.mkdir_p(bin)
     File.write(fake = File.join(bin, 'gh'), FAKE_GH)
     File.chmod(0o755, fake)
-  end
-
-  def write_candidate(root, value)
-    path = File.join(root, '.agents/agent-workflow.yml')
-    data = YAML.safe_load_file(path)
-    data['merge']['allow_admin_actor'] = value
-    File.write(path, YAML.dump(data))
   end
 
   def run_merge(root, ref, mutation)

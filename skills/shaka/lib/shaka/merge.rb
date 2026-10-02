@@ -8,21 +8,16 @@ require_relative 'required_checks'
 require_relative 'merge_review_evidence'
 require_relative 'merge_required_checks'
 require_relative 'merge_limits'
-require_relative 'merge_submission_mode'
 
 module Shaka
   # Applies native GitHub gates; the calling skill must establish merge authority.
   class Merge
     include MergeRequiredChecks
-    include MergeSubmissionMode
 
     # `review` takes MergeReviewEvidence's `required`, `waiver`, and checkout `root`.
-    def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, merge_policy: {})
-      @allow_admin_actor = merge_policy.fetch('allow_admin_actor', false)
-      raise Error, 'merge.allow_admin_actor must be a boolean' unless [true, false].include?(@allow_admin_actor)
-
+    def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
       @github = github
-      @seam_required_checks = merge_policy['required_checks']
+      @seam_required_checks = seam_required_checks
       @ci_review_wait = CiReviewWait.effective(seam: seam_wait, override: ci_review_wait)
       @review_evidence = MergeReviewEvidence.new(github, **review)
       @submission = MergeSubmission.new(github)
@@ -36,18 +31,14 @@ module Shaka
       verify_snapshot(initial, head, @target)
       evidence = verify_reviews(head, base, walkthrough, verify_gate)
       current = @github.snapshot
-      submit(initial, current, head).merge(evidence, 'actor_capability' => @actor_capability)
-    end
-
-    private
-
-    def submit(initial, current, head)
-      return reconcile_queued_replay(initial, current, head) if initial['isInMergeQueue']
+      return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
 
       verify_snapshot(current, head)
       @target.unchanged!(initial, current)
-      @submission.call(current, head)
+      @submission.call(current, head).merge(evidence)
     end
+
+    private
 
     def verify_gate
       gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
@@ -90,6 +81,30 @@ module Shaka
     def verify_pull_fields(pull)
       raise Error, 'GitHub PR identity is missing' unless pull['id'].is_a?(String) && !pull['id'].empty?
       raise Error, 'GitHub PR base is missing' unless pull['baseRefName'].is_a?(String) && !pull['baseRefName'].empty?
+    end
+
+    def verify_submission_mode(pull)
+      queue_enabled = pull['isMergeQueueEnabled']
+      in_queue = pull['isInMergeQueue']
+      verify_queue_state(pull, queue_enabled, in_queue)
+      return if in_queue
+      return if pull.key?('autoMergeRequest') && pull['autoMergeRequest'].nil?
+
+      raise Error, 'Existing or unknown delayed auto-merge blocks immediate merge'
+    end
+
+    def verify_queue_state(pull, queue_enabled, in_queue)
+      booleans = [true, false]
+      raise Error, 'Merge queue state is unknown' unless booleans.include?(queue_enabled) && booleans.include?(in_queue)
+      raise Error, 'Merge queue state is inconsistent' if in_queue && !queue_enabled
+
+      verify_queue_entry_absence(pull) unless in_queue
+    end
+
+    def verify_queue_entry_absence(pull)
+      return if pull.key?('mergeQueueEntry') && pull['mergeQueueEntry'].nil?
+
+      raise Error, 'Merge queue state is inconsistent'
     end
 
     def verify_native_state(pull)

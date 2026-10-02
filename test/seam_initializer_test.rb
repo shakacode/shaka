@@ -40,7 +40,9 @@ module SeamInitializerTestHelpers
      '--ci-review-job', 'claude-review']
   end
 
-  def generated_files(root) = GENERATED.map { |path| File.join(root, path) }
+  def generated_files(root)
+    GENERATED.map { |path| File.join(root, path) }
+  end
 
   def wrapper_files(root)
     WRAPPERS.map { |path| File.join(root, path) }
@@ -55,8 +57,7 @@ module SeamInitializerTestHelpers
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
     assert_equal %w[base_branch branches commands merge opening_check paths prose_limits review version wip],
                  config.keys.sort
-    assert_equal({ 'allow_admin_actor' => false, 'preference' => 'ask',
-                   'limits' => Shaka::MergeLimits::DEFAULTS }, config.fetch('merge'))
+    assert_equal({ 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS }, config.fetch('merge'))
     assert_includes File.read(File.join(root, CONTRACT)), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
   end

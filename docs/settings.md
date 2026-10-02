@@ -21,39 +21,12 @@ merge:
 
 With `ask`, merge the ready PR on GitHub or tell the agent to merge the reviewed
 commit. With `auto`, the agent merges after required checks, reviews, and approvals,
-subject to the repository's restrictions.
+subject to the repository's restrictions. Shaka uses your account's existing GitHub
+permissions; an account that can bypass protection needs no extra Shaka setting.
 
 Set a task's preference with `Use merge policy auto`. This is a task instruction;
 editing the PR's settings does not change its own merge authority. Required human
 approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-policy).
-
-## `merge.allow_admin_actor`
-
-**Optional.** Boolean, default `false`. Allow an admin-capable GitHub account to
-submit the normal merge or enqueue operation through Shaka.
-
-```yaml
-merge:
-  preference: ask
-  allow_admin_actor: true
-```
-
-For example, enable this when your maintainer account has admin capability and
-Shaka refuses its merge solely for that capability. The setting takes effect
-once it reaches the default branch; a candidate PR cannot authorize itself.
-
-When omitted or `false`, Shaka refuses an actor whose GitHub
-`viewerCanMergeAsAdmin` capability is `true`. An unknown capability always blocks.
-With `true`, every existing head, base, walkthrough, review, check, approval,
-size, and native-state gate still applies. Shaka uses the normal merge or queue
-operation without an admin bypass flag and leaves protection and queue settings
-unchanged. Merge evidence records the effective setting, capability, and decision.
-
-GitHub applies the repository's rules to the account as configured. Admin
-permissions may exempt that account from protection; this setting does not make
-GitHub enforce rules against an exempt actor. Shaka checks readiness snapshots,
-so a check or approval can change after its last read. Use rules that apply to
-admins when you need GitHub to enforce those gates at submission.
 
 ## `merge.required_checks`
 
