@@ -24,6 +24,18 @@ It installs a managed copy outside your projects. Start a new chat if the skill
 does not appear. Use a source installation: the published gem is a
 name-reservation prerelease without the current workflow.
 
+Try `$shaka` without a task for a guided welcome and setup check. Or ask:
+
+```text
+$shaka doctor
+```
+
+Doctor reports what is ready, which supported reviewer CLIs are on PATH, and
+where to install missing ones. It gives setup advice even before this repository
+is configured. Finding a CLI does not verify sign-in, quota, or a working review.
+An extra provider can supply independent review; installing every CLI is optional.
+The diagnostic changes no settings. Give the agent a task when you are ready.
+
 ## 2. Configure your repository
 
 Open a chat in your project and ask:

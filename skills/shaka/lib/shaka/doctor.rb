@@ -6,6 +6,8 @@ require_relative 'error'
 require_relative 'usage/usage'
 require_relative 'doctor/bounded_command'
 require_relative 'doctor/checks'
+require_relative 'local_review/path_guard'
+require_relative 'doctor/system'
 require_relative 'doctor/cursor_stop_hook'
 require_relative 'doctor/installation_identity'
 
@@ -18,17 +20,6 @@ module Shaka
     # stalled credential helper does not look like a working command.
     TIMEOUT = 15
     RUNNER = BoundedCommand.new(timeout: TIMEOUT)
-
-    # Everything doctor reaches outside its own process, in one place so a test can state
-    # the machine it describes instead of inheriting the one it runs on.
-    System = Struct.new(:runner, :usage_source, :host_name, :ruby_version, :cursor_stop_hook,
-                        keyword_init: true) do
-      def self.default
-        new(runner: RUNNER, usage_source: ->(name) { Usage::READERS.fetch(name).discover },
-            host_name: MachineAlias.system_name, ruby_version: RUBY_VERSION,
-            cursor_stop_hook: -> { CursorStopHook.installed? })
-      end
-    end
 
     def self.run(arguments)
       options = {}
@@ -62,7 +53,7 @@ module Shaka
 
     def self.option_parser(options)
       OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka doctor [--root DIR] [--installation-json]'
+        flags.banner = 'Usage: shaka doctor [--root DIR] [--host NAME] [--installation-json]'
         flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
         flags.on('--host NAME', Usage::READERS.keys, Usage::READERS.keys.join(', ')) do |value|
           options[:host] = value
@@ -94,7 +85,7 @@ module Shaka
 
     def report
       ["Shaka doctor: #{overall.upcase}", context, installation_summary, '',
-       *ordered.map { |item| render(item) }].join("\n")
+       *ordered.map { |item| render(item) }, '', next_step].join("\n")
     end
 
     private
@@ -147,6 +138,13 @@ module Shaka
       lines = ["[#{item.fetch(:status).upcase}] #{item.fetch(:name)} — #{item.fetch(:summary)}"]
       lines << "    Next: #{item[:guidance]}" if item[:guidance]
       lines.join("\n")
+    end
+
+    def next_step
+      return 'Next step: resolve the FAILED checks above, then rerun `shaka doctor`.' if blocked?
+
+      'Next step: give your coding agent a small task with Shaka. Run `shaka` for example prompts. ' \
+        'Follow any setup advice above when you want another reviewer.'
     end
   end
 end

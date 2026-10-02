@@ -294,10 +294,14 @@ published review shows a **Reviewer fallback** notice, no listed reviewer from a
 provider could run on that machine. Install one of the listed CLIs and sign in once
 with the account that should pay for reviews:
 
-- Codex: install the `codex` CLI, then run `codex login`.
-- Claude Code: install the `claude` CLI, then run `claude` and sign in. Keep the
+- Codex: follow the [official CLI installation](https://github.com/openai/codex),
+  then run `codex login`.
+- Claude Code: follow the [official setup](https://code.claude.com/docs/en/setup),
+  then run `claude` and sign in. Keep the
   normal sign-in; Shaka does not use `--bare`, which ignores it.
-- Grok: install the `grok` CLI and sign in as its setup describes.
+- Grok: follow the [Grok Build setup](https://docs.x.ai/build/overview), then run
+  `grok` and sign in. Shaka looks for `grok`; another program named `agent` is
+  not evidence of an installed Grok reviewer.
 
 Then list that provider in `local_review_agents`. The next review picks it, and the
 published review names it in its summary table instead of the fallback notice.

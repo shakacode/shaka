@@ -26,13 +26,14 @@ class DoctorAccessTest < Minitest::Test
   # Both gh calls are bounded separately, and a timeout answers its own check while the rest
   # of the report continues.
   def test_a_timed_out_command_answers_its_check_without_ending_the_report
+    ready, = doctor
     bounded = Shaka::Doctor::BoundedCommand.new(timeout: 0.2)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     report, blocked = doctor(runner: ->(*) { bounded.call(%w[sleep 30]) })
     elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
 
     assert blocked
-    assert_equal 7, check_names(report).length, 'a timeout ended the report'
+    assert_equal check_names(ready), check_names(report), 'a timeout ended the report'
     assert_includes report, 'Machine alias'
     assert_operator elapsed, :>=, 0.35, 'the two calls shared one deadline instead of one each'
     assert_operator elapsed, :<, 2, 'the calls were not bounded'

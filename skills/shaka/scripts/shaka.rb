@@ -39,6 +39,9 @@ require_relative '../lib/shaka/trial/command'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
 require_relative '../lib/shaka/workflow_version'
+require_relative '../lib/shaka/welcome'
+
+exit Shaka::Welcome.run if ARGV.empty?
 
 if ARGV.first == 'usage'
   ARGV.shift

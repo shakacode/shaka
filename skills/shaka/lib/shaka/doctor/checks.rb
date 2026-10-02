@@ -9,6 +9,7 @@ require_relative '../reviewer_settings'
 require_relative 'check'
 require_relative 'machine_alias'
 require_relative 'usage_source'
+require_relative 'reviewer_clis'
 
 module Shaka
   class Doctor
@@ -24,17 +25,17 @@ module Shaka
         @host = host
         @environment = environment
         @system = system
+        @reviewer_clis = ReviewerClis.new(root:, host:, environment:, system:)
       end
 
       def call
         seam = repository_seam
-        [ruby_runtime, github_cli, repository_access, seam, reviewer_settings(seam), alias_check,
+        [ruby_runtime, github_cli, repository_access, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
+         MachineAlias.new(@environment, host_name: @system.host_name).call,
          UsageSourceCheck.new(host: @host, system: @system).call]
       end
 
       private
-
-      def alias_check = MachineAlias.new(@environment, host_name: @system.host_name).call
 
       # An older Ruby runs this command and then fails somewhere less obvious, so the declared
       # prerequisite is checked rather than merely printed.
@@ -51,7 +52,7 @@ module Shaka
         return check('GitHub CLI', 'healthy', first_line(out)) if ok
 
         check('GitHub CLI', 'failed', "gh does not run: #{first_line(error)}",
-              guidance: 'Install the GitHub CLI. Publication and merge need it.')
+              guidance: 'Install https://cli.github.com/, then run `gh auth login` to publish PRs.')
       end
 
       # This answers authentication and permission together, for the one repository that
@@ -144,10 +145,10 @@ module Shaka
 
       # A missing contract is distinct from a present but unusable file.
       def missing_seam
-        legacy = Configuration::Paths::CONTRACT
-        modern = Configuration::Paths::NEW_CONTRACT
-        check('Repository seam', 'failed', "this root has no #{legacy} or #{modern} regular file",
-              guidance: 'Run `shaka seam init` here, or point `--root` at the repository you meant.')
+        paths = [Configuration::Paths::CONTRACT, Configuration::Paths::NEW_CONTRACT].join(' or ')
+        check('Repository seam', 'failed', "this root has no #{paths} regular file",
+              guidance: 'Ask your coding agent: Configure this repository for Shaka using its existing checks ' \
+                        'and merge policy ask. Or point `--root` at the checkout you meant.')
       end
 
       # A command that cannot even launch is this check's answer, never an aborted report.

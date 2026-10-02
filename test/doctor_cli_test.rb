@@ -20,6 +20,7 @@ class DoctorCliTest < Minitest::Test
   def test_a_stated_host_replaces_detection
     system = Shaka::Doctor::System.new(runner: ->(*) { ['', 'stub', false] },
                                        host_name: 'test-machine', ruby_version: RUBY_VERSION,
+                                       executable: ->(*) { false },
                                        usage_source: ->(host) { host == 'opencode' ? [__FILE__] : [] })
     subject = Shaka::Doctor.new(root: File.expand_path('..', __dir__), host: 'opencode',
                                 environment: {}, system: system)
