@@ -17,3 +17,14 @@ outcome, and project constraints. Evaluate the finished change as a whole.
 Focus on product fit, architecture, scope, and value. Another minor code nit is
 not a reason to run this review. Conclude **Proceed**, **Simplify/reframe**, or
 **Do not merge**, with concrete reasons and the smallest useful next action.
+
+Assess every question, but report only evidence that affects the decision. Do not
+write a paragraph for each criterion or repeat the conclusion in the summary,
+reasons, and next action. Omit generic assurances and claims of significance.
+
+For routine **Proceed** results, aim for 60–100 visible words. Give a short summary
+with the concrete reason and a concise next action. Supporting reasons and the
+alternative are published in collapsed details; keep them selective too.
+List every substantive unresolved concern in concerns so it remains visible.
+Use more explanation when a blocker or consequential tradeoff needs it.
+Discuss revision or replacement only when the result calls for that decision.
