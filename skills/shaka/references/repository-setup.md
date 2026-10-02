@@ -2,8 +2,11 @@
 
 ## Try Shaka privately in one clone
 
-When the trusted default branch has no Shaka seam, inspect the repository's existing
-commands and CI, then generate local settings with the installed helper:
+When the user explicitly requests a private trial and the trusted default branch
+has no Shaka seam, infer commands from project instructions, scripts, and CI.
+Show each proposed command with its source; ask only for consequential unknowns.
+Use the saved absolute installed helper path throughout, with no PATH edit.
+Generate local settings:
 
 ```bash
 shaka seam private setup --root /path/to/repository --ref DEFAULT_BRANCH_SHA \
@@ -22,6 +25,17 @@ required checks because they require a trusted source. The agent must verify
 that `--ref` is the current default-branch commit; Ruby only checks that it is a
 full commit SHA. Private settings do not grant trusted policy,
 public-comment trust, or merge authority.
+
+After setup, run `seam private inspect --root DIR` and
+`seam private check --root DIR --ref DEFAULT_BRANCH_SHA`. The latter reports
+complete local commands with `mode: private/local`, `grants_policy: false`, and
+`grants_merge_authority: false`; ordinary `seam check --ref` stays trusted-only.
+Continue into the feature task with the project's existing commands. Run the
+existing feature guard before staging and publication, and retain settings-bound
+validation and review evidence. Default to Ask and preserve GitHub's required
+checks, approvals, review threads, and queue rules. Private settings cannot supply
+fallback required checks or public-comment trust. Keep team adoption a separate
+explicit request, not a prerequisite for this task.
 
 Setup prepares a copy under the clone's common Git directory, adds the anchored
 `/.agents/shaka/` exclusion to its `info/exclude`, then writes the worktree's

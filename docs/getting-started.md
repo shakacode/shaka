@@ -36,9 +36,24 @@ is configured. Finding a CLI does not verify sign-in, quota, or a working review
 An extra provider can supply independent review; installing every CLI is optional.
 The diagnostic changes no settings. Give the agent a task when you are ready.
 
-## 2. Configure your repository
+## 2. Choose private trial or team setup
 
-Open a chat in your project and ask:
+For a private first task, open a chat in your project and ask:
+
+```text
+$shaka Fix search when the query contains an apostrophe.
+Try Shaka privately in this clone using the project's existing checks.
+Keep merge policy ask. Go.
+```
+
+Shaka instructs the agent to infer commands from project instructions, scripts,
+and CI, prepare local settings, and continue into the feature task. No team setup PR, manual
+YAML edit, or PATH edit is needed. Private settings remain excluded from the
+feature diff. Host permissions may require approval for protected Git writes.
+Genuine new-user acceptance remains unproven; see the
+[trial evidence and limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience).
+
+For shared team settings, ask:
 
 ```text
 $shaka Configure this repository for Shaka. Reuse its existing checks,
@@ -51,11 +66,6 @@ Shaka to your project's commands and record its review and merge choices.
 Then start your feature task. If the repository is already configured, skip this step.
 You can ask the agent to change settings later; you do not need to maintain them by hand.
 See [repository setup](configure-repository.md) for details.
-
-Want to try Shaka in one clone without shared setup? Private setup tools exist,
-but the seamless new-user path remains unproven. Read the
-[private-trial limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
-before choosing that option.
 
 ## 3. Start a task
 

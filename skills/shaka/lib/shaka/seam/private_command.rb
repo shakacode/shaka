@@ -3,12 +3,13 @@
 require 'json'
 require 'optparse'
 require_relative 'private_setup'
+require_relative 'check_report'
 
 module Shaka
   class Seam
     # Parses local-only setup and recovery commands independently of trusted policy.
     class PrivateCommand
-      OPERATIONS = %w[setup inspect list restore].freeze
+      OPERATIONS = %w[setup check inspect list restore].freeze
 
       def self.run(arguments)
         new(arguments).run
@@ -37,6 +38,7 @@ module Shaka
 
       def execute(operation, root)
         return setup(root) if operation == 'setup'
+        return CheckReport.private_settings(root:, ref: @options[:ref]).to_h if operation == 'check'
 
         recovery = recovery_for(operation, root)
         return recovery.inspect_checkout if operation == 'inspect'
@@ -60,9 +62,10 @@ module Shaka
 
       def option_parser(operation)
         OptionParser.new do |flags|
-          flags.banner = 'Usage: shaka seam private setup|inspect|list|restore --root DIR [options]'
+          flags.banner = 'Usage: shaka seam private setup|check|inspect|list|restore --root DIR [options]'
           flags.on('--root DIR') { |value| @options[:root] = value }
           add_setup_options(flags) if operation == 'setup'
+          flags.on('--ref SHA') { |value| @options[:ref] = value } if operation == 'check'
           add_restore_options(flags) if operation == 'restore'
         end
       end
