@@ -1,10 +1,11 @@
 # Shaka
 
-**Make agent-written PRs easier to understand and evaluate.**
+**Work effectively with your coding agent, from task to PR.**
 
 Shaka guides your coding agent through implementation, testing, independent
-review, and PR delivery. Get clear explanations and evidence to support your
-merge decision—and revisit the reasoning afterward.
+review, and PR delivery. Get a clear handoff: what changed, what was checked,
+and what needs your decision. Review a ready change, request revisions, or
+resolve an open question with the context you need.
 
 [Read the Shaka documentation](https://shaka.shakacode.com/).
 
@@ -35,10 +36,14 @@ merge choices, feedback, and resuming work.
   lower costs and shorten CI queues.
 - **Make review easier.** Get a clear PR description, screenshots showing visible
   changes, and a code walkthrough explaining implementation choices and alternatives.
-- **Revisit decisions after merging.** Use the recorded rationale and review
-  responses to assess the approach and how concerns were handled.
 - **See what was checked and what it cost.** Find the tested revision, review
   findings, verification gaps, and available model, usage, and cost information.
+- **Reduce prompt-injection exposure in open source.** Shaka’s comment reader
+  withholds untrusted authors’ comments from the agent for maintainer triage.
+  [Review safety](docs/workflow.md#trust-model) explains the boundary.
+- **Use one workflow across projects.** Each repository configures its own checks,
+  reviewers, and merge policy. [Repository setup](docs/configure-repository.md#use-shaka-across-projects)
+  connects Shaka to your existing tools.
 - **Control merging.** Choose **Ask** to merge yourself or approve the agent's merge,
   or **Auto** to let it merge after required checks and approvals.
   Consequential changes need human review.
@@ -67,4 +72,4 @@ verification gaps, and help resuming work when checks or access fail.
 - [FAQ](docs/faq.md) — answers to common questions.
 - [Documentation index](docs/README.md) — setup, verification, settings, and advanced guides.
 
-[Skill references](skills/shaka/references/README.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
+[Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)

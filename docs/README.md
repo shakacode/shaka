@@ -1,8 +1,8 @@
 # Documentation
 
 Understand what your coding agent changed, why it chose the approach, and how
-the result was checked. Shaka guides the work through a pull request you can
-evaluate before merging and revisit afterward. You choose who merges it.
+the result was checked. Shaka presents the context you need to approve a change,
+request revisions, or resolve an open question. You choose who merges it.
 
 ## Start here
 
