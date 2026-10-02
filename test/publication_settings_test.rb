@@ -70,6 +70,14 @@ class PublicationSettingsTest < Minitest::Test
     assert_includes body, '| source | UNKNOWN | UNKNOWN | UNKNOWN |'
   end
 
+  def test_unfinished_team_description_preserves_its_location_choice
+    with_checkout do |root, ref|
+      settings = prepare(root, ref, {})
+      assert_predicate settings, :include_locations?
+      assert_includes settings.detail.fetch('body'), '| wip.include_locations | UNKNOWN | UNKNOWN | true |'
+    end
+  end
+
   private
 
   def changed_candidate(root)
