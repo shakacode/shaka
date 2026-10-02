@@ -34,6 +34,7 @@ require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
+require_relative '../lib/shaka/usage/cursor_usage_refresh'
 require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/trial/command'
 require_relative '../lib/shaka/work'
@@ -286,7 +287,8 @@ begin
 
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge handoff].include?(command)
-    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
+    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
+                                               private_trial: command != 'merge')
   end
   seam_required_checks = seam&.merge&.fetch('required_checks', nil)
   result = case command
@@ -322,8 +324,10 @@ begin
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
                                                        model: options[:opening_model]).call(described['summary'])
+               refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note).tap do |result|
                  result['attention'] = attention if attention
+                 result['cursor_usage_refresh'] = refresh if refresh
                end
              end
            when 'reply'

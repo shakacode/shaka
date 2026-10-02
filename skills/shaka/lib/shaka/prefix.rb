@@ -56,9 +56,11 @@ module Shaka
     end
 
     def call
-      config = Configuration.trusted(root: @root, ref: @ref || Configuration.default_ref(root: @root),
-                                     candidate_commands: false).to_h
-      RepoPrefix.display(configured: config['repo_prefix'], repository_name: GitOrigin.repository_name(root: @root))
+      ref = @ref || Configuration.default_ref(root: @root)
+      sha = Configuration.resolve_commit(root: @root, ref:, label: 'prefix ref')
+      config = Configuration.trusted(root: @root, ref: sha, candidate_commands: false).to_h if
+        Configuration::Layout.commit(root: @root, sha:, allow_missing: true)
+      RepoPrefix.display(configured: config&.[]('repo_prefix'), repository_name: GitOrigin.repository_name(root: @root))
     end
   end
 end

@@ -20,6 +20,16 @@ module Shaka
         new(config:, mode: TRUSTED_MODE, ref:)
       end
 
+      def self.private_settings(root:, ref:)
+        raise Error, '--ref is required for private check' unless ref
+
+        source = Configuration.private_source(root:, ref:)
+        raise Error, "Private settings unavailable (#{source.status}): #{source.blockers.join('; ')}" unless
+          source.status == 'complete'
+
+        new(config: source.candidate_config, mode: source.mode, ref: source.ref)
+      end
+
       def self.emit(payload)
         puts JSON.pretty_generate(payload)
         0
@@ -43,6 +53,7 @@ module Shaka
           'grants_policy' => trusted?,
           'grants_merge_authority' => false
         }
+        return payload.merge('ref' => @ref, 'trusted_source' => 'absent') if @mode == 'private/local'
         return payload unless trusted?
 
         payload.merge('ref' => @ref, 'sha' => @config.sha)

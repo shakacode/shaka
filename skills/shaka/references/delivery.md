@@ -119,10 +119,11 @@ session's metadata, and copy its `link` verbatim. The host session ID differs fr
 disabled app links, and other hosts use `UNKNOWN` until a supported locator exists.
 A link's availability depends on the owner's machine being reachable.
 
-**Privacy:** the trusted `wip.include_locations` setting defaults to `true`.
-When false, publish `UNKNOWN` for both Workspace and Thread. The publishing command
-does not read this setting; check the content before submitting it. Retain the fields and
-public owner alias. The publisher does not enforce this setting; the agent must.
+**Privacy:** both team setup and private trials default `wip.include_locations` to
+`true`. Supply the selected default-branch `--ref` to `description`.
+The renderer replaces Workspace and Thread with `REDACTED` when the setting is
+false or unavailable, including before validation/review results exist. Retain the
+fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.
 See [configuration](https://github.com/shakacode/shaka/blob/main/docs/settings.md#wipinclude_locations).
 
@@ -141,6 +142,14 @@ checkout is reachable; record it as `UNKNOWN` when it is not.
 
 The note records state. It is not a lock or authorization, and the read/write gap
 still allows a race. Maintainer confirmation prevents competing owners.
+
+## Reject an approach and restart
+
+Use [human attention checkpoints](return-points.md) to identify earlier human guidance,
+preserve the abandoned code and context, and resume with new steering. Requesting
+attention alone records no human guidance. Keep the existing Ask/Auto decision path
+and WIP note; summarize superseded attempts in the description's details while
+carrying surviving material findings into the active review.
 
 ## When a task needs several PRs
 

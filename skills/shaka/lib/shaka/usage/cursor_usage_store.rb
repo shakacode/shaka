@@ -24,14 +24,19 @@ module Shaka
       record = compact(parse(raw))
       return 0 unless record
 
+      append(record)
+      0
+    rescue SystemCallError
+      0
+    end
+
+    def self.append(record)
       FileUtils.mkdir_p(home)
       File.open(File.join(home, "#{record['conversation_id']}.jsonl"), 'a') do |file|
         file.flock(File::LOCK_EX)
         file.write("#{JSON.generate(record)}\n")
       end
-      0
-    rescue SystemCallError
-      0
+      CursorUsageRefresh.after_write(record)
     end
 
     def self.parse(raw)
@@ -51,6 +56,8 @@ module Shaka
              .merge('hook_event_name' => 'stop', 'timestamp' => Time.now.utc.strftime('%Y-%m-%dT%H:%M:%SZ'))
     end
 
-    private_class_method :parse, :compact
+    private_class_method :parse, :compact, :append
   end
 end
+
+require_relative 'cursor_usage_refresh'

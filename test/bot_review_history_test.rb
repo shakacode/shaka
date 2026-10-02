@@ -17,7 +17,7 @@ module BotReviewHistoryFixture
 
   class GitHub < Shaka::GitHub
     attr_reader :writes, :node
-    attr_accessor :head, :permission, :mismatch, :failure, :changed
+    attr_accessor :head, :permission, :mismatch, :failure, :changed, :moved
 
     def initialize
       super('example/test', 1)
@@ -47,6 +47,7 @@ module BotReviewHistoryFixture
       @writes << node['id']
       node.merge!('isMinimized' => true, 'minimizedReason' => 'outdated') unless mismatch
       node['body'] += ' changed' if changed
+      @head = 'b' * 40 if moved
       { 'minimizeComment' => { 'minimizedComment' => node.dup } }
     end
   end
@@ -114,6 +115,15 @@ class BotReviewHistoryTest < Minitest::Test
     @github.head = 'b' * 40
     assert_match(/head changed/, collapse['unavailable'].first)
     assert_empty @github.writes
+  end
+
+  def test_head_change_after_confirmed_write_keeps_the_edit_and_reports_the_race
+    @github.moved = true
+    result = collapse
+    assert_equal [1], result['collapsed']
+    assert_match(/head changed/, result['unavailable'].first)
+    assert_equal ['IC_1'], @github.writes
+    assert_equal 'outdated', @github.node['minimizedReason']
   end
 
   def test_permission_failure_is_visible

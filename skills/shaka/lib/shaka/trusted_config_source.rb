@@ -6,6 +6,7 @@ require_relative 'review_prompt'
 require_relative 'trusted_path_resolver'
 require_relative 'configuration/layout'
 require_relative 'configuration/sources'
+require_relative 'configuration/private_source'
 
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
@@ -20,7 +21,10 @@ module Shaka
 
     # PR commands read policy only from a trusted ref; without one they keep GitHub's native gates
     # instead of falling back to the candidate file.
-    def self.from_ref(root:, ref:)
+    def self.from_ref(root:, ref:, private_trial: false)
+      return nil if private_trial && ref && !Configuration::Layout.commit(root:, sha: ref, allow_missing: true) &&
+                    Configuration::PrivateSource.new(root:, ref:).resolve.status == 'complete'
+
       load(root:, ref:) if ref
     end
 

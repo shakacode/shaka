@@ -3,6 +3,7 @@
 require_relative '../evidence/verification'
 require_relative '../evidence/public_settings'
 require_relative 'feature_guard'
+require_relative '../opening_publication'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -21,7 +22,7 @@ module Shaka
       FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current = current_settings(root:, ref:, repository:) if verdict
+      current = current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref
       new(verdict:, current:)
     end
 
@@ -37,15 +38,24 @@ module Shaka
       verdict
     end
 
-    def self.current_settings(root:, ref:, repository:)
-      _config, _settings, _kind, current = Evidence::Inputs.capture(root:, ref:, repository:)
-      current
+    def self.current_settings(root:, ref:, repository:, required: false)
+      OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
+        _config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
+        current
+      end
+    rescue Error, SystemCallError
+      raise if required
+
+      nil
     end
 
     def initialize(verdict: nil, current: nil)
       @verdict = verdict
       @current = current
     end
+
+    # An unknown policy cannot authorize publishing locations, even on unfinished PRs.
+    def include_locations? = @current&.fetch('wip.include_locations', false) == true
 
     def rows
       snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]

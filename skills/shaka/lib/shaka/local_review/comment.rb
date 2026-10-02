@@ -40,6 +40,8 @@ module Shaka
       @max_rounds = RepositoryConfig::ReviewLimit.from(content)
     end
 
+    def loop_summary = LocalReviewSummary.new(@rounds).lines.take(2).join("\n\n")
+
     def render
       blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice, *settings_notice,
                 *LocalReviewBound.new(@rounds, @max_rounds).lines, *LocalReviewTriage.section(@rounds, @links),

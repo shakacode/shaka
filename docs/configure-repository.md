@@ -5,6 +5,19 @@ local trial without a setup PR, see the
 [private-trial experience and limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience).
 The procedures below publish team configuration.
 
+## Use Shaka across projects
+
+Use the same skill across your organization’s repositories or the open-source
+projects you maintain. Each repository chooses its checks, reviewers, and merge
+policy through a small configuration boundary, called the **seam**.
+
+For example, a library can use its Ruby test suite and require your merge approval,
+while a documentation project uses link checks and allows Auto after required
+checks and reviews. Updating the shared skill keeps these project choices in
+repository configuration; you do not need a separate copy of the workflow for each.
+
+See [settings](settings.md) for available choices.
+
 ## Before you start
 
 Shaka waits for your CI checks before it calls a PR ready, and before it merges one
