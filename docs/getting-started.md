@@ -50,8 +50,10 @@ Shaka instructs the agent to infer commands from project instructions, scripts,
 and CI, prepare local settings, and continue into the feature task. No team setup PR, manual
 YAML edit, or PATH edit is needed. Private settings remain excluded from the
 feature diff. Host permissions may require approval for protected Git writes.
-Genuine new-user acceptance remains unproven; see the
-[trial evidence and limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience).
+These are workflow instructions; complete delivery support is tracked separately
+in [#277](https://github.com/shakacode/shaka/issues/277). Genuine new-user acceptance
+remains unproven. The [earlier trial report](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
+records the maintainer interventions that prompted these changes.
 
 For shared team settings, ask:
 
