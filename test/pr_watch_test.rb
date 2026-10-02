@@ -265,15 +265,11 @@ class PrWatchTransitionsTest < Minitest::Test
 end
 
 class PrWatchBaselineTest < Minitest::Test
-  def test_private_trial_keeps_native_checks_and_no_configured_review_jobs
+  def test_missing_review_configuration_cannot_omit_review_or_add_required_checks
     options = { root: Dir.pwd, ref: 'a' * 40, head: 'b' * 40 }
-    with_trusted_config(nil) do
-      watcher = Shaka::PrWatch::Command.watcher(['owner/repo', '42'], options)
-      assert_empty watcher.instance_variable_get(:@ci_jobs)
-      assert_nil Shaka::PrWatch::Command.watch_settings(options, nil)[:seam_required_checks]
-      assert_raises(Shaka::Error) do
-        Shaka::PrWatch::Command.review_jobs({ ci_review_not_required: true }, nil)
-      end
+    assert_nil Shaka::PrWatch::Command.watch_settings(options, nil)[:seam_required_checks]
+    assert_raises(Shaka::Error) do
+      Shaka::PrWatch::Command.review_jobs({ ci_review_not_required: true }, nil)
     end
   end
 

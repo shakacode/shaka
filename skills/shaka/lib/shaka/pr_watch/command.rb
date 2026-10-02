@@ -27,10 +27,14 @@ module Shaka
       end
 
       def watcher(arguments, options)
-        seam = TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref], private_trial: true)
-        settings = watch_settings(options, seam)
+        root = options[:root] || Dir.pwd
+        seam = TrustedConfigSource.from_ref(root:, ref: options[:ref], private_trial: true)
+        review_source = seam || Configuration::PrivateSource.new(root:, ref: options[:ref]).resolve.candidate_config
+        raise Error, 'Private trial settings changed during watcher setup.' unless review_source
+
+        settings = watch_settings(options, seam, review: review_source.review)
         PrWatch.new(GitHub.new(*arguments), head: options[:head],
-                                            ci_jobs: review_jobs(options, seam), settings:)
+                                            ci_jobs: review_jobs(options, review_source), settings:)
       end
 
       def review_jobs(options, seam)
@@ -43,10 +47,10 @@ module Shaka
         []
       end
 
-      def watch_settings(options, seam)
+      def watch_settings(options, seam, review: seam&.review)
         settings = options.slice(:interval, :timeout, :settle)
         settings[:ci_review_wait] = CiReviewWait.effective(
-          seam: seam&.review&.fetch('ci_review_wait', nil), override: options[:ci_review_wait]
+          seam: review&.fetch('ci_review_wait', nil), override: options[:ci_review_wait]
         )
         settings[:seam_required_checks] = seam&.merge&.fetch('required_checks', nil)
         settings[:baseline] = baseline(options) if options[:baseline]

@@ -3,6 +3,7 @@
 require_relative 'private_setup_test'
 require_relative 'handoff_helper'
 require_relative 'support/private_trial_github'
+require 'shaka/pr_watch/command'
 
 class PrivateTrialCommandTest < Minitest::Test
   include PrivateSetupFixture
@@ -21,7 +22,25 @@ class PrivateTrialCommandTest < Minitest::Test
     end
   end
 
+  def test_generated_trial_preserves_its_configured_ci_review_choice
+    with_setup do |root, ref|
+      selected = options.merge(review_policy: 'meaningful_changes', ci_review_jobs: ['private-review'])
+      Shaka::Seam::PrivateSetup.new(root:, ref:, options: selected).setup
+      watcher = Shaka::PrWatch::Command.watcher(['owner/repo', '1'], root:, ref:, head: ref)
+      assert_equal ['private-review'], watcher.instance_variable_get(:@ci_jobs)
+      config = Shaka::Configuration.private_source(root:, ref:).candidate_config
+      assert_empty Shaka::PrWatch::Command.review_jobs({ ci_review_not_required: true }, config)
+      assert_native_review_settings(config.review)
+    end
+  end
+
   private
+
+  def assert_native_review_settings(review)
+    settings = Shaka::PrWatch::Command.watch_settings({ ci_review_wait: 'all' }, nil, review:)
+    assert_equal 'all', settings[:ci_review_wait]
+    assert_nil settings[:seam_required_checks]
+  end
 
   def prepare_github(directory, ref)
     script = File.join(directory, 'gh')
