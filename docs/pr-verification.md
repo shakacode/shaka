@@ -1,5 +1,53 @@
 # PR verification
 
+Use a Shaka PR to understand the change, assess its evidence, and decide what
+needs closer review. The same record helps you revisit decisions after merging.
+
+<a id="read-a-pr-for-your-decision"></a>
+
+<a id="answers-for-your-merge-decision"></a>
+
+## Answers for your next decision
+
+Start with the description for the outcome, open decisions, and steps besides
+merging. Follow the code walkthrough for implementation choices and alternatives.
+Then inspect the supporting evidence for the revision you are reviewing.
+A handoff should make clear whether the change is ready to merge or needs your
+input. You can approve the approach, request revisions, or settle an open question.
+
+| Your question | Where to look |
+| --- | --- |
+| What changes for users? | The description, preview, and visual comparisons when applicable. |
+| Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
+| How was it checked? | Validation results and independent review covering the current revision, including gaps. |
+| What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |
+| What do I need to do? | Open decisions and steps besides merging, with their timing and owner. |
+
+For example, a CSV export PR may use a simple download instead of a background
+job. The walkthrough should explain that choice; tests should exercise the
+export behavior. You can then judge whether the approach suits the expected
+volume and whether important cases are missing.
+
+## Revisit a merged change
+
+Assess the decision and the process separately:
+
+- **Was the approach reasonable?** Compare the recorded goal, alternatives, and
+  risks with what was known then and what you learned after deployment. A working
+  feature can still introduce more maintenance than its benefit justifies.
+- **What evidence supports the process?** Check which revision was tested and
+  reviewed, how findings were handled, and which gaps or exceptions were reported.
+  Missing evidence leaves a question open; it does not establish that a step
+  passed or failed.
+
+For the CSV export, later growth may justify a background job. The original
+walkthrough helps distinguish changed needs from an assumption that lacked support.
+The test and review records help you examine how that assumption was checked.
+
+Shaka makes the recorded work inspectable. It does not prove that every workflow
+instruction was followed or that the tests and review were sufficient. See
+[what is enforced](workflow.md#what-is-enforced).
+
 ## Keep the PR easy to read
 
 Lead with the outcome and a short validation result. Put the most useful comparison

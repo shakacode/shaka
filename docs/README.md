@@ -1,7 +1,8 @@
 # Documentation
 
-Describe the result you want. Shaka guides your coding agent through the work,
-checks, review, and a clear pull request. You choose who merges it.
+Understand what your coding agent changed, why it chose the approach, and how
+the result was checked. Shaka presents the context you need to approve a change,
+request revisions, or resolve an open question. You choose who merges it.
 
 ## Start here
 
@@ -23,8 +24,8 @@ Ask the agent to handle configuration. These guides explain your choices:
 
 ## Look deeper
 
-- [PR verification](pr-verification.md) — understand the evidence and merge details.
-- [Pilot status and limitations](expected-experience.md) — public evidence and private-trial caveats.
+- [PR verification](pr-verification.md) — evaluate a change and revisit its decisions after merging.
+- [What to expect from Shaka](expected-experience.md) — setup choices, verification gaps, and recovery.
 - [Settings](settings.md) — the reference for options and defaults.
 - [Writing preferences](writing-preferences.md) — choose how the agent writes for your project.
 - [Workflow and enforcement](workflow.md) — what code checks and what relies on the agent.
