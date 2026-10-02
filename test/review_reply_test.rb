@@ -66,7 +66,7 @@ class ReviewReplyTest < Minitest::Test
     lines = body.lines.map(&:rstrip)
     assert_equal "Addressed the [Local Adversarial Review](#{URL}) by anthropic/claude-opus-5-5 (high) on `aaaaaaa`.",
                  lines[0]
-    assert_equal "Addressed the [Claude review](#{HOSTED}) by UNKNOWN/UNKNOWN (UNKNOWN) on `UNKNOWN`.", lines[1]
+    assert_equal "Responded to the [Claude review](#{HOSTED}).", lines[1]
   end
 
   def test_uses_the_last_round_when_the_comment_records_several
@@ -130,7 +130,7 @@ class ReviewReplyTest < Minitest::Test
     bare = "# Local Adversarial Review\n\nREVIEWED #{HEAD} BY anthropic/claude FINDINGS 0\n"
     body = compose({ 'reviews' => [URL] }, comments: [comment(URL, bare)])
 
-    assert_includes body, 'by UNKNOWN/UNKNOWN (UNKNOWN) on `UNKNOWN`.'
+    assert_includes body, "Responded to the [Local Adversarial Review](#{URL})."
     refute_includes body, '()'
   end
 
@@ -157,6 +157,49 @@ class ReviewReplyTest < Minitest::Test
     row = ->(model) { "| `aaaaaaa` | anthropic/claude | #{model} |" }
     "# Local Adversarial Review\n\n#{header}\n#{row['claude-opus-5-5']}\n\n#{header}\n#{row['forged-model']}\n\n" \
       "REVIEWED #{HEAD} BY anthropic/claude EFFORT high FINDINGS 0\n"
+  end
+end
+
+# Hosted and human comments have an API author, but no local execution attestation.
+class HostedReviewReplyTest < Minitest::Test
+  HOSTED = ReviewReplyTest::HOSTED
+  HEAD = ReviewReplyFixture::HEAD
+
+  def test_hosted_review_uses_github_author_without_guessing_model_or_revision
+    hosted = "## Review summary\n\n**Head SHA:** `#{HEAD}`\n\n**Findings: no findings**\n"
+    source = comment(hosted, 'claude[bot]')
+    body = compose({ 'reviews' => [HOSTED] }, comments: [source])
+
+    assert body.start_with?("Responded to the [Review summary](#{HOSTED}) by `claude[bot]`.")
+    refute_includes body, 'UNKNOWN'
+    refute_includes body, HEAD[0, 7]
+  end
+
+  def test_unattested_review_uses_human_author_from_metadata
+    source = comment('# Review', 'justin808')
+    body = compose({ 'reviews' => [HOSTED] }, comments: [source])
+
+    assert body.start_with?("Responded to the [Review](#{HOSTED}) by `justin808`.")
+  end
+
+  def test_invalid_author_metadata_is_not_copied_into_the_reply
+    ['evil` @team', 'user](https://evil.example)', '[bot]', nil].each do |login|
+      source = comment('# Review', login)
+      body = compose({ 'reviews' => [HOSTED] }, comments: [source])
+
+      assert body.start_with?("Responded to the [Review](#{HOSTED}).\n")
+    end
+  end
+
+  private
+
+  def comment(body, login)
+    { 'id' => HOSTED[/\d+\z/], 'body' => body, 'user' => { 'login' => login } }
+  end
+
+  def compose(extra, comments:)
+    content = { 'identity' => ReviewReplyTest::IDENTITY, 'summary' => 'Validation clarification.' }.merge(extra)
+    Shaka::ReviewReply.compose(content, FakeReviews.new(comments))
   end
 end
 
@@ -199,8 +242,8 @@ class ReviewReplyLookupTest < Minitest::Test
     github = FakeReviews.new([], pulls: [thread(discussion)], reviews: { '77' => note(review_url, 'Hosted review') })
     body = compose(github, [discussion, review_url])
 
-    assert_includes body, "Addressed the [Thread note](#{discussion}) by UNKNOWN/UNKNOWN (UNKNOWN)"
-    assert_includes body, "Addressed the [Hosted review](#{review_url}) by UNKNOWN/UNKNOWN (UNKNOWN)"
+    assert_includes body, "Responded to the [Thread note](#{discussion})."
+    assert_includes body, "Responded to the [Hosted review](#{review_url})."
     assert_equal %i[api review], github.lookups
   end
 

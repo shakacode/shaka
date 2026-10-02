@@ -4,6 +4,7 @@ require_relative 'error'
 require_relative 'merge_review_evidence'
 require_relative 'publication/publication'
 require_relative 'reviewer_selection'
+require_relative 'public_comments/github_login'
 
 module Shaka
   # Writes the opening of a reply that addresses a review.
@@ -45,7 +46,8 @@ module Shaka
     def line(url)
       raise Error, 'A review reply takes a comment URL, not a typed reviewer identity.' unless url.is_a?(String)
 
-      Evidence.line(body: located(url).fetch('body').to_s, url: url)
+      comment = located(url)
+      Evidence.line(body: comment.fetch('body').to_s, url: url, author: comment.dig('user', 'login'))
     end
 
     def located(url)
@@ -98,34 +100,47 @@ module Shaka
     # One published review comment, read back into the opening line.
     class Evidence
       # A heading or ledger cell is copied into the reply, so it cannot carry Markdown or a mention.
-      HEADING = /^# ([A-Za-z0-9][A-Za-z0-9 ._-]*)$/
+      HEADING = /^\#{1,6} ([A-Za-z0-9][A-Za-z0-9 ._-]*)$/
       TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._+-]*\z/
       COLUMNS = %w[Commit Reviewer Model].freeze
 
-      def self.line(body:, url:) = new(body, url).line
+      def self.line(body:, url:, author: nil) = new(body, url, author).line
 
-      def initialize(body, url)
+      def initialize(body, url, author)
         @body = body
         @url = url
+        @author = author
       end
 
       def line
-        provider, model, effort, sha = identity
+        evidence = identity
+        return response_line unless evidence
+
+        provider, model, effort, sha = evidence
         short = sha ? sha[0, 7] : 'UNKNOWN'
         "Addressed the [#{heading}](#{@url}) by #{provider}/#{model} (#{effort}) on `#{short}`."
       end
 
       private
 
+      # Hosted reviews and human comments do not publish Shaka's local attestation.
+      # Name their GitHub author without inferring execution metadata from prose.
+      def response_line
+        author = @author if @author.is_a?(String) &&
+                            @author.delete_suffix('[bot]').match?(PublicComments::GitHubLogin::PATTERN)
+        attribution = author ? " by `#{author}`" : ''
+        "Responded to the [#{heading}](#{@url})#{attribution}."
+      end
+
       def heading
-        text = @body.each_line.map(&:rstrip).find { |row| row.match?(HEADING) }&.delete_prefix('# ')&.strip
+        text = @body.each_line.filter_map { |row| row.rstrip.match(HEADING)&.captures&.first }.first&.strip
         text.nil? || text.empty? ? 'review' : text
       end
 
       def identity
         sha, reviewer, effort, = @body.match(MergeReviewEvidence::ATTESTATION)&.captures
         parsed = parse_reviewer(reviewer)
-        return %w[UNKNOWN UNKNOWN UNKNOWN] unless parsed
+        return unless parsed
 
         [token(parsed.fetch('provider')), ledger_model(sha, reviewer), token(effort), sha]
       end
