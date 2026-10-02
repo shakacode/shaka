@@ -9,6 +9,12 @@ class HandoffWipNoteTest < Minitest::Test
     assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::Handoff::WipNote.revision(body)
   end
 
+  def test_a_note_published_under_the_previous_heading_still_reads
+    body = HandoffFixtures.description.sub('| Chat link |', '| Thread |')
+
+    assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::Handoff::WipNote.revision(body)
+  end
+
   def test_a_body_saved_with_crlf_line_endings_still_reads
     body = HandoffFixtures.description.gsub("\n", "\r\n")
 

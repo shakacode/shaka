@@ -10,7 +10,7 @@ module Shaka
     FIELDS = {
       'owner' => 'Owner',
       'task' => 'Task',
-      'thread' => 'Thread',
+      'thread' => 'Chat link',
       'last_observed_activity' => 'Last observed activity',
       'revision' => 'Revision',
       'workspace' => 'Workspace',
@@ -20,6 +20,9 @@ module Shaka
       'state' => 'State',
       'next_action' => 'Next action'
     }.freeze
+    # Open notes published this heading before Chat link. Handoff still reads them.
+    PREVIOUS_LABELS = FIELDS.merge('thread' => 'Thread').freeze
+    RECOGNIZED_HEADINGS = [FIELDS.values, PREVIOUS_LABELS.values].freeze
 
     def initialize(spec, include_locations: true)
       @spec = spec

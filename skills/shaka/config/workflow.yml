@@ -523,11 +523,11 @@ phases:
       - Every PR description published before outcome includes its current
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>)
         as a collapsed `WIP Details` disclosure. Its workspace field carries the checkout path
-        and its thread field the host's link back to this session when the selected
+        and its thread field, published as Chat link, the host's link back to this session when the selected
         `wip.include_locations` is `true`. Team and private setup both generate `true`. The description
         renderer replaces both fields with `REDACTED` when the setting is false or unavailable;
         ownership and the current commit remain visible. Inspect other supplied prose for private
-        content. The thread link follows the guide's rule for the host: Codex builds it from
+        content. The chat link follows the guide's rule for the host: Codex builds it from
         `CODEX_THREAD_ID`, Claude Code asks the host for this session's metadata and publishes
         the `link` it returns, and any host the guide does not cover, or that reports no link,
         uses `UNKNOWN`.

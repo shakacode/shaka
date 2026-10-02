@@ -136,7 +136,7 @@ for preservation rules and the real-use evaluation still needed.
 ## Resume unfinished work
 
 Open the PR's **WIP Details** to find the owning chat, last known state, and next
-action. The **Thread** link can reopen the conversation when the owner's machine
+action. The **Chat link** can reopen the conversation when the owner's machine
 is reachable. In Codex, `codex://threads/...` takes you back to the original chat
 to pick up where the agent stopped. Before another agent takes over, confirm the previous one has
 stopped or handed off; a timestamp cannot prove it.

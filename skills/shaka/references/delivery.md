@@ -77,9 +77,10 @@ the decision unless scope or expected cost materially changes.
 ### Recover an unfinished PR
 
 Keep a collapsed **WIP Details** entry in the PR description until GitHub confirms
-the outcome. Publish it through the `description` content's `wip` object, whose
-snake_case keys name the fields below; the helper renders them as one table and
-refuses a hand-written `WIP Details` details item. Refresh at
+the outcome. Publish it through the `description` content's `wip` object. Snake_case
+keys name the fields below, and Chat link keeps the key `thread`. The helper
+renders the fields as one table and refuses a hand-written `WIP Details`
+details item. Refresh at
 meaningful progress and every stopping point, with all other description fields
 still accurate for the named head. An Ask handoff leaves the note in place with
 state “waiting for GitHub merge” and the expected SHA. A failed merge also retains it.
@@ -88,7 +89,7 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | --- | --- |
 | Owner | Public machine alias, host, and a random owner tag, such as `m5 · Codex desktop · k7q2` |
 | Task | Searchable task title or shareable tracker locator |
-| Thread | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
+| Chat link | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
 | Last observed activity | Date, time to the minute, and timezone of the latest observed activity, such as `2026-09-25 17:42 PDT`; otherwise `UNKNOWN` |
 | Revision | Branch and full current head as `BRANCH @ SHA`; `handoff` reads the SHA after the last ` @ ` |
 | Workspace | Checkout directory, subject to the privacy setting below |
@@ -121,7 +122,7 @@ A link's availability depends on the owner's machine being reachable.
 
 **Privacy:** both team setup and private trials default `wip.include_locations` to
 `true`. Supply the selected default-branch `--ref` to `description`.
-The renderer replaces Workspace and Thread with `REDACTED` when the setting is
+The renderer replaces Workspace and Chat link with `REDACTED` when the setting is
 false or unavailable, including before validation/review results exist. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.

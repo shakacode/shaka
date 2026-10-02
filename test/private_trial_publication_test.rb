@@ -43,7 +43,7 @@ module PrivateTrialPublicationHelpers
     assert_includes body, 'UNKNOWN: rerun missing evidence'
     assert_includes body, '| wip.include_locations | UNKNOWN | UNKNOWN | true |'
     assert_includes body, "| Workspace | #{CHECKOUT} |"
-    assert_includes body, "| Thread | #{SESSION} |"
+    assert_includes body, "| Chat link | #{SESSION} |"
     refute_includes body, PRIVATE_LINK
     refute_includes body, root
   end
@@ -144,7 +144,7 @@ class PrivateTrialPublicationTest < Minitest::Test
     content = description_content.merge('wip' => spec)
     body = Shaka::Publication.description(content, nil, nil, settings)
     assert_includes body, '| Workspace | REDACTED |'
-    assert_includes body, '| Thread | REDACTED |'
+    assert_includes body, '| Chat link | REDACTED |'
     refute_includes body, PRIVATE_LINK
     refute_includes body, spec.fetch('workspace')
     assert_equal PRIVATE_LINK, spec.fetch('thread')
@@ -159,7 +159,7 @@ class PrivateTrialPublicationTest < Minitest::Test
     assert_includes body, "| source.revision | #{([ref] * 3).join(' | ')} |"
     assert_includes body, '| wip.include_locations | true | true | true |'
     assert_includes body, "| Workspace | #{CHECKOUT} |"
-    assert_includes body, "| Thread | #{SESSION} |"
+    assert_includes body, "| Chat link | #{SESSION} |"
     assert_includes body, 'Local files remain local'
   end
 
