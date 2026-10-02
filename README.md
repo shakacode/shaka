@@ -1,11 +1,11 @@
 # Shaka
 
-**Work effectively with your coding agent, from task to PR.**
+**Work effectively with your coding agent, from task to human-readable PR.**
 
 Shaka guides your coding agent through implementation, testing, independent
 review, and PR delivery. Get a clear handoff: what changed, what was checked,
-and what needs your decision. Review a ready change, request revisions, or
-resolve an open question with the context you need.
+and what needs your decision—with the context to approve the change, request
+revisions, or resolve an open question.
 
 [Read the Shaka documentation](https://shaka.shakacode.com/).
 
