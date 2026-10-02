@@ -7,7 +7,8 @@ module Shaka
   # Renders the work a PR needs outside its merge, such as a secret to set or a backfill to run.
   module StepsBesidesMerging
     KEY = 'steps_besides_merging'
-    HEADING = 'Steps besides merging'
+    HEADING = 'Before and after merge'
+    RESERVED_HEADINGS = [HEADING, 'Steps besides merging'].freeze
     MARKER = '<!-- shaka:steps-besides-merging -->'
     TIMES = ['before merge', 'after merge'].freeze
     COLUMNS = { 'when' => 'When', 'step' => 'Step', 'who' => 'Who', 'where' => 'Where',
@@ -44,7 +45,9 @@ module Shaka
 
     def refuse_heading(sections)
       return unless sections.is_a?(Array)
-      return unless sections.any? { |section| section.is_a?(Hash) && section['heading'].to_s.strip.casecmp?(HEADING) }
+      return unless sections.any? do |section|
+        section.is_a?(Hash) && RESERVED_HEADINGS.any? { |heading| section['heading'].to_s.strip.casecmp?(heading) }
+      end
 
       raise Error, "Publication #{HEADING} must be supplied as the #{KEY} list, not a section."
     end
