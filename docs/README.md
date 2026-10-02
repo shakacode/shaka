@@ -25,7 +25,7 @@ Ask the agent to handle configuration. These guides explain your choices:
 ## Look deeper
 
 - [PR verification](pr-verification.md) — evaluate a change and revisit its decisions after merging.
-- [Pilot status and limitations](expected-experience.md) — public evidence and private-trial caveats.
+- [What to expect from Shaka](expected-experience.md) — setup choices, verification gaps, and recovery.
 - [Settings](settings.md) — the reference for options and defaults.
 - [Writing preferences](writing-preferences.md) — choose how the agent writes for your project.
 - [Workflow and enforcement](workflow.md) — what code checks and what relies on the agent.

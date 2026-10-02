@@ -3,7 +3,9 @@
 Use a Shaka PR to understand the change, assess its evidence, and decide what
 needs closer review. The same record helps you revisit decisions after merging.
 
-## Read a PR for your decision
+<a id="read-a-pr-for-your-decision"></a>
+
+## Answers for your merge decision
 
 Start with the description for the outcome, open decisions, and steps besides
 merging. Follow the code walkthrough for implementation choices and alternatives.

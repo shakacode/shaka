@@ -1,11 +1,11 @@
-# Pilot status and limitations
+<a id="pilot-status-and-limitations"></a>
 
-Shaka has demonstrated guided delivery of a consumer feature PR. This page records
-what that evidence supports and what remains unproven; it does not establish broad
-rollout readiness. For everyday use, start with [Start here](getting-started.md)
-and [Working with Shaka](working-with-shaka.md).
+# What to expect from Shaka
 
-<a id="what-to-expect-from-shaka"></a>
+Use Shaka with your repository's checks and review rules. This guide explains
+setup choices, what happens when verification is incomplete, and how to resume
+work or recover from access problems. For installation and everyday prompts,
+see [Start here](getting-started.md) and [Working with Shaka](working-with-shaka.md).
 
 ## Choose how to start
 
@@ -99,9 +99,12 @@ and linked worktrees; successful approval/retry remains untested. Claude Code
 also needs permission for setup; supplemental checks completed with explicit Bash
 allowances. An unrestricted session proves no sandbox outcome.
 
-## What the pilot has established
+<a id="what-the-pilot-has-established"></a>
 
-A verified consumer feature PR demonstrates guided delivery. The linked acceptance
-report separates passed, partial, and untested cases, including supplemental
-recovery and migration checks. These results support guided trials; they do not
-establish broad rollout readiness.
+## Recorded verification evidence
+
+The [first-task acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
+records a verified consumer feature PR and separates passed, partial, and untested
+cases for the evaluated installation. It includes supplemental recovery and
+migration checks. Use the report to understand that evaluation's coverage;
+newer versions need their own evidence for previously untested scenarios.

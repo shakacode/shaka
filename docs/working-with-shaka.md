@@ -13,7 +13,7 @@ the result. Expandable sections hold usage estimates, detailed checks, and
 
 Use that record to decide whether to merge, then return to it when evaluating
 the approach or how the work was checked. See
-[how to read a PR for your decision](pr-verification.md#read-a-pr-for-your-decision).
+[what a Shaka PR gives you](pr-verification.md#read-a-pr-for-your-decision).
 
 The agent handles routine choices and asks about decisions affecting the product,
 scope, or risk.
@@ -21,7 +21,7 @@ scope, or risk.
 Your agent's permissions, project commands, and GitHub rules determine what it
 can complete. Missing tests, unavailable reviewers, and access failures should
 appear as concrete gaps, never as a claim of success. See the
-[pilot status and limitations](expected-experience.md).
+[what to expect from Shaka](expected-experience.md).
 
 ## Give it an outcome
 

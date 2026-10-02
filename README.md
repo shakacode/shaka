@@ -34,24 +34,23 @@ merge choices, feedback, and resuming work.
 
 ## Why use it?
 
-- **Understand the change.** Read the outcome in the PR description, then follow
-  a code walkthrough explaining implementation choices and alternatives.
-- **Evaluate the evidence.** Inspect tests, independent review findings, and
-  before-and-after screenshots for UI changes. Missing verification stays visible.
+- **Catch problems before hitting CI.** Test and review locally, including
+  adversarial reviews and before-and-after screenshots for UI changes. Fix problems
+  before pushing.
+- **Make review easier.** Get a clear PR description, screenshots showing visible
+  changes, and a code walkthrough explaining implementation choices and alternatives.
 - **Revisit decisions after merging.** Use the recorded rationale and review
   responses to assess the approach and how concerns were handled.
-- **Inspect the process.** See which revision was tested and reviewed, along with
-  available model, usage, and cost information. The
-  [enforcement guide](docs/workflow.md#what-is-enforced) explains what code checks
-  and what relies on agent judgment.
+- **See what was checked and what it cost.** Find the tested revision, review
+  findings, verification gaps, and available model, usage, and cost information.
 - **Control merging.** Choose **Ask** to merge yourself or approve the agent's merge,
   or **Auto** to let it merge after required checks and approvals.
   Consequential changes need human review.
-- **Spend less time directing the process.** Shaka uses your coding agent,
-  repository scripts, and GitHub. WIP Details identify unfinished work and the
-  next action when you need to resume.
+- **Spend less time directing the process.** Describe the outcome. Shaka supplies
+  the steps using your coding agent, repository scripts, and GitHub. WIP Details
+  identify unfinished work and the next action when you need to resume.
 
-[Learn how to read a Shaka PR](docs/pr-verification.md#read-a-pr-for-your-decision).
+[See what a Shaka PR gives you](docs/pr-verification.md#read-a-pr-for-your-decision).
 
 <a id="requirements"></a>
 
@@ -63,27 +62,8 @@ The installation prompt lets your agent check these for you. Optional ImageMagic
 can draw [screenshot annotations and pixel diagnostics](docs/pr-verification.md#show-what-changed-between-captures).
 Agents can also annotate with an existing editor or browser overlay.
 
-Shaka is a public pilot. See [status and limitations](docs/expected-experience.md)
-for demonstrated behavior. In particular, private setup tools exist, but a seamless
-new-user private trial remains unproven.
-
-
-## How it works
-
-- **Enforcement.** Ruby and GitHub check configuration, comment trust, and merge
-  conditions. The [enforcement reference](docs/workflow.md#what-is-enforced)
-  identifies which steps rely on the agent.
-- **A shared workflow.** The skill guides each task through planning,
-  implementation, verification, review, and delivery. Repository settings supply
-  your commands and merge preferences.
-- **Verification.** [Tests, independent review, and visual comparisons](docs/pr-verification.md)
-  show whether the work is ready. Shaka gives your agent explicit checkpoints for
-  testing, review, and delivery.
-
-## Public review safety
-
-Shaka reads feedback from trusted reviewers and leaves other comments for
-maintainer triage.
+See [what to expect from Shaka](docs/expected-experience.md) for setup choices,
+verification gaps, and help resuming work when checks or access fail.
 
 ## Documentation
 
