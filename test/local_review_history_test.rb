@@ -254,3 +254,19 @@ class LocalReviewRestoredHeadTest < Minitest::Test
     assert_includes collapse(github, github.comments[2])['skipped'], 'left intact'
   end
 end
+
+class LocalReviewAttestationTest < Minitest::Test
+  include LocalReviewHistoryFixture
+
+  def test_publisher_compatible_reviewer_names_retain_readable_merge_evidence_after_collapse
+    prior = comment(1)
+    latest = comment(2, head: HEAD)
+    [prior, latest].each { |row| row['body'] = row['body'].gsub('anthropic/claude', 'anthropic/claude:fixture') }
+    github = GitHub.new([prior, latest])
+
+    assert_equal [1], collapse(github, latest)['collapsed']
+    found = Shaka::MergeReviewEvidence.new(github).send(:attestation, prior)
+    assert_equal PRIOR, found['reviewed']
+    assert_equal 'anthropic/claude:fixture', found['reviewer']
+  end
+end

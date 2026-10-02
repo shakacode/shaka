@@ -2,6 +2,7 @@
 
 require 'optparse'
 require_relative '../publication/comment_history'
+require_relative '../merge_review_evidence'
 
 module Shaka
   # Earlier reports retain their findings and their closing merge attestation.
@@ -10,7 +11,7 @@ module Shaka
     MARKER = 'Earlier review — findings are not automatically resolved. Latest local review:'
     KEY = /\A<!-- shaka:reply:(?:local-adversarial-review|local-review-[0-9a-f]{40}) -->\n/
     SUMMARY = 'Earlier local review'
-    ATTESTATION = %r{^REVIEWED ([0-9a-f]{40}) BY [\w-]+/[\w.-]+ EFFORT \S+ FINDINGS \d+\s*\z}
+    ATTESTATION = MergeReviewEvidence::ATTESTATION
 
     def self.run(arguments, github: nil)
       help = false
@@ -54,7 +55,13 @@ module Shaka
     # Returning to a reviewed head can make its comment older than the existing pointer.
     def keep_pointer?(previous, latest) = previous == latest
 
-    def attestation(body) = body.match(ATTESTATION)
+    def attestation(body)
+      found = body.match(ATTESTATION)
+      ReviewerSelection.parse(found[2]) if found
+      found
+    rescue Error
+      nil
+    end
 
     def footer(content) = "\n#{attestation(content)[0].strip}\n"
   end
