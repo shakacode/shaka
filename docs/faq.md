@@ -50,6 +50,27 @@ uses a listed reviewer from the same provider. When no listed reviewer is
 available, a fresh session with the implementation model reviews the change
 without the implementation conversation.
 
+## Why does Shaka review with a separate CLI instead of a subagent?
+
+A separate CLI is more independent of the agent that wrote the change, and it
+leaves a record. The coding agent could ask a subagent on its own host to review,
+but Shaka does not count that as the local review.
+
+| | Separate reviewer CLI | Subagent on the same host |
+| --- | --- | --- |
+| Who writes the prompt | Shaka's helper; your review criteria come from the default branch | The agent whose work is under review |
+| Where it runs | An empty directory, with no edit access and without the checkout's instructions, skills, or hooks | The PR's checkout, with the host's tools and instructions |
+| Provider | Can differ from the one that wrote the change | The host's provider |
+| What it leaves | An exit status and a report naming the reviewed commit; Codex and Claude also leave a usage record | Text returned to the coding agent; its tokens count with the coding session |
+
+The trade-off is reach. The Codex and Grok reviewers can read other files at the
+reviewed commit, and the Claude reviewer sees only the diff. A subagent could read
+the whole checkout and run its tests.
+
+The agent follows this as an instruction. `shaka merge` checks that a review of the
+commit was published, not which process wrote it. See
+[what Shaka enforces](#what-does-shaka-enforce-and-what-relies-on-the-agent).
+
 ## Why did the agent ignore a PR comment?
 
 Shaka trusts the people who maintain the project: anyone with write access, plus
