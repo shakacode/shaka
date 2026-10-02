@@ -1,5 +1,8 @@
 # Evaluation experiments
 
+[Test locally before pushing or opening a PR](../contributing/evaluating-changes.md#test-before-pushing-or-opening-a-pr)
+when possible. Keep early evidence locally and summarize it when publishing.
+
 Start by [choosing an evaluation method](../contributing/evaluating-changes.md#choose-an-evaluation-method):
 a real-work trial, a focused comparison, or a full isolated evaluation. Use the
 [real-work trial guide](../docs/trying-pr-versions.md) for the workflow introduced

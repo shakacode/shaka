@@ -6,11 +6,39 @@ tracks these evaluations. A green test, a completed PR, and an improvement in
 human attention or cost are different claims. Choose the smallest method that
 can answer the adoption question before spending another model turn.
 
+## Test before pushing or opening a PR
+
+Test locally first when possible, including from a fork checkout. You do not need
+to push a branch or open a Shaka PR to run tests, compare outputs, or try your
+candidate on a separate project task. Start with deterministic checks; agree on
+the task, time/cost limits and permitted actions before an agent trial.
+
+For a real-work trial, review the local candidate and use the existing
+[source installer](../skills/shaka/references/installation.md#install) with
+dedicated skills and managed-package directories outside the project being tested.
+Keep normal skill links unchanged. In a fresh chat, explicitly select that installed
+candidate's skill and retain its absolute helper path. Do not switch the helper
+in an ongoing task. The target project's trusted settings and merge policy still
+apply; an isolated installation is not the full sandbox described below.
+
+Record the local candidate commit, baseline, task, checks, outputs and limitations
+outside the source checkout. Prefer a clean local commit for reproducibility;
+it need not be pushed. If testing uncommitted changes, preserve the patch and
+record the installed development package's content hash, not just its base SHA.
+Keep this evidence locally until you choose to publish. When opening a PR,
+include a public-safe summary of the tested revision and results, including
+failures. Do not expose private project details or credentials.
+
+The [PR trial workflow](../docs/trying-pr-versions.md) is the convenient path
+**after an open PR exists**: `trial prepare` takes a PR URL, not a local checkout.
+Its reporting command also needs a candidate PR. Neither command is a prerequisite
+for local testing; do not open a placeholder PR just to evaluate an idea.
+
 ## Choose an evaluation method
 
 | Question | Method | What it can establish |
 | --- | --- | --- |
-| Does this change help on work someone actually needs? | [Real-work trial](../docs/trying-pr-versions.md): one pinned candidate on a fresh project task | Useful examples, friction and maintainer corrections; not a controlled comparison |
+| Does this change help on work someone actually needs? | [Real-work trial](#test-before-pushing-or-opening-a-pr): one recorded local or PR candidate on a fresh project task | Useful examples, friction and maintainer corrections; not a controlled comparison |
 | Does a specific output improve over the simpler alternative? | [Focused comparison](#compare-the-behavior-that-matters): matched inputs and a narrow, agreed rubric | Evidence about the changed behavior, not the whole delivery workflow |
 | Does the complete delivery work under controlled conditions? | [Full isolated evaluation](#simple-default-one-matched-pair): matched baseline and candidate sessions | End-to-end delivery and bounded comparative evidence, subject to the harness limits |
 
@@ -24,8 +52,8 @@ the normal installation. Follow the linked trial guide; preparation does not
 start the project task. Its keep/revise/drop feedback informs the maintainer,
 but neither proves superiority nor grants merge authority.
 
-Keep trial feedback on the candidate PR, with publication authorized by the
-tester. Keep comparison evidence in one report linked from that PR and the
+Once a candidate PR exists, keep trial feedback there, with publication authorized
+by the tester. Keep comparison evidence in one report linked from that PR and the
 [experiment index](https://github.com/shakacode/shaka/blob/main/eval/README.md), including failed harness attempts.
 Record the method, hypothesis, task, exact revisions, evidence, limitations and
 next decision. Leave private project details out of public feedback.

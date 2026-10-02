@@ -1,5 +1,9 @@
 # Try a Shaka PR on real work
 
+No PR yet? [Test your local candidate first](https://github.com/shakacode/shaka/blob/main/contributing/evaluating-changes.md#test-before-pushing-or-opening-a-pr),
+including from a fork checkout. Pushing a branch or opening a PR is not required
+for local testing. The preparation and reporting workflow below needs an open PR.
+
 Try an unmerged Shaka change on a real fix before deciding whether it belongs in
 the product. Ask your agent in a preparation chat:
 
