@@ -30,7 +30,7 @@ approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-p
 ## `merge.allow_admin_actor`
 
 **Optional.** Boolean, default `false`. Allow an admin-capable GitHub account to
-submit the normal protected merge or enqueue operation through Shaka.
+submit the normal merge or enqueue operation through Shaka.
 
 ```yaml
 merge:
@@ -48,6 +48,12 @@ With `true`, every existing head, base, walkthrough, review, check, approval,
 size, and native-state gate still applies. Shaka uses the normal merge or queue
 operation without an admin bypass flag and leaves protection and queue settings
 unchanged. Merge evidence records the effective setting, capability, and decision.
+
+GitHub applies the repository's rules to the account as configured. Admin
+permissions may exempt that account from protection; this setting does not make
+GitHub enforce rules against an exempt actor. Shaka checks readiness snapshots,
+so a check or approval can change after its last read. Use rules that apply to
+admins when you need GitHub to enforce those gates at submission.
 
 ## `merge.required_checks`
 
