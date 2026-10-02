@@ -9,6 +9,8 @@ module PrivateTrialPublicationHelpers
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
   SECRET = 'synthetic-credential-277'
   PRIVATE_LINK = 'https://private.example/prompt?token=synthetic-credential-277'
+  CHECKOUT = '/synthetic/approved-checkout'
+  SESSION = 'codex://threads/00000000-0000-4000-8000-000000000277'
 
   def fresh_trial(root, ref)
     selected = options.merge(validate_command: "bin/probe --credential=#{SECRET}")
@@ -39,7 +41,9 @@ module PrivateTrialPublicationHelpers
 
   def assert_unfinished_private(body, root)
     assert_includes body, 'UNKNOWN: rerun missing evidence'
-    assert_includes body, '| wip.include_locations | UNKNOWN | UNKNOWN | false |'
+    assert_includes body, '| wip.include_locations | UNKNOWN | UNKNOWN | true |'
+    assert_includes body, "| Workspace | #{CHECKOUT} |"
+    assert_includes body, "| Thread | #{SESSION} |"
     refute_includes body, PRIVATE_LINK
     refute_includes body, root
   end
@@ -59,7 +63,7 @@ module PrivateTrialPublicationHelpers
 
   def publish_trial(dir, root, ref, validation = nil, review = nil)
     write_fake_commands(dir)
-    path = trial_content(dir, root)
+    path = trial_content(dir)
     flags = result_flags(dir, validation, review)
     _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}", 'HOME' => dir }, COMMAND,
                                             'description', 'shakacode/shaka', '1', '--root', root, '--ref', ref,
@@ -68,9 +72,9 @@ module PrivateTrialPublicationHelpers
     File.read(File.join(dir, 'published.md'))
   end
 
-  def trial_content(dir, root)
+  def trial_content(dir)
     supplied = description_content.merge('wip' => HandoffFixtures::WIP.merge(
-      'revision' => "feature @ #{@head}", 'workspace' => root, 'thread' => PRIVATE_LINK
+      'revision' => "feature @ #{@head}", 'workspace' => CHECKOUT, 'thread' => SESSION
     ))
     path = File.join(dir, 'content.json')
     File.write(path, JSON.generate(supplied))
@@ -135,13 +139,15 @@ class PrivateTrialPublicationTest < Minitest::Test
   end
 
   def test_explicit_supported_location_choice_is_preserved
-    settings = Shaka::PublicationSettings.new(current: { 'wip.include_locations' => true })
-    public_locator = 'codex://threads/00000000-0000-4000-8000-000000000277'
-    spec = HandoffFixtures::WIP.merge('thread' => public_locator)
+    settings = Shaka::PublicationSettings.new(current: { 'wip.include_locations' => false })
+    spec = HandoffFixtures::WIP.merge('workspace' => '/synthetic/private-checkout', 'thread' => PRIVATE_LINK)
     content = description_content.merge('wip' => spec)
     body = Shaka::Publication.description(content, nil, nil, settings)
-    assert_includes body, public_locator
-    assert_equal public_locator, spec.fetch('thread')
+    assert_includes body, '| Workspace | REDACTED |'
+    assert_includes body, '| Thread | REDACTED |'
+    refute_includes body, PRIVATE_LINK
+    refute_includes body, spec.fetch('workspace')
+    assert_equal PRIVATE_LINK, spec.fetch('thread')
   end
 
   private
@@ -151,9 +157,9 @@ class PrivateTrialPublicationTest < Minitest::Test
     assert_includes body, '| source.configuration | private/local | private/local | private/local |'
     assert_includes body, '| review.required | none | none | none |'
     assert_includes body, "| source.revision | #{([ref] * 3).join(' | ')} |"
-    assert_includes body, '| wip.include_locations | false | false | false |'
-    assert_includes body, '| Workspace | REDACTED |'
-    assert_includes body, '| Thread | REDACTED |'
+    assert_includes body, '| wip.include_locations | true | true | true |'
+    assert_includes body, "| Workspace | #{CHECKOUT} |"
+    assert_includes body, "| Thread | #{SESSION} |"
     assert_includes body, 'Local files remain local'
   end
 

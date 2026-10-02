@@ -16,9 +16,9 @@ Supply `--ci-review-job NAME` with a matching review policy when a real CI revie
 job exists. If the repository defers hosted CI, supply
 `--validate-local-command COMMAND` and `--trigger-hosted-ci-command COMMAND`
 together. The private generator reuses the normal new-layout wrappers and records
-Ask and `wip.include_locations: false`. Descriptions omit local locations and session
-links automatically; no privacy YAML edit is needed. Local files remain local while
-the PR records permitted settings, with sensitive fields marked `REDACTED`.
+Ask and `wip.include_locations: true`, matching team setup. WIP Details include the
+checkout path and session link by default. Local files remain local while the PR
+records permitted settings, with sensitive configuration fields marked `REDACTED`.
 A local `merge.preference` cannot establish merge authority. An explicit
 task instruction may authorize Auto separately. Private setup cannot set fallback
 required checks because they require a trusted source. The agent must verify

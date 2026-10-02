@@ -119,8 +119,8 @@ session's metadata, and copy its `link` verbatim. The host session ID differs fr
 disabled app links, and other hosts use `UNKNOWN` until a supported locator exists.
 A link's availability depends on the owner's machine being reachable.
 
-**Privacy:** team `wip.include_locations` defaults to `true`; generated private
-trials select `false`. Supply the selected default-branch `--ref` to `description`.
+**Privacy:** both team setup and private trials default `wip.include_locations` to
+`true`. Supply the selected default-branch `--ref` to `description`.
 The renderer replaces Workspace and Thread with `REDACTED` when the setting is
 false or unavailable, including before validation/review results exist. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.

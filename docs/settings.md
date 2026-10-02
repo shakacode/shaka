@@ -556,8 +556,8 @@ wip:
   include_locations: true
 ```
 
-Include the checkout path and session link in **WIP Details**. Team setup writes
-`true`; private trials write `false`. The description renderer replaces both
+Include the checkout path and session link in **WIP Details**. Both team setup and
+private trials write `true`. The description renderer replaces both
 location fields with `REDACTED` when the selected setting is false or unavailable;
 ownership, state, next action, and the current commit remain visible.
 

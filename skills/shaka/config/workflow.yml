@@ -498,7 +498,7 @@ phases:
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>)
         as a collapsed `WIP Details` disclosure. Its workspace field carries the checkout path
         and its thread field the host's link back to this session when the selected
-        `wip.include_locations` is `true`. Private setup generates `false`. The description
+        `wip.include_locations` is `true`. Team and private setup both generate `true`. The description
         renderer replaces both fields with `REDACTED` when the setting is false or unavailable;
         ownership and the current commit remain visible. Inspect other supplied prose for private
         content. The thread link follows the guide's rule for the host: Codex builds it from
