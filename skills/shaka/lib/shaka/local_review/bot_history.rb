@@ -8,7 +8,7 @@ module Shaka
     QUERY = <<~GRAPHQL
       query($id: ID!) {
         node(id: $id) { __typename ... on IssueComment {
-          id databaseId url body isMinimized minimizedReason viewerCanMinimize
+          id url body isMinimized minimizedReason viewerCanMinimize
           author { __typename login }
         } }
       }
@@ -82,7 +82,7 @@ module Shaka
 
     def verify_comment(node, row)
       raise Error, 'Selected comment is not the admitted bot issue comment, or its content changed.' unless
-        admitted_bot?(node, row) && node['__typename'] == 'IssueComment' && node['databaseId'] == row['id'] &&
+        admitted_bot?(node, row) && node['__typename'] == 'IssueComment' &&
         node['url'] == row['url'] && node['body'] == row['body']
     end
 

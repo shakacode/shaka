@@ -82,6 +82,13 @@ class BotReviewHistoryTest < Minitest::Test
     assert_equal 'resolved', @github.node['minimizedReason']
   end
 
+  def test_large_comment_identifiers_need_no_graphql_numeric_field
+    @row['id'] = 5_908_851_946
+    @row['url'] = @github.node['url'] = 'https://github.com/example/test/pull/1#issuecomment-5908851946'
+    @github.node.delete('databaseId')
+    assert_equal [5_908_851_946], collapse([5_908_851_946])['collapsed']
+  end
+
   def test_selected_withheld_or_foreign_comment_does_not_write
     result = collapse(rows: [])
     assert_match(/not admitted/, result['unavailable'].first)
