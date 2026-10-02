@@ -507,7 +507,13 @@ phases:
       - Description provenance has exactly eight flat keys: `task_source`, `initial_prompt`,
         `requested_model`, `requested_effort`, `recommended_model`, `recommended_effort`,
         `active_model`, and `active_effort`. `initial_prompt` is `EXCLUDED`; the other values use
-        allowlisted text or `UNKNOWN`. The renderer adds the public machine alias from
+        allowlisted text or `UNKNOWN`, except that either requested field uses JSON `null`
+        when intake establishes the user did not specify that setting. Carry the request
+        from intake separately from the recommendation and active settings; a model selected
+        in the host is not a user request in the task. `null` renders as “Not specified”; use
+        `UNKNOWN` when the request evidence is unavailable, including an unrecoverable prior
+        intake. Keep existing `UNKNOWN` history unchanged rather than inferring an absence.
+        The renderer adds the public machine alias from
         `SHAKA_MACHINE_ALIAS` and the workflow version, which names the commit the helper runs
         from and links it when that commit came from `shakacode/shaka`, and keeps the native
         usage table as the only observed route and token record.

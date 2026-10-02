@@ -306,8 +306,18 @@ IDs. Recovery-note session links follow their separate [publication rule](delive
 ## PR execution provenance
 
 The required `provenance` object records task source and requested, recommended,
-and active model/effort. `task_source` is `description`, `issue`, or `pull_request`;
-missing route metadata is `UNKNOWN`. The initial prompt is excluded. The renderer
+and active model/effort. `task_source` is `description`, `issue`, or `pull_request`.
+Each requested field is JSON `null` when intake establishes that the user did not
+specify it; unavailable evidence is `UNKNOWN`. For example, a task with no requested
+settings supplies `"requested_model": null, "requested_effort": null`, which renders
+as **User-requested model / effort: Not specified**. A model-only request preserves
+that model and uses `null` for effort. All eight keys remain required.
+
+Carry those values from intake; recommendations and host settings do not establish
+a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not
+reclassified. Recommended and active fields accept allowlisted strings or `UNKNOWN`,
+never `null`. Ruby validates the shapes; the agent establishes whether an absence is
+known. The initial prompt is excluded. The renderer
 adds the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`; it never falls back
 to a hostname.
 

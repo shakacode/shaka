@@ -87,6 +87,16 @@ class ProvenanceHistoryTest < Minitest::Test
     assert_includes rendered, '"responses":["c2"]'
   end
 
+  def test_known_absence_round_trips_without_reclassifying_old_unknown_requests
+    publish(HEADS[0], 'requested_model' => 'UNKNOWN', 'requested_effort' => 'UNKNOWN')
+    publish(HEADS[1], 'requested_model' => nil, 'requested_effort' => nil)
+    publish(HEADS[2], 'requested_model' => nil, 'requested_effort' => 'high')
+    publish(HEADS[3], 'requested_model' => nil, 'requested_effort' => 'high')
+
+    assert_rows([[HEADS[0], '| UNKNOWN / UNKNOWN |'], [HEADS[1], '| Not specified |'],
+                 [HEADS[2], '| Not specified / high |']])
+  end
+
   def test_entries_beyond_the_bound_are_omitted_and_the_first_is_kept
     efforts = %w[low high]
     23.times { |index| publish(format('%07x', index).ljust(40, '0'), 'active_effort' => efforts[index % 2]) }
@@ -152,6 +162,17 @@ class ProvenanceHistoryRefusalTest < Minitest::Test
     refute_includes rendered, 'Provenance history'
     assert_includes rendered, %("head":"#{HEADS[1]}")
     refute_includes rendered, HEADS[0]
+  end
+
+  def test_known_absence_is_not_accepted_as_recommended_or_active_evidence
+    publish(HEADS[0])
+    absent = ['Not specified', 'Not specified / medium']
+    %w[recommended active].each do |route|
+      absent.each do |value|
+        tampered = @body.sub(/"#{route}":"[^"]+"/, "\"#{route}\":\"#{value}\"")
+        assert_refused(tampered)
+      end
+    end
   end
 
   def test_a_supplied_history_details_item_is_refused

@@ -10,6 +10,8 @@ module Shaka
     FIELDS = %w[task_source initial_prompt requested_model requested_effort
                 recommended_model recommended_effort active_model active_effort].freeze
     TASK_SOURCES = %w[description issue pull_request].freeze
+    REQUESTED_FIELDS = %w[requested_model requested_effort].freeze
+    NOT_SPECIFIED = 'Not specified'
     SAFE_VALUE = /\A(?:UNKNOWN|[A-Za-z0-9][A-Za-z0-9._:-]{0,79})\z/
 
     def initialize(spec, environment: ENV, workflow_version: nil)
@@ -41,9 +43,9 @@ module Shaka
         ['Machine alias', machine_alias],
         ['Task source', values.fetch('task_source')],
         ['Workflow version', @workflow_version.markdown],
-        ['Requested route', route(values, 'requested')],
-        ['Recommended route', route(values, 'recommended')],
-        ['Active setting', route(values, 'active')]
+        ['User-requested model / effort', route(values, 'requested')],
+        ['Recommended model / effort', route(values, 'recommended')],
+        ['Active model / effort', route(values, 'active')]
       ]
     end
 
@@ -59,7 +61,9 @@ module Shaka
 
       FIELDS.to_h do |field|
         value = @spec.fetch(field)
-        raise Error, "Publication provenance #{field} is invalid." unless valid?(value)
+        unless valid?(value) || (REQUESTED_FIELDS.include?(field) && value.nil?)
+          raise Error, "Publication provenance #{field} is invalid."
+        end
 
         [field, value]
       end
@@ -93,6 +97,11 @@ module Shaka
 
     def valid?(value) = value.is_a?(String) && value.match?(SAFE_VALUE)
 
-    def route(values, name) = "#{values.fetch("#{name}_model")} / #{values.fetch("#{name}_effort")}"
+    def route(values, name)
+      parts = %w[model effort].map { |setting| values.fetch("#{name}_#{setting}") }
+      return NOT_SPECIFIED if parts.all?(&:nil?)
+
+      parts.map { |value| value || NOT_SPECIFIED }.join(' / ')
+    end
   end
 end
