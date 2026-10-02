@@ -384,7 +384,19 @@ Prompt column means; any reviewer fallback notice; each report collapsed with it
 dispositions and fix commits; and the last
 round's attestation as the final line, where `merge` reads it. A commit GitHub does not have,
 such as one a rebase replaced, is named without a link. Publishing again replaces
-that comment rather than adding another. Record available native
+that comment rather than adding another.
+
+After publication, older Shaka local review comments owned by the publishing account
+link to its newest report for the current PR head. Their findings and reports remain
+expandable; their closing attestations remain readable by `merge`. Reports for the
+same commit stay visible. Collapsing history does not resolve findings or native
+threads, and comments by other accounts stay intact. Carry still-applicable material
+findings into the current review summary before publishing. The `earlier_reviews`
+result lists confirmed edits and unavailable cleanup; a cleanup failure returns a
+nonzero exit without undoing the new report. Retry publication after inspecting the
+reported failure. Both legacy and per-commit Shaka review comment keys are recognized.
+
+Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
 reviewer's source; missing evidence is UNKNOWN. Add `--format json` to each `shaka usage`
 command in this guide and put its `record` in the description's `usage.records`. Do not publish raw sessions or private

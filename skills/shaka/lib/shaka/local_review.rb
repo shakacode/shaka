@@ -4,7 +4,7 @@ require 'json'
 require 'optparse'
 require_relative 'error'
 require_relative 'github'
-require_relative 'local_review/comment'
+require_relative 'local_review/publication'
 require_relative 'local_review/ledger'
 require_relative 'local_review/runner'
 require_relative 'local_review/report_check'
@@ -75,11 +75,9 @@ module Shaka
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.length == 2 && @options[:content_file]
 
       github = @github || GitHub.new(*@arguments)
-      comment = review_comment(github)
-      body = comment.render
-      comment.check_rendering!(github.markdown(body))
-      puts JSON.pretty_generate(github.reply(body:, key: LocalReviewComment::KEY))
-      0
+      published = LocalReviewPublication.new(github, content, @arguments.first).publish
+      puts JSON.pretty_generate(published)
+      published.dig('earlier_reviews', 'unavailable').empty? ? 0 : 1
     end
 
     def record(parser)
@@ -101,23 +99,6 @@ module Shaka
     end
 
     def content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
-
-    def review_comment(github)
-      LocalReviewComment.new(content, repository: @arguments.first, published: on_github(github))
-    end
-
-    # The Git data API answers 404 for a commit GitHub does not have, such as one a rebase replaced.
-    # Any other failure stops publication, so a passing outage cannot mislabel a pushed commit.
-    def on_github(github)
-      lambda do |sha|
-        github.api("repos/#{@arguments.first}/git/commits/#{sha}")
-        true
-      rescue Shaka::Error => e
-        raise unless e.http_status == 404
-
-        false
-      end
-    end
 
     def publish_parser
       OptionParser.new do |flags|
