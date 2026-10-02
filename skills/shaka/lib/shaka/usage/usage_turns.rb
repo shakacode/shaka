@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require_relative 'cursor_usage_refresh'
 
 module Shaka
   # Refuses explicit turns that name nothing in a source that has readable turns.
@@ -13,6 +14,7 @@ module Shaka
     def print_report
       missing = unmatched_turns
       if missing.empty?
+        CursorUsageRefresh.remember(@options, inferred: @inferred)
         puts @options[:format] == 'json' ? JSON.pretty_generate(json_document) : report
         return 0
       end
