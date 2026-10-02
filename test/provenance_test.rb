@@ -8,6 +8,12 @@ class ExecutionProvenanceTest < Minitest::Test
                         'requested_model' => 'gpt-5.6-terra', 'requested_effort' => 'medium',
                         'recommended_model' => 'gpt-5.6-terra', 'recommended_effort' => 'medium',
                         'active_model' => 'gpt-5.6-terra', 'active_effort' => 'medium' }.freeze
+  PARTIAL_REQUESTS = [
+    [nil, 'high', 'Not specified / high'],
+    ['gpt-6.1-sol', nil, 'gpt-6.1-sol / Not specified'],
+    [nil, 'UNKNOWN', 'Not specified / UNKNOWN'],
+    ['UNKNOWN', 'UNKNOWN', 'UNKNOWN / UNKNOWN']
+  ].freeze
 
   def test_renders_public_machine_alias_without_redundant_prompt_or_observed_route_rows
     body = Shaka::ExecutionProvenance.new(
@@ -40,6 +46,36 @@ class ExecutionProvenanceTest < Minitest::Test
     body = Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, environment: {}).detail.fetch('body')
 
     assert_includes body, '| Machine alias | UNKNOWN |'
+  end
+
+  def test_known_absence_of_a_user_request_is_not_unknown
+    spec = PUBLIC_PROVENANCE.merge('requested_model' => nil, 'requested_effort' => nil)
+    provenance = Shaka::ExecutionProvenance.new(spec)
+
+    assert_includes provenance.detail.fetch('body'), '| User-requested model / effort | Not specified |'
+    assert_equal 'Not specified', provenance.entry.fetch('requested')
+  end
+
+  def test_a_partial_request_preserves_each_components_evidence
+    PARTIAL_REQUESTS.each do |model, effort, expected|
+      spec = PUBLIC_PROVENANCE.merge('requested_model' => model, 'requested_effort' => effort)
+      provenance = Shaka::ExecutionProvenance.new(spec)
+      assert_equal expected, provenance.entry.fetch('requested')
+      assert_includes provenance.detail.fetch('body'), "| User-requested model / effort | #{expected} |"
+    end
+  end
+
+  def test_only_explicit_null_requested_fields_record_known_absence
+    %w[recommended_model recommended_effort active_model active_effort].each do |field|
+      assert_raises(Shaka::Error) { Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE.merge(field => nil)).detail }
+    end
+    invalid = ['', false, [], 'Not specified']
+    %w[requested_model requested_effort].each do |field|
+      invalid.each do |value|
+        assert_raises(Shaka::Error) { Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE.merge(field => value)).detail }
+      end
+      assert_raises(Shaka::Error) { Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE.except(field)).detail }
+    end
   end
 
   def test_ignores_the_retired_coordination_machine_variable

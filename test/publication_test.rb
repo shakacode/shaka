@@ -316,7 +316,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
 
     assert_includes rendered, '<summary>Execution provenance</summary>'
     assert_includes rendered, '| Machine alias |'
-    assert_includes rendered, '| Requested route | gpt-5.6-terra / medium |'
+    assert_includes rendered, '| User-requested model / effort | gpt-5.6-terra / medium |'
     refute_includes rendered, '| Initial prompt |'
     refute_includes rendered, '| Observed route |'
   end

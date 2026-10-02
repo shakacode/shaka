@@ -90,13 +90,17 @@ module Shaka
     def valid_entry?(entry)
       entry.is_a?(Hash) && entry.keys.sort == FIELDS.sort && entry.values.all?(String) &&
         entry['head'].match?(HEAD) && entry['workflow'].match?(WORKFLOW) &&
-        ROUTES.all? { |route| valid_route?(entry[route]) }
+        ROUTES.all? { |route| valid_route?(entry[route], requested: route == 'requested') }
     end
 
     # A route renders as `model / effort`, each an allowlisted provenance value.
-    def valid_route?(route)
+    def valid_route?(route, requested: false)
+      return true if requested && route == ExecutionProvenance::NOT_SPECIFIED
+
       parts = route.split(' / ', -1)
-      parts.size == 2 && parts.all? { |part| part.match?(ExecutionProvenance::SAFE_VALUE) }
+      parts.size == 2 && parts.all? do |part|
+        part.match?(ExecutionProvenance::SAFE_VALUE) || (requested && part == ExecutionProvenance::NOT_SPECIFIED)
+      end
     end
 
     def invalid
@@ -123,7 +127,8 @@ module Shaka
       rows = entries.map do |entry|
         "| `#{entry['head'][0, 7]}` | #{entry['workflow']} | #{ROUTES.map { |route| entry[route] }.join(' | ')} |"
       end
-      ['| Head | Workflow version | Requested route | Recommended route | Active setting |',
+      ['| Head | Workflow version | User-requested model / effort | ' \
+       'Recommended model / effort | Active model / effort |',
        '| --- | --- | --- | --- | --- |', *rows].join("\n")
     end
 
