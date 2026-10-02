@@ -64,17 +64,19 @@ module Shaka
       summary = report.fetch('summary', report.fetch('reasons').first)
       ["**Recommendation: #{action}**", summary,
        "**Next action (task owner):** #{owner_action(report, next_action)}",
-       *report_evidence(report, summary)].join("\n\n")
+       "Head: `#{@head}`",
+       "Unresolved concerns: #{report.fetch('concerns').empty? ? 'none' : report.fetch('concerns').join('; ')}",
+       supporting_analysis(report, summary)].join("\n\n")
     end
 
-    def report_evidence(report, summary)
-      concerns = report.fetch('concerns')
-      ["Head: `#{@head}` · Conclusion: **#{report.fetch('conclusion')}**",
-       "Unresolved concerns: #{concerns.empty? ? 'none' : concerns.join('; ')}",
+    def supporting_analysis(report, summary)
+      ["<details>\n<summary>Supporting analysis and execution details</summary>",
+       "Conclusion: **#{report.fetch('conclusion')}**",
        *report.fetch('reasons').reject { |reason| reason == summary },
-       "Alternative considered: #{report.fetch('alternative')}", execution_details,
+       "Alternative considered: #{report.fetch('alternative')}",
+       "Prompt: #{@result.fetch('prompt_source')}.", usage_text,
        'Ruby verified report shape and head binding. The reviewer judged value; the task owner handles concerns ' \
-       'and merge readiness. This does not attest to technical review.']
+       'and merge readiness. This does not attest to technical review.', '</details>'].join("\n\n")
     end
 
     def recommendation(report)
@@ -102,11 +104,6 @@ module Shaka
                             end
       "**Recommendation: #{action}**\n\n#{@result.fetch('reason')}\n\n" \
         "**Next action (task owner):** #{next_action}\n\nHead: `#{@head}`"
-    end
-
-    def execution_details
-      "<details><summary>Execution details and native usage</summary>\n\n" \
-        "Prompt: #{@result.fetch('prompt_source')}.\n\n#{usage_text}\n\n</details>"
     end
 
     def usage_text

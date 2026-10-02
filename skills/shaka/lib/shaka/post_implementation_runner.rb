@@ -86,8 +86,9 @@ module Shaka
       "Return ONLY a JSON object: head (#{head.to_json}), conclusion (Proceed, Simplify/reframe, or " \
         'Do not merge), reasons (non-empty string list), concerns (string list; empty only if none), ' \
         'alternative (non-empty string), summary (one or two sentences explaining the recommendation), ' \
-        'next_action (non-empty string: the smallest useful action for the task owner). State whether to revise ' \
-        'this PR or bring a close/replace decision to the maintainer. Summary and next_action must respect blockers. ' \
+        'next_action (non-empty string: the smallest useful action for the task owner). For a blocking conclusion, ' \
+        'state whether to revise this PR or bring a close/replace decision to the maintainer. ' \
+        'Summary and next_action must respect blockers. ' \
         'Concerns lists only substantive unresolved product concerns, not technical ' \
         'nits or missing incident frequency alone. Return raw JSON without Markdown fences or surrounding prose.'
     end

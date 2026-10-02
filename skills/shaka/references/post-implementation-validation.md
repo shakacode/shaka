@@ -35,8 +35,8 @@ checkpoint. A checkout whose HEAD differs fails before reviewer launch.
 Settings follow this precedence: explicit task flags, trusted
 `review.post_implementation`, then packaged defaults. The defaults are
 `openai/codex`, model `gpt-6.1-sol`, medium effort, and the
-[default product prompt](../config/post-implementation-prompt.md), adapted unchanged
-from #338. Technical `review.prompt_file` and per-reviewer settings do not choose
+[default product prompt](../config/post-implementation-prompt.md), adapted
+from #338 with proportional reporting guidance. Technical `review.prompt_file` and per-reviewer settings do not choose
 this checkpoint's instructions.
 
 Task flags are `--reviewer PROVIDER/FAMILY`, `--model MODEL`, `--effort LEVEL`, and
@@ -86,9 +86,13 @@ unavailable update; the new report stays published so the same execution can be 
 
 ## Act on the conclusion
 
-The published comment leads with a recommendation, short reason, and next action
-for the task owner. The head, checkpoint conclusion, and unresolved concerns follow
-before supporting analysis. A completed execution with concerns does not recommend
+The published comment leads with one recommendation, short reason, and next action
+for the task owner, followed by the head and unresolved concerns. Supporting reasons,
+alternatives, and execution details stay in a closed disclosure. Assess every
+criterion; report only evidence that affects the decision. For routine **Proceed**
+results, aim for 60–100 visible words; this is prompt guidance, not a Ruby word limit.
+Blockers and consequential tradeoffs can need more explanation.
+A completed execution with concerns does not recommend
 merging. Failed executions stay blocked; an opt-out states that no product review
 completed. Keep demonstrated defects separate from value judgments and missing evidence.
 
