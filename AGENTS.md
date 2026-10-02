@@ -18,7 +18,7 @@ is the reusable default.
 - Put command syntax and flag rules in the Shaka skill. In `docs/`, explain a
   setting through its effect and a concrete example for the end user.
 - Write files under `skills/shaka/` as instructions for agents: the rule and when it
-  applies. Put reasoning meant for a maintainer, such as why a rule exists or how
+  applies. Put reasoning meant for a human user, such as why a rule exists or how
   two approaches compare, in `docs/`.
 - Lead with the action or benefit. Explain a term when the reader first needs it.
 - Keep one source for each setting and link to it. Avoid duplicate option tables.
