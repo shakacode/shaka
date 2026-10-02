@@ -276,9 +276,18 @@ end
 class SeamUpgradeRealUseReviewTest < Minitest::Test
   include SeamUpgradeFixture
 
-  def test_unmarked_old_root_from_this_repository_is_repaired
+  def test_unmarked_legacy_repository_root_is_repaired
     with_repository do |root|
-      source = File.read(File.expand_path('../.agents/bin/setup', __dir__))
+      source = <<~SHELL
+        #!/bin/sh
+        set -eu
+
+        #{ROOT_LINE}
+        unset RUBYOPT RUBYLIB
+        export BUNDLE_GEMFILE="$root/Gemfile"
+        cd "$root"
+        exec bundle install
+      SHELL
       write_wrapper(root, 'setup', source)
       commit_fixture(root, 'unmarked version-one wrapper')
       preview = report(root)
