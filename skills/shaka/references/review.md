@@ -257,4 +257,5 @@ Use a fresh reviewer context that did not implement or design the change. The
 current CLI runner launches a separate process. A current-host Task or subagent
 is not an independent review, whether or not the host gives it a fresh context,
 and is not a substitute for an available reviewer selected from trusted repository
-settings. A fresh host session can produce a report for `shaka review check`.
+settings. A new host chat with no Task or subagent context can produce a report
+for `shaka review check`.
