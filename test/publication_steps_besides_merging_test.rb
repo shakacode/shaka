@@ -9,6 +9,9 @@ class PublicationStepsBesidesMergingTest < Minitest::Test
            'who' => 'Maintainer', 'where' => 'shakacode/shaka Actions secrets',
            'verify' => '`gh secret list` shows both names' }.freeze
 
+  AFTER_STEP = STEP.merge('when' => 'after merge', 'step' => 'Run the docs dispatch',
+                          'where' => 'Docs site', 'verify' => 'The site shows the merged docs').freeze
+
   def render(**changes)
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
@@ -20,9 +23,7 @@ class PublicationStepsBesidesMergingTest < Minitest::Test
   end
 
   def test_steps_render_as_a_table_after_the_walkthrough_link_and_before_decisions
-    after = STEP.merge('when' => 'after merge', 'step' => 'Run the docs dispatch',
-                       'where' => 'Docs site', 'verify' => 'The site shows the merged docs')
-    rendered = render('steps_besides_merging' => [STEP, after], 'decisions' => ['Which base?'])
+    rendered = render('steps_besides_merging' => [STEP, AFTER_STEP], 'decisions' => ['Which base?'])
     table = "| When | Step | Who | Where | How to verify |\n| --- | --- | --- | --- | --- |\n" \
             '| before merge | Set DOCS_DISPATCH_APP_ID and DOCS_DISPATCH_APP_KEY | Maintainer | ' \
             "shakacode/shaka Actions secrets | `gh secret list` shows both names |\n" \
@@ -64,9 +65,11 @@ class PublicationStepsBesidesMergingTest < Minitest::Test
   end
 
   def test_a_hand_written_section_is_refused
-    error = assert_raises(Shaka::Error) do
-      render('sections' => [{ 'heading' => 'Before and after merge', 'body' => '- Set a secret.' }])
+    ['Before and after merge', 'Steps besides merging'].each do |heading|
+      error = assert_raises(Shaka::Error) do
+        render('sections' => [{ 'heading' => heading, 'body' => '- Set a secret.' }])
+      end
+      assert_includes error.message, 'steps_besides_merging'
     end
-    assert_includes error.message, 'steps_besides_merging'
   end
 end
