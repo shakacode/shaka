@@ -255,7 +255,8 @@ coverage. Do not add a monitor, extra audit, or tracker for this handoff.
 ## Review contexts
 
 Use a fresh reviewer context that did not implement or design the change. The
-current CLI runner launches a separate process. A subagent inheriting the
-implementation conversation is not an independent review; a fresh host session
-can produce a report for `shaka review check`. A current-host subagent is not a
-substitute for an available reviewer selected from trusted repository settings.
+current CLI runner launches a separate process. A current-host Task or subagent
+is not an independent review, whether or not the host gives it a fresh context,
+and is not a substitute for an available reviewer selected from trusted repository
+settings. A new host chat with no Task or subagent context can produce a report
+for `shaka review check`.
