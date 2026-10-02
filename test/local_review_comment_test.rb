@@ -182,29 +182,16 @@ class LocalReviewPublishTest < Minitest::Test
       @replies = []
     end
 
-    def repository = 'o/r'
-    def number = '7'
-    def viewer_login = 'ada'
-
-    def issue_comments
-      raise Shaka::Error, 'Listing failed' if @listing_failure
-
-      [{ 'id' => 1, 'created_at' => '2026-10-01T00:00:00Z', 'user' => { 'login' => 'ada' },
-         'body' => "<!-- shaka:reply:local-adversarial-review -->\n#{@replies.last.last}" }]
-    end
-
     def markdown(_body) = @html
 
     def api(path)
-      return { 'head' => { 'sha' => @head || LocalReviewCommentFixture::HEAD } } if path.end_with?('/pulls/7')
-
       raise Shaka::Error.new('Not Found', http_status: 404) if @missing.any? { |sha| path.end_with?(sha) }
       raise Shaka::Error.new('Validation failed', http_status: 422) if @outage
 
       {}
     end
 
-    attr_writer :outage, :listing_failure, :head
+    attr_writer :outage
 
     def reply(body:, key:)
       @replies << [key, body]
@@ -226,31 +213,12 @@ class LocalReviewPublishTest < Minitest::Test
   def test_publishes_under_the_local_review_key
     github = FakeGitHub.new
 
-    status, out, = publish(github, 'rounds' => [round])
+    status, = publish(github, 'rounds' => [round])
 
     assert_equal 0, status
-    assert_equal({ 'collapsed' => [], 'unavailable' => [] }, JSON.parse(out)['earlier_reviews'])
     assert_equal ['local-adversarial-review'], github.replies.map(&:first)
+    assert github.replies.first.last.start_with?('# Local Adversarial Review')
     assert_includes github.replies.first.last, "| 1 | [`aaaaaaa`](https://github.com/o/r/commit/#{HEAD}) |"
-  end
-
-  def test_publishing_a_noncurrent_review_succeeds_without_collapsing_history
-    github = FakeGitHub.new
-    github.head = 'c' * 40
-    status, out, = publish(github, 'rounds' => [round])
-
-    assert_equal 0, status
-    assert_includes JSON.parse(out).dig('earlier_reviews', 'skipped'), 'left intact'
-  end
-
-  def test_failed_history_cleanup_leaves_the_new_review_published_and_returns_nonzero
-    github = FakeGitHub.new
-    github.listing_failure = true
-    status, out, = publish(github, 'rounds' => [round])
-
-    assert_equal 1, status
-    assert_equal 1, github.replies.size
-    assert_includes JSON.parse(out).dig('earlier_reviews', 'unavailable'), 'Listing failed'
   end
 
   def test_publishes_a_cap_warning_and_keeps_the_attestation_last

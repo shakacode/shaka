@@ -183,12 +183,13 @@ class LocalReviewHistoryTest < Minitest::Test
     assert_includes collapse(github, github.comments[2])['skipped'], 'left intact'
   end
 
-  def test_collapse_command_reports_confirmed_cleanup
-    github = GitHub.new([comment(1), comment(2, head: HEAD)])
-    out, = capture_io do
-      assert_equal 0, Shaka::LocalReview.run(['collapse', 'example/test', '1'], github:)
-    end
-    assert_equal [1], JSON.parse(out)['collapsed']
+  def test_quoting_the_history_marker_inside_a_current_report_does_not_archive_it
+    prior = comment(1)
+    latest = comment(2, head: HEAD)
+    quoted = "#{Shaka::LocalReviewHistory::MARKER} example\nDocumented risk:"
+    latest['body'] = latest['body'].sub('Documented risk:', quoted)
+
+    assert_equal [1], collapse(GitHub.new([prior, latest]), latest)['collapsed']
   end
 
   def test_a_report_that_changed_to_the_current_head_before_first_read_is_not_collapsed
@@ -207,5 +208,26 @@ class LocalReviewHistoryTest < Minitest::Test
 
     assert_equal 1, prior['body'].scan('<details>').size
     assert_includes prior['body'], '&lt;details&gt;<summary>Report</summary>Kept&lt;/details&gt;'
+  end
+end
+
+class LocalReviewCollapseCommandTest < Minitest::Test
+  include LocalReviewHistoryFixture
+
+  def test_collapse_command_reports_confirmed_cleanup
+    github = GitHub.new([comment(1), comment(2, head: HEAD)])
+    out, = capture_io do
+      assert_equal 0, Shaka::LocalReview.run(['collapse', 'example/test', '1'], github:)
+    end
+    assert_equal [1], JSON.parse(out)['collapsed']
+  end
+
+  def test_collapse_command_returns_nonzero_for_failed_cleanup
+    github = GitHub.new([comment(1), comment(2, head: HEAD)])
+    github.failure = true
+    out, = capture_io do
+      assert_equal 1, Shaka::LocalReview.run(['collapse', 'example/test', '1'], github:)
+    end
+    assert_includes JSON.parse(out)['unavailable'].join, 'Update failed'
   end
 end
