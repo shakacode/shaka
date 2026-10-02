@@ -1,7 +1,12 @@
 # Evaluation experiments
 
-Use the [contributor guide](../contributing/evaluating-changes.md) to set up and
-grade a run. This index prevents a harness failure from being mistaken for a
+Start by [choosing an evaluation method](../contributing/evaluating-changes.md#choose-an-evaluation-method):
+a real-work trial, a focused comparison, or a full isolated evaluation. Use the
+[real-work trial guide](../docs/trying-pr-versions.md) for the workflow introduced
+by [PR #367](https://github.com/shakacode/shaka/pull/367); post authorized feedback
+on the candidate PR instead of duplicating each trial here.
+
+This index links comparison reports and harness attempts. It prevents a harness failure from being mistaken for a
 successful skill evaluation or repeated without a changed hypothesis.
 
 | Experiment | Evidence | Outcome |
@@ -12,10 +17,13 @@ successful skill evaluation or repeated without a changed hypothesis.
 | PR #250 / PR #326 task replay, first pair | [Full pins, tests, usage and cleanup](https://github.com/shakacode/shaka/pull/250#issuecomment-5906768008); [baseline PR](https://github.com/shaka-eval-repos/shaka-pr250-pr326-replay-a/pull/1) at `3730b62`; [candidate PR](https://github.com/shaka-eval-repos/shaka-pr250-pr326-replay-b/pull/1) at `5ebc6a2` | Baseline helper `682527f`, candidate `9e25abe`; same target/style pointer and gpt-6.1-sol/medium, two fixed turns, 30 minutes each. Baseline timed out before the final Ask marker despite green checks and walkthrough. Candidate finished Ask in 28m11s but failed an independent recording-receipt probe. Benefit inconclusive; PR #250 remains on hold. Temporary access and runtimes removed; repositories retained. |
 | PR #250 / PR #326 task replay, one-hour pair | [Results, writing comparison and next work](reports/pr250-pr326-one-hour.md); [execution evidence](https://github.com/shakacode/shaka/pull/250#issuecomment-5911241095) | Both delivered Ask and passed independent probes. Baseline 41m03s, candidate 46m22s. Writing differences are mixed; incremental value is inconclusive. Process reaping, portable trust setup and one grader assumption needed attention. Repos retained; temporary access removed. |
 
-New runs use the [simple default](../contributing/evaluating-changes.md#simple-default-one-matched-pair):
+New full isolated evaluations use the [simple default](../contributing/evaluating-changes.md#simple-default-one-matched-pair):
 one matched pair, one hour per arm including CI, separate time and cost limits.
 The first pair above keeps its original 30-minute limit; a longer follow-up gets
 its own record and does not turn that timeout into a historical success.
+For an unclear result, [identify the missing evidence](../contributing/evaluating-changes.md#when-a-result-is-inconclusive)
+before scheduling another run. The historical PR #250 pairs remain inconclusive;
+a later trial is new evidence, not a correction to their outcomes.
 
 Retain evaluation repositories and PRs for history, keeping private measured cells
 inaccessible to later agents. Remove temporary access after each run. Before a

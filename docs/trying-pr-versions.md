@@ -48,3 +48,9 @@ Testers can report without permission to manage labels.
 A few linked examples and keep/revise/drop recommendations can inform adoption.
 They are anecdotes, and the maintainer still decides whether to merge. Neither a
 report nor a vote grants merge authority.
+
+Use a trial to learn from real work, not to claim that the candidate beats the
+normal version. If adoption depends on that comparison, choose a
+[focused comparison or full isolated evaluation](https://github.com/shakacode/shaka/blob/main/contributing/evaluating-changes.md#choose-an-evaluation-method).
+An inconclusive comparison does not require another full replay; first identify
+the evidence that would change the decision.
