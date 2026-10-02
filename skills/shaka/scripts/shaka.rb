@@ -344,7 +344,7 @@ begin
              head = options.fetch(:head)
              require_merge_ref!(options)
              review = { required: seam&.review&.fetch('required'), waiver: options[:review_waiver],
-                        root: options[:root] || Dir.pwd }
+                        root: options[:root] || Dir.pwd, merge_preference: seam&.merge&.fetch('preference') }
              squash_message = options[:squash_message] &&
                               Shaka::SquashMessage.for(github, content(options[:squash_message]))
              Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],

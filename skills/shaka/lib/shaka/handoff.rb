@@ -7,6 +7,7 @@ require_relative 'status'
 require_relative 'handoff/squash_note'
 require_relative 'handoff/walkthrough'
 require_relative 'handoff/wip_note'
+require_relative 'handoff/workflow_names'
 
 module Shaka
   # Reports what an agent still owes a PR before it ends a turn, and what a resumed session finds.
@@ -53,7 +54,7 @@ module Shaka
     def open_facts(snapshot, live)
       checks = snapshot['requiredChecks']
       [label_fact(checks), checks_fact(checks, snapshot['requiredChecksUnavailable']), walkthrough_fact(live),
-       squash_fact(live), wip_fact(live)].compact
+       squash_fact(live), wip_fact(live), workflow_fact(snapshot)].compact
     end
 
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.
@@ -109,6 +110,11 @@ module Shaka
       return "squash message #{head[0, SHORT]}" if head == live
 
       owe("squash message #{head[0, SHORT]}", "The squash commit message names #{head}; post one for #{live}.")
+    end
+
+    def workflow_fact(snapshot)
+      text = WorkflowNames.fact(snapshot['workflowNames'])
+      note(text, WorkflowNames.note(text)) if text
     end
 
     def wip_fact(live)

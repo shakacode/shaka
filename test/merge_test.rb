@@ -8,7 +8,8 @@ module MergeFixtures
   BASE = 'main'
 
   class Client
-    attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error, :comments
+    attr_accessor :snapshots, :head_checks, :review_result, :mutation_result, :mutation_error, :comments,
+                  :workflow_names
     attr_reader :mutations, :requested_review, :features
     attr_writer :checks
 
@@ -37,6 +38,12 @@ module MergeFixtures
     end
 
     def configured_required_checks = []
+    def workflow_reads = @workflow_reads || 0
+
+    def workflow_configuration(_pull = nil)
+      @workflow_reads = workflow_reads + 1
+      @workflow_names || { 'status' => 'clear', 'missing' => [], 'unverified' => [] }
+    end
 
     def review(id)
       @requested_review = id
@@ -710,5 +717,50 @@ class MergeLimitsGateTest < Minitest::Test
   def test_default_limits_apply_when_the_caller_passes_none
     @client.snapshots = [snapshot.merge('changedFiles' => 30)]
     assert_blocked(/files 30 > 29/)
+  end
+end
+
+class MergeWorkflowNamesTest < Minitest::Test
+  include MergeFixtures
+
+  def test_auto_merge_stops_when_a_workflow_name_is_missing
+    @client.workflow_names = { 'status' => 'missing', 'missing' => ['secrets.DEPLOY_KEY'], 'unverified' => [] }
+    merge = Shaka::Merge.new(@client, review: { merge_preference: 'auto' })
+
+    error = assert_raises(Shaka::Error) { merge.call(head: HEAD, base: BASE, walkthrough: 17) }
+
+    assert_includes error.message, 'secrets.DEPLOY_KEY'
+    assert_empty @client.mutations
+  end
+
+  def test_ask_merge_still_merges_when_a_workflow_name_is_missing
+    @client.workflow_names = { 'status' => 'missing', 'missing' => ['secrets.DEPLOY_KEY'], 'unverified' => [] }
+    merge = Shaka::Merge.new(@client, review: { merge_preference: 'ask' })
+
+    assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('state')
+  end
+
+  def test_the_merge_command_passes_preference_inside_the_review_hash
+    source = File.read(File.expand_path('../skills/shaka/scripts/shaka.rb', __dir__))
+    call = source[/Shaka::Merge\.new\(.*?\)\.call/m]
+
+    refute_includes call, 'merge_preference:'
+  end
+
+  def test_auto_merge_does_not_stop_when_names_are_only_unverified
+    @client.workflow_names = { 'status' => 'unverified', 'missing' => [], 'unverified' => ['secrets.DEPLOY_KEY'] }
+    merge = Shaka::Merge.new(@client, review: { merge_preference: 'auto' })
+
+    assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('state')
+  end
+
+  # Seam checks are read twice to catch a late failure; the names cannot change for one head.
+  def test_auto_merge_reads_workflow_names_once_when_seam_checks_are_read_twice
+    @client.checks = []
+    @client.head_checks = [{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    merge = Shaka::Merge.new(@client, seam_required_checks: ['checks'], review: { merge_preference: 'auto' })
+
+    assert_equal 'MERGED', merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('state')
+    assert_equal 1, @client.workflow_reads
   end
 end

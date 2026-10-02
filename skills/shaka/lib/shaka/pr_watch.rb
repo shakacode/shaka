@@ -27,7 +27,7 @@ module Shaka
       @timing = timing(settings)
       @baseline = settings[:baseline]
       configure_adapters(adapters)
-      @status = Status.new(github, seam_required_checks: settings[:seam_required_checks])
+      @status = Status.new(github, seam_required_checks: settings[:seam_required_checks], workflow_names: false)
     end
 
     def call
