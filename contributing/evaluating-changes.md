@@ -87,7 +87,8 @@ unchanged outputs. Do not count that correction as an agent repair or a new tria
 ## Simple default: one matched pair
 
 This default applies to **full isolated evaluations**, not every real-work trial
-or focused comparison. Those methods declare limits appropriate to their task.
+or focused comparison. For those methods, set time and cost limits before starting;
+the trial preparation command does not choose or enforce a deadline.
 
 Ask: “Run the same task with and without this change. Give each arm one hour,
 keep everything else matched, and compare the resulting PRs.”
