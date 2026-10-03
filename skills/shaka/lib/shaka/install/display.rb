@@ -47,8 +47,6 @@ module Shaka
         raise ArgumentError, 'Skill UI interface must be an object' unless interface.is_a?(Hash)
 
         interface['display_name'] = "Shaka #{version} (#{revision_label(source)})"
-        interface['short_description'] ||= 'Deliver tasks through verified GitHub pull requests'
-        interface['default_prompt'] ||= 'Use $shaka to deliver this task through a verified pull request.'
         interface
       end
 

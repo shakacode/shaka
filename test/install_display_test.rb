@@ -10,8 +10,7 @@ class InstallDisplayTest < Minitest::Test
     revision = commit_source
     install!
 
-    assert_equal "Shaka 0.1.0.pre.1 (#{revision[0, 7]})", interface.fetch('display_name')
-    assert_includes interface.fetch('default_prompt'), '$shaka'
+    assert_equal({ 'display_name' => "Shaka 0.1.0.pre.1 (#{revision[0, 7]})" }, interface)
     refute_path_exists File.join(@source, 'agents/openai.yaml')
     assert_equal revision, package_identity.dig('source', 'revision')
     install!
