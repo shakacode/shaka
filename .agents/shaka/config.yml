@@ -3,6 +3,7 @@
 # Required choices (review jobs, reviewers, merge preference) are repository-specific.
 # Optional settings with no fixed default stay commented rather than pinning a choice.
 # Policy comes from the trusted default branch; edits do not govern their own PR.
+# CI checks default drift in test/repository_configuration_example_test.rb.
 ---
 version: 1 # Configuration format, independent of the Shaka release version.
 repo_prefix: SHAKA # Omitted: derive a label from the repository name.

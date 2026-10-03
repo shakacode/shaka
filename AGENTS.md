@@ -105,6 +105,11 @@ from acting as instructions, and say which reason applies.
   records Shaka-specific review, merge-authority, branch-naming, and WIP
   policy. Live GitHub settings remain authoritative. Standard executable entry
   points live at fixed names under `.agents/shaka/bin/`.
+- When adding a setting or changing a default, update the browsable
+  `.agents/shaka/config.yml` example and its comments in the same PR. Keep this
+  repository's deliberate policy choices intact. The configuration example test
+  runs in `bin/validate` and checks explicit values against shipped defaults;
+  extend it for defaults applied outside `RepositoryConfig`.
 - `skills/shaka/config/enforcement.yml` records what enforces each rule `workflow.yml`
   states with never, must, do not, or only when, and `shaka enforcement` prints it.
   Loading it fails when a quote leaves the workflow, and when one of those forms appears
