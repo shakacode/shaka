@@ -5,6 +5,7 @@ require 'fileutils'
 require 'json'
 require 'tmpdir'
 require_relative 'package_verification'
+require_relative 'display'
 
 module Shaka
   module Install
@@ -74,9 +75,7 @@ module Shaka
         raise ArgumentError, 'Source version changed during installation' unless @source.version == version
       end
 
-      def identity_for(version, source)
-        self.class.identity_for(version, source)
-      end
+      def identity_for(version, source) = self.class.identity_for(version, source)
 
       def stage(source_root, target, identity, version)
         staging = Dir.mktmpdir('.staging-', @root)
@@ -96,6 +95,7 @@ module Shaka
 
         verify_source(source_root, hash, identity, version)
 
+        Display.write(staging, version, identity)
         write_metadata(staging, target, identity, version)
         @tree.reject_checkout_references(staging, source_root)
         publish(staging, target)
@@ -103,7 +103,8 @@ module Shaka
 
       def write_metadata(staging, target, identity, version)
         metadata = { 'schema_version' => 1, 'package_id' => File.basename(target),
-                     'version' => version, 'skills' => @names, 'source' => identity }
+                     'version' => version, 'skills' => @names, 'source' => identity,
+                     'package_content_sha256' => @tree.hash(staging) }
         File.write(File.join(staging, METADATA), "#{JSON.pretty_generate(metadata)}\n")
         File.chmod(0o644, File.join(staging, METADATA))
       end
@@ -125,7 +126,7 @@ module Shaka
         raise ArgumentError, 'Managed package source must be an object' unless source.is_a?(Hash)
 
         validate_identity(path, metadata, source)
-        return if @tree.hash(path, names) == source.fetch('content_sha256')
+        return if @tree.hash(path, names) == metadata.fetch('package_content_sha256', source.fetch('content_sha256'))
 
         raise ArgumentError, 'Managed package content differs'
       end
