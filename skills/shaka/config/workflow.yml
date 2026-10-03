@@ -421,7 +421,7 @@ phases:
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `walkthrough`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
+        optional `walkthrough` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
         required `table`, required `provenance`, required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
@@ -433,7 +433,10 @@ phases:
         or unclosed text refuses publication.
         The helper always renders a Code Walkthrough link after the summary: the COMMENT review
         URL when `walkthrough` is supplied, otherwise `_Not published yet._`. Do not bury that URL
-        in the opening paragraph. Set `deployment` to `auto` to link the newest successful GitHub
+        in the opening paragraph. Beside it, the helper renders Post-implementation verification,
+        using `post_implementation` for the published PR comment URL or a named placeholder
+        until publication. After publishing the checkpoint, republish the description with that URL.
+        Set `deployment` to `auto` to link the newest successful GitHub
         deployment of the PR head, which reports `none` when there is none; supply an https URL
         yourself when the preview exists only in a provider comment or CI log, or `none` when the
         repository deploys nothing for the change. The helper links it beside the walkthrough.
