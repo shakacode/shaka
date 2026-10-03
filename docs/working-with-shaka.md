@@ -135,6 +135,22 @@ for preservation rules and the real-use evaluation still needed.
 
 ## Resume unfinished work
 
+After an Ask handoff, new feedback still needs assessment before the PR stays
+ready to merge. The owning agent prioritizes your requests, records a fix, an
+evidence-backed reply, or a blocked decision, and refreshes readiness afterward.
+A review saying “looks good” with another request still needs an answer.
+
+Automatic intake depends on the coding host being able to resume the owning
+chat for comments, review summaries, and inline comments. A monitor that only
+reports finished checks cannot provide this coverage. The agent names its
+bounded coverage and expiry in WIP Details; keep the chat available while that
+coverage depends on it. Watching stops when the PR closes or ownership transfers.
+
+When the host cannot resume automatically, the handoff says **Automatic feedback
+intake unavailable** and names who should check later feedback. That person uses
+the resume prompt in WIP Details after leaving a request. This manual fallback
+does not promise that an unattended agent will answer.
+
 Open the PR's **WIP Details** to find the owning chat, last known state, and next
 action. The **Chat link** can reopen the conversation when the owner's machine
 is reachable. In Codex, `codex://threads/...` takes you back to the original chat
