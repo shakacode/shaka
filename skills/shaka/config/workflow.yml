@@ -165,8 +165,11 @@ phases:
         chooses no settings and judges no claim. `value` follows the packaged
         [planning guide](<{{package_root}}/skills/shaka/references/delivery.md#say-what-the-work-is-worth>).
       - For a planning-only request, include the rendered recommendation in a compact execution
-        prompt with the usage report. Save the plan when authorized through the procedure below,
-        then stop before implementation edits and skip the implementation checkpoint.
+        prompt with the usage report. Follow
+        [keep the task plan recoverable](<{{package_root}}/skills/shaka/references/delivery.md#keep-the-task-plan-recoverable>)
+        to save an authorized plan. If permission or access is missing, return the exact proposed
+        update and request the missing permission or an accessible, authorized destination.
+        Stop before implementation edits and skip the implementation checkpoint.
       - For implementation, run `checkpoint --content-file PATH` with `recommended_model`,
         `recommended_effort`, `immediate_start`, and `settings_available`. Include
         `requested_model` and `requested_effort` when the user supplied them, plus
