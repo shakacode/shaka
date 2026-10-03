@@ -19,8 +19,8 @@ module Shaka
                  'Timeouts and account model refusals do not establish a provider outage.'
 
       def initialize(root:, path:, timeout:, ref: nil)
-        @root = root
-        @path = LocalReviewPathGuard.safe_path(path, candidate_root: root, drop_candidate: true)
+        @root = OpeningCheckout.root(root) || File.realpath(root)
+        @path = LocalReviewPathGuard.safe_path(path, candidate_root: @root, drop_candidate: true)
         @timeout = timeout
         @ref = ref
       end

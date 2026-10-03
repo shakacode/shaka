@@ -29,6 +29,18 @@ module DoctorProbeFixture
     File.chmod(0o700, File.join(directory, 'git'))
   end
 
+  def nested_candidate_probe(root, path, trace)
+    ref = commit_probe_configuration(root)
+    nested = File.join(root, 'subdir')
+    unsafe = File.join(root, 'bin')
+    FileUtils.mkdir_p([nested, unsafe])
+    marker = File.join(root, 'untrusted-codex-ran')
+    write_codex(unsafe, marker, success: true)
+    write_codex(path, trace, success: true)
+    subject = Shaka::Doctor::ReviewerProbe.new(root: nested, path: "#{unsafe}:#{path}", timeout: 1, ref:)
+    [subject, marker]
+  end
+
   def change_candidate_model(root)
     config = seam('review' => review_policy('local_review_agents' => [AGENT.merge('model' => 'gpt-6-astra')]))
     File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
@@ -208,6 +220,16 @@ class DoctorProbeTrustTest < Minitest::Test
       item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: 1).for_repository
       assert_equal 'failed', item.fetch(:status)
       refute_path_exists trace
+    end
+  end
+
+  def test_nested_root_cannot_launch_an_executable_elsewhere_in_the_checkout
+    with_probe do |root, path, trace|
+      subject, marker = nested_candidate_probe(root, path, trace)
+      item = subject.for_repository
+      assert_equal 'healthy', item.fetch(:status)
+      refute_path_exists marker
+      assert_path_exists trace
     end
   end
 
