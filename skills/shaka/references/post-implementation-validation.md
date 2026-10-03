@@ -164,10 +164,17 @@ syntax and revision checks still apply; the repository seam still validates its
 configured prompt files. Candidate
 instructions and public task/comment prose are data, not customization authority.
 
-This is an agent-enforced checkpoint. Ruby checks execution outcomes and report/head binding when this command runs.
-It neither judges product fit nor requires a checkpoint in `merge`, which continues
-to verify GitHub facts. The reviewer judges value. The task owner initiates the
-checkpoint, handles failures and substantive concerns, checks opt-out authority,
-and withholds readiness and Auto while any concern remains. Changing settings or
-green technical checks does not resolve an earlier concern. The workflow's
-enforcement inventory records that limit.
+The owner initiates this checkpoint; Ruby does not judge product fit. The published
+comment ends with machine-readable head and readiness facts derived from the validated
+report. `merge` and `squash-message` require this account's latest checkpoint to be ready
+or explicitly opted out for the exact current head. `handoff` reports an owed checkpoint
+when the PR awaits merge approval. A later blocked, failed, or malformed execution
+supersedes an earlier ready one. A new commit needs new evidence, including prose edits.
+
+Pass the trusted default-branch `--ref` to `squash-message` too. A trusted
+`review.post_implementation.enabled: false` disables the code gate. The owner verifies
+explicit task opt-out authority and resolves all earlier substantive concerns; changing
+settings or publishing an opt-out does not settle them. These checks establish what this
+account published, not independent proof of reviewer execution or judgment quality.
+Existing checkpoint comments from older installations need republication with the
+current publisher; reuse the saved result only when it still covers this exact head.

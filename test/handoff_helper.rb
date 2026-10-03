@@ -22,6 +22,8 @@ class HandoffFakeGitHub
   def snapshot = { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42 }
   def required_checks = @pull[:checks]
   def configured_required_checks = []
+  def viewer_login = 'shaka-agent'
+  def issue_comments = @pull[:comments]
 
   def api(path, **)
     return { 'login' => 'shaka-agent' } if path == 'user'
@@ -94,9 +96,10 @@ module HandoffHarness
 
   def description(wip = WIP) = HandoffFixtures.description(wip)
 
-  def handoff(expected: HEAD, woken_by: nil, **pull)
+  def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,
                  reviews: [walkthrough(HEAD)], checks: [check('pass')], comments: [] }
-    Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull))).call(head: expected, woken_by:)
+    Shaka::Handoff.new(HandoffFakeGitHub.new(defaults.merge(pull)), post_implementation:).call(head: expected,
+                                                                                               woken_by:)
   end
 end

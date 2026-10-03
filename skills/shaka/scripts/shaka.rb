@@ -261,6 +261,11 @@ begin
   command, repository, number = ARGV
   raise OptionParser::InvalidArgument, parser.to_s unless ARGV.length == 3 && COMMANDS.include?(command)
   raise OptionParser::InvalidArgument, '--issue is only for comments' if options[:issue_only] && command != 'comments'
+
+  if command == 'merge'
+    options.fetch(:head)
+    require_merge_ref!(options)
+  end
   if options[:review_waiver] && command != 'merge'
     raise OptionParser::InvalidArgument, '--review-waiver is only for merge'
   end
@@ -271,6 +276,9 @@ begin
   raise Shaka::Error, '--woken-by is only for handoff.' if options[:woken_by] && command != 'handoff'
   if command == 'handoff' && options[:ref].to_s.strip.empty?
     raise Shaka::Error, 'handoff requires --ref so seam-required checks come from a trusted commit.'
+  end
+  if command == 'squash-message' && options[:ref].to_s.strip.empty?
+    raise Shaka::Error, 'squash-message requires --ref so checkpoint opt-outs come from a trusted commit.'
   end
   raise Shaka::Error, 'resolve requires --thread THREAD_ID.' if command == 'resolve' && options[:thread].to_s.empty?
   if options[:opening_reviewer] && command != 'description'
@@ -286,11 +294,20 @@ begin
   end
 
   github = Shaka::GitHub.new(repository, number)
-  if %w[pr walkthrough merge handoff].include?(command)
+  if %w[pr walkthrough merge handoff squash-message].include?(command)
     seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
                                                private_trial: command != 'merge')
   end
   seam_required_checks = seam&.merge&.fetch('required_checks', nil)
+  if command == 'merge' && !options[:squash_message]
+    raise Shaka::Error, 'merge requires --squash-message with the commit title and body.'
+  end
+
+  checkpoint = { enabled: seam&.review&.dig('post_implementation', 'enabled') != false }
+  if %w[merge squash-message].include?(command)
+    head = options.fetch(:head)
+    Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)
+  end
   result = case command
            when 'pr' then Shaka::Status.new(github, seam_required_checks:).call
            when 'comments'
@@ -342,7 +359,6 @@ begin
                                 seam_required_checks:, prose: Shaka::ProseLimits.new(seam&.prose_limits || {}))
            when 'merge'
              head = options.fetch(:head)
-             require_merge_ref!(options)
              review = { required: seam&.review&.fetch('required'), waiver: options[:review_waiver],
                         root: options[:root] || Dir.pwd }
              squash_message = options[:squash_message] &&
@@ -359,8 +375,9 @@ begin
            when 'squash-message'
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))
              github.squash_comment(head: options.fetch(:head), message:)
-           when 'handoff' then Shaka::Handoff.new(github, seam_required_checks:).call(head: options[:head],
-                                                                                      woken_by: options[:woken_by])
+           when 'handoff'
+             Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint)
+                           .call(head: options[:head], woken_by: options[:woken_by])
            end
   puts JSON.pretty_generate(result)
   exit Shaka::Handoff.exit_status(result) if command == 'handoff'

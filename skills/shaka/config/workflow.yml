@@ -451,10 +451,10 @@ phases:
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         attention OWNER/REPO NUMBER --state answer|merge|resume|none
         handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] --root DIR --ref SHA
-        squash-message OWNER/REPO NUMBER --head SHA --content-file PATH
+        squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
-          --ref SHA [--ci-review-wait MODE] [--limits-confirmed-head SHA]
-          [--review-waiver REASON] [--squash-message PATH]
+          --ref SHA --squash-message PATH [--ci-review-wait MODE] [--limits-confirmed-head SHA]
+          [--review-waiver REASON]
         usage --commit SHA --contribution CATEGORY [--since-time TASK_START_UTC]
         ```
 

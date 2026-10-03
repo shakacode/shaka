@@ -65,4 +65,21 @@ class HandoffSquashMessageTest < Minitest::Test
   def test_a_pr_not_awaiting_merge_reads_no_comments
     assert_empty handoff(comments: nil)['owed']
   end
+
+  def test_final_handoff_owes_both_checkpoint_and_message_until_they_exist
+    result = awaiting_merge(post_implementation: {})
+    assert owed?(result, 'Post-implementation review')
+    assert owed?(result, 'squash commit message')
+    assert_equal Shaka::Handoff::OWED_EXIT, Shaka::Handoff.exit_status(result)
+
+    checkpoint = { 'user' => { 'login' => 'shaka-agent' },
+                   'body' => "<!-- shaka:reply:post-implementation-aaaaaaa-abc12345 -->\nReport\n\n" \
+                             "#{Shaka::PostImplementationEvidence.attestation(HEAD, 'ready')}" }
+    result = awaiting_merge(post_implementation: {}, comments: [checkpoint, squash_comment(HEAD)])
+    assert_empty result['owed']
+  end
+
+  def test_in_progress_handoff_does_not_require_an_early_checkpoint
+    assert_empty handoff(post_implementation: {}, comments: nil)['owed']
+  end
 end

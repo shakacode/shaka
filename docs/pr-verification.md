@@ -70,8 +70,10 @@ Unexpected growth or repeated repairs can prompt this review earlier.
 
 The final walkthrough or a separate PR comment explains one conclusion:
 **Proceed**, **Simplify/reframe**, or **Do not merge**. Substantive unresolved concerns
-hold readiness and Auto even when technical checks pass. This judgment rests with
-the agent; Ruby does not verify that it happened or assess its quality.
+hold readiness and Auto even when technical checks pass. Shaka blocks final merge
+preparation without this account's published ready review or explicit opt-out for the
+current commit. A new commit needs fresh evidence. The reviewer judges value; Ruby
+checks the published result and commit, not the judgment’s quality.
 
 For example, a settings page may satisfy the task but introduce an interface most
 users never need. The agent can recommend extending an existing setting instead
@@ -210,6 +212,8 @@ commits' `Co-authored-by` lines. Each block has a copy button; paste them into
 GitHub's squash merge boxes. When the head changes, the agent posts a new comment
 and deletes the old one. When the agent merges under **Auto**, it sends the same
 message itself, except through a merge queue, which uses the repository default.
+The merge command refuses missing message input; final handoff reports a missing
+or outdated posted message. A prepared message cannot change GitHub’s queue default.
 
 GitHub fills those boxes from a repository setting, by default with every branch
 commit's title. To start from the PR title and an empty body instead, set **Settings →
