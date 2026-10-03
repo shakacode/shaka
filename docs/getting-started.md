@@ -20,8 +20,14 @@ Follow its installation instructions and confirm the skill is available.
 ```
 
 The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
-It installs a managed copy outside your projects. Start a new chat if the skill
-does not appear. Use a source installation: the published gem is a
+It installs one dedicated checkout outside your projects and links the skill
+directly into it. The default location is `~/.agents/shaka`; you can
+choose another directory, such as `~/agent-tools/shaka`.
+
+Keep the installation outside your project repositories. Use separate checkouts
+for development so the installation stays ready for updates.
+
+Start a new chat if the skill does not appear. Use a source installation: the published gem is a
 name-reservation prerelease without the current workflow.
 
 Try `$shaka` without a task for a guided welcome and setup check. Or ask:
