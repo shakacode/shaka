@@ -36,12 +36,6 @@ is configured. Finding a CLI does not verify sign-in, quota, or a working review
 An extra provider can supply independent review; installing every CLI is optional.
 The diagnostic changes no settings. Give the agent a task when you are ready.
 
-After configuring reviewers, you can ask the agent to check their account access
-with an optional live probe. It sends each configured reviewer one short prompt;
-this can consume quota or incur cost. A refusal leaves your model and effort
-unchanged and asks you to choose before trying different settings.
-See the [availability probe](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/local-review.md#optional-availability-probe).
-
 ## 2. Choose private trial or team setup
 
 For a private first task, open a chat in your project and ask:
@@ -74,6 +68,20 @@ Shaka to your project's commands and record its review and merge choices.
 Then start your feature task. If the repository is already configured, skip this step.
 You can ask the agent to change settings later; you do not need to maintain them by hand.
 See [repository setup](configure-repository.md) for details.
+
+After merging shared reviewer settings, you can optionally check account access
+before starting your first task. This can catch an unavailable reviewer model
+before the agent reaches code review. Ask:
+
+```text
+$shaka Check whether this project's configured reviewers can run with my accounts.
+Use the optional live availability probe. I understand it may consume quota or cost money.
+Keep my chosen models and effort settings; explain any failure before we change them.
+```
+
+The agent sends each supported configured reviewer one short prompt and reports
+which attempts succeeded. If an attempt fails, it explains the problem and asks
+you how to proceed. You can skip this check and start your task directly.
 
 ## 3. Start a task
 
