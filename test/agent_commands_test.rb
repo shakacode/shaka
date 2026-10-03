@@ -4,7 +4,7 @@ require_relative 'test_helper'
 require 'bundler'
 
 class AgentCommandsTest < Minitest::Test
-  TEST_COMMAND = File.expand_path('../.agents/bin/test', __dir__)
+  TEST_COMMAND = File.expand_path('../.agents/shaka/bin/test', __dir__)
 
   def test_focused_tests_override_an_inherited_bundle
     environment = { 'BUNDLE_GEMFILE' => '/missing/shaka/Gemfile', 'RUBYOPT' => '-rbundler/setup' }

@@ -242,7 +242,7 @@ class ValidateWorkflowTest < Minitest::Test
 
   def validation_fixture
     root = Dir.mktmpdir('validate-docs')
-    FileUtils.mkdir_p([File.join(root, '.agents/bin'), File.join(root, 'bin'), File.join(root, 'docs'),
+    FileUtils.mkdir_p([File.join(root, '.agents/shaka/bin'), File.join(root, 'bin'), File.join(root, 'docs'),
                        File.join(root, 'lib')])
     install_validation_scripts(root)
     File.write(File.join(root, 'README.md'), "[Guide](docs/guide.md)\n")
@@ -262,7 +262,7 @@ class ValidateWorkflowTest < Minitest::Test
   end
 
   def install_validation_scripts(root)
-    %w[bin/docs-only-change bin/check-docs-navigation .agents/bin/validate].each do |path|
+    %w[bin/docs-only-change bin/check-docs-navigation .agents/shaka/bin/validate].each do |path|
       FileUtils.cp(File.expand_path("../#{path}", __dir__), File.join(root, path))
     end
     File.write(File.join(root, 'docs/sidebars.json'), '{"docsSidebar":["guide"]}')
@@ -303,7 +303,7 @@ class ValidateWorkflowTest < Minitest::Test
 
   def run_local_validation(root, environment = {}, chdir: root)
     Open3.capture2e({ 'SHAKA_BASE_REF' => 'HEAD' }.merge(environment),
-                    File.join(root, '.agents/bin/validate'), chdir:)
+                    File.join(root, '.agents/shaka/bin/validate'), chdir:)
   end
 
   def run_detector(root, base)

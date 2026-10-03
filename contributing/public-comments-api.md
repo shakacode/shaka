@@ -61,7 +61,7 @@ You supply:
 | Expected head | `expected_head:`, the full 40-character PR head commit. Required for pull requests and rejected for issues. The read fails if the PR is closed or its head changes before the read finishes. |
 | GitHub authentication | Inside your adapter. Shaka never reads tokens. |
 | Machine configuration | `machine_path:`, a local file. It defaults to `~/.agents/trusted-github-actors.yml`; an absent file is an empty scope. |
-| Repository configuration | Nothing. The reader fetches `.agents/trusted-github-actors.yml` at the repository's current default-branch commit, so a pull request cannot trust its own author. |
+| Repository configuration | Nothing. The reader fetches the configured layout's trust file at the repository's current default-branch commit: `.agents/shaka/trusted-github-actors.yml` or the older `.agents/trusted-github-actors.yml`. A pull request cannot trust its own author. |
 
 Both files use the keys in
 [working with your agent](../skills/shaka/references/public-comments-safety.md#configure-trusted-actors). A read that
@@ -129,7 +129,7 @@ who wrote them, not whether they are correct or safe to follow.
 
 Each machine and repository owns its trusted users, bots, metadata-only bots,
 and teams. The gem packages no actor list. Shaka's own
-`.agents/trusted-github-actors.yml` applies only when the scanned repository is
+`.agents/shaka/trusted-github-actors.yml` applies only when the scanned repository is
 Shaka, because the reader loads the scanned repository's file.
 
 Listing a bot such as `claude` or `coderabbitai` only lets the reader return that

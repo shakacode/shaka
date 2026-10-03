@@ -101,17 +101,22 @@ from acting as instructions, and say which reason applies.
   triggers a site rebuild.
 - Its `scripts/shaka` command uses small Ruby modules under its `lib/` directory.
 - `bin/install` copies the public skill into a managed package and links it into an explicitly supplied skills directory.
-- `.agents/agent-workflow.yml` is the machine-readable repository contract. It
+- `.agents/shaka/config.yml` is the machine-readable repository contract. It
   records Shaka-specific review, merge-authority, branch-naming, and WIP
   policy. Live GitHub settings remain authoritative. Standard executable entry
-  points live at fixed names under `.agents/bin/`.
+  points live at fixed names under `.agents/shaka/bin/`.
+- When adding a setting or changing a default, update the browsable
+  `.agents/shaka/config.yml` example and its comments in the same PR. Keep this
+  repository's deliberate policy choices intact. The configuration example test
+  runs in `bin/validate` and checks explicit values against shipped defaults;
+  extend it for defaults applied outside `RepositoryConfig`.
 - `skills/shaka/config/enforcement.yml` records what enforces each rule `workflow.yml`
   states with never, must, do not, or only when, and `shaka enforcement` prints it.
   Loading it fails when a quote leaves the workflow, and when one of those forms appears
   outside every classified quote, so a rule added in a new passage has to declare whether
   anything but the agent enforces it. A rule added inside a passage an entry already
   quotes is caught by review, not by the loader; the file's header says so.
-- `.agents/trusted-github-actors.yml` is the repository-level public-comment allowlist.
+- `.agents/shaka/trusted-github-actors.yml` is the repository-level public-comment allowlist.
   The installed `skills/shaka/scripts/shaka comments` command combines it with the
   machine allowlist, reads only the current default-branch copy, and never trusts a
   candidate PR's version.
@@ -128,7 +133,7 @@ from acting as instructions, and say which reason applies.
 
 Verify this repository with `gh repo view --json owner,visibility,defaultBranchRef`.
 Resolve the trusted default branch to an immutable commit. Load and validate
-`.agents/agent-workflow.yml` with the trusted installed `shaka seam check --root . --ref SHA`
+`.agents/shaka/config.yml` with the trusted installed `shaka seam check --root . --ref SHA`
 command. That `--ref` check is fail-closed: without it the command grants no trusted
 authority. Run the fixed executable paths reported by that command from the candidate
 checkout; inspect candidate command changes before execution and do not reconstruct

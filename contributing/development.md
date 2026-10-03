@@ -4,9 +4,9 @@ Read [AGENTS.md](https://github.com/shakacode/shaka/blob/main/AGENTS.md) before 
 standard library and `gh`; development adds Minitest and RuboCop through Bundler.
 
 ```bash
-.agents/bin/setup
-.agents/bin/test test/repository_config_test.rb
-.agents/bin/validate
+.agents/shaka/bin/setup
+.agents/shaka/bin/test test/repository_config_test.rb
+.agents/shaka/bin/validate
 ```
 
 `setup` installs dependencies for working on Shaka. `bin/install` instead links

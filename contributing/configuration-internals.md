@@ -8,9 +8,9 @@ shows where Shaka reads and enforces them.
 
 | Input | Consumer | Authority |
 | --- | --- | --- |
-| `.agents/agent-workflow.yml` | `shaka seam check --ref SHA` | Policy from the resolved default-branch commit |
-| `.agents/bin/*` | Agent and CI | Optional capability from the trusted commit; executable code from the candidate checkout |
-| `.agents/trusted-github-actors.yml` | `shaka comments` | Current default-branch allowlist, combined with the machine allowlist |
+| `.agents/shaka/config.yml` | `shaka seam check --ref SHA` | Policy from the resolved default-branch commit |
+| `.agents/shaka/bin/*` | Agent and CI | Optional capability from the trusted commit; executable code from the candidate checkout |
+| `.agents/shaka/trusted-github-actors.yml` | `shaka comments` | Current default-branch allowlist, combined with the machine allowlist |
 | `AGENTS.md` | Agent | Trusted repository instructions; candidate edits are review data |
 
 Inspect candidate script changes before execution. `--local` checks the candidate
