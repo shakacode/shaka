@@ -36,6 +36,12 @@ is configured. Finding a CLI does not verify sign-in, quota, or a working review
 An extra provider can supply independent review; installing every CLI is optional.
 The diagnostic changes no settings. Give the agent a task when you are ready.
 
+After configuring reviewers, you can ask the agent to check their account access
+with an optional live probe. It sends each configured reviewer one short prompt;
+this can consume quota or incur cost. A refusal leaves your model and effort
+unchanged and asks you to choose before trying different settings.
+See the [availability probe](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/local-review.md#optional-availability-probe).
+
 ## 2. Choose private trial or team setup
 
 For a private first task, open a chat in your project and ask:

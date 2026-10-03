@@ -57,20 +57,16 @@ class ReviewerSettingsTest < Minitest::Test
     assert_includes notice.fetch('summary'), 'not one of'
   end
 
-  def test_an_unknown_model_warns_and_names_the_recommendation
+  def test_an_unknown_model_warns_without_selecting_a_replacement
     notice = notices('openai/codex', model: 'gpt-9-nova').fetch(0)
 
     assert_equal 'degraded', notice.fetch('severity')
     assert_includes notice.fetch('summary'), 'gpt-9-nova'
-    assert_includes notice.fetch('summary'), 'gpt-6-sol'
+    refute_includes notice.fetch('summary'), 'recommends'
   end
 
-  def test_a_known_model_other_than_the_recommendation_is_a_warning
-    notice = notices('openai/codex', model: 'gpt-6-astra').fetch(0)
-
-    assert_equal 'degraded', notice.fetch('severity')
-    assert_includes notice.fetch('summary'), 'gpt-6-astra'
-    assert_includes notice.fetch('summary'), 'gpt-6-sol'
+  def test_known_models_do_not_prompt_a_switch
+    assert_empty notices('openai/codex', model: 'gpt-6-astra', effort: 'medium')
   end
 
   def test_the_recommended_model_and_a_listed_effort_are_quiet
@@ -107,12 +103,12 @@ class ReviewerSettingsTest < Minitest::Test
     end
   end
 
-  def test_doctor_warns_when_a_known_model_is_not_the_recommendation
+  def test_doctor_preserves_a_known_model_choice
     agents = [{ 'provider' => 'openai', 'model_family' => 'codex', 'model' => 'gpt-6-astra' }]
     report, blocked = doctor_for(agents)
 
-    assert_includes report, '[DEGRADED] Reviewer settings'
-    assert_includes report, 'Shaka recommends `gpt-6-sol`'
+    assert_includes report, '[HEALTHY] Reviewer settings'
+    refute_includes report, 'Shaka recommends'
     refute blocked
   end
 

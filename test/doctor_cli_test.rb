@@ -38,6 +38,14 @@ class DoctorCliTest < Minitest::Test
     assert_empty error
   end
 
+  def test_probe_deadline_requires_opt_in_and_has_a_small_bound
+    [%w[--probe-timeout-seconds 1], %w[--probe-reviewers --probe-timeout-seconds 0],
+     %w[--probe-reviewers --probe-timeout-seconds 121],
+     %w[--probe-reviewers --installation-json]].each do |arguments|
+      assert_equal(1, silently { Shaka::Doctor.run(arguments) })
+    end
+  end
+
   private
 
   def capture_doctor(path, root)

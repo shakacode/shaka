@@ -10,6 +10,8 @@ require_relative 'local_review/path_guard'
 require_relative 'doctor/system'
 require_relative 'doctor/cursor_stop_hook'
 require_relative 'doctor/installation_identity'
+require_relative 'doctor/command'
+require_relative 'doctor/reviewer_probe'
 
 module Shaka
   # Reports whether this machine can run the workflow and publish a complete pull request.
@@ -20,6 +22,8 @@ module Shaka
     # stalled credential helper does not look like a working command.
     TIMEOUT = 15
     RUNNER = BoundedCommand.new(timeout: TIMEOUT)
+
+    extend Command
 
     def self.run(arguments)
       options = {}
@@ -38,29 +42,21 @@ module Shaka
     def self.report(arguments, options)
       raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
 
-      subject = new(root: File.realpath(options.fetch(:root, Dir.pwd)), host: options[:host])
+      validate_probe_options!(options)
+      subject = new(root: File.realpath(options.fetch(:root, Dir.pwd)), host: options[:host],
+                    probe_timeout: (options.fetch(:probe_timeout, 30) if options[:probe_reviewers]))
       puts subject.report
       subject.blocked? ? 1 : 0
     end
 
     def self.report_installation(arguments, options)
       raise OptionParser::InvalidArgument, arguments.join(' ') unless arguments.empty?
-      raise OptionParser::InvalidArgument, 'flags cannot be combined' if options[:root] || options[:host]
+      if options.keys.any? { |key| key != :installation_json }
+        raise OptionParser::InvalidArgument, 'flags cannot be combined'
+      end
 
       puts JSON.generate(InstallationIdentity.read)
       0
-    end
-
-    def self.option_parser(options)
-      OptionParser.new do |flags|
-        flags.banner = 'Usage: shaka doctor [--root DIR] [--host NAME] [--installation-json]'
-        flags.on('--root DIR', 'Repository root (default: current directory)') { |value| options[:root] = value }
-        flags.on('--host NAME', Usage::READERS.keys, Usage::READERS.keys.join(', ')) do |value|
-          options[:host] = value
-        end
-        flags.on('--installation-json', 'JSON installation identity') { options[:installation_json] = true }
-        flags.on('-h', '--help', 'Show usage') { options[:help] = true }
-      end
     end
 
     def self.help(parser)
@@ -68,16 +64,24 @@ module Shaka
       0
     end
 
-    private_class_method :report, :report_installation, :option_parser, :help
+    private_class_method :report, :report_installation, :help
 
-    def initialize(root:, host: nil, environment: ENV, system: System.default)
+    def initialize(root:, host: nil, environment: ENV, system: System.default, probe_timeout: nil)
       @root = root
       @stated = !host.nil?
       @host = host || Usage.detected_host
-      @source = Checks.new(root: root, host: @host, environment: environment, system: system)
+      @source = Checks.new(root: root, host: @host, environment: environment, system: system,
+                           probe_reviewers: !probe_timeout.nil?)
+      @probe = ReviewerProbe.new(root:, path: environment.fetch('PATH', ''), timeout: probe_timeout) if probe_timeout
     end
 
-    def checks = @checks ||= @source.call
+    def checks
+      @checks ||= begin
+        items = @source.call
+        items << @probe.for_repository(items.find { |item| item[:name] == 'Repository seam' }) if @probe
+        items
+      end
+    end
 
     def blocked?
       checks.any? { |item| item.fetch(:status) == 'failed' } || installation_failed?

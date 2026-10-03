@@ -1088,6 +1088,19 @@ class LocalReviewSettingsTest < Minitest::Test
     end
   end
 
+  def test_account_model_refusal_keeps_the_requested_settings_and_requires_a_choice
+    with_repository do |root, base, head, bin|
+      fake_account_refusal(bin)
+      output, _error, status = run_review(root, base, head, bin, model: 'gpt-6-sol', effort: 'medium')
+      result = JSON.parse(output)
+
+      refute_predicate status, :success?
+      assert_account_refusal(result)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   def test_a_claude_effort_outside_the_list_stops_before_the_cli
     with_repository do |root, base, head, bin|
       result = refused_claude(root, base, head, bin)
@@ -1108,6 +1121,23 @@ class LocalReviewSettingsTest < Minitest::Test
   end
 
   private
+
+  def fake_account_refusal(bin)
+    write_executable(bin, 'codex', <<~SH)
+      #!/bin/sh
+      echo "The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account." >&2
+      exit 1
+    SH
+  end
+
+  def assert_account_refusal(result)
+    assert_equal 'cli_failure', result.fetch('failure_stage')
+    assert_equal 'account_model_refused', result.fetch('failure_cause')
+    assert_equal 'not_eligible', result.fetch('skip_evidence')
+    assert_equal 'gpt-6-sol', result.fetch('requested_model')
+    assert_equal 'medium', result.fetch('requested_effort')
+    assert_includes result.fetch('guidance'), 'user'
+  end
 
   def refused_claude(root, base, head, bin)
     trace = File.join(root, 'invocation.json')

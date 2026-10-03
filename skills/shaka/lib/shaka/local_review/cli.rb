@@ -59,6 +59,38 @@ module Shaka
     def reviewer_executable(name)
       LocalReviewPathGuard.safe_executable(@path || ENV.fetch('PATH', ''), name, @candidate_root)
     end
+
+    def failure(reason, diagnostic = nil)
+      result = outcome(reason, 'cli_failure', true)
+               .merge('diagnostic_path' => save_diagnostic(diagnostic),
+                      'guidance' => 'Inspect diagnostics. Ask the user before changing model or effort.').compact
+      return result unless account_model_refused?(diagnostic)
+
+      result.merge('failure_cause' => 'account_model_refused', 'skip_evidence' => 'not_eligible',
+                   'guidance' => 'This account refused the requested model. Keep the model and effort; ' \
+                                 'ask the user to choose accessible settings before retrying. ' \
+                                 'This does not establish a provider outage.')
+    end
+
+    # Recognize explicit account-access refusals, not generic invalid models or nonzero exits.
+    def account_model_refused?(diagnostic)
+      diagnostic.to_s.match?(/model[^\n]*(?:not supported[^\n]*ChatGPT account|not available[^\n]*account)/i) ||
+        diagnostic.to_s.match?(/(?:do not|does not|don't) have access to[^\n]*model/i)
+    end
+
+    def invalid(reason, diagnostic = nil)
+      outcome(reason, 'report_validation', true).merge('diagnostic_path' => save_diagnostic(diagnostic)).compact
+    end
+
+    def outcome(reason, stage, attempted)
+      File.unlink(@report) if File.exist?(@report) && (stage != 'report_validation' || !File.size?(@report))
+      { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
+        'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason,
+        'report' => stage == 'report_validation' && File.size?(@report) ? @report : nil,
+        'skip_evidence' => { 'executable_missing' => 'confirmed',
+                             'cli_failure' => 'requires_cause_review' }.fetch(stage, 'not_eligible'),
+        'usage' => @options[:usage] }.compact
+    end
   end
 
   # The only path that may claim a local review process was actually launched.
@@ -171,24 +203,6 @@ module Shaka
     end
 
     def missing(name) = outcome("#{name} is not on PATH", 'executable_missing', false)
-
-    def failure(reason, diagnostic = nil)
-      outcome(reason, 'cli_failure', true).merge('diagnostic_path' => save_diagnostic(diagnostic)).compact
-    end
-
-    def invalid(reason, diagnostic = nil)
-      outcome(reason, 'report_validation', true).merge('diagnostic_path' => save_diagnostic(diagnostic)).compact
-    end
-
-    def outcome(reason, stage, attempted)
-      File.unlink(@report) if File.exist?(@report) && (stage != 'report_validation' || !File.size?(@report))
-      { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
-        'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason,
-        'report' => stage == 'report_validation' && File.size?(@report) ? @report : nil,
-        'skip_evidence' => { 'executable_missing' => 'confirmed',
-                             'cli_failure' => 'requires_cause_review' }.fetch(stage, 'not_eligible'),
-        'usage' => @options[:usage] }.compact
-    end
 
     def effort = @options[:effort]
   end

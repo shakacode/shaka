@@ -232,6 +232,15 @@ rules:
     note: >-
       `reviewer` computes the preferred reviewer, but nothing compares the reviewer that
       actually ran against the one it returned.
+  - id: reviewer-setting-choice
+    phase: verify
+    quote: >-
+      Do not change the configured model or effort, or substitute a reviewer after an account
+      refusal, without the user's choice.
+    enforced_by: agent
+    note: >-
+      The runner preserves requested settings and reports explicit account model refusals.
+      It performs no fallback; the agent obtains the user's choice before another invocation.
   - id: reviewer-unavailability-evidence
     phase: verify
     quote: >-

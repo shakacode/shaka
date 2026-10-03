@@ -278,6 +278,11 @@ phases:
         from `PATH` (`executable_missing`), or a `cli_failure` whose local diagnostic establishes
         missing credentials, exhausted quota, or a provider outage. A nonzero exit alone, an invalid
         flag or model, and a report-validation failure are not availability evidence.
+        Distinguish malformed settings from an explicit account model refusal: that refusal
+        establishes lack of access to the requested model, not a provider outage.
+        Do not change the configured model or effort, or substitute a reviewer after an account
+        refusal, without the user's choice. Show current provider pricing for paid alternatives.
+        Diagnose timeouts before proposing a retry; a longer timeout is not a model choice.
         Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
         failure is not availability evidence, even when `attempted` is true. It returns `different_provider`,
         `same_provider`, or `same_model`, with a note to copy into the record, and a `reviewers`

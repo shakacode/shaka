@@ -20,12 +20,11 @@ the requested settings before launch, and adds a **Reviewer settings** notice to
 settings need attention. Relay that notice to the maintainer.
 
 The catalog in `skills/shaka/lib/shaka/reviewer_settings.rb` defines known names
-and the recommended Codex model for this Shaka release:
+for spelling checks, not account availability:
 
 - Likely spelling mistakes and unknown models produce warnings and still run.
   Newer model names can therefore run before the catalog knows them.
-- A known Codex model other than `recommended_model` produces a warning and
-  still runs. Claude and Grok have no single recommended model.
+- Known models preserve the configured choice without recommending a replacement.
 - Unknown Codex or Grok effort names produce warnings and still run. Effort
   names use lowercase, such as `medium` or `xhigh`.
 - Shaka accepts only `low`, `medium`, `high`, `xhigh`, and `max` for Claude
@@ -35,10 +34,27 @@ The spelling check recognizes a one-letter substitution or an adjacent-character
 swap in a same-length name. A digit substitution is treated as an unknown name,
 not a spelling mistake. Both warnings allow execution.
 
-Shaka does not interpret reviewer CLI error text or retry with a substitute
-model. Check the provider's model documentation and CLI help when a requested
-setting fails. The closed Claude effort list requires a Shaka update to accept
-any additional level introduced by that CLI.
+Shaka recognizes explicit account model refusals as `failure_cause: account_model_refused`.
+It preserves `requested_model` and `requested_effort` on review outcomes and never retries
+with a substitute. A generic invalid model, timeout, or nonzero exit still needs diagnosis.
+An account refusal establishes that the requested model failed for that account; it does
+not establish a provider outage. Keep configured settings and ask the user to choose before
+changing model or effort. Show current provider pricing when proposing a paid alternative.
+
+### Optional availability probe
+
+Run `shaka doctor --probe-reviewers` only when the user requests a live availability check.
+It launches each configured supported reviewer once with its configured model and effort,
+using the same isolated CLI adapter as review. Omitted settings use CLI defaults.
+It sends a minimal prompt without repository content; it may consume quota or incur cost.
+Plain `doctor` launches no reviewer and does not establish account access.
+
+Each probe has a 30-second deadline. `--probe-timeout-seconds 1..120` changes that probe bound;
+it requires `--probe-reviewers`. Failures report the reason and local diagnostic path, without
+retrying or changing settings. Unsupported adapters remain unverified. A response establishes
+access at that moment, not a completed review or guaranteed future access. Do not publish raw
+diagnostics without checking for private account data. The closed Claude effort list requires
+a Shaka update to accept any additional level introduced by that CLI.
 
 ## Run the selected reviewer
 
@@ -134,8 +150,7 @@ or `--effort` replaces the configured one for that review, so add one only when 
 it out or the task needs a different choice.
 When neither names a model, Codex runs its built-in default; see
 [reviewer model and effort](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewlocal_review_agents)
-for choosing a model and effort. `gpt-6-sol` at `medium` is the default choice for adversarial review;
-use a larger model or effort only when the change's risk calls for it.
+for choosing a model and effort. Keep the configured choice unless the user selects a different model or effort.
 
 A current-host Task or subagent that selects a Codex model is not this `openai/codex` local
 reviewer and cannot replace `codex exec`. It also is not evidence for `--unavailable`.
