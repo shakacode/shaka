@@ -18,6 +18,12 @@ task in each repository and invoke its setup skill:
 | Codex app | `$rct` | Agent follows the master role instructions |
 | Claude Code desktop | `/rct-claude` | `/mct-claude` |
 
+In Codex, a chat opened directly in a checkout or its worktree can use the one
+registered project at that repository's exact path on the same computer. For
+example, a chat in your application's worktree can establish its tower without
+first moving the chat into the project. The skill instructs the agent to stop
+when the project match is ambiguous.
+
 After the master acknowledges the repository tower, ask the tower what needs
 attention. You choose which task starts; setup starts no backlog work or recurring
 scans.

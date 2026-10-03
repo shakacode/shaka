@@ -6,7 +6,8 @@ are advanced pilot features; establish basic Shaka delivery first.
 
 ## Establish a repository tower
 
-Create a Codex task in the saved project for the intended repository, then send:
+Create a Codex task in the intended repository's saved project, checkout, or
+worktree, then send:
 
 ```text
 $rct
