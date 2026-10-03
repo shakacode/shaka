@@ -1,0 +1,92 @@
+# frozen_string_literal: true
+
+require_relative 'local_review_commit_publish_test'
+require_relative 'github_publication_test'
+
+class LocalReviewPresentationTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  def test_earlier_concerns_survive_a_clean_head_and_reclassification
+    defect = NIT.merge('id' => 'D1', 'class' => 'defect', 'summary' => 'Lost writes')
+    risk = NIT.merge('id' => 'R1', 'class' => 'risk', 'summary' => 'Unassessed retry risk')
+    rounds = [round(EARLIER, findings: [defect, risk], report: report(EARLIER, findings: 2)),
+              round(findings: [defect.merge('class' => 'nit')])]
+    visible = comment(rounds).render.split('<details>').first
+    assert_includes visible, 'Lost writes'
+    assert_includes visible, 'Unassessed retry risk'
+    refute_includes visible, 'nothing left to fix'
+  end
+
+  def test_settled_dispositions_are_collapsed_once_and_reports_are_preserved
+    fixed = NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => HEAD)
+    rounds = [round(EARLIER, findings: [fixed]), round(findings: [NIT.merge('id' => 'N2')])]
+    body = comment(rounds).render
+    assert_settled_layout(body)
+    assert_includes body, File.read(rounds.last['report']).strip
+  end
+
+  def assert_settled_layout(body)
+    visible, = body.split('<details>', 2)
+    refute_includes visible, '| Round |'
+    refute_includes visible, 'Missing test'
+    assert_equal 1, body.scan('— documented nit').size
+    assert_equal 1, body.scan('— fixed in').size
+    assert_equal "REVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 1", body.lines.last.strip
+  end
+
+  def test_coverage_limitations_and_unknown_coverage_stay_visible
+    explicit = round(coverage: 'Diff only; unchanged callers and tests were not inspected.')
+    visible = comment([explicit]).render.split('<details>').first
+    assert_includes visible, explicit['coverage']
+    assert_match(/coverage.*UNKNOWN/im, comment([round]).render.split('<details>').first)
+  end
+
+  def test_returned_finding_is_visible_even_when_reclassified_as_a_nit
+    fixed = NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => HEAD)
+    body = comment([round(EARLIER, findings: [fixed]), round]).render
+    assert_includes body.split('<details>').first, 'returned after its fix'
+  end
+
+  def test_an_earlier_comment_never_borrows_a_later_clean_outcome
+    defect = NIT.merge('class' => 'defect')
+    rounds = [round(EARLIER, findings: [defect]), clean_round]
+    body = comment(rounds, head: EARLIER).render
+    assert_includes body.split('<details>').first, 'Missing test'
+    assert_equal "REVIEWED #{EARLIER} BY openai/codex EFFORT UNKNOWN FINDINGS 1", body.lines.last.strip
+  end
+
+  def test_a_clean_later_round_does_not_hide_an_earlier_defect
+    defect = NIT.merge('class' => 'defect')
+    body = comment([round(EARLIER, findings: [defect]), clean_round]).render
+    assert_includes body.split('<details>').first, 'Missing test'
+  end
+
+  def test_same_head_reporters_do_not_make_a_fixed_finding_look_returned
+    fixed = NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => HEAD)
+    other = round(EARLIER, reviewer: 'anthropic/claude', findings: [fixed],
+                           report: report(EARLIER, reviewer: 'anthropic/claude'))
+    body = comment([round(EARLIER, findings: [fixed]), other, clean_round]).render
+    refute_includes body, 'returned after its fix'
+    assert_equal 1, body.scan('— fixed in').size
+  end
+
+  private
+
+  def clean_round = round(findings: [], report: report(findings: 0))
+
+  def comment(rounds, head: HEAD)
+    Shaka::LocalReviewCommitComment.new({ 'rounds' => rounds }, head:, subject: ->(_) { 'Subject' })
+  end
+end
+
+class UnchangedReviewReplyTest < Minitest::Test
+  include PublicationFixtures
+
+  def test_identical_owned_reply_is_validated_without_a_write
+    posted = "<!-- shaka:reply:review -->\n#{BODY}"
+    existing = keyed(7, posted)
+    github = client(pull_response(''), viewer_response, response([existing]), html_response('<p>ok</p>'))
+    assert_equal existing, github.reply(body: BODY, key: 'review')
+    refute(@calls.any? { |argv, _| argv.include?('PATCH') })
+  end
+end

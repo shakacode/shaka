@@ -1,8 +1,9 @@
 # Preserve review decisions and later outcomes
 
-Design slice for [issue #395](https://github.com/shakacode/shaka/issues/395).
-This document inventories shipped behavior and proposes bounded changes. It adds
-no runtime behavior, retention guarantee, export command, or training integration.
+Presentation implementation and remaining design for [issue #395](https://github.com/shakacode/shaka/issues/395).
+This PR implements compact per-commit review comments, visible retained concerns
+and coverage limitations, collapsed evidence, and unchanged-reply suppression.
+The retention and export sections below remain proposals.
 [Requirements](requirements.md) owns pilot scope and acceptance. This design
 supports its R10 maintenance, R11 evidence, R13 presentation, and R16 recovery
 requirements. Issue #395 owns this extension's acceptance checklist; this design
@@ -29,6 +30,11 @@ Paths below are relative to `skills/shaka/lib/shaka/` unless stated otherwise.
 `test/local_review_batch_test.rb`, and `test/local_review_history_test.rb`
 exercise these behaviors. Their fixtures do not establish retention after
 worktree cleanup or recommendation quality after merge.
+
+This table describes the inspected baseline. The presentation change addresses
+duplicate dispositions and earlier unresolved findings, adds explicit coverage
+limits for new runs, and marks legacy coverage unknown. It does not recover
+history that the baseline ledger already overwrote.
 
 The ledger's location outside a checkout protects it from checkout removal only
 if its directory survives. A report in a temporary directory can disappear
@@ -60,7 +66,7 @@ Proposed visible excerpt of that evidence, without inventing dispositions:
 >
 > Usage: link to this PR's consolidated usage report.
 
-This is a presentation example, not a new readiness judgment on the merged PR.
+This is a presentation example, not a new readiness judgment on that PR.
 Show required action only when evidence supplies one. Keep unresolved defects,
 decisions, significant risks, stale evidence, and returned findings visible.
 Material legacy ambiguity stays visible until explicitly assessed; a renderer
@@ -88,8 +94,8 @@ do not. Review comments link to consolidated PR usage instead of summing it agai
 
 Update the managed comment for its head. An unchanged body causes no write;
 record enrichment and settled corrections do not create notification comments.
-Preserve existing actor screening and human-authored text. This no-write behavior
-is proposed: the current publication path can patch an existing identical body.
+Preserve existing actor screening and human-authored text. The publication path now skips writing an identical owned reply after trust and
+rendering checks.
 
 ## Smallest useful extension
 
@@ -226,16 +232,15 @@ precision/recall, and no optional label collection reopens completed delivery.
 
 ## Delivery boundaries and remaining acceptance
 
-1. This PR: inventory, examples, and proposed minimum design for review.
-2. Presentation PR after this merges: one disposition projection, complete-ledger
+1. This PR: inventory, examples, and presentation implementation with one disposition projection, complete-ledger
    unresolved findings, visible coverage, grouped history, unchanged-write suppression.
    Verify real GitHub rendering, attestation parsing, and legacy ambiguity.
-3. History/retention PR after the design and presentation: validated append-only
+2. History/retention PR after presentation: validated append-only
    events, compatibility, relative bundled reports, post-merge reassessment, and
    cleanup recovery. Keep changes with their failure/concurrency tests.
-4. Export PR after the record representation: deterministic public-safe export
+3. Export PR after the record representation: deterministic public-safe export
    and executable versions of all six synthetic chains, including retry/conflict cases.
-5. Real-use evaluation on the original issue: inspect clarity and reconstruction
+4. Real-use evaluation on the original issue: inspect clarity and reconstruction
    effort; retain a genuinely reconsidered recommendation when it occurs.
 
 The presentation precedent comes from predecessor revision

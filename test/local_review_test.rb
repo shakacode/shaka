@@ -1617,6 +1617,7 @@ module LocalReviewFixture
     assert_equal 'completed', result.fetch('status')
     assert_equal head, result.fetch('head')
     assert_equal reviewer, result.fetch('reviewer')
+    assert_match(/unchanged source|inspection coverage/, result.fetch('coverage'))
     assert File.file?(result.fetch('report'))
     assert_includes File.read(result.fetch('report')), "REVIEWED #{head} BY #{reviewer}"
     result

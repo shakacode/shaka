@@ -55,7 +55,7 @@ module Shaka
     def check_rendering!(html)
       closing = %r{<p\b[^>]*>#{Regexp.escape(CGI.escapeHTML(@rounds.last.attestation))}</p>\s*\z}
       disclosures = [html.scan(/<details\b/).size, html.scan('</details>').size]
-      return if html.match?(closing) && disclosures == [@rounds.size] * 2 && summaries_in_order?(html)
+      return if html.match?(closing) && disclosures == [disclosure_count] * 2 && summaries_in_order?(html)
 
       raise Error, 'A review report leaves its markup open or adds disclosure tags, so GitHub would not show ' \
                    'each round collapsed with the attestation last. Fix the report and publish again.'
@@ -93,6 +93,8 @@ module Shaka
 
     # A fence opened in one report and closed in the next hides the boundary between them, including
     # the next round's own summary; balanced tags the reports supply cannot stand in for it.
+    def disclosure_count = @rounds.size
+
     def summaries_in_order?(html)
       offset = 0
       @rounds.all? do |round|
@@ -103,14 +105,7 @@ module Shaka
 
     # A finding whose id was marked fixed on an earlier commit and comes back is flagged where it
     # returns. Reviewers of one commit all read it before any of its fixes, so none of them is flagged.
-    def round_details
-      fixed = {}
-      @rounds.chunk(&:head).flat_map do |_head, batch|
-        texts = LocalReviewTriage.details(batch, @links, fixed)
-        LocalReviewTriage.remember_fixes(batch, fixed)
-        texts
-      end
-    end
+    def round_details = LocalReviewTriage.details(@rounds)
 
     def table
       rows = @rounds.map { |round| line(round.cells(@links)) }
@@ -194,8 +189,8 @@ module Shaka
 
       # A reviewer of a commit that several reviewed shows how its findings were collated; the
       # commit's triage then gives each finding's outcome once.
-      def details(links, fixed_before = {}, collated: false)
-        after = collated ? LocalReviewTriage.collated_as(self) : dispositions(links, fixed_before)
+      def details
+        after = LocalReviewTriage.collated_as(self)
         "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n#{after}</details>"
       end
 
@@ -233,13 +228,6 @@ module Shaka
       def cost
         estimate = value('estimate')
         value('cost') || (estimate ? "#{estimate} est." : 'UNKNOWN')
-      end
-
-      def dispositions(links, fixed_before)
-        return '' if @findings.empty?
-
-        lines = @findings.map { |finding| LocalReviewTriage.line(finding, links, fixed_before) }
-        "**Dispositions**\n\n#{lines.join("\n")}\n\n"
       end
 
       def prompt(links)
