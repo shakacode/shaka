@@ -34,8 +34,8 @@ The spelling check recognizes a one-letter substitution or an adjacent-character
 swap in a same-length name. A digit substitution is treated as an unknown name,
 not a spelling mistake. Both warnings allow execution.
 
-Shaka classifies the known Codex ChatGPT-account refusal from provider error records as
-`failure_cause: account_model_refused`. Generic model-access errors remain ambiguous.
+Shaka classifies the known Codex ChatGPT-account refusal from Codex JSON error records as
+`failure_cause: account_model_refused`. HTTP 400 JSON detail wrappers are recognized; other model-access errors and stderr remain ambiguous.
 It preserves `requested_model` and `requested_effort` on review outcomes and never retries
 with a substitute. A generic invalid model, timeout, or nonzero exit still needs diagnosis.
 An account refusal establishes that the requested model failed for that account; it does

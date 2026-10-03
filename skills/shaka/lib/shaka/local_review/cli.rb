@@ -38,7 +38,7 @@ module Shaka
     def process_failure(command, status, stderr, stdout)
       diagnostic = [stderr, stdout].reject(&:empty?).join("\n")
       failure("#{command} #{process_exit_reason(status)}", diagnostic,
-              provider_errors: provider_error_messages(stderr, stdout))
+              provider_errors: provider_error_messages(stdout))
     end
 
     def process_exit_reason(status)
@@ -74,11 +74,11 @@ module Shaka
                                  'This does not establish a provider outage.')
     end
 
-    # Only native error events and explicit stderr error lines supply provider error text.
-    # Tool output, echoed prompts, and candidate text are not error records.
-    def provider_error_messages(stderr, stdout)
-      lines = stderr.lines.filter_map { |line| line.strip.delete_prefix('ERROR: ') if line.start_with?('ERROR: ') }
-      lines + stdout.lines.filter_map { |line| error_event_message(line) }
+    # Codex --json separates native errors from candidate output; stderr is only diagnostic.
+    def provider_error_messages(stdout)
+      return [] unless @options[:reviewer] == 'openai/codex'
+
+      stdout.lines.filter_map { |line| error_event_message(line) }
     end
 
     def error_event_message(line)
@@ -94,9 +94,16 @@ module Shaka
 
     # Other model/access errors remain ambiguous and require inspection, never a fallback.
     def account_model_refused?(message)
-      message.to_s.match?(
+      unwrapped_model_error(message).to_s.match?(
         /\AThe ['"`][^'"`\n]+['"`] model is not supported when using Codex with a ChatGPT account\.?\z/i
       )
+    end
+
+    def unwrapped_model_error(message)
+      wrapper = message.to_s.match(/\Aunexpected status 400 Bad Request:\s*(\{.*\})\z/m)
+      wrapper ? JSON.parse(wrapper[1])['detail'] : message
+    rescue JSON::ParserError
+      nil
     end
 
     def invalid(reason, diagnostic = nil)

@@ -39,6 +39,20 @@ class ReviewerFailureCauseTest < Minitest::Test
     end
   end
 
+  def test_stderr_error_prose_is_only_diagnostic
+    with_failure("ERROR: #{REFUSAL}\n", '') do |result|
+      refute result.key?('failure_cause')
+      assert_equal 'requires_cause_review', result.fetch('skip_evidence')
+    end
+  end
+
+  def test_wrapped_http_error_detail_identifies_account_refusal
+    message = "unexpected status 400 Bad Request: #{JSON.generate(detail: REFUSAL)}"
+    with_failure('', JSON.generate(type: 'error', message:)) do |result|
+      assert_equal 'account_model_refused', result.fetch('failure_cause')
+    end
+  end
+
   private
 
   def with_failure(stderr, stdout)

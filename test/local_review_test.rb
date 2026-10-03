@@ -1123,11 +1123,13 @@ class LocalReviewSettingsTest < Minitest::Test
   private
 
   def fake_account_refusal(bin)
-    write_executable(bin, 'codex', <<~SH)
-      #!/bin/sh
-      echo "ERROR: The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account." >&2
+    write_executable(bin, 'codex', <<~RUBY)
+      #!#{RbConfig.ruby}
+      require 'json'
+      puts JSON.generate(type: 'error',
+                         message: "The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account.")
       exit 1
-    SH
+    RUBY
   end
 
   def assert_account_refusal(result)

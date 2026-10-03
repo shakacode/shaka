@@ -6,6 +6,7 @@ require_relative 'check'
 require_relative '../reviewer_selection'
 require_relative '../reviewer_settings'
 require_relative '../local_review/cli'
+require_relative '../opening_publication'
 
 module Shaka
   class Doctor
@@ -28,7 +29,9 @@ module Shaka
         raise Shaka::Error, '--ref must be a verified default-branch SHA' unless
           @ref.to_s.match?(/\A[0-9a-f]{40}(?:[0-9a-f]{24})?\z/)
 
-        call(Configuration.trusted(root: @root, ref: @ref, candidate_commands: false).review)
+        OpeningPublication.with_safe_path(root: @root, select_gh: false) do
+          call(Configuration.trusted(root: @root, ref: @ref, candidate_commands: false).review)
+        end
       rescue Shaka::Error, SystemCallError => e
         check('Reviewer availability', 'failed', "not probed: #{first_line(e.message)}")
       end

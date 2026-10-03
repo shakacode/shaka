@@ -11,6 +11,24 @@ module DoctorProbeFixture
 
   private
 
+  def with_candidate_git(root)
+    original = ENV.fetch('PATH')
+    directory = File.join(root, 'bin')
+    FileUtils.mkdir_p(directory)
+    marker = File.join(root, 'untrusted-git-ran')
+    write_candidate_git(directory, marker)
+    ENV['PATH'] = "#{directory}:#{original}"
+    yield marker
+    assert_equal "#{directory}:#{original}", ENV.fetch('PATH')
+  ensure
+    ENV['PATH'] = original
+  end
+
+  def write_candidate_git(directory, marker)
+    File.write(File.join(directory, 'git'), "#!/bin/sh\ntouch '#{marker}'\nexit 1\n")
+    File.chmod(0o700, File.join(directory, 'git'))
+  end
+
   def change_candidate_model(root)
     config = seam('review' => review_policy('local_review_agents' => [AGENT.merge('model' => 'gpt-6-astra')]))
     File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
@@ -67,7 +85,7 @@ module DoctorProbeFixture
       if #{success}
         File.write(ARGV.fetch(ARGV.index('-o') + 1), 'OK')
       else
-        warn "ERROR: The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account."
+        puts JSON.generate(type: 'error', message: "The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account.")
         exit 1
       end
     RUBY
@@ -140,26 +158,6 @@ class DoctorProbeTest < Minitest::Test
     end
   end
 
-  def test_candidate_settings_cannot_choose_billable_probe_settings
-    with_probe do |root, path, trace|
-      ref = commit_probe_configuration(root)
-      change_candidate_model(root)
-      write_codex(path, trace, success: true)
-      item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: 1, ref:).for_repository
-      assert_equal 'healthy', item.fetch(:status)
-      assert_includes JSON.parse(File.read(trace)).fetch('args'), 'gpt-6-sol'
-    end
-  end
-
-  def test_missing_ref_does_not_launch_a_billable_probe
-    with_probe do |root, path, trace|
-      write_codex(path, trace, success: true)
-      item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: 1).for_repository
-      assert_equal 'failed', item.fetch(:status)
-      refute_path_exists trace
-    end
-  end
-
   def test_probe_reaches_the_doctor_report_once
     with_probe do |root, path, trace|
       write_codex(path, trace, success: true)
@@ -184,5 +182,45 @@ class DoctorProbeTest < Minitest::Test
     assert_equal 1, invocation.fetch('count')
     refute_path_exists invocation.fetch('cwd')
     assert_includes item.fetch(:summary), 'not a completed review'
+  end
+end
+
+# Covers configuration reads before any potentially billable launch.
+class DoctorProbeTrustTest < Minitest::Test
+  include DoctorHelper
+  include RepositoryConfigTestHelpers
+  include DoctorProbeFixture
+
+  def test_candidate_settings_cannot_choose_billable_probe_settings
+    with_probe do |root, path, trace|
+      ref = commit_probe_configuration(root)
+      change_candidate_model(root)
+      write_codex(path, trace, success: true)
+      item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: 1, ref:).for_repository
+      assert_equal 'healthy', item.fetch(:status)
+      assert_includes JSON.parse(File.read(trace)).fetch('args'), 'gpt-6-sol'
+    end
+  end
+
+  def test_missing_ref_does_not_launch_a_billable_probe
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: 1).for_repository
+      assert_equal 'failed', item.fetch(:status)
+      refute_path_exists trace
+    end
+  end
+
+  def test_candidate_git_is_not_used_to_read_trusted_probe_settings
+    with_probe do |root, path, trace|
+      ref = commit_probe_configuration(root)
+      write_codex(path, trace, success: true)
+      with_candidate_git(root) do |marker|
+        item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: 1, ref:).for_repository
+        assert_equal 'healthy', item.fetch(:status)
+        refute_path_exists marker
+        assert_includes JSON.parse(File.read(trace)).fetch('args'), 'gpt-6-sol'
+      end
+    end
   end
 end
