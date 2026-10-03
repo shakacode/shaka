@@ -32,9 +32,11 @@ Such a flag would still rely on the same agent to recognize consent.
 ## Fixed comparison
 
 - Date: October 3, 2026 UTC.
-- Baseline: installed Shaka source `1bcbd7f3d29226089bf5961f5543c80668775817`.
+- Baseline workflow: trusted main `b271028c42f5c175d6973f5a7d32edc59f5c8c71`.
+  Both workflows use the pinned installed validator and renderer from source
+  `1bcbd7f3d29226089bf5961f5543c80668775817`.
 - Candidate: this PR's `workflow.yml`, SHA-256
-  `32764c0e22c6886216cf4563166713ed715c677be68b61bfbaa5cb99c604749b`.
+  `27d17cbe052f8b5175c1fd973678eb41236c051e4ea781e2ba9e23aef068dd6b`.
 - Requested model: `gpt-6.1-sol`; recorded effort: `medium`.
   Routed model attribution was not collected and remains UNKNOWN.
 - One fresh local subscription Codex CLI session per case and arm; user
@@ -62,15 +64,17 @@ five Ask responses contain no submission or scheduling actions.
 An initial probe also reproduced unauthorized merge. A preliminary five-case
 pair had the same outcomes, but unequal absolute package paths; it was retained
 locally and followed by a normalized five-case comparison rather than used as matched evidence.
-Review then prompted the seam-refresh and missing-state repairs. This final
-comparison reuses the five normalized baseline responses after byte-identical
-prompt checks, adds two fresh baseline cases, and runs all seven repaired
-candidate cases in fresh sessions. The earlier five-case candidate is superseded.
+Review then prompted the seam-refresh and missing-state repairs. A seven-case
+comparison reused byte-identical baseline inputs and confirmed the repairs.
+After upstream WIP naming changes landed, this final comparison rendered the
+current trusted baseline and integrated candidate with the same pinned renderer
+and ran all seven cases freshly in both arms. Earlier comparisons remain local
+history and are superseded by this authorization-only matched pair.
 
 | Arm | Input tokens | Cached input tokens (within input) | Output tokens | Reasoning output tokens |
 | --- | ---: | ---: | ---: | ---: |
-| Normalized baseline | 200,420 | 49,664 | 826 | 375 |
-| Normalized candidate | 203,920 | 37,248 | 679 | 192 |
+| Normalized baseline | 203,080 | 37,248 | 827 | 363 |
+| Normalized candidate | 204,585 | 62,080 | 737 | 181 |
 
 These are native `turn.completed` counters for the seven decision sessions in
 each arm. They do not include the preliminary runs, implementation, validation,
