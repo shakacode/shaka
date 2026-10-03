@@ -44,13 +44,13 @@ module Shaka
         raise ArgumentError, 'Managed package source must be an object' unless source.is_a?(Hash)
 
         validate_identity(path, metadata, source)
-        return if @tree.hash(path, names) == metadata.fetch('package_content_sha256', source.fetch('content_sha256'))
+        return if @tree.hash(path, names) == source.fetch('package_content_sha256', source.fetch('content_sha256'))
 
         raise ArgumentError, 'Managed package content differs'
       end
 
       def validate_identity(path, metadata, source)
-        expected = Package.identity_for(metadata.fetch('version'), source, metadata['package_content_sha256'])
+        expected = Package.identity_for(metadata.fetch('version'), source)
         return if metadata['package_id'] == expected && File.basename(path) == expected
 
         raise ArgumentError, 'Managed package identity differs'

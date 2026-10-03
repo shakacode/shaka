@@ -39,11 +39,17 @@ class InstallDisplayIdentityTest < Minitest::Test
   def make_legacy_package
     install!
     old_path = package_path
-    metadata = package_identity.except('package_content_sha256')
-    metadata['package_id'] = Shaka::Install::Package.identity_for(metadata.fetch('version'), metadata.fetch('source'))
+    metadata = legacy_metadata
     FileUtils.remove_entry(File.join(@destination, 'agents'))
     File.write(File.join(old_path, '.shaka-install.json'), JSON.generate(metadata))
     relocate_legacy(old_path, metadata.fetch('package_id'))
+    metadata
+  end
+
+  def legacy_metadata
+    metadata = package_identity
+    metadata['source'] = metadata.fetch('source').except('package_content_sha256')
+    metadata['package_id'] = Shaka::Install::Package.identity_for(metadata.fetch('version'), metadata.fetch('source'))
     metadata
   end
 
@@ -55,7 +61,7 @@ class InstallDisplayIdentityTest < Minitest::Test
   end
 
   def rewrite_package_hash(metadata)
-    metadata['package_content_sha256'] = Shaka::Install::Tree.new(metadata.fetch('skills')).hash(package_path)
+    metadata.fetch('source')['package_content_sha256'] = Shaka::Install::Tree.new(metadata.fetch('skills')).hash(package_path)
     File.write(File.join(package_path, '.shaka-install.json'), JSON.generate(metadata))
   end
 

@@ -17,9 +17,8 @@ module Shaka
       ALLOWED = %w[shaka rct mct-claude rct-claude].freeze
       ID_PATTERN = /\A[A-Za-z0-9._+-]+-[0-9a-f]{64}-[0-9a-f]{64}\z/
 
-      def self.identity_for(version, source, package_hash = nil)
-        identity = package_hash ? { 'source' => source, 'package_content_sha256' => package_hash } : source
-        "#{version}-#{source.fetch('content_sha256')}-#{Digest::SHA256.hexdigest(JSON.generate(identity))}"
+      def self.identity_for(version, source)
+        "#{version}-#{source.fetch('content_sha256')}-#{Digest::SHA256.hexdigest(JSON.generate(source))}"
       end
 
       def self.valid_skills?(names)
@@ -84,9 +83,9 @@ module Shaka
         verify_source(source_root, hash, identity, version)
 
         Display.write(staging, version, identity)
-        package_hash = @tree.hash(staging)
-        target = File.join(@root, self.class.identity_for(version, identity, package_hash))
-        write_metadata(staging, target, identity, version, package_hash)
+        package_identity = identity.merge('package_content_sha256' => @tree.hash(staging))
+        target = File.join(@root, self.class.identity_for(version, package_identity))
+        write_metadata(staging, target, package_identity, version)
         @tree.reject_checkout_references(staging, source_root)
         finish(staging, target, source_root, identity, version)
       end
@@ -101,10 +100,9 @@ module Shaka
         target
       end
 
-      def write_metadata(staging, target, identity, version, package_hash)
+      def write_metadata(staging, target, identity, version)
         metadata = { 'schema_version' => 1, 'package_id' => File.basename(target),
-                     'version' => version, 'skills' => @names, 'source' => identity,
-                     'package_content_sha256' => package_hash }
+                     'version' => version, 'skills' => @names, 'source' => identity }
         File.write(File.join(staging, METADATA), "#{JSON.pretty_generate(metadata)}\n")
         File.chmod(0o644, File.join(staging, METADATA))
       end
