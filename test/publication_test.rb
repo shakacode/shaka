@@ -762,3 +762,15 @@ class PublicationUsageRecordTableTest < Minitest::Test
     assert_includes error.message, 'unreadable columns'
   end
 end
+
+class PublicationIdentityPresentationTest < Minitest::Test
+  IDENTITY = PublicationRegressionTest::IDENTITY
+
+  def test_known_identity_names_have_consistent_capitalization
+    rendered = Shaka::Publication.comment({ 'identity' => IDENTITY.merge('agent' => 'codex', 'provider' => 'openai'),
+                                            'summary' => 'Done.' })
+    assert_equal "#{Shaka::PublicationText.identity(IDENTITY)}\n\nDone.\n", rendered
+    custom = Shaka::PublicationText.identity(IDENTITY.merge('agent' => 'Custom Agent', 'provider' => 'Custom Provider'))
+    assert_includes custom, 'Custom Agent · Custom Provider'
+  end
+end

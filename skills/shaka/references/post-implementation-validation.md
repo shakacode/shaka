@@ -72,11 +72,14 @@ conclusion-based owner action rather than the reviewer's `next_action`. It uses 
 specific reviewer action only for **Proceed** with no concerns. The owner still
 checks the meaning of the free-form summary and analysis; Ruby does not judge that prose.
 
-The first visible line identifies the reviewer, observed model, and recorded effort.
-Known configuration or requested settings appear there too when observations are
-missing or differ. `observed model: UNKNOWN` stays explicit when only a configured
-model is available; requesting a model does not prove which model served the review.
-Missing recorded effort stays UNKNOWN, with requested effort labeled separately.
+The first visible line uses the same compact identity format as walkthroughs:
+agent, provider, model, and effort. A model known only from configuration is marked
+`(configured)`; missing model or recorded effort stays UNKNOWN. Requested settings
+are not substituted for execution evidence. The comment title uses the walkthrough's
+top-level heading size. Expand the execution details for explicit observed,
+configured, and requested model labels and recorded/requested effort. An unknown
+observation remains `observed model: UNKNOWN` there; configuration does not prove
+which model served the review.
 
 Older reports from the publishing account link to its newest product validation,
 keeping any model identifier first, with their original conclusions retained in collapsed history and human annotations
