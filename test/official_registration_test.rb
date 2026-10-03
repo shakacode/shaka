@@ -34,12 +34,24 @@ class OfficialRegistrationTest < Minitest::Test
     end
   end
 
+  def test_refuses_host_directory_inside_installation_through_an_alias
+    path = File.join(@directory, 'source-alias')
+    File.symlink(@root, path)
+    directory = File.join(path, 'extra', 'skills')
+    output, status = invoke('--directory', @root, '--repository', @remote, '--skills-dir', directory)
+    refute_predicate status, :success?
+    assert_includes output, 'overlaps installation'
+    assert_empty git('-C', @root, 'status', '--porcelain')
+    refute File.symlink?(File.join(directory, 'shaka'))
+  end
+
   def test_maintenance_refuses_new_selections_before_mutating_links
     official_install
-    [%w[--update --agent codex], %w[--verify --with-rct], ['--update', '--skills-dir', @skills_dir]].each do |flags|
+    [%w[--update --agent codex], %w[--verify --with-rct], ['--update', '--skills-dir', @skills_dir],
+     ['--update', '--repository', @remote], %w[--verify --branch main]].each do |flags|
       output, status = invoke(*flags)
       refute_predicate status, :success?
-      assert_includes output, 'Use bin/install to change selected hosts or towers'
+      assert_includes output, 'Use bin/install to change installation selections'
     end
     refute File.symlink?(File.join(@home, '.agents/skills/shaka'))
   end

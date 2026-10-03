@@ -69,11 +69,13 @@ module Shaka
       end
 
       def validate_action
-        if @actions.empty? || (@options[:agents].empty? && !@options[:skills_dir] && @options[:names] == ['shaka'])
+        if @actions.empty? || (@options[:agents].empty? && @options.values_at(:skills_dir, :repository,
+                                                                              :branch).none? &&
+                  @options[:names] == ['shaka'])
           return
         end
 
-        raise ArgumentError, 'Use bin/install to change selected hosts or towers before maintenance'
+        raise ArgumentError, 'Use bin/install to change installation selections before maintenance'
       end
 
       def validate_managed

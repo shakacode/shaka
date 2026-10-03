@@ -8,6 +8,7 @@ module Shaka
     class OfficialLinks < Links
       def check(target)
         ensure_safe_directory(@skills_dir, 'Host skills directory')
+        validate_location(target)
         if codex? && File.directory?(codex_aliases)
           verify_safe_directory(codex_aliases,
                                 'Codex legacy skills directory')
@@ -39,6 +40,13 @@ module Shaka
       end
 
       private
+
+      def validate_location(target)
+        directory = File.realpath(@skills_dir)
+        root = File.realpath(target)
+        raise ArgumentError, 'Skills directory overlaps installation' if
+          directory == root || directory.start_with?("#{root}/") || root.start_with?("#{directory}/")
+      end
 
       def codex? = @skills_dir == File.join(Dir.home, '.agents/skills')
       def codex_aliases = File.join(Dir.home, '.codex/skills')

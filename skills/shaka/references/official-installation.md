@@ -11,6 +11,7 @@ Review the source and installer, then clone into a directory outside the
 repositories your agent will edit:
 
 ```bash
+umask 022
 mkdir -p "$HOME/.local/share/shaka"
 git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
 "$HOME/.local/share/shaka/source/bin/install" --agent codex
@@ -34,7 +35,10 @@ Repeat `--agent` for several hosts, or use `--directory SOURCE --skills-dir DIR`
 Add `--with-rct` for the Codex tower or `--with-claude-towers` for Claude towers.
 Use installer-owned or root-owned protected files and directories, without group
 or world write access. Reinstallation preserves recognized towers and registered hosts. Start a new chat
-and look for **Shaka**; restart the host if its list is stale.
+and look for **Shaka**; restart the host if its list is stale. Tower flags apply
+to every selected host; install hosts separately when their roles differ.
+For an existing permission error, remove group/world write access from the named
+paths you own, or select a protected location. Preserve file contents and executable bits.
 
 ## Verify and update
 

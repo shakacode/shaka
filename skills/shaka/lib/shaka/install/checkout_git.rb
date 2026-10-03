@@ -9,6 +9,13 @@ module Shaka
     module CheckoutGit
       private
 
+      def advance(candidate)
+        git('merge', '--quiet', '--ff-only', candidate)
+      rescue ArgumentError
+        write_record(@record.except('pending_revision')) if revision == @record['revision']
+        raise
+      end
+
       def stage(candidate)
         Dir.mktmpdir('shaka-update') do |directory|
           path = File.join(directory, 'source')

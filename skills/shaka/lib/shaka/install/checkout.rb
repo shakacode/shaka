@@ -38,7 +38,7 @@ module Shaka
         candidate = git('rev-parse', "refs/remotes/origin/#{@branch}")
         stage(candidate, &)
         write_record(@record.merge('pending_revision' => candidate))
-        git('merge', '--quiet', '--ff-only', candidate)
+        advance(candidate)
       end
 
       def revision = git('rev-parse', 'HEAD')

@@ -96,9 +96,6 @@ module Shaka
 
       def links_for(target)
         directory = target.fetch('directory')
-        raise ArgumentError, 'Skills directory overlaps installation' if
-          directory == @checkout.root || directory.start_with?("#{@checkout.root}/") ||
-          @checkout.root.start_with?("#{directory}/")
 
         OfficialLinks.new(directory, File.join(Dir.home, '.local/share/shaka/installs'),
                           @checkout.root, target.fetch('names'))

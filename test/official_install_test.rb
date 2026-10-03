@@ -41,12 +41,12 @@ class OfficialInstallTest < Minitest::Test
     output, status = invoke('--directory', installed, '--repository', @remote, '--skills-dir', @skills_dir)
     assert_predicate status, :success?, output
     before = git('-C', installed, 'rev-parse', 'HEAD')
-    git('-C', @root, '-c', 'user.name=T', '-c', 'user.email=t@x', 'commit', '--amend', '-qm', 'different history')
-    git('-C', @root, 'push', '--force', '-q', 'origin', 'main')
+    diverge_origin
     output, status = invoke('--directory', installed, '--update')
     refute_predicate status, :success?
     assert_includes output, 'refusing to merge'
     assert_equal before, git('-C', installed, 'rev-parse', 'HEAD')
+    assert_no_pending_revision(installed)
   end
 
   def test_update_refuses_dirty_installation_without_touching_links
@@ -83,5 +83,16 @@ class OfficialInstallTest < Minitest::Test
     assert_includes output, 'link differs'
     assert_equal before, File.binread(record)
     refute_path_exists @destination
+  end
+
+  private
+
+  def diverge_origin
+    git('-C', @root, '-c', 'user.name=T', '-c', 'user.email=t@x', 'commit', '--amend', '-qm', 'different history')
+    git('-C', @root, 'push', '--force', '-q', 'origin', 'main')
+  end
+
+  def assert_no_pending_revision(root)
+    refute JSON.parse(File.read(File.join(root, '.git/shaka-install.json'))).key?('pending_revision')
   end
 end
