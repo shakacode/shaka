@@ -9,7 +9,7 @@ module Shaka
     SUMMARY = 'WIP Details'
     FIELDS = {
       'owner' => 'Owner',
-      'task' => 'Task',
+      'task' => 'Chat name',
       'thread' => 'Chat link',
       'last_observed_activity' => 'Last observed activity',
       'revision' => 'Revision',
@@ -20,9 +20,11 @@ module Shaka
       'state' => 'State',
       'next_action' => 'Next action'
     }.freeze
-    # Open notes published this heading before Chat link. Handoff still reads them.
-    PREVIOUS_LABELS = FIELDS.merge('thread' => 'Thread').freeze
-    RECOGNIZED_HEADINGS = [FIELDS.values, PREVIOUS_LABELS.values].freeze
+    # Keep notes published with Task and/or Thread readable during recovery.
+    PREVIOUS_LABELS = FIELDS.merge('task' => 'Task').freeze
+    RECOGNIZED_HEADINGS = [FIELDS, PREVIOUS_LABELS].flat_map do |fields|
+      [fields.values, fields.merge('thread' => 'Thread').values]
+    end.freeze
 
     def initialize(spec, include_locations: true)
       @spec = spec

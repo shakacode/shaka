@@ -88,7 +88,7 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   Installation neither disables other instructions nor creates a sandbox.
 - **R16 — Recover unfinished PRs.** Keep the [WIP Details note](../skills/shaka/references/delivery.md#recover-an-unfinished-pr)
   in collapsed WIP Details through the outcome, retaining it after an Ask handoff
-  for the named head. It records owner, task, thread, observed activity, revision,
+  for the named head. It records owner, current chat name, chat link, observed activity, revision,
   workspace, unfinished work, stop reason, authority, state, and next action.
   Apply the session-link rules and `wip.include_locations` privacy setting.
   A new owner needs maintainer confirmation of the prior owner's stop or handoff,

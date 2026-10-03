@@ -48,6 +48,9 @@ issue. Hosts differ in how the agent renames its own chat:
 The app asks the user to approve a rename when the user chose the current title. Treat a
 declined rename as a user-chosen title and do not retry it.
 
+For title confirmation and WIP refresh after a rename, follow the
+[WIP Details procedure](delivery.md#recover-an-unfinished-pr).
+
 ## Claude Code tower messages
 
 Desktop towers use `get_session`, `list_sessions`, `list_events`,
