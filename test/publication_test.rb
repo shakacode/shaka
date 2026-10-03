@@ -417,6 +417,12 @@ class PublicationWipDetailsTest < Minitest::Test
     assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>WIP Details')
   end
 
+  def test_the_chat_name_uses_the_existing_task_key
+    title = 'SHAKA PR #42 · Keep WIP chat names current'
+
+    assert_includes render(WIP.merge('task' => title)), "| Chat name | #{title} |"
+  end
+
   def test_the_note_is_omitted_after_the_outcome
     refute_includes render(nil), 'WIP Details'
   end
@@ -760,5 +766,17 @@ class PublicationUsageRecordTableTest < Minitest::Test
       render(usage: usage_of(COLUMN).merge('carried' => block))
     end
     assert_includes error.message, 'unreadable columns'
+  end
+end
+
+class PublicationIdentityPresentationTest < Minitest::Test
+  IDENTITY = PublicationRegressionTest::IDENTITY
+
+  def test_known_identity_names_have_consistent_capitalization
+    rendered = Shaka::Publication.comment({ 'identity' => IDENTITY.merge('agent' => 'codex', 'provider' => 'openai'),
+                                            'summary' => 'Done.' })
+    assert_equal "#{Shaka::PublicationText.identity(IDENTITY)}\n\nDone.\n", rendered
+    custom = Shaka::PublicationText.identity(IDENTITY.merge('agent' => 'Custom Agent', 'provider' => 'Custom Provider'))
+    assert_includes custom, 'Custom Agent · Custom Provider'
   end
 end

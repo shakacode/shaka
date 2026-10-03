@@ -61,6 +61,9 @@ phases:
         suggested title alone on its own line as `Chat name:` followed by the title in a code
         span. When a reply first reports a PR this task created, open it the same way with
         `PR #NUMBER` in place of the issue identifier.
+        After a successful rename, read back the actual title and refresh the owning
+        unfinished PR's WIP Details before ending the turn, following the
+        [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
       - Before writing to an unfinished PR, whether resuming or adopting it, follow the
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>).
       - Record a named initial human attention checkpoint after an unambiguous initiating instruction,
@@ -528,9 +531,11 @@ phases:
       - Every PR description published before outcome includes its current
         [WIP Details procedure](<{{package_root}}/skills/shaka/references/delivery.md#recover-an-unfinished-pr>)
         as a collapsed `WIP Details` disclosure. Its workspace field carries the checkout path
-        and its thread field, published as Chat link, the host's link back to this session when the selected
+        and its task field, published as Chat name, the current host title read before
+        publication using that procedure; a suggested title alone is not a confirmed name.
+        Its thread field, published as Chat link, carries the host's link back to this session when the selected
         `wip.include_locations` is `true`. Team and private setup both generate `true`. The description
-        renderer replaces both fields with `REDACTED` when the setting is false or unavailable;
+        renderer replaces Workspace and Chat link with `REDACTED` when the setting is false or unavailable;
         ownership and the current commit remain visible. Inspect other supplied prose for private
         content. The chat link follows the guide's rule for the host: Codex builds it from
         `CODEX_THREAD_ID`, Claude Code asks the host for this session's metadata and publishes

@@ -41,8 +41,11 @@ class PostImplementationModelPublicationTest < Minitest::Test
   def test_configured_codex_model_is_visible_without_claiming_a_served_model
     with_result do |result, path|
       codex_usage(result, path)
-      identity = rendered(result, path).lines.first
+      identity = rendered(result, path)
       assert_includes identity, 'configured model: gpt-6.1-sol'
+      heading = /\A🤖 Codex · OpenAI · gpt-6\.1-sol \(configured\) · medium\n\n# Post-implementation validation\n\n/
+      assert_match heading, identity
+      assert_operator identity.index('observed model:'), :>, identity.index('<details>')
       assert_includes identity, 'observed model: UNKNOWN'
       assert_includes identity, 'recorded effort: medium'
     end
@@ -53,7 +56,7 @@ class PostImplementationModelPublicationTest < Minitest::Test
       with_result do |result, path|
         claude_usage(result, path, model:)
         result['requested_model'] = 'chosen-model'
-        identity = rendered(result, path).lines.first
+        identity = rendered(result, path)
         assert_includes identity, 'observed model: UNKNOWN'
         assert_includes identity, 'requested model: chosen-model'
       end
@@ -64,7 +67,7 @@ class PostImplementationModelPublicationTest < Minitest::Test
     with_result do |result, path|
       claude_usage(result, path, effort: 'high')
       result['requested_model'] = 'chosen-model'
-      identity = rendered(result, path).lines.first
+      identity = rendered(result, path)
       assert_includes identity, 'observed model: observed-model; requested model: chosen-model'
       assert_includes identity, 'recorded effort: high; requested effort: medium'
     end
@@ -74,7 +77,7 @@ class PostImplementationModelPublicationTest < Minitest::Test
     with_result do |result, path|
       result['requested_model'] = 'chosen-model'
       body = rendered(result, path)
-      assert_includes body.lines.first, 'observed model: UNKNOWN; requested model: chosen-model'
+      assert_includes body, 'observed model: UNKNOWN; requested model: chosen-model'
       assert_includes body, '**Recommendation: Proceed after required checks and approvals.**'
       assert_includes body, '**Next action (task owner):** Complete technical validation and required approvals.'
       assert_equal 1, body.scan('Useful change').size
