@@ -3,7 +3,7 @@
 require 'rbconfig'
 require_relative 'checkout'
 require_relative 'official_links'
-require_relative 'source'
+require_relative 'direct_source'
 require_relative 'link_lock'
 
 module Shaka
@@ -38,7 +38,7 @@ module Shaka
         targets = targets_for(action)
         links = targets.map { |target| links_for(target) }
         links.each { |entry| entry.check(@checkout.root) }
-        update(targets) if action == :update
+        update(targets) if action == :update && !@checkout.pending?
         @checkout.save(targets, identity(targets))
         record_ruby
         switch_links(links)
@@ -47,7 +47,7 @@ module Shaka
 
       def update(targets)
         verify(targets)
-        @checkout.update
+        @checkout.update { |root| identity(targets, root) }
       end
 
       def switch_links(links)
@@ -59,12 +59,14 @@ module Shaka
 
       def registered_source(source) = (source if File.file?(File.join(source, '.git', Checkout::RECORD)))
 
-      def targets_for(action)
+      def targets_for(_action)
         recorded = @checkout.record&.fetch('targets') || []
-        return recorded if action != :install && @agents.empty? && !@skills_dir
+        return recorded if retain_targets?(recorded)
 
         (recorded + requested_targets).to_h { |target| [target.fetch('directory'), target] }.values
       end
+
+      def retain_targets?(recorded) = !recorded.empty? && @agents.empty? && !@skills_dir && @names == ['shaka']
 
       def requested_targets
         selected_directories.map do |directory|
@@ -79,9 +81,17 @@ module Shaka
 
         raise ArgumentError, 'Choose --skills-dir or --agent, not both' if @skills_dir
 
-        (@agents.empty? ? ['codex'] : @agents).uniq.map do |agent|
+        return default_directories if @agents.empty?
+
+        @agents.uniq.map do |agent|
           File.join(Dir.home, HOSTS.fetch(agent) { raise ArgumentError, "Unknown coding agent: #{agent}" })
         end
+      end
+
+      def default_directories
+        return @checkout.record.fetch('targets').map { |target| target.fetch('directory') } if @checkout.record
+
+        [File.join(Dir.home, HOSTS.fetch('codex'))]
       end
 
       def links_for(target)
@@ -94,14 +104,10 @@ module Shaka
                           @checkout.root, target.fetch('names'))
       end
 
-      def identity(targets)
+      def identity(targets, root = @checkout.root)
         names = targets.flat_map { |target| target.fetch('names') }.uniq
         tree = Tree.new(names)
-        source = Source.new(@checkout.root, names, tree)
-        data = source.identity(tree.hash(@checkout.root))
-        raise ArgumentError, 'Installation files differ from the checkout revision' unless data['kind'] == 'revision'
-
-        { 'schema_version' => 1, 'package_id' => nil, 'version' => source.version, 'skills' => names, 'source' => data }
+        DirectSource.new(root, names, tree).identity(tree.hash(root))
       end
 
       def record_ruby

@@ -1,6 +1,8 @@
-# Install and maintain Shaka
+# Retained-copy installation
 
-Use this procedure when the user asks to install, upgrade, or remove Shaka.
+Use [official installation](official-installation.md) for everyday install, update,
+verification, and migration. Use this procedure only for an intentional retained copy.
+Examples below use the optional `~/agent-tools/shaka` convention; respect chosen locations.
 The [getting started guide](https://github.com/shakacode/shaka/blob/main/docs/getting-started.md) supplies the prompts.
 Use source installation: the published name-reservation gem
 predates the current workflow. Confirm the requested source, version, and coding
@@ -40,94 +42,137 @@ Review the source and installer, then clone into a directory outside the
 repositories your agent will edit:
 
 ```bash
-mkdir -p "$HOME/.local/share/shaka"
-git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
-"$HOME/.local/share/shaka/source/bin/install" --agent codex
+mkdir -p "$HOME/agent-tools"
+git clone https://github.com/shakacode/shaka.git "$HOME/agent-tools/shaka"
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.agents/skills"
 ```
 
-Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
-Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
+The installer copies the skill to `~/.local/share/shaka/installs/` and links Codex
+to that managed copy. The source checkout can then be removed; select a source
+checkout again when upgrading or rolling back. Open a new task in
+your project and look for
+`$shaka`; restart Codex if it does not appear.
+Codex lists managed copies as `Shaka VERSION (COMMIT)`, using a short commit for
+an exact revision or `dev CONTENT` for a development copy. The invocation remains
+`$shaka`. A source checkout keeps its own display name. Installing into two skills
+directories that Codex reads can show both entries, even when both are named `shaka`.
+Links to public guides show the current documentation. When using an older package
+or rolling back, follow its installed workflow and the repository's trusted seam
+if a public guide describes newer behavior.
+If the source sits inside another Git repository whose ignore rules match skill
+files, move it to a standalone checkout before installing.
+Use `--managed-dir DIR` if the default package location is unsuitable. Choose a
+directory outside project checkouts and pass the same directory on upgrades and
+rollbacks.
 
 <a id="use-shaka-in-claude-code"></a>
 <a id="use-shaka-in-cursor"></a>
 <a id="use-shaka-in-opencode"></a>
+## Other development environments
 
-| `--agent` | Skill links | Invocation |
+Use the same installer with your environment's skills directory:
+
+| Environment | `--skills-dir` | Invocation |
 | --- | --- | --- |
-| `codex` (default) | `~/.agents/skills` | `$shaka` |
-| `claude` | `~/.claude/skills` | `/shaka` |
-| `cursor` | `~/.cursor/skills` | `/shaka` in a new Agent chat |
-| `opencode` | `~/.config/opencode/skills` | `/shaka` in a new session |
+| Claude Code | `"$HOME/.claude/skills"` | `/shaka` |
+| Cursor | `"$HOME/.cursor/skills"` | `/shaka` in a new Agent chat |
+| OpenCode | `"$HOME/.config/opencode/skills"` | `/shaka` in a new session |
 
-Repeat `--agent` for several hosts, or use `--skills-dir DIR` for a custom directory.
-Add `--with-rct` for the Codex tower or `--with-claude-towers` for Claude towers.
-Reinstallation preserves recognized towers and registered hosts. Start a new chat
-and look for **Shaka**; restart the host if its list is stale.
+Keep the managed copy and links outside directories the coding agent can edit
+during project work, including project checkouts. If the agent can write the
+default home location, choose a protected managed directory and run installation
+with the needed privileges. The installing account must own its source checkout
+or have that checkout trusted by Git; a separate account can use its own clone.
+Make the package path readable by the coding agent,
+and use the same installing account for upgrades and rollbacks so it can open the
+host skills directory's lock file. Protect the managed directory from untrusted writers; its
+metadata records identity but does not authenticate who created a package. See
+[environment details](#development-environment-details) for terminal launchers, Pi, Cursor usage hooks,
+and tested limitations.
+
+The installer creates new managed and host skills directories with mode `0755`.
+It refuses either directory if group or world writable. It also refuses a
+directory or ancestor owned by an account other than the installer or root;
+a writable ancestor is accepted only with a sticky bit and a child owned by
+the installer or root. For example, an existing `0775` skills directory
+created under umask `002` must have group write removed or be replaced with a
+protected directory. The error names the path to fix; use `--managed-dir DIR`
+if the default package path is unsuitable.
+
+## Install from a personal fork
+
+When the user requests a fork, create or select it on GitHub and clone it into the
+installation directory. Set `origin` to their fork and `upstream` to
+`https://github.com/shakacode/shaka.git`; inspect both remotes before updating.
+Run the same `bin/install` command against that checkout.
+
+For updates, fetch upstream and inspect the diff. Fast-forward when possible;
+otherwise preserve fork changes while merging or rebasing on a feature branch.
+Validate the result before updating the installed branch. Contribute improvements
+through a branch and PR to upstream when the user authorizes that publication.
+Never overwrite local customizations to make an update succeed.
 
 ## Configure a repository
 
 After installing, follow [repository setup](repository-setup.md), then run
 `shaka doctor --root /path/to/repository` from the trusted installed helper.
 Resolve failed checks before publishing work.
+`shaka doctor --installation-json` prints the installed version, package ID, and
+source identity without checking a repository. A source records an exact revision
+only when it is the repository root, its selected file set matches `HEAD`, its
+selected paths have clean Git status, the file bytes and executable modes match
+`HEAD`, each selected directory contains a tracked file, and no selected file is
+world-writable. A Git-clean checkout with converted line endings can therefore
+record a development installation. Development installations record a base
+revision when available and a content hash. The managed copy removes group and
+world write access.
+Doctor reports the identity recorded at install time; it does not recheck the
+package's contents or compare the recorded revision with Git on each run.
+Protect the managed directory because these labels come from its metadata.
 
-## Verify and update
+## Upgrade
 
-Use the registered helper with your chosen path:
-
-```bash
-"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --verify
-"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update
-```
-
-Verification is read-only and checks checkout identity, clean status, links, and Ruby.
-Update checks these before fetching and fast-forwarding the recorded origin branch. Dirty tracked or untracked files, unexpected checkout changes,
-and divergent updates stop it. Preserve changes in a development checkout;
-do not reset them to make installation succeed. Repair missing Ruby records by
-running `bin/install` with Ruby 3.4 or later.
-
-Pause active chats before updating this mutable path. Doctor reads recorded identity;
-verification rechecks it. Project settings use [repository migration](migration.md).
-
-## Migrate retained-copy installations
-
-When the user selects migration:
-
-1. Select the dedicated directory. Clone the current official source there, or
-   bring an existing clean, expected checkout to the current default branch before
-   first registration. Stop for local changes or an unexpected remote.
-2. Run its new `bin/install --directory DIR` with every selected `--agent`, or
-   the original custom `--skills-dir`. Recognized tower links migrate too.
-3. Run its helper's `install --verify` and confirm Shaka in a new chat.
-
-Canonical Codex installation retires verified `~/.codex/skills` aliases after
-`~/.agents/skills` links succeed. This covers the standard managed directory
-and selected checkout; inspect other duplicates and preserve intentional trials.
-Keep every older package: active chats may reference its absolute paths.
-
-## Teams and forks
-
-Use [team instructions](https://github.com/shakacode/shaka/blob/main/docs/migration.md#teams-and-forks).
-For forks, register `--repository URL` and optionally `--branch NAME`.
-Publish upstream integrations from a development checkout before updating.
-
-## Separate PR trials and retained copies
-
-Use [PR trials](https://github.com/shakacode/shaka/blob/main/docs/trying-pr-versions.md)
-for intentional evaluation. They retain packages with version labels and absolute
-invocations without changing default links. Explicit legacy operations remain:
+Inspect and preserve local changes in the trusted checkout, then fast-forward:
 
 ```bash
-/path/to/source/bin/install --managed --skills-dir DIR [--managed-dir DIR]
-/path/to/source/bin/install --skills-dir DIR --rollback PACKAGE_ID [--managed-dir DIR]
+git -C "$HOME/agent-tools/shaka" status --short
+git -C "$HOME/agent-tools/shaka" switch main
+git -C "$HOME/agent-tools/shaka" pull --ff-only
 ```
 
-Include the rollback package's tower flags. Use the updated installer for rollback of labeled packages.
-No automatic cleanup or expiry exists. Only discoverable links add menu entries.
-Keep copies used by chats or needed for rollback; an unlinked copy can still be in use.
+Run `bin/install` from the chosen source with your original `--skills-dir` and
+optional tower flags. It validates a new managed copy before switching the links.
+Existing tasks that use the host link may pick up the new helper after the switch.
+Finish or pause them before upgrading, then start a new task with the new skill.
+The previous package remains in the managed directory you chose, which defaults
+to `~/.local/share/shaka/installs/`.
+If an existing link points to a different or deleted checkout, or an older gem,
+the installer refuses to replace it. Inspect that link first; if it is an old
+Shaka installation you intend to replace, unlink only that Shaka skill link and
+rerun `bin/install`. Preserve unrelated files and links.
+Configuration changes may also require a repository migration.
+If an unchanged-source reinstall refuses a changed package, move only that
+package directory aside and rerun the installer to create a fresh copy.
+
+To roll back, read the previous package ID from the installer's `Package:` line
+or from `shaka doctor --installation-json` before upgrading, then run:
+
+```bash
+"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/.agents/skills" --rollback PACKAGE_ID
+```
+
+If you installed with `--managed-dir DIR`, add the same option and directory to
+this rollback command.
+
+Include the optional tower flags recorded in that package. If the current install
+has tower skills that the rollback package lacks, inspect and unlink those managed
+tower links first. The installer refuses a missing package or one whose contents
+do not match its own metadata. It does not independently prove who created a
+package in the managed directory.
 
 ## Remove
 
-Inspect the link first and confirm it points to your selected Shaka installation:
+Inspect the link first and confirm it points to a managed Shaka package:
 
 ```bash
 ls -l "$HOME/.agents/skills/shaka"
@@ -147,6 +192,25 @@ running, remove its `.shaka-install.lock` file too.
 Managed copies remain available for rollback; remove one only after no host link
 or active task uses it.
 
+### Extra entries and retained copies
+
+There is no automatic cleanup or expiry. Upgrades switch the link in the supplied
+skills directory and retain earlier packages for rollback. Retained packages do
+not create menu entries by themselves; another discoverable skill link does.
+PR trial preparations also retain their packages, without adding normal host links.
+
+When the user wants to remove a duplicate entry, inspect `shaka` links in every
+skills directory their host reads. For example, Codex can discover both
+`~/.agents/skills/shaka` and `~/.codex/skills/shaka`. Unlink the unwanted entry using
+the removal procedure above, preserving the desired entry. Start a new chat or
+restart the host if its skill list still shows the removed link.
+
+Delete a retained package only after all chats pinned to its absolute skill or
+helper path have finished and no host link points to it. Check other coding hosts
+as well as the current one. Keep copies needed for rollback. Shaka does not track
+active chats across hosts, so an unlinked package alone is not proof it is unused.
+Old packages keep their original menu labels until replaced by a new installation.
+
 ## Development environment details
 
 Use the following sections for terminal launchers, usage hooks, and environment
@@ -160,7 +224,7 @@ For a terminal session, the optional launcher creates a separate session directo
 and gives the Codex sandbox write access to that directory and your checkout:
 
 ```bash
-"$HOME/.local/share/shaka/source/bin/install" --skills-dir "$HOME/.local/share/shaka-pilot/skills"
+"$HOME/agent-tools/shaka/bin/install" --managed --skills-dir "$HOME/agent-tools/shaka-pilot/skills"
 "$HOME/agent-tools/shaka-pilot/skills/shaka/scripts/shaka" work \
   --repo /path/to/repository "Fix the failing search test. Use Ask."
 ```

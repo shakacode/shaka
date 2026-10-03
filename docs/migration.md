@@ -20,7 +20,7 @@ chosen location, or use the default. Preserve towers, separate PR trials,
 and every retained copy. Verify it and confirm one default Shaka entry.
 ```
 
-Follow the [installation and migration procedure](../skills/shaka/references/installation.md).
+Follow the [installation and migration procedure](../skills/shaka/references/official-installation.md).
 Default: `~/.local/share/shaka/source`; `~/agent-tools/shaka` is an optional example.
 It changes recognized links and retires the standard duplicate Codex alias.
 Older copies remain for active chats, with no automatic cleanup or expiry.

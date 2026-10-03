@@ -103,6 +103,6 @@ class InstallClaudeTowersTest < Minitest::Test
   end
 
   def install(*flags)
-    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @installer, '--managed', '--skills-dir', @skills_dir, *flags)
+    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @installer, '--skills-dir', @skills_dir, *flags)
   end
 end

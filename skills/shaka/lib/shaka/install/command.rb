@@ -64,7 +64,16 @@ module Shaka
         VALUES.each_value do |key|
           raise ArgumentError, "#{key} must not be empty" if @options[key]&.strip == ''
         end
+        validate_action
         validate_managed if managed?
+      end
+
+      def validate_action
+        if @actions.empty? || (@options[:agents].empty? && !@options[:skills_dir] && @options[:names] == ['shaka'])
+          return
+        end
+
+        raise ArgumentError, 'Use bin/install to change selected hosts or towers before maintenance'
       end
 
       def validate_managed
@@ -75,7 +84,11 @@ module Shaka
         raise ArgumentError, 'Managed options cannot be combined with official checkout options'
       end
 
-      def managed? = @options.values_at(:managed, :managed_dir, :rollback).any?
+      def managed? = @options.values_at(:managed, :managed_dir, :rollback).any? || legacy_target?
+
+      def legacy_target?
+        @options[:skills_dir] && !@options[:directory] && @options[:agents].empty? && @actions.empty?
+      end
 
       def install
         if managed?

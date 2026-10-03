@@ -7,7 +7,7 @@ class InstallSkillsDirectoryModeTest < Minitest::Test
 
   def test_new_skills_directory_is_safe_under_permissive_umask
     output, status = Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, '-e',
-                                     'File.umask(0); load ARGV.shift', @installer, '--managed',
+                                     'File.umask(0); load ARGV.shift', @installer,
                                      '--skills-dir', @skills_dir)
 
     assert_predicate status, :success?, output

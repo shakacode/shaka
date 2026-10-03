@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'open3'
 require 'json'
+require_relative 'checkout_git'
 require_relative 'directory_safety'
 require_relative 'package'
 
@@ -10,6 +10,7 @@ module Shaka
     # Updates a registered checkout only from its expected origin and branch.
     class Checkout
       include DirectorySafety
+      include CheckoutGit
 
       REPOSITORY = 'https://github.com/shakacode/shaka.git'
       RECORD = 'shaka-install.json'
@@ -31,17 +32,27 @@ module Shaka
         validate
       end
 
-      def update
+      def update(&)
         git('fetch', '--quiet', 'origin', @branch)
         validate
-        git('merge', '--quiet', '--ff-only', "refs/remotes/origin/#{@branch}")
+        candidate = git('rev-parse', "refs/remotes/origin/#{@branch}")
+        stage(candidate, &)
+        write_record(@record.merge('pending_revision' => candidate))
+        git('merge', '--quiet', '--ff-only', candidate)
       end
 
       def revision = git('rev-parse', 'HEAD')
+      def pending? = @record['pending_revision'] == revision
 
       def save(targets, identity)
         data = { 'schema_version' => 1, 'directory' => @root, 'repository' => @repository,
                  'branch' => @branch, 'revision' => revision, 'targets' => targets, 'identity' => identity }
+        write_record(data)
+      end
+
+      private
+
+      def write_record(data)
         path = File.join(@root, '.git', RECORD)
         temporary = "#{path}.#{Process.pid}"
         File.write(temporary, "#{JSON.pretty_generate(data)}\n", mode: 'wx', perm: 0o600)
@@ -50,8 +61,6 @@ module Shaka
       ensure
         File.unlink(temporary) if temporary && File.exist?(temporary)
       end
-
-      private
 
       def prepare_directory(action)
         if action == :install
@@ -117,18 +126,9 @@ module Shaka
       def validate_revision
         raise ArgumentError, 'Installation checkout is dirty; use a separate development checkout' unless
           git('status', '--porcelain', '--untracked-files=all').empty?
-        return unless @record && revision != @record['revision']
+        return unless @record && revision != @record['revision'] && !pending?
 
         raise ArgumentError, 'Installation revision changed outside the update procedure'
-      end
-
-      def git(*)
-        environment = ENV.keys.grep(/\AGIT_/).to_h { |key| [key, nil] }
-        output, error, status = Open3.capture3(environment, 'git', '-c', "core.hooksPath=#{File::NULL}",
-                                               '-c', 'submodule.recurse=false', '-C', @root, *, umask: 0o022)
-        raise ArgumentError, "Installation Git operation failed: #{error.strip}" unless status.success?
-
-        output.strip
       end
     end
   end
