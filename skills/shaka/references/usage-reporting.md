@@ -322,9 +322,11 @@ The required `provenance` object records task source and requested, recommended,
 and active model/effort. `task_source` is `description`, `issue`, or `pull_request`.
 Each requested field is JSON `null` when intake establishes that the user did not
 specify it; unavailable evidence is `UNKNOWN`. For example, a task with no requested
-settings supplies `"requested_model": null, "requested_effort": null`, which renders
-as **User-requested model / effort: Not specified**. A model-only request preserves
-that model and uses `null` for effort. All eight keys remain required.
+settings supplies `"requested_model": null, "requested_effort": null`. The current
+provenance table omits the user-requested row when both fields are `null`; the hidden
+history marker still records `Not specified`. A model-only or effort-only request
+keeps the row and renders the absent component as `Not specified`. Unknown request
+evidence keeps the row too. All eight keys remain required.
 
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not

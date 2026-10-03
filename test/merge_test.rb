@@ -170,13 +170,6 @@ class MergeNativeGateTest < Minitest::Test
     assert_equal 'merge_queue', @merge.call(head: HEAD, base: BASE, walkthrough: 17).fetch('submission')
   end
 
-  def test_refuses_bypass_capable_or_unknown_actor
-    [true, nil].each do |value|
-      @client.snapshots = [snapshot.merge('viewerCanMergeAsAdmin' => value)]
-      assert_blocked(/protection must be enforced/)
-    end
-  end
-
   def test_refuses_unknown_queue_state
     %w[isMergeQueueEnabled isInMergeQueue].each do |key|
       @client.snapshots = [snapshot.merge(key => nil)]

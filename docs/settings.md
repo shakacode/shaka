@@ -21,7 +21,8 @@ merge:
 
 With `ask`, merge the ready PR on GitHub or tell the agent to merge the reviewed
 commit. With `auto`, the agent merges after required checks, reviews, and approvals,
-subject to the repository's restrictions.
+subject to the repository's restrictions. Shaka uses your account's existing GitHub
+permissions; an account that can bypass protection needs no extra Shaka setting.
 
 Set a task's preference with `Use merge policy auto`. This is a task instruction;
 editing the PR's settings does not change its own merge authority. Required human
