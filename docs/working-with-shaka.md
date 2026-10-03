@@ -41,6 +41,64 @@ Shaka checks for existing work and recommends a model and effort level. `Go`
 without naming either starts with your agent's current settings, even if they
 differ from that recommendation or cannot be reported.
 
+## Choose the outcome you need
+
+Use the same installed skill for a plan, an existing PR review, recovery, or
+repository setup. State the stopping point in your prompt.
+
+### Get a plan before implementing
+
+```text
+$shaka Plan CSV export for the orders page. Compare a simple download with
+a background export. Planning only; do not implement or open a PR yet.
+```
+
+The agent returns a compact execution prompt with the proposed scope, tradeoffs,
+recommended model and effort, and available usage. It stops before implementation
+edits. Use the returned prompt when you decide to start delivery.
+
+### Review an existing PR
+
+```text
+$shaka Review https://github.com/OWNER/REPO/pull/N for correctness and missing
+tests. Review only; report findings without editing, publishing, or merging.
+```
+
+Replace the URL with your PR. The agent reviews its current revision and reports
+findings and verification gaps, then stops. This request does not take over delivery
+or fix findings; ask separately when you want those changes.
+
+### Resume a PR you already started
+
+```text
+$shaka Resume https://github.com/OWNER/REPO/pull/N. The previous owner has
+stopped and handed this work to me. Keep merge policy ask. Go.
+```
+
+Confirm that handoff before using this prompt. The agent reads **WIP Details**,
+checks live ownership and the PR's current revision, and continues the unfinished
+work. Under Ask, it returns a verified PR for your merge decision, or explains
+the remaining blocker. See [resume unfinished work](#resume-unfinished-work)
+for recovery after a crash or when no PR exists.
+
+### Configure a repository for your team
+
+```text
+$shaka Configure this repository for Shaka. Reuse its existing setup,
+test, and validation commands. Explain the review and merge choices.
+Use merge policy ask.
+```
+
+For a repository without Shaka settings, the agent prepares a separate setup PR
+and names the reviewed commit for you to merge on GitHub. It stops there; proposed
+settings cannot govern feature work until that PR merges. See
+[repository setup](configure-repository.md#set-up) for the choices, or
+[private trials](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
+to try Shaka locally without team adoption.
+
+These are requests to the existing workflow. Separate stage skills such as
+`shaka-plan` and `shaka-review` are not included in the current installation.
+
 ## Choose a merge policy
 
 | Policy | What happens |
@@ -58,20 +116,10 @@ Merging a feature PR does not by itself publish a package or deploy a release.
 
 - **Start small.** Pick a fix whose result you can recognize. Say what should happen
   and what should stay the same; let Shaka manage the checks and review.
-- **Plan before committing to an approach.** Ask for a plan when scope or tradeoffs
-  are unclear:
-
-  ```text
-  $shaka Plan CSV export for the orders page. Compare a simple download with
-  a background export. Planning only; do not implement or open a PR yet.
-  ```
-
 - **Choose settings when you need to.** Activate a model in your coding agent, then
   name it in your prompt, for example `Use Sol, medium effort. Go.` A prompt cannot
   switch the model. Naming either setting can trigger a pause if it is unavailable,
   unverified, or differs from Shaka's recommendation.
-- **Set a stopping point.** Ask for review only or a PR without merging when that
-  is the outcome you want.
 - **Keep public PRs public-safe.** Tell the agent before publication if local paths
   or chat links should be hidden. [WIP settings](settings.md#wipinclude_locations)
   control those fields; the agent still needs to inspect all published content.
