@@ -17,7 +17,7 @@ module Shaka
       RUBY_RECORD = 'shaka-ruby'
 
       def initialize(source, options)
-        selected = options[:directory] || registered_source(source) || File.join(Dir.home, '.local/share/shaka/source')
+        selected = options[:directory] || registered_source(source) || File.join(Dir.home, '.agents/shaka')
         @checkout = Checkout.new(selected, **options.slice(:repository, :branch))
         @agents = options.fetch(:agents)
         @skills_dir = options[:skills_dir]

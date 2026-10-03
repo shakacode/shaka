@@ -16,7 +16,7 @@ class OfficialInstallTest < Minitest::Test
   def test_clones_into_the_default_location_and_links_all_requested_hosts
     output, status = invoke('--repository', @remote, '--agent', 'codex', '--agent', 'claude', '--agent', 'cursor')
     assert_predicate status, :success?, output
-    source = File.realpath(File.join(@home, '.local/share/shaka/source'))
+    source = File.realpath(File.join(@home, '.agents/shaka'))
     %w[.agents .claude .cursor].each do |host|
       assert_equal File.join(source, 'skills/shaka'), File.readlink(File.join(@home, host, 'skills/shaka'))
     end
@@ -34,6 +34,18 @@ class OfficialInstallTest < Minitest::Test
     assert_predicate status, :success?, output
     assert_equal 'updated skill', File.read(File.join(@destination, 'SKILL.md'))
     assert_equal File.realpath(File.join(installed, 'skills/shaka')), File.readlink(@destination)
+  end
+
+  def test_registered_installation_keeps_its_previous_default_location
+    installed = File.join(@home, '.local/share/shaka/source')
+    output, status = invoke('--directory', installed, '--repository', @remote, '--agent', 'codex')
+    assert_predicate status, :success?, output
+    output, status = Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, File.join(installed, 'bin/install'),
+                                     '--update')
+    assert_predicate status, :success?, output
+    link = File.join(@home, '.agents/skills/shaka')
+    assert_equal File.realpath(File.join(installed, 'skills/shaka')), File.readlink(link)
+    refute_path_exists File.join(@home, '.agents/shaka')
   end
 
   def test_divergent_remote_update_leaves_registered_revision_intact

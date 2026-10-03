@@ -12,12 +12,13 @@ repositories your agent will edit:
 
 ```bash
 umask 022
-mkdir -p "$HOME/.local/share/shaka"
-git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
-"$HOME/.local/share/shaka/source/bin/install" --agent codex
+mkdir -p "$HOME/.agents"
+git clone https://github.com/shakacode/shaka.git "$HOME/.agents/shaka"
+"$HOME/.agents/shaka/bin/install" --agent codex
 ```
 
-Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
+Default: `~/.agents/shaka`; respect chosen locations with `--directory DIR`.
+Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
 
 <a id="use-shaka-in-claude-code"></a>
@@ -45,8 +46,8 @@ paths you own, or select a protected location. Preserve file contents and execut
 Use the registered helper with your chosen path:
 
 ```bash
-"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --verify
-"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update
+"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
+"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --update
 ```
 
 Verification checks checkout identity, cleanliness, links, and Ruby without changes.

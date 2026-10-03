@@ -21,13 +21,11 @@ Follow its installation instructions and confirm the skill is available.
 
 The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
 It installs one dedicated checkout outside your projects and links the skill
-directly into it. The default location is `~/.local/share/shaka/source`; you can
+directly into it. The default location is `~/.agents/shaka`; you can
 choose another directory, such as `~/agent-tools/shaka`.
 
-The default keeps Shaka outside your project repositories and groups its files
-under `~/.local/share`, the [XDG convention for user data](https://specifications.freedesktop.org/basedir/latest/#variables).
-Shaka chooses the `shaka/source` subdirectory; you can keep your own directory convention.
-Keep development in separate checkouts so the installation stays ready for updates.
+Keep the installation outside your project repositories. Use separate checkouts
+for development so the installation stays ready for updates.
 
 Start a new chat if the skill does not appear. Use a source installation: the published gem is a
 name-reservation prerelease without the current workflow.

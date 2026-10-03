@@ -34,7 +34,7 @@ Your agent follows the [installation procedure](https://github.com/shakacode/sha
 to create or register that checkout and redirect the selected agents' skill links.
 It also removes a verified duplicate default Codex link, while preserving control
 tower skills and separate PR trials. Choose a directory or use
-`~/.local/share/shaka/source`; `~/agent-tools/shaka` is one alternative.
+`~/.agents/shaka`; `~/agent-tools/shaka` is one alternative.
 
 Older copies stay where they are so active chats can continue using them.
 Shaka does not automatically delete or expire them.

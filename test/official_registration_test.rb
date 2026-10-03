@@ -60,7 +60,7 @@ class OfficialRegistrationTest < Minitest::Test
     [%w[--agent codx], ['--skills-dir', @skills_dir, '--agent', 'codex']].each do |flags|
       output, status = invoke('--repository', @remote, *flags)
       refute_predicate status, :success?, output
-      refute_path_exists File.join(@home, '.local/share/shaka/source')
+      refute_path_exists File.join(@home, '.agents/shaka')
     end
   end
 end
