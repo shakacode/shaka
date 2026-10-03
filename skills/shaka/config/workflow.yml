@@ -667,7 +667,8 @@ phases:
         `awaiting-merge-approval`, run `squash-message` for that head so the last comment holds
         the commit title and body to paste into the squash merge boxes, name the expected head SHA,
         list each open step besides merging with its timing and who does it, and tell the user they may use
-        GitHub's currently offered merge control for that SHA and then archive this chat. If GitHub
+        GitHub's currently offered merge control for that SHA. Arrange continued feedback intake
+        through the procedure below before ending the turn. If GitHub
         shows a different head or offers no allowed merge method, tell them not to merge. Do not
         bypass protection. Do not ask whether you should merge. Ask does not treat that GitHub click
         instruction as authorization to run `merge`. If they later ask you to merge this head, run
@@ -769,9 +770,17 @@ always: |-
   Before ending any turn on a task that owns an open PR, run the saved helper's
   `handoff OWNER/REPO NUMBER --head SHA --root DIR --ref SHA`. Its status line names the head,
   attention label, required checks, walkthrough head, and WIP Details head, plus the squash
-  message head while the PR awaits merge approval; exit status 2 lists owed work. When a host monitor or background watcher will wake this session, add
+  message head while the PR awaits merge approval; exit status 2 lists owed work. For an Ask
+  handoff, follow [continued feedback intake](<{{package_root}}/skills/shaka/references/continued-feedback.md>):
+  retain one bounded comment wake through closure or transfer, or expose unavailable
+  automatic intake with a named manual follow-up owner and resume action. New actionable
+  feedback withdraws the old merge-ready handoff until triaged; record each disposition
+  once, prioritizing the primary owner. This also applies after checks pass in other phases.
+  When a host monitor or background watcher will wake this session for pending work, add
   `--woken-by` naming it in place of a label. Settle each owed item and run it again before
-  stopping. Review-only work reports what `handoff` lists and leaves the PR unchanged. A session
+  stopping. An Ask handoff's comment-only watch keeps the merge label and omits `--woken-by`;
+  keep that owning chat available while its wake depends on it. Review-only work reports
+  what `handoff` lists and leaves the PR unchanged. A session
   resuming a PR after a restart, crash, or new chat runs `handoff` without `--head` first, treats
   WIP Details as stale evidence, and continues from the live report.
 

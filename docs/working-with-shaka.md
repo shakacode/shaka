@@ -135,6 +135,21 @@ for preservation rules and the real-use evaluation still needed.
 
 ## Resume unfinished work
 
+If you leave a new request after an Ask handoff, the agent needs to address it
+before the PR is ready to merge again. It makes the change, explains why no change
+is needed, or asks you to decide. Even “looks good, but please change this” needs
+a response before merging.
+
+Some coding apps can resume the chat automatically when a PR comment or review
+arrives. Check **WIP Details** for which feedback the agent is watching and when
+that watch expires. Keep the chat unarchived while it is watching. A notification
+that checks have finished does not mean the agent is watching for feedback.
+
+If automatic resumption is unavailable, the handoff says **Automatic feedback
+intake unavailable** and names the person responsible for checking new feedback.
+That person returns to the chat and sends the resume prompt from **WIP Details**
+so the agent can respond. Use the same prompt if the watch has expired.
+
 Open the PR's **WIP Details** to find the owning chat, last known state, and next
 action. The **Chat link** can reopen the conversation when the owner's machine
 is reachable. In Codex, `codex://threads/...` takes you back to the original chat

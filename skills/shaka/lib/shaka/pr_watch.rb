@@ -5,11 +5,13 @@ require_relative 'ci_review_wait'
 require_relative 'pr_watch/review_gate'
 require_relative 'public_comments'
 require_relative 'status'
+require_relative 'pr_watch/feedback'
 
 module Shaka
   # Polls one PR head without agent turns and exits when the owner has work to do.
   class PrWatch
     include ReviewGate
+    include Feedback
 
     DEFAULT_INTERVAL = 60
     DEFAULT_TIMEOUT = 3600
@@ -25,7 +27,7 @@ module Shaka
       @ci_jobs = ci_jobs
       @ci_wait = CiReviewWait.normalize(settings[:ci_review_wait])
       @timing = timing(settings)
-      @baseline = settings[:baseline]
+      configure_feedback(settings)
       configure_adapters(adapters)
       @status = Status.new(github, seam_required_checks: settings[:seam_required_checks])
     end
@@ -80,6 +82,8 @@ module Shaka
     end
 
     def observe
+      return observe_feedback if @comments_only
+
       snapshot = @status.call
       return 'head_moved' if snapshot['headRefOid'] != @head
       return 'closed' unless snapshot['state'] == 'OPEN'

@@ -48,7 +48,7 @@ module Shaka
       end
 
       def watch_settings(options, seam, review: seam&.review)
-        settings = options.slice(:interval, :timeout, :settle)
+        settings = options.slice(:interval, :timeout, :settle, :comments_only, :owner)
         settings[:ci_review_wait] = CiReviewWait.effective(
           seam: review&.fetch('ci_review_wait', nil), override: options[:ci_review_wait]
         )
@@ -76,11 +76,10 @@ module Shaka
         OptionParser.new do |flags|
           flags.banner = 'Usage: shaka pr watch OWNER/REPO NUMBER --head SHA --ref SHA [options]'
           %w[head ref root].each { |name| flags.on("--#{name} VALUE") { |value| options[name.to_sym] = value } }
-          %w[interval timeout settle].each do |name|
-            flags.on("--#{name} SECONDS", Integer) { |value| options[name.to_sym] = value }
-          end
+          timing_options(flags, options)
           review_wait_option(flags, options)
           baseline_option(flags, options)
+          feedback_options(flags, options)
           flags.on('-h', '--help') { options[:help] = true }
         end
       end
@@ -90,6 +89,12 @@ module Shaka
         flags.on('--ci-review-not-required') { options[:ci_review_not_required] = true }
       end
 
+      def timing_options(flags, options)
+        %w[interval timeout settle].each do |name|
+          flags.on("--#{name} SECONDS", Integer) { |value| options[name.to_sym] = value }
+        end
+      end
+
       def baseline_option(flags, options)
         flags.on('--baseline PATH', 'Saved shaka comments JSON for the same head') do |value|
           options[:baseline] = value
@@ -97,9 +102,26 @@ module Shaka
       end
 
       def require_target!(arguments, options)
+        require_feedback!(options)
         return if arguments.length == 2 && options[:head] && options[:ref]
 
         raise Error, 'Expected OWNER/REPO NUMBER and --head SHA --ref SHA.'
+      end
+
+      def require_feedback!(options)
+        return unless options[:comments_only] || options[:owner]
+        return if options[:comments_only] && !options[:owner].to_s.strip.empty? && options[:baseline]
+
+        raise Error, '--comments-only needs --owner VALUE and --baseline PATH; --owner needs --comments-only.'
+      end
+
+      def feedback_options(flags, options)
+        flags.on('--comments-only', 'Watch feedback after handoff, regardless of terminal checks') do
+          options[:comments_only] = true
+        end
+        flags.on('--owner VALUE', 'Exact published WIP Details Owner cell; stop on transfer') do |value|
+          options[:owner] = value
+        end
       end
 
       def help(parser)
