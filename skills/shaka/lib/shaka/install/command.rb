@@ -64,8 +64,20 @@ module Shaka
         VALUES.each_value do |key|
           raise ArgumentError, "#{key} must not be empty" if @options[key]&.strip == ''
         end
+        validate_agents
         validate_action
         validate_managed if managed?
+      end
+
+      def validate_agents
+        if @options[:skills_dir] && @options[:agents].any?
+          raise ArgumentError,
+                'Choose --skills-dir or --agent, not both'
+        end
+
+        @options[:agents].each do |agent|
+          raise ArgumentError, "Unknown coding agent: #{agent}" unless Official::HOSTS.key?(agent)
+        end
       end
 
       def validate_action

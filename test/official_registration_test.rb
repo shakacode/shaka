@@ -55,4 +55,12 @@ class OfficialRegistrationTest < Minitest::Test
     end
     refute File.symlink?(File.join(@home, '.agents/skills/shaka'))
   end
+
+  def test_invalid_hosts_refuse_before_creating_an_installation
+    [%w[--agent codx], ['--skills-dir', @skills_dir, '--agent', 'codex']].each do |flags|
+      output, status = invoke('--repository', @remote, *flags)
+      refute_predicate status, :success?, output
+      refute_path_exists File.join(@home, '.local/share/shaka/source')
+    end
+  end
 end
