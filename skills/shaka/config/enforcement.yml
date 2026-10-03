@@ -539,18 +539,20 @@ rules:
   - id: no-protection-bypass
     phase: finish
     quote: never bypass protection
-    enforced_by: code
-    detector: >-
-      `Merge#verify_submission_mode` refuses when `viewerCanMergeAsAdmin` is true, so an actor
-      who could merge past protection does not merge through this command. It refuses only the
-      bypass the helper would perform; a maintainer clicking merge is GitHub's to refuse.
+    enforced_by: agent
+    note: >-
+      The helper checks readiness before normal merge or queue submission. It does not
+      refuse an account solely because GitHub permits it to bypass protection. Readiness
+      snapshots cannot guarantee native enforcement for an exempt account or prevent
+      changes after the final read. The agent honors the prohibition on bypass;
+      GitHub enforces rules where they apply to the account.
   - id: no-ask-mode-bypass
     phase: finish
     quote: Do not bypass protection.
     enforced_by: agent
     note: >-
       This one governs what the agent tells a maintainer when Ask gates pass and the merge click
-      is theirs. `merge` refuses a bypass it would perform itself, and nothing reads advice.
+      is theirs. Nothing reads that advice; GitHub enforces rules where they apply to the account.
   - id: no-merge-permission-question
     phase: finish
     quote: Do not ask whether you should merge.
