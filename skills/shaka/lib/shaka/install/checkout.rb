@@ -1,0 +1,135 @@
+# frozen_string_literal: true
+
+require 'open3'
+require 'json'
+require_relative 'directory_safety'
+require_relative 'package'
+
+module Shaka
+  module Install
+    # Updates a registered checkout only from its expected origin and branch.
+    class Checkout
+      include DirectorySafety
+
+      REPOSITORY = 'https://github.com/shakacode/shaka.git'
+      RECORD = 'shaka-install.json'
+      attr_reader :root, :record
+
+      def initialize(directory, repository: nil, branch: nil)
+        @root = File.expand_path(directory)
+        @root = File.realpath(@root) if File.directory?(@root)
+        @repository = repository
+        @branch = branch
+      end
+
+      def prepare(action)
+        prepare_directory(action)
+        @record = read_record
+        raise ArgumentError, 'Register this installation first with bin/install' if action != :install && !@record
+
+        select_source
+        validate
+      end
+
+      def update
+        git('fetch', '--quiet', 'origin', @branch)
+        validate
+        git('merge', '--quiet', '--ff-only', "refs/remotes/origin/#{@branch}")
+      end
+
+      def revision = git('rev-parse', 'HEAD')
+
+      def save(targets, identity)
+        data = { 'schema_version' => 1, 'directory' => @root, 'repository' => @repository,
+                 'branch' => @branch, 'revision' => revision, 'targets' => targets, 'identity' => identity }
+        path = File.join(@root, '.git', RECORD)
+        temporary = "#{path}.#{Process.pid}"
+        File.write(temporary, "#{JSON.pretty_generate(data)}\n", mode: 'wx', perm: 0o600)
+        File.rename(temporary, path)
+        @record = data
+      ensure
+        File.unlink(temporary) if temporary && File.exist?(temporary)
+      end
+
+      private
+
+      def prepare_directory(action)
+        if action == :install
+          ensure_safe_directory(@root, 'Installation directory')
+          @root = File.realpath(@root)
+          clone if Dir.empty?(@root)
+        else
+          verify_safe_directory(@root, 'Installation directory')
+        end
+        verify_safe_directory(File.join(@root, '.git'), 'Installation Git directory')
+      end
+
+      def select_source
+        @repository ||= @record&.fetch('repository') || REPOSITORY
+        @branch = @branch || @record&.fetch('branch') || 'main'
+      end
+
+      def clone
+        @repository ||= REPOSITORY
+        @branch ||= 'main'
+        git('clone', '--quiet', '--branch', @branch, '--', @repository, @root)
+      end
+
+      def read_record
+        path = File.join(@root, '.git', RECORD)
+        return unless File.exist?(path) || File.symlink?(path)
+
+        raise ArgumentError, 'Installation record must be a regular file' unless File.lstat(path).file?
+
+        value = JSON.parse(File.read(path))
+        raise ArgumentError, 'Installation record does not match this directory' unless
+          valid_record?(value)
+
+        value
+      rescue JSON::ParserError
+        raise ArgumentError, 'Installation record is invalid'
+      end
+
+      def valid_record?(value)
+        value.is_a?(Hash) && value['schema_version'] == 1 && value['directory'] == @root &&
+          %w[repository branch revision].all? { |key| value[key].is_a?(String) && !value[key].empty? } &&
+          valid_targets?(value['targets'])
+      end
+
+      def valid_targets?(targets)
+        targets.is_a?(Array) && !targets.empty? && targets.all? do |target|
+          target.is_a?(Hash) && target['directory'].is_a?(String) &&
+            target['directory'].start_with?('/') && Package.valid_skills?(target['names'])
+        end
+      end
+
+      def validate
+        raise ArgumentError, 'Unexpected installation checkout root' unless git('rev-parse', '--show-toplevel') == @root
+        raise ArgumentError, 'Installation origin differs from the selected repository' unless
+          git('config', '--get', 'remote.origin.url') == @repository
+        raise ArgumentError, 'Unexpected installation branch' unless git('branch', '--show-current') == @branch
+        raise ArgumentError, 'Unexpected installation upstream' unless
+          git('rev-parse', '--abbrev-ref', '@{upstream}') == "origin/#{@branch}"
+
+        validate_revision
+      end
+
+      def validate_revision
+        raise ArgumentError, 'Installation checkout is dirty; use a separate development checkout' unless
+          git('status', '--porcelain', '--untracked-files=all').empty?
+        return unless @record && revision != @record['revision']
+
+        raise ArgumentError, 'Installation revision changed outside the update procedure'
+      end
+
+      def git(*)
+        environment = ENV.keys.grep(/\AGIT_/).to_h { |key| [key, nil] }
+        output, error, status = Open3.capture3(environment, 'git', '-c', "core.hooksPath=#{File::NULL}",
+                                               '-c', 'submodule.recurse=false', '-C', @root, *, umask: 0o022)
+        raise ArgumentError, "Installation Git operation failed: #{error.strip}" unless status.success?
+
+        output.strip
+      end
+    end
+  end
+end

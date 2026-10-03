@@ -97,7 +97,7 @@ class InstallCheckoutReferenceTest < Minitest::Test
     File.write(File.join(@source, 'example.md'), "Run #{alias_root}/bin/install")
 
     output, status = Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, File.join(alias_root, 'bin/install'),
-                                     '--skills-dir', @skills_dir)
+                                     '--managed', '--skills-dir', @skills_dir)
     refute_predicate status, :success?
     assert_includes output, 'Checkout reference in package'
     refute_path_exists @destination

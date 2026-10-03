@@ -101,7 +101,7 @@ class PackageTest < Minitest::Test
 
   def install_skill
     skills = File.join(@directory, 'pilot skills')
-    run_executable('shaka-install', '--skills-dir', skills, '--with-rct', '--with-claude-towers')
+    run_executable('shaka-install', '--managed', '--skills-dir', skills, '--with-rct', '--with-claude-towers')
     source = File.realpath(File.join(skills, 'shaka'))
     assert source.start_with?("#{File.realpath(@environment.fetch('HOME'))}/.local/share/shaka/installs/"), source
     check_public_skills(skills, source)

@@ -20,7 +20,9 @@ Follow its installation instructions and confirm the skill is available.
 ```
 
 The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
-It installs a managed copy outside your projects. Start a new chat if the skill
+It installs one dedicated checkout outside your projects and links the skill
+directly into it. The default location is `~/.local/share/shaka/source`; you can
+choose another directory. Keep development in separate checkouts. Start a new chat if the skill
 does not appear. Use a source installation: the published gem is a
 name-reservation prerelease without the current workflow.
 

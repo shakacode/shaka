@@ -119,6 +119,12 @@ if ARGV.first == 'doctor'
   exit Shaka::Doctor.run(ARGV)
 end
 
+if ARGV.first == 'install'
+  require_relative '../lib/shaka/install/command'
+  ARGV.shift
+  exit Shaka::Install::Command.new(File.expand_path('../../..', __dir__)).run(ARGV)
+end
+
 if ARGV.first == 'evidence'
   ARGV.shift
   exit Shaka::Evidence::Command.run(ARGV)
@@ -194,7 +200,7 @@ def usage_banner
    '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka review run --help',
    '; shaka review check --help', '; shaka review publish --help', '; shaka seam check --help',
    '; shaka workflow --help', '; shaka enforcement --help', '; shaka doctor --help',
-   '; shaka repos --help; shaka prefix --help; shaka issue-create --help'].join
+   '; shaka repos --help; shaka prefix --help; shaka issue-create --help; shaka install --help'].join
 end
 
 def merge_flags(flags, options)

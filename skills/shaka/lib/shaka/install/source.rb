@@ -37,12 +37,11 @@ module Shaka
           clean? && matching_blobs?(tracked)
       end
 
-      def git(*)
-        git_raw(*)&.strip
-      end
+      def git(*) = git_raw(*)&.strip
 
       def git_raw(*)
-        output, status = Open3.capture2('git', '-C', @root, *, err: File::NULL)
+        environment = ENV.keys.grep(/\AGIT_/).to_h { |key| [key, nil] }
+        output, status = Open3.capture2(environment, 'git', '-C', @root, *, err: File::NULL)
         output if status.success?
       rescue Errno::ENOENT
         nil

@@ -21,7 +21,7 @@ module InstallTestSupport
   end
 
   def run_installer(*)
-    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @installer, *)
+    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, @installer, '--managed', *)
   end
 
   def git(*)
