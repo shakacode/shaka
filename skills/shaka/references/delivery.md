@@ -78,7 +78,8 @@ the decision unless scope or expected cost materially changes.
 
 Keep a collapsed **WIP Details** entry in the PR description until GitHub confirms
 the outcome. Publish it through the `description` content's `wip` object. Snake_case
-keys name the fields below, and Chat link keeps the key `thread`. The helper
+keys name the fields below; Chat name keeps the key `task` and Chat link keeps
+the key `thread`. The helper
 renders the fields as one table and refuses a hand-written `WIP Details`
 details item. Refresh at
 meaningful progress and every stopping point, with all other description fields
@@ -88,7 +89,7 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Field | Content |
 | --- | --- |
 | Owner | Public machine alias, host, and a random owner tag, such as `m5 · Codex desktop · k7q2` |
-| Task | Searchable task title or shareable tracker locator |
+| Chat name | Current host chat title, copied exactly; otherwise `UNKNOWN` |
 | Chat link | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
 | Last observed activity | Date, time to the minute, and timezone of the latest observed activity, such as `2026-09-25 17:42 PDT`; otherwise `UNKNOWN` |
 | Revision | Branch and full current head as `BRANCH @ SHA`; `handoff` reads the SHA after the last ` @ ` |
@@ -98,6 +99,16 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Merge authority | Previously established `ask` or `auto`, or `UNKNOWN`; this field grants no authority |
 | State | In progress, named check/review wait, blocker, decision, GitHub merge of a named head, or handoff to a named successor |
 | Next action | One step that continues the task; while `awaiting-resume`, the prompt that resumes it, such as `$shaka PR_URL` |
+
+**Chat title:** before each WIP publication, read the current title through the
+host's session metadata when available and copy it into `wip.task`. Preserve
+user-chosen titles. After a successful agent rename, read the title back and
+refresh the owning unfinished PR's WIP Details before ending the turn. When a
+manual rename is observed on resume or at the next publication, use that title.
+Without a title-reading tool, use a title confirmed by the host in this turn or
+`UNKNOWN`; a suggested `Chat name:` line alone does not establish the actual title.
+The agent performs these refreshes; Ruby validates the supplied text and does
+not compare it with host metadata or watch for renames.
 
 For Stopped because, use `awaiting merge approval` for an Ask handoff that waits
 for a GitHub merge click or approval; that stop also applies the

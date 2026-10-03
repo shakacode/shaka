@@ -9,10 +9,14 @@ class HandoffWipNoteTest < Minitest::Test
     assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::Handoff::WipNote.revision(body)
   end
 
-  def test_a_note_published_under_the_previous_heading_still_reads
-    body = HandoffFixtures.description.sub('| Chat link |', '| Thread |')
+  def test_notes_published_under_current_and_previous_headings_still_read
+    ['Chat name', 'Task'].product(['Chat link', 'Thread']).each do |name, link|
+      body = HandoffFixtures.description.sub('| Chat name |', "| #{name} |")
+                            .sub('| Chat link |', "| #{link} |")
 
-    assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::Handoff::WipNote.revision(body)
+      assert_equal "feature @ #{HandoffFixtures::HEAD}", Shaka::Handoff::WipNote.revision(body),
+                   "#{name} / #{link}"
+    end
   end
 
   def test_a_body_saved_with_crlf_line_endings_still_reads

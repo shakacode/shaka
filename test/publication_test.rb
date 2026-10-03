@@ -417,6 +417,12 @@ class PublicationWipDetailsTest < Minitest::Test
     assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>WIP Details')
   end
 
+  def test_the_chat_name_uses_the_existing_task_key
+    title = 'SHAKA PR #42 · Keep WIP chat names current'
+
+    assert_includes render(WIP.merge('task' => title)), "| Chat name | #{title} |"
+  end
+
   def test_the_note_is_omitted_after_the_outcome
     refute_includes render(nil), 'WIP Details'
   end
