@@ -80,8 +80,7 @@ class PostImplementationPublicationTest < Minitest::Test
       github, status = publish(result, path)
 
       assert_equal 0, status
-      identity = '🤖 claude · anthropic · observed model: observed-model · ' \
-                 "recorded effort: UNKNOWN; requested effort: medium\n\n"
+      identity = "🤖 Claude · Anthropic · observed-model · UNKNOWN\n\n# Post-implementation validation\n\n"
       assert github.bodies.first.first.start_with?(identity)
       refute_includes github.bodies.first.first, 'PRIVATE TRANSCRIPT'
     end
@@ -150,7 +149,7 @@ class PostImplementationPublicationHistoryTest < Minitest::Test
   def test_publication_confirms_history_updates
     with_result do |result, path|
       outcome = publish(result, path)
-      assert_includes outcome[0].bodies.first.first.lines.first, 'observed model: UNKNOWN'
+      assert_includes outcome[0].bodies.first.first, 'observed model: UNKNOWN'
       assert_equal({ 'collapsed' => [], 'unavailable' => [] }, JSON.parse(outcome[2]).fetch('earlier_checkpoints'))
     end
   end

@@ -27,7 +27,7 @@ module Shaka
     def render
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      "#{identity}\n\n## Post-implementation validation\n\n#{body}\n\n" +
+      "#{identity}\n\n# Post-implementation validation\n\n#{body}\n\n" +
         PostImplementationEvidence.attestation(@head, @state)
     end
 
@@ -36,8 +36,14 @@ module Shaka
     def identity
       provider, family = @result.fetch('reviewer', 'UNKNOWN/UNKNOWN').split('/', 2)
       PublicationText.identity('agent' => family, 'provider' => provider,
-                               'model' => model_text, 'effort' => effort_text)
+                               'model' => headline_model, 'effort' => known(@configuration[3]))
     end
+
+    def headline_model
+      known(@configuration[2]) || known(@configuration[1])&.then { |model| "#{model} (configured)" }
+    end
+
+    def execution_evidence = "#{model_text} · #{effort_text}"
 
     def model_text
       observed = known(@configuration[2])
@@ -78,7 +84,7 @@ module Shaka
        "Conclusion: **#{report.fetch('conclusion')}**",
        *report.fetch('reasons').reject { |reason| reason == summary },
        "Alternative considered: #{report.fetch('alternative')}",
-       "Prompt: #{@result.fetch('prompt_source')}.", usage_text,
+       execution_evidence, "Prompt: #{@result.fetch('prompt_source')}.", usage_text,
        'Ruby verified report shape and head binding. The reviewer judged value; the task owner handles concerns ' \
        'and merge readiness. This does not attest to technical review.', '</details>'].join("\n\n")
     end
@@ -98,8 +104,7 @@ module Shaka
     end
 
     def incomplete_body
-      opted_out = @result['status'] == 'opted_out'
-      action, next_action = if opted_out
+      action, next_action = if @result['status'] == 'opted_out'
                               ['Checkpoint opted out; no product review completed.',
                                'Verify opt-out authority and remaining gates.']
                             else
@@ -107,7 +112,8 @@ module Shaka
                                'Resolve the execution failure and rerun the checkpoint.']
                             end
       "**Recommendation: #{action}**\n\n#{@result.fetch('reason')}\n\n" \
-        "**Next action (task owner):** #{next_action}\n\nHead: `#{@head}`"
+        "**Next action (task owner):** #{next_action}\n\nHead: `#{@head}`\n\n" \
+        "<details>\n<summary>Execution details</summary>\n\n#{execution_evidence}\n\n#{usage_text}\n\n</details>"
     end
 
     def usage_text

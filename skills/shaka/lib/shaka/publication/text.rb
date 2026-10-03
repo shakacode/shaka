@@ -8,6 +8,11 @@ module Shaka
     ESCAPE = /\\[nrt]/
     IDENTITY_FIELDS = %w[agent provider model effort].freeze
 
+    DISPLAY_NAMES = {
+      'agent' => { 'codex' => 'Codex', 'claude' => 'Claude', 'grok' => 'Grok' },
+      'provider' => { 'openai' => 'OpenAI', 'anthropic' => 'Anthropic', 'xai' => 'xAI' }
+    }.freeze
+
     module_function
 
     def required(value, field)
@@ -52,11 +57,13 @@ module Shaka
     def identity(value)
       raise Error, 'Publication identity must be supplied.' unless value.is_a?(Hash)
 
-      fields = IDENTITY_FIELDS.map do |field|
-        text = value[field]
-        text.is_a?(String) && !text.strip.empty? ? single_line(text.strip, "identity #{field}") : 'UNKNOWN'
-      end
+      fields = IDENTITY_FIELDS.map { |field| identity_field(value[field], field) }
       "🤖 #{fields.join(' · ')}"
+    end
+
+    def identity_field(value, field)
+      text = value.is_a?(String) && !value.strip.empty? ? single_line(value.strip, "identity #{field}") : 'UNKNOWN'
+      DISPLAY_NAMES.fetch(field, {}).fetch(text.downcase, text)
     end
   end
 end
