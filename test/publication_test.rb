@@ -250,7 +250,9 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     link = PublicationRegressionTest::WALKTHROUGH
     rendered = render
 
-    assert_includes rendered, "A summary.\n\n[Code Walkthrough](#{link})\n"
+    assert_includes rendered,
+                    "A summary.\n\n[Code Walkthrough](#{link}) · " \
+                    "Post-implementation verification: _Not published yet._\n"
     refute_includes rendered, '## Code Walkthrough'
     refute_match(/^# Code Walkthrough/, rendered)
   end
@@ -304,6 +306,36 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   end
 end
 
+class PublicationPostImplementationLinkTest < Minitest::Test
+  URL = 'https://github.com/shakacode/shaka/pull/137#issuecomment-5746446012'
+
+  def render(value)
+    content = PublicationRegressionTest.new('unused').description_content('post_implementation' => value)
+    Shaka::Publication.description(content)
+  end
+
+  def test_verification_is_beside_the_code_walkthrough
+    assert_includes render(URL),
+                    "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
+                    "[Post-implementation verification](#{URL})"
+  end
+
+  def test_missing_verification_reserves_a_named_placeholder
+    [nil, '  '].each do |value|
+      assert_includes render(value), 'Post-implementation verification: _Not published yet._'
+    end
+  end
+
+  def test_verification_requires_a_github_pr_comment_url
+    ['https://github.com/shakacode/shaka/pull/137',
+     PublicationRegressionTest::WALKTHROUGH, 'https://example.com/report',
+     "#{URL}\nother", "#{URL})", 123].each do |value|
+      error = assert_raises(Shaka::Error) { render(value) }
+      assert_includes error.message, 'post_implementation'
+    end
+  end
+end
+
 class PublicationProvenanceRequirementTest < Minitest::Test
   # Catches a renderer that accepts the structured metadata but silently drops it,
   # leaving a PR without the route evidence needed for later comparison.
@@ -352,12 +384,16 @@ class PublicationDeploymentLinkTest < Minitest::Test
 
   def test_the_deployment_link_follows_the_walkthrough_link_before_any_section
     link = PublicationRegressionTest::WALKTHROUGH
-    assert_includes render, "A summary.\n\n[Code Walkthrough](#{link}) · [Deployment](<#{DEPLOYMENT}>)\n\n## Outcome"
+    assert_includes render,
+                    "A summary.\n\n[Code Walkthrough](#{link}) · " \
+                    'Post-implementation verification: _Not published yet._ · ' \
+                    "[Deployment](<#{DEPLOYMENT}>)\n\n## Outcome"
   end
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    "A summary.\n\n_Not published yet._\n\n[Deployment](<#{DEPLOYMENT}>)\n"
+                    "A summary.\n\n_Not published yet._ · Post-implementation verification: _Not published yet._ · " \
+                    "[Deployment](<#{DEPLOYMENT}>)\n"
   end
 
   # A bare `)` would end the Markdown link at `/a` instead of linking `/a)b`.
@@ -368,7 +404,9 @@ class PublicationDeploymentLinkTest < Minitest::Test
   def test_none_records_that_the_repository_has_no_deployment
     rendered = render('deployment' => 'none')
     refute_includes rendered, 'Deployment'
-    assert_includes rendered, "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH})\n\n## Outcome"
+    assert_includes rendered,
+                    "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
+                    "Post-implementation verification: _Not published yet._\n\n## Outcome"
   end
 
   def test_a_missing_or_blank_deployment_is_refused

@@ -8,18 +8,27 @@ module Shaka
   # Renders the links a reader needs before any description section.
   module PublicationLinks
     WALKTHROUGH_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#pullrequestreview-\d+\z}
+    POST_IMPLEMENTATION_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#issuecomment-\d+\z}
     UNPUBLISHED = '_Not published yet._'
 
     module_function
 
-    # A published walkthrough shares its line with the deployment; the placeholder keeps its own.
+    # Keep both review surfaces together before an optional deployment preview.
     def top(content)
-      walkthrough = walkthrough(content['walkthrough'])
-      deployment = deployment(content['deployment'])
-      return [walkthrough] unless deployment
-      return [walkthrough, deployment] if walkthrough == UNPUBLISHED
+      reviews = "#{walkthrough(content['walkthrough'])} · #{post_implementation(content['post_implementation'])}"
+      preview = deployment(content['deployment'])
+      [preview ? "#{reviews} · #{preview}" : reviews]
+    end
 
-      ["#{walkthrough} · #{deployment}"]
+    def post_implementation(url)
+      return "Post-implementation verification: #{UNPUBLISHED}" if url.nil? || (url.is_a?(String) && url.strip.empty?)
+
+      url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'post_implementation')
+      unless url.match?(POST_IMPLEMENTATION_URL)
+        raise Error, 'Publication post_implementation must be a GitHub pull request comment URL.'
+      end
+
+      "[Post-implementation verification](#{url})"
     end
 
     # Required so a deployable repository cannot silently omit its preview; `none` opts out.

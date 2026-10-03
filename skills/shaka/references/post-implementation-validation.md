@@ -27,6 +27,11 @@ shaka post-implementation run --root DIR --base BASE_SHA --head HEAD_SHA \
 shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.json
 ```
 
+After publication, set description `post_implementation` to the returned PR comment URL
+and republish the description. The renderer places Post-implementation verification
+beside Code Walkthrough, followed by any deployment link. Until publication, it shows
+a named placeholder. This link locates the report; it does not establish readiness.
+
 `--base`, `--head`, and `--ref` are full commit SHAs. Resolve and verify the default
 branch before supplying `--ref`, just as for technical review. Run against a clean,
 committed head; after material edits, repeat validation, technical review, and this
