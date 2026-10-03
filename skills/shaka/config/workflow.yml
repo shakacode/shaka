@@ -653,7 +653,8 @@ phases:
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Refresh the
         trusted seam and resolve the preference again using Intake's precedence.
-        Default to Ask when resolution or approval evidence is missing. Honor
+        Default to Ask when preference resolution is missing. Under Ask, keep the
+        approval wait when decision evidence is missing. Honor
         review-only and PR-only scope and existing
         explicit task-scoped merge decisions. The
         helper checks GitHub readiness; you establish local verification, authority, and acceptable

@@ -23,7 +23,7 @@ class MergeAuthorizationEvaluationTest < Minitest::Test
   end
 
   def test_explicit_approval_and_auto_require_the_positive_action
-    EVALUATION.cases.select { |entry| entry.fetch('id').start_with?('explicit-') }.each do |scenario|
+    EVALUATION.cases.select { |entry| entry.fetch('expected') == ['merge'] }.each do |scenario|
       assert_true EVALUATION.check(scenario, { 'actions' => ['merge'], 'reason' => 'Explicit decision' })['passed']
       assert_false EVALUATION.check(scenario, { 'actions' => ['handoff'], 'reason' => 'Stopped' })['passed']
     end

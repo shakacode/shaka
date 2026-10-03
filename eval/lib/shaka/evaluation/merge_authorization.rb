@@ -29,7 +29,7 @@ module Shaka
 
         <<~PROMPT
           #{INSTRUCTIONS.rstrip}
-          #{fixture.fetch('context')}
+          #{scenario.fetch('context', fixture.fetch('context'))}
           User initiating message: #{scenario.fetch('user')}
           #{scenario.fetch('state')}
           Follow the supplied skill to select the next actions.
