@@ -135,21 +135,20 @@ for preservation rules and the real-use evaluation still needed.
 
 ## Resume unfinished work
 
-After an Ask handoff, new feedback still needs assessment before the PR stays
-ready to merge. The owning agent prioritizes your requests, records a fix, an
-evidence-backed reply, or a blocked decision, and refreshes readiness afterward.
-A review saying “looks good” with another request still needs an answer.
+If you leave a new request after an Ask handoff, the agent needs to address it
+before the PR is ready to merge again. It makes the change, explains why no change
+is needed, or asks you to decide. Even “looks good, but please change this” needs
+a response before merging.
 
-Automatic intake depends on the coding host being able to resume the owning
-chat for comments, review summaries, and inline comments. A monitor that only
-reports finished checks cannot provide this coverage. The agent names its
-bounded coverage and expiry in WIP Details; keep the chat available while that
-coverage depends on it. Watching stops when the PR closes or ownership transfers.
+Some coding apps can resume the chat automatically when a PR comment or review
+arrives. Check **WIP Details** for which feedback the agent is watching and when
+that watch expires. Keep the chat unarchived while it is watching. A notification
+that checks have finished does not mean the agent is watching for feedback.
 
-When the host cannot resume automatically, the handoff says **Automatic feedback
-intake unavailable** and names who should check later feedback. That person uses
-the resume prompt in WIP Details after leaving a request. This manual fallback
-does not promise that an unattended agent will answer.
+If automatic resumption is unavailable, the handoff says **Automatic feedback
+intake unavailable** and names the person responsible for checking new feedback.
+That person returns to the chat and sends the resume prompt from **WIP Details**
+so the agent can respond. Use the same prompt if the watch has expired.
 
 Open the PR's **WIP Details** to find the owning chat, last known state, and next
 action. The **Chat link** can reopen the conversation when the owner's machine
