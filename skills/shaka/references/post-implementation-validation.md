@@ -176,5 +176,7 @@ Pass the trusted default-branch `--ref` to `squash-message` too. A trusted
 explicit task opt-out authority and resolves all earlier substantive concerns; changing
 settings or publishing an opt-out does not settle them. These checks establish what this
 account published, not independent proof of reviewer execution or judgment quality.
+The published state can change after the last read; GitHub does not enforce this
+checkpoint during its merge mutation.
 Existing checkpoint comments from older installations need republication with the
 current publisher; reuse the saved result only when it still covers this exact head.

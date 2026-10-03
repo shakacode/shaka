@@ -360,7 +360,8 @@ begin
            when 'merge'
              head = options.fetch(:head)
              review = { required: seam&.review&.fetch('required'), waiver: options[:review_waiver],
-                        root: options[:root] || Dir.pwd }
+                        root: options[:root] || Dir.pwd,
+                        checkpoint: Shaka::PostImplementationEvidence.new(github, **checkpoint) }
              squash_message = options[:squash_message] &&
                               Shaka::SquashMessage.for(github, content(options[:squash_message]))
              Shaka::Merge.new(github, ci_review_wait: options[:ci_review_wait],

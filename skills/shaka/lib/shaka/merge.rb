@@ -14,7 +14,7 @@ module Shaka
   class Merge
     include MergeRequiredChecks
 
-    # `review` takes MergeReviewEvidence's `required`, `waiver`, and checkout `root`.
+    # `review` takes MergeReviewEvidence's technical settings and final product checkpoint.
     def initialize(github, ci_review_wait: nil, seam_wait: nil, review: {}, seam_required_checks: nil)
       @github = github
       @seam_required_checks = seam_required_checks
@@ -33,12 +33,17 @@ module Shaka
       current = @github.snapshot
       return reconcile_queued_replay(initial, current, head).merge(evidence) if initial['isInMergeQueue']
 
-      verify_snapshot(current, head)
-      @target.unchanged!(initial, current)
-      @submission.call(current, head).merge(evidence)
+      submit(initial, current, head).merge(evidence)
     end
 
     private
+
+    def submit(initial, current, head)
+      verify_snapshot(current, head)
+      @target.unchanged!(initial, current)
+      @review_evidence.final_check(head)
+      @submission.call(current, head)
+    end
 
     def verify_gate
       gate = RequiredChecks.new(@github, seam_names: @seam_required_checks).call
