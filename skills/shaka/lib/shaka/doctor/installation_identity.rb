@@ -11,7 +11,7 @@ module Shaka
     class InstallationIdentity
       def self.read
         path = File.expand_path('../../../../../.shaka-install.json', __dir__)
-        return missing_metadata(path) unless File.file?(path)
+        return checkout_metadata(File.dirname(path)) unless File.file?(path)
         raise Shaka::Error, 'Installed package metadata is invalid.' if File.symlink?(path)
 
         identity = JSON.parse(File.read(path))
@@ -20,6 +20,20 @@ module Shaka
         identity
       rescue JSON::ParserError => e
         raise Shaka::Error, "Installed package metadata is invalid: #{e.message}"
+      end
+
+      def self.checkout_metadata(root)
+        path = File.join(root, '.git', 'shaka-install.json')
+        return missing_metadata(File.join(root, '.shaka-install.json')) unless File.file?(path)
+
+        raise Shaka::Error, 'Installation record is invalid.' if File.symlink?(path)
+
+        record = JSON.parse(File.read(path))
+        identity = record['identity'] if record.is_a?(Hash)
+        raise Shaka::Error, 'Installation record is invalid.' unless
+          record.is_a?(Hash) && record['directory'] == File.realpath(root) && valid?(identity, path)
+
+        identity
       end
 
       def self.missing_metadata(path)
@@ -62,7 +76,7 @@ module Shaka
       end
 
       private_class_method :valid?, :valid_source?, :valid_skills?, :valid_package_id?, :uninstalled,
-                           :missing_metadata
+                           :missing_metadata, :checkout_metadata
     end
   end
 end

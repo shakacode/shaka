@@ -84,7 +84,7 @@ class InstallTest < Minitest::Test
   end
 
   def test_rejects_invalid_arguments_without_installing
-    [[], ['--skills-dir'], ['--skills-dir', ''], ['--unknown'],
+    [['--managed'], ['--skills-dir'], ['--skills-dir', ''], ['--unknown'],
      ['--skills-dir', @skills_dir, 'extra']].each do |arguments|
       _output, status = run_installer(*arguments)
       refute_predicate status, :success?, arguments.inspect

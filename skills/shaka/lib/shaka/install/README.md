@@ -1,7 +1,10 @@
 # Installer terms
 
-The installer copies the selected Shaka skills from a source checkout into a
-managed directory. It calls each complete, retained copy a **package**. This is
+Official installation links skills into a dedicated clean checkout, with local Git,
+Ruby, and link records under `.git`. `Checkout` guards updates; `OfficialLinks`
+reuses atomic link replacement without removing old copies.
+Explicit managed operations copy selected skills into a managed directory.
+It calls each complete, retained copy a **package**. This is
 a directory of skill files and installation metadata, not a Ruby gem or npm
 package. For example, a `shaka` package contains `skills/shaka/SKILL.md`, its
 references, scripts, Ruby helper, and configuration.
@@ -35,5 +38,5 @@ The code in this directory handles four parts of that installation:
 - `Version` reads the Shaka product version from `skills/shaka/lib/shaka/version.rb`
   without running that file. It does not read a repository workflow setting.
 
-After installation, the agent uses the managed copy through its skill link. The
+After a managed installation, the agent uses the retained copy through its skill link. The
 original source checkout can be removed without breaking that installed skill.

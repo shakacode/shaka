@@ -137,11 +137,10 @@ must cite that evidence before claiming the pilot's real-use acceptance.
   requirements absent from the reported list. When the base branch has no required
   checks configured, the trusted seam's `merge.required_checks` stands in and Shaka
   enforces it (see the merge boundary). COMMENT never substitutes for APPROVE.
-- **D5 (R8, R10):** copy the complete skill into a durable managed package outside
-  the installing source checkout, record its exact source revision when verified, or a development
-  base when available, together with a content hash. Link it into an explicit
-  skills directory. Refuse foreign targets and preserve user settings and previous
-  packages for rollback.
+- **D5 (R8, R10):** register one dedicated clean checkout at a default or chosen
+  directory, with direct host links and independent Ruby. Verify before fast-forward
+  updates; refuse dirty or unexpected checkouts. Preserve optional towers and
+  retained trial or rollback packages. Migration never deletes old copies.
 - **D6 (R10):** runtime uses Ruby standard libraries. Development uses Bundler,
   Minitest, and ordinary RuboCop defaults through `bin/validate`.
 - **D7 (R2, R12, R17):** repository seams own CI commands and triggers behind fixed

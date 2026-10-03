@@ -1,6 +1,8 @@
-# Install and maintain Shaka
+# Retained-copy installation
 
-Use this procedure when the user asks to install, upgrade, or remove Shaka.
+Use [official installation](official-installation.md) for everyday install, update,
+verification, and migration. Use this procedure only for an intentional retained copy.
+Examples below use the optional `~/agent-tools/shaka` convention; respect chosen locations.
 The [getting started guide](https://github.com/shakacode/shaka/blob/main/docs/getting-started.md) supplies the prompts.
 Use source installation: the published name-reservation gem
 predates the current workflow. Confirm the requested source, version, and coding
@@ -27,8 +29,8 @@ project. It also ignores a project's `RUBYOPT`, Bundler setup, and installed gem
 because Shaka needs only Ruby's standard library. Run the installer where
 `ruby --version` reports 3.4 or later; an older Ruby stops with that requirement.
 If that Ruby or its record is removed, `scripts/shaka` stops and asks you to
-install again or set `SHAKA_RUBY` to another Ruby 3.4 interpreter. Without an
-installed package, `scripts/shaka` uses `ruby` from `PATH`.
+install again or set `SHAKA_RUBY` to another Ruby 3.4 interpreter. Without a
+registered installation or managed package, `scripts/shaka` uses `ruby` from `PATH`.
 
 Optional: [ImageMagick 7](https://imagemagick.org/script/download.php) can draw
 [annotations and pixel diagnostics](visual-diff.md). Check it with `magick --version`.
@@ -222,7 +224,7 @@ For a terminal session, the optional launcher creates a separate session directo
 and gives the Codex sandbox write access to that directory and your checkout:
 
 ```bash
-"$HOME/agent-tools/shaka/bin/install" --skills-dir "$HOME/agent-tools/shaka-pilot/skills"
+"$HOME/agent-tools/shaka/bin/install" --managed --skills-dir "$HOME/agent-tools/shaka-pilot/skills"
 "$HOME/agent-tools/shaka-pilot/skills/shaka/scripts/shaka" work \
   --repo /path/to/repository "Fix the failing search test. Use Ask."
 ```
