@@ -381,8 +381,8 @@ the helper writes both itself. It posts one `Local Adversarial Review` comment p
 commit, in ledger order. Each opens with the reviewed revision, retained unresolved findings,
 and coverage limits. Reported coverage is attributed literal text; its Markdown cannot render
 an outcome label or link. Missing or ambiguous HTML coverage shows UNKNOWN and points to
-the original report. A less-than character conservatively triggers that fallback, including
-inside code examples. The complete formatted report remains in history.
+the original report. A less-than character anywhere in the report conservatively triggers
+that fallback, including inside code examples. The complete formatted report remains in history.
 History also contains settled findings, the commit subject, and a table naming each reviewer
 and its finding count. Each disposition appears once in the generated findings view;
 each report retains its "Collated as" mapping when several reviewers read it.

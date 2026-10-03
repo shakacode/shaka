@@ -180,6 +180,17 @@ class ReviewCoverageLiteralTest < Minitest::Test
     assert_includes body, coverage
   end
 
+  def test_coverage_heading_inside_html_is_not_reported_as_actual_coverage
+    original = "<pre>\n## Coverage\nAll paths checked.\n## Findings\nExample only.\n</pre>"
+    entry = round(report: report(body: original))
+    body = Shaka::LocalReviewCommitComment.new({ 'rounds' => [entry] }, head: HEAD,
+                                                                        subject: ->(_) { 'Subject' }).render
+    visible = body.split('<details>').first
+    assert_includes visible, 'UNKNOWN; inspect the original report for complete coverage limits.'
+    refute_includes visible, 'All paths checked.'
+    assert_includes body, original
+  end
+
   private
 
   def render_coverage(coverage)

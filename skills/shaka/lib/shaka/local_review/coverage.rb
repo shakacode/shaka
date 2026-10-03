@@ -11,14 +11,16 @@ module Shaka
     def initialize(report) = @report = report
 
     def text
+      # HTML can surround a heading or span its boundary; decline ambiguous reports.
+      return if @report.include?('<')
+
       @fence = nil
       masked = @report.lines.map { |line| mask(line) }.join
       match = masked.match(SECTION) || masked.match(PARAGRAPH)
       return unless match
 
       excerpt = @report[match.begin(1)...match.end(1)].strip
-      # HTML may span a heading boundary; do not present a potentially partial excerpt as complete.
-      excerpt unless excerpt.empty? || excerpt.include?('<')
+      excerpt unless excerpt.empty?
     end
 
     private
