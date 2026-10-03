@@ -10,7 +10,7 @@ module Shaka
   # Presents the checkpoint's action without confusing configuration with observations.
   class PostImplementationPublication
     ACTIONS = {
-      'Proceed' => ['Proceed after required checks and approvals.',
+      'Proceed' => ['Proceed',
                     'Complete technical validation and required approvals.'],
       'Simplify/reframe' => ['Revise before merging.', 'Revise the approach, then revalidate and review.'],
       'Do not merge' => ['Do not merge; decide whether to close or replace.',
@@ -72,7 +72,7 @@ module Shaka
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = report.fetch('summary', report.fetch('reasons').first)
-      ["**Recommendation: #{action}**", summary,
+      ["Recommendation: **#{action}**", summary,
        "**Next action (task owner):** #{owner_action(report, next_action)}",
        "Head: `#{@head}`",
        "Unresolved concerns: #{report.fetch('concerns').empty? ? 'none' : report.fetch('concerns').join('; ')}",
@@ -111,7 +111,7 @@ module Shaka
                               ['Review not completed; readiness remains blocked.',
                                'Resolve the execution failure and rerun the checkpoint.']
                             end
-      "**Recommendation: #{action}**\n\n#{@result.fetch('reason')}\n\n" \
+      "Recommendation: **#{action}**\n\n#{@result.fetch('reason')}\n\n" \
         "**Next action (task owner):** #{next_action}\n\nHead: `#{@head}`\n\n" \
         "<details>\n<summary>Execution details</summary>\n\n#{execution_evidence}\n\n#{usage_text}\n\n</details>"
     end

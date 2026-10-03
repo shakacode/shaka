@@ -109,7 +109,7 @@ the useful summary is:
 
 > OpenAI/Codex · configured model: gpt-6.1-sol · observed model: UNKNOWN
 >
-> **Recommendation: Revise before merging.** Keep the missing-configuration
+> Recommendation: **Revise before merging.** Keep the missing-configuration
 > safeguard; remove unused scans from watching and repeated check verification.
 >
 > **Next action (task owner):** Revise this PR, then revalidate and review.
