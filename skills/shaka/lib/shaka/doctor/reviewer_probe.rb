@@ -17,15 +17,18 @@ module Shaka
       GUIDANCE = 'Inspect local diagnostics. Keep configured model and effort; ask the user before changing them. ' \
                  'Timeouts and account model refusals do not establish a provider outage.'
 
-      def initialize(root:, path:, timeout:)
+      def initialize(root:, path:, timeout:, ref: nil)
         @root = root
         @path = LocalReviewPathGuard.safe_path(path, candidate_root: root, drop_candidate: true)
         @timeout = timeout
+        @ref = ref
       end
 
-      def for_repository(seam)
-        review = Configuration.worktree(root: @root).review if seam[:status] == 'healthy'
-        call(review)
+      def for_repository
+        raise Shaka::Error, '--ref must be a verified default-branch SHA' unless
+          @ref.to_s.match?(/\A[0-9a-f]{40}(?:[0-9a-f]{24})?\z/)
+
+        call(Configuration.trusted(root: @root, ref: @ref, candidate_commands: false).review)
       rescue Shaka::Error, SystemCallError => e
         check('Reviewer availability', 'failed', "not probed: #{first_line(e.message)}")
       end

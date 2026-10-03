@@ -11,12 +11,24 @@ module DoctorProbeFixture
 
   private
 
+  def change_candidate_model(root)
+    config = seam('review' => review_policy('local_review_agents' => [AGENT.merge('model' => 'gpt-6-astra')]))
+    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(config))
+  end
+
   def with_probe
     with_repository('review' => review_policy('local_review_agents' => [AGENT])) do |root|
       Dir.mktmpdir('doctor-probe-cli') do |path|
         yield root, path, File.join(path, 'trace.json')
       end
     end
+  end
+
+  def commit_probe_configuration(root)
+    commands = [%w[init -q], %w[config user.email fixture@example.com], %w[config user.name Fixture],
+                %w[add .], %w[commit -qm fixture]]
+    commands.each { |arguments| system(TEST_GIT, '-C', root, *arguments, exception: true) }
+    Open3.capture2(TEST_GIT, '-C', root, 'rev-parse', 'HEAD').first.strip
   end
 
   def with_timeout_capture(deadlines)
@@ -55,7 +67,7 @@ module DoctorProbeFixture
       if #{success}
         File.write(ARGV.fetch(ARGV.index('-o') + 1), 'OK')
       else
-        warn "The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account."
+        warn "ERROR: The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account."
         exit 1
       end
     RUBY
@@ -128,11 +140,32 @@ class DoctorProbeTest < Minitest::Test
     end
   end
 
+  def test_candidate_settings_cannot_choose_billable_probe_settings
+    with_probe do |root, path, trace|
+      ref = commit_probe_configuration(root)
+      change_candidate_model(root)
+      write_codex(path, trace, success: true)
+      item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: 1, ref:).for_repository
+      assert_equal 'healthy', item.fetch(:status)
+      assert_includes JSON.parse(File.read(trace)).fetch('args'), 'gpt-6-sol'
+    end
+  end
+
+  def test_missing_ref_does_not_launch_a_billable_probe
+    with_probe do |root, path, trace|
+      write_codex(path, trace, success: true)
+      item = Shaka::Doctor::ReviewerProbe.new(root:, path:, timeout: 1).for_repository
+      assert_equal 'failed', item.fetch(:status)
+      refute_path_exists trace
+    end
+  end
+
   def test_probe_reaches_the_doctor_report_once
     with_probe do |root, path, trace|
       write_codex(path, trace, success: true)
+      settings = { timeout: 1, ref: commit_probe_configuration(root) }
       subject = Shaka::Doctor.new(root:, environment: { 'PATH' => path },
-                                  system: stub_system(DEFAULTS), probe_timeout: 1)
+                                  system: stub_system(DEFAULTS), probe: settings)
       assert_includes subject.report, '[HEALTHY] Reviewer availability'
       refute_includes subject.report, 'no reviewer was launched'
       subject.blocked?

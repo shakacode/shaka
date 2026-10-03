@@ -36,7 +36,9 @@ module Shaka
     end
 
     def process_failure(command, status, stderr, stdout)
-      failure("#{command} #{process_exit_reason(status)}", [stderr, stdout].reject(&:empty?).join("\n"))
+      diagnostic = [stderr, stdout].reject(&:empty?).join("\n")
+      failure("#{command} #{process_exit_reason(status)}", diagnostic,
+              provider_errors: provider_error_messages(stderr, stdout))
     end
 
     def process_exit_reason(status)
@@ -60,11 +62,11 @@ module Shaka
       LocalReviewPathGuard.safe_executable(@path || ENV.fetch('PATH', ''), name, @candidate_root)
     end
 
-    def failure(reason, diagnostic = nil)
+    def failure(reason, diagnostic = nil, provider_errors: [])
       result = outcome(reason, 'cli_failure', true)
                .merge('diagnostic_path' => save_diagnostic(diagnostic),
                       'guidance' => 'Inspect diagnostics. Ask the user before changing model or effort.').compact
-      return result unless account_model_refused?(diagnostic)
+      return result unless provider_errors.any? { |message| account_model_refused?(message) }
 
       result.merge('failure_cause' => 'account_model_refused', 'skip_evidence' => 'not_eligible',
                    'guidance' => 'This account refused the requested model. Keep the model and effort; ' \
@@ -72,10 +74,29 @@ module Shaka
                                  'This does not establish a provider outage.')
     end
 
-    # Recognize explicit account-access refusals, not generic invalid models or nonzero exits.
-    def account_model_refused?(diagnostic)
-      diagnostic.to_s.match?(/model[^\n]*(?:not supported[^\n]*ChatGPT account|not available[^\n]*account)/i) ||
-        diagnostic.to_s.match?(/(?:do not|does not|don't) have access to[^\n]*model/i)
+    # Only native error events and explicit stderr error lines supply provider error text.
+    # Tool output, echoed prompts, and candidate text are not error records.
+    def provider_error_messages(stderr, stdout)
+      lines = stderr.lines.filter_map { |line| line.strip.delete_prefix('ERROR: ') if line.start_with?('ERROR: ') }
+      lines + stdout.lines.filter_map { |line| error_event_message(line) }
+    end
+
+    def error_event_message(line)
+      event = JSON.parse(line)
+      return unless event.is_a?(Hash)
+      return event['message'] if event['type'] == 'error' && event['message'].is_a?(String)
+      return unless event['type'] == 'turn.failed' && event['error'].is_a?(Hash)
+
+      event.dig('error', 'message')
+    rescue JSON::ParserError
+      nil
+    end
+
+    # Other model/access errors remain ambiguous and require inspection, never a fallback.
+    def account_model_refused?(message)
+      message.to_s.match?(
+        /\AThe ['"`][^'"`\n]+['"`] model is not supported when using Codex with a ChatGPT account\.?\z/i
+      )
     end
 
     def invalid(reason, diagnostic = nil)

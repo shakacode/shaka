@@ -1125,7 +1125,7 @@ class LocalReviewSettingsTest < Minitest::Test
   def fake_account_refusal(bin)
     write_executable(bin, 'codex', <<~SH)
       #!/bin/sh
-      echo "The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account." >&2
+      echo "ERROR: The 'gpt-6-sol' model is not supported when using Codex with a ChatGPT account." >&2
       exit 1
     SH
   end

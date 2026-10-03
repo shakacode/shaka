@@ -44,7 +44,7 @@ module Shaka
 
       validate_probe_options!(options)
       subject = new(root: File.realpath(options.fetch(:root, Dir.pwd)), host: options[:host],
-                    probe_timeout: (options.fetch(:probe_timeout, 30) if options[:probe_reviewers]))
+                    probe: probe_options(options))
       puts subject.report
       subject.blocked? ? 1 : 0
     end
@@ -66,19 +66,19 @@ module Shaka
 
     private_class_method :report, :report_installation, :help
 
-    def initialize(root:, host: nil, environment: ENV, system: System.default, probe_timeout: nil)
+    def initialize(root:, host: nil, environment: ENV, system: System.default, probe: nil)
       @root = root
       @stated = !host.nil?
       @host = host || Usage.detected_host
       @source = Checks.new(root: root, host: @host, environment: environment, system: system,
-                           probe_reviewers: !probe_timeout.nil?)
-      @probe = ReviewerProbe.new(root:, path: environment.fetch('PATH', ''), timeout: probe_timeout) if probe_timeout
+                           probe_reviewers: !probe.nil?)
+      @probe = ReviewerProbe.new(root:, path: environment.fetch('PATH', ''), **probe) if probe
     end
 
     def checks
       @checks ||= begin
         items = @source.call
-        items << @probe.for_repository(items.find { |item| item[:name] == 'Repository seam' }) if @probe
+        items << @probe.for_repository if @probe
         items
       end
     end

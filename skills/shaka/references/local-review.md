@@ -34,7 +34,8 @@ The spelling check recognizes a one-letter substitution or an adjacent-character
 swap in a same-length name. A digit substitution is treated as an unknown name,
 not a spelling mistake. Both warnings allow execution.
 
-Shaka recognizes explicit account model refusals as `failure_cause: account_model_refused`.
+Shaka classifies the known Codex ChatGPT-account refusal from provider error records as
+`failure_cause: account_model_refused`. Generic model-access errors remain ambiguous.
 It preserves `requested_model` and `requested_effort` on review outcomes and never retries
 with a substitute. A generic invalid model, timeout, or nonzero exit still needs diagnosis.
 An account refusal establishes that the requested model failed for that account; it does
@@ -43,12 +44,16 @@ changing model or effort. Show current provider pricing when proposing a paid al
 
 ### Optional availability probe
 
-Run `shaka doctor --probe-reviewers` only when the user requests a live availability check.
-It launches each configured supported reviewer once with its configured model and effort,
+Run `shaka doctor --probe-reviewers --ref TRUSTED_SHA` only when the user requests a live availability check.
+Verify that full SHA against the default branch first, as for `seam check`. The probe reads
+reviewer choices from that commit, never from candidate checkout settings. It launches each
+configured supported reviewer once with its configured model and effort,
 using the same isolated CLI adapter as review. Omitted settings use CLI defaults.
 It sends a minimal prompt without repository content; it may consume quota or incur cost.
 Plain `doctor` launches no reviewer and does not establish account access.
 
+The trusted schema rejects duplicate reviewer identities; at most the three supported adapters
+can launch. A probe failure makes doctor exit nonzero; unsupported adapters remain degraded.
 Each probe has a 30-second deadline. `--probe-timeout-seconds 1..120` changes that probe bound;
 it requires `--probe-reviewers`. Failures report the reason and local diagnostic path, without
 retrying or changing settings. Unsupported adapters remain unverified. A response establishes
@@ -142,7 +147,7 @@ When the entry names neither:
 
 ```bash
 shaka review run --root . --base "$BASE" --head "$HEAD" --reviewer openai/codex \
-  --model gpt-6-sol --effort medium --criteria-ref "$TRUSTED" --ledger "$LEDGER"
+  --criteria-ref "$TRUSTED" --ledger "$LEDGER"
 ```
 
 With `--criteria-ref`, the helper takes the model and effort from that entry. A named `--model`
