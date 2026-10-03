@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["handoff", "merge", "enqueue", "enable_auto_merge", "schedule_retry"]
+      }
+    },
+    "reason": {"type": "string"}
+  },
+  "required": ["actions", "reason"],
+  "additionalProperties": false
+}

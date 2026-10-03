@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../lib/shaka/evaluation/merge_authorization'
+
+evaluation = Shaka::Evaluation::MergeAuthorization
+case ARGV.shift
+when 'prompt'
+  id, workflow = ARGV
+  abort 'Usage: merge-authorization prompt CASE WORKFLOW_FILE' unless id && workflow && ARGV.size == 2
+  puts evaluation.prompt(id, File.read(workflow))
+when 'check'
+  directory = ARGV.shift
+  abort 'Usage: merge-authorization check RESPONSE_DIRECTORY' unless directory && ARGV.empty?
+  results = evaluation.cases.map do |scenario|
+    response = JSON.parse(File.read(File.join(directory, "#{scenario.fetch('id')}.json")))
+    evaluation.check(scenario, response)
+  end
+  puts JSON.pretty_generate(results)
+  exit(results.all? { |result| result.fetch('passed') } ? 0 : 1)
+else
+  abort 'Usage: merge-authorization (prompt CASE WORKFLOW_FILE | check RESPONSE_DIRECTORY)'
+end
