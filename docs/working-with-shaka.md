@@ -135,26 +135,26 @@ for preservation rules and the real-use evaluation still needed.
 
 ## Resume unfinished work
 
-If you leave a new request after an Ask handoff, the agent needs to address it
-before the PR is ready to merge again. It makes the change, explains why no change
-is needed, or asks you to decide. Even “looks good, but please change this” needs
-a response before merging.
+You can leave a new request on the PR after an Ask handoff. Before merging, wait
+for the agent to address it: make the change, explain why no change is needed, or
+ask you to decide. When the agent resumes work, it removes `awaiting-merge-approval`.
+It restores that label after handling the request and checking that the PR is ready again.
 
-Some coding apps can resume the chat automatically when a PR comment or review
-arrives. Check **WIP Details** for which feedback the agent is watching and when
-that watch expires. Keep the chat unarchived while it is watching. A notification
-that checks have finished does not mean the agent is watching for feedback.
+Shaka can keep checking GitHub for new comments and reviews after CI finishes.
+To respond without another message from you, the coding tool running the agent
+must also be able to resume its chat. The handoff tells you whether this is active.
+The PR's expandable **WIP Details** section records the owning chat, monitoring
+expiry, and next action. Keep that chat unarchived while automatic follow-up depends on it.
 
-If automatic resumption is unavailable, the handoff says **Automatic feedback
-intake unavailable** and names the person responsible for checking new feedback.
-That person returns to the chat and sends the resume prompt from **WIP Details**
-so the agent can respond. Use the same prompt if the watch has expired.
+If the handoff says **Automatic feedback intake unavailable**, it names the person
+responsible for checking new feedback. That person opens the **Chat link** in WIP
+Details and sends its resume prompt, for example `$shaka https://github.com/OWNER/REPO/pull/N`.
+Do the same if monitoring has expired. Leaving a GitHub comment alone does not
+resume the agent in this case.
 
-Open the PR's **WIP Details** to find the owning chat, last known state, and next
-action. The **Chat link** can reopen the conversation when the owner's machine
-is reachable. In Codex, `codex://threads/...` takes you back to the original chat
-to pick up where the agent stopped. Before another agent takes over, confirm the previous one has
-stopped or handed off; a timestamp cannot prove it.
+The Chat link works when the owning chat is reachable. In Codex,
+`codex://threads/...` opens the original conversation. Before another agent takes
+over, confirm the previous one has stopped or handed off; a timestamp cannot prove it.
 
 To recover after a crash or in a new chat, paste the **Next action** from WIP Details,
 such as `$shaka https://github.com/OWNER/REPO/pull/N`. The agent checks the live PR

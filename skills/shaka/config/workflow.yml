@@ -772,14 +772,15 @@ always: |-
   attention label, required checks, walkthrough head, and WIP Details head, plus the squash
   message head while the PR awaits merge approval; exit status 2 lists owed work. For an Ask
   handoff, follow [continued feedback intake](<{{package_root}}/skills/shaka/references/continued-feedback.md>):
-  retain one bounded comment wake through closure or transfer, or expose unavailable
-  automatic intake with a named manual follow-up owner and resume action. New actionable
-  feedback withdraws the old merge-ready handoff until triaged; record each disposition
+  keep one time-limited monitor connected to a coding-tool feature that resumes this task,
+  or name who checks new feedback and how they resume it manually. When work resumes for
+  actionable feedback, remove the awaiting label and withdraw the old merge-ready handoff
+  until the feedback is assessed; record each disposition
   once, prioritizing the primary owner. This also applies after checks pass in other phases.
-  When a host monitor or background watcher will wake this session for pending work, add
+  When a monitor will cause the coding tool to resume this session for pending work, add
   `--woken-by` naming it in place of a label. Settle each owed item and run it again before
   stopping. An Ask handoff's comment-only watch keeps the merge label and omits `--woken-by`;
-  keep that owning chat available while its wake depends on it. Review-only work reports
+  keep that owning chat available while automatic follow-up depends on it. Review-only work reports
   what `handoff` lists and leaves the PR unchanged. A session
   resuming a PR after a restart, crash, or new chat runs `handoff` without `--head` first, treats
   WIP Details as stale evidence, and continues from the live report.
