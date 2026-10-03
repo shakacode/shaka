@@ -215,6 +215,12 @@ terminal result. Ask archives after the GitHub click; a later queue failure is a
 Queue submission does not relax walkthrough, review, authority, or required-check gates.
 With `ci_review_wait: none` or `one`, pending or failing optional checks may still leave the native state `UNSTABLE`.
 
+Final preparation requires this account’s latest published post-implementation checkpoint
+for the current head to be ready or explicitly opted out, unless trusted settings disable
+it. The owner still resolves earlier substantive concerns. The merge command requires an
+explicit squash title and body; final Ask handoff reports a missing or stale posted message.
+Queue submission retains GitHub’s default message and reports that custom text was not applied.
+
 ## Verification and exit criteria
 
 - Run `bundle install` for development setup and `bin/validate` locally and in CI.

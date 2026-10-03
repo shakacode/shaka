@@ -17,12 +17,16 @@ module Shaka
     # Bounds compare requests when many earlier revisions were reviewed.
     EARLIER_CANDIDATES = 5
 
-    def initialize(github, required: nil, waiver: nil, root: nil)
+    def initialize(github, required: nil, waiver: nil, root: nil, checkpoint: nil)
       @github = github
       @required = required
       @waiver = waiver
       @proof = root && MergeTreeProof.new(root)
+      @checkpoint = checkpoint
     end
+
+    # Product evidence is read again after technical evidence and the last native snapshot.
+    def final_check(head) = @checkpoint&.call(head)
 
     # With the PR's base branch and a checkout `root`, a review also survives a clean update from that base.
     def call(head, base: nil)

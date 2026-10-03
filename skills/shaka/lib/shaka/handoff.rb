@@ -7,6 +7,7 @@ require_relative 'status'
 require_relative 'handoff/squash_note'
 require_relative 'handoff/walkthrough'
 require_relative 'handoff/wip_note'
+require_relative 'post_implementation/evidence'
 
 module Shaka
   # Reports what an agent still owes a PR before it ends a turn, and what a resumed session finds.
@@ -20,9 +21,10 @@ module Shaka
     # A Stop hook or script can refuse to end the turn on this status without parsing the report.
     def self.exit_status(result) = result.fetch('owed').empty? ? 0 : OWED_EXIT
 
-    def initialize(github, seam_required_checks: nil)
+    def initialize(github, seam_required_checks: nil, post_implementation: nil)
       @github = github
       @status = Status.new(github, seam_required_checks:)
+      @checkpoint = PostImplementationEvidence.new(github, **post_implementation) if post_implementation
     end
 
     # woken_by names what will wake this session, such as a host PR monitor or a background watcher;
@@ -53,7 +55,7 @@ module Shaka
     def open_facts(snapshot, live)
       checks = snapshot['requiredChecks']
       [label_fact(checks), checks_fact(checks, snapshot['requiredChecksUnavailable']), walkthrough_fact(live),
-       squash_fact(live), wip_fact(live)].compact
+       checkpoint_fact(live), squash_fact(live), wip_fact(live)].compact
     end
 
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.
@@ -109,6 +111,15 @@ module Shaka
       return "squash message #{head[0, SHORT]}" if head == live
 
       owe("squash message #{head[0, SHORT]}", "The squash commit message names #{head}; post one for #{live}.")
+    end
+
+    def checkpoint_fact(live)
+      return unless @checkpoint && merge_requested?
+
+      @checkpoint.call(live)
+      "post-implementation #{live[0, SHORT]}"
+    rescue Error => e
+      owe('post-implementation owed', e.message)
     end
 
     def wip_fact(live)

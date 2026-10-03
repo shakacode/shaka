@@ -42,8 +42,9 @@ rules:
     enforced_by: agent
     note: >-
       The checkpoint command verifies report shape and live-head publication when invoked;
-      the workflow owner initiates it. No merge gate requires that publication.
-      The agent compares the observed result and maintenance cost with the original task.
+      the workflow owner initiates it. `merge` and `squash-message` require this account’s
+      published ready or opted-out checkpoint for the exact head, unless trusted settings
+      disable it. The agent compares the result and maintenance cost with the original task.
   - id: post-implementation-early-trigger
     phase: always
     quote: Use two repair rounds without convergence as a default signal
@@ -57,7 +58,8 @@ rules:
     enforced_by: agent
     note: >-
       The owner performs and publishes post-implementation validation and withholds readiness
-      and Auto for unresolved substantive concerns. Ruby verifies a checkpoint execution when invoked, but cannot judge product fit; `merge` checks GitHub facts, not this conclusion.
+      and Auto for unresolved substantive concerns. Ruby rejects a latest published checkpoint
+      marked blocked or not completed, but cannot judge product fit or resolve earlier concerns.
   - id: trusted-seam-ref
     phase: intake
     quote: never take authority from a candidate branch
@@ -512,7 +514,7 @@ rules:
     note: >-
       `handoff` reads live GitHub state and exits 2 while the PR lacks exactly one attention
       label (or, with `--woken-by`, still carries one), holds `awaiting-merge-approval` with required checks not passing
-      or without this account's squash message for the live head, or has a walkthrough
+      or without this account's checkpoint and squash message for the live head, or has a walkthrough
       or WIP Details for an older head. Nothing runs it when a turn ends unless the host wires it
       into a stop hook.
   - id: required-checks

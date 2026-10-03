@@ -34,6 +34,8 @@ class CliMergeAdminActorTest < Minitest::Test
       puts JSON.generate([{ 'name' => 'checks', 'state' => 'SUCCESS', 'bucket' => 'pass' }])
     elsif ARGV[0, 2] == ['api', 'repos/owner/repo/pulls/1/reviews/17']
       puts JSON.generate('id' => 17, 'commit_id' => head, 'state' => 'COMMENTED', 'body' => 'Walkthrough')
+    elsif ARGV[0] == 'api' && ARGV[1].start_with?('repos/owner/repo/pulls/1/commits?')
+      puts JSON.generate([{ 'sha' => head, 'commit' => { 'message' => 'Fix' } }])
     else
       warn "unexpected gh #{ARGV.join(' ')}"
       exit 2
@@ -47,6 +49,7 @@ class CliMergeAdminActorTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_equal 'MERGED', JSON.parse(output)['state']
       assert_path_exists mutation
+      assert_equal 'Reason.', JSON.parse(File.read(mutation)).dig('variables', 'body')
     end
   end
 
@@ -54,11 +57,13 @@ class CliMergeAdminActorTest < Minitest::Test
 
   def with_merge_repository
     with_repository('merge' => merge_policy,
-                    'review' => review_policy('required' => 'none').except('ci_review_jobs')) do |root|
+                    'review' => review_policy('required' => 'none', 'post_implementation' => { 'enabled' => false })
+                                .except('ci_review_jobs')) do |root|
       commit_repository(root)
       ref, = Open3.capture3('git', '-C', root, 'rev-parse', 'HEAD')
       ref = ref.strip
       install_fake_github(root)
+      File.write(File.join(root, 'message.json'), JSON.generate('title' => 'Fix', 'body' => 'Reason.'))
       yield root, ref, File.join(root, 'mutation.json')
     end
   end
@@ -80,6 +85,7 @@ class CliMergeAdminActorTest < Minitest::Test
   def run_merge(root, ref, mutation)
     Open3.capture3({ 'PATH' => "#{root}/fake-bin:#{ENV.fetch('PATH')}", 'MUTATION_FILE' => mutation },
                    COMMAND, 'merge', 'owner/repo', '1', '--root', root, '--ref', ref,
-                   '--head', HEAD, '--base', 'main', '--walkthrough', '17')
+                   '--head', HEAD, '--base', 'main', '--walkthrough', '17',
+                   '--squash-message', File.join(root, 'message.json'))
   end
 end

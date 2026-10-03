@@ -119,6 +119,13 @@ class CliTest < Minitest::Test
 end
 
 class CliMergeRefTest < Minitest::Test
+  def test_merge_without_a_message_is_refused_before_github
+    _output, error, status = Open3.capture3(CliTest::COMMAND, 'merge', 'owner/repo', '1', '--head', 'a' * 40,
+                                            '--base', 'main', '--walkthrough', '1', '--ref', 'HEAD')
+    refute_predicate status, :success?
+    assert_includes error, 'merge requires --squash-message'
+  end
+
   def test_merge_without_ref_does_not_call_github
     Dir.mktmpdir do |dir|
       sentinel = File.join(dir, 'called')

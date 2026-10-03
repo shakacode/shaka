@@ -4,6 +4,7 @@ require_relative '../post_implementation_report'
 require_relative '../publication/text'
 require_relative '../usage/codex_usage'
 require_relative '../usage/claude_usage'
+require_relative 'evidence'
 
 module Shaka
   # Presents the checkpoint's action without confusing configuration with observations.
@@ -24,8 +25,10 @@ module Shaka
     end
 
     def render
+      @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      "#{identity}\n\n## Post-implementation validation\n\n#{body}"
+      "#{identity}\n\n## Post-implementation validation\n\n#{body}\n\n" +
+        PostImplementationEvidence.attestation(@head, @state)
     end
 
     private
@@ -60,6 +63,7 @@ module Shaka
 
     def completed_body
       report = PostImplementationReport.read(@result.fetch('report'), head: @head)
+      @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = report.fetch('summary', report.fetch('reasons').first)
       ["**Recommendation: #{action}**", summary,
