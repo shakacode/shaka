@@ -8,7 +8,8 @@ class PostImplementationCompactTest < Minitest::Test
   def test_routine_report_keeps_the_decision_visible_without_repeating_the_conclusion
     visible = routine_report.split('<details>', 2).first
 
-    assert_includes visible, 'Proceed after required checks and approvals.'
+    assert_includes visible, 'Recommendation: **Proceed**'
+    refute_includes visible, 'after required checks and approvals'
     assert_includes visible, 'The label is clearer and older notes remain readable.'
     assert_includes visible, 'Complete the required approval.'
     assert_includes visible, 'a' * 40
@@ -34,7 +35,7 @@ class PostImplementationCompactTest < Minitest::Test
         visible, details = rendered(result, path).split('<details>', 2)
 
         assert_includes visible, 'Existing notes cannot be recovered.'
-        refute_includes visible, 'Proceed after required checks and approvals.'
+        refute_includes visible, 'Recommendation: **Proceed**'
         assert_includes details, "Conclusion: **#{conclusion}**"
       end
     end
@@ -49,7 +50,7 @@ class PostImplementationCompactTest < Minitest::Test
 
         assert_includes visible, 'The provider could not complete this review.'
         assert_includes visible, 'a' * 40
-        refute_includes visible, 'Proceed after required checks and approvals.'
+        refute_includes visible, 'Recommendation: **Proceed**'
       end
     end
   end
