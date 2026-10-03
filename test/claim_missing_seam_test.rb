@@ -79,8 +79,10 @@ class ClaimMissingSeamTest < Minitest::Test
   end
 
   def runner(prs, branches)
+    defaults = { 'body' => '', 'closingIssuesReferences' => [] }
+    json = JSON.generate(prs.map { |pr| defaults.merge(pr) })
     lambda do |argv, **|
-      return [JSON.generate(prs), '', STATUS.new(0)] if argv[1] == 'pr'
+      return [json, '', STATUS.new(0)] if argv[1] == 'pr'
       return [branches, '', STATUS.new(0)] if argv[1] == 'ls-remote'
 
       raise "Unexpected command: #{argv.inspect}"
