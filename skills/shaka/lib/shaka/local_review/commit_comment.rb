@@ -6,12 +6,13 @@ require_relative 'attention'
 module Shaka
   # One timeline entry, validated against the complete loop so slicing cannot hide invalid fixes.
   class LocalReviewCommitComment < LocalReviewComment
-    def initialize(content, head:, subject:, **)
+    def initialize(content, head:, subject:, usage_url: nil, **)
       super(content, **)
       @history = @rounds
       @rounds = @history.select { |round| round.head == head }
       @before = @history.take_while { |round| round.head != head }
       @subject = subject
+      @usage_url = usage_url
     end
 
     def key = "local-review-#{@rounds.last.head}"
@@ -19,7 +20,7 @@ module Shaka
     def render
       attention = LocalReviewAttention.new(@before + @rounds, @links)
       blocks = [TITLE, "**Reviewed revision:** #{@links.commit(@rounds.last.head)}", *attention.visible,
-                coverage, *fallback_notice, *settings_notice, *bound,
+                coverage, usage_link, *fallback_notice, *settings_notice, *bound,
                 history(attention), @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
     end
@@ -29,16 +30,23 @@ module Shaka
     def coverage
       lines = @rounds.map do |round|
         value = round.value('coverage') || 'UNKNOWN; inspect the original report for limitations.'
-        "- #{round.reviewer}: #{value}"
+        reported = round.reported_coverage
+        text = "- #{round.reviewer}: #{value}"
+        reported.to_s.empty? ? text : "#{text}\n\n**Reported coverage · #{round.reviewer}:**\n\n#{reported}"
       end
       "**Review coverage:**\n\n#{lines.join("\n")}"
+    end
+
+    def usage_link
+      return 'Usage and attribution: see the PR description.' unless @usage_url
+
+      "[Usage and attribution](#{@usage_url}) in the PR description."
     end
 
     def history(attention)
       blocks = ["<details>\n<summary>Review evidence and history</summary>",
                 "**Commit:** #{@subject.call(@rounds.last.head)}", *attention.settled,
                 '### Execution metadata', table,
-                'Usage totals and attribution belong in the PR description; these are original run observations.',
                 *LocalReviewTriage.details(@rounds), '</details>']
       blocks.join("\n\n")
     end

@@ -23,6 +23,7 @@ module Shaka
 
     def prepare(head)
       comment = LocalReviewCommitComment.new(@content, head:, repository: @repository,
+                                                       usage_url: "https://github.com/#{@repository}/pull/#{@github.number}",
                                                        published: ->(sha) { !commit(sha).nil? },
                                                        subject: ->(sha) { subject(sha) })
       body = comment.render

@@ -179,6 +179,8 @@ class LocalReviewPublishTest < Minitest::Test
 
     attr_reader :replies
 
+    def number = 7
+
     def initialize(html = RENDERED, missing: [])
       @html = html
       @missing = missing

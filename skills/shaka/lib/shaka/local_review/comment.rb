@@ -194,6 +194,13 @@ module Shaka
         "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n#{after}</details>"
       end
 
+      # Lift only explicitly labeled report coverage; free-form legacy reports remain UNKNOWN.
+      def reported_coverage
+        section = @report[/^\#{2} Coverage[^\n]*\n(.*?)(?=^\#{1,6} |^REVIEWED |\z)/mi, 1]
+        paragraph = @report[/^\*\*Coverage:\*\*[ \t]*(.*?)(?=\n\s*\n|^REVIEWED |\z)/mi, 1]
+        (section || paragraph)&.strip
+      end
+
       def attestation = @report.strip.lines.last.strip
 
       def check_fixes_follow!

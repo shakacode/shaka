@@ -70,6 +70,22 @@ class LocalReviewPresentationTest < Minitest::Test
     assert_equal 1, body.scan('— fixed in').size
   end
 
+  def test_report_specific_limits_stay_visible_in_both_report_formats
+    ["## Coverage\n\nCould not inspect the unchanged retry caller.\n\n## Findings\n",
+     "**Coverage:** Could not inspect the unchanged retry caller.\n\n"].each do |intro|
+      entry = round(report: report(body: "#{intro}1. Missing test"))
+      visible = comment([entry]).render.split('<details>').first
+      assert_includes visible, 'Could not inspect the unchanged retry caller.'
+      refute_includes visible, '1. Missing test'
+    end
+  end
+
+  def test_published_report_links_to_consolidated_pr_usage
+    github = LocalReviewCommitPublishTest::Timeline.new
+    Shaka::LocalReviewPublisher.new({ 'rounds' => [round] }, github, 'o/r').publish
+    assert_includes github.replies.first.last, '[Usage and attribution](https://github.com/o/r/pull/7)'
+  end
+
   private
 
   def clean_round = round(findings: [], report: report(findings: 0))
