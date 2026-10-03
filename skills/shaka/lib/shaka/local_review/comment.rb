@@ -6,6 +6,7 @@ require_relative '../publication/publication'
 require_relative '../reviewer_selection'
 require_relative '../reviewer_settings'
 require_relative 'evidence'
+require_relative 'coverage'
 require_relative 'finding'
 require_relative 'summary'
 require_relative 'bound'
@@ -55,7 +56,7 @@ module Shaka
     def check_rendering!(html)
       closing = %r{<p\b[^>]*>#{Regexp.escape(CGI.escapeHTML(@rounds.last.attestation))}</p>\s*\z}
       disclosures = [html.scan(/<details\b/).size, html.scan('</details>').size]
-      return if html.match?(closing) && disclosures == [@rounds.size] * 2 && summaries_in_order?(html)
+      return if html.match?(closing) && disclosures == [disclosure_count] * 2 && summaries_in_order?(html)
 
       raise Error, 'A review report leaves its markup open or adds disclosure tags, so GitHub would not show ' \
                    'each round collapsed with the attestation last. Fix the report and publish again.'
@@ -93,6 +94,8 @@ module Shaka
 
     # A fence opened in one report and closed in the next hides the boundary between them, including
     # the next round's own summary; balanced tags the reports supply cannot stand in for it.
+    def disclosure_count = @rounds.size
+
     def summaries_in_order?(html)
       offset = 0
       @rounds.all? do |round|
@@ -104,12 +107,7 @@ module Shaka
     # A finding whose id was marked fixed on an earlier commit and comes back is flagged where it
     # returns. Reviewers of one commit all read it before any of its fixes, so none of them is flagged.
     def round_details
-      fixed = {}
-      @rounds.chunk(&:head).flat_map do |_head, batch|
-        texts = LocalReviewTriage.details(batch, @links, fixed)
-        LocalReviewTriage.remember_fixes(batch, fixed)
-        texts
-      end
+      @rounds.chunk(&:head).flat_map { |_head, batch| LocalReviewTriage.details(batch) }
     end
 
     def table
@@ -193,11 +191,14 @@ module Shaka
       end
 
       # A reviewer of a commit that several reviewed shows how its findings were collated; the
-      # commit's triage then gives each finding's outcome once.
-      def details(links, fixed_before = {}, collated: false)
-        after = collated ? LocalReviewTriage.collated_as(self) : dispositions(links, fixed_before)
+      # generated findings view gives each finding's outcome once.
+      def details(collated: false)
+        after = collated ? LocalReviewTriage.collated_as(self) : ''
         "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n#{after}</details>"
       end
+
+      # Lift only explicitly labeled report coverage; free-form legacy reports remain UNKNOWN.
+      def reported_coverage = LocalReviewCoverage.new(@report).text
 
       def attestation = @report.strip.lines.last.strip
 
@@ -233,13 +234,6 @@ module Shaka
       def cost
         estimate = value('estimate')
         value('cost') || (estimate ? "#{estimate} est." : 'UNKNOWN')
-      end
-
-      def dispositions(links, fixed_before)
-        return '' if @findings.empty?
-
-        lines = @findings.map { |finding| LocalReviewTriage.line(finding, links, fixed_before) }
-        "**Dispositions**\n\n#{lines.join("\n")}\n\n"
       end
 
       def prompt(links)

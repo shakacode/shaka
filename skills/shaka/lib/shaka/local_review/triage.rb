@@ -43,10 +43,8 @@ module Shaka
     end
 
     # A commit's reports. Under a report of a commit several reviewers read, which of its findings
-    # became which finding; a lone reviewer's report keeps its dispositions.
-    def self.details(batch, links, fixed)
-      batch.map { |round| round.details(links, fixed, collated: !batch.one?) }
-    end
+    # became which finding. Dispositions live in the generated findings view, never in the reports.
+    def self.details(batch) = batch.map { |round| round.details(collated: !batch.one?) }
 
     # Under one reviewer's collapsed report: its own findings and the finding each became.
     def self.collated_as(round)

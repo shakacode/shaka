@@ -105,6 +105,8 @@ module Shaka
     end
 
     def write_reply(existing, content, target)
+      return existing if existing && existing['body'] == content
+
       path = if existing
                "repos/#{@repository}/#{comments_collection(target)}/comments/#{positive_integer(existing['id'])}"
              elsif target

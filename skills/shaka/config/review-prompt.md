@@ -6,5 +6,6 @@ Report on:
 - Simplicity: what could be deleted without losing behavior?
 
 How to report:
+- Before findings, include a `## Coverage` section naming inspected source, tests run, and missing context. Start findings with `## Findings`.
 - Anchor each finding to file:line. A finding you cannot make concrete is an observation; label it as one.
 - If you find nothing, say "no findings". Do not invent findings to seem useful.

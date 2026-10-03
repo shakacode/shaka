@@ -1,49 +1,63 @@
 # frozen_string_literal: true
 
 require_relative 'comment'
+require_relative 'attention'
 
 module Shaka
   # One timeline entry, validated against the complete loop so slicing cannot hide invalid fixes.
   class LocalReviewCommitComment < LocalReviewComment
-    def initialize(content, head:, subject:, **)
+    def initialize(content, head:, subject:, usage_url: nil, **)
       super(content, **)
       @history = @rounds
       @rounds = @history.select { |round| round.head == head }
       @before = @history.take_while { |round| round.head != head }
       @subject = subject
+      @usage_url = usage_url
     end
 
     def key = "local-review-#{@rounds.last.head}"
 
     def render
-      blocks = [TITLE, reason, table, *fallback_notice, *settings_notice, *bound,
-                '## Findings', LocalReviewTriage.new(@rounds.last.head, @rounds, @links).render(fixed_before),
-                *LocalReviewTriage.details(@rounds, @links, fixed_before), @rounds.last.attestation]
+      attention = LocalReviewAttention.new(@before + @rounds, @links)
+      blocks = [TITLE, "**Reviewed revision:** #{@links.commit(@rounds.last.head)}", *attention.visible,
+                coverage, usage_link, *fallback_notice, *settings_notice, *bound,
+                history(attention), @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
     end
 
     private
 
-    def reason
-      fixes = previous_fixes
-      return "**Why this commit exists:** #{@subject.call(@rounds.last.head)}" if fixes.empty?
-
-      lines = fixes.map { |finding| "- `#{finding.id}`: #{finding.summary}" }
-      "**Why this commit exists:** fixes findings from the previous triage.\n\n#{lines.join("\n")}"
+    def coverage
+      lines = @rounds.map do |round|
+        value = round.value('coverage') || 'UNKNOWN; inspect the original report for limitations.'
+        reported = round.reported_coverage || 'UNKNOWN; inspect the original report for complete coverage limits.'
+        text = "- #{round.reviewer}: #{value}"
+        "#{text}\n\n**Unverified report excerpt · #{round.reviewer}:**\n\n<pre>#{CGI.escapeHTML(reported)}</pre>"
+      end
+      "**Review coverage:**\n\n" \
+        "Coverage excerpts may be incomplete or misidentified; inspect the original reports.\n\n#{lines.join("\n")}"
     end
 
-    def previous_fixes
-      previous_batch.flat_map(&:findings).uniq(&:id).select do |finding|
-        finding.fixed? && finding.commit == @rounds.last.head
-      end
+    def usage_link
+      return 'Usage and attribution: see the PR description.' unless @usage_url
+
+      "[Usage and attribution](#{@usage_url}) in the PR description."
     end
 
-    def previous_batch = @before.select { |round| round.head == @before.last&.head }
+    def history(attention)
+      blocks = ["<details>\n<summary>Review evidence and history</summary>",
+                "**Commit:** #{@subject.call(@rounds.last.head)}", *attention.settled,
+                '### Execution metadata', table,
+                *LocalReviewTriage.details(@rounds), '</details>']
+      blocks.join("\n\n")
+    end
 
-    def fixed_before
-      @before.chunk(&:head).each_with_object({}) do |(_, batch), fixed|
-        LocalReviewTriage.remember_fixes(batch, fixed)
-      end
+    def disclosure_count = @rounds.size + 1
+
+    def summaries_in_order?(html)
+      outer = html.index('<summary>Review evidence and history</summary>')
+      first = html.index("<summary>#{@rounds.first.summary}</summary>")
+      outer && first && outer < first && super
     end
 
     # Only the final entry can announce that the loop reached its bound.

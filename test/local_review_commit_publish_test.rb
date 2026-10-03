@@ -71,7 +71,7 @@ class LocalReviewCommitPublishTest < Minitest::Test
     assert_includes body, '&#60;'
     assert_includes body, '&#91;'
     refute_includes body, '[link]'
-    assert_equal 1, body.scan('<details>').size
+    assert_equal 2, body.scan('<details>').size
   end
 
   def test_commit_subject_is_literal_text_including_quotes_mentions_and_urls
@@ -102,7 +102,7 @@ class LocalReviewCommitPublishTest < Minitest::Test
 
   def assert_commit_entry(body, index)
     head = [EARLIER, HEAD][index]
-    assert_equal 2, body.scan('<details>').size
+    assert_equal 3, body.scan('<details>').size
     assert_includes CGI.unescapeHTML(body), index.zero? ? 'Add review publication' : 'Clarify review documentation'
     refute_includes body, '**Total:**'
     assert_equal "REVIEWED #{head} BY anthropic/claude EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip

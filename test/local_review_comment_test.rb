@@ -159,8 +159,9 @@ class LocalReviewPublishTest < Minitest::Test
   ATTESTATION = "REVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 1".freeze
   # GitHub's markdown API output for a well-formed one-round comment, trimmed to what the check reads.
   SUMMARY = '<summary>Round 1 · aaaaaaa · openai/codex · effort UNKNOWN · 1 finding</summary>'
-  RENDERED = "<h1>Local Adversarial Review</h1>\n<details>\n#{SUMMARY}\n<p>ok</p>\n" \
-             "<p>#{ATTESTATION}</p>\n</details>\n<p>#{ATTESTATION}</p>".freeze
+  RENDERED = "<h1>Local Adversarial Review</h1>\n<details>\n" \
+             "<summary>Review evidence and history</summary>\n<details>\n#{SUMMARY}\n<p>ok</p>\n" \
+             "<p>#{ATTESTATION}</p>\n</details>\n</details>\n<p>#{ATTESTATION}</p>".freeze
   # What GitHub returned when a report opened a four-backtick fence and closed it with three.
   SWALLOWED = "<details>\n<summary>Round 1</summary>\n<pre><code>code\n```\n\n#{ATTESTATION}\n\n" \
               "&lt;/details&gt;\n\n#{ATTESTATION}\n</code></pre></details>".freeze
@@ -177,6 +178,8 @@ class LocalReviewPublishTest < Minitest::Test
     include Shaka::Publishing
 
     attr_reader :replies
+
+    def number = 7
 
     def initialize(html = RENDERED, missing: [])
       @html = html
