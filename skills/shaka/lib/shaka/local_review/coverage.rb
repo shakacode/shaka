@@ -4,8 +4,8 @@ module Shaka
   # Recognizes the requested Coverage section and the older bold paragraph format.
   # Mask fenced examples for boundary matching, then return the original source bytes.
   class LocalReviewCoverage
-    SECTION = /^\#{2} Coverage[^\n]*\n(.*?)(?=^\#{1,2} |^REVIEWED |\z)/mi
-    PARAGRAPH = /^\*\*Coverage:\*\*[ \t]*(.*?)(?=\n\s*\n|^REVIEWED |\z)/mi
+    SECTION = /^\#{2} (?i:Coverage)[^\n]*\n(.*?)(?=^\#{1,2} |^REVIEWED [a-f0-9]{40} BY |\z)/m
+    PARAGRAPH = /^\*\*(?i:Coverage):\*\*[ \t]*(.*?)(?=\n\s*\n|^REVIEWED [a-f0-9]{40} BY |\z)/m
     FENCE = /^ {0,3}(`{3,}|~{3,})([^\n]*)$/
 
     def initialize(report) = @report = report

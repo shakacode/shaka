@@ -153,6 +153,16 @@ end
 class ReviewCoverageSubsectionTest < Minitest::Test
   include LocalReviewCommentFixture
 
+  def test_reviewed_prose_does_not_hide_later_coverage_limits
+    coverage = "Inspected source: diff only.\nReviewed tests but did not run them.\nMissing context: integration suite."
+    ["## coverage\n", '**coverage:** '].each do |prefix|
+      entry = round(report: report(body: "#{prefix}#{coverage}\n\n## Findings\n1. Missing test"))
+      body = Shaka::LocalReviewCommitComment.new({ 'rounds' => [entry] }, head: HEAD,
+                                                                          subject: ->(_) { 'Subject' }).render
+      assert_includes body.split('<details>').first, coverage
+    end
+  end
+
   def test_coverage_keeps_subsections_until_a_peer_heading
     coverage = "### Inspected source\nChanged files only.\n\n### Missing context\nIntegration suite unavailable."
     entry = round(report: report(body: "## Coverage\n#{coverage}\n\n## Findings\n1. Missing test"))
