@@ -20,9 +20,10 @@ module Shaka
         directory = File.dirname(path)
         with_writable_directory(File.dirname(directory)) { FileUtils.mkdir_p(directory, mode: 0o755) }
         with_writable_directory(directory) do
-          File.chmod(0o644, path) if File.exist?(path)
+          mode = File.exist?(path) ? File.stat(path).mode & 0o777 : 0o644
+          File.chmod(mode | 0o200, path) if File.exist?(path)
           File.write(path, YAML.dump(metadata))
-          File.chmod(0o644, path)
+          File.chmod(mode, path)
         end
       end
 

@@ -16,8 +16,8 @@ The code in this directory handles four parts of that installation:
 - `Display` writes Codex menu metadata with the package's version and short
   revision, or a development content hash. It preserves other UI and invocation
   settings. Source identity still hashes the source files; `package_content_sha256`
-  hashes the final labeled copy. Verification falls back to the source hash for
-  older packages without that field.
+  hashes the final labeled copy and participates in its package ID. Verification
+  falls back to the original source hash and ID for older packages without that field.
 - `Links` points the coding agent's skill link, such as
   `~/.agents/skills/shaka`, at the finished package. “Switch” means replacing
   that link. An “owned host link” is an existing skill link whose target matches

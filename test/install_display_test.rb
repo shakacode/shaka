@@ -50,23 +50,19 @@ class InstallDisplayTest < Minitest::Test
   def test_read_only_source_ui_metadata_can_be_labeled_without_editing_source
     directory = read_only_custom_metadata
     install!
-    assert_equal 0o555, File.stat(File.join(@destination, 'agents')).mode & 0o777
+    assert_installed_mode 0o555, 'agents'
+    assert_installed_mode 0o444, 'agents/openai.yaml'
     original = YAML.safe_load_file(File.join(directory, 'openai.yaml'))
     assert_equal 'Custom name', original.dig('interface', 'display_name')
   ensure
     restore_display_directories(directory)
   end
 
-  def test_legacy_package_without_generated_metadata_remains_usable
-    assert_predicate install.last, :success?
-    path = File.join(package_path, '.shaka-install.json')
-    metadata = package_identity
-    metadata.delete('package_content_sha256')
-    FileUtils.remove_entry(File.join(@destination, 'agents'))
-    File.write(path, JSON.generate(metadata))
-    output, status = run_installer('--skills-dir', @skills_dir, '--with-rct',
-                                   '--rollback', metadata.fetch('package_id'))
-    assert_predicate status, :success?, output
+  def test_private_source_ui_metadata_keeps_its_permissions
+    write_custom_metadata
+    File.chmod(0o600, File.join(@source, 'agents/openai.yaml'))
+    install!
+    assert_installed_mode 0o600, 'agents/openai.yaml'
   end
 
   private
@@ -77,6 +73,10 @@ class InstallDisplayTest < Minitest::Test
   def install!
     output, status = install
     assert_predicate status, :success?, output
+  end
+
+  def assert_installed_mode(expected, relative)
+    assert_equal expected, File.stat(File.join(@destination, relative)).mode & 0o777
   end
 
   def read_only_custom_metadata

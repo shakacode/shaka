@@ -17,8 +17,9 @@ module Shaka
       ALLOWED = %w[shaka rct mct-claude rct-claude].freeze
       ID_PATTERN = /\A[A-Za-z0-9._+-]+-[0-9a-f]{64}-[0-9a-f]{64}\z/
 
-      def self.identity_for(version, source)
-        "#{version}-#{source.fetch('content_sha256')}-#{Digest::SHA256.hexdigest(JSON.generate(source))}"
+      def self.identity_for(version, source, package_hash = nil)
+        identity = package_hash ? { 'source' => source, 'package_content_sha256' => package_hash } : source
+        "#{version}-#{source.fetch('content_sha256')}-#{Digest::SHA256.hexdigest(JSON.generate(identity))}"
       end
 
       def self.valid_skills?(names)
@@ -37,11 +38,7 @@ module Shaka
         hash = @tree.hash(source_root, normalized: true)
         identity = @source.identity(hash)
         version = @source.version
-        id = identity_for(version, identity)
-        target = File.join(@root, id)
-        return reuse(target, source_root, hash, identity, version) if File.exist?(target) || File.symlink?(target)
-
-        stage(source_root, target, identity, version)
+        stage(source_root, identity, version)
       end
 
       def existing(id)
@@ -62,12 +59,6 @@ module Shaka
 
       private
 
-      def reuse(target, source_root, hash, identity, version)
-        verify(target)
-        verify_source(source_root, hash, identity, version)
-        target
-      end
-
       def verify_source(source_root, hash, identity, version)
         current_hash = @tree.hash(source_root, normalized: true)
         raise ArgumentError, 'Source changed during installation' unless current_hash == hash
@@ -75,20 +66,17 @@ module Shaka
         raise ArgumentError, 'Source version changed during installation' unless @source.version == version
       end
 
-      def identity_for(version, source) = self.class.identity_for(version, source)
-
-      def stage(source_root, target, identity, version)
+      def stage(source_root, identity, version)
         staging = Dir.mktmpdir('.staging-', @root)
         begin
-          build(staging, source_root, target, identity, version)
+          build(staging, source_root, identity, version)
         ensure
           FileUtils.chmod_R(0o700, staging) if File.directory?(staging)
           FileUtils.rm_rf(staging)
         end
-        target
       end
 
-      def build(staging, source_root, target, identity, version)
+      def build(staging, source_root, identity, version)
         hash = identity.fetch('content_sha256')
         @tree.copy(source_root, staging)
         raise ArgumentError, 'Source changed during installation' unless @tree.hash(staging) == hash
@@ -96,15 +84,27 @@ module Shaka
         verify_source(source_root, hash, identity, version)
 
         Display.write(staging, version, identity)
-        write_metadata(staging, target, identity, version)
+        package_hash = @tree.hash(staging)
+        target = File.join(@root, self.class.identity_for(version, identity, package_hash))
+        write_metadata(staging, target, identity, version, package_hash)
         @tree.reject_checkout_references(staging, source_root)
-        publish(staging, target)
+        finish(staging, target, source_root, identity, version)
       end
 
-      def write_metadata(staging, target, identity, version)
+      def finish(staging, target, source_root, identity, version)
+        if File.exist?(target) || File.symlink?(target)
+          verify(target)
+          verify_source(source_root, identity.fetch('content_sha256'), identity, version)
+        else
+          publish(staging, target)
+        end
+        target
+      end
+
+      def write_metadata(staging, target, identity, version, package_hash)
         metadata = { 'schema_version' => 1, 'package_id' => File.basename(target),
                      'version' => version, 'skills' => @names, 'source' => identity,
-                     'package_content_sha256' => @tree.hash(staging) }
+                     'package_content_sha256' => package_hash }
         File.write(File.join(staging, METADATA), "#{JSON.pretty_generate(metadata)}\n")
         File.chmod(0o644, File.join(staging, METADATA))
       end
@@ -114,28 +114,6 @@ module Shaka
         File.rename(staging, target)
       rescue Errno::EEXIST, Errno::ENOTEMPTY
         verify(target)
-      end
-
-      def validate_metadata(path, metadata)
-        raise ArgumentError, 'Managed package metadata must be an object' unless metadata.is_a?(Hash)
-
-        names = metadata.fetch('skills')
-        raise ArgumentError, 'Managed package skills are invalid' unless self.class.valid_skills?(names)
-
-        source = metadata.fetch('source')
-        raise ArgumentError, 'Managed package source must be an object' unless source.is_a?(Hash)
-
-        validate_identity(path, metadata, source)
-        return if @tree.hash(path, names) == metadata.fetch('package_content_sha256', source.fetch('content_sha256'))
-
-        raise ArgumentError, 'Managed package content differs'
-      end
-
-      def validate_identity(path, metadata, source)
-        expected = identity_for(metadata.fetch('version'), source)
-        return if metadata['package_id'] == expected && File.basename(path) == expected
-
-        raise ArgumentError, 'Managed package identity differs'
       end
     end
   end

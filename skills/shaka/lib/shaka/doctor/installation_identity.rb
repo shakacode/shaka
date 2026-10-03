@@ -52,7 +52,8 @@ module Shaka
         return true unless package.match?(Install::Package::ID_PATTERN)
 
         identity['package_id'] == package &&
-          Install::Package.identity_for(identity['version'], identity['source']) == package
+          Install::Package.identity_for(identity['version'], identity['source'],
+                                        identity['package_content_sha256']) == package
       end
 
       def self.uninstalled

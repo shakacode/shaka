@@ -34,6 +34,28 @@ module Shaka
         !File.symlink?(path) && File.directory?(path) && (File.stat(path).mode & 0o777) == 0o755
       end
 
+      def validate_metadata(path, metadata)
+        raise ArgumentError, 'Managed package metadata must be an object' unless metadata.is_a?(Hash)
+
+        names = metadata.fetch('skills')
+        raise ArgumentError, 'Managed package skills are invalid' unless Package.valid_skills?(names)
+
+        source = metadata.fetch('source')
+        raise ArgumentError, 'Managed package source must be an object' unless source.is_a?(Hash)
+
+        validate_identity(path, metadata, source)
+        return if @tree.hash(path, names) == metadata.fetch('package_content_sha256', source.fetch('content_sha256'))
+
+        raise ArgumentError, 'Managed package content differs'
+      end
+
+      def validate_identity(path, metadata, source)
+        expected = Package.identity_for(metadata.fetch('version'), source, metadata['package_content_sha256'])
+        return if metadata['package_id'] == expected && File.basename(path) == expected
+
+        raise ArgumentError, 'Managed package identity differs'
+      end
+
       def reject_non_file_metadata(path)
         return if File.lstat(path).file?
 
