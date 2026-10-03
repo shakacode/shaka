@@ -6,6 +6,7 @@ require_relative '../publication/publication'
 require_relative '../reviewer_selection'
 require_relative '../reviewer_settings'
 require_relative 'evidence'
+require_relative 'coverage'
 require_relative 'finding'
 require_relative 'summary'
 require_relative 'bound'
@@ -195,11 +196,7 @@ module Shaka
       end
 
       # Lift only explicitly labeled report coverage; free-form legacy reports remain UNKNOWN.
-      def reported_coverage
-        section = @report[/^\#{2} Coverage[^\n]*\n(.*?)(?=^\#{1,6} |^REVIEWED |\z)/mi, 1]
-        paragraph = @report[/^\*\*Coverage:\*\*[ \t]*(.*?)(?=\n\s*\n|^REVIEWED |\z)/mi, 1]
-        (section || paragraph)&.strip
-      end
+      def reported_coverage = LocalReviewCoverage.new(@report).text
 
       def attestation = @report.strip.lines.last.strip
 

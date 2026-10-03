@@ -86,6 +86,24 @@ class LocalReviewPresentationTest < Minitest::Test
     assert_includes github.replies.first.last, '[Usage and attribution](https://github.com/o/r/pull/7)'
   end
 
+  def test_coverage_preserves_fenced_examples_and_their_heading_lines
+    ["```sh\n# unit tests\nbundle exec rake test\n```",
+     "~~~~text\n## Findings inside an example\n\nNot a boundary.\n~~~~~"].each do |example|
+      intro = "## Coverage\nRan:\n#{example}\n\nMissing the integration environment.\n\n## Findings\n"
+      body = comment([round(report: report(body: "#{intro}1. Missing test"))]).render
+      visible = body.split('<details>').first
+      assert_includes visible, example
+      assert_includes visible, 'Missing the integration environment.'
+      refute_includes visible, '1. Missing test'
+    end
+  end
+
+  def test_legacy_coverage_keeps_blank_lines_inside_fences
+    example = "```text\nfirst command\n\n# second command\n```"
+    entry = round(report: report(body: "**Coverage:** Ran:\n#{example}\n\n1. Missing test"))
+    assert_includes comment([entry]).render.split('<details>').first, example
+  end
+
   private
 
   def clean_round = round(findings: [], report: report(findings: 0))
