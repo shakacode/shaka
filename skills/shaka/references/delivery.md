@@ -89,7 +89,7 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Field | Content |
 | --- | --- |
 | Owner | Public machine alias, host, and a random owner tag, such as `m5 · Codex desktop · k7q2` |
-| Chat name | Current host chat title, copied exactly; otherwise `UNKNOWN` |
+| Chat name | Current public-safe host chat title, copied exactly; otherwise `UNKNOWN` |
 | Chat link | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
 | Last observed activity | Date, time to the minute, and timezone of the latest observed activity, such as `2026-09-25 17:42 PDT`; otherwise `UNKNOWN` |
 | Revision | Branch and full current head as `BRANCH @ SHA`; `handoff` reads the SHA after the last ` @ ` |
@@ -101,8 +101,10 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Next action | One step that continues the task; while `awaiting-resume`, the prompt that resumes it, such as `$shaka PR_URL` |
 
 **Chat title:** before each WIP publication, read the current title through the
-host's session metadata when available and copy it into `wip.task`. Preserve
-user-chosen titles. After a successful agent rename, read the title back and
+host's session metadata when available. Review it for private content before
+copying it into `wip.task`; use `UNKNOWN` for a title containing private details
+and leave the actual chat title unchanged. Preserve user-chosen titles.
+After a successful agent rename, read the title back and
 refresh the owning unfinished PR's WIP Details before ending the turn. When a
 manual rename is observed on resume or at the next publication, use that title.
 Without a title-reading tool, use a title confirmed by the host in this turn or
