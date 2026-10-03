@@ -149,3 +149,17 @@ class ReviewCollationPresentationTest < Minitest::Test
     Shaka::LocalReviewCommitComment.new({ 'rounds' => rounds }, head: HEAD, subject: ->(_) { 'Subject' })
   end
 end
+
+class ReviewCoverageSubsectionTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  def test_coverage_keeps_subsections_until_a_peer_heading
+    coverage = "### Inspected source\nChanged files only.\n\n### Missing context\nIntegration suite unavailable."
+    entry = round(report: report(body: "## Coverage\n#{coverage}\n\n## Findings\n1. Missing test"))
+    body = Shaka::LocalReviewCommitComment.new({ 'rounds' => [entry] }, head: HEAD,
+                                                                        subject: ->(_) { 'Subject' }).render
+    visible = body.split('<details>').first
+    assert_includes visible, coverage
+    refute_includes visible, '1. Missing test'
+  end
+end
