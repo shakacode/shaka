@@ -36,7 +36,9 @@ module Shaka
     end
 
     def process_failure(command, status, stderr, stdout)
-      failure("#{command} #{process_exit_reason(status)}", [stderr, stdout].reject(&:empty?).join("\n"))
+      diagnostic = [stderr, stdout].reject(&:empty?).join("\n")
+      failure("#{command} #{process_exit_reason(status)}", diagnostic,
+              provider_errors: provider_error_messages(stdout))
     end
 
     def process_exit_reason(status)
@@ -58,6 +60,64 @@ module Shaka
 
     def reviewer_executable(name)
       LocalReviewPathGuard.safe_executable(@path || ENV.fetch('PATH', ''), name, @candidate_root)
+    end
+
+    def failure(reason, diagnostic = nil, provider_errors: [])
+      result = outcome(reason, 'cli_failure', true)
+               .merge('diagnostic_path' => save_diagnostic(diagnostic),
+                      'guidance' => 'Inspect diagnostics. Ask the user before changing model or effort.').compact
+      return result unless provider_errors.any? { |message| account_model_refused?(message) }
+
+      result.merge('failure_cause' => 'account_model_refused', 'skip_evidence' => 'not_eligible',
+                   'guidance' => 'This account refused the requested model. Keep the model and effort; ' \
+                                 'ask the user to choose accessible settings before retrying. ' \
+                                 'This does not establish a provider outage.')
+    end
+
+    # Codex --json separates native errors from candidate output; stderr is only diagnostic.
+    def provider_error_messages(stdout)
+      return [] unless @options[:reviewer] == 'openai/codex'
+
+      stdout.lines.filter_map { |line| error_event_message(line) }
+    end
+
+    def error_event_message(line)
+      event = JSON.parse(line)
+      return unless event.is_a?(Hash)
+      return event['message'] if event['type'] == 'error' && event['message'].is_a?(String)
+      return unless event['type'] == 'turn.failed' && event['error'].is_a?(Hash)
+
+      event.dig('error', 'message')
+    rescue JSON::ParserError
+      nil
+    end
+
+    # Other model/access errors remain ambiguous and require inspection, never a fallback.
+    def account_model_refused?(message)
+      unwrapped_model_error(message).to_s.match?(
+        /\AThe ['"`][^'"`\n]+['"`] model is not supported when using Codex with a ChatGPT account\.?\z/i
+      )
+    end
+
+    def unwrapped_model_error(message)
+      wrapper = message.to_s.match(/\Aunexpected status 400 Bad Request:\s*(\{.*\})\z/m)
+      wrapper ? JSON.parse(wrapper[1])['detail'] : message
+    rescue JSON::ParserError
+      nil
+    end
+
+    def invalid(reason, diagnostic = nil)
+      outcome(reason, 'report_validation', true).merge('diagnostic_path' => save_diagnostic(diagnostic)).compact
+    end
+
+    def outcome(reason, stage, attempted)
+      File.unlink(@report) if File.exist?(@report) && (stage != 'report_validation' || !File.size?(@report))
+      { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
+        'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason,
+        'report' => stage == 'report_validation' && File.size?(@report) ? @report : nil,
+        'skip_evidence' => { 'executable_missing' => 'confirmed',
+                             'cli_failure' => 'requires_cause_review' }.fetch(stage, 'not_eligible'),
+        'usage' => @options[:usage] }.compact
     end
   end
 
@@ -171,24 +231,6 @@ module Shaka
     end
 
     def missing(name) = outcome("#{name} is not on PATH", 'executable_missing', false)
-
-    def failure(reason, diagnostic = nil)
-      outcome(reason, 'cli_failure', true).merge('diagnostic_path' => save_diagnostic(diagnostic)).compact
-    end
-
-    def invalid(reason, diagnostic = nil)
-      outcome(reason, 'report_validation', true).merge('diagnostic_path' => save_diagnostic(diagnostic)).compact
-    end
-
-    def outcome(reason, stage, attempted)
-      File.unlink(@report) if File.exist?(@report) && (stage != 'report_validation' || !File.size?(@report))
-      { 'status' => 'not_completed', 'head' => @options[:head], 'reviewer' => @options[:reviewer],
-        'attempted' => attempted, 'failure_stage' => stage, 'reason' => reason,
-        'report' => stage == 'report_validation' && File.size?(@report) ? @report : nil,
-        'skip_evidence' => { 'executable_missing' => 'confirmed',
-                             'cli_failure' => 'requires_cause_review' }.fetch(stage, 'not_eligible'),
-        'usage' => @options[:usage] }.compact
-    end
 
     def effort = @options[:effort]
   end

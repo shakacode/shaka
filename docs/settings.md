@@ -274,8 +274,8 @@ the table; Cursor is not a fourth reviewer CLI.
 
 ### Understand a reviewer warning
 
-For these reviewers, Shaka flags unfamiliar model and effort names, likely
-typos, and Codex models that differ from its recommendation. You'll see the warning in the repository health check and
+For these reviewers, Shaka flags unfamiliar model and effort names and likely
+typos. You'll see the warning in the repository health check and
 a **Reviewer settings** notice on the published local review. Check the spelling
 and confirm that the model and effort are available to your reviewer. Shaka
 keeps your chosen model; it does not substitute another one.

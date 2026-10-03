@@ -57,11 +57,10 @@ class LocalReviewCommentTest < Minitest::Test
     refute_includes body, '**Reviewer settings:**'
   end
 
-  def test_names_a_configured_model_that_differs_from_the_recommendation
+  def test_a_known_configured_model_does_not_prompt_a_switch
     body = render('rounds' => [round(requested_model: 'gpt-6-astra')])
 
-    assert_includes body, '**Reviewer settings:** openai/codex is set to `gpt-6-astra`. ' \
-                          'Shaka recommends `gpt-6-sol` for that reviewer.'
+    refute_includes body, '**Reviewer settings:**'
   end
 
   def test_opens_with_a_title_and_a_summary_row_for_the_round

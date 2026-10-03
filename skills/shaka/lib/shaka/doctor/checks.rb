@@ -20,12 +20,12 @@ module Shaka
       WRITER = %w[ADMIN MAINTAIN WRITE].freeze
       RUBY = RubyRequirement::MINIMUM
 
-      def initialize(root:, host:, environment:, system:)
+      def initialize(root:, host:, environment:, system:, probe_reviewers: false)
         @root = root
         @host = host
         @environment = environment
         @system = system
-        @reviewer_clis = ReviewerClis.new(root:, host:, environment:, system:)
+        @reviewer_clis = ReviewerClis.new(root:, host:, environment:, system:, probe_reviewers:)
       end
 
       def call

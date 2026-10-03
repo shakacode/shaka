@@ -69,6 +69,21 @@ Then start your feature task. If the repository is already configured, skip this
 You can ask the agent to change settings later; you do not need to maintain them by hand.
 See [repository setup](configure-repository.md) for details.
 
+After merging shared reviewer settings, check whether your signed-in AI CLI
+accounts can run the selected reviewer models and effort levels. This catches
+account or model-access problems before the agent reaches code review. Ask:
+
+```text
+$shaka Check whether this project's configured AI reviewer CLIs can run their
+selected models and effort levels with my signed-in accounts.
+Run the live availability probe. I understand it may consume quota or cost money.
+Keep my chosen models and effort settings; explain any failure before we change them.
+```
+
+The agent sends each supported configured reviewer one short prompt and reports
+which attempts succeeded. If an attempt fails, it explains the problem and asks
+you how to proceed.
+
 ## 3. Start a task
 
 ```text

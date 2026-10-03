@@ -109,6 +109,12 @@ flags and itself reported a failure such as missing credentials, exhausted quota
 outage. Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
 failure does not qualify, even when `attempted` is true; neither does a current-host Task or subagent.
 
+Distinguish settings from availability. A malformed flag or model needs correction;
+an explicit account model refusal establishes lack of access to that model, not a provider
+outage. Keep the configured model and effort. Ask the user before trying another model,
+changing effort, or substituting a reviewer after an account refusal; show current provider
+pricing for paid alternatives. A timeout alone needs diagnosis, not automatic escalation.
+
 Three outcomes, none of them an error:
 
 | Outcome | Meaning |

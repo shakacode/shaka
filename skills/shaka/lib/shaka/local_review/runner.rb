@@ -254,7 +254,7 @@ module Shaka
 
     # Records what was asked for on every outcome; the routed model comes only from native usage.
     def with_requested_model(result)
-      ReviewerSettings.attach(result, model: @options[:model], notices: @config_notices)
+      ReviewerSettings.attach(result, model: @options[:model], effort: @options[:effort], notices: @config_notices)
     end
 
     def run_report(prompt)
