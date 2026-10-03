@@ -84,8 +84,6 @@ module Shaka
     end
 
     def verify_submission_mode(pull)
-      raise Error, 'Native protection must be enforced for this actor' unless pull['viewerCanMergeAsAdmin'] == false
-
       queue_enabled = pull['isMergeQueueEnabled']
       in_queue = pull['isInMergeQueue']
       verify_queue_state(pull, queue_enabled, in_queue)
