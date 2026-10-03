@@ -36,6 +36,9 @@ phases:
         delivery state on GitHub. Reading a tracker does not authorize updating it; do not create
         a duplicate issue. Link the work item from the PR only when sharing is authorized, and
         keep private task content and links out of public artifacts.
+        On resume, read the current task plan, its recorded decisions, and linked PRs before
+        choosing the next step. Reconcile them with live PR state and confirmed ownership;
+        a saved plan grants no new authority.
       - Before planning or making any edit, verify the selected problem still exists and is not
         already fixed, duplicate, or superseded. An evidence-backed no-change
         outcome is allowed: report it, skip the rest of Intake, and stop before Plan;
@@ -162,7 +165,8 @@ phases:
         chooses no settings and judges no claim. `value` follows the packaged
         [planning guide](<{{package_root}}/skills/shaka/references/delivery.md#say-what-the-work-is-worth>).
       - For a planning-only request, include the rendered recommendation in a compact execution
-        prompt with the usage report, then stop before edits and skip the implementation checkpoint.
+        prompt with the usage report. Save the plan when authorized through the procedure below,
+        then stop before implementation edits and skip the implementation checkpoint.
       - For implementation, run `checkpoint --content-file PATH` with `recommended_model`,
         `recommended_effort`, `immediate_start`, and `settings_available`. Include
         `requested_model` and `requested_effort` when the user supplied them, plus
@@ -187,7 +191,12 @@ phases:
         when possible; a prompt cannot change the runner. Differing settings stay the user's
         decision; unreported active settings need the user's confirmation; unavailable settings
         need the user to select available ones and reply ready.
-      - Default to one PR. For larger tasks, read only the
+      - Before implementing a proposed PR split or substantive design plan, follow
+        [keep the task plan recoverable](<{{package_root}}/skills/shaka/references/delivery.md#keep-the-task-plan-recoverable>).
+        Keep the current plan, consequential discussion, and later corrections in the original
+        work item or an authorized linked document. Do not leave them only in chat.
+        Reuse existing task-scoped write permission; reading alone grants none.
+      - Default to one PR. For larger tasks, read the
         [task-splitting section](<{{package_root}}/skills/shaka/references/delivery.md#when-a-task-needs-several-prs>).
         Keep one owner and each PR's own tests, review, and authority; every split PR repeats phases
         3 through 7. Use sequential ordinary PRs for dependencies; native stacks are outside this
@@ -747,6 +756,11 @@ phases:
       Post-implementation validation justifies the final result with no substantive concern
       unresolved, and the PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
+  Before implementing a material correction to the task plan, update its durable record
+  through [keep the task plan recoverable](<{{package_root}}/skills/shaka/references/delivery.md#keep-the-task-plan-recoverable>).
+  Record what changed, why, which PRs it affects, and any unresolved decision. Keep proposed
+  changes distinct from accepted direction; do not turn a proposal into human approval.
+
   When the human confirms new direction worth returning to, record the next named
   human attention checkpoint through [human attention checkpoints](<{{package_root}}/skills/shaka/references/return-points.md>).
   A request for attention alone confirms nothing. For a requested rewind, preserve

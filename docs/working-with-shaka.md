@@ -57,6 +57,35 @@ The agent returns a compact execution prompt with the proposed scope, tradeoffs,
 recommended model and effort, and available usage. It stops before implementation
 edits. Use the returned prompt when you decide to start delivery.
 
+### Keep a plan across chats
+
+```text
+$shaka Plan the changes for this tracker item. Keep the plan and important
+discussion in that item, including later corrections. Recommend a linked
+design document if the details need more room. Planning only for now.
+```
+
+For a task with several PRs or a substantive design plan, Shaka keeps the current
+plan in the original work item. It records each PR's outcome, dependencies,
+verification, open decisions, and next action. If later analysis changes the
+design, Shaka records the correction before implementing it and updates affected
+PR summaries, including a PR already awaiting review.
+
+The instruction above authorizes plan updates in that item for the task.
+Reading an item alone grants no write permission. If permission or access is
+missing, Shaka prepares the update and asks where it can save it before continuing
+the affected implementation. Small tasks need no separate planning document.
+
+Use tracker details for a compact plan. For a substantial architectural choice,
+Shaka may recommend an **architecture decision record (ADR)** explaining the
+decision, alternatives, and consequences. A linked design document can hold
+longer implementation analysis. The tracker keeps the execution order and progress.
+
+To continue in a fresh chat, provide the original work item and checkout after
+the previous owner has stopped or handed off. Shaka reads the current plan and
+checks linked PRs before selecting the next step. This is agent guidance; Shaka's
+Ruby commands do not save or verify tracker plans.
+
 ### Review an existing PR
 
 ```text

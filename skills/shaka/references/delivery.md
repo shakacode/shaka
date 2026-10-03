@@ -165,6 +165,49 @@ attention alone records no human guidance. Keep the existing Ask/Auto decision p
 and WIP note; summarize superseded attempts in the description's details while
 carrying surviving material findings into the active review.
 
+## Keep the task plan recoverable
+
+Before implementing a proposed PR split or substantive design plan, save it in
+the original work item's description or a clearly identified plan comment.
+Keep one current plan there; summarize consequential discussion and decisions
+from chat, and preserve earlier discussion when updating it. Routine choices
+within a small task need no separate planning document.
+
+Record the intended outcome, each PR's scope, order and dependencies, verification,
+open decisions, and next action. Distinguish proposals from accepted direction.
+Use existing user authorization for routine choices; ask before changing product
+scope or making a risky partial release. A plan save adds no approval requirement.
+
+Reuse permission already granted for this task and destination. An instruction
+to keep the plan in the tracker authorizes subsequent plan and discussion updates
+there within that scope. Reading the tracker or approving an approach alone does
+not authorize writing it, creating more work items, or reorganizing the backlog.
+When permission or access is missing, prepare the exact update and ask for the
+missing permission or an accessible, authorized destination. Pause affected
+implementation until the record is saved; continue independent work meanwhile.
+For a task without a work item that needs a durable plan, agree on a project
+document or tracker item before creating it. Keep private material in an
+appropriate private destination.
+
+For substantial architectural choices, recommend a linked design document or
+architecture decision record (ADR) using the project's conventions. An ADR records
+the decision, alternatives, and consequences; a design document can hold detailed
+implementation analysis. Keep execution order, progress, and the document link in
+the work item. Recommend either only when the detail warrants it; use the tracker
+alone for a compact plan.
+
+Before implementing a material correction, update the current plan with what
+changed, why, and every affected PR, including one already awaiting review. Mark
+superseded proposals and unresolved decisions clearly. Refresh affected PR
+summaries so they point to the current scope, respecting tracker privacy.
+
+At a PR handoff or merge, record its link and observed state, remaining outcomes,
+dependencies, and next action in the plan. On resume, read that record and linked
+documents, check live PR states and ownership, and select the next eligible
+outcome. A pending prerequisite stays pending until live evidence shows it merged.
+If the plan is missing or contradictory, reconstruct it from available evidence
+and resolve consequential uncertainty before affected implementation.
+
 ## When a task needs several PRs
 
 Default to one PR. Split for useful separate outcomes, different risks, or a diff
@@ -175,10 +218,11 @@ Recommend a short ordered list of outcomes, dependencies, and verification. Make
 routine splits within the authorized task; ask about changed product scope or
 risky partial releases. Each slice must be safe with its prerequisites.
 
-Keep one task owner. Record dependencies and remaining scope on the PRs, and link
-them from the original work item when sharing is authorized. A partial merge does
-not finish the task. Report shared planning and review usage once with its commit
-mappings.
+Keep one task owner and use the [current task plan](#keep-the-task-plan-recoverable)
+for dependencies and remaining scope. Link each PR to it when sharing is
+authorized; keep private tracker content and links out of public PRs. A partial
+merge does not finish the task. Report shared planning and review usage once with
+its commit mappings.
 
 Use ordinary PRs against the task's base. For dependent slices, merge the first
 before publishing the dependent PR under the same Ask/Auto workflow.
