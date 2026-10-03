@@ -49,7 +49,7 @@ is the reusable default.
   requirements in `internal/requirements.md`.
   Name feature branches from the trusted seam `branches.name`; never push to `main`.
 - Product merge preferences are `ask` and `auto`. Review-only work stops at its
-  requested outcome. Existing explicit Auto choices and task-scoped merge decisions
+  requested outcome. Existing task-scoped Auto choices and merge decisions
   persist; do not ask again.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;
   for a new branch start from the freshly fetched base. Do not reset others' work.
