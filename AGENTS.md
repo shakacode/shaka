@@ -1,7 +1,8 @@
 # Shaka
 
 This public pilot implements the small product described in `internal/requirements.md`.
-The maintainer authorized implementation, publication, and merging verified PRs.
+The maintainer authorized implementation, publication, and merging verified PRs
+subject to the task's merge preference. General permission does not override Ask.
 The maintainer authorizes public Codex thread locators in unfinished-PR WIP Details.
 Keep company strategy and private operational data out of product artifacts.
 
@@ -48,7 +49,8 @@ is the reusable default.
   requirements in `internal/requirements.md`.
   Name feature branches from the trusted seam `branches.name`; never push to `main`.
 - Product merge preferences are `ask` and `auto`. Review-only work stops at its
-  requested outcome. Existing maintainer merge authority persists; do not ask again.
+  requested outcome. Existing explicit Auto choices and task-scoped merge decisions
+  persist; do not ask again.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;
   for a new branch start from the freshly fetched base. Do not reset others' work.
 
