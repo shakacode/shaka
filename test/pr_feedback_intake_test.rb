@@ -40,10 +40,12 @@ class PrFeedbackIntakeTest < Minitest::Test
   def record_blocked_disposition
     body = 'Blocked: automatic feedback intake unavailable. ' \
            'Maintainer: resume the owning chat to assess default synchronization.'
-    publish_disposition(body, existing: [])
+    created = publish_disposition(body, existing: [])
     assert_equal 'POST', mutation_method
-    publish_disposition(body, existing: [disposition(body)])
-    assert_equal 'PATCH', mutation_method
+    assert_equal created, publish_disposition(body, existing: [disposition(body)])
+    refute @calls.any? { |argv, _input|
+      argv.include?('repos/owner/repo/issues/42/comments') && argv.include?('POST')
+    }, 'retry must reuse the existing disposition without posting another comment'
   end
 
   def feedback_watch(baseline, screened)
