@@ -124,3 +124,28 @@ class UnchangedReviewReplyTest < Minitest::Test
     refute(@calls.any? { |argv, _| argv.include?('PATCH') })
   end
 end
+
+class ReviewCollationPresentationTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  def test_solo_reviews_do_not_show_collation_even_across_commits
+    rounds = [round(EARLIER), round]
+    refute_includes comment(rounds).render, '**Collated as:**'
+    refute_includes Shaka::LocalReviewComment.new({ 'rounds' => rounds }).render, '**Collated as:**'
+  end
+
+  def test_same_commit_reviewers_keep_their_finding_mappings
+    first = round(findings: [NIT.merge('reported_as' => '1')])
+    other = round(reviewer: 'anthropic/claude', findings: [NIT.merge('reported_as' => '2')],
+                  report: report(reviewer: 'anthropic/claude'))
+    body = comment([first, other]).render
+    assert_includes body, '**Collated as:** `#1`'
+    assert_includes body, '**Collated as:** `#2`'
+  end
+
+  private
+
+  def comment(rounds)
+    Shaka::LocalReviewCommitComment.new({ 'rounds' => rounds }, head: HEAD, subject: ->(_) { 'Subject' })
+  end
+end

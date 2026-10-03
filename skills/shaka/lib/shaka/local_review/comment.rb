@@ -106,7 +106,9 @@ module Shaka
 
     # A finding whose id was marked fixed on an earlier commit and comes back is flagged where it
     # returns. Reviewers of one commit all read it before any of its fixes, so none of them is flagged.
-    def round_details = LocalReviewTriage.details(@rounds)
+    def round_details
+      @rounds.chunk(&:head).flat_map { |_head, batch| LocalReviewTriage.details(batch) }
+    end
 
     def table
       rows = @rounds.map { |round| line(round.cells(@links)) }
@@ -190,8 +192,8 @@ module Shaka
 
       # A reviewer of a commit that several reviewed shows how its findings were collated; the
       # commit's triage then gives each finding's outcome once.
-      def details
-        after = LocalReviewTriage.collated_as(self)
+      def details(collated: false)
+        after = collated ? LocalReviewTriage.collated_as(self) : ''
         "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n#{after}</details>"
       end
 
