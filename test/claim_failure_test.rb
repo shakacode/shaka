@@ -39,6 +39,17 @@ class ClaimFailureTest < Minitest::Test
     assert_includes error.message, 'ownership is incomplete'
   end
 
+  def test_a_search_candidate_missing_from_the_inventory_is_a_blocking_error
+    inner = runner(prs: [], branches: '')
+    raced = lambda do |argv, **|
+      next inner.call(argv) unless argv.include?('--search')
+
+      [JSON.generate([{ 'number' => 402 }]), '', ClaimHelpers::STATUS.new(0)]
+    end
+    error = assert_raises(Shaka::Error) { subject(raced).result }
+    assert_includes error.message, 'inventory changed'
+  end
+
   private
 
   def subject(runner)

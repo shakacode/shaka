@@ -5,7 +5,7 @@ module Shaka
     # A reference is collision evidence, not proof that the PR owns the work item.
     class References
       TOKENS = %r{https?://[^\s<>()\[\]`"']+|(?<![\w/])(?:[\w.-]+/[\w.-]+)?\#\d+(?!\w)|
-                  \b(?:issue|pr|pull\ request)\s+\d+(?!\w|[,.]\d)}ix
+                  (?<![\w-])GH-\d+(?![\w-])|\b(?:issue|pr|pull\ request)\s+\d+(?!\w|[,.]\d)}ix
 
       def initialize(query:, pull_request:)
         validate!(pull_request)
@@ -15,9 +15,11 @@ module Shaka
       end
 
       def cover?
-        return tracker_reference? unless @query.match?(/\A\d+\z/)
+        @pr.fetch('number').to_s == @query || closing_reference? || reference?(text)
+      end
 
-        @pr.fetch('number').to_s == @query || closing_reference? || numeric_reference?
+      def reference?(text)
+        @query.match?(/\A\d+\z/) ? numeric_reference?(text) : tracker_reference?(text)
       end
 
       private
@@ -40,7 +42,7 @@ module Shaka
 
       def text = "#{@pr.fetch('title')}\n#{@pr.fetch('body')}"
 
-      def tracker_reference?
+      def tracker_reference?(text)
         text.match?(/(?<![\w-])#{Regexp.escape(@query)}(?![\w-])/i)
       end
 
@@ -50,11 +52,11 @@ module Shaka
         end
       end
 
-      def numeric_reference?
+      def numeric_reference?(text)
         repository = @repository_url.split('/').last(2).join('/')
         text.scan(TOKENS).any? do |token|
           token = token.sub(/[.,;:!]+\z/, '')
-          token.casecmp?("##{@query}") || token.casecmp?("#{repository}##{@query}") ||
+          token.casecmp?("##{@query}") || token.casecmp?("GH-#{@query}") || token.casecmp?("#{repository}##{@query}") ||
             token.match?(%r{\A#{Regexp.escape(@repository_url)}/(?:issues|pull)/#{@query}(?:[?\#].*)?\z}i) ||
             token.match?(/\A(?:issue|pr|pull request)\s+#{@query}\z/i)
         end

@@ -78,7 +78,7 @@ class ClaimTest < Minitest::Test
     seen = nil
     inner = runner(prs: prs, branches: branches)
     wrapped = lambda do |argv, **|
-      seen = argv if argv[1] == 'pr'
+      seen ||= argv if argv[1] == 'pr'
       inner.call(argv)
     end
     Shaka::Claim.new(query: '36', root: Dir.pwd, runner: wrapped, branch_name: nil).result

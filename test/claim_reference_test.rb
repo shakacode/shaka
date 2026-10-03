@@ -17,7 +17,7 @@ class ClaimReferenceTest < Minitest::Test
   end
 
   def test_explicit_references_remain_collisions_even_without_a_closing_relationship
-    ['Fixes #392', 'Related to #392; scope unclear', 'Issue 392', 'PR 392', 'pull request 392',
+    ['Fixes #392', 'Related to GH-392', 'Related to #392; scope unclear', 'Issue 392', 'PR 392', 'pull request 392',
      'shakacode/shaka#392', 'https://github.com/shakacode/shaka/issues/392',
      'https://github.com/shakacode/shaka/pull/392#discussion_r1',
      'See https://github.com/shakacode/shaka/issues/392.',
@@ -31,7 +31,7 @@ class ClaimReferenceTest < Minitest::Test
   end
 
   def test_other_repositories_and_longer_numbers_do_not_collide
-    ['other/repo#392', 'https://github.com/other/repo/issues/392', '#3920', '#392abc',
+    ['other/repo#392', 'https://github.com/other/repo/issues/392', '#3920', '#392abc', 'GH-3920', 'MY-GH-392',
      'https://example.com/build#392', 'https://github.com/shakacode/shaka/issues/3920',
      'https://github.com/shakacode/shaka/issues/400#392'].each do |text|
       refute claim('392', prs: [PR.merge('body' => text)], branches: '').fetch('collision'), text

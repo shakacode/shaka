@@ -6,15 +6,12 @@ require 'optparse'
 require_relative 'branch_name'
 require_relative 'error'
 require_relative 'claim/names'
-require_relative 'claim/references'
+require_relative 'claim/pull_requests'
 require_relative 'configuration'
 
 module Shaka
   # Lists open pull requests and remote branches that already cover a work item.
   class Claim
-    PR_FIELDS = %w[number title url headRefName].freeze
-    PR_JSON = (PR_FIELDS + %w[body closingIssuesReferences]).join(',')
-
     def self.run(arguments, runner: nil)
       query, root, tracker_branch = parse(arguments)
       return 0 unless query
@@ -84,20 +81,7 @@ module Shaka
 
     private
 
-    def listed_pull_requests
-      parsed = JSON.parse(capture(['gh', 'pr', 'list', '--state', 'open', '--limit', '1000',
-                                   '--json', PR_JSON]))
-      raise Error, 'GitHub pull request list must be an array.' unless parsed.is_a?(Array)
-
-      raise Error, 'GitHub pull request list reached its limit; ownership is incomplete.' if parsed.length >= 1000
-
-      parsed.filter_map do |pr|
-        references = References.new(query: @query, pull_request: pr)
-        pr.slice(*PR_FIELDS) if references.cover? || @names.cover?(pr.fetch('headRefName'))
-      end
-    rescue JSON::ParserError
-      raise Error, 'GitHub returned invalid JSON.'
-    end
+    def listed_pull_requests = PullRequests.new(query: @query, names: @names, capture: method(:capture)).call
 
     def matching_branches
       capture(['git', 'ls-remote', '--heads', 'origin']).each_line.filter_map do |line|
