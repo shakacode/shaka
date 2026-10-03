@@ -14,7 +14,11 @@ module Shaka
       @fence = nil
       masked = @report.lines.map { |line| mask(line) }.join
       match = masked.match(SECTION) || masked.match(PARAGRAPH)
-      @report[match.begin(1)...match.end(1)].strip if match
+      return unless match
+
+      excerpt = @report[match.begin(1)...match.end(1)].strip
+      # HTML may span a heading boundary; do not present a potentially partial excerpt as complete.
+      excerpt unless excerpt.empty? || excerpt.include?('<')
     end
 
     private

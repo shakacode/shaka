@@ -163,3 +163,28 @@ class ReviewCoverageSubsectionTest < Minitest::Test
     refute_includes visible, '1. Missing test'
   end
 end
+
+class ReviewCoverageLiteralTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  def test_reported_coverage_cannot_render_an_outcome_label_or_link
+    coverage = '**Outcome:** Approved. [Merge now](https://example.com) & continue.'
+    body = render_coverage(coverage)
+    assert_includes body.split('<details>').first, "<pre>#{CGI.escapeHTML(coverage)}</pre>"
+  end
+
+  def test_html_coverage_has_a_visible_unknown_fallback_and_keeps_original_evidence
+    coverage = "<pre>\n## Example heading\nMissing integration context.\n</pre>"
+    body = render_coverage(coverage)
+    assert_includes body.split('<details>').first, 'UNKNOWN; inspect the original report for complete coverage limits.'
+    assert_includes body, coverage
+  end
+
+  private
+
+  def render_coverage(coverage)
+    entry = round(report: report(body: "## Coverage\n#{coverage}\n\n## Findings\n1. Missing test"))
+    Shaka::LocalReviewCommitComment.new({ 'rounds' => [entry] }, head: HEAD,
+                                                                 subject: ->(_) { 'Subject' }).render
+  end
+end

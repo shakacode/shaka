@@ -3,6 +3,8 @@
 Presentation implementation and remaining design for [issue #395](https://github.com/shakacode/shaka/issues/395).
 This PR implements compact per-commit review comments, visible retained concerns
 and coverage limitations, collapsed evidence, and unchanged-reply suppression.
+Coverage excerpts render as attributed literal text; ambiguous HTML coverage shows
+UNKNOWN while the complete formatted original remains in history.
 The retention and export sections below remain proposals.
 [Requirements](requirements.md) owns pilot scope and acceptance. This design
 supports its R10 maintenance, R11 evidence, R13 presentation, and R16 recovery

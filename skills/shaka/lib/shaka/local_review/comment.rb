@@ -191,7 +191,7 @@ module Shaka
       end
 
       # A reviewer of a commit that several reviewed shows how its findings were collated; the
-      # commit's triage then gives each finding's outcome once.
+      # generated findings view gives each finding's outcome once.
       def details(collated: false)
         after = collated ? LocalReviewTriage.collated_as(self) : ''
         "<details>\n<summary>#{summary}</summary>\n\n#{@report.strip}\n\n#{after}</details>"

@@ -30,9 +30,9 @@ module Shaka
     def coverage
       lines = @rounds.map do |round|
         value = round.value('coverage') || 'UNKNOWN; inspect the original report for limitations.'
-        reported = round.reported_coverage
+        reported = round.reported_coverage || 'UNKNOWN; inspect the original report for complete coverage limits.'
         text = "- #{round.reviewer}: #{value}"
-        reported.to_s.empty? ? text : "#{text}\n\n**Reported coverage · #{round.reviewer}:**\n\n#{reported}"
+        "#{text}\n\n**Reported coverage · #{round.reviewer}:**\n\n<pre>#{CGI.escapeHTML(reported)}</pre>"
       end
       "**Review coverage:**\n\n#{lines.join("\n")}"
     end

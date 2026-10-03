@@ -313,11 +313,10 @@ problem once, and map every reviewer that reported it to that reviewer's own num
 The helper refuses a finding without `reviewers` when the batch has several rounds, one
 reviewer's number claimed by two findings, and a count that differs from any reviewer's
 `FINDINGS n`. It does not read the numbers inside a report, so match each number to the
-report yourself; the checks make each reviewer's findings map one to one by count. The
-published comment's **Findings** section, before the reports, gives each commit's triage: each
-reviewer and its finding count, then every finding once, the reviewers and numbers it came from,
-and its outcome. Under each report of a
-commit several reviewers read, it shows which of that reviewer's findings became which finding.
+report yourself; the checks make each reviewer's findings map one to one by count.
+The published comment keeps retained unresolved findings visible and puts settled findings
+inside its history. Under each report of a commit several reviewers read, it shows which
+of that reviewer's findings became which finding. A solo report has no collation mapping.
 Once a batch is recorded, no reviewer can join it. A round whose start checks read a ledger that changed while it ran, other than by
 another reviewer of its commit, is refused; run it again.
 
@@ -379,10 +378,14 @@ unclosed code fence or a stray disclosure tag in a report would hide the attesta
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
 the helper writes both itself. It posts one `Local Adversarial Review` comment per reviewed
-commit, in ledger order. Each opens with the findings from the previous triage that it fixes,
-or its GitHub commit subject when no finding caused it. A summary table names each reviewer
-and its finding count. The commit's Findings block gives each collated finding one outcome;
-each report is collapsed with its "Collated as" mapping when several reviewers read it.
+commit, in ledger order. Each opens with the reviewed revision, retained unresolved findings,
+and coverage limits. Reported coverage is attributed literal text; its Markdown cannot render
+an outcome label or link. Missing or ambiguous HTML coverage shows UNKNOWN and points to
+the original report. A less-than character conservatively triggers that fallback, including
+inside code examples. The complete formatted report remains in history.
+History also contains settled findings, the commit subject, and a table naming each reviewer
+and its finding count. Each disposition appears once in the generated findings view;
+each report retains its "Collated as" mapping when several reviewers read it.
 The last reviewer's attestation closes the comment, where `merge` reads it.
 A commit GitHub does not have, such as one a rebase replaced, is named without a link or subject.
 Each comment's key includes the full commit SHA, so republishing edits that commit's entry
