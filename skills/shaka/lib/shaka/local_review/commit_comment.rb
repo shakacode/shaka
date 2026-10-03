@@ -32,9 +32,10 @@ module Shaka
         value = round.value('coverage') || 'UNKNOWN; inspect the original report for limitations.'
         reported = round.reported_coverage || 'UNKNOWN; inspect the original report for complete coverage limits.'
         text = "- #{round.reviewer}: #{value}"
-        "#{text}\n\n**Reported coverage · #{round.reviewer}:**\n\n<pre>#{CGI.escapeHTML(reported)}</pre>"
+        "#{text}\n\n**Unverified report excerpt · #{round.reviewer}:**\n\n<pre>#{CGI.escapeHTML(reported)}</pre>"
       end
-      "**Review coverage:**\n\n#{lines.join("\n")}"
+      "**Review coverage:**\n\n" \
+        "Coverage excerpts may be incomplete or misidentified; inspect the original reports.\n\n#{lines.join("\n")}"
     end
 
     def usage_link

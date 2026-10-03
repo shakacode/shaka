@@ -379,8 +379,9 @@ check cannot stop two reports that together imitate a round's layout, for exampl
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
 the helper writes both itself. It posts one `Local Adversarial Review` comment per reviewed
 commit, in ledger order. Each opens with the reviewed revision, retained unresolved findings,
-and coverage limits. Reported coverage is attributed literal text; its Markdown cannot render
-an outcome label or link. Missing or ambiguous HTML coverage shows UNKNOWN and points to
+and coverage limits. Report excerpts are attributed, unverified literal text; their Markdown
+cannot render an outcome label or link. A visible warning says excerpts may be incomplete or
+misidentified and directs readers to the originals. Missing or ambiguous HTML coverage shows UNKNOWN and points to
 the original report. A less-than character anywhere in the report conservatively triggers
 that fallback, including inside code examples. The complete formatted report remains in history.
 History also contains settled findings, the commit subject, and a table naming each reviewer

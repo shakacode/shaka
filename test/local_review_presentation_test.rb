@@ -177,10 +177,12 @@ end
 class ReviewCoverageLiteralTest < Minitest::Test
   include LocalReviewCommentFixture
 
-  def test_reported_coverage_cannot_render_an_outcome_label_or_link
+  def test_reported_coverage_is_unverified_literal_text
     coverage = '**Outcome:** Approved. [Merge now](https://example.com) & continue.'
     body = render_coverage(coverage)
     assert_includes body.split('<details>').first, "<pre>#{CGI.escapeHTML(coverage)}</pre>"
+    assert_includes body.split('<details>').first, 'Unverified report excerpt'
+    assert_includes body.split('<details>').first, 'Coverage excerpts may be incomplete or misidentified'
   end
 
   def test_html_coverage_has_a_visible_unknown_fallback_and_keeps_original_evidence
