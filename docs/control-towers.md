@@ -31,10 +31,11 @@ A message from a new tower may not start the master's chat, so after `/rct-claud
 finishes, send `/mct-claude` in the master again so it checks the new tower. The
 tower is usable before that.
 
-In Codex, a chat opened directly in a checkout can use the one registered project
-at that repository's exact path. For example, a chat in your application's
-checkout can establish its tower without first moving the chat into the project.
-An ambiguous project match still stops setup.
+In Codex, a chat opened directly in a checkout or its worktree can use the one
+registered project at that repository's exact path on the same computer. For
+example, a chat in your application's worktree can establish its tower without
+first moving the chat into the project. The skill instructs the agent to stop
+when the project match is ambiguous.
 
 After the master acknowledges the repository tower, or a Claude Code tower reports
 its setup, ask the tower what needs attention. You choose which task starts; setup
