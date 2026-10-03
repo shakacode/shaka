@@ -50,6 +50,10 @@ to that managed copy. The source checkout can then be removed; select a source
 checkout again when upgrading or rolling back. Open a new task in
 your project and look for
 `$shaka`; restart Codex if it does not appear.
+Codex lists managed copies as `Shaka VERSION (COMMIT)`, using a short commit for
+an exact revision or `dev CONTENT` for a development copy. The invocation remains
+`$shaka`. A source checkout keeps its own display name. Installing into two skills
+directories that Codex reads can show both entries, even when both are named `shaka`.
 Links to public guides show the current documentation. When using an older package
 or rolling back, follow its installed workflow and the repository's trusted seam
 if a public guide describes newer behavior.
@@ -185,6 +189,25 @@ After every Shaka link in that skills directory is removed and no install is
 running, remove its `.shaka-install.lock` file too.
 Managed copies remain available for rollback; remove one only after no host link
 or active task uses it.
+
+### Extra entries and retained copies
+
+There is no automatic cleanup or expiry. Upgrades switch the link in the supplied
+skills directory and retain earlier packages for rollback. Retained packages do
+not create menu entries by themselves; another discoverable skill link does.
+PR trial preparations also retain their packages, without adding normal host links.
+
+When the user wants to remove a duplicate entry, inspect `shaka` links in every
+skills directory their host reads. For example, Codex can discover both
+`~/.agents/skills/shaka` and `~/.codex/skills/shaka`. Unlink the unwanted entry using
+the removal procedure above, preserving the desired entry. Start a new chat or
+restart the host if its skill list still shows the removed link.
+
+Delete a retained package only after all chats pinned to its absolute skill or
+helper path have finished and no host link points to it. Check other coding hosts
+as well as the current one. Keep copies needed for rollback. Shaka does not track
+active chats across hosts, so an unlinked package alone is not proof it is unused.
+Old packages keep their original menu labels until replaced by a new installation.
 
 ## Development environment details
 
