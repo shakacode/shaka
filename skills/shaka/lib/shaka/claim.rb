@@ -6,13 +6,12 @@ require 'optparse'
 require_relative 'branch_name'
 require_relative 'error'
 require_relative 'claim/names'
+require_relative 'claim/pull_requests'
 require_relative 'configuration'
 
 module Shaka
   # Lists open pull requests and remote branches that already cover a work item.
   class Claim
-    PR_JSON = 'number,title,url,headRefName'
-
     def self.run(arguments, runner: nil)
       query, root, tracker_branch = parse(arguments)
       return 0 unless query
@@ -82,15 +81,7 @@ module Shaka
 
     private
 
-    def listed_pull_requests
-      parsed = JSON.parse(capture(['gh', 'pr', 'list', '--search', @query, '--state', 'open', '--limit', '1000',
-                                   '--json', PR_JSON]))
-      raise Error, 'GitHub pull request list must be an array.' unless parsed.is_a?(Array)
-
-      parsed
-    rescue JSON::ParserError
-      raise Error, 'GitHub returned invalid JSON.'
-    end
+    def listed_pull_requests = PullRequests.new(query: @query, names: @names, capture: method(:capture)).call
 
     def matching_branches
       capture(['git', 'ls-remote', '--heads', 'origin']).each_line.filter_map do |line|

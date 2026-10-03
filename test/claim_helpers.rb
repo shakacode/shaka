@@ -25,9 +25,12 @@ module ClaimHelpers
     $stdout = original
   end
 
-  def runner(prs:, branches:)
+  def runner(prs:, branches:, comments: [])
+    defaults = { 'body' => '', 'closingIssuesReferences' => [] }
+    json = JSON.generate(prs.map { |pr| defaults.merge(pr) })
     lambda do |argv, **|
-      return [JSON.generate(prs), '', STATUS.new(0)] if argv[1] == 'pr'
+      return [json, '', STATUS.new(0)] if argv[1] == 'pr'
+      return [JSON.generate(comments), '', STATUS.new(0)] if argv[1] == 'api'
       return [branches, '', STATUS.new(0)] if argv[1] == 'ls-remote'
 
       raise "Unexpected command: #{argv.inspect}"
