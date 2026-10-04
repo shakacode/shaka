@@ -7,7 +7,7 @@ require 'shaka/post_implementation/history'
 class PostImplementationHistoryTest < Minitest::Test
   class GitHub < Shaka::GitHub
     attr_reader :comments, :writes
-    attr_accessor :changed, :failure, :mismatched, :listing
+    attr_accessor :changed, :failure, :mismatched, :listing, :rendering_failure
 
     def initialize(comments)
       super('example/test', '1')
@@ -20,7 +20,9 @@ class PostImplementationHistoryTest < Minitest::Test
 
     def issue_comments = listing || comments.values
 
-    def verify_rendering(_body) = '<p>Rendered.</p>'
+    def verify_rendering(_body)
+      rendering_failure ? '<details></details><p>Outside the archive.</p>' : '<details><p>Rendered.</p></details>'
+    end
 
     def api(path, method: 'GET', fields: {})
       id = path.split('/').last.to_i
@@ -103,17 +105,17 @@ class PostImplementationHistoryTest < Minitest::Test
     assert_includes prior['body'], url(3)
   end
 
-  def test_archive_escapes_details_tags_outside_fences
+  def test_archive_preserves_nested_details_and_fenced_examples
     prior = comment(1, body: "<details>kept</details>\n```\n</details>\n```\n")
     latest = comment(2)
     collapse(GitHub.new([prior, latest]), latest)
 
-    assert_includes prior['body'], '&lt;details&gt;kept&lt;/details&gt;'
+    assert_includes prior['body'], '<details>kept</details>'
     assert_includes prior['body'], "```\n</details>\n```"
   end
 
   def test_changed_bodies_and_failed_or_unconfirmed_updates_are_explicit
-    %i[changed failure mismatched].each do |problem|
+    %i[changed failure mismatched rendering_failure].each do |problem|
       prior = comment(1)
       latest = comment(2)
       github = GitHub.new([prior, latest])
@@ -122,7 +124,7 @@ class PostImplementationHistoryTest < Minitest::Test
 
       assert_empty report['collapsed']
       refute_empty report['unavailable']
-      assert_empty github.writes if problem == :changed
+      assert_empty github.writes if %i[changed rendering_failure].include?(problem)
     end
   end
 

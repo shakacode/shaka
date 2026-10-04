@@ -23,7 +23,11 @@ module LocalReviewHistoryFixture
 
     def viewer_login = 'ada'
     def issue_comments = listing || comments.values
-    def verify_rendering(_body) = '<p>Rendered.</p>'
+
+    def verify_rendering(body)
+      paragraph = "<p>#{body[Shaka::LocalReviewHistory::ATTESTATION].strip.gsub('&', '&amp;')}</p>"
+      body.strip.start_with?('REVIEWED ') ? paragraph : "<details><p>Rendered.</p></details>#{paragraph}"
+    end
 
     def api(path, method: 'GET', fields: {})
       return { 'head' => { 'sha' => head } } if path.end_with?('/pulls/1')
@@ -197,8 +201,21 @@ class LocalReviewHistoryTest < Minitest::Test
     latest = comment(2, head: HEAD)
     collapse(GitHub.new([prior, latest]), latest)
 
-    assert_equal 1, prior['body'].scan('<details>').size
-    assert_includes prior['body'], '&lt;details&gt;<summary>Report</summary>Kept&lt;/details&gt;'
+    assert_equal 2, prior['body'].scan('<details>').size
+    assert_includes prior['body'], nested
+  end
+
+  def test_a_reviewer_identity_with_html_characters_keeps_its_attestation
+    prior = comment(1)
+    prior['body'] = prior['body'].sub('anthropic/claude', 'openai/Codex & Tools')
+    latest = comment(2, head: HEAD)
+    github = GitHub.new([prior, latest])
+
+    report = collapse(github, latest)
+
+    assert_equal [1], report['collapsed']
+    assert_empty report['unavailable']
+    assert_includes prior['body'].lines.last, 'BY openai/Codex & Tools'
   end
 end
 

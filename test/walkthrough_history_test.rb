@@ -25,8 +25,8 @@ module WalkthroughHistoryExamples
   end
 
   def collapse_responses(source, stored)
-    [review_response(body: source), html_response, review_response(body: source), graphql_response,
-     review_response(body: stored)]
+    [review_response(body: source), html_response('<details><p>Archived.</p></details>'),
+     review_response(body: source), graphql_response, review_response(body: stored)]
   end
 
   def collapsed(body)
@@ -36,7 +36,7 @@ module WalkthroughHistoryExamples
       <details>
       <summary>Walkthrough for commit `#{OLD_SHA}`</summary>
 
-      #{Shaka::WalkthroughText.archive(body.rstrip)}
+      #{body.rstrip}
 
       </details>
     TEXT
@@ -56,10 +56,8 @@ module WalkthroughHistoryExamples
     assert_includes body, "Walkthrough for commit `#{OLD_SHA}`"
   end
 
-  def assert_archived_details_stay_text(body)
-    visible = body.gsub(/^```.*?^```/m, '')
-    assert_equal [1, 1], [visible.scan('<details>').size, visible.scan(%r{</details>}).size]
-    assert_includes body, '&lt;details&gt;kept&lt;/details&gt;'
+  def assert_archived_details_keep_markup(body)
+    assert_includes body, '<details>kept</details>'
     assert_includes body, "```\n</details>\n```"
   end
 
@@ -140,7 +138,8 @@ class WalkthroughHistoryTest < Minitest::Test
   end
 
   def test_a_body_that_changes_again_before_the_update_is_not_overwritten
-    published = publish_over(review_record(7, PRIOR), review_response(body: PRIOR), html_response,
+    published = publish_over(review_record(7, PRIOR), review_response(body: PRIOR),
+                             html_response('<details><p>Archived.</p></details>'),
                              review_response(body: 'changed'))
 
     assert_empty published.dig('earlier_walkthroughs', 'collapsed')
@@ -217,11 +216,32 @@ class WalkthroughHistoryFooterTest < Minitest::Test
     refute_includes body, "<summary>Walkthrough for commit `#{older}`</summary>"
   end
 
-  def test_a_details_tag_in_prose_cannot_close_the_archived_walkthrough
+  def test_nested_disclosures_and_fenced_examples_keep_their_original_markup
     noisy = PRIOR.sub('The earlier behavior.', "Uses <details>kept</details>.\n\n```\n</details>\n```\n")
     publish_over(review_record(7, noisy), *collapse_responses(noisy, collapsed(noisy)))
 
-    assert_archived_details_stay_text(JSON.parse(graphql_call.last).dig('variables', 'body'))
+    assert_archived_details_keep_markup(JSON.parse(graphql_call.last).dig('variables', 'body'))
+  end
+
+  def test_rendered_content_outside_the_archive_leaves_the_prior_review_intact
+    noisy = PRIOR.sub('The earlier behavior.', "</details>\nEscaped the archive.")
+    published = publish_over(review_record(7, noisy), review_response(body: noisy),
+                             html_response('<details></details><p>Escaped the archive.</p>'))
+
+    assert_empty published.dig('earlier_walkthroughs', 'collapsed')
+    assert_match(/outer details block/, published.dig('earlier_walkthroughs', 'unavailable').join)
+    refute(@calls.any? { |_argv, input| input.include?('updatePullRequestReview') })
+  end
+
+  def test_archiving_does_not_rewrite_lists_code_fences_or_inline_code
+    ["- Step\n    - Substep", "- ```sh\n  # setup\n  bin/validate *\n  ```",
+     "```text\n```not-a-close\n**literal**\n```", 'Use `Array<String>` and `*foo*`.',
+     "<details open>\n<summary>Evidence</summary>\n\nKept.\n\n</details>"].each do |example|
+      source = PRIOR.sub('The earlier behavior.', example)
+      publish_over(review_record(7, source), *collapse_responses(source, collapsed(source)))
+
+      assert_includes JSON.parse(graphql_call.last).dig('variables', 'body'), source.rstrip
+    end
   end
 
   def test_a_same_second_walkthrough_with_a_lower_id_is_earlier
