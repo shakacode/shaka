@@ -16,7 +16,7 @@ while a documentation project uses link checks and allows Auto after required
 checks and reviews. Updating the shared skill keeps these project choices in
 repository configuration; you do not need a separate copy of the workflow for each.
 
-See [settings](settings.md) for available choices.
+Use [Choose your settings](settings-guide.md) to decide what suits your team.
 
 ## Before you start
 
@@ -60,8 +60,9 @@ $shaka Configure this repository to wait for all configured CI reviewers.
 Keep merge policy ask.
 ```
 
-You do not need to edit configuration files by hand. See [settings](settings.md)
-for choices and defaults; let the skill handle command syntax and setup steps.
+You do not need to edit configuration files by hand. Start with the
+[settings guide](settings-guide.md); use the [reference](settings.md) when you
+need exact options and defaults.
 
 ## Files the agent prepares
 
