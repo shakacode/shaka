@@ -10,7 +10,7 @@ module Shaka
     IDENTITY = /\A🤖 /
     FOOTER = /_Walkthrough for commit `([0-9a-f]{40})`\. This is a COMMENT, not an approval\._/
     FOOTER_LINE = /\A#{FOOTER}\z/
-    DETAILS_TAG = %r{</?details\b[^>\n]*>}i
+    RENDERED_DETAILS = %r{</?details\b[^>]*>}i
 
     def self.walkthrough?(body, marker)
       body.start_with?("#{marker} ") || rendered?(body)
@@ -37,16 +37,32 @@ module Shaka
 
     def self.unfenced(body) = body.gsub(/^```.*?^```/m, '')
 
-    # A details tag in the archived prose is text, so it cannot close the disclosure.
-    # A fenced example keeps the characters the walkthrough showed.
-    def self.archive(body)
-      body.split(/^(```.*?^```)/m).map { |part| escape_details(part) }.join
+    # Inspect GitHub's sanitized HTML, rather than parsing the source Markdown.
+    def self.verify_archive!(html, footer: '')
+      content = archive_without_footer(html, footer.strip)
+      return if contained_archive?(content)
+
+      raise Error, 'GitHub did not keep the archived body inside its outer details block; history was left intact.'
     end
 
-    def self.escape_details(part)
-      return part if part.start_with?('```')
+    def self.archive_without_footer(html, footer)
+      return html if footer.empty?
 
-      part.gsub(DETAILS_TAG) { |tag| "&lt;#{tag[1..-2]}&gt;" }
+      ending = html.match(%r{\s*<p(?:\s[^>]*)?>#{Regexp.escape(footer)}</p>\s*\z})
+      raise Error, 'GitHub did not render the history attestation outside the archive.' unless ending
+
+      html[0...ending.begin(0)]
+    end
+
+    def self.contained_archive?(html)
+      depth = 0
+      html.to_enum(:scan, RENDERED_DETAILS).each do
+        match = Regexp.last_match
+        depth += match[0].start_with?('</') ? -1 : 1
+        return html[match.end(0)..].strip.empty? if depth.zero?
+        return false if depth.negative?
+      end
+      false
     end
 
     # Equal timestamps use the review id, which GitHub assigns in creation order.
@@ -163,7 +179,7 @@ module Shaka
 
     def wrap(body, url)
       summary = "<summary>Walkthrough for commit `#{WalkthroughText.revision(body)}`</summary>"
-      archived = WalkthroughText.archive(body.rstrip)
+      archived = body.rstrip
       "#{MARKER} #{url}\n\n<details>\n#{summary}\n\n#{archived}\n\n</details>\n"
     end
 
@@ -171,7 +187,8 @@ module Shaka
       node = review['node_id']
       raise Error, 'Review has no GraphQL id.' unless node.is_a?(String) && !node.empty?
 
-      @github.verify_rendering(body)
+      html = @github.verify_rendering(body)
+      WalkthroughText.verify_archive!(html) unless source.start_with?("#{MARKER} ")
       confirm_unchanged(review, source)
       @github.graphql(UPDATE, { id: node, body: body })
       stored = @github.review(review['id'])

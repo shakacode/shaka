@@ -23,7 +23,10 @@ module LocalReviewHistoryFixture
 
     def viewer_login = 'ada'
     def issue_comments = listing || comments.values
-    def verify_rendering(_body) = '<p>Rendered.</p>'
+
+    def verify_rendering(body)
+      "<details><p>Rendered.</p></details><p>#{body[Shaka::LocalReviewHistory::ATTESTATION].strip}</p>"
+    end
 
     def api(path, method: 'GET', fields: {})
       return { 'head' => { 'sha' => head } } if path.end_with?('/pulls/1')
@@ -197,8 +200,8 @@ class LocalReviewHistoryTest < Minitest::Test
     latest = comment(2, head: HEAD)
     collapse(GitHub.new([prior, latest]), latest)
 
-    assert_equal 1, prior['body'].scan('<details>').size
-    assert_includes prior['body'], '&lt;details&gt;<summary>Report</summary>Kept&lt;/details&gt;'
+    assert_equal 2, prior['body'].scan('<details>').size
+    assert_includes prior['body'], nested
   end
 end
 

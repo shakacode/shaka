@@ -97,19 +97,25 @@ module Shaka
     def keep_pointer?(previous, latest) = previous >= latest
 
     def wrap(content, latest)
-      archived = WalkthroughText.archive(content.rstrip)
+      archived = content.rstrip
       "#{self.class::MARKER} #{url_prefix}#{latest}\n\n<details>\n<summary>#{self.class::SUMMARY}</summary>\n\n" \
         "#{archived}\n\n</details>\n#{footer(content)}"
     end
 
     def replace(path, source, body)
-      @github.verify_rendering(body)
+      html = @github.verify_rendering(body)
+      WalkthroughText.verify_archive!(html, footer: footer(source)) unless archived?(source)
       raise Error, 'History comment body changed before update.' unless @github.api(path)['body'] == source
 
       @github.api(path, method: 'PATCH', fields: { body: })
       return if @github.api(path)['body'] == body
 
       raise Error, 'Stored history comment body does not match the collapsed report.'
+    end
+
+    def archived?(source)
+      content = source.split("\n", 2).last.to_s.sub(/\A🤖 [^\n]+\n\n/, '')
+      content.start_with?("#{self.class::MARKER} ")
     end
 
     def url_prefix = "https://github.com/#{@github.repository}/pull/#{@github.number}#issuecomment-"
