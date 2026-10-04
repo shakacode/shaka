@@ -12,26 +12,43 @@ Browse [this repository’s configuration](https://github.com/shakacode/shaka/bl
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
 
-## Which settings apply?
+<a id="which-settings-apply"></a>
 
-Shaka uses one configuration source for the task. It does not combine individual
-settings with shared team settings.
+## Preview settings before adopting them
 
-| Repository setup | Settings used |
+Try a settings change on a real task before sharing it with your team:
+
+> $shaka Try the settings from PR #123 on this task. Keep that settings PR
+> unmerged. Explain which choices will change, then start a settings preview.
+
+The agent pins a commit from the settings PR for this worktree. A second task
+or teammate can choose the same commit. You can also preview a local commit while
+adjusting prompts, without pushing it or changing the team's defaults.
+
+| Choice | Where it comes from during preview |
 | --- | --- |
-| Shared Shaka settings exist on the default branch | The default-branch configuration, including when reviewing a PR that changes it. |
-| No shared settings; an individual trial is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
+| AI review models and prompts, opening checks, writing limits, and WIP location preferences | The selected settings commit. |
+| Merge policy, required checks, CI review requirements, review-round cap, and permission to skip the product checkpoint | The default branch and live GitHub rules. |
+| Setup, test, and validation commands | The task's current executable entry points. The agent inspects them before running them. |
 
-Omitted optional values use Shaka's defaults. An explicit task choice takes
-precedence where an option supports it, such as choosing Ask for one task.
-Each option below describes any such override. A trial's local settings govern
-delivery preferences, such as AI reviewers and writing limits; they cannot
-disable required merge gates or authorize merging.
+If Shaka has not been set up in the repository, the agent first uses individual
+setup to prepare those command entry points. The settings PR can stay unmerged.
 
-A settings PR takes effect after it merges into the default branch. Shaka does
-not yet offer a mode that applies an unmerged settings PR to another task, or
-temporarily replaces team settings while you experiment. You can edit local
-settings and opening prompts during an individual trial before team adoption.
+The preview stays selected when you resume this task in a fresh chat. Switching
+to another branch pauses it; returning to the original branch resumes it. It does
+not apply to another worktree. Ask the agent to stop the preview to return to
+ordinary team or individual settings.
+
+Changes in the settings PR do not silently change an active preview. Ask the
+agent to select the new commit when you want to try it. A changed selection
+invalidates earlier evidence, so the agent reruns affected checks and reviews.
+Prompt paths are relative to the repository root and read at the selected commit.
+Editing a prompt in the working tree alone does not change an active preview.
+
+Without an active preview, shared default-branch settings apply. An individual
+trial supplies local settings when the repository has no shared setup. Preview
+uses the same configuration format and defaults; it does not combine settings
+from multiple sources.
 
 ## `merge.preference`
 

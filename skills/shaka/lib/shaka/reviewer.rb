@@ -56,7 +56,7 @@ module Shaka
     end
 
     def config
-      return Configuration.trusted(root:, ref: nil) unless @options[:ref]
+      return Configuration.worktree(root:) unless @options[:ref]
 
       Configuration.resolve_source(root:, ref: @options[:ref]).first
     end

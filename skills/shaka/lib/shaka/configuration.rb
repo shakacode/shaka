@@ -7,6 +7,7 @@ require_relative 'trusted_config_source'
 require_relative 'configuration/sources'
 require_relative 'configuration/private_source'
 require_relative 'configuration/generated_files'
+require_relative 'configuration/settings_preview'
 
 module Shaka
   # Supported access to repository configuration. Worktree and trusted-commit reads
@@ -31,6 +32,13 @@ module Shaka
     # Operation settings can be private; this selection grants no trusted policy or merge authority.
     def resolve_source(root:, ref:, candidate_commands: true)
       sha = resolve_commit(root:, ref:, label: 'settings ref')
+      preview = SettingsPreview.ref(root:)
+      if preview
+        trusted(root:, ref: sha, candidate_commands: false) if Layout.commit(root:, sha:, allow_missing: true)
+        config = trusted(root:, ref: preview, candidate_commands:)
+        return [config, { trusted_ref: sha, preview_ref: preview }, 'preview/local']
+      end
+
       source = private_source(root:, ref: sha)
       if source.status == 'partial' && source.trusted_source == 'absent'
         raise Error, "Individual settings are incomplete: #{source.blockers.join('; ')}"

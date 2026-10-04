@@ -26,7 +26,7 @@ module Shaka
       settings = (trusted_review || {}).fetch('post_implementation', {})
       RepositoryConfig::PostImplementationSchema.new(settings).validate
       @disabled = settings['enabled'] == false
-      choices = execution_choices(settings)
+      choices = execution_choices((effective_review || {}).fetch('post_implementation', {}))
       validate_choices!(choices)
 
       @options.merge!(choices.slice('reviewer', 'model', 'effort').transform_keys(&:to_sym))
@@ -113,9 +113,9 @@ module Shaka
     def checkpoint_instructions
       return File.read(DEFAULT_PROMPT, encoding: 'UTF-8') unless @prompt_path
 
-      @prompt_source = "#{@options[:criteria_ref]}:#{@prompt_path}"
+      @prompt_source = "#{settings_ref}:#{@prompt_path}"
       access = { executable: git_executable, capture: method(:capture), resolver: method(:bounded_git) }
-      Configuration.prompt_at_commit(root:, ref: @options[:criteria_ref], path: @prompt_path, git_access: access)
+      Configuration.prompt_at_commit(root:, ref: settings_ref, path: @prompt_path, git_access: access)
     end
 
     def validate_report(path)
