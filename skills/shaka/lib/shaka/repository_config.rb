@@ -103,7 +103,7 @@ module Shaka
 
     def assign_presentation
       @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {}))
-      @opening_check = { 'external_enabled' => true }.merge(@data.fetch('opening_check', {}))
+      @opening_check = OpeningSchema.effective(@data.fetch('opening_check', {}))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
     end
 
