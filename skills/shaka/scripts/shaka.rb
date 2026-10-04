@@ -320,7 +320,7 @@ begin
     raise Shaka::Error, 'merge requires --squash-message with the commit title and body.'
   end
 
-  checkpoint = { enabled: seam&.review&.dig('post_implementation', 'enabled') != false }
+  checkpoint = { enabled: !seam&.sha || seam.review.dig('post_implementation', 'enabled') != false }
   if %w[merge squash-message].include?(command)
     head = options.fetch(:head)
     Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)

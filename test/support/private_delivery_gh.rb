@@ -24,8 +24,18 @@ result = case ARGV.first
              puts ('<table></table>' * 10) + paragraphs.map { |block| "<p>#{block}</p>" }.join
              exit
            when 'user' then { 'login' => 'shaka-agent' }
-           when %r{/rules/branches/}, %r{/comments} then []
-           when %r{/labels} then [{ 'name' => 'awaiting-resume' }]
+           when %r{/rules/branches/} then []
+           when %r{/comments}
+             if ARGV.include?('POST')
+               posted = request.merge('id' => 10, 'user' => { 'login' => 'shaka-agent' },
+                                      'html_url' => 'https://github.com/owner/repo/pull/1#issuecomment-10')
+               (pull['comments'] ||= []) << posted
+               posted
+             else
+               pull.fetch('comments', [])
+             end
+           when %r{/labels} then pull.fetch('labels', [{ 'name' => 'awaiting-resume' }])
+           when %r{/commits} then [{ 'commit' => { 'message' => 'Feature' } }]
            when %r{/files} then [{ 'filename' => 'feature' }]
            when %r{/reviews/7} then pull.fetch('review')
            when %r{/reviews}
