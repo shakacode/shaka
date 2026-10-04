@@ -215,6 +215,9 @@ def opening_flags(flags, options)
     options[:opening_reviewer] = value
   end
   flags.on('--opening-model MODEL', 'Model for the opening reviewer') { |value| options[:opening_model] = value }
+  flags.on('--opening-effort LEVEL', 'Thinking effort for the opening reviewer') do |value|
+    options[:opening_effort] = value
+  end
 end
 
 def trust_flags(flags, options)
@@ -294,10 +297,11 @@ begin
     raise Shaka::Error, '--opening-model requires --opening-reviewer.'
   end
 
-  if options[:opening_model] && options[:opening_reviewer]
-    reviewer = Shaka::ReviewerSelection.parse(options[:opening_reviewer]).values.map(&:downcase).join('/')
-    raise Shaka::Error, '--opening-model is unsupported for openai/codex.' if reviewer == 'openai/codex'
+  if options[:opening_effort] && !options[:opening_reviewer]
+    raise Shaka::Error, '--opening-effort requires --opening-reviewer.'
   end
+
+  Shaka::ReviewerSelection.parse(options[:opening_reviewer]) if options[:opening_reviewer]
 
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge handoff squash-message].include?(command)
@@ -346,7 +350,8 @@ begin
                attention = Shaka::DecisionLabels.sync(github, carried)
                opening = Shaka::OpeningPublication.new(root:, ref: options[:ref],
                                                        reviewer: options[:opening_reviewer],
-                                                       model: options[:opening_model]).call(described['summary'])
+                                                       model: options[:opening_model],
+                                                       effort: options[:opening_effort]).call(described['summary'])
                refresh = Shaka::CursorUsageRefresh.bind(repository, number, carried['usage']) if carried.is_a?(Hash)
                published.merge('opening' => opening, 'usage_records' => usage_records).merge(prose_note).tap do |result|
                  result['attention'] = attention if attention

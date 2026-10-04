@@ -51,11 +51,12 @@ module Shaka
       LocalReviewPathGuard.safe_executable(ENV.fetch('PATH'), 'gh', candidate_root)
     end
 
-    def initialize(root:, ref:, reviewer: nil, model: nil)
+    def initialize(root:, ref:, reviewer: nil, model: nil, effort: nil)
       @root = OpeningCheckout.root(root) || root
       @ref = ref
       @reviewer = reviewer
       @model = model
+      @effort = effort
     end
 
     def call(summary)
@@ -76,27 +77,45 @@ module Shaka
     def check_with_trusted_settings(summary, candidate_root)
       source = TrustedConfigSource.new(root: @root)
       config = TrustedConfigSource.from_ref(root: @root, ref: @ref)
+      return { 'status' => 'disabled' } unless config.opening_check.fetch('enabled')
+
       @prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')
+      select_reviewer(config.opening_check)
       validate_reviewer!(config) if @reviewer
-      OpeningCheck.new(summary:, candidate_root:, reviewer: @reviewer, model: @model, prompt: @prompt).call
+      OpeningCheck.new(summary:, candidate_root:, reviewer: @reviewer, model: @model,
+                       effort: @effort, prompt: @prompt).call
+    end
+
+    def select_reviewer(settings)
+      configured = settings['reviewer']
+      same_reviewer = same_reviewer?(configured)
+      @reviewer ||= configured
+      @model ||= settings['model'] if same_reviewer
+      @effort ||= same_reviewer ? settings['effort'] : RepositoryConfig::OpeningSchema::DEFAULTS.fetch('effort')
+      @reviewer = nil if settings['external_enabled'] == false
+    end
+
+    def normalized(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
+
+    def same_reviewer?(configured)
+      !@reviewer || !configured || normalized(@reviewer) == normalized(configured)
     end
 
     def validate_reviewer!(config)
-      raise Error, 'Opening reviewer requires trusted opening_check.external_enabled.' unless
-        config&.opening_check&.fetch('external_enabled', true)
+      requested = normalized(@reviewer)
+      unless allowed_reviewers(config).any? { |identity| normalized(identity) == requested }
+        raise Error, 'Opening reviewer is not configured for this repository.'
+      end
 
-      allowed = Array(config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS])
-      requested = ReviewerSelection.parse(@reviewer).values_at('provider', 'model_family').map(&:downcase)
-      raise Error, 'Opening reviewer is not in the trusted reviewer list.' unless listed?(allowed, requested)
+      raise Error, 'Unsupported local reviewer' unless ReviewerSelection::SUPPORTED_REVIEWERS.include?(requested)
 
-      normalized = requested.join('/')
-      raise Error, 'Unsupported local reviewer' unless ReviewerSelection::SUPPORTED_REVIEWERS.include?(normalized)
-
-      @reviewer = normalized
+      @reviewer = requested
     end
 
-    def listed?(allowed, requested)
-      allowed.any? { |entry| entry.values_at('provider', 'model_family').map(&:downcase) == requested }
+    def allowed_reviewers(config)
+      agents = Array(config.review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS])
+      identities = agents.map { |entry| entry.values_at('provider', 'model_family').join('/') }
+      identities.push(config.opening_check['reviewer']).compact
     end
 
     def fallback(summary, error, prompt)

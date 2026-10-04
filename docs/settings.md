@@ -416,36 +416,50 @@ require a product checkpoint report.
 
 ## `opening_check`
 
-**Optional.** By default, the coding agent tries a separate local reviewer from
-the trusted reviewer list. To keep the opening with the coding agent, set:
+**Optional.** Check whether the opening of a PR description explains a useful
+outcome to its reader. This is writing advice; a failed check does not block
+publication or merging.
+
+> Use Codex to check PR openings, with my chosen model and medium thinking
+> effort. Keep my code-review settings as they are.
 
 ```yaml
 opening_check:
-  external_enabled: false
-  prompt_file: .agents/opening-prompt.md # optional
+  enabled: true
+  reviewer: openai/codex
+  model: gpt-6.1-sol
+  effort: medium
+  # prompt_file: .agents/shaka/opening.md
 ```
 
-For a customization example, copy [Shaka's default opening prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/opening-prompt.md)
-to `.agents/opening-prompt.md` and edit it for your team. Shaka reads that same
-default file when you have not configured a replacement.
+Choose the provider and model that works best for your writing. It can be the
+same provider you use to develop the change. The opening check runs in a separate
+session and does not inherit the implementation conversation.
 
-For example, a team can develop with Codex and list Claude and Grok in
-`review.local_review_agents`. The coding agent tries the listed providers in
-preference order. If neither is available, Shaka returns the opening-check
-prompt for Codex to apply. With the setting disabled, the coding agent receives
-the prompt without sending the opening to another model.
+| Setting | Effect when omitted |
+| --- | --- |
+| `enabled` | `true`. Set `false` to turn the opening check off. |
+| `reviewer` | The agent chooses from your local AI code reviewers. An explicit `provider/family`, such as `openai/codex`, selects the opening reviewer independently. |
+| `model` | The selected CLI's default model. Setting a model requires an explicit `reviewer`. |
+| `effort` | `low`. Use a thinking level supported by the selected provider. |
+| `prompt_file` | Shaka's default opening instructions. |
 
-When `external_enabled` is true, the agent uses `review.local_review_agents` in
-its existing preference order: a different provider first, then another listed
-provider, then the development model when no listed CLI completes the parse.
-`external_enabled` defaults to `true`; only a provider in the trusted reviewer
-list may receive the opening. A valid `prompt_file`
-replaces the default parsing instructions for both external and development-model
-checks. Shaka reads it from the trusted default-branch revision, applies the
-same file checks as `review.prompt_file`, and treats the PR opening as data.
-The required JSON field names and types remain fixed by Shaka.
-If the configured check cannot run, the description still publishes and the
-development model receives a fallback prompt with the reason.
+The older `external_enabled` setting remains supported: `false` keeps the check
+in the coding chat instead of launching a separate reviewer. Use either that
+legacy setting or `enabled`, not both. With `enabled: false`, Shaka returns no
+parsing prompt and launches no opening reviewer; the agent still follows your
+ordinary writing instructions.
+
+Prompt paths are relative to the repository root. For example, copy
+[Shaka's opening prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/opening-prompt.md)
+to `.agents/shaka/opening.md` to customize its writing advice. The agent supplies
+the verified default-branch revision; Shaka validates and reads the prompt at
+that revision. Its required JSON result format stays fixed.
+
+If the selected reviewer cannot run, Shaka returns the reason and the prompt for
+the coding agent to apply. It preserves your model choice. A successful result
+is reused while the opening, instructions, provider, model, and effort stay the
+same.
 
 ## `prose_limits`
 
