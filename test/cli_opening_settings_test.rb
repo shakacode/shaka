@@ -47,6 +47,17 @@ class CliOpeningSettingsTest < Minitest::Test
     end
   end
 
+  def test_legacy_disabled_setting_explains_why_an_explicit_reviewer_was_skipped
+    with_settings('external_enabled' => false) do |root, dir|
+      output, error, status = run_description(dir, root:, reviewer: 'anthropic/claude')
+      assert_predicate status, :success?, error
+      result = JSON.parse(output).fetch('opening')
+      assert_equal 'host_check', result['status']
+      assert_includes result['reason'], 'external_enabled'
+      refute_path_exists File.join(dir, 'claude-called')
+    end
+  end
+
   private
 
   def with_settings(settings)
