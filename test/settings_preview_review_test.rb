@@ -16,7 +16,7 @@ class SettingsPreviewReviewTest < Minitest::Test
       output, error, status = run_review(root, base, head, bin, '--ledger', ledger)
       assert_predicate status, :success?, "#{output} #{error}"
       assert_equal 5, JSON.parse(File.read(ledger))['local_max_rounds']
-      assert_preview_inputs(root)
+      assert_preview_inputs(root, JSON.parse(output))
     end
   end
 
@@ -33,7 +33,8 @@ class SettingsPreviewReviewTest < Minitest::Test
     git!(root, 'rev-parse', 'HEAD').strip
   end
 
-  def assert_preview_inputs(root)
+  def assert_preview_inputs(root, result)
+    assert_equal 'Local settings preview (private source)', result['prompt_source']
     trace = JSON.parse(File.read(File.join(root, 'trace.json')))
     assert_includes trace['args'].each_cons(2).to_a, ['-m', 'preview-model']
     assert_includes trace['prompt'].split('SUPPORTING SOURCE DATA').first, 'Candidate instructions'
@@ -61,6 +62,7 @@ class SettingsPreviewCheckpointTest < Minitest::Test
       assert_predicate status, :success?, result.inspect
       assert_equal 'completed', result['status']
       assert_equal 'preview-model', result['requested_model']
+      assert_equal 'Local settings preview (private source)', result['prompt_source']
     end
   end
 
@@ -69,7 +71,9 @@ class SettingsPreviewCheckpointTest < Minitest::Test
   def preview_checkpoint(root)
     path = File.join(root, '.agents/agent-workflow.yml')
     data = YAML.safe_load_file(path)
-    data['review']['post_implementation'] = { 'enabled' => false, 'model' => 'preview-model' }
+    data['review']['post_implementation'] = { 'enabled' => false, 'model' => 'preview-model',
+                                              'prompt_file' => '.agents/private-checkpoint.md' }
+    File.write(File.join(root, '.agents/private-checkpoint.md'), 'Assess the intended outcome.')
     File.write(path, YAML.dump(data))
     commit!(root, 'preview checkpoint')
     git!(root, 'rev-parse', 'HEAD').strip

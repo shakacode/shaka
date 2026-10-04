@@ -16,9 +16,18 @@ module Shaka
           root:, effective_settings: config.to_h.merge('task_overrides' => task_overrides), repository:,
           installation:, **selected
         )
-        snapshot = PublicSettings.capture(config:, kind:, ref:, task_overrides:, installation:)
+        snapshot = public_snapshot(root:, config:, kind:, ref:, task_overrides:, installation:)
         [config, fingerprint.to_h, kind, snapshot]
       end
+
+      def self.public_snapshot(root:, ref:, **settings)
+        snapshot = PublicSettings.capture(ref:, **settings)
+        return snapshot unless settings[:kind] == 'preview/local'
+
+        policy = TrustedConfigSource.from_ref(root:, ref:, private_trial: true)
+        PublicSettings.with_policy(snapshot, policy)
+      end
+      private_class_method :public_snapshot
 
       def self.resolve_source(root, ref)
         Configuration.resolve_source(root:, ref:)
