@@ -23,10 +23,11 @@ class ArchiveRenderingTest < Minitest::Test
     footer = "REVIEWED #{'a' * 40} BY openai/codex EFFORT medium FINDINGS 0"
     html = "<details><p>Report.</p></details>\n<p>#{footer}</p>\n"
 
-    Shaka::WalkthroughText.verify_archive!(html, footer:)
+    footer_html = "<p>#{footer}</p>"
+    Shaka::WalkthroughText.verify_archive!(html, footer_html:)
     assert_raises(Shaka::Error) do
-      Shaka::WalkthroughText.verify_archive!(html.sub('</details>', '</details><p>Outside.</p>'), footer:)
+      Shaka::WalkthroughText.verify_archive!(html.sub('</details>', '</details><p>Outside.</p>'), footer_html:)
     end
-    assert_raises(Shaka::Error) { Shaka::WalkthroughText.verify_archive!(html, footer: 'Different footer') }
+    assert_raises(Shaka::Error) { Shaka::WalkthroughText.verify_archive!(html, footer_html: '<p>Different footer</p>') }
   end
 end

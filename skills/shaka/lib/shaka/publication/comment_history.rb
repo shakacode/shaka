@@ -103,14 +103,22 @@ module Shaka
     end
 
     def replace(path, source, body)
-      html = @github.verify_rendering(body)
-      WalkthroughText.verify_archive!(html, footer: footer(source)) unless archived?(source)
+      verify_history_rendering(body, source)
       raise Error, 'History comment body changed before update.' unless @github.api(path)['body'] == source
 
       @github.api(path, method: 'PATCH', fields: { body: })
       return if @github.api(path)['body'] == body
 
       raise Error, 'Stored history comment body does not match the collapsed report.'
+    end
+
+    def verify_history_rendering(body, source)
+      html = @github.verify_rendering(body)
+      return if archived?(source)
+
+      ending = footer(source)
+      footer_html = ending.empty? ? '' : @github.verify_rendering(ending)
+      WalkthroughText.verify_archive!(html, footer_html:)
     end
 
     def archived?(source)

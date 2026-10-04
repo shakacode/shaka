@@ -38,8 +38,8 @@ module Shaka
     def self.unfenced(body) = body.gsub(/^```.*?^```/m, '')
 
     # Inspect GitHub's sanitized HTML, rather than parsing the source Markdown.
-    def self.verify_archive!(html, footer: '')
-      content = archive_without_footer(html, footer.strip)
+    def self.verify_archive!(html, footer_html: '')
+      content = archive_without_footer(html.rstrip, footer_html.strip)
       return if contained_archive?(content)
 
       raise Error, 'GitHub did not keep the archived body inside its outer details block; history was left intact.'
@@ -48,10 +48,9 @@ module Shaka
     def self.archive_without_footer(html, footer)
       return html if footer.empty?
 
-      ending = html.match(%r{\s*<p(?:\s[^>]*)?>#{Regexp.escape(footer)}</p>\s*\z})
-      raise Error, 'GitHub did not render the history attestation outside the archive.' unless ending
+      raise Error, 'GitHub did not render the history attestation outside the archive.' unless html.end_with?(footer)
 
-      html[0...ending.begin(0)]
+      html.delete_suffix(footer)
     end
 
     def self.contained_archive?(html)
