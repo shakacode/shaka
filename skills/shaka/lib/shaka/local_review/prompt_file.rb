@@ -33,7 +33,7 @@ module Shaka
 
     # The reviewer's trusted model and effort apply where the task named none.
     def apply_trusted_settings!
-      agent = reviewer_settings(trusted_review || {})
+      agent = reviewer_settings(effective_review || {})
       return unless agent
 
       schema = RepositoryConfig::ReviewSchema
@@ -55,10 +55,10 @@ module Shaka
     end
 
     def trusted_prompt_text
-      review = trusted_review
+      review = effective_review
       return unless review
 
-      ref = @options[:criteria_ref]
+      ref = settings_ref
       path = configured_prompt_path(review)
       access = { executable: git_executable, capture: method(:capture), resolver: method(:bounded_git) }
       path && Configuration.prompt_at_commit(root:, ref:, path:, git_access: access)
@@ -69,6 +69,20 @@ module Shaka
 
       ref = @options[:criteria_ref]
       @trusted_review = (trusted_review_settings(ref) if ref && trusted_seam?(ref))
+    end
+
+    # Criteria and gate settings stay trusted; the explicit preview selects only review inputs.
+    def settings_ref
+      return unless @options[:criteria_ref]
+
+      Configuration::SettingsPreview.ref(root:) || @options[:criteria_ref]
+    end
+
+    def effective_review
+      ref = settings_ref
+      return trusted_review if ref == @options[:criteria_ref]
+
+      trusted_review_settings(ref)
     end
 
     # Reads only the review section, so the rest of the seam need not be valid for a review to run;

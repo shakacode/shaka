@@ -10,6 +10,42 @@ Browse [this repository’s configuration](https://github.com/shakacode/shaka/bl
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
 
+## Preview settings before adopting them
+
+Try a settings change on a real task before sharing it with your team:
+
+> $shaka Try the settings from PR #123 on this task. Keep that settings PR
+> unmerged. Explain which choices will change, then start a settings preview.
+
+The agent pins a commit from the settings PR for this worktree. A second task
+or teammate can choose the same commit. You can also preview a local commit while
+adjusting prompts, without pushing it or changing the team's defaults.
+
+| Choice | Where it comes from during preview |
+| --- | --- |
+| AI review models and prompts, opening checks, writing limits, and WIP location preferences | The selected settings commit. |
+| Merge policy, required checks, CI review requirements, review-round cap, and permission to skip the product checkpoint | The default branch and live GitHub rules. |
+| Setup, test, and validation commands | The task's current executable entry points. The agent inspects them before running them. |
+
+If Shaka has not been set up in the repository, the agent first uses individual
+setup to prepare those command entry points. The settings PR can stay unmerged.
+
+The preview stays selected when you resume this task in a fresh chat. Switching
+to another branch pauses it; returning to the original branch resumes it. It does
+not apply to another worktree. Ask the agent to stop the preview to return to
+ordinary team or individual settings.
+
+Changes in the settings PR do not silently change an active preview. Ask the
+agent to select the new commit when you want to try it. A changed selection
+invalidates earlier evidence, so the agent reruns affected checks and reviews.
+Prompt paths are relative to the repository root and read at the selected commit.
+Editing a prompt in the working tree alone does not change an active preview.
+
+Without an active preview, shared default-branch settings apply. An individual
+trial supplies local settings when the repository has no shared setup. Preview
+uses the same configuration format and defaults; it does not combine settings
+from multiple sources.
+
 ## `merge.preference`
 
 **Required.** Values: `ask` or `auto`. Setup defaults to `ask`.

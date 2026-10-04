@@ -7,6 +7,7 @@ require_relative 'trusted_path_resolver'
 require_relative 'configuration/layout'
 require_relative 'configuration/sources'
 require_relative 'configuration/private_source'
+require_relative 'configuration/settings_preview'
 
 module Shaka
   # Reads repository policy from an immutable commit resolved from a trusted ref.
@@ -23,7 +24,8 @@ module Shaka
     # instead of falling back to the candidate file.
     def self.from_ref(root:, ref:, private_trial: false)
       return nil if private_trial && ref && !Configuration::Layout.commit(root:, sha: ref, allow_missing: true) &&
-                    Configuration::PrivateSource.new(root:, ref:).resolve.status == 'complete'
+                    (Configuration::SettingsPreview.ref(root:) ||
+                     Configuration::PrivateSource.new(root:, ref:).resolve.status == 'complete')
 
       load(root:, ref:) if ref
     end
@@ -116,9 +118,7 @@ module Shaka
     end
 
     def command_entries(resolver, layout)
-      layout.optional.values.to_h do |path|
-        [path, resolver.entry(path)]
-      end.compact
+      layout.optional.values.to_h { |path| [path, resolver.entry(path)] }.compact
     end
 
     def validate_legacy_command_entries(resolver, entries, sha, layout)
