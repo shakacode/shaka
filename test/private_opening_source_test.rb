@@ -17,6 +17,18 @@ class PrivateOpeningSourceTest < Minitest::Test
     end
   end
 
+  def test_invalid_candidate_prompt_cannot_block_valid_trusted_instructions
+    with_trial do
+      prepare_tracked_prompt
+      files = input_files
+      File.binwrite(File.join(@root, 'opening.md'), '')
+      assert_trusted_prompt(files)
+      File.unlink(File.join(@root, 'opening.md'))
+      commit(@root)
+      assert_trusted_prompt(files)
+    end
+  end
+
   def test_private_symlink_cannot_turn_a_tracked_candidate_prompt_into_local_instructions
     with_trial do
       prepare_tracked_prompt
@@ -63,6 +75,12 @@ class PrivateOpeningSourceTest < Minitest::Test
   end
 
   private
+
+  def assert_trusted_prompt(files)
+    assert_reviewer('anthropic/claude')
+    assert_includes opening['prompt'], 'Trusted instructions.'
+    assert_equal files, input_files
+  end
 
   def prepare_tracked_prompt
     File.write(File.join(@root, 'opening.md'), 'Trusted instructions. — é.')

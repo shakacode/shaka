@@ -22,7 +22,7 @@ module Shaka
         candidate = candidate_paths
         prompts = prompt_paths
         commands = @settings.fetch('commands').values
-        return private_hashes(candidate, prompts, commands) if @private_source
+        return private_hashes(candidate, commands) if @private_source
 
         merge_trusted(@files.hashes(candidate, files_only: commands), prompts)
       rescue KeyError => e
@@ -38,10 +38,13 @@ module Shaka
                                       opening: @settings.fetch('opening_check')).map(&:last)
       end
 
-      def private_hashes(candidate, prompts, commands)
-        hashes = @files.hashes(candidate + prompts, files_only: commands + prompts)
+      def private_hashes(candidate, commands)
         opening = @settings.dig('opening_check', 'prompt_file')
-        return hashes if !opening || PrivateInventory.private_path?(root: @root, path: opening)
+        local_opening = !opening || PrivateInventory.private_path?(root: @root, path: opening)
+        prompts = RepositoryConfig::ReviewSchema.prompt_files(@settings.fetch('review')).map(&:last)
+        prompts << opening if opening && local_opening
+        hashes = @files.hashes(candidate + prompts, files_only: commands + prompts)
+        return hashes if local_opening
 
         merge_trusted(hashes, [opening], ref: @private_source.ref)
       end

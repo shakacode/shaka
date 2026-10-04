@@ -69,6 +69,7 @@ module Shaka
 
       text.force_encoding(Encoding::UTF_8)
     end
+    public :read_prompt
 
     # `-s` prints the blob size and `-p` its contents.
     def git_output(sha, path, option)

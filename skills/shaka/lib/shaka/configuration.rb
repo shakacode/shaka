@@ -32,6 +32,10 @@ module Shaka
     def resolve_source(root:, ref:, candidate_commands: true)
       sha = resolve_commit(root:, ref:, label: 'settings ref')
       source = private_source(root:, ref: sha)
+      if source.status == 'partial' && source.trusted_source == 'absent'
+        raise Error, "Individual settings are incomplete: #{source.blockers.join('; ')}"
+      end
+
       if source.status == 'complete'
         [source.candidate_config, { private_source: source }, 'private/local']
       else

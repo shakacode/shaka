@@ -10,15 +10,17 @@ see [Start here](getting-started.md) and [Working with Shaka](working-with-shaka
 ## Choose how to start
 
 Use [shared repository setup](configure-repository.md) for team settings, or start
-a task if the repository is already configured. The private-trial option below
-avoids a team setup PR but still has delivery limitations. Private setup grants
+a task if the repository is already configured. The individual-trial option below
+avoids a team setup PR but still has delivery limitations. Individual setup grants
 neither team policy nor permission to merge.
 
-### Private trials: available tools, incomplete guided experience
+<a id="private-trials-available-tools-incomplete-guided-experience"></a>
+
+### Individual trials: available tools, incomplete guided experience
 
 ```text
 $shaka Implement this small feature using this repository's existing commands.
-Try Shaka privately in this clone. Do not create a team setup PR or include
+Try Shaka just for me in this clone. Do not create a team setup PR or include
 Shaka configuration in the feature diff. Keep merge policy ask.
 ```
 

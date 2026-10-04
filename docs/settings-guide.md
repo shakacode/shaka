@@ -18,7 +18,7 @@ copy of the repository and are kept out of commits:
 > my commits and use merge policy Ask.
 
 You can choose AI reviewers and adjust how Shaka writes PR descriptions. See
-[what individual trials currently support](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
+[what individual trials currently support](expected-experience.md#individual-trials-available-tools-incomplete-guided-experience)
 for the remaining real-use verification gaps.
 
 Use [shared repository setup](configure-repository.md) when the team wants the
