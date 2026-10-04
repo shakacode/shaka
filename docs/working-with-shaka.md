@@ -57,6 +57,18 @@ The agent returns a compact execution prompt with the proposed scope, tradeoffs,
 recommended model and effort, and available usage. It stops before implementation
 edits. Use the returned prompt when you decide to start delivery.
 
+### Keep a plan across chats
+
+When a task needs several PRs or a detailed plan, Shaka saves the steps and
+important decisions in the original issue or tracker item. It updates the plan
+as the work changes. If it needs permission to write there, Shaka asks.
+
+For larger design decisions, Shaka may suggest a separate document linked from
+the task.
+
+To pick up the work in a new chat, give Shaka the same task link after the previous
+agent has stopped. Shaka reads the plan and checks the PRs before continuing.
+
 ### Review an existing PR
 
 ```text

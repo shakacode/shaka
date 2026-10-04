@@ -18,6 +18,20 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: durable-task-plan
+    phase: plan
+    quote: Do not leave them only in chat.
+    enforced_by: agent
+    note: >-
+      The agent saves the plan and consequential discussion in the authorized work item or
+      linked document. Ruby neither writes trackers nor verifies that the record exists.
+  - id: plan-correction-is-not-approval
+    phase: always
+    quote: do not turn a proposal into human approval
+    enforced_by: agent
+    note: >-
+      The agent distinguishes proposed changes from accepted direction and obtains any
+      consequential decision before dependent work. Ruby does not authenticate acceptance.
   - id: readiness-is-not-merge-consent
     phase: intake
     quote: >-
