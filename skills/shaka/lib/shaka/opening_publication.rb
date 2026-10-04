@@ -93,7 +93,7 @@ module Shaka
       @reviewer ||= configured
       @model ||= settings['model'] if same_reviewer
       @effort ||= same_reviewer ? settings['effort'] : RepositoryConfig::OpeningSchema::DEFAULTS.fetch('effort')
-      @reviewer = nil if settings['external_enabled'] == false
+      @reviewer
     end
 
     def normalized(identity) = ReviewerSelection.parse(identity).values.map(&:downcase).join('/')
@@ -103,6 +103,9 @@ module Shaka
     end
 
     def validate_reviewer!(config)
+      raise Error, 'Opening reviewer requires opening_check.external_enabled.' if
+        config.opening_check['external_enabled'] == false
+
       requested = normalized(@reviewer)
       unless allowed_reviewers(config).any? { |identity| normalized(identity) == requested }
         raise Error, 'Opening reviewer is not configured for this repository.'
