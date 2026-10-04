@@ -8,13 +8,35 @@ prompts you can give your agent. This reference covers each option and its limit
 Settings live in `.agents/shaka/config.yml`; repositories configured before that
 layout keep them in `.agents/agent-workflow.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
-Shared settings come from the default branch; a settings PR uses the choices
-already there. In an established private trial, local settings control delivery
-preferences. They do not grant merge authority or supply fallback required checks.
 
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
+
+## Which settings apply?
+
+Shaka uses one configuration source for the task. It does not combine individual
+settings with shared team settings.
+
+| Repository setup | Settings used |
+| --- | --- |
+| Shared Shaka settings exist on the default branch | The default-branch configuration, including when reviewing a PR that changes it. |
+| No shared settings; an individual trial is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
+
+Omitted optional values use Shaka's defaults. An explicit task choice takes
+precedence where an option supports it, such as choosing Ask for one task.
+Each option below describes any such override. A trial's local settings govern
+delivery preferences, such as AI reviewers and writing limits; they cannot
+disable required merge gates or authorize merging.
+
+An **individual trial** is called `private` in the command interface because its
+configuration is kept out of commits. It currently requires a repository without
+shared Shaka settings. Local settings do not override an existing team setup.
+
+A settings PR takes effect after it merges into the default branch. Shaka does
+not yet offer a mode that applies an unmerged settings PR to another task, or
+temporarily replaces team settings while you experiment. You can edit local
+settings and opening prompts during an individual trial before team adoption.
 
 ## `merge.preference`
 
@@ -413,19 +435,22 @@ The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
 unresolved substantive concerns block readiness and Auto; green technical checks
 and changed settings do not clear them. Earlier executions stay visible on the PR.
-An explicit `enabled: false` opts out and requires a visible note.
+Setting `enabled: false` in the shared default-branch configuration opts out and
+requires a visible note. An individual trial's local setting cannot disable
+this gate.
 
 Ruby validates settings, execution outcome, report shape, and head binding.
-The reviewer judges product fit. The task owner supplies the original problem and
-evidence, resolves concerns, and establishes merge readiness. Final merge preparation
+The AI reviewer assesses whether the change solves the problem and is worth
+maintaining. The task owner supplies the original problem and evidence, resolves
+concerns, and establishes merge readiness. Final merge preparation
 requires a report for the current commit with no unresolved concerns, or an explicit
 opt-out.
 
 ## `opening_check`
 
-**Optional.** Check that a PR's opening explains what improves for its reader.
-By default, the coding agent tries a reviewer from `review.local_review_agents`.
-To keep the check with the coding agent, set:
+**Optional.** Check that a PR description's opening explains what improves for
+its reader. The coding agent always has instructions for this check.
+`external_enabled` controls whether it also requests a separate AI check:
 
 ```yaml
 opening_check:
@@ -433,30 +458,41 @@ opening_check:
   prompt_file: .agents/shaka/opening.md # optional custom instructions
 ```
 
-With `external_enabled: false`, the opening is not sent to another model. For
-example, if you develop with Codex, Codex applies the opening check itself.
+With `external_enabled: false`, the coding agent checks the opening in the
+current chat. With the default `true`, it selects a separate AI session from
+[`review.local_review_agents`](#reviewlocal_review_agents). Here, “external” means
+outside the current chat; the session can use the same provider.
 
-With the default `true`, Shaka prefers a different provider from your reviewer
-list. If you develop with Codex and list Claude first, the agent tries Claude.
-If no listed reviewer can complete the check, the coding agent receives the
-instructions and the reason the separate check was unavailable. The opening
-check is advisory; an unavailable check does not stop description publication.
+The workflow prefers a different provider when one is available. That preference
+does not guarantee a better result. The separate check currently runs at low
+effort, independently of the effort configured for code reviews. There are no
+opening-specific provider, model, or effort settings in the configuration file.
+The command supports a listed provider and, for Claude or Grok, a model choice;
+Codex uses its CLI default model.
+
+If the separate check is unavailable, the coding agent receives its instructions
+and checks the opening itself. The check is advisory; its availability does not
+block publishing the description.
 
 ### Customize the opening check
 
 Copy [Shaka's default opening prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/opening-prompt.md)
-and set `prompt_file` to your copy. Both the separate reviewer and the coding
-agent use those instructions. Leave the setting out to use Shaka's default.
+and set `prompt_file` to your copy. The path is relative to the repository root,
+not the configuration file's directory. For example,
+`prompt_file: .agents/shaka/opening.md` selects that file beneath the repository
+root. Both the separate AI session and the coding agent use those instructions.
+Leave the setting out to use Shaka's default.
 
-Where Shaka reads your instructions depends on how you use it:
+The [configuration source](#which-settings-apply) determines which `prompt_file`
+setting applies. Shaka then reads the file as follows:
 
 - **Shared team settings:** commit the prompt with the settings PR. Shaka uses
   the version on the default branch, so a PR cannot rewrite its own review rules.
-- **Private trial:** put the prompt in `.agents/shaka/`, alongside your local
+- **Individual trial:** put the prompt in `.agents/shaka/`, alongside your local
   settings. For example, `.agents/shaka/opening.md` stays private and applies to
   your trial. A symlink cannot point outside that directory.
 - **A prompt elsewhere in the repository:** Shaka reads the default-branch
-  version, even during a private trial. A file that exists only on your feature
+  version, even during an individual trial. A file that exists only on your feature
   branch cannot supply instructions.
 
 Prompt files must pass the [review prompt file checks](#reviewprompt_file).
@@ -465,10 +501,10 @@ Shaka treats the PR opening as text to assess, not as instructions to follow.
 
 ## `prose_limits`
 
-**Optional.** Shaka refuses to publish a PR description or code walkthrough
-that reads as a wall of text. Reviewing a small diff is faster than reading a
-long explanation of it, so the text should point to the code instead of
-retelling it.
+**Optional.** Limit the length of PR descriptions and code walkthroughs. These
+limits are checked in code before publication. Recommendations and review
+replies follow the agent's writing instructions but are not checked against
+these limits.
 
 ```yaml
 prose_limits:
@@ -505,11 +541,10 @@ links to the code, then publishes again.
 
 ### Which limits apply?
 
-With shared configuration, everyone uses the limits on the default branch. A PR
-that changes those limits still follows the existing ones until it merges.
-
-In an established private trial, your local limits apply. For example, a private
-20-word sentence limit applies to both your PR description and walkthrough.
+The [configuration source](#which-settings-apply) determines the limits. For
+example, during an individual trial, a local 20-word sentence limit applies to
+both your PR description and walkthrough. A shared team's changed limit takes
+effect after its settings PR merges.
 
 When the agent publishes without a settings reference, Shaka uses its defaults.
 If it cannot read the referenced settings, the description can use the defaults
@@ -611,7 +646,7 @@ wip:
 ```
 
 Include the checkout path and session link in **WIP Details**. Both team setup and
-private trials write `true`. The description renderer replaces both
+individual trials write `true`. The description renderer replaces both
 location fields with `REDACTED` when the selected setting is explicitly false.
 When settings were not read or could not load, it withholds locations and explains
 how to reload the policy. Ownership, state, next action, and the current commit
