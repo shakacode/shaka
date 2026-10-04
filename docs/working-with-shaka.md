@@ -135,21 +135,26 @@ for preservation rules and the real-use evaluation still needed.
 
 ## Resume unfinished work
 
-You can leave a new request on the PR after an Ask handoff. Before merging, wait
+You can leave a new request on any open PR, including one awaiting merge. Before merging, wait
 for the agent to address it: make the change, explain why no change is needed, or
 ask you to decide. When the agent resumes work, it removes `awaiting-merge-approval`.
 It restores that label after handling the request and checking that the PR is ready again.
 
-Shaka can keep checking GitHub for new comments and reviews after CI finishes.
-To respond without another message from you, the coding tool running the agent
-must also be able to resume its chat. The handoff tells you whether this is active.
-The PR's expandable **WIP Details** section records the owning chat, monitoring
-expiry, and next action. Keep that chat unarchived while automatic follow-up depends on it.
+Read the handoff to find out whether automatic follow-up is active. The agent
+starts it only when the coding tool can resume the owning chat after new feedback
+arrives. A tool that resumes only when CI finishes is not enough.
+
+With automatic follow-up active, Shaka checks GitHub every minute, even after CI
+finishes. Each monitoring run lasts up to one hour. When a run expires, the agent
+checks that it still owns the PR and starts another run if its coding tool can
+still resume the chat. If it cannot, the agent hands off to a named person.
+The PR's expandable **WIP Details** section records the owning chat, the current
+expiry time, and the next action. Keep that chat unarchived while monitoring depends on it.
 
 If the handoff says **Automatic feedback intake unavailable**, it names the person
 responsible for checking new feedback. That person opens the **Chat link** in WIP
 Details and sends its resume prompt, for example `$shaka https://github.com/OWNER/REPO/pull/N`.
-Do the same if monitoring has expired. Leaving a GitHub comment alone does not
+Do the same if the recorded expiry has passed without a renewed handoff. Leaving a GitHub comment alone does not
 resume the agent in this case.
 
 The Chat link works when the owning chat is reachable. In Codex,
