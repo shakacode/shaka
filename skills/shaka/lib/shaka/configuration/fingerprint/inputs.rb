@@ -22,7 +22,7 @@ module Shaka
         candidate = candidate_paths
         prompts = prompt_paths
         commands = @settings.fetch('commands').values
-        return @files.hashes(candidate + prompts, files_only: commands + prompts) if @private_source
+        return private_hashes(candidate, prompts, commands) if @private_source
 
         merge_trusted(@files.hashes(candidate, files_only: commands), prompts)
       rescue KeyError => e
@@ -38,8 +38,16 @@ module Shaka
                                       opening: @settings.fetch('opening_check')).map(&:last)
       end
 
-      def merge_trusted(candidate, paths)
-        trusted = FingerprintTrustedPrompts.new(root: @root, ref: @trusted_ref)
+      def private_hashes(candidate, prompts, commands)
+        hashes = @files.hashes(candidate + prompts, files_only: commands + prompts)
+        opening = @settings.dig('opening_check', 'prompt_file')
+        return hashes if !opening || PrivateInventory.private_path?(root: @root, path: opening)
+
+        merge_trusted(hashes, [opening], ref: @private_source.ref)
+      end
+
+      def merge_trusted(candidate, paths, ref: @trusted_ref)
+        trusted = FingerprintTrustedPrompts.new(root: @root, ref:)
         trusted.hashes(paths.map { |path| @files.safe_path(path) }).each do |path, prompt_digest|
           candidate[path] = combined(candidate[path], prompt_digest)
         end

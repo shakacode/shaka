@@ -36,12 +36,6 @@ to be reported with its failure and any manual fallback disclosed. A guided run
 with interventions does not establish seamless new-user acceptance.
 A newer installation needs its own validation before these limits are removed.
 
-Reviewer selection, PR status, description prose and opening checks, walkthrough,
-and handoff now resolve complete private settings through the same API as validation
-evidence. These settings grant no merge authority and do not replace GitHub's live
-requirements. Command-level regression tests cover delivery and resumption; a new
-real-user trial remains required.
-
 ## Run an ordinary task
 
 The [working guide](working-with-shaka.md#give-it-an-outcome) now covers task

@@ -75,7 +75,7 @@ module Shaka
 
     def check_with_settings(summary, candidate_root)
       config = Configuration.resolve_source(root: @root, ref: @ref, candidate_commands: false).first
-      @prompt = Configuration.opening_prompt(root: @root, config:) if config.opening_check.key?('prompt_file')
+      @prompt = Configuration.opening_prompt(root: @root, config:, ref: @ref) if config.opening_check.key?('prompt_file')
       validate_reviewer!(config) if @reviewer
       OpeningCheck.new(summary:, candidate_root:, reviewer: @reviewer, model: @model, prompt: @prompt).call
     end

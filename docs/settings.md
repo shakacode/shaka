@@ -438,11 +438,16 @@ the prompt without sending the opening to another model.
 When `external_enabled` is true, the agent uses `review.local_review_agents` in
 its existing preference order: a different provider first, then another listed
 provider, then the development model when no listed CLI completes the parse.
-`external_enabled` defaults to `true`; only a provider in the trusted reviewer
+`external_enabled` defaults to `true`; only a provider in the effective reviewer
 list may receive the opening. A valid `prompt_file`
 replaces the default parsing instructions for both external and development-model
-checks. Shaka reads it from the trusted default-branch revision, applies the
-same file checks as `review.prompt_file`, and treats the PR opening as data.
+checks. Team settings and tracked prompts come from the trusted default-branch revision.
+In a private trial, the local settings choose the reviewer and opening check.
+For example, `.agents/shaka/opening.md` can hold a private prompt; Shaka reads
+it locally and rejects symlinks that leave the private settings tree.
+A prompt elsewhere in the repository still comes from the trusted revision,
+so a candidate branch cannot replace its instructions. Shaka checks the prompt
+file and treats the PR opening as data.
 The required JSON field names and types remain fixed by Shaka.
 If the configured check cannot run, the description still publishes and the
 development model receives a fallback prompt with the reason.
@@ -485,9 +490,11 @@ tell how often the limits fire.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
-links to the code, then publishes again. Shaka reads these values from the
-trusted default-branch revision when the agent passes `--ref`; without it, the
-defaults apply. If that revision cannot be read, `description` still publishes
+links to the code, then publishes again. When the agent passes `--ref`, Shaka uses
+team settings from the trusted default-branch revision, or an established private
+trial’s local settings when that revision has no team configuration. For example, a private trial's sentence limit applies to
+both its description and walkthrough. Without `--ref`, the defaults apply.
+If that revision cannot be read, `description` still publishes
 under the defaults and its result says why, while `walkthrough` stops.
 
 ## Standard command scripts

@@ -39,16 +39,28 @@ module Shaka
       end
     end
 
-    def opening_prompt(root:, config:)
-      return TrustedConfigSource.new(root:).opening_prompt(config) if config.sha
+    def opening_prompt(root:, config:, ref:)
+      path = config.opening_check.fetch('prompt_file')
+      if config.sha || !PrivateInventory.private_path?(root:, path:)
+        return TrustedConfigSource.new(root:).opening_prompt(config, ref: config.sha || ref)
+      end
 
-      path = File.expand_path(config.opening_check.fetch('prompt_file'), root)
+      private_opening_prompt(root, path)
+    end
+
+    def private_opening_prompt(root, path)
+      full = File.realpath(File.expand_path(path, root))
+      unless full.start_with?("#{File.realpath(root)}/#{PrivateInventory::DIRECTORY}/")
+        raise Error, 'Opening prompt must remain inside the private settings tree.'
+      end
+
       text = nil
-      error = ReviewPrompt.file_error(File.size(path)) { text = File.binread(path) }
+      error = ReviewPrompt.file_error(File.size(full)) { text = File.binread(full) }
       raise Error, "opening_check.prompt_file #{error}" if error
 
       text
     end
+    private_class_method :private_opening_prompt
 
     def path(root, name)
       Paths.at(root, Paths::REPOSITORY_NAMES.fetch(name))
