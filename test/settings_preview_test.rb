@@ -29,6 +29,16 @@ class SettingsPreviewTest < Minitest::Test
     end
   end
 
+  def test_public_evidence_reports_the_enforced_policy_without_the_preview_revision
+    with_preview_repository do |root, trusted, preview|
+      select_preview(root, preview)
+      snapshot = Shaka::Evidence::Inputs.capture(root:, ref: trusted, repository: 'owner/repo').last
+      assert_equal 'ask', snapshot['merge.preference']
+      assert_equal trusted, snapshot['source.revision']
+      refute_includes JSON.generate(snapshot), preview
+    end
+  end
+
   def test_new_layout_selects_and_pins_the_settings_commit
     with_preview_repository(layout: :new) do |root, trusted, preview|
       select_preview(root, preview)

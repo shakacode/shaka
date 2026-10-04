@@ -126,6 +126,10 @@ module Shaka
     end
 
     # Names the instructions the reviewer received, for the published review summary.
-    def prompt_source = @prompt_source || 'Shaka default'
+    def prompt_source
+      return 'Local settings preview (private source)' if @prompt_source && settings_ref != @options[:criteria_ref]
+
+      @prompt_source || 'Shaka default'
+    end
   end
 end
