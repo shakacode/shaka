@@ -19,7 +19,9 @@ including after CI is complete and while awaiting merge approval. A terminal
 running the command, or a tool that resumes only on CI completion, is not enough.
 
 If supported, record what resumes the chat and when monitoring expires in the
-PR's **WIP Details** table. Keep the chat unarchived while follow-up depends on it.
+PR's **WIP Details** table, using its existing State and Next action fields.
+Update the expiry when restarting. This is an agent instruction; the Ruby monitor
+does not maintain or verify that timestamp. Keep the chat unarchived while follow-up depends on it.
 At an Ask handoff, retain `awaiting-merge-approval` and run `handoff` without
 `--woken-by`, so it checks merge readiness as well as the handoff.
 

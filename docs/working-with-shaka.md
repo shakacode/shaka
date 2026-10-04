@@ -148,8 +148,9 @@ With automatic follow-up active, Shaka checks GitHub every minute, even after CI
 finishes. Each monitoring run lasts up to one hour. When a run expires, the agent
 checks that it still owns the PR and starts another run if its coding tool can
 still resume the chat. If it cannot, the agent hands off to a named person.
-The PR's expandable **WIP Details** section records the owning chat, the current
-expiry time, and the next action. Keep that chat unarchived while monitoring depends on it.
+The agent writes the owning chat, current expiry time, and next action in the PR's
+expandable **WIP Details** section, and updates them when monitoring restarts.
+Keep that chat unarchived while monitoring depends on it.
 
 If the handoff says **Automatic feedback intake unavailable**, it names the person
 responsible for checking new feedback. That person opens the **Chat link** in WIP
