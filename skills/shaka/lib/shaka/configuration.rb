@@ -58,7 +58,7 @@ module Shaka
       error = ReviewPrompt.file_error(File.size(full)) { text = File.binread(full) }
       raise Error, "opening_check.prompt_file #{error}" if error
 
-      text
+      text.force_encoding(Encoding::UTF_8)
     end
     private_class_method :private_opening_prompt
 

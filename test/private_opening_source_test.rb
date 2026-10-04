@@ -38,6 +38,17 @@ class PrivateOpeningSourceTest < Minitest::Test
     end
   end
 
+  def test_private_prompt_and_opening_support_non_ascii_utf8
+    with_trial do
+      path = '.agents/shaka/opening.md'
+      File.write(File.join(@root, path), 'Nommez le sujet — pour le lecteur.')
+      update_private { |data| data['opening_check']['prompt_file'] = path }
+      result = Shaka::OpeningPublication.new(root: @root, ref: @ref).call('La tâche est résolue.')
+      assert_equal 'host_check', result['status']
+      assert_includes result['prompt'], 'Nommez le sujet — pour le lecteur.'
+    end
+  end
+
   def test_fingerprint_includes_the_trusted_opening_dependency
     with_trial do
       prepare_tracked_prompt
@@ -54,13 +65,13 @@ class PrivateOpeningSourceTest < Minitest::Test
   private
 
   def prepare_tracked_prompt
-    File.write(File.join(@root, 'opening.md'), 'Trusted instructions.')
+    File.write(File.join(@root, 'opening.md'), 'Trusted instructions. — é.')
     commit(@root)
     @ref = git(@root, 'rev-parse', 'HEAD')
     update_private { |data| data['opening_check']['prompt_file'] = 'opening.md' }
   end
 
-  def opening = Shaka::OpeningPublication.new(root: @root, ref: @ref).call('The feature now works.')
+  def opening = Shaka::OpeningPublication.new(root: @root, ref: @ref).call('La tâche est résolue.')
 
   def input_files
     _, fingerprint, = Shaka::Evidence::Inputs.capture(root: @root, ref: @ref, repository: 'owner/repo')

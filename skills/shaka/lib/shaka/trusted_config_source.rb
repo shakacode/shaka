@@ -67,7 +67,7 @@ module Shaka
       error = ReviewPrompt.file_error(git_output(sha, resolved, '-s').to_i) { text = git_output(sha, resolved, '-p') }
       raise Error, "#{label} #{path} at #{sha} #{error}" if error
 
-      text
+      text.force_encoding(Encoding::UTF_8)
     end
 
     # `-s` prints the blob size and `-p` its contents.
