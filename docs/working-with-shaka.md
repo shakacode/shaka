@@ -195,11 +195,32 @@ for preservation rules and the real-use evaluation still needed.
 
 ## Resume unfinished work
 
-Open the PR's **WIP Details** to find the owning chat, last known state, and next
-action. The **Chat link** can reopen the conversation when the owner's machine
-is reachable. In Codex, `codex://threads/...` takes you back to the original chat
-to pick up where the agent stopped. Before another agent takes over, confirm the previous one has
-stopped or handed off; a timestamp cannot prove it.
+You can leave a new request on any open PR, including one awaiting merge. Before merging, wait
+for the agent to address it: make the change, explain why no change is needed, or
+ask you to decide. When the agent resumes work, it removes `awaiting-merge-approval`.
+It restores that label after handling the request and checking that the PR is ready again.
+
+Read the handoff to find out whether automatic follow-up is active. The agent
+starts it only when the coding tool can resume the owning chat after new feedback
+arrives. A tool that resumes only when CI finishes is not enough.
+
+With automatic follow-up active, Shaka checks GitHub every minute, even after CI
+finishes. Each monitoring run lasts up to one hour. When a run expires, the agent
+checks that it still owns the PR and starts another run if its coding tool can
+still resume the chat. If it cannot, the agent hands off to a named person.
+The agent writes the owning chat, current expiry time, and next action in the PR's
+expandable **WIP Details** section, and updates them when monitoring restarts.
+Keep that chat unarchived while monitoring depends on it.
+
+If the handoff says **Automatic feedback intake unavailable**, it names the person
+responsible for checking new feedback. That person opens the **Chat link** in WIP
+Details and sends its resume prompt, for example `$shaka https://github.com/OWNER/REPO/pull/N`.
+Do the same if the recorded expiry has passed without a renewed handoff. Leaving a GitHub comment alone does not
+resume the agent in this case.
+
+The Chat link works when the owning chat is reachable. In Codex,
+`codex://threads/...` opens the original conversation. Before another agent takes
+over, confirm the previous one has stopped or handed off; a timestamp cannot prove it.
 
 To recover after a crash or in a new chat, paste the **Next action** from WIP Details,
 such as `$shaka https://github.com/OWNER/REPO/pull/N`. The agent checks the live PR

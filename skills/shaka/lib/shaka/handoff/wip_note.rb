@@ -14,10 +14,14 @@ module Shaka
 
       # The Revision cell of a complete note, or nil when the body holds none.
       def revision(body)
+        value(body, 'revision')
+      end
+
+      def value(body, field)
         # A body saved from GitHub's web editor comes back with CRLF line endings.
         region = Publishing.managed_region(body.to_s.gsub("\r\n", "\n")).to_s
         note = region[NOTE, 1] or return
-        cell = cells(note)&.fetch(WipDetails::FIELDS.keys.index('revision'))
+        cell = cells(note)&.fetch(WipDetails::FIELDS.keys.index(field))
         cell unless cell.to_s.strip.empty?
       end
 
