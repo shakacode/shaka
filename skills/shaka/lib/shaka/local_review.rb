@@ -80,14 +80,14 @@ module Shaka
       github = @github || GitHub.new(*@arguments)
       result = LocalReviewPublisher.new(content, github, @arguments.first).publish
       puts JSON.pretty_generate(result)
-      0
+      result.fetch('cleanup').fetch('unavailable').empty? ? 0 : 1
     end
 
     def record(parser)
       raise OptionParser::InvalidArgument, parser.to_s unless
         @arguments.empty? && @options[:ledger] && @options[:content_file]
 
-      recorded = LocalReviewLedger.new(@options[:ledger]).record!(content)
+      recorded = LocalReviewLedger.new(@options[:ledger]).record!(content, head: @options[:head])
       puts JSON.pretty_generate('ledger' => File.expand_path(@options[:ledger]), 'rounds' => recorded)
       0
     end
@@ -96,6 +96,7 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review record --ledger PATH --content-file PATH'
         flags.on('--ledger PATH') { |value| @options[:ledger] = value }
+        flags.on('--head SHA', /\A[0-9a-f]{40}\z/) { |value| @options[:head] = value }
         flags.on('--content-file PATH') { |value| @options[:content_file] = value }
         flags.on('-h', '--help') { @options[:help] = true }
       end

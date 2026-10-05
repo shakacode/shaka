@@ -57,6 +57,9 @@ module Shaka
     # An unknown policy cannot authorize publishing locations, even on unfinished PRs.
     def include_locations? = @current&.fetch('wip.include_locations', false) == true
 
+    # Only resolved settings can establish whether the repository opted out.
+    def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true
+
     def rows
       snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]
       safe = snapshots.map { |snapshot| Evidence::PublicSettings.sanitize(snapshot) }

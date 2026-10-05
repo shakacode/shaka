@@ -588,6 +588,30 @@ When a task comes from a tracker that offers a branch name, such as Linear's
 Trackers link a pull request to its
 work item through that branch name. Git must accept the name as a branch name.
 
+## `pr_description.show_shaka_credit`
+
+**Optional. Default: `true`.**
+
+PR descriptions show *PR prepared with [Shaka](https://shaka.shakacode.com/).* below
+the opening summary. The credit helps readers discover the workflow that prepared
+the PR and try it on their own project.
+
+When Shaka is configured for a repository, the credit helps teammates discover its
+workflow. For private repositories, leave attribution enabled while introducing
+Shaka, then turn it off once the team is familiar with it.
+
+To hide the credit, set:
+
+```yaml
+pr_description:
+  show_shaka_credit: false
+```
+
+The setting applies to PR descriptions. Walkthroughs and replies do not carry this
+credit. Hiding it keeps verification, execution provenance, and usage visible in
+their existing sections. Shaka also omits the credit when repository settings
+cannot be read.
+
 ## `wip.include_locations`
 
 **Optional. Default: `true`.**
