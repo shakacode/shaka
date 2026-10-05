@@ -22,6 +22,10 @@ on and invoke its repository setup skill:
 | Codex app | Ask: “Set up this chat as my Master Control Tower using Shaka's instructions.” | `$rct` |
 | Claude Code desktop | `/mct-claude` | `/rct-claude` |
 
+Setup needs the app's chat tools; Codex also needs its project tools. If your
+agent cannot access them, use the [manual role prompts](../skills/shaka/references/control-towers.md#role-prompts)
+instead of automated tower setup.
+
 The setup skill guides the agent to identify the repository from the chat's
 project and checkout, check for an existing RCT, and register with the MCT.
 Reuse an existing RCT when one is found. Setup is complete when the MCT
@@ -34,6 +38,9 @@ cover each environment in detail.
 <a id="run-a-bounded-batch"></a>
 
 ## Choose a small batch
+
+The RCT normally recommends one task at a time. To plan several together,
+explicitly ask for a small batch.
 
 Continue in the repository's RCT chat. It already has the repository context;
 “me” refers to your signed-in GitHub account. You can ask:
