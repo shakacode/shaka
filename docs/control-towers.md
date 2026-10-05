@@ -1,182 +1,152 @@
 # Control towers
 
-Control towers are optional tools for tracking work across repositories. Try Shaka
-on a few tasks first.
+A **Repository Control Tower (RCT)** gives you one chat for deciding what to work
+on and following the PRs in a repository. Ask it to check in with the chats doing
+the work and show you what needs your attention.
 
-A **Repository Control Tower (RCT)** follows one repository's priorities and tasks.
-A **Master Control Tower (MCT)** coordinates RCTs and dependencies—for example, a
-library fix needed before an application upgrade.
+A **Master Control Tower (MCT)** coordinates work across repositories. For
+example, it can help sequence a library fix before an application upgrade.
+Each repository still has its own RCT.
 
-Each delivery still has one owner. The [architecture guide](architecture.md)
-explains where its records belong.
+Control towers are optional roles for your coding agent, guided by Shaka's
+skills. Try [a few Shaka tasks](getting-started.md) before adding them.
 
-Ask your agent to install the tower skills and establish the master. Then open a
-task in each repository and invoke its setup skill:
+## Set up your towers
 
-| Environment | Repository tower | Master tower |
+Ask your agent to install Shaka's tower skills and help you establish a master
+chat. Then open a chat in the saved project for the repository you want to work
+on and invoke its repository setup skill:
+
+| Environment | Master chat | Repository chat |
 | --- | --- | --- |
-| Codex app | `$rct` | Agent follows the master role instructions |
-| Claude Code desktop | `/rct-claude` | `/mct-claude` |
+| Codex app | Ask: “Set up this chat as my Master Control Tower using Shaka's instructions.” | `$rct` |
+| Claude Code desktop | `/mct-claude` | `/rct-claude` |
 
-Use a task in the saved project for the intended repository. The Codex setup
-skill instructs your agent to verify its Git root, remotes, and live GitHub
-identity, and to check for an existing RCT for that repository. These are agent
-steps, not an automatic registry guarantee. Reuse that tower when one exists.
-Setup completes only when the MCT acknowledges the same repository and RCT task.
+The setup skill guides the agent to identify the repository from the chat's
+project and checkout, check for an existing RCT, and register with the MCT.
+Reuse an existing RCT when one is found. Setup is complete when the MCT
+acknowledges the repository and its RCT chat; you then choose what work starts.
 
-After the master acknowledges the repository tower, ask the tower what needs
-attention. You choose which task starts; setup starts no backlog work or recurring
-scans.
+Keep your master and repository chats in the same app. Codex and Claude Code
+cannot read each other's chats. The [setup and operating instructions](../skills/shaka/references/control-towers.md)
+cover each environment in detail.
 
-Keep each tower set in one environment: Claude and Codex cannot read each other's
-sessions. See the [operating procedures](../skills/shaka/references/control-towers.md)
-for setup, ownership, and handoff.
+<a id="run-a-bounded-batch"></a>
 
-## Run a bounded batch
+## Choose a small batch
 
-Once one RCT is registered for the verified repository, give it an explicit
-assignment. The MCT coordinates work spanning repositories; each RCT retains
-one repository's owners and evidence. Registration alone authorizes no backlog
-execution, new delivery chats, merges, deployments, production mutations, or
-arbitrary messages. Those actions need authority from your request.
-
-For example, replace the brackets with your repository, account, and limits:
+Continue in the repository's RCT chat. It already has the repository context;
+“me” refers to your signed-in GitHub account. You can ask:
 
 ```text
-In [owner/repository], select up to three issues assigned to [my account]
-or unassigned that address [customer outcome]. Reconcile live PRs and existing
-owners first; leave other people's assignments alone. Propose the batch and
-explain dependencies before starting. Include Dependabot PRs in the triage.
+What should we tackle next? Look at issues assigned to me or unassigned,
+and include Dependabot PRs. Suggest a batch of up to three.
 ```
 
-An assignee is a selection filter, not permission to execute. Review the proposed
-scope, then authorize the concrete work and any owner messages or new chats:
+Expect a short proposal explaining why those items matter, which already have
+PRs or active chats, and which can proceed together. If one fix depends on
+another, the proposal should explain the order. You can narrow the selection
+with an outcome such as “Focus on checkout reliability.”
+
+When the selection looks right, start it with **Ask** so the PRs come back to you
+for a merge decision:
 
 ```text
-Start that three-item batch. Resume existing delivery owners; create a Shaka
-chat only for a confirmed unowned target. You may message these owners for
-handoffs and prerequisite updates. Use the installed $shaka skill with Ask
-merge preference in each delivery. Stop at reviewed PRs; do not merge or deploy.
+Start those three with Shaka and Ask. Reuse the chats already working on
+them, start new chats for the rest, and coordinate with them.
+Bring the PRs back for review.
 ```
 
-Keep one accountable owner per issue or PR. Resume an existing owner rather than
-starting a second writer because its chat is idle. If it cannot continue, explicitly
-transfer ownership. Each delivery uses an isolated checkout as needed and retains
-its repository's validation, review, security, and domain requirements.
+This gives the RCT permission to start the selected work and communicate with
+those chats. Each task stays with one chat through implementation, testing,
+review, and its PR. If a chat has stopped, ask the RCT to resume it; moving its
+work to another chat should be an explicit handoff.
 
-Ask means the owner prepares a verified PR for your merge decision. It does not
-permit delayed auto-merge or turn a prerequisite update into merge consent. See
-[working with Shaka](working-with-shaka.md) for merge preferences and resumption.
+See [merge policies](working-with-shaka.md#choose-a-merge-policy) for Ask and Auto.
+Setting up towers or starting a batch does not authorize a deployment.
 
-## Read evidence before recommending a merge
-
-Ask the RCT to read current owner handoffs and compare them with live GitHub
-state. A launch that succeeded proves only that a chat started. A green review
-job without a review artifact, an old check, or a report for another commit does
-not establish readiness. Owners remain responsible for current evidence.
-
-| State | What the RCT should establish | Next action |
-| --- | --- | --- |
-| Verified ready | Current PR head, applicable checks, actual review report, manual QA, and required domain decisions agree | Bring the PR to the authorized merge decision |
-| Blocked | A named prerequisite, failed check, missing review, QA gap, or unresolved decision remains | Give the blocker and its responsible owner |
-| Superseded | Live evidence shows another change replaces the work | Explain the replacement; obtain authority for any closure |
-| Merged | GitHub confirms the merge and resulting base revision | Report the result and reassess affected dependencies |
-
-These are evidence-based recommendations by the agent, not an automated Shaka
-readiness guarantee. A ready recommendation still respects native GitHub gates,
-Ask, and any separate security or domain approval.
-
-Require the owner to exercise the changed behavior, not just run unit tests.
-Use positive cases and **negative controls**: cases that should fail or remain
-unaffected, showing the check can detect the defect without false alarms. For
-example, a repaired smoke test should pass on a healthy page and fail when the
-required content is deliberately absent.
-
-A useful review app runs the tested revision with the routes, data, and services
-needed to exercise the change. Record desktop and mobile results where relevant.
-An empty preview, an unavailable backend, or a deployment for an earlier commit
-is a gap to report. See [PR verification](pr-verification.md) for evidence choices.
-
-AI review can handle routine diff analysis and evidence reconciliation. Keep
-human ownership for decisions requiring domain knowledge, such as whether data
-provenance is acceptable or a billing rule matches the contract. Use the least
-costly review route that can answer the question, and name what remains for the
-human; more AI review cannot substitute for that decision.
-
-## Resume after a shared prerequisite
-
-When a shared fix lands, verify its merge and wake only the owners whose blockers
-it actually resolves, within your messaging authorization. Other owners retain
-their existing state. Use a prompt like this:
+## Follow the work
 
 ```text
-[Prerequisite PR URL] merged at [base SHA]. Resume your existing delivery for
-[affected PR URL] through $shaka. Integrate the new base, rerun affected checks
-and real manual QA, and renew review evidence for your current head or exact
-merge result as the repository requires. Report remaining blockers and evidence
-links. Preserve Ask and the separate security/domain gates; this update waives none.
+How are those three going? Show me what's ready, what's blocked, and what
+you need from me. Link each PR and its chat.
 ```
 
-A wake-up is not proof that the owner read it or completed the work. Confirm the
-new handoff and live state before changing the recommendation. A prior report does
-not establish that the updated branch works with the prerequisite.
+A useful update combines the latest chat reports with the current PRs on
+GitHub. It should tell you what changed and what happens next:
 
-### Coordinate a scarce test environment
+| Status | What to expect |
+| --- | --- |
+| Ready for review | A PR with completed checks, review results, and evidence that the change works |
+| Blocked | The specific problem, the chat handling it, and any decision needed from you |
+| Replaced by other work | A link to the replacement and a recommendation for the old issue or PR |
+| Merged | The merged PR and any other work it unblocks |
 
-Some repositories require a serial database or runtime claim because owners
-share one integration environment. That is repository-specific policy, not a
-universal Shaka requirement. Follow that repository's backend claim mechanism
-and respect its live holder.
+Before merging, open the PR to see how the change was checked. Tests and reviews
+should cover its latest code. For visible changes, look for results from using
+the app, including desktop and mobile where relevant. A review app should let
+you try the feature with the data and services it needs.
 
-One real batch repeatedly raced when owners all tried to claim the released
-slot. The RCT resolved the handoff by telling **all competing owners** to defer
-new claims for the next selected owner, then waiting for that owner's successful
-backend claim. Notifying only the selected owner left competitors free to race.
+Good checks also show that they can catch the problem. For example, a smoke test
+should pass on a healthy page and fail when required content is missing. This
+is a **negative control**. [PR verification](pr-verification.md) explains what to
+look for in the evidence.
 
-A scheduling reservation gives an owner the next turn; it grants no lease and
-cannot displace a live holder. The selected owner must acquire the backend claim
-before using the environment and release it according to repository policy.
-Shaka provides no built-in FIFO scheduler or blanket background autonomy.
+Use focused AI review for code and tests, and spend human review time on decisions
+that need your knowledge. An agent can check a billing calculation; someone who
+knows the contract must decide whether that is the right billing rule.
+
+## Unblock dependent work
+
+When a prerequisite PR merges, tell the RCT:
 
 ```text
-For the authorized batch, tell every competing owner to defer new claims while
-[owner A] gets the next turn. Respect any live holder. Owner A must confirm a
-successful backend claim before testing, then report results and release it.
-Continue other work only within each owner's existing scope and limits.
+PR #123 has merged. Ask the chats that were waiting on it to update their
+branches, rerun their checks, and tell me what's still blocked.
 ```
 
-## Ask for merge priorities with links
+Replace the PR number with the one that merged. The RCT checks which chats were
+waiting for that change and follows up with them. Those chats need to test their
+changes together with the merged fix and refresh affected reviews and manual
+checks. Wait for their updated results before treating the dependent PRs as ready.
+Any outstanding security or business decision still needs to be settled.
 
-Request a recommendation you can act on:
+### If your project shares one test environment
+
+Some projects have a database or test server that only one chat can use at a
+time. You can ask:
 
 ```text
-Read current owner handoffs and live PR state for this batch. What order should
-I focus on the merges? Rank customer impact and readiness together. Give each
-PR link, clickable owner-chat link, evidence revision, reason, and remaining
-blocker. Separate verified ready, blocked, superseded, and merged work.
+Let the checkout fix test next. Tell the other chats sharing that environment
+to wait until it's finished.
 ```
 
-A production correctness fix with demonstrated QA may deserve attention before
-a setup convenience change. An urgent but blocked change needs its decision or
-repair first. Explain that tradeoff rather than ranking by PR number or green
-status alone. Keep a clickable PR link beside its owner-chat link so you can
-inspect evidence and resume the accountable owner.
+The RCT needs to notify every competing chat, so they do not all try to take the
+next slot. The selected chat must still acquire the project's lock before
+testing and release it afterward. Its place in line does not displace a chat
+already using the environment. This depends on your project's tools; Shaka
+does not include an environment scheduler.
 
-![RCT merge-priority answer with ranked PR links and owner-chat links, followed by blocked PRs and their remaining blockers.](https://raw.githubusercontent.com/shakacode/shaka/025f0d04132786e880d422d11409e6d5ddef93d7/docs/images/rct-merge-priorities.png)
+## Decide what to merge first
 
-*Illustrative snapshot from an authorized RCT batch, published with the user's
-approval. The PR numbers, owners, and readiness statements show the answer's
-format; they are not current status or merge instructions.*
+```text
+What order should I focus on the merges? Give me links to the PRs and their chats.
+```
 
-Codex chat deep links open local navigation in the Codex app. They are not public
-share links and do not grant another reader access to the conversation. Supply
-links from the actual owner's host metadata; do not invent chat IDs. Keep private
-tracker bodies and coordination records out of public artifacts. The screenshot
-above is a specifically approved example, not permission to publish other chats.
+The recommendation should weigh impact and readiness together. A tested fix for
+lost orders may deserve attention before a development convenience. An urgent
+PR that still needs a security review should name that blocker and the next step.
 
-Merge one PR at a time when the required authority and gates are satisfied. After
-each merge advances the base, have the next owner integrate it and confirm
-validation against the updated base or exact merge result, renewing affected
-review and QA evidence. Ask still requires your explicit merge decision; Auto
-continues only within its authorized scope. Verify GitHub's actual merged state
-before reporting completion or waking dependent owners.
+Here is an example response from an RCT in Codex:
+
+![RCT response ranking PRs for merge attention, with links to each PR and its chat and a separate list of blocked PRs.](https://raw.githubusercontent.com/shakacode/shaka/025f0d04132786e880d422d11409e6d5ddef93d7/docs/images/rct-merge-priorities.png)
+
+*Example snapshot: merge priorities first, remaining blockers below.*
+
+Open the PR to review the change, or its chat to ask questions and request more
+work. Codex chat links open in your app; they are not public conversation shares.
+
+Merge one PR at a time. After each merge, ask the RCT to have the next chat check
+its PR against the updated base. A previous green result may not cover the
+combined changes. Under Ask, you decide whether each PR should merge; the RCT
+helps you make that decision with current results.

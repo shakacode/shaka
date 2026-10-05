@@ -31,7 +31,7 @@ Ask the agent to handle configuration. These guides explain your choices:
 - [Workflow and enforcement](workflow.md) — what code checks and what relies on the agent.
 - [Architecture](architecture.md) — why Shaka keeps one owner and little state.
 - [Repository catalog](repository-catalog.md) — organize repositories across projects.
-- [Control towers](control-towers.md#run-a-bounded-batch) — assign a bounded batch, verify owner handoffs, and choose merge priorities.
+- [Control towers](control-towers.md) — coordinate a batch across chats and decide which PRs to merge first.
 - [Try a Shaka PR](trying-pr-versions.md) — evaluate an unmerged change on real work.
 
 Development guidance lives in [Contributing](../CONTRIBUTING.md).
