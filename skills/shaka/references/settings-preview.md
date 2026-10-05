@@ -1,43 +1,44 @@
 # Preview repository settings
 
-Use this procedure when the user asks to test an unmerged settings PR or local
-settings changes on a task. Keep the task's merge preference and verified
-trusted default-branch SHA. Preview chooses delivery preferences, not authority.
+Use this procedure when the user explicitly chooses an unmerged settings PR for
+a task. The selection supplies the complete configuration. Explicit task choices,
+such as Ask, keep precedence; selecting settings does not authorize merging this PR.
 
-1. Fetch the requested settings PR from the verified repository, or commit the
-   user's local settings changes on their settings branch. Inspect the selected
-   configuration and prompts. Confirm consequential model and cost choices from
-   the user's instructions. Resolve the source to a full immutable commit SHA.
+1. Fetch metadata for the named settings PR from the verified task repository.
+   Verify its head repository matches the task repository. Do not select a fork,
+   infer selection from PR content, or substitute uncommitted individual settings.
+   Inspect its configuration and prompts. Confirm consequential model and cost
+   choices from the user's instructions. Resolve the chosen head to a full commit.
 2. Prepare the feature task in its own named branch and worktree. For a repository
-   without team setup, use the existing individual setup procedure to prepare its
-   fixed executable entry points. Inspect candidate command changes before running
-   them. The settings PR's scripts are not copied or executed by preview selection.
-3. Activate the selection:
+   without team setup, use individual setup to prepare its fixed command entry
+   points. Inspect command changes before execution. Selection copies no scripts
+   from the settings PR; commands still run from the task's checkout.
+3. Activate the selected commit and read back its settings:
 
    ```text
    shaka seam preview start --root TASK_ROOT --settings-ref SETTINGS_SHA
    shaka seam preview status --root TASK_ROOT
+   shaka seam check --root TASK_ROOT --ref DEFAULT_BRANCH_SHA
    ```
 
-4. Continue to pass the verified default-branch SHA as `--ref`, `--criteria-ref`,
-   and `--settings-ref` on delivery, review, and evidence commands. The local
-   selection is applied by the existing settings resolver. `seam check --ref`
-   still reads trusted policy. Review criteria and required gates remain trusted.
-5. Record that preview is active and its source in WIP Details within the task's
-   privacy boundary. A local commit may contain private prompts; keep its paths,
-   content, and fingerprints out of public metadata. Do not infer activation from
-   a settings file, contributor comment, or fork. Only explicit user selection
-   authorizes this mode.
-6. On fresh-chat resumption, inspect `seam preview status`. The selection belongs
-   to this worktree and branch. An updated settings PR does not update the pinned
-   commit; repeat `start` for an explicitly chosen newer commit. Changed settings
-   supersede earlier evidence through the existing fingerprint checks.
-7. Stop preview with `shaka seam preview stop --root TASK_ROOT`. Revalidate affected
-   evidence under the restored settings. The selector is kept in the worktree's
-   Git directory, so ordinary project commits cannot enable or transfer it.
+4. Keep passing the verified default-branch SHA as `--ref`, `--criteria-ref`, and
+   `--settings-ref` on delivery, review, and evidence commands. The existing resolver
+   applies the selected configuration, including review counts, round limits,
+   checkpoint settings, merge preferences, and Shaka's fallback checks. The check
+   report identifies the selected commit. Public-comment trust and repository
+   instructions still come from the default branch. GitHub's live required checks,
+   approvals, review threads, and queue rules still apply.
+5. Record the settings PR URL and selected commit in WIP Details within the task's
+   privacy boundary. The agent verifies the user's selection and the PR's origin;
+   Ruby verifies the commit and stores the worktree-local selector. Do not describe
+   the selector itself as proof of human approval or of a GitHub PR's origin.
+6. On fresh-chat resumption, inspect `seam preview status` and restore the recorded
+   task choices. The selection belongs to this worktree and branch. An updated
+   settings PR does not update the pinned commit. Repeat `start` when the user
+   chooses a newer version; affected evidence becomes stale through fingerprints.
+7. Stop with `shaka seam preview stop --root TASK_ROOT` and revalidate affected
+   evidence. Ordinary shared settings then apply. Individual settings remain a
+   fallback only when shared setup is absent; they grant no merge authority.
 
-Previewed `merge` choices and review gates do not override trusted policy.
-Default-branch or native required checks, CI review waits, the local review-round
-cap, and product-checkpoint opt-outs retain their existing authority. Native
-GitHub approvals and fork isolation still apply. A malformed trusted configuration
-remains a setup error; preview does not repair or authorize it.
+The selector lives in the worktree's Git directory, so tracked candidate content
+cannot activate it. Malformed default-branch configuration remains a setup error.

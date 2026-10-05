@@ -7,12 +7,12 @@ require_relative 'support/private_trial_github'
 class SettingsPreviewGatesTest < Minitest::Test
   include SettingsPreviewFixture
 
-  def test_preview_cannot_remove_trusted_fallback_checks
+  def test_preview_replaces_shaka_fallback_checks
     with_preview_repository do |root, trusted, preview|
       select_preview(root, preview)
       result = read_status(root, trusted, [])
-      assert_equal 'seam', result['requiredChecksSource']
-      assert_equal(['trusted-gate'], result['requiredChecks'].map { |check| check['name'] })
+      assert_equal 'github', result['requiredChecksSource']
+      assert_empty result['requiredChecks']
     end
   end
 
@@ -53,14 +53,12 @@ end
 class SettingsPreviewFinalPreparationTest < Minitest::Test
   include FinalPreparationFixture
 
-  def test_preview_cannot_opt_out_of_final_preparation
+  def test_preview_checkpoint_opt_out_allows_final_preparation
     with_fixture do |root, ref, bin|
       start_disabled_preview(root)
-      %w[squash-message merge].each do |command|
-        _output, error, status = run_command(root, ref, bin, command)
-        refute_predicate status, :success?
-        assert_includes error, 'Post-implementation review is missing'
-      end
+      _output, error, status = run_command(root, ref, bin, 'squash-message')
+      assert_predicate status, :success?, error
+      assert_includes File.read(File.join(bin, 'written')), 'Reason.'
     end
   end
 

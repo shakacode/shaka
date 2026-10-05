@@ -34,10 +34,10 @@ module SettingsPreviewFixture
     end
   end
 
-  def create_preview_commit(root)
+  def create_preview_commit(root, model: 'preview-model')
     data = seam('merge' => { 'preference' => 'auto' })
     data['review']['local_review_agents'] = [{ 'provider' => 'openai', 'model_family' => 'codex',
-                                               'model' => 'preview-model' }]
+                                               'model' => model }]
     path = Shaka::Configuration::Layout.worktree(root:).contract
     File.write(File.join(root, path), YAML.dump(data))
     commit(root)

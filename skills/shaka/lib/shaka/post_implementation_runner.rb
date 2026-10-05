@@ -23,10 +23,10 @@ module Shaka
     def validate_reviewer!
       raise Error, '--ref must be a full trusted default-branch commit SHA' unless @options[:criteria_ref]
 
-      settings = (trusted_review || {}).fetch('post_implementation', {})
+      settings = (effective_review || {}).fetch('post_implementation', {})
       RepositoryConfig::PostImplementationSchema.new(settings).validate
       @disabled = settings['enabled'] == false
-      choices = execution_choices((effective_review || {}).fetch('post_implementation', {}))
+      choices = execution_choices(settings)
       validate_choices!(choices)
 
       @options.merge!(choices.slice('reviewer', 'model', 'effort').transform_keys(&:to_sym))
@@ -62,7 +62,7 @@ module Shaka
     def run_report(prompt)
       if @disabled || @options[:opt_out]
         return { 'status' => 'opted_out', 'head' => head, 'ready' => false,
-                 'reason' => @options[:opt_out] || 'Trusted review.post_implementation.enabled is false' }
+                 'reason' => @options[:opt_out] || 'Selected review.post_implementation.enabled is false' }
       end
 
       super

@@ -8,6 +8,10 @@ Tell your agent how you want to work. It can prepare the configuration for you:
 Start with the choices below. The [settings reference](settings.md) has the exact
 options, defaults, and advanced behavior.
 
+Try proposed settings on one task before adopting them for the team: keep them
+in an open settings PR and ask Shaka to use it. See
+[settings previews](settings.md#preview-settings-before-adopting-them) for examples.
+
 ## Try it individually or set it up for your team
 
 An **individual trial** lets you try Shaka before your team adopts it. It works
@@ -23,7 +27,7 @@ for the remaining real-use verification gaps.
 
 Use [shared repository setup](configure-repository.md) when the team wants the
 same configuration. The agent opens a settings PR for you to review. Those
-choices take effect after that PR merges into the default branch.
+choices become the team’s defaults after that PR merges into the default branch.
 
 ## Choose a merge policy
 

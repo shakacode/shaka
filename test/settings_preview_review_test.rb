@@ -7,7 +7,7 @@ require 'shaka/configuration/settings_preview'
 class SettingsPreviewReviewTest < Minitest::Test
   include ReviewPromptFileFixture
 
-  def test_preview_prompt_and_model_reach_the_reviewer_without_changing_the_round_cap
+  def test_preview_prompt_model_and_round_cap_reach_the_reviewer
     with_repository({ 'prompt_file' => '.agents/review-prompt.md' }) do |root, base, _head, bin|
       head = preview_review(root)
       fake_codex(bin, head)
@@ -15,7 +15,7 @@ class SettingsPreviewReviewTest < Minitest::Test
       ledger = File.join(bin, 'ledger.json')
       output, error, status = run_review(root, base, head, bin, '--ledger', ledger)
       assert_predicate status, :success?, "#{output} #{error}"
-      assert_equal 5, JSON.parse(File.read(ledger))['local_max_rounds']
+      assert_equal 20, JSON.parse(File.read(ledger))['local_max_rounds']
       assert_preview_inputs(root, JSON.parse(output))
     end
   end
@@ -53,16 +53,15 @@ end
 class SettingsPreviewCheckpointTest < Minitest::Test
   include PostImplementationFixture
 
-  def test_preview_model_applies_but_preview_opt_out_does_not
+  def test_explicitly_selected_preview_can_disable_the_checkpoint
     with_repository do |root, base, _head, bin|
       head = preview_checkpoint(root)
       fake_checkpoint(bin, head)
       Shaka::Configuration::SettingsPreview.new(root:).start(head)
       result, status = run_checkpoint(root, base, head, bin)
       assert_predicate status, :success?, result.inspect
-      assert_equal 'completed', result['status']
-      assert_equal 'preview-model', result['requested_model']
-      assert_equal 'Local settings preview (private source)', result['prompt_source']
+      assert_equal 'opted_out', result['status']
+      refute_path_exists File.join(root, 'trace.json')
     end
   end
 

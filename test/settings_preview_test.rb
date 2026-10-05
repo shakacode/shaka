@@ -19,21 +19,20 @@ class SettingsPreviewTest < Minitest::Test
   def test_preview_resumes_in_a_fresh_command_and_does_not_follow_a_moved_branch
     with_preview_repository do |root, trusted, preview|
       select_preview(root, preview)
-      output, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, '--ref', trusted,
-                                             '--implementer', 'anthropic/claude')
-      assert_predicate status, :success?, error
-      assert_equal(['openai/codex'], JSON.parse(output)['considered'].map { |entry| entry['reviewer'] })
+      assert_fresh_reviewer(root, trusted)
       git(root, 'checkout', '-qb', 'untrusted')
       _, _, kind = Shaka::Evidence::Inputs.resolve_source(root, trusted)
       assert_equal 'trusted/team', kind
+      git(root, 'checkout', '-q', 'feature')
+      assert_equal 'preview/local', Shaka::Evidence::Inputs.resolve_source(root, trusted).last
     end
   end
 
-  def test_public_evidence_reports_the_enforced_policy_without_the_preview_revision
+  def test_public_evidence_reports_the_selected_policy_without_private_source_details
     with_preview_repository do |root, trusted, preview|
       select_preview(root, preview)
       snapshot = Shaka::Evidence::Inputs.capture(root:, ref: trusted, repository: 'owner/repo').last
-      assert_equal 'ask', snapshot['merge.preference']
+      assert_equal 'auto', snapshot['merge.preference']
       assert_equal trusted, snapshot['source.revision']
       refute_includes JSON.generate(snapshot), preview
     end
@@ -43,7 +42,7 @@ class SettingsPreviewTest < Minitest::Test
     with_preview_repository(layout: :new) do |root, trusted, preview|
       select_preview(root, preview)
       before = capture(root, trusted)
-      changed = create_preview_commit(root)
+      changed = create_preview_commit(root, model: 'updated-preview-model')
       assert_equal before, capture(root, trusted)
       select_preview(root, changed)
       refute_equal before, capture(root, trusted)
@@ -60,6 +59,15 @@ class SettingsPreviewTest < Minitest::Test
       assert_predicate status, :success?, error
       assert_equal before, capture(root, trusted)
     end
+  end
+
+  private
+
+  def assert_fresh_reviewer(root, trusted)
+    output, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, '--ref', trusted,
+                                           '--implementer', 'anthropic/claude')
+    assert_predicate status, :success?, error
+    assert_equal(['openai/codex'], JSON.parse(output)['considered'].map { |entry| entry['reviewer'] })
   end
 end
 
@@ -85,13 +93,14 @@ class SettingsPreviewBoundaryTest < Minitest::Test
     end
   end
 
-  def test_first_setup_can_be_previewed_without_trusting_its_policy
+  def test_first_setup_can_be_explicitly_selected_without_a_default_branch_seam
     with_preview_repository do |root, _trusted, preview|
       absent = remove_trusted_setup(root)
       select_preview(root, preview)
       assert_equal 'preview/local', Shaka::Evidence::Inputs.resolve_source(root, absent).last
       refute_empty capture(root, absent)['digest']
-      assert_nil Shaka::TrustedConfigSource.from_ref(root:, ref: absent, private_trial: true)
+      policy = Shaka::TrustedConfigSource.from_ref(root:, ref: absent, private_trial: true)
+      assert_equal 'auto', policy.merge['preference']
       assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: absent) }
     end
   end

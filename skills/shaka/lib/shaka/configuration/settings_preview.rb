@@ -50,7 +50,7 @@ module Shaka
           record['branch'] == current_branch
 
         validate_ref!(record['ref'])
-        { 'status' => 'active', 'settings_ref' => record['ref'], 'grants_policy' => false,
+        { 'status' => 'active', 'settings_ref' => record['ref'], 'grants_policy' => true,
           'grants_merge_authority' => false }
       end
 

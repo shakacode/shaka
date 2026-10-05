@@ -6,7 +6,7 @@ require 'shaka/publication/settings'
 class SettingsPreviewConsumersTest < Minitest::Test
   include SettingsPreviewFixture
 
-  def test_preview_selects_reviewers_without_lowering_the_trusted_count
+  def test_preview_selects_reviewers_and_count_together
     with_preview_repository do |root, _trusted, _preview|
       data = settings(root)
       trusted = set_trusted_count(root, data)
@@ -14,8 +14,8 @@ class SettingsPreviewConsumersTest < Minitest::Test
       data['review']['local_review_agents'] = [{ 'provider' => 'xai', 'model_family' => 'grok' },
                                                { 'provider' => 'openai', 'model_family' => 'codex' }]
       select_preview(root, write_settings(root, data))
-      assert_equal %w[xai/grok openai/codex], reviewer(root, trusted)['reviewers']
-      assert_equal ['xai/grok'], reviewer(root, trusted, '--count', '1')['reviewers']
+      assert_equal ['xai/grok'], reviewer(root, trusted)['reviewers']
+      assert_equal %w[xai/grok openai/codex], reviewer(root, trusted, '--count', '2')['reviewers']
     end
   end
 
