@@ -39,10 +39,10 @@ module Shaka
     end
 
     # The saved session for one thread ID, or nil when it is not exactly one matching file.
-    def self.session_file(identity)
+    def self.session_file(identity, environment: ENV)
       return unless identity.is_a?(String) && identity.match?(/\A[0-9a-f-]{36}\z/)
 
-      home = ENV.fetch('CODEX_HOME', File.expand_path('~/.codex'))
+      home = environment.fetch('CODEX_HOME', File.expand_path('~/.codex'))
       files = Dir.glob(File.join(home, 'sessions', '*', '*', '*', "*#{identity}.jsonl"))
       return unless files.one?
 
