@@ -9,8 +9,8 @@ require_relative 'branch_schema'
 require_relative 'command_schema'
 require_relative 'merge_schema'
 require_relative 'opening_schema'
-require_relative 'wip_schema'
 require_relative 'pr_description_schema'
+require_relative 'wip_schema'
 require_relative 'review_schema'
 require_relative 'validation'
 
@@ -47,7 +47,11 @@ module Shaka
         validate_optional
         validate_review
         validate_merge
-        validate_presentation
+        ProseLimits.validate!(@data['prose_limits']) if @data.key?('prose_limits')
+      end
+
+      def opening_check
+        @data.fetch('pr_description', {}).fetch('opening_check') { @data.fetch('opening_check', {}) }
       end
 
       private
@@ -64,12 +68,18 @@ module Shaka
         BranchSchema.new(@data['branches']).validate if @data.key?('branches')
         WipSchema.new(@data['wip']).validate if @data.key?('wip')
         OpeningSchema.new(@data['opening_check']).validate if @data.key?('opening_check')
+        validate_description
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
       end
 
-      def validate_presentation
-        PrDescriptionSchema.new(@data['pr_description']).validate if @data.key?('pr_description')
-        ProseLimits.validate!(@data['prose_limits']) if @data.key?('prose_limits')
+      def validate_description
+        return unless @data.key?('pr_description')
+
+        description = @data['pr_description']
+        PrDescriptionSchema.new(description).validate
+        return unless @data.key?('opening_check') && description.key?('opening_check')
+
+        raise Error, 'Use pr_description.opening_check or opening_check, not both'
       end
 
       def validate_commands
@@ -93,7 +103,7 @@ module Shaka
 
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
       def local_prompt_files!(review)
-        RepositoryConfig.prompt_files(review:, opening: @data.fetch('opening_check', {})).each do |label, path|
+        RepositoryConfig.prompt_files(review:, opening: opening_check).each do |label, path|
           file = file!(path, label)
           error = ReviewPrompt.file_error(File.size(file)) { File.binread(file) }
           raise Error, "#{label} #{path} #{error}" if error

@@ -18,14 +18,17 @@ module Shaka
         'review.ci_review_wait' => %w[none one all],
         'overrides.command' => %w[setup test validate validate_local trigger_hosted_ci],
         'overrides.effort' => %w[none minimal low medium high xhigh max ultra],
-        'overrides.reviewer' => %w[anthropic/claude openai/codex xai/grok]
+        'overrides.reviewer' => %w[anthropic/claude openai/codex xai/grok],
+        'opening_check.reviewer' => %w[anthropic/claude openai/codex xai/grok],
+        'opening_check.effort' => %w[none minimal low medium high xhigh max ultra]
       }.freeze
-      BOOLEANS = %w[wip.include_locations opening_check.external_enabled pr_description.show_shaka_credit].freeze
+      BOOLEANS = %w[wip.include_locations opening_check.enabled opening_check.external_enabled
+                    pr_description.show_shaka_credit].freeze
       NUMBERS = %w[merge.limits.max_changed_files merge.limits.max_changed_lines merge.limits.max_commits
                    prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
                    prose_limits.words_per_changed_line].freeze
       REDACTED = %w[commands paths review.prompts review.ci_review_jobs merge.required_checks branches base_branch
-                    overrides.arguments overrides.model local_changes defaults_changed].freeze
+                    overrides.arguments overrides.model opening_check.model local_changes defaults_changed].freeze
       FIELDS = (ENUMS.keys + BOOLEANS + NUMBERS + REDACTED +
                 %w[source.revision source.configuration installation.version installation.revision]).freeze
 
