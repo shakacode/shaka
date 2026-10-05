@@ -14,7 +14,7 @@ module Shaka
     end
 
     def intro(columns)
-      [rate_intro(columns), (native_intro if columns.any? { |column| column[:native] })].compact.join(' ')
+      [rate_intro(columns), (native_intro(columns) if columns.any? { |column| column[:native] })].compact.join(' ')
     end
 
     def rate_intro(columns)
@@ -54,8 +54,15 @@ module Shaka
     def cursor_priced?(priced) = priced.any? { |column| cursor_rated?(column) }
     def anthropic_priced?(priced) = priced.any? { |column| anthropic_rated?(column) }
 
-    def native_intro
-      'Pi recorded native nominal USD.'
+    def native_intro(columns)
+      sources = columns.select { |column| column[:native] }.map { |column| column[:native_source] }.uniq
+      sources.map do |source|
+        if source == 'claude-code'
+          'Claude CLI recorded estimated USD for an independent call; not an invoice.'
+        else
+          'Pi recorded native nominal USD.'
+        end
+      end.join(' ')
     end
 
     def priced_columns(columns)
