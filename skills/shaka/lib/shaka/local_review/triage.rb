@@ -10,6 +10,7 @@ module Shaka
       result = finding.fixed? ? "fixed in #{links.commit(finding.commit)}" : finding.label
       line = "- `#{finding.id}` #{finding.kind}: #{finding.summary} — #{result}"
       line += " — #{finding.note}" if finding.note
+      line += " — Decision: #{finding.decision}" if finding.decision
       returned = fixed_before[finding.id]
       returned ? "#{line} · **returned after its fix in #{links.commit(returned)}**" : line
     end
@@ -23,7 +24,9 @@ module Shaka
       end
     end
 
-    def self.outcomes(copies) = copies.map { |item| [item.kind, item.disposition, item.commit] }.uniq.size
+    def self.outcomes(copies)
+      copies.map { |item| [item.kind, item.disposition, item.commit, item.decision] }.uniq.size
+    end
 
     # Every commit's triage, in order and before the reports, so a reader sees what each reviewer
     # reported, how the findings were collated, and what became of each without opening a report.
