@@ -360,7 +360,8 @@ begin
              # A review lookup contacts GitHub, so a missing key fails before that lookup.
              key = options.fetch(:key)
              attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
-             github.reply(body: Shaka::ReviewReply.compose(attributed, github),
+             publisher_note = attributed.delete('publisher_note')
+             github.reply(body: Shaka::ReviewReply.compose(attributed, github, publisher_note:),
                           key: key, comment: options[:comment])
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))

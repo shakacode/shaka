@@ -11,6 +11,17 @@ class CliPublisherAttributionTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   SUMMARY = 'Missing attribution comes from the publisher session.'
 
+  REPLY_GH_CASES = <<~CODE
+    when 'user' then puts JSON.generate('login' => 'author')
+    when %r{repos/owner/repo/issues/1/comments}
+      if ARGV.include?('POST')
+        File.write(File.join(ENV.fetch('HOME'), 'published.md'), request.fetch('body'))
+        puts JSON.generate(request)
+      else
+        puts '[]'
+      end
+  CODE
+
   def test_description_publishes_native_header_and_provenance
     with_session(context) do |environment, _file|
       run_publication(environment) do |dir, output, error, status|
@@ -33,22 +44,43 @@ class CliPublisherAttributionTest < Minitest::Test
     end
   end
 
+  def test_reply_publishes_native_identity_and_generated_note
+    with_session(context) do |environment, _file|
+      run_publication(environment, command: 'reply') do |dir, _output, error, status|
+        assert_predicate status, :success?, error
+        body = File.read(File.join(dir, 'published.md'))
+        assert_includes body, 'Codex · OpenAI · gpt-6.1-sol (configured) · medium'
+        assert_includes body, 'served model is UNKNOWN'
+      end
+    end
+  end
+
   private
 
   def description_content
     super.tap { |supplied| supplied['identity']['model'] = 'other-model' if @conflict }
   end
 
-  def run_publication(environment)
+  def run_publication(environment, command: 'description')
     Dir.mktmpdir do |dir|
       write_fake_commands(dir)
       file = File.join(dir, 'content.json')
-      File.write(file, JSON.generate(description_content))
+      supplied = description_content
+      supplied = supplied.slice('identity', 'summary') if command == 'reply'
+      File.write(file, JSON.generate(supplied))
       env = command_environment(environment, dir)
-      result = Open3.capture3(env, COMMAND, 'description', 'owner/repo', '1', '--root', ROOT,
-                              '--content-file', file)
+      result = invoke(env, file, command)
       yield dir, *result
     end
+  end
+
+  def invoke(env, file, command)
+    flags = command == 'reply' ? ['--key', 'native-attribution'] : ['--root', ROOT]
+    Open3.capture3(env, COMMAND, command, 'owner/repo', '1', '--content-file', file, *flags)
+  end
+
+  def fake_gh
+    super.sub('else abort', "#{REPLY_GH_CASES}else abort")
   end
 
   def command_environment(environment, dir)

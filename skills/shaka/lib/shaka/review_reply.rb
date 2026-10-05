@@ -16,18 +16,19 @@ module Shaka
     HYPHENATED = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/(pull|issues)/(\d+)#(issuecomment|pullrequestreview)-(\d+)\z}
     DISCUSSION = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/pull/(\d+)#discussion_r(\d+)\z}
 
-    def self.compose(content, github) = new(content, github).compose
+    def self.compose(content, github, publisher_note: nil) = new(content, github, publisher_note:).compose
 
-    def initialize(content, github)
+    def initialize(content, github, publisher_note: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
       @github = github
       validate_content
+      @publisher_note = publisher_note
     end
 
     def compose
-      body = Publication.comment(@content)
+      body = Publication.comment(@content.merge('publisher_note' => @publisher_note))
       lines = lead_lines
       return body if lines.empty?
 
