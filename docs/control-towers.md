@@ -146,7 +146,7 @@ PR that still needs a security review should name that blocker and the next step
 
 Here is an example response from an RCT in Codex:
 
-![RCT response ranking PRs for merge attention, with links to each PR and its chat and a separate list of blocked PRs.](https://raw.githubusercontent.com/shakacode/shaka/025f0d04132786e880d422d11409e6d5ddef93d7/docs/images/rct-merge-priorities.png)
+![RCT response ranking PRs for merge attention, with links to each PR and its chat and a separate list of blocked PRs.](https://github.com/user-attachments/assets/6da53ac1-efad-4146-b334-ac8546a49144)
 
 *Example snapshot: merge priorities first, remaining blockers below.*
 
