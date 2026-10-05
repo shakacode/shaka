@@ -97,8 +97,9 @@ module Shaka
 
         verify_trusted_ref!
 
+        common['preview_commit'] = @preview_ref if @preview_ref
         common.merge('kind' => @preview_ref ? 'preview/local' : 'trusted/team',
-                     'preview_commit' => @preview_ref, 'configuration_blob' => config_blob(path))
+                     'configuration_blob' => config_blob(path))
       end
 
       def config_path
