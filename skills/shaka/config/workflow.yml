@@ -384,6 +384,12 @@ phases:
   - id: explain
     title: Explain
     body: |-
+      - Begin every AI-authored GitHub description, comment, and review with
+        `🤖 AGENT · PROVIDER · MODEL · EFFORT`, using actual writer settings and
+        `UNKNOWN` for unavailable values. This includes verification updates and
+        attachment comments posted directly through `gh`; reviewer identity belongs
+        in the review record. Preserve human text and label mixed work AI-edited.
+        Before submission, check that the first visible line carries this identifier.
       - Push the reviewed head, then open or adopt its PR. Open a new PR with an empty body
         (`gh pr create --body ''`) and let `description` fill it; any text outside the managed
         region stays in the body. When a local review ran, publish it right after that with
@@ -396,8 +402,9 @@ phases:
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
       - Check a UI change's captures for credentials and private content, then publish
-        them on its PR with `gh pr comment NUMBER --attach 'PATH#ALT TEXT'` (GitHub CLI 2.99 or
-        later; a video takes a plain `PATH`, since video has no alt text), label them with the
+        them on its PR with `gh pr comment NUMBER --body-file PATH --attach 'PATH#ALT TEXT'` (GitHub CLI 2.99 or
+        later; a video takes a plain `PATH`, since video has no alt text). The body file starts
+        with the writer identifier above, followed by the verification note. Label captures with the
         tested revision, and read the comment back to confirm each capture became an uploaded
         URL; a local path is not evidence. When a capture cannot be published, record
         `uploader_absent`, `uploader_denied`, or `upload_failed: DETAIL` on the PR in its place.

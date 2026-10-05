@@ -18,6 +18,14 @@ version: 1
 # `rule` when that span does not read as a sentence on its own, as half of "Never A or B"
 # does not. A clause added to a sentence an entry already quotes is not detected either.
 rules:
+  - id: github-writer-identifier
+    phase: explain
+    quote: Before submission, check that the first visible line carries this identifier.
+    enforced_by: agent
+    note: >-
+      Publication helpers render supplied identity fields and show UNKNOWN for missing values.
+      Nothing intercepts direct gh posts or verifies the writer's actual model and effort;
+      the agent checks the attributed body, including attachment and verification comments.
   - id: durable-task-plan
     phase: plan
     quote: Do not leave them only in chat.
