@@ -24,7 +24,7 @@ module Shaka
       return if !@record_head || @record_head == last_head
 
       reviewed = rounds.drop(batch.last + 1).map { |round| round.fetch('head') }
-      fixes = recorded_batch_fixes(updated)
+      fixes = recorded_batch_fixes(updated) - recorded_batch_fixes
       raise Error, 'An earlier batch fix must name a later reviewed commit; review the fix before recording it.' unless
         (fixes - reviewed).empty?
     end

@@ -396,7 +396,7 @@ phases:
         file for a fresh host review; nothing from the loop reaches GitHub before the push, and
         each reviewed commit gets its own timeline comment. Publishing again updates that
         commit's comment in place. Publication then collapses older owned review comments
-        represented in its ledger; reports outside that history stay visible for assessment.
+        just published from its ledger; other reports stay visible for assessment.
         Its cleanup result reports confirmed edits and failures without undoing published reports.
         Inspect reported failures before retrying. Copy the returned loop summary into the description's review
         history details; keep native usage in `usage.records`. Use trusted `gh` for authorized

@@ -86,6 +86,16 @@ class LocalReviewEarlierDispositionTest < Minitest::Test
     assert_equal before, File.read(@path)
   end
 
+  def test_an_earlier_batch_keeps_a_previously_recorded_intermediate_fix
+    append(EARLIER, 'openai/codex', findings: 1)
+    fixed = NIT.merge('class' => 'defect', 'disposition' => 'fixed', 'commit' => FIX)
+    record([fixed])
+    append(HEAD, 'openai/codex', findings: 0)
+
+    assert_equal [1], ledger.record!({ 'findings' => [fixed] }, head: EARLIER)
+    assert_equal FIX, ledger.prior_findings.first.commit
+  end
+
   def test_an_earlier_fix_needs_a_later_reviewed_revision
     append(EARLIER, 'openai/codex', findings: 1)
     record([NIT.merge('class' => 'defect')])

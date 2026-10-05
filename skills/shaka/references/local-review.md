@@ -315,7 +315,8 @@ To update an earlier batch after a fix or decision, run `review record` with
 Republish the ledger to refresh the current summary and collapse older reports.
 Keep the same IDs, reporting reviewers, and original reports; recording a disposition
 is not a new reviewer finding. For an earlier batch, a fixed disposition names a later
-reviewed commit containing the fix; unreviewed revisions are refused. Omit `--head`
+reviewed commit containing the fix; unreviewed revisions are refused. Existing fix references
+already checked when the loop advanced remain valid. Omit `--head`
 to record the newest batch before the next review.
 
 `fixed` needs the fix commit's full SHA. The helper refuses a
@@ -444,8 +445,10 @@ and its outcome. Copy that summary into the PR description's review history deta
 usage records still belong in `usage.records`.
 
 After every successful publication, `review publish` collapses older owned Shaka
-review comments represented in the published ledger. Reports outside that ledger stay visible
-for explicit assessment. Its `cleanup` result lists confirmed edits, unavailable cleanup,
+review comments just published from the ledger, using their returned comment IDs.
+Other reports, including legacy reports at the same revision, stay visible for explicit assessment.
+Cleanup also skips when the current PR head has no report in that publication.
+Its `cleanup` result lists confirmed edits, unavailable cleanup,
 or a skip when no visible owned current-head report exists. A cleanup failure
 returns nonzero while retaining the published comments; inspect the gap and retry.
 For independent cleanup, use:
