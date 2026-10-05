@@ -48,12 +48,13 @@ review artifact rather than an attribution. It links directly to the instruction
 
 Search handles apostrophes without dropping matching results.
 
-_PR prepared with [Shaka](https://github.com/shakacode/shaka/blob/main/docs/getting-started.md)._
+_PR prepared with [Shaka](https://shaka.shakacode.com/) Skill_
 
 **Code Walkthrough:** _example walkthrough link_
 
 Uses ordinary Markdown and stays readable on small screens. Slightly more prominent
-than the small signature, and “PR prepared” describes the broader delivery workflow.
+than the small signature. The website welcomes new readers; “Skill” makes the
+agent integration explicit. Omitting “Skill” is a cleaner alternative.
 
 ## E — Discoverable explanation
 
