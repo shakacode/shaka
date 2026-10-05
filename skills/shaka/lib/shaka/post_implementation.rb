@@ -77,7 +77,7 @@ module Shaka
 
     def merge_safeguard(github, head, publication, published)
       PostImplementationMergeWarning.new(github).call(head:, publication:, published:)
-    rescue Error => e
+    rescue Error, KeyError, TypeError => e
       { 'state' => 'failed', 'reason' => e.message, 'head' => head }
     end
 

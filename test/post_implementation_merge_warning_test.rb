@@ -82,7 +82,7 @@ class PostImplementationMergeWarningLifecycleTest < Minitest::Test
       assert_equal 1, outcome[1]
       assert_equal({ 'state' => 'failed', 'reason' => 'Draft conversion denied', 'head' => 'a' * 40 },
                    JSON.parse(outcome[2]).fetch('merge_safeguard'))
-      assert_match(/issuecomment-1/, outcome[2])
+      assert_includes github.description_body, 'Do not merge'
     end
   end
 
@@ -134,8 +134,16 @@ class PostImplementationMergeWarningPreservationTest < Minitest::Test
   def failed(result) = result.merge('status' => 'not_completed', 'reason' => 'Provider failed')
 
   def test_feature_description_refresh_preserves_the_warning_before_the_new_summary
+    ["<!-- shaka:begin -->\nFeature summary\n<!-- shaka:end -->", 'Original summary'].each do |original|
+      assert_refresh_preserves_warning(original)
+    end
+  end
+
+  def assert_refresh_preserves_warning(original)
     with_result do |result, path|
-      github, = publish(failed(result), path)
+      github = GitHub.new('a' * 40)
+      github.instance_variable_set(:@description_body, "#{original}\n\nHuman notes")
+      publish(failed(result), path, github:)
       refreshed = github.send(:merge, github.description_body, "Updated feature summary\n")
       assert_includes refreshed, 'Do not merge'
       assert_operator refreshed.index('Do not merge'), :<, refreshed.index('Updated feature summary')
@@ -167,6 +175,21 @@ class PostImplementationMergeWarningPreservationTest < Minitest::Test
       outcome = publish(failed(result), path, github:)
       assert_equal 1, outcome[1]
       assert github.snapshot['isDraft']
+    end
+  end
+end
+
+class PostImplementationMergeWarningListingTest < Minitest::Test
+  include PostImplementationPublicationFixture
+
+  def test_a_stale_comment_listing_is_a_failed_safeguard_instead_of_a_superseded_success
+    with_result do |result, path|
+      github = GitHub.new('a' * 40)
+      github.define_singleton_method(:issue_comments) { [@published.merge('id' => 0)] }
+      outcome = publish(result.merge('status' => 'not_completed', 'reason' => 'Provider failed'), path, github:)
+      assert_equal 1, outcome[1]
+      assert_equal 'failed', JSON.parse(outcome[2]).dig('merge_safeguard', 'state')
+      assert_includes outcome[2], 'absent from the comment listing'
     end
   end
 end

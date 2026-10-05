@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
 require_relative '../publication/feature_guard'
+require_relative '../publication/merge_warning_region'
 
 module Shaka
   # Keeps a blocked checkpoint visible across normal description refreshes.
   class PostImplementationMergeWarning
-    OPEN = '<!-- shaka:merge-warning:begin -->'
-    CLOSE = '<!-- shaka:merge-warning:end -->'
+    OPEN = MergeWarningRegion::OPEN
+    CLOSE = MergeWarningRegion::CLOSE
     DRAFT = <<~GRAPHQL
       mutation($id: ID!) {
         convertPullRequestToDraft(input: {pullRequestId: $id}) {
@@ -29,8 +30,10 @@ module Shaka
       return { 'state' => 'superseded' } unless latest?(published)
 
       blocked = publication.state != 'ready'
-      make_draft(head) if blocked
+      failure = draft_failure(head) if blocked
       update(current, head, blocked, publication.summary, published)
+      raise Error, failure if failure
+
       { 'state' => blocked ? 'blocked' : 'cleared', 'head' => head }
     end
 
@@ -38,7 +41,7 @@ module Shaka
 
     def update(current, head, blocked, summary, published)
       body = current['body'].to_s
-      remaining = without_warning(body)
+      remaining = MergeWarningRegion.remove(body)
       updated = blocked ? "#{warning(head, summary, published)}#{remaining}" : remaining
       raise Error, 'Merge warning exceeds GitHub description length.' if updated.length > 65_536
 
@@ -52,7 +55,8 @@ module Shaka
       latest = @github.issue_comments.reverse.find do |comment|
         comment.dig('user', 'login') == account && comment['body'].to_s.match?(PostImplementationHistory::KEY)
       end
-      raise Error, 'Published checkpoint is absent from the comment listing; retry publication.' unless latest
+      raise Error, 'Published checkpoint is absent from the comment listing; retry publication.' unless
+        latest && latest['id'] >= published['id']
 
       latest['id'] == published['id']
     end
@@ -61,20 +65,6 @@ module Shaka
       return if pull['state'] == 'open' && pull.dig('head', 'sha') == head
 
       raise Error, 'Merge warning is not for the live open PR head; the checkpoint comment remains published.'
-    end
-
-    def without_warning(body)
-      opens = body.scan(OPEN).size
-      closes = body.scan(CLOSE).size
-      return body if opens.zero? && closes.zero?
-
-      unless opens == 1 && closes == 1 && body.index(OPEN) < body.index(CLOSE)
-        raise Error, 'Merge warning markers are ambiguous or malformed; repair them before retrying.'
-      end
-
-      prefix, rest = body.split(OPEN, 2)
-      suffix = rest.split(CLOSE, 2).last.delete_prefix("\n\n")
-      "#{prefix}#{suffix}"
     end
 
     def warning(head, summary, published)
@@ -101,6 +91,13 @@ module Shaka
       return if changed && changed.values_at('id', 'isDraft', 'headRefOid') == [pull['id'], true, head]
 
       raise Error, 'Draft conversion was not confirmed at the checkpoint head; inspect the PR before retrying.'
+    end
+
+    def draft_failure(head)
+      make_draft(head)
+      nil
+    rescue Error, KeyError, TypeError => e
+      e.message
     end
 
     def write(body)
