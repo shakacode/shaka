@@ -180,3 +180,18 @@ class PostImplementationPublicationHistoryTest < Minitest::Test
     end
   end
 end
+
+class PostImplementationFailureReasonTest < Minitest::Test
+  include PostImplementationPublicationFixture
+
+  def test_invalid_failure_reasons_are_refused_before_publication
+    [nil, 42, ''].each do |reason|
+      with_result do |result, path|
+        outcome = publish(result.merge('status' => 'not_completed', 'reason' => reason), path)
+        assert_equal 1, outcome[1]
+        assert_empty outcome[0].bodies
+        refute outcome[0].snapshot['isDraft']
+      end
+    end
+  end
+end

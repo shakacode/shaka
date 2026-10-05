@@ -11,7 +11,7 @@ module Shaka
   class PostImplementationPublication
     attr_reader :state
 
-    def summary = @summary || @result.fetch('reason')
+    def summary = @summary || PublicationText.required(@result.fetch('reason'), 'checkpoint failure reason')
 
     ACTIONS = {
       'Proceed' => ['Proceed',
@@ -113,7 +113,7 @@ module Shaka
                               ['Review not completed; readiness remains blocked.',
                                'Resolve the execution failure and rerun the checkpoint.']
                             end
-      "Recommendation: **#{action}**\n\n#{@result.fetch('reason')}\n\n" \
+      "Recommendation: **#{action}**\n\n#{summary}\n\n" \
         "**Next action (task owner):** #{next_action}\n\nHead: `#{@head}`\n\n" \
         "<details>\n<summary>Execution details</summary>\n\n#{execution_evidence}\n\n#{usage_text}\n\n</details>"
     end
