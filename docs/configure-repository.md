@@ -2,7 +2,7 @@
 
 Use shared configuration when your team wants repository-wide settings. For a
 local trial without a setup PR, see the
-[private-trial experience and limitations](expected-experience.md#private-trials-available-tools-incomplete-guided-experience).
+[individual-trial experience and limitations](expected-experience.md#individual-trials-available-tools-incomplete-guided-experience).
 The procedures below publish team configuration.
 
 ## Use Shaka across projects

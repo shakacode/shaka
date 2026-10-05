@@ -51,6 +51,15 @@ See [reviewer choices](settings.md#reviewlocal_review_agents),
 [reviewer setup](settings.md#add-a-second-reviewer), and
 [multiple reviewers](settings.md#reviewlocal_review_count).
 
+You can also choose what local reviewers look for. For shared team settings, ask:
+
+> Create a review prompt that emphasizes regressions, missing tests, and
+> compatibility with existing installations. Start from Shaka's default instructions.
+
+Use one prompt for all local reviewers or give a particular reviewer its own.
+The prompt takes effect after its settings PR merges. See
+[custom review prompts](settings.md#reviewprompt_file) for the options and limits.
+
 ## Keep PR explanations useful
 
 Ask the agent to keep PR descriptions, code walkthroughs, recommendations, and

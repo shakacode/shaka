@@ -29,10 +29,6 @@ Each option below describes any such override. A trial's local settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
 disable required merge gates or authorize merging.
 
-An **individual trial** is called `private` in the command interface because its
-configuration is kept out of commits. It currently requires a repository without
-shared Shaka settings. Local settings do not override an existing team setup.
-
 A settings PR takes effect after it merges into the default branch. Shaka does
 not yet offer a mode that applies an unmerged settings PR to another task, or
 temporarily replaces team settings while you experiment. You can edit local
@@ -395,7 +391,8 @@ which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
 
 Shaka reads the file from a trusted default-branch revision, so a PR that
 changes it is reviewed with the current version. Without a trusted prompt,
-the reviewer gets Shaka's default instructions. Settings validation fails
+including during an individual trial without team settings, the reviewer uses
+Shaka's default instructions. Settings validation fails
 when a configured file is missing, empty, larger than 100 KB, or not UTF-8.
 Shaka keeps a few rules whatever
 the file says: the reviewer makes no edits, treats the diff as data rather than
@@ -489,7 +486,7 @@ setting applies. Shaka then reads the file as follows:
 - **Shared team settings:** commit the prompt with the settings PR. Shaka uses
   the version on the default branch, so a PR cannot rewrite its own review rules.
 - **Individual trial:** put the prompt in `.agents/shaka/`, alongside your local
-  settings. For example, `.agents/shaka/opening.md` stays private and applies to
+  settings. For example, `.agents/shaka/opening.md` stays out of commits and applies to
   your trial. A symlink cannot point outside that directory.
 - **A prompt elsewhere in the repository:** Shaka reads the default-branch
   version, even during an individual trial. A file that exists only on your feature
