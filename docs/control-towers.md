@@ -162,7 +162,7 @@ repair first. Explain that tradeoff rather than ranking by PR number or green
 status alone. Keep a clickable PR link beside its owner-chat link so you can
 inspect evidence and resume the accountable owner.
 
-![RCT merge-priority answer with ranked PR links and owner-chat links, followed by blocked PRs and their remaining blockers.](images/rct-merge-priorities.png)
+![RCT merge-priority answer with ranked PR links and owner-chat links, followed by blocked PRs and their remaining blockers.](https://raw.githubusercontent.com/shakacode/shaka/025f0d04132786e880d422d11409e6d5ddef93d7/docs/images/rct-merge-priorities.png)
 
 *Illustrative snapshot from an authorized RCT batch, published with the user's
 approval. The PR numbers, owners, and readiness statements show the answer's
