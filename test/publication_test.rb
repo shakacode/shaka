@@ -450,6 +450,19 @@ class PublicationWipDetailsTest < Minitest::Test
     assert_includes lines, '| Stopped because | paused |'
   end
 
+  def test_owner_requires_machine_host_and_tag
+    ['Codex · 01a109ad', 'm5', 'm5 · Codex desktop · ', ' · Codex desktop · k7q2'].each do |owner|
+      error = assert_raises(Shaka::Error) { render(WIP.merge('owner' => owner)) }
+      assert_includes error.message, 'machine alias · host · owner tag'
+    end
+  end
+
+  def test_unavailable_owner_information_can_be_reported_honestly
+    ['UNKNOWN', 'UNKNOWN · Codex desktop · k7q2', 'm5 · UNKNOWN · k7q2'].each do |owner|
+      assert_includes render(WIP.merge('owner' => owner)), "| Owner | #{owner} |"
+    end
+  end
+
   def test_wip_follows_the_usage_details
     rendered = render(WIP)
     assert_operator rendered.index('<summary>Usage'), :<, rendered.index('<summary>WIP Details')
