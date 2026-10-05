@@ -9,6 +9,10 @@ require_relative 'evidence'
 module Shaka
   # Presents the checkpoint's action without confusing configuration with observations.
   class PostImplementationPublication
+    attr_reader :state
+
+    def summary = @summary || @result.fetch('reason')
+
     ACTIONS = {
       'Proceed' => ['Proceed',
                     'Complete technical validation and required approvals.'],
@@ -39,9 +43,7 @@ module Shaka
                                'model' => headline_model, 'effort' => known(@configuration[3]))
     end
 
-    def headline_model
-      known(@configuration[2]) || known(@configuration[1])&.then { |model| "#{model} (configured)" }
-    end
+    def headline_model = known(@configuration[2]) || known(@configuration[1])&.then { |model| "#{model} (configured)" }
 
     def execution_evidence = "#{model_text} · #{effort_text}"
 
@@ -71,7 +73,7 @@ module Shaka
       report = PostImplementationReport.read(@result.fetch('report'), head: @head)
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
-      summary = report.fetch('summary', report.fetch('reasons').first)
+      summary = @summary = report.fetch('summary', report.fetch('reasons').first)
       ["Recommendation: **#{action}**", summary,
        "**Next action (task owner):** #{owner_action(report, next_action)}",
        "Head: `#{@head}`",

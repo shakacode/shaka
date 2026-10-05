@@ -5,15 +5,30 @@ require 'shaka/post_implementation'
 
 module PostImplementationPublicationFixture
   class GitHub < Shaka::GitHub
-    attr_reader :bodies
+    attr_reader :bodies, :description_body
 
     def initialize(head)
       super('example/test', '1')
       @head = head
       @bodies = []
+      @draft = false
+      @description_body = "<!-- shaka:begin -->\nFeature summary\n<!-- shaka:end -->\n\nHuman notes"
     end
 
-    def snapshot = { 'state' => 'OPEN', 'headRefOid' => @head }
+    def snapshot = { 'state' => 'OPEN', 'headRefOid' => @head, 'isDraft' => @draft, 'id' => 'PR_1' }
+
+    def api(_path, method: 'GET', fields: {})
+      @description_body = fields.fetch(:body) if method == 'PATCH'
+      { 'state' => 'open', 'head' => { 'sha' => @head }, 'base' => { 'sha' => 'b' * 40 },
+        'body' => @description_body }
+    end
+
+    def graphql(_query, **)
+      @draft = true
+      { 'convertPullRequestToDraft' => { 'pullRequest' => snapshot.slice('id', 'isDraft', 'headRefOid') } }
+    end
+
+    def verify_rendering(body) = body
 
     def viewer_login = 'test-author'
 
