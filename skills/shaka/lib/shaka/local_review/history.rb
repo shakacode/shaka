@@ -14,6 +14,12 @@ module Shaka
     SUMMARY = 'Earlier local review'
     ATTESTATION = MergeReviewEvidence::ATTESTATION
 
+    # Automatic publication only retires reports whose findings the current ledger accounts for.
+    def initialize(github, heads: nil)
+      super(github)
+      @heads = heads
+    end
+
     def self.run(arguments, github: nil)
       options = parse_options(arguments)
       return 0 unless options
@@ -77,6 +83,8 @@ module Shaka
     def owned?(comment) = super && !attestation(comment['body'].to_s).nil?
 
     def earlier?(comment, latest)
+      return false if @heads && !@heads.include?(attestation(comment['body'])[1])
+
       !active?(comment) || attestation(comment['body'])[1] != attestation(latest['body'])[1]
     end
 

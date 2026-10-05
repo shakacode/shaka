@@ -17,10 +17,15 @@ module Shaka
       summary = LocalReviewComment.new(@content).loop_summary
       ready = @content.fetch('rounds').map { |round| round.fetch('head') }.uniq.map { |head| prepare(head) }
       results = ready.map { |key, body| @github.reply(body:, key:) }
-      { 'comments' => results, 'summary' => summary, 'cleanup' => LocalReviewHistory.new(@github).collapse }
+      { 'comments' => results, 'summary' => summary, 'cleanup' => cleanup }
     end
 
     private
+
+    def cleanup
+      heads = @content.fetch('rounds').map { |round| round.fetch('head') }
+      LocalReviewHistory.new(@github, heads:).collapse
+    end
 
     def prepare(head)
       comment = LocalReviewCommitComment.new(@content, head:, repository: @repository,

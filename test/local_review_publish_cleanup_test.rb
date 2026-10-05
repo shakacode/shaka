@@ -64,6 +64,31 @@ class LocalReviewPublishCleanupTest < Minitest::Test
     assert_preserved_history(github)
   end
 
+  def test_a_fresh_ledger_preserves_reports_it_does_not_account_for
+    github = Timeline.new
+    original = publish_previous_ledger(github)
+    current = { 'rounds' => [round(HEAD, findings: [], report: report(HEAD, findings: 0))] }
+
+    status, result = publish(github, current)
+
+    assert_equal 0, status
+    assert_empty result.fetch('cleanup').fetch('collapsed')
+    assert_equal original, github.issue_comments.first.fetch('body')
+  end
+
+  def test_an_earlier_unresolved_finding_stays_visible_after_a_clean_review
+    github = Timeline.new
+    content = loop_content
+    content['rounds'][0] = earlier_defect
+
+    assert_equal 0, publish(github, content).first
+
+    visible = current_visible(github)
+    assert_includes visible, NIT.fetch('summary')
+    assert_includes visible, '| Unassessed | openai/codex |'
+    assert_equal [1], github.edits
+  end
+
   def test_republishing_keeps_one_archive_disclosure
     github = Timeline.new
     content = loop_content
@@ -96,6 +121,18 @@ class LocalReviewPublishCleanupTest < Minitest::Test
   end
 
   private
+
+  def current_visible(github) = github.issue_comments.last.fetch('body').split('<details>').first
+
+  def earlier_defect = round(EARLIER, findings: [NIT.merge('class' => 'defect')])
+
+  def publish_previous_ledger(github)
+    github.head = EARLIER
+    previous = { 'rounds' => [round(EARLIER, findings: [NIT.merge('class' => 'defect')])] }
+    assert_equal 0, publish(github, previous).first
+    github.head = HEAD
+    github.issue_comments.first.fetch('body')
+  end
 
   def assert_preserved_history(github)
     earlier, current = github.issue_comments

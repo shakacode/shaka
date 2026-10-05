@@ -307,7 +307,8 @@ For `decision_needed`, give the options, tradeoffs, and recommendation in `note`
 Copy the question into the PR description's `decisions` and wait before dependent work.
 Use `accepted` after the maintainer chooses, with a public-safe `decision` recording
 who chose what and a `note` explaining the consequence. Ruby requires those fields;
-the agent verifies the human decision. A clean later review does not close an older finding.
+the agent verifies the human decision. Explicitly fixed, dismissed, and accepted findings are
+resolved for the loop cap. A clean later review does not close an older finding.
 
 To update an earlier batch after a fix or decision, run `review record` with
 `--head REVIEWED_SHA` and that batch's complete findings and reviewer mappings.
@@ -443,7 +444,8 @@ and its outcome. Copy that summary into the PR description's review history deta
 usage records still belong in `usage.records`.
 
 After every successful publication, `review publish` collapses older owned Shaka
-review comments. Its `cleanup` result lists confirmed edits, unavailable cleanup,
+review comments represented in the published ledger. Reports outside that ledger stay visible
+for explicit assessment. Its `cleanup` result lists confirmed edits, unavailable cleanup,
 or a skip when no visible owned current-head report exists. A cleanup failure
 returns nonzero while retaining the published comments; inspect the gap and retry.
 For independent cleanup, use:
@@ -456,8 +458,8 @@ The command links earlier Shaka local review comments from the publishing accoun
 to its newest visible report for the current PR head. Findings and reports remain
 expandable, and closing attestations stay readable by `merge`. Active reports for the same
 commit stay visible; already archived reports link to the current one. Collapsing history does not resolve findings or native threads;
-comments by other accounts stay intact. Carry still-applicable material findings
-into the current review summary before cleanup.
+comments by other accounts stay intact. Before publication or standalone cleanup, carry still-applicable material findings
+into the current review summary.
 
 The standalone command also lists confirmed edits and unavailable cleanup. A failed
 edit returns a nonzero exit; inspect the failure before retrying.
