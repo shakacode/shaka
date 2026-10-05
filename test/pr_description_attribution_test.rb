@@ -17,13 +17,14 @@ class PrDescriptionAttributionTest < Minitest::Test
   def test_default_contract_enables_attribution
     with_repository do |root|
       config = Shaka::RepositoryConfig.load(root:)
-      assert_equal({ 'attribution' => true }, config.pr_description)
+      assert_equal({ 'show_shaka_credit' => true }, config.pr_description)
       assert_equal config.pr_description, config.to_h.fetch('pr_description')
     end
   end
 
   def test_setting_accepts_only_a_boolean_and_known_keys
-    [{ 'attribution' => 'false' }, { 'attribution' => nil }, { 'enabled' => false }, false].each do |section|
+    [{ 'show_shaka_credit' => 'false' }, { 'show_shaka_credit' => nil },
+     { 'attribution' => false }, { 'enabled' => false }, false].each do |section|
       with_repository('pr_description' => section) do |root|
         error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
         assert_includes error.message, 'pr_description'
@@ -32,14 +33,14 @@ class PrDescriptionAttributionTest < Minitest::Test
   end
 
   def test_credit_appears_once_between_summary_and_walkthrough
-    settings = Shaka::PublicationSettings.new(current: { 'pr_description.attribution' => true })
+    settings = Shaka::PublicationSettings.new(current: { 'pr_description.show_shaka_credit' => true })
     rendered = Shaka::Publication.description(description_content, nil, nil, settings)
     assert_equal 1, rendered.scan(CREDIT).size
     assert_includes rendered, "#{SUMMARY}\n\n#{CREDIT}\n\n_Not published yet._"
   end
 
   def test_disabled_attribution_keeps_the_summary_and_other_evidence
-    settings = Shaka::PublicationSettings.new(current: { 'pr_description.attribution' => false })
+    settings = Shaka::PublicationSettings.new(current: { 'pr_description.show_shaka_credit' => false })
     rendered = Shaka::Publication.description(description_content, nil, nil, settings)
     refute_includes rendered, CREDIT
     assert_includes rendered, SUMMARY
@@ -48,7 +49,7 @@ class PrDescriptionAttributionTest < Minitest::Test
   end
 
   def test_unavailable_settings_do_not_override_an_opt_out
-    [nil, {}, { 'pr_description.attribution' => 'UNKNOWN' }].each do |current|
+    [nil, {}, { 'pr_description.show_shaka_credit' => 'UNKNOWN' }].each do |current|
       settings = Shaka::PublicationSettings.new(current:)
       refute_includes Shaka::Publication.description(description_content, nil, nil, settings), CREDIT
     end
@@ -61,12 +62,12 @@ class PrDescriptionAttributionTest < Minitest::Test
   end
 
   def test_publication_uses_trusted_opt_out_not_candidate_configuration
-    with_repository('pr_description' => { 'attribution' => false }) do |root|
+    with_repository('pr_description' => { 'show_shaka_credit' => false }) do |root|
       commit(root)
       enable_candidate_attribution(root)
       body = published_body(root)
       refute_includes body, CREDIT
-      assert_includes body, '| pr_description.attribution | UNKNOWN | UNKNOWN | false |'
+      assert_includes body, '| pr_description.show_shaka_credit | UNKNOWN | UNKNOWN | false |'
     end
   end
 
@@ -81,7 +82,7 @@ class PrDescriptionAttributionTest < Minitest::Test
   def enable_candidate_attribution(root)
     path = File.join(root, '.agents/agent-workflow.yml')
     config = YAML.safe_load_file(path)
-    config['pr_description']['attribution'] = true
+    config['pr_description']['show_shaka_credit'] = true
     File.write(path, YAML.dump(config))
   end
 

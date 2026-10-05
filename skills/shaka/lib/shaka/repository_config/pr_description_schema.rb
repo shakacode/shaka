@@ -15,10 +15,11 @@ module Shaka
 
       def validate
         mapping!(@description, 'pr_description')
-        keys!(@description, [], ['attribution'], 'pr_description')
-        return unless @description.key?('attribution')
+        keys!(@description, [], ['show_shaka_credit'], 'pr_description')
+        return unless @description.key?('show_shaka_credit')
 
-        enum!(@description['attribution'], [true, false], 'pr_description.attribution must be true or false')
+        enum!(@description['show_shaka_credit'], [true, false],
+              'pr_description.show_shaka_credit must be true or false')
       end
     end
   end

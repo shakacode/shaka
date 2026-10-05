@@ -552,7 +552,7 @@ When a task comes from a tracker that offers a branch name, such as Linear's
 Trackers link a pull request to its
 work item through that branch name. Git must accept the name as a branch name.
 
-## `pr_description.attribution`
+## `pr_description.show_shaka_credit`
 
 **Optional. Default: `true`.**
 
@@ -568,7 +568,7 @@ To hide the credit, set:
 
 ```yaml
 pr_description:
-  attribution: false
+  show_shaka_credit: false
 ```
 
 The setting applies to PR descriptions. Walkthroughs and replies do not carry this
