@@ -11,7 +11,8 @@ class LocalReviewCommitPublishTest < Minitest::Test
     def markdown(body)
       summaries = body.scan(%r{<summary>.*?</summary>}).join("\n")
       details = body.scan('<details>').join + summaries + body.scan('</details>').join
-      "#{details}<table></table><p>#{body.lines.last.strip}</p>"
+      tables = '<table></table>' * body.lines.count { |line| line.start_with?('| ---') }
+      "#{details}#{tables}<p>#{body.lines.last.strip}</p>"
     end
 
     def api(path)

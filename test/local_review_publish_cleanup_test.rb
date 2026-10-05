@@ -1,0 +1,130 @@
+# frozen_string_literal: true
+
+require_relative 'local_review_commit_publish_test'
+
+# Exercises publication and the real history cleanup together, including retryable failures.
+class LocalReviewPublishCleanupTest < Minitest::Test
+  include LocalReviewCommentFixture
+
+  class Timeline < LocalReviewCommitPublishTest::Timeline
+    attr_accessor :head, :cleanup_failure
+    attr_reader :edits
+
+    def initialize
+      super
+      @head = LocalReviewCommentFixture::HEAD
+      @comments = {}
+      @edits = []
+    end
+
+    def repository = 'o/r'
+    def viewer_login = 'agent'
+    def issue_comments = @comments.values.map(&:dup)
+
+    def reply(body:, key:)
+      result = super
+      id = result.fetch('id')
+      @comments[id] = { 'id' => id, 'user' => { 'login' => viewer_login },
+                        'created_at' => '2026-10-05T00:00:00Z',
+                        'body' => "<!-- shaka:reply:#{key} -->\n#{body}" }
+      result
+    end
+
+    def api(path, method: 'GET', fields: {})
+      return { 'head' => { 'sha' => head } } if path.end_with?('/pulls/7')
+      return super(path) unless path.include?('/issues/comments/')
+
+      comment = @comments.fetch(path.split('/').last.to_i)
+      if method == 'PATCH'
+        raise Shaka::Error, 'Cleanup denied' if cleanup_failure
+
+        @edits << comment.fetch('id')
+        comment['body'] = fields.fetch(:body)
+      end
+      comment.dup
+    end
+
+    def verify_rendering(body)
+      return super unless body.include?(Shaka::LocalReviewHistory::MARKER) || body.start_with?("\nREVIEWED ")
+
+      attestation = body.lines.reverse.find { |line| line.start_with?('REVIEWED ') }.strip
+      footer = "<p>#{attestation}</p>"
+      body.include?(Shaka::LocalReviewHistory::MARKER) ? "<details><p>History</p></details>#{footer}" : footer
+    end
+  end
+
+  def test_publication_collapses_earlier_reports
+    github = Timeline.new
+    content = loop_content
+
+    status, result = publish(github, content)
+    assert_equal 0, status
+    assert_equal [1], result.fetch('cleanup').fetch('collapsed')
+    assert_empty result.fetch('cleanup').fetch('unavailable')
+    assert_preserved_history(github)
+  end
+
+  def test_republishing_keeps_one_archive_disclosure
+    github = Timeline.new
+    content = loop_content
+    assert_equal 0, publish(github, content).first
+    assert_equal 0, publish(github, content).first
+    assert_equal 1, github.issue_comments.first['body'].scan('<summary>Earlier local review</summary>').size
+  end
+
+  def test_cleanup_failure_retains_publication_and_reports_a_retryable_gap
+    github = Timeline.new
+    github.cleanup_failure = true
+    content = loop_content
+
+    status, result = publish(github, content)
+    assert_equal 1, status
+    assert_failed_cleanup(github, result)
+    github.cleanup_failure = false
+    assert_equal 0, publish(github, content).first
+    assert_equal 2, github.issue_comments.size
+  end
+
+  def test_no_current_head_report_preserves_history_and_reports_the_skip
+    github = Timeline.new
+    github.head = 'c' * 40
+
+    status, result = publish(github, loop_content)
+    assert_equal 0, status
+    assert_includes result.fetch('cleanup').fetch('skipped'), 'No current report'
+    assert_empty github.edits
+  end
+
+  private
+
+  def assert_preserved_history(github)
+    earlier, current = github.issue_comments
+    assert_includes earlier.fetch('body'), Shaka::LocalReviewHistory::MARKER
+    assert_includes earlier.fetch('body'), '#issuecomment-2'
+    assert_equal "REVIEWED #{EARLIER} BY openai/codex EFFORT UNKNOWN FINDINGS 0", earlier['body'].lines.last.strip
+    refute_includes current.fetch('body'), Shaka::LocalReviewHistory::MARKER
+  end
+
+  def assert_failed_cleanup(github, result)
+    assert_equal 2, result.fetch('comments').size
+    assert_includes result.fetch('cleanup').fetch('unavailable').join, 'Cleanup denied'
+    assert_equal 2, github.issue_comments.size
+    refute_includes github.issue_comments.first['body'], Shaka::LocalReviewHistory::MARKER
+  end
+
+  def loop_content
+    rounds = [EARLIER, HEAD].map { |head| round(head, findings: [], report: report(head, findings: 0)) }
+    { 'rounds' => rounds }
+  end
+
+  def publish(github, content)
+    Tempfile.create(['content-', '.json']) do |file|
+      file.write(JSON.generate(content))
+      file.close
+      output, = capture_io do
+        @status = Shaka::LocalReview.run(['publish', 'o/r', '7', '--content-file', file.path], github:)
+      end
+      [@status, JSON.parse(output)]
+    end
+  end
+end

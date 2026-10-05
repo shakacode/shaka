@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'commit_comment'
+require_relative 'history'
 
 module Shaka
   # Preflights every comment, then upserts in ledger order. A retry resumes partial publication.
@@ -16,7 +17,7 @@ module Shaka
       summary = LocalReviewComment.new(@content).loop_summary
       ready = @content.fetch('rounds').map { |round| round.fetch('head') }.uniq.map { |head| prepare(head) }
       results = ready.map { |key, body| @github.reply(body:, key:) }
-      { 'comments' => results, 'summary' => summary }
+      { 'comments' => results, 'summary' => summary, 'cleanup' => LocalReviewHistory.new(@github).collapse }
     end
 
     private
