@@ -414,7 +414,9 @@ The reviewer judges product fit. The task owner supplies the original problem an
 evidence, handles concerns, and establishes merge readiness; `merge` does not
 require a product checkpoint report.
 
-## `opening_check`
+<a id="opening_check"></a>
+
+## `pr_description.opening_check`
 
 **Optional.** Check whether the opening of a PR description explains a useful
 outcome to its reader. This is writing advice; a failed check does not block
@@ -424,25 +426,40 @@ publication or merging.
 > effort. Keep my code-review settings as they are.
 
 ```yaml
-opening_check:
-  enabled: true
-  reviewer: openai/codex
-  model: gpt-6.1-sol
-  effort: medium
-  # prompt_file: .agents/shaka/opening.md
+pr_description:
+  opening_check:
+    enabled: true
+    reviewer: openai/codex
+    model: gpt-6.1-sol
+    effort: medium
+    # prompt_file: .agents/shaka/opening.md
 ```
 
 Choose the provider and model that works best for your writing. It can be the
 same provider you use to develop the change. The opening check runs in a separate
 session and does not inherit the implementation conversation.
 
+You can omit the whole section to use the defaults below. The opening check
+shares the code-review preference order when it chooses a reviewer, but uses
+its own model and effort choices. It does not copy those from code review.
+
 | Setting | Effect when omitted |
 | --- | --- |
 | `enabled` | `true`. Set `false` to turn the opening check off. |
 | `reviewer` | The agent chooses from your local AI code reviewers. An explicit `provider/family`, such as `openai/codex`, selects the opening reviewer independently. |
-| `model` | The selected CLI's default model. Setting a model requires an explicit `reviewer`. |
+| `model` | The selected CLI's default model. To name a model, also set `reviewer` so Shaka knows which provider should run it. |
 | `effort` | `low`. Use a thinking level supported by the selected provider. |
 | `prompt_file` | Shaka's default opening instructions. |
+
+For example, `reviewer: openai/codex` with no `model` uses the Codex CLI's
+built-in default model. Shaka runs Codex with personal configuration disabled.
+Adding `model: gpt-6.1-sol` pins the opening check to that model. Omit the model
+to follow CLI defaults, or pin it for predictable results and cost. Shaka does
+not currently load shared settings from another GitHub repository.
+
+The top-level `opening_check` section remains supported for existing setups.
+Use one location for these settings; Shaka rejects a configuration that supplies
+both. New setups use `pr_description.opening_check`.
 
 The older `external_enabled` setting remains supported: `false` keeps the check
 in the coding chat instead of launching a separate reviewer. Use either that

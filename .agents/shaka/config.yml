@@ -48,12 +48,14 @@ branches:
 wip:
   include_locations: true # Default: publish workspace and session link in WIP Details.
 
-opening_check:
-  enabled: true # Default: check whether the PR opening makes sense to its reader.
-  effort: low # Default thinking effort for a separate opening check.
-  # reviewer: openai/codex # Optional: choose independently of code reviewers.
-  # model: gpt-6.1-sol # Optional: requires reviewer; otherwise use that CLI's default.
-  # prompt_file: .agents/shaka/opening-prompt.md # Omitted: skills/shaka/config/opening-prompt.md.
+pr_description:
+  opening_check:
+    enabled: true # Default: check the opening; false turns the check off.
+    effort: low # Default: low, independent of the code-review effort.
+    # reviewer: openai/codex # Omitted: the agent selects from local_review_agents.
+    # model: gpt-6.1-sol # To choose a model, also uncomment reviewer above.
+    # Omit model to use that reviewer's CLI default, not its code-review model.
+    # prompt_file: .agents/shaka/opening-prompt.md # Omitted: use Shaka's opening instructions.
 
 prose_limits: # Defaults for visible PR descriptions and walkthroughs.
   max_sentence_words: 35

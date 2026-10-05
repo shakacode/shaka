@@ -18,7 +18,8 @@ class RepositoryConfigurationExampleTest < Minitest::Test
 
   def test_example_includes_effective_default_sections
     @defaults.except('version', 'commands', 'paths', 'review', 'merge').each do |section, defaults|
-      assert_equal defaults, @example.fetch(section), "Update the #{section} example when defaults change"
+      example = section == 'opening_check' ? @example.fetch('pr_description').fetch(section) : @example.fetch(section)
+      assert_equal defaults, example, "Update the #{section} example when defaults change"
     end
   end
 

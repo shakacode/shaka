@@ -83,6 +83,7 @@ module Shaka
                           candidate_commands: @candidate_commands, selection: @selection)
       schema.validate
       @commands = schema.commands
+      @opening_check = OpeningSchema.effective(schema.opening_check)
       assign_sections
     end
 
@@ -92,7 +93,6 @@ module Shaka
       merge = @data.fetch('merge')
       @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
-      @opening_check = OpeningSchema.effective(@data.fetch('opening_check', {}))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
     end
 
