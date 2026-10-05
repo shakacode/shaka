@@ -2,6 +2,8 @@
 
 require_relative '../publication/feature_guard'
 require_relative '../publication/merge_warning_region'
+require_relative '../publication/text'
+require_relative 'history'
 
 module Shaka
   # Keeps a blocked checkpoint visible across normal description refreshes.
@@ -52,13 +54,23 @@ module Shaka
 
     def latest?(published)
       account = @github.viewer_login
-      latest = @github.issue_comments.reverse.find do |comment|
+      comments = @github.issue_comments.select do |comment|
         comment.dig('user', 'login') == account && comment['body'].to_s.match?(PostImplementationHistory::KEY)
       end
+      latest = comments.max_by { |comment| order(comment) }
       raise Error, 'Published checkpoint is absent from the comment listing; retry publication.' unless
         latest && latest['id'] >= published['id']
 
       latest['id'] == published['id']
+    end
+
+    def order(comment)
+      time = WalkthroughText.submitted_at(comment.merge('submitted_at' => comment['created_at']))
+      id = comment['id']
+      raise Error, 'Checkpoint comment has no creation time or identifier.' unless
+        time && id.is_a?(Integer) && id.positive?
+
+      [time, id]
     end
 
     def verify_head(pull, head)

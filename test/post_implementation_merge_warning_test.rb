@@ -182,10 +182,37 @@ end
 class PostImplementationMergeWarningListingTest < Minitest::Test
   include PostImplementationPublicationFixture
 
+  def test_an_unordered_listing_cannot_clear_a_newer_blocker
+    with_result do |result, path|
+      github, = publish(result.merge('status' => 'not_completed', 'reason' => 'Provider failed'), path)
+      body = github.description_body
+      github.define_singleton_method(:issue_comments) do
+        [@published.merge('id' => 2, 'created_at' => '2026-09-30T00:00:01Z'), @published]
+      end
+      outcome = publish(result, path, github:)
+
+      assert_equal 'superseded', JSON.parse(outcome[2]).dig('merge_safeguard', 'state')
+      assert_equal body, github.description_body
+    end
+  end
+
+  def test_an_unordered_listing_still_applies_the_latest_blocker
+    with_result do |result, path|
+      github = GitHub.new('a' * 40)
+      github.define_singleton_method(:issue_comments) do
+        [@published, @published.merge('id' => 3, 'created_at' => '2026-09-29T00:00:00Z')]
+      end
+      outcome = publish(result.merge('status' => 'not_completed', 'reason' => 'Provider failed'), path, github:)
+
+      assert_equal 'blocked', JSON.parse(outcome[2]).dig('merge_safeguard', 'state')
+      assert_includes github.description_body, 'Do not merge'
+    end
+  end
+
   def test_a_stale_comment_listing_is_a_failed_safeguard_instead_of_a_superseded_success
     with_result do |result, path|
       github = GitHub.new('a' * 40)
-      github.define_singleton_method(:issue_comments) { [@published.merge('id' => 0)] }
+      github.define_singleton_method(:issue_comments) { [] }
       outcome = publish(result.merge('status' => 'not_completed', 'reason' => 'Provider failed'), path, github:)
       assert_equal 1, outcome[1]
       assert_equal 'failed', JSON.parse(outcome[2]).dig('merge_safeguard', 'state')
