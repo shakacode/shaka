@@ -48,6 +48,9 @@ branches:
 wip:
   include_locations: true # Default: publish workspace and session link in WIP Details.
 
+pr_description:
+  attribution: true # Default: show a quiet Shaka website credit below the PR summary.
+
 opening_check:
   external_enabled: true # Default: try a configured local reviewer for the PR opening.
   # prompt_file: .agents/shaka/opening-prompt.md # Omitted: skills/shaka/config/opening-prompt.md.

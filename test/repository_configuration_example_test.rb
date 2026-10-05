@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/repository_config'
+require 'shaka/publication/settings'
 
 # The repository contract doubles as the browsable example of shipped defaults.
 class RepositoryConfigurationExampleTest < Minitest::Test
@@ -29,6 +30,10 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   def test_example_merge_defaults_match_without_changing_repository_choices
     policy_keys = %w[preference required_checks]
     assert_equal @defaults.fetch('merge').except(*policy_keys), @example.fetch('merge').except(*policy_keys)
+  end
+
+  def test_renderer_fallback_matches_attribution_default
+    assert_equal @defaults.dig('pr_description', 'attribution'), Shaka::PublicationSettings.new.attribution?
   end
 
   def test_example_post_implementation_defaults_match

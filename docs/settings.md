@@ -552,6 +552,25 @@ When a task comes from a tracker that offers a branch name, such as Linear's
 Trackers link a pull request to its
 work item through that branch name. Git must accept the name as a branch name.
 
+## `pr_description.attribution`
+
+**Optional. Default: `true`.**
+
+PR descriptions show *PR prepared with [Shaka](https://shaka.shakacode.com/).* below
+the opening summary. The credit helps readers discover the workflow that prepared
+the PR and try it on their own project.
+
+To hide the credit, set:
+
+```yaml
+pr_description:
+  attribution: false
+```
+
+The setting applies to PR descriptions. Walkthroughs and replies do not carry this
+credit. Hiding it keeps verification, execution provenance, and usage visible in
+their existing sections.
+
 ## `wip.include_locations`
 
 **Optional. Default: `true`.**

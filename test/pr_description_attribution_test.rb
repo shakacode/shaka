@@ -1,0 +1,91 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require_relative 'repository_fixture'
+require_relative 'cli_opening_check_fakes'
+require 'shaka/repository_config'
+require 'shaka/publication/publication'
+
+class PrDescriptionAttributionTest < Minitest::Test
+  include RepositoryConfigTestHelpers
+  include CliOpeningCheckFakes
+
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+  SUMMARY = 'Reviewers can see the changed behavior.'
+  CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
+
+  def test_default_contract_enables_attribution
+    with_repository do |root|
+      config = Shaka::RepositoryConfig.load(root:)
+      assert_equal({ 'attribution' => true }, config.pr_description)
+      assert_equal config.pr_description, config.to_h.fetch('pr_description')
+    end
+  end
+
+  def test_setting_accepts_only_a_boolean_and_known_keys
+    [{ 'attribution' => 'false' }, { 'attribution' => nil }, { 'enabled' => false }, false].each do |section|
+      with_repository('pr_description' => section) do |root|
+        error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+        assert_includes error.message, 'pr_description'
+      end
+    end
+  end
+
+  def test_credit_appears_once_between_summary_and_walkthrough
+    rendered = Shaka::Publication.description(description_content)
+    assert_equal 1, rendered.scan(CREDIT).size
+    assert_operator rendered.index(SUMMARY), :<, rendered.index(CREDIT)
+    assert_operator rendered.index(CREDIT), :<, rendered.index('Post-implementation verification')
+  end
+
+  def test_disabled_attribution_keeps_the_summary_and_other_evidence
+    settings = Shaka::PublicationSettings.new(current: { 'pr_description.attribution' => false })
+    rendered = Shaka::Publication.description(description_content, nil, nil, settings)
+    refute_includes rendered, CREDIT
+    assert_includes rendered, SUMMARY
+    assert_includes rendered, 'Post-implementation verification'
+    assert_includes rendered, 'Execution provenance'
+  end
+
+  def test_replies_and_walkthroughs_have_no_description_credit
+    content = { 'identity' => { 'agent' => 'Codex' }, 'summary' => SUMMARY, 'head' => 'a' * 40 }
+    refute_includes Shaka::Publication.comment(content), CREDIT
+    refute_includes Shaka::Publication.walkthrough(content), CREDIT
+  end
+
+  def test_publication_uses_trusted_opt_out_not_candidate_configuration
+    with_repository('pr_description' => { 'attribution' => false }) do |root|
+      commit(root)
+      enable_candidate_attribution(root)
+      body = published_body(root)
+      refute_includes body, CREDIT
+      assert_includes body, '| pr_description.attribution | UNKNOWN | UNKNOWN | false |'
+    end
+  end
+
+  def published_body(root)
+    Dir.mktmpdir do |dir|
+      _output, error, status = run_description(dir, root:, ref: fixture_ref(root))
+      assert_predicate status, :success?, error
+      File.read(File.join(dir, 'published.md'))
+    end
+  end
+
+  def enable_candidate_attribution(root)
+    path = File.join(root, '.agents/agent-workflow.yml')
+    config = YAML.safe_load_file(path)
+    config['pr_description']['attribution'] = true
+    File.write(path, YAML.dump(config))
+  end
+
+  def test_publication_without_an_explicit_setting_has_the_default_credit
+    with_repository do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        _output, error, status = run_description(dir, root:, ref: fixture_ref(root))
+        assert_predicate status, :success?, error
+        assert_includes File.read(File.join(dir, 'published.md')), CREDIT
+      end
+    end
+  end
+end

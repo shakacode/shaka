@@ -57,6 +57,9 @@ module Shaka
     # An unknown policy cannot authorize publishing locations, even on unfinished PRs.
     def include_locations? = @current&.fetch('wip.include_locations', false) == true
 
+    # Attribution is an opt-out presentation choice, so missing policy keeps the default.
+    def attribution? = @current&.fetch('pr_description.attribution', true) != false
+
     def rows
       snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]
       safe = snapshots.map { |snapshot| Evidence::PublicSettings.sanitize(snapshot) }
