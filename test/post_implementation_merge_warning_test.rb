@@ -38,6 +38,14 @@ class PostImplementationMergeWarningLifecycleTest < Minitest::Test
     result.merge!('status' => 'not_completed', 'reason' => 'Review execution failed.')
   end
 
+  def refuse_description_updates(github)
+    github.define_singleton_method(:api) do |path, **options|
+      raise Shaka::Error, 'Ready publication attempted a description write.' if options[:method] == 'PATCH'
+
+      super(path, **options)
+    end
+  end
+
   def test_retry_preserves_human_text_and_does_not_duplicate_the_warning
     with_result do |result, path|
       block(result)
@@ -50,14 +58,15 @@ class PostImplementationMergeWarningLifecycleTest < Minitest::Test
     end
   end
 
-  def test_ready_removes_warning_but_does_not_mark_ready_or_remove_human_text
+  def test_ready_retains_the_warning_for_deliberate_manual_clearance
     with_result do |result, path|
       github, = publish(block(result.dup), path)
+      body = github.description_body
+      refuse_description_updates(github)
       assert_equal 0, publish(result, path, github:)[1]
 
-      refute_includes github.description_body, Shaka::PostImplementationMergeWarning::OPEN
+      assert_equal body, github.description_body
       assert github.snapshot['isDraft']
-      assert github.description_body.end_with?('Human notes')
     end
   end
 

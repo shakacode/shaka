@@ -32,20 +32,22 @@ module Shaka
       verify_published(published)
       return { 'state' => 'superseded' } unless latest?(published)
 
-      blocked = publication.state != 'ready'
-      failure = draft_failure(head) if blocked
-      update(current, head, blocked, publication.summary, published)
+      # Ready publications leave warning clearance to the maintainer; they cannot erase a newer blocker.
+      return { 'state' => 'unchanged', 'head' => head } if publication.state == 'ready'
+
+      failure = draft_failure(head)
+      update(current, head, publication.summary, published)
       raise Error, failure if failure
 
-      { 'state' => blocked ? 'blocked' : 'cleared', 'head' => head }
+      { 'state' => 'blocked', 'head' => head }
     end
 
     private
 
-    def update(current, head, blocked, summary, published)
+    def update(current, head, summary, published)
       body = current['body'].to_s
       remaining = MergeWarningRegion.remove(body)
-      updated = blocked ? "#{warning(head, summary, published)}#{remaining}" : remaining
+      updated = "#{warning(head, summary, published)}#{remaining}"
       raise Error, 'Merge warning exceeds GitHub description length.' if updated.length > 65_536
 
       @github.verify_rendering(updated) unless updated == body

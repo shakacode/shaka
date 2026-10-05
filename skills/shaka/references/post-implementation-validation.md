@@ -35,10 +35,12 @@ a named placeholder. This link locates the report; it does not establish readine
 Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
 **Do not merge** warning above its feature summary. The warning names the reason,
 head, report link, and task owner's next step. Its separate marked region survives
-normal description updates. A ready checkpoint removes the warning but leaves the
-PR in draft; the task owner marks it ready after all required gates pass. An opt-out
-leaves an existing warning in place because it does not settle substantive concerns.
-An older execution cannot replace the latest checkpoint's warning.
+normal description updates. A ready checkpoint leaves both the warning and draft
+status unchanged. After all required gates pass, the task owner removes the marked
+warning in GitHub and marks the PR ready. Ready publications cannot erase a newer
+blocker. Other description writes use best-effort stale-body checks; GitHub offers
+no atomic compare-and-swap for PR descriptions. An opt-out leaves an existing warning
+in place because it does not settle substantive concerns.
 
 Inspect `merge_safeguard` in the publication result. A failed safeguard returns a
 nonzero exit with the reason and published comment URL; inspect live state and retry
