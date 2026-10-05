@@ -26,6 +26,8 @@ module Shaka
     private
 
     def consume(line)
+      return invalidate unless line.valid_encoding?
+
       record = JSON.parse(line)
       return invalidate unless record.is_a?(Hash) && record['payload'].is_a?(Hash)
 

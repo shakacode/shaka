@@ -70,6 +70,16 @@ class PublisherAttributionTest < Minitest::Test
     end
   end
 
+  def test_invalid_utf8_is_unknown_instead_of_raising
+    with_session(context) do |environment, file|
+      line = JSON.generate(context('broken-byte'))
+      File.binwrite(file, "#{line.sub('broken-byte', "\xFF")}\n", mode: 'a')
+      result = Shaka::PublisherAttribution.prepare(content, environment:)
+      assert_equal 'UNKNOWN', result.dig('identity', 'model')
+      assert_includes result['publisher_note'], 'unreadable'
+    end
+  end
+
   def test_new_turn_without_context_does_not_inherit_previous_turn
     started = { 'type' => 'event_msg', 'payload' => { 'type' => 'task_started', 'turn_id' => 'new' } }
     with_session(context, started) do |environment, _file|
