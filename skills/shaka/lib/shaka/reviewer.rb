@@ -43,7 +43,11 @@ module Shaka
     end
 
     # A task's --count wins; otherwise the trusted seam's standing count, or one reviewer.
-    def count(review) = review.fetch(RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT, 1)
+    def count(review)
+      review = TrustedConfigSource.from_ref(root:, ref: @options[:ref], private_trial: true)&.review || {} if
+        @source_kind == 'preview/local'
+      review.fetch(RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT, 1)
+    end
 
     def identities(key, required: false)
       values = @options.fetch(key, [])
@@ -55,7 +59,8 @@ module Shaka
     def config
       return Configuration.worktree(root:) unless @options[:ref]
 
-      Configuration.resolve_source(root:, ref: @options[:ref]).first
+      selected, _, @source_kind = Configuration.resolve_source(root:, ref: @options[:ref])
+      selected
     end
 
     def option_parser
