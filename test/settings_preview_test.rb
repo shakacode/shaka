@@ -87,12 +87,10 @@ class SettingsPreviewBoundaryTest < Minitest::Test
 
   def test_first_setup_can_be_previewed_without_trusting_its_policy
     with_preview_repository do |root, _trusted, preview|
-      git(root, 'rm', '-r', '.agents')
-      absent = commit(root)
-      FileUtils.mkdir_p(File.join(root, '.agents/bin'))
-      create_commands(root)
+      absent = remove_trusted_setup(root)
       select_preview(root, preview)
       assert_equal 'preview/local', Shaka::Evidence::Inputs.resolve_source(root, absent).last
+      refute_empty capture(root, absent)['digest']
       assert_nil Shaka::TrustedConfigSource.from_ref(root:, ref: absent, private_trial: true)
       assert_raises(Shaka::Error) { Shaka::Configuration.trusted(root:, ref: absent) }
     end
@@ -115,5 +113,15 @@ class SettingsPreviewBoundaryTest < Minitest::Test
       assert_raises(Shaka::Error) { selector.start('settings') }
       assert_equal 'inactive', selector.status['status']
     end
+  end
+
+  private
+
+  def remove_trusted_setup(root)
+    git(root, 'rm', '-r', '.agents')
+    absent = commit(root)
+    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    create_commands(root)
+    absent
   end
 end
