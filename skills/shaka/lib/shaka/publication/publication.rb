@@ -46,7 +46,7 @@ module Shaka
     def sections = PublicationSections.render(@content)
 
     # The steps besides merging sit under the headline links so a reader cannot miss them.
-    def top_links = [*PublicationLinks.top(@content), *StepsBesidesMerging.render(@content)]
+    def top_links = [*PublicationLinks.top(@content, @settings.attribution?), *StepsBesidesMerging.render(@content)]
 
     def table
       spec = @content['table']

@@ -13,9 +13,11 @@ module Shaka
   # Loads the small, typed repository contract used by the workflow.
   class RepositoryConfig
     DEFAULT_WIP = { 'include_locations' => true }.freeze
+    DEFAULT_PR_DESCRIPTION = { 'show_shaka_credit' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :wip, :opening_check, :prose_limits, :sha, :config_path
+    attr_reader :base_branch, :commands, :review, :merge, :wip, :pr_description,
+                :opening_check, :prose_limits, :sha, :config_path
 
     def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
       new(root:, source:, available_commands:, sha:, candidate_commands:).load
@@ -73,7 +75,7 @@ module Shaka
                                'candidate_configuration' => @candidate_detected&.contract,
                                'trusted_command_directory' => @layout.command_directory,
                                'candidate_command_directory' => @candidate_layout.command_directory },
-                  'opening_check' => opening_check, 'prose_limits' => prose_limits)
+                  'opening_check' => opening_check, 'prose_limits' => prose_limits, 'pr_description' => pr_description)
     end
 
     private
@@ -92,6 +94,11 @@ module Shaka
       merge = @data.fetch('merge')
       @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
+      assign_presentation
+    end
+
+    def assign_presentation
+      @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {}))
       @opening_check = { 'external_enabled' => true }.merge(@data.fetch('opening_check', {}))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
     end
