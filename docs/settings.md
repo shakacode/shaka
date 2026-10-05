@@ -560,6 +560,10 @@ PR descriptions show *PR prepared with [Shaka](https://shaka.shakacode.com/).* b
 the opening summary. The credit helps readers discover the workflow that prepared
 the PR and try it on their own project.
 
+When Shaka is configured for a repository, the credit helps teammates discover its
+workflow. For private repositories, leave attribution enabled while introducing
+Shaka, then turn it off once the team is familiar with it.
+
 To hide the credit, set:
 
 ```yaml
