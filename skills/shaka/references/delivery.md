@@ -249,8 +249,7 @@ required decisions, and missing evidence visible; link to supporting detail.
 
 Follow the writer-identifier rule in [Explain](../config/workflow.yml), including
 verification updates and attachment comments. Publication helpers render the
-identifier from `identity`; direct `gh` posts use an attributed body file.
-This identifies the writer; reviewer and contributor usage belongs in details.
+identifier from `identity`.
 
 ### Make the PR description useful first
 

@@ -20,7 +20,9 @@ version: 1
 rules:
   - id: github-writer-identifier
     phase: explain
-    quote: Before submission, check that the first visible line carries this identifier.
+    quote: >-
+      Before submission, check that the first visible line of the AI-authored post or
+      managed section carries the writer identifier, keeping surrounding human text intact.
     enforced_by: agent
     note: >-
       Publication helpers render supplied identity fields and show UNKNOWN for missing values.
