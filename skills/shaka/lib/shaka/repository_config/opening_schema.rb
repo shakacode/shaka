@@ -16,33 +16,34 @@ module Shaka
         DEFAULTS.merge(settings)
       end
 
-      def initialize(opening)
+      def initialize(opening, label: 'opening_check')
         @opening = opening
+        @label = label
       end
 
       def validate
-        mapping!(@opening, 'opening_check')
-        keys!(@opening, [], %w[enabled external_enabled reviewer model effort prompt_file], 'opening_check')
+        mapping!(@opening, @label)
+        keys!(@opening, [], %w[enabled external_enabled reviewer model effort prompt_file], @label)
         validate_enabled
         validate_reviewer
         validate_model
-        ReviewSchema.effort_level!(@opening['effort'], 'opening_check.effort') if @opening.key?('effort')
+        ReviewSchema.effort_level!(@opening['effort'], "#{@label}.effort") if @opening.key?('effort')
         return unless @opening.key?('prompt_file')
 
-        prompt_path!(@opening['prompt_file'], 'opening_check.prompt_file')
+        prompt_path!(@opening['prompt_file'], "#{@label}.prompt_file")
       end
 
       private
 
       def validate_enabled
         if @opening.key?('enabled') && @opening.key?('external_enabled')
-          raise Error, 'Use opening_check.enabled; omit its older name external_enabled'
+          raise Error, "Use #{@label}.enabled; omit its older name external_enabled"
         end
 
         %w[enabled external_enabled].each do |key|
           next unless @opening.key?(key)
 
-          enum!(@opening[key], [true, false], "opening_check.#{key} must be true or false")
+          enum!(@opening[key], [true, false], "#{@label}.#{key} must be true or false")
         end
       end
 
@@ -52,15 +53,15 @@ module Shaka
         identity = ReviewerSelection.parse(@opening['reviewer']).values.map(&:downcase).join('/')
         return if ReviewerSelection::SUPPORTED_REVIEWERS.include?(identity)
 
-        raise Error, 'opening_check.reviewer must be a supported provider/family'
+        raise Error, "#{@label}.reviewer must be a supported provider/family"
       end
 
       def validate_model
         return unless @opening.key?('model')
 
-        raise Error, 'opening_check.model requires opening_check.reviewer' unless @opening.key?('reviewer')
+        raise Error, "#{@label}.model requires #{@label}.reviewer" unless @opening.key?('reviewer')
 
-        ReviewSchema.model_name!(@opening['model'], 'opening_check.model')
+        ReviewSchema.model_name!(@opening['model'], "#{@label}.model")
       end
     end
   end
