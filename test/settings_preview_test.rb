@@ -61,6 +61,29 @@ class SettingsPreviewTest < Minitest::Test
     end
   end
 
+  def test_ordinary_team_fingerprint_keeps_the_existing_source_identity
+    with_preview_repository do |root, trusted, _preview|
+      identity = { 'repository' => 'owner/repo', 'layout' => '.agents/agent-workflow.yml',
+                   'trusted_default_commit' => trusted, 'kind' => 'trusted/team',
+                   'configuration_blob' => git(root, 'rev-parse', "#{trusted}:.agents/agent-workflow.yml").strip }
+      expected = Shaka::Configuration::FingerprintCanonical.digest('source', identity)
+      assert_equal expected, capture(root, trusted).dig('components', 'source')
+    end
+  end
+
+  def test_new_layout_preview_uses_the_task_checkout_legacy_commands
+    with_preview_repository do |root, trusted, _preview|
+      git(root, 'checkout', '-q', 'settings')
+      use_new_layout(root)
+      preview = commit(root)
+      git(root, 'checkout', '-q', 'feature')
+      select_preview(root, preview)
+      config = Shaka::Evidence::Inputs.resolve_source(root, trusted).first
+      assert_equal '.agents/shaka/config.yml', config.config_path
+      assert_equal '.agents/bin/test', config.to_h.fetch('commands').fetch('test')
+    end
+  end
+
   private
 
   def assert_fresh_reviewer(root, trusted)
