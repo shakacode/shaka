@@ -3,8 +3,8 @@
 Settings live in `.agents/shaka/config.yml`; repositories configured before that
 layout keep them in `.agents/agent-workflow.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
-Policy comes from the default branch; settings changed in a PR do not govern
-that PR.
+Shared settings on the default branch apply unless you explicitly choose a settings
+PR for a task. Editing settings in a PR does not select them automatically.
 
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
@@ -12,39 +12,40 @@ Optional choices without fixed defaults, such as the base branch and local revie
 
 ## Preview settings before adopting them
 
-Try a settings change on a real task before sharing it with your team:
+Keep proposed settings in an open PR and try them on real work before making them
+your team's defaults. Teammates can choose the same settings PR for their tasks.
 
-> $shaka Try the settings from PR #123 on this task. Keep that settings PR
-> unmerged. Explain which choices will change, then start a settings preview.
+When starting a task, include the work you want done:
 
-The agent pins a commit from the settings PR for this worktree. A second task
-or teammate can choose the same commit. You can also preview a local commit while
-adjusting prompts, without pushing it or changing the team's defaults.
+```text
+$shaka Fix search when the query contains an apostrophe.
+Use the settings from PR #123 for this task. Keep that settings PR open.
+Use merge policy ask. Go.
+```
 
-| Choice | Where it comes from during preview |
-| --- | --- |
-| AI review models and prompts, opening checks, writing limits, and WIP location preferences | The selected settings commit. |
-| Merge policy, required checks, CI review requirements, review-round cap, and permission to skip the product checkpoint | The default branch and live GitHub rules. |
-| Setup, test, and validation commands | The task's current executable entry points. The agent inspects them before running them. |
+To change settings during a task that is already running:
 
-If Shaka has not been set up in the repository, the agent first uses individual
-setup to prepare those command entry points. The settings PR can stay unmerged.
+```text
+$shaka Switch this task to the settings from PR #123.
+Keep that settings PR open and use merge policy ask.
+```
 
-The preview stays selected when you resume this task in a fresh chat. Switching
-to another branch pauses it; returning to the original branch resumes it. It does
-not apply to another worktree. Ask the agent to stop the preview to return to
-ordinary team or individual settings.
+The selected PR supplies the complete Shaka configuration, including reviewer
+choices and merge preferences. You can override a choice in your prompt, as the
+examples do for merge policy. GitHub's required checks and approvals still apply.
+Use GitHub rulesets or branch protection for requirements your team wants GitHub
+to enforce.
 
-Changes in the settings PR do not silently change an active preview. Ask the
-agent to select the new commit when you want to try it. A changed selection
-invalidates earlier evidence, so the agent reruns affected checks and reviews.
-Prompt paths are relative to the repository root and read at the selected commit.
-Editing a prompt in the working tree alone does not change an active preview.
+The agent records the settings PR and selected commit in the task's PR. The choice
+survives a fresh chat, stays with that task's branch and worktree, and does not
+change another task. Updates to the settings PR take effect when you ask the agent
+to select its newer commit. Changed settings require fresh affected checks and
+reviews.
 
-Without an active preview, shared default-branch settings apply. An individual
-trial supplies local settings when the repository has no shared setup. Preview
-uses the same configuration format and defaults; it does not combine settings
-from multiple sources.
+Without a selected settings PR, shared repository settings apply. Individual
+settings are a fallback for repositories without shared setup; they do not
+override a team's configuration. Ask the agent to stop the preview to return to
+those ordinary defaults. Preview uses the existing configuration format.
 
 ## `merge.preference`
 

@@ -28,7 +28,8 @@ module Shaka
       TrustedConfigSource.load(root:, ref:, candidate_commands:)
     end
 
-    # Explicit previews and private trials choose preferences, never merge policy.
+    # Explicit task selections replace the complete configuration; private fallback
+    # settings apply only when the repository has no shared setup.
     def resolve_source(root:, ref:, candidate_commands: true)
       sha = resolve_commit(root:, ref:, label: 'settings ref')
       preview = SettingsPreview.ref(root:)

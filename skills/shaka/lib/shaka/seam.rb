@@ -81,10 +81,9 @@ module Shaka
     end
 
     def check_report
-      config = Configuration.trusted(root:, ref: @options[:ref])
-      return CheckReport.trusted(config, ref: @options[:ref]) if @options.key?(:ref)
+      return CheckReport.from_ref(root:, ref: @options[:ref]) if @options.key?(:ref)
 
-      CheckReport.local(config)
+      CheckReport.local(Configuration.worktree(root:))
     end
 
     def local? = @options[:local] == true

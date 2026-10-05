@@ -20,14 +20,16 @@ module Shaka
       new(root:, candidate_commands:).load(ref)
     end
 
-    # PR commands read policy only from a trusted ref; without one they keep GitHub's native gates
-    # instead of falling back to the candidate file.
+    # An explicit task selection replaces repository settings. Private fallback settings
+    # still grant no policy, and a candidate file cannot select itself.
     def self.from_ref(root:, ref:, private_trial: false)
-      return nil if private_trial && ref && !Configuration::Layout.commit(root:, sha: ref, allow_missing: true) &&
-                    (Configuration::SettingsPreview.ref(root:) ||
-                     Configuration::PrivateSource.new(root:, ref:).resolve.status == 'complete')
+      return unless ref
 
-      load(root:, ref:) if ref
+      require_relative 'configuration'
+      config, _, kind = Configuration.resolve_source(root:, ref:)
+      return config unless kind == 'private/local'
+
+      load(root:, ref:) unless private_trial
     end
 
     def initialize(root:, candidate_commands: true)

@@ -71,7 +71,7 @@ module Shaka
       @trusted_review = (trusted_review_settings(ref) if ref && trusted_seam?(ref))
     end
 
-    # Criteria and gate settings stay trusted; the explicit preview selects only review inputs.
+    # Repository instructions stay trusted; explicit selection replaces configuration.
     def settings_ref
       return unless @options[:criteria_ref]
 

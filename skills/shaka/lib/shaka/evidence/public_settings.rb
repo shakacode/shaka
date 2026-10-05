@@ -24,7 +24,6 @@ module Shaka
       NUMBERS = %w[merge.limits.max_changed_files merge.limits.max_changed_lines merge.limits.max_commits
                    prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
                    prose_limits.words_per_changed_line].freeze
-      POLICY_FIELDS = (ENUMS.keys + NUMBERS).grep(/\A(?:merge\.|review\.)/).freeze
       REDACTED = %w[commands paths review.prompts review.ci_review_jobs merge.required_checks branches base_branch
                     overrides.arguments overrides.model local_changes defaults_changed].freeze
       FIELDS = (ENUMS.keys + BOOLEANS + NUMBERS + REDACTED +
@@ -40,11 +39,6 @@ module Shaka
         REDACTED.each { |field| snapshot[field] = 'REDACTED' }
         snapshot['defaults_changed'] = 'UNKNOWN'
         sanitize(snapshot)
-      end
-
-      def with_policy(snapshot, config)
-        values = config ? setting_values(config.to_h) : {}
-        snapshot.merge(POLICY_FIELDS.to_h { |field| [field, safe(field, values[field])] })
       end
 
       def setting_values(values)

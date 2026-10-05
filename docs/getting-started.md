@@ -75,6 +75,9 @@ Then start your feature task. If the repository is already configured, skip this
 You can ask the agent to change settings later; you do not need to maintain them by hand.
 See [repository setup](configure-repository.md) for details.
 
+You can also [try settings from an open PR on one task](settings.md#preview-settings-before-adopting-them).
+This lets you test a change before making it the team's default.
+
 After merging shared reviewer settings, check whether your signed-in AI CLI
 accounts can run the selected reviewer models and effort levels. This catches
 account or model-access problems before the agent reaches code review. Ask:
