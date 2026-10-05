@@ -32,6 +32,22 @@ and republish the description. The renderer places Post-implementation verificat
 beside Code Walkthrough, followed by any deployment link. Until publication, it shows
 a named placeholder. This link locates the report; it does not establish readiness.
 
+Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
+**Do not merge** warning above its feature summary. The warning names the reason,
+head, report link, and task owner's next step. Its separate marked region survives
+normal description updates. A ready checkpoint removes the warning but leaves the
+PR in draft; the task owner marks it ready after all required gates pass. An opt-out
+leaves an existing warning in place because it does not settle substantive concerns.
+An older execution cannot replace the latest checkpoint's warning.
+
+Inspect `merge_safeguard` in the publication result. A failed safeguard returns a
+nonzero exit with the reason and published comment URL; inspect live state and retry
+the same execution after fixing the failure. Draft conversion and description
+publication are separate GitHub operations, so one can succeed while the other fails.
+For a maintainer decision, retain the existing `decisions` and `awaiting-answer` path.
+Name the decision owner and resolution conditions there, and correct older checklists
+that imply readiness while a substantive concern remains.
+
 `--base`, `--head`, and `--ref` are full commit SHAs. Resolve and verify the default
 branch before supplying `--ref`, just as for technical review. Run against a clean,
 committed head; after material edits, repeat validation, technical review, and this

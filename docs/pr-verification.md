@@ -75,6 +75,14 @@ preparation without this account's published ready review or explicit opt-out fo
 current commit. A new commit needs fresh evidence. The reviewer judges value; Ruby
 checks the published result and commit, not the judgment’s quality.
 
+A blocked or incomplete checkpoint makes the PR draft and puts a **Do not merge**
+warning above the feature summary. The warning links the report and identifies the
+commit it covers. For example, passing importer tests can coexist with an unanswered
+decision about fallback availability; the domain decision still blocks merging.
+When a new checkpoint resolves the blocker, Shaka removes its warning and leaves
+the PR in draft until the task owner confirms the remaining gates. An explicit
+review opt-out does not remove an existing substantive warning.
+
 For example, a settings page may satisfy the task but introduce an interface most
 users never need. The agent can recommend extending an existing setting instead
 before more work builds around that page. Maintainers can customize the
