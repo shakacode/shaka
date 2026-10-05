@@ -46,6 +46,17 @@ class CliDescriptionOpeningTest < Minitest::Test
     end
   end
 
+  def test_opening_choices_coexist_with_the_description_credit_opt_out
+    description = { 'show_shaka_credit' => false, 'opening_check' => { 'reviewer' => 'anthropic/claude' } }
+    with_repository('pr_description' => description) do |root|
+      commit(root)
+      Dir.mktmpdir do |dir|
+        assert_publication(dir, root, 'flagged')
+        refute_includes File.read(File.join(dir, 'published.md')), 'PR prepared with'
+      end
+    end
+  end
+
   private
 
   def with_nested_prompt(layout)
