@@ -57,8 +57,8 @@ module Shaka
     # An unknown policy cannot authorize publishing locations, even on unfinished PRs.
     def include_locations? = @current&.fetch('wip.include_locations', false) == true
 
-    # Attribution is an opt-out presentation choice, so missing policy keeps the default.
-    def attribution? = @current&.fetch('pr_description.attribution', true) != false
+    # Only resolved settings can establish whether the repository opted out.
+    def attribution? = @current&.fetch('pr_description.attribution', false) == true
 
     def rows
       snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]

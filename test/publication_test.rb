@@ -251,7 +251,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     rendered = render
 
     assert_includes rendered,
-                    "[Code Walkthrough](#{link}) · " \
+                    "A summary.\n\n[Code Walkthrough](#{link}) · " \
                     "Post-implementation verification: _Not published yet._\n"
     refute_includes rendered, '## Code Walkthrough'
     refute_match(/^# Code Walkthrough/, rendered)
@@ -281,7 +281,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def test_a_description_without_a_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: nil)
 
-    assert_includes rendered, '_Not published yet._'
+    assert_includes rendered, "A summary.\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -289,7 +289,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def test_a_blank_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: '  ')
 
-    assert_includes rendered, '_Not published yet._'
+    assert_includes rendered, "A summary.\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -385,14 +385,14 @@ class PublicationDeploymentLinkTest < Minitest::Test
   def test_the_deployment_link_follows_the_walkthrough_link_before_any_section
     link = PublicationRegressionTest::WALKTHROUGH
     assert_includes render,
-                    "[Code Walkthrough](#{link}) · " \
+                    "A summary.\n\n[Code Walkthrough](#{link}) · " \
                     'Post-implementation verification: _Not published yet._ · ' \
                     "[Deployment](<#{DEPLOYMENT}>)\n\n## Outcome"
   end
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    '_Not published yet._ · Post-implementation verification: _Not published yet._ · ' \
+                    "A summary.\n\n_Not published yet._ · Post-implementation verification: _Not published yet._ · " \
                     "[Deployment](<#{DEPLOYMENT}>)\n"
   end
 

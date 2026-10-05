@@ -32,10 +32,10 @@ class PrDescriptionAttributionTest < Minitest::Test
   end
 
   def test_credit_appears_once_between_summary_and_walkthrough
-    rendered = Shaka::Publication.description(description_content)
+    settings = Shaka::PublicationSettings.new(current: { 'pr_description.attribution' => true })
+    rendered = Shaka::Publication.description(description_content, nil, nil, settings)
     assert_equal 1, rendered.scan(CREDIT).size
-    assert_operator rendered.index(SUMMARY), :<, rendered.index(CREDIT)
-    assert_operator rendered.index(CREDIT), :<, rendered.index('Post-implementation verification')
+    assert_includes rendered, "#{SUMMARY}\n\n#{CREDIT}\n\n_Not published yet._"
   end
 
   def test_disabled_attribution_keeps_the_summary_and_other_evidence
@@ -45,6 +45,13 @@ class PrDescriptionAttributionTest < Minitest::Test
     assert_includes rendered, SUMMARY
     assert_includes rendered, 'Post-implementation verification'
     assert_includes rendered, 'Execution provenance'
+  end
+
+  def test_unavailable_settings_do_not_override_an_opt_out
+    [nil, {}, { 'pr_description.attribution' => 'UNKNOWN' }].each do |current|
+      settings = Shaka::PublicationSettings.new(current:)
+      refute_includes Shaka::Publication.description(description_content, nil, nil, settings), CREDIT
+    end
   end
 
   def test_replies_and_walkthroughs_have_no_description_credit
