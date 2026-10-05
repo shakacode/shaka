@@ -57,7 +57,10 @@ module Shaka
 
       refuse_keys(@spec.keys - FIELDS.keys, 'has unknown fields')
       refuse_keys(FIELDS.keys - @spec.keys, 'is missing fields', '; use UNKNOWN')
-      cells = FIELDS.keys.to_h { |key| [key, cell(key)] }
+      checked_owner(FIELDS.keys.to_h { |key| [key, cell(key)] })
+    end
+
+    def checked_owner(cells)
       problem = self.class.owner_error(cells.fetch('owner'))
       raise Error, problem if problem
 
