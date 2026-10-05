@@ -99,7 +99,7 @@ module Shaka
     end
 
     def assign_presentation
-      @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {}))
+      @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {}).except('opening_check'))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
     end
 
