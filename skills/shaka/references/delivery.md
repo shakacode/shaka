@@ -247,14 +247,9 @@ required decisions, and missing evidence visible; link to supporting detail.
 
 ### Identify AI-authored posts
 
-Begin GitHub descriptions, comments, and reviews with actual agent, provider,
-model, and effort, for example:
-
-> 🤖 Codex · OpenAI · gpt-6-astra · medium
-
-Use `UNKNOWN` for unavailable values. This identifies the writer; reviewer and
-contributor usage belongs in details. Preserve human text and label mixed work
-AI-edited rather than claiming full authorship.
+Follow the writer-identifier rule in [Explain](../config/workflow.yml), including
+verification updates and attachment comments. Publication helpers render the
+identifier from `identity`.
 
 ### Make the PR description useful first
 
