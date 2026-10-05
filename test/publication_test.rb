@@ -281,7 +281,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def test_a_description_without_a_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: nil)
 
-    assert_includes rendered, "_Not published yet._"
+    assert_includes rendered, '_Not published yet._'
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -289,7 +289,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def test_a_blank_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: '  ')
 
-    assert_includes rendered, "_Not published yet._"
+    assert_includes rendered, '_Not published yet._'
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -392,7 +392,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    "_Not published yet._ · Post-implementation verification: _Not published yet._ · " \
+                    '_Not published yet._ · Post-implementation verification: _Not published yet._ · ' \
                     "[Deployment](<#{DEPLOYMENT}>)\n"
   end
 
