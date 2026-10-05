@@ -19,10 +19,10 @@ task in each repository and invoke its setup skill:
 | Claude Code desktop | `/rct-claude` | `/mct-claude` |
 
 Use a task in the saved project for the intended repository. The Codex setup
-verifies its Git root, remotes, and live GitHub identity, and checks for an existing
-RCT for that repository. Reuse that tower when one exists; do not register a
-second one. Setup completes only when the MCT acknowledges the same repository
-and RCT task.
+skill instructs your agent to verify its Git root, remotes, and live GitHub
+identity, and to check for an existing RCT for that repository. These are agent
+steps, not an automatic registry guarantee. Reuse that tower when one exists.
+Setup completes only when the MCT acknowledges the same repository and RCT task.
 
 After the master acknowledges the repository tower, ask the tower what needs
 attention. You choose which task starts; setup starts no backlog work or recurring
