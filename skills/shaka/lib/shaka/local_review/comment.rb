@@ -226,8 +226,8 @@ module Shaka
       def outcome
         return '' if @findings.empty?
 
-        fixed = @findings.count(&:fixed?)
-        " (#{fixed} fixed, #{@findings.size - fixed} documented)"
+        counts = @findings.group_by(&:disposition).map { |status, items| "#{items.size} #{status.tr('_', ' ')}" }
+        " (#{counts.join(', ')})"
       end
 
       # A subscription session has no per-token bill; its API-equivalent estimate is marked as one.

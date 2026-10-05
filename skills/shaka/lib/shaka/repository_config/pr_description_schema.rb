@@ -15,10 +15,20 @@ module Shaka
 
       def validate
         mapping!(@description, 'pr_description')
-        keys!(@description, [], ['opening_check'], 'pr_description')
+        keys!(@description, [], %w[show_shaka_credit opening_check], 'pr_description')
+        validate_credit
         return unless @description.key?('opening_check')
 
         OpeningSchema.new(@description['opening_check'], label: 'pr_description.opening_check').validate
+      end
+
+      private
+
+      def validate_credit
+        return unless @description.key?('show_shaka_credit')
+
+        enum!(@description['show_shaka_credit'], [true, false],
+              'pr_description.show_shaka_credit must be true or false')
       end
     end
   end

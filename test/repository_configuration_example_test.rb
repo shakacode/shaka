@@ -18,8 +18,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
 
   def test_example_includes_effective_default_sections
     @defaults.except('version', 'commands', 'paths', 'review', 'merge').each do |section, defaults|
-      example = section == 'opening_check' ? @example.fetch('pr_description').fetch(section) : @example.fetch(section)
-      assert_equal defaults, example, "Update the #{section} example when defaults change"
+      assert_equal defaults, example_section(section), "Update the #{section} example when defaults change"
     end
   end
 
@@ -35,5 +34,15 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   def test_example_post_implementation_defaults_match
     defaults = Shaka::RepositoryConfig::PostImplementationSchema::DEFAULTS.merge('enabled' => true)
     assert_equal defaults, @example.fetch('review').fetch('post_implementation')
+  end
+
+  private
+
+  def example_section(section)
+    case section
+    when 'opening_check' then @example.fetch('pr_description').fetch(section)
+    when 'pr_description' then @example.fetch(section).except('opening_check')
+    else @example.fetch(section)
+    end
   end
 end

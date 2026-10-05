@@ -22,7 +22,8 @@ module Shaka
         'opening_check.reviewer' => %w[anthropic/claude openai/codex xai/grok],
         'opening_check.effort' => %w[none minimal low medium high xhigh max ultra]
       }.freeze
-      BOOLEANS = %w[wip.include_locations opening_check.enabled opening_check.external_enabled].freeze
+      BOOLEANS = %w[wip.include_locations opening_check.enabled opening_check.external_enabled
+                    pr_description.show_shaka_credit].freeze
       NUMBERS = %w[merge.limits.max_changed_files merge.limits.max_changed_lines merge.limits.max_commits
                    prose_limits.max_sentence_words prose_limits.max_paragraph_words prose_limits.max_description_words
                    prose_limits.words_per_changed_line].freeze

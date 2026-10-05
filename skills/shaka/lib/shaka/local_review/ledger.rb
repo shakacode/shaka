@@ -34,9 +34,9 @@ module Shaka
 
     def rounds = data.fetch('rounds')
 
-    def last_batch_fixes
+    def recorded_batch_fixes(source = rounds)
       batch.flat_map do |index|
-        LocalReviewFinding.list(rounds[index]['findings'], "round #{index + 1} finding").select(&:fixed?)
+        LocalReviewFinding.list(source[index]['findings'], "round #{index + 1} finding").select(&:fixed?)
       end.map(&:commit)
     end
 
@@ -85,18 +85,20 @@ module Shaka
     # Records what became of every finding on the last commit in one triage, once none of its
     # reviews is still running, and returns the round numbers it recorded. With several
     # reviewers, each finding names the ones that reported it, so a shared finding is one entry.
-    def record!(content)
+    def record!(content, head: nil)
       raise Error, 'Record content must be an object.' unless content.is_a?(Hash)
 
       locked do
         # Reviews still running explain an empty ledger better than the ledger does.
         check_nothing_running!
-        raise Error, 'The ledger has no round to record.' if rounds.empty?
+        select_record_batch!(head)
 
         write(data.merge(content.slice('fallback'), 'rounds' => recorded_rounds(content)))
         prune_running
         batch.map { |index| index + 1 }
       end
+    ensure
+      @record_head = nil
     end
 
     private

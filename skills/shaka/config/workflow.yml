@@ -287,13 +287,18 @@ phases:
         disposition with `review record`; the next `review run` refuses to start until they are
         recorded, and refuses a head the ledger already reviewed unless another reviewer joins
         it before that record. Fix defects, and risks whose
-        fix is clearly correct, in new commits, then review the new head. Document nits and the
-        remaining risks instead of fixing them; a round whose findings are all documented ends
-        the loop. A defect you decline to fix is documented too, and the comment reports it as
-        left for the maintainer. The next round's prompt lists earlier findings and the commits since, without
-        your notes on them.
+        fix is clearly correct, in new commits, then review the new head. Document optional nits.
+        Use `open` for unfinished agent work,
+        `decision_needed` for a consequential choice the maintainer owns, `dismissed` for
+        a finding disproved with evidence, and `accepted` for a consequence the maintainer
+        explicitly accepts. Record the explanation and human decision as the
+        [local review guide](<{{package_root}}/skills/shaka/references/local-review.md>) describes.
+        Stop the repair loop when no agent-owned fixes or assessments remain.
+        Wait for a needed decision before dependent work. A clean later review leaves earlier
+        open findings visible. The next round's prompt lists earlier findings and the commits
+        since, without your notes on them.
       - The trusted `review.local_max_rounds` bounds the ledger (default 5). If the last round at
-        the cap leaves an unfixed defect, stop before pushing and tell the user which defects
+        the cap leaves an unresolved defect, stop before pushing and tell the user which defects
         remain. Do not push unless the user chooses to. Reassess the task or split it with the
         maintainer; an authorized push publishes the visible Loop bound reached section and
         its ready task-reassessment prompt. If the cap prevents review of a last-round fix,
@@ -384,20 +389,31 @@ phases:
   - id: explain
     title: Explain
     body: |-
+      - Begin every AI-authored GitHub description, comment, and review with
+        `🤖 AGENT · PROVIDER · MODEL · EFFORT`, using actual writer settings and
+        `UNKNOWN` for unavailable values. This includes verification updates and
+        attachment comments posted directly through `gh`; reviewer identity belongs
+        in the review record. Preserve human text and label mixed work AI-edited.
+        Before submission, check that the first visible line of the AI-authored post or
+        managed section carries the writer identifier, keeping surrounding human text intact.
       - Push the reviewed head, then open or adopt its PR. Open a new PR with an empty body
         (`gh pr create --body ''`) and let `description` fill it; any text outside the managed
         region stays in the body. When a local review ran, publish it right after that with
         `review publish OWNER/REPO NUMBER --content-file PATH`, passing the ledger, or a content
         file for a fresh host review; nothing from the loop reaches GitHub before the push, and
         each reviewed commit gets its own timeline comment. Publishing again updates that
-        commit's comment in place. Copy the returned loop summary into the description's review
+        commit's comment in place. Publication then collapses older owned review comments
+        just published from its ledger; other reports stay visible for assessment.
+        Its cleanup result reports confirmed edits and failures without undoing published reports.
+        Inspect reported failures before retrying. Copy the returned loop summary into the description's review
         history details; keep native usage in `usage.records`. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
       - Check a UI change's captures for credentials and private content, then publish
-        them on its PR with `gh pr comment NUMBER --attach 'PATH#ALT TEXT'` (GitHub CLI 2.99 or
-        later; a video takes a plain `PATH`, since video has no alt text), label them with the
+        them on its PR with `gh pr comment NUMBER --body-file BODY_FILE --attach 'CAPTURE#ALT TEXT'` (GitHub CLI 2.99 or
+        later; a video uses `--attach CAPTURE`, since video has no alt text). The body file starts
+        with the writer identifier above, followed by the verification note. Label captures with the
         tested revision, and read the comment back to confirm each capture became an uploaded
         URL; a local path is not evidence. When a capture cannot be published, record
         `uploader_absent`, `uploader_denied`, or `upload_failed: DETAIL` on the PR in its place.

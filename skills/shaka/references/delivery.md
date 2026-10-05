@@ -88,7 +88,7 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 
 | Field | Content |
 | --- | --- |
-| Owner | Public machine alias, host, and a random owner tag, such as `m5 · Codex desktop · k7q2` |
+| Owner | Public machine alias, host, and a random owner tag, separated by ` · `, such as `m5 · Codex desktop · k7q2`; use `UNKNOWN` for an unavailable component or the whole value |
 | Chat name | Current public-safe host chat title, copied exactly; otherwise `UNKNOWN` |
 | Chat link | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
 | Last observed activity | Date, time to the minute, and timezone of the latest observed activity, such as `2026-09-25 17:42 PDT`; otherwise `UNKNOWN` |
@@ -99,6 +99,13 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Merge authority | Previously established `ask` or `auto`, or `UNKNOWN`; this field grants no authority |
 | State | In progress, named check/review wait, blocker, decision, GitHub merge of a named head, or handoff to a named successor |
 | Next action | One step that continues the task; while `awaiting-resume`, the prompt that resumes it, such as `$shaka PR_URL` |
+
+The renderer and `handoff` check that Owner is `UNKNOWN` or contains three nonempty
+components separated by `·`. `handoff` reads the live GitHub description, so an edit
+after publication is checked too. These checks verify the supplied format; the agent
+verifies the machine alias, host, and tag against available metadata. Other WIP fields
+retain their existing checks; a successful handoff does not establish compliance with
+every instruction in this guide.
 
 **Chat title:** before each WIP publication, read the current title through the
 host's session metadata when available. Review it for private content before
@@ -247,14 +254,9 @@ required decisions, and missing evidence visible; link to supporting detail.
 
 ### Identify AI-authored posts
 
-Begin GitHub descriptions, comments, and reviews with actual agent, provider,
-model, and effort, for example:
-
-> 🤖 Codex · OpenAI · gpt-6-astra · medium
-
-Use `UNKNOWN` for unavailable values. This identifies the writer; reviewer and
-contributor usage belongs in details. Preserve human text and label mixed work
-AI-edited rather than claiming full authorship.
+Follow the writer-identifier rule in [Explain](../config/workflow.yml), including
+verification updates and attachment comments. Publication helpers render the
+identifier from `identity`.
 
 ### Make the PR description useful first
 

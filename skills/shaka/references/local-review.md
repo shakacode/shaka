@@ -292,7 +292,34 @@ shaka review record --ledger "$LEDGER" --content-file FINDINGS.json
 
 Finding notes are published in the comment. Keep every `note` public-safe.
 
-`disposition` is `fixed`, with the fix commit's full SHA, or `documented`. The helper refuses a
+Use these dispositions:
+
+| Disposition | Use when | Published status |
+| --- | --- | --- |
+| `open` | The agent still has a fix or assessment to complete | Open |
+| `decision_needed` | A consequential design choice needs the maintainer | Needs your decision |
+| `fixed` | A fix commit exists; publication waits for its review | Fixed, in history |
+| `dismissed` | Evidence disproves the finding; explain it in `note` | Dismissed, in history |
+| `accepted` | The maintainer explicitly accepts the consequence | Accepted, in history |
+| `documented` | Legacy records or optional nits | Unassessed for defects/risks; nits in history |
+
+For `decision_needed`, give the options, tradeoffs, and recommendation in `note`.
+Copy the question into the PR description's `decisions` and wait before dependent work.
+Use `accepted` after the maintainer chooses, with a public-safe `decision` recording
+who chose what and a `note` explaining the consequence. Ruby requires those fields;
+the agent verifies the human decision. Explicitly fixed, dismissed, and accepted findings are
+resolved for the loop cap. A clean later review does not close an older finding.
+
+To update an earlier batch after a fix or decision, run `review record` with
+`--head REVIEWED_SHA` and that batch's complete findings and reviewer mappings.
+Republish the ledger to refresh the current summary and collapse older reports.
+Keep the same IDs, reporting reviewers, and original reports; recording a disposition
+is not a new reviewer finding. For an earlier batch, a fixed disposition names a later
+reviewed commit containing the fix; unreviewed revisions are refused. Existing fix references
+already checked when the loop advanced remain valid. Omit `--head`
+to record the newest batch before the next review.
+
+`fixed` needs the fix commit's full SHA. The helper refuses a
 fixed nit, a count that differs from the report's `FINDINGS n`, and a repeated id. Give a
 finding the same `id` when a later round raises it again: the comment then flags a finding that
 returned after its fix, a sign the fixes are not converging. Give a new finding an id no
@@ -307,7 +334,7 @@ head it was found in, and a different `--base`; after a rebase, start a new ledg
 refuses a fix recorded by any round on the last head, because no later round has reviewed it.
 The next round's prompt
 lists, as review data, every earlier finding's id, class, summary, and latest disposition
-(`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the newest
+(including fixed, open, decision-needed, and closed dispositions), plus the commits since the newest
 reviewed head before this one. It asks the reviewer to confirm each fix and to review the full diff fresh.
 It leaves out each `note`, so the reviewer does not anchor on the author's reasons.
 
@@ -349,7 +376,7 @@ the rounds they appeared in, returned defects, and a ready task-reassessment pro
 If the cap prevents review of a last-round fix, stop before pushing and tell the user.
 Publication still refuses that fix because no later round reviewed it; reassess the task.
 
-Otherwise, a round whose findings are all documented ends the loop. Push, open or adopt the
+Otherwise, settle open findings and obtain any needed maintainer decisions. Document optional nits. Push, open or adopt the
 pull request, then publish right away:
 
 ```bash
@@ -398,15 +425,14 @@ unclosed code fence or a stray disclosure tag in a report would hide the attesta
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
 the helper writes both itself. It posts one `Local Adversarial Review` comment per reviewed
-commit, in ledger order. Each opens with the reviewed revision, retained unresolved findings,
-and coverage limits. Report excerpts are attributed, unverified literal text; their Markdown
-cannot render an outcome label or link. A visible warning says excerpts may be incomplete or
-misidentified and directs readers to the originals. Missing or ambiguous HTML coverage shows UNKNOWN and points to
-the original report. A less-than character anywhere in the report conservatively triggers
-that fallback, including inside code examples. The complete formatted report remains in history.
-History also contains settled findings, the commit subject, and a table naming each reviewer
-and its finding count. Each disposition appears once in the generated findings view;
-each report retains its "Collated as" mapping when several reviewers read it.
+commit, in ledger order. Each opens with the reviewed revision, a compact table of
+findings needing attention, and coverage limits. Each finding lists every reviewer
+that reported its ID. Explicitly fixed, dismissed, and accepted findings move into
+evidence history; legacy documented defects and risks remain visibly unassessed.
+
+The closed evidence disclosure preserves all disposition explanations, decision records,
+coverage excerpts, execution metadata, and original reports. Coverage excerpts remain
+attributed, unverified literal text. Missing or ambiguous coverage stays UNKNOWN.
 The last reviewer's attestation closes the comment, where `merge` reads it.
 A commit GitHub does not have, such as one a rebase replaced, is named without a link or subject.
 Each comment's key includes the full commit SHA, so republishing edits that commit's entry
@@ -418,7 +444,14 @@ The result's `comments` lists the published entries, and `summary` gives totals 
 and its outcome. Copy that summary into the PR description's review history details; native
 usage records still belong in `usage.records`.
 
-After publishing, collapse older owned Shaka review comments:
+After every successful publication, `review publish` collapses older owned Shaka
+review comments just published from the ledger, using their returned comment IDs.
+Other reports, including legacy reports at the same revision, stay visible for explicit assessment.
+Cleanup also skips when the current PR head has no report in that publication.
+Its `cleanup` result lists confirmed edits, unavailable cleanup,
+or a skip when no visible owned current-head report exists. A cleanup failure
+returns nonzero while retaining the published comments; inspect the gap and retry.
+For independent cleanup, use:
 
 ```sh
 shaka review collapse OWNER/REPO NUMBER
@@ -428,11 +461,11 @@ The command links earlier Shaka local review comments from the publishing accoun
 to its newest visible report for the current PR head. Findings and reports remain
 expandable, and closing attestations stay readable by `merge`. Active reports for the same
 commit stay visible; already archived reports link to the current one. Collapsing history does not resolve findings or native threads;
-comments by other accounts stay intact. Carry still-applicable material findings
-into the current review summary before cleanup.
+comments by other accounts stay intact. Before publication or standalone cleanup, carry still-applicable material findings
+into the current review summary.
 
-The result lists confirmed edits and unavailable cleanup. A failed edit returns a
-nonzero exit without undoing the published reports; inspect the failure before retrying.
+The standalone command also lists confirmed edits and unavailable cleanup. A failed
+edit returns a nonzero exit; inspect the failure before retrying.
 Without a visible owned current-head report, cleanup skips without failing. If the
 PR returns to a previously archived head, republish its report before cleanup.
 Both legacy and per-commit Shaka review keys are recognized. Cleanup works with

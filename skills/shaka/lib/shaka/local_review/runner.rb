@@ -136,7 +136,7 @@ module Shaka
     def check_history!
       last = @ledger.last_head
       contains!(last, head)
-      @ledger.last_batch_fixes.each do |fix|
+      @ledger.recorded_batch_fixes.each do |fix|
         raise Shaka::Error, "Fix #{fix} is the head round #{@ledger.rounds.size} reviewed; commit the fix." if
           fix == last
 

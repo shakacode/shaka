@@ -49,6 +49,7 @@ wip:
   include_locations: true # Default: publish workspace and session link in WIP Details.
 
 pr_description:
+  show_shaka_credit: true # Default: show a quiet Shaka website credit below the PR summary.
   opening_check:
     enabled: true # Default: check the opening; false turns the check off.
     effort: low # Default: low, independent of the code-review effort.

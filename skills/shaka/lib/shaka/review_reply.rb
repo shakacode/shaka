@@ -23,17 +23,26 @@ module Shaka
 
       @content = content
       @github = github
+      validate_content
     end
 
     def compose
-      lines = lead_lines
       body = Publication.comment(@content)
+      lines = lead_lines
       return body if lines.empty?
 
       "#{lines.join("\n")}\n\n#{body}"
     end
 
     private
+
+    def validate_content
+      unsupported = @content.keys - %w[identity summary reviews]
+      return if unsupported.empty?
+
+      raise Error, "Unsupported reply content: #{unsupported.join(', ')}. " \
+                   'Use identity, summary, and optional reviews; put explanations in summary.'
+    end
 
     def lead_lines
       urls = @content['reviews']
