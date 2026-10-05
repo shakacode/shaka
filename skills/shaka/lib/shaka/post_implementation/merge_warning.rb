@@ -29,6 +29,7 @@ module Shaka
 
       current = @github.api(@path)
       verify_head(current, head)
+      verify_published(published)
       return { 'state' => 'superseded' } unless latest?(published)
 
       blocked = publication.state != 'ready'
@@ -50,6 +51,11 @@ module Shaka
       @github.verify_rendering(updated) unless updated == body
       FeaturePublication.unchanged!(@github, body, current)
       write(updated) unless updated == body
+    end
+
+    def verify_published(published)
+      id = published['id']
+      raise Error, 'Published checkpoint has no valid identifier.' unless id.is_a?(Integer) && id.positive?
     end
 
     def latest?(published)

@@ -220,3 +220,18 @@ class PostImplementationMergeWarningListingTest < Minitest::Test
     end
   end
 end
+
+class PostImplementationMergeWarningIdentityTest < Minitest::Test
+  include PostImplementationPublicationFixture
+
+  def test_missing_published_identifier_returns_a_structured_failure
+    with_result do |result, path|
+      github = GitHub.new('a' * 40)
+      github.define_singleton_method(:reply) { |**arguments| super(**arguments).except('id') }
+      outcome = publish(result, path, github:)
+      assert_equal 1, outcome[1]
+      assert_equal 'failed', JSON.parse(outcome[2]).dig('merge_safeguard', 'state')
+      assert_includes outcome[2], 'identifier'
+    end
+  end
+end
