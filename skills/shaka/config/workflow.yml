@@ -542,6 +542,12 @@ phases:
         order the walkthrough so each change prepares the next, following the packaged
         [walkthrough order](<{{package_root}}/skills/shaka/references/delivery.md#how-a-walkthrough-is-ordered>).
         Cover every change completely and stop; length comes from the change, never from the writer.
+        For a technical fix, connect the observed failure and cause (or labeled inference) to
+        the regression evidence, actual integration boundary, affected callers, and remaining
+        uncertainty. Follow [technical evidence](<{{package_root}}/skills/shaka/references/delivery.md#connect-a-technical-fix-to-its-evidence>).
+        Scale that evidence to the change; a trivial edit needs no bug-reproduction checklist.
+        Explain mechanisms here; link delivery judgments to the existing head-bound assessment
+        in the description or its linked evidence, rather than creating another report.
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
         until then the helper prints `_Not published yet._`. Link the current
         review result from the PR summary and final response. Write each new

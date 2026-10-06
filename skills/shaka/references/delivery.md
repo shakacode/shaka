@@ -312,6 +312,49 @@ output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
 Cover the change completely, then stop.
 
+### Connect a technical fix to its evidence
+
+For a technical fix, use the questions below to assemble enough evidence for a
+maintainer to assess it. Scale detail to the consequences and uncertainty; these
+are prompts for relevant evidence, not mandatory headings or a checklist for every edit.
+A typo correction can name the inspected text and link check without a bug reproduction.
+
+- **Did it reproduce the issue?** Name the triggering input or state and the
+  observed failure. Explain the cause, labeling an inference when the evidence
+  does not establish it. Link the changed code and regression test. Report the
+  same reproduction's failing base and passing fix, with revisions and captured
+  results; if the before case did not run or fail, say reproduction is unestablished.
+- **What did testing reach?** Name the actual boundary exercised: for example,
+  request → parser → application callback. Distinguish a unit test or faithful
+  mechanism probe from that integration. State tested revisions, runtime versions,
+  commands, results, and timing: before implementation, during it, or only afterward.
+  Distinguish committed regression tests from supplemental probes. Name relevant
+  full suites that ran and omissions; an unrun suite or boundary remains a gap.
+- **What else can break?** Identify shared callers, endpoints, protocols, and users
+  affected by the changed contract. Name plausible failure consequences and recovery
+  or rollback consequences. Keep consequence severity separate from evidence about
+  likelihood: a rare data-loss path still has a severe consequence. Mark unknowns.
+- **What remains uncertain?** Link review dispositions to evidence and explain
+  why each concern was fixed, disproved, deferred, or needs a maintainer decision.
+  A documented risk is neither disproved nor accepted by the human. Follow the
+  existing [disposition rules](local-review.md#run-the-review-loop-with-a-ledger).
+  State a concise technical confidence judgment, its basis, residual risk, and
+  the next check that would materially change it, or why none is needed.
+
+Keep one current assessment bound to the full PR head in the description's
+existing details or linked evidence. Link it from the description and walkthrough;
+avoid copying its tests and risk decisions into multiple reports. In the
+walkthrough, explain why the code addresses the cause and where the tests reach it.
+In the assessment, explain what that evidence supports for delivery and what it
+leaves uncertain. Reuse the existing post-implementation comment when it already
+holds the relevant assessment; that checkpoint still judges product value separately.
+
+Refresh the assessment when material evidence changes, even at the same commit,
+and identify superseded conclusions while preserving their links. A passing new
+probe can change a judgment without changing code. Technical confidence supplies
+neither required-check completion, reviewer approval, nor merge consent. Use plain
+language rather than unsupported numerical confidence scores.
+
 ### Keep a walkthrough readable
 
 - Link each step to the lines it explains with a commit-pinned permalink to a
