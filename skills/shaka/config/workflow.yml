@@ -325,7 +325,11 @@ phases:
         refusal, without the user's choice. Show current provider pricing for paid alternatives.
         Diagnose timeouts before proposing a retry; a longer timeout is not a model choice.
         Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
-        failure is not availability evidence, even when `attempted` is true. It returns `different_provider`,
+        failure is not availability evidence, even when `attempted` is true. A host denial before
+        helper launch is not a CLI attempt or permission to bypass the host; do not mark a reviewer
+        unavailable from that denial. Follow the [host-denial recovery checklist](<{{package_root}}/skills/shaka/references/local-review.md#recover-from-host-denial-before-launch>)
+        for permitted native retry or an already-authorized independent alternative; otherwise
+        retain `review check --not-run-reason` evidence and report review blocked. It returns `different_provider`,
         `same_provider`, or `same_model`, with a note to copy into the record, and a `reviewers`
         list in run order. None is an error:
         when all listed paths fail, start a new host chat with the implementation model and no

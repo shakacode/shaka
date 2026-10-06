@@ -298,7 +298,9 @@ rules:
     phase: verify
     quote: >-
       Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
-      failure is not availability evidence, even when `attempted` is true.
+      failure is not availability evidence, even when `attempted` is true. A host denial before
+      helper launch is not a CLI attempt or permission to bypass the host; do not mark a reviewer
+      unavailable from that denial.
     enforced_by: agent
     note: >-
       `review run` classifies an actual CLI attempt and its failure, but `reviewer --unavailable`
