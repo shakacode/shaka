@@ -19,7 +19,8 @@ Reuse the existing master if one is established. Do not start delivery work.
 
 The MCT and RCT companions can be selected independently. Installing neither keeps
 the default installation to Shaka. Updates and reinstallation retain selected
-companions; ask your agent to add a missing companion before updating.
+companions. Ask your agent to update an older Shaka installation first, then add
+a missing companion with the current installer.
 
 Start a new chat if the skill list is stale. Invoke `$mct` in the intended master
 chat, or continue in the existing master. Then open a chat in each saved repository
