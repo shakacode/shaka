@@ -548,8 +548,8 @@ phases:
         Scale that evidence to the change; a trivial edit needs no bug-reproduction checklist.
         Explain mechanisms here. Keep the delivery agent's assessment in the description's
         existing validation and risk summary; link reviewer evidence without editing it.
-        If an existing agent-authored assessment already covers this head, link to it from
-        that summary and the walkthrough instead of writing another report.
+        If an existing agent-authored assessment already answers these questions for this head,
+        link to it from that summary and the walkthrough instead of writing another report.
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
         until then the helper prints `_Not published yet._`. Link the current
         review result from the PR summary and final response. Write each new

@@ -344,8 +344,8 @@ A typo correction can name the inspected text and link check without a bug repro
 Keep the delivery agent's judgment in the description's existing validation and
 risk summary, bound to the full PR head. Link reviewer results as evidence; do not
 add author-written conclusions to a reviewer-produced report or edit its findings.
-If an existing agent-authored assessment already covers this head, such as the
-post-implementation comment, link to it from that summary and the walkthrough
+If an existing agent-authored assessment already answers these questions for this
+head, such as the post-implementation comment, link to it from that summary and the walkthrough
 instead of writing another assessment. That checkpoint judges product value separately.
 Keep test results and risk dispositions at their existing links. In the walkthrough,
 explain why the code addresses the cause and where tests reach it. In the assessment,
