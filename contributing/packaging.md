@@ -70,7 +70,7 @@ Applications that only need the experimental public-comment screen can load
 
 The package also contains `shaka-install --skills-dir DIR`, which calls
 the existing explicit-directory installer. It installs the portable `shaka` skill
-by default; add `--with-rct` only for a Codex app skills directory, or
+by default; add `--with-mct` and/or `--with-rct` only for a Codex app skills directory, or
 `--with-claude-towers` only for a Claude Code desktop skills directory. It preserves
 existing content and refuses to replace a different source. The
 [first-use guide](../docs/getting-started.md) explains the trusted source and host startup
@@ -92,7 +92,7 @@ destination, remove only the known pilot symlinks, then run the new version's
 installer. Do not remove a foreign directory or silently repoint another skill.
 You can retain the prior gem version and relink it for rollback.
 
-Remove the pilot `shaka`, `rct`, `mct-claude`, and `rct-claude` skill links before uninstalling the
+Remove the pilot `shaka`, `mct`, `rct`, `mct-claude`, and `rct-claude` skill links before uninstalling the
 version they point to. For the
 isolated packaging check above:
 

@@ -10,12 +10,24 @@ library fix needed before an application upgrade.
 Each delivery still has one owner. The [architecture guide](architecture.md)
 explains where its records belong.
 
-Ask your agent to install the tower skills and establish the master. Then open a
-task in each repository and invoke its setup skill:
+For Codex, ask in your existing portfolio chat:
+
+```text
+Install Shaka's optional Codex MCT companion and the RCT companion.
+Reuse the existing master if one is established. Do not start delivery work.
+```
+
+The MCT and RCT companions can be selected independently. Installing neither keeps
+the default installation to Shaka. Updates and reinstallation retain selected
+companions; ask your agent to add a missing companion before updating.
+
+Start a new chat if the skill list is stale. Invoke `$mct` in the intended master
+chat, or continue in the existing master. Then open a chat in each saved repository
+project and invoke its repository setup skill:
 
 | Environment | Repository tower | Master tower |
 | --- | --- | --- |
-| Codex app | `$rct` | Agent follows the master role instructions |
+| Codex app | `$rct` | `$mct` |
 | Claude Code desktop | `/rct-claude` | `/mct-claude` |
 
 After the master acknowledges the repository tower, ask the tower what needs

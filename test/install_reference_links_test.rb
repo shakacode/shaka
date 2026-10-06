@@ -5,7 +5,7 @@ require_relative 'test_helper'
 class InstallReferenceLinksTest < Minitest::Test
   def test_local_skill_links_stay_inside_the_copied_skills
     skills = File.expand_path('../skills', __dir__)
-    %w[shaka rct mct-claude rct-claude].each { |name| assert_skill_links(skills, name) }
+    %w[shaka rct mct mct-claude rct-claude].each { |name| assert_skill_links(skills, name) }
   end
 
   private

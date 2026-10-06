@@ -14,7 +14,7 @@ module Shaka
       include PackageVerification
 
       METADATA = '.shaka-install.json'
-      ALLOWED = %w[shaka rct mct-claude rct-claude].freeze
+      ALLOWED = %w[shaka rct mct mct-claude rct-claude].freeze
       ID_PATTERN = /\A[A-Za-z0-9._+-]+-[0-9a-f]{64}-[0-9a-f]{64}\z/
 
       def self.identity_for(version, source)
