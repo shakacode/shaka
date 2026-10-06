@@ -292,7 +292,8 @@ Use this recovery checklist:
 4. If review remains blocked, run the saved helper's `review check` with
    `--not-run-reason` set to the actual host denial, plus `--root`, `--settings-ref`,
    and `--repository`. Use the invocation shape below with that actual reason
-   replacing the synthetic example. Retain
+   replacing the synthetic example. Pass the reason as data through structured argv
+   or proper shell quoting that preserves apostrophes without evaluating its content. Retain
    its nonzero result, explain the missing review on the PR, and leave review
    readiness blocked. If the host also denies this evidence command, preserve that
    denial and state that not-run evidence could not be generated. Ask merging and
