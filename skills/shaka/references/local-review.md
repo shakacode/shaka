@@ -290,7 +290,9 @@ Use this recovery checklist:
    blocked action and host reason when a human decision is needed; keep an already
    authorized alternative within its stated scope.
 4. If review remains blocked, run the saved helper's `review check` with
-   `--not-run-reason`, `--root`, `--settings-ref`, and `--repository` as below. Retain
+   `--not-run-reason` set to the actual host denial, plus `--root`, `--settings-ref`,
+   and `--repository`. Use the invocation shape below with that actual reason
+   replacing the synthetic example. Retain
    its nonzero result, explain the missing review on the PR, and leave review
    readiness blocked. If the host also denies this evidence command, preserve that
    denial and state that not-run evidence could not be generated. Ask merging and
@@ -302,9 +304,12 @@ Use this recovery checklist:
 Use a synthetic prelaunch denial to rehearse the checklist on a clean, committed
 head. Label it synthetic; do not request a live denial on another task. Record that
 `review run` was intentionally never invoked, no provider launched, and no CLI
-attempt or report exists. Then use the saved absolute helper path:
+attempt or report exists. Save output outside the checkout and use the saved
+absolute helper path. The example creates a temporary result file; verify its
+location is outside `$ROOT` before invoking the helper:
 
 ```bash
+NOT_RUN_RESULT="$(mktemp)"
 "$SHAKA" review check --root "$ROOT" --head "$HEAD" \
   --settings-ref "$TRUSTED" --repository OWNER/REPO \
   --not-run-reason 'Synthetic replay: host denied review run before launch; no provider started' \
