@@ -22,9 +22,10 @@ the default installation to Shaka. Updates and reinstallation retain selected
 companions. Ask your agent to update an older Shaka installation first, then add
 a missing companion with the current installer.
 
-Start a new chat if the skill list is stale. Invoke `$mct` in the intended master
-chat, or continue in the existing master. Then open a chat in each saved repository
-project and invoke its repository setup skill:
+An existing master needs no new `$mct` setup; continue there. For initial setup,
+start a new chat if the skill list is stale and invoke `$mct` in the intended
+master chat. Then open a chat in each saved repository project and invoke its
+repository setup skill:
 
 | Environment | Repository tower | Master tower |
 | --- | --- | --- |

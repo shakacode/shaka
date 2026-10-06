@@ -4,12 +4,12 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'rbconfig'
 
-class InstallClaudeTowersTest < Minitest::Test
+class InstallCompanionTowersTest < Minitest::Test
   SKILLS = { 'shaka' => 'shaka source', 'rct' => 'rct source', 'mct' => 'codex mct source',
              'mct-claude' => 'mct source', 'rct-claude' => 'rct-claude source' }.freeze
 
   def setup
-    @directory = Dir.mktmpdir('workflows-claude-towers')
+    @directory = Dir.mktmpdir('workflows-companion-towers')
     @installer = File.join(@directory, 'source', 'bin', 'install')
     @skills_dir = File.join(@directory, 'isolated profile', 'skills')
     @home = File.join(@directory, 'home')

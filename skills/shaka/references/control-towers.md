@@ -15,10 +15,7 @@ portfolio chat:
 $mct
 ```
 
-The skill requires native chat and project tools. It verifies existing master
-ownership before updating its own title and pin, and refuses duplicate or
-ambiguous ownership. Setup starts no workers, registrations, schedules, or merges.
-An existing master remains the owner; invoke it there rather than creating another.
+Follow the installed `$mct` procedure for setup. Keep an existing master as the owner.
 
 Update older Shaka installations first to obtain new companion support. Add
 companions through `bin/install`; do not add selection flags to `--update`.
