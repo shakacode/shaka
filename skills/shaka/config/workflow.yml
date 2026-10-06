@@ -546,8 +546,9 @@ phases:
         the regression evidence, actual integration boundary, affected callers, and remaining
         uncertainty. Follow [technical evidence](<{{package_root}}/skills/shaka/references/delivery.md#connect-a-technical-fix-to-its-evidence>).
         Scale that evidence to the change; a trivial edit needs no bug-reproduction checklist.
-        Explain mechanisms here; link delivery judgments to the existing head-bound assessment
-        in the description or its linked evidence, rather than creating another report.
+        Explain mechanisms here. Use the description's existing validation and risk summary,
+        or its linked review result, as the assessment of delivery evidence. Link it from the
+        walkthrough and bind it to the full PR head; avoid creating another report.
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
         until then the helper prints `_Not published yet._`. Link the current
         review result from the PR summary and final response. Write each new

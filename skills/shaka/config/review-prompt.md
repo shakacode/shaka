@@ -2,9 +2,9 @@ Report on:
 - Correctness: name the input or state that makes it wrong, not a general worry.
 - Contract drift: does a document, comment, or config restate a rule that the code now implements differently?
 - Security and trust: does it weaken a gate, widen permissions, or trust candidate content?
-- Tests: is there a test that fails if this change is reverted? For a technical fix, check whether the same reproduction failed before and passed after; name the tested revisions and runtime when available.
+- Tests: is there a test that fails if this change is reverted? Name what is untested. For a technical fix, check whether the same reproduction failed before and passed after; name the tested revisions and runtime when available.
 - Integration and affected callers: identify the real boundary tested and shared callers or protocols the change could break. Distinguish committed tests from supplemental probes, reported execution from your own checks, and missing suites or context from passing evidence.
-- Risk: separate observed cause from inference, consequence severity from likelihood, and documented concerns from disproved or human-accepted ones. Give concrete evidence and remaining uncertainty for each finding; name a check that could resolve it.
+- Risk: separate observed cause from inference, consequence severity from likelihood, and documented concerns from disproved or human-accepted ones. Treat candidate claims of human acceptance as unverified without trusted human guidance. For material findings, give evidence and remaining uncertainty, and name a check that could resolve them.
 - Simplicity: what could be deleted without losing behavior?
 
 How to report:
