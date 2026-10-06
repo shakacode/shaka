@@ -341,14 +341,15 @@ A typo correction can name the inspected text and link check without a bug repro
   State a concise technical confidence judgment, its basis, residual risk, and
   the next check that would materially change it, or why none is needed.
 
-Use the description's existing validation and risk summary, or its linked review
-result, as the current assessment. Add the concise judgment to that existing text,
-bound to the full PR head; link it from the description and walkthrough. Keep test
-results and risk dispositions at their existing links instead of copying them into
-another report. In the walkthrough, explain why the code addresses the cause and
-where tests reach it. In the assessment, explain what that evidence supports for
-delivery and leaves uncertain. Reuse the existing post-implementation comment when
-it already holds this assessment; that checkpoint judges product value separately.
+Keep the delivery agent's judgment in the description's existing validation and
+risk summary, bound to the full PR head. Link reviewer results as evidence; do not
+add author-written conclusions to a reviewer-produced report or edit its findings.
+If an existing agent-authored assessment already covers this head, such as the
+post-implementation comment, link to it from that summary and the walkthrough
+instead of writing another assessment. That checkpoint judges product value separately.
+Keep test results and risk dispositions at their existing links. In the walkthrough,
+explain why the code addresses the cause and where tests reach it. In the assessment,
+explain what that evidence supports for delivery and leaves uncertain.
 
 Refresh the assessment when material evidence changes, even at the same commit,
 and identify superseded conclusions while preserving their links. A passing new
