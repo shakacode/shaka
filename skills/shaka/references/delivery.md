@@ -142,8 +142,11 @@ A link's availability depends on the owner's machine being reachable.
 
 **Privacy:** both team setup and private trials default `wip.include_locations` to
 `true`. Supply the selected default-branch `--ref` to `description`.
-The renderer replaces Workspace and Chat link with `REDACTED` when the setting is
-false or unavailable, including before validation/review results exist. Retain the
+The renderer uses `REDACTED` only when the setting is explicitly false. Unread or
+unavailable settings withhold both locations and explain the recovery action:
+rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
+republishing when loading failed. Unfinished publication remains possible without
+validation/review evidence; the diagnostic establishes no readiness. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.
 See [configuration](https://github.com/shakacode/shaka/blob/main/docs/settings.md#wipinclude_locations).
