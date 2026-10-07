@@ -41,6 +41,8 @@ For example, a Codex row with 100,000 input tokens and 80,000 cached input
 tokens has 20,000 uncached input tokens. A Claude row with 20,000 input tokens
 and 80,000 cached input tokens describes the same input quantities.
 Do not add a Codex row's cached input to its input again.
+OpenCode's native total includes input, output, reasoning, and cache tokens;
+Cursor's native total is unreported.
 
 ## How estimates are priced
 
@@ -53,8 +55,8 @@ OpenAI reports distinguish standard Codex plan credits from API-equivalent USD
 estimates. Cursor estimates use its on-demand list prices. Anthropic estimates
 charge uncached input, cache reads, and cache writes separately. A one-hour
 cache write costs more than a five-minute write. Supported Opus fast-mode
-responses use their published fast-mode rates; other Anthropic responses use
-standard-speed rates. Pi uses its recorded nominal USD instead of repricing it.
+responses use their published fast-mode rates. Standard-speed responses use
+standard rates. Fast-mode responses without a published rate remain unpriced. Pi uses its recorded nominal USD instead of repricing it.
 
 Shaka leaves unsupported models or incomplete billing categories unpriced.
 A partially priced report keeps the known estimate with a `+` marker and a
@@ -80,4 +82,4 @@ Ask the agent:
 
 [PR verification](pr-verification.md) explains how to assess the change and its
 validation evidence. Agents selecting records follow the
-[usage reporting procedure](../skills/shaka/references/usage-reporting.md).
+[usage reporting procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/usage-reporting.md).

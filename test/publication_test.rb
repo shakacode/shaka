@@ -677,7 +677,7 @@ class PublicationUsageReadabilityTest < Minitest::Test
   def test_usage_links_the_reader_guide_instead_of_repeating_definitions
     rendered = render(usage: usage_of(COLUMN.merge('credits' => '2.000000')))
     visible = rendered.gsub(/<!--.*?-->/m, '')
-    assert_includes visible, '(https://shaka.shakacode.com/usage-and-cost)'
+    assert_includes visible, '(https://shaka.shakacode.com/docs/usage-and-cost)'
     assert_includes visible, '| Codex credits |'
     refute_includes visible, 'What the columns mean'
     refute_includes visible, 'OpenCode does not'

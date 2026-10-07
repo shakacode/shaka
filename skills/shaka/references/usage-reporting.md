@@ -19,7 +19,7 @@ show their host, model, and effort. With more than one row, a total row adds the
 and credit estimates; it leaves token counts blank, because hosts count input
 differently. The collapsed summary shows the USD total. Columns are USD, Codex
 credits, Input, Cached input, Output, Reasoning, and Cache writes; a column no report
-measured is left out. The table links to the reader-facing [usage and cost guide](https://shaka.shakacode.com/usage-and-cost)
+measured is left out. The table links to the reader-facing [usage and cost guide](https://shaka.shakacode.com/docs/usage-and-cost)
 for column definitions and accounting rules. Report names keep their hyphens from breaking the line. Dollar amounts are
 rounded to cents, and token counts are shortened to about three figures, such as
 45.3M; the hidden record keeps the exact counts. A
