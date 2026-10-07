@@ -66,18 +66,18 @@ needed. Required GitHub checks and approvals still apply.
 A walkthrough may include one small diagram when a change crosses several
 components or adds a branch. It sits beside the step it explains and names code
 you can find in the reviewed commit. For example, a PR that stops duplicate
-refunds might show where the new check runs and which component refuses:
+refunds might show which callers reach the new check and where it refuses:
 
 ```text
-POST /refunds
-└── RefundsController#create
-    ├── RefundPolicy.check      refuses a second refund for the same order (new)
-    └── PaymentGateway.refund   reached only after the policy passes
+RefundsController#create ──┐
+RefundRetryJob#perform ────┴── Refunds.issue
+                               ├── RefundPolicy.check      refuses a second refund for the same order (new)
+                               └── PaymentGateway.refund   reached only after the policy passes
 ```
 
-The tree shows that the refusal happens before the gateway call, which is the
-point a reviewer most needs to confirm. A flowchart suits a change with several
-outcomes or states.
+The tree shows that the web request and the retry job both pass the new check
+before the gateway call, which is the point a reviewer most needs to confirm. A
+flowchart suits a change with several outcomes or states.
 
 A smaller change reads better as a sentence: “`RefundPolicy.check` now also
 rejects refunds larger than the original charge.” No diagram is added, because
