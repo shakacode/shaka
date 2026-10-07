@@ -303,14 +303,6 @@ Use these dispositions:
 | `accepted` | The maintainer explicitly accepts the consequence | Accepted, in history |
 | `documented` | Legacy records or optional nits | Unassessed for defects/risks; nits in history |
 
-For a technical finding, explain in `note` the observed evidence, plausible failure
-consequence, remaining uncertainty, and reason for the disposition. Link the
-reproduction or affected-boundary check where available; distinguish an inferred
-cause from an observed one and severity from likelihood. Deferring a concern leaves
-it `open` or `decision_needed` as appropriate; `documented` establishes neither
-that the risk was disproved nor that the human accepted it. Reuse these notes in
-[the current technical assessment](delivery.md#connect-a-technical-fix-to-its-evidence).
-
 For `decision_needed`, give the options, tradeoffs, and recommendation in `note`.
 Copy the question into the PR description's `decisions` and wait before dependent work.
 Use `accepted` after the maintainer chooses, with a public-safe `decision` recording

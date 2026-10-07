@@ -314,48 +314,13 @@ Cover the change completely, then stop.
 
 ### Connect a technical fix to its evidence
 
-For a technical fix, use the questions below to assemble enough evidence for a
-maintainer to assess it. Scale detail to the consequences and uncertainty; these
-are prompts for relevant evidence, not mandatory headings or a checklist for every edit.
-A typo correction can name the inspected text and link check without a bug reproduction.
-
-- **Did it reproduce the issue?** Name the triggering input or state and the
-  observed failure. Explain the cause, labeling an inference when the evidence
-  does not establish it. Link the changed code and regression test. Report the
-  same reproduction's failing base and passing fix, with revisions and captured
-  results; if the before case did not run or fail, say reproduction is unestablished.
-- **What did testing reach?** Name the actual boundary exercised: for example,
-  request → parser → application callback. Distinguish a unit test or faithful
-  mechanism probe from that integration. State tested revisions, runtime versions,
-  commands, results, and timing: before implementation, during it, or only afterward.
-  Distinguish committed regression tests from supplemental probes. Name relevant
-  full suites that ran and omissions; an unrun suite or boundary remains a gap.
-- **What else can break?** Identify shared callers, endpoints, protocols, and users
-  affected by the changed contract. Name plausible failure consequences and recovery
-  or rollback consequences. Keep consequence severity separate from evidence about
-  likelihood: a rare data-loss path still has a severe consequence. Mark unknowns.
-- **What remains uncertain?** Link review dispositions to evidence and explain
-  why each concern was fixed, disproved, deferred, or needs a maintainer decision.
-  A documented risk is neither disproved nor accepted by the human. Follow the
-  existing [disposition rules](local-review.md#run-the-review-loop-with-a-ledger).
-  State a concise technical confidence judgment, its basis, residual risk, and
-  the next check that would materially change it, or why none is needed.
-
-Keep the delivery agent's judgment in the description's existing validation and
-risk summary, bound to the full PR head. Link reviewer results as evidence; do not
-add author-written conclusions to a reviewer-produced report or edit its findings.
-If an existing agent-authored assessment already answers these questions for this
-head, such as the post-implementation comment, link to it from that summary and the walkthrough
-instead of writing another assessment. That checkpoint judges product value separately.
-Keep test results and risk dispositions at their existing links. In the walkthrough,
-explain why the code addresses the cause and where tests reach it. In the assessment,
-explain what that evidence supports for delivery and leaves uncertain.
-
-Refresh the assessment when material evidence changes, even at the same commit,
-and identify superseded conclusions while preserving their links. A passing new
-probe can change a judgment without changing code. Technical confidence supplies
-neither required-check completion, reviewer approval, nor merge consent. Use plain
-language rather than unsupported numerical confidence scores.
+For technical fixes, connect the triggering failure and observed cause (label inference)
+to before/after regression evidence, the boundary exercised, affected callers, and residual
+risk. Name tested revisions, runtime, omissions, and any next check that would change your
+judgment. Keep the head-bound assessment in the description's existing validation/risk
+summary; reuse a linked agent-authored assessment covering these points, preserve reviewer
+reports, and refresh when material evidence changes. Documenting a risk does not resolve
+or accept it; technical confidence does not grant merge consent. Scale detail to the change.
 
 ### Keep a walkthrough readable
 
