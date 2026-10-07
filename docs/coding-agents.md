@@ -17,3 +17,9 @@ Use the [installation prompt](getting-started.md); the agent follows the
 To support another coding agent, [contribute](../CONTRIBUTING.md) installation
 instructions, a demonstrated task, and known limitations. Keep environment-specific
 code separate from the shared workflow.
+
+## Codex desktop follow-up
+
+Shaka tells you who will handle later PR feedback. If automatic follow-up
+is unavailable, the handoff names someone to check feedback and gives them
+a prompt to resume the chat. Ask merging still waits for your decision.

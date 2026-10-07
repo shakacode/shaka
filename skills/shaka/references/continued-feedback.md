@@ -14,6 +14,10 @@ Automatic follow-up needs two things:
 - **Resumption:** the coding tool starts another turn in the owning chat so the
   agent can answer. This is sometimes called a *wake*.
 
+In Codex, follow the [native wake boundary](codex-wake.md) before claiming automatic
+intake. Registration evidence and an observed later turn are separate facts. Native
+heartbeats may read GitHub directly; do not start a duplicate shell watcher.
+
 Check that the coding tool can resume this chat when the monitor finishes,
 including after CI is complete and while awaiting merge approval. A terminal
 running the command, or a tool that resumes only on CI completion, is not enough.
@@ -32,6 +36,7 @@ after archiving. In the PR, WIP Details, and final handoff:
 
 - Say **Automatic feedback intake unavailable**.
 - Name the person responsible for checking later feedback.
+- Preserve the exact PR URL/head and the expiry or registration failure time.
 - Give the exact prompt to resume the chat, such as
   `$shaka https://github.com/OWNER/REPO/pull/N`.
 

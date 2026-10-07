@@ -780,3 +780,10 @@ rules:
       comments; let the user inspect candidate links.
     enforced_by: agent
     note: The fixed `gh search` field list is part of the procedure; no command blocks other reads.
+  - id: codex-native-wake-not-shell
+    phase: always
+    quote: Do not infer a native Codex wake from SHAKA_WAKE or process completion.
+    enforced_by: agent
+    note: >-
+      CodexWake checks supplied registration/readback fields at the CLI boundary when
+      Codex context is present; it cannot authenticate host evidence or prove native resumption.
