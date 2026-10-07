@@ -69,6 +69,21 @@ class OpenrouterSafetyTest < Minitest::Test
     end
   end
 
+  def test_malformed_content_length_returns_a_sanitized_transport_failure
+    response = Net::HTTPOK.new('1.1', '200', 'OK')
+    response['Content-Length'] = 'private-header-detail'
+    with_adapter do |cli, _options, report|
+      with_request(->(*) { response.content_length }) do
+        result = cli.run('diff')
+        assert_equal 'cli_failure', result.fetch('failure_stage')
+        assert result.fetch('attempted')
+        assert_includes result.fetch('reason'), 'network/TLS request failed'
+        refute_includes JSON.generate(result), 'private-header-detail'
+        refute File.size?(report)
+      end
+    end
+  end
+
   def test_metadata_tokens_retain_slugs_and_reject_autolink_urls
     assert_equal MODEL, Shaka::OpenrouterReview.token(MODEL)
     %w[https://evil.example/x www.evil.example/x ftp://evil.example/x].each do |value|

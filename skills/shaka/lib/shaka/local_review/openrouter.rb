@@ -78,7 +78,7 @@ module Shaka
   # Reuses review attestation and ledger handling; API diagnostics never retain response prose.
   module LocalReviewOpenrouter
     NETWORK_ERRORS = [SystemCallError, IOError, SocketError, OpenSSL::SSL::SSLError, Net::ProtocolError,
-                      Net::HTTPBadResponse, Zlib::Error].freeze
+                      Net::HTTPBadResponse, Net::HTTPHeaderSyntaxError, Zlib::Error].freeze
 
     private
 
