@@ -54,6 +54,12 @@ module Shaka
       raise Error, "Publication #{field} contains a literal escape sequence; supply real line breaks."
     end
 
+    def publisher_identity(content)
+      header = identity(content['identity'])
+      note = content['publisher_note']
+      note ? "#{header}\n\n_#{single_line(note, 'publisher note')}_" : header
+    end
+
     def identity(value)
       raise Error, 'Publication identity must be supplied.' unless value.is_a?(Hash)
 

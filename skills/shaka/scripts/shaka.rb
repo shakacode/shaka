@@ -35,6 +35,7 @@ require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
+require_relative '../lib/shaka/usage/publisher_attribution'
 require_relative '../lib/shaka/usage/cursor_usage_refresh'
 require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/trial/command'
@@ -191,7 +192,8 @@ end
 def walkthrough_body(options, github)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
-  walkthrough = content(options.fetch(:content_file)).merge('head' => options.fetch(:head))
+  walkthrough = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
+  walkthrough = walkthrough.merge('head' => options.fetch(:head))
   Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough), walkthrough, github)
 end
 
@@ -341,7 +343,8 @@ begin
                github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
-               described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
+               attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
+               described = Shaka::DeploymentLink.resolve(attributed, github)
                usage_records = nil
                carried = nil
                published = github.description(prose:) do |pull|
@@ -364,7 +367,9 @@ begin
            when 'reply'
              # A review lookup contacts GitHub, so a missing key fails before that lookup.
              key = options.fetch(:key)
-             github.reply(body: Shaka::ReviewReply.compose(content(options.fetch(:content_file)), github),
+             attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
+             publisher_note = attributed.delete('publisher_note')
+             github.reply(body: Shaka::ReviewReply.compose(attributed, github, publisher_note:),
                           key: key, comment: options[:comment])
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))

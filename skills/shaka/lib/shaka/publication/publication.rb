@@ -34,7 +34,7 @@ module Shaka
     end
 
     def render(parts, title: false)
-      blocks = [PublicationText.identity(@content['identity'])]
+      blocks = [PublicationText.publisher_identity(@content)]
       blocks << '# Code Walkthrough' if title
       blocks << PublicationText.required(@content['summary'], 'summary')
       parts.each { |part| blocks.concat(send(part)) }
