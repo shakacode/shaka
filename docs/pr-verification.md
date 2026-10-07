@@ -79,7 +79,7 @@ trust failures, required GitHub or seam merge checks, or protection. In the advi
 example, the security gate still needs a repair. Failed validation stays failed;
 it is never reported as passing. Missing readiness evidence remains UNKNOWN.
 
-For agent instructions, see the [base-failure procedure](../skills/shaka/references/base-validation-failure.md).
+For agent instructions, see the [base-failure procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/base-validation-failure.md).
 
 ## Reconsider the finished result
 
