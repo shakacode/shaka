@@ -15,10 +15,20 @@ class UpdateCheckLaunchTest < Minitest::Test
     end
   end
 
+  def test_subdirectory_cannot_launch_a_candidate_cli_or_interpreter
+    Dir.mktmpdir('shaka-update-launch') do |directory|
+      root, trusted, marker = prepare_wrapper(directory)
+      write_executable(File.join(root, 'bin/gh'), "#!/bin/sh\nprintf ran > '#{marker}'\nprintf '{}'\n")
+      with_path("#{root}/bin:#{trusted}:#{ENV.fetch('PATH')}") do
+        Dir.chdir(File.join(root, 'src')) { assert_safe_wrapper(marker) }
+      end
+    end
+  end
+
   def test_missing_cli_does_not_launch_a_process
     Dir.mktmpdir do |root|
       with_path(root) do
-        Dir.chdir(root) { assert_equal ['', '', false], Shaka::UpdateCheck.send(:capture, %w[gh api], Dir.tmpdir) }
+        Dir.chdir(root) { assert_equal ['', '', false], Shaka::UpdateCheck::Launch.capture(%w[gh api], Dir.tmpdir) }
       end
     end
   end
@@ -34,7 +44,7 @@ class UpdateCheckLaunchTest < Minitest::Test
   end
 
   def assert_safe_wrapper(marker)
-    output, _error, ok = Shaka::UpdateCheck.send(:capture, %w[gh api], Dir.tmpdir)
+    output, _error, ok = Shaka::UpdateCheck::Launch.capture(%w[gh api], Dir.tmpdir)
     refute_path_exists marker
     assert ok, output
     assert_equal 'identical', JSON.parse(output).fetch('status')
@@ -44,12 +54,16 @@ class UpdateCheckLaunchTest < Minitest::Test
     root = File.join(directory, 'candidate')
     trusted = File.join(directory, 'trusted')
     marker = File.join(directory, 'candidate-ran')
-    FileUtils.mkdir_p([File.join(root, 'bin'), trusted])
-    File.write(File.join(root, 'bin/ruby'), "#!/bin/sh\nprintf ran > '#{marker}'\nprintf '{}'\n")
-    File.chmod(0o755, File.join(root, 'bin/ruby'))
-    File.write(File.join(trusted, 'gh'), "#!/usr/bin/env ruby\nputs '{\"status\":\"identical\"}'\n")
-    File.chmod(0o755, File.join(trusted, 'gh'))
+    FileUtils.mkdir_p([File.join(root, 'bin'), File.join(root, 'src'), trusted])
+    File.write(File.join(root, '.git'), 'gitdir: /registered/worktree/metadata')
+    write_executable(File.join(root, 'bin/ruby'), "#!/bin/sh\nprintf ran > '#{marker}'\nprintf '{}'\n")
+    write_executable(File.join(trusted, 'gh'), "#!/usr/bin/env ruby\nputs '{\"status\":\"identical\"}'\n")
     File.symlink(RbConfig.ruby, File.join(trusted, 'ruby'))
     [root, trusted, marker]
+  end
+
+  def write_executable(path, contents)
+    File.write(path, contents)
+    File.chmod(0o755, path)
   end
 end
