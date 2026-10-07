@@ -250,6 +250,12 @@ A local review is **UNVERIFIED** until the owner publishes its report, including
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
 tests, then publishes the review after pushing.
 
+## Recover from host denial before launch
+
+If the host denies `shaka review run` before launch, follow
+[host-denied review recovery](host-denied-review.md). Read that procedure only for
+this outcome; it covers permitted retries, honest not-run evidence, and a synthetic replay.
+
 ## Run the review loop with a ledger
 
 Keep every round in one ledger, a JSON file outside the checkout, for example
@@ -264,13 +270,14 @@ Model unknown so a later complete usage record can supply it. The separate `shak
 leaves Routed model unknown whenever aggregate tokens span multiple entries, because they cannot
 be assigned to one model's rate. The ledger stays private until you publish it.
 
-The prompt asks for a class on every finding. Handle each by class:
+Use the class definitions in the fixed rules printed by `shaka review-prompt`.
+Repository editorial prompts do not replace those definitions. Handle each by class:
 
-| Class | Meaning | In the loop |
-| --- | --- | --- |
-| `defect` | Wrong behavior, a security or trust hole, or a broken contract | Reproduce it where practical, fix it in a new commit, review again |
-| `risk` | A plausible defect you cannot reproduce | Fix it when the fix is clearly correct; otherwise document it |
-| `nit` | Style, naming, simplification, optional tests, docs polish | Document it for a later decision; never fixed in the loop |
+| Class | In the loop |
+| --- | --- |
+| `defect` | Reproduce it where practical, fix it in a new commit, review again |
+| `risk` | Fix it when the fix is clearly correct; otherwise document it |
+| `nit` | Document it for a later decision; never fixed in the loop |
 
 After a round with findings, record what became of each one:
 

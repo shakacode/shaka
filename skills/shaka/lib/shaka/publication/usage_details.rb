@@ -66,6 +66,7 @@ module Shaka
     include UsageColumnCheck
 
     SUMMARY = 'Usage and cost'
+    GUIDE = '[Understand the columns and accounting rules](https://shaka.shakacode.com/docs/reference/usage-and-cost).'
     REQUIRED = %w[note records].freeze
     OPTIONAL = %w[carried].freeze
     # Each record's columns ride in a comment, so a later publish can put them back in the table.
@@ -87,8 +88,8 @@ module Shaka
     private
 
     def body(rows)
-      parts = [rows.table, rows.legend, rows.glossary, UsagePricing.details(pricing_pairs)]
-      parts << @note unless @note.empty?
+      parts = [rows.table, rows.legend, GUIDE, UsagePricing.details(pricing_pairs)]
+      parts << UsagePricing.concise(@note) unless @note.empty?
       parts.concat(earlier_reports)
       parts.concat(record_blocks)
       parts.compact.join("\n\n")

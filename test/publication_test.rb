@@ -218,9 +218,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Provenance, settings, usage with its glossary and pricing notes, and supplied details.
-    assert_equal 6, rendered.scan('</summary>').size
-    assert_equal 6, rendered.scan('</details>').size
+    # Provenance, settings, usage with pricing notes, and supplied details.
+    assert_equal 5, rendered.scan('</summary>').size
+    assert_equal 5, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
@@ -446,8 +446,17 @@ class PublicationWipDetailsTest < Minitest::Test
     assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
     labels = lines.drop(2).map { |line| line.split(' | ').first.delete_prefix('| ') }
     assert_equal Shaka::WipDetails::FIELDS.values, labels
-    assert_includes lines, '| Chat link | REDACTED |'
+    assert_includes lines.join("\n"), '| Chat link | Withheld: settings not read; rerun description with --ref |'
     assert_includes lines, '| Stopped because | paused |'
+  end
+
+  def test_unknown_policy_withholds_supplied_locations_without_claiming_redaction
+    wip = WIP.merge('workspace' => '/private/customer/project', 'thread' => 'https://private.example/session')
+    rendered = render(wip)
+    assert_includes rendered, 'Withheld: settings not read; rerun description with --ref'
+    refute_includes rendered, '/private/customer/project'
+    refute_includes rendered, 'https://private.example/session'
+    refute_includes rendered, 'REDACTED'
   end
 
   def test_owner_requires_machine_host_and_tag
@@ -673,14 +682,14 @@ class PublicationUsageReadabilityTest < Minitest::Test
     assert_equal %w[999 1K 1.5K 100K 639K 1M 45.3M], shown
   end
 
-  # Break: the maintainer could not tell what the Credits column counted.
-  def test_the_glossary_explains_only_the_columns_shown
+  # Shared definitions belong in the guide; the report keeps its measured columns.
+  def test_usage_links_the_reader_guide_instead_of_repeating_definitions
     rendered = render(usage: usage_of(COLUMN.merge('credits' => '2.000000')))
-    glossary = rendered[%r{<summary>What the columns mean</summary>(.*?)</details>}m, 1]
-    assert_includes glossary, '**Codex credits**: estimated OpenAI Codex plan credits'
-    assert_includes glossary, '**Cache writes**'
-    refute_includes render(usage: usage_of(COLUMN)), '**Codex credits**'
-    assert_includes glossary, 'OpenCode does not'
+    visible = rendered.gsub(/<!--.*?-->/m, '')
+    assert_includes visible, '(https://shaka.shakacode.com/docs/reference/usage-and-cost)'
+    assert_includes visible, '| Codex credits |'
+    refute_includes visible, 'What the columns mean'
+    refute_includes visible, 'OpenCode does not'
   end
 end
 
@@ -718,6 +727,61 @@ class PublicationUsagePricingTest < Minitest::Test
     notes = pricing(later)
     assert_includes notes, "**claude\u2011opus\u20115\u20115 implementation**\n\n#{CURSOR}"
     assert_includes notes, "**claude\u2011opus\u20115\u20115 review**\n\n#{ANTHROPIC}"
+  end
+
+  ACCOUNTING = 'Cached input is part of input; reasoning output is part of output.'
+  EVIDENCE = [ANTHROPIC, 'Native usage is PARTIAL. Scope: all turns in selected sources.',
+              'Sources: [original rates](https://example.com/rates).',
+              'Special billing exception: cache writes are unpriced.'].freeze
+  FULL_NOTE = [*EVIDENCE, ACCOUNTING].join("\n\n")
+
+  def guide_report
+    render(usage: { 'note' => 'Per-commit allocation is unavailable.', 'records' => [record(COLUMN, note: FULL_NOTE)] })
+  end
+
+  def test_accounting_boilerplate_moves_to_docs_but_report_evidence_survives
+    visible = guide_report.gsub(/<!--.*?-->/m, '')
+    refute_includes visible, ACCOUNTING
+    [*EVIDENCE, 'Per-commit allocation is unavailable.'].each { |evidence| assert_includes visible, evidence }
+  end
+
+  def test_full_notes_survive_carry_when_the_display_is_shortened
+    block = guide_report[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m]
+    assert_equal FULL_NOTE, Shaka::UsagePricing.from_block(block)
+    later = render(usage: { 'note' => 'n', 'records' => [record(REVIEW)], 'carried' => block })
+    assert_equal FULL_NOTE, Shaka::UsagePricing.from_block(later[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m])
+    refute_includes pricing(later), ACCOUNTING
+  end
+
+  def test_the_top_level_note_also_links_shared_accounting_without_losing_coverage
+    usage = { 'note' => "#{ACCOUNTING}\n\nCoverage: latest turn only.", 'records' => [record(COLUMN)] }
+    visible = render(usage:).gsub(/<!--.*?-->/m, '')
+    refute_includes visible, ACCOUNTING
+    assert_includes visible, 'Coverage: latest turn only.'
+  end
+
+  def test_host_specific_unknowns_and_exclusions_stay_visible
+    notes = ['Input excludes cache reads and writes; reasoning output is part of output. ' \
+             'Recorded native cost is nominal, not an actual charge.',
+             'Cached input and cache writes are part of input; reasoning output and native total are UNKNOWN. ' \
+             'Parent-agent turn only; subagents excluded.']
+    notes.each do |note|
+      shown = pricing(render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note:)] }))
+      assert_includes shown, note.split('. ', 2).last
+    end
+  end
+
+  def test_only_the_known_anthropic_explanation_is_shortened
+    explanation = 'Uncached input, cache reads and cache writes are separate charges, and a 1-hour cache write ' \
+                  'costs more than a 5-minute one. Standard-speed responses are priced; fast mode is priced ' \
+                  'for Opus models with a published rate.'
+    note = "#{ANTHROPIC} #{explanation}"
+    rendered = render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note:)] })
+    visible = rendered.gsub(/<!--.*?-->/m, '')
+    assert_includes visible, ANTHROPIC
+    refute_includes visible, explanation
+    changed = "#{note} Additional billing limitation."
+    assert_includes pricing(render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note: changed)] })), changed
   end
 
   def test_a_report_without_a_note_is_named

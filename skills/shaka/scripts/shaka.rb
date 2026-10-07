@@ -8,6 +8,7 @@ require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/attention'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
+require_relative '../lib/shaka/hosts/codex_wake'
 require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
@@ -208,6 +209,9 @@ def merge_flags(flags, options)
   flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits') { |sha| options[:confirmed_head] = sha }
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
   flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
+  flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|
+    options[:codex_wake] = path
+  end
 end
 
 def opening_flags(flags, options)
@@ -299,6 +303,10 @@ begin
     raise Shaka::Error, '--opening-model is unsupported for openai/codex.' if reviewer == 'openai/codex'
   end
 
+  raise Shaka::Error, '--codex-wake is only for handoff.' if options[:codex_wake] && command != 'handoff'
+
+  native_wake = Shaka::CodexWake.check(options, repository, number) if command == 'handoff'
+
   github = Shaka::GitHub.new(repository, number)
   if %w[pr walkthrough merge handoff squash-message].include?(command)
     seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
@@ -386,6 +394,10 @@ begin
              Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint)
                            .call(head: options[:head], woken_by: options[:woken_by])
            end
+  if native_wake
+    result['codexWake'] = { 'registrationId' => native_wake, 'registrationEvidence' => 'checked',
+                            'liveResumption' => 'UNVERIFIED' }
+  end
   puts JSON.pretty_generate(result)
   exit Shaka::Handoff.exit_status(result) if command == 'handoff'
 rescue OptionParser::ParseError, KeyError, SystemCallError, Shaka::Error => e

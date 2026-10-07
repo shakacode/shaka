@@ -142,8 +142,11 @@ A link's availability depends on the owner's machine being reachable.
 
 **Privacy:** both team setup and private trials default `wip.include_locations` to
 `true`. Supply the selected default-branch `--ref` to `description`.
-The renderer replaces Workspace and Chat link with `REDACTED` when the setting is
-false or unavailable, including before validation/review results exist. Retain the
+The renderer uses `REDACTED` only when the setting is explicitly false. Unread or
+unavailable settings withhold both locations and explain the recovery action:
+rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
+republishing when loading failed. Unfinished publication remains possible without
+validation/review evidence; the diagnostic establishes no readiness. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.
 See [configuration](https://github.com/shakacode/shaka/blob/main/docs/settings.md#wipinclude_locations).
@@ -271,9 +274,13 @@ renders its link after the summary, or `_Not published yet._` until it exists.
 Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
 the GitHub Deployments API for the PR head and links the newest successful
 deployment's `environment_url`, the same link GitHub shows as "View deployment";
-it renders nothing when the head has none. Supply a URL yourself only when the
-preview appears solely in a provider comment or CI log. The helper links it beside
-the walkthrough.
+when that API has no live URL, it checks the current head's latest Cloudflare Pages check
+from the Cloudflare GitHub App and extracts its immutable `pages.dev` preview when successful.
+It renders nothing when neither source supplies a URL. Supply a URL yourself when
+another provider exposes the preview solely in a comment or CI log, or to select among
+several preview projects. The helper links
+it beside the walkthrough. Republish after hosted checks and preview builds settle,
+including before an Ask handoff.
 Set the required `steps_besides_merging` field to `none` or a list of work the change
 needs outside its merge, such as a secret to set before merge or a backfill to run after
 it. The helper renders the list as a table under those links, where a maintainer sees it
@@ -311,6 +318,16 @@ Explain unfamiliar terms on first use. Distinguish mechanical moves and generate
 output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
 Cover the change completely, then stop.
+
+### Connect a technical fix to its evidence
+
+For technical fixes, connect the triggering failure and observed cause (label inference)
+to before/after regression evidence, the boundary exercised, affected callers, and residual
+risk. Name tested revisions, runtime, omissions, and any next check that would change your
+judgment. Keep the head-bound assessment in the description's existing validation/risk
+summary; reuse a linked agent-authored assessment covering these points, preserve reviewer
+reports, and refresh when material evidence changes. Documenting a risk does not resolve
+or accept it; technical confidence does not grant merge consent. Scale detail to the change.
 
 ### Keep a walkthrough readable
 

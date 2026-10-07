@@ -96,6 +96,23 @@ rules:
     note: >-
       Nothing detects non-convergence, unexpected breadth, or growing complexity.
       The owner recognizes these signals and reconsiders the approach before another round.
+  - id: post-implementation-disposition
+    phase: finish
+    quote: >-
+      After verification, supply the task owner's head-bound `disposition` in the checkpoint
+      publication: Merge, Revise before merge, Reconsider approach, or Do not merge,
+      with a reason and concrete next action. Judge the finished PR against the original
+      outcome; successful verification alone does not choose its disposition.
+      A Merge recommendation grants no merge authority. Every other disposition blocks
+      readiness and follows the existing repair or maintainer decision path; do not close
+      the PR automatically. Results without this field retain conclusion-based publication;
+      the agent supplies it for every completed implementation.
+    enforced_by: agent
+    note: >-
+      The owner supplies and judges the disposition. Ruby validates a supplied disposition's
+      vocabulary, head, reason and next action, rejects Merge against blocked verification,
+      and publishes other dispositions through the existing blocked attestation. It does not
+      infer merge authority, evaluate free-form prose, close a PR, or require the optional field.
   - id: post-implementation-merge-blocker
     phase: finish
     quote: do not submit a merge while they remain
@@ -267,6 +284,15 @@ rules:
     note: >-
       Undetectable as written. "Always-on" is not a property the seam declares, so nothing can
       tell a deferrable check from one that has to run now.
+  - id: base-failure-is-not-passing
+    phase: finish
+    quote: Never describe failed validation as passing, including after acceptance.
+    enforced_by: agent
+    note: >-
+      The agent verifies base reproduction, unchanged affected inputs, draft state, and any
+      task-scoped maintainer acceptance. Evidence verification still refuses failed validation;
+      description publication without evidence reports UNKNOWN. Ruby does not verify the
+      comparison or intercept Git push, PR readiness changes, or free-form check-table claims.
   - id: reviewer-selection-binding
     phase: verify
     quote: >-
@@ -289,7 +315,9 @@ rules:
     phase: verify
     quote: >-
       Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
-      failure is not availability evidence, even when `attempted` is true.
+      failure is not availability evidence, even when `attempted` is true. A host denial before
+      helper launch is not a CLI attempt or permission to bypass the host; do not mark a reviewer
+      unavailable from that denial.
     enforced_by: agent
     note: >-
       `review run` classifies an actual CLI attempt and its failure, but `reviewer --unavailable`
@@ -754,3 +782,10 @@ rules:
       comments; let the user inspect candidate links.
     enforced_by: agent
     note: The fixed `gh search` field list is part of the procedure; no command blocks other reads.
+  - id: codex-native-wake-not-shell
+    phase: always
+    quote: Do not infer a native Codex wake from SHAKA_WAKE or process completion.
+    enforced_by: agent
+    note: >-
+      CodexWake checks supplied registration/readback fields at the CLI boundary when
+      Codex context is present; it cannot authenticate host evidence or prove native resumption.
