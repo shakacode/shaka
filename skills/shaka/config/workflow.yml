@@ -492,11 +492,11 @@ phases:
         using `post_implementation` for the published PR comment URL or a named placeholder
         until publication. After publishing the checkpoint, republish the description with that URL.
         Set `deployment` to `auto` to link the newest successful GitHub
-        deployment of the PR head, falling back to a successful current-head Cloudflare Pages
-        check from the Cloudflare GitHub App. It reports `none` when neither provides a URL.
+        deployment of the PR head, falling back to the latest current-head Cloudflare Pages
+        check when successful from the Cloudflare GitHub App. It reports `none` when neither provides a URL.
         Supply an https URL yourself when the preview exists only in another provider comment
-        or CI log, or `none` when the
-        repository deploys nothing for the change. The helper links it beside the walkthrough.
+        or CI log. Use an explicit URL to choose among several preview projects, or `none`
+        when the repository deploys nothing for the change. The helper links it beside the walkthrough.
         It refuses literal escape sequences in prose, mismatched
         table rows, empty required content, and bodies GitHub does not render.
 
@@ -699,7 +699,7 @@ phases:
         Review-only work keeps its requested stopping point.
       - After hosted checks and preview builds settle, republish the description before the
         final handoff, including an Ask handoff. Resolve `deployment: auto` again for the
-        current head; an earlier `none` result does not prove that no preview exists now.
+        current head after the builds settle.
         When the provider supplies the preview solely in a comment or log, supply its verified
         current-head URL. Preserve an explicit choice that this repository deploys nothing.
       - Reassess scope and authority for the final head, including the base the PR actually

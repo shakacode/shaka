@@ -4,7 +4,7 @@ require_relative 'test_helper'
 require 'shaka/publication/deployment_link'
 
 # Resolves previews from deployment records or authenticated current-head checks.
-class DeploymentLinkTest < Minitest::Test
+module DeploymentLinkFixtures
   HEAD = 'a' * 40
 
   # Answers the deployment reads for one pull request head.
@@ -23,7 +23,8 @@ class DeploymentLinkTest < Minitest::Test
 
     def api(path)
       @reads << path
-      unless path == "repos/owner/repo/commits/#{HEAD}/check-runs?per_page=100"
+      expected = "repos/owner/repo/commits/#{HEAD}/check-runs?check_name=Cloudflare%20Pages&app_id=85455&per_page=100"
+      unless path == expected
         raise Shaka::Error,
               "Unexpected read: #{path}"
       end
@@ -56,6 +57,10 @@ class DeploymentLinkTest < Minitest::Test
                                   '<tr><td><strong>Branch Preview URL:</strong></td>' \
                                   "<td><a href='https://branch.example.pages.dev'>Branch</a></td></tr></table>" } }
   end
+end
+
+class CloudflarePreviewTest < Minitest::Test
+  include DeploymentLinkFixtures
 
   def test_auto_finds_the_immutable_cloudflare_preview_when_the_deployments_api_is_empty
     assert_equal 'https://72086ad2.example.pages.dev', resolve([], {}, checks: [cloudflare_check])['deployment']
@@ -105,6 +110,35 @@ class DeploymentLinkTest < Minitest::Test
     error = assert_raises(Shaka::Error) { Shaka::DeploymentLink.resolve({ 'deployment' => 'auto' }, github) }
     assert_includes error.message, 'Too many check runs'
   end
+
+  def test_github_deployments_win_without_reading_cloudflare_checks
+    github = RecordedGitHub.new([{ 'id' => 1 }], { 1 => [status('success', 'https://deployed.example')] },
+                                checks: [cloudflare_check])
+    assert_equal 'https://deployed.example',
+                 Shaka::DeploymentLink.resolve({ 'deployment' => 'auto' }, github)['deployment']
+    assert_equal 2, github.reads.size
+  end
+
+  def test_a_different_check_name_is_ignored_even_from_the_cloudflare_app
+    assert_equal 'none', resolve([], {}, checks: [cloudflare_check.merge('name' => 'Cloudflare Workers')])['deployment']
+  end
+
+  def test_missing_check_permissions_are_reported_rather_than_hidden_as_no_preview
+    github = RecordedGitHub.new([], {})
+    def github.api(_path) = raise(Shaka::Error, 'Checks access denied')
+    error = assert_raises(Shaka::Error) { Shaka::DeploymentLink.resolve({ 'deployment' => 'auto' }, github) }
+    assert_equal 'Checks access denied', error.message
+  end
+
+  def test_captured_cloudflare_pages_output_from_the_reported_pr
+    summary = File.read(File.join(__dir__, 'fixtures/cloudflare_pages_preview.html'))
+    check = cloudflare_check.merge('output' => { 'summary' => summary })
+    assert_equal 'https://72086ad2.sc-website-bv4.pages.dev', resolve([], {}, checks: [check])['deployment']
+  end
+end
+
+class DeploymentLinkTest < Minitest::Test
+  include DeploymentLinkFixtures
 
   def test_auto_uses_the_newest_successful_deployment_url_for_the_head
     deployments = [{ 'id' => 2, 'created_at' => '2026-09-24T02:00:00Z' },

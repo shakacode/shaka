@@ -8,12 +8,13 @@ module Shaka
   module CloudflarePreview
     APP_ID = 85_455
     APP_SLUG = 'cloudflare-workers-and-pages'
-    PREVIEW_ROW = %r{<tr>\s*<td>\s*<strong>Preview URL:</strong>\s*</td>\s*<td>\s*<a href=['"]([^'"]+)['"]>}m
+    PREVIEW_ROW = %r{<tr>\s*<td>\s*<strong>Preview URL:</strong>\s*</td>\s*<td>\s*<a href=['"]([^'"]+)['"]>}
 
     module_function
 
     def live_url(github, head)
-      result = github.api("repos/#{github.repository}/commits/#{head}/check-runs?per_page=100")
+      path = "repos/#{github.repository}/commits/#{head}/check-runs"
+      result = github.api("#{path}?check_name=Cloudflare%20Pages&app_id=#{APP_ID}&per_page=100")
       checks = result.fetch('check_runs')
       latest = checks.select { |check| provider_check?(check, head) }.max_by { |check| check.fetch('id') }
       url = preview_url(latest)
