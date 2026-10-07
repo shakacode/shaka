@@ -284,6 +284,15 @@ rules:
     note: >-
       Undetectable as written. "Always-on" is not a property the seam declares, so nothing can
       tell a deferrable check from one that has to run now.
+  - id: base-failure-is-not-passing
+    phase: finish
+    quote: Never describe failed validation as passing, including after acceptance.
+    enforced_by: agent
+    note: >-
+      The agent verifies base reproduction, unchanged affected inputs, draft state, and any
+      task-scoped maintainer acceptance. Evidence verification still refuses failed validation;
+      description publication without evidence reports UNKNOWN. Ruby does not verify the
+      comparison or intercept Git push, PR readiness changes, or free-form check-table claims.
   - id: reviewer-selection-binding
     phase: verify
     quote: >-
