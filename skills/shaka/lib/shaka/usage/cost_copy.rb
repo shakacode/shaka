@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'value_token'
+
 module Shaka
   # Report copy for the rate-card cost scenarios.
   module CostCopy
@@ -113,7 +115,7 @@ module Shaka
     end
 
     def safe(value)
-      value.is_a?(String) && value.match?(%r{\A[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,79}\z}) ? value : 'UNKNOWN'
+      UsageValue.token(value) || 'UNKNOWN'
     end
   end
 end

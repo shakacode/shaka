@@ -5,6 +5,7 @@ require 'net/http'
 require 'timeout'
 require 'securerandom'
 require_relative '../usage/openrouter_usage'
+require_relative '../usage/value_token'
 
 module Shaka
   # One fixed model, one bounded request, no tools or automatic model fallback.
@@ -27,11 +28,19 @@ module Shaka
       post(body, timeout)
     end
 
-    def self.token(value)
-      value if value.is_a?(String) && value.match?(%r{\A[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,79}\z})
+    def self.token(value) = UsageValue.token(value)
+
+    def self.credentials_error
+      key = ENV.fetch('OPENROUTER_API_KEY', '')
+      return ['OPENROUTER_API_KEY is missing', 'credentials_missing'] if key.strip.empty?
+
+      ['OPENROUTER_API_KEY contains invalid characters', 'credentials_invalid'] unless key.match?(/\A[\x21-\x7e]+\z/)
     end
 
     def self.post(body, timeout)
+      error = credentials_error
+      raise Error, error.first if error
+
       request = Net::HTTP::Post.new(ENDPOINT, 'Content-Type' => 'application/json',
                                               'Authorization' => "Bearer #{ENV.fetch('OPENROUTER_API_KEY')}")
       request.body = JSON.generate(body)
@@ -58,8 +67,8 @@ module Shaka
 
     def openrouter(prompt)
       OpenrouterReview.validate!(@options)
-      return outcome('OPENROUTER_API_KEY is missing', 'credentials_missing', false) if
-        ENV.fetch('OPENROUTER_API_KEY', '').strip.empty?
+      error = OpenrouterReview.credentials_error
+      return outcome(*error, false) if error
 
       request_openrouter(prompt)
     end

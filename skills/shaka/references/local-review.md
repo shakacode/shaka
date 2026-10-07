@@ -87,6 +87,7 @@ Ask still requires a maintainer's merge decision.
 
 Each request has the selected review timeout and a 16,384-token completion cap.
 Missing credentials return `credentials_missing` with `attempted: false`.
+Malformed credentials return `credentials_invalid` before transport, without echoing the key.
 Unsupported model or effort stops at setup. HTTP/API errors, network failures and
 timeouts return `not_completed`; Shaka does not retry, switch models or treat
 unsupported settings as provider unavailability. Response bodies and reasoning
