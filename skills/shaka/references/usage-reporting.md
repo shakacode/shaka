@@ -369,3 +369,18 @@ Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.
 Compare like tasks and coverage alongside quality, retries, delivery time, and
 developer attention before drawing savings conclusions.
+
+## Publisher attribution
+
+For Codex JSON descriptions, walkthroughs, and replies, Ruby resolves the publishing
+chat through `CODEX_THREAD_ID` and reads its latest native turn context. Missing or
+`UNKNOWN` identity model and effort are filled from those settings. Description
+`active_model` and `active_effort` use the same result. Concrete contradictions
+stop publication. Reviewer reports and usage rows remain separate.
+
+The header labels the model `(configured)`; the served model stays `UNKNOWN`.
+Missing, ambiguous, or unreadable session metadata leaves unavailable fields
+`UNKNOWN` with a reason. A new turn without context clears earlier settings.
+Other hosts retain supplied attribution with an explicit unverified note until
+a native publisher reader is available. Aggregate usage rows cannot establish
+the current publisher's settings.
