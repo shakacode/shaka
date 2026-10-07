@@ -45,6 +45,7 @@ paths you own, or select a protected location. Preserve file contents and execut
 
 The installer prints an update reminder for every host and custom skills directory.
 
+Run `update-check` inside a Git checkout; without a known checkout boundary it skips the network call.
 Use the registered helper with your chosen path:
 
 ```bash
