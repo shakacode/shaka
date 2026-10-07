@@ -769,4 +769,4 @@ rules:
     enforced_by: agent
     note: >-
       CodexWake checks supplied registration/readback fields at the CLI boundary when
-      CODEX_THREAD_ID is present; it cannot authenticate host evidence or prove native resumption.
+      Codex context is present; it cannot authenticate host evidence or prove native resumption.

@@ -12,7 +12,7 @@ session ID, or a completed process is detection evidence only.
    authorization, use the manual handoff below.
 2. Cancel this task's previous native registration and shell watcher before
    creating another. Use a thread heartbeat targeting the owning chat, with a
-   finite minute schedule ending by the task deadline. A standalone cron task,
+   finite minute schedule with an absolute UTC UNTIL ending by the task deadline. A standalone cron task,
    a shell-cron workaround, or a suggested automation awaiting approval does
    not establish same-chat registration.
 3. Put the exact PR URL/head, owner, expiry, and trusted helper in the heartbeat
@@ -31,16 +31,18 @@ Save a JSON packet outside the checkout, copied from the successful native
 response and readback. Its fields are:
 
 - `registration`: the returned `automationId`, `mode`, and `status`.
-- `readback`: the native `id`, `kind`, `status`, `target_thread_id`, `rrule`,
-  `created_at`, and `updated_at` fields. Preserve timestamps in milliseconds.
+- `readback`: the native `id`, `kind`, `status`, `target_thread_id`, and `rrule` fields. Use an absolute UTC UNTIL, for example
+  `FREQ=MINUTELY;INTERVAL=5;UNTIL=20261007T050000Z`.
 - `repository`, integer `number`, and full `head`: the current PR identity.
 - `expires_at` and `deadline`: ISO 8601 timestamps with timezone offsets.
 
 Pass `--codex-wake PATH` to `handoff` with `--head SHA`. A Codex invocation
-identified by `CODEX_THREAD_ID` refuses `--woken-by` without this packet. It checks
-matching ACTIVE registration/readback, the current chat and PR/head, and an
-unchanged finite minute schedule within the supplied expiry/deadline. Renew by
-canceling and creating a new registration, then replace the packet. Other native
+identified by a nonempty `CODEX_THREAD_ID` without another supported
+host marker refuses `--woken-by` without this packet. It checks
+matching ACTIVE registration/readback, the current chat and PR/head, and a
+finite minute schedule with an explicit UTC end within the supplied expiry/deadline. Renew by
+canceling and creating a new registration, then replace the packet. Creation
+timestamps and count-only rules do not establish the scheduling anchor. Other native
 schedule shapes use manual handoff until their bounds can be checked.
 
 Ruby validates the supplied fields; it does not authenticate the packet, read

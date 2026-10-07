@@ -49,22 +49,25 @@ class CodexWakeTest < Minitest::Test
 
   def test_native_schedule_must_have_a_future_run_before_expiry
     ['FREQ=MINUTELY;INTERVAL=5', 'FREQ=MINUTELY;INTERVAL=5;COUNT=1',
-     'FREQ=MINUTELY;INTERVAL=5;COUNT=1000', 'FREQ=MINUTELY;INTERVAL=0;COUNT=2'].each do |rrule|
+     'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261007T040600Z',
+     'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261007T035900Z',
+     'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261307T040400Z',
+     'FREQ=MINUTELY;INTERVAL=0;UNTIL=20261007T040400Z'].each do |rrule|
       data = packet
       data['readback']['rrule'] = rrule
       assert_raises(Shaka::Error, rrule) { validate(data) }
     end
   end
 
-  def test_changed_or_missing_native_creation_timestamps_are_not_a_bounded_schedule
-    { 'created_at' => nil, 'updated_at' => 1 }.each do |key, value|
-      data = packet
-      data['readback'][key] = value
-      assert_raises(Shaka::Error, key) { validate(data) }
+  def test_other_host_context_and_empty_codex_markers_do_not_require_a_codex_packet
+    assert_nil Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42,
+                                      environment: { 'CODEX_THREAD_ID' => '' })
+    Shaka::CodexWake::OTHER_HOSTS.each do |marker|
+      environment = { 'CODEX_THREAD_ID' => THREAD, marker => 'other-host-session' }
+      assert_nil Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42, environment:)
     end
-  end
-
-  def test_other_hosts_and_codex_manual_handoffs_need_no_packet
+    environment = { 'CODEX_THREAD_ID' => THREAD, 'PI_CODING_AGENT' => 'true' }
+    assert_nil Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42, environment:)
     assert_nil Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42, environment: {})
     assert_nil Shaka::CodexWake.check({}, 'owner/repo', 42, environment: { 'CODEX_THREAD_ID' => THREAD })
   end
@@ -108,12 +111,10 @@ class CodexWakeTest < Minitest::Test
   end
 
   def packet
-    created = ((NOW - 60).to_f * 1000).to_i
     { 'repository' => 'owner/repo', 'number' => 42, 'head' => HEAD,
       'expires_at' => '2026-10-07T04:05:00Z', 'deadline' => '2026-10-07T05:28:24Z',
       'registration' => { 'automationId' => 'wake-trial', 'mode' => 'create', 'status' => 'ACTIVE' },
       'readback' => { 'id' => 'wake-trial', 'kind' => 'heartbeat', 'status' => 'ACTIVE',
-                      'target_thread_id' => THREAD, 'rrule' => 'FREQ=MINUTELY;INTERVAL=5;COUNT=2',
-                      'created_at' => created, 'updated_at' => created } }
+                      'target_thread_id' => THREAD, 'rrule' => 'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261007T040400Z' } }
   end
 end
