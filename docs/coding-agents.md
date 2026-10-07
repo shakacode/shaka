@@ -20,12 +20,6 @@ code separate from the shared workflow.
 
 ## Codex desktop follow-up
 
-A background shell command can detect PR changes without starting another Codex
-turn. Automatic follow-up requires an authorized native thread heartbeat with
-successful registration and a finite expiry. Registration alone does not prove
-a later turn actually started.
-
-If native registration is unavailable or fails, Shaka names who checks later
-feedback and gives the exact PR/head, expiry, and resume prompt. Ask merging
-still waits for your decision. The agent follows the
-[native wake procedure](../skills/shaka/references/codex-wake.md).
+Shaka tells you who will handle later PR feedback. If automatic follow-up
+is unavailable, the handoff names someone to check feedback and gives them
+a prompt to resume the chat. Ask merging still waits for your decision.
