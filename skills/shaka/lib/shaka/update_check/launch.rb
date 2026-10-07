@@ -20,7 +20,8 @@ module Shaka
 
       def self.candidate_root
         directory = Pathname.new(File.realpath(Dir.pwd))
-        directory.ascend.find { |parent| parent.join('.git').exist? }&.to_s || directory.to_s
+        outer = directory.ascend.to_a.reverse.find { |parent| parent.join('.git').exist? }
+        outer&.to_s || directory.to_s
       end
 
       private_class_method :candidate_root

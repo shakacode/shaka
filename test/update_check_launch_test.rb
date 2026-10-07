@@ -33,7 +33,25 @@ class UpdateCheckLaunchTest < Minitest::Test
     end
   end
 
+  def test_nested_repository_does_not_narrow_the_candidate_boundary
+    Dir.mktmpdir('shaka-update-launch') do |directory|
+      root, trusted, marker = prepare_wrapper(directory)
+      nested = prepare_nested_repository(root)
+      write_executable(File.join(root, 'bin/gh'), "#!/bin/sh\nprintf ran > '#{marker}'\nprintf '{}'\n")
+      with_path("#{root}/bin:#{trusted}:#{ENV.fetch('PATH')}") do
+        Dir.chdir(nested) { assert_safe_wrapper(marker) }
+      end
+    end
+  end
+
   private
+
+  def prepare_nested_repository(root)
+    nested = File.join(root, 'vendor/sub')
+    FileUtils.mkdir_p(nested)
+    File.write(File.join(nested, '.git'), 'gitdir: /submodule/metadata')
+    nested
+  end
 
   def with_path(path)
     original = ENV.fetch('PATH')
