@@ -11,7 +11,11 @@ class InstructionGrowth
   ENTRY = 'skills/shaka/SKILL.md'
   PATTERNS = ['AGENTS.md', 'skills/shaka/**/*.md', '.agents/shaka/*.md'].freeze
 
-  def self.measure(text) = { 'words' => text.split.size, 'bytes' => text.bytesize }
+  def self.measure(text)
+    raise Shaka::Error, 'Instruction text is not valid UTF-8' unless text.valid_encoding?
+
+    { 'words' => text.split.size, 'bytes' => text.bytesize }
+  end
 
   def initialize(root:, base:)
     @root = root

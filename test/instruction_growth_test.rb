@@ -83,8 +83,7 @@ class InstructionGrowthTest < Minitest::Test
     end
   end
 
-  def test_counts_utf8_bytes_and_rejects_broken_workflow
-    assert_equal({ 'words' => 2, 'bytes' => 8 }, InstructionGrowth.measure('café hi'))
+  def test_rejects_broken_current_workflow
     with_repository do |root|
       write(root, 'skills/shaka/config/workflow.yml', 'version: broken')
       assert_raises(Shaka::Error) { InstructionGrowth.new(root:, base: 'HEAD').report }
@@ -118,5 +117,13 @@ class InstructionGrowthTest < Minitest::Test
       assert_equal [nil, nil], row.values_at('before', 'delta')
     end
     assert_operator result['entry_workflow_guidance'][1]['after']['words'], :>, 40
+  end
+end
+
+class InstructionGrowthMeasurementTest < Minitest::Test
+  def test_counts_utf8_bytes_and_rejects_invalid_current_text
+    assert_equal({ 'words' => 2, 'bytes' => 8 }, InstructionGrowth.measure('café hi'))
+    invalid = "\xFF".b.force_encoding(Encoding::UTF_8)
+    assert_raises(Shaka::Error) { InstructionGrowth.measure(invalid) }
   end
 end
