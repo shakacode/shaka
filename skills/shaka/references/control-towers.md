@@ -6,10 +6,8 @@ are advanced pilot features; establish basic Shaka delivery first.
 
 ## Establish a master tower in Codex
 
-Install the optional companion with `bin/install --agent codex --with-mct` from
-its dedicated trusted checkout. Add `--with-rct` independently when this machine
-also needs repository towers. Establish the master in the intended existing
-portfolio chat:
+Use [official installation](official-installation.md#install) to obtain the Codex
+tower skills. Establish the master in the intended portfolio chat:
 
 ```text
 $mct
@@ -17,9 +15,6 @@ $mct
 
 Follow the installed `$mct` procedure for setup. Keep an existing master as the owner.
 
-Update older Shaka installations first to obtain new companion support. Add
-companions through `bin/install`; do not add selection flags to `--update`.
-Later updates and reinstallation retain selected companions.
 Start a new chat to refresh discovery if needed, without establishing a second master.
 
 ## Establish a repository tower

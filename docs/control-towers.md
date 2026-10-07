@@ -16,8 +16,8 @@ For Codex, ask your agent:
 Install Shaka's control towers for Codex.
 ```
 
-1. Choose one chat to coordinate your projects and run `$mct` there. If you
-   already have a master chat, continue there.
+1. If you already have a master chat, continue there. Otherwise, choose one
+   chat to coordinate your projects and run `$mct` there.
 2. Open a chat in each repository's Codex project and run `$rct` to connect it
    to the master.
 
