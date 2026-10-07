@@ -1,0 +1,103 @@
+# frozen_string_literal: true
+
+require 'json'
+require 'time'
+require_relative '../error'
+
+module Shaka
+  # Checks supplied native registration evidence at the host boundary, never scheduler execution.
+  module CodexWake
+    THREAD = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
+    SCHEDULE = /\A(?:RRULE:)?FREQ=MINUTELY;INTERVAL=([1-9]\d*);COUNT=([1-9]\d*)\z/
+
+    module_function
+
+    def check(options, repository, number, environment: ENV, now: Time.now)
+      path = options[:codex_wake]
+      thread = environment['CODEX_THREAD_ID']
+      return unless path || (thread && options[:woken_by])
+      raise Error, 'Codex automatic handoff requires --codex-wake PATH; otherwise use manual resume.' unless path
+
+      packet = JSON.parse(File.read(path, encoding: 'UTF-8'))
+      target = { 'repository' => repository, 'number' => number.to_i, 'head' => options[:head] }
+      validate(packet, thread:, target:, now:)
+    rescue JSON::ParserError, SystemCallError => e
+      raise Error, "Codex wake evidence unavailable: #{e.class}; use manual resume."
+    end
+
+    def validate(packet, thread:, target:, now:)
+      raise Error, 'Codex wake evidence must be an object.' unless packet.is_a?(Hash)
+
+      check_target(packet, thread:, target:)
+      readback = check_registration(packet, thread:)
+      check_expiry(packet, readback, now:)
+      readback['id']
+    end
+
+    def check_target(packet, thread:, target:)
+      valid = thread.to_s.match?(THREAD) && target['head'].to_s.match?(/\A[0-9a-f]{40}\z/) &&
+              packet['number'].is_a?(Integer) && packet.slice(*target.keys) == target
+      return if valid
+
+      raise Error, 'Codex wake evidence needs the current chat and exact repository, PR number, and --head.'
+    end
+
+    def check_registration(packet, thread:)
+      native = packet['registration']
+      readback = packet['readback']
+      expected = { 'id' => native.is_a?(Hash) && native['automationId'], 'kind' => 'heartbeat',
+                   'status' => 'ACTIVE', 'target_thread_id' => thread }
+      valid = creation_receipt?(native) && readback.is_a?(Hash) && readback.slice(*expected.keys) == expected
+      return readback if valid
+
+      raise Error, 'Codex needs successful ACTIVE heartbeat registration and matching same-chat readback.'
+    end
+
+    def creation_receipt?(native)
+      native.is_a?(Hash) && native['mode'] == 'create' && native['status'] == 'ACTIVE' &&
+        native['automationId'].is_a?(String) && !native['automationId'].strip.empty?
+    end
+
+    def check_expiry(packet, readback, now:)
+      expiry = bounded_expiry(packet, now:)
+      last_run = schedule_end(readback, now:)
+      return if now < last_run && last_run <= expiry
+
+      raise Error, 'Codex wake schedule has no future run or exceeds its expiry.'
+    end
+
+    def bounded_expiry(packet, now:)
+      expiry = timestamp(packet, 'expires_at')
+      deadline = timestamp(packet, 'deadline')
+      return expiry if now < expiry && expiry <= deadline
+
+      raise Error, 'Codex wake registration is expired or exceeds the task deadline.'
+    rescue KeyError, ArgumentError, TypeError
+      raise Error, 'Codex wake evidence needs valid expires_at and deadline timestamps.'
+    end
+
+    def timestamp(packet, key)
+      value = packet.fetch(key)
+      raise ArgumentError unless value.is_a?(String) && value.match?(/(?:Z|[+-]\d{2}:\d{2})\z/)
+
+      Time.iso8601(value)
+    end
+
+    # The fallback uses a fresh finite minute schedule. Other native shapes need host evidence review.
+    def schedule_end(readback, now:)
+      schedule = readback['rrule'].to_s.match(SCHEDULE)
+      unless schedule && unchanged_creation?(readback, now:)
+        raise Error, 'Codex wake readback needs an unchanged finite minute schedule and native creation timestamps.'
+      end
+
+      seconds = schedule[1].to_i * 60 * (schedule[2].to_i - 1)
+      Time.at(readback['created_at'] / 1000.0) + seconds
+    end
+
+    def unchanged_creation?(readback, now:)
+      created = readback['created_at']
+      created.is_a?(Integer) && created.positive? && readback['updated_at'] == created &&
+        Time.at(created / 1000.0) <= now
+    end
+  end
+end

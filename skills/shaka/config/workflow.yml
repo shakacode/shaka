@@ -511,7 +511,7 @@ phases:
         resolve OWNER/REPO NUMBER --thread THREAD_ID
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         attention OWNER/REPO NUMBER --state answer|merge|resume|none
-        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] --root DIR --ref SHA
+        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA --squash-message PATH [--ci-review-wait MODE] [--limits-confirmed-head SHA]
@@ -822,6 +822,16 @@ always: |-
   `--state resume` and make WIP Details `Next action` the resume prompt: the host's Shaka
   invocation with the PR URL, such as `$shaka https://github.com/OWNER/REPO/pull/N` in Codex or
   `/shaka https://github.com/OWNER/REPO/pull/N` in Claude Code.
+
+  Before promising automatic follow-up in Codex, follow the
+  [native wake boundary](<{{package_root}}/skills/shaka/references/codex-wake.md>).
+  Do not infer a native Codex wake from SHAKA_WAKE or process completion.
+  Codex `--woken-by` handoffs require `--codex-wake PATH` with successful native
+  heartbeat registration and matching same-chat readback for the exact PR/head.
+  Ruby checks supplied registration fields and schedule bounds, not scheduler execution
+  or live resumption. Record the registration ID, expiry, manual owner, and resume prompt;
+  claim observed resumption only after a native-started turn is recorded. Without available,
+  authorized, successful registration, use the named manual handoff.
 
   For pending required checks and configured CI review jobs, use the host's PR monitor when it
   wakes on their completion. Otherwise,
