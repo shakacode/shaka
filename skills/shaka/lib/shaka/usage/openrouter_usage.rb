@@ -39,7 +39,10 @@ module Shaka
     private
 
     def read(file)
-      data = JSON.parse(File.read(file, encoding: 'UTF-8'))
+      text = File.read(file, encoding: 'UTF-8')
+      return unreadable unless text.valid_encoding?
+
+      data = JSON.parse(text)
       return unreadable unless data.is_a?(Hash) && data['shaka_openrouter'] == 1 && turn?(data['id'])
 
       @versions << '1'

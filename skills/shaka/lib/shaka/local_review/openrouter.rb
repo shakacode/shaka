@@ -22,6 +22,9 @@ module Shaka
     end
 
     def self.request(prompt, model:, effort:, timeout:)
+      raise Error, 'Review prompt is not UTF-8' unless valid_prompt?(prompt)
+
+      prompt = prompt.dup.force_encoding(Encoding::UTF_8)
       body = { model:, messages: [{ role: 'user', content: prompt }], stream: false, max_tokens: 16_384,
                provider: { require_parameters: true } }
       body[:reasoning] = { effort: } if effort
@@ -30,8 +33,12 @@ module Shaka
 
     def self.token(value) = UsageValue.token(value)
 
+    def self.valid_prompt?(prompt)
+      prompt.is_a?(String) && prompt.dup.force_encoding(Encoding::UTF_8).valid_encoding?
+    end
+
     def self.credentials_error
-      key = ENV.fetch('OPENROUTER_API_KEY', '')
+      key = ENV.fetch('OPENROUTER_API_KEY', '').b
       return ['OPENROUTER_API_KEY is missing', 'credentials_missing'] if key.strip.empty?
 
       ['OPENROUTER_API_KEY contains invalid characters', 'credentials_invalid'] unless key.match?(/\A[\x21-\x7e]+\z/)
@@ -48,7 +55,14 @@ module Shaka
       raise Error, "OpenRouter HTTP #{response.code}; no retry or model substitution" unless
         response.is_a?(Net::HTTPSuccess)
 
-      JSON.parse(response.body)
+      decode(response.body)
+    end
+
+    def self.decode(body)
+      text = body.to_s.dup.force_encoding(Encoding::UTF_8)
+      raise JSON::ParserError, 'Invalid UTF-8 response' unless text.valid_encoding?
+
+      JSON.parse(text)
     end
 
     def self.send_request(request, timeout)
@@ -58,7 +72,7 @@ module Shaka
                                                       max_retries: 0) { |http| http.request(request) }
       end
     end
-    private_class_method :post, :send_request
+    private_class_method :post, :send_request, :decode
   end
 
   # Reuses review attestation and ledger handling; API diagnostics never retain response prose.
@@ -69,6 +83,7 @@ module Shaka
       OpenrouterReview.validate!(@options)
       error = OpenrouterReview.credentials_error
       return outcome(*error, false) if error
+      return outcome('Review prompt is not UTF-8', 'setup_failure', false) unless OpenrouterReview.valid_prompt?(prompt)
 
       request_openrouter(prompt)
     end

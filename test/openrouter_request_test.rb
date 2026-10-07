@@ -47,6 +47,12 @@ class OpenrouterRequestTest < Minitest::Test
     end
   end
 
+  def test_invalid_provider_bytes_stay_a_report_failure
+    with_http_response(body: "{\"model\":\"\xff\"}".b) do |result|
+      assert_equal 'report_validation', result.fetch('failure_stage')
+    end
+  end
+
   def test_timeout_and_network_failure_are_explicit_without_retries
     [Timeout::Error, SocketError, OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::ProtocolError].each do |error|
       with_adapter do |cli, _options, _report|

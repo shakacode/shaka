@@ -18,7 +18,7 @@ module Shaka
         @root = root
         @path = environment.fetch('PATH', '')
         @executable = system.executable
-        @api_key_present = !environment.fetch('OPENROUTER_API_KEY', '').strip.empty?
+        @api_key_present = !environment.fetch('OPENROUTER_API_KEY', '').b.strip.empty?
       end
 
       def call(review)

@@ -3,9 +3,36 @@
 require_relative 'test_helper'
 require_relative 'openrouter_fixture'
 require 'shaka/usage/command'
+require 'shaka/doctor/cli_inventory'
 
 class OpenrouterSafetyTest < Minitest::Test
   include OpenrouterFixture
+
+  def test_invalid_prompt_bytes_fail_before_transport
+    with_adapter do |cli, _options, _report|
+      result = cli.run("\xff".b.force_encoding('UTF-8'))
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      refute result.fetch('attempted')
+    end
+  end
+
+  def test_invalid_key_bytes_return_a_failure
+    key = "\xff".b.force_encoding('UTF-8')
+    with_adapter do |cli, _options, _report|
+      with_key(key) do
+        result = cli.run('diff')
+        assert_equal 'credentials_invalid', result.fetch('failure_stage')
+        refute result.fetch('attempted')
+      end
+    end
+  end
+
+  def test_invalid_key_bytes_do_not_break_inventory
+    key = "\xff".b.force_encoding('UTF-8')
+    system = Struct.new(:executable).new(->(*) {})
+    inventory = Shaka::Doctor::CliInventory.new(root: Dir.tmpdir, environment: { 'OPENROUTER_API_KEY' => key }, system:)
+    assert_instance_of Array, inventory.call(nil)
+  end
 
   def test_multiline_key_fails_before_transport_without_disclosing_it
     with_adapter do |cli, _options, _report|

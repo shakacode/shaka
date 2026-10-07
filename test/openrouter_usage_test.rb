@@ -27,6 +27,16 @@ class OpenrouterUsageTest < Minitest::Test
     end
   end
 
+  def test_invalid_metadata_bytes_are_unreadable
+    Tempfile.create(['openrouter-invalid-', '.json']) do |file|
+      file.binmode.write("{\"shaka_openrouter\":1,\"id\":\"r\",\"model\":\"\xff\"}".b)
+      file.close
+      source = Shaka::OpenrouterUsage.new([file.path], [], all_turns: true)
+      assert_empty source.responses
+      refute_empty source.gaps
+    end
+  end
+
   def test_an_absent_observed_model_is_not_filled_from_the_request
     with_metadata(model: nil) do |file|
       column = usage_report(file).fetch('columns').first
