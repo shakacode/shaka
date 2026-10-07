@@ -27,17 +27,46 @@ module PrivateDeliveryEvidence
     output
   end
 
-  def review_result
+  def review_result(*options)
     reviewer = invoke('reviewer', '--implementer', 'openai/codex')['reviewer']
-    report = File.join(@state, 'report.md')
-    File.write(report, "Findings: none\nREVIEWED #{@ref} BY #{reviewer} EFFORT medium FINDINGS 0\n")
-    output, = capture_io do
-      args = review_arguments(@root, @ref, report)
-      args[args.index('--reviewer') + 1] = reviewer
-      args[-1] = 'owner/repo'
-      assert_equal 0, Shaka::LocalReview.run(args)
+    Dir.mktmpdir('review-cli', @state) do |bin|
+      write_executable(bin, reviewer.split('/').last, delivery_reviewer)
+      run_review_cli(bin, reviewer, options)
     end
+  end
+
+  def run_review_cli(bin, reviewer, options)
+    output, error, status = Open3.capture3(
+      { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(@state, 'reviewer.json') },
+      PrivateDeliveryFixture::COMMAND, 'review', 'run', '--root', @root, '--base', @ref, '--head', @ref,
+      '--reviewer', reviewer, '--settings-ref', @ref, '--repository', 'owner/repo', *options
+    )
+    assert_predicate status, :success?, "#{output}\n#{error}"
     output
+  end
+
+  def assert_reviewer_arguments(*expected)
+    args = JSON.parse(File.read(File.join(@state, 'reviewer.json')))['args'].each_cons(2).to_a
+    expected.each { |pair| assert_includes args, pair }
+  end
+
+  def delivery_reviewer
+    <<~'RUBY'
+      #!/usr/bin/env ruby
+      require 'json'
+      prompt = if ARGV.include?('--prompt-file')
+                 File.read(ARGV.fetch(ARGV.index('--prompt-file') + 1))
+               else
+                 STDIN.read
+               end
+      File.write(ENV.fetch('REVIEW_TRACE'), JSON.generate(args: ARGV, prompt: prompt))
+      report = prompt[/REVIEWED [0-9a-f]{40} BY \S+ EFFORT \S+ FINDINGS/, 0] + " 0\n"
+      case File.basename($PROGRAM_NAME)
+      when 'codex' then File.write(ARGV.fetch(ARGV.index('-o') + 1), report)
+      when 'claude' then puts JSON.generate(result: report)
+      else puts report
+      end
+    RUBY
   end
 
   def publish_description(validation, review, opening: false, **expected)

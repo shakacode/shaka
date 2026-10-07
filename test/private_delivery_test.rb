@@ -20,13 +20,12 @@ class PrivateDeliveryTest < Minitest::Test
   def test_private_changes_supersede_evidence_and_change_reviewer_selection
     with_trial do
       validation, review = evidence_files
-      update_private do |data|
-        data['review']['local_review_agents'] = [{ 'provider' => 'xai', 'model_family' => 'grok' }]
-      end
+      select_private_grok
       assert_reviewer('xai/grok')
       publish_description(validation, review, exit_code: 1, error: 'missing or stale')
       publish_delivery
       assert_empty invoke('handoff')['owed']
+      assert_reviewer_arguments(['-m', 'grok-4.7'], ['--reasoning-effort', 'high'])
     end
   end
 
@@ -38,6 +37,15 @@ class PrivateDeliveryTest < Minitest::Test
       assert_stale_handoff(resumed)
       invoke('walkthrough', '--head', @ref, '--content-file', walkthrough_file,
              exit_code: 1, error: 'expected head')
+    end
+  end
+
+  private
+
+  def select_private_grok
+    update_private do |data|
+      data['review']['local_review_agents'] = [{ 'provider' => 'xai', 'model_family' => 'grok',
+                                                 'model' => 'grok-4.7', 'effort' => 'high' }]
     end
   end
 end

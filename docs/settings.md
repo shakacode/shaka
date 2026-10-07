@@ -1,6 +1,6 @@
-<a id="settings"></a>
-
 # Settings reference
+
+<a id="settings"></a>
 
 Start with [Choose your settings](settings-guide.md) for common choices and
 prompts you can give your agent. This reference covers each option and its limits.
