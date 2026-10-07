@@ -10,6 +10,8 @@ module Shaka
     module Launch
       def self.capture(argv, directory)
         root = candidate_root
+        return ['', '', false] unless root
+
         path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
         executable = LocalReviewPathGuard.safe_executable(path, 'gh', root)
         return ['', '', false] unless executable
@@ -21,7 +23,7 @@ module Shaka
       def self.candidate_root
         directory = Pathname.new(File.realpath(Dir.pwd))
         outer = directory.ascend.to_a.reverse.find { |parent| parent.join('.git').exist? }
-        outer&.to_s || directory.to_s
+        outer&.to_s
       end
 
       private_class_method :candidate_root
