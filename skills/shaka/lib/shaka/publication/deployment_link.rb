@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative 'cloudflare_preview'
 
 module Shaka
-  # Resolves `deployment: auto` from the GitHub Deployments API. Providers word their
-  # PR comments differently, but a successful deployment status carries the same
-  # `environment_url` that GitHub shows as "View deployment".
+  # Resolves `deployment: auto` from head-bound deployment evidence, with an
+  # authenticated Cloudflare Pages check fallback when that API has no live URL.
   module DeploymentLink
     AUTO = 'auto'
     PAGE = 100
@@ -28,7 +28,7 @@ module Shaka
         raise Error, 'Too many deployments to resolve deployment: auto; supply the URL or none.'
       end
 
-      url
+      url || CloudflarePreview.live_url(github, head)
     end
 
     def success_url(github, id)
