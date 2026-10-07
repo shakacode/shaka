@@ -3,6 +3,7 @@ Report on:
 - Contract drift: does a document, comment, or config restate a rule that the code now implements differently?
 - Security and trust: does it weaken a gate, widen permissions, or trust candidate content?
 - Tests: is there a test that fails if this change is reverted? Name what is untested.
+- Technical evidence (when relevant): does the claimed reproduction fail before and pass after? Identify the tested boundary, affected callers, evidence gaps, and residual risk; distinguish observed cause from inference and documented concerns from resolved or trusted human-accepted consequences.
 - Simplicity: what could be deleted without losing behavior?
 
 How to report:

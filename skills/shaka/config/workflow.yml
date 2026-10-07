@@ -557,6 +557,7 @@ phases:
         order the walkthrough so each change prepares the next, following the packaged
         [walkthrough order](<{{package_root}}/skills/shaka/references/delivery.md#how-a-walkthrough-is-ordered>).
         Cover every change completely and stop; length comes from the change, never from the writer.
+        For technical fixes, follow [technical evidence](<{{package_root}}/skills/shaka/references/delivery.md#connect-a-technical-fix-to-its-evidence>).
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
         until then the helper prints `_Not published yet._`. Link the current
         review result from the PR summary and final response. Write each new
