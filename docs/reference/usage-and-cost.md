@@ -80,6 +80,6 @@ Ask the agent:
 > Explain which work this PR's usage covers, what is missing, and whether any
 > reports overlap before comparing its total with another PR.
 
-[PR verification](pr-verification.md) explains how to assess the change and its
+[PR verification](../pr-verification.md) explains how to assess the change and its
 validation evidence. Agents selecting records follow the
 [usage reporting procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/usage-reporting.md).

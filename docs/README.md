@@ -24,7 +24,6 @@ Ask the agent to handle configuration. These guides explain your choices:
 
 ## Look deeper
 
-- [Usage and cost](usage-and-cost.md) — read token counts, estimates, and measurement gaps.
 - [PR verification](pr-verification.md) — evaluate a change and revisit its decisions after merging.
 - [What to expect from Shaka](expected-experience.md) — setup choices, verification gaps, and recovery.
 - [Settings](settings.md) — the reference for options and defaults.

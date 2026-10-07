@@ -24,7 +24,7 @@
       "collapsed": true,
       "items": [
         "pr-verification",
-        "usage-and-cost",
+        "reference/usage-and-cost",
         {
           "type": "doc",
           "id": "expected-experience",
