@@ -4,8 +4,7 @@ require 'json'
 require 'shellwords'
 require 'tmpdir'
 require_relative 'doctor/installation_identity'
-require_relative 'doctor/bounded_command'
-require_relative 'local_review/path_guard'
+require_relative 'update_check/launch'
 
 module Shaka
   # Advisory comparison with the official main branch; never changes an installation.
@@ -40,19 +39,9 @@ module Shaka
           registered: !record.nil?, helper: File.join(ROOT, 'skills/shaka/scripts/shaka'))
     end
 
-    def self.capture(argv, directory)
-      root = File.realpath(Dir.pwd)
-      path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
-      executable = LocalReviewPathGuard.safe_executable(path, 'gh', root)
-      return ['', '', false] unless executable
+    private_class_method :installed, :usage
 
-      environment = { 'PATH' => path, 'BASH_ENV' => nil, 'ENV' => nil }
-      Doctor::BoundedCommand.new(timeout: 15).call([environment, executable, *argv.drop(1)], directory)
-    end
-
-    private_class_method :installed, :capture, :usage
-
-    def initialize(source:, branch:, registered:, helper:, runner: self.class.method(:capture))
+    def initialize(source:, branch:, registered:, helper:, runner: Launch.method(:capture))
       @source = source
       @branch = branch
       @registered = registered
