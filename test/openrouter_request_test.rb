@@ -54,13 +54,12 @@ class OpenrouterRequestTest < Minitest::Test
   end
 
   def test_timeout_and_network_failure_are_explicit_without_retries
-    [Timeout::Error, SocketError, OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::ProtocolError].each do |error|
+    [Timeout::Error, SocketError, OpenSSL::SSL::SSLError, Net::HTTPBadResponse, Net::ProtocolError,
+     Zlib::DataError].each do |error|
       with_adapter do |cli, _options, _report|
         with_request(->(*) { raise error, 'private diagnostic' }) do
           result = cli.run('diff')
-          assert_equal 'cli_failure', result.fetch('failure_stage')
-          assert_true result.fetch('attempted')
-          refute_includes JSON.generate(result), 'private diagnostic'
+          assert_network_failure(result)
         end
       end
     end
@@ -76,6 +75,12 @@ class OpenrouterRequestTest < Minitest::Test
   end
 
   private
+
+  def assert_network_failure(result)
+    assert_equal 'cli_failure', result.fetch('failure_stage')
+    assert_true result.fetch('attempted')
+    refute_includes JSON.generate(result), 'private diagnostic'
+  end
 
   def with_http_response(code: '200', body: JSON.generate(completion))
     response = Net::HTTPResponse::CODE_TO_OBJ.fetch(code).new('1.1', code, 'fixture')

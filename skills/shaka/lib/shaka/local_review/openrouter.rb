@@ -77,6 +77,9 @@ module Shaka
 
   # Reuses review attestation and ledger handling; API diagnostics never retain response prose.
   module LocalReviewOpenrouter
+    NETWORK_ERRORS = [SystemCallError, IOError, SocketError, OpenSSL::SSL::SSLError, Net::ProtocolError,
+                      Net::HTTPBadResponse, Zlib::Error].freeze
+
     private
 
     def openrouter(prompt)
@@ -89,15 +92,26 @@ module Shaka
     end
 
     def request_openrouter(prompt)
-      openrouter_result(OpenrouterReview.request(prompt, model: @options[:model], effort: @options[:effort],
-                                                         timeout: @options.fetch(:timeout_seconds)))
+      result = fetch_openrouter(prompt)
+      openrouter_result(result)
     rescue JSON::ParserError, TypeError
       invalid('OpenRouter returned malformed JSON')
     rescue Timeout::Error
       failure("OpenRouter timed out after #{@options.fetch(:timeout_seconds)}s; no retry")
     rescue Error => e
       failure(e.message)
-    rescue SystemCallError, IOError, SocketError, OpenSSL::SSL::SSLError, Net::ProtocolError, Net::HTTPBadResponse
+    rescue *NETWORK_ERRORS
+      openrouter_io_failure(result)
+    end
+
+    def fetch_openrouter(prompt)
+      OpenrouterReview.request(prompt, model: @options[:model], effort: @options[:effort],
+                                       timeout: @options.fetch(:timeout_seconds))
+    end
+
+    def openrouter_io_failure(result)
+      return outcome('OpenRouter response received; local evidence write failed', 'evidence_write', true) if result
+
       failure('OpenRouter network/TLS request failed; no retry')
     end
 

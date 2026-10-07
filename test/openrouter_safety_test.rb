@@ -8,6 +8,19 @@ require 'shaka/doctor/cli_inventory'
 class OpenrouterSafetyTest < Minitest::Test
   include OpenrouterFixture
 
+  def test_report_write_failure_keeps_usage_and_names_local_evidence_failure
+    with_adapter do |cli, options, _report|
+      with_request(->(*) { completion }) do
+        replacing_method(File, :write, ->(*) { raise Errno::ENOSPC }) do
+          result = cli.run('diff')
+          assert_equal 'evidence_write', result.fetch('failure_stage')
+          assert_includes result.fetch('reason'), 'response received'
+          assert File.size?(options.fetch(:usage))
+        end
+      end
+    end
+  end
+
   def test_invalid_prompt_bytes_fail_before_transport
     with_adapter do |cli, _options, _report|
       result = cli.run("\xff".b.force_encoding('UTF-8'))
