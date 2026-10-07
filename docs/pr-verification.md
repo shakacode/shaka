@@ -61,6 +61,26 @@ result.” Details can hold commands, tested commits, and a recording of the men
 Shaka uses your existing tests and validation commands, plus browser tools when
 needed. Required GitHub checks and approvals still apply.
 
+## Publish work while a base repair is pending
+
+A failure already present on the trusted base can leave unrelated work blocked.
+For example, a dependency advisory may fail the same security check on both the
+base and a task branch that never changed that dependency.
+
+Shaka can publish that work as a **blocked draft** after reproducing the same
+failure on an immutable base and confirming the task leaves affected inputs
+unchanged. The PR names the failed check, comparison evidence, separate repair
+issue, and next action. Independent review still happens before push. The agent
+performs this comparison; Ruby does not prove it.
+
+The draft stays blocked until the repair lands or a maintainer explicitly accepts
+the documented local failure for that task. Acceptance does not waive security or
+trust failures, required GitHub or seam merge checks, or protection. In the advisory
+example, the security gate still needs a repair. Failed validation stays failed;
+it is never reported as passing. Missing readiness evidence remains UNKNOWN.
+
+For agent instructions, see the [base-failure procedure](../skills/shaka/references/base-validation-failure.md).
+
 ## Reconsider the finished result
 
 Before calling a change ready to merge, Shaka asks whether the result solves the
