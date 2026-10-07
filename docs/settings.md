@@ -277,7 +277,7 @@ retry or model substitution, and reject malformed, truncated or unattested outpu
 Existing reviewers and merge preferences remain unchanged.
 
 OpenRouter's response records token counts and account cost; missing usage stays
-UNKNOWN. See [API review execution and accounting](../skills/shaka/references/local-review.md#deepseek-via-openrouter).
+UNKNOWN. See [API review execution and accounting](../skills/shaka/references/openrouter.md).
 
 Choose a `model` available to that reviewer. The CLI example names above are
 examples, not a closed list: newer names can run with a warning. Model names
