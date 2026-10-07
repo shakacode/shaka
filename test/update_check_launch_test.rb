@@ -44,7 +44,23 @@ class UpdateCheckLaunchTest < Minitest::Test
     end
   end
 
+  def test_unknown_git_boundary_does_not_launch_a_sibling_candidate_cli
+    Dir.mktmpdir('shaka-update-launch') do |directory|
+      root, trusted, marker = prepare_wrapper(directory)
+      File.delete(File.join(root, '.git'))
+      write_executable(File.join(root, 'bin/gh'), "#!/bin/sh\nprintf ran > '#{marker}'\nprintf '{}'\n")
+      with_path("#{root}/bin:#{trusted}:#{ENV.fetch('PATH')}") do
+        Dir.chdir(File.join(root, 'src')) { assert_no_launch(marker) }
+      end
+    end
+  end
+
   private
+
+  def assert_no_launch(marker)
+    assert_equal ['', '', false], Shaka::UpdateCheck::Launch.capture(%w[gh api], Dir.tmpdir)
+    refute_path_exists marker
+  end
 
   def prepare_nested_repository(root)
     nested = File.join(root, 'vendor/sub')
