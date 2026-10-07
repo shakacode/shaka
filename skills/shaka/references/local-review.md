@@ -250,6 +250,12 @@ A local review is **UNVERIFIED** until the owner publishes its report, including
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
 tests, then publishes the review after pushing.
 
+## Recover from host denial before launch
+
+If the host denies `shaka review run` before launch, follow
+[host-denied review recovery](host-denied-review.md). Read that procedure only for
+this outcome; it covers permitted retries, honest not-run evidence, and a synthetic replay.
+
 ## Run the review loop with a ledger
 
 Keep every round in one ledger, a JSON file outside the checkout, for example
