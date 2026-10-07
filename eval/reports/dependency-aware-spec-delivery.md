@@ -123,15 +123,15 @@ This section is a proposal. Each field marked "needs authorization" is the maint
 
 | Field | Value |
 | --- | --- |
-| Hypothesis | With three tickets, reading dependencies and checking overlap first reduces elapsed time or maintainer attention without more integration failures |
-| Baseline arm | Shaka at the pinned baseline, one owner, no delegation, three sequential PRs |
+| Hypothesis | With three tickets and the same authorized workers, reading dependencies and checking overlap first reduces integration failures, repair work, or maintainer attention |
+| Baseline arm | Shaka at the pinned baseline, with the same delegation authorized and no rule for choosing which tickets run together |
 | Candidate arm | The same revision plus the adaptation, pinned as one commit |
 | Held equal | Seed, tickets, prompt, model, effort, review criteria, Ask merge preference, time and cost limits |
 | Task | The three fixture tickets; needs authorization |
 | Model and effort | Needs authorization |
 | Budget and time limit | Needs authorization. Three PRs with hosted checks will not fit the one-hour default |
 | Isolation | Needs authorization. The method follows [the evaluation guide](../../contributing/evaluating-changes.md#simple-default-one-matched-pair) |
-| Delegated work | Needs authorization: up to two workers in the candidate arm, none in the baseline |
+| Delegated work | Needs authorization: up to two workers in each arm |
 
 An arm passes only if all of these hold:
 
@@ -143,7 +143,11 @@ An arm passes only if all of these hold:
 
 Record for each arm: where the collision was caught (worker, owner, reviewer, hosted
 check, or after merge), integration failures, repair work, total usage, elapsed time, and
-maintainer attention. Keep failed attempts. A combined branch is not an arm. If one is
+maintainer attention. Keep failed attempts.
+
+Both arms get the same workers, so a difference cannot come from delegation alone. A solo
+run with no delegation would show what delegation itself costs or saves. That is a
+separate question and a separate authorization. A combined branch is not an arm. If one is
 built for comparison, report its files, lines, and commits against the trusted limits and
 do not merge it.
 
@@ -189,5 +193,6 @@ do not merge it.
   combined branch would exceed them.
 - The frequency count covers this repository's native relationships only. Dependencies
   written as prose in issue bodies were not counted, and other projects are UNKNOWN.
-- The fixture is public. Once an arm has solved it, a later agent can read that solution.
+- The fixture is public. Once an arm has solved it, a later agent can read that solution,
+  so it supports one matched pair. Its `reusable_for_measured_cases: false` records that.
 - Passing this synthetic case would not establish an improvement for real users.
