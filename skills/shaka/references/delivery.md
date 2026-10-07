@@ -317,6 +317,7 @@ before the step that needs it, and say where a reviewer should look hardest.
 Explain unfamiliar terms on first use. Distinguish mechanical moves and generated
 output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
+State each risk and rollback as the [writing guidance](writing.md) describes.
 Cover the change completely, then stop.
 
 ### Connect a technical fix to its evidence
@@ -342,11 +343,16 @@ or accept it; technical confidence does not grant merge consent. Scale detail to
   four sentences, and keep most sentences under 25 words.
 - Use a list for parallel items, such as the guarantees a guard provides: one
   per bullet, each linked to its code. Keep reasoning in prose.
-- Add one small diagram when control passes through three or more components,
+- Add one small visual when control passes through three or more components,
   or when a state can move to more than one next state. Even then, skip it
-  when one sentence can state the sequence. GitHub renders a `mermaid` code block in a
-  review. Keep it to about ten nodes, label each edge with the action, and let
-  the prose carry the explanation.
+  when one sentence can state the sequence. Use an indented call tree in a
+  `text` code block for who calls whom, or a `mermaid` code block, which GitHub
+  renders in a review, for branches and states. Show observable behavior or an
+  ownership boundary, name only code present at this head, and place it beside
+  the step it supports. Keep it to about ten nodes, label each edge with the
+  action, and let the prose carry the explanation. A visual explains; the
+  validation results remain the evidence. The public guide has
+  [an example of each case](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md#when-a-diagram-helps).
 - Report validation as what it proves at this head: the behavior covered, the
   command, and its result. State each count once, and leave results from
   earlier heads to the description's review history.

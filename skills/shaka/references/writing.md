@@ -21,6 +21,13 @@ For example, replace “Adds validation of the configured base parameter” with
 “Shaka now rejects an invalid base branch before the agent starts work.” A code
 walkthrough can then explain the validation and its edge cases.
 
+State a risk as who or what is affected and what they would see fail: “API
+clients get a 500 until the cache warms,” not “medium blast radius.” State a
+rollback as what reverting the commit restores and what it leaves behind. A
+revert restores code. It does not restore deleted or rewritten data, or recall
+sent email, charges, published packages, or other effects outside the
+repository; name any the change causes and how to recover from them.
+
 When trusted `AGENTS.md` exists, read its repository writing preferences and any
 Markdown style file it explicitly points to. Use the guidance above in every
 repository; current task instructions can refine it. No style schema or prose

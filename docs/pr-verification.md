@@ -61,6 +61,48 @@ result.” Details can hold commands, tested commits, and a recording of the men
 Shaka uses your existing tests and validation commands, plus browser tools when
 needed. Required GitHub checks and approvals still apply.
 
+## When a diagram helps
+
+A walkthrough may include one small diagram when a change crosses several
+components or adds a branch. It sits beside the step it explains and names code
+you can find in the reviewed commit. For example, a PR that stops duplicate
+refunds might show where the new check runs and which component refuses:
+
+```text
+POST /refunds
+└── RefundsController#create
+    ├── RefundPolicy.check      refuses a second refund for the same order (new)
+    └── PaymentGateway.refund   reached only after the policy passes
+```
+
+The tree shows that the refusal happens before the gateway call, which is the
+point a reviewer most needs to confirm. A flowchart suits a change with several
+outcomes or states.
+
+A smaller change reads better as a sentence: “`RefundPolicy.check` now also
+rejects refunds larger than the original charge.” No diagram is added, because
+nothing about the order of calls changed.
+
+A diagram explains the change; it is not evidence that the change works. The
+before and after results still come from running the tested commit. Diagrams are
+optional, and Shaka does not check that one matches the code.
+
+## What a rollback undoes
+
+A walkthrough names who a failure would reach and what they would see, such as
+“customers with a pending refund see the old amount until the job reruns.” It
+also separates reverting the code from undoing what the code already did:
+
+- **Reversible:** “Reverting this commit restores the previous refund limit.
+  No stored data changes, so nothing else needs repair.”
+- **Not undone by a revert:** “This change emails each customer when a refund is
+  issued. Reverting stops new emails; messages already sent cannot be recalled,
+  and refunds already issued stay issued.”
+
+When a change rewrites or deletes stored data, expect the walkthrough to say how
+that data is restored, or that it cannot be. Use this to decide how much review
+and staging the change needs before it merges.
+
 ## Publish work while a base repair is pending
 
 A failure already present on the trusted base can leave unrelated work blocked.
