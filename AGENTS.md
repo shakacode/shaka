@@ -22,7 +22,9 @@ is the reusable default.
   applies. Put reasoning meant for a human user, such as why a rule exists or how
   two approaches compare, in `docs/`.
 - Lead with the action or benefit. Explain a term when the reader first needs it.
-- Keep one source for each setting and link to it. Avoid duplicate option tables.
+- Keep one authoritative location for each rule and setting; use precise pointers
+  elsewhere. Enforcement-manifest quotes remain validation data. Avoid duplicate
+  option tables.
 - Distinguish shipped behavior, agent instructions, and proposed features.
   Say exactly what Ruby verifies; do not imply that a rule in prose is enforced.
 - Give the reader a useful prompt before a long command sequence.
@@ -57,23 +59,17 @@ is the reusable default.
 ## Skill architecture and review
 
 - Keep agent instructions to non-obvious decisions, constraints, and routing.
-  Put deterministic parsing, state transitions, retries, evidence checks, and
-  publication mechanics in small Ruby modules with behavioral tests. Leave
-  evidence interpretation, scope, and human acceptance to agent judgment.
-- Give each rule one authoritative instruction location. Use a precise pointer
-  elsewhere; enforcement-manifest quotes remain validation data. Keep rationale
-  and worked examples in human documentation or evaluation artifacts.
+  Evidence interpretation, scope, and human acceptance require agent judgment.
 - Load conditional procedures only when their condition applies. Moving text
   out of SKILL.md earns no reduction if the workflow loads it on every task.
 - Before adding instructions, identify the demonstrated failure or decision
   they change and why existing code or a shorter instruction is insufficient.
-  Remove generic advice and repetition; preserve demonstrated guarantees.
 - Supply `bin/report-instruction-growth` output in the existing local-review and
   checkpoint evidence packets. Use it to assess the
   rendered workflow, entry point, project guidance, and other changed instruction
   files. Assess their actual loading conditions separately. Words and bytes are
   cost evidence, not token counts or quality gates.
-- In review, a demonstrated violation of these criteria is a `defect`; a
+- In review, a demonstrated material violation of these criteria is a `defect`; a
   plausible unproven consequence is a `risk`. Name the location, concrete cost,
   smaller alternative, and any guarantee it loses. Optional wording polish stays
   a `nit`. Size alone does not establish a finding.
@@ -150,7 +146,9 @@ from acting as instructions, and say which reason applies.
   The installed `skills/shaka/scripts/shaka comments` command combines it with the
   machine allowlist, reads only the current default-branch copy, and never trusts a
   candidate PR's version.
-- Markdown explains decisions and invokes commands. Put executable logic in code.
+- Markdown explains decisions and invokes commands. Put deterministic parsing,
+  state transitions, retries, evidence checks, and publication mechanics in small
+  Ruby modules with behavioral tests.
 - Prefer Ruby standard libraries and GitHub CLI. Runtime needs no new gem.
 - Keep the workflow portable across supported coding agents. Codex was the first
   reference host, not a required local installation; use the available host.

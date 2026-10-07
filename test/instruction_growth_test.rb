@@ -78,11 +78,7 @@ class InstructionGrowthTest < Minitest::Test
   def test_missing_baseline_is_unknown_rather_than_zero_growth
     with_repository do |root|
       result = report(root, 'missing')
-      assert_nil result['baseline']
-      result['entry_workflow_guidance'].each do |row|
-        assert_nil row['before']
-        assert_nil row['delta']
-      end
+      assert_unknown result
       assert_equal 3, result['entry_workflow_guidance'].first['after']['words']
     end
   end
@@ -97,17 +93,30 @@ class InstructionGrowthTest < Minitest::Test
 
   def test_incompatible_baseline_is_unknown_after_current_schema_is_fixed
     with_repository do |root|
-      incompatible_baseline(root)
-      result = report(root)
-      assert_nil result['baseline']
-      assert_nil result['entry_workflow_guidance'][1]['delta']
-      assert_operator result['entry_workflow_guidance'][1]['after']['words'], :>, 40
+      write(root, 'skills/shaka/config/workflow.yml', YAML.dump(workflow_data.merge('legacy_key' => true)))
+      commit(root)
+      write(root, 'skills/shaka/config/workflow.yml', YAML.dump(workflow_data))
+      assert_unknown report(root)
     end
   end
 
-  def incompatible_baseline(root)
-    write(root, 'skills/shaka/config/workflow.yml', YAML.dump(workflow_data.merge('legacy_key' => true)))
-    commit(root)
-    write(root, 'skills/shaka/config/workflow.yml', YAML.dump(workflow_data))
+  def test_invalid_utf8_baseline_keeps_current_counts_with_unknown_comparison
+    with_repository do |root|
+      write(root, 'skills/shaka/references/conditional.md', "\xFF".b)
+      commit(root)
+      write(root, 'skills/shaka/references/conditional.md', 'Conditional detail.')
+      result = report(root)
+      assert_unknown result
+      assert_match 'UTF-8', result['baseline_error']
+    end
+  end
+
+  def assert_unknown(result)
+    assert_nil result['baseline']
+    assert_empty result['other_changed_files']
+    result['entry_workflow_guidance'].each do |row|
+      assert_equal [nil, nil], row.values_at('before', 'delta')
+    end
+    assert_operator result['entry_workflow_guidance'][1]['after']['words'], :>, 40
   end
 end

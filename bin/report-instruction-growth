@@ -35,6 +35,8 @@ class InstructionGrowth
   def core_paths = [ENTRY, WORKFLOW, 'AGENTS.md']
 
   def changed_files(previous, current)
+    return [] unless @baseline
+
     ((current.keys | previous.keys) - core_paths).sort.filter_map do |path|
       row(path, previous[path], current[path]) unless previous[path] == current[path]
     end
@@ -84,6 +86,9 @@ class InstructionGrowth
     raise Shaka::Error, 'Cannot read the instruction baseline' unless status.success?
 
     output.force_encoding(Encoding::UTF_8)
+    raise Shaka::Error, 'Instruction baseline is not valid UTF-8' unless output.valid_encoding?
+
+    output
   end
 end
 
