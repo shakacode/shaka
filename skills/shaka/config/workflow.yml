@@ -325,7 +325,11 @@ phases:
         refusal, without the user's choice. Show current provider pricing for paid alternatives.
         Diagnose timeouts before proposing a retry; a longer timeout is not a model choice.
         Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
-        failure is not availability evidence, even when `attempted` is true. It returns `different_provider`,
+        failure is not availability evidence, even when `attempted` is true. A host denial before
+        helper launch is not a CLI attempt or permission to bypass the host; do not mark a reviewer
+        unavailable from that denial. Follow the [host-denial recovery checklist](<{{package_root}}/skills/shaka/references/host-denied-review.md>)
+        for permitted native retry or an already-authorized independent alternative; otherwise
+        retain `review check --not-run-reason` evidence and report review blocked. It returns `different_provider`,
         `same_provider`, or `same_model`, with a note to copy into the record, and a `reviewers`
         list in run order. None is an error:
         when all listed paths fail, start a new host chat with the implementation model and no
@@ -513,7 +517,7 @@ phases:
         resolve OWNER/REPO NUMBER --thread THREAD_ID
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         attention OWNER/REPO NUMBER --state answer|merge|resume|none
-        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] --root DIR --ref SHA
+        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA --squash-message PATH [--ci-review-wait MODE] [--limits-confirmed-head SHA]
@@ -693,6 +697,14 @@ phases:
         Publish the head-bound conclusion and reasoning in the final walkthrough or a dedicated
         PR comment: Proceed, Simplify/reframe, or Do not merge. Revisit it after changes that
         affect the result or its cost; an earlier conclusion is not evidence for a different approach.
+        After verification, supply the task owner's head-bound `disposition` in the checkpoint
+        publication: Merge, Revise before merge, Reconsider approach, or Do not merge,
+        with a reason and concrete next action. Judge the finished PR against the original
+        outcome; successful verification alone does not choose its disposition.
+        A Merge recommendation grants no merge authority. Every other disposition blocks
+        readiness and follows the existing repair or maintainer decision path; do not close
+        the PR automatically. Results without this field retain conclusion-based publication;
+        the agent supplies it for every completed implementation.
         Substantive unresolved concerns block merge readiness and Auto; do not submit a merge
         while they remain. Repair or reframe within authorized scope, then repeat affected
         validation and review; a changed goal or disputed value needs a maintainer decision.
@@ -829,6 +841,16 @@ always: |-
   `--state resume` and make WIP Details `Next action` the resume prompt: the host's Shaka
   invocation with the PR URL, such as `$shaka https://github.com/OWNER/REPO/pull/N` in Codex or
   `/shaka https://github.com/OWNER/REPO/pull/N` in Claude Code.
+
+  Before promising automatic follow-up in Codex, follow the
+  [native wake boundary](<{{package_root}}/skills/shaka/references/codex-wake.md>).
+  Do not infer a native Codex wake from SHAKA_WAKE or process completion.
+  Codex `--woken-by` handoffs require `--codex-wake PATH` with successful native
+  heartbeat registration and matching same-chat readback for the exact PR/head.
+  Ruby checks supplied registration fields and schedule bounds, not scheduler execution
+  or live resumption. Record the registration ID, expiry, manual owner, and resume prompt;
+  claim observed resumption only after a native-started turn is recorded. Without available,
+  authorized, successful registration, use the named manual handoff.
 
   For pending required checks and configured CI review jobs, use the host's PR monitor when it
   wakes on their completion. Otherwise,

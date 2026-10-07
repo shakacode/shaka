@@ -246,14 +246,16 @@ Use these provider and family pairs for Shaka's supported local reviewers:
 | Grok | `xai` | `grok` | `low`, `medium`, `high` |
 | DeepSeek via OpenRouter API | `deepseek` | `openrouter` | `low`, `high`, `max` |
 
-DeepSeek is opt-in. Add this entry to your trusted reviewer list only when you
-want Shaka to send the review prompt and diff to OpenRouter:
+DeepSeek is an experimental, supplemental reviewer. Add this entry to your trusted
+reviewer list when you want Shaka to send the prompt and diff to OpenRouter and
+its selected upstream provider. Start with low effort; high-effort trials on a
+large diff sometimes consumed the completion budget without returning a report.
 
 ```yaml
 - provider: deepseek
   model_family: openrouter
   model: deepseek/deepseek-v4.1-flash
-  effort: high
+  effort: low
 ```
 
 Set `OPENROUTER_API_KEY` in the review process environment; keep it out of repository
@@ -261,6 +263,12 @@ files. No separate reviewer CLI is needed. The adapter supports only this explic
 [OpenRouter model](https://openrouter.ai/deepseek/deepseek-v4.1-flash); it refuses other
 models and unsupported effort values before sending a request. Omitted effort uses
 the provider default and remains UNKNOWN in Shaka's attestation.
+
+Account settings govern provider routing and data policies. Shaka does not enforce
+a provider allowlist or zero data retention. Before using private code, confirm
+that your account's provider and privacy policies permit every possible recipient.
+Keep your existing review checks while evaluating this optional reviewer; quality,
+completion and savings remain unproved across workloads.
 
 This reviewer receives the supplied diff and trusted criteria, with no tools or
 filesystem access. It cannot inspect unchanged callers or execute tests. Reports

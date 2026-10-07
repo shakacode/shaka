@@ -71,10 +71,18 @@ The existing trusted reviewer configuration can name this opt-in adapter; do not
 change another user's configured reviewers automatically. The exact model and
 supported efforts (`low`, `high`, `max`) were checked against
 [OpenRouter's model metadata](https://openrouter.ai/api/v1/models) on 2026-10-07.
+Treat this adapter as an experimental, supplemental reviewer. Start with `low`;
+paid high-effort trials on a large diff returned both useful reports and incomplete
+outcomes. Completion, review quality and savings are not guaranteed.
+
+OpenRouter routes requests to upstream providers. The adapter leaves routing and
+data policies to the account's settings; it does not enforce a provider allowlist
+or zero data retention. Before sending private code, confirm that the account's
+provider and privacy policies authorize every possible recipient.
 
 ```sh
 shaka review run --root DIR --base BASE_SHA --head HEAD_SHA \
-  --reviewer deepseek/openrouter --model deepseek/deepseek-v4.1-flash --effort high \
+  --reviewer deepseek/openrouter --model deepseek/deepseek-v4.1-flash --effort low \
   --criteria-ref TRUSTED_SHA --settings-ref TRUSTED_SHA --repository OWNER/REPO \
   --ledger OUTSIDE_CHECKOUT.json
 ```
@@ -299,6 +307,12 @@ before relying on any of these; flags move.
 A local review is **UNVERIFIED** until the owner publishes its report, including that closing
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
 tests, then publishes the review after pushing.
+
+## Recover from host denial before launch
+
+If the host denies `shaka review run` before launch, follow
+[host-denied review recovery](host-denied-review.md). Read that procedure only for
+this outcome; it covers permitted retries, honest not-run evidence, and a synthetic replay.
 
 ## Run the review loop with a ledger
 
