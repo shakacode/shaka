@@ -54,6 +54,32 @@ is the reusable default.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;
   for a new branch start from the freshly fetched base. Do not reset others' work.
 
+## Skill architecture and review
+
+- Keep agent instructions to non-obvious decisions, constraints, and routing.
+  Put deterministic parsing, state transitions, retries, evidence checks, and
+  publication mechanics in small Ruby modules with behavioral tests. Leave
+  evidence interpretation, scope, and human acceptance to agent judgment.
+- Give each rule one authoritative instruction location. Use a precise pointer
+  elsewhere; enforcement-manifest quotes remain validation data. Keep rationale
+  and worked examples in human documentation or evaluation artifacts.
+- Load conditional procedures only when their condition applies. Moving text
+  out of SKILL.md earns no reduction if the workflow loads it on every task.
+- Before adding instructions, identify the demonstrated failure or decision
+  they change and why existing code or a shorter instruction is insufficient.
+  Remove generic advice and repetition; preserve demonstrated guarantees.
+- Use `bin/report-instruction-growth` output from validation to assess the
+  rendered workflow, entry point, project guidance, and changed conditional
+  resources. Words and bytes are cost evidence, not token counts or quality gates.
+- In review, a demonstrated violation of these criteria is a `defect`; a
+  plausible unproven consequence is a `risk`. Name the location, concrete cost,
+  smaller alternative, and any guarantee it loses. Optional wording polish stays
+  a `nit`. Size alone does not establish a finding.
+- Carry substantive instruction concerns into the existing finished-result
+  checkpoint and owner disposition. Recommend revision or reconsideration until
+  they are fixed, disproved, or explicitly accepted by the maintainer; recording
+  them as documented or passing tests does not settle them.
+
 ## Is the change worth carrying?
 
 For Shaka changes, use the existing [value checkpoint](skills/shaka/references/delivery.md#say-what-the-work-is-worth)
