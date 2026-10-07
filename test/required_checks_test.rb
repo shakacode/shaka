@@ -36,6 +36,24 @@ class RequiredChecksTest < Minitest::Test
     end
   end
 
+  def test_configured_native_requirements_use_reported_head_results
+    %w[SUCCESS FAILURE IN_PROGRESS].zip(%w[pass fail pending]).each do |state, bucket|
+      check = PASS.merge('state' => state, 'bucket' => bucket)
+      result = Shaka::RequiredChecks.new(Client.new([], [check], ['checks']), seam_names: ['other']).call
+
+      assert_equal({ 'source' => 'github', 'checks' => [check] }, result)
+    end
+  end
+
+  def test_configured_native_requirements_preserve_duplicate_results_and_missing_checks
+    failed = PASS.merge('state' => 'FAILURE', 'bucket' => 'fail')
+    unrelated = PASS.merge('name' => 'optional')
+    result = Shaka::RequiredChecks.new(Client.new([], [PASS, failed, unrelated], %w[checks validate])).call
+
+    missing = { 'name' => 'validate', 'state' => 'MISSING', 'bucket' => 'missing' }
+    assert_equal({ 'source' => 'github', 'checks' => [PASS, failed, missing] }, result)
+  end
+
   def test_a_seam_check_absent_from_the_head_is_reported_missing
     result = Shaka::RequiredChecks.new(Client.new([], [PASS]), seam_names: %w[checks deploy-preview]).call
 
