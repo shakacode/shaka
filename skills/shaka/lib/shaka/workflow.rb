@@ -34,6 +34,15 @@ module Shaka
       0
     end
 
+    # Development reports use the same renderer as the agent's workflow command.
+    def render(config)
+      sections = config.fetch('phases').each_with_index.map { |phase, index| render_phase(phase, index + 1) }
+      ["# #{config.fetch('title')}", expand(config.fetch('purpose')),
+       "Workflow source: `#{WorkflowConfig::PATH}`", *sections,
+       "## Always\n\n#{expand(config.fetch('always')).strip}",
+       "## Code quality\n\n#{expand(config.fetch('code_quality')).strip}"].join("\n\n")
+    end
+
     private
 
     def option_parser
@@ -46,14 +55,6 @@ module Shaka
     def help(parser)
       puts parser
       0
-    end
-
-    def render(config)
-      sections = config.fetch('phases').each_with_index.map { |phase, index| render_phase(phase, index + 1) }
-      ["# #{config.fetch('title')}", expand(config.fetch('purpose')),
-       "Workflow source: `#{WorkflowConfig::PATH}`", *sections,
-       "## Always\n\n#{expand(config.fetch('always')).strip}",
-       "## Code quality\n\n#{expand(config.fetch('code_quality')).strip}"].join("\n\n")
     end
 
     def render_phase(phase, number)

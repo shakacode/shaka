@@ -316,6 +316,16 @@ output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
 Cover the change completely, then stop.
 
+### Connect a technical fix to its evidence
+
+For technical fixes, connect the triggering failure and observed cause (label inference)
+to before/after regression evidence, the boundary exercised, affected callers, and residual
+risk. Name tested revisions, runtime, omissions, and any next check that would change your
+judgment. Keep the head-bound assessment in the description's existing validation/risk
+summary; reuse a linked agent-authored assessment covering these points, preserve reviewer
+reports, and refresh when material evidence changes. Documenting a risk does not resolve
+or accept it; technical confidence does not grant merge consent. Scale detail to the change.
+
 ### Keep a walkthrough readable
 
 - Link each step to the lines it explains with a commit-pinned permalink to a
