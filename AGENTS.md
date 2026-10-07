@@ -68,9 +68,11 @@ is the reusable default.
 - Before adding instructions, identify the demonstrated failure or decision
   they change and why existing code or a shorter instruction is insufficient.
   Remove generic advice and repetition; preserve demonstrated guarantees.
-- Use `bin/report-instruction-growth` output from validation to assess the
-  rendered workflow, entry point, project guidance, and changed conditional
-  resources. Words and bytes are cost evidence, not token counts or quality gates.
+- Supply `bin/report-instruction-growth` output in the existing local-review and
+  checkpoint evidence packets. Use it to assess the
+  rendered workflow, entry point, project guidance, and other changed instruction
+  files. Assess their actual loading conditions separately. Words and bytes are
+  cost evidence, not token counts or quality gates.
 - In review, a demonstrated violation of these criteria is a `defect`; a
   plausible unproven consequence is a `risk`. Name the location, concrete cost,
   smaller alternative, and any guarantee it loses. Optional wording polish stays

@@ -16,13 +16,13 @@ review:
     - claude-review
   ci_review_wait: one # Default: wait for one configured hosted review report.
   local_max_rounds: 5 # Default: maximum committed heads in one local review ledger.
-  prompt_file: .agents/shaka/review-prompt.md # Project criteria; replaces the packaged editorial prompt.
+  prompt_file: .agents/shaka/review-prompt.md # Project choice; omitted: skills/shaka/config/review-prompt.md.
   post_implementation: # Explicit defaults for the finished-result checkpoint.
     enabled: true
     reviewer: openai/codex
     model: gpt-6.1-sol
     effort: medium
-    prompt_file: .agents/shaka/product-checkpoint.md # Project rubric; replaces the packaged prompt.
+    prompt_file: .agents/shaka/product-checkpoint.md # Project choice; omitted: Shaka's packaged prompt.
   local_review_agents: # Repository preference order; omitted: fresh implementation-model review.
     - provider: anthropic
       model_family: claude

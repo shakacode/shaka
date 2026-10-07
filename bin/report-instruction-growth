@@ -15,7 +15,7 @@ class InstructionGrowth
 
   def initialize(root:, base:)
     @root = root
-    @baseline, status = Open3.capture2e('git', '-C', root, 'merge-base', base, 'HEAD')
+    @baseline, _error, status = Open3.capture3('git', '-C', root, 'merge-base', base, 'HEAD')
     @baseline = status.success? ? @baseline.strip : nil
   end
 
@@ -23,18 +23,19 @@ class InstructionGrowth
     current = current_texts
     previous = baseline_texts
     { 'baseline' => @baseline,
+      'baseline_error' => @baseline_error,
       'measurement' => 'Words and UTF-8 bytes; both workflows use the current renderer with normalized paths. ' \
-                       'On-demand files are separate; these counts do not measure tokens or instruction quality.',
-      'startup' => startup.map { |path| row(path, previous[path], current[path]) },
-      'changed_on_demand' => changed_on_demand(previous, current) }
+                       'File categories do not establish loading frequency, tokens, or instruction quality.',
+      'entry_workflow_guidance' => core_paths.map { |path| row(path, previous[path], current[path]) },
+      'other_changed_files' => changed_files(previous, current) }
   end
 
   private
 
-  def startup = [ENTRY, WORKFLOW, 'AGENTS.md']
+  def core_paths = [ENTRY, WORKFLOW, 'AGENTS.md']
 
-  def changed_on_demand(previous, current)
-    ((current.keys | previous.keys) - startup).sort.filter_map do |path|
+  def changed_files(previous, current)
+    ((current.keys | previous.keys) - core_paths).sort.filter_map do |path|
       row(path, previous[path], current[path]) unless previous[path] == current[path]
     end
   end
@@ -50,12 +51,19 @@ class InstructionGrowth
   def baseline_texts
     return {} unless @baseline
 
-    paths = git('ls-tree', '-r', '--name-only', '-z', @baseline).split("\0").select do |path|
-      PATTERNS.any? { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) } || path == WORKFLOW
-    end
-    paths.to_h do |path|
+    baseline_paths.to_h do |path|
       text = git('show', "#{@baseline}:#{path}")
       [path, path == WORKFLOW ? rendered(text) : text]
+    end
+  rescue Shaka::Error => e
+    @baseline_error = e.message
+    @baseline = nil
+    {}
+  end
+
+  def baseline_paths
+    git('ls-tree', '-r', '--name-only', '-z', @baseline).split("\0").select do |path|
+      PATTERNS.any? { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) } || path == WORKFLOW
     end
   end
 
@@ -72,7 +80,7 @@ class InstructionGrowth
   end
 
   def git(*)
-    output, status = Open3.capture2e('git', '-C', @root, *)
+    output, _error, status = Open3.capture3('git', '-C', @root, *)
     raise Shaka::Error, 'Cannot read the instruction baseline' unless status.success?
 
     output.force_encoding(Encoding::UTF_8)

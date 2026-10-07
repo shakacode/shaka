@@ -35,12 +35,15 @@ class ValidateWorkflowTest < Minitest::Test
     assert_equal 0, step_using('actions/checkout@').dig('with', 'fetch-depth')
   end
 
-  def test_detector_selects_the_base_for_each_event_type
-    base = @steps.find { |step| step['id'] == 'changes' }.dig('env', 'SHAKA_BASE_REF')
-
-    assert_includes base, "github.event_name == 'pull_request' && github.event.pull_request.base.sha"
-    assert_includes base, "github.event_name == 'merge_group' && github.event.merge_group.base_sha"
-    assert_includes base, 'github.event.before'
+  def test_detector_and_validation_select_the_base_for_each_event_type
+    steps = @steps.select { |step| step['id'] == 'changes' || step['run'] == 'bin/validate' }
+    assert_equal 2, steps.size
+    steps.each do |step|
+      base = effective_environment(step)['SHAKA_BASE_REF']
+      assert_includes base, "github.event_name == 'pull_request' && github.event.pull_request.base.sha"
+      assert_includes base, "github.event_name == 'merge_group' && github.event.merge_group.base_sha"
+      assert_includes base, 'github.event.before'
+    end
   end
 
   def test_detector_uses_the_shared_classifier
@@ -228,6 +231,11 @@ class ValidateWorkflowTest < Minitest::Test
   end
 
   private
+
+  def effective_environment(step)
+    @workflow.fetch('env', {}).merge(@workflow.dig('jobs', 'validate', 'env') || {})
+             .merge(step.fetch('env', {}))
+  end
 
   def step_using(action, steps = @steps)
     steps.find { |step| step['uses']&.start_with?(action) }

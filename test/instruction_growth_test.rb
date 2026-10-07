@@ -23,6 +23,10 @@ class InstructionGrowthTest < Minitest::Test
     write(root, 'skills/shaka/SKILL.md', 'Run the workflow.')
     write(root, 'skills/shaka/config/workflow.yml', YAML.dump(workflow_data))
     write(root, 'skills/shaka/references/conditional.md', 'Conditional detail.')
+    commit(root)
+  end
+
+  def commit(root)
     system(TEST_GIT, '-C', root, 'add', '.') or raise 'git add failed'
     system(TEST_GIT, '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
            'commit', '-qm', 'baseline') or raise 'git commit failed'
@@ -48,19 +52,19 @@ class InstructionGrowthTest < Minitest::Test
     with_repository do |root|
       grow_workflow(root)
       result = report(root)
-      assert_equal([0, 2, 0], result['startup'].map { |row| row['delta']['words'] })
-      assert_operator result['startup'][1]['after']['words'], :>, 40
-      assert_empty result['changed_on_demand']
+      assert_equal([0, 2, 0], result['entry_workflow_guidance'].map { |row| row['delta']['words'] })
+      assert_operator result['entry_workflow_guidance'][1]['after']['words'], :>, 40
+      assert_empty result['other_changed_files']
     end
   end
 
-  def test_conditional_additions_and_deletions_do_not_inflate_startup
+  def test_conditional_additions_and_deletions_do_not_change_core_counts
     with_repository do |root|
       File.delete(File.join(root, 'skills/shaka/references/conditional.md'))
       write(root, '.agents/shaka/review-prompt.md', 'Check actual costs.')
 
       result = report(root)
-      assert_equal([0, 0, 0], result['startup'].map { |row| row['delta']['words'] })
+      assert_equal([0, 0, 0], result['entry_workflow_guidance'].map { |row| row['delta']['words'] })
       changes = conditional_words(result)
       assert_equal(-2, changes['skills/shaka/references/conditional.md'])
       assert_equal 3, changes['.agents/shaka/review-prompt.md']
@@ -68,18 +72,18 @@ class InstructionGrowthTest < Minitest::Test
   end
 
   def conditional_words(result)
-    result['changed_on_demand'].to_h { |row| [row['surface'], row['delta']['words']] }
+    result['other_changed_files'].to_h { |row| [row['surface'], row['delta']['words']] }
   end
 
   def test_missing_baseline_is_unknown_rather_than_zero_growth
     with_repository do |root|
       result = report(root, 'missing')
       assert_nil result['baseline']
-      result['startup'].each do |row|
+      result['entry_workflow_guidance'].each do |row|
         assert_nil row['before']
         assert_nil row['delta']
       end
-      assert_equal 3, result['startup'].first['after']['words']
+      assert_equal 3, result['entry_workflow_guidance'].first['after']['words']
     end
   end
 
@@ -89,5 +93,21 @@ class InstructionGrowthTest < Minitest::Test
       write(root, 'skills/shaka/config/workflow.yml', 'version: broken')
       assert_raises(Shaka::Error) { InstructionGrowth.new(root:, base: 'HEAD').report }
     end
+  end
+
+  def test_incompatible_baseline_is_unknown_after_current_schema_is_fixed
+    with_repository do |root|
+      incompatible_baseline(root)
+      result = report(root)
+      assert_nil result['baseline']
+      assert_nil result['entry_workflow_guidance'][1]['delta']
+      assert_operator result['entry_workflow_guidance'][1]['after']['words'], :>, 40
+    end
+  end
+
+  def incompatible_baseline(root)
+    write(root, 'skills/shaka/config/workflow.yml', YAML.dump(workflow_data.merge('legacy_key' => true)))
+    commit(root)
+    write(root, 'skills/shaka/config/workflow.yml', YAML.dump(workflow_data))
   end
 end
