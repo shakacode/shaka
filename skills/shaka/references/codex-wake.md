@@ -37,13 +37,15 @@ response and readback. Its fields are:
 - `expires_at` and `deadline`: ISO 8601 timestamps with timezone offsets.
 
 Pass `--codex-wake PATH` to `handoff` with `--head SHA`. A Codex invocation
-identified by a nonempty `CODEX_THREAD_ID` without another supported
-host marker refuses `--woken-by` without this packet. It checks
+identified by a nonempty `CODEX_THREAD_ID` refuses `--woken-by` without this packet. It checks
 matching ACTIVE registration/readback, the current chat and PR/head, and a
-finite minute schedule with an explicit UTC end within the supplied expiry/deadline. Renew by
+finite minute schedule with at least one full interval before its explicit UTC
+end, within the supplied expiry/deadline. Renew by
 canceling and creating a new registration, then replace the packet. Creation
 timestamps and count-only rules do not establish the scheduling anchor. Other native
-schedule shapes use manual handoff until their bounds can be checked.
+schedule shapes use manual handoff until their bounds can be checked. Mixed host
+markers require manual attention or an explicit checked Codex packet; they do not
+establish which coding tool owns the chat.
 
 Ruby validates the supplied fields; it does not authenticate the packet, read
 the native scheduler, verify conversational authorization, or prove a later turn

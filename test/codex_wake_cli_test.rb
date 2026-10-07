@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
+require 'shaka/hosts/codex_wake'
 
 class CodexWakeCliTest < Minitest::Test
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
@@ -25,6 +26,7 @@ class CodexWakeCliTest < Minitest::Test
     gh = File.join(directory, 'gh')
     File.write(gh, "#!/bin/sh\necho unexpected-github-read >&2\nexit 99\n")
     File.chmod(0o755, gh)
-    { 'CODEX_THREAD_ID' => THREAD, 'PATH' => "#{directory}:#{ENV.fetch('PATH')}" }
+    foreign = Shaka::CodexWake::OTHER_HOSTS.to_h { |key| [key, nil] }.merge('PI_CODING_AGENT' => nil)
+    foreign.merge('CODEX_THREAD_ID' => THREAD, 'PATH' => "#{directory}:#{ENV.fetch('PATH')}")
   end
 end

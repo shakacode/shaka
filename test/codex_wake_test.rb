@@ -50,6 +50,7 @@ class CodexWakeTest < Minitest::Test
   def test_native_schedule_must_have_a_future_run_before_expiry
     ['FREQ=MINUTELY;INTERVAL=5', 'FREQ=MINUTELY;INTERVAL=5;COUNT=1',
      'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261007T040600Z',
+     'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261007T040400Z',
      'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261007T035900Z',
      'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261307T040400Z',
      'FREQ=MINUTELY;INTERVAL=0;UNTIL=20261007T040400Z'].each do |rrule|
@@ -59,15 +60,15 @@ class CodexWakeTest < Minitest::Test
     end
   end
 
-  def test_other_host_context_and_empty_codex_markers_do_not_require_a_codex_packet
+  def test_empty_codex_markers_allow_manual_handoff_and_mixed_hosts_fail_closed
     assert_nil Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42,
                                       environment: { 'CODEX_THREAD_ID' => '' })
     Shaka::CodexWake::OTHER_HOSTS.each do |marker|
       environment = { 'CODEX_THREAD_ID' => THREAD, marker => 'other-host-session' }
-      assert_nil Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42, environment:)
+      assert_raises(Shaka::Error) { Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42, environment:) }
     end
     environment = { 'CODEX_THREAD_ID' => THREAD, 'PI_CODING_AGENT' => 'true' }
-    assert_nil Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42, environment:)
+    assert_raises(Shaka::Error) { Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42, environment:) }
     assert_nil Shaka::CodexWake.check({ woken_by: 'host monitor' }, 'owner/repo', 42, environment: {})
     assert_nil Shaka::CodexWake.check({}, 'owner/repo', 42, environment: { 'CODEX_THREAD_ID' => THREAD })
   end
@@ -115,6 +116,6 @@ class CodexWakeTest < Minitest::Test
       'expires_at' => '2026-10-07T04:05:00Z', 'deadline' => '2026-10-07T05:28:24Z',
       'registration' => { 'automationId' => 'wake-trial', 'mode' => 'create', 'status' => 'ACTIVE' },
       'readback' => { 'id' => 'wake-trial', 'kind' => 'heartbeat', 'status' => 'ACTIVE',
-                      'target_thread_id' => THREAD, 'rrule' => 'FREQ=MINUTELY;INTERVAL=5;UNTIL=20261007T040400Z' } }
+                      'target_thread_id' => THREAD, 'rrule' => 'FREQ=MINUTELY;INTERVAL=1;UNTIL=20261007T040400Z' } }
   end
 end

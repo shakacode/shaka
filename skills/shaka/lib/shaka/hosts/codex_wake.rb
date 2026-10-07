@@ -8,7 +8,7 @@ module Shaka
   # Checks supplied native registration evidence at the host boundary, never scheduler execution.
   module CodexWake
     THREAD = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
-    SCHEDULE = /\A(?:RRULE:)?FREQ=MINUTELY;INTERVAL=[1-9]\d*;UNTIL=(\d{8}T\d{6}Z)\z/
+    SCHEDULE = /\A(?:RRULE:)?FREQ=MINUTELY;INTERVAL=([1-9]\d*);UNTIL=(\d{8}T\d{6}Z)\z/
     OTHER_HOSTS = %w[CLAUDE_CODE_SESSION_ID CLAUDE_CODE_HOST_SESSION_ID
                      CURSOR_CONVERSATION_ID OPENCODE_SESSION_ID].freeze
 
@@ -17,7 +17,9 @@ module Shaka
     def check(options, repository, number, environment: ENV, now: Time.now)
       path = options[:codex_wake]
       thread = environment['CODEX_THREAD_ID']
-      return unless path || (codex_context?(environment) && options[:woken_by])
+      return unless path || (!thread.to_s.empty? && options[:woken_by])
+
+      check_host_context(environment) unless path
       raise Error, 'Codex automatic handoff requires --codex-wake PATH; otherwise use manual resume.' unless path
 
       packet = JSON.parse(File.read(path, encoding: 'UTF-8'))
@@ -27,9 +29,10 @@ module Shaka
       raise Error, "Codex wake evidence unavailable: #{e.class}; use manual resume."
     end
 
-    def codex_context?(environment)
-      !environment['CODEX_THREAD_ID'].to_s.empty? && environment['PI_CODING_AGENT'] != 'true' &&
-        OTHER_HOSTS.none? { |key| !environment[key].to_s.empty? }
+    def check_host_context(environment)
+      ambiguous = environment['PI_CODING_AGENT'] == 'true' ||
+                  OTHER_HOSTS.any? { |key| !environment[key].to_s.empty? }
+      raise Error, 'Ambiguous coding host; use manual attention or explicit Codex native evidence.' if ambiguous
     end
 
     def validate(packet, thread:, target:, now:)
@@ -67,10 +70,10 @@ module Shaka
 
     def check_expiry(packet, readback, now:)
       expiry = bounded_expiry(packet, now:)
-      schedule_limit = schedule_end(readback)
-      return if now < schedule_limit && schedule_limit <= expiry
+      interval, schedule_limit = schedule_end(readback)
+      return if interval <= schedule_limit - now && schedule_limit <= expiry
 
-      raise Error, 'Codex wake schedule limit is expired or exceeds its expiry.'
+      raise Error, 'Codex wake needs a full interval before its UTC limit, within expiry.'
     end
 
     def bounded_expiry(packet, now:)
@@ -95,10 +98,10 @@ module Shaka
       schedule = readback['rrule'].to_s.match(SCHEDULE)
       raise Error, 'Codex wake readback needs a finite minute schedule with an absolute UTC UNTIL.' unless schedule
 
-      value = Time.strptime(schedule[1], '%Y%m%dT%H%M%S%z').utc
-      raise ArgumentError unless value.strftime('%Y%m%dT%H%M%SZ') == schedule[1]
+      value = Time.strptime(schedule[2], '%Y%m%dT%H%M%S%z').utc
+      raise ArgumentError unless value.strftime('%Y%m%dT%H%M%SZ') == schedule[2]
 
-      value
+      [schedule[1].to_i * 60, value]
     rescue ArgumentError
       raise Error, 'Codex wake readback has an invalid UTC UNTIL.'
     end
