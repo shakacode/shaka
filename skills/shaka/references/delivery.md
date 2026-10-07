@@ -271,9 +271,13 @@ renders its link after the summary, or `_Not published yet._` until it exists.
 Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
 the GitHub Deployments API for the PR head and links the newest successful
 deployment's `environment_url`, the same link GitHub shows as "View deployment";
-it renders nothing when the head has none. Supply a URL yourself only when the
-preview appears solely in a provider comment or CI log. The helper links it beside
-the walkthrough.
+when that API has no live URL, it checks the current head's latest Cloudflare Pages check
+from the Cloudflare GitHub App and extracts its immutable `pages.dev` preview when successful.
+It renders nothing when neither source supplies a URL. Supply a URL yourself when
+another provider exposes the preview solely in a comment or CI log, or to select among
+several preview projects. The helper links
+it beside the walkthrough. Republish after hosted checks and preview builds settle,
+including before an Ask handoff.
 Set the required `steps_besides_merging` field to `none` or a list of work the change
 needs outside its merge, such as a secret to set before merge or a backfill to run after
 it. The helper renders the list as a table under those links, where a maintainer sees it
