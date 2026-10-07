@@ -3,8 +3,7 @@
 require_relative 'test_helper'
 require 'shaka/publication/deployment_link'
 
-# Resolves `deployment: auto` from the GitHub Deployments API, the record behind
-# the "View deployment" button, instead of parsing provider comments.
+# Resolves previews from deployment records or authenticated current-head checks.
 class DeploymentLinkTest < Minitest::Test
   HEAD = 'a' * 40
 
@@ -12,14 +11,25 @@ class DeploymentLinkTest < Minitest::Test
   class RecordedGitHub
     attr_reader :repository, :reads
 
-    def initialize(deployments, statuses)
+    def initialize(deployments, statuses, checks: [])
       @repository = 'owner/repo'
       @deployments = deployments
       @statuses = statuses
+      @checks = checks
       @reads = []
     end
 
     def snapshot = { 'headRefOid' => HEAD }
+
+    def api(path)
+      @reads << path
+      unless path == "repos/owner/repo/commits/#{HEAD}/check-runs?per_page=100"
+        raise Shaka::Error,
+              "Unexpected read: #{path}"
+      end
+
+      { 'total_count' => @checks.size, 'check_runs' => @checks }
+    end
 
     def api_list(path)
       @reads << path
@@ -34,8 +44,66 @@ class DeploymentLinkTest < Minitest::Test
 
   def status(state, url = nil) = { 'state' => state, 'environment_url' => url }
 
-  def resolve(deployments, statuses, deployment: 'auto')
-    Shaka::DeploymentLink.resolve({ 'deployment' => deployment }, RecordedGitHub.new(deployments, statuses))
+  def resolve(deployments, statuses, checks: [], deployment: 'auto')
+    Shaka::DeploymentLink.resolve({ 'deployment' => deployment }, RecordedGitHub.new(deployments, statuses, checks:))
+  end
+
+  def cloudflare_check(id: 1, head: HEAD, conclusion: 'success', app_id: 85_455)
+    { 'id' => id, 'name' => 'Cloudflare Pages', 'head_sha' => head, 'status' => 'completed',
+      'conclusion' => conclusion, 'app' => { 'id' => app_id, 'slug' => 'cloudflare-workers-and-pages' },
+      'output' => { 'summary' => +'<table><tr><td><strong>Preview URL:</strong></td>' \
+                                  "<td><a href='https://72086ad2.example.pages.dev'>Preview</a></td></tr>" \
+                                  '<tr><td><strong>Branch Preview URL:</strong></td>' \
+                                  "<td><a href='https://branch.example.pages.dev'>Branch</a></td></tr></table>" } }
+  end
+
+  def test_auto_finds_the_immutable_cloudflare_preview_when_the_deployments_api_is_empty
+    assert_equal 'https://72086ad2.example.pages.dev', resolve([], {}, checks: [cloudflare_check])['deployment']
+  end
+
+  def test_a_check_name_alone_or_a_stale_commit_cannot_supply_the_preview
+    [cloudflare_check(app_id: 123), cloudflare_check(head: 'b' * 40),
+     cloudflare_check.merge('app' => { 'id' => 85_455, 'slug' => 'other' })].each do |check|
+      assert_equal 'none', resolve([], {}, checks: [check])['deployment']
+    end
+  end
+
+  def test_failed_pending_and_url_less_checks_do_not_supply_a_preview
+    [cloudflare_check(conclusion: 'failure'), cloudflare_check.merge('status' => 'in_progress'),
+     cloudflare_check.merge('output' => { 'summary' => '' })].each do |check|
+      assert_equal 'none', resolve([], {}, checks: [check])['deployment']
+    end
+  end
+
+  def test_the_latest_cloudflare_run_supersedes_an_older_success
+    checks = [cloudflare_check(id: 2, conclusion: 'failure'), cloudflare_check]
+    assert_equal 'none', resolve([], {}, checks:)['deployment']
+  end
+
+  def test_unrelated_branch_and_unsafe_urls_are_not_published
+    ['http://72086ad2.example.pages.dev', 'https://preview.example.com',
+     'https://user:secret@example.pages.dev', 'https://example.pages.dev.evil.test'].each do |url|
+      check = cloudflare_check
+      check['output']['summary'].sub!('https://72086ad2.example.pages.dev', url)
+      assert_equal 'none', resolve([], {}, checks: [check])['deployment']
+    end
+    check = cloudflare_check
+    check['output']['summary'].sub!('Preview URL:', 'Other URL:')
+    assert_equal 'none', resolve([], {}, checks: [check])['deployment']
+  end
+
+  def test_double_quoted_multiline_html_resolves_the_immutable_preview
+    check = cloudflare_check
+    check['output']['summary'].tr!("'", '"')
+    check['output']['summary'].gsub!('><', ">\n<")
+    assert_equal 'https://72086ad2.example.pages.dev', resolve([], {}, checks: [check])['deployment']
+  end
+
+  def test_truncated_check_results_do_not_prove_there_is_no_preview
+    github = RecordedGitHub.new([], {})
+    def github.api(_path) = { 'total_count' => 101, 'check_runs' => [] }
+    error = assert_raises(Shaka::Error) { Shaka::DeploymentLink.resolve({ 'deployment' => 'auto' }, github) }
+    assert_includes error.message, 'Too many check runs'
   end
 
   def test_auto_uses_the_newest_successful_deployment_url_for_the_head

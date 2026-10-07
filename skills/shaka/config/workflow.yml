@@ -492,8 +492,10 @@ phases:
         using `post_implementation` for the published PR comment URL or a named placeholder
         until publication. After publishing the checkpoint, republish the description with that URL.
         Set `deployment` to `auto` to link the newest successful GitHub
-        deployment of the PR head, which reports `none` when there is none; supply an https URL
-        yourself when the preview exists only in a provider comment or CI log, or `none` when the
+        deployment of the PR head, falling back to a successful current-head Cloudflare Pages
+        check from the Cloudflare GitHub App. It reports `none` when neither provides a URL.
+        Supply an https URL yourself when the preview exists only in another provider comment
+        or CI log, or `none` when the
         repository deploys nothing for the change. The helper links it beside the walkthrough.
         It refuses literal escape sequences in prose, mismatched
         table rows, empty required content, and bodies GitHub does not render.
@@ -695,6 +697,11 @@ phases:
         while they remain. Repair or reframe within authorized scope, then repeat affected
         validation and review; a changed goal or disputed value needs a maintainer decision.
         Review-only work keeps its requested stopping point.
+      - After hosted checks and preview builds settle, republish the description before the
+        final handoff, including an Ask handoff. Resolve `deployment: auto` again for the
+        current head; an earlier `none` result does not prove that no preview exists now.
+        When the provider supplies the preview solely in a comment or log, supply its verified
+        current-head URL. Preserve an explicit choice that this repository deploys nothing.
       - Reassess scope and authority for the final head, including the base the PR actually
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Refresh the
