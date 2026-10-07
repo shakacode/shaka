@@ -43,10 +43,19 @@ paths you own, or select a protected location. Preserve file contents and execut
 
 ## Verify and update
 
+The installer prints an update reminder for every host and custom skills directory.
+At the start of a new Shaka chat, the agent runs `update-check` once and relays
+available-update advice. It compares an official installed revision with official
+`main` using GitHub CLI, with a 15-second deadline. It reads no project policy and
+changes no files. Offline or unverifiable results remain unknown and allow work
+to continue. Forks, custom branches, and development copies receive manual advice;
+retained official copies receive migration advice. This does not check RubyGems releases.
+
 Use the registered helper with your chosen path:
 
 ```bash
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
+"$HOME/.agents/shaka/skills/shaka/scripts/shaka" update-check
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --update
 ```
 
@@ -58,8 +67,17 @@ running `bin/install` with Ruby 3.4 or later. Maintenance uses registered select
 change hosts or towers through installation first. A known interrupted update
 completes on the next installation or update run.
 
-Pause active chats before updating this mutable path. Doctor reads recorded identity;
+Finish active Shaka chats before updating this mutable path. Doctor reads recorded identity;
 verification rechecks it. Project settings use [repository migration](migration.md).
+
+## Update reminders
+
+Once at the start of each chat, run the saved helper's `update-check` command.
+For `available`, briefly relay its update guidance while continuing the task.
+For `custom` or `unknown`, explain the reported limit and guidance once.
+Describe unverifiable freshness as unknown. Continue with the saved helper;
+updating is a separate user action. Finish active Shaka chats before updating a
+registered checkout, then start a new chat. Retain packages used by active chats.
 
 ## Migrate retained-copy installations
 
