@@ -96,6 +96,23 @@ rules:
     note: >-
       Nothing detects non-convergence, unexpected breadth, or growing complexity.
       The owner recognizes these signals and reconsiders the approach before another round.
+  - id: post-implementation-disposition
+    phase: finish
+    quote: >-
+      After verification, supply the task owner's head-bound `disposition` in the checkpoint
+      publication: Merge, Revise before merge, Reconsider approach, or Do not merge,
+      with a reason and concrete next action. Judge the finished PR against the original
+      outcome; successful verification alone does not choose its disposition.
+      A Merge recommendation grants no merge authority. Every other disposition blocks
+      readiness and follows the existing repair or maintainer decision path; do not close
+      the PR automatically. Older checkpoint results remain publishable without this field.
+    enforced_by: agent
+    note: >-
+      The owner supplies and judges the disposition. Ruby validates a supplied disposition's
+      vocabulary, head, reason and next action, rejects Merge against blocked verification,
+      and publishes other dispositions through the existing blocked attestation. It does not
+      infer merge authority, evaluate free-form prose, close a PR, or require the optional field
+      on legacy checkpoint results.
   - id: post-implementation-merge-blocker
     phase: finish
     quote: do not submit a merge while they remain

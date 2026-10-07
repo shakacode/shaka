@@ -12,6 +12,11 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | Review | Handle GitHub review findings and required checks |
 | Finish | Merge when authorized, or return the reviewed PR for your merge |
 
+Before shipping, Shaka compares the finished solution with the original goal, then
+recommends **Merge**, **Revise before merge**, **Reconsider approach**, or **Do not merge**.
+A working implementation can still warrant reconsideration. Each recommendation
+includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
+
 `shaka workflow` validates and prints the
 [workflow definition](../skills/shaka/config/workflow.yml). The agent loads
 [skill references](../skills/shaka/references/README.md) as needed.

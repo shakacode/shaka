@@ -682,6 +682,13 @@ phases:
         Publish the head-bound conclusion and reasoning in the final walkthrough or a dedicated
         PR comment: Proceed, Simplify/reframe, or Do not merge. Revisit it after changes that
         affect the result or its cost; an earlier conclusion is not evidence for a different approach.
+        After verification, supply the task owner's head-bound `disposition` in the checkpoint
+        publication: Merge, Revise before merge, Reconsider approach, or Do not merge,
+        with a reason and concrete next action. Judge the finished PR against the original
+        outcome; successful verification alone does not choose its disposition.
+        A Merge recommendation grants no merge authority. Every other disposition blocks
+        readiness and follows the existing repair or maintainer decision path; do not close
+        the PR automatically. Older checkpoint results remain publishable without this field.
         Substantive unresolved concerns block merge readiness and Auto; do not submit a merge
         while they remain. Repair or reframe within authorized scope, then repeat affected
         validation and review; a changed goal or disputed value needs a maintainer decision.
