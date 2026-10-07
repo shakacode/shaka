@@ -688,7 +688,8 @@ phases:
         outcome; successful verification alone does not choose its disposition.
         A Merge recommendation grants no merge authority. Every other disposition blocks
         readiness and follows the existing repair or maintainer decision path; do not close
-        the PR automatically. Older checkpoint results remain publishable without this field.
+        the PR automatically. Results without this field retain conclusion-based publication;
+        the agent supplies it for every completed implementation.
         Substantive unresolved concerns block merge readiness and Auto; do not submit a merge
         while they remain. Repair or reframe within authorized scope, then repeat affected
         validation and review; a changed goal or disputed value needs a maintainer decision.

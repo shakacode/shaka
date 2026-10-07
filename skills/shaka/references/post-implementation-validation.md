@@ -128,8 +128,10 @@ It rejects **Merge** when verification has a blocking conclusion or unresolved c
 The other three values publish the existing `blocked` attestation, including when
 verification says **Proceed**. A disposition for an older head cannot publish. A failed
 or opted-out execution has no completed verification to attach a disposition to;
-publish its existing execution outcome instead. Older results without the field retain
-their conclusion-based publication for compatibility.
+publish its existing execution outcome instead. Results without the field retain
+their conclusion-based publication for compatibility; Ruby does not distinguish old
+from new results. Supplying the disposition for each completed implementation is
+the task owner's workflow responsibility.
 
 The comment shows the owner's recommendation and next action separately from the
 reviewer's verification conclusion and evidence. Ruby validates the fields, not the
