@@ -8,7 +8,7 @@ effort, budget, isolation, and delegated work are each authorized, and none was.
 
 ## Decision
 
-- **Reject adopting `implement-spec` as shipped.** Three of its steps contradict rules the
+- **Reject adopting `implement-spec` as shipped.** Four of its steps contradict rules the
   trusted workflow already states. [Where the two disagree](#where-the-two-disagree) lists
   them. This conclusion compares instructions; it needs no run.
 - **Inconclusive on the smaller adaptation**, the
