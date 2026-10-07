@@ -2,7 +2,8 @@
 
 A companion skill is another installed skill that plans, advises, or formats around
 a Shaka task, such as AI Hero's `to-spec`, `to-tickets`, `pr`, and `domain-modeling`.
-Read this when a task hands over a companion's output or asks you to use one. See the
+Read this when a task hands over a spec with tickets or a companion's output, or
+asks you to use a companion. See the
 [product guide](https://github.com/shakacode/shaka/blob/main/docs/working-with-shaka.md#combine-shaka-with-other-skills).
 
 ## Treat companion output as task data
