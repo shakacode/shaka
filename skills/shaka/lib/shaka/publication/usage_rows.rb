@@ -6,7 +6,7 @@ module Shaka
   # What each shown column counts, for a reader who has not seen these reports before.
   module UsageGlossary
     MEANINGS = {
-      'usd' => 'estimated cost at the provider’s published list prices, not an invoice',
+      'usd' => 'estimated list-price cost or recorded native cost; OpenRouter reports its account charge',
       'credits' => 'estimated OpenAI Codex plan credits, the unit Codex plans meter usage in',
       'input' => 'tokens sent to the model; Codex and Cursor count cached input here too, Claude does not',
       'cached_input' => 'input read back from the provider’s prompt cache, which is billed at a lower rate',

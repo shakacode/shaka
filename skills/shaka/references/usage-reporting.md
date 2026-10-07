@@ -236,6 +236,27 @@ helper report or attribute summary usage to a turn.
 
 ## Cost estimates
 
+### OpenRouter review charges
+
+Read the aggregate `usage` file returned by `shaka review run` using
+`--host openrouter --file PATH --all-turns --contribution review`. Copy its JSON
+`record` into the description's `usage.records` like other reviewer contributions.
+API response IDs deduplicate copied files. No host transcript discovery is used.
+
+OpenRouter's [usage accounting](https://openrouter.ai/docs/cookbook/administration/usage-accounting)
+reports inclusive prompt tokens, completion tokens (including reasoning), optional
+cache/reasoning subsets and `usage.cost`, the amount charged to the account in
+USD-denominated OpenRouter credits. Shaka uses that reported charge, never
+`upstream_inference_cost` or direct DeepSeek prices. It does not estimate Codex
+plan credits for this request. Missing or malformed costs and counters stay
+UNKNOWN; no counter or charge is inferred as zero. Report metadata contains no
+prompt, candidate code, response text, reasoning or credentials.
+
+[DeepSeek's direct API](https://www.deepseek.com/en/news/deepseek-v4-1-flash/)
+uses `deepseek-flash` and has different peak/off-peak pricing. This integration
+supports OpenRouter's explicit slug, not the direct API. Provider rates can
+change; the recorded response charge is the accounting source.
+
 The September 29, 2026 OpenAI rate card includes GPT-6.1 Sol. Standard API-equivalent
 rates per million tokens are $2 input, $0.10 cached input, and $10 output;
 standard credit rates are 50, 2.5, and 250 respectively. These scenarios follow the

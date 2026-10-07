@@ -52,7 +52,7 @@ using the same isolated CLI adapter as review. Omitted settings use CLI defaults
 It sends a minimal prompt without repository content; it may consume quota or incur cost.
 Plain `doctor` launches no reviewer and does not establish account access.
 
-The trusted schema rejects duplicate reviewer identities; at most the three supported adapters
+The trusted schema rejects duplicate reviewer identities; at most the four supported adapters
 can launch. A probe failure makes doctor exit nonzero; unsupported adapters remain degraded.
 Each probe has a 30-second deadline. `--probe-timeout-seconds 1..120` changes that probe bound;
 it requires `--probe-reviewers`. Failures report the reason and local diagnostic path, without
@@ -62,6 +62,53 @@ diagnostics without checking for private account data. The closed Claude effort 
 a Shaka update to accept any additional level introduced by that CLI.
 
 ## Run the selected reviewer
+
+### DeepSeek via OpenRouter
+
+Use `deepseek/openrouter` with the explicit `deepseek/deepseek-v4.1-flash` model.
+Set `OPENROUTER_API_KEY` in the invoking process; Shaka never prints the key.
+The existing trusted reviewer configuration can name this opt-in adapter; do not
+change another user's configured reviewers automatically. The exact model and
+supported efforts (`low`, `high`, `max`) were checked against
+[OpenRouter's model metadata](https://openrouter.ai/api/v1/models) on 2026-10-07.
+
+```sh
+shaka review run --root DIR --base BASE_SHA --head HEAD_SHA \
+  --reviewer deepseek/openrouter --model deepseek/deepseek-v4.1-flash --effort high \
+  --criteria-ref TRUSTED_SHA --settings-ref TRUSTED_SHA --repository OWNER/REPO \
+  --ledger OUTSIDE_CHECKOUT.json
+```
+
+The request supplies the normal review prompt, diff, trusted criteria and prior
+findings, with no tools. It cannot read unchanged source or run tests. Its report
+must carry the existing exact-head closing attestation before the runner marks it
+completed. `review record` and `review publish` use the existing ledger contract;
+Ask still requires a maintainer's merge decision.
+
+Each request has the selected review timeout and a 16,384-token completion cap.
+Missing credentials return `credentials_missing` with `attempted: false`.
+Unsupported model or effort stops at setup. HTTP/API errors, network failures and
+timeouts return `not_completed`; Shaka does not retry, switch models or treat
+unsupported settings as provider unavailability. Response bodies and reasoning
+are excluded from diagnostics and usage files. Review text remains in the report.
+
+The result's `usage` path contains only aggregate API metadata. Include it in the
+PR evidence table through:
+
+```sh
+shaka usage --host openrouter --file USAGE_PATH --all-turns \
+  --commit HEAD_SHA --contribution review --format json
+```
+
+Copy the returned `record` into description `usage.records`. Record the report's
+native model, token count and charged cost in the ledger's existing `usage` mapping
+when available. Missing model, counters or cost stay UNKNOWN, including when a
+review succeeds without usage. A malformed or truncated report can still incur a
+charge; retain its usage too. The adapter is covered by deterministic request,
+failure, report and accounting tests; that is not evidence of live model quality
+or savings. Cloud hosts need explicitly provisioned credentials and HTTPS access.
+
+### CLI reviewers
 
 Render the prompt for the selected reviewer:
 ```text
