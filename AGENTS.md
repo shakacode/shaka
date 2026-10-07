@@ -66,9 +66,9 @@ is the reusable default.
   they change and why existing code or a shorter instruction is insufficient.
 - Supply `bin/report-instruction-growth` output in the existing local-review and
   checkpoint evidence packets. Use it to assess the
-  rendered workflow, entry point, project guidance, and other changed instruction
-  files. Assess their actual loading conditions separately. Words and bytes are
-  cost evidence, not token counts or quality gates.
+  rendered workflow, entry point, project guidance, and other changed Markdown
+  instruction files. Assess their actual loading conditions separately. Words and
+  bytes are cost evidence, not token counts or quality gates.
   If that evidence is missing, state the gap and its effect on the conclusion.
 - In review, a demonstrated material violation of these criteria is a `defect`; a
   plausible unproven consequence is a `risk`. Name the location, concrete cost,
@@ -97,7 +97,8 @@ alternative. Separate value observations from demonstrated defects. Surface chan
 assumptions for the maintainer's existing decision; add no score or new approval gate
 to this initial value assessment. Before merge readiness, the
 [post-implementation checkpoint](skills/shaka/references/post-implementation-validation.md)
-reconsiders the finished result. The checkpoint and owner disposition recommend
+reconsiders the finished result and blocks unresolved substantive concerns.
+The checkpoint and owner disposition recommend
 revision or reconsideration until substantive concerns, including instructions,
 are fixed, disproved, or explicitly accepted by the maintainer. Recording them as
 documented or passing tests does not settle them. Use the existing maintainer
