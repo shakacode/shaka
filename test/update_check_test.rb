@@ -24,7 +24,7 @@ class UpdateCheckTest < Minitest::Test
     assert_includes result.fetch('guidance'), 'install --update'
     assert_includes result.fetch('guidance'), 'Finish active Shaka chats'
     assert_equal [['gh', 'api', '--hostname', 'github.com', "repos/shakacode/shaka/compare/#{SHA}...main", '--jq',
-                   '{status: .status, ahead_by: .ahead_by}'], Dir.tmpdir], @calls.fetch(0)
+                   '{status: .status}'], Dir.tmpdir], @calls.fetch(0)
   end
 
   def test_identical_is_current_and_an_ahead_or_diverged_trial_is_not_an_update
@@ -52,9 +52,12 @@ class UpdateCheckTest < Minitest::Test
   end
 
   def test_official_ssh_origins_are_supported
-    source = SOURCE.merge('repository' => 'git@github.com:shakacode/shaka.git')
-    assert_equal 'available', check('ahead', source:).fetch('status')
-    assert_equal 1, @calls.size
+    %w[git@github.com:shakacode/shaka.git git@github.com:shakacode/shaka
+       ssh://git@github.com/shakacode/shaka https://github.com/ShakaCode/shaka.git
+       https://github.com/shakacode/shaka/].each do |origin|
+      assert_equal 'available', check('ahead', source: SOURCE.merge('repository' => origin)).fetch('status')
+      assert_equal 1, @calls.size
+    end
   end
 
   def test_uninstalled_checkout_does_not_claim_freshness

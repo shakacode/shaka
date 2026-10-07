@@ -12,8 +12,8 @@ module Shaka
   class UpdateCheck
     ROOT = File.expand_path('../../../..', __dir__)
     GUIDE = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/references/official-installation.md'
-    ORIGINS = %w[https://github.com/shakacode/shaka https://github.com/shakacode/shaka.git
-                 git@github.com:shakacode/shaka.git ssh://git@github.com/shakacode/shaka.git].freeze
+    ORIGINS = %w[https://github.com/shakacode/shaka git@github.com:shakacode/shaka
+                 ssh://git@github.com/shakacode/shaka].freeze
 
     def self.run(arguments)
       return usage(arguments) unless arguments.empty?
@@ -34,15 +34,20 @@ module Shaka
       identity = Doctor::InstallationIdentity.read
       record_path = File.join(ROOT, '.git/shaka-install.json')
       record = JSON.parse(File.read(record_path)) if File.file?(record_path)
+      raise Shaka::Error, 'Invalid installation record' if record && !record.is_a?(Hash)
+
       new(source: identity.fetch('source'), branch: record&.fetch('branch', nil) || 'main',
           registered: !record.nil?, helper: File.join(ROOT, 'skills/shaka/scripts/shaka'))
     end
 
     def self.capture(argv, directory)
-      executable = LocalReviewPathGuard.safe_executable(ENV.fetch('PATH', ''), 'gh', File.realpath(Dir.pwd))
+      root = File.realpath(Dir.pwd)
+      path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
+      executable = LocalReviewPathGuard.safe_executable(path, 'gh', root)
       return ['', '', false] unless executable
 
-      Doctor::BoundedCommand.new(timeout: 15).call([executable, *argv.drop(1)], directory)
+      environment = { 'PATH' => path, 'BASH_ENV' => nil, 'ENV' => nil }
+      Doctor::BoundedCommand.new(timeout: 15).call([environment, executable, *argv.drop(1)], directory)
     end
 
     private_class_method :installed, :capture, :usage
@@ -68,14 +73,15 @@ module Shaka
     private
 
     def official?
-      @source['kind'] == 'revision' && ORIGINS.include?(@source['repository']) && @branch == 'main' &&
+      origin = @source['repository'].to_s.downcase.delete_suffix('/').delete_suffix('.git')
+      @source['kind'] == 'revision' && ORIGINS.include?(origin) && @branch == 'main' &&
         @source['revision'].to_s.match?(/\A[0-9a-f]{40}\z/)
     end
 
     def compare
       endpoint = "repos/shakacode/shaka/compare/#{@source.fetch('revision')}...main"
       output, _error, ok = @runner.call(['gh', 'api', '--hostname', 'github.com', endpoint, '--jq',
-                                         '{status: .status, ahead_by: .ahead_by}'], Dir.tmpdir)
+                                         '{status: .status}'], Dir.tmpdir)
       return unknown unless ok
 
       response = JSON.parse(output)
