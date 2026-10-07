@@ -587,8 +587,11 @@ wip:
 
 Include the checkout path and session link in **WIP Details**. Both team setup and
 private trials write `true`. The description renderer replaces both
-location fields with `REDACTED` when the selected setting is false or unavailable;
-ownership, state, next action, and the current commit remain visible.
+location fields with `REDACTED` when the selected setting is explicitly false.
+When settings were not read or could not load, it withholds locations and explains
+how to reload the policy. Ownership, state, next action, and the current commit
+remain visible. When locations are allowed but the host lacks one, its value is
+`UNKNOWN`.
 
 Locations can reveal local names or identifiers. When locations are enabled,
 the agent must inspect them before publishing. Other supplied prose still needs

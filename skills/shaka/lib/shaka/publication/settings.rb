@@ -9,6 +9,8 @@ module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
   class PublicationSettings
     SUMMARY = 'Shaka settings used'
+    MISSING_REF = 'Withheld: settings not read; rerun description with --ref'
+    UNAVAILABLE_SETTINGS = 'Withheld: settings unavailable; fix seam check --ref, then rerun description'
 
     def self.refuse_free_form!(items)
       return unless items.any? do |item|
@@ -23,7 +25,7 @@ module Shaka
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
       current = current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref
-      new(verdict:, current:)
+      new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF)
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -49,13 +51,21 @@ module Shaka
       nil
     end
 
-    def initialize(verdict: nil, current: nil)
+    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF)
       @verdict = verdict
       @current = current
+      @location_diagnostic = location_diagnostic
     end
 
     # An unknown policy cannot authorize publishing locations, even on unfinished PRs.
     def include_locations? = @current&.fetch('wip.include_locations', false) == true
+
+    def location_redaction
+      return if include_locations?
+      return 'REDACTED' if @current&.fetch('wip.include_locations', nil) == false
+
+      @location_diagnostic
+    end
 
     # Only resolved settings can establish whether the repository opted out.
     def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true
