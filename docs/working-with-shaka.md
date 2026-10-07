@@ -271,12 +271,12 @@ installed skill's `SKILL.md` file when there is no skill command. If a skill you
 named is not installed, the agent says so, continues the work that does not need
 it, and asks about the rest. It does not install software for you.
 
-If your repository has a `GLOSSARY.md`, the agent uses its terms in code and PR
-text. A `GLOSSARY-MAP.md` at the root points to the glossary for each area. You
-do not need a glossary for ordinary delivery. AI Hero renamed `CONTEXT.md` to
-`GLOSSARY.md`; before renaming yours, check what the file holds and what reads
-it. Keep anything that is not a glossary, such as agent instructions, where its
-readers expect it.
+When you combine skills this way and your repository has a `GLOSSARY.md`, the
+agent uses its terms in code and PR text. A `GLOSSARY-MAP.md` at the root points
+to the glossary for each area. You do not need a glossary for ordinary delivery.
+AI Hero renamed `CONTEXT.md` to `GLOSSARY.md`; before renaming yours, check what
+the file holds and what reads it. Keep anything that is not a glossary, such as
+agent instructions, where its readers expect it.
 
 The [companion skills procedure](../skills/shaka/references/companion-skills.md)
 has the agent's rules. Loading skills automatically at set points is a
