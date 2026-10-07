@@ -240,8 +240,9 @@ no stacked-PR service is needed.
 ## Review a session for improvements
 
 After a session with repeated failures, wrong turns, or slow searching, ask for
-a retrospective. It runs only when you ask, reads only the sessions you name, and
-changes nothing until you choose.
+a retrospective. The agent's instructions are to run one only when you ask, read
+only the sessions you name, and change nothing until you choose. Shaka's code
+does not enforce those rules.
 
 ```text
 Run a Shaka retrospective of this session, following the retrospective reference
@@ -250,8 +251,8 @@ installed; otherwise analyze the session yourself. List the findings for me to
 choose from. Do not edit files, install tools, or open issues or PRs.
 ```
 
-To cover other work, name it: “of this session and the chat that produced PR
-123.” The agent reports anything it cannot read as unknown.
+To cover another session, name it and give the agent its transcript if this chat
+cannot open it. The agent reports anything it cannot read as unknown.
 
 Each finding states what happened, the evidence, a proposed improvement, its
 expected benefit, and what it costs to maintain. A mistake the agent repeated
@@ -261,8 +262,8 @@ change.
 
 Pick the findings you want, for example `Deliver findings 1 and 3 as separate
 PRs.` Each becomes an ordinary Shaka task with its own tests, review, and your
-merge policy. Session transcripts stay private; the PR carries a public-safe
-summary.
+merge policy. The agent is told to keep session transcripts out of issues and
+PRs and to publish a public-safe summary; review what it publishes.
 
 [AI Hero's `retro` skill](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
 is one such companion. Shaka neither installs nor requires it. The benefit of

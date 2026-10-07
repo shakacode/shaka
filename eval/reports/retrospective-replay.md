@@ -1,10 +1,11 @@
 # Retrospective procedure replay, #456
 
-This is one simulated agent trial of the candidate
-[retrospective procedure](../../skills/shaka/references/retrospective.md) against
-invented, public-safe session summaries. It is not a real-session trial and
-establishes no practical benefit. [Issue #456](https://github.com/shakacode/shaka/issues/456)
-still requires one maintainer-selected real-session trial before that claim.
+This is one simulated agent trial of the
+[retrospective procedure](../../skills/shaka/references/retrospective.md), as
+first committed at `7d97a386`, against invented, public-safe session summaries.
+It is not a real-session trial and establishes no practical benefit.
+[Issue #456](https://github.com/shakacode/shaka/issues/456) still requires one
+maintainer-selected real-session trial before that claim.
 
 ## Setup
 
@@ -49,3 +50,8 @@ Every finding carried the five required fields.
   bounds companion output was not exercised.
 - No finding was selected, so delivery of a finding as a Shaka task was not
   exercised.
+- The prompt gave the procedure's path. Finding it through the installed skill's
+  reference index, as the guide's prompt asks, was not exercised.
+- Review after the trial added three rules that were not replayed: skip companion
+  steps that write, define the companion by function, and do not substitute a
+  PR's discussion for its session.
