@@ -7,11 +7,11 @@ class OpenrouterRequestTest < Minitest::Test
   include OpenrouterFixture
 
   def test_sends_one_fixed_model_request_without_tools_or_fallback
-    with_http_response do |result|
-      assert_equal MODEL, result.fetch('model')
+    with_http_response do
       assert_equal 'Bearer fixture-only', @request['Authorization']
       body = JSON.parse(@request.body)
       assert_equal MODEL, body.fetch('model')
+      assert_equal 65_536, body.fetch('max_tokens')
       assert_equal({ 'effort' => 'high' }, body.fetch('reasoning'))
       assert_equal 'diff', body.dig('messages', 0, 'content')
       assert_empty body.keys & %w[models tools]

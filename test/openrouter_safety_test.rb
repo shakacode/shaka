@@ -84,7 +84,7 @@ class OpenrouterSafetyTest < Minitest::Test
 
   def test_metadata_tokens_retain_slugs_and_reject_autolink_urls
     assert_equal MODEL, Shaka::OpenrouterReview.token(MODEL)
-    %w[https://evil.example/x www.evil.example/x ftp://evil.example/x].each do |value|
+    %w[https://evil.example/x www.evil.example/x WWW.evil.example ftp://evil.example/x].each do |value|
       assert_nil Shaka::OpenrouterReview.token(value)
       assert_equal 'UNKNOWN', Shaka::Usage.allocate.send(:safe, value)
       assert_equal 'UNKNOWN', Shaka::CostEstimate.new([]).send(:safe, value)

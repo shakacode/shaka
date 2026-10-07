@@ -25,7 +25,7 @@ module Shaka
       raise Error, 'Review prompt is not UTF-8' unless valid_prompt?(prompt)
 
       prompt = prompt.dup.force_encoding(Encoding::UTF_8)
-      body = { model:, messages: [{ role: 'user', content: prompt }], stream: false, max_tokens: 16_384,
+      body = { model:, messages: [{ role: 'user', content: prompt }], stream: false, max_tokens: 65_536,
                provider: { require_parameters: true } }
       body[:reasoning] = { effort: } if effort
       post(body, timeout)

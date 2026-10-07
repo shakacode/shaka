@@ -8,7 +8,7 @@ module Shaka
 
     def self.token(value)
       return unless value.is_a?(String) && value.valid_encoding? && value.length <= 80
-      return if value.start_with?('www.')
+      return if /\Awww\./i.match?(value)
 
       value if TOKEN.match?(value) || SLUG.match?(value)
     end

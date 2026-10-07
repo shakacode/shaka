@@ -85,7 +85,9 @@ must carry the existing exact-head closing attestation before the runner marks i
 completed. `review record` and `review publish` use the existing ledger contract;
 Ask still requires a maintainer's merge decision.
 
-Each request has the selected review timeout and a 16,384-token completion cap.
+Each request has the selected review timeout and a 65,536-token completion cap.
+Reasoning tokens count toward this cap. A high-effort review can exhaust it before
+producing review text; that outcome remains incomplete and can still incur a charge.
 Missing credentials return `credentials_missing` with `attempted: false`.
 Malformed credentials return `credentials_invalid` before transport, without echoing the key.
 Unsupported model or effort stops at setup. HTTP/API errors, network failures and
