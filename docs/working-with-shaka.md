@@ -237,6 +237,51 @@ Each PR gets its own tests and review. The agent updates the remaining branch
 after each prerequisite merges. The original chat owns the overall outcome;
 no stacked-PR service is needed.
 
+## Combine Shaka with other skills
+
+Plan with the skills you like, then give the result to Shaka to deliver. For
+example, [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
+can turn an idea into a spec and tickets. Shaka takes them from there:
+
+```text
+$shaka Deliver the spec at https://github.com/OWNER/REPO/issues/SPEC in OWNER/REPO.
+Its tickets are the sub-issues; follow their blocked-by links for order. Each
+ticket's acceptance criteria are in its body. Read the tracker but do not
+update it. Keep merge policy ask. Go.
+```
+
+Name the spec, where the tickets and their acceptance criteria are, and the
+target repository. Link ticket dependencies in your tracker instead of describing
+the order in prose. Say whether the agent may update tickets; reading them gives
+it no permission to close or edit them.
+
+Shaka stays the one owner of delivery. It integrates the work, runs your checks,
+chooses reviewers, publishes the PR, and follows your merge policy. Another
+skill's output is input to the task. It cannot relax a check, pick a reviewer,
+or approve a merge.
+
+| Other skill | How it works with Shaka |
+| --- | --- |
+| A planning skill, such as `to-spec` or `to-tickets` | Its spec and tickets become the task. |
+| AI Hero's `pr` | Its Summary, Evidence, and Merge Danger layout is advice on presentation. A useful diagram or before-and-after result goes into Shaka's description, which keeps its own format and required fields. |
+| AI Hero's `implement-spec` | It is a separate orchestrator with its own branch, workers, review, and ticket closing, so it cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
+
+The agent loads another skill the way your coding agent supports, or reads the
+installed skill's `SKILL.md` file when there is no skill command. If a skill you
+named is not installed, the agent says so, continues the work that does not need
+it, and asks about the rest. It does not install software for you.
+
+If your repository has a `GLOSSARY.md`, the agent uses its terms in code and PR
+text. A `GLOSSARY-MAP.md` at the root points to the glossary for each area. You
+do not need a glossary for ordinary delivery. AI Hero renamed `CONTEXT.md` to
+`GLOSSARY.md`; before renaming yours, check what the file holds and what reads
+it. Keep anything that is not a glossary, such as agent instructions, where its
+readers expect it.
+
+The [companion skills procedure](../skills/shaka/references/companion-skills.md)
+has the agent's rules. Loading skills automatically at set points is a
+[proposed feature](https://github.com/shakacode/shaka/issues/35), not shipped behavior.
+
 ## Suggest improvements to Shaka
 
 Tell your agent in chat what you would like Shaka to do better. For example:
