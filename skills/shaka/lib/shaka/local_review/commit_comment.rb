@@ -20,12 +20,17 @@ module Shaka
     def render
       attention = LocalReviewAttention.new(@before + @rounds, @links)
       blocks = [TITLE, "**Reviewed revision:** #{@links.commit(@rounds.last.head)}", *attention.visible,
-                usage_link, *fallback_notice, *settings_notice, *bound,
+                coverage, usage_link, *fallback_notice, *settings_notice, *bound,
                 history(attention), @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
     end
 
     private
+
+    def coverage
+      values = @rounds.map { |round| round.value('coverage') || 'UNKNOWN; see evidence.' }.uniq
+      "**Coverage:** #{values.join(' · ')}"
+    end
 
     def coverage_reports
       lines = @rounds.map do |round|
