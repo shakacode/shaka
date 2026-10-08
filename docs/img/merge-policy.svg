@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 234" role="img" aria-labelledby="t d">
+<title id="t">Ask and Auto merge policies</title>
+<desc id="d">When a pull request is ready, Ask, the default, returns it to you: you merge on GitHub or approve so the agent merges. With Auto the agent merges. A pull request that is too large or risky goes back to you even under Auto.</desc>
+<style>
+.bg{fill:#fff;stroke:#d9e0e7}
+text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
+.h{font-size:15px;font-weight:600}
+.s{font-size:13px}
+.m{fill:#516074}
+.c{text-anchor:middle}
+rect{stroke-width:1}
+.you rect{fill:#fdf3df;stroke:#b87514}
+.you text{fill:#5f3b06}
+.shaka rect{fill:#e3f5ec;stroke:#128a5e}
+.shaka text{fill:#0b4f37}
+.box rect{fill:#f1f4f8;stroke:#8a99ad}
+.frame{fill:none;stroke:#8a99ad;stroke-dasharray:6 4}
+.a{stroke:#516074;stroke-width:1.5;fill:none}
+.ah{fill:#516074}
+.dash,.dash rect{stroke-dasharray:5 4}
+@media (prefers-color-scheme:dark){
+.bg{fill:#0f1724;stroke:#2a3648}
+text{fill:#e6edf5}
+.m{fill:#9fb0c3}
+.you rect{fill:#40300f;stroke:#e0a13a}
+.you text{fill:#fbe3b0}
+.shaka rect{fill:#0e3d2c;stroke:#3ccf92}
+.shaka text{fill:#c9f3e0}
+.box rect{fill:#1a2535;stroke:#6b7c93}
+.frame{stroke:#6b7c93}
+.a{stroke:#9fb0c3}
+.ah{fill:#9fb0c3}
+}
+</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="719" height="233" rx="10"/>
+<g class="shaka"><rect x="40" y="95" width="160" height="60" rx="6"/><text class="h c" x="120" y="121">PR ready</text><text class="s c" x="120" y="139">Checks and review pass</text></g>
+<path class="a" d="M200 125H240V70H278" marker-end="url(#ar)"/>
+<path class="a" d="M240 125V180H278" marker-end="url(#ar)"/>
+<g class="you"><rect x="280" y="40" width="240" height="60" rx="6"/><text class="h c" x="400" y="66">Ask (default)</text><text class="s c" x="400" y="84">You merge, or approve it</text></g>
+<g class="shaka"><rect x="280" y="150" width="240" height="60" rx="6"/><text class="h c" x="400" y="176">Auto</text><text class="s c" x="400" y="194">The agent merges</text></g>
+<path class="a dash" d="M400 150V102" marker-end="url(#ar)"/>
+<text class="s m" x="410" y="130">Too large or risky</text>
+<path class="a" d="M520 70H560V112H598" marker-end="url(#ar)"/>
+<path class="a" d="M520 180H560V138H598" marker-end="url(#ar)"/>
+<g class="box"><rect x="600" y="95" width="80" height="60" rx="6"/><text class="h c" x="640" y="130">Merged</text></g>
+</svg>

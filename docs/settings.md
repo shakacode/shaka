@@ -107,6 +107,8 @@ Meaningful implementation also gets a local adversarial review before push:
 - To have several reviewers read each commit, set
   [`review.local_review_count`](#reviewlocal_review_count).
 
+![A local review runs before push, configured CI review jobs report after push, and the merge check requires a posted review covering the merged commit before the agent merges.](img/review-layers.svg)
+
 `shaka review run` verifies the reviewer process completed and returned a report
 for the expected commit. `shaka review check` validates a supplied report but does
 not prove a reviewer process ran.

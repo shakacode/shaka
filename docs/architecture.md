@@ -15,6 +15,8 @@ tracking system.
 - GitHub holds delivery evidence: commits, checks, reviews, and the PR outcome.
 - The agent task holds experiments and unpushed work. That context is temporary.
 
+![The work item holds why the work exists and GitHub holds delivery evidence; a fresh PR reader reconstructs the task from those two. The agent task is temporary.](img/where-facts-live.svg)
+
 A fresh PR reader should be able to reconstruct the owner, blocker,
 revision, and next step from the work item and GitHub. An unfinished PR carries a
 short [recovery note](working-with-shaka.md#resume-unfinished-work) for that

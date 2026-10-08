@@ -118,6 +118,8 @@ These are requests to the existing workflow. Separate stage skills such as
 | **Ask** (default) | Review the ready PR, then merge it on GitHub or approve it so the agent merges. |
 | **Auto** | The agent merges after required checks, review, and approvals. |
 
+![A ready PR follows Ask, where you merge or approve it, or Auto, where the agent merges. A PR that is too large or risky returns to you under Auto.](img/merge-policy.svg)
+
 Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
 Repository restrictions and required approvals still apply. Trust, authentication,
 release, and other consequential changes need explicit human review. A PR past the
