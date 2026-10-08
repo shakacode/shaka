@@ -4,7 +4,8 @@ Issue [#457](https://github.com/shakacode/shaka/issues/457) asks whether a small
 AI Hero's `implement-spec` skill would improve Shaka delivery. This report holds the
 evaluation specification, the fixture, the evidence that needs no model run, and the
 decision. No comparison run happened: the issue allows one only after its task, model and
-effort, budget, isolation, and delegated work are each authorized, and none was.
+effort, budget, isolation, and delegated work are each authorized, and none was. A run
+also needs a named person to merge each ready PR.
 
 ## Decision
 
@@ -65,7 +66,7 @@ dependency relationships and delegation is authorized:
 1. Read the blocked-by relationships from the tracker. Do not copy them into a new file.
 2. A ticket may start when every blocker's PR has merged into the task's base.
 3. Before starting two tickets together, compare the files and shared names each is likely
-   to touch. If they overlap or the answer is unknown, run them one after the other.
+   to touch. If they overlap or the answer is unknown, start the second after the first merges.
 4. Each ticket still ends as its own ordinary PR through the unchanged workflow.
 
 It adds no integration branch, merger, scheduler, ledger, or automatic launch.
@@ -126,6 +127,7 @@ This section is a proposal. Each field marked "needs authorization" is the maint
 | Baseline arm | Shaka at the pinned baseline, with the same delegation authorized and no rule for choosing which tickets run together |
 | Candidate arm | The same revision plus the adaptation, pinned as one commit |
 | Held equal | Seed, tickets, prompt, model, effort, review criteria, Ask merge preference, time and cost limits |
+| Review | The prompt requires an independent local review of every PR head in both arms. The seed sets `review.required: none` because stricter values need hosted review jobs it does not have, so the setting alone would let an arm skip review |
 | Task | The three fixture tickets; needs authorization |
 | Model and effort | Needs authorization |
 | Budget and time limit | Needs authorization. Three PRs with hosted checks will not fit the one-hour default |
@@ -165,7 +167,7 @@ do not merge it.
 
 ## What blocks a run
 
-1. The five authorizations above.
+1. The authorizations above.
 2. [#206](https://github.com/shakacode/shaka/issues/206)'s isolated path has delivered one
    PR per session. The [experiment index](../README.md) records no run with delegated
    workers or a sequence of dependent PRs inside the container. That path needs its own
