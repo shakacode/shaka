@@ -437,8 +437,8 @@ data replace them, and the calibration method is one of the documents to write f
   tasks before anyone bisects.
 - What this buys: the bank is about forty tasks, thirty in tier 1 and ten in tier 2.
   With K=3, one night detects a ten-point quality drop roughly half the time and a
-  five-point drop rarely; two nights, or the strong day with K=10 on tier 1, detect
-  ten points reliably. Deterministic gate regressions and tier 1 regressions are
+  five-point drop rarely; two consecutive nights usually detect ten points, and the
+  strong day with K=10 on tier 1 detects them reliably. Deterministic gate regressions and tier 1 regressions are
   detected in one night with near certainty. "Within about a day" is a promise
   about deterministic regressions and large judged regressions, not about small ones.
 - Expect roughly one false flag every few weeks at these thresholds; the confirmation
