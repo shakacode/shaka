@@ -185,7 +185,7 @@ unlink "$HOME/.agents/skills/shaka"
 ```
 
 Use the appropriate directory for other environments. If you installed tower skills,
-inspect and remove their links too: `rct`, or `mct-claude` and `rct-claude`.
+inspect and remove their links too: `mct` and `rct`, or `mct-claude` and `rct-claude`.
 Preserve unrelated files. Removing skill links leaves repositories and PRs intact.
 After every Shaka link in that skills directory is removed and no install is
 running, remove its `.shaka-install.lock` file too.
@@ -233,8 +233,8 @@ Replace the path and task. Native trust and command-approval prompts still apply
 The launcher refuses paths that overlap the trusted installation. Choose a
 `TMPDIR` outside the checkout if your current one is inside it.
 
-The optional `rct` skill needs the **Codex app's** task tools. Install it with
-`--with-rct`; terminal-only installations use the [control-tower role prompts](control-towers.md#role-prompts).
+The optional `mct` and `rct` skills need the **Codex app's** task and project tools.
+Select them independently with `--with-mct` and `--with-rct`; terminal-only installations use the [control-tower role prompts](control-towers.md#role-prompts).
 
 ## Claude Code
 

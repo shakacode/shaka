@@ -4,12 +4,12 @@ require_relative 'test_helper'
 require 'fileutils'
 require 'rbconfig'
 
-class InstallClaudeTowersTest < Minitest::Test
-  SKILLS = { 'shaka' => 'shaka source', 'rct' => 'rct source',
+class InstallCompanionTowersTest < Minitest::Test
+  SKILLS = { 'shaka' => 'shaka source', 'rct' => 'rct source', 'mct' => 'codex mct source',
              'mct-claude' => 'mct source', 'rct-claude' => 'rct-claude source' }.freeze
 
   def setup
-    @directory = Dir.mktmpdir('workflows-claude-towers')
+    @directory = Dir.mktmpdir('workflows-companion-towers')
     @installer = File.join(@directory, 'source', 'bin', 'install')
     @skills_dir = File.join(@directory, 'isolated profile', 'skills')
     @home = File.join(@directory, 'home')
@@ -43,17 +43,17 @@ class InstallClaudeTowersTest < Minitest::Test
   # The Codex tower drives native tools Claude Code does not have, so one flag never implies the other.
   def test_claude_towers_do_not_install_the_codex_repository_tower
     assert_predicate install('--with-claude-towers').last, :success?
-    refute_path_exists destination('rct')
+    %w[rct mct].each { |name| refute_path_exists destination(name) }
   end
 
-  def test_codex_tower_does_not_install_the_claude_towers
+  def test_codex_repository_tower_omits_master_and_claude_towers
     assert_predicate install('--with-rct').last, :success?
-    %w[mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
+    %w[mct mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
   end
 
   def test_default_install_omits_every_tower
     assert_predicate install.last, :success?
-    %w[rct mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
+    %w[rct mct mct-claude rct-claude].each { |name| refute_path_exists destination(name), name }
   end
 
   # A partial install would leave one tower skill linked and the other silently missing.
@@ -63,6 +63,29 @@ class InstallClaudeTowersTest < Minitest::Test
     File.write(marker, 'user content')
 
     refute_predicate install('--with-claude-towers').last, :success?
+    refute_path_exists destination('shaka')
+    assert_equal 'user content', File.read(marker)
+  end
+
+  def test_codex_master_is_independent_of_repository_and_claude_towers
+    output, status = install('--with-mct')
+    assert_predicate status, :success?, output
+    %w[shaka mct].each { |name| assert_linked(name) }
+    %w[rct mct-claude rct-claude].each { |name| refute_path_exists destination(name) }
+  end
+
+  def test_codex_towers_can_be_installed_together
+    output, status = install('--with-rct', '--with-mct')
+    assert_predicate status, :success?, output
+    %w[shaka rct mct].each { |name| assert_linked(name) }
+  end
+
+  def test_master_conflict_preserves_user_files_before_linking
+    FileUtils.mkdir_p(destination('mct'))
+    marker = File.join(destination('mct'), 'keep')
+    File.write(marker, 'user content')
+
+    refute_predicate install('--with-mct').last, :success?
     refute_path_exists destination('shaka')
     assert_equal 'user content', File.read(marker)
   end

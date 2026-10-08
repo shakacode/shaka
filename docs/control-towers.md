@@ -10,13 +10,18 @@ library fix needed before an application upgrade.
 Each delivery still has one owner. The [architecture guide](architecture.md)
 explains where its records belong.
 
-Ask your agent to install the tower skills and establish the master. Then open a
-task in each repository and invoke its setup skill:
+For Codex, ask your agent:
 
-| Environment | Repository tower | Master tower |
-| --- | --- | --- |
-| Codex app | `$rct` | Agent follows the master role instructions |
-| Claude Code desktop | `/rct-claude` | `/mct-claude` |
+```text
+Install Shaka's control towers for Codex.
+```
+
+1. If you already have a master chat, continue there. Otherwise, choose one
+   chat to coordinate your projects and run `$mct` there.
+2. Open a chat in each repository's Codex project and run `$rct` to connect it
+   to the master.
+
+In Claude Code, use `/mct-claude` and `/rct-claude` instead.
 
 After the master acknowledges the repository tower, ask the tower what needs
 attention. You choose which task starts; setup starts no backlog work or recurring
