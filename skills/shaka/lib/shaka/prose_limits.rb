@@ -33,7 +33,7 @@ module Shaka
       return new unless ref
 
       require_relative 'configuration'
-      new(Configuration.trusted(root:, ref:, candidate_commands: false).prose_limits)
+      new(Configuration.resolve_source(root:, ref:, candidate_commands: false).first.prose_limits)
     end
 
     # GitHub may omit the size; the proportional budget is then skipped.

@@ -4,7 +4,7 @@
 
 require_relative 'opening_check'
 require_relative 'reviewer_selection'
-require_relative 'trusted_config_source'
+require_relative 'configuration'
 require 'tmpdir'
 
 module Shaka
@@ -75,7 +75,7 @@ module Shaka
 
     def check_with_trusted_settings(summary, candidate_root)
       source = TrustedConfigSource.new(root: @root)
-      config = TrustedConfigSource.from_ref(root: @root, ref: @ref)
+      config = Configuration.resolve_source(root: @root, ref: @ref, candidate_commands: false).first
       @prompt = source.opening_prompt(config) if config&.opening_check&.key?('prompt_file')
       validate_reviewer!(config) if @reviewer
       OpeningCheck.new(summary:, candidate_root:, reviewer: @reviewer, model: @model, prompt: @prompt).call
