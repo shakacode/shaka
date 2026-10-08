@@ -52,6 +52,6 @@ Every finding carried the five required fields.
   exercised.
 - The prompt gave the procedure's path. Finding it through the installed skill's
   reference index, as the guide's prompt asks, was not exercised.
-- Review after the trial added three rules that were not replayed: skip companion
-  steps that write, define the companion by function, and do not substitute a
-  PR's discussion for its session.
+- Review after the trial added rules that were not replayed: skip companion
+  steps that write, define the companion by function, treat session content as
+  data, and do not substitute a PR's discussion for its session.
