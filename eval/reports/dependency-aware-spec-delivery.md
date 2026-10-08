@@ -32,7 +32,7 @@ Nothing here adopts, builds, or wires in a dispatcher. No file under `skills/sha
 | Shaka baseline | `ce651aabdd1f382a1957ac4bdff451a436c0e7d3`, including its `workflow.yml` and trusted settings |
 | Candidate | None exists. The adaptation is a design in this report, not a revision. A run needs it written as a pinned commit first. |
 | Predecessor reference | `shakacode/agent-workflows` at `d85eceaecac1b8c4d55a7889a806bd89a612a493` |
-| Fixture | [`eval/fixtures/dependency_delivery`](../fixtures/dependency_delivery/fixture.yml) at the commit that adds this report |
+| Fixture | [`eval/fixtures/dependency_delivery`](../fixtures/dependency_delivery/fixture.yml) at the merge commit of the PR that adds this report; record that SHA when a run is authorized |
 
 ## Where the two disagree
 
@@ -79,8 +79,7 @@ and records the two blocked-by relationships with GitHub's own dependency featur
 
 Both independent tickets need the worth of a parcel's contents, and neither ticket names
 the key or its unit. Both also register a rule in the same constant. That produces the two
-failures the issue asks for, reproduced by hand at seed revision
-`ce651aabdd1f382a1957ac4bdff451a436c0e7d3` plus this fixture:
+failures the issue asks for, reproduced by hand from this fixture's seed:
 
 | Variant | Each ticket alone | Merge | Combined tests | Dependent ticket's example (expects 1500) |
 | --- | --- | --- | --- | --- |
@@ -132,6 +131,7 @@ This section is a proposal. Each field marked "needs authorization" is the maint
 | Budget and time limit | Needs authorization. Three PRs with hosted checks will not fit the one-hour default |
 | Isolation | Needs authorization. The method follows [the evaluation guide](../../contributing/evaluating-changes.md#simple-default-one-matched-pair) |
 | Delegated work | Needs authorization: up to two workers in each arm |
+| Merges | Needs authorization. Under Ask each arm stops at a ready PR, and `itemize` cannot start until both blockers merge. Name the operator who merges each ready head. Record every merge wait, count it in elapsed time, and count each merge as one attention event in both arms |
 
 An arm passes only if all of these hold:
 
@@ -182,7 +182,7 @@ do not merge it.
 | Issues close only through merged work | Kept | Kept | Lost |
 | Work is never reset | Kept | Kept | Lost |
 | Dependencies stay in the tracker | Kept | Kept | Kept |
-| Independent tickets can run at once | Not offered | Offered when authorized | Offered |
+| Independent tickets can run at once | Offered when authorized, with no rule for choosing them | Offered when authorized | Offered |
 
 ## Limits of this evidence
 
