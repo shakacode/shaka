@@ -297,6 +297,24 @@ Pi launcher or tower skill. Its usage reader needs a persistent v3 session with
 matching `PI_SESSION_FILE` and `PI_SESSION_ID` values. Missing or unsupported
 records produce `UNKNOWN`.
 
+For actual session renaming, manually add the installed skill's absolute
+`extensions/pi-session-name.js` path to the `extensions` array in your personal Pi
+settings file (`~/.pi/agent/settings.json`, or under `PI_CODING_AGENT_DIR`). Preserve
+existing settings and extension entries. For example:
+
+```json
+{
+  "extensions": ["/absolute/trusted/skills/shaka/extensions/pi-session-name.js"]
+}
+```
+
+Keep this path outside candidate checkouts. Run `/reload` in Pi after changing settings.
+The extension exposes `shaka_session_name`; omit `name` to read the current title or
+supply it to request a rename. It changes session metadata through Pi's API, not the
+terminal window title. Follow [chat naming](launchers-and-sessions.md#name-the-chat).
+Without the extension, the workflow prints a suggested title only. Shaka's installer
+does not register the extension automatically. No additional npm packages are needed.
+
 ## Operating details
 
 Agents should read [launchers and agent sessions](launchers-and-sessions.md) when launching
