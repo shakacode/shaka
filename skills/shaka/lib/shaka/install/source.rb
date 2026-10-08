@@ -129,6 +129,7 @@ module Shaka
         user = address.user
         address.port = nil if ssh && address.port == 22
         address.user = ssh && user == 'git' ? 'git' : nil
+        address.password = nil
         address.query = nil
         address.fragment = nil
         address.to_s
