@@ -348,10 +348,11 @@ or accept it; technical confidence does not grant merge consent. Scale detail to
   when one sentence can state the sequence. Use an indented call tree in a
   `text` code block for who calls whom, or a `mermaid` code block, which GitHub
   renders in a review, for branches and states. Show observable behavior or an
-  ownership boundary, name only code present at this head, and place it beside
-  the step it supports. Keep it to about ten nodes, label each edge or line
-  with the action, and let the prose carry the explanation. A visual explains; the
-  validation results remain the evidence. The public guide shows
+  ownership boundary, name code as it is at this head, mark anything the change
+  removes, and place it beside the step it supports. Keep it to about ten
+  nodes, label each edge or line with the action, and let the prose carry the
+  explanation. A visual explains; the validation results remain the evidence.
+  The public guide shows
   [a call tree and a change that needs none](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md#when-a-diagram-helps).
 - Report validation as what it proves at this head: the behavior covered, the
   command, and its result. State each count once, and leave results from

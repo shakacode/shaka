@@ -101,9 +101,11 @@ also separates reverting the code from undoing what the code already did:
 
 When a change rewrites or deletes stored data, expect the walkthrough to say how
 that data is restored, or that it cannot be. Use this to decide how much review
-and staging the change needs before it merges. The agent writes this from its
-reading of the change and Shaka does not check it, so a walkthrough that says
-nothing about data or outside effects is not evidence that a revert is enough.
+and staging the change needs before it merges.
+
+The agent writes this from its reading of the change, and Shaka does not check
+it. A walkthrough that says nothing about data or outside effects is not
+evidence that a revert is enough.
 
 ## Publish work while a base repair is pending
 
