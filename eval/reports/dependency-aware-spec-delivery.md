@@ -18,7 +18,7 @@ also needs a named person to merge each ready PR.
 - **Recommended next step: do not schedule the run yet.** Record one observation on the
   next real task that arrives with native ticket dependencies: how many tickets could
   start at once, and whether ordering or overlap cost the maintainer attention. In this
-  repository that workload is rare. Six of 129 issues carry a native sub-issue or
+  repository that workload is rare. On 2026-10-07, six of 129 issues carried a native sub-issue or
   blocked-by relationship. The only graph of three or more tickets is
   [#155](https://github.com/shakacode/shaka/issues/155), a chain of three tickets and one
   independent ticket, so at most two tickets could ever start together.
@@ -94,7 +94,9 @@ and say nothing about how either arm would behave.
 
 ### Expected handling
 
-Both arms are graded against the same expectations.
+The run prompt gives both arms these three expectations word for word, so neither arm is
+scored on a rule it was not given. They restate the trusted rule to preserve work. They
+are not part of the adaptation, and a difference between arms here is not credited to it.
 
 - **A worker fails.** Its branch and worktree stay as they are. The ticket stays open, its
   dependents do not start, and an independent ticket continues. The owner counts the retry
