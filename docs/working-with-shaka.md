@@ -266,7 +266,7 @@ merge policy. The agent is told to keep session transcripts out of issues and
 PRs and to publish a public-safe summary; review what it publishes.
 
 [AI Hero's `retro` skill](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
-is one such skill. Shaka neither installs nor requires it. The benefit of
+is one session retrospective skill. Shaka neither installs nor requires it. The benefit of
 this routine has not been measured on real sessions. Agents follow the
 [retrospective procedure](../skills/shaka/references/retrospective.md).
 

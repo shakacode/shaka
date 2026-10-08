@@ -7,7 +7,8 @@ session went badly. The request authorizes analysis and a findings report only.
 ## Use only the named sessions
 
 Analyze the sessions the user names. With none named, analyze the current session.
-Do not search other chats, memory stores, or repository history for more material.
+Do not search other chats, memory stores, or repository history for other
+sessions' material.
 
 Report source material you cannot read as `UNKNOWN` and name it: another chat's
 transcript, context lost to summarization, an expired CI log. Do not reconstruct
@@ -88,9 +89,9 @@ and add no gate.
 
 Selection starts those tasks within the user's existing publication scope. It
 does not choose Auto, and installing a tool or changing access still needs an
-explicit choice. A finding about another repository, including global agent
-instructions or another skill pack, goes to that repository's own process: tell
-the user and do not edit it from here. A finding about Shaka itself, found while
+explicit choice. A finding about another repository, another skill pack, or
+global agent instructions is outside this checkout's task: tell the user, and
+change it only when they explicitly ask. A finding about Shaka itself, found while
 working in another repository, follows the
 [issue-offer procedure](shaka-issue-offer.md).
 
