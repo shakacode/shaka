@@ -25,6 +25,12 @@ Install Shaka's control towers for Codex.
 
 In Claude Code, use `/mct-claude` and `/rct-claude` instead.
 
+In Codex, a chat opened directly in a checkout or its worktree can use the one
+registered project at that repository's exact path on the same computer. For
+example, a chat in your application's worktree can establish its tower without
+first moving the chat into the project. The skill instructs the agent to stop
+when the project match is ambiguous.
+
 After the master acknowledges the repository tower, ask the tower what needs
 attention. You choose which task starts; setup starts no backlog work or recurring
 scans.
