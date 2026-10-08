@@ -246,14 +246,21 @@ can turn an idea into a spec and tickets. Shaka takes them from there:
 ```text
 $shaka Deliver the spec at https://github.com/OWNER/REPO/issues/SPEC in OWNER/REPO.
 Its tickets are the sub-issues; follow their blocked-by links for order. Each
-ticket's acceptance criteria are in its body. Read the tracker but do not
-update it. Keep merge policy ask. Go.
+ticket's acceptance criteria are in its body. You may comment on the spec with
+your plan; do not close or edit tickets. Keep merge policy ask. Go.
 ```
 
 Name the spec, where the tickets and their acceptance criteria are, and the
 target repository. Link ticket dependencies in your tracker instead of describing
-the order in prose. Say whether the agent may update tickets; reading them gives
-it no permission to close or edit them.
+the order in prose.
+
+Say what the agent may write in your tracker; reading gives it no permission to
+close or edit anything. A spec that needs several PRs needs a place for the plan,
+so allow a plan comment or name another place. Otherwise the agent asks before it
+starts. Without permission to close tickets, the agent links each PR to its ticket
+without a closing keyword such as `Fixes`, so merging leaves the ticket open. On a
+public repository, it also checks with you before adopting criteria from a ticket
+that someone without write access wrote or edited.
 
 Shaka stays the one owner of delivery. It integrates the work, runs your checks,
 chooses reviewers, publishes the PR, and follows your merge policy. Another
