@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'check'
+require_relative '../local_review/path_guard'
 
 module Shaka
   class Doctor
@@ -14,10 +15,10 @@ module Shaka
         'xai/grok' => ['grok', 'https://docs.x.ai/build/overview', 'run `grok` and sign in']
       }.freeze
 
-      def initialize(root:, environment:, system:)
+      def initialize(root:, environment:, system: nil)
         @root = root
         @path = environment.fetch('PATH', '')
-        @executable = system.executable
+        @executable = system ? system.executable : LocalReviewPathGuard.method(:safe_executable)
         @api_key_present = !environment.fetch('OPENROUTER_API_KEY', '').b.strip.empty?
       end
 
@@ -26,6 +27,14 @@ module Shaka
           entry.values_at('provider', 'model_family').join('/').downcase
         end
         (SETUP.keys | Array(configured)).map { |identity| entry(identity, configured) }
+      end
+
+      def self.setup_notices(entries)
+        entries.select { |entry| entry[:configured] && !entry[:installed] }.map do |entry|
+          { 'reviewer' => entry.fetch(:identity),
+            'summary' => "This repository configures #{entry.fetch(:identity)} reviews, but local setup is incomplete.",
+            'guidance' => entry[:guidance] || 'Ask the repository maintainer which supported reviewer to configure.' }
+        end
       end
 
       private

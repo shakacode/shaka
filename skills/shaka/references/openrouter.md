@@ -10,7 +10,7 @@ The existing trusted reviewer configuration can name this opt-in adapter; do not
 change another user's configured reviewers automatically. The exact model and
 supported efforts (`low`, `high`, `max`) were checked against
 [OpenRouter's model metadata](https://openrouter.ai/api/v1/models) on 2026-10-07.
-Treat this adapter as an experimental, supplemental reviewer. Start with `low`;
+Use this optional reviewer alongside the existing reviewers. Start with `low`;
 paid high-effort trials on a large diff returned both useful reports and incomplete
 outcomes. Completion, review quality and savings are not guaranteed.
 
@@ -78,4 +78,3 @@ prompt, candidate code, response text, reasoning or credentials.
 uses `deepseek-flash` and has different peak/off-peak pricing. This integration
 supports OpenRouter's explicit slug, not the direct API. Provider rates can
 change; the recorded response charge is the accounting source.
-

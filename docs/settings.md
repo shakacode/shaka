@@ -246,7 +246,7 @@ Use these provider and family pairs for Shaka's supported local reviewers:
 | Grok | `xai` | `grok` | `low`, `medium`, `high` |
 | DeepSeek via OpenRouter API | `deepseek` | `openrouter` | `low`, `high`, `max` |
 
-DeepSeek is an experimental, supplemental reviewer. Add this entry to your trusted
+DeepSeek is an optional reviewer alongside your existing reviewers. Add this entry to your trusted
 reviewer list when you want Shaka to send the prompt and diff to OpenRouter and
 its selected upstream provider. Start with low effort; high-effort trials on a
 large diff sometimes consumed the completion budget without returning a report.
