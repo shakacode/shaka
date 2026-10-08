@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 356" role="img" aria-labelledby="t d">
+<title id="t">How control towers relate to delivery tasks</title>
+<desc id="d">A Master Control Tower coordinates repositories and their dependencies. Each Repository Control Tower follows one repository&#x27;s priorities and tasks. Each delivery task still has one owner, and you choose which task starts.</desc>
+<style>
+.bg{fill:#fff;stroke:#d9e0e7}
+text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
+.h{font-size:15px;font-weight:600}
+.s{font-size:13px}
+.m{fill:#516074}
+.c{text-anchor:middle}
+rect{stroke-width:1}
+.you rect{fill:#fdf3df;stroke:#b87514}
+.you text{fill:#5f3b06}
+.shaka rect{fill:#e3f5ec;stroke:#128a5e}
+.shaka text{fill:#0b4f37}
+.box rect{fill:#f1f4f8;stroke:#8a99ad}
+.frame{fill:none;stroke:#8a99ad;stroke-dasharray:6 4}
+.a{stroke:#516074;stroke-width:1.5;fill:none}
+.ah{fill:#516074}
+.dash,.dash rect{stroke-dasharray:5 4}
+@media (prefers-color-scheme:dark){
+.bg{fill:#0f1724;stroke:#2a3648}
+text{fill:#e6edf5}
+.m{fill:#9fb0c3}
+.you rect{fill:#40300f;stroke:#e0a13a}
+.you text{fill:#fbe3b0}
+.shaka rect{fill:#0e3d2c;stroke:#3ccf92}
+.shaka text{fill:#c9f3e0}
+.box rect{fill:#1a2535;stroke:#6b7c93}
+.frame{stroke:#6b7c93}
+.a{stroke:#9fb0c3}
+.ah{fill:#9fb0c3}
+}
+</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="719" height="355" rx="10"/>
+<g class="box"><rect x="230" y="40" width="260" height="60" rx="6"/><text class="h c" x="360" y="66">Master Control Tower</text><text class="s c" x="360" y="84">Coordinates repositories</text></g>
+<path class="a" d="M360 100V125H190V148" marker-end="url(#ar)"/>
+<path class="a" d="M360 125H530V148" marker-end="url(#ar)"/>
+<g class="box"><rect x="50" y="150" width="280" height="60" rx="6"/><text class="h c" x="190" y="176">Repository Control Tower</text><text class="s c" x="190" y="194">One repository&#x27;s priorities and tasks</text></g>
+<g class="box"><rect x="390" y="150" width="280" height="60" rx="6"/><text class="h c" x="530" y="176">Repository Control Tower</text><text class="s c" x="530" y="194">One repository&#x27;s priorities and tasks</text></g>
+<path class="a" d="M190 210V235H115V258" marker-end="url(#ar)"/>
+<path class="a" d="M190 235H265V258" marker-end="url(#ar)"/>
+<path class="a" d="M530 210V235H455V258" marker-end="url(#ar)"/>
+<path class="a" d="M530 235H605V258" marker-end="url(#ar)"/>
+<g class="shaka"><rect x="50" y="260" width="130" height="50" rx="6"/><text class="h c" x="115" y="281">Delivery task</text><text class="s c" x="115" y="299">One owner</text></g>
+<g class="shaka"><rect x="200" y="260" width="130" height="50" rx="6"/><text class="h c" x="265" y="281">Delivery task</text><text class="s c" x="265" y="299">One owner</text></g>
+<g class="shaka"><rect x="390" y="260" width="130" height="50" rx="6"/><text class="h c" x="455" y="281">Delivery task</text><text class="s c" x="455" y="299">One owner</text></g>
+<g class="shaka"><rect x="540" y="260" width="130" height="50" rx="6"/><text class="h c" x="605" y="281">Delivery task</text><text class="s c" x="605" y="299">One owner</text></g>
+<text class="s m" x="40" y="336">Towers track and coordinate. You choose which task starts.</text>
+</svg>

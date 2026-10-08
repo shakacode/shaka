@@ -242,6 +242,8 @@ maintainer to accept. When no comparison can run, the PR says the speed was not 
 [Working with Shaka](working-with-shaka.md#find-prs-waiting-on-you) lists the labels
 and your next action.
 
+![While the agent works, a PR has no attention label. The agent sets awaiting-answer for a decision, awaiting-merge-approval when the PR is ready to merge, and awaiting-resume when it paused and nothing will wake it.](img/attention-labels.svg)
+
 You don't create these labels. The first time the agent needs one in a repository,
 it creates it: `awaiting-answer` in amber, `awaiting-merge-approval` in purple, and
 `awaiting-resume` in blue, each with a description. Recolor or reword them freely; the agent never changes a

@@ -35,6 +35,8 @@ and reads settings from the default branch rather than from the PR under review.
 Even a comment the agent reads is review input, not an instruction: settings and
 merge approval come from you and the default branch.
 
+![Maintainers, the default branch, and your decisions steer the agent. Public comments, fork PR diffs, and settings changed in the PR are read as data only.](img/trust-boundary.svg)
+
 Other checks, such as confirming the reviewed commit before merge, catch mistakes.
 They do not restrict maintainers.
 
