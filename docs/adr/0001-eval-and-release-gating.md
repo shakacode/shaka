@@ -203,7 +203,9 @@ run provisional; a provisional run can inform but cannot make a release clean (D
 Decision. `eval/bin/shaka-eval diff A B --axis AXIS` compares two run sets only when
 every fingerprint field except the named axis matches. The axes are:
 
-- `skill`: two packages, everything else equal. This is the only axis that gates.
+- `skill`: two packages, everything else equal. The skill package digest and the
+  workflow and enforcement hashes may differ together, since they are all part of
+  the skill; every environment field must match. This is the only axis that gates.
   A skill change is judged within the cheap tier (both arms on the same cheap
   model) and separately within the strong tier.
 - `model`: two model ids on the same host CLI and provider, with the same effort
@@ -538,7 +540,9 @@ for local review and for the product. The card has, in this order:
 
 1. A header with the shared fingerprint and the one differing axis highlighted. A
    tier diff shows every bundled field. A provisional field is shown in its own
-   color with the reason.
+   color with the reason. The public renderings, PR comments and tracking-issue
+   summaries, omit the machine alias and any private path; the full fingerprint
+   stays in the private run record.
 2. The verdict line: better, worse, no material difference, or inconclusive, with
    the interval, the number of tasks and trials, and the cost ratio.
 3. A per-task table: gate result, score, each rubric dimension as pass, fail, or
