@@ -18,7 +18,7 @@ module Shaka
       def initialize(root:, environment:, system: nil)
         @root = root
         @path = environment.fetch('PATH', '')
-        @executable = system ? system.executable : LocalReviewPathGuard.method(:safe_executable)
+        @executable = system ? system.executable : method(:executable)
         @api_key_present = !environment.fetch('OPENROUTER_API_KEY', '').b.strip.empty?
       end
 
@@ -38,6 +38,10 @@ module Shaka
       end
 
       private
+
+      def executable(name, path, root)
+        LocalReviewPathGuard.safe_executable(path, name, root)
+      end
 
       def entry(identity, configured)
         result = { identity:, provider: identity.split('/').first, configured: Array(configured).include?(identity) }

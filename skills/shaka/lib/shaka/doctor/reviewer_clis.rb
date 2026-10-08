@@ -58,8 +58,8 @@ module Shaka
 
       def guidance(entries, warnings)
         lines = entries.filter_map { |entry| entry[:guidance] }
-        lines << "Add a second reviewer: #{GUIDE}" unless warnings.empty?
-        lines << 'Configure the listed repository reviewers; other CLIs are optional.' unless lines.empty?
+        lines << "Reviewer setup: #{GUIDE}" unless warnings.empty?
+        lines << 'Configured reviewer setup is recommended; other providers are optional.' unless lines.empty?
         lines.empty? ? nil : lines.join("\n    ")
       end
 

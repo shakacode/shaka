@@ -40,6 +40,7 @@ class DoctorReviewersTest < Minitest::Test
       assert_includes report, '[DEGRADED] Reviewer CLIs'
       assert_includes report, 'This repository configures deepseek/openrouter reviews'
       assert_includes report, 'Set OPENROUTER_API_KEY'
+      refute_includes report, 'Add a second reviewer'
       refute blocked
     end
   end

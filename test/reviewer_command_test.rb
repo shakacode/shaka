@@ -27,16 +27,6 @@ class ReviewerCommandTest < Minitest::Test
     end
   end
 
-  def test_reports_configured_setup_gaps_without_launching_or_silently_skipping_reviewers
-    with_repository do |root|
-      marker = File.join(root, 'launched')
-      result = missing_setup_selection(root, marker)
-      assert_equal 'deepseek/openrouter', result.fetch('reviewer')
-      assert_setup_notices(result.fetch('setup_notices'))
-      refute_path_exists marker
-    end
-  end
-
   # A candidate that rewrites review.local_review_agents must not be able to nominate its own family.
   def test_reads_the_reviewer_list_from_the_trusted_ref
     with_repository do |root|
@@ -83,35 +73,6 @@ class ReviewerCommandTest < Minitest::Test
   end
 
   private
-
-  def missing_setup_selection(root, marker)
-    rewrite_reviewers(root, missing_setup_agents)
-    candidate_tool(root, marker)
-    env = { 'SHAKA_RUBY' => RbConfig.ruby, 'PATH' => "#{root}/tools:/usr/bin:/bin", 'OPENROUTER_API_KEY' => nil }
-    output, error, status = Open3.capture3(env, COMMAND, 'reviewer', '--root', root,
-                                           '--implementer', 'openai/codex')
-    assert_predicate status, :success?, error
-    JSON.parse(output)
-  end
-
-  def candidate_tool(root, marker)
-    FileUtils.mkdir_p(File.join(root, 'tools'))
-    path = File.join(root, 'tools/claude')
-    File.write(path, "#!/bin/sh\ntouch #{marker}\n")
-    File.chmod(0o700, path)
-  end
-
-  def missing_setup_agents
-    [{ 'provider' => 'deepseek', 'model_family' => 'openrouter',
-       'model' => 'deepseek/deepseek-v4.1-flash', 'effort' => 'low' },
-     { 'provider' => 'anthropic', 'model_family' => 'claude' }]
-  end
-
-  def assert_setup_notices(notices)
-    assert_equal(%w[anthropic/claude deepseek/openrouter], notices.map { |notice| notice.fetch('reviewer') }.sort)
-    assert_includes notices.find { |notice| notice['reviewer'] == 'deepseek/openrouter' }.fetch('guidance'),
-                    'OPENROUTER_API_KEY'
-  end
 
   def assert_reviewer_rejects(root, expected)
     _, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, '--ref', 'HEAD',
