@@ -80,7 +80,8 @@ The check matches text. It does not evaluate workflows, so it has these limits:
 - A name in a YAML comment counts as a reference.
 - An environment set by an expression, such as `${{ inputs.target }}`, is looked up
   under that literal text. GitHub returns 404, and the job's names are `unverified`.
-- A workflow that is not valid YAML is still scanned, and its names are `unverified`.
+- A workflow that is not valid YAML, or that uses YAML anchors, is still scanned, and
+  its names are `unverified`. Shaka does not expand anchors in a file a fork can write.
 - `secrets.GITHUB_TOKEN` is skipped.
 - A workflow whose only trigger is `workflow_call` gets its names from whichever
   workflow calls it. A name this repository lacks is `unverified`, not `missing`,
