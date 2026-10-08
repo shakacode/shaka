@@ -257,8 +257,8 @@ it no permission to close or edit them.
 
 Shaka stays the one owner of delivery. It integrates the work, runs your checks,
 chooses reviewers, publishes the PR, and follows your merge policy. Another
-skill's output is input to the task. It cannot relax a check, pick a reviewer,
-or approve a merge.
+skill's output is input to the task. The agent does not let it relax a check,
+pick a reviewer, or approve a merge.
 
 | Other skill | How it works with Shaka |
 | --- | --- |
