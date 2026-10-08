@@ -47,10 +47,14 @@ paths you own, or select a protected location. Preserve file contents and execut
 
 ## Verify and update
 
+The installer prints an update reminder for every host and custom skills directory.
+
+Run `update-check` inside a Git checkout; without a known checkout boundary it skips the network call.
 Use the registered helper with your chosen path:
 
 ```bash
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
+"$HOME/.agents/shaka/skills/shaka/scripts/shaka" update-check
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --update
 ```
 
@@ -62,7 +66,7 @@ running `bin/install` with Ruby 3.4 or later. Maintenance uses registered select
 change hosts or towers through installation first. A known interrupted update
 completes on the next installation or update run.
 
-Pause active chats before updating this mutable path. Doctor reads recorded identity;
+Finish active Shaka chats before updating this mutable path. Doctor reads recorded identity;
 verification rechecks it. Project settings use [repository migration](migration.md).
 
 ## Migrate retained-copy installations
