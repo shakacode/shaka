@@ -8,10 +8,11 @@ module Shaka
     def column(key, group, reasons)
       configuration, billing = key
       provider, model, routed, effort = configuration
-      { provider: provider, model: billed_model(provider, billing, model),
-        routed: billed_routed(provider, billing, routed), effort: effort,
-        billing: billing, native: native_cost?(group),
-        recorded_native: native_recorded?(group) }.merge(priced_totals(group, reasons, provider, model))
+      fields = { provider: provider, model: billed_model(provider, billing, model),
+                 routed: billed_routed(provider, billing, routed), effort: effort,
+                 billing: billing, native: native_cost?(group),
+                 recorded_native: native_recorded?(group), native_source: native_source(group) }
+      fields.merge(priced_totals(group, reasons, provider, model))
     end
 
     def priced_totals(group, reasons, provider, model)
@@ -41,6 +42,16 @@ module Shaka
 
     def native_recorded?(group)
       group.any? { |record| record['usage'].is_a?(Hash) && record['usage'].key?('native_cost_usd') }
+    end
+
+    def native_source(group)
+      if group.any? do |record|
+        record['usage'].is_a?(Hash) && record['usage']['native_cost_source'] == 'claude-code'
+      end
+        'claude-code'
+      else
+        'pi'
+      end
     end
 
     def keep_credit_reason?(provider, model, credits, group)
