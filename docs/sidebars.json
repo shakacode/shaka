@@ -43,7 +43,15 @@
         "architecture",
         "repository-catalog",
         "control-towers",
-        "trying-pr-versions"
+        "trying-pr-versions",
+        {
+          "type": "category",
+          "label": "Decision records",
+          "collapsed": true,
+          "items": [
+            "adr/0001-eval-and-release-gating"
+          ]
+        }
       ]
     },
     {
