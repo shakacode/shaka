@@ -1,6 +1,7 @@
 # 0001: Eval and release gating
 
-Status: proposed. Date: 2026-10-07. Tracks [issue #206](https://github.com/shakacode/shaka/issues/206).
+Status: proposed. Date: 2026-10-07, revised 2026-10-09 to add D15 on the execution
+layer. Tracks [issue #206](https://github.com/shakacode/shaka/issues/206).
 
 Shaka changes agent behavior through prose in skill files and through deterministic
 Ruby. Tests prove the Ruby. Beyond anecdotes from real-work trials and two
@@ -557,9 +558,10 @@ for local review and for the product. The card has, in this order:
 5. The human verdict control when the reader is a judge (product and anchor-set
    collection): blind until submitted, then revealed.
 
-No surveyed tool renders agent trajectory diffs for humans. This renderer is built
-here. Chromatic's baseline rule applies: a baseline moves only when a human accepts
-the new result.
+No surveyed tool renders two agent runs side by side for a human. Several show one
+run at a time, including Harbor's local viewer (D15). This renderer is built here.
+Chromatic's baseline rule applies: a baseline moves only when a human accepts the
+new result.
 
 ### D11. Use 3: the product feature
 
@@ -632,6 +634,93 @@ checked by the existing forbidden-content test. The nightly skill under
 the eval organization. Public summaries on a tracking issue in `shakacode/shaka`.
 Reports that a human writes still go to `eval/reports/` and the experiment index.
 
+### D15. Two layers: the comparison layer is ours, the execution layer is open
+
+Decision. The system has two layers, and this record commits to only one of them.
+
+- The comparison layer is the fingerprint match and single-axis rule (D2), the gates
+  and judge protocol (D4, D5), the score and statistics (D8), the release gate (D9),
+  and the diff card (D10). It is Ruby, it lives under `eval/`, and no surveyed tool
+  provides it.
+- The execution layer starts a container, installs a pinned host CLI, injects a skill
+  at a commit, runs the agent at a set effort, enforces resource and network limits,
+  collects artifacts, runs the verifier, and repeats K times. D1 and D14 describe a
+  Ruby runner for it. That runner is not built, and a one-day spike on
+  [Harbor](https://www.harborframework.com/) comes before it is.
+
+Harbor is an Apache-2.0 Python tool from the Terminal-Bench authors
+([repository](https://github.com/harbor-framework/harbor)). Verified in its
+documentation and in its source at v0.24.0, released 2026-10-05:
+
+- It ships agent integrations for Claude Code, Codex, Cursor, OpenCode, and Pi, the
+  five hosts Shaka supports
+  ([agents](https://docs.harborframework.com/agents/pre-integrated-agents)).
+- One flag injects a skill from a Git repository at a ref. The job lock file records
+  each skill by name, content digest, and commit
+  ([skills](https://docs.harborframework.com/jobs/skills)).
+- A task can run its verifier in a separate sandbox with explicit artifact handoff,
+  and can turn network access off or restrict it to an allowlist
+  ([separate verifier](https://docs.harborframework.com/tasks/separate-verifier),
+  [task configuration](https://docs.harborframework.com/tasks/configuration)).
+- It repeats attempts per task, and its Docker environment enforces CPU and memory
+  limits ([job configuration](https://docs.harborframework.com/jobs/configs)).
+- The host CLI version can be pinned and is recorded in each trial result with the
+  model and provider. Effort is an option on the Claude Code and Codex integrations.
+- API keys are the default. Subscription sign-in is opt-in on both of those
+  integrations.
+- It can rerun a changed verifier over recorded outputs without rerunning the agent
+  ([regrade](https://docs.harborframework.com/jobs/regrade)), and its Rewardkit
+  package offers weighted binary criteria and repeated judge samples with an
+  agreement score
+  ([judge criteria](https://docs.harborframework.com/rewardkit/judge-criteria)).
+
+What it does not provide, checked the same way:
+
+- No paired diff, single-axis rule, noise floor, gate, or side-by-side view. That is
+  the comparison layer.
+- No container image digest in the lock file or trial result, as far as a search of
+  the source found. Ruby reads the digest after the build and adds it (D2).
+- Token counts as input, cached, and output with a cost. The cache-write and
+  reasoning categories D12 needs still come from `shaka usage` reading the native
+  session logs.
+- The tier 3 driver. Harbor has multi-step tasks and a simulated-user mode that may
+  carry the two-message startup, which was not tested. The proposal's driver also
+  posts head-bound reviews during the run and reads GitHub state back. Tier 3 stays
+  on the proposal's driver unless the spike shows otherwise.
+
+Rules that hold whenever Harbor runs here. Proposed, enforced by the Ruby wrapper
+that launches it:
+
+- Telemetry is off. Harbor reports agents, models, token usage, cost, and reward to
+  a third party by default
+  ([usage stats](https://docs.harborframework.com/telemetry/telemetry)), which is
+  the material this record keeps private. The wrapper sets `HARBOR_TELEMETRY=off`.
+- No uploads to Harbor Hub. Results stay in the private results repository.
+- The Harbor version is pinned and joins the fingerprint. It is a 0.x tool with
+  frequent releases.
+- Harbor is a tool on the eval machines. It never becomes a dependency of the gem
+  or the skill.
+
+The spike. One tier 2 task, the baseline and candidate Shaka commits injected as the
+skill, Claude Code and Codex, three attempts, and a separate verifier that calls the
+existing Ruby validators through the D3 offline entry point or the fake `gh`. It
+passes when all of these hold:
+
+1. Both hosts complete the task with the Shaka skill loaded from the named commit.
+2. The verifier runs in its own sandbox and the agent cannot reach the tests.
+3. The lock file and trial result supply every D2 field except the image digest, or
+   the gaps are listed.
+4. `shaka usage` reads the collected native session logs and returns the D12 token
+   categories.
+5. Sign-in works on an office machine in the mode the maintainer chooses.
+6. Nothing leaves the machine except model and GitHub traffic.
+
+If it passes, `shaka-eval run` becomes a thin wrapper that writes a Harbor job,
+runs it, and converts the result into the run record; tier 2 tasks take Harbor's
+task layout; and the probe container builder and proxy sidecar from the proposal
+are retired for that tier. If it fails, the Ruby runner in D1 and D14 stands. Tier 1
+needs no container and stays plain Ruby either way.
+
 ## Budget
 
 All figures are cache-neutral (D12), at the rate card's base input and output rates
@@ -645,27 +734,34 @@ trial carries 30 thousand input tokens and 500 output tokens, matching the rough
 carries 300 thousand input and 6 thousand output tokens, an assumption with no
 measurement yet; a tier 3 arm on the cheap tier cost $2.42 to $3.45 in the two
 recorded pairs at gpt-6.1-sol and medium effort, under a $10 soft stop, and the
-strong tier is unmeasured and assumed at three times that; a judge call carries
+strong tier is unmeasured and assumed at three times that for either strong model;
+a judge call carries
 15 thousand input and 500 output tokens, and a pair needs about twelve calls (five
 dimensions for each of two artifacts, plus pairwise in two orders), about $0.40.
 
-| Run | Trials | Cheap tier | Strong tier, Opus 5.5 | Strong tier, gpt-6-astra |
+| Run | Trials or calls | Cheap tier | Strong tier, Opus 5.5 | Strong tier, gpt-6-astra |
 | --- | --- | --- | --- | --- |
 | Tier 1 trial | 1 | $0.07 | $0.13 | $0.33 |
 | Tier 2 trial | 1 | $0.66 | $1.32 | $3.30 |
 | Cheap night: 30 tier 1 tasks, K=3, two arms | 180 | $12 | | |
 | Cheap night: 10 tier 2 tasks, K=3, two arms | 60 | $40 | | |
-| Cheap night: judge on about 30 passing pairs | 360 calls | $13 | | |
+| Cheap night: judge calls on about 30 passing pairs | 360 | $13 | | |
 | Cheap night total | | about $65, 2 to 3 hours | | |
 | Strong night: tier 1 at K=8, two arms | 480 | | $62 | $156 |
 | Strong night: tier 2 at K=3, two arms | 60 | | $79 | $198 |
-| Strong night: judge, 30 pairs | 360 calls | | $13 | $13 |
-| Strong night: two tier 3 tasks, one trial, two arms | 4 arms | | $30 to $40 | $30 to $40 |
-| Strong night: head package on the cheap tier for the tier diff, plus judge | 270 and 360 calls | | about $50 | about $50 |
+| Strong night: judge calls, 30 pairs | 360 | | $13 | $13 |
+| Strong night: two tier 3 tasks, one trial, two arms, see note | 4 | | $30 to $40 | $30 to $40 |
+| Strong night: head package on the cheap tier for the tier diff, trials plus judge calls | 270 + 360 | | about $50 | about $50 |
 | Strong night total | | | about $240, a working day | about $450, a working day |
 | Week, six cheap nights and one strong | | | about $630 | about $840 |
 | Month | | | about $2,700 | about $3,600 |
 | One PR eval: 8 tier 1 and 4 tier 2 tasks, K=3, two arms | 72 | about $20 to $25, under an hour | | |
+
+Note on the tier 3 row: it is three times the measured cheap-tier cost for both
+strong models, so the two columns match by construction and say nothing about how
+tier 3 cost varies by model. Scaled by the rate card instead, the row would be about
+$19 to $28 for Opus 5.5 and $48 to $69 for gpt-6-astra, which moves each strong
+night total by under $35.
 
 The table prices one cheap series and one strong series. A second cheap model run
 nightly doubles the cheap night and needs its own pinned judge from the other family.
@@ -757,7 +853,8 @@ human question is the cap, not whether there is one.
 - Grading on the PR head in CI. A ten-line test shim resolved every SWE-bench Verified
   instance and a replaced `curl` scored every Terminal-Bench task
   ([Berkeley RDI](https://rdi.berkeley.edu/blog/trustworthy-benchmarks-cont/)).
-  D4 grades in a container the agent never had, with hidden tests.
+  D4 grades in a container the agent never had, with hidden tests. Harbor offers
+  the same remedy as an opt-in separate verifier sandbox (D15).
 - Author-shipped tasks. Tests written by the same model are homogeneous
   ([SAGA](https://arxiv.org/abs/2507.06920)); self-improving loops reward-hack more
   as optimization continues ([ICLR 2026](https://iclr.cc/virtual/2026/10018648)).
@@ -772,10 +869,11 @@ human question is the cap, not whether there is one.
   only on Claude, needs session auth, cannot load a Git fixture's project
   configuration, and has no run-versus-run diff. This design borrows its grader
   vocabulary and does not depend on it.
-- Framework fingerprints. Only Inspect records dependency versions and the git
-  revision natively ([Inspect eval logs](https://inspect.aisi.org.uk/eval-logs.html));
-  none of the surveyed tools was verified to record a container digest or CPU and
-  memory limits. D2 records both.
+- Framework fingerprints. Inspect records dependency versions and the git revision
+  ([Inspect eval logs](https://inspect.aisi.org.uk/eval-logs.html)). Harbor records
+  its own version, the task digest, each skill's digest and commit, the agent CLI
+  version, and the CPU and memory settings (D15). Neither was found to record the
+  container image digest. D2 records it.
 
 ## Known pitfalls in this plan
 
@@ -835,18 +933,27 @@ human question is the cap, not whether there is one.
   action reports one or the eval records the model it observed.
 - Host CLI auto-updates. The probe image ships Ruby, git, and the GitHub CLI; the
   host CLI is not pinned there today. D8 requires the image to pin it, or the
-  noise-floor window never closes.
+  noise-floor window never closes. Harbor installs a requested CLI version when one
+  is given and the latest otherwise, so the wrapper must always give one (D15).
 
 ## Alternatives considered
 
 - Adopt `claude plugin eval` as the system. Rejected as the system; borrowed as
   vocabulary. It cannot run Codex or other hosts, cannot drive a Git fixture with
   project configuration, has no run-versus-run diff, and publishes by default.
-- Adopt Inspect, promptfoo, or Braintrust. Rejected. Each would add a Python or
-  TypeScript or hosted dependency to a Ruby-only repository, and none enforces the
-  single-axis rule or records the container fingerprint this design needs.
-  promptfoo's custom providers and Braintrust's beta Ruby SDK are noted as future
-  adapters if a user wants their results in those tools.
+- Adopt Inspect, promptfoo, or Braintrust as the system. Rejected. None enforces
+  the single-axis rule, produces the gate, or records the image digest, and
+  promptfoo and Braintrust treat the system under test mainly as a function that
+  returns text. An earlier draft also rejected them for adding a non-Ruby
+  dependency. That reason was too broad: the repository rule bars a new runtime gem
+  and eval code in the product runtime, and a tool on the eval machines breaks
+  neither. promptfoo's custom providers and Braintrust's beta Ruby SDK are noted
+  as future adapters if a user wants their results in those tools.
+- Adopt Harbor as the execution layer. Not rejected and not adopted. It fits the
+  execution layer better than the three above because it ships integrations for
+  all five hosts and injects a skill at a commit. D15 decides it by spike.
+- Build the execution layer in Ruby, as the proposal planned. Held until the D15
+  spike reports.
 - Delivery tasks only, as the proposal planned. Rejected as the daily workload.
   Two hour-long pairs produced inconclusive value evidence; tiers 1 and 2 produce
   more bits per dollar.
@@ -916,6 +1023,9 @@ human question is the cap, not whether there is one.
 10. Who may promote a proposed task into core, and how many reviewer hours per task
     the budget funds.
 11. Who pays for the product's judge when a customer holds only one vendor key.
+12. The execution layer: Harbor or a Ruby runner. Recommendation: run the D15 spike
+    first and adopt Harbor for tier 2 if it passes. Adoption removes most of the
+    runner work and adds a pinned Python tool to the eval machines.
 
 ## Questions a human must answer before we build
 
@@ -939,6 +1049,8 @@ human question is the cap, not whether there is one.
     reported as API-equivalent either way?
 11. Do decision records stay under `docs/adr/`, published on the docs site, or move
     to `internal/` with the other development records?
+12. Is a pinned Python tool acceptable on the eval machines, with its telemetry off
+    and no uploads to its hosted hub?
 
 ## Documentation to read first
 
@@ -963,8 +1075,15 @@ human question is the cap, not whether there is one.
   for grader isolation.
 - [Claude Code plugin evals](https://code.claude.com/docs/en/plugin-evals) for the
   grader vocabulary.
+- Harbor's [task format](https://docs.harborframework.com/tasks/overview),
+  [separate verifier](https://docs.harborframework.com/tasks/separate-verifier), and
+  [skills](https://docs.harborframework.com/jobs/skills) pages, before the D15 spike.
 
 ## Documentation to write first
+
+Before the list below, run the D15 spike and write its report under `eval/reports/`
+with an entry in the experiment index. Its result decides how much of items 1 and 2
+is new Ruby.
 
 1. The run record schema and the fingerprint field list, as a JSON schema under
    `eval/` with a Ruby check.
