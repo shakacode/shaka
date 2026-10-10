@@ -6,8 +6,8 @@ Before publishing, reread each summary for these points:
 - Give each sentence one main idea and a clear subject and verb.
 - Put conditions beside the behavior they limit.
 - Use familiar words; explain unfamiliar project terms through the behavior they name.
-- Name the feature, user, or dependency instead of referring to an agreed design
-  or earlier discussion the reader may not know.
+- Name the feature, user, or dependency behind references to an agreed design
+  or earlier discussion; supply the context the reader needs.
 - Keep exact commands, identifiers, risks, and evidence intact.
 - In replies, state the decision; use shared context without requiring private discussion.
 - Delete greetings, praise, and claims of significance that add no information.
