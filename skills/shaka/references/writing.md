@@ -5,17 +5,21 @@ Before publishing, reread each summary for these points:
 - Lead with the outcome its reader notices.
 - Give each sentence one main idea and a clear subject and verb.
 - Put conditions beside the behavior they limit.
-- Use familiar words; explain necessary technical terms.
+- Use familiar words; explain unfamiliar project terms through the behavior they name.
+- Name the feature, user, or dependency instead of referring to an agreed design
+  or earlier discussion the reader may not know.
 - Keep exact commands, identifiers, risks, and evidence intact.
-- In replies, state the decision and use the thread's existing context.
-- Delete greetings, praise, repeated explanations, and claims of significance
-  that add no information.
+- In replies, state the decision; use shared context without requiring private discussion.
+- Delete greetings, praise, and claims of significance that add no information.
+  State each conclusion once; different wording or labels do not add meaning.
 
 For advisory reviews, put the current-head recommendation, main reason, and task
 owner's next action before the analysis. Name model settings with their provenance;
-a configured model is not proof of a served model. Keep unresolved blockers visible.
-State whether a simpler alternative revises this PR or replaces it, and explain
-the disposition. Supporting usage and history can remain collapsed.
+a configured model is not proof of a served model. Name the user benefit, scope,
+and unfinished verification when they affect the decision. Distinguish verified
+results, a recommendation to merge, and permission to merge. Keep unresolved
+blockers visible. State whether a simpler alternative revises this PR or replaces
+it. Supporting usage and history can remain collapsed.
 
 For example, replace “Adds validation of the configured base parameter” with
 “Shaka now rejects an invalid base branch before the agent starts work.” A code
