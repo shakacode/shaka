@@ -246,13 +246,8 @@ does not enforce those rules.
 
 ```text
 Run a Shaka retrospective of this session, following the retrospective reference
-in the installed Shaka skill. Use a session retrospective skill if one is
-installed; otherwise analyze the session yourself. List the findings for me to
-choose from. Do not edit files, install tools, or open issues or PRs.
+in the installed Shaka skill.
 ```
-
-To cover another session, name it and give the agent its transcript if this chat
-cannot open it. The agent reports anything it cannot read as unknown.
 
 Each finding states what happened, the evidence, a proposed improvement, its
 expected benefit, and what it costs to maintain. A mistake the agent repeated

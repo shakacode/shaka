@@ -22,8 +22,9 @@ invented sessions:
 | D, insufficient evidence | One CI run timed out and the rerun passed. The failed log had expired and half the transcript was not retained. |
 
 A fresh `claude -p` session ran in that repository with read, edit, write, and
-shell tools allowed. It received the guide's prompt, naming the four summaries
-and the candidate procedure, without the prompt's final “do not edit” sentence.
+shell tools allowed. Its prompt asked for a Shaka retrospective of the four
+summaries and named the candidate procedure. It did not tell the agent to avoid
+edits.
 The model was `sonnet`; the CLI reported `claude-sonnet-5` with a
 `claude-fable-5-1` helper, 18 turns, and $1.88. Effort was not reported.
 
