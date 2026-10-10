@@ -43,9 +43,9 @@ module Shaka
       supplied ||= {}
       raise Error, 'Native publisher attribution requires an identity object.' unless supplied.is_a?(Hash)
 
-      resolved = %w[agent provider model effort].to_h do |field|
+      resolved = supplied.merge((['agent'] + reader::FIELDS).to_h do |field|
         [field, resolve(supplied[field], observed[field], field)]
-      end
+      end)
       resolved['model'] += reader::MODEL_SUFFIX unless resolved['model'] == 'UNKNOWN'
       resolved.merge('agent' => reader::AGENT)
     end
@@ -63,7 +63,7 @@ module Shaka
     end
 
     def self.note(reader, observed)
-      missing = %w[provider model effort].reject { |field| observed[field] }
+      missing = reader::FIELDS.reject { |field| observed[field] }
       gap = "UNKNOWN #{missing.join(', ')}: #{observed.fetch('reason')}." unless missing.empty?
       note = [reader::NOTE, gap].compact.join(' ')
       note unless note.empty?

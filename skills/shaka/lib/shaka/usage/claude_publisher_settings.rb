@@ -8,6 +8,8 @@ module Shaka
     AGENT = 'Claude Code'
     MODEL_SUFFIX = ''
     NOTE = nil
+    # The session does not record which service served the model, so the provider stays as supplied.
+    FIELDS = %w[model effort].freeze
     TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
     UNAVAILABLE = 'Claude Code current turn settings unavailable'
 
@@ -44,9 +46,9 @@ module Shaka
       end
     end
 
-    # Tool results repeat their prompt's ID, so only a new ID starts a turn.
+    # Tool results repeat their prompt's ID, so only a new or missing ID starts a turn.
     def prompt(identity)
-      return if identity == @turn
+      return if identity.is_a?(String) && identity == @turn
 
       @turn = identity
       clear(UNAVAILABLE)
@@ -57,8 +59,7 @@ module Shaka
       message = record['message']
       return unless message.is_a?(Hash) && message['model'] != '<synthetic>'
 
-      @settings = { 'provider' => 'anthropic', 'model' => token(message['model']),
-                    'effort' => token(record['effort']) }
+      @settings = { 'model' => token(message['model']), 'effort' => token(record['effort']) }
       @reason = UNAVAILABLE
     end
 

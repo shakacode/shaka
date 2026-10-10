@@ -383,9 +383,10 @@ Missing, ambiguous, or unreadable session metadata leaves unavailable fields
 `UNKNOWN` with a reason. A new turn without context clears earlier settings.
 
 Claude Code publications resolve the chat through `CLAUDE_CODE_SESSION_ID` the same
-way. Ruby reads the served model and effort from the current turn's latest response,
-ignoring subagent responses, so the header carries no `(configured)` label. A
-note appears only when a field is `UNKNOWN`.
+way. Ruby reads the served model and effort from the current turn's latest response
+and ignores subagent responses. The model is the served one, so the header carries
+no `(configured)` label. The provider stays as supplied. A note appears only when
+the model or effort is `UNKNOWN`.
 
 Other hosts retain supplied attribution with an explicit unverified note until
 a native publisher reader is available. Aggregate usage rows cannot establish

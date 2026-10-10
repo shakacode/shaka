@@ -37,7 +37,7 @@ class ClaudePublisherAttributionTest < Minitest::Test
   def test_served_model_and_effort_fill_unknown_fields_without_a_note
     with_claude_session(prompt('older'), response('claude-older', 'low'), prompt, response) do |environment, _file|
       result = prepare(environment)
-      assert_equal({ 'agent' => 'Claude Code', 'provider' => 'anthropic', 'model' => 'claude-opus-5-5',
+      assert_equal({ 'agent' => 'Claude Code', 'provider' => 'Anthropic', 'model' => 'claude-opus-5-5',
                      'effort' => 'medium' }, result['identity'])
       assert_equal 'claude-opus-5-5', result.dig('provenance', 'active_model')
       assert_equal 'medium', result.dig('provenance', 'active_effort')
@@ -66,7 +66,13 @@ class ClaudePublisherAttributionTest < Minitest::Test
     with_claude_session(prompt('older'), response, prompt) do |environment, _file|
       result = prepare(environment)
       assert_equal 'UNKNOWN', result.dig('identity', 'model')
-      assert_includes result['publisher_note'], 'UNKNOWN provider, model, effort: Claude Code current turn'
+      assert_includes result['publisher_note'], 'UNKNOWN model, effort: Claude Code current turn'
+    end
+  end
+
+  def test_prompts_without_an_identity_never_carry_earlier_settings_forward
+    with_claude_session(prompt(nil), response, prompt(nil)) do |environment, _file|
+      assert_equal 'UNKNOWN', prepare(environment).dig('identity', 'model')
     end
   end
 

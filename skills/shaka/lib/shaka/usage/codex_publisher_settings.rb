@@ -8,6 +8,7 @@ module Shaka
     AGENT = 'Codex'
     MODEL_SUFFIX = ' (configured)'
     NOTE = 'Publisher model is configured; served model is UNKNOWN.'
+    FIELDS = %w[provider model effort].freeze
     TOKEN = /\A[A-Za-z0-9][A-Za-z0-9._:-]{0,79}\z/
 
     def self.read(environment)
