@@ -43,7 +43,7 @@ module Shaka
       supplied ||= {}
       raise Error, 'Native publisher attribution requires an identity object.' unless supplied.is_a?(Hash)
 
-      resolved = supplied.merge((['agent'] + reader::FIELDS).to_h do |field|
+      resolved = supplied.slice('provider').merge((['agent'] + reader::FIELDS).to_h do |field|
         [field, resolve(supplied[field], observed[field], field)]
       end)
       resolved['model'] += reader::MODEL_SUFFIX unless resolved['model'] == 'UNKNOWN'

@@ -386,7 +386,8 @@ Claude Code publications resolve the chat through `CLAUDE_CODE_SESSION_ID` the s
 way. Ruby reads the served model and effort from the current turn's latest response
 and ignores subagent responses. The model is the served one, so the header carries
 no `(configured)` label. The provider stays as supplied. A note appears only when
-the model or effort is `UNKNOWN`.
+the model or effort is `UNKNOWN`. A subagent shares its parent's session ID, so a
+publication from one would carry the main chat's settings; subagents do not publish.
 
 Other hosts retain supplied attribution with an explicit unverified note until
 a native publisher reader is available. Aggregate usage rows cannot establish
