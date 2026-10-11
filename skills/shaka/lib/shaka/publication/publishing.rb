@@ -51,7 +51,7 @@ module Shaka
         raise Error, 'Rendered output contains a literal escape sequence; supply real line breaks.'
       end
 
-      expected = PublicationText.rendered(body).lines.count { |line| line.match?(SEPARATOR) }
+      expected = PublicationText.prose(body).lines.count { |line| line.match?(SEPARATOR) }
       rendered = html.scan('<table').size
       return html if rendered >= expected
 

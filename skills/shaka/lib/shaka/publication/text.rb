@@ -7,14 +7,6 @@ module Shaka
   module PublicationText
     ESCAPE = /\\[nrt]/
     IDENTITY_FIELDS = %w[agent provider model effort].freeze
-    # GitHub shows these as literal text, so a table inside one never renders. Whichever opens
-    # first owns what it contains: a pre tag quoted in fenced code is not a pre block.
-    LITERAL = %r{
-      ^~~~.*?^~~~ | ```.*?``` |
-      ^[ ]{0,3}<!--.*?--> |
-      ^[ ]{0,3}<pre(?=[\s>]).*?</pre> |
-      (`+)(?:(?!\1).)*\1(?!`)
-    }mix
 
     DISPLAY_NAMES = {
       'agent' => { 'codex' => 'Codex', 'claude' => 'Claude', 'grok' => 'Grok' },
@@ -33,9 +25,6 @@ module Shaka
     def prose(text)
       text.gsub(/^~~~.*?^~~~/m, '').gsub(/```.*?```/m, '').gsub(/(`+)(?:(?!\1).)*\1(?!`)/m, '')
     end
-
-    # The text GitHub renders as Markdown, where a table has to become a table.
-    def rendered(text) = text.gsub(LITERAL, '')
 
     # A summary is interpolated into raw HTML, so it must not be able to close its own tag.
     def summary_text(value, field)
