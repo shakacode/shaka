@@ -241,7 +241,7 @@ no stacked-PR service is needed.
 
 Plan with the skills you like, then give the result to Shaka to deliver. For
 example, [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
-can turn an idea into a spec and tickets. Shaka takes them from there:
+can turn an idea into a spec and tickets. Paste a prompt like this to hand them over:
 
 ```text
 $shaka Deliver the spec at https://github.com/OWNER/REPO/issues/SPEC in OWNER/REPO.
@@ -250,22 +250,28 @@ ticket's acceptance criteria are in its body. You may comment on the spec with
 your plan; do not close or edit tickets. Keep merge policy ask. Go.
 ```
 
-Name the spec, where the tickets and their acceptance criteria are, and the
-target repository. Link ticket dependencies in your tracker instead of describing
-the order in prose.
+Here is what happens next:
 
-Say what the agent may write in your tracker; reading gives it no permission to
-close or edit anything. A spec that needs several PRs needs a place for the plan,
-so allow a plan comment or name another place. Otherwise the agent asks before it
-starts. Without permission to close tickets, the agent links each PR to its ticket
-without a closing keyword such as `Fixes`, so merging leaves the ticket open. On a
-public repository, it also checks with you before adopting criteria from a ticket
-that someone without write access wrote or edited.
+1. The agent reads the spec and every ticket, and takes the order of work from
+   the blocked-by links.
+2. It decides how many PRs the spec needs. When that is more than one, it posts
+   the plan as a comment on the spec.
+3. It delivers each PR the usual way: tests, your checks, independent review,
+   a description, and a code walkthrough.
+4. Under Ask, each PR comes back to you to merge. A PR that depends on another
+   waits until that one merges.
+5. Tickets stay open. Each PR links its ticket without a closing keyword such
+   as `Fixes`, because the prompt did not allow closing tickets.
 
-Shaka stays the one owner of delivery. It integrates the work, runs your checks,
-chooses reviewers, publishes the PR, and follows your merge policy. Another
-skill's output is input to the task. The agent does not let it relax a check,
-pick a reviewer, or approve a merge.
+Change the prompt to change that behavior. Allow closing tickets if you want
+merges to close them. If you allow no tracker writes at all, the agent asks
+where to keep its plan before it starts. On a public repository, it also checks
+with you before adopting criteria from a ticket that someone without write
+access wrote or edited.
+
+Shaka stays the one owner of delivery, so another skill's output is input to the
+task and nothing more. The agent does not let it relax a check, pick a reviewer,
+or approve a merge.
 
 | Other skill | How it works with Shaka |
 | --- | --- |
@@ -273,20 +279,15 @@ pick a reviewer, or approve a merge.
 | AI Hero's `pr` | Its Summary, Evidence, and Merge Danger layout is advice on presentation. A useful diagram or before-and-after result goes into Shaka's description, which keeps its own format and required fields. |
 | AI Hero's `implement-spec` | It is a separate orchestrator with its own branch, workers, review, and ticket closing, so it cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
 
-The agent loads another skill the way your coding agent supports, or reads the
-installed skill's `SKILL.md` file when there is no skill command. If a skill you
-named is not installed, the agent says so, continues the work that does not need
-it, and asks about the rest. It does not install software for you.
+If a skill you named is not installed, the agent says so, continues the work
+that does not need it, and asks about the rest. It does not install software for
+you. If your repository has a `GLOSSARY.md`, or a `GLOSSARY-MAP.md` pointing to
+several, the agent uses those terms in code and PR text for these tasks. You do
+not need a glossary.
 
-When you combine skills this way and your repository has a `GLOSSARY.md`, the
-agent uses its terms in code and PR text. A `GLOSSARY-MAP.md` at the root points
-to the glossary for each area. You do not need a glossary for ordinary delivery.
-AI Hero renamed `CONTEXT.md` to `GLOSSARY.md`; before renaming yours, check what
-the file holds and what reads it. Keep anything that is not a glossary, such as
-agent instructions, where its readers expect it.
-
-The [companion skills procedure](../skills/shaka/references/companion-skills.md)
-has the agent's rules. Loading skills automatically at set points is a
+This is guidance the agent follows, not behavior that code enforces. The
+[companion skills procedure](../skills/shaka/references/companion-skills.md)
+holds the agent's rules. Loading skills automatically at set points is a
 [proposed feature](https://github.com/shakacode/shaka/issues/35), not shipped behavior.
 
 ## Suggest improvements to Shaka
