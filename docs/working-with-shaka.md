@@ -163,8 +163,9 @@ final diff for the agent to reconcile. Keep raw notes in the local backup.
 ### Revise earlier guidance and try again
 
 If an attempt goes in the wrong direction, return to earlier human guidance,
-adjust it, and ask for a fresh result. A saved **decision checkpoint** records
-accepted guidance and the recoverable work state it applies to.
+adjust it, and ask for a fresh result. Use a saved
+[decision checkpoint](pr-verification.md#decision-checkpoint) to identify the guidance
+and recoverable work state to return to.
 C1, C2, and later numbers identify
 these points within one task; each appears on the PR with a name, guidance, and
 code revision so you can tell them apart.
@@ -174,9 +175,7 @@ $shaka Return to C2. Use the simpler approach.
 ```
 
 C1 records your initial request. Later checkpoints record your steering or review.
-A **Recommended next action** is a proposal; a **Recorded decision** is accepted
-guidance. A question or passing check alone establishes none. Revised
-steering gets a new checkpoint linked to the earlier one. Saying “Go” needs no
+Revised steering gets a new checkpoint linked to the earlier one. Saying “Go” needs no
 extra confirmation, and your Ask or Auto preference still applies.
 
 The agent preserves the rejected attempt, unrelated work, and relevant findings
@@ -188,7 +187,6 @@ These are agent instructions using Git and task records; the Ruby `checkpoint`
 command does not save or restore snapshots. Reliable recovery in real use remains
 to be evaluated. Ask what the saved state can restore before rewinding.
 See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
-[#483](https://github.com/shakacode/shaka/issues/483) tracks updating older generated labels.
 
 ## Resume unfinished work
 

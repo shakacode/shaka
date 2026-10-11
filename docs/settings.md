@@ -384,7 +384,8 @@ published review names it in its summary table instead of the fallback notice.
 ## `review.local_review_count`
 
 **Optional. Default: 1.** How many reviewers from `local_review_agents` read each
-commit before its findings are fixed. The agent starts multiple reviews concurrently.
+commit before its findings are fixed. With more than one reviewer, the agent starts
+those reviews concurrently.
 The helper refuses to record findings while a started review is still running.
 The agent combines their findings so a problem two reviewers found is fixed once.
 
@@ -489,11 +490,9 @@ requires a visible note. Individual checkpoint choices, including opt-out and
 custom instructions, currently do not apply; [#481](https://github.com/shakacode/shaka/issues/481)
 tracks this gap. #426 proposes applying these choices from a selected settings PR.
 
-Use **Recommended next action** for a proposal and **Recorded decision** for accepted
-guidance. Current generated reports still use older labels;
-[#483](https://github.com/shakacode/shaka/issues/483) tracks that mismatch. The
-checkpoint's current automated gate concerns pre-merge readiness; these terms do
-not add an approval step or a general outer-loop mechanism.
+See [decision-checkpoint terms and current report labels](pr-verification.md#decision-checkpoint).
+The current automated gate concerns pre-merge readiness; these terms do not add
+an approval step or a general outer-loop mechanism.
 
 Ruby validates settings, execution outcome, report shape, and head binding.
 The AI reviewer assesses whether the change solves the problem and is worth

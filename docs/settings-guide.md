@@ -99,17 +99,10 @@ Both team and individual settings support these options.
 
 ## Decide what happens next
 
-At a **decision checkpoint**, Shaka presents the result and recommends what to do
-next. Once the task owner chooses a direction, the agent records that guidance and
-recoverable work state so the task can return to it later.
-
-The owner may be a human or a coordinating agent acting within existing authority.
-The [code walkthrough](pr-verification.md#answers-for-your-next-decision) explains
-the implementation; the [decision checkpoint](pr-verification.md#decision-checkpoint)
-evaluates the next action. It does not mean the overall task is finished.
-
-Current reports still use older labels; [#483](https://github.com/shakacode/shaka/issues/483)
-tracks consistent terminology. Individual checkpoint settings are part of #481.
+Shaka recommends what to do next at a
+[decision checkpoint](pr-verification.md#decision-checkpoint) and records the owner's
+choice for later. See that guide for the terms and current report labels.
+Individual checkpoint settings are part of [#481](https://github.com/shakacode/shaka/issues/481).
 
 ## Resume unfinished work
 

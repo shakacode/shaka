@@ -135,11 +135,9 @@ See [which settings apply](settings.md#which-settings-apply).
 
 ## What is a decision checkpoint?
 
-It is the return point where the task owner evaluates the result and chooses
-what to do next. The code walkthrough explains the implementation. A
-**Recommended next action** is a proposal; a **Recorded decision** is accepted guidance.
-Current reports still use older labels; [#483](https://github.com/shakacode/shaka/issues/483)
-tracks consistent terminology. See [decision checkpoints](pr-verification.md#decision-checkpoint).
+It helps the task owner choose what to do next. See the
+[decision-checkpoint guide](pr-verification.md#decision-checkpoint) for its terms,
+how it differs from the code walkthrough, and current report labels.
 
 ## Can I hide my checkout path while keeping the chat locator?
 
