@@ -28,9 +28,9 @@ is the reusable default.
 - Distinguish shipped behavior, agent instructions, and proposed features.
   Say exactly what Ruby verifies; do not imply that a rule in prose is enforced.
 - Give the reader a useful prompt before a long command sequence. Keep an example
-  prompt to what the agent cannot infer: the task link and any non-default choice.
-  List optional sentences after it.
-- Remove repetition, vague qualifiers, anything a reader could act correctly
+  prompt to what the agent cannot infer, such as the task link and a non-default
+  choice. List optional additions below the prompt.
+- Remove repetition, vague qualifiers, detail a reader could act correctly
   without, and explanations of the document's own organization unless they help
   navigation.
 - Preserve rough editor feedback outside the checkout before replacing it with
