@@ -11,7 +11,9 @@ class LocalReviewCommitPublishTest < Minitest::Test
     def markdown(body)
       summaries = body.scan(%r{<summary>.*?</summary>}).join("\n")
       details = body.scan('<details>').join + summaries + body.scan('</details>').join
-      tables = '<table></table>' * body.lines.count { |line| line.start_with?('| ---') }
+      # GitHub shows a pre block as literal text, so a table inside one never renders.
+      rendered = body.gsub(%r{^<pre>.*?</pre>}m, '')
+      tables = '<table></table>' * rendered.lines.count { |line| line.start_with?('| ---') }
       "#{details}#{tables}<p>#{body.lines.last.strip}</p>"
     end
 
@@ -205,5 +207,15 @@ class LocalReviewReplyPreflightTest < Minitest::Test
     error = assert_raises(Shaka::Error) { Shaka::LocalReviewPublisher.new(content, github, 'o/r').publish }
     assert_includes error.message, 'literal escape sequence'
     assert_empty github.replies
+  end
+
+  # https://github.com/shakacode/shaka/issues/478: the coverage excerpt is literal text.
+  def test_a_report_with_a_coverage_table_is_published
+    github = LocalReviewCommitPublishTest::Timeline.new
+    table = "| Id | Status |\n| --- | --- |\n| F1 | Resolved |"
+    report = report(body: "## Coverage\n\n#{table}\n\n## Findings\n\nNone.\n", findings: 0)
+    Shaka::LocalReviewPublisher.new({ 'rounds' => [round(findings: [], report:)] }, github, 'o/r').publish
+
+    assert_includes github.replies.first.last, "<pre>#{table}</pre>"
   end
 end

@@ -131,6 +131,21 @@ class GitHubDescriptionTest < Minitest::Test
     assert_includes error.message, 'table'
   end
 
+  def test_a_table_inside_a_pre_block_is_not_expected_to_render
+    literal = "#{BODY}\n\n<pre>Limits.\n\n| A | B |\n| --- | --- |\n| 1 | 2 |</pre>\n"
+    github = client(pull_response(''), RENDERED, html_response('<pre>| A | B |</pre>'), pull_response(''),
+                    pull_response("<!-- shaka:begin -->\n#{literal}<!-- shaka:end -->"))
+    assert_includes github.description(body: literal)['body'], '<pre>Limits.'
+  end
+
+  # GitHub renders Markdown after a pre tag that opens mid-line, so that table still has to render.
+  def test_a_table_after_a_pre_tag_that_opens_mid_line_is_still_expected
+    inline = "#{BODY}\n\nSee <pre>a\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n</pre>\n"
+    github = client(pull_response(''), RENDERED, html_response('<p>| A | B |</p>'))
+    error = assert_raises(Shaka::Error) { github.description(body: inline) }
+    assert_includes error.message, 'table'
+  end
+
   def test_a_rendered_table_passes_the_readback
     table = "#{BODY}\n| A | B |\n| --- | --- |\n| 1 | 2 |\n"
     managed = "<!-- shaka:begin -->\n#{table}<!-- shaka:end -->"

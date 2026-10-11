@@ -15,6 +15,8 @@ module Shaka
     ESCAPE = /\\[nrt]/
     REPLY_PAGES = 20
     SEPARATOR = /\A\s*\|[\s|:-]*-{3}[\s|:-]*\|\s*\z/
+    # GitHub shows a pre block that opens a line as literal text, so a table inside it never renders.
+    LITERAL_BLOCK = %r{^ {0,3}<pre(?=[\s>]).*?</pre>}mi
 
     # A block builds the body from the pull request it replaces, using this same read.
     def description(body: nil)
@@ -51,7 +53,7 @@ module Shaka
         raise Error, 'Rendered output contains a literal escape sequence; supply real line breaks.'
       end
 
-      expected = PublicationText.prose(body).lines.count { |line| line.match?(SEPARATOR) }
+      expected = PublicationText.prose(body.gsub(LITERAL_BLOCK, '')).lines.count { |line| line.match?(SEPARATOR) }
       rendered = html.scan('<table').size
       return html if rendered >= expected
 
