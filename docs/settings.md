@@ -5,8 +5,7 @@
 Start with [Choose your settings](settings-guide.md) for common choices and
 prompts you can give your agent. This reference covers each option and its limits.
 
-Settings live in `.agents/shaka/config.yml`; repositories configured before that
-layout keep them in `.agents/agent-workflow.yml`. Ask your agent to
+Settings live in `.agents/shaka/config.yml`. Ask your agent to
 [configure the repository](configure-repository.md), or edit the file in a PR.
 
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
@@ -595,8 +594,6 @@ Connect your existing tools at these fixed paths:
 | `.agents/shaka/bin/validate` | Yes | Complete checks before publishing |
 | `.agents/shaka/bin/validate-local` | No | Faster checks before local review |
 | `.agents/shaka/bin/trigger-hosted-ci` | No | Start deferred CI after local fixes; requires `validate-local` |
-
-In the older layout, the same scripts live in `.agents/bin/`.
 
 A wrapper can call an existing command. `seam init` generates each required wrapper;
 it finds the repository root with Git, so it works from any directory and in linked
