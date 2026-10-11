@@ -133,7 +133,7 @@ review criteria normally come from the default branch. A maintainer can explicit
 for experiments. A fork PR cannot choose its own review rules. See
 [which settings apply](settings.md#which-settings-apply).
 
-## What is a evaluation checkpoint?
+## What is an evaluation checkpoint?
 
 It helps the task owner choose what to do next. See the
 [evaluation-checkpoint guide](pr-verification.md#evaluation-checkpoint) for its terms,

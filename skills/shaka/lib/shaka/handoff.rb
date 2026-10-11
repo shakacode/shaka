@@ -106,7 +106,7 @@ module Shaka
       return unless merge_requested?
 
       head = SquashNote.new(@github).head
-      message = "Publish the squash commit message for #{live} in the evaluation checkpoint before the merge click."
+      message = "Publish squash commit message for #{live} in the checkpoint; use `squash-message` for opt-out."
       return owe('no squash message', message) unless head
       return "squash message #{head[0, SHORT]}" if head == live
 

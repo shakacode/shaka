@@ -111,6 +111,11 @@ class HandoffEvaluationMessageTest < Minitest::Test
     assert_predicate(awaiting([checkpoint(id: 1), checkpoint(state: 'blocked')])['owed'], :any?)
   end
 
+  def test_opted_out_handoff_names_the_standalone_message_remedy
+    result = awaiting([checkpoint(state: 'opted_out')])
+    assert_includes result['owed'].join, '`squash-message` for opt-out'
+  end
+
   def test_archived_checkpoint_message_does_not_count
     archived = checkpoint
     archived['body'] = archived['body'].sub('Report', 'Superseded — read the current evaluation checkpoint: URL')
