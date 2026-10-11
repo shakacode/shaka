@@ -139,21 +139,25 @@ Rules the helper would enforce:
 - Repeating an identical entry is a no-op. A different entry reusing an `id` is refused.
 - `finding`, `recommendation`, and `supersedes` must name records in this ledger.
   Once an assessment names a finding, `review record` refuses a triage that drops
-  that finding ID.
+  that finding ID or moves an assessed reviewer number to another finding. A
+  reference that no longer resolves, as after a triage by an older helper, is
+  reported as unavailable.
 - `revision` is the commit the judgment was observed at. It may differ from the
   reviewed commit in `recommendation` and from the commits in `action`.
 - The helper stamps `recorded_at`. `observed_at` is the caller's and may be earlier.
 - Two entries conflict when neither is superseded, both name the same finding,
   and they give different values for the same field. `problem` judges the
-  finding, so it is compared across every entry for that finding; the other
-  fields are compared only between entries naming the same recommendation, or
-  none. Who wrote them does not matter.
+  finding, so it is compared across every entry for that finding. The other
+  fields are compared only between two entries that name the same recommendation
+  or that both name none. Who wrote them does not matter. Conflicting entries
+  both stay, the helper picks no winner, and the current view shows the finding
+  as needing a decision until one entry lists both in `supersedes`.
 - A superseding entry replaces the whole earlier entry in the current view, so it
-  restates each judgment it keeps. Both stay, the helper picks no
-  winner, and the current view shows the finding as needing a decision until one
-  entry lists both in `supersedes`.
-- `evidence` holds `https` links and full commit SHAs only. `rationale` is one
-  line of untrusted text, rendered through the escaping that finding notes use.
+  restates each judgment it keeps.
+- `evidence` holds `https` links and full commit SHAs only. `id` follows the
+  finding ID format and `by.role` is one of a fixed list. Every other string,
+  including `rationale` and `by.name`, is one line of untrusted text rendered
+  through the escaping that finding notes use.
 
 The helper cannot verify who is speaking. `by` is the recording agent's
 transcription, as the `accepted` disposition's `decision` field is today.
@@ -222,9 +226,10 @@ commit B. Validation passes at B and a second review finds nothing. Later a
 maintainer shows that an idempotency guard already prevented duplicates and that
 B fails after a transient error. Assessment A1 (above) records problem refuted,
 remedy harmful, implementation correct, action required. Commit C restores the
-retry; A2 lists A1 in `supersedes`, sets `attention: none`, and names C in `action`. The comment shows the
-regression while A1 stands and collapses the chain after A2. The owner's `fixed`
-record and A1 are both still readable.
+retry. A2 lists A1 in `supersedes`, restates problem refuted, remedy harmful, and
+implementation correct, sets `action.taken: reverted` with C, and sets
+`attention: none`. The comment shows the regression while A1 stands and collapses
+the chain after A2. The owner's `fixed` record and A1 are both still readable.
 
 | Case | What the record must distinguish |
 | --- | --- |
@@ -262,7 +267,8 @@ reward, training upload, or provider integration is part of this work.
 
 ## Decisions
 
-The maintainer accepted all three recommendations on 2026-10-11.
+The maintainer accepted all three recommendations on 2026-10-11 (UTC), in the
+task chat that produced this proposal; the proposal's pull request records it.
 
 1. **Judgments are typed,** as proposed. Attributed free text was the fallback.
 2. **The caller chooses where a ledger lives,** guided to a per-task directory
