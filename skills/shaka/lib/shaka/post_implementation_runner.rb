@@ -83,7 +83,7 @@ module Shaka
         "--- BEGIN DIFF DATA #{marker} ---\n#{diff}\n--- END DIFF DATA #{marker} ---\n"
     end
 
-    def writing_guidance = "Packaged writing guidance:\n#{File.read(WRITING_GUIDANCE_PATH, encoding: 'UTF-8')}"
+    def writing_guidance = "Prose defaults; project rules win:\n#{File.read(WRITING_GUIDANCE_PATH, encoding: 'UTF-8')}"
 
     def report_contract
       "Return ONLY a JSON object: head (#{head.to_json}), conclusion (Proceed, Simplify/reframe, or " \
