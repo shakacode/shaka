@@ -67,7 +67,7 @@ separate them, but the loop starts before the pull request exists.
 
 Publication and export read the bundled copy. A missing or altered report is
 reported by name as unavailable; a hash cannot restore it, and nothing guesses
-its content. The directory is private to the user (mode 0700). Nothing expires it
+its content. The guide's example creates the directory private to the user (mode 0700). Nothing expires it
 or collects it in the background; the user deletes it deliberately.
 
 Not proposed: bundling Git objects for commits that were never pushed. The
@@ -86,7 +86,7 @@ optional `by` with a name and role, in the form `assess` uses below. An absent
 helper released before this work simply has none.
 
 When `review record` replaces a batch's findings, the helper first moves the
-previous findings, with their stamps, into that round's `superseded` list. The
+previous findings, with their stamps, into that round's `earlier_findings` list. The
 current view reads `findings` as before. History and export can show what the
 owner believed first and when. Recording the same findings again changes nothing.
 
@@ -138,8 +138,10 @@ Rules the helper would enforce:
   `supersedes` lists the earlier entries it replaces, which stay in the list.
 - Repeating an identical entry is a no-op. A different entry reusing an `id` is refused.
 - `finding`, `recommendation`, and `supersedes` must name records in this ledger.
-  Once an assessment names a finding, `review record` refuses a triage that drops
-  that finding ID or moves an assessed reviewer number to another finding. A
+  While an assessment that no entry has superseded names a finding, `review record`
+  refuses a triage that drops that finding ID or moves the assessed reviewer
+  number to another finding. To merge or re-collate such a finding, first append
+  an assessment that supersedes those entries and names the surviving finding. A
   reference that no longer resolves, as after a triage by an older helper, is
   reported as unavailable.
 - `revision` is the commit the judgment was observed at. It may differ from the
@@ -147,11 +149,12 @@ Rules the helper would enforce:
 - The helper stamps `recorded_at`. `observed_at` is the caller's and may be earlier.
 - Two entries conflict when neither is superseded, both name the same finding,
   and they give different values for the same field. `problem` judges the
-  finding, so it is compared across every entry for that finding. The other
-  fields are compared only between two entries that name the same recommendation
-  or that both name none. Who wrote them does not matter. Conflicting entries
-  both stay, the helper picks no winner, and the current view shows the finding
-  as needing a decision until one entry lists both in `supersedes`.
+  finding, so it is compared across every entry for that finding. An entry that
+  names no recommendation speaks for the whole finding, so its other fields are
+  compared with every entry too. Two entries naming different recommendations
+  are not compared on those fields. Who wrote them does not matter. Conflicting
+  entries both stay, the helper picks no winner, and the current view shows the
+  finding as needing a decision until one entry lists both in `supersedes`.
 - A superseding entry replaces the whole earlier entry in the current view, so it
   restates each judgment it keeps.
 - `evidence` holds `https` links and full commit SHAs only. `id` follows the
@@ -211,7 +214,7 @@ rounds and findings already record and needs a projection to rebuild the current
 view. The proposal above adds one list and leaves the working model alone.
 
 Estimated cost of the proposal: one small class to validate an assessment, one
-command, a copy step in the runner, and a `superseded` list, each with failure
+command, a copy step in the runner, and an `earlier_findings` list, each with failure
 and concurrency tests. The benefit is unproven until a real reconsidered
 recommendation is recorded; the retention step has observed value by itself.
 
@@ -245,7 +248,7 @@ Retried and concurrent `assess` calls must neither lose nor duplicate an entry.
 ## Export, later
 
 One JSON document per ledger: an export version, the ledger's base commit, the
-rounds with their bundled report text, the findings with any superseded triage,
+rounds with their bundled report text, the findings with any earlier triage,
 and the assessments in recorded order. The export generates no timestamps or
 identifiers, so repeating it yields the same bytes. Each assessment keeps its
 `recorded_at`, which lets a reader separate what was known at review time from
@@ -259,7 +262,7 @@ reward, training upload, or provider integration is part of this work.
 
 1. **Retention.** The durable-location guidance and warning, bundled reports, and
    unavailable-report reporting. Useful alone, and it fixes an observed loss.
-2. **Assessments.** The `superseded` list, `review assess`, the comment change,
+2. **Assessments.** The finding stamps, the `earlier_findings` list, `review assess`, the comment change,
    compatibility, and chains S1 through S6 as tests.
 3. **Export.** The deterministic document and the same chains as export fixtures.
 4. **Real-use evaluation, on the issue.** Recheck the presentation checklist on
