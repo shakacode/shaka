@@ -12,9 +12,10 @@ when you installed it. Your installation directory and agent links stay the same
 If files have local edits or the checkout no longer matches its installation
 record, the update stops and leaves those changes for you to review.
 
-Pause chats using this installation before updating, because they may still need
+Finish active Shaka chats before updating, because they may still need
 its current files. Make customizations in a separate development checkout and
 publish them to your fork before updating the installation.
+Start a new chat after the update so it loads the updated skill.
 
 ## Replace managed copies with one dedicated installation
 
@@ -30,8 +31,7 @@ chosen location, or use the default. Preserve towers, separate PR trials,
 and every retained copy. Verify it and confirm one default Shaka entry.
 ```
 
-Your agent follows the [installation procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/official-installation.md#migrate-retained-copy-installations)
-to create or register that checkout and redirect the selected agents' skill links.
+Your agent creates or registers that checkout and redirects the selected agents' skill links.
 It also removes a verified duplicate default Codex link, while preserving control
 tower skills and separate PR trials. Choose a directory or use
 `~/.agents/shaka`; `~/agent-tools/shaka` is one alternative.
@@ -61,9 +61,10 @@ Upgrade this repository's Shaka configuration to the .agents/shaka/ layout.
 Preserve its review and merge choices, and prepare the change as a PR.
 ```
 
-The agent will preview the moves and repairs for review before applying them. The
-[agent procedure for upgrading project settings](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/migration.md#upgrade-the-configuration-layout)
-explains recovery and validation. Existing legacy layouts remain readable while a
+The agent previews the moves and repairs for review before applying them and
+validates the new layout. Existing legacy layouts remain readable while a
 migration PR is under review.
 
-Automatic update notifications are not currently implemented.
+Shaka instructs your agent to check for updates once per new chat and tell you
+when newer official commits are available. The installer also prints an update
+reminder. These checks provide advice; they do not update your installation.

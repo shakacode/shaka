@@ -30,7 +30,7 @@ for development so the installation stays ready for updates.
 Shaka instructs your agent to check for updates once when a new chat starts and
 give advice when newer official commits are available. The installer also prints
 an update reminder. Finish active Shaka chats, then follow the
-[update guide](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/official-installation.md#verify-and-update).
+[upgrade guide](migration.md).
 
 Start a new chat if the skill does not appear. Use a source installation: the published gem is a
 name-reservation prerelease without the current workflow.
