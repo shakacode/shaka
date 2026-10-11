@@ -14,9 +14,7 @@ in Pi, load the installed Shaka skill. See [coding agents](coding-agents.md).
 Ask your coding agent:
 
 ```text
-Install Shaka from https://github.com/shakacode/shaka for this coding agent.
-Keep the installation outside the repositories I'll work on.
-Follow its installation instructions and confirm the skill is available.
+Install Shaka from https://github.com/shakacode/shaka.
 ```
 
 The agent checks for Ruby 3.4 or later, Git, and an authenticated GitHub CLI.
@@ -46,31 +44,34 @@ An extra provider can supply independent review; installing every CLI is optiona
 The diagnostic changes no settings. Give the agent a task when you are ready.
 
 <a id="2-choose-private-trial-or-team-setup"></a>
+<a id="2-choose-individual-trial-or-team-setup"></a>
 
-## 2. Choose individual trial or team setup
+## 2. Choose individual or team setup
 
-To try Shaka individually, open a chat in your project and ask:
+Open a chat in your project and give Shaka a task:
 
 ```text
-$shaka Fix search when the query contains an apostrophe.
-Try Shaka just for me in this clone using the project's existing checks.
-Keep merge policy ask. Go.
+$shaka <task or issue link>
 ```
 
-Shaka instructs the agent to infer commands from project instructions, scripts,
-and CI, prepare local settings, and continue into the feature task. No team setup PR, manual
-YAML edit, or PATH edit is needed. Individual settings remain excluded from the
-feature diff. Host permissions may require approval for protected Git writes.
-These are workflow instructions; complete delivery support is tracked separately
-in [#277](https://github.com/shakacode/shaka/issues/277). Genuine new-user acceptance
-remains unproven. The [earlier trial report](expected-experience.md#individual-trials-available-tools-incomplete-guided-experience)
-records the maintainer interventions that prompted these changes.
+If Shaka is not configured, the agent asks which setup you want. **Individual
+setup** keeps settings out of commits in a project without team settings.
+To choose it upfront:
+
+```text
+$shaka <task or issue link>
+Set up Shaka just for me. Go.
+```
+
+The agent finds your test and lint commands, explains AI review choices, and
+defaults to Ask. Individual setup continues into the task without a team setup PR.
+Host permissions may require approval for protected Git writes. See
+[individual support and acceptance gaps](expected-experience.md#individual-setup).
 
 For shared team settings, ask:
 
 ```text
-$shaka Configure this repository for Shaka. Reuse its existing checks,
-explain the choices I need to make, and keep merge policy ask.
+$shaka Set up Shaka for this repository.
 ```
 
 The agent prepares shared settings and scripts in a **setup PR**. They connect
@@ -85,12 +86,10 @@ accounts can run the selected reviewer models and effort levels. This catches
 account or model-access problems before the agent reaches code review. Ask:
 
 ```text
-$shaka Check whether this project's configured AI reviewer CLIs can run their
-selected models and effort levels with my signed-in accounts.
-Run the live availability probe. I understand it may consume quota or cost money.
-Keep my chosen models and effort settings; explain any failure before we change them.
+$shaka Probe this project's configured reviewers.
 ```
 
+This live probe may consume quota or cost money. It keeps your chosen settings.
 The agent sends each supported configured reviewer one short prompt and reports
 which attempts succeeded. If an attempt fails, it explains the problem and asks
 you how to proceed.
@@ -98,8 +97,7 @@ you how to proceed.
 ## 3. Start a task
 
 ```text
-$shaka Fix search when the query contains an apostrophe.
-Keep merge policy ask. Go.
+$shaka Fix search when the query contains an apostrophe. Go.
 ```
 
 Replace the example with a small outcome or an issue link. `Go` lets the agent
@@ -109,6 +107,9 @@ asks when a missing choice, access problem, or consequential decision needs you.
 Look for a PR explaining what changed, what was tested and reviewed, and any
 remaining gaps. With **Ask**, you decide whether to merge; **Auto** lets the agent
 merge after the required checks, review, and approvals.
+Settings previews in [#426](https://github.com/shakacode/shaka/pull/426) and independent
+opening-check choices in [#425](https://github.com/shakacode/shaka/pull/425) are proposals,
+not setup options available today.
 [Working with Shaka](working-with-shaka.md) covers these choices, useful prompts,
 feedback, and resuming a task.
 
@@ -117,9 +118,7 @@ feedback, and resuming a task.
 To customize Shaka and contribute improvements upstream:
 
 ```text
-Fork https://github.com/shakacode/shaka into my GitHub account and install
-Shaka from that fork. Keep upstream configured so we can pull updates
-and submit improvements back to shakacode/shaka.
+Fork https://github.com/shakacode/shaka and install my fork.
 ```
 
 For later maintenance, ask the agent to [upgrade your installation](migration.md).

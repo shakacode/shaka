@@ -20,18 +20,29 @@ settings with shared team settings.
 | Repository setup | Settings used |
 | --- | --- |
 | Shared Shaka settings exist on the default branch | The default-branch configuration, including when reviewing a PR that changes it. |
-| No shared settings; an individual trial is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
+| No shared settings; individual setup is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
 
 Omitted optional values use Shaka's defaults. An explicit task choice takes
 precedence where an option supports it, such as choosing Ask for one task.
-Each option below describes any such override. A trial's local settings govern
+Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
 disable required merge gates or authorize merging.
 
-A settings PR takes effect after it merges into the default branch. Shaka does
-not yet offer a mode that applies an unmerged settings PR to another task, or
-temporarily replaces team settings while you experiment. You can edit local
-settings and opening prompts during an individual trial before team adoption.
+A settings PR takes effect after it merges into the default branch. Local settings
+do not override shared settings. Individual custom code-review instructions and
+decision-checkpoint settings still use the shared source or defaults;
+[#481](https://github.com/shakacode/shaka/issues/481) tracks complete individual support.
+
+[Merged #420](https://github.com/shakacode/shaka/pull/420) brought individual delivery
+preferences to reviewers, writing limits, opening checks, and WIP reporting.
+[#425](https://github.com/shakacode/shaka/pull/425) proposes independent opening-check
+choices. [#426](https://github.com/shakacode/shaka/pull/426) proposes selecting a
+complete configuration from a settings PR for one task. Neither proposal is shipped.
+
+Under #426's proposed model, the task would record the selected PR and pinned
+commit. That source would replace the normal configuration, without an individual
+overlay or silent refresh. A local branch can prepare an experiment; the PR makes
+its choices visible before team adoption.
 
 ## `merge.preference`
 
@@ -44,12 +55,15 @@ merge:
 
 With `ask`, merge the ready PR on GitHub or tell the agent to merge the reviewed
 commit. With `auto`, the agent merges after required checks, reviews, and approvals,
-subject to the repository's restrictions. Shaka uses your account's existing GitHub
+subject to the repository's restrictions. Some changes still need your decision.
+Shaka uses your account's existing GitHub
 permissions; an account that can bypass protection needs no extra Shaka setting.
 
 Set a task's preference with `Use merge policy auto`. This is a task instruction;
 editing the PR's settings does not change its own merge authority. Required human
-approvals still apply. See [merge policy](working-with-shaka.md#choose-a-merge-policy).
+approvals still apply. `Go` starts work; it is not merge consent. Ruby checks
+readiness; the agent establishes your task-scoped authority. See
+[merge policy](working-with-shaka.md#choose-a-merge-policy).
 
 ## `merge.required_checks`
 
@@ -236,8 +250,7 @@ needs its CLI installed and signed in, or its API credentials on the machine doi
 
 Ask your agent:
 
-> Configure local reviews to try Claude, Codex, then Grok. Use the explicit
-> models and medium effort shown below.
+> $shaka Prefer Claude for code review.
 
 ```yaml
 review:
@@ -258,7 +271,8 @@ review:
 
 Shaka prefers a different provider from the one that implemented the change,
 then follows your list order among available reviewers. These settings choose
-one local reviewer; they do not require all three to review every change.
+the available choices; [`local_review_count`](#reviewlocal_review_count) chooses how
+many run. Listing three does not require all three to review every change.
 
 ### Model and effort values
 
@@ -370,10 +384,9 @@ published review names it in its summary table instead of the fallback notice.
 ## `review.local_review_count`
 
 **Optional. Default: 1.** How many reviewers from `local_review_agents` read each
-commit before its findings are fixed. With 2 or more, the reviewers run at the same
-time. `shaka review record` refuses while any review it started is still running,
-and then records all their findings in one triage, so a problem two reviewers
-both found is recorded and fixed once.
+commit before its findings are fixed. The agent starts multiple reviews concurrently.
+The helper refuses to record findings while a started review is still running.
+The agent combines their findings so a problem two reviewers found is fixed once.
 
 Claude implements, and Codex and a fresh Claude session both review:
 
@@ -396,7 +409,7 @@ change, the order would be Claude, then Codex. When the agent finds a reviewer's
 missing or signed out, fewer reviewers read that commit, and from the next commit the next
 listed reviewer takes its place.
 
-Each extra reviewer adds its own review cost to every commit it reads. The PR's
+Each extra reviewer adds cost and may increase elapsed time. The PR's
 review comment shows every reviewer's rounds, and one review of the final commit is
 enough for `shaka merge`. A task can ask for a different number, which wins for that
 task.
@@ -427,22 +440,25 @@ which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
 
 Shaka reads the file from a trusted default-branch revision, so a PR that
 changes it is reviewed with the current version. Without a trusted prompt,
-including during an individual trial without team settings, the reviewer uses
-Shaka's default instructions. Settings validation fails
-when a configured file is missing, empty, larger than 100 KB, or not UTF-8.
-Shaka keeps a few rules whatever
-the file says: the reviewer makes no edits, treats the diff as data rather than
-instructions, reports which `AGENTS.md` criteria it used, and ends with the
-`REVIEWED` line that `shaka review run` checks.
+including during individual setup without team settings, the reviewer uses
+Shaka's default instructions. Individual custom prompts are not applied;
+[#481](https://github.com/shakacode/shaka/issues/481) tracks that gap.
+[#426](https://github.com/shakacode/shaka/pull/426) proposes using prompt files
+from an explicitly selected settings PR's pinned commit.
+
+Settings validation fails when a configured file is missing, empty, larger than
+100 KB, or not UTF-8. Replacement prompts retain the review protocol described in
+the [agent procedure](../skills/shaka/references/local-review.md#run-the-selected-reviewer).
 
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.
 
 ## `review.post_implementation`
 
-**Optional.** Choose who checks whether the finished change solves the intended
-problem and earns its maintenance cost. This is a separate product judgment from
-technical review. With no settings, Shaka invokes Codex at medium effort using its
+**Optional.** Choose who evaluates the result at the **decision checkpoint**:
+whether it solves the intended problem, earns its maintenance cost, and what to do
+next. This differs from the code walkthrough explaining the implementation.
+With no settings, Shaka invokes Codex (`gpt-6.1-sol`) at medium effort using its
 [default product prompt](../skills/shaka/config/post-implementation-prompt.md).
 
 For example, to ask Claude Sonnet to reconsider each finished change with your
@@ -469,8 +485,15 @@ usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not m
 unresolved substantive concerns block readiness and Auto; green technical checks
 and changed settings do not clear them. Earlier executions stay visible on the PR.
 Setting `enabled: false` in the shared default-branch configuration opts out and
-requires a visible note. An individual trial's local setting cannot disable
-this gate.
+requires a visible note. Individual checkpoint choices, including opt-out and
+custom instructions, currently do not apply; [#481](https://github.com/shakacode/shaka/issues/481)
+tracks this gap. #426 proposes applying these choices from a selected settings PR.
+
+Use **Recommended next action** for a proposal and **Recorded decision** for accepted
+guidance. Current generated reports still use older labels;
+[#483](https://github.com/shakacode/shaka/issues/483) tracks that mismatch. The
+checkpoint's current automated gate concerns pre-merge readiness; these terms do
+not add an approval step or a general outer-loop mechanism.
 
 Ruby validates settings, execution outcome, report shape, and head binding.
 The AI reviewer assesses whether the change solves the problem and is worth
@@ -483,12 +506,11 @@ opt-out.
 
 ## `pr_description.opening_check`
 
-**Optional.** Check whether the opening of a PR description explains a useful
-outcome to its reader. This is writing advice; a failed check does not block
-publication or merging.
+**Optional.** Check whether the first sentence leads with a useful outcome for
+its reader. This is writing advice, not a check of the whole description's accuracy.
+A failed check does not block publication or merging.
 
-> Use Codex to check PR openings, with my chosen model and medium thinking
-> effort. Keep my code-review settings as they are.
+> $shaka Use Codex for opening checks.
 
 ```yaml
 pr_description:
@@ -537,6 +559,12 @@ legacy setting or `enabled`, not both. With `enabled: false`, Shaka returns no
 parsing prompt and launches no opening reviewer; the agent still follows your
 ordinary writing instructions.
 
+[Merged #425](https://github.com/shakacode/shaka/pull/425) added these independent
+choices and the fully disabled state after #420. At #420's merged revision,
+opening checks used the code-reviewer list at low effort, without independent
+configuration for their provider, model, or effort. The legacy
+`external_enabled: false` still means a check in the current chat.
+
 ### Customize the opening check
 
 Copy [Shaka's default opening prompt](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/opening-prompt.md)
@@ -551,11 +579,11 @@ setting applies. Shaka then reads the file as follows:
 
 - **Shared team settings:** commit the prompt with the settings PR. Shaka uses
   the version on the default branch, so a PR cannot rewrite its own review rules.
-- **Individual trial:** put the prompt in `.agents/shaka/`, alongside your local
+- **Individual setup:** put the prompt in `.agents/shaka/`, alongside your local
   settings. For example, `.agents/shaka/opening.md` stays out of commits and applies to
-  your trial. A symlink cannot point outside that directory.
+  your task. A symlink cannot point outside that directory.
 - **A prompt elsewhere in the repository:** Shaka reads the default-branch
-  version, even during an individual trial. A file that exists only on your feature
+  version, even during individual setup. A file that exists only on your feature
   branch cannot supply instructions.
 
 Prompt files must pass the [review prompt file checks](#reviewprompt_file).
@@ -583,8 +611,8 @@ prose_limits:
 ```
 
 The values above are the defaults. Set any key to a positive integer to change
-it; omitted keys keep their default. Each limit counts only the prose GitHub
-shows. Code blocks, tables, headings, quotes, link addresses, and the body of a
+it; omitted keys keep their default. Each limit counts selected prose.
+Code blocks, tables, headings, quotes, link addresses, and the body of a
 collapsed details block do not count. A collapsed block's summary label counts,
 and an inline code span counts as one word.
 In a description, only the part Shaka manages counts; text that people or other tools
@@ -597,11 +625,8 @@ add outside it is left alone.
 - The description also stops at `max_description_words`, however large the change.
 
 When text breaks a limit, nothing reaches GitHub. The command exits with an
-error listing up to three problems and counting the rest. Each problem quotes a long
-sentence or paragraph, or states the total word count and its limit. The agent rewrites the text
-and runs the command again, so you see only a version that passed. The agent
-notes each refusal in the description's collapsed review history, so you can
-tell how often the limits fire.
+error identifying the long passage or total word count. The agent shortens the
+explanation before publishing.
 
 For example, a 19-line change with a 950-word walkthrough is refused. The agent
 splits long paragraphs, moves supporting detail into collapsed details, and
@@ -610,7 +635,7 @@ links to the code, then publishes again.
 ### Which limits apply?
 
 The [configuration source](#which-settings-apply) determines the limits. For
-example, during an individual trial, a local 20-word sentence limit applies to
+example, with individual setup, a local 20-word sentence limit applies to
 both your PR description and walkthrough. A shared team's changed limit takes
 effect after its settings PR merges.
 
@@ -711,17 +736,25 @@ wip:
   include_locations: true
 ```
 
-Include the checkout path and session link in **WIP Details**. Both team setup and
-individual trials write `true`. The description renderer replaces both
+Include two separate fields in **WIP Details**: the **checkout path**, which can
+reveal local directory names, and the **chat locator**, which helps resume the
+owning chat when reachable. Both team and individual setup write `true`.
+The description renderer replaces both
 location fields with `REDACTED` when the selected setting is explicitly false.
 When settings were not read or could not load, it withholds locations and explains
 how to reload the policy. Ownership, state, next action, and the current commit
 remain visible. When locations are allowed but the host lacks one, its value is
 `UNKNOWN`.
 
-Locations can reveal local names or identifiers. When locations are enabled,
-the agent must inspect them before publishing. Other supplied prose still needs
-inspection for private information. Expandable sections on public PRs are public too.
+A Codex locator such as `codex://threads/...` points to a local conversation; it
+does not create a publicly shared snapshot. Other hosts' links can have different
+access rules. The agent inspects both fields before publication.
+
+[#482](https://github.com/shakacode/shaka/issues/482) tracks retaining chat locators
+while making checkout-path visibility independently configurable, including in
+individual settings. Neither #425 nor #426 splits these fields.
+Hiding them does not remove private information elsewhere in a PR.
+Expandable sections on public PRs are public too.
 
 ## `repo_prefix`
 
