@@ -146,6 +146,13 @@ class GitHubDescriptionTest < Minitest::Test
     assert_includes error.message, 'table'
   end
 
+  def test_a_pre_tag_quoted_in_fenced_code_does_not_hide_a_later_table
+    quoted = "#{BODY}\n\n```html\n<pre>\n```\n\n| A |\n| --- | --- |\n| 1 | 2 |\n\n<pre>literal</pre>\n"
+    github = client(pull_response(''), RENDERED, html_response('<p>| A |</p><pre>literal</pre>'))
+    error = assert_raises(Shaka::Error) { github.description(body: quoted) }
+    assert_includes error.message, 'table'
+  end
+
   def test_a_rendered_table_passes_the_readback
     table = "#{BODY}\n| A | B |\n| --- | --- |\n| 1 | 2 |\n"
     managed = "<!-- shaka:begin -->\n#{table}<!-- shaka:end -->"
