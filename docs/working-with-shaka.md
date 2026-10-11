@@ -239,9 +239,14 @@ no stacked-PR service is needed.
 
 ## Combine Shaka with other skills
 
-Plan with the skills you like, then give the result to Shaka to deliver. For
-example, [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
-can turn an idea into a spec and tickets. Paste a prompt like this to hand them over:
+Use the skills you like for planning and engineering technique, and let Shaka
+deliver the result. Two examples are
+[AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md),
+which turn an idea into a spec and tickets, and
+[pstack](https://github.com/cursor/plugins/tree/main/pstack), which adds
+engineering principles and parallel workers.
+
+### Hand over a spec and tickets
 
 ```text
 $shaka Deliver the spec at https://github.com/OWNER/REPO/issues/SPEC in OWNER/REPO.
@@ -269,21 +274,36 @@ where to keep its plan before it starts. On a public repository, it also checks
 with you before adopting criteria from a ticket that someone without write
 access wrote or edited.
 
+### Use a technique skill during delivery
+
+```text
+$shaka Fix https://github.com/OWNER/REPO/issues/N in poteto mode. You may use
+subagents for swarm and arena. Keep merge policy ask. Go.
+```
+
+The agent applies pstack's principles and playbook steps while it implements and
+verifies. Shaka still runs your checks, gets an independent review, publishes
+the PR in its own format, and returns it to you to merge. pstack's "don't block
+on the human" guidance does not turn Ask into Auto. Leave out the subagent
+sentence and the agent does the fan-out steps alone or asks first.
+
+### What each kind of skill can do
+
 Shaka stays the one owner of delivery, so another skill's output is input to the
 task and nothing more. The agent does not let it relax a check, pick a reviewer,
 or approve a merge.
 
-| Other skill | How it works with Shaka |
-| --- | --- |
-| A planning skill, such as `to-spec` or `to-tickets` | Its spec and tickets become the task. |
-| AI Hero's `pr` | Its Summary, Evidence, and Merge Danger layout is advice on presentation. A useful diagram or before-and-after result goes into Shaka's description, which keeps its own format and required fields. |
-| AI Hero's `implement-spec` | It is a separate orchestrator with its own branch, workers, review, and ticket closing, so it cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
+| Kind of skill | Examples | With Shaka |
+| --- | --- | --- |
+| Planning | AI Hero `to-spec`, `to-tickets` | Its spec and tickets become the task. |
+| Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd` | Shapes how the agent works inside each step. |
+| Parallel workers | pstack `swarm`, `arena`, `interrogate` | Runs only when you say the agent may delegate. Workers never publish or merge. |
+| PR text | AI Hero `pr`, pstack `technical-writing`, `unslop` | Advice on wording and presentation. Shaka's description keeps its own format and required fields. |
+| Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, and Autopilot playbooks | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
 
 If a skill you named is not installed, the agent says so, continues the work
 that does not need it, and asks about the rest. It does not install software for
-you. If your repository has a `GLOSSARY.md`, or a `GLOSSARY-MAP.md` pointing to
-several, the agent uses those terms in code and PR text for these tasks. You do
-not need a glossary.
+you.
 
 This is guidance the agent follows, not behavior that code enforces. The
 [companion skills procedure](../skills/shaka/references/companion-skills.md)
