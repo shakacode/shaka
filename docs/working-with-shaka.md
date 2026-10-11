@@ -251,10 +251,9 @@ engineering principles and parallel workers.
 ### Hand over a spec and tickets
 
 ```text
-$shaka Deliver the spec at https://github.com/OWNER/REPO/issues/SPEC in OWNER/REPO.
-Its tickets are the sub-issues; follow their blocked-by links for order. Each
-ticket's acceptance criteria are in its body. You may comment on the spec with
-your plan; do not close or edit tickets. Keep merge policy ask. Go.
+$shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N and its
+sub-issues. You may comment on the spec with your plan; do not close tickets.
+Keep merge policy ask. Go.
 ```
 
 Here is what happens next:
