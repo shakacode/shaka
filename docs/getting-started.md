@@ -77,7 +77,8 @@ $shaka Set up Shaka for this repository.
 The agent prepares shared settings and scripts in a **setup PR**. They connect
 Shaka to your project's commands and record its review and merge choices.
 **Review the choices and merge this first setup PR yourself on GitHub.**
-Then start your feature task. If the repository is already configured, skip this step.
+To try its settings before adoption, [select the settings PR for a task](settings.md#preview-settings-before-adopting-them).
+If the repository is already configured, skip this step.
 You can ask the agent to change settings later; you do not need to maintain them by hand.
 See [repository setup](configure-repository.md) for details.
 
@@ -108,8 +109,8 @@ Look for a PR explaining what changed, what was tested and reviewed, and any
 remaining gaps. With **Ask**, you decide whether to merge; **Auto** lets the agent
 merge after the required checks, review, and approvals.
 Independent opening-check choices shipped in [#425](https://github.com/shakacode/shaka/pull/425)
-after #420. Settings previews in [#426](https://github.com/shakacode/shaka/pull/426)
-remain proposed.
+after #420. [Merged #426](https://github.com/shakacode/shaka/pull/426) added
+[settings previews](settings.md#preview-settings-before-adopting-them).
 [Working with Shaka](working-with-shaka.md) covers these choices, useful prompts,
 feedback, and resuming a task.
 

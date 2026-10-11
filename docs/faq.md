@@ -22,8 +22,9 @@ Set up Shaka just for me. Go.
 ```
 
 Settings stay out of commits. See [individual support and acceptance gaps](expected-experience.md#individual-setup).
-With team settings, local choices do not override them. [#426](https://github.com/shakacode/shaka/pull/426)
-proposes selecting a settings PR's pinned configuration for one task; it is not shipped.
+With team settings, local choices do not override them. You can explicitly
+[select a settings PR](settings.md#preview-settings-before-adopting-them) for one task,
+as shipped in [#426](https://github.com/shakacode/shaka/pull/426).
 Trying a different Shaka implementation is separate: see [try a Shaka PR](trying-pr-versions.md).
 
 ## Why did the agent stop to ask about model and effort?
@@ -126,12 +127,11 @@ apply and links the review protocol.
 
 ## Can a PR change Shaka's settings or rules for itself?
 
-Currently, shared settings and review criteria come from the default branch,
-so each PR is reviewed under the rules its maintainers already agreed on, and a
-PR from a fork cannot change how it is reviewed. Until it merges, Shaka reviews a
-settings change as part of the diff. [#426](https://github.com/shakacode/shaka/pull/426)
-proposes an explicitly selected, pinned settings PR for experiments; it is not shipped.
-See [which settings apply](settings.md#which-settings-apply).
+Editing settings in a PR does not select them automatically. Shared settings and
+review criteria normally come from the default branch. A maintainer can explicitly
+[select a settings PR's pinned configuration](settings.md#preview-settings-before-adopting-them)
+for experiments. A fork PR cannot choose its own review rules. See
+[which settings apply](settings.md#which-settings-apply).
 
 ## What is a decision checkpoint?
 

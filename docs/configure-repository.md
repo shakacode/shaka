@@ -47,10 +47,10 @@ $shaka Set up Shaka for this repository.
 
 The agent finds your test and lint commands, explains AI review choices, and keeps
 merge policy Ask. It prepares a separate setup PR using your commands.
-You review the choices and **merge this
-first setup PR yourself on GitHub** before starting feature work. Until it merges,
-Shaka cannot use those proposed settings to choose a reviewer or merge for you.
-The agent reviews the setup PR and names the commit for you to merge.
+Review the choices and **merge this first setup PR yourself on GitHub** to make
+them the team's defaults. The agent reviews it and names the commit for you to merge.
+To try the choices on one task first,
+[select that settings PR](settings.md#preview-settings-before-adopting-them).
 
 To change a choice later, ask:
 
@@ -62,9 +62,6 @@ You do not need to edit configuration files by hand. Start with the
 [settings guide](settings-guide.md); use the [reference](settings.md) when you
 need exact options and defaults.
 
-[#426](https://github.com/shakacode/shaka/pull/426) proposes testing a settings PR's
-pinned configuration on one task before adopting it for the team. Until it lands,
-shared settings come from the default branch; individual settings do not override them.
 
 ## Files the agent prepares
 

@@ -101,7 +101,8 @@ $shaka Set up Shaka for this repository.
 
 For a repository without Shaka settings, the agent prepares a separate setup PR
 and names the reviewed commit for you to merge on GitHub. It stops there; proposed
-settings cannot govern feature work until that PR merges. See
+settings apply after that PR merges, or when you explicitly
+[select it for a task](settings.md#preview-settings-before-adopting-them). See
 [repository setup](configure-repository.md#set-up) for the choices, or
 [individual setup](expected-experience.md#individual-setup)
 to try Shaka locally without team adoption.

@@ -37,8 +37,8 @@ records a maintainer-led feature PR with interventions on an earlier installatio
 That evaluation predates #420; newer delivery support still needs a genuine new-user run.
 
 [Merged #425](https://github.com/shakacode/shaka/pull/425) subsequently added independent
-opening-check choices, including individual settings. [#426](https://github.com/shakacode/shaka/pull/426)
-still proposes testing a settings PR's pinned configuration on one task.
+opening-check choices, including individual settings. [Merged #426](https://github.com/shakacode/shaka/pull/426)
+added [settings previews](settings.md#preview-settings-before-adopting-them) for one task.
 That unshipped preview differs from [trying another Shaka implementation](trying-pr-versions.md).
 
 ## Run an ordinary task

@@ -33,13 +33,13 @@ For shared team settings:
 $shaka Set up Shaka for this repository.
 ```
 
-The agent opens a settings PR for you to review. Shared choices take effect after
-it merges into the default branch. Individual settings do not override team settings.
+The agent opens a settings PR for you to review. Its choices become the team's
+defaults after it merges into the default branch. Individual settings do not
+override team settings.
 
-To experiment before adoption, [#426](https://github.com/shakacode/shaka/pull/426)
-proposes selecting a settings PR and its commit for one task. That complete
-configuration would replace the normal source, making the experiment visible.
-This preview is not shipped.
+[Merged #426](https://github.com/shakacode/shaka/pull/426) lets you
+[try a settings PR on one task](settings.md#preview-settings-before-adopting-them)
+before adoption. The PR keeps the experiment visible.
 
 ## Choose a merge policy
 

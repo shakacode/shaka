@@ -19,6 +19,7 @@ settings with shared team settings.
 
 | Repository setup | Settings used |
 | --- | --- |
+| A settings PR is explicitly selected for this task | The complete configuration at its selected commit. |
 | Shared Shaka settings exist on the default branch | The default-branch configuration, including when reviewing a PR that changes it. |
 | No shared settings; individual setup is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
 
@@ -28,21 +29,46 @@ Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
 disable required merge gates or authorize merging.
 
-A settings PR takes effect after it merges into the default branch. Local settings
-do not override shared settings. Individual custom code-review instructions and
+A settings PR becomes the team's default after it merges into the default branch.
+You can also select it for one task before adoption. Local settings do not override
+shared settings. Individual custom code-review instructions and
 decision-checkpoint settings still use the shared source or defaults;
 [#481](https://github.com/shakacode/shaka/issues/481) tracks complete individual support.
 
 [Merged #420](https://github.com/shakacode/shaka/pull/420) brought individual delivery
 preferences to reviewers, writing limits, opening checks, and WIP reporting.
 [Merged #425](https://github.com/shakacode/shaka/pull/425) subsequently added independent
-opening-check choices. [#426](https://github.com/shakacode/shaka/pull/426) still proposes
-selecting a complete configuration from a settings PR for one task; it is not shipped.
+opening-check choices. [Merged #426](https://github.com/shakacode/shaka/pull/426) added
+settings previews for one task.
 
-Under #426's proposed model, the task would record the selected PR and pinned
-commit. That source would replace the normal configuration, without an individual
-overlay or silent refresh. A local branch can prepare an experiment; the PR makes
-its choices visible before team adoption.
+## Preview settings before adopting them
+
+Keep proposed settings in an open PR and try them before making them your team's
+defaults. Teammates can select the same PR for their tasks:
+
+```text
+$shaka <task or issue link>
+Use settings from PR #123.
+```
+
+To switch an existing task:
+
+```text
+$shaka Switch this task to settings from PR #123.
+```
+
+The selected PR supplies the complete configuration, including reviewer choices
+and merge preferences. Individual settings do not overlay it. An explicit task
+choice, such as Ask, still takes precedence where supported. GitHub's required
+checks and approvals still apply.
+
+The agent records the selected PR and pinned commit on the task's PR. The selection
+survives a fresh chat and stays with that task's branch and worktree. Updates require
+explicit selection of a newer commit, followed by fresh affected checks and reviews.
+Ask the agent to stop the preview to return to ordinary settings.
+
+A local branch can prepare an experiment; the PR makes its choices visible before
+team adoption. Ask to keep that settings PR open if you want to continue experimenting.
 
 ## `merge.preference`
 
@@ -439,13 +465,13 @@ agent's entry in `local_review_agents`. It replaces `review.prompt_file` when th
 agent reviews. Here Codex reviews with `.agents/review-prompt-codex.md`, and Claude,
 which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
 
-Shaka reads the file from a trusted default-branch revision, so a PR that
+Outside a settings preview, Shaka reads the file from a trusted default-branch revision, so a PR that
 changes it is reviewed with the current version. Without a trusted prompt,
 including during individual setup without team settings, the reviewer uses
 Shaka's default instructions. Individual custom prompts are not applied;
 [#481](https://github.com/shakacode/shaka/issues/481) tracks that gap.
-[#426](https://github.com/shakacode/shaka/pull/426) proposes using prompt files
-from an explicitly selected settings PR's pinned commit.
+[Settings previews](#preview-settings-before-adopting-them) use prompt files
+from the selected commit before team adoption.
 
 Settings validation fails when a configured file is missing, empty, larger than
 100 KB, or not UTF-8. Replacement prompts keep the rules that identify the reviewed
@@ -476,7 +502,8 @@ review:
     prompt_file: .agents/shaka/product-checkpoint.md
 ```
 
-The prompt file and repository choices come from the trusted default branch.
+The prompt file and repository choices come from the trusted default branch,
+or the selected settings PR's pinned commit during a preview.
 A task's explicit choices take precedence. See
 [reconsidering the finished result](pr-verification.md#reconsider-the-finished-result)
 for what the checkpoint means for your merge decision.
@@ -485,10 +512,11 @@ The PR records the conclusion, reasons, execution settings, and available native
 usage. A failed invocation stays incomplete. “Simplify/reframe”, “Do not merge”, or
 unresolved substantive concerns block readiness and Auto; green technical checks
 and changed settings do not clear them. Earlier executions stay visible on the PR.
-Setting `enabled: false` in the shared default-branch configuration opts out and
+Setting `enabled: false` in the selected configuration opts out and
 requires a visible note. Individual checkpoint choices, including opt-out and
 custom instructions, currently do not apply; [#481](https://github.com/shakacode/shaka/issues/481)
-tracks this gap. #426 proposes applying these choices from a selected settings PR.
+tracks this gap. [Settings previews](#preview-settings-before-adopting-them) apply
+these choices from a selected settings PR.
 
 See [decision-checkpoint terms and current report labels](pr-verification.md#decision-checkpoint).
 The current automated gate concerns pre-merge readiness; these terms do not add
@@ -574,7 +602,8 @@ root. Both the separate AI session and the coding agent use those instructions.
 Leave the setting out to use Shaka's default.
 
 The [configuration source](#which-settings-apply) determines which `prompt_file`
-setting applies. Shaka then reads the file as follows:
+setting applies. A settings preview reads the prompt at its selected commit.
+Without a preview, Shaka reads the file as follows:
 
 - **Shared team settings:** commit the prompt with the settings PR. Shaka uses
   the version on the default branch, so a PR cannot rewrite its own review rules.
@@ -751,7 +780,7 @@ access rules. The agent inspects both fields before publication.
 
 [#482](https://github.com/shakacode/shaka/issues/482) tracks retaining chat locators
 while making checkout-path visibility independently configurable, including in
-individual settings. Neither merged #425 nor proposed #426 splits these fields.
+individual settings. Neither #425 nor #426 splits these fields.
 Hiding them does not remove private information elsewhere in a PR.
 Expandable sections on public PRs are public too.
 
