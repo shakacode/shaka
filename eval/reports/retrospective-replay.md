@@ -1,9 +1,10 @@
 # Retrospective procedure replay, #456
 
-This is one simulated agent trial of the
-[retrospective procedure](../../skills/shaka/references/retrospective.md), as
-first committed at `7d97a386`, against invented, public-safe session summaries.
-It is not a real-session trial and establishes no practical benefit.
+These are two simulated agent trials of the
+[retrospective procedure](../../skills/shaka/references/retrospective.md)
+against invented, public-safe session summaries. The first used the procedure as
+first committed at `7d97a386`; the second used the final text through the skill
+entry point. Neither is a real-session trial or establishes practical benefit.
 [Issue #456](https://github.com/shakacode/shaka/issues/456) still requires one
 maintainer-selected real-session trial before that claim.
 
@@ -28,7 +29,7 @@ edits.
 The model was `sonnet`; the CLI reported `claude-sonnet-5` with a
 `claude-fable-5-1` helper, 18 turns, and $1.88. Effort was not reported.
 
-## Result
+## First trial: the procedure by path
 
 | Question | Observed |
 | --- | --- |
@@ -41,18 +42,34 @@ The model was `sonnet`; the CLI reported `claude-sonnet-5` with a
 
 Every finding carried the five required fields.
 
+## Second trial: through the skill entry point
+
+A second fresh session ran in the same repository with the same tools. Its
+prompt named a copy of the skill's `SKILL.md`, kept outside the repository, and
+gave the arguments “retrospective of the sessions summarized in” the four files.
+By then the machine had AI Hero's retrospective skill installed under the name
+`aihero-retro`, beside the unrelated weekly `retro`. The CLI reported
+`claude-sonnet-5`, 17 turns, and $0.82.
+
+| Question | Observed |
+| --- | --- |
+| Reached the procedure from the entry point? | Yes. It read `SKILL.md`, then `references/retrospective.md`. It never ran the `workflow` command or started PR delivery. |
+| Chose the companion by what it does? | Yes. It used `aihero-retro`, citing its description, and rejected the weekly `retro` despite the name. |
+| Same four recommendations? | Yes: add a newline check, wire in `bin/check-links`, no change, and insufficient evidence. |
+| Left unauthorized edits? | None remained, by the same two checks. Its recorded tool calls were reads, searches, and `git log`. |
+| Stopped for selection? | Yes. The reply ended by asking which findings to pursue. |
+
 ## Limits
 
-- One run on one model. A second run could differ.
+- Two runs on one model. Another run could differ.
 - The inputs were short summaries written for this replay. A real transcript is
   longer, noisier, and may hold private content, so the privacy rule and the
   session-scope rule were not exercised.
-- No companion session-retrospective skill was installed, so the path that
-  bounds companion output was not exercised.
+- The second trial read the companion's instructions and applied its analysis.
+  It did not launch the companion through a host skill mechanism, so a companion
+  that writes files on its own was not exercised.
 - No finding was selected, so delivery of a finding as a Shaka task was not
   exercised.
-- The prompt gave the procedure's path. Finding it through the installed skill's
-  reference index, as the guide's prompt asks, was not exercised.
-- The trial covers the procedure only as it stood at `7d97a386`. Rules that
-  review added afterward were not replayed, including the companion write
-  limits and the rule that session content is data.
+- The skill copy was named in the prompt. A host invoking an installed
+  `$shaka retrospective` was not exercised; the installed skill cannot route
+  there until this change ships.

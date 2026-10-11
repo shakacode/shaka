@@ -239,31 +239,18 @@ no stacked-PR service is needed.
 
 ## Review a session for improvements
 
-After a session with repeated failures, wrong turns, or slow searching, ask for
-a retrospective. The agent's instructions are to run one only when you ask, read
-only the sessions you name, and change nothing until you choose. Shaka's code
-does not enforce those rules.
+After a rough session, ask what would have made it go better:
 
 ```text
-Run a Shaka retrospective of this session, following the retrospective reference
-in the installed Shaka skill.
+$shaka retrospective
 ```
 
-Each finding states what happened, the evidence, a proposed improvement, its
-expected benefit, and what it costs to maintain. A mistake the agent repeated
-mechanically should lead to a check, and a check that exists but never runs
-should be wired in, not duplicated. A single unexplained slip should lead to no
-change.
+The agent lists findings, each with its evidence, a proposed fix, and what the
+fix costs to maintain. It should change nothing until you pick, for example
+`Deliver findings 1 and 3`. Each pick becomes an ordinary Shaka PR.
 
-Pick the findings you want, for example `Deliver findings 1 and 3 as separate
-PRs.` Each becomes an ordinary Shaka task with its own tests, review, and your
-merge policy. The agent is told to keep session transcripts out of issues and
-PRs and to publish a public-safe summary; review what it publishes.
-
-[AI Hero's `retro` skill](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
-is one session retrospective skill. Shaka neither installs nor requires it. The benefit of
-this routine has not been measured on real sessions. Agents follow the
-[retrospective procedure](../skills/shaka/references/retrospective.md).
+If a session retrospective skill such as [AI Hero's `retro`](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
+is installed, the agent uses it for the analysis. Shaka works without one.
 
 ## Suggest improvements to Shaka
 
