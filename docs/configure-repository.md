@@ -16,10 +16,7 @@ while a documentation project uses link checks and allows Auto after required
 checks and reviews. Updating the shared skill keeps these project choices in
 repository configuration; you do not need a separate copy of the workflow for each.
 
-To try different choices on one task, keep them in an open settings PR and ask
-Shaka to use it. The team keeps its current defaults until you merge that PR.
-See [settings previews](settings.md#preview-settings-before-adopting-them) for
-examples. Use [Choose your settings](settings-guide.md) to decide what suits your team.
+Use [Choose your settings](settings-guide.md) to decide what suits your team.
 
 ## Before you start
 
