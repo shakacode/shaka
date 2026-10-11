@@ -106,7 +106,7 @@ module Shaka
       return unless merge_requested?
 
       head = SquashNote.new(@github).head
-      message = "Post the squash commit message for #{live} with `squash-message` before the merge click."
+      message = "Publish the squash commit message for #{live} in the evaluation checkpoint before the merge click."
       return owe('no squash message', message) unless head
       return "squash message #{head[0, SHORT]}" if head == live
 
@@ -117,9 +117,9 @@ module Shaka
       return unless @checkpoint && merge_requested?
 
       @checkpoint.call(live)
-      "post-implementation #{live[0, SHORT]}"
+      "evaluation checkpoint #{live[0, SHORT]}"
     rescue Error => e
-      owe('post-implementation owed', e.message)
+      owe('evaluation checkpoint owed', e.message)
     end
 
     def wip_fact(live)

@@ -252,7 +252,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
 
     assert_includes rendered,
                     "A summary.\n\n[Code Walkthrough](#{link}) · " \
-                    "Post-implementation verification: _Not published yet._\n"
+                    "Evaluation checkpoint: _Not published yet._\n"
     refute_includes rendered, '## Code Walkthrough'
     refute_match(/^# Code Walkthrough/, rendered)
   end
@@ -317,12 +317,12 @@ class PublicationPostImplementationLinkTest < Minitest::Test
   def test_verification_is_beside_the_code_walkthrough
     assert_includes render(URL),
                     "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
-                    "[Post-implementation verification](#{URL})"
+                    "[Evaluation checkpoint](#{URL})"
   end
 
   def test_missing_verification_reserves_a_named_placeholder
     [nil, '  '].each do |value|
-      assert_includes render(value), 'Post-implementation verification: _Not published yet._'
+      assert_includes render(value), 'Evaluation checkpoint: _Not published yet._'
     end
   end
 
@@ -386,13 +386,13 @@ class PublicationDeploymentLinkTest < Minitest::Test
     link = PublicationRegressionTest::WALKTHROUGH
     assert_includes render,
                     "A summary.\n\n[Code Walkthrough](#{link}) · " \
-                    'Post-implementation verification: _Not published yet._ · ' \
+                    'Evaluation checkpoint: _Not published yet._ · ' \
                     "[Deployment](<#{DEPLOYMENT}>)\n\n## Outcome"
   end
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    "A summary.\n\n_Not published yet._ · Post-implementation verification: _Not published yet._ · " \
+                    "A summary.\n\n_Not published yet._ · Evaluation checkpoint: _Not published yet._ · " \
                     "[Deployment](<#{DEPLOYMENT}>)\n"
   end
 
@@ -406,7 +406,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
     refute_includes rendered, 'Deployment'
     assert_includes rendered,
                     "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
-                    "Post-implementation verification: _Not published yet._\n\n## Outcome"
+                    "Evaluation checkpoint: _Not published yet._\n\n## Outcome"
   end
 
   def test_a_missing_or_blank_deployment_is_refused

@@ -1,4 +1,4 @@
-# Post-implementation validation
+# Evaluation checkpoint
 
 Before declaring an implementation ready to merge, step back from code correctness
 and ask whether the finished result remains worth carrying. A restricted reviewer performs
@@ -24,11 +24,20 @@ links before invoking or publishing.
 ```sh
 shaka post-implementation run --root DIR --base BASE_SHA --head HEAD_SHA \
   --ref TRUSTED_DEFAULT_SHA --content-file packet.json > checkpoint.json
-shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.json
+shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.json \
+  --squash-message message.json
 ```
 
+For a ready result, supply `message.json` with the same `title` and plain-text `body`
+used by `merge --squash-message`, as defined in the workflow's publication commands.
+Publication refuses a ready checkpoint without this message. It places copyable title
+and body blocks in the evaluation checkpoint and preserves branch co-author trailers.
+Blocked, failed, and opted-out results need no message and display no merge text.
+For an authorized opt-out, keep the standalone `squash-message` command for the Ask handoff.
+Repeat publication after a material head change; a recommendation supplies no merge consent.
+
 After publication, set description `post_implementation` to the returned PR comment URL
-and republish the description. The renderer places Post-implementation verification
+and republish the description. The renderer places Evaluation checkpoint
 beside Code Walkthrough, followed by any deployment link. Until publication, it shows
 a named placeholder. This link locates the report; it does not establish readiness.
 

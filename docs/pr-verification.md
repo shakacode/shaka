@@ -131,10 +131,11 @@ Ask the agent to show the failure on the unchanged base and explain which checks
 still block merging before accepting a base failure.
 
 <a id="reconsider-the-finished-result"></a>
+<a id="decision-checkpoint"></a>
 
-## Decision checkpoint
+## Evaluation checkpoint
 
-At a **decision checkpoint**, Shaka presents the result and recommends what to do
+At an **evaluation checkpoint**, Shaka presents the result and recommends what to do
 next. The task owner may be a human or a coordinating agent acting within existing
 authority. This is the return from the agent's work loop; it does not mean the
 overall task is finished.
@@ -144,7 +145,11 @@ problem for its users and earns its maintenance cost. It considers actual scope,
 complexity, and simpler alternatives. Unexpected growth or repeated repairs can
 prompt this review earlier. The code walkthrough explains what changed and how it works.
 
-The final walkthrough or a separate PR comment explains one conclusion:
+The evaluation checkpoint recommends the next action for the PR and includes copyable
+squash commit title and body blocks when it recommends merging. Required checks,
+reviews, and your Ask or Auto choice still apply.
+
+The checkpoint explains one conclusion:
 **Proceed**, **Simplify/reframe**, or **Do not merge**. Substantive unresolved concerns
 hold readiness and Auto even when technical checks pass. Shaka blocks final merge
 preparation without this account's published ready review or explicit opt-out for the
@@ -156,9 +161,9 @@ accepted guidance. Once a direction is chosen, the agent records that guidance
 and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
-Current generated labels still say “Post-implementation verification”, “PR disposition”,
-and “Verification conclusion”; [#483](https://github.com/shakacode/shaka/issues/483)
-tracks aligning them. Parsed identifiers and readiness rules remain unchanged.
+The generated report is titled **Evaluation checkpoint**. Its **PR disposition**
+records the task owner's recommendation, and **Verification conclusion** records
+the reviewer's evaluation. Parsed identifiers and readiness rules remain unchanged.
 
 For example, a settings page may satisfy the task but introduce an interface most
 users never need. The agent can recommend extending an existing setting instead

@@ -44,7 +44,7 @@ class PrDescriptionAttributionTest < Minitest::Test
     rendered = Shaka::Publication.description(description_content, nil, nil, settings)
     refute_includes rendered, CREDIT
     assert_includes rendered, SUMMARY
-    assert_includes rendered, 'Post-implementation verification'
+    assert_includes rendered, 'Evaluation checkpoint'
     assert_includes rendered, 'Execution provenance'
   end
 

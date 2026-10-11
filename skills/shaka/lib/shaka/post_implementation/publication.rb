@@ -5,6 +5,7 @@ require_relative '../publication/text'
 require_relative '../usage/codex_usage'
 require_relative '../usage/claude_usage'
 require_relative 'evidence'
+require_relative '../github/squash_comment'
 
 module Shaka
   # Presents the checkpoint's action without confusing configuration with observations.
@@ -17,9 +18,10 @@ module Shaka
                          'Bring the close-or-replace decision to the maintainer.']
     }.freeze
 
-    def initialize(result, head:)
+    def initialize(result, head:, message: nil)
       @result = result
       @head = head
+      @message = message
       @usage = native_usage
       @configuration = @usage.last&.fetch('configuration') || []
     end
@@ -27,7 +29,8 @@ module Shaka
     def render
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      "#{identity}\n\n# Post-implementation validation\n\n#{body}\n\n" +
+      body += "\n\n#{SquashComment.body(@head, @message.call)}" if @state == 'ready'
+      "#{identity}\n\n# Evaluation checkpoint\n\n#{body}\n\n" +
         PostImplementationEvidence.attestation(@head, @state)
     end
 
@@ -39,9 +42,7 @@ module Shaka
                                'model' => headline_model, 'effort' => known(@configuration[3]))
     end
 
-    def headline_model
-      known(@configuration[2]) || known(@configuration[1])&.then { |model| "#{model} (configured)" }
-    end
+    def headline_model = known(@configuration[2]) || known(@configuration[1])&.then { |model| "#{model} (configured)" }
 
     def execution_evidence = "#{model_text} · #{effort_text}"
 

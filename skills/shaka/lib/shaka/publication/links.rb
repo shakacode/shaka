@@ -22,14 +22,14 @@ module Shaka
     end
 
     def post_implementation(url)
-      return "Post-implementation verification: #{UNPUBLISHED}" if url.nil? || (url.is_a?(String) && url.strip.empty?)
+      return "Evaluation checkpoint: #{UNPUBLISHED}" if url.nil? || (url.is_a?(String) && url.strip.empty?)
 
       url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'post_implementation')
       unless url.match?(POST_IMPLEMENTATION_URL)
         raise Error, 'Publication post_implementation must be a GitHub pull request comment URL.'
       end
 
-      "[Post-implementation verification](#{url})"
+      "[Evaluation checkpoint](#{url})"
     end
 
     # Required so a deployable repository cannot silently omit its preview; `none` opts out.

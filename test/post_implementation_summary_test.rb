@@ -43,7 +43,7 @@ class PostImplementationModelPublicationTest < Minitest::Test
       codex_usage(result, path)
       identity = rendered(result, path)
       assert_includes identity, 'configured model: gpt-6.1-sol'
-      heading = /\A🤖 Codex · OpenAI · gpt-6\.1-sol \(configured\) · medium\n\n# Post-implementation validation\n\n/
+      heading = /\A🤖 Codex · OpenAI · gpt-6\.1-sol \(configured\) · medium\n\n# Evaluation checkpoint\n\n/
       assert_match heading, identity
       assert_operator identity.index('observed model:'), :>, identity.index('<details>')
       assert_includes identity, 'observed model: UNKNOWN'
