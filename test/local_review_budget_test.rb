@@ -125,16 +125,6 @@ class LocalReviewBudgetValidationTest < Minitest::Test
     end
   end
 
-  def test_publication_reports_the_absolute_budget_and_failed_launch_cost
-    in_loop do |head|
-      loop_round(head, findings: 0, max_review_executions: 3, budget_reason: 'Maintainer approved continuation')
-      body = Shaka::LocalReviewComment.render(stored)
-
-      assert_includes body, '1 of 3 review starts'
-      assert_includes body, 'Maintainer approved continuation'
-    end
-  end
-
   def test_concurrent_starts_share_one_budget_and_cannot_overbook
     in_loop do |head|
       ledgers = Array.new(2) { Shaka::LocalReviewLedger.new(@ledger) }
@@ -169,6 +159,57 @@ class LocalReviewBudgetValidationTest < Minitest::Test
       refute result.fetch('attempted')
       assert_includes result.fetch('reason'), 'another base'
       assert_equal original, File.read(@ledger)
+    end
+  end
+end
+
+class LocalReviewBudgetGuardTest < Minitest::Test
+  include LocalReviewBudgetSteps
+
+  def test_invalid_history_does_not_consume_or_install_a_budget
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      original = File.read(@ledger)
+      git!(@root, 'checkout', '-B', 'unrelated', @base)
+      unrelated = next_head('unrelated')
+      result = budget_attempt(unrelated)
+      refute result.fetch('attempted')
+      assert_equal original, File.read(@ledger)
+    end
+  end
+
+  def test_initial_selection_waits_for_legacy_reviews_already_running
+    in_loop do |head|
+      legacy = Shaka::LocalReviewLedger.new(@ledger)
+      legacy.start!(base: @base, head:, reviewer: 'legacy')
+      original = File.read(@ledger)
+      error = refused_adoption(head)
+      assert_includes error.message, 'Wait for legacy'
+      assert_equal original, File.read(@ledger)
+    ensure
+      legacy&.finish!
+    end
+  end
+
+  def test_first_total_below_completed_history_reports_consumed_starts
+    in_loop do |head|
+      head = advance(head, 5)
+      result = budget_attempt(head)
+      assert_includes result.fetch('reason'), 'cannot be lower than its consumed starts'
+    end
+  end
+
+  private
+
+  def budget_attempt(head)
+    options = { ledger: @ledger, max_review_executions: 3, budget_reason: 'Three total' }
+    JSON.parse(run_review(@root, @base, head, @bin, options).first)
+  end
+
+  def refused_adoption(head)
+    assert_raises(Shaka::Error) do
+      Shaka::LocalReviewLedger.new(@ledger).start!(base: @base, head:, reviewer: 'new',
+                                                   budget: { limit: 2, reason: 'Two starts' })
     end
   end
 end

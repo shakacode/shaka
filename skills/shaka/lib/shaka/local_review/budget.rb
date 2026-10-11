@@ -31,6 +31,9 @@ module Shaka
     end
 
     def initialize(stored, completed:, limit: nil, reason: nil)
+      raise Error, 'Task review budget cannot be lower than its consumed starts.' if
+        stored.nil? && limit.is_a?(Integer) && limit < completed
+
       @record = stored || { 'limit' => limit, 'used' => completed, 'reason' => reason }
       validate!(completed)
       return unless limit
@@ -44,12 +47,15 @@ module Shaka
 
     def limit = record.fetch('limit')
 
-    def consume!
-      if record.fetch('used') >= limit
-        raise LocalReviewLedger::RoundCap,
-              "Task review execution budget (#{limit}) reached; reassess before reviewing."
-      end
+    def check_available!
+      return unless record.fetch('used') >= limit
 
+      raise LocalReviewLedger::RoundCap,
+            "Task review execution budget (#{limit}) reached; reassess before reviewing."
+    end
+
+    def consume!
+      check_available!
       @record = record.merge('used' => record.fetch('used') + 1)
     end
 
@@ -81,12 +87,27 @@ module Shaka
 
     private
 
-    def task_budget(base, selection)
-      raise Error, 'Task review budget belongs to another base; preserve this ledger.' if
-        data['task_budget'] && data['base'] != base
-      return unless data['task_budget'] || selection
+    def check_cap!(max_rounds)
+      return if rounds.map { |round| round['head'] }.uniq.size < max_rounds
 
-      LocalReviewBudget.new(data['task_budget'], completed: rounds.size, **(selection || {}))
+      write(data.merge('local_max_rounds' => max_rounds))
+      raise LocalReviewLedger::RoundCap,
+            "Local review round cap (#{max_rounds}) reached; reassess the task before pushing."
+    end
+
+    def task_budget(base, selection)
+      stored = data['task_budget']
+      return unless stored || selection
+
+      check_budget_adoption!(base, stored, selection)
+      LocalReviewBudget.new(stored, completed: rounds.size, **(selection || {}))
+    end
+
+    def check_budget_adoption!(base, stored, selection)
+      raise Error, 'Task review budget belongs to another base; preserve this ledger.' if
+        stored && data['base'] != base
+
+      check_nothing_running! if selection && !stored
     end
 
     def save_task_budget(base, budget)

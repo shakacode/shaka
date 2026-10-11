@@ -400,9 +400,8 @@ TOTAL is an absolute task limit, including all existing ledger reviews; overlapp
 do not add budgets. The selected limit replaces the repository round cap for this ledger.
 Each permitted review start consumes a slot even if its launch or report fails. The ledger
 retains the limit, consumed starts, reason and prior reviews; subsequent runs reuse it without
-flags. Several reviewers of one commit each consume a slot. Ruby enforces the supplied limit
-under the ledger lock; the agent verifies that the human authorized it. This grants no merge
-authority and changes no repository settings or other ledger.
+flags. Several reviewers of one commit each consume a slot. Verify human authorization
+before selecting the total.
 If the cap leaves an unfixed defect, stop before pushing and tell the user. Push only if they
 choose to. The comment shows a visible **Loop bound reached** section with unresolved defects,
 the rounds they appeared in, returned defects, and a ready task-reassessment prompt.

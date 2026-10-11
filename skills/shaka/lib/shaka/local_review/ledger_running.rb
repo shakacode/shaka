@@ -16,9 +16,11 @@ module Shaka
                budget: nil)
       locked do
         budget = task_budget(base, budget)
-        budget&.consume!
+        budget&.check_available!
         check_next!(base:, head:, reviewer:, max_rounds: budget&.limit || max_rounds)
         check_not_running!(head, reviewer)
+        yield if block_given?
+        budget&.consume!
         save_task_budget(base, budget)
         write_running(running + [hold(head, reviewer)])
       end

@@ -76,14 +76,7 @@ module Shaka
     # the start checks read a ledger that no longer exists.
     def append!(base:, round:, snapshot: nil, max_rounds: RepositoryConfig::ReviewLimit::DEFAULT)
       locked do
-        check_next!(base:, head: round['head'], reviewer: round['reviewer'], max_rounds:)
-        raise Error, 'The ledger changed while this round ran; run the review again.' if
-          snapshot && snapshot(round['head']) != snapshot
-
-        kept = round.merge(LocalReviewBundle.store(@path, round.fetch('report')))
-        write(data.merge('version' => LocalReviewBundle::VERSION, 'base' => base, 'local_max_rounds' => max_rounds,
-                         'rounds' => rounds + [kept]))
-        clear_running
+        append_current_round!(base:, round:, snapshot:, max_rounds: self.max_rounds(max_rounds))
       end
     end
 
@@ -108,11 +101,15 @@ module Shaka
 
     private
 
-    def check_cap!(max_rounds)
-      return if rounds.map { |round| round['head'] }.uniq.size < max_rounds
+    def append_current_round!(base:, round:, snapshot:, max_rounds:)
+      check_next!(base:, head: round['head'], reviewer: round['reviewer'], max_rounds:)
+      raise Error, 'The ledger changed while this round ran; run the review again.' if
+        snapshot && snapshot(round['head']) != snapshot
 
-      write(data.merge('local_max_rounds' => max_rounds))
-      raise RoundCap, "Local review round cap (#{max_rounds}) reached; reassess the task before pushing."
+      kept = round.merge(LocalReviewBundle.store(@path, round.fetch('report')))
+      write(data.merge('version' => LocalReviewBundle::VERSION, 'base' => base, 'local_max_rounds' => max_rounds,
+                       'rounds' => rounds + [kept]))
+      clear_running
     end
 
     def data

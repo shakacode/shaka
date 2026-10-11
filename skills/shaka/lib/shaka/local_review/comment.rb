@@ -48,7 +48,8 @@ module Shaka
     def render
       blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice, *settings_notice,
                 *LocalReviewBudget.notice(@task_budget, completed: @rounds.size),
-                *LocalReviewBound.new(@rounds, @max_rounds).lines, *LocalReviewTriage.section(@rounds, @links),
+                *LocalReviewBound.new(@rounds, @max_rounds, budget: @task_budget).lines,
+                *LocalReviewTriage.section(@rounds, @links),
                 *round_details,
                 @rounds.last.attestation]
       "#{blocks.join("\n\n")}\n"
