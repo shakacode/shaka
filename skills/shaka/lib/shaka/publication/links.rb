@@ -14,6 +14,19 @@ module Shaka
 
     module_function
 
+    def checkpoint(content, head:)
+      return [] unless content.key?('checkpoint')
+
+      checkpoint = content['checkpoint']
+      raise Error, 'Description checkpoint must be an object.' unless checkpoint.is_a?(Hash)
+      raise Error, 'Description checkpoint is not for the current PR head.' unless
+        head && checkpoint['head'] == head
+
+      status = PublicationText.single_line(checkpoint['status'], 'checkpoint status')
+      action = PublicationText.single_line(checkpoint['next_action'], 'checkpoint next_action')
+      ['## Checkpoint', "**Status:** #{status}", "**Recommended next action:** #{action}", "Head: `#{head}`"]
+    end
+
     # Keep both review surfaces together before an optional deployment preview.
     def top(content, attribution)
       reviews = "#{walkthrough(content['walkthrough'])} · #{post_implementation(content['post_implementation'])}"
@@ -22,14 +35,14 @@ module Shaka
     end
 
     def post_implementation(url)
-      return "Evaluation checkpoint: #{UNPUBLISHED}" if url.nil? || (url.is_a?(String) && url.strip.empty?)
+      return "Checkpoint: #{UNPUBLISHED}" if url.nil? || (url.is_a?(String) && url.strip.empty?)
 
       url = PublicationText.single_line(url.is_a?(String) ? url.strip : url, 'post_implementation')
       unless url.match?(POST_IMPLEMENTATION_URL)
         raise Error, 'Publication post_implementation must be a GitHub pull request comment URL.'
       end
 
-      "[Evaluation checkpoint](#{url})"
+      "[Checkpoint](#{url})"
     end
 
     # Required so a deployable repository cannot silently omit its preview; `none` opts out.

@@ -117,9 +117,9 @@ module Shaka
       return unless @checkpoint && merge_requested?
 
       @checkpoint.call(live)
-      "evaluation checkpoint #{live[0, SHORT]}"
+      "checkpoint #{live[0, SHORT]}"
     rescue Error => e
-      owe('evaluation checkpoint owed', e.message)
+      owe('checkpoint owed', e.message)
     end
 
     def wip_fact(live)

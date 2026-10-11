@@ -1,4 +1,4 @@
-# Evaluation checkpoint
+# Checkpoint
 
 Before declaring an implementation ready to merge, step back from code correctness
 and ask whether the finished result remains worth carrying. A restricted reviewer performs
@@ -31,14 +31,16 @@ shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.js
 For a ready result, supply `message.json` with the same `title` and plain-text `body`
 used by `merge --squash-message`, as defined in the workflow's publication commands.
 Publication refuses a ready checkpoint without this message. It places copyable title
-and body blocks in the evaluation checkpoint and preserves branch co-author trailers.
+and body blocks in the checkpoint and preserves branch co-author trailers.
 Blocked, failed, and opted-out results need no message and display no merge text.
 For an authorized opt-out, keep the standalone `squash-message` command for the Ask handoff.
-Repeat publication after a material head change; a recommendation supplies no merge consent.
+Repeat publication after any head change; a recommendation supplies no merge consent.
 
 After publication, set description `post_implementation` to the returned PR comment URL
-and republish the description. The renderer places Evaluation checkpoint
-beside Code Walkthrough, followed by any deployment link. Until publication, it shows
+and supply description `checkpoint` with `head`, `status`, and `next_action`.
+Use the live full head and a concise action naming its owner; Ruby rejects another head.
+Republish the description when status or action changes. It places this summary near the top,
+with the Checkpoint link beside Code Walkthrough, followed by any deployment link. Until publication, it shows
 a named placeholder. This link locates the report; it does not establish readiness.
 
 `--base`, `--head`, and `--ref` are full commit SHAs. Resolve and verify the default
@@ -103,7 +105,7 @@ unavailable update; the new report stays published so the same execution can be 
 
 ## Act on the conclusion
 
-### Choose the owner's PR disposition
+### Recommend the next action
 
 Verification gathers evidence about the finished result. After assessing that evidence,
 the task owner recommends what happens to the PR. Every completed implementation ends

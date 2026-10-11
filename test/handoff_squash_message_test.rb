@@ -68,7 +68,7 @@ class HandoffSquashMessageTest < Minitest::Test
 
   def test_final_handoff_owes_both_checkpoint_and_message_until_they_exist
     result = awaiting_merge(post_implementation: {})
-    assert owed?(result, 'Evaluation checkpoint')
+    assert owed?(result, 'Checkpoint')
     assert owed?(result, 'squash commit message')
     assert_equal Shaka::Handoff::OWED_EXIT, Shaka::Handoff.exit_status(result)
 
@@ -118,7 +118,7 @@ class HandoffEvaluationMessageTest < Minitest::Test
 
   def test_archived_checkpoint_message_does_not_count
     archived = checkpoint
-    archived['body'] = archived['body'].sub('Report', 'Superseded — read the current evaluation checkpoint: URL')
+    archived['body'] = archived['body'].sub('Report', 'Superseded — read the current checkpoint: URL')
     archived['body'] += "\n</details>"
     assert_predicate(awaiting([archived])['owed'], :any?)
   end

@@ -78,7 +78,7 @@ module Shaka
       path = @options[:squash_message]
       unless path
         raise Error,
-              'Ready evaluation checkpoint requires --squash-message with the commit title and body.'
+              'Ready checkpoint requires --squash-message with the commit title and body.'
       end
 
       SquashMessage.for(github, JSON.parse(File.read(path, encoding: 'UTF-8')))

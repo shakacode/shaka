@@ -132,10 +132,11 @@ still block merging before accepting a base failure.
 
 <a id="reconsider-the-finished-result"></a>
 <a id="decision-checkpoint"></a>
+<a id="evaluation-checkpoint"></a>
 
-## Evaluation checkpoint
+## Checkpoint
 
-At an **evaluation checkpoint**, Shaka presents the result and recommends what to do
+At a **checkpoint**, Shaka presents a result, question, or blocker and recommends what to do
 next. The task owner may be a human or a coordinating agent acting within existing
 authority. This is the return from the agent's work loop; it does not mean the
 overall task is finished.
@@ -145,7 +146,7 @@ problem for its users and earns its maintenance cost. It considers actual scope,
 complexity, and simpler alternatives. Unexpected growth or repeated repairs can
 prompt this review earlier. The code walkthrough explains what changed and how it works.
 
-The evaluation checkpoint recommends the next action for the PR and includes copyable
+The checkpoint recommends the next action for the PR and includes copyable
 squash commit title and body blocks when it recommends merging. Required checks,
 reviews, and your Ask or Auto choice still apply.
 
@@ -161,9 +162,13 @@ accepted guidance. Once a direction is chosen, the agent records that guidance
 and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
-The generated report is titled **Evaluation checkpoint**. Its **PR disposition**
-records the task owner's recommendation, and **Verification conclusion** records
-the reviewer's evaluation. Parsed identifiers and readiness rules remain unchanged.
+The PR description shows the current checkpoint status and **Recommended next action**,
+with the commit they apply to and a link to the full report. Keep consequential decisions,
+questions or friction, and critical changes concise; put supporting evidence below.
+The report keeps the **Evaluation** within the checkpoint. A recommendation becomes a
+**Recorded decision** after the owner accepts it or acts under existing authority.
+Auto applies previously granted authority; a consequential unresolved choice still needs direction.
+Parsed identifiers and readiness rules remain unchanged.
 
 For example, a settings page may satisfy the task but introduce an interface most
 users never need. The agent can recommend extending an existing setting instead
