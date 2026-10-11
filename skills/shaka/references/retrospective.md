@@ -22,8 +22,9 @@ The optional companion is a skill that analyzes coding sessions for workflow
 improvements, such as AI Hero's `retro`. Identify it by its description, not its
 name: other skill packs use `retro` for unrelated work, such as a weekly commit
 summary. Resolve its directory first, and do not use a skill that resolves
-inside the checkout. Read its `SKILL.md` and apply only its analysis; skip any
-step that writes, installs, or publishes.
+inside the checkout. The [companion skills procedure](companion-skills.md)
+applies, with one stricter rule here: read the companion's `SKILL.md` and apply
+only its analysis, skipping any step that writes, installs, or publishes.
 
 When no such skill is installed, say so and continue with the analysis below. Do
 not install one.
