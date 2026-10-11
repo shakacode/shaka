@@ -38,9 +38,22 @@ module SettingsPreviewFixture
     data = seam('merge' => { 'preference' => 'auto' })
     data['review']['local_review_agents'] = [{ 'provider' => 'openai', 'model_family' => 'codex',
                                                'model' => model }]
-    path = Shaka::Configuration::Layout.worktree(root:).contract
-    File.write(File.join(root, path), YAML.dump(data))
+    write_settings(root, data)
+  end
+
+  def settings(root) = YAML.safe_load_file(File.join(root, Shaka::Configuration::Layout.worktree(root:).contract))
+
+  def write_settings(root, data)
+    File.write(File.join(root, Shaka::Configuration::Layout.worktree(root:).contract), YAML.dump(data))
     commit(root)
+  end
+
+  def remove_trusted_setup(root)
+    git(root, 'rm', '-r', '.agents')
+    absent = commit(root)
+    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
+    create_commands(root)
+    absent
   end
 
   def use_new_layout(root)

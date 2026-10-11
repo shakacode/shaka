@@ -32,11 +32,9 @@ class SettingsPreviewPolicyTest < Minitest::Test
 
   def test_selected_merge_limits_replace_repository_defaults
     with_preview_repository do |root, trusted, _preview|
-      path = File.join(root, '.agents/agent-workflow.yml')
-      data = YAML.safe_load_file(path)
+      data = settings(root)
       data['merge']['limits'] = { 'max_changed_files' => 2 }
-      File.write(path, YAML.dump(data))
-      select_preview(root, commit(root))
+      select_preview(root, write_settings(root, data))
       limits = Shaka::MergeLimits.from_ref(root:, ref: trusted)
       assert_equal 2, limits.to_h['max_changed_files']
     end
@@ -55,13 +53,26 @@ class SettingsPreviewNamingTest < Minitest::Test
   include SettingsPreviewFixture
   include ClaimHelpers
 
-  def test_selected_prefix_and_branch_template_reach_task_naming
+  def test_selected_prefix_does_not_override_another_tasks_branch_template
     with_preview_repository do |root, trusted, _preview|
       select_naming(root, trusted)
       assert_equal 'TRY', Shaka::Prefix.new(root:, ref: trusted).call['prefix']
       output, status = capture_cli(['1', '--root', root], prs: [], branches: '')
       assert_equal 0, status
-      assert_equal 'trial/{issue}-{description}', JSON.parse(output)['branch_name']
+      assert_equal '{login}-{host}/{issue}-{description}', JSON.parse(output)['branch_name']
+    end
+  end
+
+  def test_individual_naming_works_without_team_setup
+    with_preview_repository do |root, trusted, _preview|
+      select_naming(root, trusted)
+      absent = remove_trusted_setup(root)
+      git(root, 'update-ref', 'refs/remotes/origin/main', absent)
+      File.write(File.join(root, '.agents/agent-workflow.yml'),
+                 YAML.dump(seam('branches' => { 'name' => 'individual/{issue}' })))
+      output, status = capture_cli(['2', '--root', root], prs: [], branches: '')
+      assert_equal 0, status
+      assert_equal 'individual/{issue}', JSON.parse(output)['branch_name']
     end
   end
 
@@ -69,11 +80,9 @@ class SettingsPreviewNamingTest < Minitest::Test
 
   def select_naming(root, trusted)
     git(root, 'update-ref', 'refs/remotes/origin/main', trusted)
-    path = File.join(root, '.agents/agent-workflow.yml')
-    data = YAML.safe_load_file(path).merge('repo_prefix' => 'TRY',
-                                           'branches' => { 'name' => 'trial/{issue}-{description}' })
-    File.write(path, YAML.dump(data))
-    select_preview(root, commit(root))
+    data = settings(root).merge('repo_prefix' => 'TRY',
+                                'branches' => { 'name' => 'trial/{issue}-{description}' })
+    select_preview(root, write_settings(root, data))
   end
 end
 
@@ -108,11 +117,9 @@ class SettingsPreviewNativeMergeTest < Minitest::Test
   end
 
   def select_without_review(root)
-    path = File.join(root, '.agents/agent-workflow.yml')
-    data = YAML.safe_load_file(path)
+    data = settings(root)
     data['review'] = { 'required' => 'none', 'ci_review_wait' => 'none',
                        'post_implementation' => { 'enabled' => false } }
-    File.write(path, YAML.dump(data))
-    select_preview(root, commit(root))
+    select_preview(root, write_settings(root, data))
   end
 end

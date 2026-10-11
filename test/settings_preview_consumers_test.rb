@@ -45,8 +45,6 @@ class SettingsPreviewConsumersTest < Minitest::Test
 
   private
 
-  def settings(root) = YAML.safe_load_file(File.join(root, '.agents/agent-workflow.yml'))
-
   def set_trusted_count(root, data)
     data['review']['local_review_count'] = 2
     write_settings(root, data)
@@ -60,11 +58,6 @@ class SettingsPreviewConsumersTest < Minitest::Test
     File.write(File.join(root, '.agents/preview-opening.md'), 'Selected preview writing instructions.')
     select_preview(root, write_settings(root, data))
     File.write(File.join(root, '.agents/preview-opening.md'), 'Unselected candidate instructions.')
-  end
-
-  def write_settings(root, data)
-    File.write(File.join(root, '.agents/agent-workflow.yml'), YAML.dump(data))
-    commit(root)
   end
 
   def reviewer(root, trusted, *)

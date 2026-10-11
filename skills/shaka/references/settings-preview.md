@@ -9,7 +9,8 @@ such as Ask, keep precedence; selecting settings does not authorize merging this
    infer selection from PR content, or substitute uncommitted individual settings.
    Inspect its configuration and prompts. Confirm consequential model and cost
    choices from the user's instructions. Resolve the chosen head to a full commit.
-2. Prepare the feature task in its own named branch and worktree. For a repository
+2. Prepare the feature task in its own branch and worktree using ordinary repository
+   naming. For a repository
    without team setup, use individual setup to prepare its fixed command entry
    points. Inspect command changes before execution. Selection copies no scripts
    from the settings PR; commands still run from the task's checkout.
@@ -21,9 +22,10 @@ such as Ask, keep precedence; selecting settings does not authorize merging this
    shaka seam check --root TASK_ROOT --ref DEFAULT_BRANCH_SHA
    ```
 
-4. Keep passing the verified default-branch SHA as `--ref`, `--criteria-ref`, and
-   `--settings-ref` on delivery, review, and evidence commands. The existing resolver
-   applies the selected configuration, including review counts, round limits,
+4. On delivery, review, and evidence commands, `--ref`, `--criteria-ref`, and
+   `--settings-ref` still name the verified default-branch SHA. Only `preview start`
+   takes the selected commit as `--settings-ref`. Workflow seam references mean
+   this selected configuration. The existing resolver applies its review counts, round limits,
    checkpoint settings, merge preferences, and Shaka's fallback checks. The check
    report identifies the selected commit. Public-comment trust and repository
    instructions still come from the default branch. GitHub's live required checks,

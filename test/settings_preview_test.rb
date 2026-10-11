@@ -146,14 +146,4 @@ class SettingsPreviewBoundaryTest < Minitest::Test
       assert_equal 'inactive', selector.status['status']
     end
   end
-
-  private
-
-  def remove_trusted_setup(root)
-    git(root, 'rm', '-r', '.agents')
-    absent = commit(root)
-    FileUtils.mkdir_p(File.join(root, '.agents/bin'))
-    create_commands(root)
-    absent
-  end
 end
