@@ -356,8 +356,7 @@ begin
                end)
                attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
                described = Shaka::DeploymentLink.resolve(attributed, github)
-               usage_records = nil
-               carried = nil
+               usage_records = carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
                  settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
