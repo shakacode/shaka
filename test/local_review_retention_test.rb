@@ -73,7 +73,8 @@ class LocalReviewRetentionTest < Minitest::Test
     FileUtils.rm_f(Dir.glob(File.join(@directory, 'reports', '*')))
 
     _output, error = capture_io do
-      assert_equal 1, Shaka::LocalReview.run(['publish', 'owner/repo', '1', '--content-file', @path], github: Object.new)
+      assert_equal 1,
+                   Shaka::LocalReview.run(['publish', 'owner/repo', '1', '--content-file', @path], github: Object.new)
     end
     assert_includes error, "Round 1's report is unavailable"
   end
