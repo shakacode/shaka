@@ -39,7 +39,7 @@ module Shaka
       @links = LocalReviewLinks.new(repository, published)
       @rounds = build_rounds(PublicationText.list(content['rounds'], 'rounds'))
       @fallback = content['fallback']
-      @task_budget = content['task_budget']
+      @task_budget = LocalReviewBudget.record_from(content, completed: @rounds.size)
       @max_rounds = RepositoryConfig::ReviewLimit.from(content)
     end
 

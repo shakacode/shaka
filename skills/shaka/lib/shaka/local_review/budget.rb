@@ -22,8 +22,12 @@ module Shaka
       reason.is_a?(String) && !reason.strip.empty? && reason.bytesize <= 2000 && !reason.match?(/[\r\n]/)
     end
 
+    def self.record_from(content, completed:)
+      new(content['task_budget'], completed:).record if content.key?('task_budget')
+    end
+
     def self.notice(stored, completed:)
-      return [] unless stored
+      return [] if stored.nil?
 
       record = new(stored, completed:).record
       ["**Task review budget:** #{record['used']} of #{record['limit']} review starts, including failed launches. " \
@@ -80,9 +84,8 @@ module Shaka
   # Applies the recorded task limit without changing repository policy or losing spent slots.
   module LocalReviewLedgerBudget
     def max_rounds(default)
-      return default unless data['task_budget']
-
-      LocalReviewBudget.new(data['task_budget'], completed: rounds.size).limit
+      stored = LocalReviewBudget.record_from(data, completed: rounds.size)
+      stored ? stored.fetch('limit') : default
     end
 
     private
@@ -96,7 +99,7 @@ module Shaka
     end
 
     def task_budget(base, selection)
-      stored = data['task_budget']
+      stored = LocalReviewBudget.record_from(data, completed: rounds.size)
       return unless stored || selection
 
       check_budget_adoption!(base, stored, selection)

@@ -34,7 +34,28 @@ class LocalReviewBudgetPublicationTest < Minitest::Test
     assert_includes body, 'Loop bound reached'
   end
 
+  def test_malformed_budgets_refuse_publication_before_any_comment_is_written
+    [nil, false, {}, 'broken', budget(0, 1)].each do |record|
+      github = LocalReviewPublishTest::FakeGitHub.new
+      status, error = failed_publication(record, github)
+      assert_equal 1, status
+      assert_includes error, 'Invalid task review budget'
+      assert_empty github.replies
+    end
+  end
+
   private
+
+  def failed_publication(record, github)
+    Tempfile.create(['budget-', '.json']) do |file|
+      file.write(JSON.generate('rounds' => [round], 'task_budget' => record))
+      file.close
+      _output, error = capture_io do
+        @status = Shaka::LocalReview.run(['publish', 'o/r', '7', '--content-file', file.path], github:)
+      end
+      [@status, error]
+    end
+  end
 
   def budget(used, limit) = { 'used' => used, 'limit' => limit, 'reason' => 'Approved continuation' }
 

@@ -213,3 +213,28 @@ class LocalReviewBudgetGuardTest < Minitest::Test
     end
   end
 end
+
+class LocalReviewBudgetMalformedTest < Minitest::Test
+  include LocalReviewBudgetSteps
+
+  def test_present_malformed_budgets_cannot_be_replaced_by_a_new_selection
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      later = next_head(1)
+      data = stored
+      [nil, false, {}, 'broken'].each { |record| assert_malformed_budget(record, later, data) }
+    end
+  end
+
+  private
+
+  def assert_malformed_budget(record, head, data)
+    File.write(@ledger, JSON.generate(data.merge('task_budget' => record)))
+    original = File.read(@ledger)
+    options = { ledger: @ledger, max_review_executions: 3, budget_reason: 'Three total' }
+    result = JSON.parse(run_review(@root, @base, head, @bin, options).first)
+    refute result.fetch('attempted')
+    assert_includes result.fetch('reason'), 'Invalid task review budget'
+    assert_equal original, File.read(@ledger)
+  end
+end
