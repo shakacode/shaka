@@ -18,8 +18,8 @@ as insufficient evidence, with no proposed change.
 
 ## Use the companion when it is installed
 
-The optional companion is any installed skill that analyzes coding sessions for
-workflow improvements, such as AI Hero's `retro`. Identify it by its description,
+The optional companion is any skill installed outside the checkout that analyzes
+coding sessions for workflow improvements, such as AI Hero's `retro`. Identify it by its description,
 not its name: other skill packs use `retro` for unrelated work, such as a weekly
 commit summary. Load it through a mechanism this host offers; otherwise read its
 resolved installed `SKILL.md`.
@@ -85,7 +85,8 @@ change access or settings, or create issues, branches, or PRs.
 ## Deliver selected findings as Shaka tasks
 
 Each selected finding, or group of closely related findings, becomes one bounded
-Shaka task that starts at Intake. It gets its own value checkpoint, validation,
+Shaka task. Start it from the skill entry point, so the trusted `workflow`
+command runs from Intake. It gets its own value checkpoint, validation,
 independent review, publication, and merge preference. Keep no separate ledger
 and add no gate.
 

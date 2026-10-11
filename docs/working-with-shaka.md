@@ -247,7 +247,7 @@ $shaka retrospective
 
 The agent lists findings, each with its evidence, a proposed fix, and what the
 fix costs to maintain. It should change nothing until you pick, for example
-`Deliver findings 1 and 3`. Each pick becomes an ordinary Shaka PR.
+`Deliver findings 1 and 3`. Each pick is delivered as an ordinary Shaka task.
 
 If a session retrospective skill such as [AI Hero's `retro`](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
 is installed, the agent uses it for the analysis. Shaka works without one.
