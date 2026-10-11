@@ -70,12 +70,6 @@ module Shaka
     # Only resolved settings can establish whether the repository opted out.
     def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true
 
-    def rows
-      snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]
-      safe = snapshots.map { |snapshot| Evidence::PublicSettings.sanitize(snapshot) }
-      Evidence::PublicSettings::FIELDS.map { |field| [field, safe.map { |snapshot| snapshot[field] }] }
-    end
-
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
            'Private trials default to Ask; explicit user authorization and live required gates govern merging.'
@@ -91,16 +85,23 @@ module Shaka
 
     # A second disclosure keeps the status and note readable ahead of the long table.
     def values
-      withheld, shown = rows.partition { |field, cells| never_published?(field, cells) }
+      withheld, shown = rows.partition { |field, cells| redacted_in_every_column?(field, cells) }
       parts = [[HEADER, '| --- | --- | --- | --- |', *shown.map { |row| "| #{row.flatten.join(' | ')} |" }].join("\n")]
-      parts << "Values never published (REDACTED): #{withheld.map(&:first).join(', ')}" unless withheld.empty?
+      names = withheld.map(&:first).join(', ')
+      parts << "Never published, so REDACTED in every column: #{names}" unless withheld.empty?
       "<details>\n<summary>#{VALUES_SUMMARY}</summary>\n\n#{parts.join("\n\n")}\n\n</details>"
     end
 
+    def rows
+      snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]
+      safe = snapshots.map { |snapshot| Evidence::PublicSettings.sanitize(snapshot) }
+      Evidence::PublicSettings::FIELDS.map { |field| [field, safe.map { |snapshot| snapshot[field] }] }
+    end
+
     # The allowlist never publishes these values, so one line names them instead of a row each.
-    # A setting no snapshot recorded keeps its UNKNOWN row.
-    def never_published?(field, cells)
-      Evidence::PublicSettings::REDACTED.include?(field) && cells.include?('REDACTED')
+    # A row with an UNKNOWN cell stays: it shows which snapshot recorded nothing.
+    def redacted_in_every_column?(field, cells)
+      Evidence::PublicSettings::REDACTED.include?(field) && cells.all?('REDACTED')
     end
 
     def checked_snapshot(kind)
