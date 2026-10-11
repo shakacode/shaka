@@ -32,8 +32,21 @@ class PublicationSettingsLayoutTest < Minitest::Test
       body = settings.detail.fetch('body')
       refute_includes body, '| commands |'
       assert_match(/^.*REDACTED.*: commands, paths, .*local_changes$/, body)
-      assert_includes body, '| defaults_changed | UNKNOWN |'
     end
+  end
+
+  def test_settings_unknown_in_every_shown_column_share_one_line
+    [recorded(captured), Shaka::PublicationSettings.new(current: captured)].each do |settings|
+      body = settings.detail.fetch('body')
+      refute_includes body, '| defaults_changed |'
+      assert_match(/^UNKNOWN in every column: .*overrides\.command.*defaults_changed/, body)
+    end
+  end
+
+  def test_a_setting_recorded_in_one_column_keeps_its_row
+    validation = captured.merge('overrides.command' => 'validate')
+    body = recorded(captured, validation:).detail.fetch('body')
+    assert_includes body, '| overrides.command | validate | UNKNOWN | UNKNOWN |'
   end
 
   def test_a_redacted_setting_keeps_its_row_while_another_shown_column_is_unknown

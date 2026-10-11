@@ -74,6 +74,8 @@ module Shaka
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
            'Private trials default to Ask; explicit user authorization and live required gates govern merging.'
     COLUMNS = ['Before push: validation', 'Review', 'Current merge input (not evidence)'].freeze
+    FOLDED = { 'UNKNOWN' => 'UNKNOWN in every column',
+               'REDACTED' => 'Never published, so REDACTED in every column' }.freeze
     VALUES_SUMMARY = 'Setting values at validation, review, and merge'
 
     def detail
@@ -104,23 +106,26 @@ module Shaka
     def table(columns)
       return [] if columns.empty?
 
-      withheld, shown = rows(columns).partition { |field, cells| redacted_in_every_column?(field, cells) }
-      lines = [['Setting', *columns.map(&:first)], ['---'] * (columns.size + 1), *shown.map(&:flatten)]
-      [lines.map { |cells| "| #{cells.join(' | ')} |" }.join("\n"), *withheld_note(withheld)]
+      rows = rows(columns).group_by { |field, cells| fold(field, cells) }
+      lines = [['Setting', *columns.map(&:first)], ['---'] * (columns.size + 1), *rows.fetch(nil, []).map(&:flatten)]
+      [lines.map { |cells| "| #{cells.join(' | ')} |" }.join("\n"), *folded_notes(rows)]
     end
 
     def rows(columns)
       Evidence::PublicSettings::FIELDS.map { |field| [field, columns.map { |_title, settings| settings[field] }] }
     end
 
-    def withheld_note(rows)
-      rows.empty? ? [] : ["Never published, so REDACTED in every column: #{rows.map(&:first).join(', ')}"]
+    def folded_notes(rows)
+      FOLDED.filter_map { |cell, lead| "#{lead}: #{rows[cell].map(&:first).join(', ')}" if rows.key?(cell) }
     end
 
-    # The allowlist never publishes these values, so one line names them instead of a row each.
-    # A row with an UNKNOWN cell stays: it shows which snapshot recorded nothing.
-    def redacted_in_every_column?(field, cells)
-      Evidence::PublicSettings::REDACTED.include?(field) && cells.all?('REDACTED')
+    # A row that says the same nothing in every shown column is named on one line instead:
+    # UNKNOWN throughout, or REDACTED throughout for a value the allowlist never publishes.
+    # Any other row stays, so a cell that differs from its neighbours is always visible.
+    def fold(field, cells)
+      return 'UNKNOWN' if cells.all?('UNKNOWN')
+
+      'REDACTED' if Evidence::PublicSettings::REDACTED.include?(field) && cells.all?('REDACTED')
     end
 
     def checked_snapshot(kind)
