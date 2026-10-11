@@ -263,10 +263,23 @@ this outcome; it covers permitted retries, honest not-run evidence, and a synthe
 
 ## Run the review loop with a ledger
 
-Keep every round in one ledger, a JSON file outside the checkout, for example
-`LEDGER="$(mktemp -d)/review-ledger.json"`. Pass `--ledger "$LEDGER"` to each
-`shaka review run`: a completed round adds its head, reviewer, effort, requested model, report,
-prompt source, criteria commit, and usage path. The table's Model column shows attribution from
+Keep every round in one ledger, a JSON file outside the checkout. Give each task its own
+directory under `~/.local/state/shaka/reviews/`, created when the loop starts:
+
+```bash
+LEDGER_DIR="$HOME/.local/state/shaka/reviews/OWNER-REPO-ISSUE-$(date +%s)"
+mkdir -p -m 700 "$LEDGER_DIR"
+LEDGER="$LEDGER_DIR/ledger.json"
+```
+
+Do not reuse another task's directory, and do not put the ledger in a temporary directory:
+`review run` adds `ledger_warning` to its result when it sits in one. Pass `--ledger "$LEDGER"`
+to each `shaka review run`: a completed round adds its head, reviewer, effort, requested model,
+report, prompt source, criteria commit, and usage path. The helper copies the report to
+`reports/` beside the ledger before adding the round, and the round and the run result name that
+copy; a report that cannot be copied adds no round. `review publish` reads the copies. When one
+is missing or changed, it stops and names the round whose report is unavailable; do not
+recreate a report from memory. The table's Model column shows attribution from
 native usage: the top-level CLI model, one canonical aggregate model, or a `shared:` list when
 aggregate usage reports several models. The list records model usage without assigning a primary
 model or claiming which model wrote the review. If an aggregate entry lacks a canonical name, the
