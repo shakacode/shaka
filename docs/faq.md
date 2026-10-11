@@ -67,9 +67,8 @@ or its supported API adapter and records the reviewed commit, findings, and
 available usage. It does not count a same-host subagent as the local review.
 
 Reviewers have different access to unchanged code. See
-[reviewer choices and limits](settings.md#reviewlocal_review_agents), and the
-[agent procedure](../skills/shaka/references/local-review.md#run-the-selected-reviewer)
-for isolation and execution details.
+[reviewer choices and limits](settings.md#reviewlocal_review_agents) and
+[what Shaka enforces](workflow.md#what-is-enforced).
 
 ## Do multiple reviews run one after another?
 

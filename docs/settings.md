@@ -447,8 +447,8 @@ Shaka's default instructions. Individual custom prompts are not applied;
 from an explicitly selected settings PR's pinned commit.
 
 Settings validation fails when a configured file is missing, empty, larger than
-100 KB, or not UTF-8. Replacement prompts retain the review protocol described in
-the [agent procedure](../skills/shaka/references/local-review.md#run-the-selected-reviewer).
+100 KB, or not UTF-8. Replacement prompts keep the rules that identify the reviewed
+commit and prevent edits. See [what Shaka enforces](workflow.md#what-is-enforced).
 
 The file configures local reviews. A CI review job gets its prompt from its own
 workflow; to give it the same instructions, have the workflow read this file.

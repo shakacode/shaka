@@ -187,7 +187,7 @@ other external effects; the replacement still needs validation and review.
 These are agent instructions using Git and task records; the Ruby `checkpoint`
 command does not save or restore snapshots. Reliable recovery in real use remains
 to be evaluated. Ask what the saved state can restore before rewinding.
-See the [recovery procedure](../skills/shaka/references/return-points.md).
+See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
 [#483](https://github.com/shakacode/shaka/issues/483) tracks updating older generated labels.
 
 ## Resume unfinished work
