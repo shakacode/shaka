@@ -46,7 +46,8 @@ Look for four kinds of friction, each tied to something observed in the session:
 - **Tool overhead:** repeated failing commands, slow steps, or avoidable prompts.
 
 Before proposing a check, read the repository's validation commands, CI
-workflows, and hooks. Then classify the gap:
+workflows, and hooks. Do not run checkout commands during analysis; report what
+reading cannot settle as `UNKNOWN`. Then classify the gap:
 
 | State | Proposal |
 | --- | --- |

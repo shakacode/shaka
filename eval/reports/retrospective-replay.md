@@ -71,7 +71,8 @@ By then the machine had AI Hero's retrospective skill installed under the name
 - No finding was selected, so delivery of a finding as a Shaka task was not
   exercised.
 - Rules added after each trial's commit were not replayed, including the check
-  that a companion resolves outside the checkout.
+  that a companion resolves outside the checkout and the rule against running
+  checkout commands, which the first trial's agent did with `bin/check-links`.
 - The skill copy was named in the prompt. A host invoking an installed
   `$shaka retrospective` was not exercised; the installed skill cannot route
   there until this change ships.
