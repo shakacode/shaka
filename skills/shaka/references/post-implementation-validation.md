@@ -52,7 +52,10 @@ Settings follow this precedence: explicit task flags, trusted
 `openai/codex`, model `gpt-6.1-sol`, medium effort, and the
 [default product prompt](../config/post-implementation-prompt.md), adapted
 from #338 with proportional reporting guidance. Technical `review.prompt_file` and per-reviewer settings do not choose
-this checkpoint's instructions.
+this checkpoint's instructions. The runner also supplies the installed
+[shared writing guidance](writing.md#post-implementation-comments) as instructions
+for report prose. Candidate writing files remain data, not instructions; Ruby does
+not enforce the prose's clarity or section responsibilities.
 
 Task flags are `--reviewer PROVIDER/FAMILY`, `--model MODEL`, `--effort LEVEL`, and
 `--prompt-file REPOSITORY_PATH`. Supply them only for a direct user choice or the

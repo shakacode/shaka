@@ -38,25 +38,38 @@ repository; current task instructions can refine it. No style schema or prose
 score is needed beyond the limits below. Self-edit the content JSON; do not rewrite the rendered GitHub
 body or invoke a separate rewriting skill for Shaka's publication step.
 
-## Example: post-implementation review
+## Post-implementation comments
 
-Use this example for content and order, not mandatory headings or wording.
-Keep the renderer's fixed headings; organize the content within them.
+Use the renderer's existing order and headings. Give each part one job:
+
+1. **PR disposition:** The owner recommends what happens to this PR and gives the
+   main reason. A recommendation is not merge permission.
+2. **Next action:** The owner names who does what next, rather than restating the
+   recommendation.
+3. **Verification conclusion:** The reviewer says what the evidence establishes
+   and names unresolved concerns or verification gaps. Assess the result, not the
+   owner's merge decision.
+4. **Supporting analysis:** Add evidence, tradeoffs, and execution details that
+   explain the judgment. Keep them collapsed; do not repeat the visible summary.
+
+Write content for the existing fields, not extra headings. Include only information
+that changes the reader's understanding. Use the example below for content, not
+exact wording or claims.
 
 > **Recommendation: Merge**
 >
 > Internal testers can see why listings were included. The implementation matches
 > the agreed design; no significant issues were found.
 >
+> **Next action:** Merge the parent PR first. Keep the task's Ask preference
+> unchanged, and merge only after required checks and approvals are complete.
+>
 > **Scope and verification:** This is an internal experiment. Broader coverage and
 > public rollout are not yet validated. Verification in hosted and deployed
 > environments remains unfinished.
->
-> **Next action:** Merge the parent PR first. Keep the task's Ask preference
-> unchanged, and merge only after required checks and approvals are complete.
 
 Use the task's actual evidence rather than copying these claims. Include unresolved
-concerns when present; omit or combine sections that add no useful information.
+concerns when present; omit optional prose that adds no useful information.
 
 ## Point readers to the code
 
