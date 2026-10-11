@@ -10,6 +10,7 @@ require_relative 'coverage'
 require_relative 'finding'
 require_relative 'summary'
 require_relative 'bound'
+require_relative 'budget'
 require_relative 'triage'
 
 module Shaka
@@ -38,6 +39,7 @@ module Shaka
       @links = LocalReviewLinks.new(repository, published)
       @rounds = build_rounds(PublicationText.list(content['rounds'], 'rounds'))
       @fallback = content['fallback']
+      @task_budget = content['task_budget']
       @max_rounds = RepositoryConfig::ReviewLimit.from(content)
     end
 
@@ -45,6 +47,7 @@ module Shaka
 
     def render
       blocks = [TITLE, table, *LocalReviewSummary.new(@rounds).lines, *fallback_notice, *settings_notice,
+                *LocalReviewBudget.notice(@task_budget, completed: @rounds.size),
                 *LocalReviewBound.new(@rounds, @max_rounds).lines, *LocalReviewTriage.section(@rounds, @links),
                 *round_details,
                 @rounds.last.attestation]

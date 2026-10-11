@@ -7,6 +7,7 @@ require_relative 'evidence'
 require_relative 'finding'
 require_relative 'ledger_batch'
 require_relative 'ledger_running'
+require_relative 'budget'
 require_relative '../repository_config/review_schema'
 
 module Shaka
@@ -18,6 +19,7 @@ module Shaka
   class LocalReviewLedger
     include LocalReviewLedgerBatch
     include LocalReviewLedgerRunning
+    include LocalReviewLedgerBudget
 
     class RoundCap < Error; end
 
