@@ -31,7 +31,7 @@ feature PR with interventions. Its entry workflow still selected team setup, and
 walkthrough, and handoff operations failed when reading an absent team seam.
 An agent also edited individual settings to suppress local locations in public WIP Details.
 
-The [individual setup procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/repository-setup.md#try-shaka-privately-in-one-clone)
+The [individual setup](getting-started.md#2-choose-individual-trial-or-team-setup)
 exists, including recovery copies and exclusions. Its availability does not mean
 every delivery operation supports that source. Expect an unsupported operation
 to be reported with its failure and any manual fallback disclosed. A guided run

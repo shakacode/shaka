@@ -88,7 +88,7 @@ installs development dependencies; `bin/install` installs the skill.
 
 Repositories configured before this layout keep `.agents/agent-workflow.yml` and
 `.agents/bin/`, and Shaka still reads them. Moving to `.agents/shaka/` is optional;
-the [layout upgrade](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/migration.md#upgrade-the-configuration-layout)
+the [layout upgrade](migration.md#upgrade-a-projects-shaka-settings)
 does it in one reviewed step.
 
 Shaka's own [configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml)
