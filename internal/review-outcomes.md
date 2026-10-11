@@ -1,260 +1,232 @@
 # Preserve review decisions and later outcomes
 
-Presentation implementation and remaining design for [issue #395](https://github.com/shakacode/shaka/issues/395).
-This PR implements compact per-commit review comments, visible retained concerns
-and coverage limitations, collapsed evidence, and unchanged-reply suppression.
-Coverage excerpts render as attributed literal text; ambiguous HTML coverage shows
-UNKNOWN while the complete formatted original remains in history.
-The retention and export sections below remain proposals.
-[Requirements](requirements.md) owns pilot scope and acceptance. This design
-supports its R10 maintenance, R11 evidence, R13 presentation, and R16 recovery
-requirements. Issue #395 owns this extension's acceptance checklist; this design
-does not complete either checklist or expand the pilot's real-use claims.
+Design proposal for the remaining work on [issue #395](https://github.com/shakacode/shaka/issues/395).
+Nothing proposed here is shipped. [Requirements](requirements.md) owns pilot scope;
+issue #395 owns this extension's acceptance checklist.
 
-## What the current records preserve
+A maintainer should be able to ask, months after a merge, "which reviewer
+recommendation led to this change, and was it a good one?" Today that answer
+usually disappears with the temporary directory that held the review ledger.
 
-Inspected Shaka revision: `36a273c60d92261c2001d38a20dc58368018dbd6`.
-Paths below are relative to `skills/shaka/lib/shaka/` unless stated otherwise.
+## What has shipped
 
-| Surface | Facts retained today | Important gaps |
+[PR #398](https://github.com/shakacode/shaka/pull/398) and
+[PR #434](https://github.com/shakacode/shaka/pull/434) delivered the presentation
+step. Each reviewed commit gets one comment that opens with the reviewed revision,
+the findings needing attention, and coverage limits. Settled findings, original
+reports, and run metadata sit under one "Review evidence and history" disclosure.
+A finding's disposition is now `open`, `decision_needed`, `fixed`, `dismissed`,
+`accepted`, or the legacy `documented`, which renders as Unassessed and stays
+visible for a defect or risk.
+
+The issue's presentation checklist has not been rechecked against real review
+records since those PRs merged. That check belongs to the real-use evaluation below.
+
+## What the records keep today
+
+Inspected revision: `64cf06040e6e0f609079327fa6b2c225a2359e15`. Paths are relative
+to `skills/shaka/lib/shaka/local_review/`.
+
+| Question from the issue | Kept today | Missing |
 | --- | --- | --- |
-| `local_review/runner.rb` | Base, reviewed head, provider/family, report path, prompt source, criteria ref, requested settings, observed model and usage when available | No stable run/recommendation identity or structured coverage; successful reports are external files |
-| `local_review/ledger.rb` | Ordered rounds; serializes writes with a file lock and replaces JSON through rename | No format version or append-only assessment history; no repository/PR identity; no bundled report content |
-| `local_review/ledger_batch.rb` | Maps each reporter's original finding number to a shared finding ID; checks counts and consistent collation | A new `record!` replaces the last batch's findings; earlier statements within that batch are lost |
-| `local_review/finding.rb` | ID, owner-supplied summary, defect/risk/nit class, fixed/documented disposition, fix SHA, note, reporter number | Remedy and rationale remain in report prose; no actor/time attribution, explicit decision, implementation assessment, or later outcome |
-| `local_review/triage.rb` | Associates repeated findings and reporters; checks conflicting outcomes within one head; flags returned fixes | Renders dispositions in the main triage and again beneath a lone reviewer's report |
-| `local_review/summary.rb` | Keeps an earlier defect unresolved despite a clean later round or reclassification; sums parseable round usage | Fixed is operational evidence, not recommendation quality; summary totals do not deduplicate overlapping usage |
-| `local_review/commit_comment.rb` and `publisher.rb` | One managed comment per reviewed head, original reports, previous fixes explaining a new commit; preflights rendering and commit links | Current per-head rendering does not list all earlier unresolved defects; reports and dispositions can appear twice |
-| `local_review/history.rb` | Collapses earlier owned comments and links the latest; retains closing attestation and human annotations | GitHub comments are editable/deletable; collapsing is not durable retention or a finding-resolution decision |
-| `usage/records.rb` and `publication/usage_details.rb` | Source/response identity, contribution and commit mapping, completeness, time range, native columns; replaces overlapping snapshots where supported | Usage attribution cannot prove recommendation causality; ambiguous/legacy overlap remains uncertain |
+| What did the reviewer claim? | The verbatim report, at a path the round names. `runner.rb` creates it in the system temporary directory. | The report is gone once that directory is cleaned. The ledger keeps the path, not the content. |
+| Which reviewers reported it? | `ledger_batch.rb` maps each reviewer's own finding number to one shared finding ID. | Two different remedies for one problem share that ID. |
+| What did the owner decide, and why? | `finding.rb` keeps the disposition, a note, and for `accepted` the maintainer's decision. | Who recorded it and when. `record!` in `ledger.rb` replaces a batch's findings, so an earlier decision is overwritten. |
+| What changed? | A `fixed` finding names its fix commit, and `triage.rb` flags a finding that returns after its fix. | Whether the fix followed the recommendation, deviated from it, or was later reverted. |
+| Was the recommendation right? | Nothing. `fixed` means a commit was named. | Any later judgment of the problem, the remedy, or the implementation. |
+| Does anyone need to act now? | `attention.rb` and `summary.rb` keep an open or unassessed defect visible through a clean later round. | A settled finding cannot be reopened by later evidence without rewriting its disposition. |
+| Can the record be read later? | The ledger is JSON outside the checkout, written under a file lock. | No format version. The [local review guide](../skills/shaka/references/local-review.md#run-the-review-loop-with-a-ledger) suggests `mktemp -d` for its location. |
 
-`test/local_review_comment_test.rb`, `test/local_review_triage_test.rb`,
-`test/local_review_batch_test.rb`, and `test/local_review_history_test.rb`
-exercise these behaviors. Their fixtures do not establish retention after
-worktree cleanup or recommendation quality after merge.
+The retention gap is observed, not hypothetical: review ledgers kept in a
+session's temporary directory were lost when tasks resumed days later. No real
+example of a harmful accepted recommendation has been recorded yet, so how often
+that happens is unknown.
 
-This table describes the inspected baseline. The presentation change addresses
-duplicate dispositions and earlier unresolved findings, adds explicit coverage
-limits for new runs, and marks legacy coverage unknown. It does not recover
-history that the baseline ledger already overwrote.
+## Proposal
 
-The ledger's location outside a checkout protects it from checkout removal only
-if its directory survives. A report in a temporary directory can disappear
-independently. A report hash detects a change but cannot recover its content.
+Add three things to the existing ledger. Keep `rounds` and `findings` exactly as
+they are, so merge evidence, the round cap, and publication keep reading the same
+fields.
 
-## Compare the maintainer views
+### 1. Keep the ledger and its reports in a durable place
 
-[PR #391's published review](https://github.com/shakacode/shaka/pull/391#issuecomment-5950105896)
-has four runs, one fixed finding, and eight documented findings. Its opening
-nine-column table precedes the outcome. Triage appears before the reports;
-generated dispositions also appear inside individual reports.
-Coverage limitations appear inside the collapsed reports.
+`review run --ledger auto` resolves to
+`~/.local/state/shaka/reviews/OWNER/REPO/BRANCH/ledger.json` and reports the path
+in its result. An explicit path keeps working. When a round completes, the helper
+copies its report to `reports/SHA256.md` beside the ledger before appending the
+round, and the round records that relative path and hash. A failed copy appends
+no round.
 
-That record demonstrates presentation duplication. It does not establish that
-any recommendation caused an unnecessary or harmful change. In particular,
-`documented risk` does not establish acceptance or an evidence-backed rejection.
+Publication and export read the bundled copy. A missing or altered report is
+reported by name as unavailable; a hash cannot restore it, and nothing guesses
+its content. The directory is private to the user (mode 0700). Nothing expires it
+or collects it in the background; the user deletes it deliberately.
 
-Proposed visible excerpt of that evidence, without inventing dispositions:
+Not proposed: bundling Git objects for commits that were never pushed. The
+comment already marks such a commit "not on GitHub", and that is honest enough
+until a real reassessment needs the missing code.
 
-> **Local review · 2beb795 — no new findings in the final round**
->
-> **Coverage:** Reviewers reported inspecting the supplied diff only. Unchanged
-> source and test execution were outside the reported coverage.
->
-> **Unclassified remaining risks:** Findings 2 and 3 have legacy `documented`
-> dispositions. Their recorded explanations remain available for maintainer review.
->
-> ▸ Review evidence and history
->
-> Usage: link to this PR's consolidated usage report.
+### 2. Say who triaged, and stop overwriting an earlier triage
 
-This is a presentation example, not a new readiness judgment on that PR.
-Show required action only when evidence supplies one. Keep unresolved defects,
-decisions, significant risks, stale evidence, and returned findings visible.
-Material legacy ambiguity stays visible until explicitly assessed; a renderer
-does not infer settlement from a note or a clean final review.
-In the presentation-only slice, keep every legacy documented defect and risk
-visible. The six other documented findings in this example are explicitly nits
-in the original record and move into history without a recommendation-quality
-judgment. This conservative interim view cannot settle legacy risks; attributed
-assessments become available in the history slice.
+`review record` stamps each recorded batch with `recorded_at` and accepts an
+optional `by` with a name and role, in the form `assess` uses below. An absent
+`by` stays unknown.
 
-Render each finding's current disposition once, either in the current view or
-the history disclosure. Earlier decisions remain historical events beneath that
-disclosure. Preserve original reports verbatim in the private bundle. Public
-history contains marked, redacted copies when privacy requires it; retain source
-identity and availability without publishing private content. Original source
-material may naturally repeat a claim, but generated disposition prose appears once.
-Use one outer disclosure with specific nested labels for reports and execution
-metadata. Group identical settings with run IDs and retain exceptions.
+When `review record` replaces a batch's findings, the helper first moves the
+previous findings, with their stamp, into that round's `superseded` list. The
+current view reads `findings` as before. History and export can show what the
+owner believed first and when.
 
-The current head's view draws unresolved findings from the complete ledger,
-including earlier rounds. Per-head comments remain retrievable historical views.
-Keep the attestation last and preserve rendering validation. Missing evidence
-affecting confidence stays visible; routine unknown metadata and empty sections
-do not. Review comments link to consolidated PR usage instead of summing it again.
+### 3. Record a later assessment without editing the finding
 
-Update the managed comment for its head. An unchanged body causes no write;
-record enrichment and settled corrections do not create notification comments.
-Preserve existing actor screening and human-authored text. The publication path now skips writing an identical owned reply after trust and
-rendering checks.
+`shaka review assess --ledger PATH --content-file FILE` appends one entry to a
+top-level `assessments` list, under the lock `record` already uses.
 
-## Smallest useful extension
+```json
+{
+  "id": "A1",
+  "finding": "F1",
+  "recommendation": { "reviewer": "openai/codex", "reported_as": "2" },
+  "problem": "refuted",
+  "remedy": "harmful",
+  "implementation": "correct",
+  "action": { "taken": "as_proposed", "commits": ["FULL_SHA_B"], "attribution": "direct" },
+  "attention": "action_required",
+  "by": { "name": "justin808", "role": "maintainer" },
+  "revision": "FULL_SHA_B",
+  "observed_at": "2026-09-04",
+  "rationale": "The idempotency guard already prevents duplicate writes; removing the retry fails after a transient error.",
+  "evidence": ["https://github.com/OWNER/REPO/pull/12#issuecomment-1"],
+  "supersedes": null
+}
+```
 
-Recommendation: extend the existing ledger with versioned, attributed events and
-a bundle of its source evidence. Keep current rounds and finding fields as the
-operational projection while existing review and merge guards continue to work.
-Do not build another ledger, reducer framework, service, or reward policy.
+| Field | Values | Answers |
+| --- | --- | --- |
+| `problem` | `confirmed`, `refuted`, `uncertain`, `disputed` | Was the alleged problem real? |
+| `remedy` | `supported`, `unnecessary`, `incorrect`, `harmful`, `excessive`, `inconclusive` | Was the proposed change appropriate? |
+| `implementation` | `correct`, `defective`, `uncertain` | Did the change realize the remedy? |
+| `action.taken` | `not_attempted`, `as_proposed`, `differently`, `partially`, `reverted`, `replaced` | What actually changed, in which commits? |
+| `action.attribution` | `direct`, `uncertain` | Did this recommendation lead to those commits? |
+| `attention` | `action_required`, `decision_required`, `none` | Does anyone need to act now? |
 
-The cheaper alternative is a manual assessment in a finding's note, with evidence
-and commit links. It suffices for an isolated discussion, but replacing the note
-loses its prior value. It cannot reliably distinguish separate remedies, replay
-corrections, or export evidence available at different times. Prototype the event
-shape against the examples below before committing to a broader command interface.
+An entry needs `id`, `finding`, `by`, `rationale`, and at least one judgment.
+Every other field may be absent, and an absent judgment means unknown, never
+positive or negative. `recommendation` narrows the entry to one reviewer's remedy
+when two reviewers agreed on the problem and proposed different changes; the
+reviewer and its own finding number already identify that remedy, so no new
+identifier is introduced.
 
-Proposed representation, subject to implementation review:
+Rules the helper would enforce:
 
-- A ledger version and repository/task context scope stable finding, run, and
-  recommendation IDs. Existing finding IDs remain local to that context.
-- A recommendation names its originating run, reporter number, report excerpt
-  or bundled source reference, claimed class/severity, remedy, and justification.
-  Owner interpretation is separate. Two remedies for one problem get separate IDs.
-- An event has a caller-stable ID, actor and role, occurrence and recording times,
-  applicable revision, subject IDs, rationale, and evidence references. Explicit
-  relations identify alternatives, duplicates, corrections, and superseded events.
-- Events separately record problem validity, decision, action taken, recommendation
-  assessment, implementation assessment, and current attention. An implementation
-  link names commits and patch/line references, deviations, and attribution confidence.
-- Missing evidence is `unknown`, `unavailable`, or `redacted` with provenance.
-  Source privacy is recorded; a reference does not authorize disclosure.
+- Entries are appended, never edited. A correction is a new entry whose
+  `supersedes` names the earlier one, which stays in the list.
+- Repeating an identical entry is a no-op. A different entry reusing an `id` is refused.
+- `finding`, `recommendation`, and `supersedes` must name records in this ledger.
+- The helper stamps `recorded_at`. `observed_at` is the caller's and may be earlier.
+- Two entries from different people that disagree both stay. The helper picks no
+  winner; the current view shows the disagreement as needing a decision until an
+  entry supersedes both.
 
-Append events under the existing ledger lock, rereading before each write.
-Identical retries with the same event ID are no-ops; different payloads with that
-ID fail. Corrections append a new ID referencing the earlier event. Conflicting
-assessments remain distinct; neither recording order nor the actor's role alone
-silently resolves disagreement. An explicit, attributed resolution supplies the
-current view. Validate references and dimensions before persisting anything.
+The helper cannot verify who is speaking. `by` is the recording agent's
+transcription, as the `accepted` disposition's `decision` field is today.
 
-Readers accept unversioned ledgers as legacy without assigning new meanings.
-First mutation preserves the original snapshot and records the migration once.
-Old `fixed` records identify a reported implementation SHA, not proof of correctness.
-Old `documented` records remain ambiguous. Missing actor, time, remedy, and outcome
-stay unknown. Unknown future versions fail rather than being silently downgraded.
-An older writer must not rewrite a versioned ledger; compatibility needs a tested
-writer-version refusal or explicit upgrade procedure before the format ships.
+### How the comment changes
 
-## Retain and recover existing evidence
+An assessment whose `attention` is not `none` adds its finding to the visible
+attention table of the latest reviewed commit's comment, with the remedy
+judgment and the rationale. Once an entry with `attention: none` supersedes it,
+the chain moves under Finding details in the history disclosure. The closing
+attestation line never changes, so merge evidence for a merged PR reads the same
+before and after a reassessment. Republishing an unchanged comment still writes
+nothing.
 
-Propose a private, task-scoped directory outside disposable checkouts and temporary
-storage, selected through the existing ledger path. Its single ledger references
-relative report files and captured prompts/criteria, with content hashes.
-Copy successful source files before committing their ledger references; a failed
-copy leaves no success record. Use private directory/file permissions.
-Orphan files after interrupted writes are harmless; retries reuse matching content.
+### Compatibility
 
-The portable bundle contains this ledger and its referenced evidence. Preserve
-reviewed revisions through reachable Git references or an included Git bundle
-when unpublished commits would otherwise disappear. Missing objects are explicit
-and cannot become accessible merely by linking their SHAs. Bundle verification
-checks references, hashes, and recoverability after the source worktree and its
-temporary reports are removed. Historical missing content remains unavailable.
+The first write by a helper that knows this format sets `version: 2`. A ledger
+without a version reads as before: `fixed` means a named commit, `documented`
+stays ambiguous, and no actor, time, or outcome is inferred. A version above 2 is
+refused. An older helper writing a version 2 ledger keeps the new keys, because
+it merges into the parsed file, but it will overwrite a triage without saving the
+earlier one. The single official checkout makes mixed helpers rare; a PR trial is
+the case to watch.
 
-Retain the bundle through normal worktree cleanup and optional post-merge
-reassessment. No automatic expiry, background collector, or completed-task wakeup
-is needed. Its owner handles deliberate deletion and backup; the product makes
-that retention limit clear. Reassessment opens the same bundle, records the
-observed revision and later evidence, then updates the same managed report as
-needed. Use [human checkpoints](../skills/shaka/references/return-points.md) for
-human steering and recovery context instead of duplicating snapshot machinery.
+## Why not something smaller or larger
 
-Public rendering/export uses an explicit public-safe projection. Authorized
-private source content stays in the private bundle. Strip credentials, private
-links, and local paths from public output, replacing them with availability and
-provenance markers. Raw report content remains untrusted data in every projection.
+**Smaller: write the later assessment into the finding's note or a PR comment.**
+This costs nothing to build. The note is overwritten by the next record, a PR
+comment can be edited or deleted, and neither can be exported with the
+recommendation it judges. It suits a single discussion, not a record meant for
+evaluation.
 
-## Synthetic outcome chains
+**Middle: append attributed free-text assessments, with no typed judgments.**
+This keeps history and attribution with about half the validation. It cannot
+separate "the problem was real" from "the fix was right", which is the
+distinction the issue exists to make, and an export would need a person to
+classify every entry again.
 
-All identities, revisions, dates, actors, tests, and outcomes in this section are
-synthetic specification examples. They make no claim about PR #391 or production.
-They are future behavioral fixtures, not tests or records already accepted by Ruby.
+**Larger: turn every decision into an event with its own recommendation and run
+identifiers.** The first draft of this design proposed that. It duplicates what
+rounds and findings already record and needs a projection to rebuild the current
+view. The proposal above adds one list and leaves the working model alone.
 
-### Accepted removal later shown harmful
+Estimated cost of the proposal: one small class to validate an assessment, one
+command, a copy step in the runner, and a `superseded` list, each with failure
+and concurrency tests. The benefit is unproven until a real reconsidered
+recommendation is recorded; the retention step has observed value by itself.
 
-Task `S1`, finding `F1`, recommendation `R1`, review run `V1`:
+## Synthetic chains the tests must cover
 
-| Event | Recorded evidence and separate judgments |
+Every identity, revision, date, and outcome below is invented. None describes a
+real PR.
+
+**S1: an accepted removal later shown harmful.** At A, a reviewer reports
+duplicate writes and recommends removing a retry. The owner records `fixed` with
+commit B. Validation passes at B and a second review finds nothing. Later a
+maintainer shows that an idempotency guard already prevented duplicates and that
+B fails after a transient error. Assessment A1 (above) records problem refuted,
+remedy harmful, implementation correct, action required. Commit C restores the
+retry; A2 supersedes A1 with `attention: none` and names C. The comment shows the
+regression while A1 stands and collapses the chain after A2. The owner's `fixed`
+record and A1 are both still readable.
+
+| Case | What the record must distinguish |
 | --- | --- |
-| E1 at A, 2026-09-01 | Reviewer V1 reports a duplicate-write defect and recommends removing the retry. Its diff-only report and prompt are retained. Problem validity is initially uncertain. |
-| E2 at A, 2026-09-02 | Task owner accepts R1 because repeated writes appear possible; decision is implement. The owner's rationale is separate from V1's claim. |
-| E3 at B, 2026-09-03 | Owner records that B removes the retry as proposed, explicitly linking R1 to that patch. Attribution is declared direct, rather than inferred from time. |
-| E4 at B, 2026-09-03 | A test observer records the passing test set; V2 reports no new findings with diff-only coverage. Recommendation and implementation quality remain unknown. |
-| E5 observed at B, 2026-09-04; recorded 2026-09-06 | Maintainer cites the existing idempotency guard and a reproducible transient-error regression. The original duplicate-write claim is refuted; R1 is harmful. B implemented R1 correctly. Attention is action required. |
-| E6 at C, 2026-09-07 | Maintainer links the corrective patch restoring the retry, regression validation, and E5. Attention becomes no current action; E2 acceptance and E5 harmful assessment remain unchanged. |
+| S2: real problem, excessive remedy | `problem: confirmed`, `remedy: excessive`, `implementation: correct` |
+| S3: good remedy, bad implementation | `remedy: supported`, `implementation: defective`, with the corrective commit in a later entry |
+| S4: wrong recommendation declined | Finding `dismissed`; `problem: refuted`, `action.taken: not_attempted`, no commit invented |
+| S5: two people disagree | Both entries kept; the view asks for a decision until one entry supersedes both |
+| S6: requirements changed | The first `remedy: supported` entry stays; a later entry records `replaced` and why, without calling the first harmful |
 
-While E5 is unresolved, show the regression and corrective action before history.
-After E6, collapse the settled chain. A reader can still recover exactly which
-recommendation led to B, who accepted it, and what later evidence contradicted it.
-Export of A's input excludes E2–E6: future evidence is never original context.
-No clean round, passing test, or merge assigns a positive quality label to R1.
+Each case also runs with a missing report and with `attribution: uncertain`.
+Retried and concurrent `assess` calls must neither lose nor duplicate an entry.
 
-### Other fixture cases
+## Export, later
 
-| Case | Required evidence and expected distinction |
-| --- | --- |
-| S2: correct finding, excessive remedy | Reviewer identifies a confirmed missing nil guard but proposes replacing the parser. Owner implements replacement; maintainer later cites equivalent coverage from a guard and observed maintenance cost. Problem confirmed; recommendation excessive for the benefit; implementation correct. |
-| S3: correct recommendation, defective implementation | Reviewer proposes atomic rename to prevent partial files. Owner links a patch that mistakenly renames across filesystems; failure reproduces. Recommendation supported; implementation defective; corrective patch recorded separately. |
-| S4: incorrect recommendation declined | Reviewer claims an escaping bug; owner supplies a counterexample test and declines with evidence before any patch. Problem refuted; recommendation unnecessary; action not attempted. No invented implementation commit. |
-| S5: conflicting assessments | Two attributed assessors disagree about R1 with different evidence. Neither is overwritten. Attention is decision required until a recorded resolution names the disagreement and rationale. Export keeps both judgments. |
-| S6: changed requirements | Recommendation was supported under requirement Q1 and implemented correctly. Later Q2 removes that requirement; a replacement follows. Preserve the Q1 assessment and append the Q2 superseding decision; do not infer that the original remedy was harmful. |
+One JSON document per ledger: an export version, the repository and branch, the
+rounds with their bundled report text, the findings with any superseded triage,
+and the assessments in recorded order. The export generates no timestamps or
+identifiers, so repeating it yields the same bytes. Each assessment keeps its
+`recorded_at`, which lets a reader separate what was known at review time from
+what was learned later. Unavailable reports are marked, not dropped. No numeric
+reward, training upload, or provider integration is part of this work.
 
-For every case, also exercise missing source material and uncertain attribution.
-Two remedies for one finding and repeated reports of one remedy remain distinct
-from multiple successful fixes. Recovery and retry tests accompany implementation.
+## Delivery
 
-## Export evidence before evaluating rewards
+1. **Retention.** The durable location, bundled reports, and unavailable-report
+   reporting. Useful alone, and it fixes an observed loss.
+2. **Assessments.** The `superseded` list, `review assess`, the comment change,
+   compatibility, and chains S1 through S6 as tests.
+3. **Export.** The deterministic document and the same chains as export fixtures.
+4. **Real-use evaluation, on the issue.** Recheck the presentation checklist on
+   real records and record a reconsidered recommendation when one genuinely occurs.
 
-Propose one bounded JSON document per bundle, with an export version, context,
-ordered runs, findings/recommendations, and ordered events. It is simpler than
-JSONL when cross-references and a complete snapshot need validation together.
-Fix deterministic ordering and preserve recorded event IDs; exporting generates
-no timestamps or new IDs. Repeated exports of the same records are byte-identical.
-Reject unsupported versions and incomplete cross-references; identify unavailable
-content explicitly rather than silently dropping records.
+## Decisions for the maintainer
 
-Keep original input, reviewer assertions, owner decisions, observed validations,
-and later human judgments separately addressable. Include no-change and
-inconclusive cases. Preserve context grouping and duplicate/alternative relations
-for evaluation splits across related PRs and revisions. Deduplication does not
-erase individual reports or turn repeated assertions into independent successes.
-
-No numeric rewards, training uploads, or provider integration ship here. A later
-reward policy requires its own version, evaluation, and human decision. Outcome
-absence stays unknown. These records alone establish neither causality nor
-precision/recall, and no optional label collection reopens completed delivery.
-
-## Delivery boundaries and remaining acceptance
-
-1. This PR: inventory, examples, and presentation implementation with one disposition projection, complete-ledger
-   unresolved findings, visible coverage, grouped history, unchanged-write suppression.
-   Verify real GitHub rendering, attestation parsing, and legacy ambiguity.
-2. History/retention PR after presentation: validated append-only
-   events, compatibility, relative bundled reports, post-merge reassessment, and
-   cleanup recovery. Keep changes with their failure/concurrency tests.
-3. Export PR after the record representation: deterministic public-safe export
-   and executable versions of all six synthetic chains, including retry/conflict cases.
-4. Real-use evaluation on the original issue: inspect clarity and reconstruction
-   effort; retain a genuinely reconsidered recommendation when it occurs.
-
-The presentation precedent comes from predecessor revision
-`d85eceaecac1b8c4d55a7889a806bd89a612a493`:
-[summary template](https://github.com/shakacode/agent-workflows/blob/d85eceaecac1b8c4d55a7889a806bd89a612a493/skills/address-review/references/templates.md)
-and [template tests](https://github.com/shakacode/agent-workflows/blob/d85eceaecac1b8c4d55a7889a806bd89a612a493/skills/address-review/bin/address-review-summary-template-test.rb).
-Reuse its compact outcome and collapsed evidence idea. Do not import its workflow
-contracts, state snapshots, tracking receipts, or test-by-wording approach.
-
-Observed duplication justifies a small presentation change. Event validation,
-compatibility, recovery, and export add real maintenance cost; implementation
-review should reconsider that cost using the manual-assessment alternative.
-Frequency of mistaken recommendations, attention savings, and reconstruction
-improvement are unknown. A synthetic harmful case tests preservation without
-providing real-use acceptance. Keep #395 and the pilot's real-use acceptance open.
+1. **Typed judgments or free text?** Recommended: typed, as proposed. The middle
+   option above is the fallback if the validation cost looks too high.
+2. **Where do ledgers live?** Recommended: `~/.local/state/shaka/reviews/`, chosen
+   by `--ledger auto`. The alternative is to keep caller-chosen paths and only
+   change the guide's `mktemp` example.
+3. **Does retention ship first?** Recommended: yes, as its own PR, because its
+   value does not depend on the other two decisions.
