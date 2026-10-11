@@ -26,7 +26,6 @@ When starting a task, include the work you want done:
 ```text
 $shaka Fix search when the query contains an apostrophe.
 Use the settings from PR #123 for this task. Keep that settings PR open.
-Use merge policy ask. Go.
 ```
 
 To change settings during a task that is already running:
@@ -37,8 +36,8 @@ Keep that settings PR open and use merge policy ask.
 ```
 
 The selected PR supplies the complete Shaka configuration, including reviewer
-choices and merge preferences. You can override a choice in your prompt, as the
-examples do for merge policy. GitHub's required checks and approvals still apply.
+choices and merge preferences. Your prompt can override a choice, as the second
+example does for merge policy. GitHub's required checks and approvals still apply.
 Use GitHub rulesets or branch protection for requirements your team wants GitHub
 to enforce.
 

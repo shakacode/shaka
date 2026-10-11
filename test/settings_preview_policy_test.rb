@@ -56,6 +56,7 @@ class SettingsPreviewNamingTest < Minitest::Test
   def test_selected_prefix_does_not_override_another_tasks_branch_template
     with_preview_repository do |root, trusted, _preview|
       select_naming(root, trusted)
+      FileUtils.rm(File.join(root, '.agents/bin/test'))
       assert_equal 'TRY', Shaka::Prefix.new(root:, ref: trusted).call['prefix']
       output, status = capture_cli(['1', '--root', root], prs: [], branches: '')
       assert_equal 0, status

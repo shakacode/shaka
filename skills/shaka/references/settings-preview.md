@@ -10,9 +10,8 @@ such as Ask, keep precedence; selecting settings does not authorize merging this
    Inspect its configuration and prompts. Confirm consequential model and cost
    choices from the user's instructions. Resolve the chosen head to a full commit.
 2. Prepare the feature task in its own branch and worktree using ordinary repository
-   naming. For a repository
-   without team setup, use individual setup to prepare its fixed command entry
-   points. Inspect command changes before execution. Selection copies no scripts
+   naming. Without team setup, use individual setup for its fixed command entry points.
+   Inspect command changes before execution. Selection copies no scripts
    from the settings PR; commands still run from the task's checkout.
 3. Activate the selected commit and read back its settings:
 
