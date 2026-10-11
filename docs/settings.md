@@ -35,9 +35,9 @@ decision-checkpoint settings still use the shared source or defaults;
 
 [Merged #420](https://github.com/shakacode/shaka/pull/420) brought individual delivery
 preferences to reviewers, writing limits, opening checks, and WIP reporting.
-[#425](https://github.com/shakacode/shaka/pull/425) proposes independent opening-check
-choices. [#426](https://github.com/shakacode/shaka/pull/426) proposes selecting a
-complete configuration from a settings PR for one task. Neither proposal is shipped.
+[Merged #425](https://github.com/shakacode/shaka/pull/425) subsequently added independent
+opening-check choices. [#426](https://github.com/shakacode/shaka/pull/426) still proposes
+selecting a complete configuration from a settings PR for one task; it is not shipped.
 
 Under #426's proposed model, the task would record the selected PR and pinned
 commit. That source would replace the normal configuration, without an individual
@@ -752,7 +752,7 @@ access rules. The agent inspects both fields before publication.
 
 [#482](https://github.com/shakacode/shaka/issues/482) tracks retaining chat locators
 while making checkout-path visibility independently configurable, including in
-individual settings. Neither #425 nor #426 splits these fields.
+individual settings. Neither merged #425 nor proposed #426 splits these fields.
 Hiding them does not remove private information elsewhere in a PR.
 Expandable sections on public PRs are public too.
 

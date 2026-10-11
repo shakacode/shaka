@@ -36,10 +36,10 @@ your task. That is not proof of seamless first-user delivery. The
 records a maintainer-led feature PR with interventions on an earlier installation.
 That evaluation predates #420; newer delivery support still needs a genuine new-user run.
 
-[#425](https://github.com/shakacode/shaka/pull/425) proposes independent opening-check
-choices. [#426](https://github.com/shakacode/shaka/pull/426) proposes testing a settings
-PR's pinned configuration on one task. Neither is shipped, and selecting a settings
-PR differs from [trying another Shaka implementation](trying-pr-versions.md).
+[Merged #425](https://github.com/shakacode/shaka/pull/425) subsequently added independent
+opening-check choices, including individual settings. [#426](https://github.com/shakacode/shaka/pull/426)
+still proposes testing a settings PR's pinned configuration on one task.
+That unshipped preview differs from [trying another Shaka implementation](trying-pr-versions.md).
 
 ## Run an ordinary task
 

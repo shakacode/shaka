@@ -107,9 +107,9 @@ asks when a missing choice, access problem, or consequential decision needs you.
 Look for a PR explaining what changed, what was tested and reviewed, and any
 remaining gaps. With **Ask**, you decide whether to merge; **Auto** lets the agent
 merge after the required checks, review, and approvals.
-Settings previews in [#426](https://github.com/shakacode/shaka/pull/426) and independent
-opening-check choices in [#425](https://github.com/shakacode/shaka/pull/425) are proposals,
-not setup options available today.
+Independent opening-check choices shipped in [#425](https://github.com/shakacode/shaka/pull/425)
+after #420. Settings previews in [#426](https://github.com/shakacode/shaka/pull/426)
+remain proposed.
 [Working with Shaka](working-with-shaka.md) covers these choices, useful prompts,
 feedback, and resuming a task.
 
