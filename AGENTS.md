@@ -27,15 +27,12 @@ is the reusable default.
   option tables.
 - Distinguish shipped behavior, agent instructions, and proposed features.
   Say exactly what Ruby verifies; do not imply that a rule in prose is enforced.
-- Give the reader a useful prompt before a long command sequence.
-- Keep an example prompt to what the agent cannot infer: the task link and any
-  choice that differs from the default. Leave out the repository a URL already
-  names, behavior the agent has by default, and limits it observes anyway. List
-  optional sentences after the example.
-- Cut a sentence or rule when a reader could act correctly without it. Another
-  project's history, renames, and edge cases belong in a link, not the guide.
-- Remove repetition, vague qualifiers, and explanations of the document's own
-  organization unless they help navigation.
+- Give the reader a useful prompt before a long command sequence. Keep an example
+  prompt to what the agent cannot infer: the task link and any non-default choice.
+  List optional sentences after it.
+- Remove repetition, vague qualifiers, anything a reader could act correctly
+  without, and explanations of the document's own organization unless they help
+  navigation.
 - Preserve rough editor feedback outside the checkout before replacing it with
   finished prose. Take turns editing shared files and resolve every note.
 
