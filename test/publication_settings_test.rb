@@ -48,8 +48,9 @@ class PublicationSettingsTest < Minitest::Test
       validation = run_check(root, ref, command: 'validate').except('public_settings')
       review = review_check(root, ref).except('public_settings')
       with_results(validation, review) do |options|
-        assert_includes prepare(root, ref, options).detail.fetch('body'),
-                        '| source | UNKNOWN | UNKNOWN | trusted/team |'
+        body = prepare(root, ref, options).detail.fetch('body')
+        assert_match(/UNKNOWN.*Before push: validation.*Review/, body)
+        assert_includes body, '| source | trusted/team |'
       end
     end
   end
@@ -67,14 +68,14 @@ class PublicationSettingsTest < Minitest::Test
   def test_unknown_settings_are_visible_on_unfinished_descriptions
     body = Shaka::PublicationSettings.new.detail.fetch('body')
     assert_includes body, 'UNKNOWN: rerun missing evidence'
-    assert_includes body, '| source | UNKNOWN | UNKNOWN | UNKNOWN |'
+    assert_match(/UNKNOWN.*Before push: validation.*Review.*Current merge input/, body)
   end
 
   def test_unfinished_team_description_preserves_its_location_choice
     with_checkout do |root, ref|
       settings = prepare(root, ref, {})
       assert_predicate settings, :include_locations?
-      assert_includes settings.detail.fetch('body'), '| wip.include_locations | UNKNOWN | UNKNOWN | true |'
+      assert_includes settings.detail.fetch('body'), '| wip.include_locations | true |'
     end
   end
 

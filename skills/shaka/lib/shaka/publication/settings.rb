@@ -73,7 +73,7 @@ module Shaka
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
            'Private trials default to Ask; explicit user authorization and live required gates govern merging.'
-    HEADER = '| Setting | Before push: validation | Review | Current merge input (not evidence) |'
+    COLUMNS = ['Before push: validation', 'Review', 'Current merge input (not evidence)'].freeze
     VALUES_SUMMARY = 'Setting values at validation, review, and merge'
 
     def detail
@@ -85,17 +85,36 @@ module Shaka
 
     # A second disclosure keeps the status and note readable ahead of the long table.
     def values
-      withheld, shown = rows.partition { |field, cells| redacted_in_every_column?(field, cells) }
-      parts = [[HEADER, '| --- | --- | --- | --- |', *shown.map { |row| "| #{row.flatten.join(' | ')} |" }].join("\n")]
-      names = withheld.map(&:first).join(', ')
-      parts << "Never published, so REDACTED in every column: #{names}" unless withheld.empty?
+      recorded, unrecorded = columns.partition { |_title, settings| settings.values.uniq != ['UNKNOWN'] }
+      parts = [*unrecorded_note(unrecorded), *table(recorded)]
       "<details>\n<summary>#{VALUES_SUMMARY}</summary>\n\n#{parts.join("\n\n")}\n\n</details>"
     end
 
-    def rows
+    def columns
       snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]
-      safe = snapshots.map { |snapshot| Evidence::PublicSettings.sanitize(snapshot) }
-      Evidence::PublicSettings::FIELDS.map { |field| [field, safe.map { |snapshot| snapshot[field] }] }
+      COLUMNS.zip(snapshots.map { |snapshot| Evidence::PublicSettings.sanitize(snapshot) })
+    end
+
+    # A column no snapshot filled is named above the table instead of repeating UNKNOWN down it.
+    def unrecorded_note(columns)
+      titles = columns.map { |title, _settings| "**#{title}**" }.join(', ')
+      columns.empty? ? [] : ["Not shown, because every setting is UNKNOWN there: #{titles}"]
+    end
+
+    def table(columns)
+      return [] if columns.empty?
+
+      withheld, shown = rows(columns).partition { |field, cells| redacted_in_every_column?(field, cells) }
+      lines = [['Setting', *columns.map(&:first)], ['---'] * (columns.size + 1), *shown.map(&:flatten)]
+      [lines.map { |cells| "| #{cells.join(' | ')} |" }.join("\n"), *withheld_note(withheld)]
+    end
+
+    def rows(columns)
+      Evidence::PublicSettings::FIELDS.map { |field| [field, columns.map { |_title, settings| settings[field] }] }
+    end
+
+    def withheld_note(rows)
+      rows.empty? ? [] : ["Never published, so REDACTED in every column: #{rows.map(&:first).join(', ')}"]
     end
 
     # The allowlist never publishes these values, so one line names them instead of a row each.

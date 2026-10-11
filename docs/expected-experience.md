@@ -53,7 +53,8 @@ or PATH by hand.
 
 Expand the settings block to see whether the validation and review results match
 the candidate commit. Open the table inside it for the source and effective choices
-used for the candidate. The publication helper redacts selected settings values;
+used for the candidate. A column with no recorded settings is named above the table
+instead of shown. The publication helper redacts selected settings values;
 this is not a general privacy scan. A settings block describes the run;
 it does not prove tests or review happened.
 
