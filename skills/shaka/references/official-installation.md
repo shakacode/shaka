@@ -33,7 +33,11 @@ Keep it for direct links and develop separately. `~/agent-tools/shaka` is an opt
 | `opencode` | `~/.config/opencode/skills` | `/shaka` in a new session |
 
 Repeat `--agent` for several hosts, or use `--directory SOURCE --skills-dir DIR` for a custom directory.
-Add `--with-rct` for the Codex tower or `--with-claude-towers` for Claude towers.
+Add `--with-mct` for the Codex master, `--with-rct` for its repository tower,
+or `--with-claude-towers` for Claude towers. Codex flags are independent; both
+may be selected. Default installation includes only Shaka.
+If an older installer lacks a tower flag, update Shaka first, then run
+`bin/install` to select that tower.
 Use installer-owned or root-owned protected files and directories, without group
 or world write access. Reinstallation preserves recognized towers and registered hosts. Start a new chat
 and look for **Shaka**; restart the host if its list is stale. Tower flags apply

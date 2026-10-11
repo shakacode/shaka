@@ -147,7 +147,12 @@ For CLI reviews, save `claude -p --output-format json` output. The reader consum
 the result object's `usage`, never its review text, and its turn is the `session_id`. An `is_error` result is unknown.
 A present top-level `model` is used; otherwise a single `modelUsage` entry can supply
 `canonicalModel`. Multiple model entries leave the route unknown. Effort is reported
-only when recorded.
+only when recorded. Shaka marks its fresh, non-resuming CLI launches as independent
+calls. For those saved results, a present `total_cost_usd` supplies the host's cost
+estimate even when the model or billing speed needed by the rate card is missing.
+Unmarked results use the rate card: a native total might include resumed-session
+spend. These are [client estimates](https://code.claude.com/docs/en/agent-sdk/cost-tracking),
+not invoices; native result cost can include subagents while its tokens cover the main loop.
 
 Transcript responses report the routed model and recorded effort. Validation used
 desktop `2.1.270` and CLI `2.1.272`: an independent aggregate matched a session with
@@ -237,6 +242,9 @@ discloses excluded summarizer usage on the active branch. A dedicated session's
 helper report or attribute summary usage to a turn.
 
 ## Cost estimates
+
+For an OpenRouter usage source, read [recorded API charges](openrouter.md#recorded-charges)
+only when collecting that source.
 
 The September 29, 2026 OpenAI rate card includes GPT-6.1 Sol. Standard API-equivalent
 rates per million tokens are $2 input, $0.10 cached input, and $10 output;
@@ -334,9 +342,9 @@ Carry those values from intake; recommendations and host settings do not establi
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not
 reclassified. Recommended and active fields accept allowlisted strings or `UNKNOWN`,
 never `null`. Ruby validates the shapes; the agent establishes whether an absence is
-known. The initial prompt is excluded. The renderer
-adds the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`; it never falls back
-to a hostname.
+known. The initial prompt is excluded. Provenance
+carries no machine alias; put the public alias from `SHAKA_MACHINE_ALIAS`, or `UNKNOWN`,
+in the [WIP Details Owner field](delivery.md#recover-an-unfinished-pr), never a hostname.
 
 The renderer also fills the workflow version with the commit the helper runs from,
 because every commit between releases shares one version number. When the helper came
@@ -381,6 +389,14 @@ stop publication. Reviewer reports and usage rows remain separate.
 The header labels the model `(configured)`; the served model stays `UNKNOWN`.
 Missing, ambiguous, or unreadable session metadata leaves unavailable fields
 `UNKNOWN` with a reason. A new turn without context clears earlier settings.
+
+Claude Code publications resolve the chat through `CLAUDE_CODE_SESSION_ID` the same
+way. Ruby reads the served model and effort from the current turn's latest response
+and ignores subagent responses. The model is the served one, so the header carries
+no `(configured)` label. The provider stays as supplied. A note appears only when
+the model or effort is `UNKNOWN`. A subagent shares its parent's session ID, so a
+publication from one would carry the main chat's settings; subagents do not publish.
+
 Other hosts retain supplied attribution with an explicit unverified note until
 a native publisher reader is available. Aggregate usage rows cannot establish
 the current publisher's settings.

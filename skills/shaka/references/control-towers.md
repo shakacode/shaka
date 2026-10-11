@@ -4,6 +4,19 @@ This reference is part of the installed tower skills. Read it for setup,
 registration, triage, assignments, handoffs, and adoption trials. Control towers
 are advanced pilot features; establish basic Shaka delivery first.
 
+## Establish a master tower in Codex
+
+Use [official installation](official-installation.md#install) to obtain the Codex
+tower skills. Establish the master in the intended portfolio chat:
+
+```text
+$mct
+```
+
+Follow the installed `$mct` procedure for setup. Keep an existing master as the owner.
+
+Start a new chat to refresh discovery if needed, without establishing a second master.
+
 ## Establish a repository tower
 
 Create a Codex task in the saved project for the intended repository, then send:
