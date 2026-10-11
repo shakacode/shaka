@@ -38,6 +38,26 @@ repository; current task instructions can refine it. No style schema or prose
 score is needed beyond the limits below. Self-edit the content JSON; do not rewrite the rendered GitHub
 body or invoke a separate rewriting skill for Shaka's publication step.
 
+## Example: post-implementation review
+
+Use this example for content and order, not mandatory headings or wording.
+Keep the renderer's fixed headings; organize the content within them.
+
+> **Recommendation: Merge**
+>
+> Internal testers can see why listings were included. The implementation matches
+> the agreed design; no significant issues were found.
+>
+> **Scope and verification:** This is an internal experiment. Broader coverage and
+> public rollout are not yet validated. Verification in hosted and deployed
+> environments remains unfinished.
+>
+> **Next action:** Merge the parent PR first. Keep the task's Ask preference
+> unchanged, and merge only after required checks and approvals are complete.
+
+Use the task's actual evidence rather than copying these claims. Include unresolved
+concerns when present; omit or combine sections that add no useful information.
+
 ## Point readers to the code
 
 Reviewing code is easier than reading a wall of text about it. The diff already
