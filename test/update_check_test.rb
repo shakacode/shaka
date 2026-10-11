@@ -53,7 +53,8 @@ class UpdateCheckTest < Minitest::Test
 
   def test_official_ssh_origins_are_supported
     %w[git@github.com:shakacode/shaka.git git@github.com:shakacode/shaka
-       ssh://git@github.com/shakacode/shaka https://github.com/ShakaCode/shaka.git
+       ssh://git@github.com/shakacode/shaka ssh://github.com/shakacode/shaka
+       ssh://github.com/shakacode/shaka.git/ https://github.com/ShakaCode/shaka.git
        https://github.com/shakacode/shaka/].each do |origin|
       assert_equal 'available', check('ahead', source: SOURCE.merge('repository' => origin)).fetch('status')
       assert_equal 1, @calls.size

@@ -5,14 +5,13 @@ require 'shellwords'
 require 'tmpdir'
 require_relative 'doctor/installation_identity'
 require_relative 'update_check/launch'
+require_relative 'workflow_version'
 
 module Shaka
   # Advisory comparison with the official main branch; never changes an installation.
   class UpdateCheck
     ROOT = File.expand_path('../../../..', __dir__)
     GUIDE = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/references/official-installation.md'
-    ORIGINS = %w[https://github.com/shakacode/shaka git@github.com:shakacode/shaka
-                 ssh://git@github.com/shakacode/shaka].freeze
 
     def self.run(arguments)
       return usage(arguments) unless arguments.empty?
@@ -62,8 +61,8 @@ module Shaka
     private
 
     def official?
-      origin = @source['repository'].to_s.downcase.delete_suffix('/').delete_suffix('.git')
-      @source['kind'] == 'revision' && ORIGINS.include?(origin) && @branch == 'main' &&
+      origin = @source['repository'].to_s
+      @source['kind'] == 'revision' && origin.match?(WorkflowVersion::UPSTREAM) && @branch == 'main' &&
         @source['revision'].to_s.match?(/\A[0-9a-f]{40}\z/)
     end
 
