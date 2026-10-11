@@ -37,8 +37,9 @@ to `skills/shaka/lib/shaka/local_review/`.
 | Does anyone need to act now? | `attention.rb` and `summary.rb` keep an open or unassessed defect visible through a clean later round. | A settled finding cannot be reopened by later evidence without rewriting its disposition. |
 | Can the record be read later? | The ledger is JSON outside the checkout, written under a file lock. | No format version. The [local review guide](../skills/shaka/references/local-review.md#run-the-review-loop-with-a-ledger) suggests `mktemp -d` for its location. |
 
-The retention gap is observed, not hypothetical: review ledgers kept in a
-session's temporary directory were lost when tasks resumed days later. No real
+The maintainer has observed the retention gap: review ledgers kept in a session's
+temporary directory were gone when tasks resumed days later. No public record of
+those losses exists. No real
 example of a harmful accepted recommendation has been recorded yet, so how often
 that happens is unknown.
 
@@ -52,7 +53,11 @@ fields.
 
 `review run --ledger auto` resolves to
 `~/.local/state/shaka/reviews/OWNER/REPO/BRANCH/ledger.json` and reports the path
-in its result. An explicit path keeps working. When a round completes, the helper
+in its result. An explicit path keeps working. A branch name can be reused after
+a merge, so `auto` refuses an existing ledger whose last reviewed commit is not an
+ancestor of the new head. The refusal names the two ways forward: continue that
+ledger explicitly after a rebase, or start a new one, which moves the old
+directory aside under its last reviewed commit. When a round completes, the helper
 copies its report to `reports/SHA256.md` beside the ledger before appending the
 round, and the round records that relative path and hash. A failed copy appends
 no round.
@@ -75,7 +80,7 @@ optional `by` with a name and role, in the form `assess` uses below. An absent
 When `review record` replaces a batch's findings, the helper first moves the
 previous findings, with their stamp, into that round's `superseded` list. The
 current view reads `findings` as before. History and export can show what the
-owner believed first and when.
+owner believed first and when. Recording the same findings again changes nothing.
 
 ### 3. Record a later assessment without editing the finding
 
@@ -86,18 +91,18 @@ top-level `assessments` list, under the lock `record` already uses.
 {
   "id": "A1",
   "finding": "F1",
-  "recommendation": { "reviewer": "openai/codex", "reported_as": "2" },
+  "recommendation": { "head": "FULL_SHA_A", "reviewer": "openai/codex", "reported_as": "2" },
   "problem": "refuted",
   "remedy": "harmful",
   "implementation": "correct",
   "action": { "taken": "as_proposed", "commits": ["FULL_SHA_B"], "attribution": "direct" },
   "attention": "action_required",
-  "by": { "name": "justin808", "role": "maintainer" },
+  "by": { "name": "example-maintainer", "role": "maintainer" },
   "revision": "FULL_SHA_B",
   "observed_at": "2026-09-04",
   "rationale": "The idempotency guard already prevents duplicate writes; removing the retry fails after a transient error.",
   "evidence": ["https://github.com/OWNER/REPO/pull/12#issuecomment-1"],
-  "supersedes": null
+  "supersedes": []
 }
 ```
 
@@ -110,23 +115,25 @@ top-level `assessments` list, under the lock `record` already uses.
 | `action.attribution` | `direct`, `uncertain` | Did this recommendation lead to those commits? |
 | `attention` | `action_required`, `decision_required`, `none` | Does anyone need to act now? |
 
-An entry needs `id`, `finding`, `by`, `rationale`, and at least one judgment.
-Every other field may be absent, and an absent judgment means unknown, never
-positive or negative. `recommendation` narrows the entry to one reviewer's remedy
-when two reviewers agreed on the problem and proposed different changes; the
-reviewer and its own finding number already identify that remedy, so no new
-identifier is introduced.
+An entry needs `id`, `finding`, `by`, `rationale`, and at least one of the six
+fields in the table. Every other field may be absent, and an absent judgment
+means unknown, never positive or negative. `recommendation` narrows the entry to
+one reviewer's remedy when two reviewers agreed on the problem and proposed
+different changes. The reviewed commit, the reviewer, and that reviewer's own
+finding number already identify one remedy in one report, so no new identifier
+is introduced. The commit matters: the same reviewer can report the same finding
+under the same number on a later commit with a different remedy.
 
 Rules the helper would enforce:
 
 - Entries are appended, never edited. A correction is a new entry whose
-  `supersedes` names the earlier one, which stays in the list.
+  `supersedes` lists the earlier entries it replaces, which stay in the list.
 - Repeating an identical entry is a no-op. A different entry reusing an `id` is refused.
 - `finding`, `recommendation`, and `supersedes` must name records in this ledger.
 - The helper stamps `recorded_at`. `observed_at` is the caller's and may be earlier.
 - Two entries from different people that disagree both stay. The helper picks no
-  winner; the current view shows the disagreement as needing a decision until an
-  entry supersedes both.
+  winner; the current view shows the disagreement as needing a decision until one
+  entry lists both in `supersedes`.
 
 The helper cannot verify who is speaking. `by` is the recording agent's
 transcription, as the `accepted` disposition's `decision` field is today.
@@ -138,18 +145,26 @@ attention table of the latest reviewed commit's comment, with the remedy
 judgment and the rationale. Once an entry with `attention: none` supersedes it,
 the chain moves under Finding details in the history disclosure. The closing
 attestation line never changes, so merge evidence for a merged PR reads the same
-before and after a reassessment. Republishing an unchanged comment still writes
-nothing.
+before and after a reassessment. An assessment is displayed; it adds no merge
+gate, on an open PR or a merged one. Republishing an unchanged comment still
+writes nothing.
 
 ### Compatibility
 
-The first write by a helper that knows this format sets `version: 2`. A ledger
-without a version reads as before: `fixed` means a named commit, `documented`
-stays ambiguous, and no actor, time, or outcome is inferred. A version above 2 is
-refused. An older helper writing a version 2 ledger keeps the new keys, because
-it merges into the parsed file, but it will overwrite a triage without saving the
-earlier one. The single official checkout makes mixed helpers rare; a PR trial is
-the case to watch.
+Each PR that changes the format raises the version on its first write: retention
+writes `version: 2`, assessments write `version: 3`. A helper refuses a version
+above the one it knows, so a retention-only helper never rewrites a ledger that
+holds assessments. A ledger without a version reads as before: `fixed` means a
+named commit, `documented` stays ambiguous, and no actor, time, or outcome is
+inferred.
+
+Helpers released before this work cannot be made to refuse. One of them writing a
+newer ledger keeps keys it does not know, at the top level and inside each round,
+because `record!` and `triaged` merge into the parsed data. It will still replace
+a triage without saving the earlier one or stamping the new one. That loss is
+limited to the batch it records, and it is the behavior every ledger has today.
+The first draft required a tested refusal by older writers; this proposal drops
+that requirement because no change here can add a check to a released helper.
 
 ## Why not something smaller or larger
 
@@ -186,7 +201,7 @@ commit B. Validation passes at B and a second review finds nothing. Later a
 maintainer shows that an idempotency guard already prevented duplicates and that
 B fails after a transient error. Assessment A1 (above) records problem refuted,
 remedy harmful, implementation correct, action required. Commit C restores the
-retry; A2 supersedes A1 with `attention: none` and names C. The comment shows the
+retry; A2 lists A1 in `supersedes`, sets `attention: none`, and names C in `action`. The comment shows the
 regression while A1 stands and collapses the chain after A2. The owner's `fixed`
 record and A1 are both still readable.
 
@@ -195,7 +210,7 @@ record and A1 are both still readable.
 | S2: real problem, excessive remedy | `problem: confirmed`, `remedy: excessive`, `implementation: correct` |
 | S3: good remedy, bad implementation | `remedy: supported`, `implementation: defective`, with the corrective commit in a later entry |
 | S4: wrong recommendation declined | Finding `dismissed`; `problem: refuted`, `action.taken: not_attempted`, no commit invented |
-| S5: two people disagree | Both entries kept; the view asks for a decision until one entry supersedes both |
+| S5: two people disagree | Both entries kept; the view asks for a decision until one entry lists both in `supersedes` |
 | S6: requirements changed | The first `remedy: supported` entry stays; a later entry records `replaced` and why, without calling the first harmful |
 
 Each case also runs with a missing report and with `attribution: uncertain`.
@@ -208,7 +223,10 @@ rounds with their bundled report text, the findings with any superseded triage,
 and the assessments in recorded order. The export generates no timestamps or
 identifiers, so repeating it yields the same bytes. Each assessment keeps its
 `recorded_at`, which lets a reader separate what was known at review time from
-what was learned later. Unavailable reports are marked, not dropped. No numeric
+what was learned later. Unavailable reports are marked, not dropped. Report text
+is private until published, so the export stays private by default; a public
+export omits report text, local paths, and private links and marks each omission.
+No numeric
 reward, training upload, or provider integration is part of this work.
 
 ## Delivery
