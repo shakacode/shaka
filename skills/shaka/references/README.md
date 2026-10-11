@@ -25,6 +25,7 @@ the workflow reaches that decision:
 | Resolve PR comments, including late reports | [Comment settlement](comment-settlement.md) |
 | Write PR descriptions and replies | [Writing](writing.md) |
 | Assess documentation changes | [Documentation verification](documentation-verification.md) |
+| Review documentation with the user, one topic at a time | [Guided documentation review](guided-documentation-review.md) |
 | Choose tests and evidence | [Verification](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md) |
 | Explain visible changes on the new capture | [Annotated screenshots and optional pixel diagnostics](visual-diff.md) |
 | Report model, token, and cost evidence | [Usage reporting](usage-reporting.md) |
