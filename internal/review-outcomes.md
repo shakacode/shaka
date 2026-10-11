@@ -80,12 +80,13 @@ round's report as available only while its original path still holds it.
 
 ### 2. Say who triaged, and stop overwriting an earlier triage
 
-`review record` stamps each recorded batch with `recorded_at` and accepts an
+`review record` stamps each finding it records with `recorded_at` and accepts an
 optional `by` with a name and role, in the form `assess` uses below. An absent
-`by` stays unknown.
+`by` stays unknown. The stamp lives on the finding, so a finding written by a
+helper released before this work simply has none.
 
 When `review record` replaces a batch's findings, the helper first moves the
-previous findings, with their stamp, into that round's `superseded` list. The
+previous findings, with their stamps, into that round's `superseded` list. The
 current view reads `findings` as before. History and export can show what the
 owner believed first and when. Recording the same findings again changes nothing.
 
@@ -137,10 +138,18 @@ Rules the helper would enforce:
   `supersedes` lists the earlier entries it replaces, which stay in the list.
 - Repeating an identical entry is a no-op. A different entry reusing an `id` is refused.
 - `finding`, `recommendation`, and `supersedes` must name records in this ledger.
+  Once an assessment names a finding, `review record` refuses a triage that drops
+  that finding ID.
+- `revision` is the commit the judgment was observed at. It may differ from the
+  reviewed commit in `recommendation` and from the commits in `action`.
 - The helper stamps `recorded_at`. `observed_at` is the caller's and may be earlier.
-- Two entries conflict when neither is superseded, both name the same finding
-  and the same recommendation or none, and they give different values for the
-  same field. Who wrote them does not matter. Both stay, the helper picks no
+- Two entries conflict when neither is superseded, both name the same finding,
+  and they give different values for the same field. `problem` judges the
+  finding, so it is compared across every entry for that finding; the other
+  fields are compared only between entries naming the same recommendation, or
+  none. Who wrote them does not matter.
+- A superseding entry replaces the whole earlier entry in the current view, so it
+  restates each judgment it keeps. Both stay, the helper picks no
   winner, and the current view shows the finding as needing a decision until one
   entry lists both in `supersedes`.
 - `evidence` holds `https` links and full commit SHAs only. `rationale` is one
@@ -172,8 +181,9 @@ inferred.
 Helpers released before this work cannot be made to refuse. One of them writing a
 newer ledger keeps keys it does not know, at the top level and inside each round,
 because `record!` and `triaged` merge into the parsed data. It will still replace
-a triage without saving the earlier one or stamping the new one. That loss is
-limited to the batch it records, and it is the behavior every ledger has today.
+a triage without saving the earlier one, and the findings it writes carry no
+stamp. That loss is limited to the batch it records, and it is the behavior every
+ledger has today.
 The first draft required a tested refusal by older writers; this proposal drops
 that requirement because no change here can add a check to a released helper.
 
@@ -219,17 +229,17 @@ record and A1 are both still readable.
 | Case | What the record must distinguish |
 | --- | --- |
 | S2: real problem, excessive remedy | `problem: confirmed`, `remedy: excessive`, `implementation: correct` |
-| S3: good remedy, bad implementation | `remedy: supported`, `implementation: defective`, with the corrective commit in a later entry |
+| S3: good remedy, bad implementation | `remedy: supported`, `implementation: defective`; a later entry supersedes it, restates `remedy: supported`, and names the corrective commit |
 | S4: wrong recommendation declined | Finding `dismissed`; `problem: refuted`, `action.taken: not_attempted`, no commit invented |
-| S5: two people disagree | Both entries kept; the view asks for a decision until one entry lists both in `supersedes` |
-| S6: requirements changed | The first `remedy: supported` entry stays; a later entry records `replaced` and why, without calling the first harmful |
+| S5: two assessments disagree | Both entries kept; the view asks for a decision until one entry lists both in `supersedes` |
+| S6: requirements changed | A later entry supersedes the first, restates `remedy: supported`, and records `replaced` and why; the first stays readable and nothing calls it harmful |
 
 Each case also runs with a missing report and with `attribution: uncertain`.
 Retried and concurrent `assess` calls must neither lose nor duplicate an entry.
 
 ## Export, later
 
-One JSON document per ledger: an export version, the repository and branch, the
+One JSON document per ledger: an export version, the ledger's base commit, the
 rounds with their bundled report text, the findings with any superseded triage,
 and the assessments in recorded order. The export generates no timestamps or
 identifiers, so repeating it yields the same bytes. Each assessment keeps its
@@ -250,13 +260,17 @@ reward, training upload, or provider integration is part of this work.
 4. **Real-use evaluation, on the issue.** Recheck the presentation checklist on
    real records and record a reconsidered recommendation when one genuinely occurs.
 
-## Decisions for the maintainer
+## Decisions
 
-1. **Typed judgments or free text?** Recommended: typed, as proposed. The middle
-   option above is the fallback if the validation cost looks too high.
-2. **Who chooses where a ledger lives?** Recommended: the caller, guided to a
-   per-task directory under `~/.local/state/shaka/reviews/`, with a warning for a
-   temporary path. The alternative is a helper-chosen path keyed by pull request
-   number, which needs a way to adopt a ledger started before the pull request.
-3. **Does retention ship first?** Recommended: yes, as its own PR, because its
-   value does not depend on the other two decisions.
+The maintainer accepted all three recommendations on 2026-10-11.
+
+1. **Judgments are typed,** as proposed. Attributed free text was the fallback.
+2. **The caller chooses where a ledger lives,** guided to a per-task directory
+   under `~/.local/state/shaka/reviews/`, with a warning for a temporary path.
+   The official install directory, `~/.agents/shaka/`, was considered and
+   rejected: it is a clone of the public repository that `shaka install` updates,
+   so private reports there would sit as untracked files in a public checkout and
+   would be lost with a reinstall. A helper-chosen path keyed by pull request
+   number stays possible later.
+3. **Retention ships first,** as its own PR, because its value does not depend on
+   the assessment design.
