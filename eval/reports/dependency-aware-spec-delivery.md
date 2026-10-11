@@ -48,7 +48,7 @@ Nothing here adopts, builds, or wires in a dispatcher. No file under `skills/sha
 | Starting more work | The orchestrator starts every ticket whose blockers have landed | Delegation happens only when the maintainer authorizes it |
 
 The first four rows are the rejection. A combined branch replaces three reviewable
-outcomes with one. A merger subagent and a worker-run review remove the single owner and
+outcomes with one. A merger subagent and a review run by the same orchestrator remove the single owner and
 the independent review. Closing tickets at the end of a run treats a worker's report as
 completion.
 
@@ -86,6 +86,11 @@ failures the issue asks for, reproduced by hand from this fixture's seed:
 | --- | --- | --- | --- | --- |
 | Both edit the shared registry | Passes | Conflict in `lib/parcel_quote.rb` | Not reached | Not reached |
 | Each registers from its own file, with different keys for worth | Passes | Clean, exit 0 | Pass | 700 with one key, 1300 with the other |
+
+The second variant needed one change to the shared file on the base before either ticket
+branched: `SURCHARGES` lost `.freeze`, and the file gained a line that requires every file
+in `lib/parcel_quote/`. With the seed as shipped, registering a rule always edits the
+shared file, so an agent may meet only the first variant.
 
 In the second variant Git, both workers, and the seed's tests all report success. Only the
 dependent ticket's requirement that a caller describes a parcel once exposes the collision.
