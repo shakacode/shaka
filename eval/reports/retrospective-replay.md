@@ -3,8 +3,8 @@
 These are two simulated agent trials of the
 [retrospective procedure](../../skills/shaka/references/retrospective.md)
 against invented, public-safe session summaries. The first used the procedure as
-first committed at `7d97a386`; the second used the final text through the skill
-entry point. Neither is a real-session trial or establishes practical benefit.
+first committed at `7d97a386`; the second used the skill as committed at
+`eb2f2753`, through its entry point. Neither is a real-session trial or establishes practical benefit.
 [Issue #456](https://github.com/shakacode/shaka/issues/456) still requires one
 maintainer-selected real-session trial before that claim.
 
@@ -70,6 +70,8 @@ By then the machine had AI Hero's retrospective skill installed under the name
   that writes files on its own was not exercised.
 - No finding was selected, so delivery of a finding as a Shaka task was not
   exercised.
+- Rules added after each trial's commit were not replayed, including the limit
+  to companions installed outside the checkout.
 - The skill copy was named in the prompt. A host invoking an installed
   `$shaka retrospective` was not exercised; the installed skill cannot route
   there until this change ships.

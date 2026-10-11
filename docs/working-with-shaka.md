@@ -239,7 +239,8 @@ no stacked-PR service is needed.
 
 ## Review a session for improvements
 
-After a rough session, ask what would have made it go better:
+At the end of a rough session, ask in the same chat what would have made it go
+better:
 
 ```text
 $shaka retrospective
