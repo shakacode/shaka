@@ -94,6 +94,54 @@ unavailable update; the new report stays published so the same execution can be 
 
 ## Act on the conclusion
 
+### Choose the owner's PR disposition
+
+Verification gathers evidence about the finished result. After assessing that evidence,
+the task owner recommends what happens to the PR. Every completed implementation ends
+with this recommendation, even when verification confirms the requested behavior works.
+Keep the reviewer's report intact. Add a `disposition` object to the result JSON supplied
+to `post-implementation publish`, using the same verified head:
+
+```json
+{
+  "disposition": {
+    "head": "FULL_VERIFIED_HEAD_SHA",
+    "recommendation": "Reconsider approach",
+    "reason": "The requested behavior works, but the new configuration costs more than the benefit.",
+    "next_action": "Propose using the existing setting to the maintainer before changing the goal."
+  }
+}
+```
+
+This is a field added to the complete runner result, not a replacement result file.
+Choose one fixed value; Ruby parses these values, so they are not configurable:
+
+| Disposition | Meaning and next step |
+| --- | --- |
+| Merge | The result is appropriate to ship. Complete required checks, reviews, and the task's Ask or Auto path. |
+| Revise before merge | The direction is sound. Name the specific changes, make them, then repeat affected verification and review. |
+| Reconsider approach | Working code revealed a wrong or disproportionate solution. Explain why and propose an alternative through the existing maintainer decision path. |
+| Do not merge | Recommend abandoning or replacing this PR, with the reason and next step. The maintainer decides whether to close it. |
+
+Ruby checks the disposition's head, vocabulary, reason, and concrete next-action field.
+It rejects **Merge** when verification has a blocking conclusion or unresolved concerns.
+The other three values publish the existing `blocked` attestation, including when
+verification says **Proceed**. A disposition for an older head cannot publish. A failed
+or opted-out execution has no completed verification to attach a disposition to;
+publish its existing execution outcome instead. Results without the field retain
+their conclusion-based publication for compatibility; Ruby does not distinguish old
+from new results. Supplying the disposition for each completed implementation is
+the task owner's workflow responsibility.
+
+The comment shows the owner's recommendation and next action separately from the
+reviewer's verification conclusion and evidence. Ruby validates the fields, not the
+truth of their prose. The owner resolves earlier substantive concerns before recommending
+Merge; passing tests or a new positive report does not settle them. Refresh the
+disposition after material changes. A Merge recommendation grants no authority,
+disables no checks, and submits no merge. The other values close no PR automatically.
+
+### Read the verification evidence
+
 The published comment leads with one recommendation, short reason, and next action
 for the task owner, followed by the head and unresolved concerns. Supporting reasons,
 alternatives, and execution details stay in a closed disclosure. Assess every

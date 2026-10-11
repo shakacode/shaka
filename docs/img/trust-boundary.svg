@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" role="img" aria-labelledby="t d">
+<title id="t">What steers the Shaka agent and what it reads as data</title>
+<desc id="d">Maintainers, settings and instructions on the default branch, and your decisions steer the agent. Public comments, diffs from fork pull requests, and settings changed inside the pull request are outside input: the agent reads them as data and never as instructions.</desc>
+<style>
+.bg{fill:#fff;stroke:#d9e0e7}
+text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
+.h{font-size:15px;font-weight:600}
+.s{font-size:13px}
+.m{fill:#516074}
+.c{text-anchor:middle}
+rect{stroke-width:1}
+.you rect{fill:#fdf3df;stroke:#b87514}
+.you text{fill:#5f3b06}
+.shaka rect{fill:#e3f5ec;stroke:#128a5e}
+.shaka text{fill:#0b4f37}
+.box rect{fill:#f1f4f8;stroke:#8a99ad}
+.frame{fill:none;stroke:#8a99ad;stroke-dasharray:6 4}
+.a{stroke:#516074;stroke-width:1.5;fill:none}
+.ah{fill:#516074}
+.dash,.dash rect{stroke-dasharray:5 4}
+@media (prefers-color-scheme:dark){
+.bg{fill:#0f1724;stroke:#2a3648}
+text{fill:#e6edf5}
+.m{fill:#9fb0c3}
+.you rect{fill:#40300f;stroke:#e0a13a}
+.you text{fill:#fbe3b0}
+.shaka rect{fill:#0e3d2c;stroke:#3ccf92}
+.shaka text{fill:#c9f3e0}
+.box rect{fill:#1a2535;stroke:#6b7c93}
+.frame{stroke:#6b7c93}
+.a{stroke:#9fb0c3}
+.ah{fill:#9fb0c3}
+}
+</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="719" height="419" rx="10"/>
+<rect class="frame" x="40" y="40" width="640" height="110" rx="8"/>
+<text class="h" x="56" y="63">Trusted: steers the agent</text>
+<g class="you"><rect x="56" y="76" width="180" height="60" rx="6"/><text class="h c" x="146" y="102">Maintainers</text><text class="s c" x="146" y="120">Write access or listed</text></g>
+<g class="you"><rect x="270" y="76" width="180" height="60" rx="6"/><text class="h c" x="360" y="102">Default branch</text><text class="s c" x="360" y="120">Settings and instructions</text></g>
+<g class="you"><rect x="484" y="76" width="180" height="60" rx="6"/><text class="h c" x="574" y="102">Your decisions</text><text class="s c" x="574" y="120">Answers, merge approval</text></g>
+<path class="a" d="M360 150V188" marker-end="url(#ar)"/>
+<text class="s m" x="372" y="174">Instructions</text>
+<g class="shaka"><rect x="270" y="190" width="180" height="56" rx="6"/><text class="h c" x="360" y="214">Shaka agent</text><text class="s c" x="360" y="232">Acts for maintainers</text></g>
+<path class="a dash" d="M360 286V248" marker-end="url(#ar)"/>
+<text class="s m" x="372" y="272">Data only</text>
+<rect class="frame" x="40" y="286" width="640" height="110" rx="8"/>
+<text class="h" x="56" y="309">Outside input: read as data</text>
+<g class="box"><rect x="56" y="322" width="180" height="60" rx="6"/><text class="h c" x="146" y="348">Public comments</text><text class="s c" x="146" y="366">Unlisted authors withheld</text></g>
+<g class="box"><rect x="270" y="322" width="180" height="60" rx="6"/><text class="h c" x="360" y="348">Fork PR diffs</text><text class="s c" x="360" y="366">Never instructions</text></g>
+<g class="box"><rect x="484" y="322" width="180" height="60" rx="6"/><text class="h c" x="574" y="348">Settings in the PR</text><text class="s c" x="574" y="366">Default branch wins</text></g>
+</svg>

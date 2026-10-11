@@ -30,7 +30,9 @@ module Shaka
       '"Repository criteria: not supplied". This reports input coverage, not a pass/fail gate.',
       # The review loop reads these classes: a defect earns another round, a nit never does.
       'Start every finding with one class: defect (wrong behavior, a security or trust hole, or a broken ' \
-      'contract), risk (a plausible defect you cannot demonstrate), or nit (style, naming, simplification, ' \
+      'contract, including material maintainability violations the trusted repository criteria require fixing), ' \
+      'risk (a plausible ' \
+      'defect you cannot demonstrate), or nit (optional style, naming, simplification, ' \
       'optional tests, or docs polish). FINDINGS counts classed findings only, not observations.'
     ].freeze
 

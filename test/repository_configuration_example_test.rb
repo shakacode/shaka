@@ -6,7 +6,9 @@ require 'shaka/repository_config'
 # The repository contract doubles as the browsable example of shipped defaults.
 class RepositoryConfigurationExampleTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
-  POLICY_KEYS = %w[required ci_review_jobs local_review_agents local_review_count post_implementation].freeze
+  POLICY_KEYS = %w[
+    required ci_review_jobs local_review_agents local_review_count post_implementation prompt_file
+  ].freeze
 
   def setup
     config = Shaka::RepositoryConfig.load(root: ROOT)
@@ -33,6 +35,6 @@ class RepositoryConfigurationExampleTest < Minitest::Test
 
   def test_example_post_implementation_defaults_match
     defaults = Shaka::RepositoryConfig::PostImplementationSchema::DEFAULTS.merge('enabled' => true)
-    assert_equal defaults, @example.fetch('review').fetch('post_implementation')
+    assert_equal defaults, @example.fetch('review').fetch('post_implementation').except('prompt_file')
   end
 end

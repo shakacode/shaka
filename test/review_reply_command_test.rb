@@ -17,7 +17,27 @@ class ReviewReplyCommandTest < Minitest::Test
     end
   end
 
+  def test_unsupported_reply_content_does_not_call_github
+    with_stub_gh do |dir, sentinel|
+      status, error = unsupported_reply(dir)
+      refute_predicate status, :success?
+      assert_includes error, 'Unsupported reply content: sections'
+      assert_includes error, 'put explanations in summary'
+      refute_path_exists sentinel
+    end
+  end
+
   private
+
+  def unsupported_reply(dir)
+    path = File.join(dir, 'content.json')
+    File.write(path, JSON.generate({ 'identity' => { 'agent' => 'Codex' }, 'summary' => 'Done.',
+                                     'sections' => [{ 'heading' => 'Explanation', 'body' => 'Keep this.' }],
+                                     'reviews' => ['https://github.com/owner/repo/pull/1#issuecomment-1'] }))
+    _output, error, status = Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, 'reply',
+                                            'owner/repo', '1', '--content-file', path, '--key', 'fix-1')
+    [status, error]
+  end
 
   def with_stub_gh
     Dir.mktmpdir do |dir|

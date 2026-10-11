@@ -16,24 +16,34 @@ module Shaka
     HYPHENATED = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/(pull|issues)/(\d+)#(issuecomment|pullrequestreview)-(\d+)\z}
     DISCUSSION = %r{\Ahttps://github\.com/([\w.-]+)/([\w.-]+)/pull/(\d+)#discussion_r(\d+)\z}
 
-    def self.compose(content, github) = new(content, github).compose
+    def self.compose(content, github, publisher_note: nil) = new(content, github, publisher_note:).compose
 
-    def initialize(content, github)
+    def initialize(content, github, publisher_note: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
 
       @content = content
       @github = github
+      validate_content
+      @publisher_note = publisher_note
     end
 
     def compose
+      body = Publication.comment(@content.merge('publisher_note' => @publisher_note))
       lines = lead_lines
-      body = Publication.comment(@content)
       return body if lines.empty?
 
       "#{lines.join("\n")}\n\n#{body}"
     end
 
     private
+
+    def validate_content
+      unsupported = @content.keys - %w[identity summary reviews]
+      return if unsupported.empty?
+
+      raise Error, "Unsupported reply content: #{unsupported.join(', ')}. " \
+                   'Use identity, summary, and optional reviews; put explanations in summary.'
+    end
 
     def lead_lines
       urls = @content['reviews']

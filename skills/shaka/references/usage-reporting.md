@@ -19,8 +19,8 @@ show their host, model, and effort. With more than one row, a total row adds the
 and credit estimates; it leaves token counts blank, because hosts count input
 differently. The collapsed summary shows the USD total. Columns are USD, Codex
 credits, Input, Cached input, Output, Reasoning, and Cache writes; a column no report
-measured is left out, and a collapsed glossary under the table defines each column
-shown. Report names keep their hyphens from breaking the line. Dollar amounts are
+measured is left out. The table links to the reader-facing [usage and cost guide](https://shaka.shakacode.com/docs/reference/usage-and-cost)
+for column definitions and accounting rules. Report names keep their hyphens from breaking the line. Dollar amounts are
 rounded to cents, and token counts are shortened to about three figures, such as
 45.3M; the hidden record keeps the exact counts. A
 cell no report measured shows `—`, and `+` marks a minimum: a partial estimate, or a
@@ -34,8 +34,10 @@ the table.
 
 Each report is priced once, when `shaka usage` runs, with the rate card installed then.
 A carried report keeps that price; nothing reprices it. A collapsed **How each report
-was measured and priced** list under the table shows each report's note: its rate card,
-the date its prices were verified, and what its sources left out. A PR left open across
+was measured and priced** list under the table shows each report's rate card,
+the date its prices were verified, source links, and what its sources left out. Known accounting
+boilerplate moves to the guide; unknown prose and report-specific limitations stay visible.
+The full original note stays in the hidden record for later publication. A PR left open across
 a price change therefore shows which rows used which prices. To price every row with current rates, rerun `shaka usage` for each report and
 publish the new records.
 
@@ -241,6 +243,9 @@ helper report or attribute summary usage to a turn.
 
 ## Cost estimates
 
+For an OpenRouter usage source, read [recorded API charges](openrouter.md#recorded-charges)
+only when collecting that source.
+
 The September 29, 2026 OpenAI rate card includes GPT-6.1 Sol. Standard API-equivalent
 rates per million tokens are $2 input, $0.10 cached input, and $10 output;
 standard credit rates are 50, 2.5, and 250 respectively. These scenarios follow the
@@ -372,3 +377,26 @@ Native usage remains the observed execution record. Provenance does not accept
 prompt text, reasoning, transcripts, local paths, run IDs, or arbitrary metadata.
 Compare like tasks and coverage alongside quality, retries, delivery time, and
 developer attention before drawing savings conclusions.
+
+## Publisher attribution
+
+For Codex JSON descriptions, walkthroughs, and replies, Ruby resolves the publishing
+chat through `CODEX_THREAD_ID` and reads its latest native turn context. Missing or
+`UNKNOWN` identity model and effort are filled from those settings. Description
+`active_model` and `active_effort` use the same result. Concrete contradictions
+stop publication. Reviewer reports and usage rows remain separate.
+
+The header labels the model `(configured)`; the served model stays `UNKNOWN`.
+Missing, ambiguous, or unreadable session metadata leaves unavailable fields
+`UNKNOWN` with a reason. A new turn without context clears earlier settings.
+
+Claude Code publications resolve the chat through `CLAUDE_CODE_SESSION_ID` the same
+way. Ruby reads the served model and effort from the current turn's latest response
+and ignores subagent responses. The model is the served one, so the header carries
+no `(configured)` label. The provider stays as supplied. A note appears only when
+the model or effort is `UNKNOWN`. A subagent shares its parent's session ID, so a
+publication from one would carry the main chat's settings; subagents do not publish.
+
+Other hosts retain supplied attribution with an explicit unverified note until
+a native publisher reader is available. Aggregate usage rows cannot establish
+the current publisher's settings.

@@ -8,6 +8,7 @@ require_relative '../usage/codex_usage'
 require_relative '../usage/claude_usage'
 require_relative 'path_guard'
 require_relative 'process'
+require_relative 'openrouter'
 
 module Shaka
   # Keeps process diagnostics outside the candidate checkout.
@@ -127,6 +128,7 @@ module Shaka
   # The only path that may claim a local review process was actually launched.
   class LocalReviewCli
     include LocalReviewDiagnostic
+    include LocalReviewOpenrouter
 
     def initialize(options, root:, report:, candidate_root:, path: nil)
       @options = options
@@ -141,6 +143,7 @@ module Shaka
       when 'openai/codex' then codex(prompt)
       when 'anthropic/claude' then claude(prompt)
       when 'xai/grok' then grok(prompt)
+      when 'deepseek/openrouter' then openrouter(prompt)
       end
     end
 

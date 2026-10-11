@@ -61,6 +61,72 @@ result.” Details can hold commands, tested commits, and a recording of the men
 Shaka uses your existing tests and validation commands, plus browser tools when
 needed. Required GitHub checks and approvals still apply.
 
+## When a diagram helps
+
+A walkthrough may include one small diagram when a change crosses several
+components or adds a branch. It sits beside the step it explains and names code
+you can find in the reviewed commit. For example, a PR that stops duplicate
+refunds might show which callers reach the new check and where it refuses:
+
+```text
+RefundsController#create ──┐
+RefundRetryJob#perform ────┴── Refunds.issue
+                               ├── RefundPolicy.check      refuses a second refund for the same order (new)
+                               └── PaymentGateway.refund   reached only after the policy passes
+```
+
+The tree shows that the web request and the retry job both pass the new check
+before the gateway call, which is the point a reviewer most needs to confirm. A
+flowchart suits a change with several outcomes or states.
+
+A smaller change reads better as a sentence: “`RefundPolicy.check` now also
+rejects refunds larger than the original charge.” No diagram is added, because
+nothing about the order of calls changed.
+
+A diagram explains the change; it is not evidence that the change works. The
+before and after results still come from running the tested commit. Diagrams are
+optional, and Shaka does not check that one matches the code.
+
+## What a rollback undoes
+
+A walkthrough names who a failure would reach and what they would see, such as
+“customers with a pending refund see the old amount until the job reruns.” It
+also separates reverting the code from undoing what the code already did:
+
+- **Reversible:** “Reverting this commit restores the previous refund limit.
+  No stored data changes, so nothing else needs repair.”
+- **Not undone by a revert:** “This change emails each customer when a refund is
+  issued. Reverting stops new emails; messages already sent cannot be recalled,
+  and refunds already issued stay issued.”
+
+When a change rewrites or deletes stored data, expect the walkthrough to say how
+that data is restored, or that it cannot be. Use this to decide how much review
+and staging the change needs before it merges.
+
+The agent writes this from its reading of the change, and Shaka does not check
+it. A walkthrough that says nothing about data or outside effects is not
+evidence that a revert is enough.
+
+## Publish work while a base repair is pending
+
+A failure already present on the trusted base can leave unrelated work blocked.
+For example, a dependency advisory may fail the same security check on both the
+base and a task branch that never changed that dependency.
+
+Shaka can publish that work as a **blocked draft** after reproducing the same
+failure on an immutable base and confirming the task leaves affected inputs
+unchanged. The PR names the failed check, comparison evidence, separate repair
+issue, and next action. Independent review still happens before push. The agent
+performs this comparison; Ruby does not prove it.
+
+The draft stays blocked until the repair lands or a maintainer explicitly accepts
+the documented local failure for that task. Acceptance does not waive security or
+trust failures, required GitHub or seam merge checks, or protection. In the advisory
+example, the security gate still needs a repair. Failed validation stays failed;
+it is never reported as passing. Missing readiness evidence remains UNKNOWN.
+
+For agent instructions, see the [base-failure procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/base-validation-failure.md).
+
 ## Reconsider the finished result
 
 Before calling a change ready to merge, Shaka asks whether the result solves the
@@ -175,6 +241,8 @@ maintainer to accept. When no comparison can run, the PR says the speed was not 
 
 [Working with Shaka](working-with-shaka.md#find-prs-waiting-on-you) lists the labels
 and your next action.
+
+![While the agent works, a PR has no attention label. The agent sets awaiting-answer for a decision, awaiting-merge-approval when the PR is ready to merge, and awaiting-resume when it paused and nothing will wake it.](img/attention-labels.svg)
 
 You don't create these labels. The first time the agent needs one in a repository,
 it creates it: `awaiting-answer` in amber, `awaiting-merge-approval` in purple, and

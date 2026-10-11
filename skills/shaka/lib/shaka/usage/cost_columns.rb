@@ -3,16 +3,18 @@
 module Shaka
   # One cost column per configuration and billing mode.
   module CostColumns
+    # Hosts whose recorded cost is named in the report; any other recorded cost is Pi's.
+    NAMED_NATIVE_SOURCES = %w[openrouter claude-code].freeze
+
     private
 
     def column(key, group, reasons)
       configuration, billing = key
       provider, model, routed, effort = configuration
-      fields = { provider: provider, model: billed_model(provider, billing, model),
-                 routed: billed_routed(provider, billing, routed), effort: effort,
-                 billing: billing, native: native_cost?(group),
-                 recorded_native: native_recorded?(group), native_source: native_source(group) }
-      fields.merge(priced_totals(group, reasons, provider, model))
+      { provider: provider, model: billed_model(provider, billing, model),
+        routed: billed_routed(provider, billing, routed), effort: effort,
+        billing: billing, native: native_cost?(group), native_sources: native_sources(group),
+        recorded_native: native_recorded?(group) }.merge(priced_totals(group, reasons, provider, model))
     end
 
     def priced_totals(group, reasons, provider, model)
@@ -44,14 +46,17 @@ module Shaka
       group.any? { |record| record['usage'].is_a?(Hash) && record['usage'].key?('native_cost_usd') }
     end
 
-    def native_source(group)
-      if group.any? do |record|
-        record['usage'].is_a?(Hash) && record['usage']['native_cost_source'] == 'claude-code'
-      end
-        'claude-code'
-      else
-        'pi'
-      end
+    def native_sources(group)
+      group.filter_map do |record|
+        usage = record['usage']
+        next unless usage.is_a?(Hash)
+
+        value = usage['native_cost_usd']
+        next unless value.is_a?(Numeric) && value.finite? && value >= 0
+
+        source = usage['native_cost_source']
+        NAMED_NATIVE_SOURCES.include?(source) ? source : 'pi'
+      end.uniq
     end
 
     def keep_credit_reason?(provider, model, credits, group)

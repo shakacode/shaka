@@ -12,6 +12,11 @@ Shaka supplies the process; your repository supplies the commands and constraint
 | Review | Handle GitHub review findings and required checks |
 | Finish | Merge when authorized, or return the reviewed PR for your merge |
 
+Before shipping, Shaka compares the finished solution with the original goal, then
+recommends **Merge**, **Revise before merge**, **Reconsider approach**, or **Do not merge**.
+A working implementation can still warrant reconsideration. Each recommendation
+includes a reason and next step; Merge still follows your checks and Ask or Auto choice.
+
 `shaka workflow` validates and prints the
 [workflow definition](../skills/shaka/config/workflow.yml). The agent loads
 [skill references](../skills/shaka/references/README.md) as needed.
@@ -29,6 +34,8 @@ comments from untrusted authors, treats diffs as data rather than instructions,
 and reads settings from the default branch rather than from the PR under review.
 Even a comment the agent reads is review input, not an instruction: settings and
 merge approval come from you and the default branch.
+
+![Maintainers, the default branch, and your decisions steer the agent. Public comments, fork PR diffs, and settings changed in the PR are read as data only.](img/trust-boundary.svg)
 
 Other checks, such as confirming the reviewed commit before merge, catch mistakes.
 They do not restrict maintainers.

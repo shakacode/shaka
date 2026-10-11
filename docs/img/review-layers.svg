@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 228" role="img" aria-labelledby="t d">
+<title id="t">Three review checks on a Shaka change</title>
+<desc id="d">Before push, a local review runs in a fresh session, ideally with a different provider. After push, configured CI review jobs report on the pull request. Before the agent merges, the merge check requires posted review evidence that covers the commit being merged. These confirm that a review covers the commit, not that it was careful.</desc>
+<style>
+.bg{fill:#fff;stroke:#d9e0e7}
+text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
+.h{font-size:15px;font-weight:600}
+.s{font-size:13px}
+.m{fill:#516074}
+.c{text-anchor:middle}
+rect{stroke-width:1}
+.you rect{fill:#fdf3df;stroke:#b87514}
+.you text{fill:#5f3b06}
+.shaka rect{fill:#e3f5ec;stroke:#128a5e}
+.shaka text{fill:#0b4f37}
+.box rect{fill:#f1f4f8;stroke:#8a99ad}
+.frame{fill:none;stroke:#8a99ad;stroke-dasharray:6 4}
+.a{stroke:#516074;stroke-width:1.5;fill:none}
+.ah{fill:#516074}
+.dash,.dash rect{stroke-dasharray:5 4}
+@media (prefers-color-scheme:dark){
+.bg{fill:#0f1724;stroke:#2a3648}
+text{fill:#e6edf5}
+.m{fill:#9fb0c3}
+.you rect{fill:#40300f;stroke:#e0a13a}
+.you text{fill:#fbe3b0}
+.shaka rect{fill:#0e3d2c;stroke:#3ccf92}
+.shaka text{fill:#c9f3e0}
+.box rect{fill:#1a2535;stroke:#6b7c93}
+.frame{stroke:#6b7c93}
+.a{stroke:#9fb0c3}
+.ah{fill:#9fb0c3}
+}
+</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="719" height="227" rx="10"/>
+<text class="s m c" x="135" y="58">Before push</text>
+<text class="s m c" x="360" y="58">After push</text>
+<text class="s m c" x="585" y="58">Before the agent merges</text>
+<g class="shaka"><rect x="40" y="70" width="190" height="80" rx="6"/><text class="h c" x="135" y="97">Local review</text><text class="s c" x="135" y="115">Fresh session, ideally</text><text class="s c" x="135" y="133">a different provider</text></g>
+<g class="box"><rect x="265" y="70" width="190" height="80" rx="6"/><text class="h c" x="360" y="97">CI review</text><text class="s c" x="360" y="115">Configured review jobs</text><text class="s c" x="360" y="133">report on the PR</text></g>
+<g class="shaka"><rect x="490" y="70" width="190" height="80" rx="6"/><text class="h c" x="585" y="97">Merge check</text><text class="s c" x="585" y="115">Posted review must cover</text><text class="s c" x="585" y="133">the commit being merged</text></g>
+<path class="a" d="M230 110H263" marker-end="url(#ar)"/>
+<path class="a" d="M455 110H488" marker-end="url(#ar)"/>
+<text class="s m" x="40" y="186">These confirm that a review covers the commit, not that it was careful.</text>
+<text class="s m" x="40" y="206">Merging on GitHub yourself, or review.required: none, skips the merge check.</text>
+</svg>

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'value_token'
+
 module Shaka
   # Report copy for the rate-card cost scenarios.
   module CostCopy
@@ -55,14 +57,14 @@ module Shaka
     def anthropic_priced?(priced) = priced.any? { |column| anthropic_rated?(column) }
 
     def native_intro(columns)
-      sources = columns.select { |column| column[:native] }.map { |column| column[:native_source] }.uniq
-      sources.map do |source|
-        if source == 'claude-code'
+      sources = columns.flat_map { |column| column[:native_sources] || [] }
+      [(sources.include?('pi') ? 'Pi recorded native nominal USD.' : nil),
+       (if sources.include?('openrouter')
+          'OpenRouter recorded charged USD; no direct DeepSeek rate estimate is applied.'
+        end),
+       (if sources.include?('claude-code')
           'Claude CLI recorded estimated USD for an independent call; not an invoice.'
-        else
-          'Pi recorded native nominal USD.'
-        end
-      end.join(' ')
+        end)].compact.join(' ')
     end
 
     def priced_columns(columns)
@@ -116,7 +118,7 @@ module Shaka
     end
 
     def safe(value)
-      value.is_a?(String) && value.match?(/\A[a-zA-Z0-9][a-zA-Z0-9._:-]{0,79}\z/) ? value : 'UNKNOWN'
+      UsageValue.token(value) || 'UNKNOWN'
     end
   end
 end

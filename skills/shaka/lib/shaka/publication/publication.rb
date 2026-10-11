@@ -34,7 +34,7 @@ module Shaka
     end
 
     def render(parts, title: false)
-      blocks = [PublicationText.identity(@content['identity'])]
+      blocks = [PublicationText.publisher_identity(@content)]
       blocks << '# Code Walkthrough' if title
       blocks << PublicationText.required(@content['summary'], 'summary')
       parts.each { |part| blocks.concat(send(part)) }
@@ -46,7 +46,7 @@ module Shaka
     def sections = PublicationSections.render(@content)
 
     # The steps besides merging sit under the headline links so a reader cannot miss them.
-    def top_links = [*PublicationLinks.top(@content), *StepsBesidesMerging.render(@content)]
+    def top_links = [*PublicationLinks.top(@content, @settings.attribution?), *StepsBesidesMerging.render(@content)]
 
     def table
       spec = @content['table']
@@ -103,7 +103,7 @@ module Shaka
     # The note is optional because it disappears once GitHub confirms the outcome.
     def wip
       spec = @content['wip']
-      spec.nil? ? [] : [details_block(WipDetails.new(spec, include_locations: @settings.include_locations?).detail)]
+      spec.nil? ? [] : [details_block(WipDetails.new(spec, location_redaction: @settings.location_redaction).detail)]
     end
 
     def refuse_free_form_wip(items)

@@ -13,12 +13,15 @@ module Shaka
   # Loads the small, typed repository contract used by the workflow.
   class RepositoryConfig
     DEFAULT_WIP = { 'include_locations' => true }.freeze
+    DEFAULT_PR_DESCRIPTION = { 'show_shaka_credit' => true }.freeze
 
     # base_branch is nil when the seam omits it, meaning the repository's default branch.
-    attr_reader :base_branch, :commands, :review, :merge, :wip, :opening_check, :prose_limits, :sha, :config_path
+    attr_reader :base_branch, :commands, :review, :merge, :wip, :pr_description,
+                :opening_check, :prose_limits, :sha, :config_path
 
-    def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
-      new(root:, source:, available_commands:, sha:, candidate_commands:).load
+    def self.load(root: Dir.pwd, source: nil, available_commands: nil, sha: nil, candidate_commands: true,
+                  &prompt_validator)
+      new(root:, source:, available_commands:, sha:, candidate_commands:, &prompt_validator).load
     end
 
     def self.prompt_files(review:, opening:)
@@ -27,7 +30,8 @@ module Shaka
       path ? files + [['opening_check.prompt_file', path]] : files
     end
 
-    def initialize(root:, source: nil, available_commands: nil, sha: nil, candidate_commands: true)
+    def initialize(root:, source: nil, available_commands: nil, sha: nil, candidate_commands: true,
+                   &prompt_validator)
       if source && available_commands.nil?
         raise Error, 'available_commands is required when repository policy comes from another source'
       end
@@ -37,6 +41,7 @@ module Shaka
       @available_commands = available_commands
       @sha = sha
       @candidate_commands = candidate_commands
+      @prompt_validator = prompt_validator
       select_paths
     end
 
@@ -73,14 +78,15 @@ module Shaka
                                'candidate_configuration' => @candidate_detected&.contract,
                                'trusted_command_directory' => @layout.command_directory,
                                'candidate_command_directory' => @candidate_layout.command_directory },
-                  'opening_check' => opening_check, 'prose_limits' => prose_limits)
+                  'opening_check' => opening_check, 'prose_limits' => prose_limits, 'pr_description' => pr_description)
     end
 
     private
 
     def apply_schema
       schema = Schema.new(root: @root, data: @data, available_commands: @available_commands,
-                          candidate_commands: @candidate_commands, selection: @selection)
+                          candidate_commands: @candidate_commands, selection: @selection,
+                          &@prompt_validator)
       schema.validate
       @commands = schema.commands
       assign_sections
@@ -92,6 +98,11 @@ module Shaka
       merge = @data.fetch('merge')
       @merge = merge.merge('limits' => MergeLimits.new(merge.fetch('limits', {})).to_h)
       @wip = DEFAULT_WIP.merge(@data.fetch('wip', {}))
+      assign_presentation
+    end
+
+    def assign_presentation
+      @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {}))
       @opening_check = { 'external_enabled' => true }.merge(@data.fetch('opening_check', {}))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
     end

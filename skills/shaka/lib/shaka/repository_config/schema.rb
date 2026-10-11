@@ -10,6 +10,7 @@ require_relative 'command_schema'
 require_relative 'merge_schema'
 require_relative 'opening_schema'
 require_relative 'wip_schema'
+require_relative 'pr_description_schema'
 require_relative 'review_schema'
 require_relative 'validation'
 
@@ -20,17 +21,19 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip repo_prefix opening_check prose_limits].freeze
+      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix opening_check prose_limits].freeze
 
       attr_reader :commands
 
       def initialize(root:, data:, available_commands: nil, candidate_commands: true,
                      selection: Configuration::Layout::Selection.new(policy: Configuration::Layout::LEGACY,
-                                                                     candidate: Configuration::Layout::LEGACY))
+                                                                     candidate: Configuration::Layout::LEGACY),
+                     &prompt_validator)
         @root = root
         @data = data
         @available_commands = available_commands
         @candidate_commands = candidate_commands
+        @prompt_validator = prompt_validator
         @layout = selection.policy
         @candidate_layout = selection.candidate
         @config_path = @layout.contract
@@ -46,7 +49,7 @@ module Shaka
         validate_optional
         validate_review
         validate_merge
-        ProseLimits.validate!(@data['prose_limits']) if @data.key?('prose_limits')
+        validate_presentation
       end
 
       private
@@ -64,6 +67,11 @@ module Shaka
         WipSchema.new(@data['wip']).validate if @data.key?('wip')
         OpeningSchema.new(@data['opening_check']).validate if @data.key?('opening_check')
         RepoPrefix.validate!(@data['repo_prefix']) if @data.key?('repo_prefix')
+      end
+
+      def validate_presentation
+        PrDescriptionSchema.new(@data['pr_description']).validate if @data.key?('pr_description')
+        ProseLimits.validate!(@data['prose_limits']) if @data.key?('prose_limits')
       end
 
       def validate_commands
@@ -88,6 +96,8 @@ module Shaka
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
       def local_prompt_files!(review)
         RepositoryConfig.prompt_files(review:, opening: @data.fetch('opening_check', {})).each do |label, path|
+          next if @prompt_validator&.call(label, path)
+
           file = file!(path, label)
           error = ReviewPrompt.file_error(File.size(file)) { File.binread(file) }
           raise Error, "#{label} #{path} #{error}" if error

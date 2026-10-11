@@ -13,38 +13,59 @@ module Shaka
     def visible
       pending, = partition
       outcome = if pending.empty?
-                  'No unresolved defects or risks recorded; optional findings are in history.'
+                  'No open findings; closed and optional findings are in history.'
                 else
-                  "#{pending.size} unresolved or unassessed #{pending.size == 1 ? 'finding' : 'findings'}."
+                  "#{pending.size} #{pending.size == 1 ? 'finding needs' : 'findings need'} attention."
                 end
-      ["**Outcome:** #{outcome}", *pending.map { |copies| line(copies) }]
+      ["**Outcome:** #{outcome}", *finding_table(pending)]
     end
 
-    def settled
-      _, closed = partition
-      return [] if closed.empty?
-
-      ['### Settled and optional findings', *closed.map { |copies| line(copies) }]
+    def details
+      ['### Finding details', *@findings.values.map { |copies| line(copies) }]
     end
 
     private
 
     def partition
-      @findings.values.partition do |copies|
-        !copies.last.fixed? && copies.any? { |finding| finding.kind != 'nit' }
-      end
+      @findings.values.partition { |copies| LocalReviewFinding.pending?(copies) }
     end
 
-    def reclassified?(copies) = copies.last.kind == 'nit' && copies.any? { |item| item.kind != 'nit' }
+    def finding_table(pending)
+      return [] if pending.empty?
+
+      rows = pending.map { |copies| finding_row(copies) }
+      [(['| Finding | Status | Reported by |', '| --- | --- | --- |'] + rows).join("\n")]
+    end
+
+    def finding_row(copies)
+      finding = copies.last
+      text = "`#{finding.id}` · #{finding.summary}"
+      text += ' · **returned after its fix**' if copies[0...-1].any?(&:fixed?)
+      text += ' · **earlier defect/risk remains unassessed**' if reclassified?(copies)
+      cells = [text, finding.status, reporters(finding.id).join(', ')].map { |cell| PublicationText.table_cell(cell) }
+      "| #{cells.join(' | ')} |"
+    end
+
+    def reclassified?(copies)
+      !copies.last.closed? && copies.last.kind == 'nit' && copies.any? { |item| item.kind != 'nit' }
+    end
 
     def line(copies)
       finding = copies.last
       previous_fix = copies[0...-1].reverse.find(&:fixed?)
       fixed = previous_fix ? { finding.id => previous_fix.commit } : {}
-      source = @rounds.reverse.find { |round| round.findings.include?(finding) }
       text = LocalReviewTriage.line(finding, @links, fixed)
       text += ' · **earlier defect/risk remains unassessed**' if reclassified?(copies)
-      "#{text} · last recorded at #{@links.commit(source.head)}"
+      "#{text} · #{attribution(finding)}"
+    end
+
+    def attribution(finding)
+      source = @rounds.reverse.find { |round| round.findings.include?(finding) }
+      "Reported by: #{reporters(finding.id).join(', ')} · last recorded at #{@links.commit(source.head)}"
+    end
+
+    def reporters(id)
+      @rounds.select { |round| round.findings.any? { |finding| finding.id == id } }.map(&:reviewer).uniq
     end
   end
 end

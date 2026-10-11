@@ -71,7 +71,7 @@ class LocalReviewBatchLedgerTest < Minitest::Test
     append(EARLIER, 'anthropic/claude', findings: 1)
     record([fixed(['anthropic/claude'])])
 
-    assert_equal [FIX], ledger.last_batch_fixes
+    assert_equal [FIX], ledger.recorded_batch_fixes
   end
 
   # Break caught: a reviewer joining the last commit was shown no commits since the one before.
@@ -145,7 +145,7 @@ class LocalReviewBatchCommentTest < Minitest::Test
   def test_renders_two_reviewers_of_one_commit_and_closes_with_the_last
     body = render('rounds' => [clean('openai/codex'), clean('anthropic/claude')])
 
-    assert_includes body, '**Outcome:** the loop ended clean: rounds 1–2 found nothing.'
+    assert_includes body, '**Outcome:** No open findings; closed and optional findings are in history.'
     assert body.end_with?("REVIEWED #{HEAD} BY anthropic/claude EFFORT UNKNOWN FINDINGS 0\n")
   end
 
@@ -153,7 +153,7 @@ class LocalReviewBatchCommentTest < Minitest::Test
   def test_outcome_counts_every_reviewer_of_the_last_commit
     body = render('rounds' => [round, clean('anthropic/claude')])
 
-    assert_includes body, "Rounds 1–2's findings are documented nits or risks (1 nit)."
+    assert_includes body, 'No open findings; closed and optional findings are in history.'
   end
 
   # Break caught: a finding both reviewers of one commit reported read as returning after its fix.
@@ -190,7 +190,8 @@ class LocalReviewBatchCommentTest < Minitest::Test
   def test_outcome_counts_a_shared_finding_once
     claude = round(reviewer: 'anthropic/claude', report: report(HEAD, reviewer: 'anthropic/claude'))
 
-    assert_includes render('rounds' => [round, claude]), 'documented nits or risks (1 nit).'
+    assert_includes render('rounds' => [round, claude]),
+                    'No open findings; closed and optional findings are in history.'
   end
 
   # Break caught: a content file gave one shared finding two outcomes, and the triage showed only one.

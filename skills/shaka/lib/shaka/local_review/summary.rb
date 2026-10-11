@@ -52,7 +52,7 @@ module Shaka
       findings = @rounds.flat_map(&:findings)
       ids = findings.select { |finding| finding.kind == 'defect' }.map(&:id).uniq
       latest = findings.to_h { |finding| [finding.id, finding] }
-      ids.map { |id| latest.fetch(id) }.reject(&:fixed?)
+      ids.map { |id| latest.fetch(id) }.reject(&:closed?)
     end
 
     private
@@ -83,29 +83,15 @@ module Shaka
 
     def price(round) = (round.value('cost') || round.value('estimate')).to_s
 
-    # A finding ever classed a defect stays open until a later round records its fix, so neither a
-    # clean last round nor a later reclassification hides it.
+    # Older open or unassessed findings survive a clean latest round until explicitly closed.
     def outcome
-      open = unresolved_defects.size
-      return "**Outcome:** the loop stopped with #{defects(open)} left for the maintainer." if open.positive?
+      pending = @rounds.flat_map(&:findings).group_by(&:id).values
+                       .select { |copies| LocalReviewFinding.pending?(copies) }.map(&:last)
+      return '**Outcome:** No open findings; closed and optional findings are in history.' if pending.empty?
 
-      # A finding several reviewers reported is one finding of the triage.
-      findings = last_batch.flat_map(&:findings).uniq(&:id)
-      return "**Outcome:** the loop ended clean: #{last_label} found nothing." if findings.empty?
-
-      "**Outcome:** the loop ended with nothing left to fix. #{last_label.capitalize}'s findings are documented " \
-        "nits or risks (#{kinds(findings)})."
+      "**Outcome:** #{pending.size} #{pending.size == 1 ? 'finding needs' : 'findings need'} attention " \
+        "(#{kinds(pending)})."
     end
-
-    # Every reviewer of the last commit, so a clean round does not hide its sibling's findings.
-    def last_batch = @rounds.select { |round| round.head == @rounds.last.head }
-
-    def last_label
-      first = @rounds.size - last_batch.size + 1
-      first == @rounds.size ? "round #{first}" : "rounds #{first}–#{@rounds.size}"
-    end
-
-    def defects(count) = "#{count} unfixed #{count == 1 ? 'defect' : 'defects'}"
 
     def kinds(findings)
       LocalReviewFinding::CLASSES.filter_map do |kind|

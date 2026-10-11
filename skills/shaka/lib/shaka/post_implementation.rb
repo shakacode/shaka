@@ -4,6 +4,7 @@ require 'optparse'
 require_relative 'post_implementation_runner'
 require_relative 'post_implementation/history'
 require_relative 'post_implementation/publication'
+require_relative 'post_implementation/disposition'
 require_relative 'github'
 
 module Shaka
@@ -67,7 +68,8 @@ module Shaka
     end
 
     def publish_body(github, result, head)
-      body = PostImplementationPublication.new(result, head:).render
+      renderer = result.key?('disposition') ? PostImplementationDispositionPublication : PostImplementationPublication
+      body = renderer.new(result, head:).render
       github.reply(body:, key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
     end
 

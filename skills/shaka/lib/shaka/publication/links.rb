@@ -10,14 +10,15 @@ module Shaka
     WALKTHROUGH_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#pullrequestreview-\d+\z}
     POST_IMPLEMENTATION_URL = %r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/\d+#issuecomment-\d+\z}
     UNPUBLISHED = '_Not published yet._'
+    CREDIT = '_PR prepared with [Shaka](https://shaka.shakacode.com/)._'
 
     module_function
 
     # Keep both review surfaces together before an optional deployment preview.
-    def top(content)
+    def top(content, attribution)
       reviews = "#{walkthrough(content['walkthrough'])} · #{post_implementation(content['post_implementation'])}"
       preview = deployment(content['deployment'])
-      [preview ? "#{reviews} · #{preview}" : reviews]
+      [(CREDIT if attribution), preview ? "#{reviews} · #{preview}" : reviews].compact
     end
 
     def post_implementation(url)

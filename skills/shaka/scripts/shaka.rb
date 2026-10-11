@@ -8,6 +8,7 @@ require_relative '../lib/shaka/github'
 require_relative '../lib/shaka/attention'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
+require_relative '../lib/shaka/hosts/codex_wake'
 require_relative '../lib/shaka/issue_create'
 require_relative '../lib/shaka/public_comments'
 require_relative '../lib/shaka/checkpoint'
@@ -34,6 +35,7 @@ require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
+require_relative '../lib/shaka/usage/publisher_attribution'
 require_relative '../lib/shaka/usage/cursor_usage_refresh'
 require_relative '../lib/shaka/walkthrough/code_links'
 require_relative '../lib/shaka/trial/command'
@@ -167,7 +169,7 @@ def require_merge_ref!(options)
   raise Shaka::Error, 'merge requires --ref so policy comes from a trusted commit'
 end
 
-# Reads trusted limits through the opening check's guarded Git; an unreadable trusted commit is reported.
+# Reads effective limits through the opening check's guarded Git; unavailable settings are reported.
 def description_prose_limits(root, ref)
   return [Shaka::ProseLimits.new, {}] unless ref
 
@@ -190,7 +192,8 @@ end
 def walkthrough_body(options, github)
   return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
 
-  walkthrough = content(options.fetch(:content_file)).merge('head' => options.fetch(:head))
+  walkthrough = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
+  walkthrough = walkthrough.merge('head' => options.fetch(:head))
   Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough), walkthrough, github)
 end
 
@@ -208,6 +211,9 @@ def merge_flags(flags, options)
   flags.on('--limits-confirmed-head SHA', 'Head confirmed past limits') { |sha| options[:confirmed_head] = sha }
   flags.on('--squash-message PATH', 'Squash commit title and body as JSON') { |path| options[:squash_message] = path }
   flags.on('--woken-by WHAT', 'For handoff: what will wake this session') { |value| options[:woken_by] = value }
+  flags.on('--codex-wake PATH', 'For handoff: native Codex registration evidence as JSON') do |path|
+    options[:codex_wake] = path
+  end
 end
 
 def opening_flags(flags, options)
@@ -299,17 +305,22 @@ begin
     raise Shaka::Error, '--opening-model is unsupported for openai/codex.' if reviewer == 'openai/codex'
   end
 
+  raise Shaka::Error, '--codex-wake is only for handoff.' if options[:codex_wake] && command != 'handoff'
+
+  native_wake = Shaka::CodexWake.check(options, repository, number) if command == 'handoff'
+
   github = Shaka::GitHub.new(repository, number)
-  if %w[pr walkthrough merge handoff squash-message].include?(command)
-    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
-                                               private_trial: command != 'merge')
+  if %w[pr walkthrough handoff squash-message].include?(command) && options[:ref]
+    seam = Shaka::Configuration.resolve_source(root: options[:root] || Dir.pwd, ref: options[:ref]).first
+  elsif command == 'merge'
+    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
   end
-  seam_required_checks = seam&.merge&.fetch('required_checks', nil)
+  seam_required_checks = seam.merge['required_checks'] if seam&.sha
   if command == 'merge' && !options[:squash_message]
     raise Shaka::Error, 'merge requires --squash-message with the commit title and body.'
   end
 
-  checkpoint = { enabled: seam&.review&.dig('post_implementation', 'enabled') != false }
+  checkpoint = { enabled: !seam&.sha || seam.review.dig('post_implementation', 'enabled') != false }
   if %w[merge squash-message].include?(command)
     head = options.fetch(:head)
     Shaka::PostImplementationEvidence.new(github, **checkpoint).call(head)
@@ -333,7 +344,8 @@ begin
                github = Shaka::GitHub.new(repository, number, runner: lambda do |argv, stdin_data:|
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
-               described = Shaka::DeploymentLink.resolve(content(options.fetch(:content_file)), github)
+               attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
+               described = Shaka::DeploymentLink.resolve(attributed, github)
                usage_records = nil
                carried = nil
                published = github.description(prose:) do |pull|
@@ -356,7 +368,9 @@ begin
            when 'reply'
              # A review lookup contacts GitHub, so a missing key fails before that lookup.
              key = options.fetch(:key)
-             github.reply(body: Shaka::ReviewReply.compose(content(options.fetch(:content_file)), github),
+             attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
+             publisher_note = attributed.delete('publisher_note')
+             github.reply(body: Shaka::ReviewReply.compose(attributed, github, publisher_note:),
                           key: key, comment: options[:comment])
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
@@ -386,6 +400,10 @@ begin
              Shaka::Handoff.new(github, seam_required_checks:, post_implementation: checkpoint)
                            .call(head: options[:head], woken_by: options[:woken_by])
            end
+  if native_wake
+    result['codexWake'] = { 'registrationId' => native_wake, 'registrationEvidence' => 'checked',
+                            'liveResumption' => 'UNVERIFIED' }
+  end
   puts JSON.pretty_generate(result)
   exit Shaka::Handoff.exit_status(result) if command == 'handoff'
 rescue OptionParser::ParseError, KeyError, SystemCallError, Shaka::Error => e

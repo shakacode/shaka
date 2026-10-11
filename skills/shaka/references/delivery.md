@@ -88,7 +88,7 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 
 | Field | Content |
 | --- | --- |
-| Owner | Public machine alias, host, and a random owner tag, such as `m5 · Codex desktop · k7q2` |
+| Owner | Public machine alias, host, and a random owner tag, separated by ` · `, such as `m5 · Codex desktop · k7q2`; use `UNKNOWN` for an unavailable component or the whole value |
 | Chat name | Current public-safe host chat title, copied exactly; otherwise `UNKNOWN` |
 | Chat link | Raw host session URL, using the rules below; otherwise `UNKNOWN` |
 | Last observed activity | Date, time to the minute, and timezone of the latest observed activity, such as `2026-09-25 17:42 PDT`; otherwise `UNKNOWN` |
@@ -99,6 +99,13 @@ state “waiting for GitHub merge” and the expected SHA. A failed merge also r
 | Merge authority | Previously established `ask` or `auto`, or `UNKNOWN`; this field grants no authority |
 | State | In progress, named check/review wait, blocker, decision, GitHub merge of a named head, or handoff to a named successor |
 | Next action | One step that continues the task; while `awaiting-resume`, the prompt that resumes it, such as `$shaka PR_URL` |
+
+The renderer and `handoff` check that Owner is `UNKNOWN` or contains three nonempty
+components separated by `·`. `handoff` reads the live GitHub description, so an edit
+after publication is checked too. These checks verify the supplied format; the agent
+verifies the machine alias, host, and tag against available metadata. Other WIP fields
+retain their existing checks; a successful handoff does not establish compliance with
+every instruction in this guide.
 
 **Chat title:** before each WIP publication, read the current title through the
 host's session metadata when available. Review it for private content before
@@ -135,8 +142,11 @@ A link's availability depends on the owner's machine being reachable.
 
 **Privacy:** both team setup and private trials default `wip.include_locations` to
 `true`. Supply the selected default-branch `--ref` to `description`.
-The renderer replaces Workspace and Chat link with `REDACTED` when the setting is
-false or unavailable, including before validation/review results exist. Retain the
+The renderer uses `REDACTED` only when the setting is explicitly false. Unread or
+unavailable settings withhold both locations and explain the recovery action:
+rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
+republishing when loading failed. Unfinished publication remains possible without
+validation/review evidence; the diagnostic establishes no readiness. Retain the
 fields and public owner alias. Inspect all other supplied prose before publication.
 A repository where even the owner alias is sensitive should not publish these notes.
 See [configuration](https://github.com/shakacode/shaka/blob/main/docs/settings.md#wipinclude_locations).
@@ -247,14 +257,9 @@ required decisions, and missing evidence visible; link to supporting detail.
 
 ### Identify AI-authored posts
 
-Begin GitHub descriptions, comments, and reviews with actual agent, provider,
-model, and effort, for example:
-
-> 🤖 Codex · OpenAI · gpt-6-astra · medium
-
-Use `UNKNOWN` for unavailable values. This identifies the writer; reviewer and
-contributor usage belongs in details. Preserve human text and label mixed work
-AI-edited rather than claiming full authorship.
+Follow the writer-identifier rule in [Explain](../config/workflow.yml), including
+verification updates and attachment comments. Publication helpers render the
+identifier from `identity`.
 
 ### Make the PR description useful first
 
@@ -269,9 +274,13 @@ renders its link after the summary, or `_Not published yet._` until it exists.
 Set the required `deployment` field to `auto`, an https URL, or `none`. `auto` reads
 the GitHub Deployments API for the PR head and links the newest successful
 deployment's `environment_url`, the same link GitHub shows as "View deployment";
-it renders nothing when the head has none. Supply a URL yourself only when the
-preview appears solely in a provider comment or CI log. The helper links it beside
-the walkthrough.
+when that API has no live URL, it checks the current head's latest Cloudflare Pages check
+from the Cloudflare GitHub App and extracts its immutable `pages.dev` preview when successful.
+It renders nothing when neither source supplies a URL. Supply a URL yourself when
+another provider exposes the preview solely in a comment or CI log, or to select among
+several preview projects. The helper links
+it beside the walkthrough. Republish after hosted checks and preview builds settle,
+including before an Ask handoff.
 Set the required `steps_besides_merging` field to `none` or a list of work the change
 needs outside its merge, such as a secret to set before merge or a backfill to run after
 it. The helper renders the list as a table under those links, where a maintainer sees it
@@ -308,7 +317,18 @@ before the step that needs it, and say where a reviewer should look hardest.
 Explain unfamiliar terms on first use. Distinguish mechanical moves and generated
 output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
+State each risk and rollback as the [writing guidance](writing.md) describes.
 Cover the change completely, then stop.
+
+### Connect a technical fix to its evidence
+
+For technical fixes, connect the triggering failure and observed cause (label inference)
+to before/after regression evidence, the boundary exercised, affected callers, and residual
+risk. Name tested revisions, runtime, omissions, and any next check that would change your
+judgment. Keep the head-bound assessment in the description's existing validation/risk
+summary; reuse a linked agent-authored assessment covering these points, preserve reviewer
+reports, and refresh when material evidence changes. Documenting a risk does not resolve
+or accept it; technical confidence does not grant merge consent. Scale detail to the change.
 
 ### Keep a walkthrough readable
 
@@ -323,11 +343,17 @@ Cover the change completely, then stop.
   four sentences, and keep most sentences under 25 words.
 - Use a list for parallel items, such as the guarantees a guard provides: one
   per bullet, each linked to its code. Keep reasoning in prose.
-- Add one small diagram when control passes through three or more components,
+- Add one small visual when control passes through three or more components,
   or when a state can move to more than one next state. Even then, skip it
-  when one sentence can state the sequence. GitHub renders a `mermaid` code block in a
-  review. Keep it to about ten nodes, label each edge with the action, and let
-  the prose carry the explanation.
+  when one sentence can state the sequence. Use an indented call tree in a
+  `text` code block for who calls whom, or a `mermaid` code block, which GitHub
+  renders in a review, for branches and states. Show observable behavior or an
+  ownership boundary, name code as it is at this head, mark anything the change
+  removes, and place it beside the step it supports. Keep it to about ten
+  nodes, label each edge or line with the action, and let the prose carry the
+  explanation. A visual explains; the validation results remain the evidence.
+  The public guide shows
+  [a call tree and a change that needs none](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md#when-a-diagram-helps).
 - Report validation as what it proves at this head: the behavior covered, the
   command, and its result. State each count once, and leave results from
   earlier heads to the description's review history.

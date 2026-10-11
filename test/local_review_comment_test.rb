@@ -68,7 +68,7 @@ class LocalReviewCommentTest < Minitest::Test
 
     assert body.start_with?("# Local Adversarial Review\n\n| Round | Commit | Reviewer | Model |")
     assert_includes body, '| 1 | `aaaaaaa` | openai/codex | gpt-6-sol | UNKNOWN | ' \
-                          'Shaka default · criteria `ccccccc` | 1 (0 fixed, 1 documented) | 41,200 | UNKNOWN |'
+                          'Shaka default · criteria `ccccccc` | 1 (1 documented) | 41,200 | UNKNOWN |'
   end
 
   def test_collapses_each_report_and_closes_with_the_last_attestation
@@ -179,6 +179,9 @@ class LocalReviewPublishTest < Minitest::Test
     attr_reader :replies
 
     def number = 7
+    def repository = 'o/r'
+    def viewer_login = 'agent'
+    def issue_comments = []
 
     def initialize(html = RENDERED, missing: [])
       @html = html
@@ -186,7 +189,7 @@ class LocalReviewPublishTest < Minitest::Test
       @replies = []
     end
 
-    def markdown(_body) = "<table></table>#{@html}"
+    def markdown(body) = "#{'<table></table>' * body.lines.count { |line| line.start_with?('| ---') }}#{@html}"
 
     def api(path)
       raise Shaka::Error.new('Not Found', http_status: 404) if @missing.any? { |sha| path.end_with?(sha) }
@@ -420,10 +423,10 @@ class LocalReviewSummaryTest < Minitest::Test
   def test_says_why_the_loop_stopped
     clean = round(report: report(body: "no findings\n", findings: 0), findings: [])
 
-    assert_includes render('rounds' => [clean]), '**Outcome:** the loop ended clean: round 1 found nothing.'
+    assert_includes render('rounds' => [clean]),
+                    '**Outcome:** No open findings; closed and optional findings are in history.'
     assert_includes render('rounds' => [round]),
-                    '**Outcome:** the loop ended with nothing left to fix. Round 1\'s findings are documented ' \
-                    'nits or risks (1 nit).'
+                    '**Outcome:** No open findings; closed and optional findings are in history.'
   end
 
   # Break caught: a documented defect, in the last round or an earlier one, read as a clean finish.
@@ -434,7 +437,7 @@ class LocalReviewSummaryTest < Minitest::Test
 
     risk = round(report: report, findings: [defect.merge('class' => 'risk')])
     [[round(findings: [defect])], [earlier, clean], [earlier, risk]].each do |rounds|
-      assert_includes render('rounds' => rounds), '**Outcome:** the loop stopped with 1 unfixed defect left for'
+      assert_includes render('rounds' => rounds), '**Outcome:** 1 finding needs attention'
     end
   end
 

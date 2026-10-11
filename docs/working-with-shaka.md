@@ -105,7 +105,7 @@ For a repository without Shaka settings, the agent prepares a separate setup PR
 and names the reviewed commit for you to merge on GitHub. It stops there; proposed
 settings cannot govern feature work until that PR merges. See
 [repository setup](configure-repository.md#set-up) for the choices, or
-[private trials](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
+[individual trials](expected-experience.md#individual-trials-available-tools-incomplete-guided-experience)
 to try Shaka locally without team adoption.
 
 These are requests to the existing workflow. Separate stage skills such as
@@ -117,6 +117,8 @@ These are requests to the existing workflow. Separate stage skills such as
 | --- | --- |
 | **Ask** (default) | Review the ready PR, then merge it on GitHub or approve it so the agent merges. |
 | **Auto** | The agent merges after required checks, review, and approvals. |
+
+![A ready PR follows Ask, where you merge or approve it, or Auto, where the agent merges. A PR that is too large or risky returns to you under Auto.](img/merge-policy.svg)
 
 Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
 Repository restrictions and required approvals still apply. Trust, authentication,

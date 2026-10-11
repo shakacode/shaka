@@ -28,6 +28,12 @@ module Shaka
     private
 
     def coverage
+      groups = @rounds.group_by { |round| round.value('coverage') || 'UNKNOWN; see evidence.' }
+      values = groups.map { |text, rounds| "#{rounds.map(&:reviewer).join(', ')}: #{text}" }
+      "**Coverage:** #{values.join(' · ')}"
+    end
+
+    def coverage_reports
       lines = @rounds.map do |round|
         value = round.value('coverage') || 'UNKNOWN; inspect the original report for limitations.'
         reported = round.reported_coverage || 'UNKNOWN; inspect the original report for complete coverage limits.'
@@ -46,7 +52,7 @@ module Shaka
 
     def history(attention)
       blocks = ["<details>\n<summary>Review evidence and history</summary>",
-                "**Commit:** #{@subject.call(@rounds.last.head)}", *attention.settled,
+                "**Commit:** #{@subject.call(@rounds.last.head)}", *attention.details, coverage_reports,
                 '### Execution metadata', table,
                 *LocalReviewTriage.details(@rounds), '</details>']
       blocks.join("\n\n")
