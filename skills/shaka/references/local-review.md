@@ -275,11 +275,10 @@ LEDGER="$LEDGER_DIR/ledger.json"
 Do not reuse another task's directory, and do not put the ledger in a temporary directory:
 `review run` adds `ledger_warning` to its result when it sits in one. Pass `--ledger "$LEDGER"`
 to each `shaka review run`: a completed round adds its head, reviewer, effort, requested model,
-report, prompt source, criteria commit, and usage path. The helper copies the report to
-`reports/` beside the ledger before adding the round, and the round and the run result name that
-copy; a report that cannot be copied adds no round. `review publish` reads the copies. When one
-is missing or changed, it stops and names the round whose report is unavailable; do not
-recreate a report from memory. The table's Model column shows attribution from
+report, prompt source, criteria commit, and usage path. The round and the run result name the
+helper's copy of the report in `reports/` beside the ledger; read that copy, and move the
+directory as a whole. When `review publish` stops and names a round whose report is unavailable,
+do not recreate the report from memory. The table's Model column shows attribution from
 native usage: the top-level CLI model, one canonical aggregate model, or a `shared:` list when
 aggregate usage reports several models. The list records model usage without assigning a primary
 model or claiming which model wrote the review. If an aggregate entry lacks a canonical name, the

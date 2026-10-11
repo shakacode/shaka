@@ -16,8 +16,7 @@ module Shaka
 
     module_function
 
-    # The round fields naming the kept copy. Nothing is returned, and no round appended, unless the
-    # copy holds exactly what was read.
+    # The round fields naming the kept copy. A failed write raises, so no round is appended without one.
     def store(ledger_path, report)
       text = File.binread(report)
       digest = Digest::SHA256.hexdigest(text)
@@ -28,13 +27,15 @@ module Shaka
       raise Error, "The review report could not be kept beside the ledger (#{e.message}); no round was added."
     end
 
-    # A ledger this Shaka can read. A newer format is refused, never rewritten as an older one.
+    # A ledger this Shaka can read, with each kept report found where the ledger is now. A newer
+    # format is refused, never rewritten as an older one.
     def ledger!(parsed, path)
       raise Error, "#{path} is not a review ledger." unless parsed.is_a?(Hash) && parsed['rounds'].is_a?(Array)
       raise Error, "#{path} was written by a newer Shaka; update Shaka to use it." if
-        parsed['version'].to_i > VERSION
+        parsed['version'].is_a?(Integer) && parsed['version'] > VERSION
 
-      parsed
+      directory = File.dirname(path)
+      parsed.merge('rounds' => parsed['rounds'].map { |round| relocated(round, directory) })
     end
 
     # The content with every report as a readable absolute path, or an error naming the round whose
@@ -50,13 +51,24 @@ module Shaka
 
     def warning(ledger_path)
       directory = File.dirname(File.expand_path(ledger_path))
-      temporary = File.realpath(Dir.tmpdir)
-      return unless [directory, (File.realpath(directory) if File.directory?(directory))].compact.any? do |candidate|
-        candidate == temporary || candidate.start_with?("#{temporary}/")
-      end
+      return unless temporary?(directory) || (File.directory?(directory) && temporary?(File.realpath(directory)))
 
       'The ledger is in a temporary directory and will be lost with it. Keep each task\'s ledger in its own ' \
         'directory under ~/.local/state/shaka/reviews/.'
+    end
+
+    def temporary?(directory)
+      listed = [Dir.tmpdir, '/tmp', '/var/tmp']
+      roots = listed + listed.select { |root| File.directory?(root) }.map { |root| File.realpath(root) }
+      roots.uniq.any? { |root| directory == root || directory.start_with?("#{root}/") }
+    end
+
+    # A round whose recorded copy is gone or changed names the matching copy beside this ledger.
+    def relocated(round, directory)
+      return round unless round.is_a?(Hash) && round['report'].is_a?(String) && round['report_sha256']
+
+      found = located(round['report'], round['report_sha256'], directory)
+      found ? round.merge('report' => found) : round
     end
 
     def resolved(round, directory, number)
@@ -65,16 +77,18 @@ module Shaka
       expected = round['report_sha256']
       file = located(round['report'], expected, directory)
       unavailable!(number, "#{round['report']} is missing") unless file
-      unavailable!(number, "#{file} changed after it was kept") if
-        expected && Digest::SHA256.file(file).hexdigest != expected
+      unavailable!(number, "#{file} changed after it was kept") if expected && !matches?(file, expected)
 
       round.merge('report' => file)
     end
 
-    # The recorded path, or the copy beside a ledger that has moved since the round was added.
+    # The recorded path or the copy beside the ledger, preferring one that still matches its hash.
     def located(recorded, digest, directory)
-      [recorded, (kept_path(directory, digest) if digest)].compact.find { |file| File.file?(file) }
+      present = [recorded, (kept_path(directory, digest) if digest)].compact.select { |file| File.file?(file) }
+      present.find { |file| digest && matches?(file, digest) } || present.first
     end
+
+    def matches?(file, digest) = Digest::SHA256.file(file).hexdigest == digest
 
     def unavailable!(number, reason)
       raise Error, "Round #{number}'s report is unavailable: #{reason}."
@@ -89,6 +103,6 @@ module Shaka
       File.rename(temporary, target)
     end
 
-    private_class_method :resolved, :located, :unavailable!, :write
+    private_class_method :temporary?, :relocated, :resolved, :located, :matches?, :unavailable!, :write
   end
 end

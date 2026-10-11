@@ -5,9 +5,27 @@ require_relative 'local_review_batch_test'
 require 'digest'
 require 'json'
 
+# Appends one clean round and reads back what the ledger stored.
+module LocalReviewRetentionSteps
+  include LocalReviewLedgerSteps
+
+  private
+
+  def append_round
+    entry = round_entry(EARLIER, 'openai/codex', 0)
+    original = File.read(entry.fetch('report'))
+    ledger.append!(base: BASE, round: entry)
+    original
+  end
+
+  def stored = JSON.parse(File.read(@path))
+
+  def kept_round = stored.fetch('rounds').first
+end
+
 # A ledger keeps its own copy of each report, so the review survives the reviewer's temporary files.
 class LocalReviewRetentionTest < Minitest::Test
-  include LocalReviewLedgerSteps
+  include LocalReviewRetentionSteps
 
   def test_a_round_keeps_a_copy_of_its_report_beside_the_ledger
     original = append_round
@@ -40,6 +58,33 @@ class LocalReviewRetentionTest < Minitest::Test
     FileUtils.rm_rf(moved)
   end
 
+  # Break caught: only publishing found a moved copy, so recording after a move read the old path.
+  def test_a_moved_ledger_still_records_and_continues_the_loop
+    append(EARLIER, 'openai/codex', findings: 1)
+    FileUtils.mv(@directory, moved = "#{@directory}-moved")
+    FileUtils.rm_f(@reports)
+    @path = File.join(moved, 'ledger.json')
+
+    assert_equal [1], record([NIT])
+    ledger.check_next!(base: BASE, head: HEAD, reviewer: 'openai/codex')
+    assert_equal File.join(File.realpath(moved), 'reports'), File.dirname(kept_round.fetch('report'))
+  ensure
+    FileUtils.rm_rf(moved)
+  end
+
+  def test_a_matching_copy_beside_the_ledger_wins_over_a_changed_recorded_file
+    append_round
+    content = stored
+    copied = "#{@directory}-copied"
+    FileUtils.cp_r(@directory, copied)
+    File.write(kept_round.fetch('report'), 'edited')
+
+    report = Shaka::LocalReviewBundle.resolve(content, copied).fetch('rounds').first.fetch('report')
+    assert_equal File.join(copied, 'reports'), File.dirname(report)
+  ensure
+    FileUtils.rm_rf(copied)
+  end
+
   def test_a_report_that_cannot_be_copied_appends_no_round
     entry = round_entry(EARLIER, 'openai/codex', 0)
     FileUtils.rm_f(entry.fetch('report'))
@@ -48,6 +93,11 @@ class LocalReviewRetentionTest < Minitest::Test
     assert_includes error.message, 'could not be kept'
     refute_path_exists @path
   end
+end
+
+# A report that is gone or changed is named, and ledgers from other versions keep their meaning.
+class LocalReviewUnavailableReportTest < Minitest::Test
+  include LocalReviewRetentionSteps
 
   def test_a_missing_bundled_report_is_named_as_unavailable
     append_round
@@ -106,19 +156,7 @@ class LocalReviewRetentionTest < Minitest::Test
 
   def test_only_a_ledger_in_a_temporary_directory_carries_the_warning
     assert_includes Shaka::LocalReviewBundle.warning(@path), 'temporary directory'
+    assert_includes Shaka::LocalReviewBundle.warning('/tmp/shaka-review/ledger.json'), 'temporary directory'
     assert_nil Shaka::LocalReviewBundle.warning(File.join(Dir.home, '.local/state/shaka/reviews/task/ledger.json'))
   end
-
-  private
-
-  def append_round
-    entry = round_entry(EARLIER, 'openai/codex', 0)
-    original = File.read(entry.fetch('report'))
-    ledger.append!(base: BASE, round: entry)
-    original
-  end
-
-  def stored = JSON.parse(File.read(@path))
-
-  def kept_round = stored.fetch('rounds').first
 end
