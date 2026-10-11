@@ -65,14 +65,15 @@ By then the machine had AI Hero's retrospective skill installed under the name
 - The inputs were short summaries written for this replay. A real transcript is
   longer, noisier, and may hold private content, so the privacy rule and the
   session-scope rule were not exercised.
-- The second trial read the companion's instructions and applied its analysis.
-  It did not launch the companion through a host skill mechanism, so a companion
-  that writes files on its own was not exercised.
+- The second trial read the companion's instructions and applied its analysis,
+  as the procedure now requires. A companion whose instructions include writing
+  steps was not exercised.
 - No finding was selected, so delivery of a finding as a Shaka task was not
   exercised.
 - Rules added after each trial's commit were not replayed, including the check
-  that a companion resolves outside the checkout and the rule against running
-  checkout commands, which the first trial's agent did with `bin/check-links`.
+  that a companion resolves outside the checkout and the rule against executing
+  the checkout's scripts, which the first trial's agent did with
+  `bin/check-links`.
 - The skill copy was named in the prompt. A host invoking an installed
   `$shaka retrospective` was not exercised; the installed skill cannot route
   there until this change ships.
