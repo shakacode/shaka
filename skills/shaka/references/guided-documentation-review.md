@@ -22,7 +22,7 @@ missing choice would change the review.
 | --- | --- |
 | Open PR | Its head and comparison base |
 | Merged PR | Its recorded base, head, and merge commit. Review the change it made, not today's default branch. |
-| Path | The checkout's current commit. Name any uncommitted change to that path. |
+| Path | The file as it is in the checkout. Name its commit and whether the file has uncommitted changes. |
 
 When an open PR's head moves during the review, say so and pin again before the next
 topic.
@@ -30,11 +30,13 @@ topic.
 ## Build the map
 
 Read every affected document, and enough implementation and tests to check its
-claims, before presenting anything. Read them at the pinned revision, not from the
-checkout's working tree. Do not run code the PR supplies. Group the
-material into topics by concept, not by file. Use the order the user asks for.
-Otherwise start with the guide a new user reads first, then references and supporting
-pages.
+claims, before presenting anything. For a PR, read them at the pinned revision with
+read-only Git commands; do not switch branches or extract files. Do not run code the
+PR supplies.
+
+Group the material into topics by concept, not by file. Use the order the user asks
+for. Otherwise start with the guide a new user reads first, then references and
+supporting pages.
 
 ## Open with the map and one topic
 
@@ -51,7 +53,8 @@ headings:
 - For a procedural concept, show one realistic minimal prompt: the task and the choices
   the agent cannot infer. Use a concrete user action when a prompt does not fit.
 - Check each substantive claim against the implementation and tests at the pinned
-  revision. Link the lines you relied on with a URL that contains the full commit SHA.
+  revision. Link the lines you relied on with a URL that contains the full commit SHA;
+  for a commit that is not on GitHub, name the path, lines, and commit.
   Label the claim as enforced by code, an agent instruction, proposed, or unverified.
   Say when evidence is missing.
 - When a later change or related proposal matters, verify its own revision and status.

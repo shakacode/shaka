@@ -1,14 +1,14 @@
 # Guided documentation review replay, #485
 
-These are two agent trials of the
+These are three agent trials of the
 [guided documentation review](../../skills/shaka/references/guided-documentation-review.md),
-reached through the skill entry point. Neither is an observed maintainer session, so
-neither shows that a person finds the pacing or the explanations readable.
+reached through the skill entry point. None is an observed maintainer session, so
+none shows that a person finds the pacing or the explanations readable.
 [Issue #485](https://github.com/shakacode/shaka/issues/485) still asks for that session.
 
 ## Setup
 
-Both trials reviewed merged [#420](https://github.com/shakacode/shaka/pull/420):
+The first two trials reviewed merged [#420](https://github.com/shakacode/shaka/pull/420):
 base `4aac52c2`, head `b0dd4697`, merge commit `64cf0604`. By then
 [#425](https://github.com/shakacode/shaka/pull/425) and
 [#426](https://github.com/shakacode/shaka/pull/426) had also merged, and the trial
@@ -16,7 +16,7 @@ clone sat at `4e343485` on `main`.
 
 Each trial was a fresh `claude -p` session in a separate clone whose push URL was
 disabled. The first prompt named a copy of the candidate `SKILL.md` kept outside the
-clone and gave the arguments `Review docs with me:` followed by the #420 URL. Read,
+clone and gave the arguments `Review docs with me:` followed by the target. Read,
 search, edit, and write tools were allowed, with `git` and read-only `gh pr` and
 `gh issue` commands. Commands that write to GitHub were not allowed, so the trials show
 no attempt to publish, not restraint with publication available.
@@ -65,18 +65,37 @@ reported 40 turns and $1.91.
 | Labeled claims? | Partly. One claim was labeled enforced by code. It marked unchanged sections as not re-derived. |
 | Left the clone unchanged? | Yes, by the same two checks. It tried to extract #420's head into a temporary directory outside the clone; no such directory existed afterward. |
 
+## Third trial: a documentation path
+
+Local review of `4cbf9278` found that the path rule pinned a commit while the next rule
+forbade reading the working tree, so an uncommitted draft could not be reviewed. The
+procedure now reviews the file as it is in the checkout. A new session reviewed
+`docs/faq.md` after one invented sentence was appended to it and left uncommitted. The
+CLI reported 28 turns and $0.92.
+
+| Question | Observed |
+| --- | --- |
+| Named the commit and the uncommitted change? | Yes. It named `4e343485` and the one-line addition, and placed that line in its last topic. |
+| Map and at most one topic? | Yes. Seven topics listed, one presented, ending with a question. |
+| Minimal prompt, labels, and commit-pinned evidence? | Yes. It quoted the guide's two-line prompt, labeled one claim enforced by code, and linked two files at the full commit SHA. |
+| Left the clone unchanged? | Yes. `git status --short` showed only the appended sentence. |
+
+The session ended before the topic holding the invented sentence, so its handling of
+that claim was not observed.
+
 ## Limits
 
-- Two sessions on one model and one PR. Another run could differ.
-- No person judged the readability or pacing. Both were assessed by reading transcripts.
-- The second trial ran one turn, so the revised procedure's pause, question, and close
-  behavior rest on the first trial's draft.
+- Three sessions on one model, one PR, and one path. Another run could differ.
+- No person judged the readability or pacing. The author assessed both by reading transcripts.
+- The second and third trials ran one turn each, so the pause, question, and close
+  behavior rest on the first trial's draft. The second trial's procedure is the text at
+  `4cbf9278`; the third trial's is the text committed with this report.
 - The first trial's only minimal prompts came after the user asked for one. The second
   trial mentioned the guide's example prompts without showing one.
 - #426 did not come up. The later-change evidence covers #425 only.
-- A documentation path, an open PR whose head moves, and a request to reorder beyond
-  one skip were not exercised.
+- An open PR whose head moves, an untracked file, and a request to reorder beyond one
+  skip were not exercised.
 - The skill copy was named in the prompt. A host invoking an installed
   `$shaka Review docs with me:` was not exercised; the installed skill cannot route
   there until this change ships.
-- Neither session ran the entry point's `update-check`.
+- No session ran the entry point's `update-check`.
