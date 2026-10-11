@@ -19,7 +19,7 @@ module Shaka
         'overrides.command' => %w[setup test validate validate_local trigger_hosted_ci],
         'overrides.effort' => %w[none minimal low medium high xhigh max ultra],
         'overrides.reviewer' => %w[anthropic/claude openai/codex xai/grok deepseek/openrouter],
-        'opening_check.reviewer' => %w[anthropic/claude openai/codex xai/grok],
+        'opening_check.reviewer' => %w[anthropic/claude openai/codex xai/grok deepseek/openrouter],
         'opening_check.effort' => %w[none minimal low medium high xhigh max ultra]
       }.freeze
       BOOLEANS = %w[wip.include_locations opening_check.enabled opening_check.external_enabled
@@ -91,7 +91,14 @@ module Shaka
         return 'UNKNOWN' if value.nil? || value == 'UNKNOWN'
         return 'REDACTED' if value == 'REDACTED' || REDACTED.include?(field)
 
+        value = canonical_value(field, value)
         VALIDATORS[field]&.call(value) ? value : 'REDACTED'
+      end
+
+      def canonical_value(field, value)
+        return value unless value.is_a?(String) && field.end_with?('.reviewer')
+
+        value.split('/', -1).map { |part| part.strip.downcase }.join('/')
       end
     end
   end

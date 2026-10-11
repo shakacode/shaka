@@ -3,6 +3,7 @@
 # Validates the optional opening-check settings in the repository contract.
 
 require_relative 'validation'
+require_relative '../local_review/openrouter'
 
 module Shaka
   class RepositoryConfig
@@ -28,6 +29,7 @@ module Shaka
         validate_reviewer
         validate_model
         ReviewSchema.effort_level!(@opening['effort'], "#{@label}.effort") if @opening.key?('effort')
+        validate_provider_options
         return unless @opening.key?('prompt_file')
 
         prompt_path!(@opening['prompt_file'], "#{@label}.prompt_file")
@@ -50,8 +52,8 @@ module Shaka
       def validate_reviewer
         return unless @opening.key?('reviewer')
 
-        identity = ReviewerSelection.parse(@opening['reviewer']).values.map(&:downcase).join('/')
-        return if ReviewerSelection::SUPPORTED_REVIEWERS.include?(identity)
+        @reviewer = ReviewerSelection.parse(@opening['reviewer']).values.map(&:downcase).join('/')
+        return if ReviewerSelection::SUPPORTED_REVIEWERS.include?(@reviewer)
 
         raise Error, "#{@label}.reviewer must be a supported provider/family"
       end
@@ -62,6 +64,17 @@ module Shaka
         raise Error, "#{@label}.model requires #{@label}.reviewer" unless @opening.key?('reviewer')
 
         ReviewSchema.model_name!(@opening['model'], "#{@label}.model")
+      end
+
+      def validate_provider_options
+        if @reviewer == 'xai/grok' && !@opening.key?('model')
+          raise Error, "#{@label}.model is required for xai/grok; its CLI has no default model"
+        end
+        return unless @reviewer == 'deepseek/openrouter'
+
+        OpenrouterReview.validate!(model: @opening['model'], effort: @opening['effort'])
+      rescue Error => e
+        raise Error, "#{@label}: #{e.message}"
       end
     end
   end

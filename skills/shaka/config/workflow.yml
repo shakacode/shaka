@@ -475,8 +475,9 @@ phases:
         selection and pass `--opening-reviewer`. Explicit task choices use that flag plus
         optional `--opening-model` and `--opening-effort`; changing provider drops an inherited
         model and returns effort to low unless the task supplied replacements.
-        Without an opening model, use the selected CLI's default; without an opening effort,
-        use low. Model and effort stay independent of code-review settings.
+        Codex and Claude use CLI defaults without an opening model; Grok and OpenRouter require
+        an explicit model. Without an opening effort, use low. Model and effort stay independent
+        of code-review settings.
         The legacy `opening_check.external_enabled: false` keeps the check in the current model.
         A `host_check` or `not_checked` result carries the prompt for that fallback. Preserve a
         configured model when its CLI fails; report the reason and apply the returned prompt.

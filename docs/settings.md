@@ -512,7 +512,7 @@ its own model and effort choices. It does not copy those from code review.
 | --- | --- |
 | `enabled` | `true`. Set `false` to turn the opening check off. |
 | `reviewer` | The agent chooses from your local AI code reviewers. An explicit `provider/family`, such as `openai/codex`, selects the opening reviewer independently. |
-| `model` | The selected CLI's default model. To name a model, also set `reviewer` so Shaka knows which provider should run it. |
+| `model` | The selected CLI's default model for Codex or Claude. Grok requires a model; OpenRouter requires `deepseek/deepseek-v4.1-flash`. To name a model, also set `reviewer`. |
 | `effort` | `low`. Use a thinking level supported by the selected provider. |
 | `prompt_file` | Shaka's default opening instructions. |
 
@@ -521,6 +521,11 @@ built-in default model. Shaka runs Codex with personal configuration disabled.
 Adding `model: gpt-6.1-sol` pins the opening check to that model. Omit the model
 to follow CLI defaults, or pin it for predictable results and cost. Shaka does
 not currently load shared settings from another GitHub repository.
+
+For `reviewer: deepseek/openrouter`, use `model: deepseek/deepseek-v4.1-flash`
+and `effort: low`, `high`, or `max`. Shaka checks these fixed adapter choices
+when it loads the settings. Grok also needs an explicit model because its CLI
+has no default.
 
 The top-level `opening_check` section remains supported for existing setups.
 Use one location for these settings; Shaka rejects a configuration that supplies

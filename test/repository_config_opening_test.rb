@@ -49,6 +49,14 @@ class RepositoryConfigOpeningTest < Minitest::Test
     end
   end
 
+  def test_non_string_reviewer_choices_are_configuration_errors
+    [5, %w[a b]].each do |reviewer|
+      with_repository('opening_check' => { 'reviewer' => reviewer }) do |root|
+        assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
+      end
+    end
+  end
+
   def test_rejects_a_missing_local_opening_prompt
     with_repository('opening_check' => { 'prompt_file' => '.agents/missing.md' }) do |root|
       error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
