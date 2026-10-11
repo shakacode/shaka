@@ -70,8 +70,8 @@ By then the machine had AI Hero's retrospective skill installed under the name
   that writes files on its own was not exercised.
 - No finding was selected, so delivery of a finding as a Shaka task was not
   exercised.
-- Rules added after each trial's commit were not replayed, including the limit
-  to companions installed outside the checkout.
+- Rules added after each trial's commit were not replayed, including the check
+  that a companion resolves outside the checkout.
 - The skill copy was named in the prompt. A host invoking an installed
   `$shaka retrospective` was not exercised; the installed skill cannot route
   there until this change ships.
