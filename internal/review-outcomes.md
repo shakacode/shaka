@@ -51,16 +51,19 @@ fields.
 
 ### 1. Keep the ledger and its reports in a durable place
 
-`review run --ledger auto` resolves to
-`~/.local/state/shaka/reviews/OWNER/REPO/BRANCH/ledger.json` and reports the path
-in its result. An explicit path keeps working. A branch name can be reused after
-a merge, so `auto` refuses an existing ledger whose last reviewed commit is not an
-ancestor of the new head. The refusal names the two ways forward: continue that
-ledger explicitly after a rebase, or start a new one, which moves the old
-directory aside under its last reviewed commit. When a round completes, the helper
-copies its report to `reports/SHA256.md` beside the ledger before appending the
-round, and the round records that relative path and hash. A failed copy appends
-no round.
+The caller keeps choosing the ledger path, one directory per task. The guide's
+example changes from `mktemp -d` to a directory under
+`~/.local/state/shaka/reviews/`, named for the task when the loop starts, such as
+`OWNER-REPO-395-a1b2`. `review run` reports a warning in its result when the
+ledger sits under the system temporary directory. When a round completes, the
+helper copies its report to `reports/SHA256.md` beside the ledger before
+appending the round, and the round records that relative path and hash. A failed
+copy appends no round.
+
+The helper does not pick the path. A path derived from the branch name would hand
+a later task the ledger of an earlier one that reused the name, and commit
+ancestry cannot tell the two apart after a merge. A pull request number would
+separate them, but the loop starts before the pull request exists.
 
 Publication and export read the bundled copy. A missing or altered report is
 reported by name as unavailable; a hash cannot restore it, and nothing guesses
@@ -70,6 +73,10 @@ or collects it in the background; the user deletes it deliberately.
 Not proposed: bundling Git objects for commits that were never pushed. The
 comment already marks such a commit "not on GitHub", and that is honest enough
 until a real reassessment needs the missing code.
+
+A round without a hash is unbundled: an unversioned ledger has only such rounds,
+and a helper released before this work can still append one. Readers report that
+round's report as available only while its original path still holds it.
 
 ### 2. Say who triaged, and stop overwriting an earlier triage
 
@@ -120,8 +127,8 @@ fields in the table. Every other field may be absent, and an absent judgment
 means unknown, never positive or negative. `recommendation` narrows the entry to
 one reviewer's remedy when two reviewers agreed on the problem and proposed
 different changes. The reviewed commit, the reviewer, and that reviewer's own
-finding number already identify one remedy in one report, so no new identifier
-is introduced. The commit matters: the same reviewer can report the same finding
+finding number already identify one remedy in one report, because the ledger
+allows each reviewer one report per commit. No new identifier is introduced. The commit matters: the same reviewer can report the same finding
 under the same number on a later commit with a different remedy.
 
 Rules the helper would enforce:
@@ -131,9 +138,13 @@ Rules the helper would enforce:
 - Repeating an identical entry is a no-op. A different entry reusing an `id` is refused.
 - `finding`, `recommendation`, and `supersedes` must name records in this ledger.
 - The helper stamps `recorded_at`. `observed_at` is the caller's and may be earlier.
-- Two entries from different people that disagree both stay. The helper picks no
-  winner; the current view shows the disagreement as needing a decision until one
+- Two entries conflict when neither is superseded, both name the same finding
+  and the same recommendation or none, and they give different values for the
+  same field. Who wrote them does not matter. Both stay, the helper picks no
+  winner, and the current view shows the finding as needing a decision until one
   entry lists both in `supersedes`.
+- `evidence` holds `https` links and full commit SHAs only. `rationale` is one
+  line of untrusted text, rendered through the escaping that finding notes use.
 
 The helper cannot verify who is speaking. `by` is the recording agent's
 transcription, as the `accepted` disposition's `decision` field is today.
@@ -231,8 +242,8 @@ reward, training upload, or provider integration is part of this work.
 
 ## Delivery
 
-1. **Retention.** The durable location, bundled reports, and unavailable-report
-   reporting. Useful alone, and it fixes an observed loss.
+1. **Retention.** The durable-location guidance and warning, bundled reports, and
+   unavailable-report reporting. Useful alone, and it fixes an observed loss.
 2. **Assessments.** The `superseded` list, `review assess`, the comment change,
    compatibility, and chains S1 through S6 as tests.
 3. **Export.** The deterministic document and the same chains as export fixtures.
@@ -243,8 +254,9 @@ reward, training upload, or provider integration is part of this work.
 
 1. **Typed judgments or free text?** Recommended: typed, as proposed. The middle
    option above is the fallback if the validation cost looks too high.
-2. **Where do ledgers live?** Recommended: `~/.local/state/shaka/reviews/`, chosen
-   by `--ledger auto`. The alternative is to keep caller-chosen paths and only
-   change the guide's `mktemp` example.
+2. **Who chooses where a ledger lives?** Recommended: the caller, guided to a
+   per-task directory under `~/.local/state/shaka/reviews/`, with a warning for a
+   temporary path. The alternative is a helper-chosen path keyed by pull request
+   number, which needs a way to adopt a ledger started before the pull request.
 3. **Does retention ship first?** Recommended: yes, as its own PR, because its
    value does not depend on the other two decisions.
