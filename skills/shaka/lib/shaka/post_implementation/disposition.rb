@@ -48,7 +48,7 @@ module Shaka
       @summary = disposition.fetch('reason')
       verification = report.fetch('summary', report.fetch('reasons').first)
       ["Recommended next action: **#{disposition.fetch('recommendation')}**", @summary,
-       "**Action (task owner):** #{disposition.fetch('next_action')}",
+       "**Next action (task owner):** #{disposition.fetch('next_action')}",
        "Evaluation: **#{report.fetch('conclusion')}**", verification,
        evidence_lines(report), supporting_analysis(report, verification)].join("\n\n")
     end

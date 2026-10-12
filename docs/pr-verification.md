@@ -163,8 +163,9 @@ and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
 The PR description shows the current checkpoint status and **Recommended next action**,
-with the commit they apply to and a link to the full report. Keep consequential decisions,
-questions or friction, and critical changes concise; put supporting evidence below.
+with the commit they apply to and a link to the full report. Your agent summarizes
+consequential decisions, questions or friction, and critical changes in a few lines.
+Supporting evidence appears below.
 The report keeps the **Evaluation** within the checkpoint. A recommendation becomes a
 **Recorded decision** after the owner accepts it or acts under existing authority.
 Auto applies previously granted authority; a consequential unresolved choice still needs direction.

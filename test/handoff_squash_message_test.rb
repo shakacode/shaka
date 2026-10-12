@@ -116,6 +116,12 @@ class HandoffEvaluationMessageTest < Minitest::Test
     assert_includes result['owed'].join, '`squash-message` for opt-out'
   end
 
+  def test_republished_opt_out_keeps_the_existing_standalone_message
+    body = HandoffSquashMessageTest::Poster.new.render(HEAD)
+    standalone = { 'id' => 1, 'body' => body, 'user' => { 'login' => 'shaka-agent' } }
+    assert_empty awaiting([standalone, checkpoint(state: 'opted_out')])['owed']
+  end
+
   def test_archived_checkpoint_message_does_not_count
     archived = checkpoint
     archived['body'] = archived['body'].sub('Report', 'Superseded — read the current checkpoint: URL')

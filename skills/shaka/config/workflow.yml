@@ -705,7 +705,7 @@ phases:
     title: Finish
     body: |-
       - Before calling implementation merge-ready, perform
-        [checkpoint](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>):
+        [checkpoint evaluation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>):
         Use `post-implementation run` with a public-safe evidence packet and the verified
         default-branch `--ref`, then publish its result on this PR. For a ready result, pass
         `post-implementation publish --squash-message PATH` with the commit title and body
@@ -844,7 +844,7 @@ always: |-
 
   During implementation or review, unexpected breadth, growing abstractions or coupling,
   repeated fixes creating new defects, or non-converging local/CI feedback triggers
-  [checkpoint](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>)
+  [checkpoint evaluation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>)
   before another repair round. Use two repair rounds without convergence as a default signal,
   not a budget that permits known defects or requires waiting through obvious scope drift.
   Record the observed cost and reconsider the approach before continuing; an early review

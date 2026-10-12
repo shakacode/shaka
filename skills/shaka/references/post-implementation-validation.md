@@ -37,9 +37,8 @@ For an authorized opt-out, keep the standalone `squash-message` command for the 
 Repeat publication after any head change; a recommendation supplies no merge consent.
 
 After publication, set description `post_implementation` to the returned PR comment URL
-and supply description `checkpoint` with `head`, `status`, and `next_action`.
-Use the live full head and a concise action naming its owner; Ruby rejects another head.
-Republish the description when status or action changes. It places this summary near the top,
+and supply the description summary using the workflow's publication contract.
+The renderer places its status and recommended next action near the top,
 with the Checkpoint link beside Code Walkthrough, followed by any deployment link. Until publication, it shows
 a named placeholder. This link locates the report; it does not establish readiness.
 

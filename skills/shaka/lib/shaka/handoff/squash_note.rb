@@ -23,15 +23,17 @@ module Shaka
 
       def message_entry(comment)
         body = comment['body'].to_s
-        return [comment['id'], checkpoint_head(body)] if body.match?(PostImplementationHistory::KEY)
+        return checkpoint_entry(comment['id'], body) if body.match?(PostImplementationHistory::KEY)
 
         message_head = SquashComment.head(body)
         [comment['id'], message_head] if message_head
       end
 
-      def checkpoint_head(body)
+      def checkpoint_entry(id, body)
         head, state = body.match(PostImplementationEvidence::ATTESTATION)&.captures
-        head if state == 'ready' && body[MESSAGE_HEAD, 1] == head
+        return if state == 'opted_out'
+
+        [id, (head if state == 'ready' && body[MESSAGE_HEAD, 1] == head)]
       end
 
       def comments
