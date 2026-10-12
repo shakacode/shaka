@@ -52,7 +52,7 @@ sections:
 - **Said** links to the comment. A comment of at most 12 words and 90 characters
   appears in quotation marks, in the person's own words. A longer one is already
   on the PR, so the agent summarizes it in one line, shown without quotation
-  marks. Shaka refuses to publish while a longer comment has no summary.
+  marks. Shaka refuses to publish while a longer comment it shows has no summary.
 - **Response** links the agent post, or the trusted bot's post, that answered it.
 - **Status** is GitHub's resolved state for an inline thread, and the verdict for
   an approval, a request for changes, or a dismissed review. Any other comment

@@ -71,13 +71,13 @@ module Shaka
       @shown = shown
       check(packet, author, @head)
       prefix = "https://github.com/#{pull.dig('base', 'repo', 'full_name')}/pull/#{pull['number']}#"
-      @rows = HumanCommentRows.new(HumanCommentEntries.new(packet), author:, prefix:, summaries:).call
+      @rows, @cells = HumanCommentRows.new(HumanCommentEntries.new(packet), author:, prefix:, summaries:).call(shown)
     end
 
     def blocks
       return [] if @rows.empty?
 
-      lines = @rows.first(@shown).map { |row| "| #{row.cells.join(' | ')} |" }
+      lines = @cells.map { |cells| "| #{cells.join(' | ')} |" }
       body = [counts, [HEADER, *lines].join("\n"), *omitted].join("\n\n")
       ["#{OPEN_MARK}\n## #{HEADING}\n\n#{body}\n\n#{CLOSE_MARK}"]
     end

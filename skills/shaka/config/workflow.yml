@@ -570,7 +570,7 @@ phases:
         configuration sources and exclusion markers.
         Save each `comments --head SHA` result outside the checkout and pass it to the next
         `description` as `--comments PATH`, which renders the Human comments list from it. The list
-        quotes a very short human comment; summarize each longer one in a line under
+        quotes a very short human comment; summarize each longer one it shows in a line under
         `human_comment_summaries`, keyed by its URL, and the helper names any it still needs. A comment
         outside an inline thread shows No reply there until a `reply` lists its URL in `reviews`.
       - Before merge, publish a COMMENT walkthrough covering the purpose, the prior behavior it

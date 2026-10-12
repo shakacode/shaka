@@ -264,6 +264,18 @@ class PublicationHumanCommentSummaryTest < Minitest::Test
                  columns(rendered, 1)
   end
 
+  def test_only_a_row_the_list_shows_needs_its_summary
+    hidden = "#{URL}#issuecomment-2"
+    comments = packet(issue_comments: [issue_comment(1, 'Bob', LONG), issue_comment(2, 'ann', "#{LONG} Second.")])
+    one_row = { 'pr_description.max_human_comments' => 1 }
+
+    both = { ASKED => 'First.', hidden => 'Second.' }
+
+    assert_equal 1, rows(describe(comments, summaries: { ASKED => 'First.' }, settings: one_row)).size
+    assert_equal 1, rows(describe(comments, summaries: both, settings: one_row)).size
+    assert_includes assert_raises(Shaka::Error) { describe(comments, summaries: { ASKED => 'First.' }) }.message, hidden
+  end
+
   def test_summaries_wait_unused_while_no_new_read_is_passed
     refute_includes describe(nil, summaries: { ASKED => 'A summary.' }), 'Human comments'
   end
