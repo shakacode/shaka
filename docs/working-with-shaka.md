@@ -319,7 +319,8 @@ fix costs to maintain. It should change nothing until you pick, for example
 The agent can also measure which steps were slow. Shaka's helper keeps a timing log on
 your machine at `~/.local/state/shaka/calls.jsonl`: one line per helper command with
 its name, start time, duration, and exit status. For example, a line for local
-validation shows how long that run took and whether it passed. The log records no
+validation shows how long that run took and whether it passed. `shaka work` leaves no
+line, because it hands the terminal to your coding agent. The log records no
 arguments, paths, or task text, and Shaka never uploads it. Delete the file whenever
 you like. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to a path to keep the
 log elsewhere.

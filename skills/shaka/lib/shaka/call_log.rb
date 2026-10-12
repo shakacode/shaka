@@ -8,7 +8,8 @@ module Shaka
   # Appends one timing record per helper call to a local file, so a retrospective can
   # measure slow and failing steps. Records name the command, never its arguments, which
   # can hold private task text. Nothing is uploaded, and a failed write never changes
-  # the command's result.
+  # the command's result. The record is written at exit, so a call that replaces this
+  # process, as a successful `shaka work` launch does, leaves none.
   module CallLog
     VARIABLE = 'SHAKA_CALL_LOG'
     # Only these names are recorded, so a mistyped call cannot put an argument in the log.
