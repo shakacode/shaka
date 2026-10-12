@@ -29,6 +29,12 @@ class PublicationSettingsSummaryTest < Minitest::Test
     assert_includes body, "| Review | #{COMMITTED} | anthropic/claude, medium effort |"
   end
 
+  def test_results_that_recorded_the_same_settings_still_get_a_row_each
+    reviews = [snapshot(reviewer: 'openai/codex')] * 2
+    body = settings_block(current: snapshot, validation: [snapshot(command: 'validate')], review: reviews)
+    assert_equal 2, body.scan("| Review | #{COMMITTED} | openai/codex |").size
+  end
+
   def test_a_result_recorded_at_another_settings_revision_shows_that_revision
     earlier = snapshot(ref: 'b' * 40, command: 'validate')
     body = settings_block(current: snapshot, validation: [earlier], review: [snapshot(reviewer: 'openai/codex')])

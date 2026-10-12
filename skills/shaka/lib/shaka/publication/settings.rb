@@ -105,8 +105,9 @@ module Shaka
 
     def operations
       OPERATIONS.flat_map do |kind, title|
-        snapshots = Array(@verdict&.dig('checks', kind)).map { |entry| entry.dig('original', 'public_settings') }
-        snapshots.uniq.map { |snapshot| [title, Evidence::PublicSettings.sanitize(snapshot)] }
+        Array(@verdict&.dig('checks', kind)).map do |entry|
+          [title, Evidence::PublicSettings.sanitize(entry.dig('original', 'public_settings'))]
+        end
       end
     end
 
