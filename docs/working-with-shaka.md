@@ -97,8 +97,8 @@ It pauses after every topic. Ask questions, correct it, or reorder the topics; s
 gaps it verified. It should not edit files, comment on the PR, or file issues; ask
 separately when you want those changes.
 
-For a merged PR, the agent reviews the change that PR made and tells you what later
-PRs changed. To get every finding in one report instead, use
+For a merged PR, the agent reviews the change that PR made and should say when a
+later PR changed what it describes. To get every finding in one report instead, use
 [Review an existing PR](#review-an-existing-pr).
 
 This is guidance the agent follows, not behavior that code enforces.

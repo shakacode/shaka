@@ -98,7 +98,9 @@ from the clone. The CLI reported 37 turns and $1.51.
 | Checked claims at the head? | Yes. Four claims were labeled enforced by code with links at the full head SHA, and one sentence was reported as not covering a case a test asserts. |
 
 It wrote copies of two file versions to its session's temporary directory, outside the
-clone, to compare them.
+clone, to compare them. The rule it ran under said “do not switch branches or extract
+files”, so it did not follow that rule as written. The rule now names what it protects:
+do not switch branches or write to the checkout.
 
 ## Limits
 
@@ -106,8 +108,8 @@ clone, to compare them.
 - No person judged the readability or pacing. The author assessed both by reading transcripts.
 - The later trials ran one turn each, so the pause, question, and close behavior rest
   on the first trial's draft. The second trial's procedure is the text at `4cbf9278`,
-  the third's the text at `9132051e`, and the fourth's the text committed with this
-  report.
+  the third's the text at `9132051e`, and the fourth's the text at `7b41e41a`. No trial
+  ran the final wording of the checkout rule.
 - The first trial's only minimal prompts came after the user asked for one. The second
   trial mentioned the guide's example prompts without showing one.
 - #426 did not come up. The later-change evidence covers #425 only.
