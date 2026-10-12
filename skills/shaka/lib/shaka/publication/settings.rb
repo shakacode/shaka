@@ -4,6 +4,7 @@ require_relative '../evidence/verification'
 require_relative '../evidence/public_settings'
 require_relative 'feature_guard'
 require_relative '../opening_publication'
+require_relative 'settings_table'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -73,65 +74,58 @@ module Shaka
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
            'Private trials default to Ask; explicit user authorization and live required gates govern merging.'
-    COLUMNS = ['Before push: validation', 'Review', 'Current merge input (not evidence)'].freeze
-    FOLDED = { 'UNKNOWN' => 'UNKNOWN in every column',
-               'REDACTED' => 'Never published, so REDACTED in every column' }.freeze
-    VALUES_SUMMARY = 'Setting values at validation, review, and merge'
+    OPERATIONS = { 'validation' => 'Before push: validation', 'review' => 'Review' }.freeze
+    CURRENT = 'Current merge input (not evidence)'
+    # Settings from these sources are not readable in the repository, so the block keeps every value.
+    UNCOMMITTED = %w[private/local preview/local].freeze
 
     def detail
       status = @verdict ? 'Bound to the current candidate commit.' : 'UNKNOWN: rerun missing evidence.'
-      { 'summary' => SUMMARY, 'body' => [status, NOTE, values].join("\n\n") }
+      { 'summary' => SUMMARY, 'body' => [status, NOTE, current_line, *operations_table, *values].join("\n\n") }
     end
 
     private
 
-    # A second disclosure keeps the status and note readable ahead of the long table.
+    def current_line
+      settings = Evidence::PublicSettings.sanitize(@current)
+      version, installation = settings.values_at('installation.version', 'installation.source')
+      shaka = installation == 'UNKNOWN' ? version : "#{version} (installation: #{installation})"
+      "#{CURRENT}: #{source(settings)}; Shaka #{shaka}"
+    end
+
+    # One row per recorded result. Binding refuses a result whose settings differ from the
+    # current ones, so a row needs only what can still vary: its revision and what it ran with.
+    def operations_table
+      rows = operations.map { |title, settings| [title, source(settings), ran_with(settings)] }
+      return [] if rows.empty?
+
+      lines = [['Operation', 'Settings', 'Ran with'], %w[--- --- ---], *rows]
+      [lines.map { |cells| "| #{cells.join(' | ')} |" }.join("\n")]
+    end
+
+    def operations
+      OPERATIONS.flat_map do |kind, title|
+        snapshots = Array(@verdict&.dig('checks', kind)).map { |entry| entry.dig('original', 'public_settings') }
+        snapshots.uniq.map { |snapshot| [title, Evidence::PublicSettings.sanitize(snapshot)] }
+      end
+    end
+
+    def source(settings)
+      kind, revision = settings.values_at('source', 'source.revision')
+      kind == 'UNKNOWN' ? kind : "#{kind} at #{revision}"
+    end
+
+    def ran_with(settings)
+      command, reviewer, effort = settings.values_at('overrides.command', 'overrides.reviewer', 'overrides.effort')
+      parts = [command, reviewer, ("#{effort} effort" unless effort == 'UNKNOWN')].compact - ['UNKNOWN']
+      parts.empty? ? 'UNKNOWN' : parts.join(', ')
+    end
+
     def values
-      recorded, unrecorded = columns.partition { |_title, settings| settings.values.uniq != ['UNKNOWN'] }
-      parts = [*unrecorded_note(unrecorded), *table(recorded)]
-      "<details>\n<summary>#{VALUES_SUMMARY}</summary>\n\n#{parts.join("\n\n")}\n\n</details>"
-    end
+      columns = [*operations, [CURRENT, Evidence::PublicSettings.sanitize(@current)]]
+      return [] unless columns.any? { |_title, settings| UNCOMMITTED.include?(settings['source']) }
 
-    def columns
-      snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]
-      COLUMNS.zip(snapshots.map { |snapshot| Evidence::PublicSettings.sanitize(snapshot) })
-    end
-
-    # A column no snapshot filled is named above the table instead of repeating UNKNOWN down it.
-    def unrecorded_note(columns)
-      titles = columns.map { |title, _settings| "**#{title}**" }.join(', ')
-      columns.empty? ? [] : ["Not shown, because every setting is UNKNOWN there: #{titles}"]
-    end
-
-    def table(columns)
-      return [] if columns.empty?
-
-      rows = rows(columns).group_by { |field, cells| fold(field, cells) }
-      lines = [['Setting', *columns.map(&:first)], ['---'] * (columns.size + 1), *rows.fetch(nil, []).map(&:flatten)]
-      [lines.map { |cells| "| #{cells.join(' | ')} |" }.join("\n"), *folded_notes(rows)]
-    end
-
-    def rows(columns)
-      Evidence::PublicSettings::FIELDS.map { |field| [field, columns.map { |_title, settings| settings[field] }] }
-    end
-
-    def folded_notes(rows)
-      FOLDED.filter_map { |cell, lead| "#{lead}: #{rows[cell].map(&:first).join(', ')}" if rows.key?(cell) }
-    end
-
-    # A row that says the same nothing in every shown column is named on one line instead:
-    # UNKNOWN throughout, or REDACTED throughout for a value the allowlist never publishes.
-    # Any other row stays, so a cell that differs from its neighbours is always visible.
-    def fold(field, cells)
-      return 'UNKNOWN' if cells.all?('UNKNOWN')
-
-      'REDACTED' if Evidence::PublicSettings::REDACTED.include?(field) && cells.all?('REDACTED')
-    end
-
-    def checked_snapshot(kind)
-      entries = @verdict&.dig('checks', kind)
-      snapshots = entries&.map { |entry| entry.dig('original', 'public_settings') }&.uniq
-      snapshots&.size == 1 ? snapshots.first : nil
+      [SettingsTable.disclosure(columns)]
     end
   end
 end

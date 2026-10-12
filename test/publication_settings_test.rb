@@ -12,8 +12,8 @@ class PublicationSettingsTest < Minitest::Test
       review = review_check(root, ref)
       with_results(validation, review) do |options|
         body = prepare(root, ref, options).detail.fetch('body')
-        assert_includes body, '| overrides.command | validate | UNKNOWN | UNKNOWN |'
-        assert_includes body, '| source | trusted/team | trusted/team | trusted/team |'
+        assert_includes body, "| Before push: validation | trusted/team at #{ref} | validate |"
+        assert_includes body, "| Review | trusted/team at #{ref} | openai/codex |"
         refute_includes body, validation.dig('settings', 'digest')
       end
     end
@@ -49,8 +49,8 @@ class PublicationSettingsTest < Minitest::Test
       review = review_check(root, ref).except('public_settings')
       with_results(validation, review) do |options|
         body = prepare(root, ref, options).detail.fetch('body')
-        assert_match(/UNKNOWN.*Before push: validation.*Review/, body)
-        assert_includes body, '| source | trusted/team |'
+        assert_includes body, '| Before push: validation | UNKNOWN | UNKNOWN |'
+        assert_includes body, "Current merge input (not evidence): trusted/team at #{ref}"
       end
     end
   end
@@ -68,14 +68,14 @@ class PublicationSettingsTest < Minitest::Test
   def test_unknown_settings_are_visible_on_unfinished_descriptions
     body = Shaka::PublicationSettings.new.detail.fetch('body')
     assert_includes body, 'UNKNOWN: rerun missing evidence'
-    assert_match(/UNKNOWN.*Before push: validation.*Review.*Current merge input/, body)
+    assert_includes body, 'Current merge input (not evidence): UNKNOWN'
   end
 
   def test_unfinished_team_description_preserves_its_location_choice
     with_checkout do |root, ref|
       settings = prepare(root, ref, {})
       assert_predicate settings, :include_locations?
-      assert_includes settings.detail.fetch('body'), '| wip.include_locations | true |'
+      assert_includes settings.detail.fetch('body'), "Current merge input (not evidence): trusted/team at #{ref}"
     end
   end
 
