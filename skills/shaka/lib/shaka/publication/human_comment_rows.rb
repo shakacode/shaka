@@ -12,21 +12,39 @@ module Shaka
     Row = Struct.new(:reviewer, :open, :unverified, :cells)
     ANCHOR = /\A(?:issuecomment-|discussion_r|pullrequestreview-)\d+\z/
     IDENTITY_LINE = /^🤖 [^\n]*$/
+    # The content key that maps a longer comment's URL to the agent's one-line summary of it.
+    SUMMARIES = 'human_comment_summaries'
 
     # prefix is the pull request's URL up to the comment anchor; every link has to start with it.
-    def initialize(entries, author:, prefix:)
+    def initialize(entries, author:, prefix:, summaries:)
       @entries = entries
       @author = author
       @prefix = prefix
+      @summaries = summaries
+      @summarized = []
     end
 
     # Open comments lead, then those the agent could not read, and a reviewer's lead the author's.
     def call
       rows = @entries.humans.map { |entry| entry.unverified ? unverified(entry) : row(entry) }
+      check_summaries
       rows.each_with_index.sort_by { |row, at| [urgency(row), row.reviewer ? 0 : 1, at] }.map(&:first)
     end
 
     private
+
+    # The summaries have to match the longer comments exactly, so none is missing and none is stale.
+    def check_summaries
+      missing = @summarized - @summaries.keys
+      unused = @summaries.keys - @summarized
+      unless missing.empty?
+        raise Error, "Publication #{SUMMARIES} needs a one-line summary for each longer human comment: " \
+                     "#{missing.join(', ')}."
+      end
+      return if unused.empty?
+
+      raise Error, "Publication #{SUMMARIES} names a comment the list does not summarize: #{unused.join(', ')}."
+    end
 
     def urgency(row)
       return 0 if row.open
@@ -55,16 +73,25 @@ module Shaka
       linkable ? "[#{login}](https://github.com/#{login})" : CommentExcerpt.escape(login)
     end
 
+    # A short comment is repeated whole. A longer one is already on the pull request, so the
+    # agent's summary stands in for it, without quotation marks.
     def said(entry)
-      link(CommentExcerpt.quote(entry.body) || HumanCommentEntries::VERDICTS[entry.state] ||
+      link(CommentExcerpt.whole(entry.body) || summary(entry) || HumanCommentEntries::VERDICTS[entry.state] ||
            'Code or quoted text only', entry.url)
+    end
+
+    def summary(entry)
+      return unless CommentExcerpt.prose?(entry.body)
+
+      @summarized << entry.url
+      CommentExcerpt.escape(@summaries.fetch(entry.url, ''))
     end
 
     def response(entry)
       answer = @entries.answer(entry)
       return '—' unless answer
 
-      link(CommentExcerpt.quote(answer.body.to_s.split(IDENTITY_LINE, 2).last) || 'Reply', answer.url)
+      link(CommentExcerpt.opening(answer.body.to_s.split(IDENTITY_LINE, 2).last) || 'Reply', answer.url)
     end
 
     def link(label, url)

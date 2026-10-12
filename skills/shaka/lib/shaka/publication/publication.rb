@@ -44,8 +44,8 @@ module Shaka
 
     private
 
-    # Only a description lists what people wrote; a walkthrough keeps its own sections.
-    def sections = PublicationSections.render(@content, (HumanComments.render(@content, @pull) if @require_tables))
+    # Only a description is rendered with its pull request, so only a description lists what people wrote.
+    def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))
 
     def checkpoint = PublicationLinks.checkpoint(@content, head: @pull&.dig('head', 'sha'))
 

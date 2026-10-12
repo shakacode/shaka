@@ -40,16 +40,19 @@ sections:
 
 | From | Said | Response | Status |
 | --- | --- | --- | --- |
-| **Reviewer** maria | “This is inconsistent. The recommendation above is…” | — | **Open** |
+| **Reviewer** maria | Finds the tester terms unclear; suggests template notation | — | **Open** |
 | Author sam | “you mean chat, not owner.” | “Changed the guide to use chat throughout…” | Resolved |
 
 - **From** says whether the PR author or someone else wrote the comment. Agents
-  post from a person's account, so the account name cannot tell them apart. A
-  comment counts as an agent's when a bot account posted it, or when it opens
-  with the agent's 🤖 line, a hidden tool marker such as
-  `<!-- shaka:reply:… -->`, or the pointer Shaka leaves on a superseded
-  walkthrough. Any other comment counts as a person's.
-- **Said** quotes the comment's opening words and links to it.
+  post from a person's account, so the account name cannot tell them apart.
+  Every post a person did not write opens with the agent's 🤖 line, so a comment
+  without it counts as a person's. A bot account's post, a post that opens with
+  a hidden tool marker such as `<!-- shaka:reply:… -->`, and a superseded
+  walkthrough under Shaka's pointer also count as an agent's.
+- **Said** links to the comment. A comment of at most 12 words and 90 characters
+  appears in quotation marks, in the person's own words. A longer one is already
+  on the PR, so the agent summarizes it in one line, shown without quotation
+  marks. Shaka refuses to publish while a longer comment has no summary.
 - **Response** links the agent post, or the trusted bot's post, that answered it.
 - **Status** is GitHub's resolved state for an inline thread, and the verdict for
   an approval, a request for changes, or a dismissed review. Any other comment
@@ -59,14 +62,17 @@ Open comments come first, and a reviewer's come before the author's.
 
 On a public repository anyone can comment or submit a review. A comment from an
 account the repository does not trust is listed as **Unverified** and linked
-without a quotation, because the agent does not read it. That account's approval
-or request for changes is not shown, and its comments do not count as open.
+without a quotation or summary, because the agent does not read it. That account's
+approval or request for changes is not shown, and its comments do not count as open.
 
 The list names the commit at which the agent read the comments. A comment added
 later appears the next time the agent reads comments and updates the description.
 If the PR has moved to a newer commit since that read, a note under the list says
 so. On a PR from a fork the list appears only when the agent passes a fresh read.
 Instructions you give in chat are not on GitHub, so they are not in this list.
+
+To leave the list out or change how many rows it shows, see
+[`pr_description.show_human_comments`](settings.md#pr_descriptionshow_human_comments).
 
 ## Revisit a merged change
 

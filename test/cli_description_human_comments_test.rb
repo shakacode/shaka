@@ -18,6 +18,8 @@ class CliDescriptionHumanCommentsTest < Minitest::Test
   HEAD = 'c' * 40
   COMMENT = { 'id' => 1, 'author' => 'bob', 'body' => 'Please split this PR.',
               'url' => 'https://github.com/owner/repo/pull/1#issuecomment-1' }.freeze
+  LONG = COMMENT.merge('body' => 'Please split this pull request into the reader change and the list, ' \
+                                 'so each can be reviewed alone.').freeze
 
   def test_description_publishes_the_human_comments_in_the_file
     Dir.mktmpdir do |dir|
@@ -27,6 +29,26 @@ class CliDescriptionHumanCommentsTest < Minitest::Test
       assert_includes File.read(File.join(dir, 'published.md')),
                       '| **Reviewer** [bob](https://github.com/bob) | [“Please split this PR\\.”]' \
                       '(https://github.com/owner/repo/pull/1#issuecomment-1) | — | **No reply** |'
+    end
+  end
+
+  def test_a_longer_comment_without_the_agent_s_summary_publishes_nothing
+    Dir.mktmpdir do |dir|
+      _output, error, status = run_with_comments(dir, packet(HEAD, LONG))
+
+      refute_predicate status, :success?
+      assert_includes error, "needs a one-line summary for each longer human comment: #{COMMENT['url']}"
+      refute_path_exists File.join(dir, 'published.md')
+    end
+  end
+
+  def test_the_agent_s_summary_in_the_content_file_stands_in_for_a_longer_comment
+    Dir.mktmpdir do |dir|
+      summary = { 'human_comment_summaries' => { COMMENT['url'] => 'Asks to split the PR in two.' } }
+      _output, error, status = run_with_comments(dir, packet(HEAD, LONG), summary)
+
+      assert_predicate status, :success?, error
+      assert_includes File.read(File.join(dir, 'published.md')), "[Asks to split the PR in two\\.](#{COMMENT['url']})"
     end
   end
 
@@ -62,9 +84,9 @@ class CliDescriptionHumanCommentsTest < Minitest::Test
 
   private
 
-  def packet(head)
+  def packet(head, comment = COMMENT)
     { 'visibility' => 'private', 'head' => head, 'review_threads' => [], 'trust_sources' => [],
-      'excluded_interactions' => [], 'issue_comments' => [COMMENT], 'review_summaries' => [],
+      'excluded_interactions' => [], 'issue_comments' => [comment], 'review_summaries' => [],
       'inline_comments' => [] }
   end
 

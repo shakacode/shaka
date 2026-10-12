@@ -6,7 +6,8 @@ require_relative 'managed_region'
 
 module Shaka
   # Lists what people wrote on a pull request ahead of the agent's own sections, so their comments
-  # are not lost among agent posts. Every cell comes from the `shaka comments` result.
+  # are not lost among agent posts. The rows come from the `shaka comments` result; the agent adds
+  # only a one-line summary of each comment too long to repeat.
   class HumanComments
     # `shaka description --comments PATH` puts that result under this content key.
     KEY = 'human_comments'
@@ -15,23 +16,35 @@ module Shaka
     CLOSE_MARK = '<!-- /shaka:human-comments -->'
     BLOCK = /#{Regexp.escape(OPEN_MARK)}.*?#{Regexp.escape(CLOSE_MARK)}/m
     HEADER = "| From | Said | Response | Status |\n| --- | --- | --- | --- |"
-    SHOWN = 20
+    SUMMARIES = HumanCommentRows::SUMMARIES
     # The count line names the commit the comments were read at, so a carried list shows its age.
     STAMP = /· read at `(\h{7})`$/
 
-    def self.render(content, pull)
-      refuse_heading(content['sections'])
-      packet = content[KEY]
-      return carried(pull) if packet.nil?
-      raise Error, 'Human comments need the pull request they were written on.' unless pull
+    # A walkthrough is rendered without its pull request and keeps its own sections. settings
+    # carries the repository's choice to show the list and how many rows it may hold.
+    def self.for(content, pull, settings)
+      return [] unless pull
 
-      new(packet, pull).blocks
+      refuse_heading(content['sections'])
+      return [] unless settings.human_comments?
+
+      packet = content[KEY]
+      packet.nil? ? carried(pull) : new(packet, pull, summaries(content[SUMMARIES]), settings.human_comment_rows).blocks
+    end
+
+    def self.summaries(given)
+      return {} if given.nil?
+      return given.transform_values(&:strip) if given.is_a?(Hash) && given.keys.all?(String) &&
+                                                given.values.all? { |text| CommentExcerpt.summary?(text) }
+
+      raise Error, "Publication #{SUMMARIES} must map each comment URL to one line of at most " \
+                   "#{CommentExcerpt::SUMMARY_WORDS} words."
     end
 
     # Without a new read the published list stays. A fork author can edit the body, so a
     # fork's list is dropped instead, as its provenance history is.
     def self.carried(pull)
-      head = pull&.dig('head', 'repo', 'full_name')
+      head = pull.dig('head', 'repo', 'full_name')
       return [] unless head && head == pull.dig('base', 'repo', 'full_name')
 
       block = Publishing.managed_region(pull['body']).to_s[BLOCK]
@@ -52,18 +65,19 @@ module Shaka
       raise Error, "Publication #{HEADING} is rendered from --comments, not supplied as a section."
     end
 
-    def initialize(packet, pull)
+    def initialize(packet, pull, summaries, shown)
       author = pull.dig('user', 'login')
       @head = pull.dig('head', 'sha')
+      @shown = shown
       check(packet, author, @head)
       prefix = "https://github.com/#{pull.dig('base', 'repo', 'full_name')}/pull/#{pull['number']}#"
-      @rows = HumanCommentRows.new(HumanCommentEntries.new(packet), author:, prefix:).call
+      @rows = HumanCommentRows.new(HumanCommentEntries.new(packet), author:, prefix:, summaries:).call
     end
 
     def blocks
       return [] if @rows.empty?
 
-      lines = @rows.first(SHOWN).map { |row| "| #{row.cells.join(' | ')} |" }
+      lines = @rows.first(@shown).map { |row| "| #{row.cells.join(' | ')} |" }
       body = [counts, [HEADER, *lines].join("\n"), *omitted].join("\n\n")
       ["#{OPEN_MARK}\n## #{HEADING}\n\n#{body}\n\n#{CLOSE_MARK}"]
     end
@@ -97,7 +111,7 @@ module Shaka
     end
 
     def omitted
-      more = @rows.size - SHOWN
+      more = @rows.size - @shown
       more.positive? ? ["_#{more} more not shown; open comments come first._"] : []
     end
   end

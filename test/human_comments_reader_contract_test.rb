@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'comments_fixture'
-require 'shaka/publication/human_comments'
+require 'shaka/publication/publication'
 
 # The list is built from `shaka comments` output, so this reads GitHub-shaped comments through
 # the comment reader itself instead of a packet written by hand.
@@ -15,7 +15,7 @@ class HumanCommentsReaderContractTest < Minitest::Test
   ANSWER = "🤖 Codex · OpenAI · gpt-test · high\n\nFixed it."
 
   def test_the_list_reads_what_the_comment_reader_prints_for_a_public_pull_request
-    rendered = Shaka::HumanComments.render({ 'human_comments' => read_comments }, PULL).first
+    rendered = Shaka::HumanComments.for({ 'human_comments' => read_comments }, PULL, Shaka::PublicationSettings.new).first
 
     assert_equal ['| Author [maintainer](https://github.com/maintainer) | ' \
                   "[“Is this a bug\\?”](#{URL}#discussion_r6) | " \

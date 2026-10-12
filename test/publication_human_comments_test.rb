@@ -38,15 +38,19 @@ module HumanCommentsFixture
   end
 
   # comments is what `shaka description --comments PATH` read from the file, or nil without the flag.
-  def describe(comments, pull: self.pull, **changes)
+  # summaries is the agent's one line for each longer comment, keyed by the comment's URL.
+  def describe(comments, pull: self.pull, summaries: nil, settings: nil, **changes)
     content = { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
                 'steps_besides_merging' => 'none', 'table' => PublicationRegressionTest::TABLE,
                 'provenance' => PUBLIC_PROVENANCE, 'usage' => PublicationRegressionTest::USAGE_OBJECT,
                 'details' => [] }.merge(changes)
     content['human_comments'] = comments if comments
-    Shaka::Publication.description(content, nil, pull)
+    content['human_comment_summaries'] = summaries if summaries
+    Shaka::Publication.description(content, nil, pull, settings && Shaka::PublicationSettings.new(current: settings))
   end
+
+  LONG = 'It is a little confusing what internal testers are versus external testers, and listings feel abstract.'
 
   def rows(rendered) = rendered.lines.map(&:chomp).grep(/\A\| (?:\*\*Reviewer\*\*|Author|Unverified) /)
 
@@ -212,6 +216,89 @@ class PublicationHumanCommentsTest < Minitest::Test
   end
 end
 
+# A comment that is already on the pull request is not repeated unless it is very short; the
+# agent summarizes a longer one in a line, and the list links to it.
+class PublicationHumanCommentSummaryTest < Minitest::Test
+  include HumanCommentsFixture
+
+  ASKED = "#{URL}#issuecomment-1".freeze
+
+  def test_a_longer_comment_shows_the_agent_s_summary_and_a_short_one_its_own_words
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'Bob', LONG), issue_comment(2, 'Bob', 'huh?')]),
+                        summaries: { ASKED => 'Finds the tester terms unclear; wants template notation.' })
+
+    assert_equal [["[Finds the tester terms unclear\\; wants template notation\\.](#{ASKED})"],
+                  ["[“huh\\?”](#{URL}#issuecomment-2)"]], columns(rendered, 1)
+    refute_includes rendered, 'a little confusing'
+  end
+
+  def test_a_longer_comment_without_a_summary_is_refused_and_named
+    error = assert_raises(Shaka::Error) { describe(packet(issue_comments: [issue_comment(1, 'Bob', LONG)])) }
+
+    assert_includes error.message, "needs a one-line summary for each longer human comment: #{ASKED}"
+  end
+
+  def test_a_summary_for_a_comment_the_list_quotes_or_does_not_hold_is_refused
+    short = packet(issue_comments: [issue_comment(1, 'Bob', 'huh?'), issue_comment(2, 'ann', REPLY)])
+
+    [ASKED, "#{URL}#issuecomment-2", "#{URL}#issuecomment-9"].each do |url|
+      error = assert_raises(Shaka::Error) { describe(short, summaries: { url => 'A summary.' }) }
+      assert_includes error.message, "names a comment the list does not summarize: #{url}"
+    end
+  end
+
+  def test_a_summary_is_one_line_of_at_most_thirty_words
+    long = packet(issue_comments: [issue_comment(1, 'Bob', LONG)])
+
+    ["Two\nlines.", ' ', (['word'] * 31).join(' '), 7].each do |summary|
+      error = assert_raises(Shaka::Error) { describe(long, summaries: { ASKED => summary }) }
+      assert_includes error.message, 'one line of at most 30 words'
+    end
+  end
+
+  def test_markdown_in_a_summary_stays_inside_its_cell
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'Bob', LONG)]),
+                        summaries: { ASKED => 'Wants a | b and [x](https://evil.example) gone' })
+
+    assert_equal [["[Wants a \\| b and \\[x\\]\\(https\\:\\/\\/evil\\.example\\) gone](#{ASKED})"]],
+                 columns(rendered, 1)
+  end
+
+  def test_summaries_wait_unused_while_no_new_read_is_passed
+    refute_includes describe(nil, summaries: { ASKED => 'A summary.' }), 'Human comments'
+  end
+end
+
+# A repository can turn the list off or change how many rows it shows.
+class PublicationHumanCommentSettingsTest < Minitest::Test
+  include HumanCommentsFixture
+
+  def test_a_repository_that_turned_the_list_off_gets_none_and_keeps_none
+    off = { 'pr_description.show_human_comments' => false }
+    comments = packet(issue_comments: [issue_comment(1, 'ann', 'A note.')])
+
+    refute_includes describe(comments, settings: off), 'Human comments'
+    refute_includes describe(nil, pull: pull(body: published(issue_comment(2, 'ann', 'A note.'))), settings: off),
+                    'Human comments'
+  end
+
+  def test_an_unread_setting_leaves_the_list_on
+    comments = packet(issue_comments: [issue_comment(1, 'ann', 'A note.')])
+
+    [{}, { 'pr_description.show_human_comments' => 'UNKNOWN' }].each do |current|
+      assert_equal 1, rows(describe(comments, settings: current)).size
+    end
+  end
+
+  def test_the_row_cap_follows_the_repository_s_setting
+    comments = packet(issue_comments: (1..5).map { |id| issue_comment(id, 'ann', "Note #{id}.") })
+    rendered = describe(comments, settings: { 'pr_description.max_human_comments' => 2 })
+
+    assert_equal 2, rows(rendered).size
+    assert_includes rendered, '_3 more not shown; open comments come first._'
+  end
+end
+
 # On a public repository anyone can comment or submit a review, so the reader withholds what
 # an unverified account wrote and the list gives that account no standing.
 class PublicationUnverifiedCommentsTest < Minitest::Test
@@ -260,12 +347,18 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     refute_includes row, 'evil.example'
   end
 
-  def test_a_long_comment_is_cut_and_one_without_prose_is_named
-    long = (1..30).map { |number| "word#{number}" }.join(' ')
-    quoted = "> an earlier point\n\n```suggestion\nfix\n```\n"
-    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', long), issue_comment(2, 'ann', quoted)]))
+  def test_a_long_agent_reply_shows_only_its_opening_words
+    words = (1..20).map { |number| "word#{number}" }
+    rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'),
+                                                 inline(2, 'ann', "#{IDENTITY}\n\n#{words.join(' ')}")]))
 
-    assert_includes rendered, "[“#{long.split.first(12).join(' ')}…”](#{URL}#issuecomment-1)"
+    assert_equal [["[“#{words.first(12).join(' ')}…”](#{URL}#discussion_r2)"]], columns(rendered, 2)
+  end
+
+  def test_a_comment_without_prose_is_named
+    quoted = "> an earlier point\n\n```suggestion\nfix\n```\n"
+    rendered = describe(packet(issue_comments: [issue_comment(2, 'ann', quoted)]))
+
     assert_includes rendered, "[Code or quoted text only](#{URL}#issuecomment-2)"
   end
 
