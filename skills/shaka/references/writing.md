@@ -42,22 +42,24 @@ body or invoke a separate rewriting skill for Shaka's publication step.
 
 Use the renderer's existing order and headings. Give each part one job:
 
-1. **PR disposition:** The owner recommends what happens to this PR and gives the
-   main reason. A recommendation is not merge permission.
+1. **Recommendation:** The owner recommends what happens to this PR and gives
+   the main reason. A recommendation is not merge permission.
 2. **Next action:** The owner names who does what next, rather than restating the
    recommendation.
-3. **Verification conclusion:** The reviewer states what the evidence establishes
-   and what remains unverified, not the owner's merge decision.
-4. **Unresolved concerns:** Name specific remaining problems here, rather than
-   listing them again in the summary or supporting analysis.
-5. **Supporting analysis:** Give supporting evidence, costs, and tradeoffs. Keep
-   them collapsed; do not paraphrase the concerns or visible summary.
+3. **Verification conclusion:** State what the evidence establishes and what
+   remains unverified. Leave the conclusion label to the renderer; do not repeat
+   the owner's reason or next action.
+4. **Unresolved concerns:** Give each problem's location, specific failure, and
+   consequence. Put remedies in the alternative and supporting evidence in the
+   analysis; do not repeat problems there.
+5. **Supporting analysis:** Give evidence, costs, and tradeoffs not already covered
+   above. Keep them collapsed.
 
 Write content for the existing fields, not extra headings. Include only information
 that changes the reader's understanding. Use the example below for content, not
 exact wording or claims.
 
-> **Recommendation: {PR disposition}**
+> **Recommendation: {What should happen to this PR}**
 >
 > {Affected users} can now {specific behavior}. {Main reason for the recommendation}.
 >

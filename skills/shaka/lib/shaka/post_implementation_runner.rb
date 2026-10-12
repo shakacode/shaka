@@ -87,11 +87,11 @@ module Shaka
 
     def report_contract
       "Return ONLY a JSON object: head (#{head.to_json}), conclusion (Proceed, Simplify/reframe, or " \
-        'Do not merge), reasons (non-empty string list), concerns (string list; empty only if none), ' \
-        'alternative (non-empty string), summary (one or two sentences stating what the evidence establishes and ' \
-        'what remains unverified), next_action (non-empty string: the smallest useful action for the task owner). ' \
-        'For a blocking conclusion, next_action states whether to revise this PR or bring a close/replace ' \
-        'decision to the maintainer. ' \
+        'Do not merge), reasons (non-empty string list of evidence, costs, or tradeoffs), ' \
+        'concerns (string list of problem locations, failures, and consequences; empty only if none), ' \
+        'alternative (non-empty string; remedies go here), summary (one or two sentences of evidence and gaps; ' \
+        'omit conclusion label and owner context), next_action (non-empty string: the smallest useful owner action). ' \
+        'For blocking conclusions, next_action names a revision to this PR or a maintainer close/replace decision. ' \
         'Summary and next_action must respect blockers. ' \
         'Concerns lists only substantive unresolved product concerns, not technical ' \
         'nits or missing incident frequency alone. Return raw JSON without Markdown fences or surrounding prose.'

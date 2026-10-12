@@ -129,7 +129,7 @@ to `post-implementation publish`, using the same verified head:
 This is a field added to the complete runner result, not a replacement result file.
 Choose one fixed value; Ruby parses these values, so they are not configurable:
 
-| Disposition | Meaning and next step |
+| Recommendation | Meaning and next step |
 | --- | --- |
 | Merge | The result is appropriate to ship. Complete required checks, reviews, and the task's Ask or Auto path. |
 | Revise before merge | The direction is sound. Name the specific changes, make them, then repeat affected verification and review. |
