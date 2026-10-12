@@ -14,23 +14,19 @@
 - Write content for the existing fields, not extra headings.
 - Use this example for content, not exact wording or claims:
 
-  > ## Recommended next action
-  >
-  > **{What should happen to this PR}**
+  > ### Recommended next action: {What should happen to this PR}
   >
   > {Affected users} can now {specific behavior}. {Main reason for the recommendation}.
   >
-  > ## Next action
+  > ### Next action
   >
   > {Action and applicable dependencies, checks, or approvals}.
   >
-  > ## Evaluation
-  >
-  > **{Reviewer conclusion}**
+  > ### Evaluation: {Reviewer conclusion}
   >
   > {What the evidence establishes}. {What remains unverified}.
   >
-  > ## Unresolved concerns
+  > ### Unresolved concerns
   >
   > - {Location, specific problem, and consequence}.
 

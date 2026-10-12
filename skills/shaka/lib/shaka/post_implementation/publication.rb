@@ -70,15 +70,15 @@ module Shaka
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = report.fetch('summary', report.fetch('reasons').first)
-      ["## Recommended next action\n\n**#{action}**", summary,
-       "## Next action\n\n#{owner_action(report, next_action)}",
+      ["### Recommended next action: #{action}", summary,
+       "### Next action\n\n#{owner_action(report, next_action)}",
        concern_section(report), "Head: `#{@head}`",
        supporting_analysis(report, summary)].join("\n\n")
     end
 
     def concern_section(report)
       items = report.fetch('concerns')
-      "## Unresolved concerns\n\n#{items.empty? ? 'None.' : items.map { |item| "- #{item}" }.join("\n")}"
+      "### Unresolved concerns\n\n#{items.empty? ? 'None.' : items.map { |item| "- #{item}" }.join("\n")}"
     end
 
     def supporting_analysis(report, summary)
@@ -113,8 +113,8 @@ module Shaka
                               ['Review not completed; readiness remains blocked.',
                                'Resolve the execution failure and rerun the checkpoint.']
                             end
-      "## Recommended next action\n\n**#{action}**\n\n#{@result.fetch('reason')}\n\n" \
-        "## Next action\n\n#{next_action}\n\nHead: `#{@head}`\n\n" \
+      "### Recommended next action: #{action}\n\n#{@result.fetch('reason')}\n\n" \
+        "### Next action\n\n#{next_action}\n\nHead: `#{@head}`\n\n" \
         "<details>\n<summary>Execution details</summary>\n\n#{execution_evidence}\n\n#{usage_text}\n\n</details>"
     end
 
