@@ -786,9 +786,9 @@ pr_description:
   max_human_comments: 40
 ```
 
-How much of a comment the list repeats is not a setting. A comment longer than a
-dozen words is summarized, because the list repeats only a little of what an
-outside account wrote.
+How much of a comment the list repeats is not a setting. The list quotes a comment
+only when it has at most 12 words and 90 characters. A longer one is already on
+the PR, so the list shows the agent's one-line summary and links to it.
 
 ## `wip.include_locations`
 
