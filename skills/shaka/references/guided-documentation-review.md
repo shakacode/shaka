@@ -50,8 +50,9 @@ headings:
 
 - Say what the reader gains and can do. Explain an unfamiliar term where it first
   appears.
-- For a procedural concept, show one realistic minimal prompt: the task and the choices
-  the agent cannot infer. Use a concrete user action when a prompt does not fit.
+- For a procedural concept, show one realistic minimal prompt in the response, even
+  when the document has its own: the task and the choices the agent cannot infer. Use
+  a concrete user action when a prompt does not fit.
 - Check each substantive claim against the implementation and tests at the pinned
   revision. Link the lines you relied on with a URL that contains the full commit SHA;
   for a commit that is not on GitHub, name the path, lines, and commit.

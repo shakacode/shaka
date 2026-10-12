@@ -1,6 +1,6 @@
 # Guided documentation review replay, #485
 
-These are four agent trials of the
+These are five agent trials of the
 [guided documentation review](../../skills/shaka/references/guided-documentation-review.md),
 reached through the skill entry point. None is an observed maintainer session, so
 none shows that a person finds the pacing or the explanations readable.
@@ -102,17 +102,32 @@ clone, to compare them. The rule it ran under said “do not switch branches or 
 files”, so it did not follow that rule as written. The rule now names what it protects:
 do not switch branches or write to the checkout.
 
+## Fifth trial: prompts shown without asking
+
+The post-implementation checkpoint for `5adc6491` noted that no trial had shown a
+minimal prompt before the user asked for one. The procedure now says to show the prompt
+in the response even when the document has its own. A new session reviewed #420 again,
+with “Start with the new settings guide.” added to the request, then took a question
+and a `continue`. The CLI reported 46 turns and $2.02.
+
+| Prompt | Observed |
+| --- | --- |
+| The review request | Pinned #420's three commits and said before the first topic that #425, #426, and #484 had since rewritten the two files. Listed four topics in the requested order and presented one. Showed a one-line prompt for an individual trial without being asked, and linked four claims at the full head SHA. |
+| “Why does it say Ask is the default?” | Answered from three code locations at the pinned head, said the line predates #420, and stayed on topic 1. |
+| `continue` | Presented topic 2 only, with another unprompted minimal prompt. Reported the same link mismatch as the first trial. |
+
+The clone was unchanged after each turn, by the same two checks. This session ran the
+final procedure text.
+
 ## Limits
 
-- Four sessions on one model, two PRs, and one path. Another run could differ.
+- Five sessions on one model, two PRs, and one path. Another run could differ.
 - No person judged the readability or pacing. The author assessed both by reading transcripts.
-- The later trials ran one turn each, so the pause, question, and close behavior rest
-  on the first trial's draft. The second trial's procedure is the text at `4cbf9278`,
-  the third's the text at `9132051e`, and the fourth's the text at `7b41e41a`. No trial
-  ran the final wording of the checkout rule.
-- The first trial's only minimal prompts came after the user asked for one. The second
-  trial mentioned the guide's example prompts without showing one.
-- #426 did not come up. The later-change evidence covers #425 only.
+- The second, third, and fourth trials ran one turn each, on the procedure text at
+  `4cbf9278`, `9132051e`, and `7b41e41a`. Skip, wording carried between topics, and
+  close behavior rest on the first trial's draft.
+- The fifth trial named #426 as a later change but reached no topic that depends on it.
+  The detailed later-change comparison covers #425 only.
 - An open PR whose head moves, a PR from a fork, an untracked file, and a request to reorder beyond one
   skip were not exercised.
 - The skill copy was named in the prompt. A host invoking an installed
