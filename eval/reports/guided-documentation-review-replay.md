@@ -1,6 +1,6 @@
 # Guided documentation review replay, #485
 
-These are three agent trials of the
+These are four agent trials of the
 [guided documentation review](../../skills/shaka/references/guided-documentation-review.md),
 reached through the skill entry point. None is an observed maintainer session, so
 none shows that a person finds the pacing or the explanations readable.
@@ -83,17 +83,35 @@ CLI reported 28 turns and $0.92.
 The session ended before the topic holding the invented sentence, so its handling of
 that claim was not observed.
 
+## Fourth trial: an open PR missing from the clone
+
+Local review of `9132051e` found no rule for a pinned commit the clone lacks. The
+procedure now says to fetch it without checking it out. A new session reviewed open
+[#489](https://github.com/shakacode/shaka/pull/489), whose head `d29471cf` was absent
+from the clone. The CLI reported 37 turns and $1.51.
+
+| Question | Observed |
+| --- | --- |
+| Reached the head without changing the checkout? | Yes. It ran `git fetch origin pull/489/head`; afterward the clone was still detached at `4e343485` with an empty `git status --short`. |
+| Pinned head and comparison base? | Yes. It used the merge base `9eb2c3a1` and said why it differed from the base GitHub recorded. |
+| Map and at most one topic? | Yes. The PR changes one section, so it listed and presented one topic, ending with a question. |
+| Checked claims at the head? | Yes. Four claims were labeled enforced by code with links at the full head SHA, and one sentence was reported as not covering a case a test asserts. |
+
+It wrote copies of two file versions to its session's temporary directory, outside the
+clone, to compare them.
+
 ## Limits
 
-- Three sessions on one model, one PR, and one path. Another run could differ.
+- Four sessions on one model, two PRs, and one path. Another run could differ.
 - No person judged the readability or pacing. The author assessed both by reading transcripts.
-- The second and third trials ran one turn each, so the pause, question, and close
-  behavior rest on the first trial's draft. The second trial's procedure is the text at
-  `4cbf9278`; the third trial's is the text committed with this report.
+- The later trials ran one turn each, so the pause, question, and close behavior rest
+  on the first trial's draft. The second trial's procedure is the text at `4cbf9278`,
+  the third's the text at `9132051e`, and the fourth's the text committed with this
+  report.
 - The first trial's only minimal prompts came after the user asked for one. The second
   trial mentioned the guide's example prompts without showing one.
 - #426 did not come up. The later-change evidence covers #425 only.
-- An open PR whose head moves, an untracked file, and a request to reorder beyond one
+- An open PR whose head moves, a PR from a fork, an untracked file, and a request to reorder beyond one
   skip were not exercised.
 - The skill copy was named in the prompt. A host invoking an installed
   `$shaka Review docs with me:` was not exercised; the installed skill cannot route

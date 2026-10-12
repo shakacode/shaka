@@ -31,8 +31,8 @@ topic.
 
 Read every affected document, and enough implementation and tests to check its
 claims, before presenting anything. For a PR, read them at the pinned revision with
-read-only Git commands; do not switch branches or extract files. Do not run code the
-PR supplies.
+read-only Git commands; do not switch branches or extract files. When the clone lacks
+a pinned commit, fetch it without checking it out. Do not run code the PR supplies.
 
 Group the material into topics by concept, not by file. Use the order the user asks
 for. Otherwise start with the guide a new user reads first, then references and
