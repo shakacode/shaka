@@ -56,20 +56,18 @@ Write content for the existing fields, not extra headings. Include only informat
 that changes the reader's understanding. Use the example below for content, not
 exact wording or claims.
 
-> **Recommendation: Merge**
+> **Recommendation: {PR disposition}**
 >
-> Internal testers can see why listings were included. The implementation matches
-> the agreed design; no significant issues were found.
+> {Affected users} can now {specific behavior}. {Main reason for the recommendation}.
 >
-> **Next action:** Merge the parent PR first. Keep the task's Ask preference
-> unchanged, and merge only after required checks and approvals are complete.
+> **Next action:** {Who} should {action}, after {applicable dependencies, checks,
+> or approvals}.
 >
-> **Scope and verification:** This is an internal experiment. Broader coverage and
-> public rollout are not yet validated. Verification in hosted and deployed
-> environments remains unfinished.
+> **Verification:** {What the evidence establishes}. {Remaining gaps or concerns}.
 
-Use the task's actual evidence rather than copying these claims. Include unresolved
-concerns when present; omit optional prose that adds no useful information.
+Replace every slot with concrete task facts and actual evidence. Include unresolved
+concerns when present; omit inapplicable content and optional prose that adds no
+useful information.
 
 ## Point readers to the code
 
