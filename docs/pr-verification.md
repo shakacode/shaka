@@ -22,6 +22,7 @@ input. You can approve the approach, request revisions, or settle an open questi
 | What changes for users? | The description, preview, and visual comparisons when applicable. |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
 | How was it checked? | Validation results and independent review covering the current revision, including gaps. |
+| What did people say? | **Human comments** in the description: each comment a person wrote, its reply, and whether it is still open. |
 | What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |
 | What do I need to do? | Open decisions and steps besides merging, with their timing and owner. |
 
@@ -29,6 +30,41 @@ For example, a CSV export PR may use a simple download instead of a background
 job. The walkthrough should explain that choice; tests should exercise the
 export behavior. You can then judge whether the approach suits the expected
 volume and whether important cases are missing.
+
+## See what people said
+
+Agent posts can outnumber a person's comments many times over: on one Shaka PR,
+5 of 52 comments and reviews came from a person. The description lists those
+under **Human comments**, after any open decisions and before the agent's own
+sections:
+
+| From | Said | Response | Status |
+| --- | --- | --- | --- |
+| **Reviewer** maria | “This is inconsistent. The recommendation above is…” | — | **Open** |
+| Author sam | “you mean chat, not owner.” | “Changed the guide to use chat throughout…” | Resolved |
+
+- **From** says whether the PR author or someone else wrote the comment. Agents
+  post from a person's account, so the account name cannot tell them apart. A
+  comment counts as an agent's when a bot account posted it, or when it opens
+  with the agent's 🤖 line or a hidden tool marker such as
+  `<!-- shaka:reply:… -->`. Any other comment counts as a person's.
+- **Said** quotes the comment's opening words and links to it.
+- **Response** links the agent or bot post that answered it.
+- **Status** is GitHub's resolved state for an inline thread, and the verdict for
+  an approval or a request for changes. Any other comment stays open until an
+  agent reply links to it.
+
+Open comments come first, and a reviewer's come before the author's.
+
+On a public repository anyone can comment or submit a review. A comment from an
+account the repository does not trust is listed as **Unverified** and linked
+without a quotation, because the agent does not read it. That account's approval
+or request for changes is not shown, and its comments do not count as open.
+
+The list shows the comments the agent last read at the PR's current commit. A
+comment added later appears the next time the agent reads comments and updates
+the description. Instructions you give in chat are not on GitHub, so they are not
+in this list.
 
 ## Revisit a merged change
 

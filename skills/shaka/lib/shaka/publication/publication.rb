@@ -9,6 +9,7 @@ require_relative 'provenance_history'
 require_relative 'wip_details'
 require_relative 'settings'
 require_relative 'steps_besides_merging'
+require_relative 'human_comments'
 require_relative '../publication_sections'
 
 module Shaka
@@ -43,7 +44,8 @@ module Shaka
 
     private
 
-    def sections = PublicationSections.render(@content)
+    # Only a description lists what people wrote; a walkthrough keeps its own sections.
+    def sections = PublicationSections.render(@content, (HumanComments.render(@content, @pull) if @require_tables))
 
     def checkpoint = PublicationLinks.checkpoint(@content, head: @pull&.dig('head', 'sha'))
 
