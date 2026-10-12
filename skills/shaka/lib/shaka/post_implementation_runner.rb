@@ -7,7 +7,7 @@ module Shaka
   # Reuses the restricted local process and pinned-source reader, not technical review evidence.
   class PostImplementationRunner < LocalReviewRunner
     DEFAULT_PROMPT = File.expand_path('../../config/post-implementation-prompt.md', __dir__)
-    WRITING_GUIDANCE_PATH = File.expand_path('../../references/writing.md', __dir__)
+    WRITING_GUIDANCE_PATH = File.expand_path('../../references/shared-writing.md', __dir__)
     PACKET_KEYS = %w[problem audience outcome validation repair_history].freeze
 
     def run
