@@ -28,13 +28,13 @@ module HumanCommentsFixture
       'thread_id' => thread, 'is_resolved' => resolved }
   end
 
-  def issue_comment(id, author, body)
-    { 'id' => id, 'author' => author, 'body' => body, 'url' => "#{URL}#issuecomment-#{id}" }
+  def issue_comment(id, author, body, at: nil)
+    { 'id' => id, 'author' => author, 'body' => body, 'url' => "#{URL}#issuecomment-#{id}", 'created_at' => at }
   end
 
-  def review(id, author, body, state: 'COMMENTED')
+  def review(id, author, body, state: 'COMMENTED', at: nil)
     { 'id' => id, 'author' => author, 'body' => body, 'state' => state,
-      'url' => "#{URL}#pullrequestreview-#{id}" }
+      'url' => "#{URL}#pullrequestreview-#{id}", 'created_at' => at }
   end
 
   # comments is what `shaka description --comments PATH` read from the file, or nil without the flag.
@@ -57,9 +57,15 @@ module HumanCommentsFixture
 
   def roles(rendered) = cells(rendered).map { |row| row.first.split.first }
 
-  def published(comment)
-    "<!-- shaka:begin -->\n#{describe(packet(issue_comments: [comment]))}<!-- shaka:end -->"
-  end
+  # The count line without the commit it was read at.
+  def counts(rendered) = rendered[/^(.*) · read at `ccccccc`$/, 1]
+
+  def published(comment) = wrap(describe(packet(issue_comments: [comment])))
+
+  def wrap(rendered) = "<!-- shaka:begin -->\n#{rendered}<!-- shaka:end -->"
+
+  # The pull request after a push that followed the published read.
+  def moved(body) = pull(body:).merge('head' => { 'sha' => 'd' * 40, 'repo' => REPO })
 
   # What the comment reader keeps of a comment or review whose author it could not trust.
   def excluded(id, author, kind: 'issue_comment', withheld: true, **fields)
@@ -81,7 +87,7 @@ class PublicationHumanCommentsTest < Minitest::Test
     assert_equal [['Author [ann](https://github.com/ann)', "[“you mean chat\\, not owner\\.”](#{URL}#discussion_r1)",
                    "[“Removed both placeholders\\. The example now runs in one chat\\.”](#{URL}#discussion_r2)",
                    'Resolved']], cells(rendered)
-    assert_includes rendered, "## Human comments\n\nNone open · 1 from the PR author\n\n"
+    assert_includes rendered, "## Human comments\n\nNone open · 1 from the PR author · read at `ccccccc`\n\n"
   end
 
   def test_a_reviewer_s_open_comments_lead_the_author_s_and_the_count_says_who_wrote_them
@@ -91,14 +97,14 @@ class PublicationHumanCommentsTest < Minitest::Test
 
     assert_equal %w[**Reviewer** Author Author], roles(rendered)
     assert_equal [['**Open**'], ['**Open**'], ['Resolved']], columns(rendered, 3)
-    assert_includes rendered, "**2 open** · 1 from 1 reviewer, 2 from the PR author\n"
+    assert_equal '**2 open** · 1 from 1 reviewer, 2 from the PR author', counts(rendered)
   end
 
   def test_the_count_says_how_many_people_reviewed
     rendered = describe(packet(issue_comments: [issue_comment(1, 'Bob', 'One.'), issue_comment(2, 'bob', 'Two.'),
                                                 issue_comment(3, 'Cy', 'Three.')]))
 
-    assert_includes rendered, "**3 open** · 3 from 2 reviewers\n"
+    assert_equal '**3 open** · 3 from 2 reviewers', counts(rendered)
   end
 
   def test_the_login_decides_author_or_reviewer_whatever_its_letter_case
@@ -126,6 +132,22 @@ class PublicationHumanCommentsTest < Minitest::Test
                  columns(rendered, 2, 3)
   end
 
+  def test_the_latest_answer_is_shown_whichever_kind_of_post_it_is
+    earlier = "#{IDENTITY}\n\nFirst answer to [the request](#{URL}#issuecomment-1)."
+    later = "#{IDENTITY}\n\nRevised, per [the request](#{URL}#issuecomment-1)."
+    rendered = describe(packet(review_summaries: [review(9, 'ann', later, at: '2026-10-02T00:00:00Z')],
+                               issue_comments: [issue_comment(1, 'Bob', 'Split it.', at: '2026-09-30T00:00:00Z'),
+                                                issue_comment(2, 'ann', earlier, at: '2026-10-01T00:00:00Z')]))
+
+    assert_equal [["[“Revised\\, per the request\\.”](#{URL}#pullrequestreview-9)"]], columns(rendered, 2)
+  end
+
+  def test_a_person_s_line_that_starts_with_the_robot_emoji_is_still_listed
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'Bob', '🤖 this bot reply missed my point')]))
+
+    assert_equal ['**No reply**'], columns(rendered, 3).flatten
+  end
+
   def test_a_reply_that_links_the_comment_under_issues_also_answers_it
     reply = "#{IDENTITY}\n\nDone, per #{URL.sub('/pull/', '/issues/')}#issuecomment-1."
     rendered = describe(packet(issue_comments: [issue_comment(1, 'Bob', 'Please split this PR.'),
@@ -146,7 +168,7 @@ class PublicationHumanCommentsTest < Minitest::Test
     verdicts = cells(rendered).map { |row| [row[1][/\A\[.*\]/], row.last] }
 
     assert_equal [['[“Needs a test\\.”]', 'Approved later'], ['[Approved]', 'Approved']], verdicts
-    assert_includes rendered, "None open · 2 from 1 reviewer\n"
+    assert_equal 'None open · 2 from 1 reviewer', counts(rendered)
   end
 
   def test_a_pending_draft_and_a_review_that_only_carries_inline_comments_are_not_listed
@@ -184,7 +206,7 @@ class PublicationUnverifiedCommentsTest < Minitest::Test
 
     assert_equal [['Unverified [outsider](https://github.com/outsider)',
                    "[Not read by the agent](#{URL}#issuecomment-5)", '—', 'Not read']], cells(rendered)
-    assert_includes rendered, "None open · 1 unverified\n"
+    assert_equal 'None open · 1 unverified', counts(rendered)
   end
 
   def test_an_unverified_account_s_review_shows_no_verdict
@@ -204,7 +226,7 @@ class PublicationUnverifiedCommentsTest < Minitest::Test
                                excluded_interactions: [excluded(5, 'outsider')]))
 
     assert_equal %w[**Reviewer** Unverified Author], roles(rendered)
-    assert_includes rendered, "**1 open** · 1 from 1 reviewer, 1 from the PR author, 1 unverified\n"
+    assert_equal '**1 open** · 1 from 1 reviewer, 1 from the PR author, 1 unverified', counts(rendered)
   end
 end
 
@@ -228,6 +250,12 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
 
     assert_includes rendered, "[“#{long.split.first(12).join(' ')}…”](#{URL}#issuecomment-1)"
     assert_includes rendered, "[Code or quoted text only](#{URL}#issuecomment-2)"
+  end
+
+  def test_a_code_span_that_opens_a_line_does_not_hide_the_rest_of_the_comment
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', "```run``` fails here\nand also there")]))
+
+    assert_includes rendered, '[“\\`\\`\\`run\\`\\`\\` fails here and also there”]'
   end
 
   def test_only_the_first_twenty_are_shown_and_the_rest_are_counted
@@ -266,6 +294,20 @@ class PublicationHumanCommentsSourceTest < Minitest::Test
 
     assert_includes describe(nil, pull: pull(body:)),
                     body[%r{<!-- shaka:human-comments -->.*An earlier note.*<!-- /shaka:human-comments -->}m]
+  end
+
+  def test_a_carried_list_says_when_the_pull_request_has_moved_past_its_read
+    body = published(issue_comment(2, 'ann', 'An earlier note.'))
+    note = "\n\n_These comments were read at `ccccccc`; the pull request is now at `ddddddd`._\n\n"
+
+    assert_includes describe(nil, pull: moved(body)), "<!-- /shaka:human-comments -->#{note}"
+    refute_includes describe(nil, pull: pull(body:)), 'the pull request is now at'
+  end
+
+  def test_the_moved_note_is_written_once_however_often_the_list_is_carried
+    again = wrap(describe(nil, pull: moved(published(issue_comment(2, 'ann', 'An earlier note.')))))
+
+    assert_equal 1, describe(nil, pull: moved(again)).scan('the pull request is now at').size
   end
 
   def test_a_fork_s_published_list_is_not_carried_because_its_author_can_edit_the_body

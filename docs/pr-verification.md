@@ -61,10 +61,10 @@ account the repository does not trust is listed as **Unverified** and linked
 without a quotation, because the agent does not read it. That account's approval
 or request for changes is not shown, and its comments do not count as open.
 
-The list shows the comments the agent last read at the PR's current commit. A
-comment added later appears the next time the agent reads comments and updates
-the description. Instructions you give in chat are not on GitHub, so they are not
-in this list.
+The list names the commit at which the agent read the comments. A comment added
+later appears the next time the agent reads comments and updates the description.
+If the PR has moved to a newer commit since that read, a note under the list says
+so. Instructions you give in chat are not on GitHub, so they are not in this list.
 
 ## Revisit a merged change
 

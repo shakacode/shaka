@@ -569,10 +569,9 @@ phases:
         [public-comment guide](<{{package_root}}/skills/shaka/references/public-comments-safety.md>) for the trust
         configuration sources and exclusion markers.
         Save each `comments --head SHA` result outside the checkout and pass it to the next
-        `description` as `--comments PATH`. The helper renders Human comments from it: each comment a
-        person wrote, whether the PR author or a reviewer wrote it, the post that answered it, and its
-        thread state. A comment outside an inline thread shows No reply until a `reply` lists its URL
-        in `reviews`. A `description` without the flag keeps the list already published.
+        `description` as `--comments PATH`, which renders the Human comments list from it. A comment
+        outside an inline thread shows No reply there until a `reply` lists its URL in `reviews`.
+        A `description` without the flag keeps the published list and notes when the head has moved.
       - Before merge, publish a COMMENT walkthrough covering the purpose, the prior behavior it
         changes, the new behavior, key choices, validation, risks, rollback consequence, and
         commit-pinned code links. Treat those as concerns to cover rather than headings to emit, and

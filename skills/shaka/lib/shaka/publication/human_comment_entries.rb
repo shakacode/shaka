@@ -7,15 +7,16 @@ module Shaka
   # Finds the comments people wrote in a `shaka comments` result, and what answered each one.
   class HumanCommentEntries
     # unverified marks an author the comment reader could not trust, whose text it withheld.
-    Entry = Struct.new(:kind, :id, :login, :url, :body, :state, :thread, :resolved, :unverified)
+    Entry = Struct.new(:kind, :id, :login, :url, :body, :state, :thread, :resolved, :unverified, :at)
     # Reviews come first, then inline comments, then conversation comments, each in GitHub's order.
     KINDS = { 'review_summaries' => 'review_summary', 'inline_comments' => 'inline_comment',
               'issue_comments' => 'issue_comment' }.freeze
     VERDICTS = { 'APPROVED' => 'Approved', 'CHANGES_REQUESTED' => 'Requested changes' }.freeze
     # Agents post under a person's login, so the login cannot tell them apart. An agent post opens
-    # with its identity line, a hidden `tool:purpose` marker, or the pointer of an archived
-    # walkthrough. Any other hidden comment may open a person's own text.
-    AGENT_OPENING = /\A(?:🤖 |<!-- ?[a-z][\w-]*:[\w.:-]+ ?-->|#{Regexp.escape(WalkthroughHistory::MARKER)})/i
+    # with its four-field identity line, a hidden `tool:purpose` marker, or the pointer of an
+    # archived walkthrough. A person's own line may start with the emoji or another hidden comment.
+    IDENTITY = /🤖 [^\n·]+(?: · [^\n·]+){3}$/
+    AGENT_OPENING = /\A(?:#{IDENTITY}|<!-- ?[a-z][\w-]*:[\w.:-]+ ?-->|#{Regexp.escape(WalkthroughHistory::MARKER)})/i
     OPEN = ['Open', 'No reply', 'Changes requested'].freeze
 
     def initialize(packet)
@@ -27,12 +28,14 @@ module Shaka
 
     def humans = @all.select { |entry| human?(entry) }
 
-    # The latest agent or bot post in the same inline thread, otherwise the latest agent post
+    # The latest of the agent or bot posts later in the same inline thread and the agent posts
     # linking the comment. A bot's summary that merely links a comment does not answer it.
     def answer(entry)
       return if entry.unverified
 
-      thread_reply(entry) || @kept.reverse.find { |other| marked?(other) && !bot?(other) && links?(other, entry) }
+      linking = @kept.select { |other| marked?(other) && !bot?(other) && links?(other, entry) }
+      # Ids order one kind of post only, so GitHub's timestamps decide across kinds.
+      (linking + thread_replies(entry)).each_with_index.max_by { |other, at| [other.at.to_s, at] }&.first
     end
 
     # An inline thread has GitHub's own resolved state; anything else is open until something answers it.
@@ -54,7 +57,7 @@ module Shaka
 
     def entry(row, kind, unverified)
       Entry.new(kind, row['id'], row['author'], row['url'], row['body'], row['state'], row['thread_id'],
-                row['is_resolved'] == true, unverified)
+                row['is_resolved'] == true, unverified, row['created_at'])
     end
 
     # A pending review is its author's unsubmitted draft, and a review without text or a verdict
@@ -78,11 +81,11 @@ module Shaka
 
     def marked?(entry) = entry.body.to_s.lstrip.match?(AGENT_OPENING)
 
-    def thread_reply(entry)
-      return unless entry.thread
+    def thread_replies(entry)
+      return [] unless entry.thread
 
       later(@kept, entry).select { |other| other.thread == entry.thread && (bot?(other) || marked?(other)) }
-                         .max_by(&:id)
+                         .sort_by(&:id)
     end
 
     # GitHub serves a conversation comment under both /pull/ and /issues/, and `shaka reply` accepts either.

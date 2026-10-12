@@ -16,6 +16,8 @@ module Shaka
     BLOCK = /#{Regexp.escape(OPEN_MARK)}.*?#{Regexp.escape(CLOSE_MARK)}/m
     HEADER = "| From | Said | Response | Status |\n| --- | --- | --- | --- |"
     SHOWN = 20
+    # The count line names the commit the comments were read at, so a carried list shows its age.
+    STAMP = /· read at `(\h{7})`$/
 
     def self.render(content, pull)
       refuse_heading(content['sections'])
@@ -32,7 +34,15 @@ module Shaka
       head = pull&.dig('head', 'repo', 'full_name')
       return [] unless head && head == pull.dig('base', 'repo', 'full_name')
 
-      [Publishing.managed_region(pull['body']).to_s[BLOCK]].compact
+      block = Publishing.managed_region(pull['body']).to_s[BLOCK]
+      block ? [block, *stale_note(block[STAMP, 1], pull.dig('head', 'sha').to_s)] : []
+    end
+
+    # The note sits outside the carried block, so each publication writes it for its own head.
+    def self.stale_note(read, head)
+      return [] if read.nil? || head.start_with?(read)
+
+      ["_These comments were read at `#{read}`; the pull request is now at `#{head[0, 7]}`._"]
     end
 
     def self.refuse_heading(sections)
@@ -44,7 +54,8 @@ module Shaka
 
     def initialize(packet, pull)
       author = pull.dig('user', 'login')
-      check(packet, author, pull.dig('head', 'sha'))
+      @head = pull.dig('head', 'sha')
+      check(packet, author, @head)
       prefix = "https://github.com/#{pull.dig('base', 'repo', 'full_name')}/pull/#{pull['number']}#"
       @rows = HumanCommentRows.new(HumanCommentEntries.new(packet), author:, prefix:).call
     end
@@ -72,7 +83,7 @@ module Shaka
 
     def counts
       open = @rows.count(&:open)
-      "#{open.zero? ? 'None open' : "**#{open} open**"} · #{sources.join(', ')}"
+      "#{open.zero? ? 'None open' : "**#{open} open**"} · #{sources.join(', ')} · read at `#{@head[0, 7]}`"
     end
 
     def sources

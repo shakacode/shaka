@@ -8,6 +8,7 @@ module Shaka
     # The four ranges of ASCII punctuation.
     PUNCTUATION = /[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]/
     LINK = /!?\[([^\]\n]*)\]\([^)\n]*\)/
+    FENCE = /\A(?:```[^`]*|~~~.*)\z/
 
     module_function
 
@@ -22,11 +23,11 @@ module Shaka
     end
 
     # A link keeps its text. An unclosed fence hides the rest of the comment, as it does
-    # when GitHub renders it.
+    # when GitHub renders it; backticks later on the line make it a code span instead.
     def prose(body)
       fenced = false
       body.to_s.gsub(/<!--.*?-->/m, ' ').gsub(LINK, '\\1').each_line.reject do |line|
-        fence = line.lstrip.start_with?('```', '~~~')
+        fence = line.strip.match?(FENCE)
         fenced = !fenced if fence
         fence || fenced || line.lstrip.start_with?('>')
       end.join(' ')
