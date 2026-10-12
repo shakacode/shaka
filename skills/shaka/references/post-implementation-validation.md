@@ -127,6 +127,7 @@ to `post-implementation publish`, using the same verified head:
 ```
 
 This is a field added to the complete runner result, not a replacement result file.
+Put the chosen recommendation in `disposition.recommendation`.
 Choose one fixed value; Ruby parses these values, so they are not configurable:
 
 | Recommendation | Meaning and next step |
@@ -170,10 +171,10 @@ the useful summary is:
 
 > OpenAI/Codex · configured model: gpt-6.1-sol · observed model: UNKNOWN
 >
-> Recommendation: **Revise before merging.** Keep the missing-configuration
+> Recommended next action: **Revise before merging.** Keep the missing-configuration
 > safeguard; remove unused scans from watching and repeated check verification.
 >
-> **Next action (task owner):** Revise this PR, then revalidate and review.
+> **Next action:** Revise this PR, then revalidate and review.
 
 The watcher discards configuration results, so removing that dependency preserves
 its demonstrated guarantees. Keep fresh checks for explicit status, Ask handoff,

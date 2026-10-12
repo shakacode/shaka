@@ -74,7 +74,7 @@ module Shaka
       action, next_action = recommendation(report)
       summary = report.fetch('summary', report.fetch('reasons').first)
       ["Recommended next action: **#{action}**", summary,
-       "**Next action (task owner):** #{owner_action(report, next_action)}",
+       "**Next action:** #{owner_action(report, next_action)}",
        "Head: `#{@head}`",
        "Unresolved concerns: #{report.fetch('concerns').empty? ? 'none' : report.fetch('concerns').join('; ')}",
        supporting_analysis(report, summary)].join("\n\n")
@@ -113,7 +113,7 @@ module Shaka
                                'Resolve the execution failure and rerun the checkpoint.']
                             end
       "Recommended next action: **#{action}**\n\n#{@result.fetch('reason')}\n\n" \
-        "**Next action (task owner):** #{next_action}\n\nHead: `#{@head}`\n\n" \
+        "**Next action:** #{next_action}\n\nHead: `#{@head}`\n\n" \
         "<details>\n<summary>Execution details</summary>\n\n#{execution_evidence}\n\n#{usage_text}\n\n</details>"
     end
 

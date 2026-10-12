@@ -14,7 +14,7 @@
 - Write content for the existing fields, not extra headings.
 - Use this example for content, not exact wording or claims:
 
-  > **Recommendation: {What should happen to this PR}**
+  > Recommended next action: **{What should happen to this PR}**
   >
   > {Affected users} can now {specific behavior}. {Main reason for the recommendation}.
   >

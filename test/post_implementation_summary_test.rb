@@ -79,7 +79,7 @@ class PostImplementationModelPublicationTest < Minitest::Test
       body = rendered(result, path)
       assert_includes body, 'observed model: UNKNOWN; requested model: chosen-model'
       assert_includes body, 'Recommended next action: **Merge if CI passes**'
-      assert_includes body, '**Next action (task owner):** Complete technical validation and required approvals.'
+      assert_includes body, '**Next action:** Complete technical validation and required approvals.'
       assert_equal 1, body.scan('Useful change').size
     end
   end
@@ -94,9 +94,9 @@ class PostImplementationSummaryTest < Minitest::Test
                             'next_action' => 'Revise this PR, then revalidate.', 'reasons' => ['Maintenance evidence'])
       body = rendered(result, path)
       assert_includes body, 'Recommended next action: **Revise before merging.**'
-      assert_includes body, '**Next action (task owner):** Revise the approach, then revalidate and review.'
+      assert_includes body, '**Next action:** Revise the approach, then revalidate and review.'
       assert_operator body.index('Keep the safeguard'), :<, body.index('Maintenance evidence')
-      assert_operator body.index('Next action (task owner)'), :<, body.index('Maintenance evidence')
+      assert_operator body.index('**Next action:**'), :<, body.index('Maintenance evidence')
     end
   end
 
@@ -126,7 +126,7 @@ class PostImplementationSummaryTest < Minitest::Test
      { 'conclusion' => 'Simplify/reframe' }, { 'conclusion' => 'Do not merge' }].each do |blocker|
       with_result do |result, path|
         change_report(result, blocker.merge('next_action' => 'Merge now.'))
-        refute_includes rendered(result, path), '**Next action (task owner):** Merge now.'
+        refute_includes rendered(result, path), '**Next action:** Merge now.'
       end
     end
   end
@@ -134,7 +134,7 @@ class PostImplementationSummaryTest < Minitest::Test
   def test_unblocked_review_keeps_the_specific_owner_action
     with_result do |result, path|
       change_report(result, 'next_action' => 'Complete the required approval.')
-      assert_includes rendered(result, path), '**Next action (task owner):** Complete the required approval.'
+      assert_includes rendered(result, path), '**Next action:** Complete the required approval.'
     end
   end
 
@@ -152,8 +152,7 @@ class PostImplementationSummaryTest < Minitest::Test
         result['status'] = status
         result['reason'] = 'Recorded reason'
         result.delete('report')
-        body = rendered(result, path)
-        assert_includes body, recommendation
+        assert_match(/#{Regexp.escape(recommendation)}.*\*\*Next action:\*\*/m, rendered(result, path))
       end
     end
   end
