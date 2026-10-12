@@ -921,6 +921,16 @@ class PublicationCheckpointTest < Minitest::Test
     end
   end
 
+  def test_single_line_html_is_visible_text_instead_of_hiding_the_action
+    data = content
+    data['checkpoint']['status'] = 'Direction needed <details>'
+    data['checkpoint']['next_action'] = 'Justin: choose a direction <!-- recorded later -->'
+    body = Shaka::Publication.description(data, nil, { 'head' => { 'sha' => HEAD } })
+    assert_includes body, 'Direction needed &lt;details&gt;'
+    assert_includes body, 'choose a direction &lt;!-- recorded later --&gt;'
+    refute_includes body, 'Direction needed <details>'
+  end
+
   def test_status_cannot_hide_the_next_action_in_multiline_content
     data = content
     data['checkpoint']['status'] = "Direction needed\n\n<details>"

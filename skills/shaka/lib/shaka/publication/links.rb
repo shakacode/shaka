@@ -22,8 +22,8 @@ module Shaka
       raise Error, 'Description checkpoint is not for the current PR head.' unless
         head && checkpoint['head'] == head
 
-      status = PublicationText.single_line(checkpoint['status'], 'checkpoint status')
-      action = PublicationText.single_line(checkpoint['next_action'], 'checkpoint next_action')
+      status = PublicationText.summary_text(checkpoint['status'], 'checkpoint status')
+      action = PublicationText.summary_text(checkpoint['next_action'], 'checkpoint next_action')
       ['## Checkpoint', "**Status:** #{status}", "**Recommended next action:** #{action}", "Head: `#{head}`"]
     end
 
