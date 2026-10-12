@@ -72,3 +72,10 @@ verification gaps, and help resuming work when checks or access fail.
 - [Documentation index](docs/README.md) — setup, verification, settings, and advanced guides.
 
 [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
+
+## Names and logos
+
+The MIT license covers the code and documentation. It does not grant rights to
+the Shaka and ShakaCode names or logos, which are trademarks of ShakaCode. You may
+say that your work uses or is based on Shaka. Give a fork or product its own name,
+so it does not appear to come from ShakaCode.
