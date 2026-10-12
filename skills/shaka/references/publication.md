@@ -9,30 +9,18 @@
 
 ## Post-implementation comments
 
-- Use the renderer's existing order and headings. Follow the field responsibilities
-  in [the shared rules](writing.md#checkpoint-sections).
-- Write content for the existing fields, not extra headings.
+- The renderer supplies the order, labels, and the reviewer's evaluation and concerns.
+  Write the owner's `reason` and `next_action` as
+  [the checkpoint procedure](post-implementation-validation.md#recommend-the-next-action) describes.
 - Use this example for content, not exact wording or claims:
 
-  > **Reviewed revision:** {Linked commit}
-  >
   > **Recommended next action:** {What should happen to this PR}
   >
   > {Affected users} can now {specific behavior}. {Main reason for the recommendation}.
   >
   > **Next action:** {Action and applicable dependencies, checks, or approvals}.
-  >
-  > **Evaluation:** {Reviewer conclusion}
-  >
-  > {What the evidence establishes}. {What remains unverified}.
-  >
-  > **Unresolved concerns:**
-  >
-  > - {Location, specific problem, and consequence}.
 
 - Replace every slot with concrete task facts and actual evidence.
-- Include unresolved concerns when present; omit inapplicable content and optional
-  prose that adds no useful information.
 
 ## Point readers to the code
 

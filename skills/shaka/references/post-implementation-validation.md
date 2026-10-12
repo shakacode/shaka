@@ -137,6 +137,14 @@ Choose one fixed value; Ruby parses these values, so they are not configurable:
 | Reconsider approach | Working code revealed a wrong or disproportionate solution. Explain why and propose an alternative through the existing maintainer decision path. |
 | Do not merge | Recommend abandoning or replacing this PR, with the reason and next step. The maintainer decides whether to close it. |
 
+Give each owner field one job:
+
+- `reason`: the main reason for the recommendation. A recommendation is not merge permission.
+- `next_action`: the action, starting with its verb. Name who does it only when that
+  person is not the developer. Do not restate the recommendation.
+
+Publish the reviewer's report fields unchanged.
+
 Ruby checks the disposition's head, vocabulary, reason, and concrete next-action field.
 It rejects **Merge** when verification has a blocking conclusion or unresolved concerns.
 The other three values publish the existing `blocked` attestation, including when
