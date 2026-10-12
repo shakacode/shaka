@@ -524,21 +524,16 @@ and body checks cannot make GitHub's minimization mutation atomic with concurren
 changes. Inspect reported failures before retrying; no automatic rollback occurs.
 
 Evidence comments posted directly with `gh pr comment`, such as captures and samples,
-carry no Shaka key, so no publisher folds them. After posting the replacement, select
-the comments it supersedes:
-
-```sh
-shaka review collapse OWNER/REPO NUMBER --current NEW_COMMENT_ID \
-  --superseded OLD_COMMENT_ID --superseded ANOTHER_OLD_COMMENT_ID
-```
+carry no Shaka key, so no publisher folds them. After posting the replacement, pass its
+ID as `--current` and each comment it supersedes as `--superseded`. Select earlier folded
+comments again so they link the newest one.
 
 Each selected comment keeps its writer identifier line, then links the current comment
 above its original body in expandable details. Ruby checks that every comment is on this
 pull request, was written by the authenticated account, starts with the `🤖` writer
 identifier, and that each selected one is older than the current one. It also checks
 GitHub's rendering and the stored body. It does not judge whether the evidence is
-obsolete. A comment already folded this way is retargeted. Failures are listed and
-return nonzero.
+obsolete. Failures are listed and return nonzero.
 
 Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the
