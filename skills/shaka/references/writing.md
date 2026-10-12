@@ -46,11 +46,12 @@ Use the renderer's existing order and headings. Give each part one job:
    main reason. A recommendation is not merge permission.
 2. **Next action:** The owner names who does what next, rather than restating the
    recommendation.
-3. **Verification conclusion:** The reviewer says what the evidence establishes
-   and names unresolved concerns or verification gaps. Assess the result, not the
-   owner's merge decision.
-4. **Supporting analysis:** Add evidence, tradeoffs, and execution details that
-   explain the judgment. Keep them collapsed; do not repeat the visible summary.
+3. **Verification conclusion:** The reviewer states what the evidence establishes
+   and what remains unverified, not the owner's merge decision.
+4. **Unresolved concerns:** Name specific remaining problems here, rather than
+   listing them again in the summary or supporting analysis.
+5. **Supporting analysis:** Give supporting evidence, costs, and tradeoffs. Keep
+   them collapsed; do not paraphrase the concerns or visible summary.
 
 Write content for the existing fields, not extra headings. Include only information
 that changes the reader's understanding. Use the example below for content, not
