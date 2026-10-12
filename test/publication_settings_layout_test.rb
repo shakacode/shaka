@@ -24,15 +24,17 @@ class PublicationSettingsLayoutTest < Minitest::Test
     assert_includes body, '| merge.preference | ask |'
   end
 
-  def test_each_reviewer_gets_its_own_column
+  def test_each_reviewer_gets_its_own_column_headed_by_its_name
     reviews = [local(reviewer: 'openai/codex'), local(reviewer: 'anthropic/claude')]
     body = settings_block(current: local, validation: [local(command: 'validate')], review: reviews)
+    assert_includes body, '| Setting | Before push: validation | Review: openai/codex | Review: anthropic/claude |'
     assert_includes body, '| overrides.reviewer | UNKNOWN | openai/codex | anthropic/claude | UNKNOWN |'
   end
 
   def test_a_result_that_recorded_no_settings_is_named_above_the_table_instead_of_shown
     body = settings_block(current: local, validation: [nil], review: [local(reviewer: 'openai/codex')])
-    assert_operator body.index('UNKNOWN there: **Before push: validation**'), :<, body.index('| Setting | Review |')
+    note = body.index('UNKNOWN there: **Before push: validation**')
+    assert_operator note, :<, body.index('| Setting | Review: openai/codex |')
   end
 
   def test_settings_redacted_in_every_shown_column_share_one_line

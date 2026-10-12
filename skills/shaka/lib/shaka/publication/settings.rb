@@ -123,10 +123,17 @@ module Shaka
     end
 
     def values
-      columns = [*operations, [CURRENT, Evidence::PublicSettings.sanitize(@current)]]
+      columns = operations.map { |title, settings| [column_title(title, settings), settings] }
+      columns << [CURRENT, Evidence::PublicSettings.sanitize(@current)]
       return [] unless columns.any? { |_title, settings| UNCOMMITTED.include?(settings['source']) }
 
       [SettingsTable.disclosure(columns)]
+    end
+
+    # Several reviewers would otherwise share one column title.
+    def column_title(title, settings)
+      reviewer = settings['overrides.reviewer']
+      reviewer == 'UNKNOWN' ? title : "#{title}: #{reviewer}"
     end
   end
 end
