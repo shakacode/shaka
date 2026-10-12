@@ -11,9 +11,15 @@ module Shaka
   # the command's result.
   module CallLog
     VARIABLE = 'SHAKA_CALL_LOG'
+    # Only these names are recorded, so a mistyped call cannot put an argument in the log.
+    COMMANDS = %w[attention checkpoint claim comments description doctor enforcement evidence handoff install
+                  issue-create merge post-implementation pr prefix recommendation reply repos resolve review
+                  review-prompt reviewer seam squash-message trial update-check usage walkthrough work
+                  workflow].freeze
     # Commands whose second word selects the operation; any other second word is an argument.
-    GROUPS = %w[evidence post-implementation pr review seam trial].freeze
-    WORD = /\A[a-z][a-z-]*\z/
+    OPERATIONS = { 'evidence' => %w[run bind verify guard], 'post-implementation' => %w[run publish],
+                   'pr' => %w[watch], 'review' => %w[run check record publish collapse],
+                   'seam' => %w[check init pointer preview private upgrade], 'trial' => %w[prepare] }.freeze
     # The fixed commands `evidence run` accepts; any other `--command` value is not recorded.
     CHECKS = %w[setup test validate validate_local trigger_hosted_ci].freeze
 
@@ -53,8 +59,8 @@ module Shaka
 
     def identity(arguments)
       first, second = arguments
-      words = [first.to_s.match?(WORD) ? first : 'unknown']
-      words << second if GROUPS.include?(first) && second.to_s.match?(WORD)
+      words = [COMMANDS.include?(first) ? first : 'unknown']
+      words << second if OPERATIONS.fetch(first, []).include?(second)
       record = { 'command' => words.join(' ') }
       check = arguments[arguments.index('--command').to_i + 1] if arguments.include?('--command')
       record['check'] = check if CHECKS.include?(check)

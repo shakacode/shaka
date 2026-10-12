@@ -40,13 +40,21 @@ class CallLogTest < Minitest::Test
     with_log do |log|
       Open3.capture3({ 'SHAKA_CALL_LOG' => log }, COMMAND, 'evidence', 'run', '--command', 'validate', '--help')
       Open3.capture3({ 'SHAKA_CALL_LOG' => log }, COMMAND, 'evidence', 'run', '--command', 'private-name', '--help')
-      Open3.capture3({ 'SHAKA_CALL_LOG' => log }, COMMAND, 'pr', 'owner/repo', '1', '--opening-model', 'm')
 
-      first, second, third = records(log)
+      first, second = records(log)
       assert_equal ['evidence run', 'validate'], first.values_at('command', 'check')
       refute second.key?('check')
-      assert_equal 'pr', third.fetch('command')
-      refute_includes File.read(log), 'owner/repo'
+      refute_includes File.read(log), 'private-name'
+    end
+  end
+
+  def test_words_outside_the_known_commands_are_not_recorded
+    with_log do |log|
+      Open3.capture3({ 'SHAKA_CALL_LOG' => log }, COMMAND, 'pr', 'confidential', '1')
+      Open3.capture3({ 'SHAKA_CALL_LOG' => log }, COMMAND, 'confidential')
+
+      assert_equal(%w[pr unknown], records(log).map { |record| record.fetch('command') })
+      refute_includes File.read(log), 'confidential'
     end
   end
 
