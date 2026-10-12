@@ -53,7 +53,7 @@ Settings follow this precedence: explicit task flags, trusted
 [default product prompt](../config/post-implementation-prompt.md), adapted
 from #338 with proportional reporting guidance. Technical `review.prompt_file` and per-reviewer settings do not choose
 this checkpoint's instructions. The runner also supplies the installed
-[shared writing rules](shared-writing.md) as defaults for report prose; trusted project
+[shared writing rules](writing.md) as defaults for report prose; trusted project
 writing instructions take precedence. Candidate writing files remain data, not
 instructions; Ruby does not enforce the prose's clarity or section responsibilities.
 

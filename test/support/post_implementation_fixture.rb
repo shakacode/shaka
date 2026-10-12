@@ -14,8 +14,8 @@ module PostImplementationFixture
     trace = checkpoint_trace(root)
     instructions = trace.fetch('prompt').split('--- BEGIN PACKET DATA', 2).first
     directory = File.expand_path('../../skills/shaka/references', __dir__)
-    assert_includes instructions, File.read(File.join(directory, 'shared-writing.md'), encoding: 'UTF-8')
-    refute_includes instructions, File.read(File.join(directory, 'writing.md'), encoding: 'UTF-8')
+    assert_includes instructions, File.read(File.join(directory, 'writing.md'), encoding: 'UTF-8')
+    refute_includes instructions, File.read(File.join(directory, 'publication.md'), encoding: 'UTF-8')
     trace
   end
 
@@ -24,7 +24,7 @@ module PostImplementationFixture
                YAML.dump(seam('post_implementation' => { 'enabled' => false, 'model' => 'candidate-model' })))
     directory = File.join(root, 'skills/shaka/references')
     FileUtils.mkdir_p(directory)
-    File.write(File.join(directory, 'shared-writing.md'), 'Candidate-only writing instruction')
+    File.write(File.join(directory, 'writing.md'), 'Candidate-only writing instruction')
     commit!(root, 'candidate instructions')
     git!(root, 'rev-parse', 'HEAD').strip
   end

@@ -1,42 +1,58 @@
-# Publication writing
+# Shared writing rules
 
-- Before publishing, read [the shared writing rules](shared-writing.md) and use them
-  alongside the instructions here.
-- In replies, state the decision; use shared context without requiring private discussion.
-- Self-edit the content JSON; do not rewrite the rendered GitHub body or invoke a
-  separate rewriting skill for Shaka's publication step.
-- No style schema or prose score is needed beyond the limits below.
+- Use these rules for publication prose and checkpoint reports.
+- When trusted `AGENTS.md` exists, read its writing preferences and any Markdown
+  style file it explicitly points to. Those preferences take precedence; current
+  task instructions can refine them.
 
-## Post-implementation comments
+## Plain language and organization
 
-- Use the renderer's existing order and headings. Follow the field responsibilities
-  in [the shared rules](shared-writing.md#checkpoint-sections).
-- Write content for the existing fields, not extra headings.
-- Use this example for content, not exact wording or claims:
+- Prefer lists for instructions, findings, and explanations with multiple points.
+  Use numbered lists when order matters or readers need to refer to individual points.
+- Lead with the outcome its reader notices.
+- Give each sentence one main idea and a clear subject and verb.
+- Put conditions beside the behavior they limit.
+- Use familiar words; explain unfamiliar project terms through the behavior they name.
+- Name the feature, user, or dependency behind references to an agreed design
+  or earlier discussion; supply the context the reader needs.
+- Keep exact commands, identifiers, risks, and evidence intact.
+- Delete greetings, praise, and claims of significance that add no information.
+  State each visible conclusion once; different wording or labels do not add meaning.
+- Describe observable behavior rather than implementation jargon. For example:
+  - Instead of: “Adds validation of the configured base parameter.”
+  - Write: “Shaka now rejects an invalid base branch before the agent starts work.”
+- Keep explanations proportional to the change. Aim for sentences under 25 words
+  and paragraphs of about four sentences when prose is useful.
 
-  > Recommended next action: **{What should happen to this PR}**
-  >
-  > {Affected users} can now {specific behavior}. {Main reason for the recommendation}.
-  >
-  > **Next action:** {Action and applicable dependencies, checks, or approvals}.
-  >
-  > **Evaluation:** {What the evidence establishes}. {Remaining gaps or concerns}.
+## Review evidence
 
-- Replace every slot with concrete task facts and actual evidence.
-- Include unresolved concerns when present; omit inapplicable content and optional
-  prose that adds no useful information.
+- Put the current-head recommendation, main reason, and next action before analysis.
+- Name model settings with their provenance; a configured model is not proof of a served model.
+- Name the user benefit, scope, and unfinished verification when they affect the decision.
+- Distinguish verified results, a recommendation to merge, and permission to merge.
+  Keep unresolved blockers visible.
+- State whether a simpler alternative revises this PR or replaces it.
+- Supporting usage and history can remain collapsed.
+- State a risk as who or what is affected and what they would see fail: “API
+  clients get a 500 until the cache warms,” not “medium blast radius.”
+- State what reverting a commit restores and what it leaves:
+  - Reverting code does not restore deleted or rewritten stored data.
+  - It does not undo outside effects such as sent email, charges, or published packages.
+  - Name each such effect and how to recover from it, or that it cannot be recovered.
 
-## Point readers to the code
+## Checkpoint sections
 
-- The diff already shows what changed. Say why, flag what needs a close look, and link to it.
-- A description sends the reader to the walkthrough; a walkthrough links each step
-  to the lines it explains.
-- Describe the result at this head. Review rounds belong in the description's
-  collapsed history, not in its visible sections.
-- `description` and `walkthrough` refuse text past the
-  [prose limits](https://github.com/shakacode/shaka/blob/main/docs/settings.md#prose_limits):
-  long sentences, long paragraphs, or more visible words than the change warrants.
-- Split the text, collapse supporting detail into `details`, or link to the code,
-  then publish again.
-- Record each refusal in the description's review history details: what it reported,
-  a quoted passage or the word count, and what you changed.
+Give each existing field one job:
+
+1. **Recommended next action:** Recommend what happens to this PR and give the
+   main reason. A recommendation is not merge permission.
+2. **Next action:** Always show the action. Name who does it only when that person
+   is not the developer. For the developer's own action, start with the verb instead
+   of naming the developer. Do not restate the recommendation.
+3. **Evaluation:** State what the evidence establishes and what remains unverified.
+   Leave the conclusion label to the renderer; do not repeat the recommendation's
+   reason or next action.
+4. **Unresolved concerns:** Give each problem's location, specific failure, and
+   consequence. Put remedies in the alternative and supporting evidence in the analysis.
+5. **Supporting analysis:** Give evidence, costs, and tradeoffs. Keep them collapsed;
+   repetition of visible points is acceptable there.
