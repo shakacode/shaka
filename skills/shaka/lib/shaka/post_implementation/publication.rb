@@ -30,7 +30,7 @@ module Shaka
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
       body += "\n\n#{SquashComment.body(@head, @message.call)}" if @state == 'ready'
-      "#{identity}\n\n# Checkpoint\n\n**Reviewed revision:** #{@revision}\n\n#{body}\n\n" +
+      "#{identity}\n\n# Checkpoint\n\n**Revision:** #{@revision}\n\n#{body}\n\n" +
         PostImplementationEvidence.attestation(@head, @state)
     end
 

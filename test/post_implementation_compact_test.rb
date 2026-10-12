@@ -9,7 +9,7 @@ class PostImplementationCompactTest < Minitest::Test
     visible = routine_report.split('<details>', 2).first
 
     assert_includes visible, '**Recommended next action:** Merge if CI passes'
-    assert_match(%r{\*\*Reviewed revision:\*\* \[`aaaaaaa`\]\(https://github.com/example/test/commit/a{40}\)}, visible)
+    assert_match(%r{\*\*Revision:\*\* \[`aaaaaaa`\]\(https://github.com/example/test/commit/a{40}\)}, visible)
     assert_includes visible, "**Unresolved concerns:**\n\nNone."
     refute_includes visible, 'after required checks and approvals'
     assert_includes visible, 'The label is clearer and older notes remain readable.'
@@ -50,7 +50,7 @@ class PostImplementationCompactTest < Minitest::Test
         visible = rendered(result, path).split('<details>', 2).first
 
         assert_includes visible, 'The provider could not complete this review.'
-        assert_includes visible, 'a' * 40
+        assert_match(/\*\*Revision:\*\* .*a{40}/, visible)
         refute_includes visible, '**Recommended next action:** Merge if CI passes'
       end
     end
