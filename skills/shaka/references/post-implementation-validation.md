@@ -52,8 +52,8 @@ Settings follow this precedence: explicit task flags, trusted
 `openai/codex`, model `gpt-6.1-sol`, medium effort, and the
 [default product prompt](../config/post-implementation-prompt.md), adapted
 from #338 with proportional reporting guidance. Technical `review.prompt_file` and per-reviewer settings do not choose
-this checkpoint's instructions. The runner also supplies the installed
-[shared writing rules](writing.md) as defaults for report prose; trusted project
+this checkpoint's instructions. The runner also supplies the plain-language section of the
+installed [shared writing rules](writing.md) as defaults for report prose; trusted project
 writing instructions take precedence. Candidate writing files remain data, not
 instructions; Ruby does not enforce the prose's clarity or section responsibilities.
 
@@ -173,10 +173,12 @@ the useful summary is:
 >
 > **Recommended next action:** Revise before merging.
 >
+> **Next action:** Revise this PR, then revalidate and review.
+>
+> **Evaluation:** Simplify/reframe
+>
 > Keep the missing-configuration safeguard; remove unused scans from watching and
 > repeated check verification.
->
-> **Next action:** Revise this PR, then revalidate and review.
 
 The watcher discards configuration results, so removing that dependency preserves
 its demonstrated guarantees. Keep fresh checks for explicit status, Ask handoff,

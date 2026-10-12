@@ -5,7 +5,7 @@ require_relative 'post_implementation_summary_test'
 class PostImplementationCompactTest < Minitest::Test
   include PostImplementationSummaryFixture
 
-  def test_routine_report_keeps_the_decision_visible_without_repeating_the_conclusion
+  def test_routine_report_keeps_the_decision_visible_and_states_the_conclusion_once
     visible = routine_report.split('<details>', 2).first
 
     assert_includes visible, '**Recommended next action:** Merge if CI passes'
@@ -14,7 +14,7 @@ class PostImplementationCompactTest < Minitest::Test
     refute_includes visible, 'after required checks and approvals'
     assert_includes visible, 'The label is clearer and older notes remain readable.'
     assert_includes visible, 'Complete the required approval.'
-    refute_includes visible, 'Evaluation:'
+    assert_equal 1, routine_report.scan('Evaluation:').size
   end
 
   def test_supporting_analysis_and_usage_remain_available_in_closed_details
@@ -33,11 +33,11 @@ class PostImplementationCompactTest < Minitest::Test
       with_result do |result, path|
         change_report(result, 'conclusion' => conclusion, 'summary' => 'The approach needs attention.',
                               'concerns' => ['Notes cannot be recovered.', 'Recovery is unverified.'])
-        visible, details = rendered(result, path).split('<details>', 2)
+        visible = rendered(result, path).split('<details>', 2).first
 
         assert_includes visible, "**Unresolved concerns:**\n\n- Notes cannot be recovered.\n- Recovery is unverified."
         refute_includes visible, '**Recommended next action:** Merge if CI passes'
-        assert_includes details, "Evaluation: **#{conclusion}**"
+        assert_includes visible, "**Evaluation:** #{conclusion}\n\nThe approach needs attention."
       end
     end
   end

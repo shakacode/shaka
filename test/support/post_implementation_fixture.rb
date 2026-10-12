@@ -14,7 +14,10 @@ module PostImplementationFixture
     trace = checkpoint_trace(root)
     instructions = trace.fetch('prompt').split('--- BEGIN PACKET DATA', 2).first
     directory = File.expand_path('../../skills/shaka/references', __dir__)
-    assert_includes instructions, File.read(File.join(directory, 'writing.md'), encoding: 'UTF-8')
+    guide = File.read(File.join(directory, 'writing.md'), encoding: 'UTF-8')
+    assert_includes instructions, guide[/^## Plain language and organization\n.*?(?=^## )/m].strip
+    refute_includes instructions, '## Review evidence'
+    refute_includes instructions, '## Checkpoint sections'
     refute_includes instructions, File.read(File.join(directory, 'publication.md'), encoding: 'UTF-8')
     trace
   end

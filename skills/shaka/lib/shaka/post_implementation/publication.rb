@@ -71,8 +71,9 @@ module Shaka
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = report.fetch('summary', report.fetch('reasons').first)
-      ["**Recommended next action:** #{action}", summary,
+      ["**Recommended next action:** #{action}",
        "**Next action:** #{owner_action(report, next_action)}",
+       "**Evaluation:** #{report.fetch('conclusion')}", summary,
        concern_section(report), supporting_analysis(report, summary)].join("\n\n")
     end
 
@@ -83,7 +84,6 @@ module Shaka
 
     def supporting_analysis(report, summary)
       ["<details>\n<summary>Supporting analysis and execution details</summary>",
-       "Evaluation: **#{report.fetch('conclusion')}**",
        *report.fetch('reasons').reject { |reason| reason == summary },
        "Alternative considered: #{report.fetch('alternative')}",
        execution_evidence, "Prompt: #{@result.fetch('prompt_source')}.", usage_text,
