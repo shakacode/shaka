@@ -46,8 +46,9 @@ sections:
 - **From** says whether the PR author or someone else wrote the comment. Agents
   post from a person's account, so the account name cannot tell them apart. A
   comment counts as an agent's when a bot account posted it, or when it opens
-  with the agent's 🤖 line or a hidden tool marker such as
-  `<!-- shaka:reply:… -->`. Any other comment counts as a person's.
+  with the agent's 🤖 line, a hidden tool marker such as
+  `<!-- shaka:reply:… -->`, or the pointer Shaka leaves on a superseded
+  walkthrough. Any other comment counts as a person's.
 - **Said** quotes the comment's opening words and links to it.
 - **Response** links the agent or bot post that answered it.
 - **Status** is GitHub's resolved state for an inline thread, and the verdict for
@@ -64,7 +65,8 @@ or request for changes is not shown, and its comments do not count as open.
 The list names the commit at which the agent read the comments. A comment added
 later appears the next time the agent reads comments and updates the description.
 If the PR has moved to a newer commit since that read, a note under the list says
-so. Instructions you give in chat are not on GitHub, so they are not in this list.
+so. On a PR from a fork the list appears only when the agent passes a fresh read.
+Instructions you give in chat are not on GitHub, so they are not in this list.
 
 ## Revisit a merged change
 

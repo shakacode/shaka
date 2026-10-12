@@ -171,6 +171,14 @@ class PublicationHumanCommentsTest < Minitest::Test
     assert_equal 'None open · 2 from 1 reviewer', counts(rendered)
   end
 
+  def test_an_approval_submitted_later_closes_the_request_even_when_its_review_was_started_first
+    request = review(2, 'Bob', 'Needs a test.', state: 'CHANGES_REQUESTED', at: '2026-10-01T00:00:00Z')
+    approval = review(1, 'Bob', '', state: 'APPROVED', at: '2026-10-02T00:00:00Z')
+    rendered = describe(packet(review_summaries: [approval, request]))
+
+    assert_equal [['Approved'], ['Approved later']], columns(rendered, 3)
+  end
+
   def test_a_pending_draft_and_a_review_that_only_carries_inline_comments_are_not_listed
     rendered = describe(packet(review_summaries: [review(1, 'ann', 'My unsubmitted draft.', state: 'PENDING'),
                                                   review(2, 'ann', '')],

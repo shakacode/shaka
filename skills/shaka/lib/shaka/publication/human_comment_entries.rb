@@ -94,7 +94,10 @@ module Shaka
       other.body.to_s.match?(/#{url}(?!\d)/)
     end
 
-    def later(posts, entry) = posts.select { |other| other.id.is_a?(Integer) && other.id > entry.id }
+    # A review can be submitted long after it was started, so time decides and the id only breaks a tie.
+    def later(posts, entry)
+      posts.select { |other| other.id.is_a?(Integer) && ([other.at.to_s, other.id] <=> [entry.at.to_s, entry.id]) == 1 }
+    end
 
     def approved_later?(entry)
       later(@kept, entry).any? do |other|
