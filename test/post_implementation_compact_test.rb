@@ -8,12 +8,12 @@ class PostImplementationCompactTest < Minitest::Test
   def test_routine_report_keeps_the_decision_visible_without_repeating_the_conclusion
     visible = routine_report.split('<details>', 2).first
 
-    assert_includes visible, '### Recommended next action: Merge if CI passes'
-    assert_includes visible, "### Unresolved concerns\n\nNone."
+    assert_includes visible, '**Recommended next action:** Merge if CI passes'
+    assert_match(%r{\*\*Reviewed revision:\*\* \[`aaaaaaa`\]\(https://github.com/example/test/commit/a{40}\)}, visible)
+    assert_includes visible, "**Unresolved concerns:**\n\nNone."
     refute_includes visible, 'after required checks and approvals'
     assert_includes visible, 'The label is clearer and older notes remain readable.'
     assert_includes visible, 'Complete the required approval.'
-    assert_includes visible, 'a' * 40
     refute_includes visible, 'Evaluation:'
   end
 
@@ -35,8 +35,8 @@ class PostImplementationCompactTest < Minitest::Test
                               'concerns' => ['Notes cannot be recovered.', 'Recovery is unverified.'])
         visible, details = rendered(result, path).split('<details>', 2)
 
-        assert_includes visible, "### Unresolved concerns\n\n- Notes cannot be recovered.\n- Recovery is unverified."
-        refute_includes visible, '### Recommended next action: Merge if CI passes'
+        assert_includes visible, "**Unresolved concerns:**\n\n- Notes cannot be recovered.\n- Recovery is unverified."
+        refute_includes visible, '**Recommended next action:** Merge if CI passes'
         assert_includes details, "Evaluation: **#{conclusion}**"
       end
     end
@@ -51,7 +51,7 @@ class PostImplementationCompactTest < Minitest::Test
 
         assert_includes visible, 'The provider could not complete this review.'
         assert_includes visible, 'a' * 40
-        refute_includes visible, '### Recommended next action: Merge if CI passes'
+        refute_includes visible, '**Recommended next action:** Merge if CI passes'
       end
     end
   end

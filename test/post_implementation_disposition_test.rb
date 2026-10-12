@@ -13,10 +13,10 @@ module PostImplementationDispositionFixture
 
   def assert_owner_decision(github, result)
     body = github.bodies.first.first
-    assert_includes body, '### Evaluation: Proceed'
-    assert_includes body, "### Recommended next action: #{result['disposition']['recommendation']}"
+    assert_includes body, '**Evaluation:** Proceed'
+    assert_includes body, "**Recommended next action:** #{result['disposition']['recommendation']}"
     assert_includes body, result['disposition']['reason']
-    assert_includes body, "### Next action\n\n#{result['disposition']['next_action']}"
+    assert_includes body, "**Next action:** #{result['disposition']['next_action']}"
     assert_includes body, 'Required checks, reviews, and merge authority still apply.'
   end
 

@@ -11,16 +11,16 @@ module Shaka
   # Presents the checkpoint's action without confusing configuration with observations.
   class PostImplementationPublication
     ACTIONS = {
-      'Proceed' => ['Merge if CI passes',
-                    'Complete technical validation and required approvals.'],
+      'Proceed' => ['Merge if CI passes', 'Complete technical validation and required approvals.'],
       'Simplify/reframe' => ['Revise before merging.', 'Revise the approach, then revalidate and review.'],
       'Do not merge' => ['Do not merge; decide whether to close or replace.',
                          'Bring the close-or-replace decision to the maintainer.']
     }.freeze
 
-    def initialize(result, head:, message: nil)
+    def initialize(result, head:, repository:, message: nil)
       @result = result
       @head = head
+      @revision = "[`#{head[0, 7]}`](https://github.com/#{repository}/commit/#{head})"
       @message = message
       @usage = native_usage
       @configuration = @usage.last&.fetch('configuration') || []
@@ -30,7 +30,8 @@ module Shaka
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
       body += "\n\n#{SquashComment.body(@head, @message.call)}" if @state == 'ready'
-      "#{identity}\n\n# Checkpoint\n\n#{body}\n\n#{PostImplementationEvidence.attestation(@head, @state)}"
+      "#{identity}\n\n# Checkpoint\n\n**Reviewed revision:** #{@revision}\n\n#{body}\n\n" +
+        PostImplementationEvidence.attestation(@head, @state)
     end
 
     private
@@ -70,15 +71,14 @@ module Shaka
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = report.fetch('summary', report.fetch('reasons').first)
-      ["### Recommended next action: #{action}", summary,
-       "### Next action\n\n#{owner_action(report, next_action)}",
-       concern_section(report), "Head: `#{@head}`",
-       supporting_analysis(report, summary)].join("\n\n")
+      ["**Recommended next action:** #{action}", summary,
+       "**Next action:** #{owner_action(report, next_action)}",
+       concern_section(report), supporting_analysis(report, summary)].join("\n\n")
     end
 
     def concern_section(report)
       items = report.fetch('concerns')
-      "### Unresolved concerns\n\n#{items.empty? ? 'None.' : items.map { |item| "- #{item}" }.join("\n")}"
+      "**Unresolved concerns:**\n\n#{items.empty? ? 'None.' : items.map { |item| "- #{item}" }.join("\n")}"
     end
 
     def supporting_analysis(report, summary)
@@ -113,8 +113,8 @@ module Shaka
                               ['Review not completed; readiness remains blocked.',
                                'Resolve the execution failure and rerun the checkpoint.']
                             end
-      "### Recommended next action: #{action}\n\n#{@result.fetch('reason')}\n\n" \
-        "### Next action\n\n#{next_action}\n\nHead: `#{@head}`\n\n" \
+      "**Recommended next action:** #{action}\n\n#{@result.fetch('reason')}\n\n" \
+        "**Next action:** #{next_action}\n\n" \
         "<details>\n<summary>Execution details</summary>\n\n#{execution_evidence}\n\n#{usage_text}\n\n</details>"
     end
 
