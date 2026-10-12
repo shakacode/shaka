@@ -76,6 +76,7 @@ verification gaps, and help resuming work when checks or access fail.
 ## Names and logos
 
 The MIT license covers the code and documentation. It does not grant rights to
-the Shaka and ShakaCode names or logos, which are trademarks of ShakaCode. You may
-say that your work uses or is based on Shaka. Give a fork or product its own name,
-so it does not appear to come from ShakaCode.
+use the Shaka or ShakaCode names or logos. ShakaCode is a registered trademark of
+ShakaCode LLC in the United States. You may say that your work uses or is based on
+Shaka. Give a fork or product its own name, so it does not appear to come from
+ShakaCode.
