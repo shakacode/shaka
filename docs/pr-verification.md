@@ -50,10 +50,10 @@ sections:
   `<!-- shaka:reply:… -->`, or the pointer Shaka leaves on a superseded
   walkthrough. Any other comment counts as a person's.
 - **Said** quotes the comment's opening words and links to it.
-- **Response** links the agent or bot post that answered it.
+- **Response** links the agent post, or the trusted bot's post, that answered it.
 - **Status** is GitHub's resolved state for an inline thread, and the verdict for
-  an approval or a request for changes. Any other comment stays open until an
-  agent reply links to it.
+  an approval, a request for changes, or a dismissed review. Any other comment
+  stays open until an agent reply links to it.
 
 Open comments come first, and a reviewer's come before the author's.
 

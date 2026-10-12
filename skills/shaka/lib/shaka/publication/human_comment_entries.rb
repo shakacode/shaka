@@ -16,7 +16,7 @@ module Shaka
     # with its four-field identity line, a hidden `tool:purpose` marker, or the pointer of an
     # archived walkthrough. A person's own line may start with the emoji or another hidden comment.
     IDENTITY = /🤖 [^\n·]+(?: · [^\n·]+){3}$/
-    AGENT_OPENING = /\A(?:#{IDENTITY}|<!-- ?[a-z][\w-]*:[\w.:-]+ ?-->|#{Regexp.escape(WalkthroughHistory::MARKER)})/i
+    AGENT_OPENING = /\A(?:#{IDENTITY}|<!-- ?[a-z][\w-]*:[\w.:-]+ ?-->|#{Regexp.escape(WalkthroughHistory::MARKER)})/
     OPEN = ['Open', 'No reply', 'Changes requested'].freeze
 
     def initialize(packet)
@@ -70,8 +70,9 @@ module Shaka
 
     def person?(entry) = entry.login.is_a?(String) && entry.id.is_a?(Integer) && !bot?(entry) && !marked?(entry)
 
+    # A maintainer who dismisses a review has settled it.
     def verdict(entry)
-      return 'Approved' if entry.state == 'APPROVED'
+      return entry.state.capitalize if %w[APPROVED DISMISSED].include?(entry.state)
       return unless entry.state == 'CHANGES_REQUESTED'
 
       approved_later?(entry) ? 'Approved later' : 'Changes requested'

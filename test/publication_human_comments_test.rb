@@ -179,6 +179,13 @@ class PublicationHumanCommentsTest < Minitest::Test
     assert_equal [['Approved'], ['Approved later']], columns(rendered, 3)
   end
 
+  def test_a_dismissed_review_is_settled
+    rendered = describe(packet(review_summaries: [review(1, 'Bob', 'Needs a test.', state: 'DISMISSED')]))
+
+    assert_equal [['Dismissed']], columns(rendered, 3)
+    assert_equal 'None open · 1 from 1 reviewer', counts(rendered)
+  end
+
   def test_a_pending_draft_and_a_review_that_only_carries_inline_comments_are_not_listed
     rendered = describe(packet(review_summaries: [review(1, 'ann', 'My unsubmitted draft.', state: 'PENDING'),
                                                   review(2, 'ann', '')],
@@ -190,9 +197,11 @@ class PublicationHumanCommentsTest < Minitest::Test
 
   def test_a_person_s_comment_that_opens_with_an_ordinary_hidden_comment_is_still_listed
     rendered = describe(packet(issue_comments: [issue_comment(1, 'Bob', "<!-- from my template -->\nSplit this PR."),
-                                                issue_comment(2, 'ann', "<!-- grokbot:triage -->\nTriaged.")]))
+                                                issue_comment(2, 'Bob', "<!-- TODO:mine -->\nAnd rename it."),
+                                                issue_comment(3, 'ann', "<!-- grokbot:triage -->\nTriaged.")]))
 
-    assert_equal [["[“Split this PR\\.”](#{URL}#issuecomment-1)", '**No reply**']], columns(rendered, 1, 3)
+    assert_equal [["[“Split this PR\\.”](#{URL}#issuecomment-1)"], ["[“And rename it\\.”](#{URL}#issuecomment-2)"]],
+                 columns(rendered, 1)
   end
 
   def test_a_bot_summary_that_links_a_conversation_comment_does_not_answer_it
