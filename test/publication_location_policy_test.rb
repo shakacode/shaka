@@ -48,6 +48,18 @@ class PublicationLocationPolicyTest < Minitest::Test
     end
   end
 
+  def test_a_committed_earlier_setting_name_still_hides_the_checkout_path
+    with_checkout do |root, _ref|
+      path = Dir[File.join(root, '.agents/{agent-workflow.yml,shaka/config.yml}')].first
+      File.write(path, YAML.dump(YAML.safe_load_file(path).merge('wip' => { 'include_locations' => false })))
+      git(root, 'add', '-A')
+      commit(root)
+      body = location_body(prepare(root, git(root, 'rev-parse', 'HEAD'), {}))
+      assert_includes body, '| Workspace | REDACTED |'
+      assert_recovery_fields_kept(body)
+    end
+  end
+
   def test_the_earlier_setting_name_no_longer_reaches_publication
     settings = Shaka::PublicationSettings.new(current: { 'wip.include_locations' => true })
     assert_checkout_path_withheld(location_body(settings))

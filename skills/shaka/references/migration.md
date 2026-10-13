@@ -92,10 +92,12 @@ Older keys are deliberately rejected during this pilot:
 | `review.pace` | `review.ci_review_wait`; `swift` becomes `one`, `thorough` becomes `all` |
 | `--pace swift` / `--pace thorough` | `--ci-review-wait one` / `--ci-review-wait all` |
 | `recovery.workspace_path`, `recovery.publish_locations` | `wip.include_checkout_path`; migration preserves the boolean value |
-| `wip.include_locations` | `wip.include_checkout_path`; same boolean, and the session link is no longer hidden |
 | `plan` | Point to the requirements document from `AGENTS.md` |
 | YAML `commands` mapping | Fixed `.agents/bin/` scripts |
 | `protection`, `trusted_actions`, `merge.method`, `merge.release` | Live GitHub settings, workflow files, or the repository's actual security tooling |
+
+`wip.include_locations` still loads as `wip.include_checkout_path` with the same
+boolean; the session link is no longer hidden.
 
 For the old command-path mapping, migrate in this order:
 

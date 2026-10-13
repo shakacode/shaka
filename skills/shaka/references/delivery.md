@@ -145,7 +145,7 @@ share or export URL, to fill this field.
 **Privacy:** both team setup and private trials default `wip.include_checkout_path`
 to `true`. Supply the selected default-branch `--ref` to `description`.
 The renderer uses `REDACTED` for Workspace only when the setting is explicitly
-false; `wip.include_locations` is its earlier name. Unread or unavailable settings
+false. Unread or unavailable settings
 withhold Workspace and explain the recovery action:
 rerun `description` with `--ref` when omitted, or fix `seam check --ref` before
 republishing when loading failed. No setting hides Chat link; supply `UNKNOWN`
