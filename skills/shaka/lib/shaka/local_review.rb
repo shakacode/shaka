@@ -57,7 +57,7 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review run --root DIR --base SHA --head SHA --reviewer ID'
         %w[root base head reviewer effort model criteria-ref settings-ref repository description-file timeout-seconds
-           ledger].each do |key|
+           ledger max-review-executions budget-reason].each do |key|
           flags.on("--#{key} VALUE") { |value| @options[key.tr('-', '_').to_sym] = value }
         end
         flags.on('-h', '--help') { @options[:help] = true }
@@ -78,16 +78,16 @@ module Shaka
       raise OptionParser::InvalidArgument, parser.to_s unless @arguments.length == 2 && @options[:content_file]
 
       github = @github || GitHub.new(*@arguments)
-      result = LocalReviewPublisher.new(content, github, @arguments.first).publish
+      result = LocalReviewPublisher.new(published_content, github, @arguments.first).publish
       puts JSON.pretty_generate(result)
-      0
+      result.fetch('cleanup').fetch('unavailable').empty? ? 0 : 1
     end
 
     def record(parser)
       raise OptionParser::InvalidArgument, parser.to_s unless
         @arguments.empty? && @options[:ledger] && @options[:content_file]
 
-      recorded = LocalReviewLedger.new(@options[:ledger]).record!(content)
+      recorded = LocalReviewLedger.new(@options[:ledger]).record!(content, head: @options[:head])
       puts JSON.pretty_generate('ledger' => File.expand_path(@options[:ledger]), 'rounds' => recorded)
       0
     end
@@ -96,12 +96,18 @@ module Shaka
       OptionParser.new do |flags|
         flags.banner = 'Usage: shaka review record --ledger PATH --content-file PATH'
         flags.on('--ledger PATH') { |value| @options[:ledger] = value }
+        flags.on('--head SHA', /\A[0-9a-f]{40}\z/) { |value| @options[:head] = value }
         flags.on('--content-file PATH') { |value| @options[:content_file] = value }
         flags.on('-h', '--help') { @options[:help] = true }
       end
     end
 
     def content = JSON.parse(File.read(@options[:content_file], encoding: 'UTF-8'))
+
+    # Finds each kept report, including beside a ledger that has moved, or names the one that is gone.
+    def published_content
+      LocalReviewBundle.resolve(content, File.dirname(File.expand_path(@options[:content_file])))
+    end
 
     def publish_parser
       OptionParser.new do |flags|

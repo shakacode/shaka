@@ -1,4 +1,4 @@
-# Post-implementation validation
+# Checkpoint
 
 Before declaring an implementation ready to merge, step back from code correctness
 and ask whether the finished result remains worth carrying. A restricted reviewer performs
@@ -24,12 +24,23 @@ links before invoking or publishing.
 ```sh
 shaka post-implementation run --root DIR --base BASE_SHA --head HEAD_SHA \
   --ref TRUSTED_DEFAULT_SHA --content-file packet.json > checkpoint.json
-shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.json
+shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.json \
+  --squash-message message.json
 ```
 
+For a ready result, supply `message.json` with the same `title` and plain-text `body`
+used by `merge --squash-message`, as defined in the workflow's publication commands.
+Publication refuses a ready checkpoint without this message, or before this account's
+walkthrough for the head is published. It places copyable title
+and body blocks in the checkpoint and preserves branch co-author trailers.
+Blocked, failed, and opted-out results need no message and display no merge text.
+For an authorized opt-out, keep the standalone `squash-message` command for the Ask handoff.
+Repeat publication after any head change; a recommendation supplies no merge consent.
+
 After publication, set description `post_implementation` to the returned PR comment URL
-and republish the description. The renderer places Post-implementation verification
-beside Code Walkthrough, followed by any deployment link. Until publication, it shows
+and supply the description summary using the workflow's publication contract.
+The renderer places its status and recommended next action near the top,
+with the Checkpoint link beside Code Walkthrough, followed by any deployment link. Until publication, it shows
 a named placeholder. This link locates the report; it does not establish readiness.
 
 Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
@@ -60,7 +71,10 @@ Settings follow this precedence: explicit task flags, trusted
 `openai/codex`, model `gpt-6.1-sol`, medium effort, and the
 [default product prompt](../config/post-implementation-prompt.md), adapted
 from #338 with proportional reporting guidance. Technical `review.prompt_file` and per-reviewer settings do not choose
-this checkpoint's instructions.
+this checkpoint's instructions. The runner also supplies the plain-language section of the
+installed [shared writing rules](writing.md) as defaults for report prose; trusted project
+writing instructions take precedence. Candidate writing files remain data, not
+instructions; Ruby does not enforce the prose's clarity or section responsibilities.
 
 Task flags are `--reviewer PROVIDER/FAMILY`, `--model MODEL`, `--effort LEVEL`, and
 `--prompt-file REPOSITORY_PATH`. Supply them only for a direct user choice or the
@@ -112,6 +126,63 @@ unavailable update; the new report stays published so the same execution can be 
 
 ## Act on the conclusion
 
+### Recommend the next action
+
+Verification gathers evidence about the finished result. After assessing that evidence,
+the task owner recommends what happens to the PR. Every completed implementation ends
+with this recommendation, even when verification confirms the requested behavior works.
+Keep the reviewer's report intact. Add a `disposition` object to the result JSON supplied
+to `post-implementation publish`, using the same verified head:
+
+```json
+{
+  "disposition": {
+    "head": "FULL_VERIFIED_HEAD_SHA",
+    "recommendation": "Reconsider approach",
+    "reason": "The requested behavior works, but the new configuration costs more than the benefit.",
+    "next_action": "Propose using the existing setting to the maintainer before changing the goal."
+  }
+}
+```
+
+This is a field added to the complete runner result, not a replacement result file.
+Put the chosen recommendation in `disposition.recommendation`.
+Choose one fixed value; Ruby parses these values, so they are not configurable:
+
+| Recommendation | Meaning and next step |
+| --- | --- |
+| Merge | The result is appropriate to ship. Complete required checks, reviews, and the task's Ask or Auto path. |
+| Revise before merge | The direction is sound. Name the specific changes, make them, then repeat affected verification and review. |
+| Reconsider approach | Working code revealed a wrong or disproportionate solution. Explain why and propose an alternative through the existing maintainer decision path. |
+| Do not merge | Recommend abandoning or replacing this PR, with the reason and next step. The maintainer decides whether to close it. |
+
+Give each owner field one job:
+
+- `reason`: the main reason for the recommendation. A recommendation is not merge permission.
+- `next_action`: the action, starting with its verb. Name who does it only when that
+  person is not the developer. Do not restate the recommendation.
+
+Publish the reviewer's report fields unchanged.
+
+Ruby checks the disposition's head, vocabulary, reason, and concrete next-action field.
+It rejects **Merge** when verification has a blocking conclusion or unresolved concerns.
+The other three values publish the existing `blocked` attestation, including when
+verification says **Proceed**. A disposition for an older head cannot publish. A failed
+or opted-out execution has no completed verification to attach a disposition to;
+publish its existing execution outcome instead. Results without the field retain
+their conclusion-based publication for compatibility; Ruby does not distinguish old
+from new results. Supplying the disposition for each completed implementation is
+the task owner's workflow responsibility.
+
+The comment shows the owner's recommendation and next action separately from the
+reviewer's verification conclusion and evidence. Ruby validates the fields, not the
+truth of their prose. The owner resolves earlier substantive concerns before recommending
+Merge; passing tests or a new positive report does not settle them. Refresh the
+disposition after material changes. A Merge recommendation grants no authority,
+disables no checks, and submits no merge. The other values close no PR automatically.
+
+### Read the verification evidence
+
 The published comment leads with one recommendation, short reason, and next action
 for the task owner, followed by the head and unresolved concerns. Supporting reasons,
 alternatives, and execution details stay in a closed disclosure. Assess every
@@ -127,10 +198,14 @@ the useful summary is:
 
 > OpenAI/Codex · configured model: gpt-6.1-sol · observed model: UNKNOWN
 >
-> Recommendation: **Revise before merging.** Keep the missing-configuration
-> safeguard; remove unused scans from watching and repeated check verification.
+> **Recommended next action:** Revise before merging.
 >
-> **Next action (task owner):** Revise this PR, then revalidate and review.
+> **Next action:** Revise this PR, then revalidate and review.
+>
+> **Evaluation:** Simplify/reframe
+>
+> Keep the missing-configuration safeguard; remove unused scans from watching and
+> repeated check verification.
 
 The watcher discards configuration results, so removing that dependency preserves
 its demonstrated guarantees. Keep fresh checks for explicit status, Ask handoff,
@@ -138,8 +213,9 @@ and Auto submission, along with job-scoped environments, caller-secret exclusion
 names-only reporting, and unverified permission responses. Checker fixes belong to
 #348/#354; this example is bound to the earlier report, not a current readiness claim.
 
-**Proceed** means the result remains justified and appropriately scoped; technical
-validation and required reviews still apply. **Simplify/reframe** means the goal
+**Proceed** is published as **Merge if CI passes**: the result remains justified
+and appropriately scoped. Technical validation, required reviews, and the task’s
+merge approval still apply. The recommendation does not authorize merging. **Simplify/reframe** means the goal
 may be valid but the approach needs revision. **Do not merge** means the result
 does not justify adoption. The latter two block readiness and Auto while the
 substantive concern remains. Green checks or merge authority do not resolve it.

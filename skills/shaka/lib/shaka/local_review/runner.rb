@@ -21,7 +21,7 @@ module Shaka
 
     def coverage
       return 'Supplied diff only; unchanged source and test execution are unavailable to this reviewer.' if
-        reviewer == 'anthropic/claude'
+        %w[anthropic/claude deepseek/openrouter].include?(reviewer)
 
       'Read-only source lookup permitted; actual inspection coverage is UNKNOWN. Test execution is prohibited.'
     end
@@ -33,6 +33,9 @@ module Shaka
     end
 
     def source_lookup_instruction
+      return 'The API has no filesystem or tools; review the supplied diff and report missing context.' if
+        reviewer == 'deepseek/openrouter'
+
       return 'Restricted Claude cannot run Git commands; review the supplied diff and report missing context.' if
         reviewer == 'anthropic/claude'
 
@@ -70,6 +73,7 @@ module Shaka
     private
 
     def validate_path!
+      LocalReviewBudget.validate_options!(@options)
       ENV['PATH'] = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
     end
 
@@ -123,11 +127,19 @@ module Shaka
       return unless @options[:ledger]
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
-      @max_rounds = RepositoryConfig::ReviewLimit.from(trusted_review || {})
-      @ledger.start!(base: @options[:base], head:, reviewer: @options[:reviewer], max_rounds: @max_rounds)
+      @max_rounds = RepositoryConfig::ReviewLimit.from(effective_review || {})
+      start_ledger
       @started = true
-      check_history! if @ledger.last_head
       @snapshot = @ledger.snapshot(head)
+    end
+
+    def start_ledger
+      budget = { limit: @options[:max_review_executions].to_i, reason: @options[:budget_reason] } if
+        @options[:max_review_executions]
+      @ledger.start!(base: @options[:base], head:, reviewer: @options[:reviewer], max_rounds: @max_rounds, budget:) do
+        check_history! if @ledger.last_head
+      end
+      @max_rounds = @ledger.max_rounds(@max_rounds)
     end
 
     # The next round must hold the last reviewed head and each fix the last batch records, and each
@@ -136,7 +148,7 @@ module Shaka
     def check_history!
       last = @ledger.last_head
       contains!(last, head)
-      @ledger.last_batch_fixes.each do |fix|
+      @ledger.recorded_batch_fixes.each do |fix|
         raise Shaka::Error, "Fix #{fix} is the head round #{@ledger.rounds.size} reviewed; commit the fix." if
           fix == last
 
@@ -170,7 +182,13 @@ module Shaka
       round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
       @ledger.append!(base: @options[:base], round:, snapshot: @snapshot, max_rounds: @max_rounds)
       @appended = true
-      result.merge('ledger' => @ledger.path, 'round' => @ledger.rounds.size)
+      result.merge(kept_round)
+    end
+
+    # The result names the kept copy, which outlives the reviewer's own temporary file.
+    def kept_round
+      { 'report' => @ledger.rounds.last.fetch('report'), 'ledger' => @ledger.path, 'round' => @ledger.rounds.size,
+        'ledger_warning' => LocalReviewBundle.warning(@ledger.path) }.compact
     end
 
     # Earlier rounds reach the reviewer as data: each finding's class and disposition, never the
@@ -312,6 +330,7 @@ module Shaka
     end
 
     def validate_model!
+      OpenrouterReview.validate!(@options) if reviewer == 'deepseek/openrouter'
       raise Shaka::Error, '--model is required for xai/grok' if reviewer == 'xai/grok' && @options[:model].to_s.empty?
 
       RepositoryConfig::ReviewSchema.effort_level!(@options[:effort], '--effort') if @options[:effort]

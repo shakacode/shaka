@@ -20,6 +20,17 @@ class PostImplementationMergeWarningTest < Minitest::Test
                     github.description_body.index('Feature summary')
   end
 
+  def test_owner_revision_keeps_the_pr_blocked_even_when_verification_proceeds
+    with_result do |result, path|
+      result['disposition'] = { 'head' => result['head'], 'recommendation' => 'Revise before merge',
+                                'reason' => 'Domain acceptance is pending.', 'next_action' => 'Resolve acceptance.' }
+      github, status = publish(result, path)
+
+      assert_equal 0, status
+      assert_warning(github)
+    end
+  end
+
   def test_blocked_report_makes_the_pr_draft_and_puts_the_reason_before_the_feature_summary
     with_result do |result, path|
       domain_block(result)

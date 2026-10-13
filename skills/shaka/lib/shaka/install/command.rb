@@ -43,6 +43,7 @@ module Shaka
         options.on('--agent NAME', 'codex, claude, cursor, or opencode; repeat for several') do |value|
           @options[:agents] << value
         end
+        options.on('--with-mct') { @options[:names] << 'mct' }
         options.on('--with-rct') { @options[:names] << 'rct' }
         options.on('--with-claude-towers') { @options[:names].push('mct-claude', 'rct-claude') }
         options.on('--managed', 'Explicit retained copy (normally use a PR trial)') { @options[:managed] = true }

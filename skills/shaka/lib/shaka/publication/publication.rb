@@ -9,6 +9,7 @@ require_relative 'provenance_history'
 require_relative 'wip_details'
 require_relative 'settings'
 require_relative 'steps_besides_merging'
+require_relative 'human_comments'
 require_relative '../publication_sections'
 
 module Shaka
@@ -17,7 +18,7 @@ module Shaka
     # With the pull request being replaced, the provenance history carries forward from its body.
     def self.description(content, workflow_version = nil, pull = nil, settings = nil)
       new(content, require_tables: true, workflow_version:, pull:, settings:)
-        .render(%i[top_links sections table provenance details wip])
+        .render(%i[checkpoint top_links sections table provenance details wip])
     end
 
     def self.comment(content) = new(content).render([])
@@ -34,7 +35,7 @@ module Shaka
     end
 
     def render(parts, title: false)
-      blocks = [PublicationText.identity(@content['identity'])]
+      blocks = [PublicationText.publisher_identity(@content)]
       blocks << '# Code Walkthrough' if title
       blocks << PublicationText.required(@content['summary'], 'summary')
       parts.each { |part| blocks.concat(send(part)) }
@@ -43,10 +44,13 @@ module Shaka
 
     private
 
-    def sections = PublicationSections.render(@content)
+    # Only a description is rendered with its pull request, so only a description lists what people wrote.
+    def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))
+
+    def checkpoint = PublicationLinks.checkpoint(@content, head: @pull&.dig('head', 'sha'))
 
     # The steps besides merging sit under the headline links so a reader cannot miss them.
-    def top_links = [*PublicationLinks.top(@content), *StepsBesidesMerging.render(@content)]
+    def top_links = [*PublicationLinks.top(@content, @settings.attribution?), *StepsBesidesMerging.render(@content)]
 
     def table
       spec = @content['table']
@@ -103,7 +107,7 @@ module Shaka
     # The note is optional because it disappears once GitHub confirms the outcome.
     def wip
       spec = @content['wip']
-      spec.nil? ? [] : [details_block(WipDetails.new(spec, include_locations: @settings.include_locations?).detail)]
+      spec.nil? ? [] : [details_block(WipDetails.new(spec, location_redaction: @settings.location_redaction).detail)]
     end
 
     def refuse_free_form_wip(items)
@@ -114,9 +118,8 @@ module Shaka
 
     # Only the helper writes the history, from the previous body.
     def refuse_supplied_history(items)
-      return unless items.any? do |item|
-        item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(ProvenanceHistory::SUMMARY)
-      end
+      summary = ProvenanceHistory::SUMMARY
+      return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(summary) }
 
       raise Error, 'Publication provenance history is carried from the PR body, not supplied as a details item.'
     end

@@ -6,18 +6,25 @@ require 'shaka/post_implementation'
 module PostImplementationPublicationFixture
   class GitHub < Shaka::GitHub
     attr_reader :bodies, :description_body
+    attr_writer :walkthrough
 
     def initialize(head)
       super('example/test', '1')
       @head = head
+      @walkthrough = head
       @bodies = []
       @draft = false
       @description_body = "<!-- shaka:begin -->\nFeature summary\n<!-- shaka:end -->\n\nHuman notes"
     end
 
-    def snapshot = { 'state' => 'OPEN', 'headRefOid' => @head, 'isDraft' => @draft, 'id' => 'PR_1' }
+    def snapshot
+      { 'state' => 'OPEN', 'headRefOid' => @head, 'isDraft' => @draft, 'id' => 'PR_1',
+        'commits' => { 'totalCount' => 1 } }
+    end
 
-    def api(_path, method: 'GET', fields: {})
+    def api(path, method: 'GET', fields: {})
+      return { 'login' => viewer_login } if path == 'user'
+
       @description_body = fields.fetch(:body) if method == 'PATCH'
       { 'state' => 'open', 'head' => { 'sha' => @head }, 'base' => { 'sha' => 'b' * 40 },
         'body' => @description_body }
@@ -29,6 +36,20 @@ module PostImplementationPublicationFixture
     end
 
     def verify_rendering(body) = body
+
+    def api_list(path)
+      return walkthroughs if path.include?('/reviews')
+
+      [{ 'commit' => { 'message' => "Fix\n\nCo-authored-by: Ada <ada@example.test>" } }]
+    end
+
+    def walkthroughs
+      return [] unless @walkthrough
+
+      footer = "_Walkthrough for commit `#{@walkthrough}`. This is a COMMENT, not an approval._"
+      [{ 'user' => { 'login' => viewer_login }, 'state' => 'COMMENTED', 'commit_id' => @walkthrough,
+         'body' => "🤖 Codex · OpenAI · UNKNOWN · UNKNOWN\n\n# Code Walkthrough\n\nSteps.\n\n#{footer}" }]
+    end
 
     def viewer_login = 'test-author'
 
@@ -76,11 +97,21 @@ module PostImplementationPublicationFixture
     end
   end
 
+  def message_file(path)
+    message = File.join(File.dirname(path), 'message.json')
+    File.write(message,
+               JSON.generate(title: 'Fix checkpoint handoff', body: 'Put the merge text beside the recommendation.'))
+    message
+  end
+
   def publish(result, path, github: GitHub.new('a' * 40))
+    message = message_file(path)
     File.write(path, JSON.generate(result))
     status = nil
     output = capture_io do
-      status = Shaka::PostImplementation.run(['publish', 'example/test', '1', '--content-file', path], github:)
+      status = Shaka::PostImplementation.run(
+        ['publish', 'example/test', '1', '--content-file', path, '--squash-message', message], github:
+      )
     end.first
     [github, status, output]
   end
@@ -95,7 +126,7 @@ class PostImplementationPublicationTest < Minitest::Test
       github, status = publish(result, path)
 
       assert_equal 0, status
-      identity = "🤖 Claude · Anthropic · observed-model · UNKNOWN\n\n# Post-implementation validation\n\n"
+      identity = "🤖 Claude · Anthropic · observed-model · UNKNOWN\n\n# Checkpoint\n\n"
       assert github.bodies.first.first.start_with?(identity)
       refute_includes github.bodies.first.first, 'PRIVATE TRANSCRIPT'
     end

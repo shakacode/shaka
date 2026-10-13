@@ -17,16 +17,19 @@ the workflow reaches that decision:
 | Configure or inspect a repository | [Setup](repository-setup.md) and shared [settings reference](https://github.com/shakacode/shaka/blob/main/docs/settings.md) |
 | Migrate existing settings | [Migration](migration.md) |
 | Plan, split PRs, write updates, or recover work | [Delivery and communication](delivery.md) |
+| Take over a spec or use another installed skill | [Companion skills](companion-skills.md) |
 | Revise earlier human steering and restart | [Human attention checkpoints](return-points.md) |
 | Select reviewers and handle findings | [Review](review.md) |
-| Reconsider the finished result before merge | [Post-implementation validation](post-implementation-validation.md) |
+| Reconsider the finished result before merge | [Checkpoint](post-implementation-validation.md) |
 | Launch a reviewer CLI | [Local review](local-review.md) |
 | Resolve PR comments, including late reports | [Comment settlement](comment-settlement.md) |
-| Write PR descriptions and replies | [Writing](writing.md) |
+| Write clear publication prose and review reports | [Writing rules](writing.md) |
+| Publish PR descriptions, walkthroughs, and replies | [Publication](publication.md) |
 | Assess documentation changes | [Documentation verification](documentation-verification.md) |
 | Choose tests and evidence | [Verification](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md) |
 | Explain visible changes on the new capture | [Annotated screenshots and optional pixel diagnostics](visual-diff.md) |
 | Report model, token, and cost evidence | [Usage reporting](usage-reporting.md) |
+| Run a requested session retrospective | [Retrospective](retrospective.md) |
 | Offer an issue for a verified Shaka gap | [Issue offers](shaka-issue-offer.md) |
 | Read public issue and review discussions | [Public comments](public-comments-safety.md) |
 | Operate a control tower | [Control towers](control-towers.md) |

@@ -7,6 +7,13 @@ review, and PR delivery. Get a clear handoff: what changed, what was checked,
 and what needs your decision—with the context to approve the change, request
 revisions, or resolve an open question.
 
+![A sandwich surrounds an agent loop for building, testing, and review. A human checkpoint routes the result toward revision or proceeding.](docs/img/checkpoint-switchback.webp)
+
+Humans steer the outer loop. Agents build, test, and review inside it.
+At the [checkpoint](docs/pr-verification.md#checkpoint), evaluate the result and decide what happens next.
+
+[View the full-size diagram](docs/img/checkpoint-switchback.webp).
+
 [Read the Shaka documentation](https://shaka.shakacode.com/).
 
 <a id="example-prompts"></a>
@@ -14,17 +21,16 @@ revisions, or resolve an open question.
 
 ## Start with a small task
 
-[Install Shaka and ask it to configure your repository](docs/getting-started.md).
-The agent prepares shared settings using your existing checks. You review the
-choices and merge the first setup PR, then give it a task:
+[Install Shaka](docs/getting-started.md), then give it a task:
 
 ```text
-$shaka Fix search when the query contains an apostrophe.
-Keep merge policy ask. Go.
+$shaka <task or issue link>
 ```
 
 Examples use Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode; in Pi,
 load the installed skill. You can describe an outcome or provide an issue link.
+If setup is missing, Shaka asks whether you want individual or team settings,
+finds your existing checks, and defaults to Ask.
 `Go` starts with your agent's current model and effort settings.
 [Working with Shaka](docs/working-with-shaka.md) covers practical prompts,
 merge choices, feedback, and resuming work.
@@ -73,3 +79,11 @@ verification gaps, and help resuming work when checks or access fail.
 - [Documentation index](docs/README.md) — setup, verification, settings, and advanced guides.
 
 [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
+
+## Names and logos
+
+The MIT license covers the code and documentation. It does not grant rights to
+use the Shaka or ShakaCode names or logos. ShakaCode is a registered trademark of
+ShakaCode LLC in the United States. You may say that your work uses or is based on
+Shaka. Give a fork or product its own name, so it does not appear to come from
+ShakaCode.

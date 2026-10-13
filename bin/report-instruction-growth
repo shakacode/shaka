@@ -1,0 +1,108 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'open3'
+require_relative '../skills/shaka/lib/shaka/workflow'
+
+# Reports instruction size, not quality or model tokens. Never executes baseline code.
+class InstructionGrowth
+  WORKFLOW = 'skills/shaka/config/workflow.yml'
+  ENTRY = 'skills/shaka/SKILL.md'
+  PATTERNS = ['AGENTS.md', 'skills/shaka/**/*.md', '.agents/shaka/*.md'].freeze
+
+  def self.measure(text)
+    raise Shaka::Error, 'Instruction text is not valid UTF-8' unless text.valid_encoding?
+
+    { 'words' => text.split.size, 'bytes' => text.bytesize }
+  end
+
+  def initialize(root:, base:)
+    @root = root
+    @baseline, _error, status = Open3.capture3('git', '-C', root, 'merge-base', base, 'HEAD')
+    @baseline = status.success? ? @baseline.strip : nil
+  end
+
+  def report
+    current = current_texts
+    previous = baseline_texts
+    { 'baseline' => @baseline,
+      'baseline_error' => @baseline_error,
+      'measurement' => 'Words and UTF-8 bytes; both workflows use the current renderer with normalized paths. ' \
+                       'File categories do not establish loading frequency, tokens, or instruction quality.',
+      'entry_workflow_guidance' => core_paths.map { |path| row(path, previous[path], current[path]) },
+      'other_changed_files' => changed_files(previous, current) }
+  end
+
+  private
+
+  def core_paths = [ENTRY, WORKFLOW, 'AGENTS.md']
+
+  def changed_files(previous, current)
+    return [] unless @baseline
+
+    ((current.keys | previous.keys) - core_paths).sort.filter_map do |path|
+      row(path, previous[path], current[path]) unless previous[path] == current[path]
+    end
+  end
+
+  def current_texts
+    paths = PATTERNS.flat_map { |pattern| Dir.glob(pattern, base: @root) }.select do |path|
+      File.file?(File.join(@root, path))
+    end
+    paths.to_h { |path| [path, File.read(File.join(@root, path), encoding: 'UTF-8')] }
+         .merge(WORKFLOW => rendered(File.read(File.join(@root, WORKFLOW), encoding: 'UTF-8')))
+  end
+
+  def baseline_texts
+    return {} unless @baseline
+
+    baseline_paths.to_h do |path|
+      text = git('show', "#{@baseline}:#{path}")
+      [path, path == WORKFLOW ? rendered(text) : text]
+    end
+  rescue Shaka::Error => e
+    @baseline_error = e.message
+    @baseline = nil
+    {}
+  end
+
+  def baseline_paths
+    git('ls-tree', '-r', '--name-only', '-z', @baseline).split("\0").select do |path|
+      PATTERNS.any? { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) } || path == WORKFLOW
+    end
+  end
+
+  def rendered(source)
+    text = Shaka::Workflow.new([]).render(Shaka::WorkflowConfig.load(source:))
+    text.gsub(Shaka::Workflow::PACKAGE_ROOT, '<package>')
+  end
+
+  def row(path, before, after)
+    old = self.class.measure(before || '') if @baseline
+    current = self.class.measure(after || '')
+    delta = current.to_h { |key, value| [key, value - old.fetch(key)] } if old
+    { 'surface' => path, 'before' => old, 'after' => current, 'delta' => delta }
+  end
+
+  def git(*)
+    output, _error, status = Open3.capture3('git', '-C', @root, *)
+    raise Shaka::Error, 'Cannot read the instruction baseline' unless status.success?
+
+    output.force_encoding(Encoding::UTF_8)
+    raise Shaka::Error, 'Instruction baseline is not valid UTF-8' unless output.valid_encoding?
+
+    output
+  end
+end
+
+if $PROGRAM_NAME == __FILE__
+  begin
+    root = File.expand_path('..', __dir__)
+    base = ARGV.fetch(0, ENV.fetch('SHAKA_BASE_REF', 'origin/main'))
+    puts JSON.pretty_generate(InstructionGrowth.new(root:, base:).report)
+  rescue Shaka::Error, SystemCallError => e
+    warn "Instruction report failed: #{e.message}"
+    exit 1
+  end
+end

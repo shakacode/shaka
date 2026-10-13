@@ -30,7 +30,7 @@ module Shaka
           @ref.to_s.match?(/\A[0-9a-f]{40}(?:[0-9a-f]{24})?\z/)
 
         OpeningPublication.with_safe_path(root: @root, select_gh: false) do
-          call(Configuration.trusted(root: @root, ref: @ref, candidate_commands: false).review)
+          call(Configuration.resolve_source(root: @root, ref: @ref, candidate_commands: false).first.review)
         end
       rescue Shaka::Error, SystemCallError => e
         check('Reviewer availability', 'failed', "not probed: #{first_line(e.message)}")
@@ -67,6 +67,7 @@ module Shaka
       end
 
       def validate_settings!(identity, entry)
+        OpenrouterReview.validate!(entry.transform_keys(&:to_sym)) if identity == 'deepseek/openrouter'
         ReviewerSettings.refuse!(ReviewerSettings.notices(identity, model: entry['model'], effort: entry['effort']))
         raise Shaka::Error, 'model is required for Grok; not launched' if identity == 'xai/grok' && !entry['model']
       end

@@ -4,6 +4,13 @@ Understand what your coding agent changed, why it chose the approach, and how
 the result was checked. Shaka presents the context you need to approve a change,
 request revisions, or resolve an open question. You choose who merges it.
 
+![A sandwich surrounds an agent loop for building, testing, and review. A human checkpoint routes the result toward revision or proceeding.](img/checkpoint-switchback.webp)
+
+Humans steer the outer loop. Agents build, test, and review inside it.
+At the [checkpoint](pr-verification.md#checkpoint), evaluate the result and decide what happens next.
+
+[View the full-size diagram](img/checkpoint-switchback.webp).
+
 ## Start here
 
 1. [Install Shaka, configure your repository, and run a first task](getting-started.md).
@@ -19,6 +26,7 @@ request revisions, or resolve an open question. You choose who merges it.
 Ask the agent to handle configuration. These guides explain your choices:
 
 - [Repository setup](configure-repository.md) — reuse your checks and review the setup PR.
+- [Choose your settings](settings-guide.md) — common choices and prompts for your agent.
 - [Coding agents](coding-agents.md) — invocation and installation for your environment.
 - [Upgrade an installation](migration.md) — preserve customizations when updating.
 
@@ -26,7 +34,7 @@ Ask the agent to handle configuration. These guides explain your choices:
 
 - [PR verification](pr-verification.md) — evaluate a change and revisit its decisions after merging.
 - [What to expect from Shaka](expected-experience.md) — setup choices, verification gaps, and recovery.
-- [Settings](settings.md) — the reference for options and defaults.
+- [Settings reference](settings.md) — exact options, defaults, and advanced behavior.
 - [Writing preferences](writing-preferences.md) — choose how the agent writes for your project.
 - [Workflow and enforcement](workflow.md) — what code checks and what relies on the agent.
 - [Architecture](architecture.md) — why Shaka keeps one owner and little state.

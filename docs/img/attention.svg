@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 324" role="img" aria-labelledby="t d">
+<title id="t">Where your attention goes in a Shaka task</title>
+<desc id="d">You set the outcome at the start and make the merge call at the end. Shaka plans, implements, verifies, explains, and handles review in between, and pauses for you only when a product, scope, or risk decision comes up.</desc>
+<style>
+.bg{fill:#fff;stroke:#d9e0e7}
+text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
+.h{font-size:15px;font-weight:600}
+.s{font-size:13px}
+.m{fill:#516074}
+.c{text-anchor:middle}
+rect{stroke-width:1}
+.you rect{fill:#fdf3df;stroke:#b87514}
+.you text{fill:#5f3b06}
+.shaka rect{fill:#e3f5ec;stroke:#128a5e}
+.shaka text{fill:#0b4f37}
+.box rect{fill:#f1f4f8;stroke:#8a99ad}
+.frame{fill:none;stroke:#8a99ad;stroke-dasharray:6 4}
+.a{stroke:#516074;stroke-width:1.5;fill:none}
+.ah{fill:#516074}
+.dash,.dash rect{stroke-dasharray:5 4}
+@media (prefers-color-scheme:dark){
+.bg{fill:#0f1724;stroke:#2a3648}
+text{fill:#e6edf5}
+.m{fill:#9fb0c3}
+.you rect{fill:#40300f;stroke:#e0a13a}
+.you text{fill:#fbe3b0}
+.shaka rect{fill:#0e3d2c;stroke:#3ccf92}
+.shaka text{fill:#c9f3e0}
+.box rect{fill:#1a2535;stroke:#6b7c93}
+.frame{stroke:#6b7c93}
+.a{stroke:#9fb0c3}
+.ah{fill:#9fb0c3}
+}
+</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="719" height="323" rx="10"/>
+<g class="you"><rect x="40" y="40" width="180" height="56" rx="6"/><text class="h c" x="130" y="64">You set the outcome</text><text class="s c" x="130" y="82">Task, limits, merge policy</text></g>
+<g class="you dash"><rect x="270" y="40" width="180" height="56" rx="6"/><text class="h c" x="360" y="64">A decision needs you</text><text class="s c" x="360" y="82">Only product, scope, or risk</text></g>
+<g class="you"><rect x="500" y="40" width="180" height="56" rx="6"/><text class="h c" x="590" y="64">You make the call</text><text class="s c" x="590" y="82">Merge, revise, or rethink</text></g>
+<path class="a" d="M130 96V148" marker-end="url(#ar)"/>
+<path class="a dash" d="M345 150V98" marker-end="url(#ar)"/>
+<path class="a dash" d="M375 96V148" marker-end="url(#ar)"/>
+<path class="a" d="M590 150V98" marker-end="url(#ar)"/>
+<rect class="frame" x="40" y="150" width="640" height="150" rx="8"/>
+<g class="shaka"><rect x="56" y="172" width="108" height="56" rx="6"/><text class="h c" x="110" y="196">Plan</text><text class="s c" x="110" y="214">Value, scope</text></g>
+<g class="shaka"><rect x="181" y="172" width="108" height="56" rx="6"/><text class="h c" x="235" y="196">Implement</text><text class="s c" x="235" y="214">Test, change</text></g>
+<g class="shaka"><rect x="306" y="172" width="108" height="56" rx="6"/><text class="h c" x="360" y="196">Verify</text><text class="s c" x="360" y="214">Checks, review</text></g>
+<g class="shaka"><rect x="431" y="172" width="108" height="56" rx="6"/><text class="h c" x="485" y="196">Explain</text><text class="s c" x="485" y="214">PR, evidence</text></g>
+<g class="shaka"><rect x="556" y="172" width="108" height="56" rx="6"/><text class="h c" x="610" y="196">Review</text><text class="s c" x="610" y="214">CI, findings</text></g>
+<path class="a" d="M165 200H180" marker-end="url(#ar)"/>
+<path class="a" d="M290 200H305" marker-end="url(#ar)"/>
+<path class="a" d="M415 200H430" marker-end="url(#ar)"/>
+<path class="a" d="M540 200H555" marker-end="url(#ar)"/>
+<text class="h" x="56" y="260">Shaka runs the middle</text>
+<text class="s m" x="56" y="280">Reproduces, tests, gets an independent review, and puts the evidence on the PR</text>
+</svg>

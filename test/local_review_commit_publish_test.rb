@@ -11,7 +11,8 @@ class LocalReviewCommitPublishTest < Minitest::Test
     def markdown(body)
       summaries = body.scan(%r{<summary>.*?</summary>}).join("\n")
       details = body.scan('<details>').join + summaries + body.scan('</details>').join
-      "#{details}<table></table><p>#{body.lines.last.strip}</p>"
+      tables = '<table></table>' * body.lines.count { |line| line.start_with?('| ---') }
+      "#{details}#{tables}<p>#{body.lines.last.strip}</p>"
     end
 
     def api(path)
@@ -30,6 +31,17 @@ class LocalReviewCommitPublishTest < Minitest::Test
     github = publish_loop
     assert_equal [EARLIER, HEAD].map { |sha| "local-review-#{sha}" }, github.replies.map(&:first)
     github.replies.each_with_index { |(_, body), index| assert_commit_entry(body, index) }
+  end
+
+  def test_deepseek_report_publishes_through_the_same_exact_head_contract
+    github = Timeline.new
+    entry = clean(HEAD, 'deepseek/openrouter').merge('model' => 'deepseek/deepseek-v4.1-flash',
+                                                     'coverage' => 'Supplied diff only; no filesystem access.')
+    assert_equal 0, publish(github, 'rounds' => [entry]).first
+    body = github.replies.first.last
+    assert_includes body, 'deepseek/deepseek-v4.1-flash'
+    assert_includes body, 'Supplied diff only'
+    assert_equal "REVIEWED #{HEAD} BY deepseek/openrouter EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip
   end
 
   def test_merge_accepts_the_final_commit_attestation_from_a_timeline_comment
@@ -193,5 +205,18 @@ class LocalReviewReplyPreflightTest < Minitest::Test
     error = assert_raises(Shaka::Error) { Shaka::LocalReviewPublisher.new(content, github, 'o/r').publish }
     assert_includes error.message, 'literal escape sequence'
     assert_empty github.replies
+  end
+
+  # https://github.com/shakacode/shaka/issues/478: the rendering check counted the literal
+  # excerpt's separator line as a table GitHub failed to render.
+  def test_a_report_with_a_coverage_table_is_published
+    github = LocalReviewCommitPublishTest::Timeline.new
+    # GitHub shows a pre block as literal text, so a table inside one never renders.
+    def github.markdown(body) = super(body.gsub(%r{^<pre>.*?</pre>}m, ''))
+    table = "| Id | Status |\n| --- | --- |\n| F1 | Resolved |"
+    report = report(body: "## Coverage\n\n#{table}\n\n## Findings\n\nNone.\n", findings: 0)
+    Shaka::LocalReviewPublisher.new({ 'rounds' => [round(findings: [], report:)] }, github, 'o/r').publish
+
+    assert_includes github.replies.first.last, "<pre>#{table.gsub('|', '&#124;')}</pre>"
   end
 end

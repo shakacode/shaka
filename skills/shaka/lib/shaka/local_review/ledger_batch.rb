@@ -12,6 +12,23 @@ module Shaka
 
     private
 
+    def select_record_batch!(head)
+      raise Error, 'The ledger has no round to record.' if rounds.empty?
+
+      @record_head = head
+      raise Error, 'No review batch matches --head.' if batch.empty?
+    end
+
+    # An older batch may be closed after review, but cannot bypass the next-run fix checks.
+    def check_historical_fixes!(updated)
+      return if !@record_head || @record_head == last_head
+
+      reviewed = rounds.drop(batch.last + 1).map { |round| round.fetch('head') }
+      fixes = recorded_batch_fixes(updated) - recorded_batch_fixes
+      raise Error, 'An earlier batch fix must name a later reviewed commit; review the fix before recording it.' unless
+        (fixes - reviewed).empty?
+    end
+
     def check_batch_recorded!
       unrecorded = batch.find { |index| !recorded?(rounds[index]) }
       raise Error, "Record round #{unrecorded + 1}'s findings with `shaka review record` before the next round." if
@@ -19,7 +36,7 @@ module Shaka
     end
 
     # Indexes of the rounds that reviewed the last head.
-    def batch = rounds.each_index.select { |index| rounds[index]['head'] == last_head }
+    def batch = rounds.each_index.select { |index| rounds[index]['head'] == (@record_head || last_head) }
 
     # Another reviewer may join the last batch until it is triaged; any other repeat of a commit
     # needs a fix first.
@@ -36,14 +53,13 @@ module Shaka
     def recorded_rounds(content)
       findings = content.key?('findings') ? PublicationText.list(content['findings'], 'recorded finding') : nil
       # One triage lists each problem once, so an id repeated across reviewers is two problems.
-      if findings
-        check_unique_ids!(findings)
-        check_collation!(findings)
-      end
+      check_recorded_findings!(findings) if findings
       check_usage!(content)
-      rounds.each_with_index.map do |round, index|
+      updated = rounds.each_with_index.map do |round, index|
         batch.include?(index) ? triaged(round, index, findings, content) : round
       end
+      check_historical_fixes!(updated)
+      updated
     end
 
     def triaged(round, index, findings, content)
@@ -126,9 +142,10 @@ module Shaka
       check_reviewers!('usage', usage.keys)
     end
 
-    def check_unique_ids!(findings)
+    def check_recorded_findings!(findings)
       LocalReviewFinding.list(findings.map { |finding| finding.is_a?(Hash) ? finding.except('reviewers') : finding },
                               'recorded finding')
+      check_collation!(findings)
     end
 
     def joins?(round, head, reviewer) = head == last_head && !same_reviewer?(round, reviewer)

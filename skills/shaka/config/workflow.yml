@@ -16,6 +16,8 @@ phases:
         follow [PR trial preparation](references/pr-trials.md) before starting that task.
         Return the pinned startup prompt for a fresh chat; preparation does not switch
         this running task's helper. A plain PR URL remains the work item.
+      - When the task hands over a spec with tickets or another skill's output, or asks you
+        to use another skill, read [companion skills](<{{package_root}}/skills/shaka/references/companion-skills.md>).
       - Identify the checkout from host context and Git remotes. If trusted `AGENTS.md`
         exists, read it for human-only constraints. Load the repository configuration
         selected at the current default-branch commit with the saved helper's
@@ -127,6 +129,9 @@ phases:
         `--ref` command stops, so review, wait for, and hand off the setup PR through the packaged
         [first setup PR path](<{{package_root}}/skills/shaka/references/repository-setup.md#review-and-merge-the-first-setup-pr>)
         in place of every step that reads policy with `--ref`.
+      - For an explicit request to try unmerged repository settings, or a resumed task
+        whose `seam check` reports `preview/local`, follow
+        [settings preview](<{{package_root}}/skills/shaka/references/settings-preview.md>).
       - Resolve this task's base branch, which is the branch the work starts from and the branch
         its pull request targets. It is not where policy comes from: `seam check --ref` keeps
         reading the contract from the default branch whatever the base is, so a base a task names
@@ -259,8 +264,13 @@ phases:
         --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --head SHA --result PATH` for each
         earlier result. Only an exact candidate tree and unchanged material settings components
         bind it; retain the original tested tree in the result. Rerun an affected check when binding
-        reports superseded evidence. Fix failures and reverify changed heads.
-      - Commit the validated change before reviewing it. The reviewer reads `git diff BASE...HEAD`,
+        reports superseded evidence. Fix failures and reverify changed heads. When the same
+        failure is reproduced on the immutable trusted base and the task leaves its affected
+        inputs unchanged, follow [publish a draft blocked by a base failure](<{{package_root}}/skills/shaka/references/base-validation-failure.md>).
+        That verified comparison permits committing and publishing a blocked draft while the
+        separate repair proceeds; it does not turn failed validation into passing evidence.
+      - Commit the validated change, or the change with that verified base-failure comparison,
+        before reviewing it. The reviewer reads `git diff BASE...HEAD`,
         so the work has to be a revision it can name and attest to; the push waits for Explain.
         Pass `--settings-ref TRUSTED_SHA --repository OWNER/REPO` to `review run`, and also
         `--root DIR` to `review check`. A review result captures the committed tree and settings.
@@ -273,7 +283,10 @@ phases:
         Supply those results to `description` with `--validation-result PATH --review-result PATH`,
         plus `--root DIR --ref TRUSTED_SHA`. It checks the live PR diff and renders a redacted settings block.
         For a separate configuration PR, also pass `--publication-flow setup` or `migration`. Unfinished
-        descriptions without results show UNKNOWN and cannot establish readiness.
+        descriptions without results show UNKNOWN and cannot establish readiness. For the
+        verified base-failure draft path, retain the nonzero verification result and publish
+        without those result flags, recording the failed check and comparison in the PR.
+        That path permits publication, not readiness; all unaffected gates still apply.
       - Meaningful implementation gets an adversarial review before you push, and its findings
         fixed first, so the pushed branch costs fewer CI runs and review rounds. What makes the
         review adversarial is the context, not the model: a fresh session that did not produce the
@@ -287,17 +300,24 @@ phases:
         disposition with `review record`; the next `review run` refuses to start until they are
         recorded, and refuses a head the ledger already reviewed unless another reviewer joins
         it before that record. Fix defects, and risks whose
-        fix is clearly correct, in new commits, then review the new head. Document nits and the
-        remaining risks instead of fixing them; a round whose findings are all documented ends
-        the loop. A defect you decline to fix is documented too, and the comment reports it as
-        left for the maintainer. The next round's prompt lists earlier findings and the commits since, without
-        your notes on them.
+        fix is clearly correct, in new commits, then review the new head. Document optional nits.
+        Use `open` for unfinished agent work,
+        `decision_needed` for a consequential choice the maintainer owns, `dismissed` for
+        a finding disproved with evidence, and `accepted` for a consequence the maintainer
+        explicitly accepts. Record the explanation and human decision as the
+        [local review guide](<{{package_root}}/skills/shaka/references/local-review.md>) describes.
+        Stop the repair loop when no agent-owned fixes or assessments remain.
+        Wait for a needed decision before dependent work. A clean later review leaves earlier
+        open findings visible. The next round's prompt lists earlier findings and the commits
+        since, without your notes on them.
       - The trusted `review.local_max_rounds` bounds the ledger (default 5). If the last round at
-        the cap leaves an unfixed defect, stop before pushing and tell the user which defects
+        the cap leaves an unresolved defect, stop before pushing and tell the user which defects
         remain. Do not push unless the user chooses to. Reassess the task or split it with the
         maintainer; an authorized push publishes the visible Loop bound reached section and
         its ready task-reassessment prompt. If the cap prevents review of a last-round fix,
         stop before pushing and tell the user; publication still refuses unreviewed fixes.
+        For a maintainer-authorized task extension, use the absolute execution budget in the
+        [local review guide](<{{package_root}}/skills/shaka/references/local-review.md>), retaining the same ledger and history.
       - Choose the reviewer with the saved helper's `reviewer --root DIR --ref REF --implementer
         PROVIDER/FAMILY`, passing the trusted commit used for `seam check` so the preference order
         comes from the default branch. Pass `--implementer` once per provider and model family that
@@ -312,7 +332,11 @@ phases:
         refusal, without the user's choice. Show current provider pricing for paid alternatives.
         Diagnose timeouts before proposing a retry; a longer timeout is not a model choice.
         Added or removed flags do not establish unavailability. A helper-side setup or evidence-write
-        failure is not availability evidence, even when `attempted` is true. It returns `different_provider`,
+        failure is not availability evidence, even when `attempted` is true. A host denial before
+        helper launch is not a CLI attempt or permission to bypass the host; do not mark a reviewer
+        unavailable from that denial. Follow the [host-denial recovery checklist](<{{package_root}}/skills/shaka/references/host-denied-review.md>)
+        for permitted native retry or an already-authorized independent alternative; otherwise
+        retain `review check --not-run-reason` evidence and report review blocked. It returns `different_provider`,
         `same_provider`, or `same_model`, with a note to copy into the record, and a `reviewers`
         list in run order. None is an error:
         when all listed paths fail, start a new host chat with the implementation model and no
@@ -374,8 +398,8 @@ phases:
         When no comparison could run or reach the changed behavior, record for the PR that the
         speed claim was not measured.
     done_when: >-
-      The change is committed; validation passed on that exact head; a UI change was used by
-      hand and captured on that head; a speed-affecting change has either a current comparison
+      The change is committed; validation passed on that exact head or the verified base-failure
+      procedure permits a blocked draft only; a UI change was used by hand and captured on that head; a speed-affecting change has either a current comparison
       result, one that reaches the changed behavior, covers the head's runtime behavior and
       comparison setup, and that the step above did not send back or the maintainer accepted, or,
       when no comparison could run or reach the changed behavior, a recorded unmeasured gap; and
@@ -384,20 +408,31 @@ phases:
   - id: explain
     title: Explain
     body: |-
+      - Begin every AI-authored GitHub description, comment, and review with
+        `🤖 AGENT · PROVIDER · MODEL · EFFORT`, using actual writer settings and
+        `UNKNOWN` for unavailable values. This includes verification updates and
+        attachment comments posted directly through `gh`; reviewer identity belongs
+        in the review record. Preserve human text and label mixed work AI-edited.
+        Before submission, check that the first visible line of the AI-authored post or
+        managed section carries the writer identifier, keeping surrounding human text intact.
       - Push the reviewed head, then open or adopt its PR. Open a new PR with an empty body
         (`gh pr create --body ''`) and let `description` fill it; any text outside the managed
         region stays in the body. When a local review ran, publish it right after that with
         `review publish OWNER/REPO NUMBER --content-file PATH`, passing the ledger, or a content
         file for a fresh host review; nothing from the loop reaches GitHub before the push, and
         each reviewed commit gets its own timeline comment. Publishing again updates that
-        commit's comment in place. Copy the returned loop summary into the description's review
+        commit's comment in place. Publication then collapses older owned review comments
+        just published from its ledger; other reports stay visible for assessment.
+        Its cleanup result reports confirmed edits and failures without undoing published reports.
+        Inspect reported failures before retrying. Copy the returned loop summary into the description's review
         history details; keep native usage in `usage.records`. Use trusted `gh` for authorized
         issue and PR reads and for publication. Publish only within the task's scope; without a PR,
         put supporting tables and checks in the final report, and link from chats that cannot
         collapse details.
       - Check a UI change's captures for credentials and private content, then publish
-        them on its PR with `gh pr comment NUMBER --attach 'PATH#ALT TEXT'` (GitHub CLI 2.99 or
-        later; a video takes a plain `PATH`, since video has no alt text), label them with the
+        them on its PR with `gh pr comment NUMBER --body-file BODY_FILE --attach 'CAPTURE#ALT TEXT'` (GitHub CLI 2.99 or
+        later; a video uses `--attach CAPTURE`, since video has no alt text). The body file starts
+        with the writer identifier above, followed by the verification note. Label captures with the
         tested revision, and read the comment back to confirm each capture became an uploaded
         URL; a local path is not evidence. When a capture cannot be published, record
         `uploader_absent`, `uploader_denied`, or `upload_failed: DETAIL` on the PR in its place.
@@ -406,6 +441,11 @@ phases:
       - Publish a speed-affecting change's comparison result, any maintainer acceptance, or its
         unmeasured note on its PR. Label a result with the revisions it compared, and an
         unmeasured note with the head it covers, marked as not measured.
+      - When a comment you publish replaces earlier comments of yours, such as captures or
+        samples for an older head, fold them with `review collapse OWNER/REPO NUMBER --current
+        NEW_COMMENT_ID --superseded OLD_COMMENT_ID`, repeating `--superseded`. Keep visible any
+        comment holding evidence the new one does not replace. Before the Finish checkpoint,
+        fold or minimize evidence and bot reports the current head made obsolete.
       - Before publishing, read the diff for steps besides merging: anything that has to exist
         or happen outside the code for the change to work once deployed. Look for new or renamed
         environment variables, `secrets.*` and `vars.*` references in workflows, GitHub App
@@ -415,7 +455,8 @@ phases:
         `who`, `where`, and `verify`, or `none` after checking found nothing. The helper renders
         them as a table under the headline links and refuses a missing answer; whether the list
         is complete is the agent's report.
-      - Use the review-ready path unless a needed reviewer's trusted workflow shows it reviews drafts.
+      - Use the review-ready path unless a needed reviewer's trusted workflow shows it reviews drafts
+        or the verified base-failure procedure requires a blocked draft.
       - Write plain English: the outcome and why, in established project terms, following user and
         repository writing preferences. Keep decisions, risks, and evidence gaps visible. Name
         specific things in summaries and sections. Keep blockers visible; put supporting checks,
@@ -428,30 +469,36 @@ phases:
         A refusal publishes nothing and quotes the long text or states the word count; rewrite it,
         publish again, and note the refusal in the description's review history details.
       - Before publishing the PR description, walkthrough, or final response, self-edit each summary
-        against the [portable baseline](<{{package_root}}/skills/shaka/references/writing.md>):
+        following [the publication procedure](<{{package_root}}/skills/shaka/references/publication.md>):
         lead with the outcome its reader notices, keep one main idea per sentence, put each condition
         beside the behavior it limits, and prefer a clear subject and active verb over diff-shaped
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
         wrappers and inflated significance. A reply leads with the decision and uses the thread's
         shared context.
-      - `description` reports an advisory `opening` result. Its default `host_check` gives this
-        task's development model the parsing prompt, so the check works without another provider.
-        Pass the verified default-branch full commit SHA with `description --ref SHA`.
-        When the trusted seam has `opening_check.external_enabled: true` (the default), use
-        the same ordered reviewer selection and unavailable-provider fallback as local code review, passing the selected
-        identity with `--opening-reviewer` and any chosen `--opening-model`. The command only
-        sends the opening to a provider and model family named in the trusted reviewer list. If no
-        listed provider can complete the parse, apply the returned prompt in the current model.
-        A `flagged` result means the first sentence has an internal subject. Use the opening
-        and any returned parse to rewrite it so what the reader sees leads, then publish again.
-        `not_checked` also carries the prompt
-        for the current-model fallback. A successful verdict is cached locally, but failed calls
-        are retried when the same opening is published again.
+      - `description` reports an advisory `opening` result. Pass the verified default-branch
+        full commit SHA with `description --ref SHA`. Opening settings live under
+        `pr_description.opening_check`; the top-level `opening_check` remains a compatibility
+        input. When `enabled` is false, the command skips the check. Otherwise, a configured `reviewer`, `model`,
+        and `effort` select this check independently of code review; the same provider as the
+        implementer is allowed. Let the helper apply these settings without reconstructing them
+        as flags. Without a configured opening reviewer, use the ordered local code-review
+        selection and pass `--opening-reviewer`. Explicit task choices use that flag plus
+        optional `--opening-model` and `--opening-effort`; changing provider drops an inherited
+        model and returns effort to low unless the task supplied replacements.
+        Codex and Claude use CLI defaults without an opening model; Grok and OpenRouter require
+        an explicit model. Without an opening effort, use low. Model and effort stay independent
+        of code-review settings.
+        The legacy `opening_check.external_enabled: false` keeps the check in the current model.
+        A `host_check` or `not_checked` result carries the prompt for that fallback. Preserve a
+        configured model when its CLI fails; report the reason and apply the returned prompt.
+        A `flagged` result means the first sentence has an internal subject. Rewrite it so what
+        the reader sees leads, then publish again. Successful verdicts are cached by the
+        opening, prompt, reviewer, model, and effort; failed calls are retried on publication.
       - Supply meaning as content JSON and let the helper render it. Self-edit those summaries before
         calling `description`, `walkthrough`, or `reply`. Do not rewrite the rendered GitHub body, and
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
-        optional `walkthrough` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
+        optional `checkpoint`, `walkthrough` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
         required `table`, required `provenance`, required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
@@ -463,13 +510,18 @@ phases:
         or unclosed text refuses publication.
         The helper always renders a Code Walkthrough link after the summary: the COMMENT review
         URL when `walkthrough` is supplied, otherwise `_Not published yet._`. Do not bury that URL
-        in the opening paragraph. Beside it, the helper renders Post-implementation verification,
+        in the opening paragraph. Beside it, the helper renders Checkpoint,
         using `post_implementation` for the published PR comment URL or a named placeholder
-        until publication. After publishing the checkpoint, republish the description with that URL.
+        until publication. Supply `checkpoint` with the live full `head`, concise `status`, and
+        `next_action` naming its owner; the renderer keeps these visible near the top and rejects
+        a stale head. Summarize consequential decisions, questions or friction, and critical
+        changes in a few lines; put evidence in details. Republish when status or action changes.
         Set `deployment` to `auto` to link the newest successful GitHub
-        deployment of the PR head, which reports `none` when there is none; supply an https URL
-        yourself when the preview exists only in a provider comment or CI log, or `none` when the
-        repository deploys nothing for the change. The helper links it beside the walkthrough.
+        deployment of the PR head, falling back to the latest current-head Cloudflare Pages
+        check when successful from the Cloudflare GitHub App. It reports `none` when neither provides a URL.
+        Supply an https URL yourself when the preview exists only in another provider comment
+        or CI log. Use an explicit URL to choose among several preview projects, or `none`
+        when the repository deploys nothing for the change. The helper links it beside the walkthrough.
         It refuses literal escape sequences in prose, mismatched
         table rows, empty required content, and bodies GitHub does not render.
 
@@ -480,13 +532,13 @@ phases:
           [--ci-review-wait none|one|all] [--ci-review-not-required]
         comments OWNER/REPO NUMBER --head SHA
         comments OWNER/REPO ISSUE_NUMBER --issue
-        description OWNER/REPO NUMBER --content-file PATH [--root DIR --ref SHA]
-          [--opening-reviewer PROVIDER/FAMILY] [--opening-model MODEL]
+        description OWNER/REPO NUMBER --content-file PATH [--root DIR --ref SHA] [--comments COMMENTS_JSON]
+          [--opening-reviewer PROVIDER/FAMILY] [--opening-model MODEL] [--opening-effort LEVEL]
         reply OWNER/REPO NUMBER --content-file PATH --key NAME [--comment ROOT_COMMENT_ID]
         resolve OWNER/REPO NUMBER --thread THREAD_ID
         walkthrough OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         attention OWNER/REPO NUMBER --state answer|merge|resume|none
-        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] --root DIR --ref SHA
+        handoff OWNER/REPO NUMBER [--head SHA] [--woken-by WHAT] [--codex-wake PATH] --root DIR --ref SHA
         squash-message OWNER/REPO NUMBER --head SHA --content-file PATH --root DIR --ref SHA
         merge OWNER/REPO NUMBER --head SHA --base BRANCH --walkthrough REVIEW_ID --root DIR
           --ref SHA --squash-message PATH [--ci-review-wait MODE] [--limits-confirmed-head SHA]
@@ -497,11 +549,14 @@ phases:
         `pr` reports the native readiness snapshot and required checks; it is not an exit code.
         Its `requiredChecksSource` is `github`, or `seam` when GitHub enforces no required checks
         and the trusted `merge.required_checks` gates the PR instead.
-        `squash-message` and `merge --squash-message` read the same JSON: `title`, the PR title,
+        `post-implementation publish --squash-message`, `squash-message`, and
+        `merge --squash-message` read the same JSON: `title`, the PR title,
         and `body`, plain text for a `git log` reader that says what changed and why, drawn from
         the description summary without its links, tables, or evidence. The helper appends
         `(#N)`, wraps the body, and carries the branch commits' `Co-authored-by` trailers.
-        `squash-message` posts it as a new comment and deletes this account's earlier one.
+        Ready checkpoint publication embeds copyable title and body blocks in the checkpoint.
+        `squash-message` remains the standalone path for an opted-out checkpoint and older installations;
+        it posts a new comment and deletes this account's earlier standalone one.
         A merge queue takes no message, and `merge` reports that.
         `description` replaces only its marked region. `reply` reuses its stable key; `--comment`
         answers an inline thread. When a reply addresses a review, its `reviews` list holds
@@ -520,12 +575,18 @@ phases:
         excluded author; the command posts nothing, so the thread gets no approval note either. Read the packaged
         [public-comment guide](<{{package_root}}/skills/shaka/references/public-comments-safety.md>) for the trust
         configuration sources and exclusion markers.
+        Save each `comments --head SHA` result outside the checkout and pass it to the next
+        `description` as `--comments PATH`, which renders the Human comments list from it. The list
+        quotes a very short human comment; summarize each longer one it shows in a line under
+        `human_comment_summaries`, keyed by its URL, and the helper names any it still needs. A comment
+        outside an inline thread shows No reply there until a `reply` lists its URL in `reviews`.
       - Before merge, publish a COMMENT walkthrough covering the purpose, the prior behavior it
         changes, the new behavior, key choices, validation, risks, rollback consequence, and
         commit-pinned code links. Treat those as concerns to cover rather than headings to emit, and
         order the walkthrough so each change prepares the next, following the packaged
         [walkthrough order](<{{package_root}}/skills/shaka/references/delivery.md#how-a-walkthrough-is-ordered>).
         Cover every change completely and stop; length comes from the change, never from the writer.
+        For technical fixes, follow [technical evidence](<{{package_root}}/skills/shaka/references/delivery.md#connect-a-technical-fix-to-its-evidence>).
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
         until then the helper prints `_Not published yet._`. Link the current
         review result from the PR summary and final response. Write each new
@@ -564,8 +625,8 @@ phases:
         publication using that procedure; a suggested title alone is not a confirmed name.
         Its thread field, published as Chat link, carries the host's link back to this session when the selected
         `wip.include_locations` is `true`. Team and private setup both generate `true`. The description
-        renderer replaces Workspace and Chat link with `REDACTED` when the setting is false or unavailable;
-        ownership and the current commit remain visible. Inspect other supplied prose for private
+        renderer uses `REDACTED` for an explicitly false setting. Unread or unavailable settings
+        withhold both locations and explain the recovery action; ownership and the current commit remain visible. Inspect other supplied prose for private
         content. The chat link follows the guide's rule for the host: Codex builds it from
         `CODEX_THREAD_ID`, Claude Code asks the host for this session's metadata and publishes
         the `link` it returns, and any host the guide does not cover, or that reports no link,
@@ -579,10 +640,10 @@ phases:
         in the host is not a user request in the task. `null` renders as “Not specified”; use
         `UNKNOWN` when the request evidence is unavailable, including an unrecoverable prior
         intake. Keep existing `UNKNOWN` history unchanged rather than inferring an absence.
-        The renderer adds the public machine alias from
-        `SHAKA_MACHINE_ALIAS` and the workflow version, which names the commit the helper runs
+        The renderer adds the workflow version, which names the commit the helper runs
         from and links it when that commit came from `shakacode/shaka`, and keeps the native
-        usage table as the only observed route and token record.
+        usage table as the only observed route and token record. The public machine alias
+        from `SHAKA_MACHINE_ALIAS` belongs in the WIP Details Owner field, not in provenance.
     done_when: >-
       The PR description, walkthrough, and usage describe the current head; a UI change has
       that head's captures or a recorded blocked reason published on the PR; and a
@@ -656,20 +717,37 @@ phases:
     title: Finish
     body: |-
       - Before calling implementation merge-ready, perform
-        [post-implementation validation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>):
+        [checkpoint evaluation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>):
         Use `post-implementation run` with a public-safe evidence packet and the verified
-        default-branch `--ref`, then publish its result on this PR. The companion procedure
+        default-branch `--ref`, then publish its result on this PR. For a ready result, pass
+        `post-implementation publish --squash-message PATH` with the commit title and body
+        so the checkpoint contains the copyable merge message. The companion procedure
         defines trusted settings, explicit task overrides, failures, and opt-outs.
+        A ready checkpoint must follow this head's walkthrough. Publish a UI change's captures
+        for this head before it too.
         Did we build the right thing? Compare the finished result with the original problem,
         intended audience, and expected value, including actual complexity, scope drift,
         file/commit churn, and simpler alternatives. This complements technical review.
         Publish the head-bound conclusion and reasoning in the final walkthrough or a dedicated
         PR comment: Proceed, Simplify/reframe, or Do not merge. Revisit it after changes that
         affect the result or its cost; an earlier conclusion is not evidence for a different approach.
+        After verification, supply the task owner's head-bound `disposition` in the checkpoint
+        publication: Merge, Revise before merge, Reconsider approach, or Do not merge,
+        with a reason and concrete next action. Judge the finished PR against the original
+        outcome; successful verification alone does not choose its disposition.
+        A Merge recommendation grants no merge authority. Every other disposition blocks
+        readiness and follows the existing repair or maintainer decision path; do not close
+        the PR automatically. Results without this field retain conclusion-based publication;
+        the agent supplies it for every completed implementation.
         Substantive unresolved concerns block merge readiness and Auto; do not submit a merge
         while they remain. Repair or reframe within authorized scope, then repeat affected
         validation and review; a changed goal or disputed value needs a maintainer decision.
         Review-only work keeps its requested stopping point.
+      - After hosted checks and preview builds settle, republish the description before the
+        final handoff, including an Ask handoff. Resolve `deployment: auto` again for the
+        current head after the builds settle.
+        When the provider supplies the preview solely in a comment or log, supply its verified
+        current-head URL. Preserve an explicit choice that this repository deploys nothing.
       - Reassess scope and authority for the final head, including the base the PR actually
         targets: `pr` reports it as `baseRefName`, and a retarget after planning is the case
         that silently moves an Auto merge onto a branch nobody agreed to. Refresh the
@@ -684,6 +762,10 @@ phases:
         Uncertain authority, consequential risk, or a base neither the trusted seam nor the
         default branch establishes switches Auto to Ask; safety failures block. So does an open
         `before merge` step besides merging until the user confirms it is done.
+      - A base-failure draft stays blocked until its repair lands or the maintainer explicitly
+        accepts the documented local failure for this task, as the [base-failure procedure](<{{package_root}}/skills/shaka/references/base-validation-failure.md>) describes.
+        Security, trust, native required checks, and seam-required merge checks retain their gates.
+        Never describe failed validation as passing, including after acceptance.
       - Refresh `pr` and inspect required check states. Never accept missing, failed, pending, or stale
         required checks, and never bypass protection. An empty required set is acceptable only in Ask
         mode; say in the handoff that no check gates the PR. Wait when independent review is not yet
@@ -706,8 +788,9 @@ phases:
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge
         click, run `attention OWNER/REPO NUMBER --state merge` to label the PR
-        `awaiting-merge-approval`, run `squash-message` for that head so the last comment holds
-        the commit title and body to paste into the squash merge boxes, name the expected head SHA,
+        `awaiting-merge-approval`, verify the checkpoint contains the current head
+        and copyable commit title and body. For an opted-out checkpoint, run `squash-message`
+        for that head instead. Name the expected head SHA,
         list each open step besides merging with its timing and who does it, and tell the user they may use
         GitHub's currently offered merge control for that SHA. Arrange continued feedback intake
         through the procedure below before ending the turn. If GitHub
@@ -758,7 +841,7 @@ phases:
         blocker, pending chat decision, or machine-only format. A remaining GitHub merge click after
         Ask gates pass is not a pending chat decision.
     done_when: >-
-      Post-implementation validation justifies the final result with no substantive concern
+      Checkpoint justifies the final result with no substantive concern
       unresolved, and the PR is merged or handed to GitHub's merge control with the report sent.
 always: |-
   Before implementing a material correction to the task plan, update its durable record
@@ -775,7 +858,7 @@ always: |-
 
   During implementation or review, unexpected breadth, growing abstractions or coupling,
   repeated fixes creating new defects, or non-converging local/CI feedback triggers
-  [post-implementation validation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>)
+  [checkpoint evaluation](<{{package_root}}/skills/shaka/references/post-implementation-validation.md>)
   before another repair round. Use two repair rounds without convergence as a default signal,
   not a budget that permits known defects or requires waiting through obvious scope drift.
   Record the observed cost and reconsider the approach before continuing; an early review
@@ -793,6 +876,16 @@ always: |-
   `--state resume` and make WIP Details `Next action` the resume prompt: the host's Shaka
   invocation with the PR URL, such as `$shaka https://github.com/OWNER/REPO/pull/N` in Codex or
   `/shaka https://github.com/OWNER/REPO/pull/N` in Claude Code.
+
+  Before promising automatic follow-up in Codex, follow the
+  [native wake boundary](<{{package_root}}/skills/shaka/references/codex-wake.md>).
+  Do not infer a native Codex wake from SHAKA_WAKE or process completion.
+  Codex `--woken-by` handoffs require `--codex-wake PATH` with successful native
+  heartbeat registration and matching same-chat readback for the exact PR/head.
+  Ruby checks supplied registration fields and schedule bounds, not scheduler execution
+  or live resumption. Record the registration ID, expiry, manual owner, and resume prompt;
+  claim observed resumption only after a native-started turn is recorded. Without available,
+  authorized, successful registration, use the named manual handoff.
 
   For pending required checks and configured CI review jobs, use the host's PR monitor when it
   wakes on their completion. Otherwise,

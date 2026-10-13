@@ -26,9 +26,19 @@ module Shaka
       [fields.values, fields.merge('thread' => 'Thread').values]
     end.freeze
 
-    def initialize(spec, include_locations: true)
+    # Shared with handoff, which reads the final GitHub note rather than trusting publication inputs.
+    def self.owner_error(value)
+      return if value == 'UNKNOWN'
+
+      parts = value.to_s.split('·', -1).map(&:strip)
+      return if parts.length == 3 && parts.none?(&:empty?) && !value.to_s.match?(/[\r\n]/)
+
+      'WIP Owner must be machine alias · host · owner tag; use UNKNOWN for unavailable information.'
+    end
+
+    def initialize(spec, location_redaction: nil)
       @spec = spec
-      @include_locations = include_locations
+      @location_redaction = location_redaction
     end
 
     def detail
@@ -47,7 +57,14 @@ module Shaka
 
       refuse_keys(@spec.keys - FIELDS.keys, 'has unknown fields')
       refuse_keys(FIELDS.keys - @spec.keys, 'is missing fields', '; use UNKNOWN')
-      FIELDS.keys.to_h { |key| [key, cell(key)] }
+      checked_owner(FIELDS.keys.to_h { |key| [key, cell(key)] })
+    end
+
+    def checked_owner(cells)
+      problem = self.class.owner_error(cells.fetch('owner'))
+      raise Error, problem if problem
+
+      cells
     end
 
     def refuse_keys(keys, problem, advice = '')
@@ -55,7 +72,7 @@ module Shaka
     end
 
     def cell(key)
-      return 'REDACTED' if !@include_locations && %w[workspace thread].include?(key)
+      return @location_redaction if @location_redaction && %w[workspace thread].include?(key)
 
       value = @spec[key]
       unless value.is_a?(String) && !value.strip.empty? && !value.match?(/[\r\n]/)
