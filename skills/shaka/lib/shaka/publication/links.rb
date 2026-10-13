@@ -62,7 +62,8 @@ module Shaka
       return if looked_up.nil?
       raise Error, 'Publication deployment_not_found_for must be a full commit SHA.' unless
         looked_up.is_a?(String) && looked_up.match?(/\A\h{40}\z/)
-      raise Error, 'Publication deployment_not_found_for is not for the current PR head.' if head && looked_up != head
+      raise Error, 'The deployment lookup is not for the current PR head; publish the description again.' if
+        head && looked_up != head
 
       "Deployment: none found for `#{looked_up[0, 7]}`"
     end
