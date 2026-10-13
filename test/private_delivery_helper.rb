@@ -27,18 +27,18 @@ module PrivateDeliveryEvidence
     output
   end
 
-  def review_result(*options)
+  def review_result(*options, head: @ref)
     reviewer = invoke('reviewer', '--implementer', 'openai/codex')['reviewer']
     Dir.mktmpdir('review-cli', @state) do |bin|
       write_executable(bin, reviewer.split('/').last, delivery_reviewer)
-      run_review_cli(bin, reviewer, options)
+      run_review_cli(bin, reviewer, head, options)
     end
   end
 
-  def run_review_cli(bin, reviewer, options)
+  def run_review_cli(bin, reviewer, head, options)
     output, error, status = Open3.capture3(
       { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(@state, 'reviewer.json') },
-      PrivateDeliveryFixture::COMMAND, 'review', 'run', '--root', @root, '--base', @ref, '--head', @ref,
+      PrivateDeliveryFixture::COMMAND, 'review', 'run', '--root', @root, '--base', @ref, '--head', head,
       '--reviewer', reviewer, '--settings-ref', @ref, '--repository', 'owner/repo', *options
     )
     assert_predicate status, :success?, "#{output}\n#{error}"
