@@ -11,7 +11,7 @@ module Shaka
   # expects, and by hash, which finds the copy again after the directory moves. A round without a
   # hash predates this and still names the reviewer's own file.
   module LocalReviewBundle
-    VERSION = 2
+    VERSION = 3
     DIRECTORY = 'reports'
 
     module_function
@@ -31,8 +31,8 @@ module Shaka
     # format is refused, never rewritten as an older one.
     def ledger!(parsed, path)
       raise Error, "#{path} is not a review ledger." unless parsed.is_a?(Hash) && parsed['rounds'].is_a?(Array)
-      raise Error, "#{path} was written by a newer Shaka; update Shaka to use it." if
-        parsed['version'].is_a?(Integer) && parsed['version'] > VERSION
+
+      version!(parsed)
 
       directory = File.dirname(path)
       parsed.merge('rounds' => parsed['rounds'].map { |round| relocated(round, directory) })
@@ -41,10 +41,23 @@ module Shaka
     # The content with every report as a readable absolute path, or an error naming the round whose
     # report is gone or no longer matches its hash. A hash detects a change; it cannot restore one.
     def resolve(content, directory)
+      version!(content)
       rounds = content['rounds']
       return content unless rounds.is_a?(Array)
 
       content.merge('rounds' => rounds.each_with_index.map { |round, index| resolved(round, directory, index + 1) })
+    end
+
+    def version!(content)
+      raise Error, 'Review content must be an object.' unless content.is_a?(Hash)
+
+      version = content['version']
+      return if version.nil?
+      unless version.is_a?(Integer) && version.positive?
+        raise Error,
+              'Review format version must be a positive integer.'
+      end
+      raise Error, 'Review content was written by a newer Shaka; update Shaka to use it.' if version > VERSION
     end
 
     def kept_path(directory, digest) = File.join(directory, DIRECTORY, "#{digest}.md")

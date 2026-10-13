@@ -1,0 +1,104 @@
+# frozen_string_literal: true
+
+require 'cgi'
+require 'json'
+require_relative 'assessments'
+require_relative 'attention'
+
+module Shaka
+  # Later judgments affect attention, never the historical review attestation or merge policy.
+  class LocalReviewAssessmentView
+    def initialize(content)
+      @history = LocalReviewAssessments.new(content)
+      @rounds = content.fetch('rounds')
+    end
+
+    def attention?(id) = @history.attention?(id)
+
+    def summary(rounds, links, total)
+      outcome = LocalReviewAttention.new(rounds, links, assessments: self).visible.first
+      [total, outcome, *unavailable].join("\n\n")
+    end
+
+    def status(id)
+      return 'Needs decision: conflicting assessments' if @history.conflict?(id)
+      return 'Evidence unavailable: assessment reference' if @history.for_finding(id).any? do |entry|
+        !@history.available?(entry)
+      end
+
+      'Later assessment needs attention'
+    end
+
+    def visible(id)
+      @history.for_finding(id).map do |entry|
+        values = entry.data.slice('problem', 'remedy', 'implementation', 'attention')
+                      .map { |key, value| "#{key}: #{value}" }.join(', ')
+        "#{literal(entry.id)} #{literal(values)} — #{literal(entry.data.fetch('rationale'))}"
+      end.join(' · ')
+    end
+
+    def details
+      return [] if @history.entries.empty?
+
+      ['### Later assessments', *@history.entries.map { |entry| detail(entry) }]
+    end
+
+    def unavailable
+      @history.active.filter_map do |entry|
+        next if @history.available?(entry)
+
+        "**Assessment reference unavailable:** #{literal(entry.id)} refers to #{literal(entry.finding)}; " \
+          'recover or correct its finding/recommendation mapping.'
+      end
+    end
+
+    def triage_history
+      blocks = @rounds.filter_map do |round|
+        earlier = round.fetch('earlier_findings', [])
+        next if earlier.empty?
+
+        raise Error, 'Earlier findings must be lists of triage snapshots.' unless
+          earlier.is_a?(Array) && earlier.all?(Array)
+
+        earlier.each { |snapshot| LocalReviewFinding.list(snapshot, 'earlier finding') }
+        earlier_triage(round, earlier)
+      end
+      blocks.empty? ? [] : ['### Preserved triage', *blocks]
+    end
+
+    def triage_attribution
+      @rounds.flat_map do |round|
+        round.fetch('findings', []).filter_map do |finding|
+          next unless finding.key?('recorded_at') || finding.key?('by')
+
+          actor_line(round, finding)
+        end
+      end
+    end
+
+    private
+
+    def earlier_triage(round, earlier)
+      "**Earlier triage · #{round.fetch('head')[0, 7]} · #{literal(round.fetch('reviewer'))}:**\n\n#{json(earlier)}"
+    end
+
+    def actor_line(round, finding)
+      by = finding['by']
+      LocalReviewAssessment.actor!(by) if by
+      actor = by ? "#{by.fetch('name')} (#{by.fetch('role')})" : 'UNKNOWN'
+      "- #{literal(finding.fetch('id'))} · #{literal(round.fetch('reviewer'))}: " \
+        "triaged by #{literal(actor)} at #{literal(finding.fetch('recorded_at', 'UNKNOWN'))}"
+    end
+
+    def detail(entry)
+      state = @history.active.include?(entry) ? 'current' : 'superseded'
+      state += '; reference unavailable' unless @history.historically_available?(entry)
+      # Literal JSON retains each original judgment, evidence link and time without treating it as Markdown.
+      "**#{literal(entry.id)} · #{state}:**\n\n#{json(entry.data)}"
+    end
+
+    def json(value) = "<pre>#{CGI.escapeHTML(JSON.pretty_generate(value)).gsub('|', '&#124;')}</pre>"
+
+    def literal(value) = "<code>#{CGI.escapeHTML(value.to_s).gsub('|', '&#124;')}</code>"
+  end
+end
