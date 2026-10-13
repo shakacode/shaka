@@ -225,7 +225,7 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
    defects on the runtime and dependency versions the repository's required checks
    use. A pass on another version does not dismiss a finding; if those versions are
    unavailable locally, say so and keep the finding open. Fix
-   with focused tests, and explain the result on the original thread. Briefly
+   them with focused tests, and explain the result on the original thread. Briefly
    explain declined findings; do not implement speculative requests or create
    follow-up issues merely because a bot suggested them.
 3. After changes, run the affected checks and the repository's validation. Obtain review
@@ -239,16 +239,12 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
    reviewer fails or repeats the same unresolved concern without new evidence,
    report the blocker or concrete decision; do not loop or schedule retries.
 
-### Keep a correction in proportion
+### Reuse the walkthrough for a correction
 
-These rules apply when a commit repairs specific findings and leaves the task's goal,
-scope, dependencies, and repository settings unchanged. A small diff alone does not
-qualify a change, and a security or trust repair still reruns its security check.
-
-- Republish the walkthrough before the checkpoint. Reuse the previous walkthrough
-  content for the new head and rewrite only the steps the repair changed.
-- When a required step looks out of proportion to the repair, stop before starting
-  it: publish the question in the description's `decisions` and wait for the answer.
+When a commit repairs specific findings and leaves the task's goal, scope,
+dependencies, and repository settings unchanged, republish the previous walkthrough
+content for the new head and rewrite only the steps the repair changed. Publish it
+before the checkpoint. A small diff alone does not qualify a change.
 
 ## Reviews after merge
 

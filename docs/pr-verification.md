@@ -293,7 +293,7 @@ updates the existing PR once.
 | Repository validation and required checks | Run again for the new commit |
 | Local review | The configured reviewers review the new commit |
 | Hosted review | Awaited again when the correction changes runtime behavior, trust, or tests |
-| [Checkpoint](#checkpoint) | Run again, because merging needs one for the exact commit |
+| [Checkpoint](#checkpoint) | Run again; merging needs a checkpoint, or your explicit skip, for the exact commit |
 | Code walkthrough | The same walkthrough for the new commit, with only the affected steps rewritten |
 
 Evidence for an earlier commit is shown with that commit. It counts for the new one
@@ -309,9 +309,7 @@ shows both results and the work each path performs.
 The walkthrough is reused only while the repair leaves the goal, scope, dependencies,
 and settings of the task unchanged. A small diff alone does not make a change low risk.
 
-When a required step looks out of proportion to a repair, the agent stops and asks
-you on the PR before spending the time. To skip the checkpoint for one correction,
-tell your agent:
+To skip the checkpoint for one correction, tell your agent:
 
 ```text
 Skip the checkpoint for this correction; the outcome is unchanged.

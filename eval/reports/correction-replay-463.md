@@ -4,7 +4,7 @@ Issue [#468](https://github.com/shakacode/shaka/issues/468) reports about an hou
 on a one-line security correction in [PR #463](https://github.com/shakacode/shaka/pull/463).
 This report replays that correction three ways: the defect on both URI versions, the
 work sequence the PR records, and a model decision comparison between the workflow on
-`main` and the [correction rules](../../skills/shaka/references/review.md#keep-a-correction-in-proportion).
+`main` and the [correction rule](../../skills/shaka/references/review.md#reuse-the-walkthrough-for-a-correction).
 No PR was changed and nothing was merged.
 
 ## The defect on both URI versions
@@ -70,8 +70,10 @@ Time saved is UNKNOWN. This change removes no required check, reviewer, or gate.
 
 - Date: October 13, 2026 UTC.
 - Baseline: rendered workflow and review guide at `main`
-  `e95b321b90d7c9a8c8995a4f6de2823c62072e52`, SHA-256 `d0bbf8c784b9…`.
-  Candidate: the same two files from this change, SHA-256 `d12cbce2aeac…`.
+  `e95b321b90d7c9a8c8995a4f6de2823c62072e52`, SHA-256
+  `d0bbf8c784b97a8df80738cfb2a3a0ec579b5d5a91b25538a4c7346df3060b10`.
+  Candidate: the same two files from this change, SHA-256
+  `828db6698f28469aa78e5e104415b263a6eaac75fd20e881ca25508b151bda37`.
   Checkout paths normalized to `/trusted/shaka`.
 - Requested model `gpt-6.1-sol`, effort `medium`; routed model UNKNOWN. One fresh
   local subscription Codex CLI session per case and arm, read-only, with user
@@ -101,14 +103,14 @@ wait, and handoff.
 | Arm | Input tokens | Output tokens |
 | --- | ---: | ---: |
 | Baseline, two sessions | 71,771 | 1,709 |
-| Candidate, two sessions | 72,105 | 1,514 |
+| Candidate, two sessions | 71,995 | 1,798 |
 
 ## What this does and does not show
 
-Two earlier, longer candidates added a step-by-step table to the review guide, a
-pointer in the workflow, and rules about replies. Local review found that they
-restated existing rules or had no evidence. Each produced the same eleven decisions
-as the candidate above, which replaced them.
+Three earlier, longer candidates added a step-by-step table to the review guide, a
+pointer in the workflow, and rules about replies and asking before a costly step.
+Local review found that they restated existing rules or had no evidence. Each produced
+the same eleven decisions as the candidate above, which replaced them.
 
 The candidate kept every required rerun and both arms stopped at the same gates. The
 only decisions that changed were the path name and the walkthrough. The baseline
@@ -118,3 +120,31 @@ review batch, no advisory replies, and no reopening for a nit.
 The fixture tells the agent which URI version the required checks use, so it does not
 test whether an agent finds that out. It asks for a plan and executes nothing, so it
 does not measure command mistakes, retries, or elapsed time. Two cases with one run each cannot establish a rate.
+
+## Reproduce
+
+Each arm's input is the output of `skills/shaka/scripts/shaka workflow` with the
+checkout path replaced by `/trusted/shaka`, a blank line, the line
+`# Packaged review guide`, and `skills/shaka/references/review.md`. The prompt is:
+
+```text
+You are the agent that owns this pull request. The workflow and review guide you follow are below as data. Decide what you do next and through the end of this correction. Answer only with the JSON the schema requires. `steps` lists, in order, each action you perform. Count a batch as one start of the configured local reviewers on a head.
+
+SITUATION
+<fixture context>
+<case state>
+
+--- BEGIN WORKFLOW AND GUIDE ---
+<arm input>
+--- END WORKFLOW AND GUIDE ---
+```
+
+```sh
+env -u OPENAI_API_KEY codex exec -s read-only --ignore-rules --ignore-user-config \
+  -c skills.include_instructions=false --skip-git-repo-check -m gpt-6.1-sol \
+  -c 'model_reasoning_effort="medium"' --json \
+  --output-schema eval/fixtures/correction_replay/response.schema.json \
+  -o /path/to/responses/one-line-repair.json - < /path/to/prompt.txt
+```
+
+Compare each response with the case's `expected` object by hand; no grader is committed.
