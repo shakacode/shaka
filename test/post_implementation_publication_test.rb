@@ -6,14 +6,32 @@ require 'shaka/post_implementation'
 module PostImplementationPublicationFixture
   class GitHub < Shaka::GitHub
     attr_reader :bodies
+    attr_writer :walkthrough
 
     def initialize(head)
       super('example/test', '1')
       @head = head
+      @walkthrough = head
       @bodies = []
     end
 
-    def snapshot = { 'state' => 'OPEN', 'headRefOid' => @head }
+    def snapshot = { 'state' => 'OPEN', 'headRefOid' => @head, 'commits' => { 'totalCount' => 1 } }
+
+    def api_list(path)
+      return walkthroughs if path.include?('/reviews')
+
+      [{ 'commit' => { 'message' => "Fix\n\nCo-authored-by: Ada <ada@example.test>" } }]
+    end
+
+    def api(_path) = { 'login' => viewer_login }
+
+    def walkthroughs
+      return [] unless @walkthrough
+
+      footer = "_Walkthrough for commit `#{@walkthrough}`. This is a COMMENT, not an approval._"
+      [{ 'user' => { 'login' => viewer_login }, 'state' => 'COMMENTED', 'commit_id' => @walkthrough,
+         'body' => "🤖 Codex · OpenAI · UNKNOWN · UNKNOWN\n\n# Code Walkthrough\n\nSteps.\n\n#{footer}" }]
+    end
 
     def viewer_login = 'test-author'
 
@@ -61,11 +79,21 @@ module PostImplementationPublicationFixture
     end
   end
 
+  def message_file(path)
+    message = File.join(File.dirname(path), 'message.json')
+    File.write(message,
+               JSON.generate(title: 'Fix checkpoint handoff', body: 'Put the merge text beside the recommendation.'))
+    message
+  end
+
   def publish(result, path, github: GitHub.new('a' * 40))
+    message = message_file(path)
     File.write(path, JSON.generate(result))
     status = nil
     output = capture_io do
-      status = Shaka::PostImplementation.run(['publish', 'example/test', '1', '--content-file', path], github:)
+      status = Shaka::PostImplementation.run(
+        ['publish', 'example/test', '1', '--content-file', path, '--squash-message', message], github:
+      )
     end.first
     [github, status, output]
   end
@@ -80,7 +108,7 @@ class PostImplementationPublicationTest < Minitest::Test
       github, status = publish(result, path)
 
       assert_equal 0, status
-      identity = "🤖 Claude · Anthropic · observed-model · UNKNOWN\n\n# Post-implementation validation\n\n"
+      identity = "🤖 Claude · Anthropic · observed-model · UNKNOWN\n\n# Checkpoint\n\n"
       assert github.bodies.first.first.start_with?(identity)
       refute_includes github.bodies.first.first, 'PRIVATE TRANSCRIPT'
     end

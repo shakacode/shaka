@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 334" role="img" aria-labelledby="t d">
+<title id="t">Attention labels on a Shaka PR</title>
+<desc id="d">While the agent works, the PR has no attention label. The agent sets awaiting-answer when a decision needs you, awaiting-merge-approval when the PR is ready to merge, and awaiting-resume when it paused and nothing will wake it. A PR carries at most one of these labels.</desc>
+<style>
+.bg{fill:#fff;stroke:#d9e0e7}
+text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
+.h{font-size:15px;font-weight:600}
+.s{font-size:13px}
+.m{fill:#516074}
+.c{text-anchor:middle}
+rect{stroke-width:1}
+.you rect{fill:#fdf3df;stroke:#b87514}
+.you text{fill:#5f3b06}
+.shaka rect{fill:#e3f5ec;stroke:#128a5e}
+.shaka text{fill:#0b4f37}
+.box rect{fill:#f1f4f8;stroke:#8a99ad}
+.frame{fill:none;stroke:#8a99ad;stroke-dasharray:6 4}
+.a{stroke:#516074;stroke-width:1.5;fill:none}
+.ah{fill:#516074}
+.dash,.dash rect{stroke-dasharray:5 4}
+@media (prefers-color-scheme:dark){
+.bg{fill:#0f1724;stroke:#2a3648}
+text{fill:#e6edf5}
+.m{fill:#9fb0c3}
+.you rect{fill:#40300f;stroke:#e0a13a}
+.you text{fill:#fbe3b0}
+.shaka rect{fill:#0e3d2c;stroke:#3ccf92}
+.shaka text{fill:#c9f3e0}
+.box rect{fill:#1a2535;stroke:#6b7c93}
+.frame{stroke:#6b7c93}
+.a{stroke:#9fb0c3}
+.ah{fill:#9fb0c3}
+}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px}
+.purple rect{fill:#f0ecfd;stroke:#6d4fc4}
+.purple text{fill:#3a2585}
+.blue rect{fill:#e6f0fc;stroke:#2a6fc9}
+.blue text{fill:#123f7d}
+@media (prefers-color-scheme:dark){
+.purple rect{fill:#2c2157;stroke:#a892f0}
+.purple text{fill:#e2dafc}
+.blue rect{fill:#12305a;stroke:#6aa8f0}
+.blue text{fill:#d3e5fb}
+}
+</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="719" height="333" rx="10"/>
+<g class="shaka"><rect x="40" y="40" width="180" height="250" rx="6"/><text class="h c" x="130" y="161">Agent working</text><text class="s c" x="130" y="179">No attention label</text></g>
+<path class="a" d="M220 72H438" marker-end="url(#ar)"/>
+<path class="a" d="M220 165H438" marker-end="url(#ar)"/>
+<path class="a" d="M220 258H438" marker-end="url(#ar)"/>
+<text class="s m c" x="330" y="64">A decision needs you</text>
+<text class="s m c" x="330" y="157">Ready to merge</text>
+<text class="s m c" x="330" y="250">Paused; nothing wakes it</text>
+<g class="you"><rect x="440" y="40" width="240" height="64" rx="6"/><text class="h c mono" x="560" y="68">awaiting-answer</text><text class="s c" x="560" y="86">Answer, and work resumes</text></g>
+<g class="purple"><rect x="440" y="133" width="240" height="64" rx="6"/><text class="h c mono" x="560" y="161">awaiting-merge-approval</text><text class="s c" x="560" y="179">Merge, or approve in chat</text></g>
+<g class="blue"><rect x="440" y="226" width="240" height="64" rx="6"/><text class="h c mono" x="560" y="254">awaiting-resume</text><text class="s c" x="560" y="272">Send the resume prompt</text></g>
+<text class="s m" x="40" y="314">A PR carries at most one of these labels. The agent removes it when work resumes.</text>
+</svg>

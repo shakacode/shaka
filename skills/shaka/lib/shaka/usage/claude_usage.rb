@@ -92,7 +92,7 @@ module Shaka
       { identity => { 'response_id' => identity, 'turn_id' => identity, 'timestamp' => record['timestamp'],
                       'aggregate' => true,
                       'configuration' => ['anthropic', 'UNKNOWN', print_model(record), record['effort']],
-                      'billing_mode' => speed(record['usage']), 'usage' => tokens(record['usage']) } }
+                      'billing_mode' => speed(record['usage']), 'usage' => print_tokens(record) } }
     end
 
     def print_model(record) = ClaudePrintResult.routed_model(record)
@@ -151,14 +151,19 @@ module Shaka
     attr_reader :responses, :versions, :gaps
 
     def self.discover
-      identity = ENV.fetch('CLAUDE_CODE_SESSION_ID', nil)
-      return [] unless identity&.match?(/\A[0-9a-f-]{36}\z/)
+      session = session_file(ENV.fetch('CLAUDE_CODE_SESSION_ID', nil))
+      return [] unless session
 
-      home = ENV.fetch('CLAUDE_CONFIG_DIR', File.expand_path('~/.claude'))
+      [session] + Dir.glob(File.join(File.dirname(session), File.basename(session, '.jsonl'), 'subagents', '*.jsonl'))
+    end
+
+    # The saved session for one session ID, or nil when it is not exactly one matching file.
+    def self.session_file(identity, environment: ENV)
+      return unless identity.is_a?(String) && identity.match?(/\A[0-9a-f-]{36}\z/)
+
+      home = environment.fetch('CLAUDE_CONFIG_DIR', File.expand_path('~/.claude'))
       sessions = Dir.glob(File.join(home, 'projects', '*', "#{identity}.jsonl"))
-      return [] unless sessions.one? && session_of(sessions.first) == identity
-
-      sessions + Dir.glob(File.join(File.dirname(sessions.first), identity, 'subagents', '*.jsonl'))
+      sessions.first if sessions.one? && session_of(sessions.first) == identity
     end
 
     def self.session_of(file)
@@ -198,6 +203,14 @@ module Shaka
     def speed(usage)
       recorded = usage['speed'] if usage.is_a?(Hash)
       %w[standard fast].include?(recorded) ? recorded : 'UNKNOWN'
+    end
+
+    # Only Shaka's fresh CLI launch establishes that this total excludes resumed-session spend.
+    def print_tokens(record)
+      observed = tokens(record['usage'])
+      return observed unless record['shaka_usage_scope'] == 'independent_call' && record.key?('total_cost_usd')
+
+      observed.merge('native_cost_usd' => record['total_cost_usd'], 'native_cost_source' => 'claude-code')
     end
 
     def tokens(usage)

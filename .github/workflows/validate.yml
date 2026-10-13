@@ -16,6 +16,8 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      SHAKA_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'merge_group' && github.event.merge_group.base_sha || github.event.before }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -23,8 +25,6 @@ jobs:
           persist-credentials: false
       - name: Detect documentation-only changes
         id: changes
-        env:
-          SHAKA_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event_name == 'merge_group' && github.event.merge_group.base_sha || github.event.before }}
         run: |
           if ! comparison=$(git merge-base "$SHAKA_BASE_REF" HEAD 2>/dev/null); then
             echo "docs_only=false" >> "$GITHUB_OUTPUT"

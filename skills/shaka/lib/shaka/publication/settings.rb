@@ -2,13 +2,17 @@
 
 require_relative '../evidence/verification'
 require_relative '../evidence/public_settings'
+require_relative '../repository_config'
 require_relative 'feature_guard'
 require_relative '../opening_publication'
+require_relative 'settings_table'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
   class PublicationSettings
     SUMMARY = 'Shaka settings used'
+    MISSING_REF = 'Withheld: settings not read; rerun description with --ref'
+    UNAVAILABLE_SETTINGS = 'Withheld: settings unavailable; fix seam check --ref, then rerun description'
 
     def self.refuse_free_form!(items)
       return unless items.any? do |item|
@@ -23,7 +27,7 @@ module Shaka
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
       current = current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref
-      new(verdict:, current:)
+      new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF)
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -49,39 +53,97 @@ module Shaka
       nil
     end
 
-    def initialize(verdict: nil, current: nil)
+    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF)
       @verdict = verdict
       @current = current
+      @location_diagnostic = location_diagnostic
     end
 
     # An unknown policy cannot authorize publishing locations, even on unfinished PRs.
     def include_locations? = @current&.fetch('wip.include_locations', false) == true
 
-    def rows
-      snapshots = %w[validation review].map { |kind| checked_snapshot(kind) } + [@current]
-      safe = snapshots.map { |snapshot| Evidence::PublicSettings.sanitize(snapshot) }
-      Evidence::PublicSettings::FIELDS.map do |field|
-        "| #{field} | #{safe.map { |snapshot| snapshot[field] }.join(' | ')} |"
-      end
+    def location_redaction
+      return if include_locations?
+      return 'REDACTED' if @current&.fetch('wip.include_locations', nil) == false
+
+      @location_diagnostic
+    end
+
+    # Only resolved settings can establish whether the repository opted out.
+    def attribution? = @current&.fetch('pr_description.show_shaka_credit', false) == true
+
+    # An unread setting leaves the list on: the agent passed a comment read for it, and leaving
+    # the list out would hide what people wrote.
+    def human_comments? = @current&.fetch('pr_description.show_human_comments', nil) != false
+
+    def human_comment_rows
+      rows = @current&.fetch('pr_description.max_human_comments', nil)
+      rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
            'Private trials default to Ask; explicit user authorization and live required gates govern merging.'
-    HEADER = '| Setting | Before push: validation | Review | Current merge input (not evidence) |'
+    OPERATIONS = { 'validation' => 'Before push: validation', 'review' => 'Review' }.freeze
+    CURRENT = 'Current merge input (not evidence)'
+    # Settings from these sources are not readable in the repository, so the block keeps every value.
+    UNCOMMITTED = %w[private/local preview/local].freeze
 
     def detail
       status = @verdict ? 'Bound to the current candidate commit.' : 'UNKNOWN: rerun missing evidence.'
-      table = [HEADER, '| --- | --- | --- | --- |', *rows].join("\n")
-      { 'summary' => SUMMARY, 'body' => [status, NOTE, table].join("\n\n") }
+      { 'summary' => SUMMARY, 'body' => [status, NOTE, current_line, *operations_table, *values].join("\n\n") }
     end
 
     private
 
-    def checked_snapshot(kind)
-      entries = @verdict&.dig('checks', kind)
-      snapshots = entries&.map { |entry| entry.dig('original', 'public_settings') }&.uniq
-      snapshots&.size == 1 ? snapshots.first : nil
+    def current_line
+      settings = Evidence::PublicSettings.sanitize(@current)
+      version, installation = settings.values_at('installation.version', 'installation.source')
+      shaka = installation == 'UNKNOWN' ? version : "#{version} (installation: #{installation})"
+      "#{CURRENT}: #{source(settings)}; Shaka #{shaka}"
+    end
+
+    # One row per recorded result. Binding refuses a result whose settings differ from the
+    # current ones, so a row needs only what can still vary: its revision and what it ran with.
+    def operations_table
+      rows = operations.map { |title, settings| [title, source(settings), ran_with(settings)] }
+      return [] if rows.empty?
+
+      lines = [['Operation', 'Settings', 'Ran with'], %w[--- --- ---], *rows]
+      [lines.map { |cells| "| #{cells.join(' | ')} |" }.join("\n")]
+    end
+
+    def operations
+      OPERATIONS.flat_map do |kind, title|
+        Array(@verdict&.dig('checks', kind)).map do |entry|
+          [title, Evidence::PublicSettings.sanitize(entry.dig('original', 'public_settings'))]
+        end
+      end
+    end
+
+    def source(settings)
+      kind, revision = settings.values_at('source', 'source.revision')
+      kind == 'UNKNOWN' ? kind : "#{kind} at #{revision}"
+    end
+
+    def ran_with(settings)
+      command, reviewer, effort = settings.values_at('overrides.command', 'overrides.reviewer', 'overrides.effort')
+      parts = [command, reviewer, ("#{effort} effort" unless effort == 'UNKNOWN')].compact - ['UNKNOWN']
+      parts.empty? ? 'UNKNOWN' : parts.join(', ')
+    end
+
+    def values
+      columns = operations.map { |title, settings| [column_title(title, settings), settings] }
+      columns << [CURRENT, Evidence::PublicSettings.sanitize(@current)]
+      return [] unless columns.any? { |_title, settings| UNCOMMITTED.include?(settings['source']) }
+
+      [SettingsTable.disclosure(columns)]
+    end
+
+    # Several reviewers would otherwise share one column title.
+    def column_title(title, settings)
+      reviewer = settings['overrides.reviewer']
+      reviewer == 'UNKNOWN' ? title : "#{title}: #{reviewer}"
     end
   end
 end

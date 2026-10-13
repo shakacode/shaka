@@ -30,7 +30,7 @@ agent could not infer:
 
 ```text
 $shaka Add CSV export to the orders page. Reuse the filters shown on screen.
-Keep merge policy ask. Go.
+Go.
 ```
 
 Examples use Codex's `$shaka`. Use `/shaka` in Claude Code, Cursor, or OpenCode;
@@ -96,16 +96,15 @@ for recovery after a crash or when no PR exists.
 ### Configure a repository for your team
 
 ```text
-$shaka Configure this repository for Shaka. Reuse its existing setup,
-test, and validation commands. Explain the review and merge choices.
-Use merge policy ask.
+$shaka Set up Shaka for this repository.
 ```
 
 For a repository without Shaka settings, the agent prepares a separate setup PR
 and names the reviewed commit for you to merge on GitHub. It stops there; proposed
-settings cannot govern feature work until that PR merges. See
+settings apply after that PR merges, or when you explicitly
+[select it for a task](settings.md#preview-settings-before-adopting-them). See
 [repository setup](configure-repository.md#set-up) for the choices, or
-[private trials](expected-experience.md#private-trials-available-tools-incomplete-guided-experience)
+[individual setup](expected-experience.md#individual-setup)
 to try Shaka locally without team adoption.
 
 These are requests to the existing workflow. Separate stage skills such as
@@ -117,6 +116,8 @@ These are requests to the existing workflow. Separate stage skills such as
 | --- | --- |
 | **Ask** (default) | Review the ready PR, then merge it on GitHub or approve it so the agent merges. |
 | **Auto** | The agent merges after required checks, review, and approvals. |
+
+![A ready PR follows Ask, where you merge or approve it, or Auto, where the agent merges. A PR that is too large or risky returns to you under Auto.](img/merge-policy.svg)
 
 Set the choice in your prompt: `Use merge policy ask` or `Use merge policy auto`.
 Repository restrictions and required approvals still apply. Trust, authentication,
@@ -163,35 +164,30 @@ final diff for the agent to reconcile. Keep raw notes in the local backup.
 ### Revise earlier guidance and try again
 
 If an attempt goes in the wrong direction, return to earlier human guidance,
-adjust it, and ask for a fresh result. A **human attention checkpoint** records
-that guidance and the code state it applies to. C1, C2, and later numbers identify
+adjust it, and ask for a fresh result. Use a saved
+[checkpoint](pr-verification.md#checkpoint) to identify the guidance
+and recoverable work state to return to.
+C1, C2, and later numbers identify
 these points within one task; each appears on the PR with a name, guidance, and
 code revision so you can tell them apart.
 
 ```text
-Return to C2 — Parser direction. Keep the acceptance criteria, use the
-existing parser, discard the abstraction, and retain the failing edge case.
+$shaka Return to C2. Use the simpler approach.
 ```
 
-C1 records your initial request. Later checkpoints record your steering or review;
-an agent proposal, question, or passing check alone establishes none. Revised
-steering gets a new checkpoint linked to the earlier one. Saying “Go” needs no
+C1 records your initial request. Later checkpoints record your steering or review.
+Revised steering gets a new checkpoint linked to the earlier one. Saying “Go” needs no
 extra confirmation, and your Ask or Auto preference still applies.
 
-The agent first preserves the rejected attempt and relevant uncommitted work.
-By default, it adds a corrective commit to the existing branch to restore owned
-code; newer commits remain in history. It then implements your revised guidance
-with unrelated newer work and relevant findings preserved. If the snapshot is
-incomplete or another writer is active, it explains the limitation before restoring.
+The agent preserves the rejected attempt, unrelated work, and relevant findings
+before restoring owned work. If the saved state is incomplete or another writer
+is active, it explains the limitation first. Rewind does not undo deployments or
+other external effects; the replacement still needs validation and review.
 
-The PR describes the active attempt and puts superseded work in expandable
-summaries with published review links. Human comments remain intact. A final
-squash merge leaves the resulting change on the base branch while the PR retains
-the attempt history. Rewind does not undo deployments or other external effects;
-the replacement still needs validation and review.
-
-This is an agent procedure. See the [human attention checkpoint procedure](../skills/shaka/references/return-points.md)
-for preservation rules and the real-use evaluation still needed.
+These are agent instructions using Git and task records; the Ruby `checkpoint`
+command does not save or restore snapshots. Reliable recovery in real use remains
+to be evaluated. Ask what the saved state can restore before rewinding.
+See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
 
 ## Resume unfinished work
 
@@ -236,6 +232,101 @@ integration.
 Each PR gets its own tests and review. The agent updates the remaining branch
 after each prerequisite merges. The original chat owns the overall outcome;
 no stacked-PR service is needed.
+
+## Combine Shaka with other skills
+
+Use the skills you like for planning and engineering technique, and let Shaka
+deliver the result. Two examples are
+[AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md),
+which turn an idea into a spec and tickets, and
+[pstack](https://github.com/cursor/plugins/tree/main/pstack), which adds
+engineering principles and parallel workers.
+
+### Hand over a spec and tickets
+
+```text
+$shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N.
+Keep merge policy ask. Go.
+```
+
+Here is what happens next:
+
+1. The agent reads the spec and its sub-issues, and takes the order of work
+   from their blocked-by links.
+2. It decides how many PRs the spec needs. When that is more than one, it asks
+   where to keep its plan, such as a comment on the spec.
+3. It delivers each PR the usual way: tests, your checks, independent review,
+   a description, and a code walkthrough.
+4. Under Ask, each PR comes back to you to merge. A PR that depends on another
+   waits until that one merges.
+5. Tickets stay open. Each PR links its ticket without a closing keyword such
+   as `Fixes`, because reading a tracker gives no permission to change it.
+
+Add a sentence to the prompt to change that. "You may comment on the spec with
+your plan" skips the question in step 2. "Close each ticket when its PR merges"
+lets merges close them. On a public repository, the agent also checks with you
+before adopting criteria from a ticket that someone without write access wrote
+or edited.
+
+### Use a technique skill during delivery
+
+```text
+$shaka Fix https://github.com/OWNER/REPO/issues/N in poteto mode. You may use
+subagents for swarm and arena. Keep merge policy ask. Go.
+```
+
+The agent applies pstack's principles and playbook steps while it implements and
+verifies. Shaka still runs your checks, gets an independent review, publishes
+the PR in its own format, and returns it to you to merge. pstack's "don't block
+on the human" guidance does not turn Ask into Auto. Leave out the subagent
+sentence and the agent does the fan-out steps alone or asks first.
+
+### What each kind of skill can do
+
+Shaka stays the one owner of delivery, so another skill's output is input to the
+task and nothing more. The agent does not let it relax a check, pick a reviewer,
+or approve a merge.
+
+| Kind of skill | Examples | With Shaka |
+| --- | --- | --- |
+| Planning | AI Hero `to-spec`, `to-tickets` | Its spec and tickets become the task. |
+| Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd` | Shapes how the agent works inside each step. |
+| Parallel workers | pstack `swarm`, `arena`, `interrogate` | Runs only when you say the agent may delegate. Workers never publish or merge. |
+| PR text | AI Hero `pr`, pstack `technical-writing`, `unslop` | Advice on wording and presentation. Shaka's description keeps its own format and required fields. |
+| Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, and Autopilot playbooks | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
+
+If a skill you named is not installed, the agent says so, continues the work
+that does not need it, and asks about the rest. It does not install software for
+you.
+
+This is guidance the agent follows, not behavior that code enforces.
+Loading skills automatically at set points is a
+[proposed feature](https://github.com/shakacode/shaka/issues/35), not shipped behavior.
+
+## Review a session for improvements
+
+At the end of a rough session, ask in the same chat what would have made it go
+better:
+
+```text
+$shaka retrospective
+```
+
+The agent lists findings, each with its evidence, a proposed fix, and what the
+fix costs to maintain. It should change nothing until you pick, for example
+`Deliver findings 1 and 3`. Each pick is delivered as an ordinary Shaka task.
+
+The agent can also measure which steps were slow. Shaka's helper keeps a timing log on
+your machine at `~/.local/state/shaka/calls.jsonl`: one line per helper command with
+its name, start time, duration, and exit status. For example, a line for local
+validation shows how long that run took and whether it passed. `shaka work` leaves no
+line, because it hands the terminal to your coding agent. The log records no
+arguments, paths, or task text, and Shaka never uploads it. Delete the file whenever
+you like. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to a path to keep the
+log elsewhere.
+
+If a session retrospective skill such as [AI Hero's `retro`](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
+is installed, the agent uses it for the analysis. Shaka works without one.
 
 ## Suggest improvements to Shaka
 

@@ -33,7 +33,11 @@ Keep it for direct links and develop separately. `~/agent-tools/shaka` is an opt
 | `opencode` | `~/.config/opencode/skills` | `/shaka` in a new session |
 
 Repeat `--agent` for several hosts, or use `--directory SOURCE --skills-dir DIR` for a custom directory.
-Add `--with-rct` for the Codex tower or `--with-claude-towers` for Claude towers.
+Add `--with-mct` for the Codex master, `--with-rct` for its repository tower,
+or `--with-claude-towers` for Claude towers. Codex flags are independent; both
+may be selected. Default installation includes only Shaka.
+If an older installer lacks a tower flag, update Shaka first, then run
+`bin/install` to select that tower.
 Use installer-owned or root-owned protected files and directories, without group
 or world write access. Reinstallation preserves recognized towers and registered hosts. Start a new chat
 and look for **Shaka**; restart the host if its list is stale. Tower flags apply
@@ -43,10 +47,14 @@ paths you own, or select a protected location. Preserve file contents and execut
 
 ## Verify and update
 
+The installer prints an update reminder for every host and custom skills directory.
+
+Run `update-check` inside a Git checkout; without a known checkout boundary it skips the network call.
 Use the registered helper with your chosen path:
 
 ```bash
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
+"$HOME/.agents/shaka/skills/shaka/scripts/shaka" update-check
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --update
 ```
 
@@ -58,7 +66,7 @@ running `bin/install` with Ruby 3.4 or later. Maintenance uses registered select
 change hosts or towers through installation first. A known interrupted update
 completes on the next installation or update run.
 
-Pause active chats before updating this mutable path. Doctor reads recorded identity;
+Finish active Shaka chats before updating this mutable path. Doctor reads recorded identity;
 verification rechecks it. Project settings use [repository migration](migration.md).
 
 ## Migrate retained-copy installations
@@ -79,7 +87,7 @@ Keep every older package: active chats may reference its absolute paths.
 
 ## Teams and forks
 
-Use [team instructions](https://github.com/shakacode/shaka/blob/main/docs/migration.md#teams-and-forks).
+Use [team instructions](https://github.com/shakacode/shaka/blob/main/docs/getting-started.md#use-a-personal-fork).
 Keep local `.git` installation records per machine. For forks or SSH origins, register the exact `--repository URL` and optional `--branch NAME`.
 Publish upstream integrations separately before updating.
 

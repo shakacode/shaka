@@ -50,7 +50,7 @@ class PrWatchFeedbackTest < Minitest::Test
   end
 
   def test_transfer_stops_before_ingesting_new_feedback
-    transferred = frame.merge(owner: 'another owner')
+    transferred = frame.merge(owner: 'm6 · Codex desktop · next')
     packets = [packet, packet('issue_comments', 400)]
     assert_equal 'ownership_transferred', watch_feedback([frame, transferred], packets).first
   end
@@ -60,7 +60,7 @@ class PrWatchFeedbackTest < Minitest::Test
   end
 
   def test_transfer_during_comment_read_stops_before_work_wake
-    github = FeedbackGitHub.new([frame, frame.merge(owner: 'another owner')])
+    github = FeedbackGitHub.new([frame, frame.merge(owner: 'm6 · Codex desktop · next')])
     reader = lambda do
       github.advance
       packet('review_summaries', 400)

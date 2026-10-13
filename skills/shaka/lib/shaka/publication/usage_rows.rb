@@ -3,26 +3,6 @@
 require_relative 'usage_pricing'
 
 module Shaka
-  # What each shown column counts, for a reader who has not seen these reports before.
-  module UsageGlossary
-    MEANINGS = {
-      'usd' => 'estimated cost at the provider’s published list prices, not an invoice',
-      'credits' => 'estimated OpenAI Codex plan credits, the unit Codex plans meter usage in',
-      'input' => 'tokens sent to the model; Codex and Cursor count cached input here too, Claude does not',
-      'cached_input' => 'input read back from the provider’s prompt cache, which is billed at a lower rate',
-      'output' => 'tokens the model wrote; Codex, Claude, and Pi count reasoning here too, OpenCode does not',
-      'reasoning_output' => 'tokens the model spent reasoning before the answer',
-      'cache_writes' => 'input stored in the prompt cache so later turns can reuse it'
-    }.freeze
-
-    module_function
-
-    def for(metrics)
-      lines = metrics.map { |key, label| "- **#{label}**: #{MEANINGS.fetch(key)}." }
-      "<details>\n<summary>What the columns mean</summary>\n\n#{lines.join("\n")}\n\n</details>" unless lines.empty?
-    end
-  end
-
   # Rounds amounts for reading; the hidden record keeps the reported text.
   module UsageNumbers
     module_function
@@ -92,8 +72,6 @@ module Shaka
       usd = minimum(@rows.last.last['usd'])
       usd && "#{shown('usd', usd)} estimated"
     end
-
-    def glossary = UsageGlossary.for(@metrics)
 
     def legend
       cells = @rows.flat_map { |_label, amounts| @metrics.map { |key, _| amounts[key] } }

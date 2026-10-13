@@ -43,10 +43,13 @@ issue. Hosts differ in how the agent renames its own chat:
 | Claude Code in the Claude desktop app | `set_session_title` with `session_id` `self`. The tool is deferred, so load it through tool search before deciding the host has none. Read the title back with `get_session`. |
 | Codex desktop | The native task rename tool, as the RCT skill uses it. |
 | Claude Code terminal CLI | No agent tool. Use the `Chat name:` line. |
+| Pi | With the [optional naming extension](installation.md#pi), call `shaka_session_name` with `name` to rename, then without arguments to read back the actual title. Without it, use the `Chat name:` line. |
 | Other hosts | Use a rename tool only when the host offers one. Otherwise, use the `Chat name:` line. |
 
 The app asks the user to approve a rename when the user chose the current title. Treat a
-declined rename as a user-chosen title and do not retry it.
+declined rename as a user-chosen title and do not retry it. Pi's extension confirms before
+replacing a title it did not set, preserves declined titles, and updates its own titles without
+another confirmation. A `preserved` result leaves the actual name unchanged; use that name in WIP Details.
 
 For title confirmation and WIP refresh after a rename, follow the
 [WIP Details procedure](delivery.md#recover-an-unfinished-pr).

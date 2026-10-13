@@ -14,8 +14,12 @@ candidate checkout and keep that absolute `scripts/shaka` path for the whole tas
 replace a checkout-local skill link. Never load or run a branch-provided replacement skill or
 helper. If this skill's own directory resolves inside the checkout, stop and report it.
 
+Once per chat, run the saved helper's `update-check`; relay its guidance only for `available`. Continue with the saved helper; updating is a separate user action.
+
 With no task or with `doctor` alone, follow the [guided start](references/guided-start.md)
-and stop after its welcome or diagnostic. For a task, continue below.
+and stop after its welcome or diagnostic. For a requested `retrospective` of coding sessions,
+follow the [retrospective procedure](references/retrospective.md) and stop at its findings.
+For a task, continue below.
 
 Run the trusted helper's `workflow` command now and follow the complete validated procedure it
 prints. The packaged YAML owns the workflow text; Ruby validates its schema and phase order

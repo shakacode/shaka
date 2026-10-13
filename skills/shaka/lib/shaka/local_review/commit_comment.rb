@@ -28,15 +28,25 @@ module Shaka
     private
 
     def coverage
+      groups = @rounds.group_by { |round| round.value('coverage') || 'UNKNOWN; see evidence.' }
+      values = groups.map { |text, rounds| "#{rounds.map(&:reviewer).join(', ')}: #{text}" }
+      "**Coverage:** #{values.join(' · ')}"
+    end
+
+    def coverage_reports
       lines = @rounds.map do |round|
         value = round.value('coverage') || 'UNKNOWN; inspect the original report for limitations.'
         reported = round.reported_coverage || 'UNKNOWN; inspect the original report for complete coverage limits.'
         text = "- #{round.reviewer}: #{value}"
-        "#{text}\n\n**Unverified report excerpt · #{round.reviewer}:**\n\n<pre>#{CGI.escapeHTML(reported)}</pre>"
+        "#{text}\n\n**Unverified report excerpt · #{round.reviewer}:**\n\n<pre>#{literal(reported)}</pre>"
       end
       "**Review coverage:**\n\n" \
         "Coverage excerpts may be incomplete or misidentified; inspect the original reports.\n\n#{lines.join("\n")}"
     end
+
+    # A pipe written as an entity displays the same, and keeps a table in the excerpt from
+    # reaching the rendering check as one GitHub failed to render.
+    def literal(text) = CGI.escapeHTML(text).gsub('|', '&#124;')
 
     def usage_link
       return 'Usage and attribution: see the PR description.' unless @usage_url
@@ -46,7 +56,7 @@ module Shaka
 
     def history(attention)
       blocks = ["<details>\n<summary>Review evidence and history</summary>",
-                "**Commit:** #{@subject.call(@rounds.last.head)}", *attention.settled,
+                "**Commit:** #{@subject.call(@rounds.last.head)}", *attention.details, coverage_reports,
                 '### Execution metadata', table,
                 *LocalReviewTriage.details(@rounds), '</details>']
       blocks.join("\n\n")

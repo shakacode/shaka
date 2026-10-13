@@ -218,9 +218,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Provenance, settings, usage with its glossary and pricing notes, and supplied details.
-    assert_equal 6, rendered.scan('</summary>').size
-    assert_equal 6, rendered.scan('</details>').size
+    # Provenance, settings, usage with pricing notes, and supplied details.
+    assert_equal 5, rendered.scan('</summary>').size
+    assert_equal 5, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
@@ -252,7 +252,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
 
     assert_includes rendered,
                     "A summary.\n\n[Code Walkthrough](#{link}) · " \
-                    "Post-implementation verification: _Not published yet._\n"
+                    "Checkpoint: _Not published yet._\n"
     refute_includes rendered, '## Code Walkthrough'
     refute_match(/^# Code Walkthrough/, rendered)
   end
@@ -317,12 +317,12 @@ class PublicationPostImplementationLinkTest < Minitest::Test
   def test_verification_is_beside_the_code_walkthrough
     assert_includes render(URL),
                     "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
-                    "[Post-implementation verification](#{URL})"
+                    "[Checkpoint](#{URL})"
   end
 
   def test_missing_verification_reserves_a_named_placeholder
     [nil, '  '].each do |value|
-      assert_includes render(value), 'Post-implementation verification: _Not published yet._'
+      assert_includes render(value), 'Checkpoint: _Not published yet._'
     end
   end
 
@@ -347,7 +347,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
     rendered = Shaka::Publication.description(content)
 
     assert_includes rendered, '<summary>Execution provenance</summary>'
-    assert_includes rendered, '| Machine alias |'
+    refute_includes rendered, '| Machine alias |'
     assert_includes rendered, '| User-requested model / effort | gpt-5.6-terra / medium |'
     refute_includes rendered, '| Initial prompt |'
     refute_includes rendered, '| Observed route |'
@@ -386,13 +386,13 @@ class PublicationDeploymentLinkTest < Minitest::Test
     link = PublicationRegressionTest::WALKTHROUGH
     assert_includes render,
                     "A summary.\n\n[Code Walkthrough](#{link}) · " \
-                    'Post-implementation verification: _Not published yet._ · ' \
+                    'Checkpoint: _Not published yet._ · ' \
                     "[Deployment](<#{DEPLOYMENT}>)\n\n## Outcome"
   end
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    "A summary.\n\n_Not published yet._ · Post-implementation verification: _Not published yet._ · " \
+                    "A summary.\n\n_Not published yet._ · Checkpoint: _Not published yet._ · " \
                     "[Deployment](<#{DEPLOYMENT}>)\n"
   end
 
@@ -406,7 +406,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
     refute_includes rendered, 'Deployment'
     assert_includes rendered,
                     "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
-                    "Post-implementation verification: _Not published yet._\n\n## Outcome"
+                    "Checkpoint: _Not published yet._\n\n## Outcome"
   end
 
   def test_a_missing_or_blank_deployment_is_refused
@@ -446,8 +446,30 @@ class PublicationWipDetailsTest < Minitest::Test
     assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
     labels = lines.drop(2).map { |line| line.split(' | ').first.delete_prefix('| ') }
     assert_equal Shaka::WipDetails::FIELDS.values, labels
-    assert_includes lines, '| Chat link | REDACTED |'
+    assert_includes lines.join("\n"), '| Chat link | Withheld: settings not read; rerun description with --ref |'
     assert_includes lines, '| Stopped because | paused |'
+  end
+
+  def test_unknown_policy_withholds_supplied_locations_without_claiming_redaction
+    wip = WIP.merge('workspace' => '/private/customer/project', 'thread' => 'https://private.example/session')
+    rendered = render(wip)
+    assert_includes rendered, 'Withheld: settings not read; rerun description with --ref'
+    refute_includes rendered, '/private/customer/project'
+    refute_includes rendered, 'https://private.example/session'
+    refute_includes rendered, 'REDACTED'
+  end
+
+  def test_owner_requires_machine_host_and_tag
+    ['Codex · 01a109ad', 'm5', 'm5 · Codex desktop · ', ' · Codex desktop · k7q2'].each do |owner|
+      error = assert_raises(Shaka::Error) { render(WIP.merge('owner' => owner)) }
+      assert_includes error.message, 'machine alias · host · owner tag'
+    end
+  end
+
+  def test_unavailable_owner_information_can_be_reported_honestly
+    ['UNKNOWN', 'UNKNOWN · Codex desktop · k7q2', 'm5 · UNKNOWN · k7q2'].each do |owner|
+      assert_includes render(WIP.merge('owner' => owner)), "| Owner | #{owner} |"
+    end
   end
 
   def test_wip_follows_the_usage_details
@@ -660,14 +682,14 @@ class PublicationUsageReadabilityTest < Minitest::Test
     assert_equal %w[999 1K 1.5K 100K 639K 1M 45.3M], shown
   end
 
-  # Break: the maintainer could not tell what the Credits column counted.
-  def test_the_glossary_explains_only_the_columns_shown
+  # Shared definitions belong in the guide; the report keeps its measured columns.
+  def test_usage_links_the_reader_guide_instead_of_repeating_definitions
     rendered = render(usage: usage_of(COLUMN.merge('credits' => '2.000000')))
-    glossary = rendered[%r{<summary>What the columns mean</summary>(.*?)</details>}m, 1]
-    assert_includes glossary, '**Codex credits**: estimated OpenAI Codex plan credits'
-    assert_includes glossary, '**Cache writes**'
-    refute_includes render(usage: usage_of(COLUMN)), '**Codex credits**'
-    assert_includes glossary, 'OpenCode does not'
+    visible = rendered.gsub(/<!--.*?-->/m, '')
+    assert_includes visible, '(https://shaka.shakacode.com/docs/reference/usage-and-cost)'
+    assert_includes visible, '| Codex credits |'
+    refute_includes visible, 'What the columns mean'
+    refute_includes visible, 'OpenCode does not'
   end
 end
 
@@ -705,6 +727,61 @@ class PublicationUsagePricingTest < Minitest::Test
     notes = pricing(later)
     assert_includes notes, "**claude\u2011opus\u20115\u20115 implementation**\n\n#{CURSOR}"
     assert_includes notes, "**claude\u2011opus\u20115\u20115 review**\n\n#{ANTHROPIC}"
+  end
+
+  ACCOUNTING = 'Cached input is part of input; reasoning output is part of output.'
+  EVIDENCE = [ANTHROPIC, 'Native usage is PARTIAL. Scope: all turns in selected sources.',
+              'Sources: [original rates](https://example.com/rates).',
+              'Special billing exception: cache writes are unpriced.'].freeze
+  FULL_NOTE = [*EVIDENCE, ACCOUNTING].join("\n\n")
+
+  def guide_report
+    render(usage: { 'note' => 'Per-commit allocation is unavailable.', 'records' => [record(COLUMN, note: FULL_NOTE)] })
+  end
+
+  def test_accounting_boilerplate_moves_to_docs_but_report_evidence_survives
+    visible = guide_report.gsub(/<!--.*?-->/m, '')
+    refute_includes visible, ACCOUNTING
+    [*EVIDENCE, 'Per-commit allocation is unavailable.'].each { |evidence| assert_includes visible, evidence }
+  end
+
+  def test_full_notes_survive_carry_when_the_display_is_shortened
+    block = guide_report[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m]
+    assert_equal FULL_NOTE, Shaka::UsagePricing.from_block(block)
+    later = render(usage: { 'note' => 'n', 'records' => [record(REVIEW)], 'carried' => block })
+    assert_equal FULL_NOTE, Shaka::UsagePricing.from_block(later[/<!-- shaka:usage .*?<!-- shaka:usage:end -->/m])
+    refute_includes pricing(later), ACCOUNTING
+  end
+
+  def test_the_top_level_note_also_links_shared_accounting_without_losing_coverage
+    usage = { 'note' => "#{ACCOUNTING}\n\nCoverage: latest turn only.", 'records' => [record(COLUMN)] }
+    visible = render(usage:).gsub(/<!--.*?-->/m, '')
+    refute_includes visible, ACCOUNTING
+    assert_includes visible, 'Coverage: latest turn only.'
+  end
+
+  def test_host_specific_unknowns_and_exclusions_stay_visible
+    notes = ['Input excludes cache reads and writes; reasoning output is part of output. ' \
+             'Recorded native cost is nominal, not an actual charge.',
+             'Cached input and cache writes are part of input; reasoning output and native total are UNKNOWN. ' \
+             'Parent-agent turn only; subagents excluded.']
+    notes.each do |note|
+      shown = pricing(render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note:)] }))
+      assert_includes shown, note.split('. ', 2).last
+    end
+  end
+
+  def test_only_the_known_anthropic_explanation_is_shortened
+    explanation = 'Uncached input, cache reads and cache writes are separate charges, and a 1-hour cache write ' \
+                  'costs more than a 5-minute one. Standard-speed responses are priced; fast mode is priced ' \
+                  'for Opus models with a published rate.'
+    note = "#{ANTHROPIC} #{explanation}"
+    rendered = render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note:)] })
+    visible = rendered.gsub(/<!--.*?-->/m, '')
+    assert_includes visible, ANTHROPIC
+    refute_includes visible, explanation
+    changed = "#{note} Additional billing limitation."
+    assert_includes pricing(render(usage: { 'note' => 'n', 'records' => [record(COLUMN, note: changed)] })), changed
   end
 
   def test_a_report_without_a_note_is_named
@@ -816,5 +893,49 @@ class PublicationIdentityPresentationTest < Minitest::Test
     assert_equal "#{Shaka::PublicationText.identity(IDENTITY)}\n\nDone.\n", rendered
     custom = Shaka::PublicationText.identity(IDENTITY.merge('agent' => 'Custom Agent', 'provider' => 'Custom Provider'))
     assert_includes custom, 'Custom Agent · Custom Provider'
+  end
+end
+
+class PublicationCheckpointTest < Minitest::Test
+  HEAD = 'a' * 40
+
+  def content
+    { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'Review the current result.',
+      'table' => PublicationRegressionTest::TABLE, 'deployment' => 'none', 'steps_besides_merging' => 'none',
+      'provenance' => PUBLIC_PROVENANCE, 'usage' => PublicationRegressionTest::USAGE_OBJECT,
+      'checkpoint' => { 'head' => HEAD, 'status' => 'Direction needed',
+                        'next_action' => 'Justin: choose the simpler parser before another review round.' } }
+  end
+
+  def test_current_status_and_action_precede_supporting_evidence
+    body = Shaka::Publication.description(content, nil, { 'head' => { 'sha' => HEAD } })
+    assert_includes body, '**Status:** Direction needed'
+    assert_includes body, '**Recommended next action:** Justin: choose the simpler parser'
+    assert_operator body.index('**Recommended next action:**'), :<, body.index('| Check |')
+    assert_includes body, "Head: `#{HEAD}`"
+  end
+
+  def test_stale_checkpoint_cannot_describe_the_current_pr
+    assert_raises(Shaka::Error) do
+      Shaka::Publication.description(content, nil, { 'head' => { 'sha' => 'b' * 40 } })
+    end
+  end
+
+  def test_single_line_html_is_visible_text_instead_of_hiding_the_action
+    data = content
+    data['checkpoint']['status'] = 'Direction needed <details>'
+    data['checkpoint']['next_action'] = 'Justin: choose a direction <!-- recorded later -->'
+    body = Shaka::Publication.description(data, nil, { 'head' => { 'sha' => HEAD } })
+    assert_includes body, 'Direction needed &lt;details&gt;'
+    assert_includes body, 'choose a direction &lt;!-- recorded later --&gt;'
+    refute_includes body, 'Direction needed <details>'
+  end
+
+  def test_status_cannot_hide_the_next_action_in_multiline_content
+    data = content
+    data['checkpoint']['status'] = "Direction needed\n\n<details>"
+    assert_raises(Shaka::Error) do
+      Shaka::Publication.description(data, nil, { 'head' => { 'sha' => HEAD } })
+    end
   end
 end

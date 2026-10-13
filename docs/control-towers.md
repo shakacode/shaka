@@ -1,73 +1,70 @@
 # Control towers
 
-A **Repository Control Tower (RCT)** gives you one chat for deciding what to work
-on and following the PRs in a repository. Ask it to check in with the chats doing
-the work and show you what needs your attention.
+![A central coordination tower connects three smaller towers, each with its own platform and work units.](img/coordinated-towers.webp)
 
-A **Master Control Tower (MCT)** coordinates work across repositories. For
-example, it can help sequence a library fix before an application upgrade.
-Each repository still has its own RCT.
+Control towers are optional. Try [a few Shaka tasks](getting-started.md) first.
 
-Control towers are optional roles for your coding agent, guided by Shaka's
-skills. Try [a few Shaka tasks](getting-started.md) before adding them.
+A **Repository Control Tower (RCT)** gives you one chat for choosing work and
+following PRs in a repository.
+A **Master Control Tower (MCT)** coordinates RCTs and dependencies—for example, a
+library fix needed before an application upgrade.
+
+![A Master Control Tower coordinates Repository Control Towers. Each repository tower follows its delivery tasks, and each task has one owner.](img/control-towers.svg)
 
 ## Set up your towers
 
-Ask your agent to install Shaka's tower skills and help you establish a master
-chat. Then open a chat in the saved project for the repository you want to work
-on and invoke its repository setup skill:
+For Codex, ask your agent:
 
-| Environment | Master chat | Repository chat |
-| --- | --- | --- |
-| Codex app | Ask: “Set up this chat as my Master Control Tower using Shaka's instructions.” | `$rct` |
-| Claude Code desktop | `/mct-claude` | `/rct-claude` |
+```text
+Install Shaka's control towers for Codex.
+```
 
-Setup needs the app's chat tools; Codex also needs its project tools. If your
-agent cannot access them, use the [manual role prompts](../skills/shaka/references/control-towers.md#role-prompts)
-instead of automated tower setup.
+1. If you already have a master chat, continue there. Otherwise, choose one
+   chat to coordinate your projects and run `$mct` there.
+2. Open a chat in each repository's Codex project and run `$rct` to connect it
+   to the master.
 
-The setup skill guides the agent to identify the repository from the chat's
-project and checkout, check for an existing RCT, and register with the MCT.
-Reuse an existing RCT when one is found. Setup is complete when the MCT
-acknowledges the repository and its RCT chat; you then choose what work starts.
+In Claude Code, use `/mct-claude` and `/rct-claude` instead. Tower setup needs the
+app's chat tools; Codex also needs its project tools. Ask your agent for help if
+these are unavailable. See [coding agents](coding-agents.md) for supported environments.
 
-Keep your master and repository chats in the same app. Codex and Claude Code
-cannot read each other's chats. The [setup and operating instructions](../skills/shaka/references/control-towers.md)
-cover each environment in detail.
+After the master acknowledges the repository tower, ask the tower what needs
+attention. You choose which task starts; setup starts no backlog work or recurring
+scans.
+
+Keep each tower set in one environment: Claude and Codex cannot read each other's
+sessions. Ask the owning tower to explain its setup, ownership, or handoff before
+moving work between environments.
 
 <a id="run-a-bounded-batch"></a>
 
-## Choose a small batch
+## Choose what to work on
 
-The RCT normally recommends one task at a time. To plan several together,
-explicitly ask for a small batch.
-
-Continue in the repository's RCT chat. It already has the repository context;
-“me” refers to your signed-in GitHub account. You can ask:
+In your repository's RCT chat, ask:
 
 ```text
-What should we tackle next? Look at issues assigned to me or unassigned,
-and include Dependabot PRs. Suggest a batch of up to three.
+What should we tackle next?
 ```
 
-Expect a short proposal explaining why those items matter, which already have
-PRs or active chats, and which can proceed together. If one fix depends on
-another, the proposal should explain the order. You can narrow the selection
-with an outcome such as “Focus on checkout reliability.”
-
-When the selection looks right, start it with **Ask** so the PRs come back to you
-for a merge decision:
+The RCT recommends one task and explains why it matters. To work on several
+at once, follow up with:
 
 ```text
-Start those three with Shaka and Ask. Reuse the chats already working on
-them, start new chats for the rest, and coordinate with them.
-Bring the PRs back for review.
+Suggest a batch of up to three.
 ```
 
-This gives the RCT permission to start the selected work and communicate with
-those chats. Each task stays with one chat through implementation, testing,
-review, and its PR. If a chat has stopped, ask the RCT to resume it; moving its
-work to another chat should be an explicit handoff.
+Expect a short proposal showing which tasks can proceed together and which need
+to wait. You can narrow it with a request such as “Focus on checkout reliability.”
+
+When the selection looks right:
+
+```text
+Start those three with Shaka and Ask. Coordinate their chats.
+```
+
+**Ask** brings each PR back to you for a merge decision. The RCT reuses existing
+chats and creates any missing ones. Each task stays with one chat through testing,
+review, and its PR. If a chat stops, ask the RCT to resume it.
 
 See [merge policies](working-with-shaka.md#choose-a-merge-policy) for Ask and Auto.
 Setting up towers or starting a batch does not authorize a deployment.

@@ -52,7 +52,7 @@ using the same isolated CLI adapter as review. Omitted settings use CLI defaults
 It sends a minimal prompt without repository content; it may consume quota or incur cost.
 Plain `doctor` launches no reviewer and does not establish account access.
 
-The trusted schema rejects duplicate reviewer identities; at most the three supported adapters
+The trusted schema rejects duplicate reviewer identities; at most the four supported adapters
 can launch. A probe failure makes doctor exit nonzero; unsupported adapters remain degraded.
 Each probe has a 30-second deadline. `--probe-timeout-seconds 1..120` changes that probe bound;
 it requires `--probe-reviewers`. Failures report the reason and local diagnostic path, without
@@ -62,6 +62,11 @@ diagnostics without checking for private account data. The closed Claude effort 
 a Shaka update to accept any additional level introduced by that CLI.
 
 ## Run the selected reviewer
+
+For `deepseek/openrouter`, read [OpenRouter reviews](openrouter.md#review-execution)
+only when that reviewer is selected.
+
+### CLI reviewers
 
 Render the prompt for the selected reviewer:
 ```text
@@ -250,12 +255,30 @@ A local review is **UNVERIFIED** until the owner publishes its report, including
 line, to the pull request. The owner verifies each finding against the code, makes the edits and
 tests, then publishes the review after pushing.
 
+## Recover from host denial before launch
+
+If the host denies `shaka review run` before launch, follow
+[host-denied review recovery](host-denied-review.md). Read that procedure only for
+this outcome; it covers permitted retries, honest not-run evidence, and a synthetic replay.
+
 ## Run the review loop with a ledger
 
-Keep every round in one ledger, a JSON file outside the checkout, for example
-`LEDGER="$(mktemp -d)/review-ledger.json"`. Pass `--ledger "$LEDGER"` to each
-`shaka review run`: a completed round adds its head, reviewer, effort, requested model, report,
-prompt source, criteria commit, and usage path. The table's Model column shows attribution from
+Keep every round in one ledger, a JSON file outside the checkout. Give each task its own
+directory under `~/.local/state/shaka/reviews/`, created when the loop starts:
+
+```bash
+LEDGER_DIR="$HOME/.local/state/shaka/reviews/OWNER-REPO-ISSUE-$(date +%s)"
+mkdir -p -m 700 "$LEDGER_DIR"
+LEDGER="$LEDGER_DIR/ledger.json"
+```
+
+Do not reuse another task's directory, and do not put the ledger in a temporary directory:
+`review run` adds `ledger_warning` to its result when it sits in one. Pass `--ledger "$LEDGER"`
+to each `shaka review run`: a completed round adds its head, reviewer, effort, requested model,
+report, prompt source, criteria commit, and usage path. The round and the run result name the
+helper's copy of the report in `reports/` beside the ledger; read that copy, and move the
+directory as a whole. When `review publish` stops and names a round whose report is unavailable,
+do not recreate the report from memory. The table's Model column shows attribution from
 native usage: the top-level CLI model, one canonical aggregate model, or a `shared:` list when
 aggregate usage reports several models. The list records model usage without assigning a primary
 model or claiming which model wrote the review. If an aggregate entry lacks a canonical name, the
@@ -264,13 +287,14 @@ Model unknown so a later complete usage record can supply it. The separate `shak
 leaves Routed model unknown whenever aggregate tokens span multiple entries, because they cannot
 be assigned to one model's rate. The ledger stays private until you publish it.
 
-The prompt asks for a class on every finding. Handle each by class:
+Use the class definitions in the fixed rules printed by `shaka review-prompt`.
+Repository editorial prompts do not replace those definitions. Handle each by class:
 
-| Class | Meaning | In the loop |
-| --- | --- | --- |
-| `defect` | Wrong behavior, a security or trust hole, or a broken contract | Reproduce it where practical, fix it in a new commit, review again |
-| `risk` | A plausible defect you cannot reproduce | Fix it when the fix is clearly correct; otherwise document it |
-| `nit` | Style, naming, simplification, optional tests, docs polish | Document it for a later decision; never fixed in the loop |
+| Class | In the loop |
+| --- | --- |
+| `defect` | Reproduce it where practical, fix it in a new commit, review again |
+| `risk` | Fix it when the fix is clearly correct; otherwise document it |
+| `nit` | Document it for a later decision; never fixed in the loop |
 
 After a round with findings, record what became of each one:
 
@@ -292,7 +316,34 @@ shaka review record --ledger "$LEDGER" --content-file FINDINGS.json
 
 Finding notes are published in the comment. Keep every `note` public-safe.
 
-`disposition` is `fixed`, with the fix commit's full SHA, or `documented`. The helper refuses a
+Use these dispositions:
+
+| Disposition | Use when | Published status |
+| --- | --- | --- |
+| `open` | The agent still has a fix or assessment to complete | Open |
+| `decision_needed` | A consequential design choice needs the maintainer | Needs your decision |
+| `fixed` | A fix commit exists; publication waits for its review | Fixed, in history |
+| `dismissed` | Evidence disproves the finding; explain it in `note` | Dismissed, in history |
+| `accepted` | The maintainer explicitly accepts the consequence | Accepted, in history |
+| `documented` | Legacy records or optional nits | Unassessed for defects/risks; nits in history |
+
+For `decision_needed`, give the options, tradeoffs, and recommendation in `note`.
+Copy the question into the PR description's `decisions` and wait before dependent work.
+Use `accepted` after the maintainer chooses, with a public-safe `decision` recording
+who chose what and a `note` explaining the consequence. Ruby requires those fields;
+the agent verifies the human decision. Explicitly fixed, dismissed, and accepted findings are
+resolved for the loop cap. A clean later review does not close an older finding.
+
+To update an earlier batch after a fix or decision, run `review record` with
+`--head REVIEWED_SHA` and that batch's complete findings and reviewer mappings.
+Republish the ledger to refresh the current summary and collapse older reports.
+Keep the same IDs, reporting reviewers, and original reports; recording a disposition
+is not a new reviewer finding. For an earlier batch, a fixed disposition names a later
+reviewed commit containing the fix; unreviewed revisions are refused. Existing fix references
+already checked when the loop advanced remain valid. Omit `--head`
+to record the newest batch before the next review.
+
+`fixed` needs the fix commit's full SHA. The helper refuses a
 fixed nit, a count that differs from the report's `FINDINGS n`, and a repeated id. Give a
 finding the same `id` when a later round raises it again: the comment then flags a finding that
 returned after its fix, a sign the fixes are not converging. Give a new finding an id no
@@ -307,7 +358,7 @@ head it was found in, and a different `--base`; after a rebase, start a new ledg
 refuses a fix recorded by any round on the last head, because no later round has reviewed it.
 The next round's prompt
 lists, as review data, every earlier finding's id, class, summary, and latest disposition
-(`fixed in SHA`, `documented nit`, `documented risk`), plus the commits since the newest
+(including fixed, open, decision-needed, and closed dispositions), plus the commits since the newest
 reviewed head before this one. It asks the reviewer to confirm each fix and to review the full diff fresh.
 It leaves out each `note`, so the reviewer does not anchor on the author's reasons.
 
@@ -349,7 +400,7 @@ the rounds they appeared in, returned defects, and a ready task-reassessment pro
 If the cap prevents review of a last-round fix, stop before pushing and tell the user.
 Publication still refuses that fix because no later round reviewed it; reassess the task.
 
-Otherwise, a round whose findings are all documented ends the loop. Push, open or adopt the
+Otherwise, settle open findings and obtain any needed maintainer decisions. Document optional nits. Push, open or adopt the
 pull request, then publish right away:
 
 ```bash
@@ -398,15 +449,14 @@ unclosed code fence or a stray disclosure tag in a report would hide the attesta
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
 the helper writes both itself. It posts one `Local Adversarial Review` comment per reviewed
-commit, in ledger order. Each opens with the reviewed revision, retained unresolved findings,
-and coverage limits. Report excerpts are attributed, unverified literal text; their Markdown
-cannot render an outcome label or link. A visible warning says excerpts may be incomplete or
-misidentified and directs readers to the originals. Missing or ambiguous HTML coverage shows UNKNOWN and points to
-the original report. A less-than character anywhere in the report conservatively triggers
-that fallback, including inside code examples. The complete formatted report remains in history.
-History also contains settled findings, the commit subject, and a table naming each reviewer
-and its finding count. Each disposition appears once in the generated findings view;
-each report retains its "Collated as" mapping when several reviewers read it.
+commit, in ledger order. Each opens with the reviewed revision, a compact table of
+findings needing attention, and coverage limits. Each finding lists every reviewer
+that reported its ID. Explicitly fixed, dismissed, and accepted findings move into
+evidence history; legacy documented defects and risks remain visibly unassessed.
+
+The closed evidence disclosure preserves all disposition explanations, decision records,
+coverage excerpts, execution metadata, and original reports. Coverage excerpts remain
+attributed, unverified literal text. Missing or ambiguous coverage stays UNKNOWN.
 The last reviewer's attestation closes the comment, where `merge` reads it.
 A commit GitHub does not have, such as one a rebase replaced, is named without a link or subject.
 Each comment's key includes the full commit SHA, so republishing edits that commit's entry
@@ -418,7 +468,14 @@ The result's `comments` lists the published entries, and `summary` gives totals 
 and its outcome. Copy that summary into the PR description's review history details; native
 usage records still belong in `usage.records`.
 
-After publishing, collapse older owned Shaka review comments:
+After every successful publication, `review publish` collapses older owned Shaka
+review comments just published from the ledger, using their returned comment IDs.
+Other reports, including legacy reports at the same revision, stay visible for explicit assessment.
+Cleanup also skips when the current PR head has no report in that publication.
+Its `cleanup` result lists confirmed edits, unavailable cleanup,
+or a skip when no visible owned current-head report exists. A cleanup failure
+returns nonzero while retaining the published comments; inspect the gap and retry.
+For independent cleanup, use:
 
 ```sh
 shaka review collapse OWNER/REPO NUMBER
@@ -428,11 +485,11 @@ The command links earlier Shaka local review comments from the publishing accoun
 to its newest visible report for the current PR head. Findings and reports remain
 expandable, and closing attestations stay readable by `merge`. Active reports for the same
 commit stay visible; already archived reports link to the current one. Collapsing history does not resolve findings or native threads;
-comments by other accounts stay intact. Carry still-applicable material findings
-into the current review summary before cleanup.
+comments by other accounts stay intact. Before publication or standalone cleanup, carry still-applicable material findings
+into the current review summary.
 
-The result lists confirmed edits and unavailable cleanup. A failed edit returns a
-nonzero exit without undoing the published reports; inspect the failure before retrying.
+The standalone command also lists confirmed edits and unavailable cleanup. A failed
+edit returns a nonzero exit; inspect the failure before retrying.
 Without a visible owned current-head report, cleanup skips without failing. If the
 PR returns to a previously archived head, republish its report before cleanup.
 Both legacy and per-commit Shaka review keys are recognized. Cleanup works with
@@ -441,7 +498,9 @@ the per-commit publisher and can run independently after publishing.
 After assessing completed CI feedback, also minimize obsolete bot review reports
 and notices with GitHub's native **outdated** disclosure. Read them with `shaka comments`
 at the current head first. Select reports that earlier commits have superseded and
-notices, such as a past rate-limit warning, that no longer help the reader. Carry
+notices that no longer help the reader. Minimize a CodeRabbit review-limit notice
+when it contains no review findings; record `rate-limited; no review completed`
+in the existing review summary even when the notice concerns the current head. Carry
 still-applicable findings into the current summary; leave current review reports
 and discussions with unaddressed material concerns visible. A different SHA alone
 does not establish that findings are resolved. The agent makes this assessment;
@@ -463,6 +522,18 @@ change after a confirmed mutation appears as both a confirmed change and a failu
 so the result retains the actual edit and reports the changed context. Head
 and body checks cannot make GitHub's minimization mutation atomic with concurrent
 changes. Inspect reported failures before retrying; no automatic rollback occurs.
+
+Evidence comments posted directly with `gh pr comment`, such as captures and samples,
+carry no Shaka key, so no publisher folds them. After posting the replacement, pass its
+ID as `--current` and each comment it supersedes as `--superseded`. Select earlier folded
+comments again so they link the newest one.
+
+Each selected comment keeps its writer identifier line, then links the current comment
+above its original body in expandable details. Ruby checks that every comment is on this
+pull request, was written by the authenticated account, starts with the `🤖` writer
+identifier, and that each selected one is older than the current one. It also checks
+GitHub's rendering and the stored body. It does not judge whether the evidence is
+obsolete. Failures are listed and return nonzero.
 
 Record available native
 model, effort, and usage with `shaka usage --commit "$(git rev-parse HEAD)" --contribution review` on the

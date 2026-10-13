@@ -9,32 +9,37 @@ see [Start here](getting-started.md) and [Working with Shaka](working-with-shaka
 
 ## Choose how to start
 
-Use [shared repository setup](configure-repository.md) for team settings, or start
-a task if the repository is already configured. The private-trial option below
-avoids a team setup PR but still has delivery limitations. Private setup grants
-neither team policy nor permission to merge.
+Give Shaka a task. If setup is missing, it asks whether you want individual
+or team settings. Individual setup avoids a team setup PR; shared
+[repository setup](configure-repository.md) gives the team one configuration.
+Setup alone does not authorize merging.
 
-### Private trials: available tools, incomplete guided experience
+<a id="private-trials-available-tools-incomplete-guided-experience"></a>
+<a id="individual-trials-available-tools-incomplete-guided-experience"></a>
+
+### Individual setup
 
 ```text
-$shaka Implement this small feature using this repository's existing commands.
-Try Shaka privately in this clone. Do not create a team setup PR or include
-Shaka configuration in the feature diff. Keep merge policy ask.
+$shaka <task or issue link>
+Set up Shaka just for me. Go.
 ```
 
-This prompt describes the intended trial. It is not yet a demonstrated seamless
-new-user path. The [first-task acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
-identifies the evaluated installation and records a verified maintainer-led
-feature PR with interventions. Its entry workflow still selected team setup, and reviewer selection,
-walkthrough, and handoff operations failed when reading an absent team seam.
-An agent also edited private settings to suppress local locations in public WIP Details.
+Individual settings remain outside commits in a repository without team setup.
+[Merged #420](https://github.com/shakacode/shaka/pull/420) added delivery support for
+individual reviewer choices, writing limits, opening instructions, and WIP preferences.
+Custom code-review instructions and checkpoint settings remain incomplete;
+[#481](https://github.com/shakacode/shaka/issues/481) tracks those gaps.
 
-The [private setup procedure](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/repository-setup.md#try-shaka-privately-in-one-clone)
-exists, including recovery copies and exclusions. Its availability does not mean
-every delivery operation supports that source. Expect an unsupported operation
-to be reported with its failure and any manual fallback disclosed. A guided run
-with interventions does not establish seamless new-user acceptance.
-A newer installation needs its own validation before these limits are removed.
+The agent follows setup instructions to find existing commands and continue into
+your task. That is not proof of seamless first-user delivery. The
+[earlier acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
+records a maintainer-led feature PR with interventions on an earlier installation.
+That evaluation predates #420; newer delivery support still needs a genuine new-user run.
+
+[Merged #425](https://github.com/shakacode/shaka/pull/425) subsequently added independent
+opening-check choices, including individual settings. [Merged #426](https://github.com/shakacode/shaka/pull/426)
+added [settings previews](settings.md#preview-settings-before-adopting-them) for one task.
+That settings preview differs from [trying another Shaka implementation](trying-pr-versions.md).
 
 ## Run an ordinary task
 
@@ -46,10 +51,19 @@ or PATH by hand.
 
 ## Understand the PR's settings and evidence
 
-Expand the settings block to see the source and effective choices used for the
-candidate. The publication helper redacts selected settings values; this is not a
-general privacy scan. A settings block describes the run;
-it does not prove tests or review happened.
+Expand the settings block to see whether the validation and review results match
+the candidate commit. Below that line, one row per result shows the settings it used
+and what it ran with, such as the validation command or the reviewer.
+[Which settings apply](settings.md#which-settings-apply) explains where settings
+come from.
+
+When the settings are not the default branch's, as in an individual setup or a
+settings PR tried on one task, the block also holds a table of every setting.
+Settings that are UNKNOWN or never published in every column are listed below
+that table instead of taking a row.
+The publication helper redacts selected settings values; this is not a general
+privacy scan. A settings block describes the run; it does not prove tests or
+review happened.
 
 | What changes or fails | Expected response |
 | --- | --- |
@@ -61,8 +75,9 @@ it does not prove tests or review happened.
 
 Public PRs must contain no private task content, operational settings, or
 private-content fingerprints. Expandable details are still public. WIP Details
-can include workspace and chat locations by default; decide whether to suppress
-them before publication. See [WIP settings](settings.md#wipinclude_locations).
+includes separate checkout-path and chat-locator fields, shown by default.
+The current [WIP setting](settings.md#wipinclude_locations) hides both together;
+[#482](https://github.com/shakacode/shaka/issues/482) tracks independent path visibility.
 Privacy still requires the agent to inspect the publication.
 
 ## Decide whether to merge
@@ -78,14 +93,16 @@ consumer trial.
 | --- | --- |
 | Resume the same task with a PR | The workflow directs the agent to refresh PR state and evidence. Open WIP Details and return to the owner, or give a new chat the PR URL after the previous owner stops. Fresh-chat acceptance remains untested. |
 | Resume before a PR exists | Supply the task and checkout. The intended path is local inspection; there is no PR record from which to recover missing choices. Fresh-chat acceptance remains untested. |
-| Use a linked worktree with private setup | Each worktree has its own local settings identity and recovery copy in the common Git directory. Host permissions must allow the required writes. |
-| An outside pull adds team settings | Inspect adoption and compare saved private settings. Default-branch team policy governs; do not overwrite it with the private copy. |
-| Clean or delete a private worktree | Previously captured settings may be restored outside a checkout for comparison. Uncaptured edits and deletion of the common Git directory cannot be recovered from those copies. |
-| Upgrade an older configuration layout | Use the reviewed migration procedure. A private destination collision stops migration for comparison rather than overwriting it. |
+| Use a linked worktree with individual settings | Each worktree has its own local settings identity and recovery copy in the common Git directory. Host permissions must allow the required writes. |
+| An outside pull adds team settings | Inspect adoption and compare saved individual settings. Default-branch team policy governs; do not overwrite it with the local copy. |
+| Clean or delete a worktree with individual settings | Previously captured settings may be restored outside a checkout for comparison. Uncaptured edits and deletion of the common Git directory cannot be recovered from those copies. |
 
-Use the [resume guide](working-with-shaka.md#resume-unfinished-work) and
-[migration guide](migration.md). Private recovery protects captured configuration;
-it is not a backup of feature changes or the agent conversation.
+Use the [resume guide](working-with-shaka.md#resume-unfinished-work).
+Recovery copies protect captured configuration, not feature changes or the agent
+conversation. A [checkpoint](working-with-shaka.md#revise-earlier-guidance-and-try-again)
+needs recorded guidance and recoverable work state. It is a separate agent procedure;
+the Ruby `checkpoint` command does not capture or restore snapshots.
+Tests in fresh processes do not establish genuine fresh-chat recovery.
 
 ## When the coding agent denies access
 
@@ -93,11 +110,9 @@ Expect the failed operation and path to be reported, with no claim of completion
 Use the host's supported permission mechanism for the necessary operation, then
 retry and verify it. Shaka does not create a sandbox or grant filesystem access.
 
-Codex workspace permissions can allow ordinary project edits while denying the
-protected Git writes needed by private setup. That denial was observed in normal
-and linked worktrees; successful approval/retry remains untested. Claude Code
-also needs permission for setup; supplemental checks completed with explicit Bash
-allowances. An unrestricted session proves no sandbox outcome.
+Host permissions can allow project edits while denying protected Git writes
+needed by individual setup. The acceptance report records host-specific outcomes;
+an unrestricted run does not prove that a sandboxed setup or retry will succeed.
 
 <a id="what-the-pilot-has-established"></a>
 

@@ -47,8 +47,9 @@ class LocalReviewCodexTest < Minitest::Test
   # Break caught: a missing CLI leaves no machine-readable account of why review did not run.
   def test_missing_codex_reports_no_attempt_and_a_reason
     with_repository do |root, base, head, bin|
-      path = [bin, File.dirname(RbConfig.ruby), File.dirname(TEST_GIT), '/usr/bin', '/bin'].uniq.join(':')
-      output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => path })
+      File.symlink(RbConfig.ruby, File.join(bin, 'ruby'))
+      File.symlink(TEST_GIT, File.join(bin, 'git'))
+      output, _error, status = run_review(root, base, head, bin, env: { 'PATH' => bin })
       refute_predicate status, :success?
       result = JSON.parse(output)
       assert_missing_codex(result)
@@ -1330,6 +1331,17 @@ class LocalReviewLoopTest < Minitest::Test
       loop_round(fix_commit, findings: 0)
       git!(@root, 'checkout', '--quiet', head)
       assert_refused(head, 'Round 1 already reviewed')
+    end
+  end
+
+  def test_a_ledger_round_reports_its_kept_report_and_warns_about_a_temporary_ledger
+    in_loop do |head|
+      result = loop_round(head, findings: 0)
+      kept = JSON.parse(File.read(@ledger)).fetch('rounds').first.fetch('report')
+
+      assert_equal File.join(File.realpath(File.dirname(@ledger)), 'reports'), File.dirname(kept)
+      assert_equal kept, result.fetch('report')
+      assert_includes result.fetch('ledger_warning'), 'temporary directory'
     end
   end
 
