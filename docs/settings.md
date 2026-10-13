@@ -825,27 +825,15 @@ Owner, revision, state, and next action also stay visible. When settings were
 not read or could not load, the description withholds the checkout path, says
 how to reload the settings, and still shows the chat locator.
 
-A chat locator such as `codex://threads/...` or `claude://...` opens the
-conversation on the owner's machine. It is not a link that shares the
-conversation's content, and writing WIP Details never creates a shared copy.
+A chat locator such as `codex://threads/...` or `claude://...` is an identifier,
+not a copy of the conversation. It opens the chat only in the owner's own app, so
+a reader who sees it on a public PR cannot open or read the conversation with it.
+Writing WIP Details never creates a shared copy. Links from other hosts can have
+different access rules, so the agent checks the field before publishing.
+To keep a chat locator off a PR, tell the agent before it publishes.
 
 This setting controls the Workspace field only. It does not remove private
 information elsewhere in a PR, and expandable sections on public PRs are public too.
-
-### Settings written as `wip.include_locations`
-
-`wip.include_locations` is the earlier name. It hid the checkout path and the
-chat locator together. Shaka still reads it, as the checkout-path choice alone:
-
-| Existing value | Checkout path | Chat locator |
-| --- | --- | --- |
-| `include_locations: true` | Shown | Shown |
-| `include_locations: false` | `REDACTED` | Shown; it was `REDACTED` before |
-| No `wip` setting | Shown | Shown |
-
-Rename the key to `include_checkout_path` when you next edit the file. A file
-that sets both names is refused. To keep a chat locator off a PR, tell the agent
-before it publishes.
 
 ## `repo_prefix`
 
