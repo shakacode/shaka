@@ -2,7 +2,8 @@
 
 ![A central coordination tower connects three smaller towers, each with its own platform and work units.](img/coordinated-towers.webp)
 
-Control towers are optional. Try [a few Shaka tasks](getting-started.md) first.
+Control towers are optional roles for your coding agent.
+Try [a few Shaka tasks](getting-started.md) first.
 
 A **Repository Control Tower (RCT)** gives you one chat for choosing work and
 following PRs in a repository.
@@ -24,9 +25,8 @@ Install Shaka's control towers for Codex.
 2. Open a chat in each repository's Codex project and run `$rct` to connect it
    to the master.
 
-In Claude Code, use `/mct-claude` and `/rct-claude` instead. Tower setup needs the
-app's chat tools; Codex also needs its project tools. Ask your agent for help if
-these are unavailable. See [coding agents](coding-agents.md) for supported environments.
+In Claude Code, use `/mct-claude` and `/rct-claude` instead. Use the desktop apps
+for tower setup; see [coding agents](coding-agents.md) for other environments.
 
 After the master acknowledges the repository tower, ask the tower what needs
 attention. You choose which task starts; setup starts no backlog work or recurring
@@ -59,7 +59,7 @@ to wait. You can narrow it with a request such as “Focus on checkout reliabili
 When the selection looks right:
 
 ```text
-Start those three with Shaka and Ask. Coordinate their chats.
+Start that batch with Shaka and Ask. Coordinate the chats.
 ```
 
 **Ask** brings each PR back to you for a merge decision. The RCT reuses existing
@@ -72,8 +72,7 @@ Setting up towers or starting a batch does not authorize a deployment.
 ## Follow the work
 
 ```text
-How are those three going? Show me what's ready, what's blocked, and what
-you need from me. Link each PR and its chat.
+How is the batch going? Show what needs my attention, with PR and chat links.
 ```
 
 A useful update combines the latest chat reports with the current PRs on
@@ -109,10 +108,9 @@ PR #123 has merged. Ask the chats that were waiting on it to update their
 branches, rerun their checks, and tell me what's still blocked.
 ```
 
-Replace the PR number with the one that merged. The RCT checks which chats were
-waiting for that change and follows up with them. Those chats need to test their
-changes together with the merged fix and refresh affected reviews and manual
-checks. Wait for their updated results before treating the dependent PRs as ready.
+Those chats need to test their changes together with the merged fix and refresh
+affected reviews and manual checks. Wait for their updated results before treating
+the dependent PRs as ready.
 Any outstanding security or business decision still needs to be settled.
 
 ### If your project shares one test environment
@@ -125,16 +123,14 @@ Let the checkout fix test next. Tell the other chats sharing that environment
 to wait until it's finished.
 ```
 
-The RCT needs to notify every competing chat, so they do not all try to take the
-next slot. The selected chat must still acquire the project's lock before
-testing and release it afterward. Its place in line does not displace a chat
-already using the environment. This depends on your project's tools; Shaka
-does not include an environment scheduler.
+The RCT should tell every chat sharing the environment which one tests next.
+This needs your project's existing way to reserve it. A chat already testing
+finishes first. Shaka does not include an environment scheduler.
 
 ## Decide what to merge first
 
 ```text
-What order should I focus on the merges? Give me links to the PRs and their chats.
+Which PRs should I merge first? Include PR and chat links.
 ```
 
 The recommendation should weigh impact and readiness together. A tested fix for
