@@ -31,20 +31,23 @@ arguments, paths, or task text. Set `SHAKA_CALL_LOG=off` to stop recording.
 
 ## Install
 
-Clone first, read the source and `bin/install`, then run it. The installer
-records the first `ruby` on your `PATH`:
+Clone the source. To install somewhere else, such as `~/agent-tools/shaka`,
+change `SHAKA_DIR` on the first line:
 
 ```bash
 SHAKA_DIR="$HOME/.agents/shaka"
 umask 022
 mkdir -p "$(dirname "$SHAKA_DIR")"
 git clone https://github.com/shakacode/shaka.git "$SHAKA_DIR"
-"$SHAKA_DIR/bin/install" --directory "$SHAKA_DIR" --agent codex
 ```
 
-To install somewhere else, such as `~/agent-tools/shaka`, change `SHAKA_DIR` on
-the first line. `--directory` makes the installer register the checkout you
-just read.
+Read the source and `bin/install`, then run the installer in the same terminal.
+It records the first `ruby` on your `PATH`, and `--directory` makes it register
+the checkout you just read:
+
+```bash
+"$SHAKA_DIR/bin/install" --directory "$SHAKA_DIR" --agent codex
+```
 
 Replace `codex` with your coding agent, and repeat `--agent` to select several.
 Each one adds this link:
