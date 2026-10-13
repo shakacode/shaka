@@ -59,13 +59,21 @@ For title confirmation and WIP refresh after a rename, follow the
 Desktop towers use `get_session`, `list_sessions`, `list_events`,
 `set_session_title`, `set_pinned`, and `send_message`. The terminal CLI lacks
 these tools. Use title suffixes for discovery and each tower's own recorded
-registration for ownership. Sidebar groups are unused because `move_sessions`
+setup for ownership. Sidebar groups are unused because `move_sessions`
 unpins a pinned session.
 
-There is no bounded wait for another session. After sending registration, report
-`awaiting acknowledgment` and end the turn. Complete setup when the master's
-reply names the same repository and session. Neither `queued` nor `delivered`
-is acknowledgment. Do not poll or start a monitor.
+`send_message` reaches only a session with a turn running. `delivered` means that
+turn started on the message and `queued` means it waits behind current work;
+neither is the other session's answer. An idle session returns `undelivered`
+("gave no sign of starting on it within 20s") and never receives the message.
+Three tower setups between September 24 and October 8 got that result from one
+idle master, whose transcript gained no turn. Delivery to a session mid-turn is
+untested for towers.
+
+Record the setup or answer in the sending session's own transcript before sending,
+and read the other session with `list_events` on the next turn. There is no
+bounded wait for another session: report the result and end the turn. Do not poll,
+re-send, or start a monitor.
 
 ## Read the session listing completely
 

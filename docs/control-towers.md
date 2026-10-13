@@ -25,11 +25,15 @@ Install Shaka's control towers for Codex.
 2. Open a chat in each repository's Codex project and run `$rct` to connect it
    to the master.
 
-In Claude Code, use `/mct-claude` and `/rct-claude` instead.
+In Claude Code, use `/mct-claude` and `/rct-claude` instead. Claude Code delivers
+a message only to a chat that is working, so an idle master does not hear a new
+tower. After `/rct-claude` finishes, send `/mct-claude` in the master again to
+confirm the tower, then `/rct-claude` in the tower to pick up the answer. The tower
+is usable before that.
 
-After the master acknowledges the repository tower, ask the tower what needs
-attention. You choose which task starts; setup starts no backlog work or recurring
-scans.
+After the master acknowledges the repository tower, or a Claude Code tower reports
+its setup, ask the tower what needs attention. You choose which task starts; setup
+starts no backlog work or recurring scans.
 
 Keep each tower set in one environment: Claude and Codex cannot read each other's
 sessions. Ask the owning tower to explain its setup, ownership, or handoff before

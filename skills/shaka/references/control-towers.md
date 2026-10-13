@@ -80,10 +80,11 @@ supported fallback.
 
 Establishing the master authorizes its own title, pin, and acknowledgment
 operations. It assigns no backlog, creates no worker session, and grants no merge
-authority. A repository tower registers by message; the master verifies the
-repository, session, and default branch from its own reads before acknowledging,
-and refuses a repository that already has a tower. A delivered or queued message is
-not acknowledgment in either direction.
+authority. A repository tower registers by recording its setup in its own session.
+On each `/mct-claude`, the master verifies every unconfirmed tower's repository,
+session, and default branch from its own reads, then records and sends its
+confirmation or refusal. An idle master receives no message, so send `/mct-claude`
+there again after setting up a tower.
 
 ## Establish a repository tower in Claude Code
 
@@ -104,16 +105,17 @@ rather than guesses.
 
 The skill resolves the display prefix with `shaka prefix`, renames the session to
 `<PREFIX> RCT — Shaka`, pins it, and then states the
-completed setup in the session itself: the repository, session, default branch, and
-one-repository scope. That written record, not the title, is what makes the role
-durable — the master establishes ownership by reading the tower's session, and towers
-outlive the master that acknowledged them.
+recorded setup in the session itself: the repository, session, default branch,
+one-repository scope, and chosen master. That written record is the registration and
+makes the role durable: the master establishes ownership by reading the tower's
+session, and towers outlive the master that confirmed them.
 
-Registration is a message, and this host has no bounded wait for another session, so
-the tower reports `awaiting acknowledgment` and ends its turn. The master's answer
-arrives as an ordinary labelled turn. Setup is complete only when that answer names
-the same repository and session; a delivered or queued message is not acknowledgment,
-and a refusal comes back the same way rather than leaving the tower waiting.
+The tower also sends the master a notice, reports `awaiting confirmation`, and ends
+its turn. When the master was idle, the tower names one step: open the master and
+send `/mct-claude`. The master's answer arrives as a labelled turn only while the
+tower is working; otherwise send `/rct-claude` in the tower again and it reads the
+answer from the master's session. Tower work does not wait for confirmation, and a
+refusal stops it.
 
 The two hosts cannot see each other's sessions, so a Claude master coordinates Claude
 repository towers and a Codex master coordinates Codex ones. Do not mix hosts within
@@ -139,7 +141,7 @@ proof of ownership, authorization, or completion.
 
 ## Select work interactively
 
-After `$rct` or `/rct-claude` registration completes, give a read-only
+After `$rct` registration completes or `/rct-claude` records its setup, give a read-only
 recommendation from a fresh read of live issues, PRs, tracker relationships, and
 any native task ownership the host exposes, not from the setup-time inventory.
 Reread this section
