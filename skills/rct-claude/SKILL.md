@@ -90,9 +90,9 @@ Take the first of these that matches, in this order:
 - If exactly one other session records one, stop with `RCT setup error: repository
   already has an RCT`, identify that session, and direct the user there.
 - If only this session records one, reuse it. Repair a missing title or pin state,
+  record the setup again when a verified fact changed,
   [find the master](#find-the-master) again, and continue at
-  [Tell the master](#tell-the-master) unless this conversation already records that
-  master's confirmation.
+  [Tell the master](#tell-the-master).
 - Otherwise this session is the candidate tower. A session carrying the suffix without
   a recorded setup is a stale hint, not an owner; say so and continue.
 
@@ -134,10 +134,10 @@ asking it to confirm them. Say that registration releases no paused work, assign
 backlog, creates no worker session, and changes no merge authority.
 
 Read the delivery result. `delivered` and `queued` describe the message, not the
-master's answer. Any other result means the master was idle and received nothing,
-now or later. Report `registration recorded, master not notified`, the observed
-result, and one user step: open the master session, named by title and ID, and send
-`/mct-claude` there.
+master's answer. `undelivered` means the master was idle and received nothing, now
+or later. Report `registration recorded, master not notified`, the observed result,
+and one user step: open the master session, named by title and ID, and send
+`/mct-claude` there. Report any other result as `RCT setup error: notice failed`.
 
 Then give the report below as `awaiting confirmation` and end the turn. Do not poll,
 re-send, or start a monitor. A confirmation arrives as a turn only while one is

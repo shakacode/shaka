@@ -106,9 +106,10 @@ statement here later, so write it before sending anything. State that confirmati
 registers the tower only, and releases no paused work, backlog assignment, worker
 session, or merge authority. Then send the same text with `send_message`.
 
-Read the delivery result for every reply. Anything other than `delivered` or `queued`
-means the tower was idle and received nothing: report that the answer is recorded
-here and that the user completes it by sending `/rct-claude` in that tower.
+Read the delivery result for every reply. `undelivered` means the tower was idle and
+received nothing: report that the answer is recorded here and that the user completes
+it by sending `/rct-claude` in that tower. Report any other result that is not
+`delivered` or `queued` as an error with what you observed.
 
 When a check fails, confirm nothing for that repository and send no refusal: an idle
 tower would not receive it. Report to the user here, with what each session recorded
