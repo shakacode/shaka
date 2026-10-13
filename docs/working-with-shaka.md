@@ -339,11 +339,16 @@ The agent helps refine the idea and asks before filing an issue.
 
 Use these searches in the repository's GitHub PR list:
 
-| Search on GitHub | Why it is waiting | Your next action |
-| --- | --- | --- |
-| `is:open label:awaiting-answer` | The agent needs a decision. | Answer **Decisions for the maintainer** in the description. For example, choose whether an import rejects invalid rows or skips them. Return the answer to the owning chat unless the handoff names active automatic follow-up. |
-| `is:open label:awaiting-merge-approval` | The verified commit is ready under Ask. | Tell the agent to merge that commit, or merge it yourself through GitHub's offered control. Any required GitHub review approval still needs an eligible reviewer. |
-| `is:open label:awaiting-resume` | The session paused and nothing will wake it. | Paste **WIP Details → Next action** into the owning agent chat. For example, resume after checks finish with the Shaka prompt and PR URL recorded there. |
+| Search on GitHub | Why it is waiting and what to do |
+| --- | --- |
+| `is:open label:awaiting-answer` | Decision needed: answer **Decisions for the maintainer** in the description. |
+| `is:open label:awaiting-merge-approval` | Ready under Ask: authorize the agent to merge that commit, or use GitHub's offered merge control. |
+| `is:open label:awaiting-resume` | Paused without a wake: paste **WIP Details → Next action** into the owning chat. |
+
+For example, an import decision might ask whether to reject invalid rows or skip
+them. A session paused for checks can resume with the Shaka prompt and PR URL in
+its next action. Return answers to the chat unless the handoff names active
+automatic follow-up.
 
 The agent creates and manages these labels, leaving at most one on a PR. It clears
 the wait when work resumes and prepares a new handoff after validation and review.
