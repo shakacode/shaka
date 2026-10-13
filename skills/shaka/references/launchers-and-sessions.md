@@ -66,9 +66,6 @@ unpins a pinned session.
 turn started on the message and `queued` means it waits behind current work;
 neither is the other session's answer. An idle session returns `undelivered`
 ("gave no sign of starting on it within 20s") and never receives the message.
-Three tower setups between September 24 and October 8 got that result from one
-idle master, whose transcript gained no turn. Delivery to a session mid-turn is
-untested for towers.
 
 Record the setup or answer in the sending session's own transcript before sending,
 and read the other session with `list_events` on the next turn. There is no

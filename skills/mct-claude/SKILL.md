@@ -89,7 +89,7 @@ establish each fact from your own reads:
 - `list_events` on that session shows its own recorded tower setup for this
   repository. A title suffix, a matching `cwd`, or a notice alone is not proof of the
   role;
-- no other live session's transcript records a setup for that same
+- no other live session's transcript records an unwithdrawn setup for that same
   `OWNER/REPOSITORY`. List sessions completely for this check too, as the
   [host guide](../shaka/references/launchers-and-sessions.md#read-the-session-listing-completely)
   describes: a first page that hides an older tower is how a duplicate gets
@@ -128,8 +128,9 @@ action, and never confirm a fact you did not read yourself.
 
 Derive the tower set by reading the live `list_sessions` candidates with
 `list_events`, again listing completely, and keeping those whose own transcript
-records a tower setup, confirmed or not. That read is the registry; it needs no file,
-database, or sidebar group. Do not add one: `move_sessions` unpins a pinned session,
+records a tower setup it has not withdrawn, confirmed or not. That read is the
+registry; it needs no file, database, or sidebar group. Do not add one:
+`move_sessions` unpins a pinned session,
 and the live session list is the only record this role keeps. One RCT owns one
 repository; closely related repositories keep separate towers, and this role orders
 their work.

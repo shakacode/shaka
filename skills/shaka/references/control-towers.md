@@ -78,7 +78,7 @@ needs the desktop app's session tools; a terminal `claude` stops with `MCT setup
 error: host session tools are unavailable`, and the role prompt below remains the
 supported fallback.
 
-Establishing the master authorizes its own title, pin, and acknowledgment
+Establishing the master authorizes its own title, pin, and confirmation
 operations. It assigns no backlog, creates no worker session, and grants no merge
 authority. A repository tower registers by recording its setup in its own session.
 On each `/mct-claude`, the master verifies every unconfirmed tower's repository,
