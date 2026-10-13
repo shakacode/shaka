@@ -8,8 +8,9 @@ module Shaka
     SUMMARY = 'Skills used'
     FIELDS = %w[name source revision phase contribution evidence corroboration].freeze
     LABELS = { 'agent-reported' => 'Agent-reported', 'corroborated' => 'Corroborated' }.freeze
-    NOTE = 'Agent-reported use is the agent’s account. Corroborated use names a record of invocation or loading; ' \
-           'it does not establish compliance with every instruction. Completeness is not verified.'
+    NOTE = 'Agent-reported use is the agent’s account. The agent selects Corroborated when a record confirms ' \
+           'invocation or loading. Shaka does not check that record or instruction compliance. ' \
+           'Completeness is not verified.'
 
     def self.refuse_free_form!(items)
       return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.casecmp?(SUMMARY) }

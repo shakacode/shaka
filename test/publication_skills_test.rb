@@ -28,7 +28,7 @@ class PublicationSkillsTest < Minitest::Test
     assert_includes rendered, '| pstack-investigate | PStack | UNKNOWN | implementation |'
     assert_includes rendered, '| Agent-reported | — |'
     assert_includes rendered, '| Corroborated | Native invocation event |'
-    assert_includes rendered, 'does not establish compliance'
+    assert_includes rendered, 'Shaka does not check that record'
     assert_includes rendered, 'Completeness is not verified'
     refute_includes rendered, '<details open'
   end

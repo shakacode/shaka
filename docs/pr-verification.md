@@ -90,10 +90,11 @@ knows the contract must decide whether that is the right billing rule.
 
 Expand **Skills used** to see the skills reported during planning, implementation,
 review, and integration, with their sources and revisions when available.
-**Agent-reported** means the agent says it applied the skill. **Corroborated** names
-a record confirming invocation or loading; it does not prove the agent followed
-every instruction. Contributions remain the agent's account, and the list's
-completeness is unverified. Missing records show unknown coverage.
+**Agent-reported** means the agent says it applied the skill. The agent selects
+**Corroborated** when it identifies a record confirming invocation or loading.
+Shaka checks metadata shape, not that record or instruction compliance.
+Contributions remain the agent's account, and completeness is unverified.
+Missing records show unknown coverage; private skill identifiers are withheld.
 
 ## See what people said
 
