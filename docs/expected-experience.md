@@ -50,10 +50,11 @@ or PATH by hand.
 ## Two reviewers per commit
 
 Configure [two local reviewers](settings.md#reviewlocal_review_count) from different
-providers when you want both to check each commit. Each commit's review
-comment explains why it exists, names the reviewers and their finding counts,
-and shows one collated list of problems. Expand a report to see which findings
-became entries in that list; a shared problem is fixed once.
+providers when you want both to check each commit. The review comment names
+the reviewed revision, reviewers, and finding counts, then shows one combined
+list of problems. Expand the reports to see their findings and how they were
+combined; a shared problem is fixed once. Earlier review comments remain
+collapsed in the PR timeline, linked to the current report.
 
 Two reviewers cost more, and the extra findings vary. The [PR #326 follow-up](https://github.com/shakacode/shaka/issues/361) records that
 rounds 1–25 found 7 problems only Codex reported (all fixed), 51 only Claude
