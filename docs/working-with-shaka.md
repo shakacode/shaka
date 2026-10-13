@@ -341,7 +341,7 @@ Use these searches in the repository's GitHub PR list:
 
 | Search on GitHub | Why it is waiting | Your next action |
 | --- | --- | --- |
-| `is:open label:awaiting-answer` | The agent needs a decision. | Answer **Decisions for the maintainer** in the description. For example, choose whether an import rejects invalid rows or skips them. Return the answer to the owning chat when it cannot resume automatically. |
+| `is:open label:awaiting-answer` | The agent needs a decision. | Answer **Decisions for the maintainer** in the description. For example, choose whether an import rejects invalid rows or skips them. Return the answer to the owning chat unless the handoff names active automatic follow-up. |
 | `is:open label:awaiting-merge-approval` | The verified commit is ready under Ask. | Tell the agent to merge that commit, or merge it yourself through GitHub's offered control. Any required GitHub review approval still needs an eligible reviewer. |
 | `is:open label:awaiting-resume` | The session paused and nothing will wake it. | Paste **WIP Details → Next action** into the owning agent chat. For example, resume after checks finish with the Shaka prompt and PR URL recorded there. |
 
@@ -349,6 +349,7 @@ The agent creates and manages these labels, leaving at most one on a PR. It clea
 the wait when work resumes and prepares a new handoff after validation and review.
 A label does not wake a chat or prove that checks and approvals passed. The
 handoff names any automatic follow-up; availability depends on the coding tool.
+Find the owning chat through **WIP Details → Chat link**.
 
 If a label looks stale, read **WIP Details** and the current handoff, then resume
 the owning chat so the agent can refresh the PR's state. You can remove a stale

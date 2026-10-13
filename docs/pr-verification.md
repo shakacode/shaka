@@ -20,8 +20,11 @@ through GitHub's offered control. For example: “Merge the commit in your hando
 Saying “Go” to start the task does not grant this later merge authority.
 
 An **Approve** review on GitHub also grants Ask authority when it comes from a
-login you named to the agent as a merge approver for this task. Return to the
-owning chat if automatic follow-up is unavailable. Approval in chat does not
+login you named to the agent as a merge approver for this task. For example:
+“Treat `maria` as a merge approver for this task.” That review can also satisfy
+a required GitHub approval if the reviewer is eligible under the repository's rules.
+Return to the owning chat unless the handoff names active automatic follow-up.
+Approval in chat does not
 satisfy a required GitHub review; a required review must come from an eligible
 GitHub reviewer. GitHub does not let the PR author approve their own PR.
 
@@ -37,7 +40,7 @@ If behavior changes, the agent explains the difference and returns the new
 commit for your decision.
 
 When you choose to merge through GitHub, compare its current commit with the
-handoff before using the offered control. If they differ, or no allowed merge
+agent's chat handoff before using the offered control. If they differ, or no allowed merge
 method is offered, return to the agent. For a squash merge, use the
 [prepared commit message](#squash-merge-details).
 
