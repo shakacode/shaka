@@ -31,8 +31,8 @@ arguments, paths, or task text. Set `SHAKA_CALL_LOG=off` to stop recording.
 
 ## Install
 
-Clone first, read the source and `bin/install`, then run it with the Ruby you
-want Shaka to keep using:
+Clone first, read the source and `bin/install`, then run it. The installer
+records the first `ruby` on your `PATH`:
 
 ```bash
 SHAKA_DIR="$HOME/.agents/shaka"
@@ -66,7 +66,7 @@ how to start a task in each one. Then continue with
 ## Verify and update
 
 Check the installation at any time, using the directory you installed into.
-This command changes nothing:
+This command changes nothing in the checkout or your skill links:
 
 ```bash
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
@@ -75,8 +75,8 @@ This command changes nothing:
 It confirms that the checkout comes from the recorded origin, has no local
 changes, and is the target of each skill link, and that the recorded Ruby still exists.
 
-Shaka tells you when an update is available. Finish active Shaka chats, then
-fetch and apply it:
+Shaka tells you when an update is available. Finish active Shaka chats, fetch
+and apply it, then start a new chat:
 
 ```bash
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --update
@@ -86,4 +86,3 @@ The update stops without changing the checkout when it finds local changes or
 history that diverged from the recorded branch. To read an update before you
 apply it, run `git fetch` in the checkout and compare `HEAD` with the recorded
 branch, which is `origin/main` unless you chose another.
-Start a new chat afterward.
