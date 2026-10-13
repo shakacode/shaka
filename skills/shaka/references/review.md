@@ -223,8 +223,8 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
    successful review.
 2. Check each finding against the code and requirements. Reproduce important
    defects on the runtime and dependency versions the repository's required checks
-   use. A result from another version neither confirms nor dismisses a finding; if
-   those versions are unavailable locally, say so and keep the finding open. Fix
+   use. A pass on another version does not dismiss a finding; if those versions are
+   unavailable locally, say so and keep the finding open. Fix
    with focused tests, and explain the result on the original thread. Briefly
    explain declined findings; do not implement speculative requests or create
    follow-up issues merely because a bot suggested them.
@@ -247,10 +247,6 @@ qualify a change, and a security or trust repair still reruns its security check
 
 - Republish the walkthrough before the checkpoint. Reuse the previous walkthrough
   content for the new head and rewrite only the steps the repair changed.
-- Update the existing reply on the finding's thread once, with the reproduction and
-  the fix commit.
-- Leave out replies to advisory findings already answered on an earlier head, and a
-  new assessment of behavior the repair leaves alone.
 - When a required step looks out of proportion to the repair, stop before starting
   it: publish the question in the description's `decisions` and wait for the answer.
 

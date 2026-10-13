@@ -54,14 +54,14 @@ checkpoint rerun finished within three minutes of the review publication.
 
 | Step | Workflow on `main` | With this change |
 | --- | --- | --- |
-| Reproduce the finding | Versions not stated | On the versions the required checks use |
+| Reproduce the finding | Versions not stated | On the versions the required checks use; a pass elsewhere does not dismiss it |
 | Repository validation | Before review, and again after repairs | Unchanged |
 | Local review | Configured reviewers confirm each fix and review the full diff | Unchanged |
 | Required checks, hosted review wait | Required | Unchanged |
 | Checkpoint | Rerun for the new head | Unchanged |
 | Walkthrough | Written again from the whole diff | Previous content, affected steps rewritten |
-| Reply on the finding | Required | One update to the existing reply |
-| Replies to settled advisory comments | Not stated | Left out |
+| Reply on the finding | Required | Unchanged |
+| Replies to settled advisory comments | Not stated | Unchanged |
 | Merge authority | Ask or Auto as resolved | Unchanged |
 
 Time saved is UNKNOWN. This change removes no required check, reviewer, or gate.
@@ -71,7 +71,7 @@ Time saved is UNKNOWN. This change removes no required check, reviewer, or gate.
 - Date: October 13, 2026 UTC.
 - Baseline: rendered workflow and review guide at `main`
   `e95b321b90d7c9a8c8995a4f6de2823c62072e52`, SHA-256 `d0bbf8c784b9…`.
-  Candidate: the same two files from this change, SHA-256 `aab47f5331a3…`.
+  Candidate: the same two files from this change, SHA-256 `d12cbce2aeac…`.
   Checkout paths normalized to `/trusted/shaka`.
 - Requested model `gpt-6.1-sol`, effort `medium`; routed model UNKNOWN. One fresh
   local subscription Codex CLI session per case and arm, read-only, with user
@@ -101,13 +101,14 @@ wait, and handoff.
 | Arm | Input tokens | Output tokens |
 | --- | ---: | ---: |
 | Baseline, two sessions | 71,771 | 1,709 |
-| Candidate, two sessions | 72,207 | 1,781 |
+| Candidate, two sessions | 72,105 | 1,514 |
 
 ## What this does and does not show
 
-An earlier, longer candidate added a step-by-step table to the review guide and a
-pointer in the workflow. Local review found that most of it restated existing rules.
-It produced the same eleven decisions as the candidate above and was replaced by it.
+Two earlier, longer candidates added a step-by-step table to the review guide, a
+pointer in the workflow, and rules about replies. Local review found that they
+restated existing rules or had no evidence. Each produced the same eleven decisions
+as the candidate above, which replaced them.
 
 The candidate kept every required rerun and both arms stopped at the same gates. The
 only decisions that changed were the path name and the walkthrough. The baseline

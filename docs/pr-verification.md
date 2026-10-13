@@ -289,27 +289,25 @@ updates the existing PR once.
 
 | What you see on the PR | After a correction |
 | --- | --- |
-| The finding's thread | One updated reply: how the defect was reproduced, and the fix commit |
+| The finding's thread | A reply with how the defect was reproduced, and the fix commit |
 | Repository validation and required checks | Run again for the new commit |
-| Local review | The configured reviewers read the new commit and confirm the fix |
+| Local review | The configured reviewers review the new commit |
 | Hosted review | Awaited again when the correction changes runtime behavior, trust, or tests |
 | [Checkpoint](#checkpoint) | Run again, because merging needs one for the exact commit |
 | Code walkthrough | The same walkthrough for the new commit, with only the affected steps rewritten |
-| Advisory comments answered earlier | No new replies |
 
 Evidence for an earlier commit is shown with that commit. It counts for the new one
 only where Shaka can prove nothing relevant changed, such as a clean merge of the
 base or a prose-only edit.
 
-A finding is reproduced on the versions your repository's required checks use. In
+Your agent reproduces a finding on the versions your repository's required checks use. In
 [PR #463](https://github.com/shakacode/shaka/pull/463), a credential-redaction finding
 was dismissed after a test on URI 1.1.1, which drops the password itself. CI used
 URI 1.0.3, which keeps it. The [replay](https://github.com/shakacode/shaka/blob/main/eval/reports/correction-replay-463.md)
 shows both results and the work each path performs.
 
-The agent uses the full process again when the repair grows: new behavior, a changed
-goal, changed settings or dependencies, or security-sensitive code beyond the finding.
-A small diff alone does not make a change low risk.
+The walkthrough is reused only while the repair leaves the goal, scope, dependencies,
+and settings of the task unchanged. A small diff alone does not make a change low risk.
 
 When a required step looks out of proportion to a repair, the agent stops and asks
 you on the PR before spending the time. To skip the checkpoint for one correction,
@@ -319,7 +317,7 @@ tell your agent:
 Skip the checkpoint for this correction; the outcome is unchanged.
 ```
 
-The PR then shows that no product review ran for that commit.
+The PR can still merge, and it shows that no product review ran for that commit.
 
 ## Documentation changes
 
