@@ -4,6 +4,7 @@ require 'digest'
 require 'fileutils'
 require 'tmpdir'
 require_relative '../error'
+require_relative 'finding'
 
 module Shaka
   # Keeps a copy of each report beside its ledger, named by content hash, so a review outlives the
@@ -61,6 +62,15 @@ module Shaka
     end
 
     def kept_path(directory, digest) = File.join(directory, DIRECTORY, "#{digest}.md")
+
+    def earlier_findings(round)
+      snapshots = round.fetch('earlier_findings', [])
+      raise Error, 'Earlier findings must be lists of triage snapshots.' unless
+        snapshots.is_a?(Array) && snapshots.all?(Array)
+
+      snapshots.each { |snapshot| LocalReviewFinding.list(snapshot, 'earlier finding') }
+      snapshots
+    end
 
     def warning(ledger_path)
       directory = File.dirname(File.expand_path(ledger_path))

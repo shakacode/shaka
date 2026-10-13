@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'assessment'
+require_relative 'bundle'
 
 module Shaka
   # Interprets only explicit judgments. Superseded entries remain in the retained record.
@@ -46,7 +47,7 @@ module Shaka
 
     def historically_available?(entry)
       rounds = @rounds.map do |round|
-        kept = round.fetch('earlier_findings', []).flatten + round.fetch('findings', [])
+        kept = LocalReviewBundle.earlier_findings(round).flatten(1) + round.fetch('findings', [])
         round.merge('findings' => kept)
       end
       available?(entry, rounds)

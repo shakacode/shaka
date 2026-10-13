@@ -69,7 +69,7 @@ module Shaka
       previous = round['findings']
       return round if unchanged_triage?(previous, mine, actor)
 
-      history = previous ? { 'earlier_findings' => round.fetch('earlier_findings', []) + [previous] } : {}
+      history = previous ? { 'earlier_findings' => LocalReviewBundle.earlier_findings(round) + [previous] } : {}
       round.merge(history, 'findings' => mine)
     end
 

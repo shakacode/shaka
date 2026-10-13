@@ -55,13 +55,9 @@ module Shaka
 
     def triage_history
       blocks = @rounds.filter_map do |round|
-        earlier = round.fetch('earlier_findings', [])
+        earlier = LocalReviewBundle.earlier_findings(round)
         next if earlier.empty?
 
-        raise Error, 'Earlier findings must be lists of triage snapshots.' unless
-          earlier.is_a?(Array) && earlier.all?(Array)
-
-        earlier.each { |snapshot| LocalReviewFinding.list(snapshot, 'earlier finding') }
         earlier_triage(round, LocalReviewPublicTriage.snapshots(earlier))
       end
       blocks.empty? ? [] : ['### Preserved triage', *blocks]
