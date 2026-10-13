@@ -804,34 +804,48 @@ How much of a comment the list repeats is not a setting. The list quotes a comme
 only when it has at most 12 words and 90 characters. A longer one is already on
 the PR, so the list shows the agent's one-line summary and links to it.
 
-## `wip.include_locations`
+## `wip.include_checkout_path`
 
 **Optional. Default: `true`.**
 
 ```yaml
 wip:
-  include_locations: true
+  include_checkout_path: false
 ```
 
-Include two separate fields in **WIP Details**: the **checkout path**, which can
-reveal local directory names, and the **chat locator**, which helps resume the
-owning chat when reachable. Both team and individual setup write `true`.
-The description renderer replaces both
-location fields with `REDACTED` when the selected setting is explicitly false.
-When settings were not read or could not load, it withholds locations and explains
-how to reload the policy. Ownership, state, next action, and the current commit
-remain visible. When locations are allowed but the host lacks one, its value is
-`UNKNOWN`.
+WIP Details include the chat locator to help resume unfinished work. Choose
+whether to include the checkout path.
 
-A Codex locator such as `codex://threads/...` points to a local conversation; it
-does not create a publicly shared snapshot. Other hosts' links can have different
-access rules. The agent inspects both fields before publication.
+- **Workspace** is the checkout path. It can reveal local directory names. With
+  `false`, the description shows `REDACTED` in its place.
+- **Chat link** is the chat locator. It stays in WIP Details whatever this
+  setting says, and reads `UNKNOWN` when the host has no supported locator.
 
-[#482](https://github.com/shakacode/shaka/issues/482) tracks retaining chat locators
-while making checkout-path visibility independently configurable, including in
-individual settings. Neither #425 nor #426 splits these fields.
-Hiding them does not remove private information elsewhere in a PR.
-Expandable sections on public PRs are public too.
+Owner, revision, state, and next action also stay visible. When settings were
+not read or could not load, the description withholds the checkout path, says
+how to reload the settings, and still shows the chat locator.
+
+A chat locator such as `codex://threads/...` or `claude://...` opens the
+conversation on the owner's machine. It is not a link that shares the
+conversation's content, and writing WIP Details never creates a shared copy.
+
+This setting controls the Workspace field only. It does not remove private
+information elsewhere in a PR, and expandable sections on public PRs are public too.
+
+### Settings written as `wip.include_locations`
+
+`wip.include_locations` is the earlier name. It hid the checkout path and the
+chat locator together. Shaka still reads it, as the checkout-path choice alone:
+
+| Existing value | Checkout path | Chat locator |
+| --- | --- | --- |
+| `include_locations: true` | Shown | Shown |
+| `include_locations: false` | `REDACTED` | Shown; it was `REDACTED` before |
+| No `wip` setting | Shown | Shown |
+
+Rename the key to `include_checkout_path` when you next edit the file. A file
+that sets both names is refused. To keep a chat locator off a PR, tell the agent
+before it publishes.
 
 ## `repo_prefix`
 

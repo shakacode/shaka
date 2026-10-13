@@ -91,7 +91,8 @@ Older keys are deliberately rejected during this pilot:
 | `--ci-review-agent`, `--review-check`, `--github-action-check` | `--ci-review-job` |
 | `review.pace` | `review.ci_review_wait`; `swift` becomes `one`, `thorough` becomes `all` |
 | `--pace swift` / `--pace thorough` | `--ci-review-wait one` / `--ci-review-wait all` |
-| `recovery.workspace_path`, `recovery.publish_locations` | `wip.include_locations`; migration preserves the boolean value |
+| `recovery.workspace_path`, `recovery.publish_locations` | `wip.include_checkout_path`; migration preserves the boolean value |
+| `wip.include_locations` | `wip.include_checkout_path`; same boolean, and the session link is no longer hidden |
 | `plan` | Point to the requirements document from `AGENTS.md` |
 | YAML `commands` mapping | Fixed `.agents/bin/` scripts |
 | `protection`, `trusted_actions`, `merge.method`, `merge.release` | Live GitHub settings, workflow files, or the repository's actual security tooling |
