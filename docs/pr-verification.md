@@ -291,7 +291,7 @@ updates the existing PR once.
 | --- | --- |
 | The finding's thread | One updated reply: how the defect was reproduced, and the fix commit |
 | Repository validation and required checks | Run again for the new commit |
-| Local review | The configured reviewers read the new commit. They confirm the fix and review what it affects, and still report any defect or risk they notice elsewhere |
+| Local review | The configured reviewers read the new commit and confirm the fix |
 | Hosted review | Awaited again when the correction changes runtime behavior, trust, or tests |
 | [Checkpoint](#checkpoint) | Run again, because merging needs one for the exact commit |
 | Code walkthrough | The same walkthrough for the new commit, with only the affected steps rewritten |
@@ -311,8 +311,9 @@ The agent uses the full process again when the repair grows: new behavior, a cha
 goal, changed settings or dependencies, or security-sensitive code beyond the finding.
 A small diff alone does not make a change low risk.
 
-When a required step looks out of proportion to a repair, the agent asks you before
-spending the time. To skip the checkpoint for one correction, tell your agent:
+When a required step looks out of proportion to a repair, the agent stops and asks
+you on the PR before spending the time. To skip the checkpoint for one correction,
+tell your agent:
 
 ```text
 Skip the checkpoint for this correction; the outcome is unchanged.

@@ -702,8 +702,7 @@ phases:
         on the original thread. After two repair rounds, remaining nits do not start another cycle.
         Remaining demonstrated defects still block until fixed, declined with evidence, or the
         maintainer decides. Follow the packaged
-        [review guide](<{{package_root}}/skills/shaka/references/review.md>); its correction
-        path names what a repair commit reruns and what it leaves alone.
+        [review guide](<{{package_root}}/skills/shaka/references/review.md>).
       - After repairs, run the deferred resolved `validate` command, then
         the resolved `trigger_hosted_ci` command when present. Later fixes need fresh evidence.
       - When the user expressly asks to resolve PR comments, follow the packaged

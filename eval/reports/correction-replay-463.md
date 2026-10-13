@@ -4,7 +4,7 @@ Issue [#468](https://github.com/shakacode/shaka/issues/468) reports about an hou
 on a one-line security correction in [PR #463](https://github.com/shakacode/shaka/pull/463).
 This report replays that correction three ways: the defect on both URI versions, the
 work sequence the PR records, and a model decision comparison between the workflow on
-`main` and the [correction path](../../skills/shaka/references/review.md#correct-a-reviewed-change).
+`main` and the [correction rules](../../skills/shaka/references/review.md#keep-a-correction-in-proportion).
 No PR was changed and nothing was merged.
 
 ## The defect on both URI versions
@@ -52,15 +52,15 @@ checkpoint rerun finished within three minutes of the review publication.
 
 ## Before and after, by step
 
-| Step | Workflow on `main` | Correction path |
+| Step | Workflow on `main` | With this change |
 | --- | --- | --- |
 | Reproduce the finding | Versions not stated | On the versions the required checks use |
-| Repository validation | Before review, and again after repairs | Once, on the last commit of the repair |
-| Local review | Configured reviewers, asked to review the full diff fresh | Same reviewers, asked to review the correction and report only defects and risks elsewhere |
+| Repository validation | Before review, and again after repairs | Unchanged |
+| Local review | Configured reviewers confirm each fix and review the full diff | Unchanged |
 | Required checks, hosted review wait | Required | Unchanged |
 | Checkpoint | Rerun for the new head | Unchanged |
 | Walkthrough | Written again from the whole diff | Previous content, affected steps rewritten |
-| Reply on the finding | Required | Once |
+| Reply on the finding | Required | One update to the existing reply |
 | Replies to settled advisory comments | Not stated | Left out |
 | Merge authority | Ask or Auto as resolved | Unchanged |
 
@@ -71,7 +71,7 @@ Time saved is UNKNOWN. This change removes no required check, reviewer, or gate.
 - Date: October 13, 2026 UTC.
 - Baseline: rendered workflow and review guide at `main`
   `e95b321b90d7c9a8c8995a4f6de2823c62072e52`, SHA-256 `d0bbf8c784b9…`.
-  Candidate: the same two files from this change, SHA-256 `601281620983…`.
+  Candidate: the same two files from this change, SHA-256 `aab47f5331a3…`.
   Checkout paths normalized to `/trusted/shaka`.
 - Requested model `gpt-6.1-sol`, effort `medium`; routed model UNKNOWN. One fresh
   local subscription Codex CLI session per case and arm, read-only, with user
@@ -101,9 +101,13 @@ wait, and handoff.
 | Arm | Input tokens | Output tokens |
 | --- | ---: | ---: |
 | Baseline, two sessions | 71,771 | 1,709 |
-| Candidate, two sessions | 72,669 | 1,528 |
+| Candidate, two sessions | 72,207 | 1,781 |
 
 ## What this does and does not show
+
+An earlier, longer candidate added a step-by-step table to the review guide and a
+pointer in the workflow. Local review found that most of it restated existing rules.
+It produced the same eleven decisions as the candidate above and was replaced by it.
 
 The candidate kept every required rerun and both arms stopped at the same gates. The
 only decisions that changed were the path name and the walkthrough. The baseline
@@ -112,5 +116,4 @@ review batch, no advisory replies, and no reopening for a nit.
 
 The fixture tells the agent which URI version the required checks use, so it does not
 test whether an agent finds that out. It asks for a plan and executes nothing, so it
-does not measure the reviewer prompt change, command mistakes, retries, or elapsed
-time. Two cases with one run each cannot establish a rate.
+does not measure command mistakes, retries, or elapsed time. Two cases with one run each cannot establish a rate.

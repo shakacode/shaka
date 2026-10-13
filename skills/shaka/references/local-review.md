@@ -359,8 +359,7 @@ refuses a fix recorded by any round on the last head, because no later round has
 The next round's prompt
 lists, as review data, every earlier finding's id, class, summary, and latest disposition
 (including fixed, open, decision-needed, and closed dispositions), plus the commits since the newest
-reviewed head before this one. It asks the reviewer to confirm each fix, review those commits and the
-behavior they affect, and report only defects and risks elsewhere in the diff.
+reviewed head before this one. It asks the reviewer to confirm each fix and to review the full diff fresh.
 It leaves out each `note`, so the reviewer does not anchor on the author's reasons.
 
 When several reviewers read each head, as `shaka reviewer` lists them, start them all against
