@@ -181,7 +181,8 @@ When the maintainer explicitly accepts a listed concern for this task, record it
 Record only a decision the maintainer gave for this concern, in chat or in a comment
 the `comments` command admits from a maintainer; do not infer one from silence, a start
 word, or merge approval. Write the decision on one line without `<` or backticks. Ask through the existing decision path when
-it is missing. Repeat the entries when a later head's report lists the concern again.
+it is missing. Repeat an entry for a later head only when its report lists the same
+concern and the change behind it is unchanged; ask again when the concern differs.
 
 Ruby checks the disposition's head, vocabulary, reason, and concrete next-action field.
 It rejects **Merge** when verification has a blocking conclusion, or lists a concern
