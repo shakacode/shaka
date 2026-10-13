@@ -145,6 +145,13 @@ class PostImplementationAcceptedConcernTest < Minitest::Test
      'all', [first]].each { |acceptance| assert_refused('Proceed', concerns, acceptance) }
   end
 
+  def test_a_decision_cannot_hide_or_imitate_the_published_comment
+    concern = 'Frequency is unknown.'
+    ["Fine.\n\n**Unresolved concerns:**", 'Fine. <!--', 'Fine. ```'].each do |decision|
+      assert_refused('Proceed', [concern], [{ 'concern' => concern, 'decision' => decision }])
+    end
+  end
+
   def test_acceptance_cannot_override_a_blocking_conclusion
     ['Simplify/reframe', 'Do not merge'].each do |conclusion|
       assert_refused(conclusion, ['Too costly.'], accepted('Too costly.'))

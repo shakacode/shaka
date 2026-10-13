@@ -246,7 +246,7 @@ The checkpoint explains one conclusion:
 hold readiness and Auto even when technical checks pass. When the checkpoint says
 **Proceed** and you decide a listed concern is acceptable, tell your agent, for example
 "I accept the unknown-frequency concern; merge as is." The agent republishes the
-checkpoint with your decision under **Concerns the maintainer accepted**, and merge
+checkpoint with your decision under **Concerns recorded as accepted by the maintainer**, and merge
 preparation continues. Shaka checks that a decision is recorded for each concern, not
 who made it, so read that list before you merge. Accepting a concern does not override
 **Simplify/reframe** or **Do not merge**. Shaka blocks final merge

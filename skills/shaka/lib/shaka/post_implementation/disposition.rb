@@ -14,7 +14,7 @@ module Shaka
       validate(content, head:)
       accepted = accepted_concerns(content, report)
       raise Error, 'Merge disposition cannot override a blocking conclusion or unresolved concerns' if
-        merge?(content) && !(report['conclusion'] == 'Proceed' && unresolved(report, accepted).empty?)
+        merge?(content) && !PostImplementationReport.ready?(report.merge('concerns' => unresolved(report, accepted)))
 
       content.slice('head', 'recommendation', 'reason', 'next_action').merge('accepted_concerns' => accepted)
     end
@@ -22,7 +22,7 @@ module Shaka
     # Checks that each acceptance names one listed concern and records a decision, not who decided.
     def accepted_concerns(content, report)
       entries = content.fetch('accepted_concerns', [])
-      raise Error, 'PR disposition accepted_concerns must list each concern with the maintainer\'s decision' unless
+      raise Error, 'PR disposition accepted_concerns needs each concern and a one-line decision without < or `' unless
         entries.is_a?(Array) && entries.all? { |entry| acceptance?(entry) }
 
       listed_once!(entries.map { |entry| entry['concern'] }, report)
@@ -34,8 +34,10 @@ module Shaka
         names.uniq == names && (names - report.fetch('concerns')).empty?
     end
 
+    # One plain line, so a decision cannot hide or imitate the rest of the published comment.
     def acceptance?(entry)
-      entry.is_a?(Hash) && %w[concern decision].all? { |key| PostImplementationReport.text?(entry[key]) }
+      entry.is_a?(Hash) && %w[concern decision].all? { |key| PostImplementationReport.text?(entry[key]) } &&
+        !entry['decision'].match?(/[\r\n<`]/)
     end
 
     def unresolved(report, accepted) = report.fetch('concerns') - accepted.map { |entry| entry['concern'] }
@@ -86,8 +88,8 @@ module Shaka
       return [] if accepted.empty?
 
       items = accepted.map { |entry| "- #{entry['concern']} — Decision: #{entry['decision']}" }
-      ["**Concerns the maintainer accepted:**\n\n#{items.join("\n")}",
-       'Ruby checked that each accepted concern records a decision, not who made it.']
+      ['**Concerns recorded as accepted by the maintainer:** ' \
+       "Ruby checked that each records a decision, not who made it.\n\n#{items.join("\n")}"]
     end
 
     def incomplete_body
