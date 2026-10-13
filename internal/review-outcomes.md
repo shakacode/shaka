@@ -40,7 +40,7 @@ Compatibility differs at the old publication boundary: version 2 ledger writers
 refuse version 3, but version 2 publishers can omit its assessments. Use current
 Shaka for reading and publication. Current readers reject newer formats before
 reading reports or publishing; released older publishers cannot gain that check
-through this change. The retained ledger still contains the judgments. Acceptance of this released-publisher\nlimitation remains a maintainer decision for the assessment PR. Public triage history\nnow projects supported fields and marks omitted metadata; complete legacy snapshots\nstay private in the ledger.
+through this change. The retained ledger still contains the judgments. Acceptance of this released-publisher\nlimitation was accepted by the maintainer for PR #518. Public triage history\nnow projects supported fields and marks omitted metadata; complete legacy snapshots\nstay private in the ledger.
 
 ## Inventory before retention and assessments
 

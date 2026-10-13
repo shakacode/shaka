@@ -32,8 +32,7 @@ module Shaka
 
     def visible(id)
       @history.for_finding(id).map do |entry|
-        values = entry.data.slice('problem', 'remedy', 'implementation', 'attention')
-                      .map { |key, value| "#{key}: #{value}" }.join(', ')
+        values = visible_values(entry.data)
         "#{literal(entry.id)} #{literal(values)} — #{literal(entry.data.fetch('rationale'))}"
       end.join(' · ')
     end
@@ -75,6 +74,15 @@ module Shaka
     end
 
     private
+
+    def visible_values(data)
+      values = data.slice('problem', 'remedy', 'implementation', 'attention')
+                   .map { |key, value| "#{key}: #{value}" }
+      action = data['action']
+      values << "action: #{action.fetch('taken')}" if action
+      values << "action attribution: #{action['attribution']}" if action&.key?('attribution')
+      values.join(', ')
+    end
 
     def earlier_triage(round, earlier)
       "**Earlier triage · #{round.fetch('head')[0, 7]} · #{literal(round.fetch('reviewer'))}:**\n\n#{json(earlier)}"

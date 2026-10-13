@@ -52,3 +52,23 @@ class LocalReviewHistoryValidationTest < Minitest::Test
     saved.tap { |content| content['rounds'].first['earlier_findings'] = value }
   end
 end
+
+class LocalReviewActiveActionPresentationTest < Minitest::Test
+  include SyntheticReviewAssessment
+
+  def test_active_actions_and_uncertain_attribution_are_visible
+    reviewed_finding
+    ledger.assess!(assessment(action: { 'taken' => 'reverted', 'attribution' => 'uncertain' }))
+    visible = CGI.unescapeHTML(view(EARLIER).split('<details>').first)
+    assert_includes visible, 'action: reverted'
+    assert_includes visible, 'action attribution: uncertain'
+  end
+
+  def test_missing_action_attribution_is_not_invented
+    reviewed_finding
+    ledger.assess!(assessment(action: { 'taken' => 'not_attempted' }))
+    visible = CGI.unescapeHTML(view(EARLIER).split('<details>').first)
+    assert_includes visible, 'action: not_attempted'
+    refute_includes visible, 'action attribution'
+  end
+end
