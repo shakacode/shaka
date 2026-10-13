@@ -3,7 +3,7 @@
 Run the installation yourself when you want to read what will run before it
 runs. You need Ruby 3.4 or later, Git, and an authenticated
 [GitHub CLI](https://cli.github.com/). To let your coding agent do this instead,
-use the [installation prompt](getting-started.md#getting-started).
+use the [installation prompt](getting-started.md).
 
 ## What the installer changes
 
@@ -19,9 +19,15 @@ is a Ruby script that uses only Ruby's standard library. It makes these changes:
 - **Older Codex links.** For Codex, it removes a `shaka` link from
   `~/.codex/skills` when that link points at this checkout or at a Shaka copy an
   earlier installer made. It leaves every other entry alone.
+- **Lock files.** It leaves an empty `.shaka-install.lock` file in each skills
+  directory it links.
 
 It does not use `sudo`, edit your shell profile or `PATH`, or install gems.
 It refuses a checkout or skills directory that other accounts can write to.
+
+Afterward, each Shaka command adds a line to a timing log at
+`~/.local/state/shaka/calls.jsonl`. The log stays on your machine and holds no
+arguments, paths, or task text. Set `SHAKA_CALL_LOG=off` to stop recording.
 
 ## Install
 
@@ -29,31 +35,38 @@ Clone first, read the source and `bin/install`, then run it with the Ruby you
 want Shaka to keep using:
 
 ```bash
+SHAKA_DIR="$HOME/.agents/shaka"
 umask 022
-mkdir -p "$HOME/.agents"
-git clone https://github.com/shakacode/shaka.git "$HOME/.agents/shaka"
-"$HOME/.agents/shaka/bin/install" --agent codex
+mkdir -p "$(dirname "$SHAKA_DIR")"
+git clone https://github.com/shakacode/shaka.git "$SHAKA_DIR"
+"$SHAKA_DIR/bin/install" --directory "$SHAKA_DIR" --agent codex
 ```
 
-Replace `codex` with your coding agent, and repeat `--agent` to select several:
+To install somewhere else, such as `~/agent-tools/shaka`, change `SHAKA_DIR` on
+the first line. `--directory` makes the installer register the checkout you
+just read.
 
-| `--agent` | Skill link | Start a task |
-| --- | --- | --- |
-| `codex` | `~/.agents/skills/shaka` | `$shaka` |
-| `claude` | `~/.claude/skills/shaka` | `/shaka` |
-| `cursor` | `~/.cursor/skills/shaka` | `/shaka` in a new Agent chat |
-| `opencode` | `~/.config/opencode/skills/shaka` | `/shaka` in a new session |
+Replace `codex` with your coding agent, and repeat `--agent` to select several.
+Each one adds this link:
+
+| `--agent` | Skill link |
+| --- | --- |
+| `codex` | `~/.agents/skills/shaka` |
+| `claude` | `~/.claude/skills/shaka` |
+| `cursor` | `~/.cursor/skills/shaka` |
+| `opencode` | `~/.config/opencode/skills/shaka` |
 
 Pi has no option of its own; it loads the shared skill linked for `codex`.
-To clone somewhere else, such as `~/agent-tools/shaka`, change both paths.
 `bin/install --help` lists the remaining options.
 
-Start a new chat and look for **Shaka**, then continue with
+Start a new chat and look for **Shaka**. [Coding agents](coding-agents.md) shows
+how to start a task in each one. Then continue with
 [setup](getting-started.md#2-choose-individual-or-team-setup).
 
 ## Verify and update
 
-Check the installation at any time. This command changes nothing:
+Check the installation at any time, using the directory you installed into.
+This command changes nothing:
 
 ```bash
 "$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
@@ -71,5 +84,6 @@ fetch and apply it:
 
 The update stops without changing the checkout when it finds local changes or
 history that diverged from the recorded branch. To read an update before you
-apply it, run `git fetch` in the checkout and compare `origin/main` with `HEAD`.
+apply it, run `git fetch` in the checkout and compare `HEAD` with the recorded
+branch, which is `origin/main` unless you chose another.
 Start a new chat afterward.
