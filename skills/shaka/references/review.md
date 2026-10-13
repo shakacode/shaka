@@ -224,7 +224,7 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
 2. Check each finding against the code and requirements. Reproduce important
    defects on the runtime and dependency versions the repository's required checks
    use. A pass on another version does not dismiss a finding; if those versions are
-   unavailable locally, say so and keep the finding open. Fix
+   unavailable locally, say so and run the regression through those checks. Fix
    them with focused tests, and explain the result on the original thread. Briefly
    explain declined findings; do not implement speculative requests or create
    follow-up issues merely because a bot suggested them.

@@ -292,7 +292,7 @@ updates the existing PR once.
 | The finding's thread | A reply with how the defect was reproduced, and the fix commit |
 | Repository validation and required checks | Run again for the new commit |
 | Local review | The configured reviewers review the new commit |
-| Hosted review | Awaited again when the correction changes runtime behavior, trust, or tests |
+| Hosted review | Awaited again when your repository's review settings require it for the change |
 | [Checkpoint](#checkpoint) | Run again; merging needs a checkpoint, or your explicit skip, for the exact commit |
 | Code walkthrough | The same walkthrough for the new commit, with only the affected steps rewritten |
 

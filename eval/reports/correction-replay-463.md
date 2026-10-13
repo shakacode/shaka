@@ -85,7 +85,7 @@ Time saved is UNKNOWN. This change removes no required check, reviewer, or gate.
 | Decision in the one-line repair case | Expected | Baseline | Candidate |
 | --- | --- | --- | --- |
 | Dismiss the finding from the local pass | no | no | no |
-| Path | bounded | full | bounded |
+| Path label | bounded | full | bounded |
 | Validation runs on the new head | 1 | 1 | 1 |
 | Local review batches on the new head | 1 | 1 | 1 |
 | Reuse the earlier validation as current evidence | no | no | no |
@@ -113,7 +113,9 @@ Local review found that they restated existing rules or had no evidence. Each pr
 the same eleven decisions as the candidate above, which replaced them.
 
 The candidate kept every required rerun and both arms stopped at the same gates. The
-only decisions that changed were the path name and the walkthrough. The baseline
+only answers that changed were the path label and the walkthrough. The label comes
+from the response schema, not from a rule in either arm, so the walkthrough is the one
+decision that changed. The baseline
 workflow, read fresh with the versions stated, already chose one validation run, one
 review batch, no advisory replies, and no reopening for a nit.
 
