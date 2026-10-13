@@ -73,7 +73,8 @@ Time saved is UNKNOWN. This change removes no required check, reviewer, or gate.
   `e95b321b90d7c9a8c8995a4f6de2823c62072e52`, SHA-256
   `d0bbf8c784b97a8df80738cfb2a3a0ec579b5d5a91b25538a4c7346df3060b10`.
   Candidate: the same two files from this change, SHA-256
-  `828db6698f28469aa78e5e104415b263a6eaac75fd20e881ca25508b151bda37`.
+  `5eb0fe12fb866f78437f592fe39e9315b8c78fe8cca5e16cab9d1a9a80007798`,
+  taken at commit `9a60321b80c7d7cb0346b8d904689d7f8add6b54`.
   Checkout paths normalized to `/trusted/shaka`.
 - Requested model `gpt-6.1-sol`, effort `medium`; routed model UNKNOWN. One fresh
   local subscription Codex CLI session per case and arm, read-only, with user
@@ -103,12 +104,13 @@ wait, and handoff.
 | Arm | Input tokens | Output tokens |
 | --- | ---: | ---: |
 | Baseline, two sessions | 71,771 | 1,709 |
-| Candidate, two sessions | 71,995 | 1,798 |
+| Candidate, two sessions | 71,999 | 1,607 |
 
 ## What this does and does not show
 
-Three earlier, longer candidates added a step-by-step table to the review guide, a
-pointer in the workflow, and rules about replies and asking before a costly step.
+Four earlier candidates added a step-by-step table to the review guide, a
+pointer in the workflow, rules about replies and asking before a costly step, and
+another wording of the version rule.
 Local review found that they restated existing rules or had no evidence. Each produced
 the same eleven decisions as the candidate above, which replaced them.
 
