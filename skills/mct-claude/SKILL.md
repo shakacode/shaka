@@ -89,7 +89,7 @@ establish each fact from your own reads:
 - `list_events` on that session shows its own recorded tower setup for this
   repository. A title suffix, a matching `cwd`, or a notice alone is not proof of the
   role;
-- no other live session's transcript records an unwithdrawn setup for that same
+- no other live session's transcript records a setup for that same
   `OWNER/REPOSITORY`. List sessions completely for this check too, as the
   [host guide](../shaka/references/launchers-and-sessions.md#read-the-session-listing-completely)
   describes: a first page that hides an older tower is how a duplicate gets
@@ -110,25 +110,27 @@ Read the delivery result for every reply. Anything other than `delivered` or `qu
 means the tower was idle and received nothing: report that the answer is recorded
 here and that the user completes it by sending `/rct-claude` in that tower.
 
-Refuse instead when a check fails, recording and sending the refusal the same way:
+When a check fails, confirm nothing for that repository and send no refusal: an idle
+tower would not receive it. Report to the user here, with what each session recorded
+and one recovery action, such as archiving the session that should not hold the
+repository:
 
-- two sessions record a setup for one repository: when a master confirmed
-  exactly one, refuse the other with `MCT registration error: repository already has
-  an RCT`. Otherwise confirm neither, report what each recorded, and ask the user
-  which tower keeps the repository. A session carrying a title but no recorded setup
-  owns nothing and blocks no one;
+- two sessions record a setup for one repository: `MCT registration error:
+  repository has conflicting towers`. Do not choose between them, whichever a master
+  confirmed. A session carrying a title but no recorded setup owns nothing and
+  blocks no one;
 - the session ID, repository, or default branch does not match your reads:
   `MCT registration error: registration facts do not match`.
 
-Confirming is not atomic. Do not choose between towers, and do not try to withdraw a
-confirmation already recorded. Name the observed state and one concrete recovery
-action, and never confirm a fact you did not read yourself.
+Confirming is not atomic, so a later read can show a conflict after a confirmation.
+Report it the same way, do not try to withdraw a confirmation already recorded, and
+never confirm a fact you did not read yourself.
 
 ## Coordinate without becoming a writer
 
 Derive the tower set by reading the live `list_sessions` candidates with
 `list_events`, again listing completely, and keeping those whose own transcript
-records a tower setup it has not withdrawn, confirmed or not. That read is the
+records a tower setup, confirmed or not. That read is the
 registry; it needs no file, database, or sidebar group. Do not add one:
 `move_sessions` unpins a pinned session,
 and the live session list is the only record this role keeps. One RCT owns one

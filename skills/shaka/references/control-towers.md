@@ -83,8 +83,9 @@ operations. It assigns no backlog, creates no worker session, and grants no merg
 authority. A repository tower registers by recording its setup in its own session.
 On each `/mct-claude`, the master verifies every unconfirmed tower's repository,
 session, and default branch from its own reads, then records and sends its
-confirmation or refusal. An idle master receives no message, so send `/mct-claude`
-there again after setting up a tower.
+confirmation. It reports a duplicate or mismatched tower to you instead. An idle
+master receives no message, so send `/mct-claude` there again after setting up a
+tower.
 
 ## Establish a repository tower in Claude Code
 
@@ -105,8 +106,8 @@ rather than guesses.
 
 The skill resolves the display prefix with `shaka prefix`, renames the session to
 `<PREFIX> RCT — Shaka`, pins it, and then states the
-recorded setup in the session itself: the repository, session, default branch,
-one-repository scope, and chosen master. That written record is the registration and
+recorded setup in the session itself: the repository, session, default branch, and
+one-repository scope. That written record is the registration and
 makes the role durable: the master establishes ownership by reading the tower's
 session, and towers outlive the master that confirmed them.
 
@@ -114,8 +115,7 @@ The tower also sends the master a notice, reports `awaiting confirmation`, and e
 its turn. When the master was idle, the tower names one step: open the master and
 send `/mct-claude`. The master's answer arrives as a labelled turn only while the
 tower is working; otherwise send `/rct-claude` in the tower again and it reads the
-answer from the master's session. Tower work does not wait for confirmation, and a
-refusal stops it.
+answer from the master's session. Tower work does not wait for confirmation.
 
 The two hosts cannot see each other's sessions, so a Claude master coordinates Claude
 repository towers and a Codex master coordinates Codex ones. Do not mix hosts within
