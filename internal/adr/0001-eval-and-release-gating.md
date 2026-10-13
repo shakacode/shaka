@@ -1,14 +1,14 @@
 # 0001: Eval and release gating
 
-Status: proposed. Date: 2026-10-07, revised 2026-10-09 to add D15 on the execution
-layer. Tracks [issue #206](https://github.com/shakacode/shaka/issues/206).
+Status: proposed. Date: 2026-10-07, revised 2026-10-12 to remove company-specific
+planning and clarify evaluation rules. Tracks [issue #206](https://github.com/shakacode/shaka/issues/206).
 
 Shaka changes agent behavior through prose in skill files and through deterministic
 Ruby. Tests prove the Ruby. Beyond anecdotes from real-work trials and two
 inconclusive matched pairs, nothing today measures whether a prose change helps,
 and nothing between releases proves that the merged changes still work together.
 This record decides one eval system that serves three uses: judging a single PR,
-gating a release, and letting Shaka and ShakaFlow users tune their own prompts.
+gating a release, and letting users compare their own prompts.
 The same run record, the same single-axis diff, and the same side-by-side diff card
 serve all three. Cheap models with light thinking plus strong deterministic Ruby are
 the thesis under test, so the cheap tier is the gate and the strong tier is the audit.
@@ -57,7 +57,7 @@ Shipped in the product runtime, and reusable by an eval:
 - The real-work trial workflow from [PR #367](https://github.com/shakacode/shaka/pull/367):
   `shaka trial prepare` pins a PR revision for a fresh chat and `shaka trial report`
   posts keep, revise, or drop feedback on the candidate PR. See
-  [Try a Shaka PR on real work](../trying-pr-versions.md). It yields examples and
+  [Try a Shaka PR on real work](../../docs/trying-pr-versions.md). It yields examples and
   friction, not a controlled comparison, and it is the path
   `internal/requirements.md` names for real-use acceptance.
 - Deterministic publication validators: `shaka description`, `shaka walkthrough`,
@@ -74,15 +74,9 @@ Shipped in the product runtime, and reusable by an eval:
   `skills/shaka/config/model-rates.yml`; a configuration fingerprint digests the
   effective settings, the trusted config, the installation identity, and command bytes.
 
-Shipped in ShakaFlow: an Evals feature that runs one workflow as two arms that
-differ in provider, model, or effort, presents the two outputs blind, records one
-human verdict with a reason per judge, and shows a deterministic overlap of findings
-beside the two outputs. It uses no model judge. It records the settings each arm
-actually used and the workflow version, not a prompt version or code revision. This
-record uses that feature's vocabulary where it fits: arm, side, pair, verdict, judge.
-The task behind this record set three product targets, which it takes as given: a
-user-defined statement of what matters in the comparison, company-level
-administration, and execution on the customer's own API keys.
+For comparisons outside the core benchmark, this record proposes a blind human
+verdict with a reason, followed by revealed settings and metrics. This is a general
+evaluation interface, not a commitment about another product's features or rollout.
 
 ### Constraints this record honors
 
@@ -91,21 +85,19 @@ administration, and execution on the customer's own API keys.
   per-run records, and machine identities are not public material. They live in a
   private repository or on local disk only. Aggregate API-equivalent cost and token
   totals are public, as every Shaka PR's usage block already is.
-- Eval spend is a small fixed budget with no team line behind it. Cost is a
-  first-class requirement, not a report.
+- An evaluation operator must set a fixed spending cap. Cost is a first-class
+  requirement, not a report; the budget below is an illustrative rate-card estimate.
 - Runtime needs no new gem. Eval code lives under `eval/` and stays out of the
   product runtime, per the proposal and `AGENTS.md`. Ruby standard library plus
   the GitHub CLI.
 - The workflow is portable across hosts. The runner invokes whichever host CLI is
   installed; Codex was the first reference host and Claude Code is the second.
-- Shaka CI never launches paid benchmarks. The nightly batch runs on the
-  maintainer's office machines, scheduled by a host job, which is not CI.
+- Shaka CI never launches paid benchmarks. The proposed nightly batch runs on a
+  maintainer-controlled host, scheduled outside CI.
 - Private repositories on the GitHub Free plan have no GitHub-required checks.
   [PR #236](https://github.com/shakacode/shaka/pull/236) added seam-declared
   `merge.required_checks`, which only Shaka enforces; a GitHub merge click is not
-  stopped. See [Before you start](../configure-repository.md#before-you-start).
-  The dedicated eval organization `shaka-eval-repos` is on the Free plan with five
-  public repositories and none private.
+  stopped. See [Before you start](../../docs/configure-repository.md#before-you-start).
 - Merge rate: about 260 PRs merged in the three weeks after the only tag,
   `v0.1.0.pre.1`. "About 20 PRs per release" therefore means a release roughly
   every two days at the current pace, or a wider window. D9 states what the gate
@@ -134,19 +126,20 @@ quality delta. The task asked that a PR "beat its baseline on quality"; this rec
 reads that as improvement on the PR's own task plus non-inferiority on the core,
 because a wording change rarely moves every core task and should not have to.
 
-**Use 2, release gating.** Between releases, a nightly batch on office machines
+**Use 2, release gating.** Between releases, a nightly batch on a maintainer-controlled host
 runs the core benchmark and every merged PR's task against the current head, paired
 with the previous release package rerun the same night, and decides whether the
 head is clean. Deterministic regressions surface the next morning. Judged quality
 regressions of about ten points surface within one or two nights. Smaller effects
 need the weekly strong-tier run or a confirmation rerun. The gate rule is in D9.
 
-**Use 3, evals as a product feature.** Shaka and ShakaFlow users compare settings
+**Use 3, user-defined comparisons.** Users compare settings
 for PR review, PR description, digest, and other prompt types, define what good
 output means in their context, and read the result as the same diff card the
-maintainer reads. The product reuses the run record, the single-axis rule, the
-judge protocol, and the diff renderer. The product adds a criteria set, frozen
-inputs, blind human verdicts, customer-owned API keys, and company-admin scope.
+maintainer reads. These comparisons reuse the run record, the single-axis rule,
+judge protocol, and diff renderer, with a criteria set, frozen inputs, and blind
+human verdicts. Product-specific integration and commercial decisions are outside
+this public record.
 
 ## Decisions
 
@@ -309,7 +302,7 @@ Decision. A model judge is allowed only on trials that passed the gate, only on 
    the record says so, the self-preference risk is shown on the card, and the diff
    cannot gate without a human verdict sample.
 
-Blind human verdicts, in the ShakaFlow shape (A better, B better, tie, both bad, with
+Blind human verdicts (A better, B better, tie, both bad, with
 a required reason, one per judge, hidden metrics until submitted), are the ground
 truth. One validation bound applies everywhere: a rubric is validated when its judge
 agrees with at least sixty human-labeled pairs at a stated kappa (0.6 is the starting
@@ -354,8 +347,10 @@ mentions a reference solution. That test extends to both banks.
 
 ### D7. Use 1: the PR eval
 
-Decision. A PR that touches `skills/shaka/**`, `workflow.yml`, `enforcement.yml`, or
-the loaded references ships with:
+Decision. A PR that changes the skill package's rendered agent instructions ships
+with the following evidence. This includes instruction changes in `SKILL.md`,
+`workflow.yml`, and loaded references. A Ruby-only change or an enforcement-manifest
+update that leaves those instructions unchanged does not trigger model trials.
 
 1. At least one task in `eval/proposed/` whose reference artifact shows the intended
    improvement, or an explicit reason none applies (for example, a wording fix with
@@ -379,8 +374,9 @@ not pass; the thesis is that the cheap tier is the product.
 
 CI runs only the free parts: task schema checks for the two public banks, the
 existing instruction-growth report, and `bin/validate`. Model runs happen on the
-office machines or the author's machine, and their records are posted as evidence.
-Doc-only and Ruby-only PRs run no model trials.
+the operator's host, and their records are posted as evidence. Changes to human
+documentation or runtime Ruby alone need no model trials when rendered agent
+instructions stay unchanged.
 
 ### D8. Scores, noise, repeats, and what counts as a regression
 
@@ -427,9 +423,8 @@ data replace them, and the calibration method is one of the documents to write f
   uncertainty below a few hundred items.
 - Noise floor: sigma_AA is estimated from the nightly baseline arm itself, split-half
   within a night and across nights, over at least ten nights. It resets whenever the
-  model, image, or bank version changes, or the host CLI changes at minor or major
-  version. The image pins the host CLI version, so a patch update is a deliberate
-  rebuild and does not reset the floor.
+  model, image digest, or bank version changes. The image pins the host CLI version,
+  so any CLI update requires a deliberate rebuild and resets the floor too.
 - Two thresholds, with the relation stated. The flag threshold tau is for detection
   on a night or a PR: the larger of five points and 1.65 times sigma_AA, roughly eight
   points at K=3 on forty tasks. The release margin is for acceptance: ten points is
@@ -449,7 +444,7 @@ data replace them, and the calibration method is one of the documents to write f
 
 ### D9. Use 2: the nightly batch and the release gate
 
-Decision, the nightly. A scheduled host job on an office machine invokes a small
+Decision, the nightly. A scheduled job on a maintainer-controlled host invokes a small
 eval skill, kept outside `skills/shaka/` so it never enters the product. The skill
 does four things and nothing else: pull `main`, run `shaka-eval nightly`, read the
 JSON summary, and post or append a public-safe summary to the tracking issue. Agent
@@ -459,19 +454,21 @@ above the configured maximum, and stops launching trials when the running
 API-equivalent total crosses it. The Ruby does the rest:
 
 1. Build or reuse the pinned image and read its digest.
-2. Run the core bank and every proposed task merged since the last clean release on
-   the head package, cheap tier, K=3, tiers 1 and 2.
+2. On each of six cheap nights, run the core bank and every proposed task merged
+   since the last clean release on the head package, cheap tier, K=3, tiers 1 and 2.
 3. Rerun the last clean release package the same night on the same tasks as the
    paired baseline. This is the single largest cost lever and the single largest
    validity lever; the nightly keeps it.
-4. One night in seven, run the strong tier at K=8 to 10 on tier 1 and K=3 on tier 2,
-   with both the head package and the release package on the strong model, so the
-   strong night has its own paired baseline. The same night, run the head package
-   once more on the cheap tier at the same K, so the tier diff (D2) has two arms on
-   one head, one machine, one night. The provider rotates on a fixed weekly order. A
+4. On the seventh night, replace the K=3 cheap run with the strong tier at K=8 to 10
+   on tier 1 and K=3 on tier 2. Run both head and release packages on the strong
+   model for its paired baseline, and both packages on the cheap tier at the same K.
+   This supplies the cheap skill-axis trajectory diff and the same-head tier diff
+   (D2). The provider rotates on a fixed weekly order. A
    strong night is compared only within that night and against the previous
    strong-tier night of the same provider. The strong tier audits the cheap-tier
-   conclusion; it is not a trend line across providers.
+   conclusion; it is not a trend line across providers. When the rotating generator
+   shares the pinned judge's family, D5 requires a human verdict sample before that
+   strong-tier result can satisfy release condition 6.
 5. Run tier 3 delivery tasks on the strong day only, or on a stated cadence, never
    on every night.
 6. Write run records to the private results repository. Post to the tracking issue:
@@ -529,9 +526,10 @@ these hold against the previous release package R:
    promoted task and recorded the sign-off on the tracking issue.
 
 Any other state is not clean. Inconclusive means rerun, not widen the window and not
-lower the bound. During the first ten nights after a noise-floor reset, condition 3
-cannot be computed because tau has no floor behind it; every other condition applies,
-and a release in that window is labeled "no quality bound".
+lower the bound. During the first ten nights after a noise-floor reset, condition 3's
+trajectory flag cannot be computed because tau has no floor behind it. The fixed
+ten-point H-versus-R acceptance bound can still be computed. Such a release cannot
+be called clean; any maintainer-approved exception is labeled "uncalibrated trajectory".
 
 ### D10. The diff is the product: one card, three readers
 
@@ -558,14 +556,20 @@ for local review and for the product. The card has, in this order:
 5. The human verdict control when the reader is a judge (product and anchor-set
    collection): blind until submitted, then revealed.
 
-No surveyed tool renders two agent runs side by side for a human. Several show one
-run at a time, including Harbor's local viewer (D15). This renderer is built here.
+Existing tools provide parts of this view. Braintrust supports
+[side-by-side output diffs and human pairwise verdicts](https://www.braintrust.dev/docs/evaluate/compare-experiments),
+and LangSmith supports
+[comparison of experiment results](https://docs.langchain.com/langsmith/compare-experiment-results).
+Harbor's local viewer shows one run at a time (D15). Before building an HTML viewer,
+evaluate whether an existing comparison view can consume the run records without
+losing fingerprint enforcement, private-data boundaries, or the gate explanation.
+The proposed CLI still needs a portable Markdown card for GitHub and local review.
 Chromatic's baseline rule applies: a baseline moves only when a human accepts the
 new result.
 
-### D11. Use 3: the product feature
+### D11. Use 3: user-defined comparisons
 
-Decision. The product reuses D1, D2, D4, D5, and D10 unchanged and adds the
+Proposed. A user-defined comparison reuses D1, D2, D4, D5, and D10 and adds the
 following.
 
 - A criteria set is how a user defines good output. Proposed fields: a name and
@@ -579,27 +583,18 @@ following.
   prompt material; validation still needs sixty human verdicts collected through the
   blind verdict flow over time.
 - Frozen inputs. Both arms receive byte-identical inputs captured when the eval is
-  created. The existing ShakaFlow arms read live data, so their inputs can drift
-  between arms; the product design closes that gap.
+  created, so data cannot drift between the arms.
 - Settings comparison on one axis per eval: provider, model, effort, or prompt
   version. A user who wants to compare two prompts on two models runs two evals.
 - The reader's flow: blind side-by-side first, a human verdict with a reason,
   then revealed settings, metrics, and the judge's dimension results. Judge results
   are labeled advisory until the user's criteria set is validated, at which point
   the user can run evals unattended.
-- Keys and budget: the eval runs on the customer's own API keys at company scope,
-  with a per-company daily budget cap. The judge needs a key from a family other
-  than the arms' family; a customer holding one vendor key gets judge results
-  labeled advisory with the self-preference caveat, unless the judge runs on a
-  ShakaCode-held key at ShakaCode's cost. That is a business decision listed below.
-- Results contract: the product reads run records and the diff card's JSON form
-  from the results store; it writes human verdicts back as anchor candidates. No
-  product code reads eval internals.
-- Integration path: the recommended path is that the product's workers invoke the
-  Ruby CLI and store its run records, so there is one implementation of the gate,
-  the fingerprint, and the card. The alternative, an adapter that materializes run
-  records from the product's own run rows, keeps execution in the product and
-  duplicates the fingerprint logic. The choice is open below.
+- Keys and budget: the operator supplies credentials and a daily cap. A same-family
+  judge is advisory unless the D5 human-verdict requirement is met.
+- Results contract: integrations exchange run records, diff-card JSON, and human
+  verdicts rather than importing eval internals. Specific product designs are outside
+  this record.
 
 ### D12. Cost accounting
 
@@ -641,8 +636,9 @@ Decision. The system has two layers, and this record commits to only one of them
 
 - The comparison layer is the fingerprint match and single-axis rule (D2), the gates
   and judge protocol (D4, D5), the score and statistics (D8), the release gate (D9),
-  and the diff card (D10). It is Ruby, it lives under `eval/`, and no surveyed tool
-  provides it.
+  and the diff card (D10). It is Ruby and lives under `eval/`. The surveyed tools
+  provide comparison components, but not this complete contract. Existing viewers
+  remain candidates for D10's presentation layer.
 - The execution layer starts a container, installs a pinned host CLI, loads a skill
   revision, runs the agent at a set effort, enforces resource and network limits,
   collects artifacts, runs the verifier, and repeats K times. D1 and D14 describe a
@@ -742,7 +738,7 @@ result. It passes when all of these hold:
    enforcement hashes, routed model, Ruby and lockfile hash, and machine alias.
 4. `shaka usage --file` reads the collected native session logs and returns the D12
    token categories.
-5. The chosen sign-in mode works on an office machine without any other credential
+5. The chosen sign-in mode works on the eval host without any other credential
    entering the container.
 6. With the host CLIs built into the image, the agent phase runs under an allowlist
    of model endpoints only, a request to any other host fails, and a host-side
@@ -790,10 +786,11 @@ orders), about $0.40.
 | Strong night: tier 2 at K=3, two arms | 60 | | $79 | $198 |
 | Strong night: judge calls, 30 pairs | 360 | | $13 | $13 |
 | Strong night: two tier 3 tasks, one trial, two arms, see note | 4 | | $30 to $40 | $30 to $40 |
-| Strong night: head package on the cheap tier for the tier diff, trials plus judge calls | 270 + 360 | | about $50 | about $50 |
-| Strong night total | | | about $240, a working day | about $450, a working day |
-| Week, six cheap nights and one strong | | | about $630 | about $840 |
-| Month | | | about $2,700 | about $3,600 |
+| Strong night: paired cheap packages for trajectory and tier diffs, trials plus judge calls | 540 + 360 | | about $84 | about $84 |
+| Strong night total | | | about $275, a working day | about $485, a working day |
+| Week, six cheap nights and one strong | | | about $665 | about $875 |
+| Month, 30 days | | | about $2,850 | about $3,750 |
+| Release-night cheap comparison at K=8 on tier 1, K=3 on tier 2, including judge calls | 540 + 360 | about $84 | | |
 | One PR eval: 8 tier 1 and 4 tier 2 tasks, K=3, two arms | 72 | about $20 to $25, under an hour | | |
 
 Note on the tier 3 row: it is three times the measured cheap-tier cost for both
@@ -804,6 +801,8 @@ a strong night total by under $30 and a month by under $130.
 
 The table prices one cheap series and one strong series. A second cheap model run
 nightly doubles the cheap night and needs its own pinned judge from the other family.
+The release-night row replaces a scheduled cheap comparison at those settings. If
+run separately, add its full cost to the weekly and monthly estimates.
 
 Levers, in order of effect: the number of tier 2 tasks and their K on both cheap
 and strong nights (tier 2 is about half of every total); the strong-tier choice
@@ -819,7 +818,7 @@ human question is the cap, not whether there is one.
 
 ## Tradeoffs
 
-- Nightly on office machines instead of CI keeps paid benchmarks out of CI and
+- Nightly on maintainer-controlled hosts instead of CI keeps paid benchmarks out of CI and
   keeps credentials off shared runners, at the cost of machine heterogeneity. The
   fingerprint records the machine and limits; it does not control them. Pairing the
   baseline on the same machine the same night is the mitigation, and the reason
@@ -1015,23 +1014,21 @@ human question is the cap, not whether there is one.
   PR path unblocked by the promotion step.
 - A private repository, a tracking issue, and a scheduled host job become part of
   the maintainer's routine. Someone reads the nightly summary every morning.
-- The first ten nights produce no statistical gate decisions; they produce the noise
-  floor. A release in that window is gated by the deterministic conditions only, and
-  the tracking issue says so.
+- The first ten nights establish the noise floor. The fixed release acceptance
+  bound is available, but the trajectory rule is uncalibrated. Any release exception
+  in that window requires maintainer approval and the explicit label in D9.
 - A judge deprecation or a bank change starts a new series. Trend charts restart.
 - A release cadence faster than weekly ships with "strong tier not rechecked" on
   most releases. A weekly cadence on the strong-tier day avoids that label.
-- ShakaFlow's existing eval data model gains frozen inputs, a criteria set, a judge
-  step, and a run record export. Its blind verdict flow is already the product's
-  ground truth collection and needs no redesign.
-- This record itself is published on the docs site, because `docs/` syncs there.
-  Nothing in it is private; the private material it names lives elsewhere. Whether
-  future records belong under `docs/adr/` or `internal/` is a question below.
+- User-defined comparisons need frozen inputs, versioned criteria, and blind human
+  verdicts; they do not authorize changes to any separate product.
+- This proposed design stays under `internal/` with the public development records.
+  It does not appear on the docs site. Company plans, hidden assets, and private run
+  records belong outside this public repository.
 
 ## Open decisions
 
-1. Fixture repository organization and visibility. A separate organization
-   already exists (`shaka-eval-repos`, Free plan). The question is tier 3 only.
+1. Fixture repository organization and visibility. The question is tier 3 only.
    Options: keep public repositories and accept that solved cells leak into the
    public record and into training data, with hidden assets private; move measured
    cells to private repositories on a paid Team plan, which restores GitHub-required
@@ -1045,7 +1042,7 @@ human question is the cap, not whether there is one.
    predates PR #236.
 2. Results store. A private repository in the eval organization, a private branch,
    or local disk with a published summary. Recommendation: a private repository,
-   so records survive machine changes and the product can read them.
+   so records survive machine changes and integrations can read them.
 3. Release candidate definition and cadence. A tagged head on a fixed weekly cadence
    on the strong-tier day keeps the bisection window bounded and avoids the "strong
    tier not rechecked" label; "about 20 PRs" at the current merge rate is every two
@@ -1056,13 +1053,11 @@ human question is the cap, not whether there is one.
 5. Which cheap models and which strong models, and the weekly provider rotation order.
 6. Nightly and weekly caps, and the per-PR cap, as API-equivalent dollars.
 7. Whether tier 3 runs weekly, every other week, or only before a release.
-8. The scheduling host (a Claude scheduled task, a Codex scheduled job, or cron
-   invoking a host CLI) and where the office machines keep credentials.
-9. The product integration path: ShakaFlow workers calling the CLI (recommended), or
-   an adapter from its run rows to run records.
+8. The scheduling host and credential storage for the eval operator.
+9. The interchange schema for integrations reading run records and diff cards.
 10. Who may promote a proposed task into core, and how many reviewer hours per task
     the budget funds.
-11. Who pays for the product's judge when a customer holds only one vendor key.
+11. How a user-defined comparison records an advisory same-family judge result.
 12. The execution layer: Harbor or a Ruby runner. Recommendation: run the D15 spike
     first and decide on its report. Adoption would trade runner code not yet written
     for a pinned Python tool on the eval machines and the isolation gaps D15 lists.
@@ -1083,12 +1078,13 @@ human question is the cap, not whether there is one.
 7. Who, besides the maintainer, may record a human verdict or promote a task?
 8. Does the first ten-night calibration period gate releases on the deterministic
    conditions alone, or does no release happen until the noise floor exists?
-9. For the product: does a company's criteria set stay private to that company, and
-   may ShakaCode use anonymized verdicts to calibrate the shared judge?
+9. Which user-defined comparison criteria and verdicts may be shared? Default to
+   private records unless their owner explicitly authorizes publication.
 10. Does the nightly skill run under a subscription or under API keys, with usage
     reported as API-equivalent either way?
-11. Do decision records stay under `docs/adr/`, published on the docs site, or move
-    to `internal/` with the other development records?
+11. Which parts of an implemented evaluation system need a human-facing guide?
+    Keep proposed development records under `internal/`; publish a guide when the
+    behavior exists.
 12. Is a pinned Python tool acceptable on the eval machines, with its telemetry off
     and no uploads to its hosted hub?
 
@@ -1100,9 +1096,9 @@ human question is the cap, not whether there is one.
   run-card defaults, the three conclusions, what inconclusive means.
 - [Experiment index](https://github.com/shakacode/shaka/blob/main/eval/README.md)
   and the three reports under `eval/reports/`.
-- [Try a Shaka PR on real work](../trying-pr-versions.md),
-  [PR verification](../pr-verification.md), and
-  [usage and cost](../reference/usage-and-cost.md): what a Shaka PR must show and
+- [Try a Shaka PR on real work](../../docs/trying-pr-versions.md),
+  [PR verification](../../docs/pr-verification.md), and
+  [usage and cost](../../docs/reference/usage-and-cost.md): what a Shaka PR must show and
   how usage is recorded.
 - [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)
   and [infrastructure noise](https://www.anthropic.com/engineering/infrastructure-noise).
