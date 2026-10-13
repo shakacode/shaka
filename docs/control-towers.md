@@ -2,7 +2,7 @@
 
 ![A central coordination tower connects three smaller towers, each with its own platform and work units.](img/coordinated-towers.webp)
 
-Control towers are optional roles for your coding agent.
+Use control-tower chats to choose work and follow progress across your coding tasks.
 Try [a few Shaka tasks](getting-started.md) first.
 
 A **Repository Control Tower (RCT)** gives you one chat for choosing work and
@@ -46,8 +46,13 @@ In your repository's RCT chat, ask:
 What should we tackle next?
 ```
 
-The RCT recommends one task and explains why it matters. To work on several
-at once, follow up with:
+The RCT recommends one task and explains why it matters. When it looks right:
+
+```text
+Start that task with Shaka and Ask.
+```
+
+To work on several tasks at once, ask:
 
 ```text
 Suggest a batch of up to three.
@@ -72,7 +77,7 @@ Setting up towers or starting a batch does not authorize a deployment.
 ## Follow the work
 
 ```text
-How is the batch going? Show what needs my attention, with PR and chat links.
+How is the work going? Show what needs my attention, with PR and chat links.
 ```
 
 A useful update combines the latest chat reports with the current PRs on
@@ -80,35 +85,27 @@ GitHub. It should tell you what changed and what happens next:
 
 | Status | What to expect |
 | --- | --- |
+| In progress | What the chat is working on and what comes next, such as implementing the fix, then running tests |
 | Ready for review | A PR with completed checks, review results, and evidence that the change works |
-| Blocked | The specific problem, the chat handling it, and any decision needed from you |
+| Blocked | The specific problem, the chat handling it, and its next action; if it needs your input, the question and recommendation |
 | Replaced by other work | A link to the replacement and a recommendation for the old issue or PR |
 | Merged | The merged PR and any other work it unblocks |
 
-Before merging, open the PR to see how the change was checked. Tests and reviews
-should cover its latest code. For visible changes, look for results from using
-the app, including desktop and mobile where relevant. A review app should let
-you try the feature with the data and services it needs.
+A chat can handle some blockers, such as waiting for CI, without your input.
+The update should distinguish those from decisions that need your attention.
 
-Good checks also show that they can catch the problem. For example, a smoke test
-should pass on a healthy page and fail when required content is missing. This
-is a **negative control**. [PR verification](pr-verification.md) explains what to
-look for in the evidence.
-
-Use focused AI review for code and tests, and spend human review time on decisions
-that need your knowledge. An agent can check a billing calculation; someone who
-knows the contract must decide whether that is the right billing rule.
+Before merging, check [how the PR’s latest changes were verified and what remains
+unverified](pr-verification.md#check-the-latest-changes).
 
 ## Unblock dependent work
 
 When a prerequisite PR merges, tell the RCT:
 
 ```text
-PR #123 has merged. Ask the chats that were waiting on it to update their
-branches, rerun their checks, and tell me what's still blocked.
+PR #123 merged. Have the waiting chats update their PRs and recheck them.
 ```
 
-Those chats need to test their changes together with the merged fix and refresh
+Those chats need to incorporate the merged fix, rerun their checks, and refresh
 affected reviews and manual checks. Wait for their updated results before treating
 the dependent PRs as ready.
 Any outstanding security or business decision still needs to be settled.
@@ -119,19 +116,21 @@ Some projects have a database or test server that only one chat can use at a
 time. You can ask:
 
 ```text
-Let the checkout fix test next. Tell the other chats sharing that environment
-to wait until it's finished.
+Let the checkout fix use the shared test environment next.
 ```
 
-The RCT should tell every chat sharing the environment which one tests next.
-This needs your project's existing way to reserve it. A chat already testing
-finishes first. Shaka does not include an environment scheduler.
+Let the current test run finish. The next chat must reserve the environment
+using the project’s existing process before testing. Other chats can continue
+work that doesn’t need it. Shaka does not include an environment scheduler.
 
 ## Decide what to merge first
 
 ```text
 Which PRs should I merge first? Include PR and chat links.
 ```
+
+Expect ready PRs in recommended order, with a brief reason for each. List blocked
+PRs separately, with the next action and the chat handling it.
 
 The recommendation should weigh impact and readiness together. A tested fix for
 lost orders may deserve attention before a development convenience. An urgent
@@ -143,10 +142,8 @@ Here is an example response from an RCT in Codex:
 
 *Example snapshot: merge priorities first, remaining blockers below.*
 
-Open the PR to review the change, or its chat to ask questions and request more
-work. Codex chat links open in your app; they are not public conversation shares.
+Open a PR to review it, or its chat to ask questions. Merge one PR at a time.
+After each merge, have the next chat recheck its PR against the updated base.
+Under Ask, you decide whether each PR should merge.
 
-Merge one PR at a time. After each merge, ask the RCT to have the next chat check
-its PR against the updated base. A previous green result may not cover the
-combined changes. Under Ask, you decide whether each PR should merge; the RCT
-helps you make that decision with current results.
+Codex chat links open in your app; they are not public conversation shares.
