@@ -27,6 +27,7 @@ module SyntheticReviewAssessment
 
   def first_round = ledger.rounds.first
   def current_findings = first_round.fetch('findings')
+  def newest_finding = ledger.rounds.last.fetch('findings').first
   def assessments = saved.fetch('assessments')
   def judgments = Shaka::LocalReviewAssessments.new(saved)
 
@@ -294,8 +295,8 @@ class LocalReviewAssessmentPresentationTest < Minitest::Test
     ledger.assess!(assessment(rationale: '</code></details> [merge now](https://example.com) | x'))
     body = view(EARLIER)
     assert_equal 2, body.scan('<details>').size
-    assert_includes body, '&lt;/details&gt;'
-    assert_includes body, '&#124; x'
+    assert_includes CGI.unescapeHTML(body), '</code></details> [merge now](https://example.com) | x'
+    refute_includes body.split('<details>').first, '[merge now](https://example.com)'
   end
 
   def test_later_assessment_does_not_rewrite_an_earlier_heads_outcome
@@ -328,7 +329,7 @@ class LocalReviewAssessmentPresentationTest < Minitest::Test
     record([NIT.merge('note' => 'The owner deferred this optional suggestion.')])
     body = view(EARLIER)
     assert_includes body, 'Preserved triage'
-    assert_includes body, 'triaged by <code>UNKNOWN</code>'
+    refute_includes body, 'triaged by <code>UNKNOWN</code>'
     assert_includes body, '&quot;disposition&quot;: &quot;documented&quot;'
   end
 
@@ -373,5 +374,41 @@ class LocalReviewAssessmentFormatTest < Minitest::Test
       assert_raises(Shaka::Error) { Shaka::LocalReviewBundle.resolve(content, @directory) }
       assert_raises(Shaka::Error) { Shaka::LocalReviewComment.new(content) }
     end
+  end
+end
+
+class LocalReviewOrphanProgressTest < Minitest::Test
+  include SyntheticReviewAssessment
+
+  def test_an_already_missing_reference_does_not_block_usage_or_unrelated_triage
+    reviewed_finding
+    ledger.assess!(assessment)
+    drop_assessed_reference
+    ledger.record!({ 'tokens' => '25' })
+    append(HEAD, 'openai/codex', findings: 1)
+    record([NIT.merge('id' => 'F3')])
+    assert_includes view.split('<details>').first, 'Assessment reference unavailable'
+    assert_equal 'F3', newest_finding['id']
+  end
+end
+
+class LocalReviewTriagePresentationTest < Minitest::Test
+  include SyntheticReviewAssessment
+
+  def test_each_heads_metadata_is_published_once_while_its_ledger_history_is_retained
+    retriage(EARLIER, 'F1', 'EarlierOwner')
+    retriage(HEAD, 'F2', 'CurrentOwner')
+    refute_includes view, 'EarlierOwner'
+    assert_includes view, 'CurrentOwner'
+    assert_includes view(EARLIER), 'EarlierOwner'
+    assert_equal(2, ledger.rounds.sum { |round| round.fetch('earlier_findings').size })
+  end
+
+  private
+
+  def retriage(head, id, name)
+    append(head, 'openai/codex', findings: 1)
+    record([NIT.merge('id' => id)])
+    record([NIT.merge('id' => id, 'note' => 'Later decision')], by: { 'name' => name, 'role' => 'task_owner' })
   end
 end

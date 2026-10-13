@@ -32,12 +32,15 @@ module Shaka
 
     def current_attention
       current = @rounds.last.head == @history.last.head
-      rounds = @assessment_content.fetch('rounds').take(@before.size + @rounds.size)
+      rounds = raw_prefix
       content = @assessment_content.merge('rounds' => rounds,
                                           'assessments' => current ? @assessment_content['assessments'] : [])
-      @assessments = LocalReviewAssessmentView.new(content)
+      displayed = rounds.select { |round| round.fetch('head') == @rounds.last.head }
+      @assessments = LocalReviewAssessmentView.new(content, displayed_rounds: displayed)
       LocalReviewAttention.new(@before + @rounds, @links, assessments: @assessments)
     end
+
+    def raw_prefix = @assessment_content.fetch('rounds').take(@before.size + @rounds.size)
 
     def budget_notice = LocalReviewBudget.notice(@task_budget, completed: @history.size)
 

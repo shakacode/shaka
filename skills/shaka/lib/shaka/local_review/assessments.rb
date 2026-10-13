@@ -59,7 +59,7 @@ module Shaka
     end
 
     def check_triage!(updated)
-      missing = active.find { |entry| !available?(entry, updated) }
+      missing = active.find { |entry| available?(entry) && !available?(entry, updated) }
       return unless missing
 
       raise Error,

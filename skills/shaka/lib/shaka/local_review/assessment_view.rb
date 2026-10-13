@@ -8,9 +8,9 @@ require_relative 'attention'
 module Shaka
   # Later judgments affect attention, never the historical review attestation or merge policy.
   class LocalReviewAssessmentView
-    def initialize(content)
+    def initialize(content, displayed_rounds: nil)
       @history = LocalReviewAssessments.new(content)
-      @rounds = content.fetch('rounds')
+      @rounds = displayed_rounds || content.fetch('rounds')
     end
 
     def attention?(id) = @history.attention?(id)
@@ -67,13 +67,14 @@ module Shaka
     end
 
     def triage_attribution
-      @rounds.flat_map do |round|
+      lines = @rounds.flat_map do |round|
         round.fetch('findings', []).filter_map do |finding|
-          next unless finding.key?('recorded_at') || finding.key?('by')
+          next unless finding['by']
 
           actor_line(round, finding)
         end
       end
+      lines.empty? ? [] : ['### Triage attribution', *lines]
     end
 
     private
@@ -99,6 +100,10 @@ module Shaka
 
     def json(value) = "<pre>#{CGI.escapeHTML(JSON.pretty_generate(value)).gsub('|', '&#124;')}</pre>"
 
-    def literal(value) = "<code>#{CGI.escapeHTML(value.to_s).gsub('|', '&#124;')}</code>"
+    # Encode punctuation before GFM can treat it as links, images, or emphasis inside inline HTML.
+    def literal(value)
+      text = value.to_s.gsub(/[^\p{Alnum} ]/) { |character| "&##{character.ord};" }
+      "<code>#{text}</code>"
+    end
   end
 end
