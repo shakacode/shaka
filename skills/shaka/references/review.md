@@ -222,19 +222,51 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
    empty comment, skipped run, quota error, or `is_error: true` does not establish a
    successful review.
 2. Check each finding against the code and requirements. Reproduce important
-   defects, fix them with focused tests, and explain the result on the original
-   thread. Briefly explain declined findings; do not implement speculative requests
-   or create follow-up issues merely because a bot suggested them.
-3. After changes, run the affected checks and the repository's validation. Obtain review
-   of the fix and affected behavior on the new commit, using the existing workflow
-   or its documented re-review mechanism. A stale finding may still apply; check it
-   before resolving the thread with `shaka resolve`. Do not call an unreviewed fix independently reviewed.
+   defects on the runtime and dependency versions the repository's required checks
+   use. A result from another version neither confirms nor dismisses a finding; if
+   those versions are unavailable locally, say so and keep the finding open. Fix
+   with focused tests, and explain the result on the original thread. Briefly
+   explain declined findings; do not implement speculative requests or create
+   follow-up issues merely because a bot suggested them.
+3. After changes, follow [correct a reviewed change](#correct-a-reviewed-change). A
+   stale finding may still apply; check it before resolving the thread with
+   `shaka resolve`. Do not call an unreviewed fix independently reviewed.
 4. Stop when material findings are addressed and independent review for this task has
-   completed. Refresh GitHub required checks and required approvals,
-   update the walkthrough, and follow the task's existing merge authority. After two repair
-   rounds, remaining nits do not start another cycle. If a
-   reviewer fails or repeats the same unresolved concern without new evidence,
-   report the blocker or concrete decision; do not loop or schedule retries.
+   completed. Refresh GitHub required checks and required approvals, and follow the
+   task's existing merge authority. After two repair rounds, remaining nits do not
+   start another cycle. If a reviewer fails or repeats the same unresolved concern
+   without new evidence, report the blocker or concrete decision; do not loop or
+   schedule retries.
+
+### Correct a reviewed change
+
+Use this path when a commit repairs specific findings on a head that already has
+validation, review, and a walkthrough, and the task's goal, scope, dependencies, and
+repository settings are unchanged. Otherwise repeat Verify, Explain, and Review in
+full. A small diff does not qualify a change. A security or trust repair qualifies
+only for the behavior its finding names, and its security check always reruns.
+
+Do each row once, on the last commit of the repair batch:
+
+| Evidence | For the correction |
+| --- | --- |
+| Focused regression | Run it on the versions the required checks use. Where practical, observe it fail before the fix. |
+| Repository validation | Run the resolved command once. Repeat it only after a later edit or a failure. |
+| Local review | Run the next round in the same ledger with the configured reviewers. Its prompt directs them to the correction. Start that batch once per head. |
+| Required checks and CI review | Unchanged. A runtime, trust, or test change reopens the configured CI review wait. |
+| Checkpoint | Rerun it; `merge` needs one for the exact head. State in `repair_history` what the correction changed. |
+| Walkthrough | Republish the previous content for the new head, rewriting only the steps the correction changed. |
+| Original thread | Update the existing reply once with the reproduction and the fix commit. |
+| Description | Publish once, after the rows above settle. |
+
+An earlier result counts for the new head only where `evidence bind` or `merge`
+accepts it. Otherwise cite it with its own revision.
+
+Leave out replies to advisory findings already answered on an earlier head, a new
+assessment of behavior the correction leaves alone, and repairs for nits.
+
+When a required row looks out of proportion to the correction, say which row and
+why in the description's `decisions` before starting it, not after.
 
 ## Reviews after merge
 

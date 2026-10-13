@@ -121,6 +121,12 @@ module Shaka
 
   # Keeps a local review loop's rounds in a ledger and shows the reviewer what earlier rounds found.
   module LocalReviewRounds
+    PRIOR_ROUNDS = 'PRIOR ROUNDS: Earlier local rounds reviewed this change. Confirm each fix below resolves its ' \
+                   'finding, and report it again with the same id if not. Do not raise documented findings again ' \
+                   'unless the change made them worse. Then review the commits listed below and the behavior they ' \
+                   'affect. Elsewhere in the diff, report only a defect or risk; an earlier round already reviewed ' \
+                   'that code.'
+
     private
 
     def open_ledger
@@ -199,9 +205,7 @@ module Shaka
 
       findings = @ledger.prior_findings.map(&:prompt_line)
       commits = capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{previous}..#{head}", '--')
-      'PRIOR ROUNDS: Earlier local rounds reviewed this change. Confirm each fix below resolves its finding, ' \
-        'and report it again with the same id if not. Do not raise documented findings again unless the ' \
-        "change made them worse. Then review the full diff fresh.\n\n--- BEGIN PRIOR ROUND DATA #{marker} ---\n" \
+      "#{PRIOR_ROUNDS}\n\n--- BEGIN PRIOR ROUND DATA #{marker} ---\n" \
         "Findings:\n#{findings.empty? ? 'none' : findings.join("\n")}\n\n" \
         "Commits since #{previous}:\n#{commits}--- END PRIOR ROUND DATA #{marker} ---\n\n"
     end

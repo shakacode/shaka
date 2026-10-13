@@ -280,6 +280,46 @@ before/after evidence. Wording edits need documentation checks, not invented
 failing tests. Validation can select checks for affected files; required security
 checks still apply.
 
+## Corrections after review
+
+A correction repairs a review finding on a PR that was already validated, reviewed,
+and explained. It should cost in proportion to the repair, without lowering what the
+PR has to prove. Your agent checks the repair and the behavior it affects, then
+updates the existing PR once.
+
+| What you see on the PR | After a correction |
+| --- | --- |
+| The finding's thread | One updated reply: how the defect was reproduced, and the fix commit |
+| Repository validation and required checks | Run again for the new commit |
+| Local review | The configured reviewers read the new commit. They confirm the fix and review what it affects, and still report any defect or risk they notice elsewhere |
+| Hosted review | Awaited again when the correction changes runtime behavior, trust, or tests |
+| [Checkpoint](#checkpoint) | Run again, because merging needs one for the exact commit |
+| Code walkthrough | The same walkthrough for the new commit, with only the affected steps rewritten |
+| Advisory comments answered earlier | No new replies |
+
+Evidence for an earlier commit is shown with that commit. It counts for the new one
+only where Shaka can prove nothing relevant changed, such as a clean merge of the
+base or a prose-only edit.
+
+A finding is reproduced on the versions your repository's required checks use. In
+[PR #463](https://github.com/shakacode/shaka/pull/463), a credential-redaction finding
+was dismissed after a test on URI 1.1.1, which drops the password itself. CI used
+URI 1.0.3, which keeps it. The [replay](https://github.com/shakacode/shaka/blob/main/eval/reports/correction-replay-463.md)
+shows both results and the work each path performs.
+
+The agent uses the full process again when the repair grows: new behavior, a changed
+goal, changed settings or dependencies, or security-sensitive code beyond the finding.
+A small diff alone does not make a change low risk.
+
+When a required step looks out of proportion to a repair, the agent asks you before
+spending the time. To skip the checkpoint for one correction, tell your agent:
+
+```text
+Skip the checkpoint for this correction; the outcome is unchanged.
+```
+
+The PR then shows that no product review ran for that commit.
+
 ## Documentation changes
 
 The agent checks links and rendered pages. For a substantial rewrite, it also
