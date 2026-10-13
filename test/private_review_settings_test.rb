@@ -32,9 +32,20 @@ class PrivateReviewSettingsTest < Minitest::Test
       @ref = git(@root, 'rev-parse', 'HEAD')
       update_private { |data| data['review']['prompt_file'] = 'review.md' }
       commit_prompt('CANDIDATE REVIEW RULES')
-      review_result(head: git(@root, 'rev-parse', 'HEAD'))
+      result = JSON.parse(review_result(head: git(@root, 'rev-parse', 'HEAD')))
+      assert_equal 'review.prompt_file review.md', result['prompt_source']
       assert_includes instructions, 'TRUSTED REVIEW RULES'
       refute_includes instructions, 'CANDIDATE REVIEW RULES'
+    end
+  end
+
+  def test_private_round_limit_stops_the_review_loop
+    with_trial do
+      update_private { |data| data['review']['local_max_rounds'] = 1 }
+      ledger = ['--ledger', File.join(@state, 'ledger.json')]
+      review_result(*ledger)
+      commit_prompt('A later change')
+      review_result(*ledger, head: git(@root, 'rev-parse', 'HEAD'), error: 'round cap (1) reached')
     end
   end
 

@@ -68,7 +68,8 @@ module Shaka
     # Individual setup keeps its own instructions in its untracked settings directory. Any other
     # path is read at the settings commit, so a branch cannot supply its own instructions.
     def configured_prompt(path, label)
-      return Configuration.private_prompt(root:, path:, label:) if individual_prompt?(path)
+      @private_prompt = individual_prompt?(path)
+      return Configuration.private_prompt(root:, path:, label:) if @private_prompt
 
       access = { executable: git_executable, capture: method(:capture), resolver: method(:bounded_git) }
       Configuration.prompt_at_commit(root:, ref: settings_ref, path:, git_access: access)
@@ -109,7 +110,7 @@ module Shaka
     # Names the instructions the reviewer received, for the published review summary.
     def prompt_source
       return 'Local settings preview (private source)' if @prompt_source && settings_ref != @options[:criteria_ref]
-      return 'Individual settings (private source)' if @prompt_source && @individual_review
+      return 'Individual settings (private source)' if @private_prompt
 
       @prompt_source || 'Shaka default'
     end
