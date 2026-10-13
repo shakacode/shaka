@@ -4,6 +4,7 @@ require 'cgi'
 require 'json'
 require_relative 'assessments'
 require_relative 'attention'
+require_relative 'public_triage'
 
 module Shaka
   # Later judgments affect attention, never the historical review attestation or merge policy.
@@ -61,7 +62,7 @@ module Shaka
           earlier.is_a?(Array) && earlier.all?(Array)
 
         earlier.each { |snapshot| LocalReviewFinding.list(snapshot, 'earlier finding') }
-        earlier_triage(round, earlier)
+        earlier_triage(round, LocalReviewPublicTriage.snapshots(earlier))
       end
       blocks.empty? ? [] : ['### Preserved triage', *blocks]
     end

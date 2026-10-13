@@ -412,3 +412,15 @@ class LocalReviewTriagePresentationTest < Minitest::Test
     record([NIT.merge('id' => id, 'note' => 'Later decision')], by: { 'name' => name, 'role' => 'task_owner' })
   end
 end
+
+class LocalReviewPrivateTriageTest < Minitest::Test
+  include SyntheticReviewAssessment
+
+  def test_unknown_legacy_metadata_stays_in_the_ledger_and_out_of_every_comment
+    reviewed_finding
+    record([NIT.merge('private_context' => 'MUST_REMAIN_LOCAL')])
+    record([NIT.merge('note' => 'Public explanation')])
+    refute_includes view(EARLIER), 'MUST_REMAIN_LOCAL'
+    assert_includes JSON.generate(first_round['earlier_findings']), 'MUST_REMAIN_LOCAL'
+  end
+end
