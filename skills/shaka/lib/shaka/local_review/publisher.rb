@@ -31,8 +31,9 @@ module Shaka
                                                              subject: ->(sha) { subject(sha) })
     end
 
-    # Also retires comments this ledger replaced: the per-commit publisher's, and continuations a
-    # repacking no longer writes. A failed lookup is reported, never mistaken for nothing to retire.
+    # Also retires comments this ledger replaced: per-commit comments holding one of its reports, and
+    # continuations a repacking no longer writes. Another ledger's report of the same commit stays
+    # visible. A failed lookup is reported, never mistaken for nothing to retire.
     def cleanup(results, count)
       begin
         replaced = replaced(count)
@@ -46,12 +47,13 @@ module Shaka
       stale = /\A<!-- shaka:reply:#{Regexp.escape(loop_comment.key)}-(\d+) -->\n/
       @github.issue_comments.filter_map do |comment|
         body = comment['body'].to_s
-        comment['id'] if per_commit_marks.any? { |mark| body.start_with?(mark) } || body[stale, 1].to_i >= count
+        comment['id'] if per_commit?(body) || body[stale, 1].to_i >= count
       end
     end
 
-    def per_commit_marks
-      @content.fetch('rounds').map { |round| "<!-- shaka:reply:local-review-#{round.fetch('head')} -->\n" }
+    def per_commit?(body)
+      head = body[/\A<!-- shaka:reply:local-review-(\h{40}) -->\n/, 1]
+      head && loop_comment.reports(head).any? { |report| body.include?(report) }
     end
 
     # Cache both the subject and existence; a 404 names an unpushed or replaced commit.

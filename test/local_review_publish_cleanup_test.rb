@@ -30,9 +30,10 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
       result
     end
 
-    # A comment the per-commit publisher left before this PR moved to one loop comment.
-    def add_per_commit_report(head, id)
-      body = "# Local Adversarial Review\n\nOld layout.\n\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
+    # A comment the per-commit publisher left before this PR moved to one loop comment, holding `report`.
+    def add_per_commit_report(head, id, report)
+      body = "# Local Adversarial Review\n\n<details>\n\n#{report.strip}\n\n</details>\n\n" \
+             "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
       @comments[id] = { 'id' => id, 'user' => { 'login' => viewer_login }, 'created_at' => '2026-10-04T00:00:00Z',
                         'body' => "<!-- shaka:reply:local-review-#{head} -->\n#{body}" }
     end
@@ -89,10 +90,11 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
     github.issue_comments.first.fetch('body')
   end
 
-  def per_commit_timeline
+  def per_commit_timeline(content = loop_content)
     github = Timeline.new
-    github.add_per_commit_report(EARLIER, 50)
-    github.add_per_commit_report(HEAD, 51)
+    content['rounds'].zip([50, 51]) do |round, id|
+      github.add_per_commit_report(round['head'], id, File.read(round['report']))
+    end
     github
   end
 
@@ -166,6 +168,15 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_equal 0, publish(github, content).first
     assert_equal 3, github.issue_comments.size
     assert_includes comment(github, 50), Shaka::LocalReviewHistory::MARKER
+  end
+
+  def test_another_ledgers_per_commit_report_of_the_same_commit_stays_visible
+    github = Timeline.new
+    github.add_per_commit_report(HEAD, 52, File.read(report(HEAD, body: "1. [P1] Unrelated defect.\n")))
+
+    assert_equal 0, publish(github, loop_content).first
+
+    refute_includes comment(github, 52), Shaka::LocalReviewHistory::MARKER
   end
 
   def test_a_failed_listing_of_replaced_comments_is_a_retryable_gap

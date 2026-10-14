@@ -214,6 +214,9 @@ module Shaka
 
       def attestation = @report.strip.lines.last.strip
 
+      # The report as every Shaka comment publishes it, verbatim inside its disclosure.
+      def published_report = @report.strip
+
       # Identifies the ledger this round opened: its report never changes once written.
       def report_digest = Digest::SHA256.hexdigest(@report)
 

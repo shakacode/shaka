@@ -34,6 +34,9 @@ module Shaka
 
     def render = parts.first.body
 
+    # This ledger's reports of one commit, which a comment it replaces must contain.
+    def reports(head) = @rounds.select { |round| round.head == head }.map(&:published_report)
+
     def key = "#{LOOP_KEY}-#{@rounds.first.head[0, 12]}-#{@ledger_id || @rounds.first.report_digest[0, 12]}"
 
     # The main comment first, keeping the newest commits' reports that fit; the rest follow, oldest first.
