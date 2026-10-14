@@ -67,10 +67,9 @@ turn started on the message and `queued` means it waits behind current work;
 neither is the other session's answer. An idle session returns `undelivered`
 ("gave no sign of starting on it within 20s") and never receives the message.
 
-Record the setup or answer in the sending session's own transcript before sending,
-and read the other session with `list_events` on the next turn. There is no
-bounded wait for another session: report the result and end the turn. Do not poll,
-re-send, or start a monitor.
+Record the setup in the tower's own transcript before sending; the master reads it
+with `list_events` on its next turn. There is no bounded wait for another session:
+report the result and end the turn. Do not poll, re-send, or start a monitor.
 
 ## Read the session listing completely
 

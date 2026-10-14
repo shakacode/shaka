@@ -78,14 +78,13 @@ needs the desktop app's session tools; a terminal `claude` stops with `MCT setup
 error: host session tools are unavailable`, and the role prompt below remains the
 supported fallback.
 
-Establishing the master authorizes its own title, pin, and confirmation
+Establishing the master authorizes its own title and pin
 operations. It assigns no backlog, creates no worker session, and grants no merge
 authority. A repository tower registers by recording its setup in its own session.
-On each `/mct-claude`, the master verifies every unconfirmed tower's repository,
-session, and default branch from its own reads, then records and sends its
-confirmation. It reports a duplicate or mismatched tower to you instead. An idle
-master receives no message, so send `/mct-claude` there again after setting up a
-tower.
+On each `/mct-claude`, the master verifies every tower's repository, session, and
+default branch from its own reads, and reports a duplicate or mismatched tower to
+you. An idle master receives no message, so send `/mct-claude` there again after
+setting up a tower.
 
 ## Establish a repository tower in Claude Code
 
@@ -109,13 +108,10 @@ The skill resolves the display prefix with `shaka prefix`, renames the session t
 recorded setup in the session itself: the repository, session, default branch, and
 one-repository scope. That written record is the registration and
 makes the role durable: the master establishes ownership by reading the tower's
-session, and towers outlive the master that confirmed them.
+session, and towers outlive the master that verified them.
 
-The tower also sends the master a notice, reports `awaiting confirmation`, and ends
-its turn. When the master was idle, the tower names one step: open the master and
-send `/mct-claude`. The master's answer arrives as a labelled turn only while the
-tower is working; otherwise send `/rct-claude` in the tower again and it reads the
-answer from the master's session. Tower work does not wait for confirmation.
+The tower also sends the master a notice and waits for no reply. When the master
+was idle, the tower names one step: open the master and send `/mct-claude`.
 
 The two hosts cannot see each other's sessions, so a Claude master coordinates Claude
 repository towers and a Codex master coordinates Codex ones. Do not mix hosts within
