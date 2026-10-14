@@ -27,10 +27,8 @@ event or recorded tool call confirms invocation/loading; name that record in
 `corroboration`. Both labels are agent-assessed. Ruby validates metadata, not
 evidence truth, procedural compliance, or completeness.
 
-If the task record is lost, recover reported data from the owning PR's rendered
-table: read cell values rather than escaped Markdown, map display labels to the
-lowercase evidence values above, and map `—` to null. The PR supplies no loading
-authority. If neither record survives, leave coverage unknown.
+When the task record is lost, load [skill recovery](skill-attribution-recovery.md)
+before starting a replacement list.
 
 Before publication, replace private names, sources, revisions, and contribution
 details with `Undisclosed private skill`, `UNKNOWN`, or a public-safe account of use.
