@@ -10,6 +10,7 @@ require_relative 'wip_details'
 require_relative 'settings'
 require_relative 'steps_besides_merging'
 require_relative 'human_comments'
+require_relative 'skills_used'
 require_relative '../publication_sections'
 
 module Shaka
@@ -18,7 +19,7 @@ module Shaka
     # With the pull request being replaced, the provenance history carries forward from its body.
     def self.description(content, workflow_version = nil, pull = nil, settings = nil)
       new(content, require_tables: true, workflow_version:, pull:, settings:)
-        .render(%i[checkpoint top_links sections table provenance details wip])
+        .render(%i[checkpoint top_links sections table provenance skills_used details wip])
     end
 
     def self.comment(content) = new(content).render([])
@@ -50,7 +51,7 @@ module Shaka
     def checkpoint = PublicationLinks.checkpoint(@content, head: @pull&.dig('head', 'sha'))
 
     # The steps besides merging sit under the headline links so a reader cannot miss them.
-    def top_links = [*PublicationLinks.top(@content, @settings.attribution?), *StepsBesidesMerging.render(@content)]
+    def top_links = [*PublicationLinks.top(@content, @settings, @pull), *StepsBesidesMerging.render(@content)]
 
     def table
       spec = @content['table']
@@ -61,8 +62,7 @@ module Shaka
       end
 
       columns = table_columns(spec)
-      rows = table_data_rows(spec, columns.size)
-      [[table_line(columns), table_line(['---'] * columns.size), *rows].join("\n")]
+      [[table_line(columns), table_line(['---'] * columns.size), *table_data_rows(spec, columns.size)].join("\n")]
     end
 
     def table_data_rows(spec, width)
@@ -101,13 +101,13 @@ module Shaka
       UsageDetails.refuse_free_form!(items)
       refuse_free_form_wip(items)
       refuse_supplied_history(items)
-      PublicationSettings.refuse_free_form!(items)
+      [PublicationSettings, SkillsUsed].each { |validator| validator.refuse_free_form!(items) }
     end
 
     # The note is optional because it disappears once GitHub confirms the outcome.
     def wip
       spec = @content['wip']
-      spec.nil? ? [] : [details_block(WipDetails.new(spec, location_redaction: @settings.location_redaction).detail)]
+      spec.nil? ? [] : [details_block(WipDetails.new(spec, path_redaction: @settings.path_redaction).detail)]
     end
 
     def refuse_free_form_wip(items)
@@ -136,6 +136,8 @@ module Shaka
       marked = detail.merge('body' => "#{detail['body']}\n\n#{ProvenanceHistory.marker(history)}")
       [details_block(marked), *ProvenanceHistory.detail(history)&.then { |item| details_block(item) }]
     end
+
+    def skills_used = [details_block(SkillsUsed.new(@content['skills_used']).detail)]
 
     def details_block(detail)
       summary = PublicationText.summary_text(detail['summary'], 'details summary')

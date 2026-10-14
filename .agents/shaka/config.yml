@@ -32,6 +32,7 @@ review:
       model_family: codex
     - provider: deepseek
       model_family: openrouter
+      # Review deadline defaults to 600 seconds; --timeout-seconds overrides it per run.
       model: deepseek/deepseek-v4.1-flash
       effort: low
     - provider: xai
@@ -50,7 +51,7 @@ branches:
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.
 
 wip:
-  include_locations: true # Default: publish workspace and session link in WIP Details.
+  include_checkout_path: true # Default: publish the checkout path in WIP Details; false keeps the chat link.
 
 pr_description:
   show_shaka_credit: true # Default: show a quiet Shaka website credit below the PR summary.

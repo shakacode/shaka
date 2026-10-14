@@ -73,8 +73,11 @@ under [reviews after merge](#reviews-after-merge).
 - A skipped, failed, missing, or stale review cannot satisfy a required gate.
   Only the authority that set a requirement may change it.
 - The Shaka repository's Claude Action skips changes to its own workflow and
-  reports **UNAVAILABLE**. A successful model run remains **UNVERIFIED** until
-  the owner reads its visible report for the reviewed commit.
+  fails the Claude check as **UNAVAILABLE**. Successful execution also needs a
+  new head-bound report with its closing findings attestation to pass that check.
+  **REPORT POSTED** verifies presence; the owner must read and handle its findings.
+  An independent local review can satisfy the separate review requirement when
+  the Claude job is optional; it does not turn that failed job green.
 - Claude `--bare` ignores keychain/OAuth credentials. Its “Not logged in” message
   does not prove the normal signed-in CLI is unavailable.
 
@@ -222,9 +225,12 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
    empty comment, skipped run, quota error, or `is_error: true` does not establish a
    successful review.
 2. Check each finding against the code and requirements. Reproduce important
-   defects, fix them with focused tests, and explain the result on the original
-   thread. Briefly explain declined findings; do not implement speculative requests
-   or create follow-up issues merely because a bot suggested them.
+   defects on the runtime and dependency versions the repository's required checks
+   use. A pass on another version does not dismiss a finding; if those versions are
+   unavailable locally, say so and run the regression through those checks. Fix
+   them with focused tests, and explain the result on the original thread. Briefly
+   explain declined findings; do not implement speculative requests or create
+   follow-up issues merely because a bot suggested them.
 3. After changes, run the affected checks and the repository's validation. Obtain review
    of the fix and affected behavior on the new commit, using the existing workflow
    or its documented re-review mechanism. A stale finding may still apply; check it
@@ -235,6 +241,13 @@ It covers late reports, bounded waits, and the remaining owner's handoff.
    rounds, remaining nits do not start another cycle. If a
    reviewer fails or repeats the same unresolved concern without new evidence,
    report the blocker or concrete decision; do not loop or schedule retries.
+
+### Reuse the walkthrough for a correction
+
+When a commit repairs specific findings and leaves the task's goal, scope,
+dependencies, and repository settings unchanged, republish the previous walkthrough
+content for the new head and rewrite only the steps the repair changed. Publish it
+before the checkpoint. A small diff alone does not qualify a change.
 
 ## Reviews after merge
 

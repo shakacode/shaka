@@ -25,10 +25,8 @@ Set up Shaka just for me. Go.
 ```
 
 Individual settings remain outside commits in a repository without team setup.
-[Merged #420](https://github.com/shakacode/shaka/pull/420) added delivery support for
-individual reviewer choices, writing limits, opening instructions, and WIP preferences.
-Custom code-review instructions and checkpoint settings remain incomplete;
-[#481](https://github.com/shakacode/shaka/issues/481) tracks those gaps.
+They cover the same choices as shared settings: reviewers, custom code-review
+instructions, checkpoint choices, writing limits, opening instructions, and WIP preferences.
 
 The agent follows setup instructions to find existing commands and continue into
 your task. That is not proof of seamless first-user delivery. The
@@ -76,8 +74,7 @@ review happened.
 Public PRs must contain no private task content, operational settings, or
 private-content fingerprints. Expandable details are still public. WIP Details
 includes separate checkout-path and chat-locator fields, shown by default.
-The current [WIP setting](settings.md#wipinclude_locations) hides both together;
-[#482](https://github.com/shakacode/shaka/issues/482) tracks independent path visibility.
+The [WIP setting](settings.md#wipinclude_checkout_path) hides the checkout path and keeps the chat locator.
 Privacy still requires the agent to inspect the publication.
 
 ## Decide whether to merge

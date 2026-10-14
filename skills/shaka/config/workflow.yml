@@ -8,6 +8,9 @@ phases:
   - id: intake
     title: Intake
     body: |-
+      - When using a skill, record it immediately in the existing task record through
+        [skill attribution](<{{package_root}}/skills/shaka/references/skill-attribution.md>).
+        Include planning, implementation, review, and integration use; retain the list on resume.
       - A new work item received after this chat's previous PR closes starts Intake again,
         including the current workflow, claim, and checkpoint. Recommend a new chat for the
         new task; when the user keeps this chat, record its UTC start time before work and
@@ -499,7 +502,8 @@ phases:
         do not invoke a separate rewrite skill. The helper owns identity, headings,
         spacing, tables, details, and UNKNOWN fields. Description keys are `identity`, `summary`,
         optional `checkpoint`, `walkthrough` and `post_implementation`, required `deployment`, required `steps_besides_merging`, optional `decisions`, optional `sections`,
-        required `table`, required `provenance`, required `usage` (`note` and `records` from
+        required `table`, required `provenance`, optional `skills_used` from the task record,
+        required `usage` (`note` and `records` from
         `shaka usage --format json`), and `wip` while the PR is unfinished. A `details` item
         whose summary names usage is refused; walkthroughs also require `head`.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
@@ -518,7 +522,7 @@ phases:
         changes in a few lines; put evidence in details. Republish when status or action changes.
         Set `deployment` to `auto` to link the newest successful GitHub
         deployment of the PR head, falling back to the latest current-head Cloudflare Pages
-        check when successful from the Cloudflare GitHub App. It reports `none` when neither provides a URL.
+        check when successful from the Cloudflare GitHub App. When neither provides a URL, the description shows `Deployment: none found` for that head.
         Supply an https URL yourself when the preview exists only in another provider comment
         or CI log. Use an explicit URL to choose among several preview projects, or `none`
         when the repository deploys nothing for the change. The helper links it beside the walkthrough.
@@ -623,10 +627,10 @@ phases:
         as a collapsed `WIP Details` disclosure. Its workspace field carries the checkout path
         and its task field, published as Chat name, the current host title read before
         publication using that procedure; a suggested title alone is not a confirmed name.
-        Its thread field, published as Chat link, carries the host's link back to this session when the selected
-        `wip.include_locations` is `true`. Team and private setup both generate `true`. The description
-        renderer uses `REDACTED` for an explicitly false setting. Unread or unavailable settings
-        withhold both locations and explain the recovery action; ownership and the current commit remain visible. Inspect other supplied prose for private
+        Its thread field, published as Chat link, carries the host's link back to this session whatever
+        `wip.include_checkout_path` says. Team and private setup both generate `true`. The description
+        renderer uses `REDACTED` for the checkout path when the setting is explicitly false. Unread or unavailable settings
+        withhold the checkout path and explain the recovery action; the chat link, ownership, and the current commit remain visible. Inspect other supplied prose for private
         content. The chat link follows the guide's rule for the host: Codex builds it from
         `CODEX_THREAD_ID`, Claude Code asks the host for this session's metadata and publishes
         the `link` it returns, and any host the guide does not cover, or that reports no link,

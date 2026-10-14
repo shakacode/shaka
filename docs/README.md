@@ -28,6 +28,7 @@ Ask the agent to handle configuration. These guides explain your choices:
 - [Repository setup](configure-repository.md) — reuse your checks and review the setup PR.
 - [Choose your settings](settings-guide.md) — common choices and prompts for your agent.
 - [Coding agents](coding-agents.md) — invocation and installation for your environment.
+- [Install Shaka manually](manual-installation.md) — review and run the installer yourself.
 - [Upgrade an installation](migration.md) — preserve customizations when updating.
 
 ## Look deeper
@@ -38,7 +39,8 @@ Ask the agent to handle configuration. These guides explain your choices:
 - [Writing preferences](writing-preferences.md) — choose how the agent writes for your project.
 - [Workflow and enforcement](workflow.md) — what code checks and what relies on the agent.
 - [Architecture](architecture.md) — why Shaka keeps one owner and little state.
-- [Repository catalog](repository-catalog.md) and [control towers](control-towers.md) — optional tools across projects.
+- [Repository catalog](repository-catalog.md) — organize repositories across projects.
+- [Control towers](control-towers.md) — coordinate a batch across chats and decide which PRs to merge first.
 - [Try a Shaka PR](trying-pr-versions.md) — evaluate an unmerged change on real work.
 
 Development guidance lives in [Contributing](../CONTRIBUTING.md).

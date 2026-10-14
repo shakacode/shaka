@@ -112,7 +112,8 @@ than supplying their bodies.
 Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers.
 `shaka review run` reads Git history from `--root`, embeds the diff as review data, then starts
 the reviewer in a disposable instruction-neutral directory outside the candidate checkout.
-Reviewer subprocesses have a 300-second deadline by default; `--timeout-seconds 1..3600`
+DeepSeek/OpenRouter reviews have a 600-second deadline by default; CLI reviewers have 300 seconds.
+`--timeout-seconds 1..3600`
 sets a task-specific bound. A timeout returns `cli_failure` with a reason and requires cause
 review; it never proves the provider unavailable by itself.
 The prompt identifies the checkout path and exact commit for read-only Git inspection of
@@ -569,3 +570,7 @@ The [React on Rails review workflow](https://github.com/shakacode/react_on_rails
 is an example: it posts comments and inspects Claude's execution result because
 an unsuccessful review can otherwise report a successful action. Its separate
 `@claude` workflow is a different capability, not required by this ordinary path.
+
+When later evidence challenges a recommendation, including after merge, follow
+[record later review evidence](review-assessments.md). Assessments preserve the
+original triage and add no merge gate.

@@ -61,6 +61,7 @@ input. You can approve the approach, request revisions, or settle an open questi
 | What changes for users? | The description, preview, and visual comparisons when applicable. |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
 | How was it checked? | Validation results and independent review covering the current revision, including gaps. |
+| Which skills contributed? | **Skills used** lists the reported skills, their contributions, and evidence labels. |
 | What did people say? | **Human comments** in the description: each comment a person wrote, its reply, and whether it is still open. |
 | What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |
 | What do I need to do? | Open decisions and steps besides merging, with their timing and owner. |
@@ -69,6 +70,32 @@ For example, a CSV export PR may use a simple download instead of a background
 job. The walkthrough should explain that choice; tests should exercise the
 export behavior. You can then judge whether the approach suits the expected
 volume and whether important cases are missing.
+
+## Check the latest changes
+
+Before merging, open the PR to see how the change was checked. Tests and reviews
+should cover its latest code. For visible changes, look for results from using
+the app, including desktop and mobile where relevant. A review app should let
+you try the feature with the data and services it needs.
+
+Good checks also show that they can catch the problem. For example, a smoke test
+should pass on a healthy page and fail when required content is missing. This
+is a **negative control**.
+
+Use focused AI review for code and tests, and spend human review time on decisions
+that need your knowledge. An agent can check a billing calculation; someone who
+knows the contract must decide whether that is the right billing rule.
+
+## See which skills contributed
+
+Expand **Skills used** to see the skills reported during planning, implementation,
+review, and integration, with their sources and revisions when available.
+**Agent-reported** means the agent says it applied the skill. The agent selects
+**Corroborated** when it identifies a record confirming invocation or loading.
+Shaka checks metadata shape, not that record or instruction compliance.
+Contributions remain the agent's account, and completeness is unverified.
+Missing records show unknown coverage. Agents are instructed to withhold private
+skill identifiers; Ruby does not screen them.
 
 ## See what people said
 
@@ -80,10 +107,11 @@ sections:
 | From | Said | Response | Status |
 | --- | --- | --- | --- |
 | **Reviewer** maria | Finds the tester terms unclear; suggests template notation | — | **Open** |
-| Author sam | “you mean chat, not owner.” | “Changed the guide to use chat throughout…” | Resolved |
+| sam | “you mean chat, not owner.” | “Changed the guide to use chat throughout…” | Resolved |
 
-- **From** says whether the PR author or someone else wrote the comment. Agents
-  post from a person's account, so the account name cannot tell them apart.
+- **From** names the account. The PR author's comments show the account alone;
+  **Reviewer** marks one from another trusted account. Agents post from a person's
+  account, so the account name cannot tell a person from an agent.
   Every post a person did not write opens with the agent's 🤖 line, so a comment
   without it counts as a person's. A bot account's post, a post that opens with
   a hidden tool marker such as `<!-- shaka:reply:… -->`, and a superseded
@@ -243,7 +271,13 @@ commit exists; your agent publishes the screenshots first.
 
 The checkpoint explains one conclusion:
 **Proceed**, **Simplify/reframe**, or **Do not merge**. Substantive unresolved concerns
-hold readiness and Auto even when technical checks pass. Shaka blocks final merge
+hold readiness and Auto even when technical checks pass. When the checkpoint says
+**Proceed** and you decide a listed concern is acceptable, tell your agent, for example
+"I accept the unknown-frequency concern; merge as is." The agent republishes the
+checkpoint with your decision under **Concerns recorded as accepted by the maintainer**, and merge
+preparation continues. Shaka checks that a decision is recorded for each concern, not
+who made it, so read that list before you merge. Accepting a concern does not override
+**Simplify/reframe** or **Do not merge**. Shaka blocks final merge
 preparation without this account's published ready review or explicit opt-out for the
 current commit. A new commit needs fresh evidence. The reviewer judges value; Ruby
 checks the published result and commit, not the judgment’s quality.
@@ -279,6 +313,43 @@ When automation is impractical, the agent records the limitation and useful
 before/after evidence. Wording edits need documentation checks, not invented
 failing tests. Validation can select checks for affected files; required security
 checks still apply.
+
+## Corrections after review
+
+A correction repairs a review finding on a PR that was already validated, reviewed,
+and explained. It should cost in proportion to the repair, without lowering what the
+PR has to prove. Your agent checks the repair and the behavior it affects, then
+updates the existing PR once.
+
+| What you see on the PR | After a correction |
+| --- | --- |
+| The finding's thread | A reply with how the defect was reproduced, and the fix commit |
+| Repository validation and required checks | Run again for the new commit |
+| Local review | The configured reviewers review the new commit |
+| Hosted review | Awaited again when your repository's review settings require it for the change |
+| [Checkpoint](#checkpoint) | Run again; merging needs a checkpoint, or your explicit skip, for the exact commit |
+| Code walkthrough | The same walkthrough for the new commit, with only the affected steps rewritten |
+
+Evidence for an earlier commit is shown with that commit. It counts for the new one
+only where Shaka can prove nothing relevant changed, such as a clean merge of the
+base or a prose-only edit.
+
+Your agent reproduces a finding on the versions your repository's required checks use. In
+[PR #463](https://github.com/shakacode/shaka/pull/463), a credential-redaction finding
+was dismissed after a test on URI 1.1.1, which drops the password itself. CI used
+URI 1.0.3, which keeps it. The [replay](https://github.com/shakacode/shaka/blob/main/eval/reports/correction-replay-463.md)
+shows both results and the work each path performs.
+
+The walkthrough is reused only while the repair leaves the goal, scope, dependencies,
+and settings of the task unchanged. A small diff alone does not make a change low risk.
+
+To skip the checkpoint for one correction, tell your agent:
+
+```text
+Skip the checkpoint for this correction; the outcome is unchanged.
+```
+
+The PR can still merge, and it shows that no product review ran for that commit.
 
 ## Documentation changes
 

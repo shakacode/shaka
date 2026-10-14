@@ -218,9 +218,9 @@ class PublicationStructureTest < Minitest::Test
   def test_a_details_summary_cannot_close_its_own_disclosure
     rendered = render('details' => [{ 'summary' => 'Docs for </summary></details> handling', 'body' => 'b' }])
     assert_includes rendered, '<summary>Docs for &lt;/summary&gt;&lt;/details&gt; handling</summary>'
-    # Provenance, settings, usage with pricing notes, and supplied details.
-    assert_equal 5, rendered.scan('</summary>').size
-    assert_equal 5, rendered.scan('</details>').size
+    # Provenance, skills, settings, usage with pricing notes, and supplied details.
+    assert_equal 6, rendered.scan('</summary>').size
+    assert_equal 6, rendered.scan('</details>').size
   end
 
   def test_collections_that_are_not_lists_are_refused_rather_than_crashing
@@ -409,6 +409,26 @@ class PublicationDeploymentLinkTest < Minitest::Test
                     "Checkpoint: _Not published yet._\n\n## Outcome"
   end
 
+  # https://github.com/shakacode/shaka/issues/495: `auto` that found nothing rendered like an explicit `none`.
+  def test_an_empty_auto_lookup_names_the_head_beside_the_walkthrough_link
+    assert_includes render('deployment' => 'none', 'deployment_not_found_for' => 'abcdef0123' * 4),
+                    "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
+                    "Checkpoint: _Not published yet._ · Deployment: none found for `abcdef0`\n\n## Outcome"
+  end
+
+  def test_a_malformed_lookup_head_is_refused
+    error = assert_raises(Shaka::Error) { render('deployment' => 'none', 'deployment_not_found_for' => 'main`x') }
+    assert_includes error.message, 'deployment_not_found_for'
+  end
+
+  def test_a_lookup_for_another_head_is_refused
+    content = { 'deployment' => 'none', 'deployment_not_found_for' => 'a' * 40 }
+    top = ->(sha) { Shaka::PublicationLinks.top(content, Shaka::PublicationSettings.new, { 'head' => { 'sha' => sha } }) }
+    assert_includes top.call('a' * 40).last, 'none found for `aaaaaaa`'
+    error = assert_raises(Shaka::Error) { top.call('b' * 40) }
+    assert_includes error.message, 'current PR head'
+  end
+
   def test_a_missing_or_blank_deployment_is_refused
     [nil, '  '].each do |value|
       error = assert_raises(Shaka::Error) { render('deployment' => value) }
@@ -446,16 +466,17 @@ class PublicationWipDetailsTest < Minitest::Test
     assert_equal ['| Field | Value |', '| --- | --- |'], lines.first(2)
     labels = lines.drop(2).map { |line| line.split(' | ').first.delete_prefix('| ') }
     assert_equal Shaka::WipDetails::FIELDS.values, labels
-    assert_includes lines.join("\n"), '| Chat link | Withheld: settings not read; rerun description with --ref |'
+    assert_includes lines, '| Chat link | UNKNOWN |'
+    assert_includes lines, '| Workspace | Withheld: settings not read; rerun description with --ref |'
     assert_includes lines, '| Stopped because | paused |'
   end
 
-  def test_unknown_policy_withholds_supplied_locations_without_claiming_redaction
-    wip = WIP.merge('workspace' => '/private/customer/project', 'thread' => 'https://private.example/session')
+  def test_unknown_policy_withholds_the_checkout_path_without_claiming_redaction
+    wip = WIP.merge('workspace' => '/private/customer/project', 'thread' => 'claude://claude.ai/epitaxy/local_1')
     rendered = render(wip)
-    assert_includes rendered, 'Withheld: settings not read; rerun description with --ref'
+    assert_includes rendered, '| Workspace | Withheld: settings not read; rerun description with --ref |'
     refute_includes rendered, '/private/customer/project'
-    refute_includes rendered, 'https://private.example/session'
+    assert_includes rendered, '| Chat link | claude://claude.ai/epitaxy/local_1 |'
     refute_includes rendered, 'REDACTED'
   end
 

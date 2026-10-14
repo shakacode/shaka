@@ -27,22 +27,23 @@ module PrivateDeliveryEvidence
     output
   end
 
-  def review_result(*options)
+  def review_result(*options, head: @ref, error: nil)
     reviewer = invoke('reviewer', '--implementer', 'openai/codex')['reviewer']
     Dir.mktmpdir('review-cli', @state) do |bin|
       write_executable(bin, reviewer.split('/').last, delivery_reviewer)
-      run_review_cli(bin, reviewer, options)
+      output, stderr, status = run_review_cli(bin, reviewer, head, options)
+      assert_equal error.nil?, status.success?, "#{output}\n#{stderr}"
+      assert_includes output + stderr, error if error
+      output
     end
   end
 
-  def run_review_cli(bin, reviewer, options)
-    output, error, status = Open3.capture3(
+  def run_review_cli(bin, reviewer, head, options)
+    Open3.capture3(
       { 'PATH' => "#{bin}:#{ENV.fetch('PATH')}", 'REVIEW_TRACE' => File.join(@state, 'reviewer.json') },
-      PrivateDeliveryFixture::COMMAND, 'review', 'run', '--root', @root, '--base', @ref, '--head', @ref,
+      PrivateDeliveryFixture::COMMAND, 'review', 'run', '--root', @root, '--base', @ref, '--head', head,
       '--reviewer', reviewer, '--settings-ref', @ref, '--repository', 'owner/repo', *options
     )
-    assert_predicate status, :success?, "#{output}\n#{error}"
-    output
   end
 
   def assert_reviewer_arguments(*expected)
@@ -138,7 +139,8 @@ module PrivateDeliveryFixture
   def write_private
     FileUtils.mkdir_p(File.join(@root, '.agents/shaka/bin'))
     create_new_commands(@root)
-    data = config.merge('wip' => { 'include_locations' => false }, 'opening_check' => { 'external_enabled' => false })
+    data = config.merge('wip' => { 'include_checkout_path' => false },
+                        'opening_check' => { 'external_enabled' => false })
     File.write(File.join(@root, '.agents/shaka/config.yml'), YAML.dump(data))
   end
 
