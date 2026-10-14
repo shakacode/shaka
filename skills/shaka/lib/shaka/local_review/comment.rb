@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'cgi'
+require 'digest'
 require_relative '../error'
 require_relative '../publication/publication'
 require_relative '../reviewer_selection'
@@ -212,6 +213,9 @@ module Shaka
       def reported_coverage = LocalReviewCoverage.new(@report).text
 
       def attestation = @report.strip.lines.last.strip
+
+      # Identifies the ledger this round opened: its report never changes once written.
+      def report_digest = Digest::SHA256.hexdigest(@report)
 
       def check_fixes_follow!
         return unless @findings.any? { |finding| finding.fixed? && finding.commit == @head }

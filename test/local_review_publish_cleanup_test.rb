@@ -37,6 +37,12 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
                         'body' => "<!-- shaka:reply:local-review-#{head} -->\n#{body}" }
     end
 
+    def add_continuation(key, head, id)
+      body = "# Local Adversarial Review · earlier commits (1)\n\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
+      @comments[id] = { 'id' => id, 'user' => { 'login' => viewer_login }, 'created_at' => '2026-10-04T00:00:00Z',
+                        'body' => "<!-- shaka:reply:#{key} -->\n#{body}" }
+    end
+
     def add_legacy_report
       source = @comments.fetch(1)
       body = source['body'].sub(/local-review-loop-[a-f0-9]+/, 'local-adversarial-review')
@@ -159,6 +165,27 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_equal 0, publish(github, content).first
     assert_equal 3, github.issue_comments.size
     assert_includes comment(github, 50), Shaka::LocalReviewHistory::MARKER
+  end
+
+  def test_a_failed_listing_of_replaced_comments_is_a_retryable_gap
+    github = per_commit_timeline
+    def github.issue_comments = raise(Shaka::Error, 'Listing denied')
+
+    status, result = publish(github, loop_content)
+    assert_equal 1, status
+    assert_includes result.fetch('cleanup').fetch('unavailable').join, 'Listing denied'
+    assert_equal 1, result.fetch('comments').size
+  end
+
+  def test_a_continuation_a_repacking_no_longer_writes_is_retired
+    github = Timeline.new
+    content = loop_content
+    key = Shaka::LocalReviewLoopComment.new(content).key
+    github.add_continuation("#{key}-1", EARLIER, 60)
+
+    assert_equal 0, publish(github, content).first
+
+    assert_includes comment(github, 60), Shaka::LocalReviewHistory::MARKER
   end
 
   def test_no_current_head_report_preserves_history_and_reports_the_skip

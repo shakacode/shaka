@@ -10,8 +10,8 @@ module Shaka
   # continuation comments; each comment closes with its newest round's attestation, where `merge` reads it.
   class LocalReviewLoopComment < LocalReviewComment
     LIMIT = 65_536
-    # Keyed by the ledger's first reviewed commit: the same loop republishes in place, while a fresh
-    # ledger gets its own comment and leaves reports it does not account for untouched.
+    # Keyed by the ledger's first reviewed commit and first report: the same loop republishes in
+    # place, while a fresh ledger gets its own comment, even from the same commit.
     LOOP_KEY = 'local-review-loop'
     FINDINGS = 'Findings, assessments, and execution metadata'
 
@@ -51,7 +51,7 @@ module Shaka
 
     def render = parts.first.body
 
-    def key = "#{LOOP_KEY}-#{@rounds.first.head}"
+    def key = "#{LOOP_KEY}-#{@rounds.first.head[0, 12]}-#{@rounds.first.report_digest[0, 12]}"
 
     # The main comment first, keeping the newest commits' reports that fit; the rest follow, oldest first.
     def parts

@@ -29,7 +29,8 @@ class LocalReviewCommitPublishTest < Minitest::Test
 
   def test_two_reviewers_per_commit_leave_one_idempotent_comment
     github = publish_loop
-    assert_equal ["local-review-loop-#{EARLIER}"], github.replies.map(&:first)
+    assert_equal 1, github.replies.size
+    assert_match(/\Alocal-review-loop-#{EARLIER[0, 12]}-\h{12}\z/, github.replies.first.first)
     assert_loop_comment(github.replies.first.last)
   end
 
@@ -187,12 +188,20 @@ class LocalReviewCommitSizeTest < Minitest::Test
     Shaka::LocalReviewPublisher.new(content, github, 'o/r').publish
 
     (main_key, main), (earlier_key, earlier) = github.replies
-    assert_equal ["local-review-loop-#{EARLIER}", "local-review-loop-#{EARLIER}-1"], [main_key, earlier_key]
+    assert_equal "#{main_key}-1", earlier_key
     assert_includes main, 'reports in earlier comment 1'
     refute_includes main, "<summary>Commit #{EARLIER[0, 7]}"
     assert_equal "REVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 1", main.lines.last.strip
     assert_includes earlier, "<summary>Commit #{EARLIER[0, 7]}"
     assert_equal "REVIEWED #{EARLIER} BY openai/codex EFFORT UNKNOWN FINDINGS 1", earlier.lines.last.strip
+  end
+
+  def test_separate_ledgers_from_the_same_commit_keep_separate_comments
+    first = { 'rounds' => [round(EARLIER)] }
+    second = { 'rounds' => [round(EARLIER, report: report(EARLIER, body: "2. [P1] Other finding.\n"))] }
+
+    refute_equal comment(first).key, comment(second).key
+    assert_equal comment(first).key, comment(JSON.parse(JSON.generate(first))).key
   end
 
   def test_one_commit_too_large_for_any_comment_prevents_all_writes
@@ -210,7 +219,7 @@ class LocalReviewCommitSizeTest < Minitest::Test
   def near_limit_content
     last = round(report: report(body: ''))
     content = { 'rounds' => [round(EARLIER), last] }
-    marker = "<!-- shaka:reply:local-review-loop-#{EARLIER} -->\n"
+    marker = "<!-- shaka:reply:#{comment(content).key} -->\n"
     padding = 65_536 - marker.length - comment(content).render.length + 1
     last['report'] = report(body: 'x' * padding)
     content

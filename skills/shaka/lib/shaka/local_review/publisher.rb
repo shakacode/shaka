@@ -16,30 +16,34 @@ module Shaka
 
     def publish
       summary = LocalReviewComment.new(@content).loop_summary
-      parts = LocalReviewLoopComment.new(@content, repository: @repository,
+      @loop = LocalReviewLoopComment.new(@content, repository: @repository,
                                                    usage_url: "https://github.com/#{@repository}/pull/#{@github.number}",
                                                    published: ->(sha) { !commit(sha).nil? },
-                                                   subject: ->(sha) { subject(sha) }).parts
+                                                   subject: ->(sha) { subject(sha) })
+      parts = @loop.parts
       parts.each { |part| part.check_rendering!(@github.verify_rendering(part.body)) }
       results = parts.map { |part| @github.reply(body: part.body, key: part.key) }
-      { 'comments' => results, 'summary' => summary, 'cleanup' => cleanup(results) }
+      { 'comments' => results, 'summary' => summary, 'cleanup' => cleanup(results, parts.size) }
     end
 
     private
 
-    # Comments from the per-commit publisher that this ledger covers are retired with the rest.
-    def cleanup(results)
-      ids = results.map { |result| result.fetch('id') } + per_commit_comments
+    # Also retires comments this ledger replaced: the per-commit publisher's, and continuations a
+    # repacking no longer writes. A failed lookup is reported, never mistaken for nothing to retire.
+    def cleanup(results, count)
+      ids = results.map { |result| result.fetch('id') } + replaced(count)
       LocalReviewHistory.new(@github, ids:).collapse
+    rescue Error => e
+      { 'collapsed' => [], 'unavailable' => ["Replaced review comments could not be listed: #{e.message}"] }
     end
 
-    def per_commit_comments
+    def replaced(count)
       marks = @content.fetch('rounds').map { |round| "<!-- shaka:reply:local-review-#{round.fetch('head')} -->\n" }
+      stale = /\A<!-- shaka:reply:#{Regexp.escape(@loop.key)}-(\d+) -->\n/
       @github.issue_comments.filter_map do |comment|
-        comment['id'] if marks.any? { |mark| comment['body'].to_s.start_with?(mark) }
+        body = comment['body'].to_s
+        comment['id'] if marks.any? { |mark| body.start_with?(mark) } || body[stale, 1].to_i >= count
       end
-    rescue Error
-      []
     end
 
     # Cache both the subject and existence; a 404 names an unpushed or replaced commit.

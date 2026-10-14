@@ -476,15 +476,12 @@ attributed, unverified literal text. Missing or ambiguous coverage stays UNKNOWN
 The newest round's attestation closes the comment, where `merge` reads it.
 A commit GitHub does not have, such as one a rebase replaced, is named without a link or subject.
 
-The comment's key names the ledger's first reviewed commit, so republishing the same loop edits
-it in place, while a fresh ledger gets its own comment and leaves reports it does not account for
-untouched. When the reports would pass GitHub's 65,536-character limit, the oldest commits'
-reports move into `earlier commits` continuation comments, packed in ledger order; the main
-comment keeps every commit's table row and names the continuation holding its reports. Each
-continuation closes with its newest round's attestation. A single commit too large for one
-comment is refused. All comments are rendered and checked before any is posted; after a
-partial GitHub write failure, retry the same content file to update posted entries and
-finish the rest.
+Republishing the same ledger edits its comment in place; a fresh ledger gets its own comment
+and leaves reports it does not account for untouched. When reports would pass GitHub's
+65,536-character limit, the oldest commits' reports move into `earlier commits` continuation
+comments. One commit whose reports cannot fit any comment is refused: shorten its reports and
+publish again. All comments are rendered and checked before any is posted; after a partial
+GitHub write failure, retry the same content file to update posted entries and finish the rest.
 
 The result's `comments` lists the published entries, and `summary` gives totals across the loop
 and its outcome. Copy that summary into the PR description's review history details; native
@@ -515,8 +512,8 @@ The standalone command also lists confirmed edits and unavailable cleanup. A fai
 edit returns a nonzero exit; inspect the failure before retrying.
 Without a visible owned current-head report, cleanup skips without failing. If the
 PR returns to a previously archived head, republish its report before cleanup.
-Legacy, per-commit, and loop Shaka review keys are all recognized, and a loop comment
-outranks a per-commit comment for the same head. Cleanup can run independently after publishing.
+Legacy, per-commit, and loop Shaka review keys are all recognized. Cleanup can run
+independently after publishing.
 
 After assessing completed CI feedback, also minimize obsolete bot review reports
 and notices with GitHub's native **outdated** disclosure. Read them with `shaka comments`
