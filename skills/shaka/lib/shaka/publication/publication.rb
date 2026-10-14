@@ -19,7 +19,7 @@ module Shaka
     # With the pull request being replaced, the provenance history carries forward from its body.
     def self.description(content, workflow_version = nil, pull = nil, settings = nil)
       new(content, require_tables: true, workflow_version:, pull:, settings:)
-        .render(%i[checkpoint top_links sections table provenance skills_used details wip])
+        .render(%i[top_links sections table provenance skills_used details wip], lead: %i[checkpoint])
     end
 
     def self.comment(content) = new(content).render([])
@@ -39,9 +39,11 @@ module Shaka
       @settings = settings || PublicationSettings.new
     end
 
-    def render(parts, title: false)
+    # A description leads with the maintainer's decision, so lead parts come before the summary.
+    def render(parts, title: false, lead: [])
       blocks = [PublicationText.publisher_identity(@content)]
       blocks << '# Code Walkthrough' if title
+      lead.each { |part| blocks.concat(send(part)) }
       blocks << PublicationText.required(@content['summary'], 'summary')
       parts.each { |part| blocks.concat(send(part)) }
       "#{blocks.join("\n\n")}\n"

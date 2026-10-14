@@ -948,7 +948,7 @@ class PublicationCheckpointTest < Minitest::Test
     body = Shaka::Publication.description(content, nil, PULL)
     assert_includes body, "## Recommendation: Revise before merge\n\n**Next:** Justin: choose the simpler parser"
     assert_includes body, "Head [`aaaaaaa`](https://github.com/acme/widgets/commit/#{HEAD})"
-    assert_operator body.index('## Recommendation:'), :<, body.index('| Check |')
+    assert_operator body.index('## Recommendation:'), :<, body.index('Review the current result.')
     refute_includes body, "`#{HEAD}`"
   end
 
@@ -957,6 +957,7 @@ class PublicationCheckpointTest < Minitest::Test
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, "<!-- shaka:decisions -->\n## Decisions to make\n\n- Keep the parser?\n\n**Next:**"
+    assert_operator body.index('## Decisions to make'), :<, body.index('Review the current result.')
     refute_includes body, '## Recommendation:'
   end
 
