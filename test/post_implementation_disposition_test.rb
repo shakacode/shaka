@@ -41,6 +41,7 @@ class PostImplementationDispositionTest < Minitest::Test
         assert_equal 0, status
         assert_owner_decision(github, result)
         assert_raises(Shaka::Error) { Shaka::PostImplementationEvidence.new(github).call('a' * 40) }
+        assert_equal recommendation, Shaka::PostImplementationEvidence.new(github).recommendation('a' * 40)
       end
     end
   end
@@ -53,6 +54,7 @@ class PostImplementationDispositionTest < Minitest::Test
       assert_equal 0, status
       assert_owner_decision(github, result)
       assert_equal 'ready', Shaka::PostImplementationEvidence.new(github).call('a' * 40)['basis']
+      assert_equal 'Merge', Shaka::PostImplementationEvidence.new(github).recommendation('a' * 40)
     end
   end
 end

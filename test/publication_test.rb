@@ -961,14 +961,12 @@ class PublicationCheckpointTest < Minitest::Test
     refute_includes body, '## Recommendation:'
   end
 
-  def test_open_decisions_lead_over_a_published_revision_but_refuse_merge
+  def test_open_decisions_lead_even_over_a_published_merge
     data = content.merge('decisions' => ['Keep the parser?'])
+    data['checkpoint']['recommendation'] = 'Merge'
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, '## Decisions to make'
     refute_includes body, '## Recommendation:'
-    data['checkpoint']['recommendation'] = 'Merge'
-    error = assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
-    assert_includes error.message, 'open decisions'
   end
 
   def test_recommendation_must_be_a_known_disposition

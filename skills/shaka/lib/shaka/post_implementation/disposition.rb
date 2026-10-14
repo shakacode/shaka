@@ -77,12 +77,12 @@ module Shaka
        evidence_lines(report, disposition), supporting_analysis(report, verification)].join("\n\n")
     end
 
-    # The hidden disposition line lets a description read this recommendation for the same head.
+    # The hidden disposition line, rendered above the attestation, lets a description read this recommendation.
     def evidence_lines(report, disposition)
       accepted = disposition.fetch('accepted_concerns')
+      @disposition_line = PostImplementationEvidence.disposition(disposition.fetch('recommendation'))
       open = report.merge('concerns' => PostImplementationDisposition.unresolved(report, accepted))
-      [concern_section(open), *accepted_section(accepted),
-       PostImplementationEvidence.disposition(disposition.fetch('recommendation'))].join("\n\n")
+      [concern_section(open), *accepted_section(accepted)].join("\n\n")
     end
 
     def accepted_section(accepted)

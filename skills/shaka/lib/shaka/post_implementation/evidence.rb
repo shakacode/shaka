@@ -12,8 +12,11 @@ module Shaka
 
     def self.attestation(head, state) = "<!-- #{MARK} #{head} #{state} -->"
 
-    # The owner's disposition, kept beside the attestation so a description can read it for the same head.
-    DISPOSITION = /^<!-- #{MARK}-disposition (#{PostImplementationReport::RECOMMENDATIONS.join('|')}) -->$/
+    # The owner's disposition sits on the line directly above the attestation, so free text earlier in the
+    # report cannot plant one, and it counts only when it agrees with the attested state.
+    RECOMMENDATION = PostImplementationReport::RECOMMENDATIONS.join('|')
+    DISPOSITION = Regexp.new("\n<!-- #{MARK}-disposition (#{RECOMMENDATION}) -->" \
+                             "\n<!-- #{MARK} ([0-9a-f]{40}) (ready|blocked) -->\\s*\\z")
     def self.disposition(recommendation) = "<!-- #{MARK}-disposition #{recommendation} -->"
 
     def initialize(github, enabled: true)
@@ -36,8 +39,8 @@ module Shaka
 
     # The latest checkpoint's owner recommendation, or nil when that checkpoint is for another head or has none.
     def recommendation(head)
-      body = latest&.fetch('body', '').to_s
-      body[DISPOSITION, 1] if body.match(ATTESTATION)&.captures&.first == head
+      recommendation, reviewed, state = latest&.fetch('body', '').to_s.match(DISPOSITION)&.captures
+      recommendation if reviewed == head && (recommendation == 'Merge') == (state == 'ready')
     end
 
     private

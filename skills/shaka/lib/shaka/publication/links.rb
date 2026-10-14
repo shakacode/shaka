@@ -31,15 +31,13 @@ module Shaka
        "**Next:** #{action} · Head #{PublicationText.commit(head, pull.dig('base', 'repo', 'full_name'))}"]
     end
 
-    # Open decisions are the heading while they last; the published checkpoint's recommendation follows them.
+    # Open decisions are the heading while they last, even over a Merge checkpoint; its recommendation follows them.
     # Without one for this head, such as while the checkpoint is pending or failed, the heading says so.
     def checkpoint_heading(recommendation, decisions)
       recommendations = PostImplementationReport::RECOMMENDATIONS
       unless recommendation.nil? || recommendations.include?(recommendation)
         raise Error, "Description checkpoint recommendation must be one of: #{recommendations.join(', ')}."
       end
-      raise Error, 'A Merge checkpoint cannot head a description with open decisions.' if
-        recommendation == 'Merge' && decisions.any?
       return decisions if decisions.any?
 
       [recommendation ? "## Recommendation: #{recommendation}" : '## No recommendation yet']

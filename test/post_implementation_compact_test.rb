@@ -8,7 +8,7 @@ class PostImplementationCompactTest < Minitest::Test
   def test_routine_report_keeps_the_decision_visible_and_states_the_conclusion_once
     visible = routine_report.split('<details>', 2).first
 
-    assert_includes visible, '## Recommendation: Merge if CI passes'
+    assert_includes visible, '## Reviewer recommendation: Merge if CI passes'
     assert_match(%r{# Checkpoint for \[`aaaaaaa`\]\(https://github.com/example/test/commit/a{40}\)}, visible)
     assert_includes visible, '**Unresolved concerns:** None.'
     refute_includes visible, 'after required checks and approvals'
@@ -36,7 +36,7 @@ class PostImplementationCompactTest < Minitest::Test
         visible = rendered(result, path).split('<details>', 2).first
 
         assert_includes visible, "**Unresolved concerns:**\n\n- Notes cannot be recovered.\n- Recovery is unverified."
-        refute_includes visible, '## Recommendation: Merge if CI passes'
+        refute_includes visible, '## Reviewer recommendation: Merge if CI passes'
         assert_includes visible, "**Reviewer verdict:** #{conclusion}\n\nThe approach needs attention."
       end
     end
@@ -51,7 +51,7 @@ class PostImplementationCompactTest < Minitest::Test
 
         assert_includes visible, 'The provider could not complete this review.'
         assert_match(/# Checkpoint for .*a{40}/, visible)
-        refute_includes visible, '## Recommendation: Merge if CI passes'
+        refute_includes visible, '## Reviewer recommendation: Merge if CI passes'
       end
     end
   end

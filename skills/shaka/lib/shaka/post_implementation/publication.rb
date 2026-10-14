@@ -38,7 +38,7 @@ module Shaka
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
       body += "\n\n#{SquashComment.body(@head, @message.call)}" if @state == 'ready'
-      "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n" +
+      "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n#{"#{@disposition_line}\n" if @disposition_line}" +
         PostImplementationEvidence.attestation(@head, @state)
     end
 
@@ -71,7 +71,7 @@ module Shaka
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = @summary = report.fetch('summary', report.fetch('reasons').first)
-      ["## Recommendation: #{action}", "**Next:** #{owner_action(report, next_action)}",
+      ["## Reviewer recommendation: #{action}", "**Next:** #{owner_action(report, next_action)}",
        "**Reviewer verdict:** #{report.fetch('conclusion')}", summary,
        concern_section(report), supporting_analysis(report, summary)].join("\n\n")
     end
