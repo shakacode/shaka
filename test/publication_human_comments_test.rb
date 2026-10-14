@@ -352,16 +352,18 @@ end
 class PublicationHumanCommentQuotationTest < Minitest::Test
   include HumanCommentsFixture
 
-  # Each note is the publisher's own wording for a host it cannot read, so a reworded note fails here.
+  # Each note is the publisher's own wording for a host it cannot read, placed by the comment
+  # renderer, so rewording a note or moving it fails here.
   def test_the_response_skips_a_publisher_note_under_the_agent_s_identity_line
     hosts = [{}, { 'CLAUDE_CODE_SESSION_ID' => 'none' }, { 'CODEX_THREAD_ID' => 'none' }]
 
     hosts.each do |host|
-      unread = host.merge('HOME' => '/nonexistent')
-      note = Shaka::PublisherAttribution.prepare({}, environment: unread)['publisher_note']
+      content = { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'Shortened the prompt.' }
+      noted = Shaka::PublisherAttribution.prepare(content, environment: host.merge('HOME' => '/nonexistent'))
 
+      assert_includes Shaka::Publication.comment(noted), "_#{noted.fetch('publisher_note')}_"
       assert_equal [["[“Shortened the prompt\\.”](#{URL}#discussion_r2)"]],
-                   columns(answered("#{IDENTITY}\n\n_#{note}_\n\nShortened the prompt."), 2), note
+                   columns(answered(Shaka::Publication.comment(noted)), 2), host
     end
   end
 
