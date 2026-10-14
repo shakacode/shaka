@@ -290,8 +290,11 @@ not an automatic Ruby snapshot or an extra human approval at every return point.
 The PR description opens with the recommendation as a heading, such as
 **Recommendation: Merge**, with **Decisions to make** while you have questions to answer,
 or with **Not ready to merge** before the agent has a recommendation.
-The next action follows on one line with the short, linked commit it applies to, and the
-links below it open the walkthrough, the detailed code review, and the full checkpoint. Your agent summarizes
+The next action follows on one line with the short, linked commit it applies to. After
+the summary, links open the walkthrough, the detailed code review when one was published,
+and the full checkpoint. Your agent writes the heading from its checkpoint: Shaka checks
+that it names one of the four recommendations and waits for open decisions, but not that
+it matches the published checkpoint, so open the Checkpoint link before you merge. Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.
 Supporting evidence appears below.
 The report keeps the **Reviewer verdict** within the checkpoint. A recommendation becomes a
