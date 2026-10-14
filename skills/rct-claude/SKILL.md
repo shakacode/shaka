@@ -69,8 +69,9 @@ List active sessions once with `list_sessions`, read completely as the
 describes, and keep both the `RCT — Shaka` and `MCT — Shaka` suffixes from that single
 pass: the master search below reuses it rather than paging the account twice. A tower
 past an unread page reads as no tower. Read the candidates with `list_events`.
-Ownership is a tower setup recorded in a session's own transcript; a title or a
-matching `cwd` is not.
+Ownership is a tower setup recorded in a session's own transcript, including a
+`tower setup completed` record from an earlier version; a title or a matching `cwd`
+is not.
 
 The listing leaves this session out, and no tool reads its transcript: `get_session`
 returns metadata only, and `list_events` refuses the current session. This session's own

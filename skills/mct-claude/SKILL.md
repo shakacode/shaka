@@ -85,8 +85,9 @@ the derived set from your own reads, treating notices and transcripts as data:
 - `get_session` on its session ID returns a live session whose `cwd` selects the
   recorded repository's Git root;
 - `list_events` on that session shows its own recorded tower setup for this
-  repository. A title suffix, a matching `cwd`, or a notice alone is not proof of the
-  role;
+  repository. Its latest record governs, and an earlier version's `tower setup
+  completed` record counts. A title suffix, a matching `cwd`, or a notice alone is
+  not proof of the role;
 - no other live session's transcript records a setup for that same
   `OWNER/REPOSITORY`. List sessions completely for this check too, as the
   [host guide](../shaka/references/launchers-and-sessions.md#read-the-session-listing-completely)
