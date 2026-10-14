@@ -40,9 +40,11 @@ module ReviewTimingFixture
 
   def stored(path) = JSON.parse(File.read(path))
 
+  def attempts(path) = File.readlines("#{path}.attempts.jsonl").map { |line| JSON.parse(line) }
+
   def assert_attempt(path, stage, attempted)
-    assert_empty stored(path).fetch('rounds')
-    attempt = stored(path).fetch('attempts').last
+    assert_empty stored(path).fetch('rounds') if File.exist?(path)
+    attempt = attempts(path).last
     assert_equal stage, attempt.fetch('failure_stage')
     assert_equal attempted, attempt.fetch('attempted')
   end
@@ -57,7 +59,7 @@ class LocalReviewTimingTest < Minitest::Test
       fake_codex(bin, head)
       result = timed_run(root, base, head, bin, path, expected: 'completed',
                                                       env: { 'REVIEW_TRACE' => File.join(bin, 'trace.json') })
-      assert_completed_timing(result, stored(path))
+      assert_completed_timing(result, stored(path), attempts(path))
     ensure
       cleanup_artifacts(result)
     end
@@ -68,9 +70,9 @@ class LocalReviewTimingTest < Minitest::Test
       write_executable(bin, 'codex', "#!/bin/sh\necho private-diagnostic >&2\nexit 42\n")
       2.times { cleanup_artifacts(timed_run(root, base, head, bin, path)) }
       assert_attempt(path, 'cli_failure', true)
-      assert_equal 2, stored(path).fetch('attempts').size
-      refute_includes File.read(path), 'private-diagnostic'
-      refute_includes File.read(path), 'diagnostic_path'
+      assert_equal 2, attempts(path).size
+      refute_includes File.read("#{path}.attempts.jsonl"), 'private-diagnostic'
+      refute_includes File.read("#{path}.attempts.jsonl"), 'diagnostic_path'
     end
   end
 
@@ -120,34 +122,12 @@ class LocalReviewTimingTest < Minitest::Test
     end
   end
 
-  def test_refused_start_keeps_existing_history_and_returns_unretained_timing
-    with_timed_review do |root, base, head, bin, path|
-      fake_codex(bin, head)
-      cleanup_artifacts(timed_run(root, base, head, bin, path, expected: 'completed',
-                                                               env: { 'REVIEW_TRACE' => File.join(bin, 'trace.json') }))
-      original = File.read(path)
-      result = timed_run(root, base, base, bin, path)
-      assert_equal 'not_retained', result.fetch('timing_retention')
-      assert_equal original, File.read(path)
-    end
-  end
-
-  def test_malformed_ledger_returns_timing_and_keeps_original_bytes
-    with_timed_review do |root, base, head, bin, path|
-      File.write(path, '{invalid')
-      result = timed_run(root, base, head, bin, path)
-      assert_equal 'setup_failure', result.fetch('failure_stage')
-      assert_equal 'not_retained', result.fetch('timing_retention')
-      assert_equal '{invalid', File.read(path)
-    end
-  end
-
   private
 
-  def assert_completed_timing(result, saved)
+  def assert_completed_timing(result, saved, attempts)
     timing = result.slice('started_at', 'duration_ms')
     assert_equal timing, saved.fetch('rounds').first.slice(*timing.keys)
-    attempt = saved.fetch('attempts').first
+    attempt = attempts.first
     assert_equal timing, attempt.slice(*timing.keys)
     assert_equal result.values_at('head', 'reviewer', 'status'), attempt.values_at('head', 'reviewer', 'status')
     assert attempt.fetch('attempted')
@@ -158,7 +138,7 @@ class LocalReviewTimingTest < Minitest::Test
     assert_operator result.fetch('duration_ms'), :<, 6000
     assert_equal 1, result.fetch('timeout_seconds')
     assert_attempt(path, 'cli_failure', true)
-    assert_equal 1, stored(path).fetch('attempts').first.fetch('timeout_seconds')
+    assert_equal 1, attempts(path).first.fetch('timeout_seconds')
   end
 end
 
@@ -204,11 +184,15 @@ class ReviewTimingLedgerConcurrencyTest < Minitest::Test
     parallel_attempts
     saved = JSON.parse(File.read(@path))
     assert_equal 1, saved.fetch('rounds').size
-    assert_equal %w[openai/codex anthropic/claude].sort, saved.fetch('attempts').map { |a| a['reviewer'] }.sort
+    assert_equal %w[openai/codex anthropic/claude].sort, attempt_reviewers.sort
     assert_equal [1], ledger.record!({ 'findings' => [] })
   end
 
   private
+
+  def attempt_reviewers
+    File.readlines("#{@path}.attempts.jsonl").map { |line| JSON.parse(line)['reviewer'] }
+  end
 
   def parallel_attempts
     [ledger, ledger].zip(%w[openai/codex anthropic/claude]).map do |reader, reviewer|
@@ -219,5 +203,66 @@ class ReviewTimingLedgerConcurrencyTest < Minitest::Test
                                'started_at' => Time.now.utc.iso8601, 'duration_ms' => 1000)
       end
     end.each(&:value)
+  end
+end
+
+class LocalReviewTimingRecoveryTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+  include ReviewTimingFixture
+
+  def test_refused_start_keeps_existing_history_and_retains_timing
+    with_timed_review do |root, base, head, bin, path|
+      fake_codex(bin, head)
+      cleanup_artifacts(timed_run(root, base, head, bin, path, expected: 'completed',
+                                                               env: { 'REVIEW_TRACE' => File.join(bin, 'trace.json') }))
+      original = File.read(path)
+      result = timed_run(root, base, base, bin, path)
+      assert_equal 'retained', result.fetch('timing_retention')
+      assert_equal 2, attempts(path).size
+      assert_equal original, File.read(path)
+    end
+  end
+
+  def test_malformed_ledger_returns_timing_and_keeps_original_bytes
+    with_timed_review do |root, base, head, bin, path|
+      File.write(path, '{invalid')
+      result = timed_run(root, base, head, bin, path)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_equal 'retained', result.fetch('timing_retention')
+      assert_equal '{invalid', File.read(path)
+    end
+  end
+
+  def test_repeated_pre_start_failures_then_success_keep_every_attempt
+    with_timed_review do |root, base, head, bin, path|
+      2.times { timed_run(root, base, base, bin, path) }
+      refute_path_exists path
+      fake_codex(bin, head)
+      result = timed_run(root, base, head, bin, path, expected: 'completed',
+                                                      env: { 'REVIEW_TRACE' => File.join(bin, 'trace.json') })
+      assert_equal(%w[not_completed not_completed completed], attempts(path).map { |a| a['status'] })
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_corruption_during_review_returns_timing_without_rewriting_history
+    with_timed_review do |root, base, head, bin, path|
+      corrupting_codex(bin, head, path)
+      result = timed_run(root, base, head, bin, path)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_equal '{invalid', File.read(path)
+      assert_equal 'not_completed', attempts(path).last.fetch('status')
+    end
+  end
+
+  private
+
+  def corrupting_codex(bin, head, path)
+    write_executable(bin, 'codex', <<~RUBY_SCRIPT)
+      #!/usr/bin/env ruby
+      File.write(#{path.inspect}, '{invalid')
+      File.write(ARGV.fetch(ARGV.index('-o') + 1), "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n")
+    RUBY_SCRIPT
   end
 end

@@ -171,7 +171,7 @@ module Shaka
     # A run that ended without appending its round stops holding up the batch's record.
     def finish_ledger
       @ledger.finish! if @started && !@appended
-    rescue Shaka::Error, SystemCallError
+    rescue Shaka::Error, SystemCallError, JSON::ParserError
       nil
     end
 

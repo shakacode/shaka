@@ -112,16 +112,10 @@ than supplying their bodies.
 Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers.
 `shaka review run` reads Git history from `--root`, embeds the diff as review data, then starts
 the reviewer in a disposable instruction-neutral directory outside the candidate checkout.
-`review run` results include UTC `started_at` and monotonic `duration_ms` for runner setup,
-reviewer invocation and report validation, including failed outcomes. A validated deadline is
-`timeout_seconds`; elapsed time can exceed it because setup and cleanup also take time.
-Timing excludes caller settings capture, ledger retention, publication and human attention.
-With `--ledger`, completed rounds retain timing and a separate `attempts` list keeps
-terminal outcomes, including failures and retries, without counting it as a completed round.
-Attempts omit report, prompt, diagnostic and error prose. `timing_retention: not_retained`
-names a retention gap; timing remains in the returned result. Invalid budget options or a refused
-start leave existing ledger history unchanged. Earlier records have unknown
-durations. Calls refused before runner entry or killed before returning have no attempt result.
+Report `duration_ms` as elapsed runner setup, reviewer invocation and report validation;
+`started_at` is UTC and `timeout_seconds` is its validated deadline. With `--ledger`, retain
+terminal timing from the returned `attempt_log`; failed attempts remain separate from completed
+rounds. Report `timing_retention: not_retained` as a measurement gap. Keep missing durations UNKNOWN.
 
 Reviewer subprocesses have a 300-second deadline by default; `--timeout-seconds 1..3600`
 sets a task-specific bound. A timeout returns `cli_failure` with a reason and requires cause
