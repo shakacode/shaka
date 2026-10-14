@@ -825,12 +825,14 @@ Owner, revision, state, and next action also stay visible. When settings were
 not read or could not load, the description withholds the checkout path, says
 how to reload the settings, and still shows the chat locator.
 
-A chat locator such as `codex://threads/...` or `claude://...` is an identifier,
-not a copy of the conversation. It opens the chat only in the owner's own app, so
-a reader who sees it on a public PR cannot open or read the conversation with it.
-Writing WIP Details never creates a shared copy. Links from other hosts can have
-different access rules, so the agent checks the field before publishing.
-To keep a chat locator off a PR, tell the agent before it publishes.
+A supported chat locator, such as `codex://threads/...` or `claude://...`, is an
+identifier, not a copy of the conversation. It opens the chat only in the owner's
+own app, so a reader who sees one on a public PR cannot read the conversation with it.
+
+Shaka does not check the value. The agent supplies a supported locator or
+`UNKNOWN`, and never a link that shares conversation content. Links from other
+hosts can have different access rules. To keep a chat locator off a PR, tell the
+agent before it publishes.
 
 This setting controls the Workspace field only. It does not remove private
 information elsewhere in a PR, and expandable sections on public PRs are public too.
