@@ -290,8 +290,9 @@ not an automatic Ruby snapshot or an extra human approval at every return point.
 The PR description opens with **Decisions to make** while you have questions to answer.
 Otherwise it opens with the task owner's recommendation from the checkpoint published for
 that commit, such as **Recommendation: Merge**, or with **No recommendation yet** before the
-owner has recorded one. Shaka reads that heading from the checkpoint itself, so the two
-cannot disagree. A checkpoint that holds only the reviewer's verdict shows it as **Reviewer
+owner has recorded one. Shaka reads that heading from the latest checkpoint for that commit
+each time the description is published; your agent republishes the description when the
+checkpoint changes. A checkpoint that holds only the reviewer's verdict shows it as **Reviewer
 recommendation** and leaves the description at **No recommendation yet**.
 The next action follows on one line with the short, linked commit it applies to. After
 the summary, links open the walkthrough, the detailed code review when one was published,
