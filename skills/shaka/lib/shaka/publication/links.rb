@@ -31,16 +31,16 @@ module Shaka
        "**Next:** #{action} · Head #{PublicationText.commit(head, pull.dig('base', 'repo', 'full_name'))}"]
     end
 
-    # Open decisions are the heading while they last; the recommendation can be omitted until they close.
+    # Open decisions are the heading while they last, so a recommendation waits until they are answered.
     def checkpoint_heading(recommendation, decisions)
-      recommendations = PostImplementationReport::RECOMMENDATIONS
-      unless (recommendation.nil? && decisions.any?) || recommendations.include?(recommendation)
-        raise Error, "Description checkpoint recommendation must be one of: #{recommendations.join(', ')}."
-      end
-      raise Error, 'Description checkpoint cannot recommend Merge while open decisions remain.' if
-        recommendation == 'Merge' && decisions.any?
+      return decisions if decisions.any? && recommendation.nil?
+      raise Error, 'Description checkpoint recommendation waits until the open decisions are answered.' if
+        decisions.any?
 
-      decisions.any? ? decisions : ["## Recommendation: #{recommendation}"]
+      recommendations = PostImplementationReport::RECOMMENDATIONS
+      return ["## Recommendation: #{recommendation}"] if recommendations.include?(recommendation)
+
+      raise Error, "Description checkpoint recommendation must be one of: #{recommendations.join(', ')}."
     end
 
     # Keep both review surfaces together before an optional deployment preview.

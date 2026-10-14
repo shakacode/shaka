@@ -520,7 +520,7 @@ phases:
         published PR comment URL or a named placeholder until publication. Supply `checkpoint`
         with the live full `head`, `next_action` naming its owner, and `recommendation`, one of
         the checkpoint `disposition` values. While `decisions` is non-empty, open decisions head
-        the description and `recommendation` may be omitted but cannot be `Merge`. The renderer
+        the description; omit `recommendation` until they are answered. The renderer
         rejects a stale head. Name the head once there: leave the check table without a commit
         column unless a row covers an earlier commit. Summarize consequential decisions,
         questions or friction, and critical changes in a few lines; put evidence in details.

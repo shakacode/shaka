@@ -960,11 +960,13 @@ class PublicationCheckpointTest < Minitest::Test
     refute_includes body, '## Recommendation:'
   end
 
-  def test_merge_recommendation_cannot_sit_beside_open_decisions
+  def test_a_recommendation_waits_until_open_decisions_are_answered
     data = content.merge('decisions' => ['Keep the parser?'])
-    data['checkpoint']['recommendation'] = 'Merge'
-    error = assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
-    assert_includes error.message, 'open decisions'
+    ['Merge', 'Revise before merge'].each do |recommendation|
+      data['checkpoint']['recommendation'] = recommendation
+      error = assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
+      assert_includes error.message, 'open decisions'
+    end
   end
 
   def test_recommendation_must_be_a_known_disposition

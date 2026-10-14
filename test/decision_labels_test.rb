@@ -83,8 +83,9 @@ class DecisionLabelsTest < Minitest::Test
     assert_empty @calls
   end
 
+  # Bodies published before the heading was renamed still carry the old one.
   def test_omitting_decisions_is_refused_when_the_body_already_asks
-    body = "<!-- shaka:decisions -->\n## Decisions to make\n\n- Which base?\n"
+    body = "<!-- shaka:decisions -->\n## Decisions for the maintainer\n\n- Which base?\n"
     error = assert_raises(Shaka::Error) { Shaka::DecisionLabels.guard(client, {}, body) }
 
     assert_includes error.message, 'empty list'

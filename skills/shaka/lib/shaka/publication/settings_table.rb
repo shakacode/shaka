@@ -12,10 +12,16 @@ module Shaka
 
     module_function
 
-    # Where a result's settings came from, with a committed revision as a short link.
+    # Where a result's settings came from. Only a trusted revision is known to be a commit in this repository,
+    # so only it is linked; a local revision is shown short.
     def source(settings, repository)
       kind, revision = settings.values_at('source', 'source.revision')
-      kind == 'UNKNOWN' ? kind : "#{kind} at #{PublicationText.commit(revision, repository)}"
+      if kind == 'UNKNOWN'
+        kind
+      else
+        "#{kind} at #{PublicationText.commit(revision,
+                                             (repository if kind == 'trusted/team'))}"
+      end
     end
 
     # A second disclosure keeps the long table out of the way of the lines above it.
