@@ -117,7 +117,8 @@ Report `duration_ms` as elapsed runner setup, reviewer invocation and report val
 terminal timing from the returned `attempt_log`; failed attempts remain separate from completed
 rounds. Report `timing_retention: not_retained` as a measurement gap. Keep missing durations UNKNOWN.
 
-Reviewer subprocesses have a 300-second deadline by default; `--timeout-seconds 1..3600`
+DeepSeek/OpenRouter reviews have a 600-second deadline by default; CLI reviewers have 300 seconds.
+`--timeout-seconds 1..3600`
 sets a task-specific bound. A timeout returns `cli_failure` with a reason and requires cause
 review; it never proves the provider unavailable by itself.
 The prompt identifies the checkout path and exact commit for read-only Git inspection of
