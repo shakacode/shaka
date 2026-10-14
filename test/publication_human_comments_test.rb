@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'publication_test'
+require 'shaka/usage/codex_publisher_settings'
 
 # Builds the `shaka comments --head SHA` output a description lists human comments from.
 module HumanCommentsFixture
@@ -351,12 +352,20 @@ end
 class PublicationHumanCommentQuotationTest < Minitest::Test
   include HumanCommentsFixture
 
-  def test_the_response_skips_the_note_under_the_agent_s_identity_line
-    reply = "#{IDENTITY}\n\n_Publisher model is configured; served model is UNKNOWN._\n\nShortened the prompt."
-    rendered = describe(packet(inline_comments: [inline(1, 'ann', 'more concise', resolved: true),
-                                                 inline(2, 'ann', reply, resolved: true)]))
+  # The first note is the Codex publisher's own wording, so a reworded note fails here.
+  def test_the_response_skips_a_publisher_note_under_the_agent_s_identity_line
+    notes = [Shaka::CodexPublisherSettings::NOTE, 'UNKNOWN model: Codex session unreadable.',
+             'Native publisher settings unavailable for this host; supplied attribution is unverified.']
 
-    assert_equal [["[“Shortened the prompt\\.”](#{URL}#discussion_r2)"]], columns(rendered, 2)
+    notes.each do |note|
+      assert_equal [["[“Shortened the prompt\\.”](#{URL}#discussion_r2)"]],
+                   columns(answered("#{IDENTITY}\n\n_#{note}_\n\nShortened the prompt."), 2), note
+    end
+  end
+
+  def test_the_response_keeps_an_agent_s_own_italic_first_line
+    assert_equal [["[“\\_Unable to reproduce\\.\\_”](#{URL}#discussion_r2)"]],
+                 columns(answered("#{IDENTITY}\n\n_Unable to reproduce._"), 2)
   end
 
   def test_markdown_in_a_comment_cannot_break_the_table_link_elsewhere_or_read_as_an_escape
@@ -395,6 +404,13 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
 
     assert_equal 20, rows(rendered).size
     assert_includes rendered, "\n\n_3 more not shown; open comments come first._\n\n<!-- /shaka:human-comments -->"
+  end
+
+  private
+
+  def answered(reply)
+    describe(packet(inline_comments: [inline(1, 'ann', 'more concise', resolved: true),
+                                      inline(2, 'ann', reply, resolved: true)]))
   end
 end
 

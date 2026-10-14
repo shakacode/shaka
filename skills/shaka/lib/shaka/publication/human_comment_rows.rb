@@ -11,8 +11,10 @@ module Shaka
     # reviewer is the login of a trusted person other than the PR author.
     Row = Struct.new(:entry, :status, :reviewer, :open, :unverified)
     ANCHOR = /\A(?:issuecomment-|discussion_r|pullrequestreview-)\d+\z/
-    # The agent's identity line, with the italic publisher note the helper may print under it.
-    IDENTITY_LINE = /^🤖 [^\n]*$(?:\n\n_[^\n]+_$)?/
+    # The three ways a publisher note opens. An agent's own italic first line is its answer.
+    PUBLISHER_NOTE = /_(?:Publisher model is configured;|Native publisher settings unavailable|UNKNOWN )[^\n]*_/
+    # The agent's identity line, with the publisher note the helper may print under it.
+    IDENTITY_LINE = /^🤖 [^\n]*$(?:\n\n#{PUBLISHER_NOTE}$)?/
     # The content key that maps a longer comment's URL to the agent's one-line summary of it.
     SUMMARIES = 'human_comment_summaries'
 

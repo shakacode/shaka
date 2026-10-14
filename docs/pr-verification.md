@@ -83,7 +83,7 @@ sections:
 | sam | “you mean chat, not owner.” | “Changed the guide to use chat throughout…” | Resolved |
 
 - **From** names the account. The PR author's comments show the account alone;
-  **Reviewer** marks a comment from anyone else. Agents post from a person's
+  **Reviewer** marks one from another trusted account. Agents post from a person's
   account, so the account name cannot tell a person from an agent.
   Every post a person did not write opens with the agent's 🤖 line, so a comment
   without it counts as a person's. A bot account's post, a post that opens with
