@@ -130,11 +130,11 @@ tower from the recorded setup whenever `/mct-claude` runs there, and reports a
 duplicate or mismatch to the user there.
 
 Read the delivery result. `delivered` and `queued` mean the master will read the
-notice. `undelivered` means the master was idle and received nothing, now or later:
-report `registration recorded, master not notified` and one user step: open the
-master session, named by title and ID, and send `/mct-claude` there. Report any other
-result as `RCT setup error: notice failed`. Do not poll, re-send, start a monitor, or
-wait for a reply.
+notice. Any other result means the master received nothing: `undelivered` means it
+was idle, and anything else is a failed send. Report `registration recorded, master
+not notified` with the observed result and one user step: open the master session,
+named by title and ID, and send `/mct-claude` there. Do not poll, re-send, start a
+monitor, or wait for a reply.
 
 ## Begin tower work
 
