@@ -56,6 +56,12 @@ class PublicationSkillsTest < Minitest::Test
     refute_includes rendered, '| Skill |'
   end
 
+  def test_a_same_named_skill_from_another_source_stays_listed
+    rendered = render('skills_used' => [skill('name' => 'shaka', 'source' => 'Example/fork')])
+
+    assert_includes rendered, '| shaka | Example/fork |'
+  end
+
   def test_omitted_shaka_rows_are_still_validated
     assert_raises(Shaka::Error) { render('skills_used' => [skill('name' => 'shaka', 'evidence' => 'verified')]) }
   end
