@@ -30,9 +30,13 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
       result
     end
 
-    # A comment the per-commit publisher left before this PR moved to one loop comment, holding `report`.
-    def add_per_commit_report(head, id, report)
-      body = "# Local Adversarial Review\n\n<details>\n\n#{report.strip}\n\n</details>\n\n" \
+    # A comment the per-commit publisher left before this PR moved to one loop comment, holding `reports`.
+    def add_per_commit_report(head, id, *reports)
+      disclosures = reports.each_with_index.map do |report, index|
+        summary = "Round #{index + 1} · #{head[0, 7]} · openai/codex"
+        "<details>\n<summary>#{summary}</summary>\n\n#{report.strip}\n\n</details>"
+      end
+      body = "# Local Adversarial Review\n\n#{disclosures.join("\n\n")}\n\n" \
              "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
       @comments[id] = { 'id' => id, 'user' => { 'login' => viewer_login }, 'created_at' => '2026-10-04T00:00:00Z',
                         'body' => "<!-- shaka:reply:local-review-#{head} -->\n#{body}" }
@@ -176,6 +180,17 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_equal 0, publish(github, loop_content).first
 
     refute_includes comment(github, 52), Shaka::LocalReviewHistory::MARKER
+  end
+
+  def test_a_per_commit_comment_also_holding_another_ledgers_report_stays_visible
+    content = loop_content
+    github = Timeline.new
+    other = File.read(report(EARLIER, body: "1. [P1] Unrelated defect.\n"))
+    github.add_per_commit_report(EARLIER, 53, File.read(content['rounds'][0]['report']), other)
+
+    assert_equal 0, publish(github, content).first
+
+    refute_includes comment(github, 53), Shaka::LocalReviewHistory::MARKER
   end
 
   def test_a_failed_listing_of_replaced_comments_is_a_retryable_gap

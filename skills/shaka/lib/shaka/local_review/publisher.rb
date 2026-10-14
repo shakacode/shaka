@@ -51,9 +51,13 @@ module Shaka
       end
     end
 
+    # Every report the comment holds, one per round disclosure, must be one of this ledger's.
     def per_commit?(body)
       head = body[/\A<!-- shaka:reply:local-review-(\h{40}) -->\n/, 1]
-      head && loop_comment.reports(head).any? { |report| body.include?(report) }
+      return false unless head
+
+      held = loop_comment.reports(head).count { |report| body.include?(report) }
+      held.positive? && held == body.scan(/<summary>Round \d+ · #{head[0, 7]} · /).size
     end
 
     # Cache both the subject and existence; a 404 names an unpushed or replaced commit.
