@@ -74,13 +74,15 @@ module Shaka
       ["## Recommendation: #{disposition.fetch('recommendation')}", @summary,
        "**Next:** #{disposition.fetch('next_action')}",
        "**Reviewer verdict:** #{report.fetch('conclusion')}", verification,
-       evidence_lines(report, disposition.fetch('accepted_concerns')),
-       supporting_analysis(report, verification)].join("\n\n")
+       evidence_lines(report, disposition), supporting_analysis(report, verification)].join("\n\n")
     end
 
-    def evidence_lines(report, accepted)
+    # The hidden disposition line lets a description read this recommendation for the same head.
+    def evidence_lines(report, disposition)
+      accepted = disposition.fetch('accepted_concerns')
       open = report.merge('concerns' => PostImplementationDisposition.unresolved(report, accepted))
-      [concern_section(open), *accepted_section(accepted)].join("\n\n")
+      [concern_section(open), *accepted_section(accepted),
+       PostImplementationEvidence.disposition(disposition.fetch('recommendation'))].join("\n\n")
     end
 
     def accepted_section(accepted)

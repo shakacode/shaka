@@ -219,7 +219,7 @@ the useful summary is:
 
 > OpenAI/Codex · configured model: gpt-6.1-sol · observed model: UNKNOWN
 >
-> ## Recommendation: Revise before merging
+> ## Recommendation: Revise before merge
 >
 > **Next:** Revise this PR, then revalidate and review.
 >

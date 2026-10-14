@@ -19,7 +19,7 @@ module Shaka
 
     ACTIONS = {
       'Proceed' => ['Merge if CI passes', 'Complete technical validation and required approvals.'],
-      'Simplify/reframe' => ['Revise before merging', 'Revise the approach, then revalidate and review.'],
+      'Simplify/reframe' => ['Revise before merge', 'Revise the approach, then revalidate and review.'],
       'Do not merge' => ['Do not merge; decide whether to close or replace',
                          'Bring the close-or-replace decision to the maintainer.']
     }.freeze

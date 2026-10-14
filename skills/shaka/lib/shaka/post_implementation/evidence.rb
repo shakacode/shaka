@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../error'
+require_relative '../post_implementation_report'
 require_relative 'history'
 
 module Shaka
@@ -10,6 +11,10 @@ module Shaka
     ATTESTATION = /\n<!-- #{MARK} ([0-9a-f]{40}) (ready|blocked|opted_out|not_completed) -->\s*\z/
 
     def self.attestation(head, state) = "<!-- #{MARK} #{head} #{state} -->"
+
+    # The owner's disposition, kept beside the attestation so a description can read it for the same head.
+    DISPOSITION = /^<!-- #{MARK}-disposition (#{PostImplementationReport::RECOMMENDATIONS.join('|')}) -->$/
+    def self.disposition(recommendation) = "<!-- #{MARK}-disposition #{recommendation} -->"
 
     def initialize(github, enabled: true)
       @github = github
@@ -27,6 +32,12 @@ module Shaka
       end
 
       { 'basis' => state, 'head' => reviewed, 'comment' => comment['html_url'] }.compact
+    end
+
+    # The latest checkpoint's owner recommendation, or nil when that checkpoint is for another head or has none.
+    def recommendation(head)
+      body = latest&.fetch('body', '').to_s
+      body[DISPOSITION, 1] if body.match(ATTESTATION)&.captures&.first == head
     end
 
     private

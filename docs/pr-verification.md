@@ -287,14 +287,13 @@ accepted guidance. Once a direction is chosen, the agent records that guidance
 and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
-The PR description opens with the recommendation as a heading, such as
-**Recommendation: Merge**, with **Decisions to make** while you have questions to answer,
-or with **Not ready to merge** before the agent has a recommendation.
+The PR description opens with **Decisions to make** while you have questions to answer.
+Otherwise it opens with the recommendation from the checkpoint published for that commit,
+such as **Recommendation: Merge**, or with **No recommendation yet** before one exists.
+Shaka reads that heading from the checkpoint itself, so the two cannot disagree.
 The next action follows on one line with the short, linked commit it applies to. After
 the summary, links open the walkthrough, the detailed code review when one was published,
-and the full checkpoint. Your agent writes the heading from its checkpoint: Shaka checks
-that it names one of the four recommendations and waits for open decisions, but not that
-it matches the published checkpoint, so open the Checkpoint link before you merge. Your agent summarizes
+and the full checkpoint. Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.
 Supporting evidence appears below.
 The report keeps the **Reviewer verdict** within the checkpoint. A recommendation becomes a

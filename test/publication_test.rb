@@ -961,13 +961,14 @@ class PublicationCheckpointTest < Minitest::Test
     refute_includes body, '## Recommendation:'
   end
 
-  def test_a_recommendation_waits_until_open_decisions_are_answered
+  def test_open_decisions_lead_over_a_published_revision_but_refuse_merge
     data = content.merge('decisions' => ['Keep the parser?'])
-    ['Merge', 'Revise before merge'].each do |recommendation|
-      data['checkpoint']['recommendation'] = recommendation
-      error = assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
-      assert_includes error.message, 'open decisions'
-    end
+    body = Shaka::Publication.description(data, nil, PULL)
+    assert_includes body, '## Decisions to make'
+    refute_includes body, '## Recommendation:'
+    data['checkpoint']['recommendation'] = 'Merge'
+    error = assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
+    assert_includes error.message, 'open decisions'
   end
 
   def test_recommendation_must_be_a_known_disposition
@@ -976,11 +977,11 @@ class PublicationCheckpointTest < Minitest::Test
     assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
   end
 
-  def test_without_a_disposition_the_heading_says_the_pr_is_not_ready
+  def test_without_a_published_disposition_the_heading_says_so
     data = content
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, "## Not ready to merge\n\n**Next:** Justin: choose the simpler parser"
+    assert_includes body, "## No recommendation yet\n\n**Next:** Justin: choose the simpler parser"
     refute_includes body, '## Recommendation:'
   end
 
