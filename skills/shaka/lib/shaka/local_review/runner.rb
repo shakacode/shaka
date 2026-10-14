@@ -96,7 +96,7 @@ module Shaka
       valid = timeout.match?(/\A[1-9]\d*\z/) && timeout.to_i <= 3600
       raise Shaka::Error, '--timeout-seconds must be 1..3600' unless valid
 
-      @options[:timeout_seconds] = timeout.to_i
+      @validated_timeout_seconds = @options[:timeout_seconds] = timeout.to_i
     end
 
     def validate_criteria_ref!

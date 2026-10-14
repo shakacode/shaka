@@ -7,8 +7,9 @@ module Shaka
   module LocalReviewTiming
     def run
       @attempted = false
+      @validated_timeout_seconds = nil
       result, timing = CallLog.measure { with_requested_model(outcome) }
-      timing['timeout_seconds'] = @options[:timeout_seconds] if @options[:timeout_seconds].is_a?(Integer)
+      timing['timeout_seconds'] = @validated_timeout_seconds if @validated_timeout_seconds
       retain_attempt(keep_round(result.merge(timing)))
     ensure
       finish_ledger
@@ -31,7 +32,7 @@ module Shaka
       @ledger ||= LocalReviewLedger.new(@options[:ledger], root:)
       @ledger.record_attempt!(result)
       result.merge('attempt_log' => @ledger.attempt_log, 'timing_retention' => 'retained')
-    rescue Shaka::Error, SystemCallError, JSON::ParserError => e
+    rescue Shaka::Error, SystemCallError, JSON::ParserError, ArgumentError, TypeError => e
       result.merge('timing_retention' => 'not_retained', 'timing_retention_reason' => e.message)
     end
   end

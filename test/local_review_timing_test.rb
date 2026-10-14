@@ -266,3 +266,56 @@ class LocalReviewTimingRecoveryTest < Minitest::Test
     RUBY_SCRIPT
   end
 end
+
+class LocalReviewTimingInputTest < Minitest::Test
+  include ReviewTimingFixture
+
+  def test_rejected_integer_deadlines_are_not_returned_or_retained
+    with_timed_review do |root, base, head, _bin, path|
+      [0, 3601].each do |deadline|
+        result = input_run(root, base, head, path, timeout_seconds: deadline)
+        assert_setup_timing(result)
+        refute result.key?('timeout_seconds')
+        refute attempts(path).last.key?('timeout_seconds')
+      end
+      assert_equal 2, attempts(path).size
+      refute_path_exists path
+    end
+  end
+
+  def test_early_validation_failure_does_not_claim_an_unvalidated_deadline
+    with_timed_review do |root, base, head, _bin, path|
+      result = input_run(root, base, head, path, base: 'invalid', timeout_seconds: 1)
+      assert_setup_timing(result)
+      refute result.key?('timeout_seconds')
+      refute attempts(path).last.key?('timeout_seconds')
+    end
+  end
+
+  def test_invalid_root_after_early_failure_preserves_timing_with_a_retention_gap
+    with_timed_review do |root, base, head, _bin, path|
+      [nil, "\0"].each do |invalid_root|
+        result = input_run(root, base, head, path, root: invalid_root, max_review_executions: 0)
+        assert_setup_timing(result)
+        assert_equal 'not_retained', result.fetch('timing_retention')
+        refute_empty result.fetch('timing_retention_reason')
+        refute_path_exists path
+        refute_path_exists "#{path}.attempts.jsonl"
+      end
+    end
+  end
+
+  private
+
+  def input_run(root, base, head, path, **overrides)
+    options = { root:, base:, head:, reviewer: 'openai/codex', ledger: path }.merge(overrides)
+    Shaka::LocalReviewRunner.new(options).run
+  end
+
+  def assert_setup_timing(result)
+    assert_equal 'not_completed', result.fetch('status')
+    assert_equal 'setup_failure', result.fetch('failure_stage')
+    refute result.fetch('attempted')
+    assert_timing(result)
+  end
+end
