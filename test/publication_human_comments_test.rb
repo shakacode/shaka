@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'publication_test'
-require 'shaka/usage/codex_publisher_settings'
+require 'shaka/usage/publisher_attribution'
 
 # Builds the `shaka comments --head SHA` output a description lists human comments from.
 module HumanCommentsFixture
@@ -352,20 +352,22 @@ end
 class PublicationHumanCommentQuotationTest < Minitest::Test
   include HumanCommentsFixture
 
-  # The first note is the Codex publisher's own wording, so a reworded note fails here.
+  # Each note is the publisher's own wording for a host it cannot read, so a reworded note fails here.
   def test_the_response_skips_a_publisher_note_under_the_agent_s_identity_line
-    notes = [Shaka::CodexPublisherSettings::NOTE, 'UNKNOWN model: Codex session unreadable.',
-             'Native publisher settings unavailable for this host; supplied attribution is unverified.']
+    hosts = [{}, { 'CLAUDE_CODE_SESSION_ID' => 'none' }, { 'CODEX_THREAD_ID' => 'none' }]
 
-    notes.each do |note|
+    hosts.each do |host|
+      unread = host.merge('HOME' => '/nonexistent')
+      note = Shaka::PublisherAttribution.prepare({}, environment: unread)['publisher_note']
+
       assert_equal [["[“Shortened the prompt\\.”](#{URL}#discussion_r2)"]],
                    columns(answered("#{IDENTITY}\n\n_#{note}_\n\nShortened the prompt."), 2), note
     end
   end
 
   def test_the_response_keeps_an_agent_s_own_italic_first_line
-    assert_equal [["[“\\_Unable to reproduce\\.\\_”](#{URL}#discussion_r2)"]],
-                 columns(answered("#{IDENTITY}\n\n_Unable to reproduce._"), 2)
+    assert_equal [["[“\\_UNKNOWN cause\\; unable to reproduce\\.\\_”](#{URL}#discussion_r2)"]],
+                 columns(answered("#{IDENTITY}\n\n_UNKNOWN cause; unable to reproduce._"), 2)
   end
 
   def test_markdown_in_a_comment_cannot_break_the_table_link_elsewhere_or_read_as_an_escape

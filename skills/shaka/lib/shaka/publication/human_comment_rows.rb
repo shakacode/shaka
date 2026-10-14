@@ -12,7 +12,8 @@ module Shaka
     Row = Struct.new(:entry, :status, :reviewer, :open, :unverified)
     ANCHOR = /\A(?:issuecomment-|discussion_r|pullrequestreview-)\d+\z/
     # The three ways a publisher note opens. An agent's own italic first line is its answer.
-    PUBLISHER_NOTE = /_(?:Publisher model is configured;|Native publisher settings unavailable|UNKNOWN )[^\n]*_/
+    UNREAD = /UNKNOWN (?:provider|model|effort)[,:]/
+    PUBLISHER_NOTE = /_(?:Publisher model is configured;|Native publisher settings unavailable|#{UNREAD})[^\n]*_/
     # The agent's identity line, with the publisher note the helper may print under it.
     IDENTITY_LINE = /^🤖 [^\n]*$(?:\n\n#{PUBLISHER_NOTE}$)?/
     # The content key that maps a longer comment's URL to the agent's one-line summary of it.
