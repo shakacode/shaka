@@ -112,10 +112,8 @@ module Shaka
       super && (@ids.nil? || @ids.include?(comment['id'])) && !attestation(comment['body'].to_s).nil?
     end
 
-    # The one loop comment supersedes a per-commit comment even for the same reviewed commit.
     def earlier?(comment, latest)
-      !active?(comment) || attestation(comment['body'])[1] != attestation(latest['body'])[1] ||
-        (per_commit?(comment) && !per_commit?(latest))
+      !active?(comment) || attestation(comment['body'])[1] != attestation(latest['body'])[1]
     end
 
     def per_commit?(comment) = comment['body'].to_s.match?(PER_COMMIT)

@@ -100,15 +100,14 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
 
   def comment(github, id) = github.issue_comments.find { |item| item['id'] == id }.fetch('body')
 
-  # Both per-commit comments point at the loop comment, including the one for the current head.
+  # The earlier commit's per-commit comment points at the loop comment; like any report of the
+  # current commit, the current one stays visible.
   def assert_preserved_history(github)
-    [[50, EARLIER], [51, HEAD]].each do |id, head|
-      body = comment(github, id)
-      assert_includes body, Shaka::LocalReviewHistory::MARKER
-      assert_includes body, '#issuecomment-1'
-      assert_equal "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip
-    end
-    refute_includes comment(github, 1), Shaka::LocalReviewHistory::MARKER
+    body = comment(github, 50)
+    assert_includes body, Shaka::LocalReviewHistory::MARKER
+    assert_includes body, '#issuecomment-1'
+    assert_equal "REVIEWED #{EARLIER} BY openai/codex EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip
+    [1, 51].each { |id| refute_includes comment(github, id), Shaka::LocalReviewHistory::MARKER }
   end
 
   def assert_failed_cleanup(github, result)
@@ -142,7 +141,7 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
 
     status, result = publish(github, content)
     assert_equal 0, status
-    assert_equal [50, 51], result.fetch('cleanup').fetch('collapsed')
+    assert_equal [50], result.fetch('cleanup').fetch('collapsed')
     assert_empty result.fetch('cleanup').fetch('unavailable')
     assert_preserved_history(github)
   end
@@ -170,9 +169,9 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_includes comment(github, 50), Shaka::LocalReviewHistory::MARKER
   end
 
-  def test_another_ledgers_per_commit_report_of_the_same_commit_stays_visible
+  def test_another_ledgers_per_commit_report_of_an_earlier_commit_stays_visible
     github = Timeline.new
-    github.add_per_commit_report(HEAD, 52, File.read(report(HEAD, body: "1. [P1] Unrelated defect.\n")))
+    github.add_per_commit_report(EARLIER, 52, File.read(report(EARLIER, body: "1. [P1] Unrelated defect.\n")))
 
     assert_equal 0, publish(github, loop_content).first
 

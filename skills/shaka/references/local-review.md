@@ -489,7 +489,7 @@ usage records still belong in `usage.records`.
 
 After every successful publication, `review publish` collapses older owned Shaka
 review comments from the ledger: its continuation comments and any comment the earlier
-per-commit publisher posted holding one of the ledger's reports, including at the current head.
+per-commit publisher posted for an earlier commit holding one of the ledger's reports.
 Other reports, including legacy reports at the same revision, stay visible for explicit assessment.
 Cleanup also skips when the current PR head has no report in that publication.
 Its `cleanup` result lists confirmed edits, unavailable cleanup,
