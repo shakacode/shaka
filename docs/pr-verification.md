@@ -94,7 +94,8 @@ review, and integration, with their sources and revisions when available.
 **Corroborated** when it identifies a record confirming invocation or loading.
 Shaka checks metadata shape, not that record or instruction compliance.
 Contributions remain the agent's account, and completeness is unverified.
-Missing records show unknown coverage. Agents are instructed to withhold private
+Missing records show unknown coverage. Shaka itself is not listed: every managed PR
+uses it, and **Execution provenance** names the workflow version that ran. Agents are instructed to withhold private
 skill identifiers; Ruby does not screen them.
 
 ## See what people said
