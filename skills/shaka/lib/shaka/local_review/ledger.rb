@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'digest'
 require 'json'
 require 'securerandom'
 require_relative '../error'
@@ -134,11 +135,16 @@ module Shaka
         snapshot && snapshot(round['head']) != snapshot
 
       kept = round.merge(LocalReviewBundle.store(@path, round.fetch('report')))
-      # A random identity names this ledger's PR comment, so two ledgers never share one.
       write(data.merge('version' => LocalReviewBundle::VERSION, 'base' => base, 'local_max_rounds' => max_rounds,
-                       'id' => data['id'] || SecureRandom.hex(6), 'rounds' => rounds + [kept]))
+                       'id' => identity, 'rounds' => rounds + [kept]))
       clear_running
     end
+
+    # Names this ledger's PR comment, so two ledgers never share one. A ledger begun before ids
+    # existed keeps the first-report key it already published under.
+    def identity = data['id'] || (rounds.empty? ? SecureRandom.hex(6) : first_report_digest)
+
+    def first_report_digest = Digest::SHA256.file(rounds.first.fetch('report')).hexdigest[0, 12]
 
     def data
       @data ||= if File.exist?(@path)

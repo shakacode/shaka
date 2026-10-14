@@ -38,7 +38,8 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
     end
 
     def add_continuation(key, head, id)
-      body = "# Local Adversarial Review · earlier commits (1)\n\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
+      body = "# Local Adversarial Review · earlier commits (1)\n\n" \
+             "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
       @comments[id] = { 'id' => id, 'user' => { 'login' => viewer_login }, 'created_at' => '2026-10-04T00:00:00Z',
                         'body' => "<!-- shaka:reply:#{key} -->\n#{body}" }
     end

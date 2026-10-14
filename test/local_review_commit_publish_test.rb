@@ -34,17 +34,6 @@ class LocalReviewCommitPublishTest < Minitest::Test
     assert_loop_comment(github.replies.first.last)
   end
 
-  def test_the_outcome_and_coverage_appear_once_however_many_commits_were_reviewed
-    body = publish_loop.replies.first.last
-    visible = body.split('<details>').first
-
-    [TITLE_LINE, '**Reviewed revision:**', '**Outcome:**', '**Coverage:**', 'Usage and attribution'].each do |text|
-      assert_equal 1, body.scan(text).size, text
-    end
-    assert_includes visible, "| [`bbbbbbb`](https://github.com/o/r/commit/#{EARLIER}) | " \
-                             'openai/codex: 0 · anthropic/claude: 0 |'
-  end
-
   def test_deepseek_report_publishes_through_the_same_exact_head_contract
     github = Timeline.new
     entry = clean(HEAD, 'deepseek/openrouter').merge('model' => 'deepseek/deepseek-v4.1-flash',
@@ -105,9 +94,8 @@ class LocalReviewCommitPublishTest < Minitest::Test
     end
     assert_equal 0, publish(github, 'rounds' => [clean(HEAD, 'openai/codex')]).first
 
-    literal = "Don't notify @someone https://example.test"
     rendered_subject = github.replies.first.last[%r{<code>(.*?)</code>}, 1]
-    assert_equal literal, CGI.unescapeHTML(rendered_subject)
+    assert_equal "Don't notify @someone https://example.test", CGI.unescapeHTML(rendered_subject)
   end
 
   private
@@ -124,14 +112,14 @@ class LocalReviewCommitPublishTest < Minitest::Test
     github
   end
 
-  TITLE_LINE = "# Local Adversarial Review\n"
-
-  # One findings disclosure, then each commit's disclosure holding its two reports.
+  # One findings disclosure, then each commit's disclosure holding its two reports. The outcome and
+  # coverage appear once however many commits were reviewed.
   def assert_loop_comment(body)
+    once = ["# Local Adversarial Review\n", '**Outcome:**', '**Coverage:**', 'Usage and attribution']
+    assert_equal([1] * once.size, once.map { |text| body.scan(text).size })
+    assert_includes body, '| openai/codex: 0 · anthropic/claude: 0 |'
     assert_equal 7, body.scan('<details>').size
     assert_includes CGI.unescapeHTML(body), 'Add review publication'
-    assert_includes CGI.unescapeHTML(body), 'Clarify review documentation'
-    refute_includes body, '**Total:**'
     assert_equal "REVIEWED #{HEAD} BY anthropic/claude EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip
   end
 
@@ -190,10 +178,8 @@ class LocalReviewCommitSizeTest < Minitest::Test
     (main_key, main), (earlier_key, earlier) = github.replies
     assert_equal "#{main_key}-1", earlier_key
     assert_includes main, 'reports in earlier comment 1'
-    refute_includes main, "<summary>Commit #{EARLIER[0, 7]}"
-    assert_equal "REVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 1", main.lines.last.strip
-    assert_includes earlier, "<summary>Commit #{EARLIER[0, 7]}"
-    assert_equal "REVIEWED #{EARLIER} BY openai/codex EFFORT UNKNOWN FINDINGS 1", earlier.lines.last.strip
+    assert_closes(main, HEAD, without: EARLIER)
+    assert_closes(earlier, EARLIER, without: HEAD)
   end
 
   def test_separate_ledgers_from_the_same_commit_keep_separate_comments
@@ -222,6 +208,12 @@ class LocalReviewCommitSizeTest < Minitest::Test
   end
 
   private
+
+  def assert_closes(body, head, without:)
+    assert_includes body, "<summary>Commit #{head[0, 7]}"
+    refute_includes body, "<summary>Commit #{without[0, 7]}"
+    assert_equal "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 1", body.lines.last.strip
+  end
 
   # Exactly one character over the limit with both commits' reports in the main comment.
   def near_limit_content

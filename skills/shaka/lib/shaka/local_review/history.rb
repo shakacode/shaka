@@ -11,7 +11,9 @@ module Shaka
   # A different reviewed commit is history, not proof that any concern was resolved.
   class LocalReviewHistory < CommentHistory
     MARKER = 'Earlier review — findings are not automatically resolved. Latest local review:'
-    KEY = /\A<!-- shaka:reply:(?:local-adversarial-review|local-review-[0-9a-f]{40}|local-review-loop-[0-9a-f]{12}-[0-9a-f]{12}(?:-\d+)?) -->\n/
+    KEYS = '(?:local-adversarial-review|local-review-[0-9a-f]{40}|' \
+           'local-review-loop-[0-9a-f]{12}-[0-9a-f]{12}(?:-\\d+)?)'
+    KEY = /\A<!-- shaka:reply:#{KEYS} -->\n/
     PER_COMMIT = /\A<!-- shaka:reply:local-review-[0-9a-f]{40} -->\n/
     SUMMARY = 'Earlier local review'
     ATTESTATION = MergeReviewEvidence::ATTESTATION

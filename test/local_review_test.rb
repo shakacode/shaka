@@ -1315,15 +1315,12 @@ class LocalReviewLoopTest < Minitest::Test
   def test_ledger_records_rounds_and_feeds_prior_findings_to_the_next_round
     in_loop do |head|
       assert_equal 1, loop_round(head, findings: 1).fetch('round')
-      id = JSON.parse(File.read(@ledger)).fetch('id')
-      assert_match(/\A\h{12}\z/, id)
       fix = fix_commit
       assert_refused(fix, 'Record round 1')
       record_fix(fix)
       loop_round(fix, findings: 0)
       assert_prior_round_prompt(File.read(@trace), fix)
       assert_ledger_rounds([head, fix])
-      assert_equal id, JSON.parse(File.read(@ledger)).fetch('id')
     end
   end
 
@@ -1411,6 +1408,40 @@ class LocalReviewLoopTest < Minitest::Test
 end
 
 # Several reviewers of one commit share the loop's ledger.
+# A ledger's id names its PR comment; a ledger begun before ids existed keeps its published key.
+class LocalReviewLedgerIdentityTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  include LocalReviewLoopSteps
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  def test_a_ledger_keeps_one_random_id_across_rounds
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      id = stored_ledger.fetch('id')
+      loop_round(fix_commit, findings: 0)
+      assert_match(/\A\h{12}\z/, id)
+      assert_equal id, stored_ledger.fetch('id')
+    end
+  end
+
+  def test_a_ledger_without_an_id_keeps_its_first_report_key
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      File.write(@ledger, JSON.generate(stored_ledger.except('id')))
+      before = Shaka::LocalReviewLoopComment.new(stored_ledger).key
+      loop_round(fix_commit, findings: 0)
+
+      assert_equal before, Shaka::LocalReviewLoopComment.new(stored_ledger).key
+    end
+  end
+
+  def stored_ledger = JSON.parse(File.read(@ledger))
+end
+
 class LocalReviewLoopBatchTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
   NIT_FINDING = LocalReviewLoopTest::NIT_FINDING
@@ -1756,6 +1787,7 @@ LocalReviewStatusTest.include(LocalReviewFixture)
 LocalReviewAttestationCaseTest.include(LocalReviewFixture)
 LocalReviewLoopTest.include(LocalReviewFixture)
 LocalReviewLoopBatchTest.include(LocalReviewFixture)
+LocalReviewLedgerIdentityTest.include(LocalReviewFixture)
 LocalReviewCapRunnerTest.include(LocalReviewFixture)
 LocalReviewDirtyWorktreeTest.include(LocalReviewFixture)
 
