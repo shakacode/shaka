@@ -8,6 +8,7 @@ require_relative 'finding'
 require_relative 'ledger_batch'
 require_relative 'ledger_running'
 require_relative 'budget'
+require_relative 'timing'
 require_relative 'triage_history'
 require_relative '../repository_config/review_schema'
 
@@ -22,6 +23,7 @@ module Shaka
     include LocalReviewLedgerRunning
     include LocalReviewLedgerBudget
     include LocalReviewTriageHistory
+    include LocalReviewAttemptHistory
 
     class RoundCap < Error; end
 

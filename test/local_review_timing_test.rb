@@ -1,0 +1,223 @@
+# frozen_string_literal: true
+
+require_relative 'local_review_test'
+require_relative 'local_review_batch_test'
+require_relative 'openrouter_fixture'
+require 'time'
+
+module ReviewTimingAssertions
+  private
+
+  def assert_timing(result)
+    assert_in_delta Time.now.to_f, Time.iso8601(result.fetch('started_at')).to_f, 10
+    assert_kind_of Integer, result.fetch('duration_ms')
+    assert_operator result.fetch('duration_ms'), :>=, 0
+  end
+end
+
+module ReviewTimingFixture
+  include LocalReviewFixture
+  include ReviewTimingAssertions
+
+  private
+
+  def with_timed_review
+    Dir.mktmpdir('shaka-timing-ledger') do |directory|
+      with_repository { |root, base, head, bin| yield root, base, head, bin, File.join(directory, 'ledger.json') }
+    end
+  end
+
+  def timed_run(*arguments, **options)
+    path = arguments.pop
+    expected = options.delete(:expected) || 'not_completed'
+    output, error, status = run_review(*arguments, options.merge(ledger: path))
+    result = JSON.parse(output)
+    assert_equal expected, result.fetch('status'), error
+    assert_equal expected == 'completed', status.success?, error
+    assert_timing(result)
+    result
+  end
+
+  def stored(path) = JSON.parse(File.read(path))
+
+  def assert_attempt(path, stage, attempted)
+    assert_empty stored(path).fetch('rounds')
+    attempt = stored(path).fetch('attempts').last
+    assert_equal stage, attempt.fetch('failure_stage')
+    assert_equal attempted, attempt.fetch('attempted')
+  end
+end
+
+class LocalReviewTimingTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+  include ReviewTimingFixture
+
+  def test_completed_review_retains_attributable_timing_in_round_and_attempt
+    with_timed_review do |root, base, head, bin, path|
+      fake_codex(bin, head)
+      result = timed_run(root, base, head, bin, path, expected: 'completed',
+                                                      env: { 'REVIEW_TRACE' => File.join(bin, 'trace.json') })
+      assert_completed_timing(result, stored(path))
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_cli_failure_and_retry_remain_separate_attempts_without_completed_rounds
+    with_timed_review do |root, base, head, bin, path|
+      write_executable(bin, 'codex', "#!/bin/sh\necho private-diagnostic >&2\nexit 42\n")
+      2.times { cleanup_artifacts(timed_run(root, base, head, bin, path)) }
+      assert_attempt(path, 'cli_failure', true)
+      assert_equal 2, stored(path).fetch('attempts').size
+      refute_includes File.read(path), 'private-diagnostic'
+      refute_includes File.read(path), 'diagnostic_path'
+    end
+  end
+
+  def test_timeout_keeps_actual_elapsed_time_and_deadline_without_a_round
+    with_timed_review do |root, base, head, bin, path|
+      write_executable(bin, 'codex', "#!/bin/sh\nsleep 10\n")
+      result = timed_run(root, base, head, bin, path, timeout_seconds: 1)
+      assert_timeout_timing(result, path)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_setup_failure_is_timed_and_retained_before_ledger_round_start
+    with_timed_review do |root, base, _head, bin, path|
+      timed_run(root, base, base, bin, path)
+      assert_attempt(path, 'setup_failure', false)
+    end
+  end
+
+  def test_invalid_report_is_timed_without_gaining_completed_review_evidence
+    with_timed_review do |root, base, head, bin, path|
+      fake_unattested_codex(bin)
+      result = timed_run(root, base, head, bin, path)
+      assert_attempt(path, 'report_validation', true)
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
+  def test_missing_cli_is_timed_and_retained_without_claiming_invocation
+    with_timed_review do |root, base, head, bin, path|
+      File.symlink(RbConfig.ruby, File.join(bin, 'ruby'))
+      File.symlink(TEST_GIT, File.join(bin, 'git'))
+      timed_run(root, base, head, bin, path, env: { 'PATH' => bin })
+      assert_attempt(path, 'executable_missing', false)
+    end
+  end
+
+  def test_unsafe_ledger_reports_retention_gap_and_returns_timing
+    with_timed_review do |root, base, head, bin, _path|
+      path = File.join(root, 'ledger.json')
+      result = timed_run(root, base, head, bin, path)
+      assert_equal 'not_retained', result.fetch('timing_retention')
+      assert_includes result.fetch('timing_retention_reason'), 'outside the candidate checkout'
+      refute_path_exists path
+    end
+  end
+
+  def test_refused_start_keeps_existing_history_and_returns_unretained_timing
+    with_timed_review do |root, base, head, bin, path|
+      fake_codex(bin, head)
+      cleanup_artifacts(timed_run(root, base, head, bin, path, expected: 'completed',
+                                                               env: { 'REVIEW_TRACE' => File.join(bin, 'trace.json') }))
+      original = File.read(path)
+      result = timed_run(root, base, base, bin, path)
+      assert_equal 'not_retained', result.fetch('timing_retention')
+      assert_equal original, File.read(path)
+    end
+  end
+
+  def test_malformed_ledger_returns_timing_and_keeps_original_bytes
+    with_timed_review do |root, base, head, bin, path|
+      File.write(path, '{invalid')
+      result = timed_run(root, base, head, bin, path)
+      assert_equal 'setup_failure', result.fetch('failure_stage')
+      assert_equal 'not_retained', result.fetch('timing_retention')
+      assert_equal '{invalid', File.read(path)
+    end
+  end
+
+  private
+
+  def assert_completed_timing(result, saved)
+    timing = result.slice('started_at', 'duration_ms')
+    assert_equal timing, saved.fetch('rounds').first.slice(*timing.keys)
+    attempt = saved.fetch('attempts').first
+    assert_equal timing, attempt.slice(*timing.keys)
+    assert_equal result.values_at('head', 'reviewer', 'status'), attempt.values_at('head', 'reviewer', 'status')
+    assert attempt.fetch('attempted')
+  end
+
+  def assert_timeout_timing(result, path)
+    assert_operator result.fetch('duration_ms'), :>=, 1000
+    assert_operator result.fetch('duration_ms'), :<, 6000
+    assert_equal 1, result.fetch('timeout_seconds')
+    assert_attempt(path, 'cli_failure', true)
+    assert_equal 1, stored(path).fetch('attempts').first.fetch('timeout_seconds')
+  end
+end
+
+class OpenrouterTimingTest < Minitest::Test
+  include OpenrouterFixture
+  include ReviewTimingAssertions
+
+  def test_api_completion_and_timeout_both_return_timing
+    with_review_repository do |root, base, head|
+      [->(*) { completion(head) }, ->(*) { raise Timeout::Error }].each do |request|
+        with_key { with_request(request) { assert_api_timing(root, base, head) } }
+      end
+    end
+  end
+
+  def test_missing_key_returns_timing_without_invoking_api
+    with_review_repository do |root, base, head|
+      with_key('') do
+        with_request(->(*) { flunk 'missing credentials must not launch a request' }) do
+          assert_api_timing(root, base, head)
+        end
+      end
+    end
+  end
+
+  private
+
+  def assert_api_timing(root, base, head)
+    result = Shaka::LocalReviewRunner.new(root:, base:, head:, reviewer: 'deepseek/openrouter',
+                                          model: MODEL, effort: 'high', timeout_seconds: 1).run
+    assert_timing(result)
+    assert_equal 1, result.fetch('timeout_seconds')
+  ensure
+    %w[report usage].each { |key| FileUtils.rm_f(result[key]) if result && result[key] }
+  end
+end
+
+class ReviewTimingLedgerConcurrencyTest < Minitest::Test
+  include LocalReviewLedgerSteps
+
+  def test_parallel_terminal_attempt_writes_preserve_old_rounds_and_every_attempt
+    append(EARLIER, 'openai/codex', findings: 0)
+    parallel_attempts
+    saved = JSON.parse(File.read(@path))
+    assert_equal 1, saved.fetch('rounds').size
+    assert_equal %w[openai/codex anthropic/claude].sort, saved.fetch('attempts').map { |a| a['reviewer'] }.sort
+    assert_equal [1], ledger.record!({ 'findings' => [] })
+  end
+
+  private
+
+  def parallel_attempts
+    [ledger, ledger].zip(%w[openai/codex anthropic/claude]).map do |reader, reviewer|
+      reader.rounds
+      Thread.new do
+        reader.record_attempt!('head' => HEAD, 'reviewer' => reviewer, 'status' => 'not_completed',
+                               'attempted' => true, 'failure_stage' => 'cli_failure',
+                               'started_at' => Time.now.utc.iso8601, 'duration_ms' => 1000)
+      end
+    end.each(&:value)
+  end
+end
