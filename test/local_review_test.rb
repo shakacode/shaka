@@ -1315,12 +1315,15 @@ class LocalReviewLoopTest < Minitest::Test
   def test_ledger_records_rounds_and_feeds_prior_findings_to_the_next_round
     in_loop do |head|
       assert_equal 1, loop_round(head, findings: 1).fetch('round')
+      id = JSON.parse(File.read(@ledger)).fetch('id')
+      assert_match(/\A\h{12}\z/, id)
       fix = fix_commit
       assert_refused(fix, 'Record round 1')
       record_fix(fix)
       loop_round(fix, findings: 0)
       assert_prior_round_prompt(File.read(@trace), fix)
       assert_ledger_rounds([head, fix])
+      assert_equal id, JSON.parse(File.read(@ledger)).fetch('id')
     end
   end
 

@@ -10,9 +10,11 @@ module Shaka
   # continuation comments; each comment closes with its newest round's attestation, where `merge` reads it.
   class LocalReviewLoopComment < LocalReviewComment
     LIMIT = 65_536
-    # Keyed by the ledger's first reviewed commit and first report: the same loop republishes in
-    # place, while a fresh ledger gets its own comment, even from the same commit.
+    # Keyed by the ledger's first reviewed commit and its identity, so the same loop republishes in
+    # place while a fresh ledger gets its own comment, even from the same commit. A ledger written
+    # before identities existed, or a host review's content file, falls back to its first report.
     LOOP_KEY = 'local-review-loop'
+    LEDGER_ID = /\A\h{12}\z/
     FINDINGS = 'Findings, assessments, and execution metadata'
 
     # One comment to publish. `summaries` lists every disclosure summary in the order GitHub must show them.
@@ -44,6 +46,9 @@ module Shaka
     def initialize(content, subject: ->(_) { 'Commit subject unavailable.' }, usage_url: nil, **)
       super(content, **)
       @subject = subject
+      @ledger_id = content['id']
+      raise Error, 'Local review ledger id must be 12 hexadecimal characters.' unless
+        @ledger_id.nil? || @ledger_id.to_s.match?(LEDGER_ID)
       @usage_url = usage_url
       @commits = @rounds.chunk(&:head).map(&:last)
       @attention = LocalReviewAttention.new(@rounds, @links, assessments: @assessment_view)
@@ -51,7 +56,7 @@ module Shaka
 
     def render = parts.first.body
 
-    def key = "#{LOOP_KEY}-#{@rounds.first.head[0, 12]}-#{@rounds.first.report_digest[0, 12]}"
+    def key = "#{LOOP_KEY}-#{@rounds.first.head[0, 12]}-#{@ledger_id || @rounds.first.report_digest[0, 12]}"
 
     # The main comment first, keeping the newest commits' reports that fit; the rest follow, oldest first.
     def parts

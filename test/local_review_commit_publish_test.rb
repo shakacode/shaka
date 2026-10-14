@@ -204,6 +204,14 @@ class LocalReviewCommitSizeTest < Minitest::Test
     assert_equal comment(first).key, comment(JSON.parse(JSON.generate(first))).key
   end
 
+  def test_ledgers_with_identical_first_reports_keep_separate_comments_by_ledger_id
+    first = { 'id' => 'a' * 12, 'rounds' => [round(EARLIER)] }
+    second = { 'id' => 'b' * 12, 'rounds' => [round(EARLIER)] }
+
+    refute_equal comment(first).key, comment(second).key
+    assert_equal "local-review-loop-#{EARLIER[0, 12]}-#{'a' * 12}", comment(first).key
+  end
+
   def test_one_commit_too_large_for_any_comment_prevents_all_writes
     github = LocalReviewCommitPublishTest::Timeline.new
     content = { 'rounds' => [round(EARLIER), round(report: report(body: 'x' * 65_536))] }

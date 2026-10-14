@@ -31,10 +31,12 @@ module Shaka
     # Also retires comments this ledger replaced: the per-commit publisher's, and continuations a
     # repacking no longer writes. A failed lookup is reported, never mistaken for nothing to retire.
     def cleanup(results, count)
-      ids = results.map { |result| result.fetch('id') } + replaced(count)
-      LocalReviewHistory.new(@github, ids:).collapse
-    rescue Error => e
-      { 'collapsed' => [], 'unavailable' => ["Replaced review comments could not be listed: #{e.message}"] }
+      begin
+        replaced = replaced(count)
+      rescue Error => e
+        return { 'collapsed' => [], 'unavailable' => ["Replaced review comments could not be listed: #{e.message}"] }
+      end
+      LocalReviewHistory.new(@github, ids: results.map { |result| result.fetch('id') } + replaced).collapse
     end
 
     def replaced(count)

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'securerandom'
 require_relative '../error'
 require_relative 'bundle'
 require_relative 'evidence'
@@ -133,8 +134,9 @@ module Shaka
         snapshot && snapshot(round['head']) != snapshot
 
       kept = round.merge(LocalReviewBundle.store(@path, round.fetch('report')))
+      # A random identity names this ledger's PR comment, so two ledgers never share one.
       write(data.merge('version' => LocalReviewBundle::VERSION, 'base' => base, 'local_max_rounds' => max_rounds,
-                       'rounds' => rounds + [kept]))
+                       'id' => data['id'] || SecureRandom.hex(6), 'rounds' => rounds + [kept]))
       clear_running
     end
 
