@@ -32,8 +32,10 @@ module Shaka
     end
 
     # Open decisions are the heading while they last, so a recommendation waits until they are answered.
+    # Before the owner has a disposition, such as while the checkpoint is pending or failed, no recommendation is made.
     def checkpoint_heading(recommendation, decisions)
       return decisions if decisions.any? && recommendation.nil?
+      return ['## Not ready to merge'] if recommendation.nil?
       raise Error, 'Description checkpoint recommendation waits until the open decisions are answered.' if
         decisions.any?
 

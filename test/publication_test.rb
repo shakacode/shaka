@@ -973,8 +973,14 @@ class PublicationCheckpointTest < Minitest::Test
     data = content
     data['checkpoint']['recommendation'] = 'Ship it'
     assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
+  end
+
+  def test_without_a_disposition_the_heading_says_the_pr_is_not_ready
+    data = content
     data['checkpoint'].delete('recommendation')
-    assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
+    body = Shaka::Publication.description(data, nil, PULL)
+    assert_includes body, "## Not ready to merge\n\n**Next:** Justin: choose the simpler parser"
+    refute_includes body, '## Recommendation:'
   end
 
   def test_review_link_sits_between_walkthrough_and_checkpoint

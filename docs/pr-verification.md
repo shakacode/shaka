@@ -288,7 +288,8 @@ and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
 The PR description opens with the recommendation as a heading, such as
-**Recommendation: Merge**, or with **Decisions to make** while you have questions to answer.
+**Recommendation: Merge**, with **Decisions to make** while you have questions to answer,
+or with **Not ready to merge** before the agent has a recommendation.
 The next action follows on one line with the short, linked commit it applies to, and the
 links below it open the walkthrough, the detailed code review, and the full checkpoint. Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.
