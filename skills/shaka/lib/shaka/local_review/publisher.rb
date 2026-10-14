@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
-require_relative 'commit_comment'
+require_relative 'loop_comment'
 require_relative 'history'
 
 module Shaka
-  # Preflights every comment, then upserts in ledger order. A retry resumes partial publication.
+  # Preflights every comment, then upserts the main comment and any continuations. A retry resumes
+  # partial publication.
   class LocalReviewPublisher
     def initialize(content, github, repository)
       @content = content
@@ -15,34 +16,34 @@ module Shaka
 
     def publish
       summary = LocalReviewComment.new(@content).loop_summary
-      ready = @content.fetch('rounds').map { |round| round.fetch('head') }.uniq.map { |head| prepare(head) }
-      results = ready.map { |key, body| @github.reply(body:, key:) }
+      parts = LocalReviewLoopComment.new(@content, repository: @repository,
+                                                   usage_url: "https://github.com/#{@repository}/pull/#{@github.number}",
+                                                   published: ->(sha) { !commit(sha).nil? },
+                                                   subject: ->(sha) { subject(sha) }).parts
+      parts.each { |part| part.check_rendering!(@github.verify_rendering(part.body)) }
+      results = parts.map { |part| @github.reply(body: part.body, key: part.key) }
       { 'comments' => results, 'summary' => summary, 'cleanup' => cleanup(results) }
     end
 
     private
 
+    # Comments from the per-commit publisher that this ledger covers are retired with the rest.
     def cleanup(results)
-      ids = results.map { |result| result.fetch('id') }
+      ids = results.map { |result| result.fetch('id') } + per_commit_comments
       LocalReviewHistory.new(@github, ids:).collapse
     end
 
-    def prepare(head)
-      comment = LocalReviewCommitComment.new(@content, head:, repository: @repository,
-                                                       usage_url: "https://github.com/#{@repository}/pull/#{@github.number}",
-                                                       published: ->(sha) { !commit(sha).nil? },
-                                                       subject: ->(sha) { subject(sha) })
-      body = comment.render
-      size = "<!-- shaka:reply:#{comment.key} -->\n#{body}".length
-      raise Error, "Review comment for #{head[0, 7]} exceeds GitHub’s 65536-character limit; shorten its reports." if
-        size > 65_536
-
-      comment.check_rendering!(@github.verify_rendering(body))
-      [comment.key, body]
+    def per_commit_comments
+      marks = @content.fetch('rounds').map { |round| "<!-- shaka:reply:local-review-#{round.fetch('head')} -->\n" }
+      @github.issue_comments.filter_map do |comment|
+        comment['id'] if marks.any? { |mark| comment['body'].to_s.start_with?(mark) }
+      end
+    rescue Error
+      []
     end
 
     # Cache both the subject and existence; a 404 names an unpushed or replaced commit.
-    # Other failures stop publication before any timeline entry is written.
+    # Other failures stop publication before any comment is written.
     def commit(sha)
       @commits.fetch(sha) do
         @commits[sha] = @github.api("repos/#{@repository}/git/commits/#{sha}")

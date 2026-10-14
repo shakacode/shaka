@@ -30,9 +30,16 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
       result
     end
 
+    # A comment the per-commit publisher left before this PR moved to one loop comment.
+    def add_per_commit_report(head, id)
+      body = "# Local Adversarial Review\n\nOld layout.\n\nREVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0\n"
+      @comments[id] = { 'id' => id, 'user' => { 'login' => viewer_login }, 'created_at' => '2026-10-04T00:00:00Z',
+                        'body' => "<!-- shaka:reply:local-review-#{head} -->\n#{body}" }
+    end
+
     def add_legacy_report
       source = @comments.fetch(1)
-      body = source['body'].sub(/local-review-[a-f0-9]+/, 'local-adversarial-review')
+      body = source['body'].sub(/local-review-loop-[a-f0-9]+/, 'local-adversarial-review')
       @comments[99] = source.merge('id' => 99, 'body' => body)
     end
 
@@ -75,19 +82,31 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
     github.issue_comments.first.fetch('body')
   end
 
+  def per_commit_timeline
+    github = Timeline.new
+    github.add_per_commit_report(EARLIER, 50)
+    github.add_per_commit_report(HEAD, 51)
+    github
+  end
+
+  def comment(github, id) = github.issue_comments.find { |item| item['id'] == id }.fetch('body')
+
+  # Both per-commit comments point at the loop comment, including the one for the current head.
   def assert_preserved_history(github)
-    earlier, current = github.issue_comments
-    assert_includes earlier.fetch('body'), Shaka::LocalReviewHistory::MARKER
-    assert_includes earlier.fetch('body'), '#issuecomment-2'
-    assert_equal "REVIEWED #{EARLIER} BY openai/codex EFFORT UNKNOWN FINDINGS 0", earlier['body'].lines.last.strip
-    refute_includes current.fetch('body'), Shaka::LocalReviewHistory::MARKER
+    [[50, EARLIER], [51, HEAD]].each do |id, head|
+      body = comment(github, id)
+      assert_includes body, Shaka::LocalReviewHistory::MARKER
+      assert_includes body, '#issuecomment-1'
+      assert_equal "REVIEWED #{head} BY openai/codex EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip
+    end
+    refute_includes comment(github, 1), Shaka::LocalReviewHistory::MARKER
   end
 
   def assert_failed_cleanup(github, result)
-    assert_equal 2, result.fetch('comments').size
+    assert_equal 1, result.fetch('comments').size
     assert_includes result.fetch('cleanup').fetch('unavailable').join, 'Cleanup denied'
-    assert_equal 2, github.issue_comments.size
-    refute_includes github.issue_comments.first['body'], Shaka::LocalReviewHistory::MARKER
+    assert_equal 3, github.issue_comments.size
+    refute_includes comment(github, 50), Shaka::LocalReviewHistory::MARKER
   end
 
   def loop_content
@@ -108,27 +127,28 @@ class LocalReviewPublishCleanupSupport < Minitest::Test
 end
 
 class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
-  def test_publication_collapses_earlier_reports
-    github = Timeline.new
+  def test_publication_collapses_the_per_commit_reports_it_replaces
+    github = per_commit_timeline
     content = loop_content
 
     status, result = publish(github, content)
     assert_equal 0, status
-    assert_equal [1], result.fetch('cleanup').fetch('collapsed')
+    assert_equal [50, 51], result.fetch('cleanup').fetch('collapsed')
     assert_empty result.fetch('cleanup').fetch('unavailable')
     assert_preserved_history(github)
   end
 
-  def test_republishing_keeps_one_archive_disclosure
-    github = Timeline.new
+  def test_republishing_keeps_one_archive_disclosure_and_one_loop_comment
+    github = per_commit_timeline
     content = loop_content
     assert_equal 0, publish(github, content).first
     assert_equal 0, publish(github, content).first
-    assert_equal 1, github.issue_comments.first['body'].scan('<summary>Earlier local review</summary>').size
+    assert_equal 1, comment(github, 50).scan('<summary>Earlier local review</summary>').size
+    assert_equal 3, github.issue_comments.size
   end
 
   def test_cleanup_failure_retains_publication_and_reports_a_retryable_gap
-    github = Timeline.new
+    github = per_commit_timeline
     github.cleanup_failure = true
     content = loop_content
 
@@ -137,7 +157,8 @@ class LocalReviewPublishCleanupTest < LocalReviewPublishCleanupSupport
     assert_failed_cleanup(github, result)
     github.cleanup_failure = false
     assert_equal 0, publish(github, content).first
-    assert_equal 2, github.issue_comments.size
+    assert_equal 3, github.issue_comments.size
+    assert_includes comment(github, 50), Shaka::LocalReviewHistory::MARKER
   end
 
   def test_no_current_head_report_preserves_history_and_reports_the_skip
@@ -174,7 +195,7 @@ class LocalReviewPublishPreservationTest < LocalReviewPublishCleanupSupport
     visible = current_visible(github)
     assert_includes visible, NIT.fetch('summary')
     assert_includes visible, '| Unassessed | openai/codex |'
-    assert_equal [1], github.edits
+    assert_empty github.edits
   end
 
   def test_a_separate_legacy_report_at_a_ledger_head_stays_visible
@@ -186,7 +207,7 @@ class LocalReviewPublishPreservationTest < LocalReviewPublishCleanupSupport
     assert_equal 0, publish(github, loop_content).first
 
     assert_equal original, legacy_body(github)
-    assert_equal [1], github.edits
+    assert_empty github.edits
   end
 
   def test_republishing_an_old_ledger_skips_cleanup_behind_an_unrelated_current_report

@@ -27,10 +27,21 @@ class LocalReviewCommitPublishTest < Minitest::Test
     end
   end
 
-  def test_two_reviewers_per_commit_leave_two_idempotent_timeline_comments
+  def test_two_reviewers_per_commit_leave_one_idempotent_comment
     github = publish_loop
-    assert_equal [EARLIER, HEAD].map { |sha| "local-review-#{sha}" }, github.replies.map(&:first)
-    github.replies.each_with_index { |(_, body), index| assert_commit_entry(body, index) }
+    assert_equal ["local-review-loop-#{EARLIER}"], github.replies.map(&:first)
+    assert_loop_comment(github.replies.first.last)
+  end
+
+  def test_the_outcome_and_coverage_appear_once_however_many_commits_were_reviewed
+    body = publish_loop.replies.first.last
+    visible = body.split('<details>').first
+
+    [TITLE_LINE, '**Reviewed revision:**', '**Outcome:**', '**Coverage:**', 'Usage and attribution'].each do |text|
+      assert_equal 1, body.scan(text).size, text
+    end
+    assert_includes visible, "| [`bbbbbbb`](https://github.com/o/r/commit/#{EARLIER}) | " \
+                             'openai/codex: 0 · anthropic/claude: 0 |'
   end
 
   def test_deepseek_report_publishes_through_the_same_exact_head_contract
@@ -83,7 +94,7 @@ class LocalReviewCommitPublishTest < Minitest::Test
     assert_includes body, '&#60;'
     assert_includes body, '&#91;'
     refute_includes body, '[link]'
-    assert_equal 2, body.scan('<details>').size
+    assert_equal 3, body.scan('<details>').size
   end
 
   def test_commit_subject_is_literal_text_including_quotes_mentions_and_urls
@@ -112,12 +123,15 @@ class LocalReviewCommitPublishTest < Minitest::Test
     github
   end
 
-  def assert_commit_entry(body, index)
-    head = [EARLIER, HEAD][index]
-    assert_equal 3, body.scan('<details>').size
-    assert_includes CGI.unescapeHTML(body), index.zero? ? 'Add review publication' : 'Clarify review documentation'
+  TITLE_LINE = "# Local Adversarial Review\n"
+
+  # One findings disclosure, then each commit's disclosure holding its two reports.
+  def assert_loop_comment(body)
+    assert_equal 7, body.scan('<details>').size
+    assert_includes CGI.unescapeHTML(body), 'Add review publication'
+    assert_includes CGI.unescapeHTML(body), 'Clarify review documentation'
     refute_includes body, '**Total:**'
-    assert_equal "REVIEWED #{head} BY anthropic/claude EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip
+    assert_equal "REVIEWED #{HEAD} BY anthropic/claude EFFORT UNKNOWN FINDINGS 0", body.lines.last.strip
   end
 
   def timeline_comments
@@ -149,38 +163,54 @@ class LocalReviewCommitPublicationKeyTest < Minitest::Test
   include GitHubHelper
 
   def test_generated_commit_key_passes_real_reply_validation
-    comment = Shaka::LocalReviewCommitComment.new({ 'rounds' => [round] }, head: HEAD, subject: ->(_) { 'Subject' })
+    comment = Shaka::LocalReviewLoopComment.new({ 'rounds' => [round] }, subject: ->(_) { 'Subject' })
     body = comment.render
     posted = "<!-- shaka:reply:#{comment.key} -->\n#{body}"
     github = client(response({ 'id' => 1, 'number' => 42, 'body' => '' }),
-                    response({ 'login' => 'agent' }), response([]), html_response('<table></table>'),
+                    response({ 'login' => 'agent' }), response([]), html_response('<table></table><table></table>'),
                     response({ 'id' => 9, 'body' => posted }))
 
     assert_equal 9, github.reply(body:, key: comment.key)['id']
   end
 end
 
-# The API limit includes the reply marker, and a later oversized report must cause no writes.
+# The API limit includes the reply marker. Reports past it move to an earlier-commits comment;
+# a single commit that cannot fit causes no writes.
 class LocalReviewCommitSizeTest < Minitest::Test
   include LocalReviewCommentFixture
 
-  def test_reply_marker_counts_toward_the_limit_before_any_timeline_write
+  def test_reply_marker_counts_toward_the_limit_and_moves_the_oldest_reports
     github = LocalReviewCommitPublishTest::Timeline.new
-    def github.api(_path) = { 'message' => 'Subject' }
     content = near_limit_content
-    assert_operator comment(content).render.length, :<=, 65_536
+    assert_operator comment(content).parts.first.body.length, :<=, 65_536
+
+    Shaka::LocalReviewPublisher.new(content, github, 'o/r').publish
+
+    (main_key, main), (earlier_key, earlier) = github.replies
+    assert_equal ["local-review-loop-#{EARLIER}", "local-review-loop-#{EARLIER}-1"], [main_key, earlier_key]
+    assert_includes main, 'reports in earlier comment 1'
+    refute_includes main, "<summary>Commit #{EARLIER[0, 7]}"
+    assert_equal "REVIEWED #{HEAD} BY openai/codex EFFORT UNKNOWN FINDINGS 1", main.lines.last.strip
+    assert_includes earlier, "<summary>Commit #{EARLIER[0, 7]}"
+    assert_equal "REVIEWED #{EARLIER} BY openai/codex EFFORT UNKNOWN FINDINGS 1", earlier.lines.last.strip
+  end
+
+  def test_one_commit_too_large_for_any_comment_prevents_all_writes
+    github = LocalReviewCommitPublishTest::Timeline.new
+    content = { 'rounds' => [round(EARLIER), round(report: report(body: 'x' * 65_536))] }
 
     error = assert_raises(Shaka::Error) { Shaka::LocalReviewPublisher.new(content, github, 'o/r').publish }
-    assert_includes error.message, HEAD[0, 7]
+    assert_includes error.message, '65536'
     assert_empty github.replies
   end
 
   private
 
+  # Exactly one character over the limit with both commits' reports in the main comment.
   def near_limit_content
     last = round(report: report(body: ''))
     content = { 'rounds' => [round(EARLIER), last] }
-    marker = "<!-- shaka:reply:local-review-#{HEAD} -->\n"
+    marker = "<!-- shaka:reply:local-review-loop-#{EARLIER} -->\n"
     padding = 65_536 - marker.length - comment(content).render.length + 1
     last['report'] = report(body: 'x' * padding)
     content
@@ -188,7 +218,7 @@ class LocalReviewCommitSizeTest < Minitest::Test
 
   def comment(content)
     subject = ->(_) { '<code>&#83;&#117;&#98;&#106;&#101;&#99;&#116;</code>' }
-    Shaka::LocalReviewCommitComment.new(content, head: HEAD, repository: 'o/r', published: ->(_) { true }, subject:)
+    Shaka::LocalReviewLoopComment.new(content, repository: 'o/r', published: ->(_) { true }, subject:)
   end
 end
 
