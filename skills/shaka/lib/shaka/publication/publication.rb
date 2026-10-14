@@ -23,7 +23,11 @@ module Shaka
     end
 
     def self.comment(content) = new(content).render([])
-    def self.walkthrough(content) = new(content).render(%i[sections table details revision], title: true)
+
+    def self.walkthrough(content, repository = nil)
+      "#{new(content).render(%i[sections table details], title: true)}\n" \
+        "#{PublicationLinks.walkthrough_footer(content['head'], repository)}\n"
+    end
 
     def initialize(content, require_tables: false, workflow_version: nil, pull: nil, settings: nil)
       raise Error, 'Publication content must be an object.' unless content.is_a?(Hash)
@@ -48,7 +52,7 @@ module Shaka
     # Only a description is rendered with its pull request, so only a description lists what people wrote.
     def sections = PublicationSections.render(@content, HumanComments.for(@content, @pull, @settings))
 
-    def checkpoint = PublicationLinks.checkpoint(@content, head: @pull&.dig('head', 'sha'))
+    def checkpoint = PublicationLinks.checkpoint(@content, @pull, PublicationSections.decisions(@content['decisions']))
 
     # The steps besides merging sit under the headline links so a reader cannot miss them.
     def top_links = [*PublicationLinks.top(@content, @settings, @pull), *StepsBesidesMerging.render(@content)]
@@ -143,13 +147,6 @@ module Shaka
       summary = PublicationText.summary_text(detail['summary'], 'details summary')
       body = PublicationText.required(detail['body'], "details #{summary}")
       "<details>\n<summary>#{summary}</summary>\n\n#{body}\n\n</details>"
-    end
-
-    def revision
-      head = @content['head']
-      raise Error, 'Walkthrough requires the full commit SHA it explains.' unless head.to_s.match?(/\A[0-9a-f]{40}\z/)
-
-      ["_Walkthrough for commit `#{head}`. This is a COMMENT, not an approval._"]
     end
   end
 end

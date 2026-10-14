@@ -23,9 +23,9 @@ class WorkflowVersionMarkdownTest < Minitest::Test
   end
 
   # A commit from a fork or an unrecognized source may not exist upstream, so it is not linked.
-  def test_a_commit_from_another_source_shows_the_full_id_without_a_link
-    assert_equal "`#{SHA}`", result(SHA, upstream: false).markdown
-    assert_equal "`#{SHA}` (modified)", result(SHA, modified: true, upstream: false).markdown
+  def test_a_commit_from_another_source_shows_the_short_id_without_a_link
+    assert_equal "`#{SHA[0, 7]}`", result(SHA, upstream: false).markdown
+    assert_equal "`#{SHA[0, 7]}` (modified)", result(SHA, modified: true, upstream: false).markdown
   end
 
   def test_an_unknown_commit_falls_back_to_the_version_number

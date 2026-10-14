@@ -219,11 +219,11 @@ the useful summary is:
 
 > OpenAI/Codex · configured model: gpt-6.1-sol · observed model: UNKNOWN
 >
-> **Recommended next action:** Revise before merging.
+> ## Recommendation: Revise before merging
 >
-> **Next action:** Revise this PR, then revalidate and review.
+> **Next:** Revise this PR, then revalidate and review.
 >
-> **Evaluation:** Simplify/reframe
+> **Reviewer verdict:** Simplify/reframe
 >
 > Keep the missing-configuration safeguard; remove unused scans from watching and
 > repeated check verification.

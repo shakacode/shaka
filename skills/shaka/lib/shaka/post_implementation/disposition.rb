@@ -6,7 +6,7 @@ require_relative 'publication'
 module Shaka
   # The task owner's shipping recommendation, separate from the reviewer's verification.
   module PostImplementationDisposition
-    RECOMMENDATIONS = ['Merge', 'Revise before merge', 'Reconsider approach', 'Do not merge'].freeze
+    RECOMMENDATIONS = PostImplementationReport::RECOMMENDATIONS
 
     module_function
 
@@ -71,17 +71,16 @@ module Shaka
       @state = PostImplementationDisposition.merge?(disposition) ? 'ready' : 'blocked'
       @summary = disposition.fetch('reason')
       verification = report.fetch('summary', report.fetch('reasons').first)
-      ["**Recommended next action:** #{disposition.fetch('recommendation')}", @summary,
-       "**Next action:** #{disposition.fetch('next_action')}",
-       "**Evaluation:** #{report.fetch('conclusion')}", verification,
+      ["## Recommendation: #{disposition.fetch('recommendation')}", @summary,
+       "**Next:** #{disposition.fetch('next_action')}",
+       "**Reviewer verdict:** #{report.fetch('conclusion')}", verification,
        evidence_lines(report, disposition.fetch('accepted_concerns')),
        supporting_analysis(report, verification)].join("\n\n")
     end
 
     def evidence_lines(report, accepted)
       open = report.merge('concerns' => PostImplementationDisposition.unresolved(report, accepted))
-      [concern_section(open), *accepted_section(accepted),
-       'Required checks, reviews, and merge authority still apply.'].join("\n\n")
+      [concern_section(open), *accepted_section(accepted)].join("\n\n")
     end
 
     def accepted_section(accepted)

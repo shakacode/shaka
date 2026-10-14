@@ -213,7 +213,8 @@ def walkthrough_body(options, github)
 
   walkthrough = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
   walkthrough = walkthrough.merge('head' => options.fetch(:head))
-  Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough), walkthrough, github)
+  Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough, github.repository), walkthrough,
+                                        github)
 end
 
 def usage_banner

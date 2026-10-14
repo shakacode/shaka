@@ -282,16 +282,18 @@ preparation without this account's published ready review or explicit opt-out fo
 current commit. A new commit needs fresh evidence. The reviewer judges value; Ruby
 checks the published result and commit, not the judgment’s quality.
 
-Use **Recommended next action** for the proposal and **Recorded decision** for
+Use **Recommendation** for the proposal and **Recorded decision** for
 accepted guidance. Once a direction is chosen, the agent records that guidance
 and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
-The PR description shows the current checkpoint status and **Recommended next action**,
-with the commit they apply to and a link to the full report. Your agent summarizes
+The PR description opens with the recommendation as a heading, such as
+**Recommendation: Merge**, or with **Decisions to make** while you have questions to answer.
+The next action follows on one line with the short, linked commit it applies to, and the
+links below it open the walkthrough, the detailed code review, and the full checkpoint. Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.
 Supporting evidence appears below.
-The report keeps the **Evaluation** within the checkpoint. A recommendation becomes a
+The report keeps the **Reviewer verdict** within the checkpoint. A recommendation becomes a
 **Recorded decision** after the owner accepts it or acts under existing authority.
 Auto applies previously granted authority; a consequential unresolved choice still needs direction.
 Parsed identifiers and readiness rules remain unchanged.

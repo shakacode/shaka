@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../evidence/public_settings'
+require_relative 'text'
 
 module Shaka
   # Renders every setting by operation, for settings a reader cannot look up in the repository.
@@ -10,6 +11,12 @@ module Shaka
                'REDACTED' => 'Never published, so REDACTED in every column' }.freeze
 
     module_function
+
+    # Where a result's settings came from, with a committed revision as a short link.
+    def source(settings, repository)
+      kind, revision = settings.values_at('source', 'source.revision')
+      kind == 'UNKNOWN' ? kind : "#{kind} at #{PublicationText.commit(revision, repository)}"
+    end
 
     # A second disclosure keeps the long table out of the way of the lines above it.
     def disclosure(columns)

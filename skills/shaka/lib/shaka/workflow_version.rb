@@ -45,7 +45,7 @@ module Shaka
       def link
         raise Error, 'Workflow commit is invalid.' unless commit.is_a?(String) && commit.match?(COMMIT)
 
-        upstream ? "[`#{commit[0, 7]}`](#{REPOSITORY}/commit/#{commit})" : "`#{commit}`"
+        upstream ? "[`#{commit[0, 7]}`](#{REPOSITORY}/commit/#{commit})" : "`#{commit[0, 7]}`"
       end
     end
 

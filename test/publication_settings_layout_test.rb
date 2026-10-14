@@ -8,7 +8,7 @@ class PublicationSettingsLayoutTest < Minitest::Test
 
   def test_settings_kept_out_of_the_repository_keep_every_value_behind_a_second_disclosure
     summary, values = bound.split('<details>', 2)
-    assert_includes summary, "| Before push: validation | private/local at #{REVISION} | validate |"
+    assert_includes summary, "| Before push: validation | private/local at `#{REVISION[0, 7]}` | validate |"
     refute_includes summary, '| merge.preference |'
     assert_includes values, '| merge.preference | ask | ask | ask |'
     assert values.end_with?('</details>'), 'the values disclosure must close inside the block'

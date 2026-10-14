@@ -111,7 +111,7 @@ class PrDescriptionCheckpointCommandTest < Minitest::Test
       Dir.mktmpdir do |dir|
         _output, error, status = run_description(dir, root:, ref: fixture_ref(root))
         assert_predicate status, :success?, error
-        assert_includes File.read(File.join(dir, 'published.md')), '**Status:** Direction needed'
+        assert_includes File.read(File.join(dir, 'published.md')), '## Recommendation: Revise before merge'
       end
     end
   end
@@ -129,7 +129,7 @@ class PrDescriptionCheckpointCommandTest < Minitest::Test
   end
 
   def description_content
-    super.merge('checkpoint' => { 'head' => @checkpoint_head || ('c' * 40), 'status' => 'Direction needed',
+    super.merge('checkpoint' => { 'head' => @checkpoint_head || ('c' * 40), 'recommendation' => 'Revise before merge',
                                   'next_action' => 'Justin: choose the next direction.' })
   end
 end
