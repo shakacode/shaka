@@ -412,8 +412,7 @@ phases:
       - For a UI change, follow [UI evidence publication](<{{package_root}}/skills/shaka/references/ui-verification.md#publish-ui-evidence>)
         to inspect captures for private content, then publish them on its PR before the Finish
         checkpoint. When a capture cannot be published, record `uploader_absent`, `uploader_denied`,
-        or `upload_failed: DETAIL` on the PR in its place. Complete verified uploads and a manual
-        pass against a resolved preview or publish the reason that pass could not run.
+        or `upload_failed: DETAIL` on the PR in its place.
       - Publish a speed-affecting change's comparison result, any maintainer acceptance, or its
         unmeasured note on its PR. Label a result with the revisions it compared, and an
         unmeasured note with the head it covers, marked as not measured.

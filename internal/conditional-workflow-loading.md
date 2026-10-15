@@ -35,10 +35,10 @@ quotes, not execution of the instructions.
 
 Against Shaka `0408d279a64255e94a6a604ec4b945a109615fae`,
 `bin/report-instruction-growth` measures the rendered workflow from 11,032 to
-10,630 words: 402 fewer words (3.6%) and 2,453 fewer UTF-8 bytes.
+10,610 words: 422 fewer words (3.8%) and 2,573 fewer UTF-8 bytes.
 The entry point remains 254 words and project guidance remains 1,709 words.
 The new UI reference has 309 words; performance has 288. The reference index
-adds 14 words. Across these instruction surfaces, total text grows by 209 words.
+adds 14 words. Across these instruction surfaces, total text grows by 189 words.
 
 An ordinary task avoids both references. A UI-only task adds the UI reference;
 a speed-only task adds performance. A task needing both loads more text than
