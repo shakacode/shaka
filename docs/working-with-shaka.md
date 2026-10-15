@@ -330,9 +330,13 @@ risk instead. To give them Ponytail's rule, add a line like this to your
 [review prompt](settings.md#reviewprompt_file):
 
 ```text
-A `shortcut:` comment that names its limit is a deliberate decision. Report it
-only when the expected load already exceeds that limit.
+A `shortcut:` comment that names its limit records a deliberate decision.
+Check that limit against the expected load, and report it only when the load
+already exceeds it.
 ```
+
+The PR's author writes these comments, so add the line where you trust the
+people who open PRs, not on a repository that takes PRs from forks.
 
 ### What each kind of skill can do
 
@@ -351,8 +355,9 @@ or approve a merge.
 
 Some skills write rule files into your repository, such as the `CONSTRAINTS.md`
 that Addy Osmani's `constraint-driven-development` creates. On a feature
-branch, that file is part of the change under review. Shaka's checks,
-reviewers, and merge rules still come from your default branch.
+branch, that file is part of the change under review. Shaka still reads its
+settings from your default branch, including which checks run, who reviews,
+and the merge rules.
 
 If a skill you named is not installed, the agent says so, continues the work
 that does not need it, and asks about the rest. It does not install software for
