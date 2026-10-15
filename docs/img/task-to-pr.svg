@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img" aria-labelledby="t d">
+<title id="t">From task to pull request</title>
+<desc id="d">You give a task. The agent builds, verifies, and reviews, repeating tests, screenshots, and review. You review one clear pull request with a walkthrough, passed checks, and addressed findings, then merge it or send it back.</desc>
+<style>
+.bg{fill:#fff;stroke:#d9e0e7}
+text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
+.h{font-size:15px;font-weight:600}
+.s{font-size:13px}
+.l{font-size:11px;letter-spacing:.08em}
+.m{fill:#516074}
+.you rect{fill:#fdf3df;stroke:#b87514;stroke-width:1}
+.agent rect{fill:#f1f4f8;stroke:#8a99ad;stroke-width:1}
+.pr rect{fill:#e3f5ec;stroke:#128a5e;stroke-width:2}
+.ok{fill:#128a5e;font-weight:700}
+.a{stroke:#516074;stroke-width:1.5;fill:none}
+.ah{fill:#516074}
+@media (prefers-color-scheme:dark){
+.bg{fill:#0f1724;stroke:#2a3648}
+text{fill:#e6edf5}
+.m{fill:#9fb0c3}
+.you rect{fill:#40300f;stroke:#e0a13a}
+.agent rect{fill:#1a2535;stroke:#6b7c93}
+.pr rect{fill:#0e3d2c;stroke:#3ccf92}
+.ok{fill:#3ccf92}
+.a{stroke:#9fb0c3}
+.ah{fill:#9fb0c3}
+}
+</style>
+<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0.5" y="0.5" width="719" height="199" rx="10"/>
+<g class="you"><rect x="30" y="30" width="190" height="140" rx="8"/>
+<text class="l m" x="48" y="56">YOU</text>
+<text class="h" x="48" y="80">Give a task</text>
+<text class="s m" x="48" y="102">An issue or a sentence</text></g>
+<path class="a" d="M222 100H262" marker-end="url(#ar)"/>
+<g class="agent"><rect x="265" y="30" width="190" height="140" rx="8"/>
+<text class="l m" x="283" y="56">AGENT</text>
+<text class="h" x="283" y="80">Build, verify, review</text>
+<text class="s m" x="283" y="102">↻ Repeats tests,</text>
+<text class="s m" x="283" y="120">screenshots, and review</text></g>
+<path class="a" d="M457 100H497" marker-end="url(#ar)"/>
+<g class="pr"><rect x="500" y="30" width="190" height="140" rx="8"/>
+<text class="l m" x="518" y="56">YOU</text>
+<text class="h" x="518" y="80">Review one clear PR</text>
+<text class="s" x="518" y="102"><tspan class="ok">✓</tspan> Walkthrough</text>
+<text class="s" x="518" y="120"><tspan class="ok">✓</tspan> Checks passed</text>
+<text class="s" x="518" y="138"><tspan class="ok">✓</tspan> Findings addressed</text>
+<text class="s m" x="518" y="158">Merge, or send it back</text></g>
+</svg>
