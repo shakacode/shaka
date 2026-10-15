@@ -51,7 +51,8 @@ or PATH by hand.
 
 Start with one reviewer. For broader coverage, configure
 [multiple reviewers](settings.md#reviewlocal_review_count), such as Claude, Codex,
-or DeepSeek. Additional reviews cost more.
+or DeepSeek. Additional reviews cost more. The agent combines reviews before
+deciding how to respond, so overlapping findings are handled once.
 
 ## Understand the PR's settings and evidence
 
