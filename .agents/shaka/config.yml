@@ -1,28 +1,43 @@
 # Shaka settings for this repository; also a browsable configuration example.
-# Reference: docs/settings.md. Explicit values below preserve effective policy.
+# Reference: https://shaka.shakacode.com/docs/settings
+# Why this repository departs from defaults: README.md beside this file.
+# Explicit values below preserve effective policy.
 # Required choices (review jobs, reviewers, merge preference) are repository-specific.
 # Optional settings with no fixed default stay commented rather than pinning a choice.
 # Policy comes from the trusted default branch; edits do not govern their own PR.
 # CI checks default drift in test/repository_configuration_example_test.rb.
 ---
+# https://shaka.shakacode.com/docs/settings#version
 version: 1 # Configuration format, independent of the Shaka release version.
+# https://shaka.shakacode.com/docs/settings#repo_prefix
 repo_prefix: SHAKA # Omitted: derive a label from the repository name.
+# https://shaka.shakacode.com/docs/settings#base_branch
 # base_branch: main # Omitted: follow the repository's default branch.
 
 review:
-  local_review_count: 3
+  # https://shaka.shakacode.com/docs/settings#reviewlocal_review_count
+  local_review_count: 3 # Default 1; this repository runs three reviewers (README.md).
+  # https://shaka.shakacode.com/docs/settings#reviewrequired
   required: meaningful_changes # Repository choice: meaningful_changes, always, or none.
+  # https://shaka.shakacode.com/docs/settings#reviewci_review_jobs
   ci_review_jobs: # Repository jobs, required unless review.required is none.
     - claude-review
+  # https://shaka.shakacode.com/docs/settings#reviewci_review_wait
   ci_review_wait: one # Default: wait for one configured hosted review report.
+  # https://shaka.shakacode.com/docs/settings#reviewlocal_max_rounds
   local_max_rounds: 5 # Default: maximum committed heads in one local review ledger.
-  prompt_file: .agents/shaka/review-prompt.md # Project choice; omitted: skills/shaka/config/review-prompt.md.
+  # https://shaka.shakacode.com/docs/settings#reviewprompt_file
+  # Replaces Shaka's packaged prompt to apply AGENTS.md criteria (README.md).
+  prompt_file: .agents/shaka/review-prompt.md # Omitted: skills/shaka/config/review-prompt.md.
+  # https://shaka.shakacode.com/docs/settings#reviewpost_implementation
   post_implementation: # Explicit defaults for the finished-result checkpoint.
     enabled: true
     reviewer: openai/codex
     model: gpt-6.1-sol
     effort: medium
-    prompt_file: .agents/shaka/product-checkpoint.md # Project choice; omitted: Shaka's packaged prompt.
+    # Replaces Shaka's packaged prompt to apply AGENTS.md criteria (README.md).
+    prompt_file: .agents/shaka/product-checkpoint.md # Omitted: Shaka's packaged prompt.
+  # https://shaka.shakacode.com/docs/settings#reviewlocal_review_agents
   local_review_agents: # Repository preference order; omitted: fresh implementation-model review.
     - provider: anthropic
       model_family: claude
@@ -33,6 +48,7 @@ review:
     - provider: deepseek
       model_family: openrouter
       # Review deadline defaults to 600 seconds; --timeout-seconds overrides it per run.
+      # https://shaka.shakacode.com/docs/settings#model-and-effort-values
       model: deepseek/deepseek-v4.1-flash
       effort: low
     - provider: xai
@@ -40,23 +56,32 @@ review:
       # Grok needs a model from configuration or the task to run.
 
 merge:
+  # https://shaka.shakacode.com/docs/settings#mergepreference
   preference: ask # Setup default: hand the verified PR back for merging.
+  # https://shaka.shakacode.com/docs/settings#mergerequired_checks
   # required_checks: [validate] # Omitted: no fallback list; live GitHub gates come first.
+  # https://shaka.shakacode.com/docs/settings#mergelimits
   limits: # Defaults; exceeding a limit requires confirmation of the commit to merge.
     max_changed_files: 29
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
 
 branches:
+  # https://shaka.shakacode.com/docs/settings#branchesname
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.
 
 wip:
+  # https://shaka.shakacode.com/docs/settings#wipinclude_checkout_path
   include_checkout_path: true # Default: publish the checkout path in WIP Details; false keeps the chat link.
 
 pr_description:
+  # https://shaka.shakacode.com/docs/settings#pr_descriptionshow_shaka_credit
   show_shaka_credit: true # Default: show a quiet Shaka website credit below the PR summary.
+  # https://shaka.shakacode.com/docs/settings#pr_descriptionshow_human_comments
   show_human_comments: true # Default: list the comments people wrote; false leaves the list out.
+  # https://shaka.shakacode.com/docs/settings#pr_descriptionmax_human_comments
   max_human_comments: 20 # Default: rows the list shows, open comments first.
+  # https://shaka.shakacode.com/docs/settings#pr_descriptionopening_check
   opening_check:
     enabled: true # Default: check the opening; false turns the check off.
     effort: low # Default: low, independent of the code-review effort.
@@ -65,6 +90,7 @@ pr_description:
     # Omit model to use that reviewer's CLI default, not its code-review model.
     # prompt_file: .agents/shaka/opening-prompt.md # Omitted: use Shaka's opening instructions.
 
+# https://shaka.shakacode.com/docs/settings#prose_limits
 prose_limits: # Defaults for visible PR descriptions and walkthroughs.
   max_sentence_words: 35
   max_paragraph_words: 100
@@ -73,5 +99,6 @@ prose_limits: # Defaults for visible PR descriptions and walkthroughs.
 
 # Commands are executable files, not YAML settings: .agents/shaka/bin/{setup,test,validate}.
 # Optional: .agents/shaka/bin/validate-local and .agents/shaka/bin/trigger-hosted-ci (requires validate-local).
+# https://shaka.shakacode.com/docs/settings#standard-command-scripts
 # Public-comment trust lives beside this file in trusted-github-actors.yml.
 # Older repositories may keep .agents/agent-workflow.yml and .agents/bin/.

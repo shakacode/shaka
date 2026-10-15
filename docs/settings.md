@@ -11,6 +11,9 @@ Settings live in `.agents/shaka/config.yml`. Ask your agent to
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
+Each value links to its entry here, and the
+[configuration README](https://github.com/shakacode/shaka/tree/main/.agents/shaka#readme)
+explains why its review prompts and reviewer count differ from the defaults.
 
 ## Which settings apply?
 
@@ -458,7 +461,10 @@ task.
 
 **Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**
 A Markdown file in your repository that replaces what the local reviewer looks for
-and how it reports. Copy the default to start.
+and how it reports. Copy the default to start. Shaka's own
+[review prompt](https://github.com/shakacode/shaka/blob/main/.agents/shaka/review-prompt.md)
+is an example; its [README](https://github.com/shakacode/shaka/tree/main/.agents/shaka#review-prompt)
+explains what it adds.
 
 ```yaml
 review:
@@ -523,6 +529,10 @@ review:
     effort: high
     prompt_file: .agents/shaka/product-checkpoint.md
 ```
+
+Shaka's own [checkpoint prompt](https://github.com/shakacode/shaka/blob/main/.agents/shaka/product-checkpoint.md)
+is an example; its [README](https://github.com/shakacode/shaka/tree/main/.agents/shaka#checkpoint-prompt)
+explains what it changes.
 
 Repository choices come from the [configuration source](#which-settings-apply),
 and the prompt file from [where Shaka reads prompt files](#where-shaka-reads-a-prompt-file).
