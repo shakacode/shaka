@@ -259,11 +259,15 @@ no stacked-PR service is needed.
 ## Combine Shaka with other skills
 
 Use the skills you like for planning and engineering technique, and let Shaka
-deliver the result. Two examples are
+deliver the result. Examples are
 [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md),
-which turn an idea into a spec and tickets, and
+which turn an idea into a spec and tickets;
 [pstack](https://github.com/cursor/plugins/tree/main/pstack), which adds
-engineering principles and parallel workers.
+engineering principles and parallel workers;
+[Ponytail](https://github.com/DietrichGebert/ponytail), which keeps each change
+as small as it can be while still complete; and
+[Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills), a
+library of engineering practices from spec to launch.
 
 ### Hand over a spec and tickets
 
@@ -304,6 +308,32 @@ the PR in its own format, and returns it to you to merge. pstack's "don't block
 on the human" guidance does not turn Ask into Auto. Leave out the subagent
 sentence and the agent does the fan-out steps alone or asks first.
 
+### Work with Ponytail turned on
+
+Ponytail turns itself on. Once installed, it adds its rules at the start of
+every session and to every subagent, so you do not name it in the prompt:
+
+```text
+$shaka Fix https://github.com/OWNER/REPO/issues/N. Keep merge policy ask. Go.
+```
+
+The agent writes the smallest complete change, and Shaka delivers it the usual
+way. Ponytail's rules stay out of Shaka's Claude and Codex reviewers. The
+Claude reviewer runs with plugins and hooks turned off, and the Codex reviewer
+skips your Codex config file, where plugins are enabled. The Grok reviewer
+keeps installed plugins, so it may review with Ponytail's rules.
+
+Ponytail marks a deliberate shortcut with a code comment such as
+`shortcut: in-memory cache, move to Redis past one server`. Ponytail's own
+review treats that comment as a decision. Shaka's reviewers may report it as a
+risk instead. To give them Ponytail's rule, add a line like this to your
+[review prompt](settings.md#reviewprompt_file):
+
+```text
+A `shortcut:` comment that names its limit is a deliberate decision. Report it
+only when the expected load already exceeds that limit.
+```
+
 ### What each kind of skill can do
 
 Shaka stays the one owner of delivery, so another skill's output is input to the
@@ -313,10 +343,16 @@ or approve a merge.
 | Kind of skill | Examples | With Shaka |
 | --- | --- | --- |
 | Planning | AI Hero `to-spec`, `to-tickets` | Its spec and tickets become the task. |
-| Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd` | Shapes how the agent works inside each step. |
+| Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd`; Ponytail; Addy Osmani `test-driven-development`, `incremental-implementation` | Shapes how the agent works inside each step. |
 | Parallel workers | pstack `swarm`, `arena`, `interrogate` | Runs only when you say the agent may delegate. Workers never publish or merge. |
+| Same-session review | Ponytail `/ponytail-review`, `/ponytail-audit`; Addy Osmani `/review`, `/ship`; AI Hero `code-review`; pstack `thermos` | Findings the agent weighs and fixes before Shaka's own review. It does not replace that review, which runs in a separate session and, when available, with another provider's model. |
 | PR text | AI Hero `pr`, pstack `technical-writing`, `unslop` | Advice on wording and presentation. Shaka's description keeps its own format and required fields. |
-| Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, and Autopilot playbooks | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
+| Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, Orchestrate, and Autopilot playbooks | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
+
+Some skills write rule files into your repository, such as the `CONSTRAINTS.md`
+that Addy Osmani's `constraint-driven-development` creates. On a feature
+branch, that file is part of the change under review. Shaka's checks,
+reviewers, and merge rules still come from your default branch.
 
 If a skill you named is not installed, the agent says so, continues the work
 that does not need it, and asks about the rest. It does not install software for
