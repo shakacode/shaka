@@ -7,8 +7,9 @@ require_relative '../error'
 module Shaka
   # Finds the pull request commit a rebase made from a reviewed commit that was never pushed. A rebase
   # keeps a commit's subject and author date, so those pick the candidates; the copy must also make the
-  # same change, by `git patch-id`, so an amended commit with new content never counts. Without the
-  # local commits, a unique match, or a readable commit list, there is no copy and the SHA stays plain.
+  # same change, byte for byte apart from line numbers and blob ids, so an amended commit with new
+  # content, even whitespace, never counts. Without the local commits, a unique match, or a readable
+  # commit list, there is no copy and the SHA stays plain.
   class LocalReviewRebasedCommits
     SHA = /\A\h{40}\z/
 
@@ -27,10 +28,10 @@ module Shaka
 
     def copy_of(sha)
       local = local_identity(sha)
-      change = local && patch_id(sha)
+      change = local && change(sha)
       return unless change
 
-      copies = pull_commits.select { |commit| identity(commit) == local && patch_id(commit['sha']) == change }
+      copies = pull_commits.select { |commit| identity(commit) == local && change(commit['sha']) == change }
       copies.one? ? copies.first.fetch('sha') : nil
     end
 
@@ -46,14 +47,14 @@ module Shaka
       nil
     end
 
-    def patch_id(sha)
+    # The commit's patch without the parts a rebase moves: blob ids and hunk line numbers.
+    def change(sha)
       return unless sha.to_s.match?(SHA)
 
-      diff, _error, status = Open3.capture3('git', '-C', @root, 'diff-tree', '-p', '--root', sha)
+      diff, _error, status = Open3.capture3('git', '-C', @root, 'diff-tree', '-p', '--root', '--no-commit-id', sha)
       return unless status.success? && !diff.empty?
 
-      output, _error, status = Open3.capture3('git', '-C', @root, 'patch-id', '--stable', stdin_data: diff)
-      output.split.first if status.success?
+      diff.lines.reject { |line| line.start_with?('index ') }.map { |line| line.sub(/\A@@ [^@]* @@/, '@@') }.join
     rescue SystemCallError
       nil
     end

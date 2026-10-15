@@ -43,6 +43,13 @@ class LocalReviewRebasedCommitsTest < Minitest::Test
     assert_nil rebased([pushed(amended)]).call(@reviewed)
   end
 
+  def test_an_amended_commit_changing_only_whitespace_is_not_a_copy
+    git('checkout', '--quiet', '--detach', @copy)
+    amended = commit('x.txt', "reviewed \n", 'Add review publication', date: DATE, amend: true)
+
+    assert_nil rebased([pushed(amended)]).call(@reviewed)
+  end
+
   def test_no_copy_without_the_local_commit_or_a_readable_list
     assert_nil rebased([pushed(@copy)]).call('d' * 40)
     failing = Object.new
