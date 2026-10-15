@@ -4,10 +4,11 @@ Understand what your coding agent changed, why it chose the approach, and how
 the result was checked. Shaka presents the context you need to approve a change,
 request revisions, or resolve an open question. You choose who merges it.
 
-![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, passed checks, and addressed findings, then merge it or send it back.](img/task-to-pr.svg)
+![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
 
-The agent builds, verifies, and reviews until your checks pass. Then you review one
-clear PR. At the [checkpoint](pr-verification.md#checkpoint), decide whether to merge it or send it back.
+The agent builds, verifies, and reviews, fixing what it can. Then you review one clear
+PR: what changed, how it was checked, and what is still open. At the
+[checkpoint](pr-verification.md#checkpoint), decide whether to merge it or send it back.
 
 ## Start here
 
