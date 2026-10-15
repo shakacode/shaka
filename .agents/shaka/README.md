@@ -59,10 +59,12 @@ change runs the repository's full [`bin/validate`](../../bin/validate).
 
 ### Repository choices without a default
 
-`review.required`, `review.ci_review_jobs`, `review.local_review_agents`, and the
-trusted actors have no default. This repository sets `required: meaningful_changes`
-and waits for its hosted `claude-review` job from
+Setup asks each repository for `merge.preference`, `review.required`,
+`review.ci_review_jobs`, `review.local_review_agents`, and the trusted actors.
+This repository keeps merging at Ask, sets `required: meaningful_changes`, and waits
+for its hosted `claude-review` job from
 [Claude Code Review](../../.github/workflows/claude-code-review.yml).
+`repo_prefix: SHAKA` names this repository's chats and labels explicitly.
 
 Every other value in `config.yml` restates Shaka's default so readers can see it.
 [A test](../../test/repository_configuration_example_test.rb) fails when a default
