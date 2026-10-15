@@ -326,13 +326,13 @@ keeps installed plugins, so it may review with Ponytail's rules.
 Ponytail marks a deliberate shortcut with a code comment such as
 `shortcut: in-memory cache, move to Redis past one server`. Ponytail's own
 review treats that comment as a decision. Shaka's reviewers may report it as a
-risk instead. To give them Ponytail's rule, add a line like this to your
-[review prompt](settings.md#reviewprompt_file):
+risk instead. To have them treat it as a known tradeoff, add a line like this
+to your [review prompt](settings.md#reviewprompt_file):
 
 ```text
-A `shortcut:` comment that names its limit records a deliberate decision.
-Check that limit against the expected load, and report it only when the load
-already exceeds it.
+A `shortcut:` comment records a deliberate tradeoff and its limit. Check that
+limit against the expected load. Report the shortcut when that load is likely
+to reach the limit, and report other risks as usual.
 ```
 
 The PR's author writes these comments, so add the line where you trust the
