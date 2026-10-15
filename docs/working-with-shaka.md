@@ -349,7 +349,7 @@ or approve a merge.
 | Planning | AI Hero `to-spec`, `to-tickets` | Its spec and tickets become the task. |
 | Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd`; Ponytail; Addy Osmani `test-driven-development`, `incremental-implementation` | Shapes how the agent works inside each step. |
 | Parallel workers | pstack `swarm`, `arena`, `interrogate` | Runs only when you say the agent may delegate. Workers never publish or merge. |
-| Same-session review | Ponytail `/ponytail-review`, `/ponytail-audit`; Addy Osmani `/review`, `/ship`; AI Hero `code-review`; pstack `thermos` | Findings the agent weighs and fixes before Shaka's own review. It does not replace that review, which runs in a separate session and, when available, with another provider's model. |
+| Same-session review | Ponytail `/ponytail-review`, `/ponytail-audit`; Addy Osmani `/review`, `/ship`; AI Hero `code-review` | Findings the agent weighs and fixes before Shaka's own review. The skill does not replace that review, which runs in a separate session and, when available, with another provider's model. |
 | PR text | AI Hero `pr`, pstack `technical-writing`, `unslop` | Advice on wording and presentation. Shaka's description keeps its own format and required fields. |
 | Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, Orchestrate, and Autopilot playbooks | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
 
