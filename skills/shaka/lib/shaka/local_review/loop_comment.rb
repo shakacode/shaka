@@ -28,7 +28,7 @@ module Shaka
         @ledger_id.nil? || @ledger_id.to_s.match?(LEDGER_ID)
 
       @usage_url = usage_url
-      @commits = @rounds.chunk(&:head).map { |_, rounds| LocalReviewCommitSection.new(rounds, subject) }
+      @commits = @rounds.chunk(&:head).map { |_, rounds| LocalReviewCommitSection.new(rounds, subject, @links) }
       @attention = LocalReviewAttention.new(@rounds, @links, assessments: @assessment_view)
     end
 
