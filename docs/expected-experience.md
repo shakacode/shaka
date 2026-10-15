@@ -49,22 +49,9 @@ or PATH by hand.
 
 ## Multiple reviewers per commit
 
-Configure [multiple local reviewers](settings.md#reviewlocal_review_count) when you
-want independent reviews of each commit. For example, combine Claude and Codex
-and optionally add DeepSeek. The review comment names
-the reviewed revision, reviewers, and finding counts, then shows one combined
-list of problems. Expand the reports to see their findings and how they were
-combined; a shared problem is fixed once. Earlier review comments remain
-collapsed in the PR timeline, linked to the current report.
-
-Additional reviewers cost more, and the extra findings vary. A historical
-two-reviewer comparison is recorded in [follow-up #361](https://github.com/shakacode/shaka/issues/361).
-Rounds 1–25 found 7 problems only Codex reported (all fixed), 51 only Claude
-reported (31 fixed), and 4 reported by both. In the last 7 reviewed commits,
-Codex used 2.28 million tokens and found nothing; Claude used 1.26 million and
-found 22 problems, including 2 defects. This is one PR's evidence, not an
-established efficiency advantage. Start with one reviewer unless the extra
-coverage is worth the cost to your project.
+Start with one reviewer. For broader coverage, configure
+[multiple reviewers](settings.md#reviewlocal_review_count), such as Claude, Codex,
+or DeepSeek. Additional reviews cost more.
 
 ## Understand the PR's settings and evidence
 
