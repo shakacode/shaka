@@ -8,7 +8,7 @@ request revisions, or resolve an open question. You choose who merges it.
 
 The agent builds, verifies, and reviews, fixing what it can. Then you review one clear
 PR: what changed, how it was checked, and what is still open. At the
-[checkpoint](pr-verification.md#checkpoint), decide whether to merge it or send it back.
+[checkpoint](pr-verification.md#checkpoint), decide what happens next.
 
 ## Start here
 

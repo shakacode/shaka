@@ -11,7 +11,7 @@ revisions, or resolve an open question.
 
 The agent builds, verifies, and reviews, fixing what it can. Then you review one clear
 PR: what changed, how it was checked, and what is still open. At the
-[checkpoint](docs/pr-verification.md#checkpoint), decide whether to merge it or send it back.
+[checkpoint](docs/pr-verification.md#checkpoint), decide what happens next.
 
 [Read the Shaka documentation](https://shaka.shakacode.com/).
 
