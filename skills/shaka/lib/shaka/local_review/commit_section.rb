@@ -12,6 +12,8 @@ module Shaka
       @links = links
     end
 
+    attr_reader :rounds
+
     def head = @rounds.first.head
 
     def summaries = [summary, *@rounds.map(&:summary)]

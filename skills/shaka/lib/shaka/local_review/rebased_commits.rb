@@ -7,9 +7,10 @@ require_relative '../error'
 module Shaka
   # Finds the pull request commit a rebase made from a reviewed commit that was never pushed. A rebase
   # keeps a commit's subject and author date, so those pick the candidates; the copy must also make the
-  # same change, byte for byte apart from line numbers and blob ids, so an amended commit with new
-  # content, even whitespace, never counts. Without the local commits, a unique match, or a readable
-  # commit list, there is no copy and the SHA stays plain.
+  # same change, byte for byte apart from blob ids and hunk line numbers, so an amended commit with new
+  # content, even whitespace, never counts. Context lines and each hunk's heading still have to match,
+  # so the same lines changed elsewhere do not either. A binary change has no comparable text and
+  # stays plain, as does a commit without the local commits, a unique match, or a readable commit list.
   class LocalReviewRebasedCommits
     SHA = /\A\h{40}\z/
 
@@ -47,14 +48,21 @@ module Shaka
       nil
     end
 
-    # The commit's patch without the parts a rebase moves: blob ids and hunk line numbers.
+    # The commit's patch without what a rebase moves when it changes the file's other lines: blob ids
+    # and hunk line numbers.
     def change(sha)
+      diff = patch(sha)
+      return if diff.nil? || diff.empty? || diff.match?(/^Binary files /)
+
+      kept = diff.lines.reject { |line| line.start_with?('index ') }
+      kept.map { |line| line.sub(/\A@@ -\d+(?:,\d+)? \+\d+(?:,\d+)? @@/, '@@') }.join
+    end
+
+    def patch(sha)
       return unless sha.to_s.match?(SHA)
 
       diff, _error, status = Open3.capture3('git', '-C', @root, 'diff-tree', '-p', '--root', '--no-commit-id', sha)
-      return unless status.success? && !diff.empty?
-
-      diff.lines.reject { |line| line.start_with?('index ') }.map { |line| line.sub(/\A@@ [^@]* @@/, '@@') }.join
+      diff if status.success?
     rescue SystemCallError
       nil
     end
