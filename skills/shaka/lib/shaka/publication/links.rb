@@ -17,6 +17,7 @@ module Shaka
     module_function
 
     # The heading is the decision a maintainer acts on: the owner's recommendation, or the open decisions.
+    # The head check keeps a stale recommendation off the page, so the text need not name the commit.
     def checkpoint(content, pull, decisions)
       return decisions unless content.key?('checkpoint')
 
@@ -27,8 +28,7 @@ module Shaka
         head && checkpoint['head'] == head
 
       action = PublicationText.summary_text(checkpoint['next_action'], 'checkpoint next_action')
-      [*checkpoint_heading(checkpoint['recommendation'], decisions),
-       "**Next:** #{action} · Head #{PublicationText.commit(head, pull.dig('base', 'repo', 'full_name'))}"]
+      [*checkpoint_heading(checkpoint['recommendation'], decisions), "**Next:** #{action}"]
     end
 
     # Open decisions are the heading while they last, even over a Merge checkpoint; its recommendation follows them.

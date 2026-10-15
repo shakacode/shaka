@@ -294,7 +294,8 @@ owner has recorded one. Shaka reads that heading from the latest checkpoint for 
 each time the description is published; your agent republishes the description when the
 checkpoint changes. A checkpoint that holds only the reviewer's verdict shows it as **Reviewer
 recommendation** and leaves the description at **No recommendation yet**.
-The next action follows on one line with the short, linked commit it applies to. After
+The next action follows in one short sentence. Shaka refuses to show a recommendation
+made for an earlier commit, so that line does not name one. After
 the summary, links open the walkthrough, the detailed code review when one was published,
 and the full checkpoint. Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.

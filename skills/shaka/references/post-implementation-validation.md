@@ -160,7 +160,8 @@ Give each owner field one job:
 
 - `reason`: the main reason for the recommendation. A recommendation is not merge permission.
 - `next_action`: the action, starting with its verb. Name who does it only when that
-  person is not the developer. Do not restate the recommendation.
+  person is not the developer. Do not restate the recommendation. Keep it to one short,
+  plain sentence; leave out the commit, merge preference, and check results.
 
 Publish the reviewer's report fields unchanged.
 

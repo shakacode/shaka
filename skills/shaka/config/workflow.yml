@@ -518,10 +518,11 @@ phases:
         in the opening paragraph. Beside it, the helper renders Code Review from `review`, the
         published local review comment URL, and Checkpoint, using `post_implementation` for the
         published PR comment URL or a named placeholder until publication. Supply `checkpoint`
-        with the live full `head` and `next_action` naming its owner; the helper reads the
+        with the live full `head` and a one-sentence `next_action`, such as
+        `Maintainer: merge on GitHub.`; the helper reads the
         heading's recommendation from this head's published checkpoint `disposition`, and
         non-empty `decisions` head the description instead. The renderer rejects a stale
-        head. Name the head once there: leave the check table without a commit
+        head, so neither line names the commit; leave the check table without a commit
         column unless a row covers an earlier commit. Summarize consequential decisions,
         questions or friction, and critical changes in a few lines; put evidence in details.
         Republish when the recommendation or action changes.
