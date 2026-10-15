@@ -31,8 +31,8 @@ module Shaka
                                                              subject: ->(sha) { subject(sha) })
     end
 
-    # Also retires comments this ledger replaced: per-commit comments of earlier commits holding one
-    # of its reports, and continuations a repacking no longer writes. Like any report of the current
+    # Also retires comments this ledger replaced: per-commit comments of earlier commits holding only
+    # its reports, and continuations a repacking no longer writes. Like any report of the current
     # commit, a per-commit one stays visible. A failed lookup is reported, never mistaken for nothing to retire.
     def cleanup(results, count)
       begin
