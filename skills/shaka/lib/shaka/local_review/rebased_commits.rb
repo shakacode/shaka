@@ -6,8 +6,9 @@ require_relative '../error'
 
 module Shaka
   # Finds the pull request commit a rebase made from a reviewed commit that was never pushed. A rebase
-  # keeps a commit's subject and author date, so the local commit's pair names its copy when exactly
-  # one pull request commit shares it. Without the local commit or a unique match, there is none.
+  # keeps a commit's subject and author date, so those pick the candidates; the copy must also make the
+  # same change, by `git patch-id`, so an amended commit with new content never counts. Without the
+  # local commits, a unique match, or a readable commit list, there is no copy and the SHA stays plain.
   class LocalReviewRebasedCommits
     SHA = /\A\h{40}\z/
 
@@ -19,14 +20,19 @@ module Shaka
     end
 
     def call(sha)
-      @found.fetch(sha) do
-        local = local_identity(sha)
-        matches = local ? pull_commits.select { |commit| identity(commit) == local } : []
-        @found[sha] = matches.one? ? matches.first.fetch('sha') : nil
-      end
+      @found.fetch(sha) { @found[sha] = copy_of(sha) }
     end
 
     private
+
+    def copy_of(sha)
+      local = local_identity(sha)
+      change = local && patch_id(sha)
+      return unless change
+
+      copies = pull_commits.select { |commit| identity(commit) == local && patch_id(commit['sha']) == change }
+      copies.one? ? copies.first.fetch('sha') : nil
+    end
 
     def local_identity(sha)
       return unless sha.match?(SHA)
@@ -40,6 +46,18 @@ module Shaka
       nil
     end
 
+    def patch_id(sha)
+      return unless sha.to_s.match?(SHA)
+
+      diff, _error, status = Open3.capture3('git', '-C', @root, 'diff-tree', '-p', '--root', sha)
+      return unless status.success? && !diff.empty?
+
+      output, _error, status = Open3.capture3('git', '-C', @root, 'patch-id', '--stable', stdin_data: diff)
+      output.split.first if status.success?
+    rescue SystemCallError
+      nil
+    end
+
     def identity(commit)
       subject = commit.dig('commit', 'message').to_s.lines.first.to_s.strip
       [subject, Time.iso8601(commit.dig('commit', 'author', 'date'))]
@@ -47,11 +65,12 @@ module Shaka
       nil
     end
 
-    # GitHub lists at most 250 commits for a pull request; a rebased copy beyond that is not found.
+    # One page of up to 100 commits; a rebased copy beyond them is not found.
     def pull_commits
       @pull_commits ||= begin
-        listed = @github.api("repos/#{@repository}/pulls/#{@github.number}/commits?per_page=100")
-        listed.is_a?(Array) ? listed : []
+        @github.api_list("repos/#{@repository}/pulls/#{@github.number}/commits?per_page=100")
+      rescue Error
+        []
       end
     end
   end
