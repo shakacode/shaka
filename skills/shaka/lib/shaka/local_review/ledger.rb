@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require 'digest'
 require 'json'
-require 'securerandom'
 require_relative '../error'
 require_relative 'bundle'
 require_relative 'evidence'
@@ -142,9 +140,7 @@ module Shaka
 
     # Names this ledger's PR comment, so two ledgers never share one. A ledger begun before ids
     # existed keeps the first-report key it already published under.
-    def identity = data['id'] || (rounds.empty? ? SecureRandom.hex(6) : first_report_digest)
-
-    def first_report_digest = Digest::SHA256.file(rounds.first.fetch('report')).hexdigest[0, 12]
+    def identity = data['id'] || LocalReviewBundle.ledger_id(rounds)
 
     def data
       @data ||= if File.exist?(@path)
