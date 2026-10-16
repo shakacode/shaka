@@ -50,8 +50,8 @@ method is offered, return to the agent. For a squash merge, use the
 
 ## Answers for your next decision
 
-Start with the description for the outcome, open decisions, and steps besides
-merging. Follow the code walkthrough for implementation choices and alternatives.
+Start with the description for the outcome, open decisions, steps besides
+merging, and what the change is for and how it was proved. Follow the code walkthrough for implementation choices and alternatives.
 Then inspect the supporting evidence for the revision you are reviewing.
 A handoff should make clear whether the change is ready to merge or needs your
 input. You can approve the approach, request revisions, or settle an open question.
@@ -59,8 +59,9 @@ input. You can approve the approach, request revisions, or settle an open questi
 | Your question | Where to look |
 | --- | --- |
 | What changes for users? | The description, preview, and visual comparisons when applicable. |
+| What is it for, and what does it leave out? | **Intent** in the description: the problem, the scope, what was deliberately left out, and why the change is safe. |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
-| How was it checked? | Validation results and independent review covering the current revision, including gaps. |
+| How was it checked? | **Verification** in the description: up to three checks, each with what ran, its outcome, and a link or a command you can rerun. **Not verified** names what went unproven and why that is acceptable. Independent review covers the current revision. |
 | Which skills contributed? | **Skills used** lists the reported skills, their contributions, and evidence labels. |
 | What did people say? | **Human comments** in the description: each comment a person wrote, its reply, and whether it is still open. |
 | What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |

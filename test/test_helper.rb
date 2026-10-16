@@ -19,6 +19,14 @@ USAGE_RECORD = { 'host' => 'claude-code', 'sources' => ['s1'], 'responses' => ['
                  'contribution' => 'implementation', 'commits' => ['a' * 40], 'complete' => true,
                  'from' => '2026-09-14T12:00:00Z', 'to' => '2026-09-14T13:00:00Z' }.freeze
 
+# What every description states about its purpose and proof; tests replace a field to exercise it.
+INTENT = { 'why' => 'Review comments showed rebased commits as plain text.',
+           'scope' => 'Commit links in local review comments.',
+           'leaves_out' => 'The closing attestation line.',
+           'safe_because' => 'A copy must make the identical change.' }.freeze
+VERIFICATION = { 'checks' => ['Ran `bin/validate`: all tests passed.'],
+                 'not_verified' => 'Nothing.' }.freeze
+
 module MetricAssert
   def assert_metric(haystack, label, *values)
     row = "| #{label} | #{values.join(' | ')} |"
