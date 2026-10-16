@@ -72,16 +72,16 @@ module Shaka
       action, next_action = recommendation(report)
       summary = @summary = report.fetch('summary', report.fetch('reasons').first)
       ["## Reviewer recommendation: #{action}", "**Next:** #{owner_action(report, next_action)}",
-       verdict(report, summary), supporting_analysis(report, summary)].compact.join("\n\n")
+       verdict(report, summary), supporting_analysis(report, summary)].join("\n\n")
     end
 
     # One paragraph states the verdict and its evidence; the concern list follows only when there is one.
+    # Only a ready verdict says no concerns remain, so a blocking verdict never reads as clear to merge.
     def verdict(report, summary)
+      verdict = PostImplementationReport.ready?(report) ? 'Proceed, no unresolved concerns' : report.fetch('conclusion')
       items = report.fetch('concerns')
-      return "**Reviewer verdict:** #{report.fetch('conclusion')}, no unresolved concerns. #{summary}" if items.empty?
-
-      "**Reviewer verdict:** #{report.fetch('conclusion')}. #{summary}\n\n" \
-        "**Unresolved concerns:**\n\n#{items.map { |item| "- #{item}" }.join("\n")}"
+      list = "\n\n**Unresolved concerns:**\n\n#{items.map { |item| "- #{item}" }.join("\n")}" unless items.empty?
+      "**Reviewer verdict:** #{verdict}. #{summary}#{list}"
     end
 
     def squash_details
