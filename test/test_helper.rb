@@ -3,12 +3,21 @@
 require 'minitest/autorun'
 require 'tmpdir'
 require 'open3'
+require 'fileutils'
 
 # Helper calls the tests spawn stay out of the developer's own call log.
 ENV['SHAKA_CALL_LOG'] = 'off'
 # Background maintenance outlives a fixture repository and races Dir.mktmpdir's cleanup.
-# Trial preparation refuses an inherited GIT_CONFIG_PARAMETERS, so system config carries it.
-ENV['GIT_CONFIG_SYSTEM'] = File.expand_path('fixtures/gitconfig', __dir__)
+# Trial preparation refuses an inherited GIT_CONFIG_PARAMETERS, so a global config that keeps
+# the developer's own settings, then turns maintenance off, carries it.
+TEST_GIT_CONFIG_DIR = Dir.mktmpdir('shaka-test-gitconfig')
+Minitest.after_run { FileUtils.remove_entry(TEST_GIT_CONFIG_DIR, true) }
+ENV['GIT_CONFIG_GLOBAL'] = File.join(TEST_GIT_CONFIG_DIR, 'config').tap do |path|
+  own = [ENV.fetch('GIT_CONFIG_GLOBAL', nil), File.expand_path('~/.gitconfig'),
+         File.join(ENV.fetch('XDG_CONFIG_HOME', File.expand_path('~/.config')), 'git/config')].compact.uniq
+  includes = own.map { |file| "[include]\n\tpath = #{file}\n" }.join
+  File.write(path, "#{includes}[maintenance]\n\tauto = false\n[gc]\n\tauto = 0\n")
+end
 
 TEST_GIT = ENV.fetch('PATH').split(File::PATH_SEPARATOR).map { |dir| File.join(dir, 'git') }.find do |path|
   File.file?(path) && File.executable?(path)
