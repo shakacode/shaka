@@ -13,11 +13,12 @@ ENV['SHAKA_CALL_LOG'] = 'off'
 module TestGitConfig
   module_function
 
+  # Git expands ~ when it reads the include, so a test that changes HOME still gets that home's files.
   def own_files(env)
     return [env['GIT_CONFIG_GLOBAL']] if env['GIT_CONFIG_GLOBAL']
 
-    home = env.fetch('HOME', Dir.home)
-    [File.join(env.fetch('XDG_CONFIG_HOME', File.join(home, '.config')), 'git/config'), File.join(home, '.gitconfig')]
+    xdg = env['XDG_CONFIG_HOME'] ? File.join(env['XDG_CONFIG_HOME'], 'git/config') : '~/.config/git/config'
+    [xdg, '~/.gitconfig']
   end
 
   # Unquoted, Git would end the path at # or ;.

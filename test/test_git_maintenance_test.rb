@@ -20,7 +20,20 @@ class TestGitMaintenanceTest < Minitest::Test
 
   # Git reads the XDG file first, so ~/.gitconfig wins a conflict.
   def test_default_files_keep_gits_order
-    assert_equal %w[/home/.config/git/config /home/.gitconfig], TestGitConfig.own_files('HOME' => '/home')
+    assert_equal %w[~/.config/git/config ~/.gitconfig], TestGitConfig.own_files({})
+    assert_equal %w[/xdg/git/config ~/.gitconfig], TestGitConfig.own_files('XDG_CONFIG_HOME' => '/xdg')
+  end
+
+  # Install tests point HOME at a temporary directory; that home's config must still apply.
+  def test_a_changed_home_still_supplies_its_own_config
+    Dir.mktmpdir('shaka-home') do |home|
+      File.write(File.join(home, '.gitconfig'), "[user]\n\tname = Fake Home\n")
+      File.write(File.join(home, 'config'), TestGitConfig.text({}))
+      env = { 'HOME' => home, 'XDG_CONFIG_HOME' => nil, 'GIT_CONFIG_GLOBAL' => File.join(home, 'config') }
+      output, = Open3.capture2e(env, TEST_GIT, '-C', home, 'config', '--get', 'user.name')
+
+      assert_equal 'Fake Home', output.strip
+    end
   end
 
   def test_a_developer_setting_survives_and_maintenance_still_wins
