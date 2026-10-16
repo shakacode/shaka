@@ -2,8 +2,59 @@
 
 require_relative 'private_setup_test'
 
-class PrivateSeedTest < Minitest::Test
+module PrivateSeedFixture
   include PrivateSetupFixture
+
+  def assert_seeded(worktree, ref)
+    assert_includes File.read(config_path(worktree)), '# kept for the next task'
+    assert_equal "Review carefully.\n", File.read(File.join(worktree, '.agents/shaka/review-prompt.md'))
+    assert File.executable?(File.join(worktree, '.agents/shaka/bin/test'))
+    assert_equal 'complete', Shaka::Configuration.private_source(root: worktree, ref:).status
+  end
+
+  def interrupted_seed_setup(worktree, ref, id, after: nil)
+    seed_setup(worktree, ref, id).tap do |setup|
+      setup.define_singleton_method(:write_seeded_file) do |path, content|
+        super(path, content)
+        raise Errno::EIO, path if after.nil? || path.end_with?("/#{after}")
+      end
+    end
+  end
+
+  def with_failed_link
+    original = File.method(:link)
+    File.define_singleton_method(:link) { |_from, to| raise Errno::ENOSPC, to }
+    yield
+  ensure
+    File.define_singleton_method(:link, original)
+  end
+
+  def with_seed_source
+    with_setup do |root, ref|
+      setup_private(root, ref)
+      note_private_config(root, 'kept for the next task')
+      File.write(File.join(root, '.agents/shaka/review-prompt.md'), "Review carefully.\n")
+      id = File.basename(recovery(root).inspect_checkout.fetch('recovery'))
+      yield root, ref, id
+    end
+  end
+
+  def with_linked_worktree(root)
+    Dir.mktmpdir('shaka-seed') do |parent|
+      worktree = File.join(File.realpath(parent), 'next-task')
+      git(root, 'worktree', 'add', '--quiet', '-b', 'next-task', worktree)
+      yield worktree
+    ensure
+      git(root, 'worktree', 'remove', '--force', worktree) if worktree && File.directory?(worktree)
+    end
+  end
+
+  def seed_setup(worktree, ref, id) = Shaka::Seam::PrivateSetup.new(root: worktree, ref:, options: { from: id })
+  def seed(worktree, ref, id) = seed_setup(worktree, ref, id).setup
+end
+
+class PrivateSeedTest < Minitest::Test
+  include PrivateSeedFixture
 
   def test_new_worktree_starts_with_the_clone_copy_including_edits
     with_seed_source do |root, ref, id|
@@ -30,6 +81,16 @@ class PrivateSeedTest < Minitest::Test
       with_linked_worktree(root) do |worktree|
         assert_raises(Shaka::Error) { interrupted_seed_setup(worktree, ref, id, after: 'review-prompt.md').setup }
         assert_path_exists File.join(worktree, '.agents/shaka/review-prompt.md')
+        assert_equal 'complete', seed(worktree, ref, id).fetch('status')
+      end
+    end
+  end
+
+  def test_failed_file_install_leaves_nothing_to_block_the_rerun
+    with_seed_source do |root, ref, id|
+      with_linked_worktree(root) do |worktree|
+        with_failed_link { assert_raises(Shaka::Error) { seed(worktree, ref, id) } }
+        assert_empty Dir.glob(File.join(worktree, '.agents/shaka/**/*.shaka-seed-*'))
         assert_equal 'complete', seed(worktree, ref, id).fetch('status')
       end
     end
@@ -70,45 +131,4 @@ class PrivateSeedTest < Minitest::Test
       end
     end
   end
-
-  private
-
-  def assert_seeded(worktree, ref)
-    assert_includes File.read(config_path(worktree)), '# kept for the next task'
-    assert_equal "Review carefully.\n", File.read(File.join(worktree, '.agents/shaka/review-prompt.md'))
-    assert File.executable?(File.join(worktree, '.agents/shaka/bin/test'))
-    assert_equal 'complete', Shaka::Configuration.private_source(root: worktree, ref:).status
-  end
-
-  def interrupted_seed_setup(worktree, ref, id, after: nil)
-    seed_setup(worktree, ref, id).tap do |setup|
-      setup.define_singleton_method(:write_seeded_file) do |path, content|
-        super(path, content)
-        raise Errno::EIO, path if after.nil? || path.end_with?("/#{after}")
-      end
-    end
-  end
-
-  def with_seed_source
-    with_setup do |root, ref|
-      setup_private(root, ref)
-      note_private_config(root, 'kept for the next task')
-      File.write(File.join(root, '.agents/shaka/review-prompt.md'), "Review carefully.\n")
-      id = File.basename(recovery(root).inspect_checkout.fetch('recovery'))
-      yield root, ref, id
-    end
-  end
-
-  def with_linked_worktree(root)
-    Dir.mktmpdir('shaka-seed') do |parent|
-      worktree = File.join(File.realpath(parent), 'next-task')
-      git(root, 'worktree', 'add', '--quiet', '-b', 'next-task', worktree)
-      yield worktree
-    ensure
-      git(root, 'worktree', 'remove', '--force', worktree) if worktree && File.directory?(worktree)
-    end
-  end
-
-  def seed_setup(worktree, ref, id) = Shaka::Seam::PrivateSetup.new(root: worktree, ref:, options: { from: id })
-  def seed(worktree, ref, id) = seed_setup(worktree, ref, id).setup
 end

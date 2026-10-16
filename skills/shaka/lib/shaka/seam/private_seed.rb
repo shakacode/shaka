@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'securerandom'
 require_relative '../error'
 
 module Shaka
@@ -41,10 +42,19 @@ module Shaka
         assert_inside_private_root!(existing_parent(File.dirname(path)))
         FileUtils.mkdir_p(File.dirname(path))
         assert_inside_private_root!(File.dirname(path))
-        File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
+        install_seeded_file(path, content, mode)
+      end
+
+      # A partial write stays in a temporary file, so the rerun never meets it at the destination.
+      def install_seeded_file(path, content, mode)
+        temporary = "#{path}.shaka-seed-#{SecureRandom.hex(6)}"
+        File.open(temporary, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
           file.write(content)
           file.chmod(mode)
         end
+        File.link(temporary, path)
+      ensure
+        FileUtils.rm_f(temporary) if temporary
       end
 
       # Matches the recovery copy's mode rule so an interrupted seed resumes like setup.
