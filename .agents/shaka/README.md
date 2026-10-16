@@ -1,19 +1,21 @@
-# Shaka's own configuration
+# Shaka's own settings
 
-A working example of Shaka's settings. You need not edit these files: ask the skill,
-such as `$shaka Prefer Claude for code review.` See the
-[settings reference](https://shaka.shakacode.com/docs/settings).
+These are the settings Shaka uses when it works on its own code. Copy them as a
+starting point for your repository. You rarely need to edit them by hand; ask your
+agent instead, for example `$shaka Prefer Claude for code review.` The
+[settings reference](https://shaka.shakacode.com/docs/settings) explains every option.
 
-## Where this repository differs from the defaults
+## Where we differ from the defaults
 
-Most Shaka changes edit agent instructions, so reviewers here also judge their cost
-against the [AGENTS.md criteria](../../AGENTS.md#skill-architecture-and-review).
+Most changes to Shaka edit the instructions its agents follow. Every extra line of
+instructions costs time and money on later tasks, so we ask reviewers to judge
+whether new instructions are worth that cost, not only whether they are correct.
 
-- [`review-prompt.md`](review-prompt.md) replaces the
-  [default review prompt](../../skills/shaka/config/review-prompt.md) to add those
-  criteria and a check that new procedures are reachable from the skill.
-- [`product-checkpoint.md`](product-checkpoint.md) replaces the
-  [default checkpoint prompt](../../skills/shaka/config/post-implementation-prompt.md)
-  to add the same criteria.
-- `local_review_count: 3` (default 1) has Claude, Codex, and DeepSeek review each commit,
-  because changes here can alter Shaka's own review and merge gates.
+- **Code review prompt.** [review-prompt.md](review-prompt.md) replaces Shaka's
+  [default review prompt](../../skills/shaka/config/review-prompt.md). It adds that
+  cost check, and checks that people can reach any new procedure from the skill.
+- **Final check before merge.** [product-checkpoint.md](product-checkpoint.md)
+  replaces the [default checkpoint prompt](../../skills/shaka/config/post-implementation-prompt.md)
+  and adds the same cost check.
+- **Three reviewers.** Claude, Codex, and DeepSeek each review every commit; the
+  default is one. A mistake here can weaken the checks Shaka runs on every project.
