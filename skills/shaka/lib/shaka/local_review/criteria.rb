@@ -55,7 +55,8 @@ module Shaka
         target = @read_link.call(object)
         return false if (@links += 1) > MAX_LINKS || target.empty? || target.start_with?('/')
 
-        @pending.unshift(*target.split('/'))
+        # A limit of -1 keeps a trailing slash as an empty component, so `file/` stays invalid.
+        @pending.unshift(*target.split('/', -1))
       end
 
       def directory?(path)

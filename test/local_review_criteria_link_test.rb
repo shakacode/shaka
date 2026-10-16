@@ -48,6 +48,19 @@ class LocalReviewCriteriaLinkTest < Minitest::Test
     end
   end
 
+  def test_unresolved_nested_link_is_marked_beside_resolved_root
+    with_repository do |root, _base, _head, bin|
+      link(root, 'nested/AGENTS.md', 'missing.md')
+      base, head = linked_history(root, 'nested/example.txt') { nil }
+      result, prompt = captured_review(root, base, head, bin)
+      assert_equal base, result.fetch('criteria_ref')
+      assert_includes criteria_section(prompt), 'Trusted test criteria'
+      assert_includes prompt, "NOT SUPPLIED: #{base}:nested/AGENTS.md does not resolve"
+    ensure
+      cleanup_artifacts(result)
+    end
+  end
+
   def test_dangling_link_reports_criteria_missing
     with_repository do |root, _base, _head, bin|
       base, head = linked_history(root) { link(root, 'AGENTS.md', 'missing.md') }
@@ -111,8 +124,9 @@ class LocalReviewCriteriaResolveTest < Minitest::Test
                 'module/AGENTS.md' => link_entry('vendor'), 'module/vendor' => ['160000', 'f' * 40],
                 'empty/AGENTS.md' => link_entry(''), 'missing/AGENTS.md' => link_entry('gone/../rules.md'),
                 'missing/rules.md' => ['100644', 'a' * 40], 'file/AGENTS.md' => link_entry('rules.md/../rules.md'),
-                'file/rules.md' => ['100644', 'a' * 40] }
-    %w[cycle absolute escape module empty missing file].each do |name|
+                'file/rules.md' => ['100644', 'a' * 40], 'slash/AGENTS.md' => link_entry('rules.md/'),
+                'slash/rules.md' => ['100644', 'a' * 40] }
+    %w[cycle absolute escape module empty missing file slash].each do |name|
       assert_nil Shaka::LocalReviewCriteria.resolve(entries, "#{name}/AGENTS.md", &:itself), name
     end
   end
