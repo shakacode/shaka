@@ -20,8 +20,11 @@ module TestGitConfig
     [File.join(env.fetch('XDG_CONFIG_HOME', File.join(home, '.config')), 'git/config'), File.join(home, '.gitconfig')]
   end
 
+  # Unquoted, Git would end the path at # or ;.
+  def quoted(path) = %("#{path.gsub(/[\\"]/) { "\\#{it}" }}")
+
   def text(env)
-    includes = own_files(env).map { |file| "[include]\n\tpath = #{file}\n" }.join
+    includes = own_files(env).map { |file| "[include]\n\tpath = #{quoted(file)}\n" }.join
     "#{includes}[maintenance]\n\tauto = false\n[gc]\n\tauto = 0\n"
   end
 end

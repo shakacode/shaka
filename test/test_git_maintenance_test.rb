@@ -32,6 +32,16 @@ class TestGitMaintenanceTest < Minitest::Test
     end
   end
 
+  def test_a_path_with_comment_characters_is_still_included
+    Dir.mktmpdir('shaka-#own;config') do |dir|
+      own = File.join(dir, 'own "config"')
+      File.write(own, "[user]\n\tname = Developer\n")
+      File.write(File.join(dir, 'config'), TestGitConfig.text('GIT_CONFIG_GLOBAL' => own))
+
+      assert_equal 'Developer', config(dir, 'user.name', File.join(dir, 'config'))
+    end
+  end
+
   def config(root, key, global = ENV.fetch('GIT_CONFIG_GLOBAL'))
     output, = Open3.capture2e({ 'GIT_CONFIG_GLOBAL' => global }, TEST_GIT, '-C', root, 'config', '--get', key)
     output.strip
