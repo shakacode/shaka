@@ -12,8 +12,8 @@ text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-ser
 .c{text-anchor:middle}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .card{fill:#f1f4f8;stroke:#8a99ad;stroke-width:1}
-.del{fill:#7c4dbd;text-decoration:line-through}
-.ins{fill:#7c4dbd;text-decoration:underline}
+.del,.ins{fill:#7c4dbd}
+.sk{stroke:#7c4dbd;stroke-width:1.5}
 .rm{fill:#fdecea}
 .ad{fill:#e3f5ec}
 .x{fill:#c2412d;font-weight:700}
@@ -29,6 +29,7 @@ text{fill:#e6edf5}
 .m{fill:#9fb0c3}
 .card{fill:#1a2535;stroke:#6b7c93}
 .del,.ins{fill:#b48cf2}
+.sk{stroke:#b48cf2}
 .x{fill:#f07a62}
 .ok{fill:#3ccf92}
 .rm{fill:#3d1712}
@@ -41,7 +42,11 @@ text{fill:#e6edf5}
 <rect class="bg" x="0.5" y="0.5" width="359" height="389" rx="10"/>
 <rect class="card" x="20" y="20" width="320" height="144" rx="8"/>
 <text class="l m" x="38" y="44">GOOGLE DOCS · SUGGESTING MODE</text>
-<text class="h" x="38" y="80">Doors open at <tspan class="del">8 am</tspan> <tspan class="ins">7 am</tspan></text>
+<text class="h" x="38" y="80">Doors open at</text>
+<text class="h del" x="148" y="80" textLength="35" lengthAdjust="spacingAndGlyphs">8 am</text>
+<path class="sk" d="M146 74.5H185"/>
+<text class="h ins" x="192" y="80" textLength="35" lengthAdjust="spacingAndGlyphs">7 am</text>
+<path class="sk" d="M192 83H227"/>
 <text class="s m" x="38" y="104">Crossed out is removed. Colored is added.</text>
 <rect class="acc" x="38" y="120" width="100" height="28" rx="6"/>
 <text class="b nt c" x="88" y="139">Accept all</text>
