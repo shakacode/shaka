@@ -58,6 +58,22 @@ default restore uses `previous` and reports that source. Each worktree gets an a
 re-creating a deleted worktree at the same path starts a new copy without replacing
 the old one.
 
+### Start another worktree with private settings
+
+Private settings belong to one worktree. Before the first edit in a new worktree of
+a clone with private settings, run `seam private inspect --root DIR` in the worktree
+whose settings to carry forward, when it still exists, so its latest edits reach its
+copy. Run `seam private list --root NEW_DIR`, choose that copy by its `path` and
+`time`, then seed the new worktree:
+
+```bash
+shaka seam private setup --root /path/to/new-worktree --ref DEFAULT_BRANCH_SHA --from ID
+```
+
+`--from` copies every file in that copy, including custom prompts, and accepts no
+command or review options. The new worktree gets its own identity and copy, so later
+edits in either worktree stay separate. Rerun the same command after an interruption.
+
 ## Recover private setup
 
 If setup is denied or interrupted, report the failed path the error names and
