@@ -54,7 +54,7 @@ class LocalReviewCriteriaLinkTest < Minitest::Test
       result, prompt = captured_review(root, base, head, bin)
       refute result.key?('criteria_ref')
       refute_includes prompt, 'BEGIN TRUSTED CRITERIA'
-      assert_match(/TRUSTED CRITERIA \h+ NOT SUPPLIED: #{base}:AGENTS\.md is a link/, prompt)
+      assert_match(/TRUSTED CRITERIA \h+ NOT SUPPLIED: #{base}:AGENTS\.md does not resolve/, prompt)
     ensure
       cleanup_artifacts(result)
     end
@@ -132,6 +132,12 @@ class LocalReviewCriteriaResolveTest < Minitest::Test
     %w[loop out].each do |name|
       assert_nil Shaka::LocalReviewCriteria.resolve(entries, "#{name}/AGENTS.md", &:itself), name
     end
+  end
+
+  def test_parent_after_linked_directory_follows_the_link
+    entries = { 'AGENTS.md' => link_entry('alias/../rules.md'), 'alias' => link_entry('config/sub'),
+                'rules.md' => ['100644', 'a' * 40], 'config/rules.md' => ['100644', 'b' * 40] }
+    assert_equal 'config/rules.md', Shaka::LocalReviewCriteria.resolve(entries, 'AGENTS.md', &:itself)
   end
 
   private

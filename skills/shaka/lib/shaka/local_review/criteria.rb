@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'pathname'
-
 module Shaka
   # Loads only review criteria present at the separately verified trusted commit.
   module LocalReviewCriteria
@@ -9,37 +7,49 @@ module Shaka
     FILE_MODES = %w[100644 100755].freeze
     MAX_LINKS = 40
 
-    # Follows symlink entries, including linked directories, within one tree. Returns the regular
-    # file path, or nil when a link is empty, absolute, leaves the repository, dangles, cycles,
-    # or ends at a non-file entry.
-    def self.resolve(entries, path)
-      MAX_LINKS.times do
-        mode, = entries[path]
-        return (path if FILE_MODES.include?(mode)) if mode && mode != LINK_MODE
-
-        link, rest = mode ? [path] : linked_directory(entries, path)
-        target = link && link_path(link, yield(entries.fetch(link).last))
-        return nil unless target
-
-        path = Pathname.new(File.join(target, rest.to_s)).cleanpath.to_s
-      end
-      nil
+    # Resolves a path one component at a time within one tree, expanding each link before any
+    # later `..`, as the filesystem does. Returns the regular file path, or nil when a link is
+    # empty or absolute, the path leaves the repository or dangles, links cycle, or it ends at a
+    # non-file entry.
+    def self.resolve(entries, path, &read_link)
+      TreeWalk.new(entries, read_link).run(path)
     end
 
-    def self.linked_directory(entries, path)
-      parts = path.split('/')
-      (1...parts.length).each do |count|
-        prefix = parts.first(count).join('/')
-        return [prefix, parts.drop(count).join('/')] if entries.dig(prefix, 0) == LINK_MODE
+    # One component-by-component path walk over a trusted tree's entries.
+    class TreeWalk
+      def initialize(entries, read_link)
+        @entries = entries
+        @read_link = read_link
+        @resolved = []
+        @links = 0
       end
-      nil
-    end
 
-    def self.link_path(path, target)
-      return nil if target.empty? || target.start_with?('/')
+      def run(path)
+        @pending = path.split('/')
+        until @pending.empty?
+          part = @pending.shift
+          next if ['', '.'].include?(part)
+          return nil unless part == '..' ? parent : enter(part)
+        end
+        file = @resolved.join('/')
+        file if FILE_MODES.include?(@entries.dig(file, 0))
+      end
 
-      resolved = Pathname.new(File.join(File.dirname(path), target)).cleanpath.to_s
-      resolved unless resolved == '..' || resolved.start_with?('../')
+      private
+
+      def parent
+        @resolved.pop
+      end
+
+      def enter(part)
+        mode, object = @entries[[*@resolved, part].join('/')]
+        return @resolved.push(part) unless mode == LINK_MODE
+
+        target = @read_link.call(object)
+        return false if (@links += 1) > MAX_LINKS || target.empty? || target.start_with?('/')
+
+        @pending.unshift(*target.split('/'))
+      end
     end
 
     private
@@ -56,7 +66,7 @@ module Shaka
 
     def criteria_block(ref, marker, origin, object)
       label = "TRUSTED CRITERIA #{marker}"
-      return "--- #{label} NOT SUPPLIED: #{ref}:#{origin} is a link that does not resolve to a file ---\n\n" unless
+      return "--- #{label} NOT SUPPLIED: #{ref}:#{origin} does not resolve to a file in the repository ---\n\n" unless
         object
 
       text = capture(git_executable, '-C', root, 'cat-file', 'blob', object)
