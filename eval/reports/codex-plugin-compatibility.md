@@ -61,6 +61,10 @@ public submission, remote downloads, interrupted updates, and completion of a re
 PR by a newly onboarded user remain untested. Setup time, interventions, adoption,
 and token savings are unknown. A successful probe process means observations were
 collected; its JSON can still contain compatibility failures.
+If a command or cache probe fails, the runner emits its earlier observations and
+`trial_error`, then exits nonzero. The update probe uses the observed 0.162.1 cache
+layout; a later layout change is a runner error requiring investigation, not
+evidence that Shaka itself regressed.
 
 The portable manifest, onboarding field, and local-executor declaration follow
 [OpenAI packaging guidance](https://developers.openai.com/plugins/build/plugins)

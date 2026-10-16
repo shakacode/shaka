@@ -18,6 +18,8 @@ class CodexPluginTrial
       update
       @report
     end
+  rescue StandardError => e
+    (@report || {}).merge('trial_error' => { 'class' => e.class.name, 'message' => e.message })
   end
 
   private
@@ -122,4 +124,8 @@ class CodexPluginTrial
   end
 end
 
-puts JSON.pretty_generate(CodexPluginTrial.new.run) if $PROGRAM_NAME == __FILE__
+if $PROGRAM_NAME == __FILE__
+  result = CodexPluginTrial.new.run
+  puts JSON.pretty_generate(result)
+  exit(result.key?('trial_error') ? 1 : 0)
+end
