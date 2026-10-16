@@ -19,10 +19,18 @@ module Shaka
         copy.to_h { |relative, content| [File.join(private_root, relative), content] }
       end
 
+      # Seeded copies may hold files setup never generates, such as a custom review prompt.
+      def preflight_files(files)
+        return super unless seeding?
+
+        files.each { |path, content| seeded_file_present?(path, content, seeded_mode(path)) }
+      end
+
       def write_files(files)
         return super unless seeding?
 
         preflight_directories
+        FileUtils.mkdir_p(private_root)
         files.each { |path, content| write_seeded_file(path, content) }
       end
 
@@ -30,6 +38,7 @@ module Shaka
         mode = seeded_mode(path)
         return if seeded_file_present?(path, content, mode)
 
+        assert_inside_private_root!(existing_parent(File.dirname(path)))
         FileUtils.mkdir_p(File.dirname(path))
         assert_inside_private_root!(File.dirname(path))
         File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|

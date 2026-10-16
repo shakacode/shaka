@@ -25,6 +25,27 @@ class PrivateSeedTest < Minitest::Test
     end
   end
 
+  def test_seed_interrupted_after_a_custom_file_resumes
+    with_seed_source do |root, ref, id|
+      with_linked_worktree(root) do |worktree|
+        assert_raises(Shaka::Error) { interrupted_seed_setup(worktree, ref, id, after: 'review-prompt.md').setup }
+        assert_path_exists File.join(worktree, '.agents/shaka/review-prompt.md')
+        assert_equal 'complete', seed(worktree, ref, id).fetch('status')
+      end
+    end
+  end
+
+  def test_seed_refuses_a_differing_destination
+    with_seed_source do |root, ref, id|
+      with_linked_worktree(root) do |worktree|
+        FileUtils.mkdir_p(File.join(worktree, '.agents/shaka'))
+        File.write(File.join(worktree, '.agents/shaka/review-prompt.md'), "Mine.\n")
+        assert_raises(Shaka::Error) { seed(worktree, ref, id) }
+        assert_equal "Mine.\n", File.read(File.join(worktree, '.agents/shaka/review-prompt.md'))
+      end
+    end
+  end
+
   def test_seed_refuses_generation_options_and_unknown_copies
     with_seed_source do |root, ref, id|
       with_linked_worktree(root) do |worktree|
@@ -59,11 +80,11 @@ class PrivateSeedTest < Minitest::Test
     assert_equal 'complete', Shaka::Configuration.private_source(root: worktree, ref:).status
   end
 
-  def interrupted_seed_setup(worktree, ref, id)
+  def interrupted_seed_setup(worktree, ref, id, after: nil)
     seed_setup(worktree, ref, id).tap do |setup|
       setup.define_singleton_method(:write_seeded_file) do |path, content|
         super(path, content)
-        raise Errno::EIO, path
+        raise Errno::EIO, path if after.nil? || path.end_with?("/#{after}")
       end
     end
   end
