@@ -9,10 +9,12 @@ repo_prefix: SHAKA # Default: derived from the repo name ("SHAK" here); we prefe
 # base_branch: main # Default: the repository's default branch.
 
 review:
-  required: meaningful_changes # Required: meaningful_changes, always, or none.
+  # Required, no default; setup asks. meaningful_changes lets trivial prose skip review;
+  # the others are always and none.
+  required: meaningful_changes
   ci_review_jobs: # Required unless review.required is none: the GitHub jobs that post AI reviews.
     - claude-review
-  ci_review_wait: one # Default: wait for one CI review report before merging.
+  ci_review_wait: one # Default. A word, not a number: none, one, or all CI review reports.
   local_max_rounds: 5 # Default: most commits one local review covers before the agent asks you.
   # Default 1. We use 3: a mistake in Shaka weakens checks on every project that uses it.
   local_review_count: 3
