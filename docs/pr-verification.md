@@ -60,8 +60,9 @@ input. You can approve the approach, request revisions, or settle an open questi
 | --- | --- |
 | What changes for users? | The description, preview, and visual comparisons when applicable. |
 | What is it for, and what does it leave out? | **Intent** in the description: the problem, the scope, what was deliberately left out, and why the change is safe. |
+| How carefully should I review it? | **Review effort** under Intent, from 1 (read the description) to 5 (review every line, reproduce it, and ask a second reviewer), based on what a mistake could reach. |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
-| How was it checked? | **Verification** in the description: up to three checks, each with what ran, its outcome, and a link or a command you can rerun. **Not verified** names what went unproven and why that is acceptable. Independent review covers the current revision. |
+| How was it checked? | **Verification** in the description: up to three checks, each with what ran, its outcome, and a link to the evidence or the command itself. **Not verified** names what went unproven and why that is acceptable. Independent review covers the current revision. |
 | Which skills contributed? | **Skills used** lists the reported skills, their contributions, and evidence labels. |
 | What did people say? | **Human comments** in the description: each comment a person wrote, its reply, and whether it is still open. |
 | What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |

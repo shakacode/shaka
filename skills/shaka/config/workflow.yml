@@ -474,10 +474,13 @@ phases:
         whose summary names usage is refused; walkthroughs also require `head`.
         `intent` holds one line each for `why`, `scope`, `leaves_out`, and `safe_because`: the
         problem, what the PR covers, what it deliberately leaves out, and the fact its safety rests
-        on. `verification` lists 1 to 3 `checks`, each what was run and its outcome with a link or
-        a command a reader can rerun, and a `not_verified` line naming what went unproven and why
-        that is acceptable, or `Nothing.` when every claim was proved. The helper renders both
-        after the links and refuses a check with neither link nor command.
+        on. Its `review_effort`, 1 to 5, tells the reviewer how hard to look given that blast radius:
+        1 for docs a reader can trust from the description, 5 for irreversible or security changes.
+        `verification` lists 1 to 3 `checks`, each what was run and its outcome, citing a link
+        or the command, and a `not_verified` line naming what went unproven and why that is
+        acceptable, or `Nothing.` when every claim was proved. An unfinished PR may list no checks
+        yet. The helper renders both after the links and refuses a check with neither a Markdown
+        link nor a code span; it cannot tell whether the check ran.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
         text, and either `to` text or `block: true`; write `[label](code:NAME)` in the prose.
         The helper finds `from` on exactly one line of the file at the head. It ends the range

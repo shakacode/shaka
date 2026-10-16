@@ -23,7 +23,7 @@ USAGE_RECORD = { 'host' => 'claude-code', 'sources' => ['s1'], 'responses' => ['
 INTENT = { 'why' => 'Review comments showed rebased commits as plain text.',
            'scope' => 'Commit links in local review comments.',
            'leaves_out' => 'The closing attestation line.',
-           'safe_because' => 'A copy must make the identical change.' }.freeze
+           'safe_because' => 'A copy must make the identical change.', 'review_effort' => 2 }.freeze
 VERIFICATION = { 'checks' => ['Ran `bin/validate`: all tests passed.'],
                  'not_verified' => 'Nothing.' }.freeze
 

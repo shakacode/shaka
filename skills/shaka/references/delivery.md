@@ -270,10 +270,9 @@ identifier from `identity`.
 Write for someone deciding whether to merge. State the outcome and why it
 matters, then send them to the walkthrough and the code rather than retelling
 the diff. Show blockers, decisions, and missing required review.
-Show what the change is for and what was proved in `intent` and `verification`.
-A check names what was run and its outcome, with a link or a rerunnable command;
-`not_verified` says what went unproven and why that is acceptable. Provenance,
-usage, and the WIP Details note are audit material the helper keeps collapsed.
+Show what the change is for and what was proved in `intent` and `verification`,
+as the Explain step defines them. Provenance, usage, and the WIP Details note are
+audit material the helper keeps collapsed.
 Keep optional review history and routine rollback detail collapsed.
 
 Supply the current COMMENT review URL in the `walkthrough` field. The helper
