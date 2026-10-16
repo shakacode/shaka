@@ -24,10 +24,11 @@ It installs one dedicated checkout outside your projects and links the skill
 directly into it. The default location is `~/.agents/shaka`; you can
 choose another directory, such as `~/agent-tools/shaka`.
 
-Outside that directory, the installer adds only a `shaka` link and an empty lock
-file to your coding agent's skills folder, such as `~/.claude/skills` for Claude
-Code. Your agent finds Shaka through that link, so allow it if your rules protect
-that folder. See [what the installer changes](manual-installation.md#what-the-installer-changes).
+The installer adds a `shaka` link and an empty lock file to your coding agent's
+skills folder, such as `~/.claude/skills` for Claude Code. Your agent finds Shaka
+through that link, so allow it if your rules protect that folder. See
+[what the installer changes](manual-installation.md#what-the-installer-changes)
+for everything it touches.
 
 Keep the installation outside your project repositories. Use separate checkouts
 for development so the installation stays ready for updates.
