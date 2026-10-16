@@ -53,6 +53,7 @@ module Shaka
           source.trusted_source == 'present'
 
         refuse_adoption!(PrivateRecovery.new(root: @root, assign_identity: false))
+        remove_seed_temporaries if seeding?
       end
 
       def preflight(recovery, files)

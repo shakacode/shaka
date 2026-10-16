@@ -21,6 +21,16 @@ module PrivateSeedFixture
     end
   end
 
+  def with_outside_private_link(worktree)
+    Dir.mktmpdir('shaka-outside') do |outside|
+      kept = File.join(outside, 'notes.shaka-seed-0123456789ab')
+      File.write(kept, 'not ours')
+      FileUtils.mkdir_p(File.join(worktree, '.agents'))
+      File.symlink(outside, File.join(worktree, '.agents/shaka'))
+      yield kept
+    end
+  end
+
   def with_seed_source
     with_setup do |root, ref|
       setup_private(root, ref)
@@ -86,6 +96,17 @@ class PrivateSeedTest < Minitest::Test
         File.write(leftover, 'Rev')
         assert_equal 'complete', seed(worktree, ref, id).fetch('status')
         refute_path_exists leftover
+      end
+    end
+  end
+
+  def test_symlinked_destination_is_refused_before_any_cleanup
+    with_seed_source do |root, ref, id|
+      with_linked_worktree(root) do |worktree|
+        with_outside_private_link(worktree) do |kept|
+          assert_raises(Shaka::Error) { seed(worktree, ref, id) }
+          assert_path_exists kept
+        end
       end
     end
   end
