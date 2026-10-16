@@ -71,9 +71,9 @@ here.
 Report the session ID, title, pin state, and the tower set derived below. Never
 assume a new master starts with none: each tower's setup lives in its own transcript,
 so towers survive replacing the master. Verify the towers as below, on a reused
-master too. Then tell the user that this host delivers no message to an idle
-session, so a tower set up later is verified when they send `/mct-claude` here
-again, and stop.
+master too. Then tell the user that a tower set up later is verified when they send
+`/mct-claude` here again, because a notice may reach this session without starting a
+turn, and stop.
 
 ## Verify repository towers
 

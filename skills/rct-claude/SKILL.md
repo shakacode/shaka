@@ -131,9 +131,10 @@ tower from the recorded setup whenever `/mct-claude` runs there, and reports a
 duplicate or mismatch to the user there.
 
 Read the delivery result. `delivered` and `queued` mean the master will read the
-notice. Any other result means the master received nothing: `undelivered` means it
-was idle, and anything else is a failed send. Report `registration recorded, master
-not notified` with the observed result and one user step: open the master session,
+notice. `undelivered` means the master had not started within the host's wait; the
+notice may still land later, unanswered. Anything else is a failed send. For either,
+report `registration recorded, master not notified` with the observed result and one
+user step: open the master session,
 named by title and ID, and send `/mct-claude` there. Do not poll, re-send, start a
 monitor, or wait for a reply.
 

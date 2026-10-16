@@ -62,10 +62,11 @@ these tools. Use title suffixes for discovery and each tower's own recorded
 setup for ownership. Sidebar groups are unused because `move_sessions`
 unpins a pinned session.
 
-`send_message` reaches only a session with a turn running. `delivered` means that
-turn started on the message and `queued` means it waits behind current work;
-neither is the other session's answer. An idle session returns `undelivered`
-("gave no sign of starting on it within 20s") and never receives the message.
+`delivered` means the target session's turn started on the message and `queued`
+means it waits behind current work; neither is the other session's answer.
+`undelivered` means the target had not started within the host's wait. In trials
+that happened with an idle master whose transcript is long. The message can still
+land in the target's transcript later, and the target may never take a turn on it.
 
 Record the setup in the tower's own transcript before sending; the master reads it
 with `list_events` on its next turn. There is no bounded wait for another session:
