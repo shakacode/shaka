@@ -109,15 +109,17 @@ class LocalReviewCriteriaResolveTest < Minitest::Test
     entries = { 'cycle/AGENTS.md' => link_entry('other.md'), 'cycle/other.md' => link_entry('AGENTS.md'),
                 'absolute/AGENTS.md' => link_entry('/etc/passwd'), 'escape/AGENTS.md' => link_entry('../../out.md'),
                 'module/AGENTS.md' => link_entry('vendor'), 'module/vendor' => ['160000', 'f' * 40],
-                'empty/AGENTS.md' => link_entry('') }
-    %w[cycle absolute escape module empty].each do |name|
+                'empty/AGENTS.md' => link_entry(''), 'missing/AGENTS.md' => link_entry('gone/../rules.md'),
+                'missing/rules.md' => ['100644', 'a' * 40], 'file/AGENTS.md' => link_entry('rules.md/../rules.md'),
+                'file/rules.md' => ['100644', 'a' * 40] }
+    %w[cycle absolute escape module empty missing file].each do |name|
       assert_nil Shaka::LocalReviewCriteria.resolve(entries, "#{name}/AGENTS.md", &:itself), name
     end
   end
 
   def test_regular_file_and_chained_links_resolve
     entries = { 'AGENTS.md' => ['100644', 'a' * 40], 'docs/AGENTS.md' => link_entry('./guide/../link.md'),
-                'docs/link.md' => link_entry('../AGENTS.md') }
+                'docs/link.md' => link_entry('../AGENTS.md'), 'docs/guide/notes.md' => ['100644', 'c' * 40] }
     %w[AGENTS.md docs/AGENTS.md].each do |path|
       assert_equal 'AGENTS.md', Shaka::LocalReviewCriteria.resolve(entries, path, &:itself)
     end
@@ -136,7 +138,8 @@ class LocalReviewCriteriaResolveTest < Minitest::Test
 
   def test_parent_after_linked_directory_follows_the_link
     entries = { 'AGENTS.md' => link_entry('alias/../rules.md'), 'alias' => link_entry('config/sub'),
-                'rules.md' => ['100644', 'a' * 40], 'config/rules.md' => ['100644', 'b' * 40] }
+                'rules.md' => ['100644', 'a' * 40], 'config/rules.md' => ['100644', 'b' * 40],
+                'config/sub/notes.md' => ['100644', 'c' * 40] }
     assert_equal 'config/rules.md', Shaka::LocalReviewCriteria.resolve(entries, 'AGENTS.md', &:itself)
   end
 

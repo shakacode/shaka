@@ -41,14 +41,29 @@ module Shaka
         @resolved.pop
       end
 
+      # A non-link component must be a directory in the tree, or the final regular file.
       def enter(part)
-        mode, object = @entries[[*@resolved, part].join('/')]
-        return @resolved.push(part) unless mode == LINK_MODE
+        path = [*@resolved, part].join('/')
+        mode, object = @entries[path]
+        return follow(object) if mode == LINK_MODE
+        return false unless mode ? @pending.empty? : directory?(path)
 
+        @resolved.push(part)
+      end
+
+      def follow(object)
         target = @read_link.call(object)
         return false if (@links += 1) > MAX_LINKS || target.empty? || target.start_with?('/')
 
         @pending.unshift(*target.split('/'))
+      end
+
+      def directory?(path)
+        @directories ||= @entries.keys.each_with_object(Set.new) do |key, directories|
+          parts = key.split('/')
+          (1...parts.length).each { |count| directories << parts.first(count).join('/') }
+        end
+        @directories.include?(path)
       end
     end
 
