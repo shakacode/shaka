@@ -60,7 +60,7 @@ Then the agent does the gray box:
 2. **Test.** It runs your project's tests. If the change shows on screen, it also
    takes before and after pictures when it can.
 3. **Review.** A second AI reads the change and looks for mistakes. The agent
-   fixes what it finds, then tests and reviews again.
+   fixes real problems, then tests and reviews again.
 
 Then it hands you the green box: a pull request with everything you need to decide.
 
@@ -145,12 +145,14 @@ The agent told you where it saved the folder; ask again if you missed it.
 /shaka doctor
 ```
 
-**Success looks like:** everything Shaka needs shows as ready. If something is
-missing, ask the agent to help you install it.
+**Success looks like:** the tools Shaka needs show HEALTHY. Expect one FAILED
+row, **Repository seam**, and a few DEGRADED rows: Shaka is not set up in this
+project until step 4, so skip their advice for now. If a tool is missing, ask the
+agent to help you install it.
 
-The report also lists AI reviewer tools. Shaka likes a reviewer from another AI
-company. One AI tool is fine too: Shaka then uses a fresh copy of it that has
-not seen your chat, so the second look stays separate.
+In this tutorial, the second look comes from a fresh copy of the same AI that has
+not seen your chat. A reviewer from another AI company is optional; see
+[add a second reviewer](settings.md#add-a-second-reviewer).
 
 ### Step 4: Give Shaka a task
 
@@ -168,15 +170,15 @@ Set up Shaka just for me. Go.
 
 ### Step 5: Watch it work
 
-This takes longer than a normal chat, because the agent tests and reviews its own
-work. Its messages use the words from this page.
+This takes about 10 minutes, because the agent tests and reviews its own work.
+Its messages use the words from this page.
 
 | The agent… | It means… |
 | --- | --- |
 | Shows its plan: value, scope, risk, model, and effort | Why the work matters, how big and risky it is, and how hard the AI will think. |
 | Names a branch | It made its own copy to work in. Your real version, called **main**, stays as it was. |
 | Runs your tests | The robot checks are running. |
-| Reports review findings | The second AI found something. The agent fixes it and checks again. |
+| Reports review findings | The second AI found something. The agent fixes real problems and checks again; small suggestions are only noted. |
 | Pushes the branch | It uploaded its copy to GitHub. |
 | Opens a pull request | Its suggestions are ready for you. |
 | Publishes a walkthrough | A guided tour of the changed code. |
@@ -184,9 +186,9 @@ work. Its messages use the words from this page.
 | Adds the `awaiting-merge-approval` label | A tag on the PR that means: your turn to decide. |
 
 **If it stops to ask you something,** answer in your own words. If a question is
-confusing, reply “Explain that in simple words.” Your first run may pause for a
-few questions while Shaka learns your project. Your coding agent may also ask
-before it runs some commands. For this playground project, saying yes is fine.
+confusing, reply “Explain that in simple words.” On this first run, your coding
+agent may ask your permission many times before it runs commands such as `git`,
+`gh`, and `ruby`. For this playground project, saying yes is fine.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
@@ -195,15 +197,16 @@ for your decision.
 
 **Do:** open the PR link. Shaka's PRs use the same layout every time:
 
-![A pull request page with the label awaiting-merge-approval and a Files changed tab. One: the summary. Two: the checkpoint, a final look at whether it is ready. Three: the Code Walkthrough link. Four: what ran on this exact version. Five: usage and cost. Six: the merge button, like Accept all; with Ask, the agent waits for your yes.](img/pr-parts.svg)
+![A pull request page with the label awaiting-merge-approval and a Files changed tab. One: Recommendation: Merge, with the next step. Two: the summary. Three: links to the Code Walkthrough, Code Review, and Checkpoint. Four: a table of checks, results, and evidence. Five: usage and cost, an estimate. Six: the merge button, like Accept all; with Ask, the agent waits for your yes.](img/pr-parts.svg)
 
-Find each numbered part on your PR. Then open the **Files changed** tab to see
-every changed line. If your agent could open a browser, a comment below the
-summary also shows before and after pictures of the button.
+Find each numbered part on your PR. **Code Review** opens the second AI's
+findings, in a comment titled Local Adversarial Review. Then open the **Files
+changed** tab to see every changed line. If your agent could open a browser, a
+comment below the summary also shows before and after pictures of the button.
 
-A green ✓ means a check ran and passed. Letters and numbers such as `a1b2c3d`
-name the exact version it ran on. A ✓ is strong proof, but it does not promise
-zero bugs.
+The PR and its comments show your own GitHub account. A 🤖 line marks text the
+AI wrote. A green ✓ means a check ran and passed. That is strong proof, but it
+does not promise zero bugs.
 
 **Success looks like:** you can say what changed and how it was checked, without
 reading every line of code. If a check failed or something is missing, the PR
@@ -221,7 +224,8 @@ Make the counter number bigger.
 entry in version history, then tests and reviews again. Reload the PR page to see
 the changes.
 
-**What it means:** you can steer as often as you like, and main still has not changed.
+**What it means:** you can steer as often as you like, and main still has not
+changed.
 
 ### Step 8: Merge
 

@@ -1,12 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 592" width="360" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 608" width="360" role="img" aria-labelledby="t d">
 <title id="t">The parts of a Shaka pull request</title>
-<desc id="d">A pull request page titled Count button clicks, marked Open with the label awaiting-merge-approval. Its Files changed tab counts 5 lines added and 3 removed. One: the summary says what changed and why, in plain words. Two: the checkpoint is a final look at whether it is ready and what happens next. Three: the Code Walkthrough link opens a guided tour of the changed code. Four: a table shows what ran on this exact version, such as tests passing and one review problem fixed. Five: usage and cost show what the AI work cost, when reported. Six: the merge button, which works like Accept all in Google Docs; with Ask, the agent waits for your yes.</desc>
+<desc id="d">A pull request page titled Count button clicks, marked Open with the label awaiting-merge-approval. Its Files changed tab counts 5 lines added and 3 removed. One: Recommendation: Merge, with a Next line saying what happens now. Two: the summary says what changed and why, in plain words. Three: links to the Code Walkthrough, a guided tour of the changed code; Code Review, the second AI's findings; and Checkpoint, a final look at whether it is ready. Four: a table of checks with each result and its evidence, such as tests passing and two small review suggestions noted. Five: usage and cost, an estimate at API prices rather than your bill. Six: the merge button, which works like Accept all in Google Docs; with Ask, the agent waits for your yes.</desc>
 <style>
 .bg{fill:#fff;stroke:#d9e0e7}
 text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
 .h{font-size:15px;font-weight:600}
 .b{font-size:13px;font-weight:600}
 .s{font-size:13px}
+.u{font-size:12px}
 .t{font-size:11px}
 .m{fill:#516074}
 .c{text-anchor:middle}
@@ -44,8 +45,8 @@ text{fill:#e6edf5}
 .w{fill:#fff}
 }
 </style>
-<rect class="bg" x="0.5" y="0.5" width="359" height="591" rx="10"/>
-<rect class="page" x="20" y="20" width="320" height="552" rx="8"/>
+<rect class="bg" x="0.5" y="0.5" width="359" height="607" rx="10"/>
+<rect class="page" x="20" y="20" width="320" height="568" rx="8"/>
 <path class="bar" d="M28 21h304a7 7 0 0 1 7 7v22H21V28a7 7 0 0 1 7-7z"/>
 <circle class="dot" cx="36" cy="35" r="4"/><circle class="dot" cx="48" cy="35" r="4"/><circle class="dot" cx="60" cy="35" r="4"/>
 <text class="t m" x="76" y="39">github.com · Pull request #1</text>
@@ -61,29 +62,34 @@ text{fill:#e6edf5}
 <path class="ln" d="M21 158H339"/>
 <g transform="translate(0 36)">
 <circle class="n" cx="38" cy="146" r="10"/><text class="nt c" x="38" y="150">1</text>
-<text class="b" x="58" y="150">Summary</text>
-<text class="s m" x="58" y="170">What changed and why, in plain words.</text>
+<text class="b" x="58" y="150">Recommendation: Merge</text>
+<text class="s m" x="58" y="170">Next: what happens now, and who acts.</text>
 <circle class="n" cx="38" cy="210" r="10"/><text class="nt c" x="38" y="214">2</text>
-<text class="b" x="58" y="214">Checkpoint: Ready to merge</text>
-<text class="s m" x="58" y="234">Final look: is it ready, and what next?</text>
+<text class="b" x="58" y="214">Summary</text>
+<text class="s m" x="58" y="234">What changed and why, in plain words.</text>
 <circle class="n" cx="38" cy="274" r="10"/><text class="nt c" x="38" y="278">3</text>
-<text class="s lnk" x="58" y="278">Code Walkthrough · Checkpoint</text>
-<text class="s m" x="58" y="298">A guided tour of the changed code.</text>
+<text class="u lnk" x="58" y="278">Code Walkthrough · Code Review · Checkpoint</text>
+<text class="s m" x="58" y="298">Code tour, review findings, final look.</text>
 <circle class="n" cx="38" cy="338" r="10"/><text class="nt c" x="38" y="342">4</text>
-<rect class="tbl" x="58" y="324" width="266" height="46" rx="4"/>
-<path class="tbl" d="M58 347H324M136 324V370"/>
-<text class="s" x="66" y="341">Tests</text>
-<text class="s" x="144" y="341"><tspan class="ok">✓</tspan> pass at a1b2c3d</text>
-<text class="s" x="66" y="364">Review</text>
-<text class="s" x="144" y="364"><tspan class="ok">✓</tspan> 1 problem fixed</text>
-<text class="s m" x="58" y="390">What ran on this exact version.</text>
-<circle class="n" cx="38" cy="424" r="10"/><text class="nt c" x="38" y="428">5</text>
-<text class="b" x="58" y="428">▸ Usage and cost</text>
-<text class="s m" x="58" y="448">What the AI work cost, when reported.</text>
-<circle class="n" cx="38" cy="486" r="10"/><text class="nt c" x="38" y="490">6</text>
-<rect class="btn" x="58" y="470" width="150" height="32" rx="6"/>
-<text class="b w c" x="133" y="491">Merge pull request</text>
-<text class="s m" x="220" y="491">= Accept all</text>
-<text class="s m" x="58" y="524">With Ask, the agent waits for your yes.</text>
+<rect class="tbl" x="58" y="318" width="266" height="69" rx="4"/>
+<path class="tbl" d="M58 341H324M58 364H324M118 318V387M226 318V387"/>
+<text class="t m" x="66" y="334">Check</text>
+<text class="t m" x="126" y="334">Result</text>
+<text class="t m" x="234" y="334">Evidence</text>
+<text class="s" x="66" y="357">Tests</text>
+<text class="s" x="126" y="357"><tspan class="ok">✓</tspan> 3 of 3 pass</text>
+<text class="s" x="234" y="357">Local run</text>
+<text class="s" x="66" y="380">Review</text>
+<text class="s" x="126" y="380"><tspan class="ok">✓</tspan> 2 nits noted</text>
+<text class="s lnk" x="234" y="380">Comment</text>
+<text class="s m" x="58" y="406">What was checked, with proof.</text>
+<circle class="n" cx="38" cy="440" r="10"/><text class="nt c" x="38" y="444">5</text>
+<text class="b" x="58" y="444">▸ Usage and cost</text>
+<text class="s m" x="58" y="464">An estimate at API prices, not your bill.</text>
+<circle class="n" cx="38" cy="502" r="10"/><text class="nt c" x="38" y="506">6</text>
+<rect class="btn" x="58" y="486" width="150" height="32" rx="6"/>
+<text class="b w c" x="133" y="507">Merge pull request</text>
+<text class="s m" x="220" y="507">= Accept all</text>
+<text class="s m" x="58" y="540">With Ask, the agent waits for your yes.</text>
 </g>
 </svg>
