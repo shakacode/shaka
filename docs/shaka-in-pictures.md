@@ -34,12 +34,12 @@ with proof, before anything goes in.
 
 ## It works like suggesting mode
 
-In Google Docs suggesting mode, edits show as suggestions: removed text is red
-and crossed out, and new text is green. Nothing changes until someone clicks
+In Google Docs suggesting mode, edits show as suggestions: removed text is
+crossed out, and new text appears in color. Nothing changes until someone clicks
 **Accept all**. The agent hands you its work the same way, on **GitHub**, the
 website where your project lives.
 
-![Google Docs crosses out 8 am in red and adds 7 am in green, with an Accept all button. A GitHub pull request shows the same edit as a red line and a green line under Files changed, with a Merge pull request button instead.](img/suggesting-mode.svg)
+![Google Docs crosses out 8 am and adds 7 am as a colored suggestion, with an Accept all button. A GitHub pull request shows the same edit as a red line and a green line under Files changed, with a Merge pull request button instead.](img/suggesting-mode.svg)
 
 - A **pull request**, or **PR**, is the agent's suggestions, waiting for you. Its
   **Files changed** tab shows removed lines in red and new lines in green.
@@ -124,7 +124,7 @@ This step is ordinary work for your coding agent. It is not a Shaka task yet.
 
 ```text
 Create a private GitHub repository named shaka-playground. Give it a
-one-page website with a button and one automated test.
+one-page website with a button and one automated test. Upload it to GitHub.
 ```
 
 A **repository**, or repo, is your project's home on GitHub. The test matters:
