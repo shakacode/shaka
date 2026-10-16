@@ -67,6 +67,16 @@ class PrivateSetupTest < Minitest::Test
     end
   end
 
+  def test_cli_setup_records_local_review_agents
+    with_setup do |root, ref|
+      args = cli_setup_args(root, ref) + ['--local-review-agent', 'openai/codex']
+      capture_io { assert_equal 0, Shaka::Seam.run(args) }
+      config = Shaka::Configuration.private_source(root:, ref:).candidate_config
+      assert_equal [{ 'provider' => 'openai', 'model_family' => 'codex' }],
+                   config.review.fetch('local_review_agents')
+    end
+  end
+
   def cli_setup_args(root, ref)
     ['private', 'setup', '--root', root, '--ref', ref,
      '--setup-command', 'bin/probe', '--validate-command', 'bin/probe',
