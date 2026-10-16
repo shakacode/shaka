@@ -51,7 +51,8 @@ method is offered, return to the agent. For a squash merge, use the
 ## Answers for your next decision
 
 Start with the description for the outcome, open decisions, steps besides
-merging, and what the change is for and how it was proved. Follow the code walkthrough for implementation choices and alternatives.
+merging, and what the change is for and how it was proved. Follow the code
+walkthrough for implementation choices and alternatives.
 Then inspect the supporting evidence for the revision you are reviewing.
 A handoff should make clear whether the change is ready to merge or needs your
 input. You can approve the approach, request revisions, or settle an open question.

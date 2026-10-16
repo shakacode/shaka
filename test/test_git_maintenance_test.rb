@@ -13,8 +13,27 @@ class TestGitMaintenanceTest < Minitest::Test
     end
   end
 
-  def config(root, key)
-    output, = Open3.capture2e(TEST_GIT, '-C', root, 'config', '--get', key)
+  def test_an_explicit_global_config_is_kept_alone
+    assert_equal ['/explicit'], TestGitConfig.own_files('GIT_CONFIG_GLOBAL' => '/explicit', 'HOME' => '/home')
+  end
+
+  # Git reads the XDG file first, so ~/.gitconfig wins a conflict.
+  def test_default_files_keep_gits_order
+    assert_equal %w[/home/.config/git/config /home/.gitconfig], TestGitConfig.own_files('HOME' => '/home')
+  end
+
+  def test_a_developer_setting_survives_and_maintenance_still_wins
+    Dir.mktmpdir('shaka-own-config') do |dir|
+      own = File.join(dir, 'own')
+      File.write(own, "[user]\n\tname = Developer\n[gc]\n\tauto = 50\n")
+      File.write(File.join(dir, 'config'), TestGitConfig.text('GIT_CONFIG_GLOBAL' => own))
+
+      assert_equal(%w[Developer 0], %w[user.name gc.auto].map { |key| config(dir, key, File.join(dir, 'config')) })
+    end
+  end
+
+  def config(root, key, global = ENV.fetch('GIT_CONFIG_GLOBAL'))
+    output, = Open3.capture2e({ 'GIT_CONFIG_GLOBAL' => global }, TEST_GIT, '-C', root, 'config', '--get', key)
     output.strip
   end
 end

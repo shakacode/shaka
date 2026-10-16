@@ -8,15 +8,28 @@ require 'fileutils'
 # Helper calls the tests spawn stay out of the developer's own call log.
 ENV['SHAKA_CALL_LOG'] = 'off'
 # Background maintenance outlives a fixture repository and races Dir.mktmpdir's cleanup.
-# Trial preparation refuses an inherited GIT_CONFIG_PARAMETERS, so a global config that keeps
-# the developer's own settings, then turns maintenance off, carries it.
+# Trial preparation refuses an inherited GIT_CONFIG_PARAMETERS, so a generated global config
+# carries the setting after including the files Git would have read, in Git's own order.
+module TestGitConfig
+  module_function
+
+  def own_files(env)
+    return [env['GIT_CONFIG_GLOBAL']] if env['GIT_CONFIG_GLOBAL']
+
+    home = env.fetch('HOME', Dir.home)
+    [File.join(env.fetch('XDG_CONFIG_HOME', File.join(home, '.config')), 'git/config'), File.join(home, '.gitconfig')]
+  end
+
+  def text(env)
+    includes = own_files(env).map { |file| "[include]\n\tpath = #{file}\n" }.join
+    "#{includes}[maintenance]\n\tauto = false\n[gc]\n\tauto = 0\n"
+  end
+end
+
 TEST_GIT_CONFIG_DIR = Dir.mktmpdir('shaka-test-gitconfig')
 Minitest.after_run { FileUtils.remove_entry(TEST_GIT_CONFIG_DIR, true) }
 ENV['GIT_CONFIG_GLOBAL'] = File.join(TEST_GIT_CONFIG_DIR, 'config').tap do |path|
-  own = [ENV.fetch('GIT_CONFIG_GLOBAL', nil), File.expand_path('~/.gitconfig'),
-         File.join(ENV.fetch('XDG_CONFIG_HOME', File.expand_path('~/.config')), 'git/config')].compact.uniq
-  includes = own.map { |file| "[include]\n\tpath = #{file}\n" }.join
-  File.write(path, "#{includes}[maintenance]\n\tauto = false\n[gc]\n\tauto = 0\n")
+  File.write(path, TestGitConfig.text(ENV))
 end
 
 TEST_GIT = ENV.fetch('PATH').split(File::PATH_SEPARATOR).map { |dir| File.join(dir, 'git') }.find do |path|
