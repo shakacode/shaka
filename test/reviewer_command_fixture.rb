@@ -12,11 +12,22 @@ module ReviewerCommandFixture
 
   private
 
+  # Every CLI reviewer is installed, so selection does not depend on the machine running the tests.
   def reviewer(root, *)
-    output, error, status = Open3.capture3(COMMAND, 'reviewer', '--root', root, *)
-    raise error unless status.success?
+    Dir.mktmpdir('shaka-reviewer-tools') do |tools|
+      %w[claude codex grok].each { |name| write_stub(tools, name) }
+      env = { 'PATH' => "#{tools}:/usr/bin:/bin", 'OPENROUTER_API_KEY' => nil, 'SHAKA_RUBY' => RbConfig.ruby }
+      output, error, status = Open3.capture3(env, COMMAND, 'reviewer', '--root', root, *)
+      raise error unless status.success?
 
-    JSON.parse(output)
+      JSON.parse(output)
+    end
+  end
+
+  def write_stub(directory, name)
+    path = File.join(directory, name)
+    File.write(path, "#!/bin/sh\nexit 1\n")
+    File.chmod(0o700, path)
   end
 
   def rewrite_reviewers(root, reviewers)
