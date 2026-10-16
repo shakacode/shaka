@@ -69,6 +69,8 @@ Ask the agent to stop the preview to return to ordinary settings.
 A local branch can prepare an experiment; the PR makes its choices visible before
 team adoption. Ask to keep that settings PR open if you want to continue experimenting.
 
+For documentation and PR style, see [writing preferences](writing-preferences.md).
+
 ## `merge.preference`
 
 **Required.** Values: `ask` or `auto`. Setup defaults to `ask`.
