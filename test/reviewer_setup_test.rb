@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require_relative 'reviewer_command_fixture'
+require 'shaka/doctor/cli_inventory'
 
 class ReviewerSetupTest < Minitest::Test
   include ReviewerCommandFixture
@@ -42,6 +43,14 @@ class ReviewerSetupTest < Minitest::Test
         refute_path_exists marker
       end
     end
+  end
+
+  # A lookup that could not be checked is left to the review run to report.
+  def test_keeps_a_reviewer_whose_lookup_could_not_be_checked
+    entries = [{ identity: 'openai/codex', configured: true, installed: false, unchecked: true },
+               { identity: 'deepseek/openrouter', configured: true, installed: false }]
+    assert_equal [{ 'provider' => 'deepseek', 'model_family' => 'openrouter' }],
+                 Shaka::Doctor::CliInventory.not_set_up(entries)
   end
 
   private
