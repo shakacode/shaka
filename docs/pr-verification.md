@@ -303,7 +303,8 @@ commit exists; your agent publishes the screenshots first.
 
 [The checkpoint on PR #527](https://github.com/shakacode/shaka/pull/527#issuecomment-6184807134),
 captured October 14, 2026 (Hawaii time), separates the owner's recommendation
-from the reviewer's verdict and provides the squash message below it.
+from the reviewer's verdict. Current checkpoints state the verdict and any unresolved
+concerns in one paragraph and keep the squash message in a closed section below it.
 
 The checkpoint explains one conclusion:
 **Proceed**, **Simplify/reframe**, or **Do not merge**. Substantive unresolved concerns
