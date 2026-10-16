@@ -50,8 +50,9 @@ Under **Ask**, the agent merges only after you approve that PR's commit. To have
 a task end at the PR, say so in your prompt, for example `Open a PR and stop`.
 Ask relies on the agent following its instructions, and the agent acts with your
 GitHub permissions. For a rule no session can get around, protect the base branch
-on GitHub: require an approving review and do not let administrators bypass it.
-The agent opens PRs as you, so someone else then has to approve each one.
+on GitHub: require an approving review, and give no bypass to administrators or
+to any role, team, or app that includes your account. The agent opens PRs as you,
+so someone else then has to approve each one.
 
 ## Does a green review job mean the PR was reviewed?
 
