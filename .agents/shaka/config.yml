@@ -5,7 +5,7 @@
 # Changes take effect once merged into the default branch.
 ---
 version: 1 # Required. The configuration format, not the Shaka release.
-repo_prefix: SHAKA # Default: derived from the repository name ("SHAK" here); we spell it out.
+repo_prefix: SHAKA # Default: derived from the repo name ("SHAK" here); we prefer the full name.
 # base_branch: main # Default: the repository's default branch.
 
 review:
@@ -13,7 +13,7 @@ review:
   ci_review_jobs: # Required unless review.required is none: the GitHub jobs that post AI reviews.
     - claude-review
   ci_review_wait: one # Default: wait for one CI review report before merging.
-  local_max_rounds: 5 # Default: commits local review reads before the agent stops and asks you.
+  local_max_rounds: 5 # Default: most commits one local review covers before the agent asks you.
   # Default 1. We use 3: a mistake in Shaka weakens checks on every project that uses it.
   local_review_count: 3
   # Default: Shaka's built-in prompt. Ours also weighs the cost of instruction changes (README.md).
@@ -37,7 +37,7 @@ review:
       model: deepseek/deepseek-v4.1-flash
       effort: low
     - provider: xai
-      model_family: grok # Fallback; runs only when a task names a Grok model.
+      model_family: grok # Fallback; runs only with a model set here or named in the task.
 
 merge:
   preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
@@ -61,6 +61,7 @@ pr_description:
     enabled: true # Default: check that the PR description's first sentence leads with the outcome.
     effort: low # Default.
     # reviewer: openai/codex # Default: chosen like the code reviewers above.
+    # Set reviewer with model; Grok and OpenRouter need a model.
     # model: gpt-6.1-sol # Default: the reviewer's CLI default.
 
 prose_limits: # Defaults: word limits for PR descriptions and walkthroughs.
