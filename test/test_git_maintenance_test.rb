@@ -7,7 +7,8 @@ require_relative 'test_helper'
 class TestGitMaintenanceTest < Minitest::Test
   def test_fixture_repositories_never_start_background_maintenance
     Dir.mktmpdir('shaka-maintenance') do |root|
-      Open3.capture2e(TEST_GIT, 'init', '--quiet', root)
+      output, status = Open3.capture2e(TEST_GIT, 'init', '--quiet', root)
+      assert_predicate status, :success?, output
 
       assert_equal(%w[false 0], %w[maintenance.auto gc.auto].map { |key| config(root, key) })
     end
