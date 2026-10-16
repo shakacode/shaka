@@ -1,6 +1,7 @@
 # Shaka's settings for its own repository, kept short so you can copy it as an example.
 # You rarely need to edit it; ask your agent: `$shaka Wait for all configured CI reviewers.`
 # Each comment gives the default; where this repository chooses otherwise, it says why.
+# All of Shaka's defaults in one place: skills/shaka/config/defaults.yml.
 # Every option: docs/settings.md (https://shaka.shakacode.com/docs/settings).
 # Changes take effect once merged into the default branch.
 ---

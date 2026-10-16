@@ -6,7 +6,8 @@ If you copy them, replace the values that belong to Shaka: `repo_prefix`, the
 GitHub review jobs in `ci_review_jobs`, the trusted people in
 `trusted-github-actors.yml`, and the two prompt files. After setup, ask your agent
 to change a setting, for example `$shaka Prefer Claude for code review.` The
-[settings reference](https://shaka.shakacode.com/docs/settings) explains every option.
+[settings reference](https://shaka.shakacode.com/docs/settings) explains every option,
+and [Shaka's defaults file](../../skills/shaka/config/defaults.yml) lists every default.
 
 ## Where we differ from the defaults
 
