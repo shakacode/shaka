@@ -7,7 +7,8 @@ require 'open3'
 # Helper calls the tests spawn stay out of the developer's own call log.
 ENV['SHAKA_CALL_LOG'] = 'off'
 # Background maintenance outlives a fixture repository and races Dir.mktmpdir's cleanup.
-ENV['GIT_CONFIG_PARAMETERS'] = "'maintenance.auto'='false' 'gc.auto'='0'"
+# Trial preparation refuses an inherited GIT_CONFIG_PARAMETERS, so system config carries it.
+ENV['GIT_CONFIG_SYSTEM'] = File.expand_path('fixtures/gitconfig', __dir__)
 
 TEST_GIT = ENV.fetch('PATH').split(File::PATH_SEPARATOR).map { |dir| File.join(dir, 'git') }.find do |path|
   File.file?(path) && File.executable?(path)

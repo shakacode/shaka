@@ -1,0 +1,5 @@
+# Test-only system Git configuration; see test/test_helper.rb.
+[maintenance]
+	auto = false
+[gc]
+	auto = 0
