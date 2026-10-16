@@ -154,9 +154,7 @@ provider other than the current host first. Pass each reviewer the user accepts,
 in that order, as `--local-review-agent PROVIDER/FAMILY`. Omit the flag when none
 is installed or the user declines.
 
-   If the user wants no required checks, continue with merge preference `ask` and
-   say that Auto merge needs at least one.
-   [Offer local reviewers](#offer-local-reviewers) for `seam init`.
+## Review and merge the first setup PR
 
 When the default branch has no Shaka configuration, every `--ref` command stops
 with `Cannot find .agents/agent-workflow.yml or .agents/shaka/config.yml`. That includes
