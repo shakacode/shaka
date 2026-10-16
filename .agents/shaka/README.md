@@ -20,6 +20,5 @@ whether new instructions are worth that cost, not only whether they are correct.
 - **Final check before merge.** [product-checkpoint.md](product-checkpoint.md)
   replaces the [default checkpoint prompt](../../skills/shaka/config/post-implementation-prompt.md)
   and adds the same cost check.
-- **Three reviewers.** Three of the listed reviewers read each reviewed commit,
-  preferring ones from a different provider than the author; the default is one.
-  A mistake here can weaken the checks Shaka runs on every project.
+- **Two reviewers.** Claude and Codex both read each reviewed commit; the default
+  is one. A mistake here can weaken the checks Shaka runs on every project.
