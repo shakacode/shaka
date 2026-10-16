@@ -45,7 +45,7 @@ allowlist source selection; its former require path is a compatibility shim.
 The boundary covers repository-facing settings, allowlists, executable discovery,
 and seam initialization and migration. `configuration/generated_files.rb` restricts
 generated-file reads and writes to the known destinations. Packaged `workflow.yml`, `enforcement.yml`,
-and usage rate data have separate loaders; the install-local repository catalog
+`defaults.yml`, and usage rate data have separate loaders; the install-local repository catalog
 and GitHub metadata are also separate. Generated pointer text and error messages
 may show concrete paths as explanations. The merge-review classifier names
 `.agents/` as an instruction directory, not a configuration source. The architectural

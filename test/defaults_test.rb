@@ -36,10 +36,28 @@ class DefaultsTest < Minitest::Test
 
   def test_omitted_settings_resolve_to_the_file
     config = Shaka::RepositoryConfig.load(root: Dir.pwd, source: YAML.dump(minimal), available_commands: [])
+    review = Shaka::Defaults.fetch('review')
 
-    assert_equal Shaka::Defaults.fetch('review', 'ci_review_wait'), config.review.fetch('ci_review_wait')
-    assert_equal Shaka::Defaults.fetch('review', 'local_max_rounds'), config.review.fetch('local_max_rounds')
+    assert_equal review.slice('ci_review_wait', 'local_max_rounds'),
+                 config.review.slice('ci_review_wait', 'local_max_rounds')
     assert_equal Shaka::Defaults.fetch('pr_description', 'opening_check'), config.opening_check
+    assert_equal Shaka::Defaults.fetch('wip'), config.wip
+  end
+
+  # The file is not validated at load time, so the repository schema checks its values here.
+  def test_packaged_values_pass_the_repository_schema
+    sections = Shaka::Defaults.data.except('runtime')
+    review = sections.fetch('review').merge('required' => 'none')
+    source = YAML.dump(sections.merge('version' => 1, 'review' => review))
+
+    assert Shaka::RepositoryConfig.load(root: Dir.pwd, source:, available_commands: [])
+  end
+
+  def test_runtime_values_are_positive_integers
+    runtime = Shaka::Defaults.fetch('runtime')
+    values = runtime.fetch('review_timeout_seconds').values + runtime.fetch('pr_watch').values
+
+    assert(values.all? { |value| value.is_a?(Integer) && value.positive? })
   end
 
   def test_rejects_malformed_yaml
