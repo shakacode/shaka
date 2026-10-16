@@ -1,8 +1,11 @@
 # Shaka's own settings
 
-These are the settings Shaka uses when it works on its own code. Copy them as a
-starting point for your repository. You rarely need to edit them by hand; ask your
-agent instead, for example `$shaka Prefer Claude for code review.` The
+These are the settings Shaka uses when it works on its own code. Use them as an
+example, but let setup choose your own: `$shaka Set up Shaka for this repository.`
+If you copy them, replace the values that belong to Shaka: `repo_prefix`, the
+GitHub review jobs in `ci_review_jobs`, the trusted people in
+`trusted-github-actors.yml`, and the two prompt files. After setup, ask your agent
+to change a setting, for example `$shaka Prefer Claude for code review.` The
 [settings reference](https://shaka.shakacode.com/docs/settings) explains every option.
 
 ## Where we differ from the defaults
