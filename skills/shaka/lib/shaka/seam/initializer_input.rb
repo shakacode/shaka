@@ -18,7 +18,7 @@ module Shaka
         return unless @options[:merge_preference] == 'auto' && !@options[:required_checks]
 
         warn 'shaka: merge preference Auto with no required check listed. If GitHub requires no checks on the ' \
-             'base branch, nothing gates an unattended merge and Shaka merges only a head a user confirms; ' \
+             'base branch, nothing gates an unattended merge; the agent confirms a head only under Ask, so ' \
              'recommend ask, or add --required-check.'
       end
 
