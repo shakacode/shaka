@@ -27,7 +27,7 @@ nobody checks the work unless you ask. Shaka gives the AI a careful routine. It
 works on a practice copy, tests its work, gets a second opinion, and hands you
 proof before anything goes in.
 
-![Without Shaka, the AI edits your project directly, tests run only if you ask, nobody double-checks, and bugs can slip through. With Shaka, the AI works on a practice copy, tests run first, a second AI looks for mistakes, you get a permission slip with proof, and by default you say yes before it goes in.](img/without-and-with-shaka.svg)
+![Without Shaka, the AI edits your project directly, tests run only if you ask, nobody double-checks, and bugs can slip through. With Shaka, the AI works on a practice copy, your tests run first, a second AI looks for mistakes, you get a permission slip with proof, and by default the agent waits for your yes.](img/without-and-with-shaka.svg)
 
 **The goal: changes you can trust, while you stay in charge of what goes in.**
 
@@ -73,7 +73,7 @@ checked. See [which rules a program checks](workflow.md#what-is-enforced).
 
 Shaka's PRs use the same layout every time, so you always know where to look.
 
-![A pull request page marked Open with the label awaiting-merge-approval. One: the summary says what changed and why. Two: the checkpoint is a final look at whether it is ready and what happens next. Three: the Code Walkthrough link tours the changed code. Four: a table shows what ran on this exact version. Five: usage and cost. Six: the merge button; with Ask, nothing merges until you say so.](img/pr-permission-slip.svg)
+![A pull request page marked Open with the label awaiting-merge-approval. One: the summary says what changed and why. Two: the checkpoint is a final look at whether it is ready and what happens next. Three: the Code Walkthrough link tours the changed code. Four: a table shows what ran on this exact version. Five: usage and cost. Six: the merge button; with Ask, the agent waits for your yes.](img/pr-permission-slip.svg)
 
 A green ✓ means a check ran and passed. Letters and numbers such as `a1b2c3d`
 name the exact commit it ran on. A ✓ is strong proof, but it does not promise
@@ -93,7 +93,8 @@ Shaka has two merge choices. **Ask** is the default.
 - **Auto:** the agent merges once its checks and reviews pass. Big or risky
   changes still come back to you.
 
-This page uses Ask. With Ask, Shaka adds nothing to main until you say yes.
+This page uses Ask. With Ask, Shaka's rules tell the agent to wait for your yes
+before anything joins main. See [choose a merge policy](working-with-shaka.md#choose-a-merge-policy).
 
 ## Tutorial: your first Shaka task
 
@@ -228,8 +229,8 @@ says so. Ask the agent about it.
 Make the counter number bigger.
 ```
 
-**You will see:** the agent updates the same PR. It saves a new commit, tests and
-reviews again, and updates the PR. Reload the PR page to see the changes.
+**You will see:** the agent updates the same PR. It saves a new commit, then tests
+and reviews again. Reload the PR page to see the changes.
 
 **What it means:** you can steer as often as you like. main still has not changed.
 

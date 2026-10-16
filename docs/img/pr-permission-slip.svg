@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 556" width="360" role="img" aria-labelledby="t d">
 <title id="t">The parts of a Shaka pull request</title>
-<desc id="d">A pull request page titled Count button clicks, marked Open with the label awaiting-merge-approval. One: the summary says what changed and why, in plain words. Two: the checkpoint is a final look at whether it is ready and what happens next. Three: the Code Walkthrough link opens a guided tour of the changed code. Four: a table shows what ran on this exact version, such as tests passing and one review problem fixed. Five: usage and cost show what the AI work cost, when reported. Six: the merge button; with Ask, nothing merges until you say so.</desc>
+<desc id="d">A pull request page titled Count button clicks, marked Open with the label awaiting-merge-approval. One: the summary says what changed and why, in plain words. Two: the checkpoint is a final look at whether it is ready and what happens next. Three: the Code Walkthrough link opens a guided tour of the changed code. Four: a table shows what ran on this exact version, such as tests passing and one review problem fixed. Five: usage and cost show what the AI work cost, when reported. Six: the merge button; with Ask, the agent waits for your yes.</desc>
 <style>
 .bg{fill:#fff;stroke:#d9e0e7}
 text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
@@ -74,5 +74,5 @@ text{fill:#e6edf5}
 <circle class="n" cx="38" cy="486" r="10"/><text class="nt c" x="38" y="490">6</text>
 <rect class="btn" x="58" y="470" width="150" height="32" rx="6"/>
 <text class="b w c" x="133" y="491">Merge pull request</text>
-<text class="s m" x="58" y="524">With Ask, nothing merges until you say so.</text>
+<text class="s m" x="58" y="524">With Ask, the agent waits for your yes.</text>
 </svg>
