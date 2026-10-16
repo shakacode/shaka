@@ -149,8 +149,8 @@ conflicting files. When GitHub enforces no required checks, add
 ## Offer local reviewers
 
 Run `shaka doctor --host HOST` and read its Reviewer CLIs check. Offer each
-reviewer it reports as on PATH, or with its API key present, putting one from a
-provider other than the current host first. Pass each reviewer the user accepts,
+reviewer CLI it reports on PATH, putting one from a provider other than the
+current host first. Pass each reviewer the user accepts,
 in that order, as `--local-review-agent PROVIDER/FAMILY`. Omit the flag when none
 is installed or the user declines.
 
