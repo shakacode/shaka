@@ -86,5 +86,4 @@ The scripts usually wrap existing commands. In Shaka's repository, `.agents/shak
 installs development dependencies; `bin/install` installs the skill.
 
 Shaka's own [configuration](https://github.com/shakacode/shaka/tree/main/.agents/shaka)
-provides working examples of the required files. Its README explains
-where Shaka's repository departs from the defaults and why.
+provides working examples of the required files.
