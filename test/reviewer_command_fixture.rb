@@ -6,28 +6,40 @@ require 'open3'
 require 'tmpdir'
 require 'yaml'
 
+# Stub claude, codex, and grok CLIs. Reviewer selection skips a CLI missing from PATH, so tests that
+# expect a listed reviewer to be chosen put these first to stay independent of the test machine.
+module ReviewerCliStubs
+  def self.path(rest = ENV.fetch('PATH')) = "#{directory}:#{rest}"
+
+  # One directory per process: parallel test workers must not remove each other's stubs.
+  def self.directory
+    return @directory if @pid == Process.pid
+
+    @pid = Process.pid
+    @directory = Dir.mktmpdir('shaka-reviewer-clis')
+    %w[claude codex grok].each do |name|
+      File.write(File.join(@directory, name), "#!/bin/sh\nexit 1\n")
+      File.chmod(0o700, File.join(@directory, name))
+    end
+    directory = @directory
+    at_exit { FileUtils.rm_rf(directory) if Process.pid == @pid }
+    @directory
+  end
+end
+
 # A throwaway repository whose seam lists Claude, Codex, and Grok, and a runner for `shaka reviewer`.
 module ReviewerCommandFixture
   COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
 
   private
 
-  # Every CLI reviewer is installed, so selection does not depend on the machine running the tests.
   def reviewer(root, *)
-    Dir.mktmpdir('shaka-reviewer-tools') do |tools|
-      %w[claude codex grok].each { |name| write_stub(tools, name) }
-      env = { 'PATH' => "#{tools}:/usr/bin:/bin", 'OPENROUTER_API_KEY' => nil, 'SHAKA_RUBY' => RbConfig.ruby }
-      output, error, status = Open3.capture3(env, COMMAND, 'reviewer', '--root', root, *)
-      raise error unless status.success?
+    env = { 'PATH' => ReviewerCliStubs.path('/usr/bin:/bin'), 'OPENROUTER_API_KEY' => nil,
+            'SHAKA_RUBY' => RbConfig.ruby }
+    output, error, status = Open3.capture3(env, COMMAND, 'reviewer', '--root', root, *)
+    raise error unless status.success?
 
-      JSON.parse(output)
-    end
-  end
-
-  def write_stub(directory, name)
-    path = File.join(directory, name)
-    File.write(path, "#!/bin/sh\nexit 1\n")
-    File.chmod(0o700, path)
+    JSON.parse(output)
   end
 
   def rewrite_reviewers(root, reviewers)
