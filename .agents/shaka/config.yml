@@ -1,7 +1,8 @@
 # Shaka settings for this repository; also a browsable configuration example.
 # You need not edit this file: ask the skill, e.g. `$shaka Wait for all configured CI reviewers.`
-# Docs: https://shaka.shakacode.com/docs/settings; each key's anchor joins its path
-# without dots, such as #reviewci_review_wait. Explicit values below preserve effective policy.
+# Docs: docs/settings.md, published at https://shaka.shakacode.com/docs/settings.
+# Each section-level key's anchor drops the dot, such as #reviewci_review_wait;
+# nested values use their parent's. Explicit values below preserve effective policy.
 # Required choices (review jobs, reviewers, merge preference) are repository-specific.
 # Optional settings with no fixed default stay commented rather than pinning a choice.
 # Policy comes from the trusted default branch; edits do not govern their own PR.
