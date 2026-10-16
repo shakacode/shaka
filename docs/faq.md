@@ -111,10 +111,10 @@ $shaka Add USER to this project's trusted GitHub actors.
 
 Shaka reads `AGENTS.md` from Git at the trusted commit. When `AGENTS.md` is a
 symlink to another file in the repository, such as `CLAUDE.md`, Shaka reads that
-file at the same commit. Recent Claude Code versions can read `AGENTS.md`
-directly, but not in every session, and not by default when a `CLAUDE.md` exists.
-To give Claude the same instructions every time, add a `CLAUDE.md` containing
-`@AGENTS.md` rather than a symlink. See Claude Code's
+file at the same commit. Claude Code is a separate case: recent versions can read
+`AGENTS.md` directly, but not in every session, and not by default when a
+`CLAUDE.md` exists. To give Claude the same instructions every time, add a
+`CLAUDE.md` containing `@AGENTS.md`. See Claude Code's
 [AGENTS.md support](https://code.claude.com/docs/en/memory#agents-md).
 
 ## Can I customize the prompt Shaka gives its local reviewer?

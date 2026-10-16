@@ -123,6 +123,17 @@ class LocalReviewCriteriaResolveTest < Minitest::Test
     end
   end
 
+  def test_linked_directory_resolves_inside_the_tree
+    entries = { 'AGENTS.md' => link_entry('shared/rules.md'), 'shared' => link_entry('config'),
+                'config/rules.md' => ['100644', 'a' * 40], 'loop/AGENTS.md' => link_entry('../loop/x/AGENTS.md'),
+                'loop/x' => link_entry('.'), 'out/AGENTS.md' => link_entry('up/rules.md'),
+                'out/up' => link_entry('../..') }
+    assert_equal 'config/rules.md', Shaka::LocalReviewCriteria.resolve(entries, 'AGENTS.md', &:itself)
+    %w[loop out].each do |name|
+      assert_nil Shaka::LocalReviewCriteria.resolve(entries, "#{name}/AGENTS.md", &:itself), name
+    end
+  end
+
   private
 
   # Entries store the link target as their object id, so the reader block returns it unchanged.
