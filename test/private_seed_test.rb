@@ -21,14 +21,6 @@ module PrivateSeedFixture
     end
   end
 
-  def with_failed_link
-    original = File.method(:link)
-    File.define_singleton_method(:link) { |_from, to| raise Errno::ENOSPC, to }
-    yield
-  ensure
-    File.define_singleton_method(:link, original)
-  end
-
   def with_seed_source
     with_setup do |root, ref|
       setup_private(root, ref)
@@ -86,12 +78,14 @@ class PrivateSeedTest < Minitest::Test
     end
   end
 
-  def test_failed_file_install_leaves_nothing_to_block_the_rerun
+  def test_killed_file_install_leaves_nothing_to_block_the_rerun
     with_seed_source do |root, ref, id|
       with_linked_worktree(root) do |worktree|
-        with_failed_link { assert_raises(Shaka::Error) { seed(worktree, ref, id) } }
-        assert_empty Dir.glob(File.join(worktree, '.agents/shaka/**/*.shaka-seed-*'))
+        assert_raises(Shaka::Error) { interrupted_seed_setup(worktree, ref, id).setup }
+        leftover = File.join(worktree, '.agents/shaka/review-prompt.md.shaka-seed-0123456789ab')
+        File.write(leftover, 'Rev')
         assert_equal 'complete', seed(worktree, ref, id).fetch('status')
+        refute_path_exists leftover
       end
     end
   end
