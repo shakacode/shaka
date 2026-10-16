@@ -620,8 +620,8 @@ rules:
     quote: Never accept missing, failed, pending, or stale required checks
     enforced_by: code
     detector: >-
-      `Merge#verify_checks` refuses an empty required-check list unless `--empty-checks-confirmed-head`
-      names the head being merged, and any check that is not passing, and `Merge#verify_snapshot` refuses a head that moved since verification. That
+      `Merge#verify_checks` refuses any check that is not passing, and an empty list unless
+      `--empty-checks-confirmed-head` names the merged head, and `Merge#verify_snapshot` refuses a head that moved since verification. That
       covers the path where the helper submits the merge. When no required check has reported
       and `GitHub#configured_required_checks` finds none configured in classic protection or
       rulesets, `RequiredChecks` substitutes the trusted seam's `merge.required_checks`, read

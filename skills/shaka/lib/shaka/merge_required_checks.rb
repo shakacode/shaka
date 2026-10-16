@@ -9,8 +9,7 @@ module Shaka
                             'If the branch is unprotected, enable branch protection or list merge.required_checks; ' \
                             'if required checks have not registered yet, wait and retry. ' \
                             'This is not unread evidence. In Ask mode, pass --empty-checks-confirmed-head for a head ' \
-                            'the user told you to merge; Auto has no such approval, so it cannot merge without a ' \
-                            'required check.'
+                            'the user told you to merge; Auto supplies no such approval.'
 
     private
 
