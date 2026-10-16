@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../defaults'
+require_relative '../error'
 
 module Shaka
   class Claim
@@ -17,6 +18,9 @@ module Shaka
         @description = description
         @template = template
         @exact = exact
+        return unless description && !(template || DEFAULT).include?('{description}')
+
+        raise Error, 'branches.name needs {description} to name a task without a work item.'
       end
 
       def reported

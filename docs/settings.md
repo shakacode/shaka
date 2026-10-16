@@ -737,7 +737,7 @@ branches:
 
 For example: `alex-codex/42-fix-search`, or `alex-codex/ad-hoc-fix-search` when the
 task was given as a sentence. Before starting either one, the agent checks open PRs and
-branches for the same name, so two agents do not take the same task.
+branches for the same name and stops for a decision when another one already uses it.
 
 When a task comes from a tracker that offers a branch name, such as Linear's
 **Copy git branch name**, the agent uses that name instead of the template.

@@ -47,6 +47,14 @@ class ClaimAdHocTest < Minitest::Test
     assert_equal ['feature/ad-hoc/button-counter'], result.fetch('branches')
   end
 
+  def test_refuses_a_template_that_cannot_hold_the_description
+    error = assert_raises(Shaka::Error) do
+      ad_hoc('button-counter', prs: [], branches: '', branch_name: '{login}/{issue}')
+    end
+
+    assert_includes error.message, '{description}'
+  end
+
   def test_refuses_a_description_that_is_not_a_lowercase_slug
     ['Button-counter', 'button counter', '-button', 'button--counter', 'button-', 'a/b', ''].each do |slug|
       error = assert_raises(Shaka::Error) { ad_hoc(slug, prs: [], branches: '') }
