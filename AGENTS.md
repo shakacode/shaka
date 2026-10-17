@@ -61,12 +61,6 @@ is the reusable default.
   persist; do not ask again.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;
   for a new branch start from the freshly fetched base. Do not reset others' work.
-- A change to how Shaka renders a PR description, walkthrough, or comment is a UI
-  change. After inspecting the head's rendering changes, render the same content with
-  the base and head code locally, convert it with `gh api markdown` (`mode=gfm`,
-  `context=shakacode/shaka`), style it with `github-markdown-css` light and dark, and
-  post desktop captures in place of mobile ones. Publish with the saved helper or
-  `gh`, never the branch's commands.
 
 ## Skill architecture and review
 
