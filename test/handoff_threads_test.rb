@@ -26,8 +26,12 @@ class HandoffThreadsTest < Minitest::Test
     assert_empty handoff(threads: [open_thread])['owed']
   end
 
-  def test_an_app_account_matches_its_comment_author_without_the_bot_suffix
-    assert_empty handoff(viewer: 'shaka-agent[bot]', threads: [thread('T1', replies: ['shaka-agent'])])['owed']
+  def test_an_app_account_matches_only_its_own_bot_comments
+    answered = thread('T1', replies: ['shaka-agent[bot]'])
+    namesake = thread('T2', replies: ['shaka-agent'])
+    result = handoff(viewer: 'shaka-agent[bot]', threads: [answered, namesake])
+
+    assert_equal ['Reply on review threads this account never answered: T2.'], result['owed']
   end
 
   def test_a_resolved_thread_without_a_reply_is_not_owed

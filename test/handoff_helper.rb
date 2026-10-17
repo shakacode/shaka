@@ -91,9 +91,11 @@ module HandoffFixtures
   STATES = { 'pass' => 'SUCCESS', 'pending' => 'PENDING', 'skipping' => 'SKIPPED' }.freeze
 
   # A review thread opened by a reviewer, with later comments from each login in replies.
+  # A login ending in [bot] is a Bot author, which GraphQL names without the suffix.
   def self.thread(id, resolved: false, replies: [])
     comments = ['reviewer', *replies].each_with_index.map do |login, index|
-      { 'fullDatabaseId' => "#{id.delete('^0-9')}#{index + 1}", 'author' => { 'login' => login } }
+      author = { '__typename' => login.end_with?('[bot]') ? 'Bot' : 'User', 'login' => login.delete_suffix('[bot]') }
+      { 'fullDatabaseId' => "#{id.delete('^0-9')}#{index + 1}", 'author' => author }
     end
     page = { 'nodes' => comments, 'pageInfo' => { 'hasNextPage' => false } }
     { 'id' => id, 'isResolved' => resolved, 'comments' => page }
