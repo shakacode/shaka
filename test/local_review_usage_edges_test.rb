@@ -136,3 +136,27 @@ class LocalReviewUsageOverlapTest < Minitest::Test
     assert_equal cost, Shaka::LocalReviewUsage.cost(attached.dig('usage', 'records', 0))
   end
 end
+
+class LocalReviewUnknownUsageCopiesTest < Minitest::Test
+  include LocalReviewUsageBridgeFixture
+
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_unknown_incomplete_round_is_attached_once
+    with_captured_review(reviewer: 'openai/codex') do |ledger, result|
+      triage_and_remove_source(ledger, result)
+      record = result.fetch('usage_record')
+      refute record.fetch('complete')
+      assert_equal 'UNKNOWN', record.dig('columns', 0, 'provider')
+      assert_equal [record], attached_description(result).dig('usage', 'records')
+    end
+  end
+
+  private
+
+  def codex_records
+    records = super
+    conflict = records.last.merge(payload: records.last.fetch(:payload).merge(usage: {}))
+    records + [conflict]
+  end
+end

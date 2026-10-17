@@ -37,6 +37,8 @@ module Shaka
     # Use the same response coverage rules as description carry, including copies of a source.
     def keep_record(kept, record)
       identity = UsageRecordCarry.identity!(record)
+      return if kept.include?(record)
+
       known = kept.reject { |earlier| unknown?(earlier) }.map { |earlier| UsageRecordCarry.identity!(earlier) }
       return if covered?(record, identity, known)
 

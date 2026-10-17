@@ -433,9 +433,8 @@ fix recorded in the commit its round reviewed. A
 content file without a ledger gets only these checks: publishing does not read Git history, so
 use `--ledger` when fixes must be proven to follow and reach the reviewed head.
 `review run` captures a redacted `usage_record` from supported native sources and keeps it
-with the ledger round. Publication shows available categories; incompatible token totals stay
-uncombined. Supply the saved review results through description's `--review-result` inputs
-to include every ledger round in the canonical PR usage table automatically, even after
+with the ledger round. Supply the saved review results through description's `--review-result`
+inputs to include every ledger round in the canonical PR usage table automatically, even after
 temporary source cleanup. Keep the ledger and saved results together for publication.
 Legacy rounds without captured records still accept `model`, `tokens`, `cost`, and
 `estimate`; subscription estimates belong in `estimate`, never `cost`.
