@@ -415,6 +415,7 @@ validation evidence; passing link checks alone does not establish that a guide i
 | --- | --- |
 | Layout, styling, or visible output | Test on desktop and mobile; capture before/after screenshots of both, with [annotations explaining meaningful changes](#show-what-changed-between-captures). |
 | Interaction, animation, or timing | A short recording, with screenshots where they help comparison. |
+| Markdown a tool generates for GitHub, such as a PR description | Before/after screenshots of the same content in light and dark themes, rendered with the PR's code but published by the installed version. |
 | Backend or command-line behavior | Focused tests and concise before/after output. |
 
 The agent inspects screenshots for the intended state and reviews relevant video
