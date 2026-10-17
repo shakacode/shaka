@@ -17,6 +17,9 @@ module Shaka
 
     def remove(body) = split(body).last
 
+    # The commit the warning links, or nil when the region has no generated head link.
+    def head(body) = split(body).first[%r{/commit/(\h{40})\)}, 1]
+
     def split(body)
       return ['', body] if body.scan(OPEN).empty? && body.scan(CLOSE).empty?
 
