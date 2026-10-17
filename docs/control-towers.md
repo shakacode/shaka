@@ -28,6 +28,10 @@ Install Shaka's control towers for Codex.
 In Claude Code, use `/mct-claude` and `/rct-claude` instead. Use the desktop apps
 for tower setup; see [coding agents](coding-agents.md) for other environments.
 
+Run `$rct` from the repository's checkout or worktree. You can keep your current
+chat if the repository is saved as a Codex project on that computer. Setup needs
+exactly one matching project.
+
 After the master acknowledges the repository tower, ask the tower what needs
 attention. You choose which task starts; setup starts no backlog work or recurring
 scans.
