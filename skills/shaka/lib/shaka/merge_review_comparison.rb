@@ -9,7 +9,7 @@ module Shaka
     # GitHub's compare API lists at most this many files, so a full page may hide code changes.
     COMPARE_FILE_LIMIT = 300
     # Markdown that instructs agents can change trust or merge policy, so it needs fresh review.
-    # Matching the stem also covers host variants such as AGENTS.override.md and CLAUDE.local.md.
+    # Any name starting with these stems counts, covering host variants such as AGENTS.override.md.
     INSTRUCTION_FILE = /\A(?:agents|claude|gemini|skill).*\.md\z/
     INSTRUCTION_DIRECTORIES = %w[.agents/ .claude/ .cursor/ .github/ skills/].freeze
 
