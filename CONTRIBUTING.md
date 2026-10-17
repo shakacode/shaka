@@ -2,7 +2,9 @@
 
 For a published guide, update `docs/sidebars.json` in the same PR. The docs site
 syncs this navigation with the content; `bin/check-docs-navigation` rejects pages
-missing from the sidebar and entries pointing to deleted pages. Site-only pages
+missing from the sidebar and entries pointing to deleted pages. It also rejects
+relative links and heading anchors in `docs/` and `skills/` that do not resolve,
+including the `docs/` anchors that Shaka's code prints. Site-only pages
 and the global header/footer remain in the site repository.
 
 Start with [developing Shaka](contributing/development.md) for local setup and
