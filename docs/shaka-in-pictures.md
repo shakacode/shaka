@@ -97,6 +97,8 @@ the PR, and merge it. Your real projects stay untouched.
 - A coding agent that can run commands on your computer, such as Claude Code,
   Codex, or Cursor. See [coding agents](coding-agents.md).
 
+Claude Code, Cursor, and OpenCode use `/shaka`.
+
 Shaka also needs a few tools on your computer: Ruby, Git, and GitHub's
 command-line tool. In step 1, the agent checks for them and tells you what is missing.
 
@@ -129,10 +131,9 @@ Upload it to GitHub.
 ```
 
 A **repository**, or repo, is your project's home on GitHub. The test matters:
-Shaka runs your tests, so without one it has less to check and show you.
+without one, Shaka has less to check and show you.
 
-**You will see:** the agent gives you a link to the new repository. Open it to
-see your files.
+**You will see:** a link to the new repository. Open it to see your files.
 
 **Then:** the agent made the project in a folder on your computer, where Shaka
 will work. Ask it:
@@ -141,8 +142,8 @@ will work. Ask it:
 How do I start a new chat in the shaka-playground folder and check it worked?
 ```
 
-**Success looks like:** the new chat says it is in the shaka-playground folder.
-Continue there.
+**Success looks like:** when asked, the new chat says it is in the
+shaka-playground folder. Continue there.
 
 ### Step 3: Run a health check
 
@@ -154,8 +155,7 @@ Continue there.
 
 **Success looks like:** one FAILED line, **Repository seam**: Shaka's settings for
 this project, which step 4 adds. Leave any DEGRADED lines for now, even if the
-agent offers to fix them. If any other line says FAILED, ask the agent to help you
-fix it.
+agent offers to fix them. If any other line says FAILED, ask the agent to fix it.
 
 ### Step 4: Give Shaka a task
 
@@ -193,7 +193,7 @@ Its messages use the words from this page.
 your own words. If a question is confusing, reply “Explain that in simple words.”
 On this first run, your coding agent may ask permission many times before running
 commands such as `git`, `gh`, and `ruby`. For this playground project, say yes
-each time; skip any choice that stops it asking.
+each time; avoid any choice that stops it asking.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
