@@ -1,16 +1,12 @@
 # frozen_string_literal: true
 
 require 'fileutils'
-require 'securerandom'
 require_relative '../error'
 
 module Shaka
   class Seam
     # Starts a worktree's private settings from another worktree's recovery copy.
     module PrivateSeed
-      SEED_TEMPORARY = '.shaka-seed-'
-      SEED_TEMPORARY_NAME = /#{Regexp.escape(SEED_TEMPORARY)}\h{12}\z/
-
       private
 
       def seeding? = @options.key?(:from)
@@ -45,36 +41,10 @@ module Shaka
         assert_inside_private_root!(existing_parent(File.dirname(path)))
         FileUtils.mkdir_p(File.dirname(path))
         assert_inside_private_root!(File.dirname(path))
-        install_seeded_file(path, content, mode)
-      end
-
-      # A partial write stays in a temporary file, so the rerun never meets it at the destination.
-      def install_seeded_file(path, content, mode)
-        temporary = "#{path}#{SEED_TEMPORARY}#{SecureRandom.hex(6)}"
-        File.open(temporary, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
+        File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
           file.write(content)
           file.chmod(mode)
         end
-        File.rename(temporary, path)
-      ensure
-        FileUtils.rm_f(temporary) if temporary
-      end
-
-      # A killed seed can leave its temporary files; the rerun removes them before checking the tree.
-      # Runs after setup refuses symlinked destination directories, and only inside the real private tree.
-      def remove_seed_temporaries
-        preflight_directories
-        return unless File.directory?(private_root)
-
-        Dir.glob("**/*#{SEED_TEMPORARY}*", File::FNM_DOTMATCH, base: private_root).each do |relative|
-          path = File.join(private_root, relative)
-          File.unlink(path) if seed_temporary?(path)
-        end
-      end
-
-      def seed_temporary?(path)
-        File.basename(path).match?(SEED_TEMPORARY_NAME) && File.file?(path) && !File.symlink?(path) &&
-          "#{File.realpath(File.dirname(path))}/".start_with?("#{File.realpath(private_root)}/")
       end
 
       # Matches the recovery copy's mode rule so an interrupted seed resumes like setup.

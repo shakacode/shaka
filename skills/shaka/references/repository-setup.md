@@ -73,7 +73,10 @@ shaka seam private setup --root /path/to/new-worktree --ref DEFAULT_BRANCH_SHA -
 
 `--from` copies every file in that copy, including custom prompts, and accepts no
 command or review options. The new worktree gets its own identity and copy, so later
-edits in either worktree stay separate. Rerun the same command after an interruption.
+edits in either worktree stay separate. Seeding refuses a copy that holds a symbolic
+link and names it; run setup with its options in the new worktree instead. After an
+interruption, rerun the same command; if it refuses a partly written file, follow
+[private setup recovery](#recover-private-setup).
 
 ## Recover private setup
 

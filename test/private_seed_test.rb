@@ -23,11 +23,9 @@ module PrivateSeedFixture
 
   def with_outside_private_link(worktree)
     Dir.mktmpdir('shaka-outside') do |outside|
-      kept = File.join(outside, 'notes.shaka-seed-0123456789ab')
-      File.write(kept, 'not ours')
       FileUtils.mkdir_p(File.join(worktree, '.agents'))
       File.symlink(outside, File.join(worktree, '.agents/shaka'))
-      yield kept
+      yield outside
     end
   end
 
@@ -88,25 +86,25 @@ class PrivateSeedTest < Minitest::Test
     end
   end
 
-  def test_killed_file_install_leaves_nothing_to_block_the_rerun
+  def test_symlinked_destination_is_refused_without_writing_outside
     with_seed_source do |root, ref, id|
       with_linked_worktree(root) do |worktree|
-        assert_raises(Shaka::Error) { interrupted_seed_setup(worktree, ref, id).setup }
-        leftover = File.join(worktree, '.agents/shaka/review-prompt.md.shaka-seed-0123456789ab')
-        File.write(leftover, 'Rev')
-        assert_equal 'complete', seed(worktree, ref, id).fetch('status')
-        refute_path_exists leftover
+        with_outside_private_link(worktree) do |outside|
+          assert_raises(Shaka::Error) { seed(worktree, ref, id) }
+          assert_empty Dir.children(outside)
+        end
       end
     end
   end
 
-  def test_symlinked_destination_is_refused_before_any_cleanup
-    with_seed_source do |root, ref, id|
+  def test_seed_refuses_a_copy_with_a_link_and_names_it
+    with_seed_source do |root, ref, _id|
+      File.symlink('test', File.join(root, '.agents/shaka/bin/extra'))
+      id = File.basename(recovery(root).inspect_checkout.fetch('recovery'))
       with_linked_worktree(root) do |worktree|
-        with_outside_private_link(worktree) do |kept|
-          assert_raises(Shaka::Error) { seed(worktree, ref, id) }
-          assert_path_exists kept
-        end
+        error = assert_raises(Shaka::Error) { seed(worktree, ref, id) }
+        assert_includes error.message, 'bin/extra'
+        refute_path_exists File.join(worktree, '.agents/shaka')
       end
     end
   end
