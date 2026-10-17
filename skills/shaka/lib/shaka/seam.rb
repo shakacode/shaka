@@ -19,6 +19,9 @@ module Shaka
   class Seam
     include PolicyOptions
 
+    # Every operation `run` dispatches; the CLI usage banner lists them.
+    OPERATIONS = %w[check init pointer migrate upgrade private preview].freeze
+
     def self.run(arguments)
       new(arguments).run
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
