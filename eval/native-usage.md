@@ -34,6 +34,8 @@ An unreadable source, unsupported JSON shape, failed reader or unpriced response
 leaves dollars `UNKNOWN`. The runner then leaves its reservation unresolved and
 stops later calls. An aggregate Claude print-result JSON is unsupported: collect
 the native JSONL sessions, as the pinned Harbor integration does.
+An unsupported host or missing session list raises `ArgumentError` for the caller
+to fix, before any source is read.
 
 The rate card is captured at construction, hashed, and copied into a private
 temporary checkout for each read. Original and cache-neutral input snapshots come

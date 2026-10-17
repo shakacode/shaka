@@ -29,6 +29,12 @@ module Shaka
         raise ArgumentError, 'Expected dedicated native sessions' unless %w[codex claude-code].include?(host) &&
                                                                          files.is_a?(Array) && !files.empty?
 
+        capture(host, files)
+      end
+
+      private
+
+      def capture(host, files)
         Dir.mktmpdir('shaka-eval-usage') do |directory|
           pin_card(directory)
           original, neutral, identities = UsageSnapshot.write(directory, host, files)
@@ -38,8 +44,6 @@ module Shaka
       rescue StandardError
         { 'models' => [], 'cache_neutral_dollars' => 'UNKNOWN', 'billed_dollars' => 'UNKNOWN' }
       end
-
-      private
 
       def pin_card(directory)
         path = File.join(directory, CARD)

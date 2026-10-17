@@ -56,6 +56,12 @@ class EvaluationNativeSourceTest < Minitest::Test
     assert_equal 'UNKNOWN', capture('claude-code', rows)['cache_neutral_dollars']
   end
 
+  def test_invalid_source_selection_reports_a_caller_error
+    assert_raises(ArgumentError) { @reader.read(host: 'typo', files: ['unused']) }
+    assert_raises(ArgumentError) { @reader.read(host: 'codex', files: nil) }
+    assert_raises(ArgumentError) { @reader.read(host: 'codex', files: []) }
+  end
+
   private
 
   def observations
