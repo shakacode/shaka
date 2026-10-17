@@ -16,6 +16,7 @@ module Shaka
     FENCE = /\A(?<marker>`{3,}(?=[^`]*\z)|~{3,})/
     # Four spaces, or a tab after fewer, indent a code block.
     INDENTED = /\A(?: {4}| {0,3}\t)/
+    LIST_ITEM = /\A {0,3}(?:[-+*]|\d{1,9}[.)])\s/
 
     module_function
 
@@ -44,31 +45,63 @@ module Shaka
 
     # A link keeps its text. An unclosed fence hides the rest of the comment, as it does
     # when GitHub renders it; backticks later on the line make it a code span instead.
-    # An indented line is code unless it continues a paragraph.
     def prose(body)
-      fence = nil
-      code_may_start = true
+      code = CodeLines.new
       body.to_s.gsub(/<!--.*?-->/m, ' ').gsub(LINK, '\\1').each_line.reject do |line|
-        code, fence = code_line(line, fence, code_may_start)
-        code_may_start = code || line.strip.empty?
-        code || line.lstrip.start_with?('>')
+        code.code?(line) || line.lstrip.start_with?('>')
       end.join(' ')
-    end
-
-    # Whether a line is code, and the fence open after it. Only a run of the same character at
-    # least as long closes a fence, and a fence-shaped line in an indented block opens none.
-    def code_line(line, fence, code_may_start)
-      return [true, (fence unless line.strip.match?(/\A#{fence}#{fence[0]}*\z/))] if fence
-      return [true, nil] if code_may_start && line.match?(INDENTED)
-
-      fence = line.lstrip[FENCE, :marker]
-      [!fence.nil?, fence]
     end
 
     # GitHub accepts a backslash before any ASCII punctuation. A backslash of the comment's own
     # becomes a look-alike, because the rendering check refuses `\n` as an unconverted line break.
     def escape(text)
       text.gsub(/[[:cntrl:]]/, ' ').tr('\\', '∖').gsub(PUNCTUATION) { |character| "\\#{character}" }
+    end
+
+    # Follows which lines of a comment GitHub renders as code. Only a run of the same character
+    # at least as long closes a fence. An indented line is code unless it continues a paragraph.
+    # Inside a list item, where indentation also continues the item, indented lines stay prose
+    # and a fence may be indented, since list depth is not measured.
+    class CodeLines
+      def initialize
+        @fence = nil
+        @code_may_start = true
+        @list = false
+      end
+
+      def code?(line)
+        code = in_code?(line)
+        follow_list(line) unless code
+        @code_may_start = code || line.strip.empty?
+        code
+      end
+
+      private
+
+      def in_code?(line)
+        return inside_fence?(line) if @fence
+        return true if @code_may_start && !@list && line.match?(INDENTED)
+
+        @fence = (line.lstrip[FENCE, :marker] if fence_line?(line))
+        !@fence.nil?
+      end
+
+      # A line inside a fence is code, and may close it.
+      def inside_fence?(line)
+        @fence = nil if fence_line?(line) && line.strip.match?(/\A#{@fence}#{@fence[0]}*\z/)
+        true
+      end
+
+      def fence_line?(line) = @list || line.match?(/\A {0,3}\S/)
+
+      # A list ends at an unindented line that follows a blank line or code and starts no item.
+      def follow_list(line)
+        if line.match?(LIST_ITEM)
+          @list = true
+        elsif @code_may_start && line.match?(/\A\S/)
+          @list = false
+        end
+      end
     end
   end
 end

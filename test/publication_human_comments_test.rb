@@ -426,6 +426,26 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     assert_includes rendered, '[“Please change this line\\.”]'
   end
 
+  def test_a_fence_indented_four_spaces_outside_a_list_neither_opens_nor_closes
+    rendered = describe(packet(issue_comments: [
+                                 issue_comment(1, 'ann', "Run:\n```\n    ```\nsecret_line = 1\n```\nThanks."),
+                                 issue_comment(2, 'ann', "Note\n    ```\nmore text")
+                               ]))
+
+    assert_includes rendered, '[“Run\\: Thanks\\.”]'
+    assert_includes rendered, '[“Note \\`\\`\\` more text”]'
+  end
+
+  def test_a_list_item_keeps_its_indented_paragraph_and_hides_its_indented_fence
+    rendered = describe(packet(issue_comments: [
+                                 issue_comment(1, 'ann', "- Please change:\n\n    this behavior."),
+                                 issue_comment(2, 'ann', "1. Step:\n\n    ```\n    secret_line = 1\n    ```\n\nDone.")
+                               ]))
+
+    assert_includes rendered, '[“\\- Please change\\: this behavior\\.”]'
+    assert_includes rendered, '[“1\\. Step\\: Done\\.”]'
+  end
+
   def test_a_fence_inside_an_indented_code_block_opens_nothing
     rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', "Run:\n\n    ```\nThen retry.")]))
 
