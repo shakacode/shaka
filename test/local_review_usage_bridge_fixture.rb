@@ -82,11 +82,11 @@ module LocalReviewUsageBridgeFixture
     github.replies.first.last
   end
 
-  def attached_description(result)
+  def attached_description(result, content: { 'usage' => { 'note' => '', 'records' => [] } })
     Tempfile.create(['result-', '.json']) do |file|
       file.write(JSON.generate(result))
       file.close
-      Shaka::LocalReviewUsage.attach({ 'usage' => { 'note' => '', 'records' => [] } }, [file.path, file.path])
+      Shaka::LocalReviewUsage.attach(content, [file.path, file.path])
     end
   end
 

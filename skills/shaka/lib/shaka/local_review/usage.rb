@@ -30,10 +30,39 @@ module Shaka
       return content if captured.empty?
 
       usage = content.fetch('usage', { 'note' => '', 'records' => [] })
-      records = (captured + usage.fetch('records')).uniq do |record|
-        UsageRecordCarry.identity!(record)
-      end
+      records = (captured + usage.fetch('records')).each_with_object([]) { |record, kept| keep_record(kept, record) }
       content.merge('usage' => usage.merge('records' => records))
+    end
+
+    # Use the same response coverage rules as description carry, including copies of a source.
+    def keep_record(kept, record)
+      identity = UsageRecordCarry.identity!(record)
+      known = kept.reject { |earlier| unknown?(earlier) }.map { |earlier| UsageRecordCarry.identity!(earlier) }
+      return if covered?(record, identity, known)
+
+      kept.reject! { |earlier| replaces?(earlier, record, identity) }
+      kept << record
+    end
+
+    def replaces?(earlier, record, identity)
+      previous = UsageRecordCarry.identity!(earlier)
+      UsageRecords.superseded?(previous, [identity]) ||
+        (unknown?(earlier) && !unknown?(record) && same_source?(previous, identity))
+    end
+
+    def covered?(record, identity, known)
+      known.include?(identity) || UsageRecords.superseded?(identity, known) ||
+        (unknown?(record) && known.any? { |earlier| same_source?(identity, earlier) })
+    end
+
+    def same_source?(left, right)
+      left['host'] == right['host'] && UsageRecords.same_attribution?(left, right) &&
+        UsageRecords.fallback_match?(left, right)
+    end
+
+    # An unreadable refresh cannot replace retained usage or attribution.
+    def unknown?(record)
+      record.fetch('columns').all? { |column| column.except('label').values.all?('UNKNOWN') }
     end
 
     def result_rounds(path)
