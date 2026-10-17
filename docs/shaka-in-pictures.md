@@ -170,8 +170,7 @@ Set up Shaka just for me. Go.
 - **Set up Shaka just for me** saves Shaka's settings only on your computer.
 - **Go** means: start now.
 
-**Success looks like:** the agent starts working and shows its plan. Move on to
-step 5.
+**Success looks like:** the agent shows its plan. Move on to step 5.
 
 ### Step 5: Watch it work
 
@@ -190,11 +189,11 @@ Its messages use the words from this page.
 | Publishes a checkpoint | Its final look: did it build the right thing, and is it ready? |
 | Adds the `awaiting-merge-approval` label | A tag on the PR that means: your turn to decide. |
 
-**You do not need to type while it works.** If it asks you something, answer in
-your own words. If a question is confusing, reply “Explain that in simple words.”
-On this first run, your coding agent may ask permission many times before running
-commands such as `git`, `gh`, and `ruby`. For this playground project, say yes
-to every request, but only for that request.
+**You do not need to type while it works, but stay nearby.** If it asks you
+something, answer in your own words. If a question is confusing, reply “Explain
+that in simple words.” On this first run, the agent may ask permission many times
+before running commands such as `git`, `gh`, and `ruby`. For this playground
+project, say yes to every request, but only for that request.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
