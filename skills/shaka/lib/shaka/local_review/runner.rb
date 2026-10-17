@@ -5,6 +5,7 @@ require 'securerandom'
 require 'tempfile'
 require 'tmpdir'
 require_relative 'timing'
+require_relative 'usage'
 require_relative '../defaults'
 require_relative '../reviewer_selection'
 require_relative '../reviewer_settings'
@@ -183,10 +184,14 @@ module Shaka
     end
 
     def record_round(result)
-      return result unless @ledger && result['status'] == 'completed'
+      return result unless result['status'] == 'completed'
+
+      record = LocalReviewUsage.capture(result)
+      result = result.merge('usage_record' => record) if record
+      return result unless @ledger
 
       round = result.slice('head', 'reviewer', 'report', 'prompt_source', 'criteria_ref', 'model', 'usage', 'coverage',
-                           'started_at', 'duration_ms', 'timeout_seconds')
+                           'started_at', 'duration_ms', 'timeout_seconds', 'usage_record')
       # The observed model comes from Claude's result or native usage, never from the request.
       round = round.merge('effort' => effort, 'requested_model' => @options[:model]).compact
       @ledger.append!(base: @options[:base], round:, snapshot: @snapshot, max_rounds: @max_rounds)
