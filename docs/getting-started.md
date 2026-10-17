@@ -141,11 +141,15 @@ feedback, and resuming a task.
 
 ### Use a personal fork
 
-To customize Shaka and contribute improvements upstream:
+To change Shaka itself and install that version:
 
 ```text
 Fork https://github.com/shakacode/shaka and install my fork.
 ```
 
-For later maintenance, ask the agent to [upgrade your installation](migration.md).
-To evaluate an unmerged workflow change, [try a Shaka PR on real work](trying-pr-versions.md).
+[Fork Shaka and make it yours](fork-and-hack.md) is the procedure: what to
+change in project settings first, how to install the fork, and how to send a
+change back. For later maintenance, ask the agent to
+[upgrade your installation](migration.md). To evaluate one unmerged change
+without replacing your installation,
+[try a Shaka PR on real work](trying-pr-versions.md).
