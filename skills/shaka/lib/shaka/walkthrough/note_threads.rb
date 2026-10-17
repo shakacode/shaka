@@ -16,23 +16,24 @@ module Shaka
         @account = account
       end
 
-      # Adds each resolved thread ID to the collapse report, and each failure to its unavailable list.
+      # Adds each resolved thread ID to the collapse report as it resolves, and each failure to
+      # its unavailable list.
       def resolve_all(reviews, report)
         reviews.select { |review| review.dig('user', 'login') == @account }.each do |review|
-          report['resolved_notes'].concat(resolve(review))
+          resolve(review) { |id| report['resolved_notes'] << id }
         rescue Error => e
           report['unavailable'] << "Review #{review['id']} notes: #{e.message}"
         end
       end
 
-      # Returns the IDs of the threads it resolved.
+      # Yields the ID of each thread it resolves.
       def resolve(review)
         roots = note_roots(review)
-        return [] if roots.empty?
+        return if roots.empty?
 
         index = threads
-        roots.filter_map { |id| index[id] }.uniq.select { |thread| unanswered?(thread) }.map do |thread|
-          mutate(thread['thread_id'])
+        roots.filter_map { |id| index[id] }.uniq.select { |thread| unanswered?(thread) }.each do |thread|
+          yield mutate(thread['thread_id'])
         end
       end
 

@@ -301,10 +301,10 @@ class WalkthroughHistoryNotesTest < Minitest::Test
     response({ 'data' => { 'resolveReviewThread' => { 'thread' => { 'id' => 'PRRT_1', 'isResolved' => true } } } })
   end
 
-  def publish_over_noted(*tail)
+  def publish_over_noted(*tail, notes: [NOTE])
     prior = review_record(7, collapsed(PRIOR))
     github = client(*publish_responses(snapshot_response), response([prior]), response({ 'login' => 'ada' }),
-                    review_response(body: collapsed(PRIOR)), response([NOTE]), *tail)
+                    review_response(body: collapsed(PRIOR)), response(notes), *tail)
     github.walkthrough(head: HEAD, body: WALKTHROUGH)
   end
 
@@ -338,5 +338,23 @@ class WalkthroughHistoryNotesTest < Minitest::Test
 
     assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
     assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'did not resolve'
+  end
+
+  def test_a_failure_after_one_resolution_still_reports_that_resolution
+    unresolved = response({ 'data' => { 'resolveReviewThread' => { 'thread' => { 'isResolved' => false } } } })
+    published = publish_over_noted(two_threads, resolved_response, unresolved, notes: [NOTE, NOTE.merge('id' => 56)])
+
+    assert_equal ['PRRT_1'], published.dig('earlier_walkthroughs', 'resolved_notes')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'PRRT_2'
+  end
+
+  def two_threads
+    threads = %w[PRRT_1 PRRT_2].each_with_index.map do |id, index|
+      author = { 'fullDatabaseId' => (55 + index).to_s, 'author' => { '__typename' => 'User', 'login' => 'ada' } }
+      { 'id' => id, 'isResolved' => false,
+        'comments' => { 'nodes' => [author], 'pageInfo' => { 'hasNextPage' => false } } }
+    end
+    connection = { 'nodes' => threads, 'pageInfo' => { 'hasNextPage' => false, 'endCursor' => nil } }
+    response({ 'data' => { 'repository' => { 'pullRequest' => { 'reviewThreads' => connection } } } })
   end
 end

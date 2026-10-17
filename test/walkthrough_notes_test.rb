@@ -3,6 +3,9 @@
 require_relative 'test_helper'
 require 'shaka/walkthrough/notes'
 require 'shaka/publication/human_comment_entries'
+require 'json'
+require 'open3'
+require 'tmpdir'
 
 class WalkthroughNotesTest < Minitest::Test
   HEAD = 'a' * 40
@@ -80,5 +83,31 @@ class WalkthroughNotesTest < Minitest::Test
   def test_a_note_opens_as_an_agent_post
     body = notes({ 'path' => 'lib/package.rb', 'from' => 'def publish', 'body' => 'Skim this.' }).first['body']
     assert_match Shaka::HumanCommentEntries::AGENT_OPENING, body
+  end
+end
+
+class WalkthroughNotesCommandTest < Minitest::Test
+  COMMAND = File.expand_path('../skills/shaka/scripts/shaka', __dir__)
+
+  # The command hands walkthrough notes to Notes, which refuses a malformed list before GitHub.
+  # A stub gh on PATH records any invocation.
+  def test_notes_reach_the_note_check_before_any_github_call
+    Dir.mktmpdir do |dir|
+      sentinel = File.join(dir, 'called')
+      File.write(File.join(dir, 'gh'), "#!/bin/sh\ntouch #{sentinel}\nexit 1\n")
+      File.chmod(0o755, File.join(dir, 'gh'))
+      _output, error, status = publish_notes(dir, 'Start here.')
+      refute_predicate status, :success?
+      assert_includes error, 'Walkthrough notes must be a list.'
+      refute_path_exists sentinel
+    end
+  end
+
+  def publish_notes(dir, notes)
+    identity = { 'agent' => 'claude', 'provider' => 'anthropic', 'model' => 'UNKNOWN', 'effort' => 'UNKNOWN' }
+    path = File.join(dir, 'content.json')
+    File.write(path, JSON.generate({ 'identity' => identity, 'summary' => 'Done.', 'notes' => notes }))
+    Open3.capture3({ 'PATH' => "#{dir}:#{ENV.fetch('PATH')}" }, COMMAND, 'walkthrough', 'owner/repo', '1',
+                   '--head', 'a' * 40, '--content-file', path)
   end
 end
