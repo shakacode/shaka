@@ -59,9 +59,9 @@ Then the agent does the gray box:
 1. **Build.** It makes the change on its own copy.
 2. **Test.** It runs your project's tests. If the change shows on screen, it also
    takes before and after pictures when it can.
-3. **Review.** A second AI, often a fresh copy of your agent that has not seen
-   your chat, looks for mistakes. The agent fixes real problems, then tests and
-   reviews again.
+3. **Review.** A second AI looks for mistakes: a fresh copy of your agent that
+   has not seen your chat, unless you add one from another AI company. The agent
+   fixes real problems, then tests and reviews again.
 
 Then it hands you the green box: a pull request with everything you need to decide.
 
@@ -96,9 +96,6 @@ the PR, and merge it. Your real projects stay untouched.
 - A coding agent that can run commands on your computer, such as Claude Code,
   Codex, or Cursor. See [coding agents](coding-agents.md).
 
-The examples type `/shaka`, which works in Claude Code, Cursor, and OpenCode. In
-Codex, type `$shaka` instead.
-
 Shaka also needs a few tools on your computer: Ruby, Git, and GitHub's
 command-line tool. In step 1, the agent checks for them and tells you what is missing.
 
@@ -114,8 +111,9 @@ Install Shaka from https://github.com/shakacode/shaka.
 folder, away from your projects. If GitHub asks you to sign in, follow the
 agent's steps.
 
-**Success looks like:** in a new chat, in any folder, type `/shaka` by itself. A
-short welcome means Shaka is ready.
+**Success looks like:** in a new chat, in any folder, type `/shaka` (`$shaka` in
+Codex) by itself. A short welcome means Shaka is ready. FAILED lines can wait
+until step 3.
 
 ### Step 2: Make a playground project
 
@@ -142,7 +140,8 @@ will work. Ask it:
 How do I start a new chat in the shaka-playground folder and check it worked?
 ```
 
-Continue in that new chat.
+**Success looks like:** the new chat says it is in the shaka-playground folder.
+Continue there.
 
 ### Step 3: Run a health check
 
@@ -152,14 +151,14 @@ Continue in that new chat.
 /shaka doctor
 ```
 
-**Success looks like:** the tools Shaka needs show HEALTHY. Expect one FAILED
-line, **Repository seam**, and a few DEGRADED lines: this project has no Shaka
-settings until step 4. Skip their advice; if the agent offers to fix them now,
-say not yet. If a tool is missing, ask the agent to help you install it.
+**Success looks like:** one FAILED line, **Repository seam**: Shaka's settings for
+this project, which step 4 adds. Some lines may say DEGRADED. Leave these lines
+for now, even if the agent offers to fix them. If any other line says FAILED, ask
+the agent to help you fix it.
 
 ### Step 4: Give Shaka a task
 
-**Do:**
+**Do:** (in Codex, start with `$shaka`)
 
 ```text
 /shaka Add a counter that shows how many times the button was clicked.
@@ -169,7 +168,8 @@ Set up Shaka just for me. Go.
 - **Set up Shaka just for me** saves Shaka's settings only on your computer.
 - **Go** means: start now.
 
-**You will see:** the agent starts working and shows its plan. Move on to step 5.
+**Success looks like:** the agent starts working and shows its plan. Move on to
+step 5.
 
 ### Step 5: Watch it work
 
@@ -190,9 +190,9 @@ Its messages use the words from this page.
 
 **You do not need to type while it works.** If it asks you something, answer in
 your own words. If a question is confusing, reply “Explain that in simple words.”
-On this first run, your coding agent may ask your permission many times before it
-runs commands such as `git`, `gh`, and `ruby`. For this playground project, a
-one-time yes is enough.
+On this first run, your coding agent may ask permission many times before running
+commands such as `git`, `gh`, and `ruby`. For this playground project, say yes
+each time it asks.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
@@ -224,9 +224,8 @@ says so. Ask the agent about it.
 Make the counter number bigger.
 ```
 
-**You will see:** the agent updates the same PR. It saves a new commit, like a new
-entry in version history, then tests and reviews again. Reload the PR page to see
-the changes.
+**You will see:** the agent updates the same PR. It saves a new commit, then tests
+and reviews again. Reload the PR page to see the changes.
 
 **What it means:** you can steer as often as you like, and main still has not
 changed.
