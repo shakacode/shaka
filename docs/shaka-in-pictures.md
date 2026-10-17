@@ -81,8 +81,8 @@ Shaka has two merge choices. **Ask** is the default.
 - **Auto:** the agent merges once its checks and reviews pass. Big or risky
   changes still come back to you.
 
-This page uses Ask. With Ask, Shaka's rules tell the agent to wait for your yes
-before anything joins your project. See [choose a merge policy](working-with-shaka.md#choose-a-merge-policy).
+This page uses Ask: Shaka's rules tell the agent to wait for your yes before
+anything joins your project. See [choose a merge policy](working-with-shaka.md#choose-a-merge-policy).
 
 ## Tutorial: your first Shaka task
 
@@ -191,10 +191,10 @@ Its messages use the words from this page.
 | Adds the `awaiting-merge-approval` label | A tag on the PR that means: your turn to decide. |
 
 **You do not need to type while it works, but stay nearby.** If it asks you
-something, answer in your own words. If a question is confusing, reply “Explain
-that in simple words.” On this first run, the agent may often ask permission
-before running commands such as `git`, `gh`, and `ruby`. For this playground, say
-yes to every permission request, but only for that request.
+something, answer in your own words, or reply “Explain that in simple words.” The
+agent may often ask permission to run commands such as `git`, `gh`, and `ruby`.
+For this playground, say yes to each permission request, but only for that
+request. If one worries you, ask the agent what it does first.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
