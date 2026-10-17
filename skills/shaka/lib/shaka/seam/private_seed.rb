@@ -9,6 +9,7 @@ module Shaka
     # Starts a worktree's private settings from another worktree's recovery copy.
     module PrivateSeed
       SEED_TEMPORARY = '.shaka-seed-'
+      SEED_TEMPORARY_NAME = /#{Regexp.escape(SEED_TEMPORARY)}\h{12}\z/
 
       private
 
@@ -72,7 +73,7 @@ module Shaka
       end
 
       def seed_temporary?(path)
-        File.basename(path).match?(/#{SEED_TEMPORARY}\h{12}\z/o) && File.file?(path) && !File.symlink?(path) &&
+        File.basename(path).match?(SEED_TEMPORARY_NAME) && File.file?(path) && !File.symlink?(path) &&
           "#{File.realpath(File.dirname(path))}/".start_with?("#{File.realpath(private_root)}/")
       end
 

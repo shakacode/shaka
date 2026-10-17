@@ -61,7 +61,8 @@ the old one.
 ### Start another worktree with private settings
 
 Private settings belong to one worktree. Before the first edit in a new worktree of
-a clone with private settings, run `seam private inspect --root DIR` in the worktree
+a clone whose default branch has no Shaka settings but whose private copies
+`seam private list` reports, run `seam private inspect --root DIR` in the worktree
 whose settings to carry forward, when it still exists, so its latest edits reach its
 copy. Run `seam private list --root NEW_DIR`, choose that copy by its `path` and
 `time`, then seed the new worktree:

@@ -111,6 +111,19 @@ class PrivateSeedTest < Minitest::Test
     end
   end
 
+  def test_seed_refuses_after_team_adoption
+    with_seed_source do |root, ref, id|
+      with_linked_worktree(root) do |worktree|
+        FileUtils.mkdir_p(File.join(worktree, '.agents/shaka'))
+        File.write(config_path(worktree), "version: 1\n")
+        git(worktree, 'add', '-f', '.agents/shaka/config.yml')
+        git(worktree, 'commit', '--quiet', '-m', 'adopt team settings')
+        error = assert_raises(Shaka::Error) { seed(worktree, ref, id) }
+        assert_includes error.message, 'Tracked Shaka configuration'
+      end
+    end
+  end
+
   def test_seed_refuses_a_differing_destination
     with_seed_source do |root, ref, id|
       with_linked_worktree(root) do |worktree|
