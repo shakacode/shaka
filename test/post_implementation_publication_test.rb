@@ -132,6 +132,20 @@ class PostImplementationPublicationTest < Minitest::Test
     end
   end
 
+  def test_usage_is_one_token_line_and_a_pinned_prompt_links_to_its_file
+    with_result do |result, path|
+      attach_private_usage(result, path)
+      result['prompt_source'] = "#{'c' * 40}:.agents/shaka/product-checkpoint.md"
+      github, = publish(result, path)
+      body = github.bodies.first.first
+
+      assert_match(/Native usage \(.*observed-model.*\), 1 response: 17 input, UNKNOWN cached input, 2 output/, body)
+      refute_includes body, '```json'
+      file = '.agents/shaka/product-checkpoint.md'
+      assert_includes body, "prompt: [`#{file}`](https://github.com/example/test/blob/#{'c' * 40}/#{file})"
+    end
+  end
+
   def test_alternative_label_fits_a_report_that_proposes_no_change
     with_result do |result, path|
       github, = publish(result, path)
