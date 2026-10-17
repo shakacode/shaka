@@ -60,7 +60,8 @@ Then the agent does the gray box:
 2. **Test.** It runs your project's tests. If the change shows on screen, it also
    takes before and after pictures when it can.
 3. **Review.** A second AI looks for mistakes: a fresh copy of your agent that
-   has not seen your chat, unless you add one from another AI company. The agent
+   has not seen your chat, unless you
+   [add one from another AI company](settings.md#add-a-second-reviewer). The agent
    fixes real problems, then tests and reviews again.
 
 Then it hands you the green box: a pull request with everything you need to decide.
@@ -112,8 +113,8 @@ folder, away from your projects. If GitHub asks you to sign in, follow the
 agent's steps.
 
 **Success looks like:** in a new chat, in any folder, type `/shaka` (`$shaka` in
-Codex) by itself. A short welcome means Shaka is ready. FAILED lines can wait
-until step 3.
+Codex) by itself. A short welcome means Shaka is ready, even if FAILED lines
+follow it.
 
 ### Step 2: Make a playground project
 
@@ -152,13 +153,13 @@ Continue there.
 ```
 
 **Success looks like:** one FAILED line, **Repository seam**: Shaka's settings for
-this project, which step 4 adds. Some lines may say DEGRADED. Leave these lines
-for now, even if the agent offers to fix them. If any other line says FAILED, ask
-the agent to help you fix it.
+this project, which step 4 adds. Leave any DEGRADED lines for now, even if the
+agent offers to fix them. If any other line says FAILED, ask the agent to help you
+fix it.
 
 ### Step 4: Give Shaka a task
 
-**Do:** (in Codex, start with `$shaka`)
+**Do:** (in Codex, `$shaka` instead of `/shaka`)
 
 ```text
 /shaka Add a counter that shows how many times the button was clicked.
@@ -192,7 +193,7 @@ Its messages use the words from this page.
 your own words. If a question is confusing, reply “Explain that in simple words.”
 On this first run, your coding agent may ask permission many times before running
 commands such as `git`, `gh`, and `ruby`. For this playground project, say yes
-each time it asks.
+each time; skip any choice that stops it asking.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
@@ -224,8 +225,8 @@ says so. Ask the agent about it.
 Make the counter number bigger.
 ```
 
-**You will see:** the agent updates the same PR. It saves a new commit, then tests
-and reviews again. Reload the PR page to see the changes.
+**Success looks like:** the agent updates the same PR, tests and reviews again,
+and says it is ready. Reload the PR page to see the changes.
 
 **What it means:** you can steer as often as you like, and main still has not
 changed.
