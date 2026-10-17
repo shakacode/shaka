@@ -12,7 +12,7 @@ module Shaka
 
       attr_reader :kind
 
-      def initialize(directory:, kind:, limits: BudgetLimits.load, **options)
+      def initialize(directory:, kind:, limits:, **options)
         @limits = BudgetLimits.parse(limits)
         raise ArgumentError, 'Invalid budget options' unless
           BudgetLimits::KINDS.include?(kind) && (options.keys - %i[scope cap clock]).empty?

@@ -1,20 +1,15 @@
 # frozen_string_literal: true
 
-require 'json'
-
 module Shaka
   module Evaluation
     class BudgetError < StandardError
     end
 
-    # Operator-owned maximums, separate from the product's delivery configuration.
+    # Exact dollar values supplied by the operator; no implicit spending limits.
     module BudgetLimits
-      PATH = File.expand_path('../../../config/pilot-budget.json', __dir__)
       KINDS = %w[nightly pr manual].freeze
 
       module_function
-
-      def load = JSON.parse(File.read(PATH))
 
       def amount(value)
         raise ArgumentError, 'Invalid dollar amount' unless value.is_a?(Numeric) || value.is_a?(String)

@@ -11,6 +11,7 @@ class EvaluationBudgetProcessTest < Minitest::Test
   CHILD = <<~RUBY
     require ARGV.shift
     account = Shaka::Evaluation::Budget.new(directory: ARGV.shift, kind: 'nightly',
+      limits: { 'monthly' => 200, 'nightly' => 5, 'pr' => 15 },
       clock: -> { Time.utc(2026, 10, 16, 20) })
     begin
       account.reserve

@@ -7,8 +7,8 @@ require_relative '../eval/lib/shaka/evaluation/budget'
 class EvaluationBudgetTest < Minitest::Test
   include EvaluationBudgetFixture
 
-  def test_shipped_pilot_limits_and_lower_requested_caps
-    assert_equal @limits, Shaka::Evaluation::BudgetLimits.load
+  def test_explicit_limits_and_lower_requested_caps
+    assert_raises(ArgumentError) { Shaka::Evaluation::Budget.new(directory: @directory, kind: 'nightly') }
     assert_equal '2.0', budget(cap: 2).snapshot.fetch('cap')
     assert_raises(ArgumentError) { budget(cap: 6) }
     assert_raises(ArgumentError) { budget(kind: 'manual', scope: 'manual-run') }

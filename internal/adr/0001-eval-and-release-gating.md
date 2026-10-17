@@ -772,8 +772,8 @@ at first. The shared monthly cap takes precedence. These caps fund a smaller
 initial bank than the full workload estimated below; a partial night is not clean
 under D9.
 
-Shipped: the [budgeted Ruby batch core](../../eval/budget-runner.md) enforces these
-launch limits across one private account, retains unresolved calls, and saves
+Shipped: the [budgeted Ruby batch core](../../eval/budget-runner.md) requires
+explicit operator limits, retains unresolved calls across one private account, and saves
 validated records before settling charges. It requires a trusted executor callback;
 Harbor integration, native usage conversion, and scheduled execution remain unbuilt.
 

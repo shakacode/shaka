@@ -10,12 +10,11 @@ runtime. Harbor execution, native usage conversion, fingerprint capture, and the
 `run` and `nightly` commands remain unbuilt. A completed batch is not a quality
 verdict or evidence that a release is clean.
 
-[`config/pilot-budget.json`](config/pilot-budget.json) contains the approved
-maximums: $200/month, $5/night, and $15/PR in API-equivalent dollars. Pass a lower
-`cap` for a particular run; a request above its configured maximum is rejected.
-These are evaluation settings, separate from `.agents/shaka/config.yml` delivery
-policy. Operators can supply different `limits` explicitly; the shipped pilot
-values are covered by the configuration test.
+The operator supplies `limits` explicitly; omitting them rejects the call.
+[ADR 0001](../internal/adr/0001-eval-and-release-gating.md#budget) records the
+approved pilot amounts. Pass a lower `cap` for a particular run; a request above
+its supplied maximum is rejected. No delivery setting or built-in budget default
+is added.
 
 All batches use one private budget directory. A separate directory starts a
 separate account and cannot enforce the shared cap. Judges, retries, and tier 3
@@ -27,8 +26,9 @@ the calendar month, while unresolved calls continue to block execution.
 The adapter boundary is:
 
 ```ruby
+approved_limits = { 'monthly' => 200, 'nightly' => 5, 'pr' => 15 }
 budget = Shaka::Evaluation::Budget.new(directory: private_budget_directory,
-  kind: 'pr', scope: '578', cap: 10)
+  limits: approved_limits, kind: 'pr', scope: '578', cap: 10)
 runner = Shaka::Evaluation::Runner.new(budget: budget, directory: private_records_directory)
 summary = runner.run(tasks) { |task, trial_id| native_driver.call(task, trial_id) }
 ```
