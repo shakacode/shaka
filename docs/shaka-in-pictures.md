@@ -66,8 +66,8 @@ Then the agent does the gray box:
 
 Then it hands you the green box: a pull request with everything you need to decide.
 
-Shaka gives the agent rules. A program checks some of them, and the agent follows
-the others on its own. The PR lists what was checked and what could not be. See
+Shaka gives the agent rules. A program checks some, and the agent follows the
+others on its own. The PR lists what was checked and what could not be. See
 [which rules a program checks](workflow.md#what-is-enforced).
 
 ## Who says yes?
@@ -170,7 +170,8 @@ Set up Shaka just for me. Go.
 - **Set up Shaka just for me** saves Shaka's settings only on your computer.
 - **Go** means: start now.
 
-**Success looks like:** the agent shows its plan. Move on to step 5.
+**Success looks like:** the agent starts working and shows its plan. Move on to
+step 5.
 
 ### Step 5: Watch it work
 
@@ -191,9 +192,9 @@ Its messages use the words from this page.
 
 **You do not need to type while it works, but stay nearby.** If it asks you
 something, answer in your own words. If a question is confusing, reply “Explain
-that in simple words.” On this first run, the agent may ask permission many times
-before running commands such as `git`, `gh`, and `ruby`. For this playground
-project, say yes to every request, but only for that request.
+that in simple words.” On this first run, the agent may often ask permission
+before running commands such as `git`, `gh`, and `ruby`. For this playground, say
+yes to every permission request, but only for that request.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
