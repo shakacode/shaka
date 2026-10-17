@@ -21,8 +21,7 @@ module Shaka
                 commit: round.fetch('head'), contribution: 'review').json_document.fetch('record')
     end
 
-    # Description already consumes the review result for verification. Its ledger supplies all
-    # rounds, including earlier heads, without another usage input or counter transcription.
+    # Saved results carry the same redacted records as their ledger, including earlier heads.
     def attach(content, result_path)
       return content unless result_path
 
@@ -69,7 +68,10 @@ module Shaka
 
     def result_rounds(path)
       result = JSON.parse(File.read(path, encoding: 'UTF-8'))
-      result['ledger'] ? LocalReviewLedger.new(result['ledger']).rounds : [result]
+      return result.fetch('usage_records').map { |record| { 'usage_record' => record } } if result.key?('usage_records')
+
+      ledger = result['ledger']
+      ledger && File.file?(ledger) ? LocalReviewLedger.new(ledger).rounds : [result]
     end
 
     def tokens(record)

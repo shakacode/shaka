@@ -37,7 +37,9 @@ class LocalReviewUsageEdgesTest < Minitest::Test
     with_repository do |root, base, head, bin|
       Dir.mktmpdir do |directory|
         ledger = File.join(directory, 'ledger.json')
-        assert_attached_heads(two_heads(root, base, head, bin, ledger))
+        results = two_heads(root, base, head, bin, ledger)
+        File.unlink(ledger)
+        assert_attached_heads(results)
       end
     end
   end

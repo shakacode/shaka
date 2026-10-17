@@ -435,7 +435,8 @@ use `--ledger` when fixes must be proven to follow and reach the reviewed head.
 `review run` captures a redacted `usage_record` from supported native sources and keeps it
 with the ledger round. Supply the saved review results through description's `--review-result`
 inputs to include every ledger round in the canonical PR usage table automatically, even after
-temporary source cleanup. Keep the ledger and saved results together for publication.
+temporary source cleanup. Retain saved results for description publication; keep the ledger
+for findings and reports.
 Legacy rounds without captured records still accept `model`, `tokens`, `cost`, and
 `estimate`; subscription estimates belong in `estimate`, never `cost`.
 When `shaka reviewer` did not return `different_provider`, add

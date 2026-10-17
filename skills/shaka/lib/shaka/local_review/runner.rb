@@ -202,6 +202,7 @@ module Shaka
     # The result names the kept copy, which outlives the reviewer's own temporary file.
     def kept_round
       { 'report' => @ledger.rounds.last.fetch('report'), 'ledger' => @ledger.path, 'round' => @ledger.rounds.size,
+        'usage_records' => @ledger.rounds.filter_map { |round| round['usage_record'] },
         'ledger_warning' => LocalReviewBundle.warning(@ledger.path) }.compact
     end
 
