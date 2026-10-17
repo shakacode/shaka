@@ -59,8 +59,10 @@ if ARGV.first == 'pr' && ARGV[1] == 'watch'
   exit Shaka::PrWatch::Command.run(ARGV)
 end
 
-subcommand = Shaka::Subcommands::TABLE[ARGV.first]
-exit subcommand.run.call(ARGV.drop(1)) if subcommand
+if Shaka::Subcommands::TABLE.key?(ARGV.first)
+  subcommand = Shaka::Subcommands::TABLE.fetch(ARGV.shift)
+  exit subcommand.run.call(ARGV)
+end
 
 COMMANDS = %w[pr comments description reply resolve walkthrough merge attention squash-message handoff].freeze
 
