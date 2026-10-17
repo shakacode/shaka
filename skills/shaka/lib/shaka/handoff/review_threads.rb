@@ -28,8 +28,13 @@ module Shaka
       def answered_and_owed
         reader = PublicComments::Threads.new(@github)
         open = reader.call.first.reject { |thread| thread['is_resolved'] }.map { |thread| thread['thread_id'] }
-        account = @github.viewer_login
-        open.partition { |id| reader.authors.fetch(id).include?(account) }
+        account = bare(@github.viewer_login)
+        open.partition { |id| reader.authors.fetch(id).any? { |login| bare(login) == account } }
+      end
+
+      # REST names an app account `name[bot]`; GraphQL comment authors leave the suffix off.
+      def bare(login)
+        login.to_s.delete_suffix('[bot]')
       end
     end
 

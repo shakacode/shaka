@@ -22,7 +22,7 @@ class HandoffFakeGitHub
   def snapshot = { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42 }
   def required_checks = @pull[:checks]
   def configured_required_checks = []
-  def viewer_login = 'shaka-agent'
+  def viewer_login = @pull.fetch(:viewer, 'shaka-agent')
   def issue_comments = @pull[:comments]
 
   def graphql(_query, **)
