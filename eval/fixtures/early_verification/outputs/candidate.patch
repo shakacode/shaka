@@ -1,6 +1,15 @@
 --- a/lib/line_decoder.rb
 +++ b/lib/line_decoder.rb
-@@ -10,8 +10,7 @@
+@@ -2,7 +2,7 @@
+ 
+ require 'json'
+ 
+-# Deliberately faulty incremental decoder for the behavioral comparison.
++# Incrementally decodes complete lines while retaining partial input.
+ class LineDecoder
+   def initialize
+     @pending = +''
+@@ -11,8 +11,7 @@
    def feed(chunk)
      @pending << chunk
      lines = @pending.split("\n", -1)
@@ -10,60 +19,53 @@
  
      lines.map { |line| JSON.parse(line) }
    end
---- a/test/line_decoder_test.rb
-+++ b/test/line_decoder_test.rb
-@@ -13,4 +13,11 @@
-     assert_empty decoder.feed('{"id":')
-     assert_equal [{ 'id' => 'a' }], decoder.feed("\"a\"}\n")
-   end
-+
-+  def test_complete_record_with_partial_next_record
-+    decoder = LineDecoder.new
-+    assert_equal [{ 'id' => 'a' }], decoder.feed("{\"id\":\"a\"}\n{\"id\":")
-+    assert_equal [{ 'id' => 'b' }], decoder.feed("\"b\"}\n")
-+    assert_empty decoder.feed('')
-+  end
- end
 --- a/test/receiver_test.rb
 +++ b/test/receiver_test.rb
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,47 @@
 +# frozen_string_literal: true
 +
 +require 'minitest/autorun'
 +require_relative '../lib/receiver'
 +
 +class ReceiverTest < Minitest::Test
-+  def test_complete_records_are_delivered_before_partial_suffix
++  def test_delivers_complete_records_while_retaining_only_the_partial_suffix
 +    delivered = []
 +    receiver = Receiver.new { |id| delivered << id }
 +
-+    receiver.receive("{\"id\":\"a\"}\n{\"id\":\"b\"}\n{\"id\":")
-+    assert_equal %w[a b], delivered
++    receiver.receive('{"id":')
++    assert_empty delivered
 +
-+    receiver.receive('"c')
++    receiver.receive("\"a\"}\n{\"id\":\"b\"}\n{\"id\":\"c")
 +    assert_equal %w[a b], delivered
-+
-+    receiver.receive("\"}\n{\"id\":\"d\"}\n")
-+    assert_equal %w[a b c d], delivered
 +
 +    receiver.receive('')
-+    assert_equal %w[a b c d], delivered
++    receiver.receive('d')
++    assert_equal %w[a b], delivered
++
++    receiver.receive("\"}\n{\"id\":\"e\"}\n")
++    assert_equal %w[a b cd e], delivered
++
++    receiver.receive('')
++    assert_equal %w[a b cd e], delivered
 +  end
 +
-+  def test_delivery_at_every_chunk_boundary
++  def test_delivery_is_independent_of_transport_chunk_boundaries
 +    stream = "{\"id\":\"a\"}\n{\"id\":\"b\"}\n{\"id\":\"c\"}\n"
 +
-+    (0..stream.length).each do |boundary|
-+      delivered = []
-+      receiver = Receiver.new { |id| delivered << id }
-+      prefix = stream[0...boundary]
++    (0..stream.length).each do |first|
++      (first..stream.length).each do |second|
++        delivered = []
++        receiver = Receiver.new { |id| delivered << id }
++        chunks = [stream[0...first], stream[first...second], stream[second..-1]]
++        received = +''
 +
-+      receiver.receive(prefix)
-+      assert_equal %w[a b c].take(prefix.count("\n")), delivered,
-+                   "delivery after prefix ending at #{boundary}"
-+
-+      receiver.receive(stream[boundary..])
-+      assert_equal %w[a b c], delivered, "delivery after boundary #{boundary}"
++        chunks.each do |chunk|
++          received << chunk
++          receiver.receive(chunk)
++          expected = %w[a b c].first(received.count("\n"))
++          assert_equal expected, delivered, "chunk boundaries: #{first}, #{second}"
++        end
++      end
 +    end
 +  end
 +end

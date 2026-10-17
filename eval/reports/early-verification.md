@@ -6,7 +6,7 @@ with caller-level reproduction before production edits and an explicit check of
 the fix's safety assumption. It keeps the existing delivery gates.
 
 The isolated comparison shows a useful difference in this fixture: the candidate
-checked the shipped CLI before editing and preserved empty-chunk delivery. Both
+tested chunk boundaries before editing and preserved empty-chunk delivery. Both
 arms already wrote a failing receiver test before editing. Earlier testing alone
 is therefore a tie; broader effectiveness is unknown.
 
@@ -22,12 +22,13 @@ metered provider was used.
 Baseline is the implementation paragraph at `a5026372f4734ab77369068634f99d476a8d9ceb`;
 candidate is this PR's replacement. Their SHA-256 hashes are respectively
 `6ab4d852660187d57ab963585fd127bcd7164b700db5a4926f27c0aff15b9253` and
-`6f1e57796247e27cfc3847b7f1a183c64dc3178aeea84ad1165a829224ccc5a6`.
+`29eacef39d646f367caef3aa18eb99057bd82f32200dbfd4d0d2f49b66d95f04`.
 Prompts contained `Implementation guidance:`, that paragraph, `Task:`, and the
 unchanged task. Neutral directories contained no project instructions. A temporary
 Codex home retained subscription authentication without global instructions;
 rules, user config and skill injection were disabled. Completed command traces
-showed no global guidance or installed Shaka reads in these four runs.
+showed no global guidance or installed Shaka reads in these four runs. Candidate
+listed parent-directory AGENTS.md paths but did not read their contents.
 
 Criteria fixed before these sessions: reproduce through a real caller before the
 first production edit, rerun the same check after the fix, exercise the shared
@@ -39,10 +40,10 @@ empty chunks. These are 1,785 assertions, not independent model trials.
 
 | Observed action | Baseline | Candidate |
 | --- | --- | --- |
-| Real Receiver failure before production edit | Yes: event 4, two failures | Yes: event 7, two failures and an empty-chunk error |
-| CLI before production edit | No | Event 4: emitted only `b`, expected `a,b` |
-| First production edit | Event 6: remove early return | Event 9: remove early return and retain an empty string buffer |
-| Rerun | Events 7/9: 4 tests, 10 final assertions pass | Event 10: 5 tests, 80 assertions pass; CLI emits `a,b` |
+| Real Receiver failure before production edit | Yes: event 5, two failures | Yes: event 6, one failure and an empty-chunk error |
+| CLI before production edit | No | No; both exercised CLI after editing |
+| First production edit | Event 7: remove early return | Event 8: remove early return and retain an empty string buffer |
+| Rerun | Event 8: 4 tests, 13 assertions pass | Event 9: 4 tests, 1,795 assertions pass |
 | Independent probe | Fails at cuts `[0,0]`: nil buffer | Passes all 1,785 assertions |
 | Typo control | Only README changed; spelling checked | Only README changed; unified diff inspected |
 
@@ -51,15 +52,13 @@ retain command order, changed paths and captured output with host paths normaliz
 Generated code and tests are retained as
 [baseline](../fixtures/early_verification/outputs/baseline.patch) and
 [candidate](../fixtures/early_verification/outputs/candidate.patch) patches.
-The candidate needed one command repair: Ruby 2.6 could not resolve
-`require_relative` from `-e`; it reran with `require` before editing production code.
 
 | Run | Seconds | Input tokens | Cached within input | Output | Reasoning within output |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Baseline behavior | 37.55 | 108,061 | 98,048 | 1,608 | 369 |
-| Candidate behavior | 39.86 | 146,038 | 130,560 | 2,007 | 456 |
-| Baseline typo | 12.60 | 57,663 | 52,480 | 318 | 0 |
-| Candidate typo | 12.92 | 58,777 | 38,528 | 416 | 19 |
+| Baseline behavior | 30.50 | 91,544 | 84,224 | 1,251 | 115 |
+| Candidate behavior | 40.41 | 117,932 | 103,552 | 1,618 | 253 |
+| Baseline typo | 12.44 | 58,273 | 55,040 | 343 | 0 |
+| Candidate typo | 12.12 | 60,978 | 56,192 | 317 | 0 |
 
 These are native completed-turn counters for these sessions only, excluding
 implementation, reviews and qualification attempts. They establish no efficiency
@@ -81,8 +80,7 @@ To repeat the model comparison, use fresh seed copies and the prompt constructio
 above, holding model, effort, deadline and host context constant. Retain command
 order and outputs; do not infer pre-edit verification from final tests alone.
 The seed intentionally fails the independent probe; it is not production code.
-Comments and executable permission were added after copying the trial seeds;
-their Ruby behavior is unchanged.
+Codex CLI was 0.163.0; behavior sessions used the same available Ruby 3.4.6.
 
 ## Qualification and limits
 
@@ -96,6 +94,15 @@ not counted as a candidate advantage. No outcomes were
 retried within the final four-session comparison. Qualification overhead and
 these earlier outcomes remain separate from its usage figures.
 
+The [first isolated pair and outputs](https://github.com/shakacode/shaka/tree/9f42ec4099c0e297703b5b5e2acce605771f9ad2/eval/fixtures/early_verification)
+used the shorter paragraph at that commit: both arms tested Receiver before editing;
+only candidate exercised the CLI before editing and passed the independent probe.
+Review found that replacement dropped existing code-placement, browser-tool and
+manual before/after directions. Restoring those constraints prompted this new
+four-session comparison, with no outcome-based retries. Its baseline again failed
+the empty-chunk probe and candidate passed; pre-edit CLI use did not repeat.
+The earlier pair's report retains its separate native usage figures at that commit.
+
 This synthetic streaming task gives concrete behavior evidence for one model and
 one pair. The probe covers chunk boundaries, not malformed JSON or arbitrary
 transport failures. Shared subscription execution, model variability and no
@@ -103,7 +110,7 @@ randomized repetitions limit causal attribution. Real Shaka delivery is untested
 The evidence supports trying this small instruction change; it does not prove
 general compliance or justify a new runtime gate.
 
-The rendered workflow grows by 30 words/230 UTF-8 bytes; entry point and AGENTS.md
+The rendered workflow grows by 54 words/382 UTF-8 bytes; entry point and AGENTS.md
 are unchanged. The paragraph is rendered on every task, with its caller procedure
 conditional on behavior changes. It adds no file load, setting or dependency.
 The predecessor's `verify-pr-fix` practice informed the before/after check; no
