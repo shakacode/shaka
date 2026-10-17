@@ -103,22 +103,27 @@ class DocsNavigationTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
+  BROKEN = ['docs/expected-experience.md -> gone.md (missing file)',
+            'docs/expected-experience.md -> settings.md#nope (missing anchor)',
+            'docs/expected-experience.md -> settings.md#not-a-heading (missing anchor)',
+            'docs/expected-experience.md -> guide.mdx#absent (missing anchor)',
+            'docs/expected-experience.md -> settings.md#also-nope (missing anchor)',
+            'skills/shaka/SKILL.md -> references/missing.md (missing file)'].freeze
+
   def test_missing_files_and_anchors_fail
     page = "[gone](gone.md), [anchor](settings.md#nope), [code block](settings.md#not-a-heading)\n" \
-           "[defined]: settings.md#also-nope\n"
-    output, _, status = check_links(page, 'skills/shaka/SKILL.md' => "[ref](references/missing.md)\n")
+           "[mdx](guide.mdx#absent)\n[defined]: settings.md#also-nope\n[^1]: A footnote, not a link.\n"
+    output, _, status = check_links(page, 'skills/shaka/SKILL.md' => "[ref](references/missing.md)\n",
+                                          'docs/guide.mdx' => '# Guide')
     refute_predicate status, :success?
-    ['docs/expected-experience.md -> gone.md (missing file)',
-     'docs/expected-experience.md -> settings.md#nope (missing anchor)',
-     'docs/expected-experience.md -> settings.md#not-a-heading (missing anchor)',
-     'docs/expected-experience.md -> settings.md#also-nope (missing anchor)',
-     'skills/shaka/SKILL.md -> references/missing.md (missing file)'].each { |line| assert_includes output, line }
+    assert_equal BROKEN.sort, output.lines.map(&:strip).grep(/ -> /).sort
   end
 
   def test_docs_anchor_emitted_by_code_must_resolve
-    guide = format(GUIDE, 'add-another-reviewer')
+    guide = "#{format(GUIDE, 'add-another-reviewer')}PAGE = 'https://github.com/shakacode/shaka/blob/main/docs/gone.md'\n"
     output, _, status = check_links('# What to expect', 'skills/shaka/lib/guide.rb' => guide)
     refute_predicate status, :success?
     assert_includes output, 'skills/shaka/lib/guide.rb -> docs/settings.md#add-another-reviewer (missing anchor)'
+    assert_includes output, 'skills/shaka/lib/guide.rb -> docs/gone.md (missing file)'
   end
 end
