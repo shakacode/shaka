@@ -27,12 +27,22 @@ module Shaka
       end
     end
 
+    # The refusal names the requirement, since `HEAD` or an empty `$(git rev-parse HEAD)` is easy to pass.
+    def commit_option(flags, options)
+      flags.on('--commit SHA', 'Affected full commit SHAs, comma separated') do |value|
+        commits = value.split(',')
+        unless !commits.empty? && commits.all? { |commit| commit.match?(FULL_SHA) }
+          raise Error, 'each --commit needs a full 40-character commit SHA, such as "$(git rev-parse HEAD)"'
+        end
+
+        options[:commit] = value
+      end
+    end
+
     def valid_mapping?(options)
       commits = options[:commit].to_s.split(',')
-      raise Error, 'each --commit needs a full 40-character commit SHA, such as "$(git rev-parse HEAD)"' unless
-        commits.all? { |commit| commit.match?(FULL_SHA) }
-
       options[:host] && valid_selection?(options) && !commits.empty? &&
+        commits.all? { |commit| commit.match?(FULL_SHA) } &&
         %w[implementation review integration shared-planning].include?(options[:contribution])
     end
 
