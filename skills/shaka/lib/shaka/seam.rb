@@ -19,6 +19,12 @@ module Shaka
   class Seam
     include PolicyOptions
 
+    # Operations with their own command; each receives the arguments after its operation word.
+    DELEGATED = { 'migrate' => Migrator, 'upgrade' => Upgrader, 'private' => PrivateCommand,
+                  'preview' => PreviewCommand }.freeze
+    # Every operation `run` dispatches; the CLI usage banner lists them.
+    OPERATIONS = (%w[check init pointer] + DELEGATED.keys).freeze
+
     def self.run(arguments)
       new(arguments).run
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
@@ -32,9 +38,7 @@ module Shaka
     end
 
     def run
-      return Migrator.run(@arguments) if @arguments.first == 'migrate'
-      return Upgrader.run(@arguments) if @arguments.first == 'upgrade'
-      return run_local_mode if %w[private preview].include?(@arguments.first)
+      return DELEGATED.fetch(@arguments.first).run(@arguments.drop(1)) if DELEGATED.key?(@arguments.first)
 
       parser = option_parser
       parser.parse!(@arguments)
@@ -46,10 +50,6 @@ module Shaka
     end
 
     private
-
-    def run_local_mode
-      { 'private' => PrivateCommand, 'preview' => PreviewCommand }.fetch(@arguments.shift).run(@arguments)
-    end
 
     def validate_operation(operation, parser)
       raise OptionParser::InvalidArgument, parser.to_s unless known_operation?(operation)

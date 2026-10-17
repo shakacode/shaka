@@ -11,12 +11,13 @@ module Shaka
     module Command
       ERRORS = [Error, ArgumentError, SystemCallError, OptionParser::ParseError,
                 JSON::ParserError, URI::InvalidURIError].freeze
+      ACTIONS = %w[prepare report].freeze
 
       def self.run(arguments)
         action = arguments.shift
         options, parser = options(arguments, action)
         return print_help(parser) if options[:help]
-        raise OptionParser::InvalidArgument, parser.to_s unless arguments.one? && %w[prepare report].include?(action)
+        raise OptionParser::InvalidArgument, parser.to_s unless arguments.one? && ACTIONS.include?(action)
 
         result = execute(action, arguments.first, options)
         puts JSON.pretty_generate(result)
@@ -36,7 +37,7 @@ module Shaka
 
       def self.parser(options, action)
         OptionParser.new do |flags|
-          flags.banner = 'Usage: shaka trial prepare|report SHAKA_PR_URL [options]'
+          flags.banner = "Usage: shaka trial #{ACTIONS.join('|')} SHAKA_PR_URL [options]"
           prepare_flags(flags, options) if action == 'prepare'
           if action == 'report'
             flags.on('--content-file PATH', 'Public-safe report JSON') do |v|
