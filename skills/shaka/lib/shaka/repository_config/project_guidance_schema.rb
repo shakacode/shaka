@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'validation'
+require_relative '../defaults'
 
 module Shaka
   class RepositoryConfig
@@ -10,6 +11,9 @@ module Shaka
 
       KEY = 'project_guidance'
       NAMES = %w[pr_evidence merge_readiness].freeze
+
+      # The effective guides: the repository's choice, or the packaged default.
+      def self.resolve(settings) = settings.fetch(KEY) { Defaults.fetch(KEY) }
 
       def self.prompt_files(guidance)
         NAMES.filter_map { |name| ["#{KEY}.#{name}", guidance[name]] if guidance[name] }

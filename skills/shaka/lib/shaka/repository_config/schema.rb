@@ -59,7 +59,7 @@ module Shaka
         @data.fetch('pr_description', {}).fetch('opening_check') { @data.fetch('opening_check', {}) }
       end
 
-      def project_guidance = @data.fetch(ProjectGuidanceSchema::KEY, {})
+      def project_guidance = ProjectGuidanceSchema.resolve(@data)
 
       private
 

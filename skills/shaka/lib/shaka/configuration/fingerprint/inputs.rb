@@ -35,7 +35,8 @@ module Shaka
 
       def prompt_paths
         RepositoryConfig.prompt_files(review: @settings.fetch('review'), opening: @settings.fetch('opening_check'),
-                                      guidance: @settings.fetch('project_guidance', {})).map(&:last)
+                                      guidance: RepositoryConfig::ProjectGuidanceSchema.resolve(@settings))
+                        .map(&:last)
       end
 
       # Hashes each prompt where it is read: the private tree, or the default-branch commit.

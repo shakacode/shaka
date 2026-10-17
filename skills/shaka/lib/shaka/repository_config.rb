@@ -110,7 +110,7 @@ module Shaka
     def assign_presentation
       @pr_description = DEFAULT_PR_DESCRIPTION.merge(@data.fetch('pr_description', {}).except('opening_check'))
       @prose_limits = ProseLimits.new(@data.fetch('prose_limits', {})).to_h
-      @project_guidance = @data.fetch(ProjectGuidanceSchema::KEY, {})
+      @project_guidance = ProjectGuidanceSchema.resolve(@data)
     end
 
     def with_default_review_wait(review)
