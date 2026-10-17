@@ -54,7 +54,7 @@ module Shaka
     # Merge already says what happens next, so its next_action is optional; any other value needs one.
     def text_fields!(content)
       %w[reason next_action].each do |key|
-        next if key == 'next_action' && merge?(content) && !content.key?(key)
+        next if key == 'next_action' && merge?(content) && content[key].nil?
 
         raise Error, "PR disposition #{key} must be non-empty text" unless
           PostImplementationReport.text?(content[key])

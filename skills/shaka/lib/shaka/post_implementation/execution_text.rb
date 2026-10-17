@@ -3,7 +3,8 @@
 module Shaka
   # Renders the checkpoint's prompt source and native token usage for its closed details.
   module PostImplementationExecutionText
-    TOKEN_FIELDS = [%w[input input_tokens], ['cached input', 'cached_input_tokens'], %w[output output_tokens],
+    TOKEN_FIELDS = [%w[input input_tokens], ['cached input', 'cached_input_tokens'],
+                    ['cache writes', 'cache_write_input_tokens'], %w[output output_tokens],
                     ['reasoning output', 'reasoning_output_tokens'], %w[total total_tokens]].freeze
 
     private

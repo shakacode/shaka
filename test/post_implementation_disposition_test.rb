@@ -113,7 +113,7 @@ class PostImplementationDispositionValidationTest < Minitest::Test
 
   def test_merge_without_a_next_action_publishes_no_next_line
     with_result do |result, path|
-      result['disposition'] = disposition('Merge').except('next_action')
+      result['disposition'] = disposition('Merge').merge('next_action' => nil)
       github, status = publish(result, path)
       body = github.bodies.first.first
       visible = body.split('<details>', 2).first
