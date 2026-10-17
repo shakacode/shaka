@@ -187,10 +187,23 @@ class PostImplementationMergeWarningClearanceTest < Minitest::Test
     end
   end
 
+  def test_a_summary_quoting_another_head_line_cannot_clear_a_same_head_warning
+    with_result do |result, path|
+      quoted = "· Head [`ddddddd`](https://github.com/example/test/commit/#{'d' * 40}). Passing"
+      github, = publish(result.merge('status' => 'not_completed', 'reason' => quoted), path)
+      body = github.description_body
+      assert_includes body, quoted
+
+      assert_equal 'unchanged', JSON.parse(publish(result, path, github:)[2]).dig('merge_safeguard', 'state')
+      assert_equal body, github.description_body
+    end
+  end
+
   def test_ready_checkpoint_keeps_a_warning_without_a_recorded_head
     with_result do |result, path|
       github = GitHub.new('a' * 40)
-      body = "#{Shaka::PostImplementationMergeWarning::OPEN}\nManual hold\n#{CLOSE}\n\n#{github.description_body}"
+      hold = "Manual hold for [this](https://github.com/example/test/commit/#{'d' * 40})"
+      body = "#{Shaka::PostImplementationMergeWarning::OPEN}\n#{hold}\n#{CLOSE}\n\n#{github.description_body}"
       github.instance_variable_set(:@description_body, body)
 
       assert_equal 0, publish(result, path, github:)[1]

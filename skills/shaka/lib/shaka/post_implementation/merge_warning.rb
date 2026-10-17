@@ -47,7 +47,7 @@ module Shaka
     # this head, or no head, stays for the maintainer. The task owner still marks the PR ready.
     def clear(current, head)
       body = current['body'].to_s
-      cleared = ![nil, head].include?(MergeWarningRegion.head(body))
+      cleared = ![nil, head].include?(MergeWarningRegion.head(body, @github.repository))
       replace(current, MergeWarningRegion.remove(body)) if cleared
       { 'state' => cleared ? 'cleared' : 'unchanged', 'head' => head, 'draft' => current['draft'] }
     end

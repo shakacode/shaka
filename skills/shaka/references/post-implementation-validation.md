@@ -47,10 +47,11 @@ Publishing a blocked or incomplete checkpoint converts the PR to draft and adds 
 **Do not merge** warning above its feature summary. The warning names the reason,
 head, report link, and task owner's next step. Its separate marked region survives
 normal description updates. When a ready checkpoint is the latest one and the warning
-names an earlier head, publication removes the warning, reports `cleared`, and reports
-`draft`. After all required gates pass, the task owner marks a draft PR ready. A ready
-checkpoint leaves a warning for its own head, or one naming no head, for the maintainer
-to remove in GitHub. Ready publications cannot erase a newer blocker. Other description writes use best-effort stale-body checks; GitHub offers
+names an earlier head, publication removes the warning and reports `cleared` with the
+PR's `draft` status. After all required gates pass, the task owner marks a draft PR
+ready. A ready checkpoint leaves a warning for its own head, or one naming no head, for
+the maintainer to remove in GitHub. Ready publications cannot erase a newer blocker.
+Other description writes use best-effort stale-body checks; GitHub offers
 no atomic compare-and-swap for PR descriptions. An opt-out leaves an existing warning
 in place because it does not settle substantive concerns.
 
