@@ -57,6 +57,19 @@ class PrTemplateGuidanceTest < Minitest::Test
     end
   end
 
+  def test_unusable_templates_leave_the_guide_and_fingerprint_working
+    with_guidance(GUIDANCE) do |root|
+      write_template(root, '')
+      sha = commit(root)
+      refute_empty files_fingerprint(root, sha)
+      File.delete(File.join(root, '.github/pull_request_template.md'))
+      File.symlink('pull_request_template.md', File.join(root, '.github/pull_request_template.md'))
+      git_commit(root)
+      assert_equal 'Trusted pr_evidence.', guidance('pr_evidence', root, head(root))
+      refute_empty files_fingerprint(root, head(root))
+    end
+  end
+
   def test_committed_template_change_updates_the_files_fingerprint
     with_guidance(GUIDANCE) do |root|
       write_template(root, 'First template.')
