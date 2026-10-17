@@ -2,11 +2,25 @@
 
 require_relative 'companion_towers_support'
 require 'json'
-require 'shaka/installer'
 
 # Managed packages record one skill list whatever the flag order or repetition.
 class InstallSkillSelectionTest < Minitest::Test
   include CompanionTowersSupport
+
+  # Builds a package directly, bypassing the installer's name normalization.
+  PACKAGE = <<~RUBY
+    require 'fileutils'
+    require 'shaka/installer'
+    root, managed, *names = ARGV
+    root = File.realpath(root)
+    tree = Shaka::Install::Tree.new(names, source_root: root, source_alias: root)
+    source = Shaka::Install::Source.new(root, names, tree)
+    begin
+      puts Shaka::Install::Package.new(FileUtils.mkdir_p(managed).first, source, names, tree).prepare(root)
+    rescue ArgumentError => e
+      abort e.message
+    end
+  RUBY
 
   def test_repeated_tower_flag_installs_valid_reusable_package
     output, status = install('--with-mct', '--with-mct')
@@ -31,7 +45,9 @@ class InstallSkillSelectionTest < Minitest::Test
 
   # Packages from earlier releases recorded skills in flag order.
   def test_rollback_accepts_package_recorded_in_flag_order
-    package = unnormalized_package(%w[shaka mct rct])
+    output, status = unnormalized_package(%w[shaka mct rct])
+    assert_predicate status, :success?, output
+    package = output.strip
 
     output, status = install('--with-rct', '--with-mct', '--rollback', File.basename(package))
     assert_predicate status, :success?, output
@@ -42,8 +58,9 @@ class InstallSkillSelectionTest < Minitest::Test
     FileUtils.mkdir_p(source('extra'))
     File.write(File.join(source('extra'), 'SKILL.md'), 'extra source')
 
-    error = assert_raises(ArgumentError) { unnormalized_package(%w[shaka extra]) }
-    assert_equal 'Managed package skills are invalid', error.message
+    output, status = unnormalized_package(%w[shaka extra])
+    refute_predicate status, :success?
+    assert_equal "Managed package skills are invalid\n", output
     assert_empty Dir.children(managed_dir)
   end
 
@@ -51,12 +68,10 @@ class InstallSkillSelectionTest < Minitest::Test
 
   def managed_dir = File.join(@home, '.local/share/shaka/installs')
 
-  # Builds a package directly, bypassing the installer's name normalization.
   def unnormalized_package(names)
-    root = File.realpath(File.join(@directory, 'source'))
-    tree = Shaka::Install::Tree.new(names, source_root: root, source_alias: root)
-    source = Shaka::Install::Source.new(root, names, tree)
-    Shaka::Install::Package.new(FileUtils.mkdir_p(managed_dir).first, source, names, tree).prepare(root)
+    library = File.expand_path('../skills/shaka/lib', __dir__)
+    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, '-I', library, '-e', PACKAGE,
+                    File.join(@directory, 'source'), managed_dir, *names)
   end
 
   def package_path = File.dirname(File.readlink(destination('shaka')), 2)
