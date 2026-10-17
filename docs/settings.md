@@ -599,7 +599,8 @@ by the version already merged. Changing them makes earlier validation and review
 for a PR out of date.
 
 The guides add requirements for the agent to follow; Shaka does not check them itself.
-They cannot turn off reviews, required checks, or [merge preference](#mergepreference).
+The agent is told to ignore any guide text that would relax reviews, required checks, or
+[merge preference](#mergepreference); those stay enforced as before.
 
 <a id="opening_check"></a>
 

@@ -66,12 +66,15 @@ module Shaka
     private
 
     # PR evidence also carries the repository's pull request template, read from the same trusted commit.
+    # A guide that names a template is the template; a broken template is skipped so the guide still prints.
     def with_template(text, guide_path, sha)
       template = PrTemplate.path(root: @root, sha:)
-      return text if template.nil? || template == guide_path
+      return text if template.nil? || PrTemplate::PATHS.include?(guide_path)
 
       body = TrustedConfigSource.new(root: @root).read_prompt(template, sha, 'pull request template')
       "#{text.chomp}\n\n---\n\nPull request template (#{template}):\n\n#{body}"
+    rescue Error => e
+      "#{text.chomp}\n\n---\n\nPull request template skipped: #{e.message}\n"
     end
   end
 end

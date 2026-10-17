@@ -26,7 +26,25 @@ class PrivateGuidanceSourceTest < Minitest::Test
     end
   end
 
+  def test_individual_setup_reads_the_template_at_the_trusted_commit
+    with_trial do
+      write_template('Trusted template.')
+      commit(@root)
+      @ref = git(@root, 'rev-parse', 'HEAD')
+      File.write(File.join(@root, '.agents/shaka/pr-evidence.md'), 'Private evidence.')
+      update_private { |data| data['project_guidance'] = { 'pr_evidence' => '.agents/shaka/pr-evidence.md' } }
+      write_template('Candidate template.')
+      assert_equal "Private evidence.\n\n---\n\nPull request template (.github/pull_request_template.md):\n\n" \
+                   'Trusted template.', guidance('pr_evidence')
+    end
+  end
+
   private
 
-  def guidance = Shaka::Guidance.new(name: 'merge_readiness', root: @root, ref: @ref).call
+  def guidance(name = 'merge_readiness') = Shaka::Guidance.new(name:, root: @root, ref: @ref).call
+
+  def write_template(text)
+    FileUtils.mkdir_p(File.join(@root, '.github'))
+    File.write(File.join(@root, '.github/pull_request_template.md'), text)
+  end
 end

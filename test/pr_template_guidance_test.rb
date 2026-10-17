@@ -41,6 +41,22 @@ class PrTemplateGuidanceTest < Minitest::Test
     end
   end
 
+  def test_a_broken_template_is_skipped_and_the_guide_still_prints
+    with_guidance(GUIDANCE) do |root|
+      write_template(root, '')
+      output = guidance('pr_evidence', root, commit(root))
+      assert output.start_with?("Trusted pr_evidence.\n\n---\n\nPull request template skipped: ")
+      assert_includes output, 'is empty'
+    end
+  end
+
+  def test_a_guide_naming_another_template_location_skips_the_found_template
+    with_guidance('pr_evidence' => 'docs/pull_request_template.md') do |root|
+      write_template(root, 'Root template.')
+      assert_equal 'Trusted pr_evidence.', guidance('pr_evidence', root, commit(root))
+    end
+  end
+
   def test_committed_template_change_updates_the_files_fingerprint
     with_guidance(GUIDANCE) do |root|
       write_template(root, 'First template.')
