@@ -2,6 +2,7 @@
 
 require_relative 'publication_test'
 require_relative 'github_helper'
+require_relative 'usage_records_test'
 require 'shaka/github/squash_comment'
 require 'shaka/usage/records'
 
@@ -9,6 +10,7 @@ require 'shaka/usage/records'
 # markers published once, then left every reader of the managed region failing.
 class PublicationQuotedMarkersTest < Minitest::Test
   include GitHubHelper
+  include UsageRecordsFixture
 
   MARKERS = [
     Shaka::Publishing::OPEN_MARK, Shaka::Publishing::CLOSE_MARK,
@@ -42,6 +44,14 @@ class PublicationQuotedMarkersTest < Minitest::Test
     quoted = content('summary' => 'Moves the `<!-- shaka:end -->` marker check.')
     assert_raises(Shaka::Error) { github.description { Shaka::Publication.description(quoted) } }
     assert_equal 1, @calls.size, 'only the pull request read may happen'
+  end
+
+  # Break: checking the carried reports refused every republish that kept earlier usage.
+  def test_usage_carried_from_the_earlier_body_still_renders
+    earlier = existing(record('codex', 'codex-review', responses: %w[r1], sources: ['s9'], contribution: 'review'))
+    carried, = Shaka::UsageRecords.carry(content, earlier)
+    assert_includes carried.dig('usage', 'carried'), Shaka::UsageRecords::END_MARK
+    assert_includes Shaka::Publication.description(carried), 'codex-review'
   end
 
   def test_marker_names_without_comment_delimiters_still_render
