@@ -34,8 +34,8 @@ module Shaka
       def candidate_paths = private_paths + @settings.fetch('commands').values
 
       def prompt_paths
-        RepositoryConfig.prompt_files(review: @settings.fetch('review'),
-                                      opening: @settings.fetch('opening_check')).map(&:last)
+        RepositoryConfig.prompt_files(review: @settings.fetch('review'), opening: @settings.fetch('opening_check'),
+                                      guidance: @settings.fetch('project_guidance', {})).map(&:last)
       end
 
       # Hashes each prompt where it is read: the private tree, or the default-branch commit.

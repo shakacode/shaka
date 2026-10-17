@@ -492,7 +492,8 @@ which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
 ### Where Shaka reads a prompt file
 
 The [configuration source](#which-settings-apply) determines which `prompt_file`
-settings apply. This rule covers code-review, checkpoint, and opening prompts.
+settings apply. This rule covers code-review, checkpoint, and opening prompts, and
+[project guidance](#project_guidance) files.
 A settings preview reads each prompt at its selected commit. Without a preview:
 
 - **Shared team settings:** commit the prompt with the settings PR. Shaka uses
@@ -559,6 +560,32 @@ maintaining. The task owner supplies the original problem and evidence, resolves
 concerns, and establishes merge readiness. Final merge preparation
 requires a report for the current commit with no unresolved concerns, counting a concern
 you [accepted](pr-verification.md#checkpoint) as resolved, or an explicit opt-out.
+
+## `project_guidance`
+
+**Optional. Default: none.** Markdown files with your repository's own requirements,
+which the agent reads at the moment they apply instead of carrying them through every task.
+
+```yaml
+project_guidance:
+  pr_evidence: .agents/shaka/pr-evidence.md
+  merge_readiness: .agents/shaka/merge-readiness.md
+```
+
+- `pr_evidence`: read before the agent writes the PR description. For example, a
+  library can ask for a compatibility run against its oldest supported version, and
+  the agent reports that run in the description's verification.
+- `merge_readiness`: read before the [checkpoint](pr-verification.md#checkpoint).
+  For example, a data service can require a confirmed backfill plan. The agent lists
+  each requirement and its status, and an unmet one blocks the merge-ready claim.
+
+Set either one or both. Shaka reads them from
+[the same place as prompt files](#where-shaka-reads-a-prompt-file), with the same file checks,
+so a PR cannot rewrite the requirements it is judged by. Changing a guide makes earlier
+validation and review results for a PR out of date.
+
+The guides add requirements for the agent to follow; Shaka does not check them itself.
+They cannot turn off reviews, required checks, or [merge preference](#mergepreference).
 
 <a id="opening_check"></a>
 
