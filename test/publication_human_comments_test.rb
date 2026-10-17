@@ -403,6 +403,35 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     assert_includes rendered, '[“\\`\\`\\`run\\`\\`\\` fails here and also there”]'
   end
 
+  def test_a_fence_of_four_backticks_hides_its_code_and_closes_only_on_four_or_more
+    body = "Try:\n\n````md\n```ruby\nsecret_line = 1\n```\n`````\n\nThanks."
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', body)]))
+
+    assert_includes rendered, '[“Try\\: Thanks\\.”]'
+  end
+
+  def test_a_tilde_fence_closes_only_on_tildes
+    body = "Try:\n~~~~\n```\nsecret_line = 1\n~~~\n~~~~~\nThanks."
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', body)]))
+
+    assert_includes rendered, '[“Try\\: Thanks\\.”]'
+  end
+
+  def test_an_indented_code_block_is_not_quoted_but_an_indented_paragraph_line_is
+    code = "Please change:\n\n    secret_line = 1\n\tother = 2\n\nThanks."
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', code),
+                                                issue_comment(2, 'ann', "Please change\n    this line.")]))
+
+    assert_includes rendered, '[“Please change\\: Thanks\\.”]'
+    assert_includes rendered, '[“Please change this line\\.”]'
+  end
+
+  def test_a_fence_inside_an_indented_code_block_opens_nothing
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', "Run:\n\n    ```\nThen retry.")]))
+
+    assert_includes rendered, '[“Run\\: Then retry\\.”]'
+  end
+
   def test_only_the_first_twenty_are_shown_and_the_rest_are_counted
     comments = (1..23).map { |id| issue_comment(id, 'ann', "Note #{id}.") }
     rendered = describe(packet(issue_comments: comments))

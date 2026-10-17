@@ -12,7 +12,10 @@ module Shaka
     # The four ranges of ASCII punctuation.
     PUNCTUATION = /[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]/
     LINK = /!?\[([^\]\n]*)\]\([^)\n]*\)/
-    FENCE = /\A(?:```[^`]*|~~~.*)\z/
+    # Three or more backticks or tildes open a fence; a backtick fence's info text has no backtick.
+    FENCE = /\A(?<marker>`{3,}(?=[^`]*\z)|~{3,})/
+    # Four spaces, or a tab after fewer, indent a code block.
+    INDENTED = /\A(?: {4}| {0,3}\t)/
 
     module_function
 
@@ -41,13 +44,25 @@ module Shaka
 
     # A link keeps its text. An unclosed fence hides the rest of the comment, as it does
     # when GitHub renders it; backticks later on the line make it a code span instead.
+    # An indented line is code unless it continues a paragraph.
     def prose(body)
-      fenced = false
+      fence = nil
+      code_may_start = true
       body.to_s.gsub(/<!--.*?-->/m, ' ').gsub(LINK, '\\1').each_line.reject do |line|
-        fence = line.strip.match?(FENCE)
-        fenced = !fenced if fence
-        fence || fenced || line.lstrip.start_with?('>')
+        code, fence = code_line(line, fence, code_may_start)
+        code_may_start = code || line.strip.empty?
+        code || line.lstrip.start_with?('>')
       end.join(' ')
+    end
+
+    # Whether a line is code, and the fence open after it. Only a run of the same character at
+    # least as long closes a fence, and a fence-shaped line in an indented block opens none.
+    def code_line(line, fence, code_may_start)
+      return [true, (fence unless line.strip.match?(/\A#{fence}#{fence[0]}*\z/))] if fence
+      return [true, nil] if code_may_start && line.match?(INDENTED)
+
+      fence = line.lstrip[FENCE, :marker]
+      [!fence.nil?, fence]
     end
 
     # GitHub accepts a backslash before any ASCII punctuation. A backslash of the comment's own
