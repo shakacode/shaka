@@ -32,4 +32,15 @@ class EvaluationRunRecordCliTest < Minitest::Test
     assert_equal 2, status.exitstatus
     assert_includes error, 'Usage:'
   end
+
+  def test_invalid_utf8_returns_a_private_safe_error
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'record.json')
+      File.binwrite(path, File.read(FIXTURE).sub("sha256:#{'a' * 64}", "\xFF".b))
+      output, error, status = Open3.capture3('ruby', CLI, 'check-record', path)
+      assert_equal 1, status.exitstatus
+      assert_equal({ 'valid' => false, 'errors' => ['Invalid JSON'] }, JSON.parse(output))
+      assert_empty error
+    end
+  end
 end

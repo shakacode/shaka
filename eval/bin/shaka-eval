@@ -4,7 +4,10 @@
 require_relative '../lib/shaka/evaluation/run_record'
 
 def check_record(path)
-  Shaka::Evaluation::RunRecord.errors(JSON.parse(File.read(path)))
+  source = File.read(path, encoding: 'UTF-8')
+  return ['Invalid JSON'] unless source.valid_encoding?
+
+  Shaka::Evaluation::RunRecord.errors(JSON.parse(source))
 rescue JSON::ParserError
   ['Invalid JSON']
 rescue SystemCallError
