@@ -424,7 +424,7 @@ phases:
         comment holding evidence the new one does not replace. Before the Finish checkpoint,
         fold or minimize evidence and bot reports the current head made obsolete. At any
         point, you may minimize bot comments that contain no review findings with
-        `review collapse --bot-comment`.
+        `review collapse OWNER/REPO NUMBER --head SHA --bot-comment ID`.
       - When this task's team or individual settings set `project_guidance.pr_evidence`, read
         that guide with the saved helper's `guidance pr_evidence --root DIR --ref SHA` before
         preparing the description. It also prints the repository's pull request template when
