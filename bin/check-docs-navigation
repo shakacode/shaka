@@ -3,7 +3,7 @@
 
 require 'json'
 
-AGENT_REFERENCES = %r{(?:\A|/)skills/shaka/references(?:/|\z)}
+AGENT_REFERENCES = %r{(?:\A|/)skills/shaka/references(?:[/#?]|\z)}
 
 # Check the full published tree, so an already-merged orphan is caught too.
 def document_ids(item)
@@ -28,7 +28,7 @@ end
 def agent_reference_links(text)
   inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
   defined = text.scan(/^\s{0,3}\[[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
-  html = text.scan(/href=["']([^"']+)["']/).flatten
+  html = text.scan(/href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>`=]+))/).flatten.compact
   urls = text.scan(%r{https?://[^\s<>()"'\]]+})
   (inline + defined + html + urls).grep(AGENT_REFERENCES).uniq
 end

@@ -14,6 +14,8 @@ class DocsNavigationTest < Minitest::Test
     <a href="https://github.com/shakacode/shaka/tree/main/skills/shaka/references">all</a>
     Bare: https://github.com/shakacode/shaka/blob/v1/skills/shaka/references/review.md
     Autolink: <https://github.com/shakacode/shaka/blob/main/skills/shaka/references/publication.md>
+    [section](../skills/shaka/references#review) and [query](../skills/shaka/references?page=1)
+    <a href=../skills/shaka/references/review.md>unquoted</a>
   MARKDOWN
 
   def check(sidebar, page = '# What to expect')
@@ -45,7 +47,7 @@ class DocsNavigationTest < Minitest::Test
   def test_links_to_agent_instructions_fail
     output, _, status = check({ 'docsSidebar' => ['expected-experience'] }, AGENT_LINKS)
     refute_predicate status, :success?
-    assert_equal 6, output.scan('expected-experience.md -> ').size
+    assert_equal 9, output.scan('expected-experience.md -> ').size
   end
 
   def test_configuration_links_and_prose_pass
