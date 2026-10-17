@@ -385,6 +385,40 @@ completed required and review check. It does not check the rules above or
 whole-diff coverage; they rest on the writer and on review, and
 `shaka enforcement` lists them as agent-enforced.
 
+### Leave reviewer notes on the diff
+
+Reviewer notes are inline comments in the walkthrough review, written for the
+person reading the diff. They guide the reading; they are neither findings nor
+to-dos. Supply them as walkthrough `notes` when a pointer on the line itself
+saves the reviewer a search. The walkthrough body still carries the order,
+purpose, validation, risks, and rollback.
+
+Write a note for one of these:
+
+- **Start here:** the file or function to read first, when it is not the first
+  file GitHub lists.
+- **Core change:** the lines where behavior changes, when wiring surrounds them.
+- **Look closely:** a risky spot, and what could go wrong there.
+- **Skim:** a mechanical move, rename, or generated output.
+- **Why this:** the alternative you rejected, when the code invites it.
+- **Proof:** the test that exercises these lines.
+
+Before writing a note, place it elsewhere when it fits better:
+
+- A future maintainer needs it: write a code comment or clearer code.
+- It affects the merge decision: put it in the description.
+- It asks for a change: make the change.
+
+Open each note with its kind in bold, give it one idea, and anchor it on the
+lines it is about. Leave most lines without a note; a note on every hunk is
+noise. Notes count toward the walkthrough's prose limits. Anchor only on lines
+the PR diff shows: GitHub refuses the whole review otherwise, and the command
+names each note's location in its error.
+
+When a new walkthrough replaces an older one, the command resolves the older
+walkthrough's note threads that nobody else answered. A note with a reply from
+someone else stays open as a conversation; answer it like any review thread.
+
 ### Keep one current walkthrough
 
 Edit wording at the same revision in place. For a new commit, write a walkthrough
