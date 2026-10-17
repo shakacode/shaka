@@ -14,12 +14,14 @@ module Shaka
       end
 
       def write(record, id:, task:)
-        raise BudgetError, 'Invalid executor record' unless valid?(record, id, task)
+        source = JSON.pretty_generate(record)
+        saved = JSON.parse(source)
+        raise BudgetError, 'Invalid executor record' unless valid?(saved, id, task)
 
         FileUtils.mkdir_p(@directory, mode: 0o700)
         path = File.join(@directory, "#{id}.json")
-        persist(record, path)
-        "sha256:#{Digest::SHA256.file(path).hexdigest}"
+        persist(source, path)
+        [saved, "sha256:#{Digest::SHA256.file(path).hexdigest}"]
       end
 
       private
@@ -28,9 +30,9 @@ module Shaka
         RunRecord.errors(record).empty? && record['trial_id'] == id && record['task'] == task
       end
 
-      def persist(record, path)
+      def persist(source, path)
         File.open(path, 'wbx', 0o600) do |file|
-          file.write(JSON.pretty_generate(record))
+          file.write(source)
           file.flush
           file.fsync
         end

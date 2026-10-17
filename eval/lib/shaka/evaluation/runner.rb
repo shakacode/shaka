@@ -49,7 +49,7 @@ module Shaka
         plans.each do |task|
           record = trial(task, executor)
           return report('harness_error', 'executor_harness_error') if record.dig('outcome', 'state') == 'HARNESS_ERROR'
-          return report('partial', 'cap_exceeded') if @budget.snapshot.fetch('over')
+          return report('partial', 'cap_exceeded') if @over
         end
         report('complete', 'finished')
       end
@@ -58,8 +58,8 @@ module Shaka
         id = @budget.reserve
         @active = true
         record = executor.call(JSON.parse(JSON.generate(task)), id)
-        digest = @store.write(record, id: id, task: task)
-        @budget.settle(id: id, dollars: record.dig('usage', 'cache_neutral_dollars'), digest: digest)
+        record, digest = @store.write(record, id: id, task: task)
+        @over = @budget.settle(id: id, dollars: record.dig('usage', 'cache_neutral_dollars'), digest: digest)
         completed(record)
         record
       end

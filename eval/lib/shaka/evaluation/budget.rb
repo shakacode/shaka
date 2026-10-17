@@ -26,12 +26,13 @@ module Shaka
 
       def reserve
         @ledger.transaction do |calls|
+          period = month
           raise Stopped, 'unaccounted_trial' if calls.values.any? { it['dollars'].nil? }
-          raise Stopped, 'monthly_cap' if monthly(calls) >= @limits.fetch('monthly')
+          raise Stopped, 'monthly_cap' if monthly(calls, period) >= @limits.fetch('monthly')
           raise Stopped, 'scope_cap' if scoped(calls) >= @cap
 
           id = SecureRandom.uuid
-          [id, { 'version' => 1, 'event' => 'start', 'id' => id, 'month' => month,
+          [id, { 'version' => 1, 'event' => 'start', 'id' => id, 'month' => period,
                  'kind' => @kind, 'scope' => @scope, 'cap' => BudgetLimits.text(@cap) }]
         end
       end
@@ -42,7 +43,8 @@ module Shaka
           call = calls.fetch(id)
           raise BudgetError, 'Foreign budget reservation' unless call['kind'] == @kind && call['scope'] == @scope
 
-          [true, { 'version' => 1, 'event' => 'settle', 'id' => id,
+          over = monthly(calls, call['month']) + amount > @limits.fetch('monthly') || scoped(calls) + amount > @cap
+          [over, { 'version' => 1, 'event' => 'settle', 'id' => id,
                    'dollars' => BudgetLimits.text(amount), 'digest' => digest }]
         end
       rescue ArgumentError, KeyError
@@ -51,10 +53,11 @@ module Shaka
 
       def snapshot
         @ledger.transaction do |calls|
-          [{ 'monthly_dollars' => BudgetLimits.text(monthly(calls)),
+          monthly_total = monthly(calls, month)
+          [{ 'monthly_dollars' => BudgetLimits.text(monthly_total),
              'scope_dollars' => BudgetLimits.text(scoped(calls)),
              'pending' => calls.values.count { it['dollars'].nil? }, 'cap' => BudgetLimits.text(@cap),
-             'over' => monthly(calls) > @limits.fetch('monthly') || scoped(calls) > @cap }, nil]
+             'over' => monthly_total > @limits.fetch('monthly') || scoped(calls) > @cap }, nil]
         end
       end
 
@@ -80,7 +83,7 @@ module Shaka
         value
       end
 
-      def monthly(calls) = sum(calls) { it['month'] == month }
+      def monthly(calls, period) = sum(calls) { it['month'] == period }
       def scoped(calls) = sum(calls) { it['kind'] == @kind && it['scope'] == @scope }
       def sum(calls, &) = calls.values.select(&).sum(Rational(0)) { it['dollars'] || 0 }
     end

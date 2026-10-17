@@ -44,4 +44,25 @@ class EvaluationRunnerFailureTest < Minitest::Test
     assert_equal 'harness_error', result.fetch('status')
     assert_equal '6.0', budget.snapshot.fetch('monthly_dollars')
   end
+
+  def test_month_end_does_not_hide_an_overrun_in_the_reservation_month
+    @now = Time.utc(2026, 10, 31, 23, 59, 50)
+    earlier = budget(kind: 'manual', scope: 'earlier-trials', cap: 200)
+    settle(earlier, earlier.reserve, 199)
+    result = runner.run(tasks) do |task, id|
+      @now += 60
+      record(task, id, 2)
+    end
+    assert_equal 'partial', result.fetch('status')
+    assert_equal 'cap_exceeded', result.fetch('reason')
+  end
+
+  def test_serialized_record_must_still_satisfy_the_schema
+    result = runner.run(tasks) do |task, id|
+      record(task, id).merge('score' => Rational(5, 4))
+    end
+    assert_equal 'harness_error', result.fetch('status')
+    assert_empty saved_records
+    assert_equal 1, budget.snapshot.fetch('pending')
+  end
 end
