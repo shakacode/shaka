@@ -65,9 +65,15 @@ class GitHubWalkthroughNotesTest < Minitest::Test
   NOTE = { 'path' => CHANGED_FILE, 'line' => 4, 'side' => 'RIGHT',
            'body' => "#{Shaka::Walkthrough::Notes::MARKER}\n🤖 Claude\n\nStart here." }.freeze
 
+  def resolution_responses(classic: false, rules: [])
+    rule = { 'refUpdateRule' => { 'requiresConversationResolution' => classic } }
+    [response({ 'data' => { 'repository' => { 'pullRequest' => { 'baseRefName' => 'main', 'baseRef' => rule } } } }),
+     response(rules)]
+  end
+
   def note_publish_responses(stored, *extra)
     [snapshot_response, files_response, *gate_responses, html_response, html_response('<p>Start here.</p>'),
-     review_response, review_response, response(stored), *extra]
+     *resolution_responses, review_response, review_response, response(stored), *extra]
   end
 
   def test_notes_are_posted_as_inline_comments_of_the_same_review
@@ -90,8 +96,18 @@ class GitHubWalkthroughNotesTest < Minitest::Test
 
   def test_a_refused_review_names_each_note_location
     github = client(snapshot_response, files_response, *gate_responses, html_response, html_response,
-                    response({}, status: 1, http_status: 422))
+                    *resolution_responses, response({}, status: 1, http_status: 422))
     error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH, notes: [NOTE]) }
     assert_includes error.message, "check #{CHANGED_FILE}:L4."
+  end
+
+  def test_notes_are_refused_where_the_base_requires_conversation_resolution
+    ruleset = [{ 'type' => 'pull_request', 'parameters' => { 'required_review_thread_resolution' => true } }]
+    [resolution_responses(classic: true), resolution_responses(rules: ruleset)].each do |rules|
+      github = client(snapshot_response, files_response, *gate_responses, html_response, html_response, *rules)
+      error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH, notes: [NOTE]) }
+      assert_includes error.message, 'main requires conversation resolution'
+      assert_nil posted_review
+    end
   end
 end

@@ -6,6 +6,17 @@ require_relative '../walkthrough/notes'
 module Shaka
   # Posts a walkthrough review with its inline notes and confirms GitHub kept every note.
   module WalkthroughNotePosting
+    RESOLUTION_QUERY = <<~GRAPHQL
+      query($owner: String!, $name: String!, $number: Int!) {
+        repository(owner: $owner, name: $name) {
+          pullRequest(number: $number) {
+            baseRefName
+            baseRef { refUpdateRule { requiresConversationResolution } }
+          }
+        }
+      }
+    GRAPHQL
+
     private
 
     # GitHub refuses the whole review when one note's lines are outside the diff, so nothing is posted.
@@ -13,12 +24,30 @@ module Shaka
       fields = { event: 'COMMENT', commit_id: head, body: body }
       return api(reviews_path, method: 'POST', fields:) if notes.empty?
 
+      refuse_blocking_notes
       api(reviews_path, method: 'POST', fields: fields.merge(comments: notes))
     rescue Error => e
       raise e if notes.empty?
 
       raise Error, "#{e.message} GitHub refuses the whole review when a note sits on lines the diff " \
                    "does not show; check #{notes.map { |note| Walkthrough::Notes.location(note) }.join(', ')}."
+    end
+
+    # The current notes stay open until a newer walkthrough, so they would block such a merge.
+    def refuse_blocking_notes
+      owner, name = @repository.split('/')
+      pull = graphql(RESOLUTION_QUERY, { owner:, name:, number: @number }).dig('repository', 'pullRequest')
+      branch = pull['baseRefName'] if pull.is_a?(Hash)
+      raise Error, 'GitHub did not report the pull request base branch.' unless branch.is_a?(String)
+      return unless pull.dig('baseRef', 'refUpdateRule', 'requiresConversationResolution') ||
+                    branch_rules(branch).any? { |rule| resolution_rule?(rule) }
+
+      raise Error, "#{branch} requires conversation resolution before merging; publish the walkthrough without notes."
+    end
+
+    def resolution_rule?(rule)
+      rule.is_a?(Hash) && rule['type'] == 'pull_request' &&
+        rule.dig('parameters', 'required_review_thread_resolution') == true
     end
 
     def verify_notes(id, notes)

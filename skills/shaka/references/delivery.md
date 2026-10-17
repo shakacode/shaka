@@ -416,8 +416,8 @@ the PR diff shows: GitHub refuses the whole review otherwise, and the command
 names each note's location in its error.
 
 The current walkthrough's notes stay open until a newer walkthrough replaces
-them. When the base branch requires conversation resolution before merging,
-leave notes out, because they would block the merge.
+them, so the command refuses notes when the base branch requires conversation
+resolution before merging; publish that walkthrough without notes.
 
 When a new walkthrough replaces an older one, the command resolves the older
 walkthrough's note threads that nobody else answered. A note with a reply from
