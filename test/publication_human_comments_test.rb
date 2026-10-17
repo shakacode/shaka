@@ -426,24 +426,24 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     assert_includes rendered, '[“Please change this line\\.”]'
   end
 
-  def test_a_fence_indented_four_spaces_outside_a_list_neither_opens_nor_closes
-    rendered = describe(packet(issue_comments: [
-                                 issue_comment(1, 'ann', "Run:\n```\n    ```\nsecret_line = 1\n```\nThanks."),
-                                 issue_comment(2, 'ann', "Note\n    ```\nmore text")
-                               ]))
+  def test_a_closing_fence_indented_four_spaces_more_than_its_opener_does_not_close_it
+    body = "Run:\n```\n    ```\nsecret_line = 1\n```\nThanks."
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', body)]))
 
     assert_includes rendered, '[“Run\\: Thanks\\.”]'
-    assert_includes rendered, '[“Note \\`\\`\\` more text”]'
   end
 
-  def test_a_list_item_keeps_its_indented_paragraph_and_hides_its_indented_fence
+  def test_code_in_a_list_or_after_a_rule_or_heading_is_hidden
     rendered = describe(packet(issue_comments: [
-                                 issue_comment(1, 'ann', "- Please change:\n\n    this behavior."),
-                                 issue_comment(2, 'ann', "1. Step:\n\n    ```\n    secret_line = 1\n    ```\n\nDone.")
+                                 issue_comment(1, 'ann', "1. Step:\n    ```\n    secret_line = 1\n    ```\nDone."),
+                                 issue_comment(2, 'ann', "- Item\n\n```\n    ```\nsecret_line = 1\n```\nDone."),
+                                 issue_comment(3, 'ann', "- Item\n\n      secret_line = 1\n\nDone."),
+                                 issue_comment(4, 'ann', "Notes\n\n* * *\n\n    secret_line = 1\n\nDone."),
+                                 issue_comment(5, 'ann', "# Error\n    secret_line = 1\nDone.")
                                ]))
 
-    assert_includes rendered, '[“\\- Please change\\: this behavior\\.”]'
-    assert_includes rendered, '[“1\\. Step\\: Done\\.”]'
+    refute_includes rendered, 'secret'
+    assert_equal 5, rendered.scan(/Done\\\.”\]/).size
   end
 
   def test_a_fence_inside_an_indented_code_block_opens_nothing
