@@ -1,0 +1,49 @@
+--- a/lib/line_decoder.rb
++++ b/lib/line_decoder.rb
+@@ -11,7 +11,6 @@
+     @pending << chunk
+     lines = @pending.split("\n", -1)
+     @pending = lines.pop
+-    return [] unless @pending.empty?
+ 
+     lines.map { |line| JSON.parse(line) }
+   end
+--- a/test/line_decoder_test.rb
++++ b/test/line_decoder_test.rb
+@@ -13,4 +13,13 @@
+     assert_empty decoder.feed('{"id":')
+     assert_equal [{ 'id' => 'a' }], decoder.feed("\"a\"}\n")
+   end
++
++  def test_complete_records_are_emitted_while_next_record_is_incomplete
++    decoder = LineDecoder.new
++
++    assert_equal [{ 'id' => 'a' }], decoder.feed("{\"id\":\"a\"}\n{\"id\":")
++    assert_equal [{ 'id' => 'b' }, { 'id' => 'c' }],
++                 decoder.feed("\"b\"}\n{\"id\":\"c\"}\n{\"id\":")
++    assert_equal [{ 'id' => 'd' }], decoder.feed("\"d\"}\n")
++  end
+ end
+--- a/test/receiver_test.rb
++++ b/test/receiver_test.rb
+@@ -0,0 +1,20 @@
++# frozen_string_literal: true
++
++require 'minitest/autorun'
++require_relative '../lib/receiver'
++
++class ReceiverTest < Minitest::Test
++  def test_delivers_each_complete_record_once_in_arrival_order
++    delivered = []
++    receiver = Receiver.new { |id| delivered << id }
++
++    receiver.receive("{\"id\":\"a\"}\n{\"id\":")
++    assert_equal ['a'], delivered
++
++    receiver.receive("\"b\"}\n{\"id\":\"c\"}\n{\"id\":")
++    assert_equal %w[a b c], delivered
++
++    receiver.receive("\"d\"}\n")
++    assert_equal %w[a b c d], delivered
++  end
++end
