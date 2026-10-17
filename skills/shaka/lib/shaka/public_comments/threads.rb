@@ -15,7 +15,7 @@ module Shaka
                 nodes {
                   id isResolved
                   comments(first: 100) {
-                    nodes { fullDatabaseId }
+                    nodes { fullDatabaseId author { login } }
                     pageInfo { hasNextPage }
                   }
                 }
@@ -26,8 +26,12 @@ module Shaka
         }
       GRAPHQL
 
+      # Logins that commented after each thread's opening comment, keyed by thread ID.
+      attr_reader :replies
+
       def initialize(github)
         @github = github
+        @replies = {}
       end
 
       def call
@@ -84,6 +88,7 @@ module Shaka
       def add_thread(row, threads, index)
         meta, comments = normalize_thread(row)
         threads << meta
+        @replies[meta['thread_id']] = comments.drop(1).filter_map { |comment| comment.dig('author', 'login') }
         comments.each { |comment| index_comment(comment, meta, index) }
       end
 
