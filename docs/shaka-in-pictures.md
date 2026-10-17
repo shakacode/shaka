@@ -118,7 +118,7 @@ means Shaka is ready.
 
 ### Step 2: Make a playground project
 
-This is ordinary agent work, not a Shaka task yet.
+This is not a Shaka task yet.
 
 **Do:**
 
@@ -130,14 +130,14 @@ one-page website with a button and one automated test. Upload it to GitHub.
 A **repository**, or repo, is your project's home on GitHub. The test matters:
 Shaka runs your tests, so without one it has less to check and show you.
 
-**Success looks like:** the agent gives you a link to the new repository. Open it
-to see your files on GitHub.
+**You will see:** the agent gives you a link to the new repository. Open it to
+see your files.
 
 **Then:** the agent made the project in a folder on your computer, where Shaka
 will work. Ask it:
 
 ```text
-How do I start a new chat in the shaka-playground folder?
+How do I start a new chat in the shaka-playground folder and check it worked?
 ```
 
 Continue in that new chat.
