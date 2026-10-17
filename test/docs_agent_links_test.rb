@@ -11,7 +11,8 @@ class DocsAgentLinksTest < Minitest::Test
     inline = text.scan(/\]\(\s*<?([^)\s>]+)/).flatten
     defined = text.scan(/^\s{0,3}\[[^\]]+\]:\s*<?(\S+?)>?(?:\s|$)/).flatten
     html = text.scan(/href=["']([^"']+)["']/).flatten
-    (inline + defined + html).grep(AGENT_REFERENCES)
+    urls = text.scan(%r{https?://[^\s<>()"'\]]+})
+    (inline + defined + html + urls).grep(AGENT_REFERENCES).uniq
   end
 
   def test_finds_relative_and_github_links_to_agent_references
@@ -20,9 +21,11 @@ class DocsAgentLinksTest < Minitest::Test
       See [upstream](https://github.com/shakacode/shaka/blob/main/skills/shaka/references/delivery.md).
       [guide]: <skills/shaka/references/local-review.md>
       <a href="https://github.com/shakacode/shaka/tree/main/skills/shaka/references">all</a>
+      Bare: https://github.com/shakacode/shaka/blob/v1/skills/shaka/references/review.md
+      Autolink: <https://github.com/shakacode/shaka/blob/main/skills/shaka/references/publication.md>
     MARKDOWN
 
-    assert_equal 4, agent_reference_links(text).size
+    assert_equal 6, agent_reference_links(text).size
   end
 
   def test_allows_configuration_files_and_human_guides
