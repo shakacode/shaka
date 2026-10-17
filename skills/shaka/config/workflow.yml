@@ -423,9 +423,10 @@ phases:
         fold or minimize evidence and bot reports the current head made obsolete.
       - When this task's team or individual settings set `project_guidance.pr_evidence`, read
         that guide with the saved helper's `guidance pr_evidence --root DIR --ref SHA` before
-        preparing the description.
-        Gather the evidence it asks for, and report each item in `verification` or `details`,
-        naming any gap.
+        preparing the description. It also prints the repository's pull request template when
+        one exists. Gather the evidence the guide asks for, and report each item in
+        `verification` or `details`, naming any gap. Cover each template section the
+        description does not already render in `sections`.
       - Before publishing, read the diff for steps besides merging: anything that has to exist
         or happen outside the code for the change to work once deployed. Look for new or renamed
         environment variables, `secrets.*` and `vars.*` references in workflows, GitHub App

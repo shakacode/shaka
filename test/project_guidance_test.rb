@@ -2,13 +2,11 @@
 
 require_relative 'test_helper'
 require_relative 'repository_fixture'
-require 'shaka/guidance'
-require 'shaka/configuration/fingerprint'
+require_relative 'project_guidance_helper'
 
 class ProjectGuidanceTest < Minitest::Test
   include RepositoryConfigTestHelpers
-
-  GUIDANCE = { 'pr_evidence' => '.agents/pr-evidence.md', 'merge_readiness' => '.agents/merge-readiness.md' }.freeze
+  include ProjectGuidanceHelper
 
   def test_absent_guidance_leaves_the_effective_contract_unchanged
     with_repository do |root|
@@ -76,35 +74,5 @@ class ProjectGuidanceTest < Minitest::Test
   def test_rejects_an_unknown_name
     _, error = capture_io { assert_equal 1, Shaka::Guidance.run(%w[other]) }
     assert_includes error, 'Usage: shaka guidance pr_evidence|merge_readiness'
-  end
-
-  private
-
-  def guidance(name, root, sha) = Shaka::Guidance.new(name:, root:, ref: sha).call
-
-  def files_fingerprint(root, sha)
-    settings = Shaka::Configuration.trusted(root:, ref: sha).to_h
-    installation = { 'schema_version' => 1, 'version' => '1', 'source' => { 'kind' => 'uninstalled' } }
-    Shaka::Configuration::Fingerprint.build(root:, effective_settings: settings, repository: 'shakacode/shaka',
-                                            installation:, trusted_ref: sha).components.fetch('files')
-  end
-
-  def with_guidance(guidance)
-    with_repository('project_guidance' => guidance) do |root|
-      write_guidance(root, guidance)
-      yield root
-    end
-  end
-
-  def write_guidance(root, guidance)
-    guidance.each { |name, path| File.write(File.join(root, path), "Trusted #{name}.") }
-  end
-
-  def commit(root)
-    system('git', '-C', root, 'init', '-q', exception: true)
-    system('git', '-C', root, 'add', '.', exception: true)
-    system('git', '-C', root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com',
-           'commit', '-qm', 'trusted', exception: true)
-    Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
   end
 end

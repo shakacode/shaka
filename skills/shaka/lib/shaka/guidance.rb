@@ -3,6 +3,7 @@
 require 'optparse'
 require_relative 'error'
 require_relative 'configuration'
+require_relative 'pr_template'
 
 module Shaka
   # Prints one repository guidance file from the selected settings source, never the candidate branch.
@@ -58,7 +59,19 @@ module Shaka
       path = config.project_guidance[@name]
       raise Error, "#{label} is not configured" unless path
 
-      Configuration.configured_prompt(root: @root, config:, ref: sha, path:, label:)
+      text = Configuration.configured_prompt(root: @root, config:, ref: sha, path:, label:)
+      @name == 'pr_evidence' ? with_template(text, path, config.sha || sha) : text
+    end
+
+    private
+
+    # PR evidence also carries the repository's pull request template, read from the same trusted commit.
+    def with_template(text, guide_path, sha)
+      template = PrTemplate.path(root: @root, sha:)
+      return text if template.nil? || template == guide_path
+
+      body = TrustedConfigSource.new(root: @root).read_prompt(template, sha, 'pull request template')
+      "#{text.chomp}\n\n---\n\nPull request template (#{template}):\n\n#{body}"
     end
   end
 end

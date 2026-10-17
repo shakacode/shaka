@@ -578,11 +578,25 @@ project_guidance:
 - `merge_readiness`: read before the [checkpoint](pr-verification.md#checkpoint).
   For example, a data service can require a confirmed backfill plan. The agent lists
   each requirement and its status, and an unmet one blocks the merge-ready claim.
+  Write standing rules for every PR here; a task's own acceptance criteria stay in
+  its issue or spec.
 
-Set either one or both. Shaka reads them from
+When `pr_evidence` is set and your repository has a pull request template, the agent
+also reads that template and fills any of its sections Shaka's description does not
+already cover. The template gives the description its shape; the guide says what to
+run or check before writing it. Shaka looks for `pull_request_template.md` in `.github/`,
+the repository root, then `docs/`. With several templates, name the one to use as
+`pr_evidence`.
+
+Put anything a command can check in your [validate script](#standard-command-scripts)
+or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
+whether a preview looks right, which the agent reports rather than proves.
+
+Set either one or both. Shaka reads the guides and the template from
 [the same place as prompt files](#where-shaka-reads-a-prompt-file), with the same file checks,
-so a PR cannot rewrite the requirements it is judged by. Changing a guide makes earlier
-validation and review results for a PR out of date.
+so a PR cannot rewrite the requirements it is judged by. A PR that edits them is judged
+by the version already merged. Changing them makes earlier validation and review results
+for a PR out of date.
 
 The guides add requirements for the agent to follow; Shaka does not check them itself.
 They cannot turn off reviews, required checks, or [merge preference](#mergepreference).
