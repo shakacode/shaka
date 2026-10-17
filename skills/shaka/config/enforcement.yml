@@ -549,10 +549,11 @@ rules:
     quote: Do not claim resolution while the procedure says review is unsettled
     enforced_by: reported
     detector: >-
-      `handoff` owes each unresolved review thread with no reply from this account after its
-      opening comment and exits 2; it reads the first 100 comments of each thread. Under merge
-      approval it only counts answered threads left open. Nothing checks optional reviews still
-      running, and nothing stops a turn whose agent ignores the exit status.
+      `handoff` owes each unresolved review thread this account neither opened nor answered,
+      and exits 2; it reads the first 100 comments of each thread. Under merge approval it also
+      notes answered threads left open. It cannot tell whether a reviewer pushed back after the
+      reply, nothing checks optional reviews still running, and nothing stops a turn whose agent
+      ignores the exit status.
   - id: no-handoff-monitor
     phase: review
     quote: never create a monitor or follow-up issue for the handoff

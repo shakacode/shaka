@@ -19,6 +19,13 @@ class HandoffThreadsTest < Minitest::Test
     assert_equal ['Reply on review threads this account never answered: T1.'], result['owed']
   end
 
+  def test_an_open_thread_this_account_opened_is_not_owed
+    open_thread = thread('T1')
+    open_thread['comments']['nodes'].first['author']['login'] = 'shaka-agent'
+
+    assert_empty handoff(threads: [open_thread])['owed']
+  end
+
   def test_a_resolved_thread_without_a_reply_is_not_owed
     assert_empty handoff(threads: [thread('T1', resolved: true)])['owed']
   end
@@ -30,7 +37,7 @@ class HandoffThreadsTest < Minitest::Test
     assert_empty handoff(threads:)['notes']
     result = handoff(threads:, labels:)
 
-    assert_includes result['notes'], '2 answered review threads remain open; confirm each is meant to stay open.'
+    assert_includes result['notes'], '2 answered review threads still open; confirm each is meant to stay open.'
     refute(result['owed'].any? { |item| item.include?('review threads') })
   end
 
