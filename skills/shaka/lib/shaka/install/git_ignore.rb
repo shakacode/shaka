@@ -28,7 +28,8 @@ module Shaka
       end
 
       def git_root(root)
-        top, status = Open3.capture2('git', '-C', root, 'rev-parse', '--show-toplevel', err: File::NULL)
+        top, status = Open3.capture2(checkout_git_environment, 'git', '-C', root, 'rev-parse', '--show-toplevel',
+                                     err: File::NULL)
         return top.strip if status.success?
         return unless git_marker?(root)
 
@@ -49,12 +50,15 @@ module Shaka
 
       def git_ignored(root, files)
         relative = files.map { |path| path.delete_prefix("#{root}/") }
-        output, status = Open3.capture2('git', '-C', root, 'check-ignore', '-z', '--stdin',
+        output, status = Open3.capture2(checkout_git_environment, 'git', '-C', root, 'check-ignore', '-z', '--stdin',
                                         stdin_data: "#{relative.join("\0")}\0", err: File::NULL)
         raise ArgumentError, 'Cannot verify ignored skill files' unless [0, 1].include?(status.exitstatus)
 
         output
       end
+
+      # A leaked GIT_DIR belongs to some other repository. Ignore rules have to come from this checkout.
+      def checkout_git_environment = ENV.keys.grep(/\AGIT_/).to_h { |key| [key, nil] }
     end
   end
 end
