@@ -59,7 +59,7 @@ class PublicationIntentVerificationTest < Minitest::Test
     assert_includes rendered, "- #{checks.first}\n- #{checks.last}"
   end
 
-  # https://github.com/shakacode/hichee/pull/10726 put the cause in Why, leaving the symptom unstated.
+  # A bug-fix PR put the cause in Why and left the symptom unstated.
   def test_a_bug_fix_names_its_root_cause_after_why
     cause = 'The booking link covered the underlined price.'
     rendered = render('intent' => INTENT.merge('root_cause' => cause))
