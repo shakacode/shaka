@@ -420,8 +420,8 @@ them, so the command refuses notes when the base branch requires conversation
 resolution before merging; publish that walkthrough without notes.
 
 When a new walkthrough replaces an older one, the command resolves the older
-walkthrough's note threads that nobody else answered. A note with a reply from
-someone else stays open as a conversation; answer it like any review thread.
+walkthrough's note threads that have no reply. A note with any reply stays open
+as a conversation; answer it like any review thread, then resolve it.
 
 ### Keep one current walkthrough
 

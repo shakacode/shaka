@@ -315,11 +315,14 @@ class WalkthroughHistoryNotesTest < Minitest::Test
     assert_equal 'PRRT_1', JSON.parse(@calls.last.last).dig('variables', 'id')
   end
 
-  def test_a_note_someone_answered_stays_open
-    published = publish_over_noted(thread_response('ada', 'grace'))
+  # A reply from the publishing account may be the person who owns it, so any reply keeps a note open.
+  def test_a_note_with_any_reply_stays_open
+    [thread_response('ada', 'grace'), thread_response('ada', 'ada')].each do |thread|
+      published = publish_over_noted(thread)
 
-    assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
-    refute(@calls.any? { |_argv, stdin| stdin.include?('resolveReviewThread') })
+      assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
+      refute(@calls.any? { |_argv, stdin| stdin.include?('resolveReviewThread') })
+    end
   end
 
   def test_a_note_answered_by_an_unnamed_author_stays_open

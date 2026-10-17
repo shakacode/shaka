@@ -25,10 +25,12 @@ module Shaka
       return api(reviews_path, method: 'POST', fields:) if notes.empty?
 
       refuse_blocking_notes
+      post_with_notes(fields, notes)
+    end
+
+    def post_with_notes(fields, notes)
       api(reviews_path, method: 'POST', fields: fields.merge(comments: notes))
     rescue Error => e
-      raise e if notes.empty?
-
       raise Error, "#{e.message} GitHub refuses the whole review when a note sits on lines the diff " \
                    "does not show; check #{notes.map { |note| Walkthrough::Notes.location(note) }.join(', ')}."
     end

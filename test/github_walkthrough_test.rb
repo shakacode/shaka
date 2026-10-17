@@ -106,7 +106,8 @@ class GitHubWalkthroughNotesTest < Minitest::Test
     [resolution_responses(classic: true), resolution_responses(rules: ruleset)].each do |rules|
       github = client(snapshot_response, files_response, *gate_responses, html_response, html_response, *rules)
       error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH, notes: [NOTE]) }
-      assert_includes error.message, 'main requires conversation resolution'
+      assert_equal 'main requires conversation resolution before merging; publish the walkthrough without notes.',
+                   error.message
       assert_nil posted_review
     end
   end
