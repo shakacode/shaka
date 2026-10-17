@@ -327,16 +327,18 @@ and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
 The PR description opens with **Decisions to make** while you have questions to answer.
-Otherwise its first line is the task owner's recommendation from the checkpoint published for
-that commit, such as **Recommendation: Merge**, or **No recommendation yet** before the
-owner has recorded one. Shaka reads that heading from the latest checkpoint for that commit
-each time the description is published; your agent republishes the description when the
-checkpoint changes. A checkpoint that holds only the reviewer's verdict shows it as **Reviewer
-recommendation** and leaves the description at **No recommendation yet**.
-Beside it, links open the walkthrough, the detailed code review when one was published,
-and the full checkpoint. A **Next** line follows only when merging waits on something the
-recommendation does not say, such as another PR. Shaka refuses to show a recommendation
-made for an earlier commit, so that line does not name one. The **Summary** comes next. Your agent summarizes
+Otherwise, below the line naming the AI that wrote it, it opens with the task owner's
+recommendation from the checkpoint published for that commit, such as
+**Recommendation: Merge**, or **No recommendation yet** before the owner has recorded one.
+Shaka reads the recommendation from the latest checkpoint for that commit each time the
+description is published; your agent republishes the description when the checkpoint
+changes. A checkpoint that holds only the reviewer's verdict shows it as **Reviewer
+recommendation** and leaves the description at **No recommendation yet**. Shaka refuses
+to show a recommendation made for an earlier commit, so the recommendation does not name
+one. Beside it, links open the walkthrough, the detailed code review when one was
+published, and the full checkpoint. Your agent adds a **Next** line when merging waits on
+something the recommendation does not say, such as another PR. The **Summary** follows.
+Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.
 Supporting evidence appears below.
 The report keeps the **Reviewer verdict** within the checkpoint. A recommendation becomes a
