@@ -44,6 +44,17 @@ class LocalReviewUsageEdgesTest < Minitest::Test
     end
   end
 
+  def test_older_saved_result_uses_its_ledger_then_its_own_record_if_the_ledger_is_missing
+    with_captured_review do |ledger, result|
+      triage_and_remove_source(ledger, result)
+      legacy = result.except('usage_records')
+      expected = [result.fetch('usage_record')]
+      assert_equal expected, attached_description(legacy).dig('usage', 'records')
+      File.unlink(ledger)
+      assert_equal expected, attached_description(legacy).dig('usage', 'records')
+    end
+  end
+
   private
 
   def assert_attached_heads(results)
@@ -53,7 +64,7 @@ class LocalReviewUsageEdgesTest < Minitest::Test
   end
 
   def assert_unknown_capture(file, reviewer)
-    record = Shaka::LocalReviewUsage.capture('head' => 'a' * 40, 'reviewer' => reviewer, 'usage' => file)
+    record = Shaka::LocalReviewUsageCapture.capture('head' => 'a' * 40, 'reviewer' => reviewer, 'usage' => file)
     assert_equal 'UNKNOWN', record.dig('columns', 0, 'input')
     assert_equal 'cost UNKNOWN', Shaka::LocalReviewUsage.cost(record)
   end
@@ -98,7 +109,7 @@ class LocalReviewUsageOverlapTest < Minitest::Test
   def test_a_missing_source_refresh_does_not_add_an_unknown_copy_or_erase_known_values
     with_captured_review do |ledger, result|
       triage_and_remove_source(ledger, result)
-      unknown = Shaka::LocalReviewUsage.capture(result)
+      unknown = Shaka::LocalReviewUsageCapture.capture(result)
       assert_equal 'UNKNOWN', unknown.dig('columns', 0, 'input')
       assert_single_record(result, unknown)
     end
@@ -108,7 +119,7 @@ class LocalReviewUsageOverlapTest < Minitest::Test
     with_captured_review(native: { usage: {} }) do |ledger, result|
       triage_and_remove_source(ledger, result)
       assert_empty result.fetch('usage_record').fetch('responses')
-      assert_single_record(result, Shaka::LocalReviewUsage.capture(result))
+      assert_single_record(result, Shaka::LocalReviewUsageCapture.capture(result))
     end
   end
 
@@ -116,7 +127,7 @@ class LocalReviewUsageOverlapTest < Minitest::Test
     with_captured_review(native: { usage: {} }) do |ledger, result|
       triage_and_remove_source(ledger, result)
       known = result.fetch('usage_record')
-      empty = result.except('ledger').merge('usage_record' => Shaka::LocalReviewUsage.capture(result))
+      empty = result.except('ledger').merge('usage_record' => Shaka::LocalReviewUsageCapture.capture(result))
       content = { 'usage' => { 'note' => '', 'records' => [known] } }
       assert_equal [known], attached_description(empty, content:).dig('usage', 'records')
     end
@@ -125,7 +136,7 @@ class LocalReviewUsageOverlapTest < Minitest::Test
   def test_known_attribution_survives_cleanup_without_counters_or_cost
     with_captured_review(native: { usage: {}, total_cost_usd: nil }) do |ledger, result|
       triage_and_remove_source(ledger, result)
-      assert_single_record(result, Shaka::LocalReviewUsage.capture(result), cost: 'cost UNKNOWN')
+      assert_single_record(result, Shaka::LocalReviewUsageCapture.capture(result), cost: 'cost UNKNOWN')
     end
   end
 
@@ -160,5 +171,39 @@ class LocalReviewUnknownUsageCopiesTest < Minitest::Test
     records = super
     conflict = records.last.merge(payload: records.last.fetch(:payload).merge(usage: {}))
     records + [conflict]
+  end
+end
+
+class LocalReviewPartialUsageCopiesTest < Minitest::Test
+  include LocalReviewUsageBridgeFixture
+
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  def test_incomplete_copied_snapshot_is_attached_once_but_distinct_coverage_survives
+    with_captured_review(reviewer: 'openai/codex') do |ledger, result|
+      triage_and_remove_source(ledger, result)
+      record = result.fetch('usage_record')
+      refute record.fetch('complete')
+      assert_includes record.dig('columns', 0, 'usd'), '(partial)'
+      copied = record.merge('sources' => ['copied-source'])
+      content = { 'usage' => { 'note' => '', 'records' => [copied] } }
+      assert_equal [record], attached_description(result, content:).dig('usage', 'records')
+      assert_distinct_coverage(result, copied)
+    end
+  end
+
+  private
+
+  def assert_distinct_coverage(result, copied)
+    distinct = copied.merge('responses' => ['different-response'])
+    content = { 'usage' => { 'note' => '', 'records' => [distinct] } }
+    assert_equal [result.fetch('usage_record'), distinct],
+                 attached_description(result, content:).dig('usage', 'records')
+  end
+
+  def codex_records
+    records = super
+    unknown = records.last.merge(payload: records.last.fetch(:payload).merge(response_id: 'unreadable', usage: {}))
+    records + [unknown]
   end
 end

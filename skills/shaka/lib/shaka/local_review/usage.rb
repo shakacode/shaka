@@ -1,25 +1,15 @@
 # frozen_string_literal: true
 
-require_relative '../usage/command'
+require_relative 'ledger'
 require_relative '../publication/usage_details'
 
 module Shaka
   # Keeps the existing redacted usage record, never a transcript, with its review round.
   module LocalReviewUsage
-    HOSTS = { 'anthropic/claude' => 'claude-code', 'openai/codex' => 'codex',
-              'deepseek/openrouter' => 'openrouter' }.freeze
     METRICS = { 'input' => 'input', 'cached_input' => 'cached input', 'cache_writes' => 'cache writes',
                 'output' => 'output', 'reasoning_output' => 'reasoning output' }.freeze
 
     module_function
-
-    def capture(round)
-      host = HOSTS[round['reviewer']]
-      return unless host && round['usage']
-
-      Usage.new(host:, files: [round['usage']], turns: [], all_turns: true,
-                commit: round.fetch('head'), contribution: 'review').json_document.fetch('record')
-    end
 
     # Saved results carry the same redacted records as their ledger, including earlier heads.
     def attach(content, result_path)
@@ -36,13 +26,17 @@ module Shaka
     # Use the same response coverage rules as description carry, including copies of a source.
     def keep_record(kept, record)
       identity = UsageRecordCarry.identity!(record)
-      return if kept.include?(record)
+      return if kept.any? { |earlier| equivalent?(earlier, record) }
 
       known = kept.reject { |earlier| unknown?(earlier) }.map { |earlier| UsageRecordCarry.identity!(earlier) }
       return if covered?(record, identity, known)
 
       kept.reject! { |earlier| replaces?(earlier, record, identity) }
       kept << record
+    end
+
+    def equivalent?(left, right)
+      left == right || (left.fetch('responses').any? && left.except('sources') == right.except('sources'))
     end
 
     def replaces?(earlier, record, identity)
