@@ -56,4 +56,13 @@ class HandoffThreadsTest < Minitest::Test
     assert_includes result['notes'], 'Review threads are unread: GraphQL failed or returned missing data.'
     assert_includes result['status'], "walkthrough #{HEAD[0, 7]} · WIP #{HEAD[0, 7]}"
   end
+
+  def test_a_thread_whose_reply_may_be_past_the_first_page_is_noted_not_owed
+    long_thread = thread('T1', replies: ['someone-else'])
+    long_thread['comments']['pageInfo']['hasNextPage'] = true
+    result = handoff(threads: [long_thread])
+
+    assert_empty result['owed']
+    assert_includes result['notes'], 'Check by hand for a reply past 100 comments on T1.'
+  end
 end

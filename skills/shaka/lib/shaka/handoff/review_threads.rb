@@ -12,11 +12,8 @@ module Shaka
       private
 
       def threads_fact
-        answered, owed = answered_and_owed
-        if merge_requested? && answered.any?
-          @notes << "#{answered.length} answered review thread#{'s' if answered.length > 1} still open; " \
-                    'confirm each is meant to stay open.'
-        end
+        answered, owed, unknown = classified_threads
+        thread_notes(answered, unknown)
         return if owed.empty?
 
         owe("#{owed.length} unanswered thread#{'s' if owed.length > 1}",
@@ -25,11 +22,24 @@ module Shaka
         note(nil, "Review threads are unread: #{e.message}")
       end
 
-      def answered_and_owed
+      def thread_notes(answered, unknown)
+        @notes << "Check by hand for a reply past 100 comments on #{unknown.join(', ')}." if unknown.any?
+        return unless merge_requested? && answered.any?
+
+        @notes << "#{answered.length} answered review thread#{'s' if answered.length > 1} still open; " \
+                  'confirm each is meant to stay open.'
+      end
+
+      # A reply past the first page of comments is unseen, so a truncated thread is unknown, not owed.
+      def classified_threads
         reader = PublicComments::Threads.new(@github)
-        open = reader.call.first.reject { |thread| thread['is_resolved'] }.map { |thread| thread['thread_id'] }
         account = @github.viewer_login
-        open.partition { |id| reader.authors.fetch(id).include?(account) }
+        answered, unanswered = open_ids(reader).partition { |id| reader.authors.fetch(id).include?(account) }
+        [answered, *unanswered.partition { |id| !reader.truncated.include?(id) }]
+      end
+
+      def open_ids(reader)
+        reader.call.first.reject { |thread| thread['is_resolved'] }.map { |thread| thread['thread_id'] }
       end
     end
 
