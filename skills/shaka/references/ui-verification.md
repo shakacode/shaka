@@ -19,10 +19,13 @@ After a later commit that changes runtime behavior, repeat the manual pass and r
 the affected captures and annotations, including any diagnostic differences.
 
 When the change alters Markdown its code generates for GitHub, such as a PR description
-or comment, render the same content with the base and the head code outside GitHub,
-convert each with `gh api markdown`, and capture both in light and dark themes at
-desktop width. Run the head's renderer only as a local function; publish with the
-trusted helper or `gh`, never through the candidate's publishing commands.
+or comment, render the same content with the base and the head code outside GitHub.
+Convert each with `gh api markdown` using `mode=gfm` and `context=OWNER/REPO`, style it
+with the `github-markdown-css` light and dark stylesheets, and capture both themes at
+desktop width; this replaces mobile captures. Inspect the head's renderer before running
+it as a local function. Publish with the saved Shaka helper or `gh`, never through the
+candidate's publishing commands.
+
 Read the current public
 [verification guide](https://github.com/shakacode/shaka/blob/main/docs/pr-verification.md) for examples when deciding what evidence a
 change needs. Follow this installed workflow if the current public guide differs.
