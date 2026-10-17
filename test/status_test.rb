@@ -40,6 +40,15 @@ class StatusTest < Minitest::Test
     assert_includes result['requiredChecksUnavailable'], 'unavailable'
   end
 
+  # Branch rules are read even beside reported checks, so an unreadable rule set cannot pass the gate.
+  def test_status_reports_unreadable_branch_rules_as_unavailable
+    checks = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
+    github = client(snapshot_response, response(checks), response({}, status: 1), snapshot_response)
+    result = Shaka::Status.new(github).call
+    assert_nil result['requiredChecks']
+    assert result.key?('requiredChecksUnavailable')
+  end
+
   def test_status_rejects_a_head_that_changed_while_reading
     checks = [{ 'name' => 'validate', 'state' => 'SUCCESS', 'bucket' => 'pass' }]
     status = Shaka::Status.new(client(snapshot_response, response(checks), *no_configured_requirements,
