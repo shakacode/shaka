@@ -103,16 +103,27 @@ terminal outside it.
 
 ## Install from a personal fork
 
-When the user requests a fork, create or select it on GitHub and clone it into the
-installation directory. Set `origin` to their fork and `upstream` to
-`https://github.com/shakacode/shaka.git`; inspect both remotes before updating.
-Run the same `bin/install` command against that checkout.
+When the user wants to change Shaka and install that version, follow the
+[fork guide](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md).
+Use the dedicated checkout in [official installation](official-installation.md),
+not a retained copy, unless the user asked for a retained copy.
 
-For updates, fetch upstream and inspect the diff. Fast-forward when possible;
-otherwise preserve fork changes while merging or rebasing on a feature branch.
-Validate the result before updating the installed branch. Contribute improvements
-through a branch and PR to upstream when the user authorizes that publication.
-Never overwrite local customizations to make an update succeed.
+Clone their fork outside the repositories the agent edits. Set `origin` to that
+fork and `upstream` to `https://github.com/shakacode/shaka.git`. Inspect both
+remotes before updating. Pass `--repository` with the exact `origin` URL from
+`git remote get-url origin`, and `--branch` when the installed branch is not
+`main`. The installed checkout must be clean, on that branch, and tracking
+`origin/<branch>`.
+
+`install --update` only fast-forwards the recorded branch. A rebase or other
+rewrite stops it and leaves the old commit. Do not reset the installed checkout
+to force the update. Fetch upstream, inspect the diff, and merge it into the
+installed branch in a working clone. Never overwrite local customizations to
+make an update succeed. Contribute upstream only when the user authorizes that
+publication.
+
+`--rollback PACKAGE_ID` switches a retained copy created with `--skills-dir`.
+It does not roll back a dedicated checkout.
 
 ## Configure a repository
 
