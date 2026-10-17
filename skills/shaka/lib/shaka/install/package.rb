@@ -25,6 +25,15 @@ module Shaka
         names.is_a?(Array) && names.include?('shaka') && names.uniq == names && (names - ALLOWED).empty?
       end
 
+      # Flag repeats and flag order must not change the package id or its metadata.
+      def self.normalize_skills(names)
+        raise ArgumentError, 'Managed package skills are invalid' unless names.is_a?(Array) &&
+                                                                         (names - ALLOWED).empty? &&
+                                                                         names.include?('shaka')
+
+        ALLOWED & names
+      end
+
       def initialize(root, source, names, tree)
         @root = root
         @source = source
@@ -46,7 +55,9 @@ module Shaka
 
         path = File.join(@root, id)
         metadata = verified_metadata(path)
-        raise ArgumentError, 'Rollback flags must match the package skills' unless metadata.fetch('skills') == @names
+        recorded = self.class.normalize_skills(metadata.fetch('skills'))
+        requested = self.class.normalize_skills(@names)
+        raise ArgumentError, 'Rollback flags must match the package skills' unless recorded == requested
 
         path
       end
@@ -101,6 +112,10 @@ module Shaka
       end
 
       def write_metadata(staging, target, identity, version)
+        # A unique allowlisted list can still follow flag order. Only the canonical list may be stored.
+        canonical = self.class.normalize_skills(@names)
+        raise ArgumentError, 'Managed package skills are invalid' unless @names == canonical
+
         metadata = { 'schema_version' => 1, 'package_id' => File.basename(target),
                      'version' => version, 'skills' => @names, 'source' => identity }
         File.write(File.join(staging, METADATA), "#{JSON.pretty_generate(metadata)}\n")
