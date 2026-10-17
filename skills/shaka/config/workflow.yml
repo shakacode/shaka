@@ -366,7 +366,7 @@ phases:
         `reviewer`, adding `--unavailable` for any reviewer that has since failed with qualifying
         evidence.
       - For UI changes, meaning anything a person sees on screen other than command-line output,
-        including Markdown the change's code generates for GitHub, follow [UI verification](<{{package_root}}/skills/shaka/references/ui-verification.md#ui-changes>)
+        follow [UI verification](<{{package_root}}/skills/shaka/references/ui-verification.md#ui-changes>)
         before review. It covers manual use, desktop/mobile captures, annotations, and refresh after
         runtime changes. Publish that evidence before the Finish checkpoint.
         Captures complement tests; they do not replace them.
