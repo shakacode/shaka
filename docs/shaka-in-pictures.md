@@ -59,8 +59,9 @@ Then the agent does the gray box:
 1. **Build.** It makes the change on its own copy.
 2. **Test.** It runs your project's tests. If the change shows on screen, it also
    takes before and after pictures when it can.
-3. **Review.** A second AI reads the change and looks for mistakes. The agent
-   fixes real problems, then tests and reviews again.
+3. **Review.** A second AI, often a fresh copy of your agent that has not seen
+   your chat, looks for mistakes. The agent fixes real problems, then tests and
+   reviews again.
 
 Then it hands you the green box: a pull request with everything you need to decide.
 
@@ -113,8 +114,8 @@ Install Shaka from https://github.com/shakacode/shaka.
 folder, away from your projects. If GitHub asks you to sign in, follow the
 agent's steps.
 
-**Success looks like:** in a new chat, type `/shaka` by itself. A short welcome
-means Shaka is ready.
+**Success looks like:** in a new chat, in any folder, type `/shaka` by itself. A
+short welcome means Shaka is ready.
 
 ### Step 2: Make a playground project
 
@@ -123,8 +124,9 @@ This is not a Shaka task yet.
 **Do:**
 
 ```text
-Create a private GitHub repository named shaka-playground. Give it a
-one-page website with a button and one automated test. Upload it to GitHub.
+Create a private GitHub repository named shaka-playground, outside my other
+projects. Give it a one-page website with a button and one automated test.
+Upload it to GitHub.
 ```
 
 A **repository**, or repo, is your project's home on GitHub. The test matters:
@@ -144,20 +146,16 @@ Continue in that new chat.
 
 ### Step 3: Run a health check
 
-**Do:**
+**Do:** (in Codex, `$shaka doctor`)
 
 ```text
 /shaka doctor
 ```
 
 **Success looks like:** the tools Shaka needs show HEALTHY. Expect one FAILED
-row, **Repository seam**, and a few DEGRADED rows: Shaka is not set up in this
-project until step 4, so skip their advice for now. If a tool is missing, ask the
-agent to help you install it.
-
-In this tutorial, the second look comes from a fresh copy of the same AI that has
-not seen your chat. A reviewer from another AI company is optional; see
-[add a second reviewer](settings.md#add-a-second-reviewer).
+line, **Repository seam**, and a few DEGRADED lines: this project has no Shaka
+settings until step 4. Skip their advice; if the agent offers to fix them now,
+say not yet. If a tool is missing, ask the agent to help you install it.
 
 ### Step 4: Give Shaka a task
 
@@ -182,7 +180,7 @@ Its messages use the words from this page.
 | --- | --- |
 | Shows its plan: value, scope, risk, model, and effort | Why the work matters, how big and risky it is, and how hard the AI will think. |
 | Names a branch | It made its own copy to work in. Your real version, called **main**, stays as it was. |
-| Runs your tests | The robot checks are running. |
+| Runs your tests | Your project's test is running. |
 | Reports review findings | The second AI found something. The agent fixes real problems and checks again; small notes are only recorded. |
 | Pushes the branch | It uploaded its copy to GitHub. |
 | Opens a pull request | Its suggestions are ready for you. |
@@ -190,10 +188,11 @@ Its messages use the words from this page.
 | Publishes a checkpoint | Its final look: did it build the right thing, and is it ready? |
 | Adds the `awaiting-merge-approval` label | A tag on the PR that means: your turn to decide. |
 
-**If it stops to ask you something,** answer in your own words. If a question is
-confusing, reply “Explain that in simple words.” On this first run, your coding
-agent may ask your permission many times before it runs commands such as `git`,
-`gh`, and `ruby`. For this playground project, saying yes is fine.
+**You do not need to type while it works.** If it asks you something, answer in
+your own words. If a question is confusing, reply “Explain that in simple words.”
+On this first run, your coding agent may ask your permission many times before it
+runs commands such as `git`, `gh`, and `ruby`. For this playground project, a
+one-time yes is enough.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
