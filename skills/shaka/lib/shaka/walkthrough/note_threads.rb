@@ -8,7 +8,7 @@ require_relative 'notes'
 module Shaka
   module Walkthrough
     # Resolves the note threads of a walkthrough a newer one replaced, so the diff shows only
-    # current guidance. A thread anyone else joined stays open: it is a conversation now.
+    # current guidance. A thread anyone else joined, or whose authors are not all known, stays open.
     class NoteThreads
       def initialize(github, account)
         @github = github
@@ -52,7 +52,9 @@ module Shaka
 
       def ours_alone?(thread)
         id = thread['thread_id']
-        !thread['is_resolved'] && !@reader.truncated.include?(id) && @reader.authors.fetch(id).all?(@account)
+        return false if thread['is_resolved'] || @reader.truncated.include?(id) || @reader.anonymous.include?(id)
+
+        @reader.authors[id]&.all?(@account) == true
       end
 
       def mutate(id)

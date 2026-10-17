@@ -286,9 +286,10 @@ class WalkthroughHistoryNotesTest < Minitest::Test
   NOTE = { 'id' => 55, 'in_reply_to_id' => nil, 'user' => { 'login' => 'ada' },
            'body' => "#{Shaka::Walkthrough::Notes::MARKER}\n🤖 Claude\n\nStart here." }.freeze
 
+  # A nil login stands for a comment whose author GitHub does not name, such as a deleted account.
   def thread_response(*logins)
     authors = logins.each_with_index.map do |login, index|
-      { 'fullDatabaseId' => (55 + index).to_s, 'author' => { '__typename' => 'User', 'login' => login } }
+      { 'fullDatabaseId' => (55 + index).to_s, 'author' => login && { '__typename' => 'User', 'login' => login } }
     end
     thread = { 'id' => 'PRRT_1', 'isResolved' => false,
                'comments' => { 'nodes' => authors, 'pageInfo' => { 'hasNextPage' => false } } }
@@ -319,5 +320,20 @@ class WalkthroughHistoryNotesTest < Minitest::Test
 
     assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
     refute(@calls.any? { |_argv, stdin| stdin.include?('resolveReviewThread') })
+  end
+
+  def test_a_note_answered_by_an_unnamed_author_stays_open
+    published = publish_over_noted(thread_response('ada', nil))
+
+    assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
+    refute(@calls.any? { |_argv, stdin| stdin.include?('resolveReviewThread') })
+  end
+
+  def test_a_resolution_github_did_not_apply_is_reported
+    unresolved = response({ 'data' => { 'resolveReviewThread' => { 'thread' => { 'isResolved' => false } } } })
+    published = publish_over_noted(thread_response('ada'), unresolved)
+
+    assert_empty published.dig('earlier_walkthroughs', 'resolved_notes')
+    assert_includes published.dig('earlier_walkthroughs', 'unavailable').join, 'did not resolve'
   end
 end

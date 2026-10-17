@@ -415,6 +415,10 @@ noise. Notes count toward the walkthrough's prose limits. Anchor only on lines
 the PR diff shows: GitHub refuses the whole review otherwise, and the command
 names each note's location in its error.
 
+The current walkthrough's notes stay open until a newer walkthrough replaces
+them. When the base branch requires conversation resolution before merging,
+leave notes out, because they would block the merge.
+
 When a new walkthrough replaces an older one, the command resolves the older
 walkthrough's note threads that nobody else answered. A note with a reply from
 someone else stays open as a conversation; answer it like any review thread.
