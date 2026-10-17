@@ -67,8 +67,8 @@ Then the agent does the gray box:
 Then it hands you the green box: a pull request with everything you need to decide.
 
 Shaka gives the agent rules. A program checks some of them, and the agent follows
-the others on its own. The PR lists what was checked, and also what could not be
-checked. See [which rules a program checks](workflow.md#what-is-enforced).
+the others on its own. The PR lists what was checked and what could not be. See
+[which rules a program checks](workflow.md#what-is-enforced).
 
 ## Who says yes?
 
@@ -97,7 +97,7 @@ the PR, and merge it. Your real projects stay untouched.
 - A coding agent that can run commands on your computer, such as Claude Code,
   Codex, or Cursor. See [coding agents](coding-agents.md).
 
-Claude Code, Cursor, and OpenCode use `/shaka`.
+Claude Code, Cursor, and OpenCode use `/shaka`; Codex uses `$shaka`.
 
 Shaka also needs a few tools on your computer: Ruby, Git, and GitHub's
 command-line tool. In step 1, the agent checks for them and tells you what is missing.
@@ -142,8 +142,8 @@ will work. Ask it:
 How do I start a new chat in the shaka-playground folder and check it worked?
 ```
 
-**Success looks like:** when asked, the new chat says it is in the
-shaka-playground folder. Continue there.
+**Success looks like:** ask the new chat which folder it is in; it says
+shaka-playground. Continue there.
 
 ### Step 3: Run a health check
 
@@ -154,8 +154,9 @@ shaka-playground folder. Continue there.
 ```
 
 **Success looks like:** one FAILED line, **Repository seam**: Shaka's settings for
-this project, which step 4 adds. Leave any DEGRADED lines for now, even if the
-agent offers to fix them. If any other line says FAILED, ask the agent to fix it.
+this project, which step 4 adds. Leave it and any DEGRADED lines for now, even if
+the agent offers to fix them. If any other line says FAILED, ask the agent to fix
+it.
 
 ### Step 4: Give Shaka a task
 
@@ -181,7 +182,7 @@ Its messages use the words from this page.
 | --- | --- |
 | Shows its plan: value, scope, risk, model, and effort | Why the work matters, how big and risky it is, and how hard the AI will think. |
 | Names a branch | It made its own copy to work in. Your real version, called **main**, stays as it was. |
-| Runs your tests | Your project's test is running. |
+| Runs your tests | Your project's tests are running. |
 | Reports review findings | The second AI found something. The agent fixes real problems and checks again; small notes are only recorded. |
 | Pushes the branch | It uploaded its copy to GitHub. |
 | Opens a pull request | Its suggestions are ready for you. |
@@ -193,7 +194,7 @@ Its messages use the words from this page.
 your own words. If a question is confusing, reply “Explain that in simple words.”
 On this first run, your coding agent may ask permission many times before running
 commands such as `git`, `gh`, and `ruby`. For this playground project, say yes
-each time; avoid any choice that stops it asking.
+to every request, but only for that request.
 
 **Success looks like:** the agent gives you a PR link and says the PR is ready
 for your decision.
