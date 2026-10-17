@@ -4,6 +4,7 @@ module Shaka
   # CLI source selection and validation shared by every native usage reader.
   module UsageOptions
     ISO_TIME = /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)\z/
+    FULL_SHA = /\A[0-9a-f]{40}\z/
 
     def source_options(flags, options)
       flags.on('--host NAME', Usage::READERS.keys, 'codex, claude-code, cursor, opencode, pi, or openrouter') do |value|
@@ -28,8 +29,10 @@ module Shaka
 
     def valid_mapping?(options)
       commits = options[:commit].to_s.split(',')
+      raise Error, 'each --commit needs a full 40-character commit SHA, such as "$(git rev-parse HEAD)"' unless
+        commits.all? { |commit| commit.match?(FULL_SHA) }
+
       options[:host] && valid_selection?(options) && !commits.empty? &&
-        commits.all? { |commit| commit.match?(/\A[0-9a-f]{40}\z/) } &&
         %w[implementation review integration shared-planning].include?(options[:contribution])
     end
 
