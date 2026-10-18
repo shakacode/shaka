@@ -230,6 +230,29 @@ class GitHubReplyTest < Minitest::Test
     assert_equal MANAGED, github.description(body: BODY)['body']
   end
 
+  # https://github.com/shakacode/shaka/issues/646: a reviewer report's backtick closed its code span
+  # early, so GitHub showed a literal `\n` outside code and the whole review comment was refused.
+  def test_a_verbatim_report_may_render_an_escape_outside_code
+    report = 'The fixture is `"`\\n"`.'
+    posted = "<!-- shaka:reply:review -->\n#{BODY}\n#{report}\n"
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p><code>"</code>\\n"`.</p>'),
+                    html_response('<p>ok</p>'), response({ 'id' => 9, 'body' => posted }))
+    github.reply(body: "#{BODY}\n#{report}\n", key: 'review', verbatim: [report])
+    checked = JSON.parse(@calls[4].last)['text']
+    assert_equal ['POST', false, true], [sent_method(5), checked.include?(report), checked.include?('A summary.')]
+  end
+
+  def test_text_around_a_verbatim_report_keeps_the_escape_check
+    report = 'The fixture is `"`\\n"`.'
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+                    html_response('<p>Shaka \\n text</p>'))
+    error = assert_raises(Shaka::Error) do
+      github.reply(body: "#{BODY}\nShaka \\n text\n\n#{report}\n", key: 'review', verbatim: [report])
+    end
+    assert_includes error.message, 'escape sequence'
+    assert_equal 5, @calls.size
+  end
+
   def test_a_number_that_is_not_a_pull_request_is_refused_before_any_comment_is_touched
     github = client(response({}, status: 1))
     assert_raises(Shaka::Error) { github.reply(body: BODY, key: 'fix-1') }
