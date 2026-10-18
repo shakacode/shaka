@@ -39,8 +39,9 @@ shaka repos refresh
 
 For each registered root, refresh reads `origin` for identity and canonical URL,
 then loads the trusted default-branch seam from `origin/HEAD`, falling back to
-`origin/main` or `origin/master` when that symbolic ref is missing. It does not trust
-a candidate working tree. The effective prefix follows the
+`origin/main` or `origin/master` when that symbolic ref is missing. It reads no
+tracked candidate files. Without a trusted seam, it reads complete individual settings,
+which label the repository and grant no authority. The effective prefix follows the
 [`repo_prefix` setting](https://github.com/shakacode/shaka/blob/main/docs/settings.md#repo_prefix).
 
 Stdout and `catalog.json` use the same object:
