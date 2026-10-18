@@ -25,10 +25,11 @@ class UpdateCheckLaunchTest < Minitest::Test
     end
   end
 
-  def test_missing_cli_does_not_launch_a_process
+  def test_missing_cli_names_the_command_without_launching_a_process
     Dir.mktmpdir do |root|
       with_path(root) do
-        Dir.chdir(root) { assert_equal ['', '', false], Shaka::UpdateCheck::Launch.capture(%w[gh api], Dir.tmpdir) }
+        error = Dir.chdir(root) { assert_raises(Shaka::UpdateCheck::Launch::Unavailable) { capture } }
+        assert_equal 'gh_missing', error.reason
       end
     end
   end
@@ -44,22 +45,35 @@ class UpdateCheckLaunchTest < Minitest::Test
     end
   end
 
-  def test_unknown_git_boundary_does_not_launch_a_sibling_candidate_cli
+  # Outside every repository no pull request could have written the PATH, so the user's own gh runs.
+  def test_outside_any_repository_the_check_still_runs
     Dir.mktmpdir('shaka-update-launch') do |directory|
       root, trusted, marker = prepare_wrapper(directory)
       File.delete(File.join(root, '.git'))
-      write_executable(File.join(root, 'bin/gh'), "#!/bin/sh\nprintf ran > '#{marker}'\nprintf '{}'\n")
-      with_path("#{root}/bin:#{trusted}:#{ENV.fetch('PATH')}") do
-        Dir.chdir(File.join(root, 'src')) { assert_no_launch(marker) }
+      with_path("#{trusted}:#{ENV.fetch('PATH')}") do
+        Dir.chdir(File.join(root, 'src')) { assert_safe_wrapper(marker) }
+      end
+    end
+  end
+
+  def test_signed_out_cli_reports_how_to_sign_in
+    Dir.mktmpdir('shaka-update-launch') do |directory|
+      write_executable(File.join(directory, 'gh'),
+                       "#!/bin/sh\necho 'To get started with GitHub CLI, please run:  gh auth login' >&2\nexit 4\n")
+      with_path("#{directory}:#{ENV.fetch('PATH')}") do
+        result = Dir.chdir(directory) { update_check.result }
+        assert_equal %w[unknown signed_out], [result.fetch('status'), result.fetch('reason')]
       end
     end
   end
 
   private
 
-  def assert_no_launch(marker)
-    assert_equal ['', '', false], Shaka::UpdateCheck::Launch.capture(%w[gh api], Dir.tmpdir)
-    refute_path_exists marker
+  def capture = Shaka::UpdateCheck::Launch.capture(%w[gh api], Dir.tmpdir)
+
+  def update_check
+    source = { 'kind' => 'revision', 'revision' => 'a' * 40, 'repository' => 'https://github.com/shakacode/shaka.git' }
+    Shaka::UpdateCheck.new(source:, branch: 'main', helper: '/installed/shaka')
   end
 
   def prepare_nested_repository(root)
@@ -78,7 +92,7 @@ class UpdateCheckLaunchTest < Minitest::Test
   end
 
   def assert_safe_wrapper(marker)
-    output, _error, ok = Shaka::UpdateCheck::Launch.capture(%w[gh api], Dir.tmpdir)
+    output, _error, ok = capture
     refute_path_exists marker
     assert ok, output
     assert_equal 'identical', JSON.parse(output).fetch('status')

@@ -5,13 +5,19 @@ require 'shellwords'
 require 'tmpdir'
 require_relative 'doctor/installation_identity'
 require_relative 'update_check/launch'
-require_relative 'workflow_version'
+require_relative 'update_check/messages'
 
 module Shaka
-  # Advisory comparison with the official main branch; never changes an installation.
+  # Advisory comparison with the registered origin branch; never changes an installation.
   class UpdateCheck
+    include Messages
+
     ROOT = File.expand_path('../../../..', __dir__)
     GUIDE = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/references/official-installation.md'
+    GITHUB = %r{\A(?:https://github\.com/|git@github\.com:|ssh://(?:git@)?github\.com/)
+                ([A-Za-z0-9-]+/[A-Za-z0-9._-]+?)(?:\.git)?/?\z}xi
+    BRANCH = %r{\A(?!-)[A-Za-z0-9._/-]+\z}
+    COMMIT = /\A[0-9a-f]{40}\z/
 
     def self.run(arguments)
       return usage(arguments) unless arguments.empty?
@@ -35,91 +41,73 @@ module Shaka
       raise Shaka::Error, 'Invalid installation record' if record && !record.is_a?(Hash)
 
       new(source: identity.fetch('source'), branch: record&.fetch('branch', nil) || 'main',
-          registered: !record.nil?, helper: File.join(ROOT, 'skills/shaka/scripts/shaka'))
+          helper: File.join(ROOT, 'skills/shaka/scripts/shaka'), checkout: (ROOT if record))
     end
 
     private_class_method :installed, :usage
 
-    def initialize(source:, branch:, registered:, helper:, runner: Launch.method(:capture))
+    # Only a registered installation has a checkout, and its comparison starts from the files on
+    # disk rather than the revision its record names.
+    def initialize(source:, branch:, helper:, checkout: nil, runner: Launch.method(:capture))
       @source = source
       @branch = branch
-      @registered = registered
       @helper = helper
+      @checkout = checkout
       @runner = runner
     end
 
     def result
       return answer('uninstalled', 'Use the official installer to receive update guidance.') if
         @source['kind'] == 'uninstalled'
-      return custom unless official?
+      return development unless @source['kind'] == 'revision'
 
-      compare
+      repository = @source['repository'].to_s[GITHUB, 1]
+      return unsupported_source unless repository && supported_revision?
+
+      compare(repository)
+    rescue Launch::Unavailable => e
+      unknown(e.reason, e.message)
     rescue Shaka::Error, JSON::ParserError, SystemCallError, TypeError
-      unknown
+      unknown('invalid_response', 'GitHub returned an answer this check cannot read.')
     end
 
     private
 
-    def official?
-      origin = @source['repository'].to_s
-      @source['kind'] == 'revision' && origin.match?(WorkflowVersion::UPSTREAM) && @branch == 'main' &&
-        @source['revision'].to_s.match?(/\A[0-9a-f]{40}\z/)
-    end
+    def recorded = @source['revision'].to_s
+    def supported_revision? = @branch.to_s.match?(BRANCH) && recorded.match?(COMMIT)
 
-    def compare
-      endpoint = "repos/shakacode/shaka/compare/#{@source.fetch('revision')}...main"
-      output, _error, ok = @runner.call(['gh', 'api', '--hostname', 'github.com', endpoint, '--jq',
-                                         '{status: .status, ahead_by: .ahead_by}'], Dir.tmpdir)
-      return unknown unless ok
+    def compare(repository)
+      official = repository.casecmp?('shakacode/shaka') && @branch == 'main'
+      @target = official ? 'official main' : "#{repository} #{@branch}"
+      head = checkout_head
+      endpoint = "repos/#{repository}/compare/#{head}...#{@branch}"
+      output, error, ok = @runner.call(['gh', 'api', '--hostname', 'github.com', endpoint, '--jq',
+                                        '{status: .status, ahead_by: .ahead_by}'], Dir.tmpdir)
+      return request_failed(error) unless ok
 
       response = JSON.parse(output)
-      return unknown unless response.is_a?(Hash)
+      raise TypeError unless response.is_a?(Hash)
 
-      comparison(response['status'], response['ahead_by'])
+      comparison(response['status'], response['ahead_by'], head)
     end
 
-    def comparison(status, ahead_by)
+    def checkout_head
+      return recorded unless @checkout
+
+      output, error, ok = @runner.call(['git', '-C', @checkout, 'rev-parse', '--verify', 'HEAD'], @checkout)
+      head = output.strip
+      return head if ok && head.match?(COMMIT)
+
+      raise Launch::Unavailable.new('checkout_unreadable', "Could not read #{@checkout}: #{first_line(error)}")
+    end
+
+    def comparison(status, ahead_by, head)
       case status
-      when 'identical' then answer('current', 'This installed revision matches official main.')
+      when 'identical' then head == recorded ? current : drift(head)
       when 'ahead' then available(ahead_by)
-      when 'behind', 'diverged' then custom
-      else unknown
+      when 'behind', 'diverged' then @checkout ? local_commits : custom
+      else raise TypeError
       end
     end
-
-    # GitHub reports the comparison from the installed revision, so its ahead count is how far behind this is.
-    def available(ahead_by)
-      count = ahead_by if ahead_by.is_a?(Integer) && ahead_by.positive?
-      result = answer('available', "#{lag(count)} #{update_guidance}")
-      count ? result.merge('commits_behind' => count) : result
-    end
-
-    def lag(count)
-      return 'Newer official commits are available.' unless count
-
-      "This installation is #{count} #{count == 1 ? 'commit' : 'commits'} behind official main."
-    end
-
-    def update_guidance
-      unless @registered
-        return "This is a retained copy; follow #{GUIDE} to migrate. " \
-               'Keep trial and rollback copies for active chats.'
-      end
-
-      "Finish active Shaka chats, run #{Shellwords.escape(@helper)} install --update, then start a new chat. " \
-        'Continue this task with its saved helper.'
-    end
-
-    def custom
-      answer('custom', "Fork, trial, or development source: review upstream changes through #{GUIDE}. " \
-                       'Keep your chosen source and local changes; do not replace it automatically.')
-    end
-
-    def unknown
-      answer('unknown', 'Could not verify update availability. Continue the task and retry `update-check` later; ' \
-                        "manual update guidance: #{GUIDE}.")
-    end
-
-    def answer(status, guidance) = { 'status' => status, 'guidance' => guidance }
   end
 end
