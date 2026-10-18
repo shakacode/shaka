@@ -23,7 +23,10 @@ module Shaka
       end
 
       def preflight(directory)
-        process = HarborProcess.new(docker: @docker, environment: environment(directory))
+        env = environment(directory)
+        raise ArgumentError, 'Expected selected Docker on controller PATH' unless selected_docker?(env.fetch('HOME'))
+
+        process = HarborProcess.new(docker: @docker, environment: env)
         clean = process.capture(['git', '-C', @source, 'status', '--porcelain']).strip.empty?
         revision = process.capture(['git', '-C', @source, 'rev-parse', 'HEAD']).strip
         version = process.capture([@harbor, '--version']).strip
@@ -56,6 +59,12 @@ module Shaka
       def host = @profile.fetch('host')
 
       private
+
+      def selected_docker?(home)
+        paths = @path.split(File::PATH_SEPARATOR, -1).map { |entry| File.expand_path(File.join(entry, 'docker'), home) }
+        selected = paths.find { |path| File.file?(path) && File.executable?(path) }
+        selected && File.realpath(selected) == @docker
+      end
 
       def execute(process, configuration, log)
         process.run([@harbor, 'trial', 'start', '--config', configuration], log: log,

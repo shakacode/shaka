@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 module EvaluationHarborFixture
-  def setup_harbor(host: 'codex', mode: 'success', timeout: 10)
+  def setup_harbor(host: 'codex', mode: 'success', timeout: 10, docker: nil)
     prepare_harbor_files(mode, host)
-    tools = { 'harbor' => File.join(@bin, 'harbor'), 'docker' => File.join(@bin, 'docker'), 'source' => @source }
+    tools = { 'harbor' => File.join(@bin, 'harbor'), 'docker' => docker || File.join(@bin, 'docker'),
+              'source' => @source }
     @runtime = Shaka::Evaluation::HarborRuntime.new(tools: tools, credential: @credential, skill: @skill,
                                                     path: "#{@bin}:#{ENV.fetch('PATH')}", profile: {
                                                       'host' => host, 'model' => 'synthetic-model',

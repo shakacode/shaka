@@ -68,4 +68,16 @@ class EvaluationHarborRuntimeTest < Minitest::Test
     assert_equal 0, account.snapshot['pending']
     refute_path_exists File.join(@directory, 'observed.json')
   end
+
+  def test_a_different_docker_on_path_fails_before_reserving
+    selected = File.join(@directory, 'selected-docker')
+    File.write(selected, "#!/bin/sh\nexit 77\n")
+    File.chmod(0o755, selected)
+    setup_harbor(docker: selected)
+    account = budget
+    error = assert_raises(ArgumentError) { harbor_run(account) }
+    assert_includes error.message, 'Docker'
+    assert_equal 0, account.snapshot['pending']
+    refute_path_exists File.join(@directory, 'observed.json')
+  end
 end

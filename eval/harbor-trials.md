@@ -19,8 +19,10 @@ and `docker`, plus `credential`, `skill` and a `profile`. The profile requires
 `host`, `model`, an exact `version` for the host CLI, `reasoning_effort`, and
 `timeout_seconds` between 1 and 3600. Before any reservation, preflight requires a
 clean Harbor source checkout at `b53b8134e1241686dca7759af188f987ecc48e8b`
-and Harbor 0.24.0. `PYTHONPATH` selects that source and the tested Codex upload
-adapter. The requested host version is not an attestation of its observed version.
+and Harbor 0.24.0. `PATH` must resolve the selected Docker executable so launch,
+discovery and cleanup use the same client. `PYTHONPATH` selects that source and the
+tested Codex upload adapter. The requested host version is not an attestation of
+its observed version.
 
 `HarborTrial.new(runtime:, usage:, tasks:, directory:)` takes a `NativeUsage`
 instance, a map of task IDs to prepared directories, and a private capture
