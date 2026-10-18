@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'shellwords'
 require_relative 'install_refusal_support'
 
 # Link, Ruby, and file-mode refusals name what they found, and their next command clears it.
@@ -58,6 +59,17 @@ class OfficialLinkRefusalTest < Minitest::Test
     run_next(output)
     official_install
     assert_path_exists "#{@destination}.before-shaka"
+  end
+
+  def test_moving_aside_never_replaces_an_earlier_backup
+    FileUtils.mkdir_p(@destination)
+    File.write("#{@destination}.before-shaka", 'earlier backup')
+    output, status = invoke('--directory', @root, '--repository', @remote, '--skills-dir', @skills_dir)
+    refute_predicate status, :success?
+    assert_includes output, "#{Shellwords.escape(@destination)}.before-shaka-2"
+    run_next(output)
+    assert_equal 'earlier backup', File.read("#{@destination}.before-shaka")
+    assert File.directory?("#{@destination}.before-shaka-2")
   end
 
   def test_writable_skill_files_are_listed_and_chmod_clears_them
