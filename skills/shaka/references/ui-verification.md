@@ -29,8 +29,8 @@ Publish them with the saved helper's
 content JSON holds `identity`, the Explain writer fields; `body`, the verification note;
 `captures`, each `PATH#ALT TEXT` (a video takes its path alone, since it has no alt text);
 and optional `retire` and `earlier`. List in `earlier` the comment IDs of this PR's open UI
-checks posted before this command, which it cannot recognize alone. Reference a capture in `body` as `![ALT](PATH)` to place it; an
-unreferenced one is appended. The command adds the writer line and the heading that links
+checks posted before this command, which it cannot recognize alone. To place a capture, reference its path in `body` as a Markdown image; an unreferenced one
+is appended. The command adds the writer line and the heading that links
 the head, confirms each capture uploaded, and folds this account's earlier UI checks.
 Label captures with the tested revision.
 A UI check for a newer head carries all of the PR's current UI evidence. For a view the
