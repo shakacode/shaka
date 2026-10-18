@@ -147,9 +147,8 @@ To change Shaka itself and install that version:
 Fork https://github.com/shakacode/shaka and install my fork.
 ```
 
-[Fork Shaka and make it yours](fork-and-hack.md) is the procedure: what to
-change in project settings first, how to install the fork, and how to send a
-change back. For later maintenance, ask the agent to
+[Fork Shaka and make it yours](fork-and-hack.md) covers installing the fork,
+changing it, and sending a change back. For later maintenance, ask the agent to
 [upgrade your installation](migration.md). To evaluate one unmerged change
 without replacing your installation,
 [try a Shaka PR on real work](trying-pr-versions.md).
