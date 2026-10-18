@@ -47,11 +47,11 @@ class UpdateCheckTest < Minitest::Test
 
   def test_manual_pull_reports_an_older_record_instead_of_an_update
     guidance = check('identical', head: PULLED).fetch('guidance')
-    assert_includes guidance,
-                    'on official main, but its installation record names aaaaaaa and the checkout is at bbbbbbb'
+    assert_includes guidance, 'is at bbbbbbb, but its installation record names aaaaaaa. It matches official main'
     assert_includes guidance, '/installed\\ path/scripts/shaka install --update to record it'
+    assert_equal ['merge-base', '--is-ancestor', SHA, PULLED], @calls.fetch(1).first.drop(3)
+    assert_equal ['merge-base', '--is-ancestor', PULLED, 'refs/remotes/origin/main'], @calls.fetch(2).first.drop(3)
     assert_includes @calls.fetch(3).first, "repos/shakacode/shaka/compare/#{PULLED}...main"
-    assert_equal ['merge-base', '--is-ancestor', SHA, PULLED], @calls.fetch(2).first.drop(3)
   end
 
   def test_manual_pull_is_drift_until_newer_commits_make_it_an_update
@@ -59,19 +59,14 @@ class UpdateCheckTest < Minitest::Test
     assert_equal 'available', check('ahead', head: PULLED).fetch('status')
   end
 
-  def test_local_commits_in_the_registered_checkout_say_update_will_stop
-    %w[behind diverged].each do |status|
-      result = check(status, head: PULLED)
-      assert_equal 'local_commits', result.fetch('status')
-      assert_includes result.fetch('guidance'), 'install --update` will stop'
+  # The installer records only a pull, so any other move gets one answer without asking GitHub.
+  def test_a_move_the_installer_would_refuse_is_reported_offline
+    [{ pulled: ['', '', false] }, { published: ['', '', false] }].each do |answers|
+      result = check('ahead', head: PULLED, **answers)
+      assert_equal %w[drift not_a_pull], [result.fetch('status'), result.fetch('reason')]
+      assert_includes result.fetch('guidance'), '`install --update` will stop'
+      refute(@calls.any? { |argv, _| argv.first == 'gh' })
     end
-  end
-
-  def test_unpushed_local_commit_is_found_without_asking_github
-    result = check('identical', head: PULLED, published: ['', '', false])
-    assert_equal 'local_commits', result.fetch('status')
-    assert_equal ['merge-base', '--is-ancestor', PULLED, 'refs/remotes/origin/main'], @calls.fetch(1).first.drop(3)
-    assert_equal 2, @calls.size
   end
 
   def test_retained_copy_offers_migration_instead_of_an_unsupported_update

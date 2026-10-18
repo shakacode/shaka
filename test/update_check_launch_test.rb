@@ -56,13 +56,13 @@ class UpdateCheckLaunchTest < Minitest::Test
     end
   end
 
-  def test_signed_out_cli_reports_how_to_sign_in
+  def test_relative_path_entry_cannot_launch_a_cli_from_the_starting_folder
     Dir.mktmpdir('shaka-update-launch') do |directory|
-      write_executable(File.join(directory, 'gh'),
-                       "#!/bin/sh\necho 'To get started with GitHub CLI, please run:  gh auth login' >&2\nexit 4\n")
-      with_path("#{directory}:#{ENV.fetch('PATH')}") do
-        result = Dir.chdir(directory) { update_check.result }
-        assert_equal %w[unknown signed_out], [result.fetch('status'), result.fetch('reason')]
+      root, trusted, marker = prepare_wrapper(directory)
+      File.delete(File.join(root, '.git'))
+      write_executable(File.join(root, 'bin/gh'), "#!/bin/sh\nprintf ran > '#{marker}'\nprintf '{}'\n")
+      with_path("bin::#{trusted}:#{ENV.fetch('PATH')}") do
+        Dir.chdir(root) { assert_safe_wrapper(marker) }
       end
     end
   end
@@ -70,11 +70,6 @@ class UpdateCheckLaunchTest < Minitest::Test
   private
 
   def capture = Shaka::UpdateCheck::Launch.capture(%w[gh api], Dir.tmpdir)
-
-  def update_check
-    source = { 'kind' => 'revision', 'revision' => 'a' * 40, 'repository' => 'https://github.com/shakacode/shaka.git' }
-    Shaka::UpdateCheck.new(source:, branch: 'main', helper: '/installed/shaka')
-  end
 
   def prepare_nested_repository(root)
     nested = File.join(root, 'vendor/sub')

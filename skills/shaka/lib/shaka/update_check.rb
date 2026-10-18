@@ -86,10 +86,7 @@ module Shaka
       official = repository.casecmp?('shakacode/shaka') && @branch == 'main'
       @target = official ? 'official main' : "#{repository} #{@branch}"
       head = checkout_head
-      return github(repository, head) if head == recorded
-      return local_commits unless published?(head)
-
-      ancestor?(recorded, head) ? github(repository, head) : rewritten(head)
+      head == recorded || pulled?(head) ? github(repository, head) : not_a_pull(head)
     end
 
     def github(repository, head)
@@ -114,9 +111,9 @@ module Shaka
       raise Launch::Unavailable.new('checkout_unreadable', "Could not read #{@checkout}: #{first_line(error)}")
     end
 
-    # GitHub cannot compare a commit it has never received, so a HEAD outside the registered branch
-    # as last fetched is a local commit, found without the network.
-    def published?(head) = ancestor?(head, "refs/remotes/origin/#{@branch}")
+    # The installer's own test (Install::CheckoutDrift#pulled?) for a move install --update records. It
+    # needs no network, and any other move stops the update whatever caused it.
+    def pulled?(head) = ancestor?(recorded, head) && ancestor?(head, "refs/remotes/origin/#{@branch}")
 
     def ancestor?(older, newer)
       _output, error, ok = git('merge-base', '--is-ancestor', older, newer)
@@ -131,7 +128,7 @@ module Shaka
       case status
       when 'identical' then head == recorded ? current : drift(head)
       when 'ahead' then available(ahead_by)
-      when 'behind', 'diverged' then @checkout ? local_commits : custom
+      when 'behind', 'diverged' then @checkout ? branch_moved(head) : custom
       else raise TypeError
       end
     end

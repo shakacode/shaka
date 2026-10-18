@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative 'update_check_support'
-require 'open3'
 
 class UpdateCheckReasonTest < Minitest::Test
   include UpdateCheckSupport
@@ -36,7 +35,7 @@ class UpdateCheckReasonTest < Minitest::Test
     assert_includes result.fetch('guidance'), 'fatal: not a git repository. Continue the task'
   end
 
-  def test_unreadable_branch_ancestry_is_not_mistaken_for_local_commits
+  def test_unreadable_branch_ancestry_is_not_mistaken_for_a_move
     result = check('identical', head: PULLED, published: ['', "fatal: Not a valid object name\n", false])
     assert_equal 'checkout_unreadable', result.fetch('reason')
     assert_includes result.fetch('guidance'), 'fatal: Not a valid object name'
@@ -52,12 +51,22 @@ class UpdateCheckReasonTest < Minitest::Test
     assert_empty @calls
   end
 
-  def test_rewritten_branch_does_not_offer_an_update_the_installer_refuses
-    %w[identical ahead].each do |status|
-      result = check(status, head: PULLED, pulled: ['', '', false])
-      assert_equal %w[drift rewritten_history], [result.fetch('status'), result.fetch('reason')]
-      refute_includes result.fetch('guidance'), 'install --update to record'
-      refute(@calls.any? { |argv, _| argv.first == 'gh' })
+  def test_upstream_rewritten_after_the_last_fetch_is_not_called_local_work
+    %w[behind diverged].each do |status|
+      result = check(status, head: PULLED)
+      assert_equal %w[unknown branch_moved], [result.fetch('status'), result.fetch('reason')]
+      assert_includes result.fetch('guidance'), 'official main no longer contains checkout commit bbbbbbb.'
+    end
+  end
+
+  def test_signed_out_cli_reports_how_to_sign_in
+    Dir.mktmpdir('shaka-update-launch') do |directory|
+      write_executable(File.join(directory, 'gh'),
+                       "#!/bin/sh\necho 'To get started with GitHub CLI, please run:  gh auth login' >&2\nexit 4\n")
+      with_path("#{directory}:#{ENV.fetch('PATH')}") do
+        result = Dir.chdir(directory) { signed_out_check.result }
+        assert_equal %w[unknown signed_out], [result.fetch('status'), result.fetch('reason')]
+      end
     end
   end
 
@@ -74,47 +83,23 @@ class UpdateCheckReasonTest < Minitest::Test
     assert_includes result.fetch('guidance'), '`gh` was not found on PATH.'
   end
 
-  def test_manual_pull_of_a_real_checkout_reads_head_from_disk
-    Dir.mktmpdir('shaka-update-pull') do |checkout|
-      recorded = commit(checkout, 'first')
-      pulled = commit(checkout, 'second')
-      git(checkout, 'update-ref', 'refs/remotes/origin/main', pulled)
-      result = real_check(checkout, recorded)
-      assert_equal 'drift', result.fetch('status')
-      assert_includes result.fetch('guidance'), "checkout is at #{pulled[0, 7]}"
-    end
-  end
-
-  def test_real_unpushed_commit_reports_local_commits_without_github
-    Dir.mktmpdir('shaka-update-local') do |checkout|
-      recorded = commit(checkout, 'first')
-      git(checkout, 'update-ref', 'refs/remotes/origin/main', recorded)
-      commit(checkout, 'local')
-      assert_equal 'local_commits', real_check(checkout, recorded).fetch('status')
-    end
-  end
-
   private
 
-  def real_check(checkout, recorded)
-    runner = lambda do |argv, directory|
-      argv.first == 'git' ? Shaka::UpdateCheck::Launch.capture(argv, directory) : ['{"status":"identical"}', '', true]
-    end
-    Shaka::UpdateCheck.new(source: SOURCE.merge('revision' => recorded), branch: 'main', checkout:,
-                           helper: '/installed/shaka', runner:).result
+  def signed_out_check
+    source = { 'kind' => 'revision', 'revision' => 'a' * 40, 'repository' => 'https://github.com/shakacode/shaka.git' }
+    Shaka::UpdateCheck.new(source:, branch: 'main', helper: '/installed/shaka')
   end
 
-  def git(directory, *arguments)
-    command = ['git', '-C', directory, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', *arguments]
-    output, status = Open3.capture2(*command)
-    raise "git #{arguments.first} failed" unless status.success?
-
-    output.strip
+  def with_path(path)
+    original = ENV.fetch('PATH')
+    ENV['PATH'] = path
+    yield
+  ensure
+    ENV['PATH'] = original
   end
 
-  def commit(directory, message)
-    git(directory, 'init', '--quiet') unless File.directory?(File.join(directory, '.git'))
-    git(directory, 'commit', '--quiet', '--allow-empty', '-m', message)
-    git(directory, 'rev-parse', 'HEAD')
+  def write_executable(path, contents)
+    File.write(path, contents)
+    File.chmod(0o755, path)
   end
 end

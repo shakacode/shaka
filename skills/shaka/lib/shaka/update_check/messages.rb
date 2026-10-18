@@ -14,18 +14,23 @@ module Shaka
       def current = answer('current', "This installed revision matches #{@target}.")
 
       def drift(head)
-        answer('drift', "#{moved(head)} Run #{Shellwords.escape(@helper)} install --update to record it.")
+        answer('drift', "#{moved(head)} It matches #{@target}; run #{Shellwords.escape(@helper)} install --update " \
+                        'to record it.')
       end
 
-      # install --update records only a pull: a HEAD whose history contains the recorded revision.
-      def rewritten(head)
-        answer('drift', "#{moved(head)} The branch history was rewritten, so `install --update` cannot " \
-                        "record it; see #{GUIDE}.", 'rewritten_history')
+      def not_a_pull(head)
+        answer('drift', "#{moved(head)} That is not a pull of the recorded revision from #{@target}, so " \
+                        "`install --update` will stop. Return the checkout to #{recorded[0, 7]}, or keep changes " \
+                        "in a separate development checkout; see #{GUIDE}.", 'not_a_pull')
       end
 
       def moved(head)
-        "Your checkout #{@checkout} is on #{@target}, but its installation record names #{recorded[0, 7]} " \
-          "and the checkout is at #{head[0, 7]}."
+        "Your checkout #{@checkout} is at #{head[0, 7]}, but its installation record names #{recorded[0, 7]}."
+      end
+
+      # The checkout's commit was on the registered branch when it was last fetched, so the branch moved.
+      def branch_moved(head)
+        unknown('branch_moved', "#{@target} no longer contains checkout commit #{head[0, 7]}.")
       end
 
       # GitHub reports the comparison from the installed revision, so its ahead count is how far behind this is.
@@ -51,15 +56,9 @@ module Shaka
           'Continue this task with its saved helper.'
       end
 
-      def local_commits
-        answer('local_commits', "Your checkout #{@checkout} has commits that #{@target} does not, so " \
-                                '`install --update` will stop. Keep development in a separate checkout; ' \
-                                "see #{GUIDE}.")
-      end
-
       def custom
-        answer('custom', "This copy has commits that #{@target} does not: review upstream changes through " \
-                         "#{GUIDE}. Keep your chosen source and local changes; do not replace it automatically.")
+        answer('custom', "This copy differs from #{@target}: review upstream changes through #{GUIDE}. " \
+                         'Keep your chosen source and local changes; do not replace it automatically.')
       end
 
       def development

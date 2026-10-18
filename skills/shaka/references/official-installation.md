@@ -51,7 +51,7 @@ paths you own, or select a protected location. Preserve file contents and execut
 The installer prints an update reminder for every host and custom skills directory.
 
 `update-check` compares the checkout's HEAD commit with its registered origin branch from any folder. `drift` means
-a manual pull left the record older; `install --update` records it. An `unknown` result names its reason.
+the checkout moved; its guidance says whether `install --update` can record the move. An `unknown` result names its reason.
 Use the registered helper with your chosen path:
 
 ```bash
