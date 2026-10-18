@@ -17,7 +17,7 @@ module Shaka
     # Four spaces, or a tab after fewer, indent a code block.
     INDENTED = /\A(?: {4}| {0,3}\t)/
     # A heading, a thematic break, or a setext underline ends a paragraph on its own line.
-    ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|(?:[-*_][ \t]*){3,}\z|=+[ \t]*\z)/
+    ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|(?:[-*_][ \t]*){3,}\z|(?:=+|-+)[ \t]*\z)/
 
     module_function
 

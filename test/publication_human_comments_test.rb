@@ -440,7 +440,8 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     bodies = ["1. Step:\n    ```\n    secret_line = 1\n    ```\nDone.",
               "- Item\n\n```\n    ```\nsecret_line = 1\n```\nDone.", "- Item\n\n      secret_line = 1\n\nDone.",
               "Notes\n\n* * *\n\n    secret_line = 1\n\nDone.", "# Error\n    secret_line = 1\nDone.",
-              "Notes\n***\n    secret_line = 1\nDone.", "Title\n===\n    secret_line = 1\nDone."]
+              "Notes\n***\n    secret_line = 1\nDone.", "Title\n===\n    secret_line = 1\nDone.",
+              "Title\n--\n    secret_line = 1\nDone."]
     comments = bodies.each_with_index.map { |body, id| issue_comment(id, 'ann', body) }
     rendered = describe(packet(issue_comments: comments))
 
