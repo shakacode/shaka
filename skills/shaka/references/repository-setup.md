@@ -58,6 +58,26 @@ default restore uses `previous` and reports that source. Each worktree gets an a
 re-creating a deleted worktree at the same path starts a new copy without replacing
 the old one.
 
+### Start another worktree with private settings
+
+Private settings belong to one worktree. Before the first edit in a new worktree of
+a clone whose default branch has no Shaka settings but whose private copies
+`seam private list` reports, run `seam private inspect --root DIR` in the worktree
+whose settings to carry forward, when it still exists, so its latest edits reach its
+copy. Run `seam private list --root NEW_DIR`, choose that copy by its `path` and
+`time`, then seed the new worktree:
+
+```bash
+shaka seam private setup --root /path/to/new-worktree --ref DEFAULT_BRANCH_SHA --from ID
+```
+
+`--from` copies every file in that copy, including custom prompts, and accepts no
+command or review options. The new worktree gets its own identity and copy, so later
+edits in either worktree stay separate. Seeding refuses a copy that holds a symbolic
+link and names it; run setup with its options in the new worktree instead. After an
+interruption, rerun the same command; if it refuses a partly written file, follow
+[private setup recovery](#recover-private-setup).
+
 ## Recover private setup
 
 If setup is denied or interrupted, report the failed path the error names and
@@ -115,6 +135,12 @@ and standard script; keep those definitions there.
    If the user wants no required checks, continue with merge preference `ask` and
    say that Auto merge needs at least one.
    [Offer local reviewers](#offer-local-reviewers) for `seam init`.
+   When no CI review job exists, offer the packaged
+   [Claude review workflow](../config/claude-code-review.yml). If the user accepts, copy it
+   to `.github/workflows/claude-code-review.yml`, pass `--ci-review-job claude-review`, and
+   list creating the `CLAUDE_CODE_OAUTH_TOKEN` repository secret as a step the user
+   completes before merging. Offer the same template to replace an existing Claude review
+   workflow that lacks its `depth` step.
 4. Prepare the files with the trusted installed helper. `seam init` creates
    version-one configuration in `.agents/shaka/`. When the repository already has
    `.agents/agent-workflow.yml`, `seam init` refuses and names the
