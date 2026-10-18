@@ -66,12 +66,6 @@ Start a new chat and look for **Shaka**. [Coding agents](coding-agents.md) shows
 how to start a task in each one. Then continue with
 [setup](getting-started.md#2-choose-individual-or-team-setup).
 
-## Install your own fork
-
-The commands above install ShakaCode's repository. To run a version you can
-change, follow [Fork Shaka and make it yours](fork-and-hack.md). Pass
-`--repository` with your fork's exact origin URL.
-
 ## Verify and update
 
 Check the installation at any time, using the directory you installed into.
@@ -95,3 +89,57 @@ The update stops without changing the checkout when it finds local changes or
 history that diverged from the recorded branch. To read an update before you
 apply it, run `git fetch` in the checkout and compare `HEAD` with the recorded
 branch, which is `origin/main` unless you chose another.
+
+## Install your own fork
+
+Install a fork to change Shaka itself and use your version in every project.
+Project commands, settings, and review criteria need no fork; see
+[where project rules go](faq.md#where-do-i-put-project-rules). To try one
+unmerged change on a single task, [try a Shaka PR](trying-pr-versions.md).
+
+Fork the repository and clone the fork. Put your changes on a branch of their
+own, so your fork's `main` stays the same as Shaka's. Create and push that
+branch before you install:
+
+```bash
+gh repo fork shakacode/shaka --clone=false
+FORK_URL="https://github.com/YOUR-LOGIN/shaka.git"
+SHAKA_DIR="$HOME/.agents/shaka"
+umask 022
+mkdir -p "$(dirname "$SHAKA_DIR")"
+git clone "$FORK_URL" "$SHAKA_DIR"
+git -C "$SHAKA_DIR" remote add upstream https://github.com/shakacode/shaka.git
+git -C "$SHAKA_DIR" switch -c mine
+git -C "$SHAKA_DIR" push -u origin mine
+"$SHAKA_DIR/bin/install" --directory "$SHAKA_DIR" --repository "$FORK_URL" \
+  --branch mine --agent codex
+```
+
+`--repository` must match the clone's `origin` URL exactly. Otherwise the
+installer stops with `Installation origin differs from the selected repository`.
+Using `FORK_URL` for both keeps them equal; for SSH, set it to your SSH URL.
+
+Leave the installed checkout unedited, because `install --update` stops when it
+has local changes. Make changes in a separate clone of your fork with the same
+`upstream` remote, run `.agents/shaka/bin/validate` there, and push them to `mine`.
+[Developing Shaka](https://github.com/shakacode/shaka/blob/main/contributing/development.md)
+explains the source tree. Then run `install --update` as shown above.
+
+Shaka's update notice does not count new Shaka commits for a fork, and
+`install --update` only fast-forwards to your fork's `mine`. To bring in Shaka's
+changes, merge them in your working clone:
+
+```bash
+git fetch upstream
+git switch mine
+git merge upstream/main
+.agents/shaka/bin/validate
+git push origin mine
+```
+
+Merge rather than rebase. After a rebase and force-push, `install --update`
+stops with `Not possible to fast-forward` and keeps the previous commit.
+
+To send a change to Shaka, branch from `upstream/main` instead of `mine`, and
+open the PR against `shakacode/shaka`. Read
+[Contributing](https://github.com/shakacode/shaka/blob/main/CONTRIBUTING.md) first.
