@@ -6,8 +6,21 @@ repository's pull requests (PRs) and compare them with current guidance for
 Claude code review. The agent collected the data, wrote the scripts, and drafted
 the text. Codex and a fresh Claude session reviewed it before publication.*
 
-All sources are public PR data, the repository's workflow and prompts, and
-Anthropic's public documentation.
+All sources are public PR data, the repository's workflow and prompts, the
+maintainer's local Shaka timing logs, and Anthropic's public documentation.
+
+## Main results
+
+- Two local reviewers beat one. Codex reported 37 of the 102 defects that local
+  review found, defects Claude did not report. 35 are recorded as fixed. Codex
+  costs about $0.09 a run.
+- A third reviewer added little. DeepSeek Flash, run after Claude and Codex on 10
+  PRs, found one new real bug and one new docs risk. Everything else was a nit, a
+  duplicate, or disproved.
+- The reviewers ran in parallel on 106 of 110 commits that had two of them. A
+  review takes a median of 43 seconds, while local validation takes 5.5 minutes.
+- The hosted Claude review found nothing on 86% of runs after local review.
+- Agents wrote about 97% of the PR text. Shaka's own review comments are 30% of it.
 
 ## Data and limits
 
@@ -109,6 +122,16 @@ What Codex adds over Claude alone:
   round if Codex had not caught it first.
 - Codex costs about $0.09 per run, roughly $40 over the four weeks.
 
+Timing, from the helper call log for 2026-10-13 to 2026-10-18 (14,124 calls):
+
+- Shaka runs each reviewer with its own `review run`. The agent starts them
+  together on one ledger, so they normally overlap: 106 of 110 commits with two
+  reviewers had overlapping runs.
+- `review run`: median 43 seconds, p90 94 seconds.
+- Local validation (`evidence run validate`): median 5.5 minutes, p90 23 minutes.
+- The log records each call's start, command, exit code, and duration. It has no
+  PR or task identity, so it cannot give the end-to-end time of one PR.
+
 ## DeepSeek trial
 
 The maintainer ran DeepSeek Flash (`deepseek/deepseek-v4.1-flash` through
@@ -129,11 +152,13 @@ commits that Claude and Codex had already reviewed, to see what it would add.
 
 | Outcome of completed DeepSeek reviews | Count | Where |
 | --- | ---: | --- |
-| New confirmed defect | 1 | #518: malformed saved history raised a raw error; normal writes were unaffected. Fixed. |
-| New confirmed risk | 1 | #515: a docs sentence dropped a warning about other hosts' link access |
+| New confirmed defect | 1 | #518: a saved review history with `earlier_findings: null` raised a raw `NoMethodError`. Only hand-edited or corrupted files hit it; files Shaka writes were unaffected. Fixed before merge. |
+| New confirmed risk | 1 | #515: `docs/settings.md` dropped a warning that other hosts' chat links can have different access rules. The warning is back in the current docs. |
 | No findings | 1 | #429 |
 | Nits, duplicates of Claude or Codex, or disproved concerns | 6 | #250, #453 (first attempt), #493, #511, #512 (600-second rerun), #516 |
 
+- Neither DeepSeek-only item would have reached users as a failure: one needed a
+  malformed file, and the other was missing docs wording.
 - DeepSeek added little that Claude and Codex had not already caught.
 - It is cheap, but slow, and fails often enough to need a fallback.
 
