@@ -28,10 +28,10 @@ module Shaka
 
     def prose?(body) = !prose(body).strip.empty?
 
-    # The opening words of an agent's reply, before any list when it has a list beside code; nil
-    # when those hold only quoted text, code, or markers.
+    # The opening words of an agent's reply; nil when it holds only quoted text, code, or markers,
+    # or a list beside code and no clear first paragraph.
     def opening(body)
-      words = prose(before_list(plain(body))).split
+      words = prose(clear_opening(plain(body))).split
       return if words.empty?
 
       text = words.first(WORDS).join(' ')
@@ -51,10 +51,13 @@ module Shaka
       plain(body).each_line.reject { |line| code.code?(line) || line.lstrip.start_with?('>') }.join(' ')
     end
 
-    def before_list(text)
+    # With a list beside code, only a first paragraph that has neither is clear enough to quote.
+    def clear_opening(text)
       return text unless CodeLines.list_with_code?(text)
 
-      text.lines.take_while { |line| !line.match?(CodeLines::LIST_ITEM) }.join
+      first = text.sub(/\A(?:[ \t]*\n)+/, '').lines.take_while { |line| line.match?(/\S/) }
+      clear = first.none? { |line| CodeLines.list_item?(line.chomp) || line.match?(CodeLines::CODE_SHAPED) }
+      clear ? first.join : ''
     end
 
     # A link keeps its text, and hidden comments are dropped.

@@ -13,18 +13,20 @@ module Shaka
       # a setext underline below one.
       ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|([-*_])(?:[ \t]*\1){2,}[ \t]*\z|>)/
       SETEXT = /\A {0,3}(?:=+|-+)[ \t]*\z/
-      LIST_ITEM = /\A {0,3}(?:[-+*]|\d{1,9}[.)])(?:[ \t]|\z)/
+      MARKER = /(?:[-+*]|\d{1,9}[.)])/
+      LIST_ITEM = /\A {0,3}#{MARKER}(?:[ \t]|\z)/
       # Any run of three backticks or tildes, any indented text, or text set five columns past a
       # list marker may be code inside a list.
-      CODE_SHAPED = /`{3}|~{3}|#{INDENTED}[ \t]*\S|\A {0,3}(?:[-+*]|\d{1,9}[.)])(?: {5}|[ \t]*\t)/
+      CODE_SHAPED = /`{3}|~{3}|#{INDENTED}[ \t]*\S|\A {0,3}(?:#{MARKER}[ \t]+)*#{MARKER}(?: {5}|[ \t]*\t)/
 
       # A list can hold a fence or indented code at any depth, so its code cannot be told apart
       # from its prose without list rules.
       def self.list_with_code?(text)
         lines = text.lines.map(&:chomp)
-        lines.any? { |line| line.match?(LIST_ITEM) && !line.match?(ENDS_PARAGRAPH) } &&
-          lines.any? { |line| line.match?(CODE_SHAPED) }
+        lines.any? { |line| list_item?(line) } && lines.any? { |line| line.match?(CODE_SHAPED) }
       end
+
+      def self.list_item?(line) = line.match?(LIST_ITEM) && !line.match?(ENDS_PARAGRAPH)
 
       def initialize
         @fence = nil
