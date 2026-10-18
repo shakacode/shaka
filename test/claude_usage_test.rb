@@ -511,10 +511,22 @@ class ClaudeUsageAdvisorTest < Minitest::Test
     refute_includes output, 'Inconsistent token subsets'
   end
 
-  def test_an_executor_iteration_that_wrote_without_a_split_leaves_the_split_unknown
+  # Without per-iteration splits the recorded one still prices a response it accounts for.
+  def test_iterations_without_a_split_keep_the_recorded_split
     output = served(advised(iteration(40, 8, writes: 7), advisor))
-    assert_metric output, 'USD estimate', 'UNKNOWN', '$0.035532'
-    assert_includes output, 'Cache-write TTL split UNKNOWN'
+    assert_metric output, 'USD estimate', '$0.001079', '$0.035532'
+    output = served(advised(iteration(40, 8, writes: 3), advisor, iteration(60, 12, writes: 4)))
+    assert_metric output, 'USD estimate', '$0.001079', '$0.035532'
+    refute_includes output, 'Cache-write TTL split UNKNOWN'
+  end
+
+  def test_an_advised_response_without_an_identity_adds_no_advisor_response
+    unidentified = documented
+    unidentified[:message].delete(:id)
+    output = served(priced_reply('m0', 100), unidentified)
+    assert_metric output, 'Routed model', 'claude-opus-5'
+    assert_includes output, '1 responses'
+    assert_includes output, 'Unreadable or unidentifiable records'
   end
 
   # Fast mode is requested for the executor; whether it reaches the advisor is not recorded.
@@ -539,7 +551,7 @@ class ClaudeUsageAdvisorTest < Minitest::Test
     assert_metric output, 'USD estimate', '$0.001079'
     assert_includes output, '1 responses'
     output = served(advised(1, advisor))
-    assert_metric output, 'USD estimate', 'UNKNOWN', '$0.035532'
-    assert_includes output, 'Cache-write TTL split UNKNOWN'
+    assert_metric output, 'USD estimate', '$0.001079', '$0.035532'
+    assert_includes output, '2 responses'
   end
 end

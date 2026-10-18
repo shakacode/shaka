@@ -8,7 +8,10 @@ module Shaka
     private
 
     # One response per advisor sub-inference, keyed by its position so streamed copies count once.
+    # Without the executor's identity there is nothing to key them by, so they stay uncounted with it.
     def advisor_responses(identity, usage, base)
+      return {} unless identity.is_a?(String) && !identity.empty?
+
       advisors = iterations(usage).select { |item| item.is_a?(Hash) && item['type'] == 'advisor_message' }
       advisors.each_with_index.to_h do |iteration, index|
         key = "#{identity}/advisor/#{index}"
@@ -22,15 +25,17 @@ module Shaka
     def advisor_speed(usage) = speed(usage) == 'standard' ? 'standard' : 'UNKNOWN'
 
     # The top-level TTL split holds only the first executor iteration, so the split is
-    # rebuilt from every `message` iteration to match the cache-write total.
+    # rebuilt from every `message` iteration to match the cache-write total. When the
+    # iterations cannot establish it, the recorded split stands for the estimate to check.
     def executor_write_split(usage)
       messages = iterations(usage).select { |iteration| !iteration.is_a?(Hash) || iteration['type'] == 'message' }
-      return unless messages.any?
+      split = %w[ephemeral_5m_input_tokens ephemeral_1h_input_tokens].map { |field| writes(messages, field) }
+      split if messages.any? && split.all?(Integer)
+    end
 
-      %w[ephemeral_5m_input_tokens ephemeral_1h_input_tokens].map do |field|
-        counts = messages.map { |iteration| iteration_writes(iteration, field) }
-        counts.sum if counts.all?(Integer)
-      end
+    def writes(messages, field)
+      counts = messages.map { |iteration| iteration_writes(iteration, field) }
+      counts.sum if counts.all?(Integer)
     end
 
     # An iteration that wrote nothing to the cache needs no split to establish both TTL counts.
