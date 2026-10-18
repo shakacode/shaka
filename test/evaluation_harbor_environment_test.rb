@@ -76,6 +76,12 @@ class EvaluationHarborEnvironmentTest < Minitest::Test
     assert_equal 'UNKNOWN', capture(rows)['digest']
   end
 
+  def test_services_split_across_verifier_projects_stay_unknown
+    rows = container_readbacks
+    rows.last['Config']['Labels']['com.docker.compose.project'] = 'shaka-synthetic__verifier__other'
+    assert_equal 'UNKNOWN', capture(rows)['digest']
+  end
+
   private
 
   def different_private_metadata(row)

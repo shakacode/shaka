@@ -13,6 +13,8 @@ module Shaka
       module_function
 
       def capture(containers, name:)
+        raise ArgumentError unless verifier_projects(containers, name).one?
+
         rows = containers.map { readback(it, name) }
         raise ArgumentError unless complete?(rows)
 
@@ -20,6 +22,11 @@ module Shaka
         { 'manifest' => manifest, 'digest' => "sha256:#{Digest::SHA256.hexdigest(JSON.generate(manifest))}" }
       rescue KeyError, TypeError, NoMethodError, ArgumentError
         { 'manifest' => 'UNKNOWN', 'digest' => 'UNKNOWN' }
+      end
+
+      def verifier_projects(containers, name)
+        containers.map { it.fetch('Config').fetch('Labels').fetch('com.docker.compose.project') }
+                  .select { it.start_with?("#{name}__verifier__") }.uniq
       end
 
       def readback(container, name)

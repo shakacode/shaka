@@ -33,7 +33,7 @@ module Shaka
         version = process.capture([@harbor, '--version']).strip
         return if clean && revision == REVISION && version == VERSION
 
-        raise ArgumentError, 'Expected clean pinned Harbor 0.24.0'
+        raise ArgumentError, "Expected clean pinned Harbor #{VERSION}"
       end
 
       def config(task:, name:, directory:)
