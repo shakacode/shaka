@@ -494,8 +494,8 @@ review:
 When Claude writes the change, Codex reviews it, then a fresh Claude session. Reviewers listed
 in `local_review_agents` from other providers run only when a task asks for one by name.
 
-When a listed provider cannot review, the published review says so near the top, with the
-reason: that provider is not listed in `local_review_agents`, not set up on the machine, or
+When a listed provider cannot review, the agent copies Shaka's gap report into the published
+review, which shows it near the top with the reason: that provider is not listed in `local_review_agents`, not set up on the machine, or
 unavailable. Shaka does not substitute another provider, and the gap never blocks merging.
 Writing the change does not count as reviewing it.
 

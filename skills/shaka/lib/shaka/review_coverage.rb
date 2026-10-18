@@ -29,9 +29,11 @@ module Shaka
 
     # How many local reviewers run on each commit.
     def self.count(review)
-      providers = names(review.fetch(KEY, []))
-      providers.empty? ? review.fetch(COUNT) { Defaults.fetch('review', COUNT) } : providers.size
+      providers = names(setting(review, KEY))
+      providers.empty? ? setting(review, COUNT) : providers.size
     end
+
+    def self.setting(review, key) = review.fetch(key) { Defaults.fetch('review', key) }
 
     # The entries selection chooses from: for each covered provider, its first listed entry that
     # can run here, or its first entry when none can, so the gap keeps that entry's reason.
@@ -115,6 +117,7 @@ module Shaka
     end
 
     def self.provider(id) = id.split('/').first.downcase
-    private_class_method :providers!, :name?, :listed_reasons, :reason, :listed, :reasons, :gap_text, :provider
+    private_class_method :setting, :providers!, :name?, :listed_reasons, :reason, :listed, :reasons, :gap_text,
+                         :provider
   end
 end
