@@ -26,6 +26,23 @@ class PrefixIndividualSettingsTest < Minitest::Test
     end
   end
 
+  def test_an_invalid_individual_prefix_keeps_the_fallback
+    with_individual_settings('repo_prefix' => 'shop') do |root, ref|
+      assert_equal 'fallback', prefix(root, ref).fetch('source')
+    end
+  end
+
+  def test_shared_settings_take_precedence_over_the_working_tree
+    with_individual_settings('repo_prefix' => 'TEAM') do |root, _ref|
+      git!(root, 'add', '.agents')
+      git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'shared')
+      ref = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
+      path = File.join(root, '.agents/shaka/config.yml')
+      File.write(path, File.read(path).sub('TEAM', 'LOCAL'))
+      assert_equal({ 'prefix' => 'TEAM', 'source' => 'seam' }, prefix(root, ref))
+    end
+  end
+
   private
 
   def prefix(root, ref) = Shaka::Prefix.new(root:, ref:).call
