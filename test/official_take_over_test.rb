@@ -36,6 +36,18 @@ class OfficialTakeOverTest < Minitest::Test
     File.chmod(0o755, File.join(@root, '.git'))
   end
 
+  def test_take_over_refuses_an_owner_other_accounts_can_write
+    install_two_hosts
+    git_directory = File.join(@root, '.git')
+    File.chmod(0o777, git_directory)
+    output, status = invoke('--directory', @second, '--take-over')
+    refute_predicate status, :success?
+    assert_includes output, 'group or world writable'
+    refute_path_exists @second
+  ensure
+    File.chmod(0o755, git_directory)
+  end
+
   def test_take_over_without_another_owner_refuses
     output, status = invoke('--directory', @second, '--take-over')
     refute_predicate status, :success?

@@ -9,9 +9,8 @@ module Shaka
       # The checkout whose `shaka` links the host skills directories point at, other than this one.
       def owning_checkout(selected, skills_dir)
         directories = skills_dir ? [skills_dir] : host_directories
-        owners = directories.filter_map { |directory| link_owner(File.join(directory, 'shaka')) }.uniq
-        owners -= [Checkout.new(selected).root]
-        return Checkout.new(owners.first) if owners.size == 1
+        owners = link_owners(directories) - [Checkout.new(selected).root]
+        return Checkout.new(owners.first).tap(&:verify_directories) if owners.size == 1
         raise ArgumentError, no_owner_message(directories) if owners.empty?
 
         raise ArgumentError, "Several registered checkouts own Shaka links (#{owners.join(', ')}); " \
@@ -23,6 +22,10 @@ module Shaka
       def no_owner_message(directories)
         "No other registered checkout owns the Shaka links in #{directories.join(', ')}; " \
           'run bin/install without --take-over'
+      end
+
+      def link_owners(directories)
+        directories.filter_map { |directory| link_owner(File.join(directory, 'shaka')) }.uniq
       end
 
       def link_owner(link)
