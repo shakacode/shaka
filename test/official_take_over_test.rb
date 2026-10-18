@@ -78,7 +78,7 @@ class OfficialTakeOverTest < Minitest::Test
 
   private
 
-  # Returns once the take-over has recorded its Ruby, just before it would switch links.
+  # Returns once the take-over has recorded its Ruby, just before it takes the host locks.
   def spawn_take_over
     pid = Process.spawn({ 'HOME' => @home }, RbConfig.ruby, @installer, '--directory', @second, '--take-over',
                         %i[out err] => File::NULL)
@@ -90,6 +90,7 @@ class OfficialTakeOverTest < Minitest::Test
   def wait_for
     deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 60
     sleep 0.1 until yield || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+    assert yield, 'take-over did not reach the host locks'
   end
 
   def assert_retired_and_registered

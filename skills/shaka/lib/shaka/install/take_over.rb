@@ -49,7 +49,7 @@ module Shaka
           targets = take_over_targets
           links = targets.map { |target| links_for(target, previous_source: @owner.root) }
           links.each { |entry| entry.check(@checkout.root) }
-          with_host_locks(links) { move(targets, links) }
+          move(targets, links)
           links.each(&:retire_aliases)
           verify(targets)
         end
@@ -67,7 +67,7 @@ module Shaka
       def move(targets, links)
         recorded = identity(targets)
         record_ruby
-        move_links(links) { retire_owner { @checkout.save(targets, recorded) } }
+        with_host_locks(links) { move_links(links) { retire_owner { @checkout.save(targets, recorded) } } }
       end
 
       def take_over_targets
