@@ -3,6 +3,7 @@
 require_relative 'check'
 require_relative '../configuration'
 require_relative 'cli_inventory'
+require_relative '../review_coverage'
 
 module Shaka
   class Doctor
@@ -50,8 +51,7 @@ module Shaka
         return ['Repository configuration unavailable; reviewer readiness is not assessed.'] unless review
 
         configured = entries.select { |entry| entry[:configured] }
-        key = RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT
-        lines = warnings(configured, review.fetch(key) { Defaults.fetch('review', key) })
+        lines = warnings(configured, ReviewCoverage.count(review))
         lines.concat(CliInventory.setup_notices(configured).map { |notice| notice.fetch('summary') })
         lines << 'Some CLI lookups could not be checked.' if entries.any? { |entry| entry[:unchecked] }
         lines

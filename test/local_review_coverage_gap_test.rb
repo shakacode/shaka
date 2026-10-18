@@ -7,14 +7,14 @@ require_relative 'local_review_comment_test'
 class LocalReviewCoverageGapTest < Minitest::Test
   include LocalReviewCommentFixture
 
-  GAP = { 'provider' => 'anthropic', 'reason' => Shaka::ReviewCoverage::NOT_CHOSEN }.freeze
+  GAP = { 'provider' => 'anthropic', 'reason' => Shaka::ReviewCoverage::UNAVAILABLE }.freeze
   BOTH = %w[anthropic openai].freeze
 
   def test_names_each_gap_and_its_reason_near_the_top
     header = loop_body('rounds' => [round], 'provider_coverage' => coverage([GAP])).split('**Reviewed commits:**').first
 
     assert_includes header, '**Review coverage gap:** no local review of this commit from `anthropic` ' \
-                            "(#{Shaka::ReviewCoverage::NOT_CHOSEN})."
+                            "(#{Shaka::ReviewCoverage::UNAVAILABLE})."
   end
 
   def test_no_gaps_show_no_notice

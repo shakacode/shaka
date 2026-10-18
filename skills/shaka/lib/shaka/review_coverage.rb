@@ -1,24 +1,51 @@
 # frozen_string_literal: true
 
 require_relative 'error'
+require_relative 'defaults'
 require_relative 'publication/text'
 require_relative 'reviewer_selection'
 
 module Shaka
-  # review.provider_coverage names providers each change should get a review from. Coverage changes
-  # no reviewer choice: it names each listed provider that did not review, with the reason, and
-  # never blocks. Writing a change is not reviewing it, so the implementing provider gets no credit.
+  # review.provider_coverage names providers each change should get a review from. Shaka then runs
+  # one local reviewer per listed provider in place of review.local_review_count, and names each one
+  # that could not review, with the reason; a gap never blocks. Writing a change is not reviewing
+  # it, so the implementing provider gets no credit.
   module ReviewCoverage
     KEY = 'provider_coverage'
+    COUNT = 'local_review_count'
     NOT_LISTED = 'not listed in review.local_review_agents'
-    NOT_CHOSEN = 'not chosen within review.local_review_count'
     UNAVAILABLE = ReviewerSelection::UNAVAILABLE
     NOT_SET_UP = ReviewerSelection::NOT_SET_UP
 
     # Selection compares these with each reviewer's provider, folding case.
     def self.validate!(review)
-      providers!(review[KEY]) if review.key?(KEY)
+      return unless review.key?(KEY)
+
+      providers!(review[KEY])
+      return if review[KEY].empty? || !review.key?(COUNT)
+
+      raise Error, "review.#{KEY} runs one reviewer per listed provider; remove review.#{COUNT}"
     end
+
+    # How many local reviewers run on each commit.
+    def self.count(review)
+      providers = names(review.fetch(KEY, []))
+      providers.empty? ? review.fetch(COUNT) { Defaults.fetch('review', COUNT) } : providers.size
+    end
+
+    # The entries selection chooses from: for each covered provider, its first listed entry that
+    # can run here, or its first entry when none can, so the gap keeps that entry's reason.
+    def self.candidates(entries, providers, usable)
+      return entries if names(providers).empty?
+
+      chosen = names(providers).filter_map do |name|
+        own = entries.select { |entry| entry['provider'].downcase == name }
+        own.find(&usable) || own.first
+      end
+      entries.select { |entry| chosen.include?(entry) }
+    end
+
+    def self.names(providers) = providers.map(&:downcase).uniq
 
     def self.providers!(providers)
       unless providers.is_a?(Array) && providers.all? { |provider| name?(provider) }
@@ -33,7 +60,7 @@ module Shaka
 
     # Reads the `reviewers` run order and the `considered` reasons `ReviewerSelection` returns.
     def self.coverage(providers, selection)
-      names = providers.map(&:downcase).uniq
+      names = names(providers)
       reviewed = selection.fetch('reviewers').map { |id| provider(id) }
       gaps = (names - reviewed).map do |name|
         { 'provider' => name, 'reason' => reason(listed_reasons(selection, name)) }
@@ -46,11 +73,11 @@ module Shaka
       listed.map { |entry| entry.fetch('reason') }
     end
 
+    # A listed provider that can run always reviews, so its gap is a missing or failed setup.
     def self.reason(reasons)
       return NOT_LISTED if reasons.empty?
-      return NOT_SET_UP if reasons.all?(NOT_SET_UP)
 
-      reasons.all? { |why| [UNAVAILABLE, NOT_SET_UP].include?(why) } ? UNAVAILABLE : NOT_CHOSEN
+      reasons.all?(NOT_SET_UP) ? NOT_SET_UP : UNAVAILABLE
     end
 
     # The `provider_coverage` object copied from `shaka reviewer`. Every listed provider that did
@@ -71,7 +98,7 @@ module Shaka
       raise Error, 'provider_coverage must be an object.' unless coverage.is_a?(Hash)
 
       providers!(coverage['providers'])
-      coverage['providers'].map(&:downcase).uniq
+      names(coverage['providers'])
     end
 
     def self.reasons(gaps, redact)

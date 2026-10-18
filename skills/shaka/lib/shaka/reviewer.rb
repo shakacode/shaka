@@ -39,17 +39,31 @@ module Shaka
     def selection
       review = config.review
       inventory = Doctor::CliInventory.new(root:, environment: ENV).call(review)
-      result = ReviewerSelection.new(reviewers: review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS],
+      unavailable = identities(:unavailable)
+      not_set_up = Doctor::CliInventory.not_set_up(inventory)
+      result = ReviewerSelection.new(reviewers: candidates(review, unavailable + not_set_up),
                                      implementers: identities(:implementers, required: true),
-                                     unavailable: identities(:unavailable),
-                                     not_set_up: Doctor::CliInventory.not_set_up(inventory),
-                                     count: @options.fetch(:count) { count(review) }).call
+                                     unavailable:, not_set_up:, count: count(review)).call
       result.merge('provider_coverage' => coverage(review, result),
                    'setup_notices' => Doctor::CliInventory.setup_notices(inventory))
     end
 
-    # A task's --count wins; otherwise use the selected configuration's count.
-    def count(review) = setting(review, RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT)
+    # A task's --count wins unless coverage sets one reviewer per listed provider.
+    def count(review)
+      return ReviewCoverage.count(review) unless @options.key?(:count)
+      raise OptionParser::InvalidArgument, "--count does not apply while review.#{ReviewCoverage::KEY} is set" unless
+        ReviewCoverage.names(setting(review, ReviewCoverage::KEY)).empty?
+
+      @options[:count]
+    end
+
+    def candidates(review, skipped)
+      entries = review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS] || []
+      usable = ->(entry) { skipped.none? { |other| key(other) == key(entry) } }
+      ReviewCoverage.candidates(entries, setting(review, ReviewCoverage::KEY), usable)
+    end
+
+    def key(entry) = entry.values_at('provider', 'model_family').map(&:downcase)
 
     def coverage(review, selection) = ReviewCoverage.coverage(setting(review, ReviewCoverage::KEY), selection)
 
