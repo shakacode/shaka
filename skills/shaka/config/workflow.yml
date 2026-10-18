@@ -16,7 +16,8 @@ phases:
         new task; when the user keeps this chat, record its UTC start time before work and
         use that start point to separate its usage.
       - For an explicit request to try a Shaka tool PR on a separate project task,
-        follow [PR trial preparation](references/pr-trials.md) before starting that task.
+        follow [PR trial preparation](<{{package_root}}/skills/shaka/references/pr-trials.md>)
+        before starting that task.
         Return the pinned startup prompt for a fresh chat; preparation does not switch
         this running task's helper. A plain PR URL remains the work item.
       - When the task hands over a spec with tickets or another skill's output, or asks you
@@ -422,7 +423,9 @@ phases:
         samples for an older head, fold them with `review collapse OWNER/REPO NUMBER --current
         NEW_COMMENT_ID --superseded OLD_COMMENT_ID`, repeating `--superseded`. Keep visible any
         comment holding evidence the new one does not replace. Before the Finish checkpoint,
-        fold or minimize evidence and bot reports the current head made obsolete.
+        fold or minimize evidence and bot reports the current head made obsolete. At any
+        point, you may minimize bot comments that contain no review findings with
+        `review collapse OWNER/REPO NUMBER --head SHA --bot-comment ID`.
       - When this task's team or individual settings set `project_guidance.pr_evidence`, read
         that guide with the saved helper's `guidance pr_evidence --root DIR --ref SHA` before
         preparing the description. It also prints the repository's pull request template when
@@ -491,6 +494,8 @@ phases:
         problem, what the PR covers, what it deliberately leaves out, and the fact its safety rests
         on. Its `review_effort`, 1 to 5, tells the reviewer how hard to look given that blast radius:
         1 for docs a reader can trust from the description, 5 for irreversible or security changes.
+        A bug fix adds `root_cause`: the mechanism that produced the symptom `why` names, or
+        that it was not found and the PR treats only the symptom.
         `verification` lists 1 to 3 `checks`, each what was run and its outcome, citing a link
         or the command, and a `not_verified` line naming what went unproven and why that is
         acceptable, or `Nothing.` when every claim was proved. An unfinished PR may list no checks
@@ -502,6 +507,10 @@ phases:
         at the first later line containing `to`, or with `block: true` at the bare `end` or `}`
         closing that line's indentation, and otherwise links the one line. Missing, ambiguous,
         or unclosed text refuses publication.
+        Optional `notes` lists reviewer notes, each with `path`, `from`, `to` or `block` as a code
+        link takes them, and a Markdown `body`. The helper posts each one as an inline comment of
+        the walkthrough review on those lines. Before writing notes or answering a note
+        thread, read [walkthrough notes](<{{package_root}}/skills/shaka/references/walkthrough-notes.md>).
         The helper always renders a Code Walkthrough link above the summary: the COMMENT review
         URL when `walkthrough` is supplied, otherwise `_Not published yet._`. Do not bury that URL
         in the opening paragraph. Beside it, the helper renders Code Review from `review`, the

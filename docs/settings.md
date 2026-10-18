@@ -228,8 +228,9 @@ review:
   ci_review_wait: one
 ```
 
-The agent reads reports according to `ci_review_wait`; a green job alone does not
-prove review completed. GitHub's required merge checks are configured separately.
+The [hosted Claude review](configure-repository.md#add-hosted-claude-review) workflow
+Shaka ships produces `claude-review`. The agent reads reports according to
+`ci_review_wait`; a green job alone does not prove review completed. GitHub's required merge checks are configured separately.
 
 ## `review.ci_review_wait`
 
@@ -896,6 +897,9 @@ information elsewhere in a PR, and expandable sections on public PRs are public 
 Use 1–6 uppercase ASCII letters or digits, such as `repo_prefix: SHOP`, to label
 chat titles: `SHOP PR #42 · Fix checkout`. The
 [repository catalog](repository-catalog.md) reports duplicate prefixes.
+
+Shared settings on the default branch supply the prefix. Without them, complete
+individual settings supply it. Incomplete or invalid individual settings use the default label.
 
 ## `version`
 

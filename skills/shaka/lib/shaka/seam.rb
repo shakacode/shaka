@@ -19,11 +19,11 @@ module Shaka
   class Seam
     include PolicyOptions
 
-    # Operations with their own command; each receives the arguments after its operation word.
-    DELEGATED = { 'migrate' => Migrator, 'upgrade' => Upgrader, 'private' => PrivateCommand,
-                  'preview' => PreviewCommand }.freeze
-    # Every operation `run` dispatches; the CLI usage banner lists them.
-    OPERATIONS = (%w[check init pointer] + DELEGATED.keys).freeze
+    # Operations whose own command reads the arguments after the operation name.
+    COMMANDS = { 'migrate' => Migrator, 'upgrade' => Upgrader, 'private' => PrivateCommand,
+                 'preview' => PreviewCommand }.freeze
+    REPORTS = %w[check init pointer].freeze
+    OPERATIONS = [*REPORTS, *COMMANDS.keys].freeze
 
     def self.run(arguments)
       new(arguments).run
@@ -38,7 +38,8 @@ module Shaka
     end
 
     def run
-      return DELEGATED.fetch(@arguments.first).run(@arguments.drop(1)) if DELEGATED.key?(@arguments.first)
+      command = COMMANDS[@arguments.first]
+      return command.run(@arguments.drop(1)) if command
 
       parser = option_parser
       parser.parse!(@arguments)
@@ -58,7 +59,7 @@ module Shaka
       operation == 'check' ? validate_check_options : validate_init_options
     end
 
-    def known_operation?(operation) = %w[check init pointer].include?(operation) && @arguments.empty?
+    def known_operation?(operation) = REPORTS.include?(operation) && @arguments.empty?
 
     def validate_check_options
       init_keys = %i[base_branch setup_command validate_command test_command review_policy ci_review_jobs

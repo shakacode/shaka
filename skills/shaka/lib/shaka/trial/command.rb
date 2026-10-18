@@ -9,9 +9,9 @@ module Shaka
   module Trial
     # Preparation is local; report is the explicit authorization to publish field feedback.
     module Command
+      ACTIONS = %w[prepare report].freeze
       ERRORS = [Error, ArgumentError, SystemCallError, OptionParser::ParseError,
                 JSON::ParserError, URI::InvalidURIError].freeze
-      ACTIONS = %w[prepare report].freeze
 
       def self.run(arguments)
         action = arguments.shift
@@ -37,7 +37,7 @@ module Shaka
 
       def self.parser(options, action)
         OptionParser.new do |flags|
-          flags.banner = "Usage: shaka trial #{ACTIONS.join('|')} SHAKA_PR_URL [options]"
+          flags.banner = 'Usage: shaka trial prepare|report SHAKA_PR_URL [options]'
           prepare_flags(flags, options) if action == 'prepare'
           if action == 'report'
             flags.on('--content-file PATH', 'Public-safe report JSON') do |v|

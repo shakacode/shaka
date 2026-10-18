@@ -60,7 +60,7 @@ input. You can approve the approach, request revisions, or settle an open questi
 | Your question | Where to look |
 | --- | --- |
 | What changes for users? | The description, preview, and visual comparisons when applicable. |
-| What is it for, and what does it leave out? | **Intent** in the description: the problem, the scope, what was deliberately left out, and why the change is safe. |
+| What is it for, and what does it leave out? | **Intent** in the description: the problem, the scope, what was deliberately left out, and why the change is safe. A bug fix also names its **Root cause**, or says it was not found and the PR treats only the symptom. |
 | How carefully should I review it? | **Review effort** under Intent, from 1 (read the description) to 5 (review every line, reproduce it, and ask a second reviewer), based on what a mistake could reach. |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
 | How was it checked? | **Verification** in the description: up to three checks, each with what ran, its outcome, and a link to the evidence or the command itself. **Not verified** names what went unproven and why that is acceptable. Independent review covers the current revision. |
@@ -206,6 +206,32 @@ result.” Details can hold commands, tested commits, and a recording of the men
 
 Shaka uses your existing tests and validation commands, plus browser tools when
 needed. Required GitHub checks and approvals still apply.
+
+## Notes on the diff
+
+The walkthrough can also leave a few notes on the diff itself, written for you
+as the reviewer. Each note sits on the lines it is about and says how to read
+them: where to start, which lines change behavior, what to check closely, what
+to skim, or why the code took this approach. They are not findings to fix, and
+they do not replace explanations the code itself needs.
+
+For example, in a PR that stops duplicate refunds:
+
+> **Start here:** this check is the whole behavior change; the controller and
+> retry job only call it.
+
+> **Skim:** the rest of this file moves the old helper unchanged.
+
+Notes help most on a change of several files. Reviewers tend to read files in
+the order GitHub lists them and comment less on the later ones
+([Fregnan et al., 2022](https://arxiv.org/abs/2208.04259)), so a note can send
+you to the important part first. Understanding a change is usually harder than
+finding its defects
+([Bacchelli and Bird, 2013](https://www.microsoft.com/en-us/research/publication/expectations-outcomes-and-challenges-of-modern-code-review/)).
+
+When the agent publishes a walkthrough for a newer commit, it resolves the
+older walkthrough's notes. A note you replied to stays open, and the agent
+answers it like any review comment.
 
 ## When a diagram helps
 
@@ -432,8 +458,11 @@ that changes runtime behavior.
 When the PR has a preview deployment, it checks the preview too, or says why not.
 
 The agent uploads captures to the PR and verifies that you can open them; a local
-path is not shared evidence. It names the tested commit and behavior, then
-refreshes affected evidence after code changes or explains which part still applies.
+path is not shared evidence. Below the agent's 🤖 line, the comment opens with a
+**Verification for** heading that links the tested commit, so you can find it among
+review comments and see whether it matches the current head. The agent names the
+tested behavior, then refreshes affected evidence after code changes or explains
+which part still applies.
 When a new comment replaces an earlier one, the agent folds the earlier one
 beneath a link to its replacement. Current evidence appears first; older captures
 stay one click away. When a capture cannot be published, the PR records the
