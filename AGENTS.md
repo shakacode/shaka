@@ -67,8 +67,9 @@ is the reusable default.
   to the skill's rule against running a branch-provided helper. After the installed
   helper's last publication for a reviewed head, inspect the diff, then republish that
   artifact with `skills/shaka/scripts/shaka` from a detached worktree of that head.
-  Then run the installed `handoff`; if it cannot read the republished artifact,
-  publish it again with the installed helper and say so on the PR. Repeat after each
+  Then run the installed `handoff`, and for a review comment confirm its last line is
+  still the `REVIEWED` attestation. If either check fails, publish the artifact again
+  with the installed helper and say so on the PR. Repeat after each
   new head. Every other command, including seam, evidence, review, and merge, stays
   with the installed helper.
 
