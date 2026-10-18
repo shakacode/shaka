@@ -52,6 +52,12 @@ class UpdateCheckReasonTest < Minitest::Test
     assert_empty @calls
   end
 
+  def test_rewritten_branch_does_not_offer_a_recording_the_installer_refuses
+    result = check('identical', head: PULLED, pulled: ['', '', false])
+    assert_equal %w[drift rewritten_history], [result.fetch('status'), result.fetch('reason')]
+    refute_includes result.fetch('guidance'), 'install --update to record'
+  end
+
   def test_local_command_failure_is_not_blamed_on_github
     result = Shaka::UpdateCheck.new(source: SOURCE, branch: 'main', helper: '/installed/shaka',
                                     runner: ->(*) { raise Errno::ENOENT, 'gh' }).result
@@ -72,7 +78,7 @@ class UpdateCheckReasonTest < Minitest::Test
       git(checkout, 'update-ref', 'refs/remotes/origin/main', pulled)
       result = real_check(checkout, recorded)
       assert_equal 'drift', result.fetch('status')
-      assert_includes result.fetch('guidance'), "checkout #{pulled[0, 7]}"
+      assert_includes result.fetch('guidance'), "checkout is at #{pulled[0, 7]}"
     end
   end
 

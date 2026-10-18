@@ -46,11 +46,15 @@ class UpdateCheckTest < Minitest::Test
   end
 
   def test_manual_pull_reports_an_older_record_instead_of_an_update
-    result = check('identical', head: PULLED)
-    assert_equal 'drift', result.fetch('status')
-    assert_includes result.fetch('guidance'), 'recorded aaaaaaa, checkout bbbbbbb'
-    assert_includes result.fetch('guidance'), "#{Shellwords.escape('/installed path/scripts/shaka')} install --update"
+    guidance = check('identical', head: PULLED).fetch('guidance')
+    assert_includes guidance, 'names aaaaaaa and the checkout is at bbbbbbb'
+    assert_includes guidance, '/installed\\ path/scripts/shaka install --update to record it'
     assert_includes @calls.fetch(2).first, "repos/shakacode/shaka/compare/#{PULLED}...main"
+    assert_equal ['merge-base', '--is-ancestor', SHA, PULLED], @calls.fetch(3).first.drop(3)
+  end
+
+  def test_manual_pull_is_drift_until_newer_commits_make_it_an_update
+    assert_equal 'drift', check('identical', head: PULLED).fetch('status')
     assert_equal 'available', check('ahead', head: PULLED).fetch('status')
   end
 

@@ -11,19 +11,21 @@ module UpdateCheckSupport
   SOURCE = { 'kind' => 'revision', 'revision' => SHA,
              'repository' => 'https://github.com/shakacode/shaka.git' }.freeze
   DEFAULTS = { source: SOURCE, branch: 'main', checkout: CHECKOUT, ahead_by: 3, head: SHA, github: nil,
-               published: ['', '', true] }.freeze
+               published: ['', '', true], pulled: ['', '', true] }.freeze
 
   def check(status, **options)
-    options = DEFAULTS.merge(options)
+    @options = DEFAULTS.merge(options)
     @calls = []
-    github = options[:github] || [JSON.generate({ 'status' => status, 'ahead_by' => options[:ahead_by] }), '', true]
-    runner = lambda do |argv, directory|
-      @calls << [argv, directory]
-      next github unless argv.first == 'git'
+    @github = @options[:github] || [JSON.generate({ 'status' => status, 'ahead_by' => @options[:ahead_by] }), '', true]
+    Shaka::UpdateCheck.new(source: @options[:source], branch: @options[:branch], checkout: @options[:checkout],
+                           helper: '/installed path/scripts/shaka', runner: method(:answer)).result
+  end
 
-      argv.include?('merge-base') ? options[:published] : ["#{options[:head]}\n", '', true]
-    end
-    Shaka::UpdateCheck.new(source: options[:source], branch: options[:branch], checkout: options[:checkout],
-                           helper: '/installed path/scripts/shaka', runner:).result
+  def answer(argv, directory)
+    @calls << [argv, directory]
+    return @github unless argv.first == 'git'
+    return ["#{@options[:head]}\n", '', true] unless argv.include?('merge-base')
+
+    argv.last.start_with?('refs/') ? @options[:published] : @options[:pulled]
   end
 end

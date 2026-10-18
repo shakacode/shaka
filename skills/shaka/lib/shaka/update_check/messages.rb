@@ -13,10 +13,14 @@ module Shaka
 
       def current = answer('current', "This installed revision matches #{@target}.")
 
-      def drift(head)
-        answer('drift', "Your checkout #{@checkout} has the latest #{@target} commits, but its installation record " \
-                        "is older (recorded #{recorded[0, 7]}, checkout #{head[0, 7]}). " \
-                        "Run #{Shellwords.escape(@helper)} install --update to record it.")
+      # install --update records only a pull: a HEAD whose history contains the recorded revision.
+      def drift(head, pulled)
+        state = "Your checkout #{@checkout} matches #{@target}, but its installation record names " \
+                "#{recorded[0, 7]} and the checkout is at #{head[0, 7]}."
+        return answer('drift', "#{state} Run #{Shellwords.escape(@helper)} install --update to record it.") if pulled
+
+        answer('drift', "#{state} The branch history was rewritten, so `install --update` cannot record it; " \
+                        "see #{GUIDE}.", 'rewritten_history')
       end
 
       # GitHub reports the comparison from the installed revision, so its ahead count is how far behind this is.

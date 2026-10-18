@@ -113,8 +113,10 @@ module Shaka
 
     # GitHub cannot compare a commit it has never received, so a HEAD outside the registered branch
     # as last fetched is a local commit, found without the network.
-    def published?(head)
-      _output, error, ok = git('merge-base', '--is-ancestor', head, "refs/remotes/origin/#{@branch}")
+    def published?(head) = ancestor?(head, "refs/remotes/origin/#{@branch}")
+
+    def ancestor?(older, newer)
+      _output, error, ok = git('merge-base', '--is-ancestor', older, newer)
       return ok if ok || error.strip.empty?
 
       raise Launch::Unavailable.new('checkout_unreadable', "Could not read #{@checkout}: #{first_line(error)}")
@@ -124,7 +126,7 @@ module Shaka
 
     def comparison(status, ahead_by, head)
       case status
-      when 'identical' then head == recorded ? current : drift(head)
+      when 'identical' then head == recorded ? current : drift(head, ancestor?(recorded, head))
       when 'ahead' then available(ahead_by)
       when 'behind', 'diverged' then @checkout ? local_commits : custom
       else raise TypeError
