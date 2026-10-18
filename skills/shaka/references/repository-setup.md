@@ -135,6 +135,12 @@ and standard script; keep those definitions there.
    If the user wants no required checks, continue with merge preference `ask` and
    say that Auto merge needs at least one.
    [Offer local reviewers](#offer-local-reviewers) for `seam init`.
+   When the user wants hosted Claude review, during setup or later, and no CI review
+   job exists, copy the packaged [Claude review workflow](../config/claude-code-review.yml)
+   to `.github/workflows/claude-code-review.yml` and pass `--ci-review-job claude-review`.
+   Record the `CLAUDE_CODE_OAUTH_TOKEN` repository secret as a before-merge step besides
+   merging. Offer the same template to replace an existing Claude review workflow that
+   lacks its `depth` step.
 4. Prepare the files with the trusted installed helper. `seam init` creates
    version-one configuration in `.agents/shaka/`. When the repository already has
    `.agents/agent-workflow.yml`, `seam init` refuses and names the
