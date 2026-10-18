@@ -57,7 +57,7 @@ module Shaka
         output
       end
 
-      # A leaked GIT_DIR belongs to some other repository. Ignore rules have to come from this checkout.
+      # Matches Source#git_raw, so ignore filtering and the clean check read the same checkout and rules.
       def checkout_git_environment = ENV.keys.grep(/\AGIT_/).to_h { |key| [key, nil] }
     end
   end
