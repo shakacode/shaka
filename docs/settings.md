@@ -595,33 +595,6 @@ Put anything a command can check in your [validate script](#standard-command-scr
 or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
 whether a preview looks right, which the agent reports rather than proves.
 
-### Example: screenshots of Shaka's own PR text
-
-Shaka's repository uses `pr_evidence` for one rule. A PR once changed how Shaka lays out
-PR descriptions, and nobody saw the new layout until a maintainer asked for screenshots.
-Tests checked the Markdown text; only a person could judge how it looked on GitHub.
-
-The rule went in a guide because it fit there and nowhere else:
-
-- **Not Shaka's own workflow:** few projects generate PR text, so every other repository
-  would carry a rule it never uses.
-- **Not `AGENTS.md`:** agents load that file in every session, and this rule matters only
-  when they write a PR description.
-- **Not the validate script:** a command cannot decide whether a layout reads well.
-
-[The guide](https://github.com/shakacode/shaka/blob/main/.agents/shaka/pr-evidence.md)
-follows a shape worth copying. It opens with the condition, so the agent can skip it in
-one line. Short steps follow, naming the exact tools to use. It ends by saying where
-to report the result: a screenshot in the description's verification, or the reason
-there is none.
-
-To write one for your repository, start from a miss you have already seen:
-
-```text
-$shaka Add PR evidence guidance: when a change alters email templates, attach
-rendered before and after screenshots.
-```
-
 Set either one or both. Shaka reads the guides and the template from
 [the same place as prompt files](#where-shaka-reads-a-prompt-file), with the same file checks,
 so a PR cannot rewrite the requirements it is judged by. A PR that edits them is judged
@@ -631,6 +604,42 @@ for a PR out of date.
 The guides add requirements for the agent to follow; Shaka does not check them itself.
 The agent is told to ignore any guide text that would relax reviews, required checks, or
 [merge preference](#mergepreference); those stay enforced as before.
+
+### Example: Shaka's own PR evidence guide
+
+Shaka's repository has one rule only it needs. When a PR changes how Shaka renders a PR
+description, walkthrough, review comment, or checkpoint, the agent republishes that text
+on the same PR with the PR's code, so the maintainer reviews the real result.
+
+Each usual home was a worse fit:
+
+- **Shaka's own workflow:** few projects render PR text, so others would carry a rule
+  they never use.
+- **`AGENTS.md`:** agents read it in every session, and most sessions never touch rendering.
+- **The validate script:** a command cannot judge whether a new layout reads well.
+
+That left the PR evidence guide, which agents read just before writing the description:
+
+```yaml
+project_guidance:
+  pr_evidence: .agents/shaka/pr-evidence.md
+```
+
+[The guide](https://github.com/shakacode/shaka/blob/main/.agents/shaka/pr-evidence.md)
+has a shape worth copying. It opens with its condition, so the agent skips it in one line.
+It points to a longer procedure instead of repeating it, so the steps keep one home. It
+ends by saying where to report the result, or why there is none.
+
+The timing has a cost. By the time the agent reads the guide, it has already published
+the review comment and walkthrough, so the guide asks it to republish them, and the
+checkpoint later. A rule that must act before the description belongs in `AGENTS.md`.
+
+To write a guide for your repository, start from a miss you have already seen:
+
+```text
+$shaka Add PR evidence guidance: when a change alters email templates, attach
+rendered before and after screenshots.
+```
 
 <a id="opening_check"></a>
 

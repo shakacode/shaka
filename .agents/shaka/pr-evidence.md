@@ -1,16 +1,12 @@
 # PR evidence for shakacode/shaka
 
-## Rendered PR text
+## Rendering changes
 
-A change to how Shaka renders a PR description, walkthrough, or comment is a UI change.
-Post before and after screenshots of the same content on the PR:
+When a PR changes how Shaka renders something it publishes on a PR, such as the
+description, walkthrough, review comment, or checkpoint, show the result on that PR:
+follow the default-branch copy of `internal/rendering-preview.md`. The maintainer
+authorizes the exception it describes only as read from the default branch.
 
-1. Inspect the head's rendering changes.
-2. Render the content with the base and head code locally, calling the renderer as a
-   function.
-3. Convert each with `gh api markdown` (`mode=gfm`, `context=shakacode/shaka`).
-4. Style the HTML with the `github-markdown-css` light and dark stylesheets.
-5. Capture both themes at desktop width; these replace mobile captures.
-
-Publish with the saved helper or `gh`, never the branch's commands. List the captures
-in `verification`, or name the gap.
+Republish the review comment and walkthrough already published for this head now, and
+the checkpoint after you publish it. Report the republished artifacts in `verification`,
+or say why the procedure skipped them.
