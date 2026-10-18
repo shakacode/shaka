@@ -45,21 +45,26 @@ comment holding every round's full report, including rounds that found nothing.
 
 The cost figures are averages from the 33 runs per reviewer that reported cost.
 
-After removing repeats, the ledger holds 792 distinct findings:
+After removing repeats, the ledger holds 792 distinct findings. "Fixed" and
+"Dismissed" are the dispositions the implementing agent recorded, each with a
+commit or evidence. Nobody separately checked whether every finding was real.
 
-| Reported by | Findings | Defects | Nits | Fixed | Dismissed |
+| Reported by | Findings | Defects | Nits | Recorded fixed | Recorded dismissed |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Claude only | 719 | 43 | 340 | 212 | 158 |
 | Codex only | 41 | 37 | 1 | 37 | 1 |
 | Both | 27 | 22 | 2 | 25 | 0 |
+| DeepSeek (optional trial) | 5 | 0 | 2 | 0 | 2 |
 
-- **Codex** rarely speaks, and when it does, it is almost always a real defect
-  that gets fixed.
-- **Claude** finds more that gets fixed: 212 findings against 37. But nearly
-  half of what it reports are nits, and about a fifth gets dismissed. Each of
-  those still costs the implementing agent a triage step and a ledger entry.
+- **Codex** rarely speaks. When it does, it almost always reports a defect, and
+  the defect is recorded as fixed.
+- **Claude** has more findings recorded as fixed: 212, against 37 for Codex.
+  But nearly half of what it reports are nits, and about a fifth is dismissed.
+  Each of those still costs the implementing agent a triage step and a ledger
+  entry.
 
-Dropping Claude would lose those 212 fixes. The better move is to make it quieter.
+Dropping Claude would give up most of the recorded fixes. Making it quieter
+looks like the better trade.
 
 ## The hosted review mostly confirms work that was already reviewed
 
@@ -78,25 +83,29 @@ works like this:
 - It keeps an explicit list of what not to flag, ending with "If you are not
   certain an issue is real, do not flag it."
 
-The hosted review is still worth keeping. It is the one reviewer that the
-implementing agent cannot run or impersonate.
+The hosted review is still worth keeping. It is the one Claude review that
+runs on GitHub, outside the implementing agent's session.
 
-## What we are changing
+## What we propose to change
+
+The first item has a pull request. The rest are proposals and not yet built.
 
 1. **Hosted review that knows about Shaka.** A PR that already has a published
-   Shaka local review gets a short, high-signal pass. A PR from someone not
-   using Shaka gets the full review. This matters for teams where only some
-   contributors use Shaka. In review:
+   Shaka local review would get a short, high-signal pass. A PR from someone not
+   using Shaka would get the full review. This matters for teams where only some
+   contributors use Shaka. See
    [shakacode/shaka#640](https://github.com/shakacode/shaka/pull/640).
-2. **A quieter local Claude reviewer.** Its prompt will omit nits unless asked
-   and require a concrete failing case for every risk. We will measure for two
-   weeks before changing Shaka's built-in prompt.
-3. **Shorter review publications.** A round with no findings will become a
-   single line in the published comment instead of a full report.
-4. **Fewer overlapping bots.** CodeRabbit produced 14% of the text and a small
-   share of the fixes. We will turn off its summaries or remove it.
-5. **Measurement you can repeat.** A command that prints these tables for any
-   date range, so each change above can be checked against this baseline.
+2. **A quieter local Claude reviewer.** Tell it to omit nits unless asked, and
+   to name a concrete failing case for every risk. Measure for two weeks before
+   changing Shaka's built-in prompt.
+3. **Shorter review publications.** Show a round with no findings as a single
+   line in the published comment, instead of the full report.
+4. **Fewer overlapping bots.** CodeRabbit produced 14% of the text. About 52 of
+   its 116 inline threads got a fix-style reply, against about 490 of the Codex
+   connector's 616. Its summaries are the first candidate to turn off.
+5. **Measurement you can repeat.** Add a command that prints these tables for
+   any date range, so each change can be checked against this baseline. Until
+   it exists, the prompt below has your agent do the counting.
 
 ## Run the same study on your repository
 
