@@ -41,7 +41,8 @@ class HumanCommentCodeBlocksTest < Minitest::Test
 
   def test_a_short_list_beside_code_needs_the_agent_s_summary
     body = "1. Step:\n    ```\n    secret_line = 1\n    ```\nDone."
-    ["- ```\n  secret_line = 1\n\nPlease split this.", "- Item\n\n      secret_line = 1", body].each do |listed|
+    ["- ```\n  secret_line = 1\n\nPlease split this.", "- Item\n\n      secret_line = 1", '-     secret_line = 1',
+     body].each do |listed|
       error = assert_raises(Shaka::Error) { quote(listed) }
       assert_includes error.message, "needs a one-line summary for each longer human comment: #{URL}#issuecomment-0"
     end
@@ -51,6 +52,14 @@ class HumanCommentCodeBlocksTest < Minitest::Test
 
     refute_includes rendered, 'secret'
     assert_includes rendered, "[Asks for one step\\.](#{URL}#issuecomment-0)"
+  end
+
+  def test_an_agent_reply_with_a_list_beside_code_opens_with_its_words_before_the_list
+    reply = "#{IDENTITY}\n\nFixed both:\n\n- the parser\n- its test\n\n```\nsecret_line = 1\n```"
+    rendered = describe(packet(inline_comments: [inline(1, 'ann', 'Why?'), inline(2, 'ann', reply)]))
+
+    refute_includes rendered, 'secret'
+    assert_equal [["[“Fixed both\\:”](#{URL}#discussion_r2)"]], columns(rendered, 2)
   end
 
   def test_a_list_without_code_is_quoted

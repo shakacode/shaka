@@ -14,8 +14,9 @@ module Shaka
       ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|([-*_])(?:[ \t]*\1){2,}[ \t]*\z|>)/
       SETEXT = /\A {0,3}(?:=+|-+)[ \t]*\z/
       LIST_ITEM = /\A {0,3}(?:[-+*]|\d{1,9}[.)])(?:[ \t]|\z)/
-      # Any run of three backticks or tildes, or any indented text, may be code inside a list.
-      CODE_SHAPED = /`{3}|~{3}|#{INDENTED}[ \t]*\S/
+      # Any run of three backticks or tildes, any indented text, or text set five columns past a
+      # list marker may be code inside a list.
+      CODE_SHAPED = /`{3}|~{3}|#{INDENTED}[ \t]*\S|\A {0,3}(?:[-+*]|\d{1,9}[.)])(?: {5}|[ \t]*\t)/
 
       # A list can hold a fence or indented code at any depth, so its code cannot be told apart
       # from its prose without list rules.
