@@ -11,7 +11,7 @@ maintainer's one exception to the skill's rule against running a branch-provided
 1. Confirm `gh pr view` reports `isCrossRepository` false. Only accounts with write
    access can push such a branch. Otherwise, skip the republish.
 2. Publish the artifact with the installed helper as usual. After its last publication
-   for a reviewed head, inspect that head's changes to `skills/shaka/`. If they change
+   for a reviewed head, inspect that head's whole diff against `REF`. If it changes
    anything besides rendering, or you cannot tell, skip the republish.
 3. Confirm `gh pr view --json headRefOid` still reports the reviewed head. Then republish
    the artifact with `skills/shaka/scripts/shaka` from a detached worktree of that head.
