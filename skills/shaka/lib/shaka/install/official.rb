@@ -53,7 +53,8 @@ module Shaka
       end
 
       def update(targets)
-        verify(targets)
+        # A pulled checkout no longer matches its recorded identity; the update re-records it.
+        verify(targets, identity: !@checkout.drifted?)
         @checkout.update { |root| identity(targets, root) }
       end
 
@@ -110,7 +111,7 @@ module Shaka
 
       def identity(targets, root = @checkout.root)
         names = targets.flat_map { |target| target.fetch('names') }.uniq
-        tree = Tree.new(names)
+        tree = Tree.new(names, source_root: root)
         DirectSource.new(root, names, tree).identity(tree.hash(root))
       end
 
@@ -128,9 +129,9 @@ module Shaka
           identity(targets) == @checkout.record['identity']
       end
 
-      def verify(targets)
+      def verify(targets, identity: true)
         targets.each { |target| links_for(target).verify(@checkout.root) }
-        verify_identity(targets)
+        verify_identity(targets) if identity
         ruby = File.read(File.join(@checkout.root, '.git', RUBY_RECORD)).strip
         unless File.executable?(ruby)
           raise ArgumentError,

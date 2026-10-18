@@ -46,10 +46,12 @@ a named placeholder. This link locates the report; it does not establish readine
 Publishing a blocked or incomplete checkpoint converts the PR to draft and adds a
 **Do not merge** warning above its feature summary. The warning names the reason,
 head, report link, and task owner's next step. Its separate marked region survives
-normal description updates. A ready checkpoint leaves both the warning and draft
-status unchanged. After all required gates pass, the task owner removes the marked
-warning in GitHub and marks the PR ready. Ready publications cannot erase a newer
-blocker. Other description writes use best-effort stale-body checks; GitHub offers
+normal description updates. When a ready checkpoint is the latest one and the warning
+names an earlier head, publication removes the warning and reports `cleared` with the
+PR's `draft` status. After all required gates pass, the task owner marks a draft PR
+ready. A ready checkpoint leaves a warning for its own head, or one naming no head, for
+the maintainer to remove in GitHub. Ready publications cannot erase a newer blocker.
+Other description writes use best-effort stale-body checks; GitHub offers
 no atomic compare-and-swap for PR descriptions. An opt-out leaves an existing warning
 in place because it does not settle substantive concerns.
 
@@ -161,7 +163,9 @@ Give each owner field one job:
 - `reason`: the main reason for the recommendation. A recommendation is not merge permission.
 - `next_action`: the action, starting with its verb. Name who does it only when that
   person is not the developer. Do not restate the recommendation. Keep it to one short,
-  plain sentence; leave out the commit, merge preference, and check results.
+  plain sentence; leave out the commit, merge preference, and check results. For Merge,
+  omit it unless merging waits on something the recommendation does not say, such as
+  another PR; then name only that dependency.
 
 Publish the reviewer's report fields unchanged.
 
@@ -185,7 +189,7 @@ word, or merge approval. Write the decision on one line without `<` or backticks
 it is missing. Repeat an entry for a later head only when its report lists the same
 concern and the change behind it is unchanged; ask again when the concern differs.
 
-Ruby checks the disposition's head, vocabulary, reason, and concrete next-action field.
+Ruby checks the disposition's head, vocabulary, reason, and next-action field, which only Merge may omit.
 It rejects **Merge** when verification has a blocking conclusion, or lists a concern
 without a matching `accepted_concerns` entry, and never verifies who made a decision.
 The other three values publish the existing `blocked` attestation, including when
@@ -205,9 +209,10 @@ disables no checks, and submits no merge. The other values close no PR automatic
 
 ### Read the verification evidence
 
-The published comment leads with one recommendation, short reason, and next action
-for the task owner, followed by the head and unresolved concerns. Supporting reasons,
-alternatives, and execution details stay in a closed disclosure. Assess every
+The published comment leads with one recommendation, short reason, and any next action
+for the task owner, followed by the reviewer's conclusion and unresolved concerns. The
+reviewer's summary, supporting reasons, alternative, and execution details stay in a
+closed disclosure. Assess every
 criterion; report only evidence that affects the decision. For routine **Proceed**
 results, aim for 60–100 visible words; this is prompt guidance, not a Ruby word limit.
 Blockers and consequential tradeoffs can need more explanation.
@@ -224,10 +229,8 @@ the useful summary is:
 >
 > **Next:** Revise this PR, then revalidate and review.
 >
-> **Reviewer verdict:** Simplify/reframe
->
-> Keep the missing-configuration safeguard; remove unused scans from watching and
-> repeated check verification.
+> **Reviewer verdict:** Simplify/reframe. Keep the missing-configuration safeguard;
+> remove unused scans from watching and repeated check verification.
 
 The watcher discards configuration results, so removing that dependency preserves
 its demonstrated guarantees. Keep fresh checks for explicit status, Ask handoff,

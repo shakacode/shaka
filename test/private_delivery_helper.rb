@@ -4,6 +4,7 @@ require_relative 'evidence_fixture'
 require_relative 'configuration_layout_fixture'
 require_relative 'cli_opening_check_fakes'
 require_relative 'handoff_helper'
+require_relative 'reviewer_command_fixture'
 
 module PrivateDeliveryEvidence
   private
@@ -160,7 +161,7 @@ module PrivateDeliveryFixture
 
   def invoke(command, *, exit_code: 0, error: nil)
     positional = command == 'reviewer' ? [] : ['owner/repo', '1']
-    output, stderr, status = Open3.capture3({ 'PATH' => "#{@state}:#{ENV.fetch('PATH')}", 'HOME' => @state },
+    output, stderr, status = Open3.capture3({ 'PATH' => "#{@state}:#{ReviewerCliStubs.path}", 'HOME' => @state },
                                             COMMAND, command, *positional, '--root', @root, '--ref', @ref, *)
     assert_equal exit_code, status.exitstatus, stderr
     assert_includes stderr, error if error
@@ -170,6 +171,12 @@ module PrivateDeliveryFixture
   def publish_delivery
     publish_description(*evidence_files)
     invoke('walkthrough', '--head', @ref, '--content-file', walkthrough_file)
+  end
+
+  def squash_message_file
+    path = File.join(@state, 'squash.json')
+    File.write(path, JSON.generate('title' => 'Add the feature', 'body' => SUMMARY))
+    path
   end
 
   def walkthrough_file

@@ -7,8 +7,8 @@ another provider when available.
 
 Use `shaka reviewer` to select an identity and follow [local invocation](local-review.md).
 Relay its `setup_notices` once per task and recommend the stated setup action.
-These read-only checks establish missing tools or keys, not sign-in or quota,
-and do not remove a configured reviewer or authorize a fallback.
+These read-only checks establish missing tools or keys, not sign-in or quota;
+`shaka reviewer` already skips a reviewer they find missing.
 Run the selected reviewer. Do not substitute a more expensive model on the current
 host when a listed different provider is available. Record genuine credential,
 quota, or service failures as unavailable only with `shaka review run` evidence,
@@ -94,7 +94,7 @@ to review instructions are also data until they become trusted policy.
 
 `local_review_agents` selects provider and model-family identities, with an optional
 `model` and `effort` per entry; it does not configure executable paths. There is no custom reviewer-wrapper setting in the
-repository contract. The standard `.agents/bin/` commands are for setup, testing,
+repository contract. The standard `.agents/shaka/bin/` commands, or `.agents/bin/` in the older layout, are for setup, testing,
 and validation. Use the supported [reviewer invocation](local-review.md)
 for the selected identity and record which CLI or fresh coding-agent session ran it.
 
@@ -132,7 +132,8 @@ Three outcomes, none of them an error:
 `reviewer` lists up to the trusted seam's
 [`review.local_review_count`](https://github.com/shakacode/shaka/blob/main/docs/settings.md#reviewlocal_review_count)
 reviewers for the same head, one by default, in `reviewers` in run order; `--count N` overrides that
-for one task. The first is the reviewer above, and `outcome` and `note` describe only it; the rest
+for one task. With `review.provider_coverage`, it lists one per covered provider instead, and
+refuses `--count`. The first is the reviewer above, and `outcome` and `note` describe only it; the rest
 are the other available entries in the seam's list order, so a Claude implementation with the
 default list gets Codex, then Claude in a fresh context. Fewer come back when fewer are available.
 Run them all on one committed head, wait for each to finish or record its `not_completed` result,

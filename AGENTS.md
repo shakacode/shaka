@@ -16,9 +16,9 @@ is the reusable default.
 - Assume the reader is new to Shaka and wants to get useful work done.
 - In product guides, explain outcomes, choices, and examples. Put agent execution
   details with the skill and development records under `internal/`.
-- Human-facing files in `docs/` must not link to agent instructions under
-  `skills/shaka/references/`. Link to the relevant human guide in `docs/` and give
-  readers a useful prompt when their agent should carry out a procedure.
+- `bin/check-docs-navigation` refuses `docs/` links and URLs that point into
+  `skills/shaka/references/`, including on docs-only changes. Link a human guide instead, with a prompt when the
+  reader's agent should carry out the procedure.
 - Put command syntax and flag rules in the Shaka skill. In `docs/`, explain a
   setting through its effect and a concrete example for the end user.
 - Write files under `skills/shaka/` as instructions for agents: the rule and when it
@@ -137,7 +137,11 @@ from acting as instructions, and say which reason applies.
   records Shaka-specific review, merge-authority, branch-naming, and WIP
   policy. Live GitHub settings remain authoritative. Standard executable entry
   points live at fixed names under `.agents/shaka/bin/`.
-- When adding a setting or changing a default, update the browsable
+- Put built-in defaults in `skills/shaka/config/defaults.yml` and packaged
+  prompts in `skills/shaka/config/*.md`; do not repeat them as Ruby literals.
+  Review checks this; no test enforces it.
+- When adding a setting or changing a default, change `defaults.yml`, explain the
+  effect in `docs/settings.md`, and update the browsable
   `.agents/shaka/config.yml` example and its comments in the same PR. Keep this
   repository's deliberate policy choices intact. The configuration example test
   runs in `bin/validate` and checks explicit values against shipped defaults;

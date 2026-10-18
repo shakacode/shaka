@@ -28,6 +28,7 @@ require_relative '../lib/shaka/merge_limits'
 require_relative '../lib/shaka/opening_publication'
 require_relative '../lib/shaka/publication/squash_message'
 require_relative '../lib/shaka/prefix'
+require_relative '../lib/shaka/guidance'
 require_relative '../lib/shaka/publication/publication'
 require_relative '../lib/shaka/review_reply'
 require_relative '../lib/shaka/recommendation'
@@ -38,11 +39,13 @@ require_relative '../lib/shaka/post_implementation'
 require_relative '../lib/shaka/reviewer'
 require_relative '../lib/shaka/seam'
 require_relative '../lib/shaka/status'
+require_relative '../lib/shaka/subcommands'
 require_relative '../lib/shaka/trusted_config_source'
 require_relative '../lib/shaka/usage/usage'
 require_relative '../lib/shaka/usage/publisher_attribution'
 require_relative '../lib/shaka/usage/cursor_usage_refresh'
 require_relative '../lib/shaka/walkthrough/code_links'
+require_relative '../lib/shaka/walkthrough/notes'
 require_relative '../lib/shaka/trial/command'
 require_relative '../lib/shaka/work'
 require_relative '../lib/shaka/workflow'
@@ -52,110 +55,14 @@ require_relative '../lib/shaka/update_check'
 
 exit Shaka::Welcome.run if ARGV.empty?
 
-if ARGV.first == 'update-check'
-  ARGV.shift
-  exit Shaka::UpdateCheck.run(ARGV)
-end
-
-if ARGV.first == 'usage'
-  ARGV.shift
-  exit Shaka::Usage.run(ARGV)
-end
-
 if ARGV.first == 'pr' && ARGV[1] == 'watch'
   ARGV.shift(2)
   exit Shaka::PrWatch::Command.run(ARGV)
 end
 
-if ARGV.first == 'issue-create'
-  ARGV.shift
-  exit Shaka::IssueCreate.run(ARGV)
-end
-
-if ARGV.first == 'trial'
-  ARGV.shift
-  exit Shaka::Trial::Command.run(ARGV)
-end
-
-if ARGV.first == 'work'
-  ARGV.shift
-  exit Shaka::Work.run(ARGV)
-end
-
-if ARGV.first == 'recommendation'
-  ARGV.shift
-  exit Shaka::Recommendation.run(ARGV)
-end
-
-if ARGV.first == 'checkpoint'
-  ARGV.shift
-  exit Shaka::Checkpoint.run(ARGV)
-end
-
-if ARGV.first == 'review-prompt'
-  ARGV.shift
-  exit Shaka::ReviewPrompt.run(ARGV)
-end
-
-if ARGV.first == 'post-implementation'
-  ARGV.shift
-  exit Shaka::PostImplementation.run(ARGV)
-end
-
-if ARGV.first == 'review'
-  ARGV.shift
-  exit Shaka::LocalReview.run(ARGV)
-end
-
-if ARGV.first == 'reviewer'
-  ARGV.shift
-  exit Shaka::Reviewer.run(ARGV)
-end
-
-if ARGV.first == 'seam'
-  ARGV.shift
-  exit Shaka::Seam.run(ARGV)
-end
-
-if ARGV.first == 'workflow'
-  ARGV.shift
-  exit Shaka::Workflow.run(ARGV)
-end
-
-if ARGV.first == 'enforcement'
-  ARGV.shift
-  exit Shaka::Enforcement.run(ARGV)
-end
-
-if ARGV.first == 'doctor'
-  ARGV.shift
-  exit Shaka::Doctor.run(ARGV)
-end
-
-if ARGV.first == 'install'
-  require_relative '../lib/shaka/install/command'
-  ARGV.shift
-  exit Shaka::Install::Command.new(File.expand_path('../../..', __dir__)).run(ARGV)
-end
-
-if ARGV.first == 'evidence'
-  ARGV.shift
-  exit Shaka::Evidence::Command.run(ARGV)
-end
-
-if ARGV.first == 'claim'
-  ARGV.shift
-  exit Shaka::Claim.run(ARGV)
-end
-
-if ARGV.first == 'repos'
-  ARGV.shift
-  exit Shaka::Repos.run(ARGV)
-end
-
-if ARGV.first == 'prefix'
-  ARGV.shift
-  exit Shaka::Prefix.run(ARGV)
+if Shaka::Subcommands::TABLE.key?(ARGV.first)
+  subcommand = Shaka::Subcommands::TABLE.fetch(ARGV.shift)
+  exit subcommand.run.call(ARGV)
 end
 
 COMMANDS = %w[pr comments description reply resolve walkthrough merge attention squash-message handoff].freeze
@@ -178,9 +85,8 @@ def with_human_comments(described, path)
   path ? described.merge(Shaka::HumanComments::KEY => content(path)) : described
 end
 
-def merge_limits(options)
-  Shaka::MergeLimits.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
-                              confirmed_head: options[:confirmed_head])
+def merge_limits(options, seam)
+  Shaka::MergeLimits.new(seam ? seam.merge.fetch('limits') : {}, confirmed_head: options[:confirmed_head])
 end
 
 def require_merge_ref!(options)
@@ -210,26 +116,29 @@ rescue Shaka::Error, SystemCallError
 end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
-def resolved_description(content, github)
-  Shaka::CheckpointRecommendation.resolve(Shaka::DeploymentLink.resolve(content, github), github)
+def resolved_description(content, github, options)
+  content = Shaka::LocalReviewUsage.attach(content, options[:review])
+  resolved = Shaka::CheckpointRecommendation.resolve(Shaka::DeploymentLink.resolve(content, github), github)
+  with_human_comments(resolved, options[:comments])
 end
 
-def walkthrough_body(options, github)
-  return File.read(options.fetch(:body_file), encoding: 'UTF-8') if options[:body_file]
+# The rendered review body and its inline notes; a prerendered body file carries no notes.
+def walkthrough_parts(options, github)
+  return [File.read(options.fetch(:body_file), encoding: 'UTF-8'), []] if options[:body_file]
 
   walkthrough = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
   walkthrough = walkthrough.merge('head' => options.fetch(:head))
-  Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough, github.repository), walkthrough,
-                                        github)
+  body = Shaka::Walkthrough::CodeLinks.resolve(Shaka::Publication.walkthrough(walkthrough, github.repository),
+                                               walkthrough, github)
+  [body, Shaka::Walkthrough::Notes.resolve(walkthrough, github)]
 end
 
 def usage_banner
-  ["Usage: shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]; ",
-   'shaka usage --help; shaka work --help; shaka recommendation --help; shaka checkpoint --help',
-   '; shaka reviewer --help', '; shaka review-prompt --help', '; shaka review run --help',
-   '; shaka review check --help', '; shaka review publish --help', '; shaka seam check --help',
-   '; shaka workflow --help', '; shaka enforcement --help', '; shaka doctor --help',
-   '; shaka repos --help; shaka prefix --help; shaka issue-create --help; shaka install --help'].join
+  lines = ["shaka (#{COMMANDS.join('|')}) OWNER/REPO NUMBER [options]", 'shaka pr watch OWNER/REPO NUMBER [options]']
+  lines += Shaka::Subcommands.usage_lines
+  "Usage: #{lines.join("\n       ")}\n" \
+    "Run a command with --help, after its operation when it takes one, for its options.\n" \
+    "Options for the OWNER/REPO NUMBER commands:\n"
 end
 
 def merge_flags(flags, options)
@@ -351,7 +260,9 @@ begin
   if %w[pr walkthrough handoff squash-message].include?(command) && options[:ref]
     seam = Shaka::Configuration.resolve_source(root: options[:root] || Dir.pwd, ref: options[:ref]).first
   elsif command == 'merge'
-    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref])
+    # Private trial settings grant no policy, so merge applies defaults and GitHub's gates under them.
+    seam = Shaka::TrustedConfigSource.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref],
+                                               private_trial: true)
   end
   seam_required_checks = seam.merge['required_checks'] if seam&.sha
   if command == 'merge' && !options[:squash_message]
@@ -383,7 +294,7 @@ begin
                  Open3.capture3(gh, *argv.drop(1), stdin_data:, chdir: neutral)
                end)
                attributed = Shaka::PublisherAttribution.prepare(content(options.fetch(:content_file)))
-               described = with_human_comments(resolved_description(attributed, github), options[:comments])
+               described = resolved_description(attributed, github, options)
                usage_records = carried = nil
                published = github.description(prose:) do |pull|
                  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
@@ -413,8 +324,8 @@ begin
            when 'resolve'
              github.resolve_thread(options.fetch(:thread))
            when 'walkthrough'
-             github.walkthrough(head: options.fetch(:head), body: walkthrough_body(options, github),
-                                seam_required_checks:,
+             body, notes = walkthrough_parts(options, github)
+             github.walkthrough(head: options.fetch(:head), body:, notes:, seam_required_checks:,
                                 prose: Shaka::ProseLimits.from_ref(root: options[:root] || Dir.pwd, ref: options[:ref]))
            when 'merge'
              head = options.fetch(:head)
@@ -428,7 +339,7 @@ begin
                                               seam_required_checks:)
              merge.empty_checks_confirmed_head = options[:empty_checks_confirmed_head]
              merge.call(head:, base: options.fetch(:base), walkthrough: options.fetch(:walkthrough),
-                        limits: merge_limits(options), squash_message:)
+                        limits: merge_limits(options, seam), squash_message:)
            when 'attention' then Shaka::Attention.new(github).call(state: options.fetch(:state))
            when 'squash-message'
              message = Shaka::SquashMessage.for(github, content(options.fetch(:content_file)))

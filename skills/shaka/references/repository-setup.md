@@ -17,7 +17,7 @@ shaka seam private setup --root /path/to/repository --ref DEFAULT_BRANCH_SHA \
 
 Replace the example commands with executable commands found in that repository.
 Supply `--ci-review-job NAME` with a matching review policy when a real CI review
-job exists. If the repository defers hosted CI, supply
+job exists. [Offer local reviewers](#offer-local-reviewers) before running setup. If the repository defers hosted CI, supply
 `--validate-local-command COMMAND` and `--trigger-hosted-ci-command COMMAND`
 together. The private generator reuses the normal new-layout wrappers and records
 Ask and `wip.include_checkout_path: true`, matching team setup. WIP Details include the
@@ -28,7 +28,9 @@ task instruction may authorize Auto separately. Private setup cannot set fallbac
 required checks because they require a trusted source. The agent must verify
 that `--ref` is the current default-branch commit; Ruby only checks that it is a
 full commit SHA. Private settings do not grant trusted policy,
-public-comment trust, or merge authority.
+public-comment trust, or merge authority. Under Ask, the user's approval of a named
+head still lets `merge` run: it ignores the private settings and applies default limits,
+an independent review, the checkpoint, and GitHub's gates.
 
 After setup, run `seam private inspect --root DIR` and
 `seam private check --root DIR --ref DEFAULT_BRANCH_SHA`. The latter reports
@@ -55,6 +57,26 @@ is also available with `--previous`. If an interrupted rotation leaves no `curre
 default restore uses `previous` and reports that source. Each worktree gets an assigned local identity;
 re-creating a deleted worktree at the same path starts a new copy without replacing
 the old one.
+
+### Start another worktree with private settings
+
+Private settings belong to one worktree. Before the first edit in a new worktree of
+a clone whose default branch has no Shaka settings but whose private copies
+`seam private list` reports, run `seam private inspect --root DIR` in the worktree
+whose settings to carry forward, when it still exists, so its latest edits reach its
+copy. Run `seam private list --root NEW_DIR`, choose that copy by its `path` and
+`time`, then seed the new worktree:
+
+```bash
+shaka seam private setup --root /path/to/new-worktree --ref DEFAULT_BRANCH_SHA --from ID
+```
+
+`--from` copies every file in that copy, including custom prompts, and accepts no
+command or review options. The new worktree gets its own identity and copy, so later
+edits in either worktree stay separate. Seeding refuses a copy that holds a symbolic
+link and names it; run setup with its options in the new worktree instead. After an
+interruption, rerun the same command; if it refuses a partly written file, follow
+[private setup recovery](#recover-private-setup).
 
 ## Recover private setup
 
@@ -112,6 +134,13 @@ and standard script; keep those definitions there.
    reports one check per workflow. Explain that Shaka, not GitHub, then enforces them.
    If the user wants no required checks, continue with merge preference `ask` and
    say that Auto merge needs at least one.
+   [Offer local reviewers](#offer-local-reviewers) for `seam init`.
+   When no CI review job exists, offer the packaged
+   [Claude review workflow](../config/claude-code-review.yml). If the user accepts, copy it
+   to `.github/workflows/claude-code-review.yml`, pass `--ci-review-job claude-review`, and
+   list creating the `CLAUDE_CODE_OAUTH_TOKEN` repository secret as a step the user
+   completes before merging. Offer the same template to replace an existing Claude review
+   workflow that lacks its `depth` step.
 4. Prepare the files with the trusted installed helper. `seam init` creates
    version-one configuration in `.agents/shaka/`. When the repository already has
    `.agents/agent-workflow.yml`, `seam init` refuses and names the
@@ -144,6 +173,14 @@ implementation still gets local review. The initializer refuses to overwrite
 conflicting files. When GitHub enforces no required checks, add
 `--required-check NAME` for each confirmed check.
 
+
+## Offer local reviewers
+
+Run `shaka doctor --host HOST` and read its Reviewer CLIs check. Offer each
+reviewer CLI it reports on PATH, putting one from a provider other than the
+current host first. Pass each reviewer the user accepts,
+in that order, as `--local-review-agent PROVIDER/FAMILY`. Omit the flag when none
+is installed or the user declines.
 
 ## Review and merge the first setup PR
 
@@ -196,8 +233,9 @@ root. The initializer refuses Shaka command names left in `.agents/bin/` without
 their configuration, leaves other `.agents/bin/` tools alone, and checks write
 access before writing anything. It defaults to Ask. Add `--merge-preference auto`
 only with established authority, `--base-branch` for another base, and
-`--required-check` for seam-declared checks. Add optional reviewer entries and
-`repo_prefix` by editing the YAML afterward. Set `wip.include_checkout_path` to
+`--required-check` for seam-declared checks, and `--local-review-agent` for each
+accepted reviewer. Add reviewer models, efforts, prompt files, and `repo_prefix`
+by editing the YAML afterward. Set `wip.include_checkout_path` to
 `false` only when the user asks to hide the checkout path.
 If the repository already uses `AGENTS.md`, it may point to its requirements
 there; Shaka does not require that file.

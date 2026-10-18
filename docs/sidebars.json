@@ -22,6 +22,7 @@
         "settings-guide",
         "coding-agents",
         "manual-installation",
+        "fork-and-hack",
         "migration"
       ]
     },
@@ -44,6 +45,14 @@
         },
         "writing-preferences",
         "workflow"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Articles",
+      "collapsed": true,
+      "items": [
+        "articles/review-process-study"
       ]
     },
     {

@@ -25,7 +25,7 @@ class PublicationRegressionTest < Minitest::Test
 
   def description_content(**changes)
     { 'identity' => IDENTITY, 'summary' => 'A summary.', 'walkthrough' => WALKTHROUGH, 'table' => TABLE,
-      'deployment' => 'none',
+      'intent' => INTENT, 'verification' => VERIFICATION, 'deployment' => 'none',
       'steps_besides_merging' => 'none', 'provenance' => PUBLIC_PROVENANCE, 'usage' => USAGE_OBJECT,
       'details' => [] }.merge(changes)
   end
@@ -76,11 +76,6 @@ class PublicationRegressionTest < Minitest::Test
 
   # https://github.com/shakacode/shaka/pull/71 published validation and usage as prose,
   # so GitHub rendered no tables in the managed description.
-  def test_a_description_without_a_table_is_refused
-    error = assert_raises(Shaka::Error) { Shaka::Publication.description(description_content.except('table')) }
-    assert_includes error.message, 'table'
-  end
-
   def test_usage_details_restated_as_prose_are_refused
     prose = { 'summary' => 'Final native usage snapshot',
               'body' => 'Native usage is PARTIAL: 70 responses from the latest Codex turn.' }
@@ -116,7 +111,7 @@ class PublicationStructureTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
-        'steps_besides_merging' => 'none',
+        'steps_besides_merging' => 'none', 'intent' => INTENT, 'verification' => VERIFICATION,
         'table' => PublicationRegressionTest::TABLE,
         'provenance' => PUBLIC_PROVENANCE,
         'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes)
@@ -124,7 +119,7 @@ class PublicationStructureTest < Minitest::Test
   end
 
   def test_identity_line_leads_the_description
-    assert_match(/\A🤖 Codex · OpenAI · gpt-5\.6-terra · low\n\nA summary\.\n/, render)
+    assert_match(/\A🤖 Codex · OpenAI · gpt-5\.6-terra · low\n\n\[Code Walkthrough\]/, render)
   end
 
   def test_sections_become_second_level_headings_separated_by_one_blank_line
@@ -180,7 +175,7 @@ class PublicationStructureTest < Minitest::Test
   def test_a_real_newline_in_a_cell_cannot_split_the_row
     content = { 'identity' => IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
-                'steps_besides_merging' => 'none',
+                'steps_besides_merging' => 'none', 'intent' => INTENT, 'verification' => VERIFICATION,
                 'table' => { 'columns' => %w[A B], 'rows' => [%W[one\ntwo three]] },
                 'provenance' => PUBLIC_PROVENANCE }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
@@ -242,6 +237,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => walkthrough, 'deployment' => 'none',
         'steps_besides_merging' => 'none', 'table' => PublicationRegressionTest::TABLE,
+        'intent' => INTENT, 'verification' => VERIFICATION,
         'provenance' => PUBLIC_PROVENANCE, 'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
     )
   end
@@ -251,8 +247,8 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     rendered = render
 
     assert_includes rendered,
-                    "A summary.\n\n[Code Walkthrough](#{link}) · " \
-                    "Checkpoint: _Not published yet._\n"
+                    "[Code Walkthrough](#{link}) · " \
+                    "Checkpoint: _Not published yet._\n\n## Summary\n\nA summary.\n"
     refute_includes rendered, '## Code Walkthrough'
     refute_match(/^# Code Walkthrough/, rendered)
   end
@@ -271,7 +267,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
-        'steps_besides_merging' => 'none',
+        'steps_besides_merging' => 'none', 'intent' => INTENT, 'verification' => VERIFICATION,
         'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
@@ -281,7 +277,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def test_a_description_without_a_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: nil)
 
-    assert_includes rendered, "A summary.\n\n_Not published yet._"
+    assert_includes rendered, "low\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -289,7 +285,7 @@ class PublicationWalkthroughLinkTest < Minitest::Test
   def test_a_blank_walkthrough_link_reserves_the_placeholder
     rendered = render(walkthrough: '  ')
 
-    assert_includes rendered, "A summary.\n\n_Not published yet._"
+    assert_includes rendered, "low\n\n_Not published yet._"
     refute_includes rendered, '[Code Walkthrough]('
     refute_includes rendered, '## Code Walkthrough'
   end
@@ -342,7 +338,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
   def test_description_renders_public_safe_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
-                'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
+                'intent' => INTENT, 'verification' => VERIFICATION, 'provenance' => PUBLIC_PROVENANCE,
                 'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [], 'steps_besides_merging' => 'none' }
     rendered = Shaka::Publication.description(content)
 
@@ -356,7 +352,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
   def test_description_refuses_missing_execution_provenance
     content = { 'identity' => PublicationStructureTest::IDENTITY, 'summary' => 'A summary.',
                 'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
-                'steps_besides_merging' => 'none',
+                'steps_besides_merging' => 'none', 'intent' => INTENT, 'verification' => VERIFICATION,
                 'table' => PublicationRegressionTest::TABLE,
                 'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }
     error = assert_raises(Shaka::Error) { Shaka::Publication.description(content) }
@@ -375,7 +371,7 @@ class PublicationDeploymentLinkTest < Minitest::Test
     Shaka::Publication.description(
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => DEPLOYMENT,
-        'steps_besides_merging' => 'none',
+        'steps_besides_merging' => 'none', 'intent' => INTENT, 'verification' => VERIFICATION,
         'sections' => [{ 'heading' => 'Outcome', 'body' => 'What landed.' }],
         'table' => PublicationRegressionTest::TABLE, 'provenance' => PUBLIC_PROVENANCE,
         'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [] }.merge(changes)
@@ -385,15 +381,15 @@ class PublicationDeploymentLinkTest < Minitest::Test
   def test_the_deployment_link_follows_the_walkthrough_link_before_any_section
     link = PublicationRegressionTest::WALKTHROUGH
     assert_includes render,
-                    "A summary.\n\n[Code Walkthrough](#{link}) · " \
+                    "[Code Walkthrough](#{link}) · " \
                     'Checkpoint: _Not published yet._ · ' \
-                    "[Deployment](<#{DEPLOYMENT}>)\n\n## Outcome"
+                    "[Deployment](<#{DEPLOYMENT}>)\n\n## Summary"
   end
 
   def test_the_deployment_link_stays_near_the_top_before_the_walkthrough_exists
     assert_includes render('walkthrough' => nil),
-                    "A summary.\n\n_Not published yet._ · Checkpoint: _Not published yet._ · " \
-                    "[Deployment](<#{DEPLOYMENT}>)\n"
+                    '_Not published yet._ · Checkpoint: _Not published yet._ · ' \
+                    "[Deployment](<#{DEPLOYMENT}>)\n\n## Summary"
   end
 
   # A bare `)` would end the Markdown link at `/a` instead of linking `/a)b`.
@@ -406,14 +402,14 @@ class PublicationDeploymentLinkTest < Minitest::Test
     refute_includes rendered, 'Deployment'
     assert_includes rendered,
                     "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
-                    "Checkpoint: _Not published yet._\n\n## Outcome"
+                    "Checkpoint: _Not published yet._\n\n## Summary"
   end
 
   # https://github.com/shakacode/shaka/issues/495: `auto` that found nothing rendered like an explicit `none`.
   def test_an_empty_auto_lookup_names_the_head_beside_the_walkthrough_link
     assert_includes render('deployment' => 'none', 'deployment_not_found_for' => 'abcdef0123' * 4),
                     "[Code Walkthrough](#{PublicationRegressionTest::WALKTHROUGH}) · " \
-                    "Checkpoint: _Not published yet._ · Deployment: none found for `abcdef0`\n\n## Outcome"
+                    "Checkpoint: _Not published yet._ · Deployment: none found for `abcdef0`\n\n## Summary"
   end
 
   def test_a_malformed_lookup_head_is_refused
@@ -423,9 +419,9 @@ class PublicationDeploymentLinkTest < Minitest::Test
 
   def test_a_lookup_for_another_head_is_refused
     content = { 'deployment' => 'none', 'deployment_not_found_for' => 'a' * 40 }
-    top = ->(sha) { Shaka::PublicationLinks.top(content, Shaka::PublicationSettings.new, { 'head' => { 'sha' => sha } }) }
-    assert_includes top.call('a' * 40).last, 'none found for `aaaaaaa`'
-    error = assert_raises(Shaka::Error) { top.call('b' * 40) }
+    links = ->(sha) { Shaka::PublicationLinks.links(content, { 'head' => { 'sha' => sha } }) }
+    assert_includes links.call('a' * 40), 'none found for `aaaaaaa`'
+    error = assert_raises(Shaka::Error) { links.call('b' * 40) }
     assert_includes error.message, 'current PR head'
   end
 
@@ -937,6 +933,7 @@ class PublicationCheckpointTest < Minitest::Test
   def content
     { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'Review the current result.',
       'table' => PublicationRegressionTest::TABLE, 'deployment' => 'none', 'steps_besides_merging' => 'none',
+      'intent' => INTENT, 'verification' => VERIFICATION,
       'provenance' => PUBLIC_PROVENANCE, 'usage' => PublicationRegressionTest::USAGE_OBJECT,
       'checkpoint' => { 'head' => HEAD, 'recommendation' => 'Revise before merge',
                         'next_action' => 'Justin: choose the simpler parser before another review round.' } }
@@ -944,21 +941,34 @@ class PublicationCheckpointTest < Minitest::Test
 
   PULL = { 'head' => { 'sha' => HEAD }, 'base' => { 'repo' => { 'full_name' => 'acme/widgets' } } }.freeze
 
-  def test_recommendation_heads_the_description_without_naming_the_commit
+  def test_recommendation_leads_the_links_without_naming_the_commit
     body = Shaka::Publication.description(content, nil, PULL)
-    assert_includes body, "## Recommendation: Revise before merge\n\n" \
-                          "**Next:** Justin: choose the simpler parser before another review round.\n"
-    assert_operator body.index('## Recommendation:'), :<, body.index('Review the current result.')
+    assert_includes body, "low\n\n**Recommendation: Revise before merge** · _Not published yet._ · " \
+                          "Checkpoint: _Not published yet._\n\n" \
+                          "**Next:** Justin: choose the simpler parser before another review round.\n\n" \
+                          "## Summary\n\nReview the current result.\n"
+    refute_includes body, '## Recommendation'
     refute_includes body, "/commit/#{HEAD}"
+  end
+
+  def test_without_a_next_action_the_recommendation_stands_alone
+    [nil, '  '].each do |action|
+      data = content
+      data['checkpoint']['next_action'] = action
+      body = Shaka::Publication.description(data, nil, PULL)
+      assert_includes body, "Checkpoint: _Not published yet._\n\n## Summary\n"
+      refute_includes body, '**Next:**'
+    end
   end
 
   def test_open_decisions_replace_the_recommendation_heading
     data = content.merge('decisions' => ['Keep the parser?'])
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, "<!-- shaka:decisions -->\n## Decisions to make\n\n- Keep the parser?\n\n**Next:**"
+    assert_includes body, "<!-- shaka:decisions -->\n## Decisions to make\n\n- Keep the parser?\n\n" \
+                          "_Not published yet._ · Checkpoint: _Not published yet._\n\n**Next:**"
     assert_operator body.index('## Decisions to make'), :<, body.index('Review the current result.')
-    refute_includes body, '## Recommendation:'
+    refute_includes body, 'Recommendation'
   end
 
   def test_open_decisions_lead_even_over_a_published_merge
@@ -966,7 +976,7 @@ class PublicationCheckpointTest < Minitest::Test
     data['checkpoint']['recommendation'] = 'Merge'
     body = Shaka::Publication.description(data, nil, PULL)
     assert_includes body, '## Decisions to make'
-    refute_includes body, '## Recommendation:'
+    refute_includes body, 'Recommendation'
   end
 
   def test_recommendation_must_be_a_known_disposition
@@ -975,12 +985,12 @@ class PublicationCheckpointTest < Minitest::Test
     assert_raises(Shaka::Error) { Shaka::Publication.description(data, nil, PULL) }
   end
 
-  def test_without_a_published_disposition_the_heading_says_so
+  def test_without_a_published_disposition_the_label_says_so
     data = content
     data['checkpoint'].delete('recommendation')
     body = Shaka::Publication.description(data, nil, PULL)
-    assert_includes body, "## No recommendation yet\n\n**Next:** Justin: choose the simpler parser"
-    refute_includes body, '## Recommendation:'
+    assert_includes body, '**No recommendation yet** · _Not published yet._'
+    refute_includes body, 'Recommendation:'
   end
 
   def test_review_link_sits_between_walkthrough_and_checkpoint

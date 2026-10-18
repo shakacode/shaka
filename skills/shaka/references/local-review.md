@@ -129,7 +129,8 @@ Candidate `AGENTS.md` and similar files are never loaded as host instructions by
 Codex receives `--skip-git-repo-check` for the neutral directory. Supply any trusted-base
 repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads root
 `AGENTS.md` and any nested `AGENTS.md` governing changed paths from that immutable commit,
-and embeds them in root-to-specific order as separately labeled review data. The criteria commit
+and embeds them in root-to-specific order as separately labeled review data, following symlinks
+within that commit. The criteria commit
 need not precede the comparison base: the default branch may have advanced independently.
 Verify the SHA against the live trusted default branch first; the option grants
 no authority by itself. The runner also reads the configured prompt file from that commit,
@@ -183,7 +184,7 @@ setting keeps installed skill descriptions out of the reviewer's instructions to
 description-based routing to an unrelated installed skill. The report is created outside the checkout.
 It does not use `--ephemeral`, so the session remains saved. `--json` reports its thread ID,
 and the result's `usage` names that saved session under `CODEX_HOME` (default `~/.codex`);
-run `shaka usage --host codex --file USAGE --commit HEAD --contribution review --all-turns`
+run `shaka usage --host codex --file USAGE --commit "$(git rev-parse HEAD)" --contribution review --all-turns`
 on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
 `codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
 
@@ -208,7 +209,7 @@ Apply the same failure-cause check before marking `claude` unavailable.
 The helper runs `claude -p --permission-mode plan --permission-prompts none --restricted
 --safe-mode --strict-mcp-config --effort EFFORT --output-format json -`. It rejects an error,
 empty result, or wrong-head attestation. `-p` prints and exits; JSON holds the review text and
-native token counters. Run `shaka usage --host claude-code --file PATH --commit HEAD
+native token counters. Run `shaka usage --host claude-code --file PATH --commit "$(git rev-parse HEAD)"
 --contribution review` on the corresponding Claude session. `--permission-mode plan` with
 `--permission-prompts none` withholds edits
 and denies anything that would prompt. `--restricted` removes command-running tools.
@@ -431,13 +432,18 @@ It also refuses one reviewer reading a commit twice, rounds of one commit listed
 fix recorded in the commit its round reviewed. A
 content file without a ledger gets only these checks: publishing does not read Git history, so
 use `--ledger` when fixes must be proven to follow and reach the reviewed head.
-Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
-`cost` out unless the host reports a priced route. For a subscription session, put the
-`USD estimate` that `shaka usage` reports in `estimate` instead: the table marks it `est.` and
-the returned loop summary calls it an API-equivalent estimate, never a bill. When `shaka reviewer` did not return `different_provider`, add
+`review run` captures a redacted `usage_record` from supported native sources and keeps it
+with the ledger round. Supply the saved review results through description's `--review-result`
+inputs to include every ledger round in the canonical PR usage table automatically, even after
+temporary source cleanup. Retain saved results for description publication; keep the ledger
+for findings and reports.
+Legacy rounds without captured records still accept `model`, `tokens`, `cost`, and
+`estimate`; subscription estimates belong in `estimate`, never `cost`.
+When `shaka reviewer` did not return `different_provider`, add
 `fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
 `reviewer`, `failure_stage`, and `reason` from its `shaka review run` result. Leave
-`attempts` empty when selection tried no other reviewer. The helper replaces each `reason`
+`attempts` empty when selection tried no other reviewer. Copy the last `shaka reviewer`
+result's `provider_coverage` object to the top level unchanged. The helper replaces each `reason`
 from its first absolute or home-directory path onward with `[path]`, so a setup failure does
 not publish a local file location.
 
@@ -519,9 +525,10 @@ independently after publishing.
 After assessing completed CI feedback, also minimize obsolete bot review reports
 and notices with GitHub's native **outdated** disclosure. Read them with `shaka comments`
 at the current head first. Select reports that earlier commits have superseded and
-notices that no longer help the reader. Minimize a CodeRabbit review-limit notice
-when it contains no review findings; record `rate-limited; no review completed`
-in the existing review summary even when the notice concerns the current head. Carry
+notices that no longer help the reader. At any point, you may also minimize a bot
+comment that contains no review findings, such as a skipped-review, plan, upgrade,
+or status-only notice. For a CodeRabbit review-limit notice, record `rate-limited; no
+review completed` in the existing review summary even when it concerns the current head. Carry
 still-applicable findings into the current summary; leave current review reports
 and discussions with unaddressed material concerns visible. A different SHA alone
 does not establish that findings are resolved. The agent makes this assessment;
@@ -578,10 +585,9 @@ and inline threads from the pinned `claude[bot]` report author, address demonstr
 defects, and recheck fixes before merge.
 ```
 
-The [React on Rails review workflow](https://github.com/shakacode/react_on_rails/blob/e3d95bebc743ea9f9ab322f4b370667393c7627a/.github/workflows/claude-code-review.yml)
-is an example: it posts comments and inspects Claude's execution result because
-an unsuccessful review can otherwise report a successful action. Its separate
-`@claude` workflow is a different capability, not required by this ordinary path.
+The packaged [Claude review workflow](../config/claude-code-review.yml) is an example:
+it inspects Claude's execution result, because an unsuccessful review can otherwise report a
+successful action, and runs a short pass when the PR author published a local review of the head.
 
 When later evidence challenges a recommendation, including after merge, follow
 [record later review evidence](review-assessments.md). Assessments preserve the

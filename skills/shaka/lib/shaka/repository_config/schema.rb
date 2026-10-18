@@ -5,11 +5,13 @@ require_relative '../error'
 require_relative '../prose_limits'
 require_relative '../repo_prefix'
 require_relative '../review_prompt'
+require_relative '../review_coverage'
 require_relative 'branch_schema'
 require_relative 'command_schema'
 require_relative 'merge_schema'
 require_relative 'opening_schema'
 require_relative 'pr_description_schema'
+require_relative 'project_guidance_schema'
 require_relative 'wip_schema'
 require_relative 'review_schema'
 require_relative 'validation'
@@ -21,7 +23,11 @@ module Shaka
       include Validation
 
       REQUIRED = %w[version review merge].freeze
-      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix opening_check prose_limits].freeze
+      OPTIONAL = %w[base_branch branches wip pr_description repo_prefix opening_check prose_limits
+                    project_guidance].freeze
+      OPTIONAL_REVIEW_KEYS = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
+                              ReviewSchema::LOCAL_REVIEW_COUNT, ReviewCoverage::KEY, ReviewLimit::KEY,
+                              'ci_review_wait', 'post_implementation'].freeze
 
       attr_reader :commands
 
@@ -47,6 +53,7 @@ module Shaka
         validate_commands
         # Validate opening_check before review prompt collection reads its prompt_file.
         validate_optional
+        ProjectGuidanceSchema.new(project_guidance).validate if @data.key?(ProjectGuidanceSchema::KEY)
         validate_review
         validate_merge
         ProseLimits.validate!(@data['prose_limits']) if @data.key?('prose_limits')
@@ -55,6 +62,8 @@ module Shaka
       def opening_check
         @data.fetch('pr_description', {}).fetch('opening_check') { @data.fetch('opening_check', {}) }
       end
+
+      def project_guidance = ProjectGuidanceSchema.resolve(@data)
 
       private
 
@@ -94,10 +103,9 @@ module Shaka
         review = mapping!(@data['review'], 'review')
         ReviewSchema.retired!(review)
         ReviewSchema.renamed!(review)
-        optional = [ReviewSchema::CI_REVIEW_JOBS, ReviewSchema::LOCAL_REVIEW_AGENTS, ReviewSchema::PROMPT_FILE,
-                    ReviewSchema::LOCAL_REVIEW_COUNT, ReviewLimit::KEY, 'ci_review_wait', 'post_implementation']
-        keys!(review, ['required'], optional, 'review')
+        keys!(review, ['required'], OPTIONAL_REVIEW_KEYS, 'review')
         ReviewSchema.new(review).validate
+        ReviewCoverage.validate!(review)
         count = ReviewSchema::LOCAL_REVIEW_COUNT
         positive_integer!(review[count], "review.#{count}") if review.key?(count)
         local_prompt_files!(review) unless @available_commands
@@ -105,7 +113,7 @@ module Shaka
 
       # A trusted load checks the files in the commit's tree instead; see TrustedConfigSource.
       def local_prompt_files!(review)
-        RepositoryConfig.prompt_files(review:, opening: opening_check).each do |label, path|
+        RepositoryConfig.prompt_files(review:, opening: opening_check, guidance: project_guidance).each do |label, path|
           next if @prompt_validator&.call(label, path)
 
           file = file!(path, label)

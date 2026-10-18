@@ -20,6 +20,7 @@ git clone https://github.com/shakacode/shaka.git "$HOME/.agents/shaka"
 Default: `~/.agents/shaka`; respect chosen locations with `--directory DIR`.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
+This directory is the Shaka source, not configuration; each project keeps its settings in its own `.agents/shaka/`.
 
 <a id="use-shaka-in-claude-code"></a>
 <a id="use-shaka-in-cursor"></a>
@@ -60,7 +61,8 @@ Use the registered helper with your chosen path:
 
 Verification checks checkout identity, cleanliness, links, and Ruby without changes.
 Update validates the fetched tree before advancing the recorded origin branch. Dirty tracked or untracked files, unexpected checkout changes,
-and divergent updates stop it. Preserve changes in a development checkout;
+and divergent updates stop it. After a manual pull of the registered branch,
+`install --update` records the pulled revision; local commits still stop it. Preserve changes in a development checkout;
 do not reset them to make installation succeed. Repair missing Ruby records by
 running `bin/install` with Ruby 3.4 or later. Maintenance uses registered selections;
 change hosts or towers through installation first. A known interrupted update
@@ -87,7 +89,7 @@ Keep every older package: active chats may reference its absolute paths.
 
 ## Teams and forks
 
-Use [team instructions](https://github.com/shakacode/shaka/blob/main/docs/getting-started.md#use-a-personal-fork).
+Use the [fork guide](https://github.com/shakacode/shaka/blob/main/docs/fork-and-hack.md).
 Keep local `.git` installation records per machine. For forks or SSH origins, register the exact `--repository URL` and optional `--branch NAME`.
 Publish upstream integrations separately before updating.
 

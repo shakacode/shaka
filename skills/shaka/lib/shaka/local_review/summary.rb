@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'usage'
+
 module Shaka
   # Links a commit to GitHub only when GitHub has it. A round reviewed before a rebase names a
   # commit that was never pushed, and a link to it would open a 404 page; `rebased` names the
@@ -40,13 +42,24 @@ module Shaka
   end
 
   # The lines under the summary table: what the loop cost, why it stopped, and what the prompt
-  # column means.
+  # line means.
   class LocalReviewSummary
     INSTRUCTIONS = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/config/review-prompt.md'
     RULES = 'https://github.com/shakacode/shaka/blob/main/skills/shaka/lib/shaka/review_prompt.rb'
     NUMBER = /\A\d{1,3}(?:,\d{3})*\z|\A\d+\z/
     # `shaka usage` marks an estimate that leaves some responses unpriced as `(partial)`.
     MONEY = /\A\$?(\d+(?:\.\d+)?)( \(partial\))?\z/
+
+    # Each distinct prompt once, with its rounds named only when the rounds used different prompts.
+    def self.prompts(rounds, links)
+      groups = rounds.group_by { |round| round.prompt(links) }
+      return "**Prompt:** #{groups.keys.first}" if groups.one?
+
+      texts = groups.map do |text, grouped|
+        "#{text} (#{grouped.one? ? 'round' : 'rounds'} #{grouped.map(&:number).join(', ')})"
+      end
+      "**Prompt:** #{texts.join('; ')}"
+    end
 
     def initialize(rounds) = @rounds = rounds
 
@@ -67,6 +80,8 @@ module Shaka
     end
 
     def tokens
+      return 'token categories per round (totals not combined)' if @rounds.any?(&:usage_record)
+
       counts = @rounds.map { |round| round.value('tokens').to_s }
       return 'tokens UNKNOWN' unless counts.all? { |count| count.match?(NUMBER) }
 
@@ -75,10 +90,19 @@ module Shaka
 
     # A subscription session has no per-token bill, so its dollar figure is an API-equivalent estimate.
     def cost
+      return captured_cost if @rounds.any?(&:usage_record)
+
       prices = @rounds.map { |round| price(round).match(MONEY) }
       return 'cost UNKNOWN' if prices.any?(&:nil?)
 
       format('$%<sum>.2f %<label>s', sum: prices.sum { |match| match[1].to_f }, label: cost_label(prices))
+    end
+
+    def captured_cost
+      columns = @rounds.flat_map do |round|
+        round.usage_record ? round.usage_record.fetch('columns') : [{ 'usd' => price(round) }]
+      end
+      LocalReviewUsage.cost('columns' => columns)
     end
 
     def cost_label(prices)
@@ -106,7 +130,7 @@ module Shaka
     end
 
     def prompt
-      "**Prompt:** `Shaka default` is Shaka's [review instructions](#{INSTRUCTIONS}) plus its " \
+      "**Prompt sources:** `Shaka default` is Shaka's [review instructions](#{INSTRUCTIONS}) plus its " \
         "[fixed rules](#{RULES}); a `review.prompt_file` entry names the repository file used instead. " \
         '`criteria SHA` means the reviewer also received the trusted `AGENTS.md` files from that commit.'
     end

@@ -5,7 +5,8 @@
 review:
   ci_review_wait: one # Wait for one configured hosted review report before merge.
   local_max_rounds: 5 # Committed heads one local review ledger may review.
-  local_review_count: 1 # Local reviewers run on each committed head.
+  local_review_count: 1 # Local reviewers run on each committed head; unused when provider_coverage lists providers.
+  provider_coverage: [] # One local reviewer per listed provider, in place of local_review_count.
   post_implementation: # The finished-result checkpoint before merge readiness.
     enabled: true
     reviewer: openai/codex
@@ -38,6 +39,8 @@ prose_limits: # Visible PR description and walkthrough prose.
   max_paragraph_words: 100
   max_description_words: 300
   words_per_changed_line: 4 # Proportional budget: 150 words plus this many per changed line.
+
+project_guidance: {} # None: no repository guides for PR evidence or merge readiness.
 
 # Command-line defaults; config.yml does not set these, but the flags override them per run.
 runtime:
