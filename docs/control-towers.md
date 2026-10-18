@@ -22,18 +22,17 @@ Install Shaka's control towers for Codex.
 
 1. If you already have a master chat, continue there. Otherwise, choose one
    chat to coordinate your projects and run `$mct` there.
-2. Open a chat in each repository's Codex project and run `$rct` to connect it
+2. In each repository's checkout or worktree, run `$rct` to connect its chat
    to the master.
+
+You can keep your current chat if the repository is saved as a Codex project on
+that computer. Setup needs exactly one matching project.
 
 In Claude Code, use `/mct-claude` and `/rct-claude` instead. Use the desktop apps
 for tower setup; see [coding agents](coding-agents.md) for other environments.
 A message from a new tower may not start the master's chat, so after `/rct-claude`
 finishes, send `/mct-claude` in the master again so it checks the new tower. The
 tower is usable before that.
-
-Run `$rct` from the repository's checkout or worktree. You can keep your current
-chat if the repository is saved as a Codex project on that computer. Setup needs
-exactly one matching project.
 
 After the master acknowledges the repository tower, or a Claude Code tower reports
 its setup, ask the tower what needs attention. You choose which task starts; setup
