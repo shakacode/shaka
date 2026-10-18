@@ -23,7 +23,7 @@ module Shaka
 
       def development_uses
         worktrees = linked_worktrees
-        branches = git('for-each-ref', '--format=%(refname:short)', 'refs/heads/').lines.map(&:strip) - [@branch]
+        branches = git('for-each-ref', '--format=%(refname:lstrip=2)', 'refs/heads/').lines.map(&:strip) - [@branch]
         uses = []
         uses << "linked worktrees: #{worktrees.join(', ')}" unless worktrees.empty?
         uses << "local branches: #{branches.join(', ')}" unless branches.empty?

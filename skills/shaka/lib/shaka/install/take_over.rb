@@ -43,8 +43,9 @@ module Shaka
         { repository: options[:repository] || record['repository'], branch: options[:branch] || record['branch'] }
       end
 
+      # Both checkout locks in path order, so two opposite take-overs cannot wait on each other.
       def take_over
-        with_lock(File.join(@owner.root, '.git')) do
+        with_locks(checkout_lock_directories) do
           @checkout.prepare(:install)
           targets = take_over_targets
           links = targets.map { |target| links_for(target, previous_source: @owner.root) }
@@ -54,6 +55,8 @@ module Shaka
           verify(targets)
         end
       end
+
+      def checkout_lock_directories = [@checkout.root, @owner.root].map { |root| File.join(root, '.git') }.sort
 
       # Holding every host lock until the records change keeps a rollback from undoing another install.
       def with_host_locks(links, &) = with_locks(links.map(&:lock_directory).uniq.sort, &)

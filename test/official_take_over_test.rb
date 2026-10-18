@@ -1,17 +1,10 @@
 # frozen_string_literal: true
 
-require 'English'
-require_relative 'official_install_support'
+require_relative 'official_take_over_support'
 
-# A second checkout takes every host link from the registered one in one step, or changes nothing.
+# A second checkout takes every host link from the registered one in one step.
 class OfficialTakeOverTest < Minitest::Test
-  include OfficialInstallSupport
-
-  def setup
-    super
-    @second = File.join(@directory, 'second')
-    @claude = File.join(@home, '.claude/skills/shaka')
-  end
+  include OfficialTakeOverSupport
 
   def test_take_over_moves_every_host_and_retires_the_old_record
     install_two_hosts
@@ -21,33 +14,6 @@ class OfficialTakeOverTest < Minitest::Test
     assert_retired_and_registered
     output, status = Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, File.join(@second, 'bin/install'), '--verify')
     assert_predicate status, :success?, output
-  end
-
-  def test_a_failure_after_switching_links_restores_them
-    install_two_hosts
-    record = File.join(@root, '.git/shaka-install.json')
-    before = File.binread(record)
-    # The links switch, then renaming the old record fails.
-    File.chmod(0o555, File.join(@root, '.git'))
-    output, = invoke('--directory', @second, '--take-over')
-    assert_includes output, 'links point at'
-    assert_links_point_at(@root)
-    assert_equal [before, false], [File.binread(record), File.exist?(File.join(@second, '.git/shaka-install.json'))]
-  ensure
-    File.chmod(0o755, File.join(@root, '.git'))
-  end
-
-  def test_take_over_switches_no_host_until_it_holds_every_host_lock
-    install_two_hosts
-    File.open(File.join(File.dirname(@claude), '.shaka-install.lock'), File::RDWR) do |lock|
-      lock.flock(File::LOCK_EX)
-      pid = spawn_take_over
-      assert_links_point_at(@root)
-      lock.flock(File::LOCK_UN)
-      Process.wait(pid)
-    end
-    assert_predicate $CHILD_STATUS, :success?
-    assert_links_point_at(@second)
   end
 
   def test_take_over_refuses_an_owner_other_accounts_can_write
@@ -78,38 +44,10 @@ class OfficialTakeOverTest < Minitest::Test
 
   private
 
-  # Returns once the take-over has recorded its Ruby, just before it takes the host locks.
-  def spawn_take_over
-    pid = Process.spawn({ 'HOME' => @home }, RbConfig.ruby, @installer, '--directory', @second, '--take-over',
-                        %i[out err] => File::NULL)
-    wait_for { File.exist?(File.join(@second, '.git/shaka-ruby')) }
-    sleep 1
-    pid
-  end
-
-  def wait_for
-    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 60
-    sleep 0.1 until yield || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
-    assert yield, 'take-over did not reach the host locks'
-  end
-
   def assert_retired_and_registered
     refute_path_exists File.join(@root, '.git/shaka-install.json')
     assert_equal 1, Dir.glob(File.join(@root, '.git/shaka-install.retired-*.json')).size
     record = JSON.parse(File.read(File.join(@second, '.git/shaka-install.json')))
     assert_equal [@remote, 2], [record['repository'], record['targets'].size]
-  end
-
-  def assert_links_point_at(checkout)
-    [@destination, @claude].each do |link|
-      assert_equal File.join(File.realpath(checkout), 'skills/shaka'), File.realpath(link)
-    end
-  end
-
-  # The custom directory and the Claude host directory both point at the first checkout.
-  def install_two_hosts
-    official_install
-    output, status = invoke('--directory', @root, '--repository', @remote, '--agent', 'claude')
-    assert_predicate status, :success?, output
   end
 end

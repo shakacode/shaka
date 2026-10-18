@@ -34,7 +34,7 @@ module Shaka
         @checkout.check_development_use(action)
         return verify(targets_for(action)) if action == :verify
 
-        with_lock(File.join(@checkout.root, '.git')) { @owner ? take_over : install(action) }
+        @owner ? take_over : with_lock(File.join(@checkout.root, '.git')) { install(action) }
         update_reminder
       end
 
