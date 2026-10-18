@@ -116,8 +116,10 @@ What Codex adds over Claude alone:
 - 35 of the 37 Codex-only defects are recorded as fixed.
 - Two related PRs share the same pair of defects. Counting each once leaves 35
   distinct Codex-only defects, spread across 27 of the 147 PRs.
-- When both review a commit, they run at the same time, and neither sees the
-  other's findings. In 27 of the 31 Codex-only findings of any class with a recorded commit,
+- Neither reviewer sees the other's findings for the same commit. Shaka records a
+  commit's findings only after every reviewer of that commit has finished, so no
+  review prompt can include them. The runs usually overlap as well: 106 of 110
+  times in the timing window. In 27 of the 31 Codex-only findings of any class with a recorded commit,
   Claude reviewed that same commit and did not report it.
 - Examples: PATH and arguments read in reverse order (#453), cleanup that could
   delete a user's file (#611), and two different binary files compared as equal
