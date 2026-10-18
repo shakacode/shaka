@@ -267,7 +267,7 @@ engineering principles and parallel workers;
 [Ponytail](https://github.com/DietrichGebert/ponytail), which keeps each change
 as small as it can be while still complete; and
 [Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills), a
-library of engineering practices from spec to launch. Ponytail and Addy
+library of engineering practices from spec to launch. pstack, Ponytail, and Addy
 Osmani's skills have not yet been tried on a full Shaka delivery, so
 [try a new pack](#try-a-new-skill-pack-with-shaka) on one task before relying on it.
 
@@ -310,6 +310,11 @@ the PR in its own format, and returns it to you to merge. pstack's "don't block
 on the human" guidance does not turn Ask into Auto. Leave out the subagent
 sentence and the agent does the fan-out steps alone or asks first.
 
+pstack's [plugin for Claude Code and Codex](https://github.com/michael-denyer/pstack-claude)
+turns poteto mode on by itself. At the start of each session it tells the agent
+to use poteto mode for any task that touches more than one file, so you do not
+need to name it.
+
 ### Try a new skill pack with Shaka
 
 Try a pack on one real task, one you would merge anyway, before you rely on it:
@@ -327,8 +332,8 @@ Which SKILL instructions did you follow, and where did they conflict with Shaka?
 Then check four things:
 
 1. **Does the pack turn itself on?** Some packs load at the start of every
-   session, so they shape tasks you did not name them in. Ponytail works this
-   way.
+   session, so they shape tasks you did not name them in. Ponytail and pstack's
+   plugin work this way.
 2. **Does it change how Shaka delivers?** A pack that skips checks, merges,
    closes tickets, or replaces Shaka's PR description is its own delivery
    workflow. Keep it out of Shaka tasks.
@@ -339,8 +344,9 @@ Then check four things:
 
 Shaka starts its Claude reviewer with Claude Code's `--safe-mode` and its Codex
 reviewer with `--ignore-user-config`, which leave out your plugins and hooks. In
-a check with Ponytail loaded, neither reviewer saw its rules, while a normal
-session did. The Grok reviewer has not been checked.
+a check with Ponytail and pstack loaded, neither reviewer received their skills,
+hooks, or rules, while a normal session did. The Grok reviewer has not been
+checked.
 
 ### What each kind of skill can do
 
@@ -353,7 +359,7 @@ or approve a merge.
 | Planning | AI Hero `to-spec`, `to-tickets` | Its spec and tickets become the task. |
 | Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd` | Shapes how the agent works inside each step. |
 | Parallel workers | pstack `swarm`, `arena`, `interrogate` | Runs only when you say the agent may delegate. Workers never publish or merge. |
-| Same-session review | AI Hero `code-review` | Findings the agent weighs and fixes before Shaka's own review. The skill does not replace that review, which runs in a separate session and, when available, with another provider's model. |
+| Same-session review | AI Hero `code-review`, pstack `blast-radius` | Findings the agent weighs and fixes before Shaka's own review. The skill does not replace that review, which runs in a separate session and, when available, with another provider's model. |
 | PR text | AI Hero `pr`, pstack `technical-writing`, `unslop` | Advice on wording and presentation. Shaka's description keeps its own format and required fields. |
 | Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, Orchestrate, and Autopilot playbooks | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
 
