@@ -20,8 +20,9 @@ same structured table, so one script could read all of them.
 ## Most PR text is agents writing to agents
 
 The 350 PRs (Dependabot excluded) carry about 21.5 million characters of
-discussion and 5.9 million of PR descriptions. That is roughly 6.9 million
-tokens that any later agent reading a PR must load. A typical PR has 10 posts
+discussion and 5.9 million of PR descriptions, roughly 6.9 million tokens of
+text. An agent that reads a whole PR loads that PR's share; how often agents
+do so went unmeasured. A typical PR has 10 posts
 and 37,600 characters of discussion.
 
 | Source | Share of discussion |
@@ -66,12 +67,13 @@ commit or evidence. Nobody separately checked whether every finding was real.
 Dropping Claude would give up most of the recorded fixes. Making it quieter
 looks like the better trade.
 
-## The hosted review mostly confirms work that was already reviewed
+## The hosted review adds few findings after local review
 
 The hosted Claude review ran on every push, with a broad prompt. It was told
 to look for "code quality, bugs, security, performance". Since its reports
-started declaring a finding count, 95 of 111 runs (86%) found nothing. The
-local review had already caught the problems.
+started declaring a finding count, 95 of 111 runs (86%) found nothing. These
+PRs had already passed local review, which is a likely reason. The study did
+not measure the cause.
 
 Anthropic's current guidance points the other way. Its
 [code-review plugin](https://github.com/anthropics/claude-code/blob/main/plugins/code-review/commands/code-review.md)
