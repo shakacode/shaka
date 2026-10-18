@@ -55,13 +55,14 @@ module Shaka
 
     # The `provider_coverage` object copied from `shaka reviewer`. Every listed provider that did
     # not review the final commit is a gap, whether or not the copy named it, so a selected reviewer
-    # that failed afterward still shows; the copied gaps supply only reasons.
+    # that failed afterward still shows. The copied gaps supply only reasons; a stale one, such as
+    # for a provider whose fallback reviewer ran after selection, is ignored.
     def self.notice(coverage, reviewed, redact:)
       return [] if coverage.nil?
 
       providers = listed(coverage)
       reviewed = reviewed.map { |id| provider(id) }
-      reasons = reasons(coverage['gaps'], providers, reviewed, redact)
+      reasons = reasons(coverage['gaps'], redact)
       gaps = (providers - reviewed).map { |name| gap_text(name, reasons[name]) }
       gaps.empty? ? [] : ["**Review coverage gap:** #{gaps.join(' ')}"]
     end
@@ -73,15 +74,12 @@ module Shaka
       coverage['providers'].map(&:downcase).uniq
     end
 
-    def self.reasons(gaps, providers, reviewed, redact)
+    def self.reasons(gaps, redact)
       PublicationText.list(gaps, 'provider_coverage gaps').to_h do |gap|
         raise Error, 'Each coverage gap must be an object.' unless gap.is_a?(Hash)
 
-        name = PublicationText.single_line(gap['provider'], 'coverage gap provider').downcase
-        raise Error, "Coverage gap for #{name} is wrong: #{name} reviewed this commit." if reviewed.include?(name)
-        raise Error, "Coverage gap for #{name} is not in provider_coverage." unless providers.include?(name)
-
-        [name, PublicationText.single_line(gap['reason'], 'coverage gap reason').sub(redact, '[path]')]
+        [PublicationText.single_line(gap['provider'], 'coverage gap provider').downcase,
+         PublicationText.single_line(gap['reason'], 'coverage gap reason').sub(redact, '[path]')]
       end
     end
 

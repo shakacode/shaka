@@ -32,18 +32,13 @@ class LocalReviewCoverageGapTest < Minitest::Test
     assert_includes body, 'no local review of this commit from `openai` (reason not recorded).'
   end
 
-  def test_refuses_a_gap_for_a_provider_that_reviewed_the_commit
-    gap = GAP.merge('provider' => 'OpenAI')
-    error = assert_raises(Shaka::Error) { loop_body('rounds' => [round], 'provider_coverage' => coverage([gap])) }
+  # Selection named anthropic as a gap, then Codex failed and a fallback Claude review ran.
+  def test_ignores_a_stale_gap_for_a_provider_that_reviewed_the_commit
+    claude = round(reviewer: 'anthropic/claude', report: report(reviewer: 'anthropic/claude'))
+    body = loop_body('rounds' => [claude], 'provider_coverage' => coverage([GAP]))
 
-    assert_includes error.message, 'openai reviewed'
-  end
-
-  def test_refuses_a_gap_for_an_unlisted_provider
-    gap = GAP.merge('provider' => 'xai')
-    error = assert_raises(Shaka::Error) { loop_body('rounds' => [round], 'provider_coverage' => coverage([gap])) }
-
-    assert_includes error.message, 'not in provider_coverage'
+    refute_includes body, 'from `anthropic`'
+    assert_includes body, 'from `openai` (reason not recorded).'
   end
 
   def test_an_earlier_commit_review_does_not_cover_the_final_commit
