@@ -48,6 +48,14 @@ class PrefixIndividualSettingsTest < Minitest::Test
     end
   end
 
+  def test_a_subdirectory_root_keeps_the_fallback
+    with_individual_settings('repo_prefix' => 'CPF') do |root, ref|
+      subdirectory = File.join(root, 'sub')
+      FileUtils.mkdir_p(subdirectory)
+      assert_equal({ 'prefix' => 'SUB', 'source' => 'fallback' }, prefix(subdirectory, ref))
+    end
+  end
+
   private
 
   def prefix(root, ref) = Shaka::Prefix.new(root:, ref:).call
