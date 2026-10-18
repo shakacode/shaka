@@ -44,7 +44,8 @@ Anthropic's public documentation.
 | Text clearly written by humans | n/a | ≈ 0.6M | ≈ 3% |
 
 - Agents wrote almost all of this text.
-- The largest single source is Shaka's own review publications, at 30%.
+- Shaka's own review publications, at 30%, are the largest single kind of post.
+  The mixed group of other agent posts is larger in total.
 - Hosted Claude review is 11%.
 
 ## Hosted Claude review (`.github/workflows/claude-code-review.yml`)
@@ -114,10 +115,15 @@ The maintainer ran DeepSeek Flash (`deepseek/deepseek-v4.1-flash` through
 OpenRouter, low effort, diff only, no tools) as an extra reviewer. It ran on
 commits that Claude and Codex had already reviewed, to see what it would add.
 
-- 13 attempts on 10 PRs: #250, #409, #429, #453, #493, #511, #512, #515, #516,
-  and #518.
-- 3 attempts failed. Two timed out at 300 seconds (#409, #512). One spent its
-  whole 65,536-token output allowance on reasoning and returned no report (#453).
+- 12 attempts with a published outcome, on 10 PRs: #250, #409, #429, #453, #493,
+  #511, #512, #515, #516, and #518.
+- 3 attempts failed and 9 completed.
+  - Two timed out at 300 seconds: #409, and the first attempt on #512.
+  - One spent its whole 65,536-token output allowance on reasoning and returned
+    no report: the second attempt on #453.
+- These counts come from each trial's own published report. The ledger tables
+  above include only the 10 DeepSeek runs written into shared Claude and Codex
+  ledgers, so their DeepSeek rows are a subset and do not show the #518 defect.
 - Completed reviews took 72 to 595 seconds and cost $0.001 to $0.07 each, as
   OpenRouter reported.
 
@@ -126,7 +132,7 @@ commits that Claude and Codex had already reviewed, to see what it would add.
 | New confirmed defect | 1 | #518: malformed saved history raised a raw error; normal writes were unaffected. Fixed. |
 | New confirmed risk | 1 | #515: a docs sentence dropped a warning about other hosts' link access |
 | No findings | 1 | #429 |
-| Nits, duplicates of Claude or Codex, or disproved concerns | the rest | #250, #453, #493, #511, #512, #516 |
+| Nits, duplicates of Claude or Codex, or disproved concerns | 6 | #250, #453 (first attempt), #493, #511, #512 (600-second rerun), #516 |
 
 - DeepSeek added little that Claude and Codex had not already caught.
 - It is cheap, but slow, and fails often enough to need a fallback.
@@ -177,7 +183,8 @@ commits that Claude and Codex had already reviewed, to see what it would add.
 - **Guarantee at risk:** the 174 Claude-only risks recorded as fixed.
   Tightening the risk rule could lose some of them, so start with nits only.
 - **Not proposed:** dropping Codex. It found 35 distinct defects that Claude did
-  not report on the same commit, at about $0.09 a run.
+  not report. Where the ledger records the commit, Claude reviewed that same
+  commit in 27 of 31 cases. Codex costs about $0.09 a run.
 - **Maintenance:** a few prompt lines.
 
 ### 2. The hosted Claude review adds few findings after local review, and its prompt goes against Anthropic's guidance
@@ -201,7 +208,7 @@ commits that Claude and Codex had already reviewed, to see what it would add.
   findings, which argues for a cheaper hosted review over removing it.
 - **Maintenance:** the prompt, plus a gate change if triggers narrow.
 
-### 3. Shaka's own review publications are the largest single source of text
+### 3. Shaka's own review publications are the largest single kind of post
 
 - **Observed:**
   - 477 publications came to 6.36M characters. The median loop is near 13K and
