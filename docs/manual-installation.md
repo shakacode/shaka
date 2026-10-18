@@ -97,3 +97,24 @@ The update stops without changing the checkout when it finds local changes or
 history that diverged from the recorded branch. To read an update before you
 apply it, run `git fetch` in the checkout and compare `HEAD` with the recorded
 branch, which is `origin/main` unless you chose another.
+
+## Keep development in another clone
+
+The installed checkout should only follow its recorded branch. Branches,
+worktrees, and commits there are what later stop updates. The installer refuses
+a checkout that has linked worktrees or local branches besides the recorded one.
+`install --verify` and `install --update` warn when they appear later and still succeed.
+
+To move Shaka out of a clone you also develop in, give it a checkout of its own
+and move every skill link there in one step:
+
+```bash
+"$OLD_CLONE/bin/install" --directory ~/.local/share/shaka/source --take-over
+```
+
+`--take-over` finds the registered checkout your skill links point at, clones its
+repository and branch into the new directory, and switches every host it
+registered. It renames the old checkout's installation record so that checkout
+stops claiming the links, and leaves its files, branches, and worktrees alone.
+If any step fails, every link points back at the old checkout. For links in a
+custom skills directory, add `--skills-dir DIR` so it can find them.

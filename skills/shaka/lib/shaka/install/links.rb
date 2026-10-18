@@ -25,8 +25,12 @@ module Shaka
           preflight(target)
           previous = @names.to_h { |name| [name, old_target(name)] }
           switch_links(target, previous)
+          previous
         end
       end
+
+      # Puts back links that a later step of the same operation could not keep.
+      def restore_all(previous) = with_lock(@skills_dir) { restore_links(@names, previous) }
 
       private
 

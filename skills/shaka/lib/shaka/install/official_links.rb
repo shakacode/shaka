@@ -6,6 +6,12 @@ module Shaka
   module Install
     # Migrates verified copies without removing their contents.
     class OfficialLinks < Links
+      # A take-over also owns links that point at the previous registered checkout.
+      def initialize(*, previous_source: nil)
+        super(*)
+        @previous_source = previous_source
+      end
+
       def check(target)
         ensure_safe_directory(@skills_dir, 'Host skills directory')
         validate_location(target)
@@ -40,6 +46,18 @@ module Shaka
       end
 
       private
+
+      def owned?(name) = super || previous_target?(name)
+
+      def previous_target?(name)
+        target = old_target(name)
+        return false unless @previous_source && target
+
+        File.realpath(File.expand_path(target, @skills_dir)) ==
+          File.realpath(File.join(@previous_source, 'skills', name))
+      rescue Errno::ENOENT
+        false
+      end
 
       def validate_location(target)
         directory = File.realpath(@skills_dir)

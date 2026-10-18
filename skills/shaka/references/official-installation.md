@@ -20,6 +20,9 @@ git clone https://github.com/shakacode/shaka.git "$HOME/.agents/shaka"
 Default: `~/.agents/shaka`; respect chosen locations with `--directory DIR`.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
+Installation refuses a checkout with linked worktrees or extra local branches; verify and update warn.
+To move links off such a checkout, run its `bin/install --directory NEW --take-over`
+(add `--skills-dir DIR` for a custom skills directory). Never delete the old checkout's branches or worktrees for the user.
 This directory is the Shaka source, not configuration; each project keeps its settings in its own `.agents/shaka/`.
 
 <a id="use-shaka-in-claude-code"></a>

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require_relative 'checkout_development'
 require_relative 'checkout_drift'
 require_relative 'checkout_git'
 require_relative 'directory_safety'
@@ -13,6 +14,7 @@ module Shaka
       include DirectorySafety
       include CheckoutGit
       include CheckoutDrift
+      include CheckoutDevelopment
 
       REPOSITORY = 'https://github.com/shakacode/shaka.git'
       RECORD = 'shaka-install.json'
@@ -44,7 +46,21 @@ module Shaka
         advance(candidate)
       end
 
-      def revision = git('rev-parse', 'HEAD')
+      def read_record
+        path = File.join(@root, '.git', RECORD)
+        return unless File.exist?(path) || File.symlink?(path)
+
+        raise ArgumentError, 'Installation record must be a regular file' unless File.lstat(path).file?
+
+        value = JSON.parse(File.read(path))
+        raise ArgumentError, 'Installation record does not match this directory' unless
+          valid_record?(value)
+
+        value
+      rescue JSON::ParserError
+        raise ArgumentError, 'Installation record is invalid'
+      end
+
       def pending? = @record['pending_revision'] == revision
 
       def save(targets, identity)
@@ -85,21 +101,6 @@ module Shaka
         @repository ||= REPOSITORY
         @branch ||= 'main'
         git('clone', '--quiet', '--branch', @branch, '--', @repository, @root)
-      end
-
-      def read_record
-        path = File.join(@root, '.git', RECORD)
-        return unless File.exist?(path) || File.symlink?(path)
-
-        raise ArgumentError, 'Installation record must be a regular file' unless File.lstat(path).file?
-
-        value = JSON.parse(File.read(path))
-        raise ArgumentError, 'Installation record does not match this directory' unless
-          valid_record?(value)
-
-        value
-      rescue JSON::ParserError
-        raise ArgumentError, 'Installation record is invalid'
       end
 
       def valid_record?(value)
