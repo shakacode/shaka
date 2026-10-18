@@ -50,7 +50,7 @@ class UpdateCheckTest < Minitest::Test
     assert_equal 'drift', result.fetch('status')
     assert_includes result.fetch('guidance'), 'recorded aaaaaaa, checkout bbbbbbb'
     assert_includes result.fetch('guidance'), "#{Shellwords.escape('/installed path/scripts/shaka')} install --update"
-    assert_includes @calls.fetch(1).first, "repos/shakacode/shaka/compare/#{PULLED}...main"
+    assert_includes @calls.fetch(2).first, "repos/shakacode/shaka/compare/#{PULLED}...main"
     assert_equal 'available', check('ahead', head: PULLED).fetch('status')
   end
 
@@ -60,6 +60,13 @@ class UpdateCheckTest < Minitest::Test
       assert_equal 'local_commits', result.fetch('status')
       assert_includes result.fetch('guidance'), 'install --update` will stop'
     end
+  end
+
+  def test_unpushed_local_commit_is_found_without_asking_github
+    result = check('identical', head: PULLED, published: ['', '', false])
+    assert_equal 'local_commits', result.fetch('status')
+    assert_equal ['merge-base', '--is-ancestor', PULLED, 'refs/remotes/origin/main'], @calls.fetch(1).first.drop(3)
+    assert_equal 2, @calls.size
   end
 
   def test_retained_copy_offers_migration_instead_of_an_unsupported_update
@@ -87,8 +94,6 @@ class UpdateCheckTest < Minitest::Test
       assert_equal ['custom', reason], [result.fetch('status'), result.fetch('reason')]
       assert_empty @calls
     end
-    assert_equal 'unsupported_source', check('ahead', branch: '--upload-pack=x').fetch('reason')
-    assert_empty @calls
   end
 
   def test_official_ssh_origins_are_supported

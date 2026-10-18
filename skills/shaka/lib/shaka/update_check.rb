@@ -46,8 +46,8 @@ module Shaka
 
     private_class_method :installed, :usage
 
-    # Only a registered installation has a checkout, and its comparison starts from the files on
-    # disk rather than the revision its record names.
+    # Only a registered installation has a checkout, and its comparison starts from the checkout's
+    # HEAD commit rather than the revision its record names.
     def initialize(source:, branch:, helper:, checkout: nil, runner: Launch.method(:capture))
       @source = source
       @branch = branch
@@ -61,25 +61,35 @@ module Shaka
         @source['kind'] == 'uninstalled'
       return development unless @source['kind'] == 'revision'
 
-      repository = @source['repository'].to_s[GITHUB, 1]
-      return unsupported_source unless repository && supported_revision?
-
-      compare(repository)
+      compare(@source['repository'].to_s[GITHUB, 1])
     rescue Launch::Unavailable => e
       unknown(e.reason, e.message)
-    rescue Shaka::Error, JSON::ParserError, SystemCallError, TypeError
+    rescue JSON::ParserError, TypeError
       unknown('invalid_response', 'GitHub returned an answer this check cannot read.')
+    rescue Shaka::Error, SystemCallError => e
+      unknown('command_failed', "A local command failed: #{e.message}")
     end
 
     private
 
     def recorded = @source['revision'].to_s
-    def supported_revision? = @branch.to_s.match?(BRANCH) && recorded.match?(COMMIT)
+
+    # The branch and repository name form an API path, so a `..` segment could address another endpoint.
+    def supported?(repository)
+      repository && !"#{repository}/#{@branch}".include?('..') && @branch.to_s.match?(BRANCH) &&
+        recorded.match?(COMMIT)
+    end
 
     def compare(repository)
+      return unsupported_source unless supported?(repository)
+
       official = repository.casecmp?('shakacode/shaka') && @branch == 'main'
       @target = official ? 'official main' : "#{repository} #{@branch}"
       head = checkout_head
+      head == recorded || published?(head) ? github(repository, head) : local_commits
+    end
+
+    def github(repository, head)
       endpoint = "repos/#{repository}/compare/#{head}...#{@branch}"
       output, error, ok = @runner.call(['gh', 'api', '--hostname', 'github.com', endpoint, '--jq',
                                         '{status: .status, ahead_by: .ahead_by}'], Dir.tmpdir)
@@ -94,12 +104,23 @@ module Shaka
     def checkout_head
       return recorded unless @checkout
 
-      output, error, ok = @runner.call(['git', '-C', @checkout, 'rev-parse', '--verify', 'HEAD'], @checkout)
+      output, error, ok = git('rev-parse', '--verify', 'HEAD')
       head = output.strip
       return head if ok && head.match?(COMMIT)
 
       raise Launch::Unavailable.new('checkout_unreadable', "Could not read #{@checkout}: #{first_line(error)}")
     end
+
+    # GitHub cannot compare a commit it has never received, so a HEAD outside the registered branch
+    # as last fetched is a local commit, found without the network.
+    def published?(head)
+      _output, error, ok = git('merge-base', '--is-ancestor', head, "refs/remotes/origin/#{@branch}")
+      return ok if ok || error.strip.empty?
+
+      raise Launch::Unavailable.new('checkout_unreadable', "Could not read #{@checkout}: #{first_line(error)}")
+    end
+
+    def git(*arguments) = @runner.call(['git', '-C', @checkout, *arguments], @checkout)
 
     def comparison(status, ahead_by, head)
       case status

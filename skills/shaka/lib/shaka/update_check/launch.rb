@@ -20,20 +20,22 @@ module Shaka
 
       def self.capture(argv, directory)
         name = argv.first
-        root = candidate_root
-        path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
-        executable = LocalReviewPathGuard.safe_executable(path, name, root)
+        path, executable = locate(name)
         raise Unavailable.new("#{name}_missing", "`#{name}` was not found on PATH.") unless executable
 
         Doctor::BoundedCommand.new(timeout: 15).call([environment(path), executable, *argv.drop(1)], directory)
-      rescue Unavailable
-        raise
+      end
+
+      def self.locate(name)
+        root = candidate_root
+        path = LocalReviewPathGuard.safe_path(ENV.fetch('PATH', ''), candidate_root: root, drop_candidate: true)
+        [path, LocalReviewPathGuard.safe_executable(path, name, root)]
       rescue Shaka::Error => e
         raise Unavailable.new('unsafe_path', "`#{name}` was not run: #{e.message}.")
       end
 
-      # Outside every repository no candidate checkout can own a PATH entry, so the installed
-      # source checkout is the boundary instead.
+      # Pull request content arrives as a Git checkout, so outside every repository the user's own
+      # PATH applies and only the installed source checkout is kept out of it.
       def self.candidate_root
         directory = Pathname.new(File.realpath(Dir.pwd))
         outer = directory.ascend.to_a.reverse.find { |parent| parent.join('.git').exist? }
@@ -44,7 +46,7 @@ module Shaka
         ENV.keys.grep(/\AGIT_/).to_h { |key| [key, nil] }.merge('PATH' => path, 'BASH_ENV' => nil, 'ENV' => nil)
       end
 
-      private_class_method :candidate_root, :environment
+      private_class_method :locate, :candidate_root, :environment
     end
   end
 end

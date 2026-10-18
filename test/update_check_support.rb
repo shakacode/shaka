@@ -10,7 +10,8 @@ module UpdateCheckSupport
   CHECKOUT = '/installed path'
   SOURCE = { 'kind' => 'revision', 'revision' => SHA,
              'repository' => 'https://github.com/shakacode/shaka.git' }.freeze
-  DEFAULTS = { source: SOURCE, branch: 'main', checkout: CHECKOUT, ahead_by: 3, head: SHA, github: nil }.freeze
+  DEFAULTS = { source: SOURCE, branch: 'main', checkout: CHECKOUT, ahead_by: 3, head: SHA, github: nil,
+               published: ['', '', true] }.freeze
 
   def check(status, **options)
     options = DEFAULTS.merge(options)
@@ -18,7 +19,9 @@ module UpdateCheckSupport
     github = options[:github] || [JSON.generate({ 'status' => status, 'ahead_by' => options[:ahead_by] }), '', true]
     runner = lambda do |argv, directory|
       @calls << [argv, directory]
-      argv.first == 'git' ? ["#{options[:head]}\n", '', true] : github
+      next github unless argv.first == 'git'
+
+      argv.include?('merge-base') ? options[:published] : ["#{options[:head]}\n", '', true]
     end
     Shaka::UpdateCheck.new(source: options[:source], branch: options[:branch], checkout: options[:checkout],
                            helper: '/installed path/scripts/shaka', runner:).result

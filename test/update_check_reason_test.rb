@@ -36,6 +36,28 @@ class UpdateCheckReasonTest < Minitest::Test
     assert_includes result.fetch('guidance'), 'fatal: not a git repository'
   end
 
+  def test_unreadable_branch_ancestry_is_not_mistaken_for_local_commits
+    result = check('identical', head: PULLED, published: ['', "fatal: Not a valid object name\n", false])
+    assert_equal 'checkout_unreadable', result.fetch('reason')
+    assert_includes result.fetch('guidance'), 'fatal: Not a valid object name'
+  end
+
+  def test_option_like_branches_and_dot_dot_segments_are_refused_before_any_command
+    ['--upload-pack=x', '../../user', 'a..b'].each do |branch|
+      assert_equal 'unsupported_source', check('ahead', branch:).fetch('reason')
+      assert_empty @calls
+    end
+    fork = SOURCE.merge('repository' => 'https://github.com/owner/..')
+    assert_equal 'unsupported_source', check('ahead', source: fork).fetch('reason')
+    assert_empty @calls
+  end
+
+  def test_local_command_failure_is_not_blamed_on_github
+    result = Shaka::UpdateCheck.new(source: SOURCE, branch: 'main', helper: '/installed/shaka',
+                                    runner: ->(*) { raise Errno::ENOENT, 'gh' }).result
+    assert_equal 'command_failed', result.fetch('reason')
+  end
+
   def test_missing_cli_is_advisory_and_names_the_command
     runner = ->(*) { raise Shaka::UpdateCheck::Launch::Unavailable.new('gh_missing', '`gh` was not found on PATH.') }
     result = Shaka::UpdateCheck.new(source: SOURCE, branch: 'main', helper: '/installed/shaka', runner:).result
@@ -47,23 +69,43 @@ class UpdateCheckReasonTest < Minitest::Test
     Dir.mktmpdir('shaka-update-pull') do |checkout|
       recorded = commit(checkout, 'first')
       pulled = commit(checkout, 'second')
-      result = Shaka::UpdateCheck.new(source: SOURCE.merge('revision' => recorded), branch: 'main', checkout:,
-                                      helper: '/installed/shaka', runner: method(:real_git)).result
+      git(checkout, 'update-ref', 'refs/remotes/origin/main', pulled)
+      result = real_check(checkout, recorded)
       assert_equal 'drift', result.fetch('status')
       assert_includes result.fetch('guidance'), "checkout #{pulled[0, 7]}"
     end
   end
 
+  def test_real_unpushed_commit_reports_local_commits_without_github
+    Dir.mktmpdir('shaka-update-local') do |checkout|
+      recorded = commit(checkout, 'first')
+      git(checkout, 'update-ref', 'refs/remotes/origin/main', recorded)
+      commit(checkout, 'local')
+      assert_equal 'local_commits', real_check(checkout, recorded).fetch('status')
+    end
+  end
+
   private
 
-  def real_git(argv, directory)
-    argv.first == 'git' ? Shaka::UpdateCheck::Launch.capture(argv, directory) : ['{"status":"identical"}', '', true]
+  def real_check(checkout, recorded)
+    runner = lambda do |argv, directory|
+      argv.first == 'git' ? Shaka::UpdateCheck::Launch.capture(argv, directory) : ['{"status":"identical"}', '', true]
+    end
+    Shaka::UpdateCheck.new(source: SOURCE.merge('revision' => recorded), branch: 'main', checkout:,
+                           helper: '/installed/shaka', runner:).result
+  end
+
+  def git(directory, *arguments)
+    command = ['git', '-C', directory, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', *arguments]
+    output, status = Open3.capture2(*command)
+    raise "git #{arguments.first} failed" unless status.success?
+
+    output.strip
   end
 
   def commit(directory, message)
-    git = ['git', '-C', directory, '-c', 'user.name=Test', '-c', 'user.email=test@example.com']
-    system(*git, 'init', '--quiet', exception: true) unless File.directory?(File.join(directory, '.git'))
-    system(*git, 'commit', '--quiet', '--allow-empty', '-m', message, exception: true)
-    Open3.capture2(*git, 'rev-parse', 'HEAD').first.strip
+    git(directory, 'init', '--quiet') unless File.directory?(File.join(directory, '.git'))
+    git(directory, 'commit', '--quiet', '--allow-empty', '-m', message)
+    git(directory, 'rev-parse', 'HEAD')
   end
 end
