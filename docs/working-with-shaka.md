@@ -310,7 +310,7 @@ the PR in its own format, and returns it to you to merge. pstack's "don't block
 on the human" guidance does not turn Ask into Auto. Leave out the subagent
 sentence and the agent does the fan-out steps alone or asks first.
 
-pstack's [plugin for Claude Code and Codex](https://github.com/michael-denyer/pstack-claude)
+A [community port of pstack for Claude Code and Codex](https://github.com/michael-denyer/pstack-claude)
 turns poteto mode on by itself. At the start of each session it tells the agent
 to use poteto mode for any task that touches more than one file, so you do not
 need to name it.
@@ -332,8 +332,8 @@ Which SKILL instructions did you follow, and where did they conflict with Shaka?
 Then check four things:
 
 1. **Does the pack turn itself on?** Some packs load at the start of every
-   session, so they shape tasks you did not name them in. Ponytail and pstack's
-   plugin work this way.
+   session, so they shape tasks you did not name them in. Ponytail and the
+   pstack port work this way.
 2. **Does it change how Shaka delivers?** A pack that skips checks, merges,
    closes tickets, or replaces Shaka's PR description is its own delivery
    workflow. Keep it out of Shaka tasks.
@@ -342,10 +342,9 @@ Then check four things:
 4. **Do its reports clash with Shaka's?** Compare its closing summary with the
    PR description and the final report.
 
-Shaka starts its Claude reviewer with Claude Code's `--safe-mode` and its Codex
-reviewer with `--ignore-user-config`, which leave out your plugins and hooks. In
-a check with Ponytail and pstack loaded, neither reviewer received their skills,
-hooks, or rules, while a normal session did. The Grok reviewer has not been
+Shaka starts its Claude and Codex reviewers without your plugins, skills, and
+hooks. In a check with Ponytail and the pstack port loaded, neither reviewer
+received them, while a normal session did. The Grok reviewer has not been
 checked.
 
 ### What each kind of skill can do
