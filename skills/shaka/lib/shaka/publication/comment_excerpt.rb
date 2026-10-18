@@ -17,18 +17,22 @@ module Shaka
 
     module_function
 
-    # The whole comment in quotation marks; nil when it is too long to repeat or has no prose.
+    # The whole comment in quotation marks; nil when it is too long to repeat, has no prose, or
+    # has a list beside code, which the agent summarizes instead.
     def whole(body)
+      return if CodeLines.list_with_code?(plain(body))
+
       text = prose(body).split.join(' ')
       "“#{escape(text)}”" unless text.empty? || text.split.size > WORDS || text.length > LENGTH
     end
 
     def prose?(body) = !prose(body).strip.empty?
 
-    # The opening words of an agent's reply; nil when it holds only quoted text, code, or markers.
+    # The opening words of an agent's reply; nil when it holds only quoted text, code, or markers,
+    # or a list beside code.
     def opening(body)
       words = prose(body).split
-      return if words.empty?
+      return if words.empty? || CodeLines.list_with_code?(plain(body))
 
       text = words.first(WORDS).join(' ')
       shown = text[0, LENGTH].rstrip
@@ -40,14 +44,15 @@ module Shaka
       text.is_a?(String) && !text.strip.empty? && !text.match?(/[\r\n]/) && text.split.size <= SUMMARY_WORDS
     end
 
-    # A link keeps its text. Code is left out as GitHub renders it: an unclosed fence hides the
-    # rest of its list item or comment, and backticks later on the line make a code span instead.
+    # Code is left out as GitHub renders it: an unclosed fence hides the rest of the comment, and
+    # backticks later on the line make a code span instead.
     def prose(body)
       code = CodeLines.new
-      body.to_s.gsub(/<!--.*?-->/m, ' ').gsub(LINK, '\\1').each_line.reject do |line|
-        code.code?(line) || line.lstrip.start_with?('>')
-      end.join(' ')
+      plain(body).each_line.reject { |line| code.code?(line) || line.lstrip.start_with?('>') }.join(' ')
     end
+
+    # A link keeps its text, and hidden comments are dropped.
+    def plain(body) = body.to_s.gsub(/<!--.*?-->/m, ' ').gsub(LINK, '\\1')
 
     # GitHub accepts a backslash before any ASCII punctuation. A backslash of the comment's own
     # becomes a look-alike, because the rendering check refuses `\n` as an unconverted line break.
