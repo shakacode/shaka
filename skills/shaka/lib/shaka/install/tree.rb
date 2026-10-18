@@ -69,7 +69,7 @@ module Shaka
 
       def ignored_path?(path, ignored) = ignored.any? { |entry| path == entry || path.start_with?("#{entry}/") }
 
-      # Git status hides a directory that holds only ignored files, so the package omits it too.
+      # Drop a directory whose only contents are ignored; an empty untracked directory still counts as drift.
       # Sorted paths list children after their parent, so reverse order visits children first.
       def without_ignored_only_directories(paths, ignored)
         kept = []
