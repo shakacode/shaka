@@ -66,7 +66,9 @@ need exact options and defaults.
 ## Add hosted Claude review
 
 Shaka ships a [Claude review workflow](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml)
-that reviews every PR on GitHub and fits teams where only some people use Shaka.
+that reviews PRs opened from branches in your repository, and fits teams where only
+some people use Shaka. It skips drafts, Dependabot, and PRs from forks; review those
+another way.
 When a PR's author already published Shaka's local review of the pushed commit,
 Claude makes a short pass for serious bugs the local reviewers missed. Every other
 PR gets a full review. Both report only issues Claude can tie to a concrete failure,
