@@ -17,10 +17,13 @@ maintainer's local Shaka timing logs, and Anthropic's public documentation.
 - A third reviewer added little. DeepSeek Flash, run after Claude and Codex on 10
   PRs, found one new real bug and one new docs risk. Everything else was a nit, a
   duplicate, or disproved.
-- The reviewers ran in parallel on 106 of 110 commits that had two of them. A
-  review takes a median of 43 seconds, while local validation takes 5.5 minutes.
+- The reviewers usually run in parallel. In the timing log for 2026-10-13 to
+  2026-10-18 (UTC), runs overlapped on 106 of 110 commits that had two
+  reviewers. A review takes a median of 43 seconds; local validation takes 5.5
+  minutes.
 - The hosted Claude review found nothing on 86% of runs after local review.
-- Agents wrote about 97% of the PR text. Shaka's own review comments are 30% of it.
+- Agents wrote about 97% of PR discussion. Shaka's own review comments are 30%
+  of it.
 
 ## Data and limits
 
@@ -82,8 +85,9 @@ maintainer's local Shaka timing logs, and Anthropic's public documentation.
 ## Local adversarial review (the ledger)
 
 - The ledger covers 147 PRs and 374 review loops.
-- It records 884 reviewer runs. On each reviewed commit, Codex and Claude run
-  in parallel, and each run is numbered as its own round.
+- It records 884 reviewer runs, each numbered as its own round. Codex and Claude
+  usually review the same commit together. Some commits had only one of them:
+  Codex has 30 more runs than Claude.
 
 | Reviewer | Runs | Runs with zero findings | Est. cost per run |
 | --- | ---: | ---: | ---: |
@@ -112,7 +116,7 @@ What Codex adds over Claude alone:
 - 35 of the 37 Codex-only defects are recorded as fixed.
 - Two related PRs share the same pair of defects. Counting each once leaves 35
   distinct Codex-only defects, spread across 27 of the 147 PRs.
-- The two reviewers run on the same commit at the same time, and neither sees the
+- When both review a commit, they run at the same time, and neither sees the
   other's findings. In 27 of the 31 Codex-only findings of any class with a recorded commit,
   Claude reviewed that same commit and did not report it.
 - Examples: PATH and arguments read in reverse order (#453), cleanup that could
@@ -122,7 +126,8 @@ What Codex adds over Claude alone:
   round if Codex had not caught it first.
 - Codex costs about $0.09 per run, roughly $40 over the four weeks.
 
-Timing, from the helper call log for 2026-10-13 to 2026-10-18 (14,124 calls):
+Timing, from the helper call log for 2026-10-13 to 2026-10-18 UTC (14,124
+calls). This window is shorter than the four-week study and runs one day past it:
 
 - Shaka runs each reviewer with its own `review run`. The agent starts them
   together on one ledger, so they normally overlap: 106 of 110 commits with two
