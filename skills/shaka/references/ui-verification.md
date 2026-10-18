@@ -30,6 +30,10 @@ with the writer identifier required by Explain, then a `# Verification for COMMI
 heading that links the tested commit, then the verification note. Label captures with the
 tested revision, and read the comment back to confirm each capture became an uploaded
 URL; a local path is not evidence.
+A UI check for a newer head carries all of the PR's current UI evidence. For a view the
+newer commits leave unchanged, say so and embed its earlier uploaded captures, labeled with
+the revision they show; a link to the older comment does not replace it. Then fold every
+earlier UI check with `review collapse`.
 Once you resolve a preview for the description, whether through `deployment: auto` or a
 URL you supply, repeat the manual pass against it, or record on the PR why not.
 
