@@ -20,6 +20,7 @@ each note's location in its error. Notes count toward the walkthrough's prose li
 
 The command refuses notes when the base branch requires conversation resolution,
 because the current notes stay open until a newer walkthrough replaces them;
-publish that walkthrough without notes. A newer walkthrough resolves the older
+publish that walkthrough without notes. Do the same when no changed line in the
+diff can hold a note, such as a change of only binary or deleted files. A newer walkthrough resolves the older
 notes that have no reply. Answer a note with a reply like any review thread, then
 resolve it.
