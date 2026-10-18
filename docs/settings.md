@@ -595,6 +595,33 @@ Put anything a command can check in your [validate script](#standard-command-scr
 or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
 whether a preview looks right, which the agent reports rather than proves.
 
+### Example: screenshots of Shaka's own PR text
+
+Shaka's repository uses `pr_evidence` for one rule. A PR once changed how Shaka lays out
+PR descriptions, and nobody saw the new layout until a maintainer asked for screenshots.
+Tests checked the Markdown text; only a person could judge how it looked on GitHub.
+
+The rule went in a guide because it fit there and nowhere else:
+
+- **Not Shaka's own workflow:** few projects generate PR text, so every other repository
+  would carry a rule it never uses.
+- **Not `AGENTS.md`:** agents load that file in every session, and this rule matters only
+  when they write a PR description.
+- **Not the validate script:** a command cannot decide whether a layout reads well.
+
+[The guide](https://github.com/shakacode/shaka/blob/main/.agents/shaka/pr-evidence.md)
+follows a shape worth copying. It opens with the condition, so the agent can skip it in
+one line. Short steps follow, naming the exact tools to use. It ends by saying where
+to report the result: a screenshot in the description's verification, or the reason
+there is none.
+
+To write one for your repository, start from a miss you have already seen:
+
+```text
+$shaka Add PR evidence guidance: when a change alters email templates, attach
+rendered before and after screenshots.
+```
+
 Set either one or both. Shaka reads the guides and the template from
 [the same place as prompt files](#where-shaka-reads-a-prompt-file), with the same file checks,
 so a PR cannot rewrite the requirements it is judged by. A PR that edits them is judged
