@@ -21,16 +21,18 @@ module Shaka
 
       def switch_all(target)
         ensure_safe_directory(@skills_dir, 'Host skills directory')
-        with_lock(@skills_dir) do
-          preflight(target)
-          previous = @names.to_h { |name| [name, old_target(name)] }
-          switch_links(target, previous)
-          previous
-        end
+        with_lock(@skills_dir) { switch_locked(target) }
       end
 
-      # Puts back links that a later step of the same operation could not keep.
-      def restore_all(previous) = with_lock(@skills_dir) { restore_links(@names, previous) }
+      # The caller holds this directory's lock, so it can restore the links before anyone else changes them.
+      def switch_locked(target)
+        preflight(target)
+        previous = @names.to_h { |name| [name, old_target(name)] }
+        switch_links(target, previous)
+        previous
+      end
+
+      def restore_locked(previous) = restore_links(@names, previous)
 
       private
 

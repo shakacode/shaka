@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'English'
 require_relative 'official_install_support'
 
 # A second checkout takes every host link from the registered one in one step, or changes nothing.
@@ -36,6 +37,19 @@ class OfficialTakeOverTest < Minitest::Test
     File.chmod(0o755, File.join(@root, '.git'))
   end
 
+  def test_take_over_switches_no_host_until_it_holds_every_host_lock
+    install_two_hosts
+    File.open(File.join(File.dirname(@claude), '.shaka-install.lock'), File::RDWR) do |lock|
+      lock.flock(File::LOCK_EX)
+      pid = spawn_take_over
+      assert_links_point_at(@root)
+      lock.flock(File::LOCK_UN)
+      Process.wait(pid)
+    end
+    assert_predicate $CHILD_STATUS, :success?
+    assert_links_point_at(@second)
+  end
+
   def test_take_over_refuses_an_owner_other_accounts_can_write
     install_two_hosts
     git_directory = File.join(@root, '.git')
@@ -63,6 +77,20 @@ class OfficialTakeOverTest < Minitest::Test
   end
 
   private
+
+  # Returns once the take-over has recorded its Ruby, just before it would switch links.
+  def spawn_take_over
+    pid = Process.spawn({ 'HOME' => @home }, RbConfig.ruby, @installer, '--directory', @second, '--take-over',
+                        %i[out err] => File::NULL)
+    wait_for { File.exist?(File.join(@second, '.git/shaka-ruby')) }
+    sleep 1
+    pid
+  end
+
+  def wait_for
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 60
+    sleep 0.1 until yield || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+  end
 
   def assert_retired_and_registered
     refute_path_exists File.join(@root, '.git/shaka-install.json')

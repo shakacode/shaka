@@ -49,16 +49,25 @@ module Shaka
           targets = take_over_targets
           links = targets.map { |target| links_for(target, previous_source: @owner.root) }
           links.each { |entry| entry.check(@checkout.root) }
-          move(targets, links)
+          with_host_locks(links) { move(targets, links) }
+          links.each(&:retire_aliases)
           verify(targets)
         end
+      end
+
+      # Holding every host lock until the records change keeps a rollback from undoing another install.
+      def with_host_locks(links, &) = with_locks(links.map(&:lock_directory).uniq.sort, &)
+
+      def with_locks(directories, &)
+        return yield if directories.empty?
+
+        with_lock(directories.first) { with_locks(directories.drop(1), &) }
       end
 
       def move(targets, links)
         recorded = identity(targets)
         record_ruby
         move_links(links) { retire_owner { @checkout.save(targets, recorded) } }
-        links.each(&:retire_aliases)
       end
 
       def take_over_targets
@@ -71,10 +80,10 @@ module Shaka
       # A failure in any host, or in the record changes, puts every host's links back.
       def move_links(links)
         previous = []
-        links.each_with_index { |entry, index| previous[index] = entry.switch_all(@checkout.root) }
+        links.each_with_index { |entry, index| previous[index] = entry.switch_locked(@checkout.root) }
         yield
       rescue StandardError
-        previous.each_with_index.reverse_each { |links_before, index| links[index].restore_all(links_before) }
+        previous.each_with_index.reverse_each { |links_before, index| links[index].restore_locked(links_before) }
         warn "Take-over failed; links point at #{@owner.root} again" unless previous.empty?
         raise
       end
@@ -94,7 +103,11 @@ module Shaka
       def restore_record_on_failure(retired, record)
         yield
       rescue StandardError
-        File.rename(retired, record)
+        begin
+          File.rename(retired, record)
+        rescue SystemCallError => e
+          warn "Could not restore #{record} from #{retired}: #{e.message}"
+        end
         raise
       end
     end

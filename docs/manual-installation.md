@@ -116,5 +116,6 @@ and move every skill link there in one step:
 repository and branch into the new directory, and switches every host it
 registered. It renames the old checkout's installation record so that checkout
 stops claiming the links, and leaves its files, branches, and worktrees alone.
-If any step fails, every link points back at the old checkout. For links in a
+If switching a link or changing either record fails, every link points back at
+the old checkout. For links in a
 custom skills directory, add `--skills-dir DIR` so it can find them.

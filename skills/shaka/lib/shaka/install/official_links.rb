@@ -30,6 +30,8 @@ module Shaka
         end
       end
 
+      def lock_directory = File.realpath(@skills_dir)
+
       def existing_names
         current = Package::ALLOWED.select { |name| File.symlink?(destination(name)) && owned?(name) }
         return current unless codex?
