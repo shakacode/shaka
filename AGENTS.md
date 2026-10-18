@@ -69,9 +69,9 @@ is the reusable default.
   artifact with `skills/shaka/scripts/shaka` from a detached worktree of that head.
   Then run the installed `handoff`, and for a review comment confirm its last line is
   still the `REVIEWED` attestation. If either check fails, publish the artifact again
-  with the installed helper and say so on the PR. Repeat after each
-  new head. Every other command, including seam, evidence, review, and merge, stays
-  with the installed helper.
+  with the installed helper and say so on the PR. Repeat after each new head. Every
+  other command, including seam, evidence, review, and merge, stays with the
+  installed helper.
 
 ## Skill architecture and review
 
