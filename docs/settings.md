@@ -477,7 +477,7 @@ merging; it tells you which review is missing.
 
 Ask your agent:
 
-> $shaka Make sure every PR gets both a Claude and a Codex review.
+> $shaka Flag any PR that misses a Claude or a Codex review.
 
 ```yaml
 review:
@@ -492,8 +492,8 @@ review:
 
 Coverage changes which gaps you see, not which reviewers run or how many. With this example,
 when Claude writes the change, Codex reviews it locally and the review names `anthropic` as
-a gap. The [hosted Claude review](configure-repository.md#add-hosted-claude-review) then
-runs its full review, because no local Claude review exists, so the PR still gets both.
+a gap. When the repository uses the [hosted Claude review](configure-repository.md#add-hosted-claude-review),
+it runs its full review because no local Claude review exists, so the PR still gets both.
 When Codex writes the change, Claude reviews it and `openai` is the gap: writing the
 change is not reviewing it. Set `local_review_count: 2` to get both locally.
 

@@ -58,7 +58,8 @@ class ReviewProviderCoverageTest < Minitest::Test
       set_review(root, 'provider_coverage' => BOTH)
       result = reviewer(root, '--implementer', 'anthropic/claude')
 
-      assert_equal [gap('anthropic', Shaka::ReviewCoverage::NOT_CHOSEN)], result.fetch('coverage_gaps')
+      assert_equal [gap('anthropic', Shaka::ReviewCoverage::NOT_CHOSEN)],
+                   result.fetch('provider_coverage').fetch('gaps')
     end
   end
 
@@ -109,6 +110,6 @@ class ReviewProviderCoverageTest < Minitest::Test
       unavailable: parse.call(options.fetch(:unavailable, [])), not_set_up: parse.call(options.fetch(:not_set_up, [])),
       count: options.fetch(:count, 1)
     ).call
-    Shaka::ReviewCoverage.gaps(coverage, selection)
+    Shaka::ReviewCoverage.coverage(coverage, selection).fetch('gaps')
   end
 end

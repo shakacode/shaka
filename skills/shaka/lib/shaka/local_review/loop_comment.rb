@@ -29,7 +29,7 @@ module Shaka
         @ledger_id.nil? || @ledger_id.to_s.match?(LEDGER_ID)
 
       @usage_url = usage_url
-      @coverage_gaps = content['coverage_gaps']
+      @provider_coverage = content['provider_coverage']
       @commits = @rounds.chunk(&:head).map { |_, rounds| LocalReviewCommitSection.new(rounds, subject, @links) }
       @attention = LocalReviewAttention.new(@rounds, @links, assessments: @assessment_view)
     end
@@ -64,7 +64,8 @@ module Shaka
     def header
       [TITLE, reviewers_marker, "**Reviewed revision:** #{@links.commit(@rounds.last.head)}", *@attention.visible,
        *@assessment_view.unavailable, coverage, usage_link,
-       *ReviewCoverage.notice(@coverage_gaps, final_reviewers), *fallback_notice, *settings_notice,
+       *ReviewCoverage.notice(@provider_coverage, final_reviewers, redact: LOCAL_PATH), *fallback_notice,
+       *settings_notice,
        *LocalReviewBound.new(@rounds, @max_rounds, budget: @task_budget).lines,
        *LocalReviewBudget.notice(@task_budget, completed: @rounds.size)]
     end

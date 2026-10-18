@@ -44,14 +44,14 @@ module Shaka
                                      unavailable: identities(:unavailable),
                                      not_set_up: Doctor::CliInventory.not_set_up(inventory),
                                      count: @options.fetch(:count) { count(review) }).call
-      result.merge('coverage_gaps' => coverage_gaps(review, result),
+      result.merge('provider_coverage' => coverage(review, result),
                    'setup_notices' => Doctor::CliInventory.setup_notices(inventory))
     end
 
     # A task's --count wins; otherwise use the selected configuration's count.
     def count(review) = setting(review, RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT)
 
-    def coverage_gaps(review, selection) = ReviewCoverage.gaps(setting(review, ReviewCoverage::KEY), selection)
+    def coverage(review, selection) = ReviewCoverage.coverage(setting(review, ReviewCoverage::KEY), selection)
 
     def setting(review, key) = review.fetch(key) { Defaults.fetch('review', key) }
 
