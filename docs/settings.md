@@ -467,6 +467,36 @@ review comment shows every reviewer's rounds, and one review of the final commit
 enough for `shaka merge`. A task can ask for a different number, which wins for that
 task.
 
+## `review.provider_coverage`
+
+**Optional. Default: none.** Name the providers each PR should get a review from. When a
+listed provider did not review the final commit locally, the published review says so near
+the top, with the reason: that provider is not listed in `local_review_agents`, not set up
+on the machine, unavailable, or not chosen within `local_review_count`. A gap never blocks
+merging; it tells you which review is missing.
+
+Ask your agent:
+
+> $shaka Make sure every PR gets both a Claude and a Codex review.
+
+```yaml
+review:
+  local_review_count: 1
+  local_review_agents:
+    - provider: anthropic
+      model_family: claude
+    - provider: openai
+      model_family: codex
+  provider_coverage: [anthropic, openai]
+```
+
+Coverage changes which gaps you see, not which reviewers run or how many. With this example,
+when Claude writes the change, Codex reviews it locally and the review names `anthropic` as
+a gap. The [hosted Claude review](configure-repository.md#add-hosted-claude-review) then
+runs its full review, because no local Claude review exists, so the PR still gets both.
+When Codex writes the change, Claude reviews it and `openai` is the gap: writing the
+change is not reviewing it. Set `local_review_count: 2` to get both locally.
+
 ## `review.prompt_file`
 
 **Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**

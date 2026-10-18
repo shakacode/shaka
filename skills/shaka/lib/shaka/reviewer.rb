@@ -5,6 +5,7 @@ require 'optparse'
 require_relative 'error'
 require_relative 'repository_config'
 require_relative 'reviewer_selection'
+require_relative 'review_coverage'
 require_relative 'configuration'
 require_relative 'doctor/cli_inventory'
 
@@ -43,14 +44,16 @@ module Shaka
                                      unavailable: identities(:unavailable),
                                      not_set_up: Doctor::CliInventory.not_set_up(inventory),
                                      count: @options.fetch(:count) { count(review) }).call
-      result.merge('setup_notices' => Doctor::CliInventory.setup_notices(inventory))
+      result.merge('coverage_gaps' => coverage_gaps(review, result),
+                   'setup_notices' => Doctor::CliInventory.setup_notices(inventory))
     end
 
     # A task's --count wins; otherwise use the selected configuration's count.
-    def count(review)
-      key = RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT
-      review.fetch(key) { Defaults.fetch('review', key) }
-    end
+    def count(review) = setting(review, RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT)
+
+    def coverage_gaps(review, selection) = ReviewCoverage.gaps(setting(review, ReviewCoverage::KEY), selection)
+
+    def setting(review, key) = review.fetch(key) { Defaults.fetch('review', key) }
 
     def identities(key, required: false)
       values = @options.fetch(key, [])
