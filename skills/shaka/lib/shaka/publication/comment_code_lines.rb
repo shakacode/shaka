@@ -21,9 +21,11 @@ module Shaka
 
       # A list can hold a fence or indented code at any depth, so its code cannot be told apart
       # from its prose without list rules.
+      # A list-shaped line inside a fence that opens before any list, such as a diff, is code.
       def self.list_with_code?(text)
-        lines = text.lines.map(&:chomp)
-        lines.any? { |line| list_item?(line) } && lines.any? { |line| line.match?(CODE_SHAPED) }
+        code = new
+        listed = text.lines.any? { |line| !code.code?(line) && list_item?(line.chomp) }
+        listed && text.lines.any? { |line| line.match?(CODE_SHAPED) }
       end
 
       def self.list_item?(line) = line.match?(LIST_ITEM) && !line.match?(ENDS_PARAGRAPH)

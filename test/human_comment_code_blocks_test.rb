@@ -39,15 +39,19 @@ class HumanCommentCodeBlocksTest < Minitest::Test
     assert_includes rendered, '[“Intro \\=\\=\\= keep this\\.”]'
   end
 
-  def test_a_short_list_beside_code_needs_the_agent_s_summary
-    body = "1. Step:\n    ```\n    secret_line = 1\n    ```\nDone."
-    ["- ```\n  secret_line = 1\n\nPlease split this.", "- Item\n\n      secret_line = 1", '-     secret_line = 1',
-     '- -     secret_line = 1', '1. -     secret_line = 1', body].each do |listed|
-      error = assert_raises(Shaka::Error) { quote(listed) }
-      assert_includes error.message, "needs a one-line summary for each longer human comment: #{URL}#issuecomment-0"
-    end
+  STEP = "1. Step:\n    ```\n    secret_line = 1\n    ```\nDone."
 
-    rendered = describe(packet(issue_comments: [issue_comment(0, 'ann', body)]),
+  def test_a_short_list_beside_code_is_not_quoted
+    ["- ```\n  secret_line = 1\n\nPlease split this.", "- Item\n\n      secret_line = 1", '-     secret_line = 1',
+     '- -     secret_line = 1', '1. -     secret_line = 1', STEP].each do |listed|
+      error = assert_raises(Shaka::Error) { quote(listed) }
+      assert_includes error.message,
+                      "needs a one-line summary for each human comment it does not quote: #{URL}#issuecomment-0"
+    end
+  end
+
+  def test_the_agent_s_summary_stands_in_for_a_short_list_beside_code
+    rendered = describe(packet(issue_comments: [issue_comment(0, 'ann', STEP)]),
                         summaries: { "#{URL}#issuecomment-0" => 'Asks for one step.' })
 
     refute_includes rendered, 'secret'
@@ -60,10 +64,20 @@ class HumanCommentCodeBlocksTest < Minitest::Test
 
     refute_includes rendered, 'secret'
     assert_equal [["[“Fixed both\\:”](#{URL}#discussion_r2)"]], columns(rendered, 2)
-    ["- Fixed the parser\n- Added a test\n\n```\nsecret_line = 1\n```", "```\n- secret_line\n```\nFixed both.",
+    ["- Fixed the parser\n- Added a test\n\n```\nsecret_line = 1\n```",
      "\n    secret_line = 1\n\n- the parser"].each do |body|
       assert_nil Shaka::CommentExcerpt.opening(body)
     end
+    assert_equal '“Fixed both\\:”',
+                 Shaka::CommentExcerpt.opening("> Why?\n\nFixed both:\n\n- the parser\n\n```\nx\n```")
+  end
+
+  def test_a_diff_in_a_fence_is_not_a_list
+    rendered = quote("Use this:\n```diff\n- secret_line = 1\n+ secret_line = 2\n```\nThanks.")
+
+    refute_includes rendered, 'secret'
+    assert_includes rendered, '[“Use this\\: Thanks\\.”]'
+    assert_equal '“Fixed both\\.”', Shaka::CommentExcerpt.opening("```\n- secret_line\n```\nFixed both.")
   end
 
   def test_a_list_without_code_is_quoted

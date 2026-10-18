@@ -51,11 +51,14 @@ module Shaka
       plain(body).each_line.reject { |line| code.code?(line) || line.lstrip.start_with?('>') }.join(' ')
     end
 
+    # Blank and quoted lines before a reply's own words; the excerpt leaves both out.
+    LEADING_QUOTES = /\A(?:(?: {0,3}>.*)?[ \t]*\n)+/
+
     # With a list beside code, only a first paragraph that has neither is clear enough to quote.
     def clear_opening(text)
       return text unless CodeLines.list_with_code?(text)
 
-      first = text.sub(/\A(?:[ \t]*\n)+/, '').lines.take_while { |line| line.match?(/\S/) }
+      first = text.sub(LEADING_QUOTES, '').lines.take_while { |line| line.match?(/\S/) }
       clear = first.none? { |line| CodeLines.list_item?(line.chomp) || line.match?(CodeLines::CODE_SHAPED) }
       clear ? first.join : ''
     end
