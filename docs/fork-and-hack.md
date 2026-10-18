@@ -46,6 +46,24 @@ matches the clone's `origin` exactly and stops with
 `Installation origin differs from the selected repository` when it doesn't.
 Using `FORK_URL` for both keeps them equal; for SSH, set it to your SSH URL.
 
+**Already installed Shaka?** Switch that checkout to your fork instead of
+cloning a second one, which the existing skill link would block. Set
+`SHAKA_DIR` to where Shaka is installed. The installation stays on the same
+commit until your next update:
+
+```bash
+gh repo fork shakacode/shaka --clone=false
+FORK_URL="https://github.com/YOUR-LOGIN/shaka.git"
+SHAKA_DIR="$HOME/.agents/shaka"
+git -C "$SHAKA_DIR" remote rename origin upstream
+git -C "$SHAKA_DIR" remote add origin "$FORK_URL"
+git -C "$SHAKA_DIR" fetch origin
+git -C "$SHAKA_DIR" switch -c mine
+git -C "$SHAKA_DIR" push -u origin mine
+"$SHAKA_DIR/bin/install" --directory "$SHAKA_DIR" --repository "$FORK_URL" \
+  --branch mine --agent codex
+```
+
 From now on, `install --update` follows your fork's `mine`, not Shaka's `main`.
 The commands below reuse `FORK_URL` and `SHAKA_DIR`; set them again in a new
 terminal.
