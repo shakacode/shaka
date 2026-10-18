@@ -268,7 +268,7 @@ engineering principles and parallel workers;
 as small as it can be while still complete; and
 [Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills), a
 library of engineering practices from spec to launch. Ponytail and Addy
-Osmani's skills are untested with Shaka, so
+Osmani's skills have not yet been tried on a full Shaka delivery, so
 [try a new pack](#try-a-new-skill-pack-with-shaka) on one task before relying on it.
 
 ### Hand over a spec and tickets
@@ -330,17 +330,17 @@ Then check four things:
    session, so they shape tasks you did not name them in. Ponytail works this
    way.
 2. **Does it change how Shaka delivers?** A pack that skips checks, merges,
-   closes tickets, or writes its own PR body is its own delivery workflow. Keep
-   it out of Shaka tasks.
+   closes tickets, or replaces Shaka's PR description is its own delivery
+   workflow. Keep it out of Shaka tasks.
 3. **Does it leave marks that reviewers will flag?** Look for comment markers
    or rule files it adds to the code.
 4. **Do its reports clash with Shaka's?** Compare its closing summary with the
    PR description and the final report.
 
-Shaka's Claude and Codex reviewers start without your plugins and hooks. On
-2026-10-18 we loaded Ponytail and asked each reviewer whether it saw
-Ponytail's rules. Neither did, while a normal session did. The Grok reviewer
-has not been checked.
+Shaka starts its Claude reviewer with Claude Code's `--safe-mode` and its Codex
+reviewer with `--ignore-user-config`, which leave out your plugins and hooks. In
+a check with Ponytail loaded, neither reviewer saw its rules, while a normal
+session did. The Grok reviewer has not been checked.
 
 ### What each kind of skill can do
 
