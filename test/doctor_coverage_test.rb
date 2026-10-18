@@ -31,6 +31,17 @@ class DoctorCoverageTest < Minitest::Test
     end
   end
 
+  # Break caught: with no reviewers configured, readiness returned before checking coverage.
+  def test_coverage_without_configured_reviewers_warns_for_each_provider
+    review = review_policy('provider_coverage' => %w[anthropic openai]).except('local_review_agents')
+    with_repository('review' => review) do |root|
+      report, = doctor(root:, executable: ->(*) { true })
+
+      assert_includes report, 'No configured reviewer is installed for covered provider anthropic.'
+      assert_includes report, 'No configured reviewer is installed for covered provider openai.'
+    end
+  end
+
   private
 
   def agents

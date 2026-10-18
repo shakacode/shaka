@@ -59,18 +59,21 @@ module Shaka
 
       # Coverage names the providers that must review, so a count of other providers does not satisfy it.
       def shortfall(providers, review)
-        covered = ReviewCoverage.names(ReviewCoverage.setting(review, ReviewCoverage::KEY))
-        unless covered.empty?
-          return (covered - providers.map(&:downcase)).map do |name|
-            "No configured reviewer is installed for covered provider #{name}."
-          end
-        end
+        return covered_shortfall(providers, review) unless covered(review).empty?
 
         count = ReviewCoverage.count(review)
         return [] unless providers.size < count
 
         ["#{providers.size} provider#{'s' unless providers.one?} available; #{count} reviewers requested."]
       end
+
+      def covered_shortfall(providers, review)
+        (covered(review) - providers.map(&:downcase)).map do |name|
+          "No configured reviewer is installed for covered provider #{name}."
+        end
+      end
+
+      def covered(review) = ReviewCoverage.names(ReviewCoverage.setting(review, ReviewCoverage::KEY))
 
       def guidance(entries, warnings)
         lines = entries.filter_map { |entry| entry[:guidance] }
@@ -79,10 +82,11 @@ module Shaka
         lines.empty? ? nil : lines.join("\n    ")
       end
 
+      # Without configured reviewers a fresh host review is healthy, unless coverage names providers.
       def warnings(entries, review)
-        return [] if entries.empty?
-
         providers = entries.select { |entry| entry[:installed] }.map { |entry| entry[:provider] }.uniq
+        return covered_shortfall(providers, review) if entries.empty?
+
         lines = shortfall(providers, review)
         if providers == [@provider]
           lines << "Only the current host's provider (#{@provider}) is available; no different-provider CLI was found."
