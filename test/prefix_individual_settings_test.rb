@@ -41,6 +41,13 @@ class PrefixIndividualSettingsTest < Minitest::Test
     end
   end
 
+  def test_a_branch_that_commits_settings_does_not_supply_an_individual_prefix
+    with_individual_settings('repo_prefix' => 'CAND') do |root, ref|
+      commit(root, '.agents')
+      assert_equal 'fallback', prefix(root, ref).fetch('source')
+    end
+  end
+
   private
 
   def prefix(root, ref) = Shaka::Prefix.new(root:, ref:).call
