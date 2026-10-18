@@ -267,7 +267,9 @@ engineering principles and parallel workers;
 [Ponytail](https://github.com/DietrichGebert/ponytail), which keeps each change
 as small as it can be while still complete; and
 [Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills), a
-library of engineering practices from spec to launch.
+library of engineering practices from spec to launch. Ponytail and Addy
+Osmani's skills are untested with Shaka, so
+[try a new pack](#try-a-new-skill-pack-with-shaka) on one task before relying on it.
 
 ### Hand over a spec and tickets
 
@@ -308,35 +310,37 @@ the PR in its own format, and returns it to you to merge. pstack's "don't block
 on the human" guidance does not turn Ask into Auto. Leave out the subagent
 sentence and the agent does the fan-out steps alone or asks first.
 
-### Work with Ponytail turned on
+### Try a new skill pack with Shaka
 
-Ponytail turns itself on. Once installed, it adds its rules at the start of
-every session and to every subagent, so you do not name it in the prompt:
-
-```text
-$shaka Fix https://github.com/OWNER/REPO/issues/N. Keep merge policy ask. Go.
-```
-
-The agent writes the smallest complete change, and Shaka delivers it the usual
-way. Ponytail's rules stay out of Shaka's Claude and Codex reviewers. The
-Claude reviewer runs with plugins and hooks turned off, and the Codex reviewer
-skips your Codex config file, where plugins are enabled. The Grok reviewer
-keeps installed plugins, so it may review with Ponytail's rules.
-
-Ponytail marks a deliberate shortcut with a code comment such as
-`shortcut: in-memory cache, move to Redis past one server`. Ponytail's own
-review treats that comment as a decision. Shaka's reviewers may report it as a
-risk instead. To have them treat it as a known tradeoff, add a line like this
-to your [review prompt](settings.md#reviewprompt_file):
+Try a pack on one real task, one you would merge anyway, before you rely on it:
 
 ```text
-A `shortcut:` comment records a deliberate tradeoff and its limit. Check that
-limit against the expected load. Report the shortcut when that load is likely
-to reach the limit, and report other risks as usual.
+$shaka Fix https://github.com/OWNER/REPO/issues/N using SKILL. Go.
 ```
 
-The PR's author writes these comments, so add the line where you trust the
-people who open PRs, not on a repository that takes PRs from forks.
+When the PR is ready, ask in the same chat:
+
+```text
+Which SKILL instructions did you follow, and where did they conflict with Shaka?
+```
+
+Then check four things:
+
+1. **Does the pack turn itself on?** Some packs load at the start of every
+   session, so they shape tasks you did not name them in. Ponytail works this
+   way.
+2. **Does it change how Shaka delivers?** A pack that skips checks, merges,
+   closes tickets, or writes its own PR body is its own delivery workflow. Keep
+   it out of Shaka tasks.
+3. **Does it leave marks that reviewers will flag?** Look for comment markers
+   or rule files it adds to the code.
+4. **Do its reports clash with Shaka's?** Compare its closing summary with the
+   PR description and the final report.
+
+Shaka's Claude and Codex reviewers start without your plugins and hooks. On
+2026-10-18 we loaded Ponytail and asked each reviewer whether it saw
+Ponytail's rules. Neither did, while a normal session did. The Grok reviewer
+has not been checked.
 
 ### What each kind of skill can do
 
@@ -347,17 +351,16 @@ or approve a merge.
 | Kind of skill | Examples | With Shaka |
 | --- | --- | --- |
 | Planning | AI Hero `to-spec`, `to-tickets` | Its spec and tickets become the task. |
-| Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd`; Ponytail; Addy Osmani `test-driven-development`, `incremental-implementation` | Shapes how the agent works inside each step. |
+| Technique or mode | pstack `poteto-mode`, principles, `how`, `tdd` | Shapes how the agent works inside each step. |
 | Parallel workers | pstack `swarm`, `arena`, `interrogate` | Runs only when you say the agent may delegate. Workers never publish or merge. |
-| Same-session review | Ponytail `/ponytail-review`, `/ponytail-audit`; Addy Osmani `/review`, `/ship`; AI Hero `code-review` | Findings the agent weighs and fixes before Shaka's own review. The skill does not replace that review, which runs in a separate session and, when available, with another provider's model. |
+| Same-session review | AI Hero `code-review` | Findings the agent weighs and fixes before Shaka's own review. The skill does not replace that review, which runs in a separate session and, when available, with another provider's model. |
 | PR text | AI Hero `pr`, pstack `technical-writing`, `unslop` | Advice on wording and presentation. Shaka's description keeps its own format and required fields. |
 | Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, Orchestrate, and Autopilot playbooks | A separate orchestrator that cannot run as a step inside Shaka. Try it as its own experiment: name the scope and say the agent may delegate. |
 
-Some skills write rule files into your repository, such as the `CONSTRAINTS.md`
-that Addy Osmani's `constraint-driven-development` creates. On a feature
-branch, that file is part of the change under review. Shaka still reads its
-settings from your default branch, including which checks run, who reviews,
-and the merge rules.
+A rule file that a skill writes into your repository is part of the change
+under review. Shaka still takes its settings, such as reviewers and merge
+rules, from your default branch. Your check scripts run from the branch, so
+review changes to them like any other code.
 
 If a skill you named is not installed, the agent says so, continues the work
 that does not need it, and asks about the rest. It does not install software for
