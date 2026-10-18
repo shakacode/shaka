@@ -69,8 +69,8 @@ Anthropic's public documentation.
 ## Local adversarial review (the ledger)
 
 - The ledger covers 147 PRs and 374 review loops.
-- Its 884 reviewer runs alternate Codex and Claude on each head, so a median loop
-  covers roughly 2 heads.
+- It records 884 reviewer runs. On each reviewed commit, Codex and Claude run
+  in parallel, and each run is numbered as its own round.
 
 | Reviewer | Runs | Runs with zero findings | Est. cost per run |
 | --- | ---: | ---: | ---: |
@@ -96,11 +96,11 @@ What Codex adds over Claude alone:
 
 - Of 102 defects, Codex alone reported 37 (36%). Both reported 22, and Claude
   alone reported 43.
-- 35 of the 37 Codex-only defects are recorded as fixed. Two PRs share the same
-  pair of findings, so there are 35 distinct defects, spread across 27 of the 147
-  PRs.
+- 35 of the 37 Codex-only defects are recorded as fixed.
+- Two related PRs share the same pair of defects. Counting each once leaves 35
+  distinct Codex-only defects, spread across 27 of the 147 PRs.
 - The two reviewers run on the same commit at the same time, and neither sees the
-  other's findings. In 27 of the 31 Codex-only findings with a recorded commit,
+  other's findings. In 27 of the 31 Codex-only findings of any class with a recorded commit,
   Claude reviewed that same commit and did not report it.
 - Examples: PATH and arguments read in reverse order (#453), cleanup that could
   delete a user's file (#611), and two different binary files compared as equal
@@ -183,8 +183,8 @@ commits that Claude and Codex had already reviewed, to see what it would add.
 - **Guarantee at risk:** the 174 Claude-only risks recorded as fixed.
   Tightening the risk rule could lose some of them, so start with nits only.
 - **Not proposed:** dropping Codex. It found 35 distinct defects that Claude did
-  not report. Where the ledger records the commit, Claude reviewed that same
-  commit in 27 of 31 cases. Codex costs about $0.09 a run.
+  not report. For the 31 Codex-only findings of any class with a recorded
+  commit, Claude reviewed that same commit in 27. Codex costs about $0.09 a run.
 - **Maintenance:** a few prompt lines.
 
 ### 2. The hosted Claude review adds few findings after local review, and its prompt goes against Anthropic's guidance
@@ -253,7 +253,9 @@ commits that Claude and Codex had already reviewed, to see what it would add.
 
 ## Run the same study on your repository
 
-Ask your agent:
+Shaka has no built-in procedure for this yet; finding 5 proposes one. Until then,
+ask your agent for it as an ordinary task. This report came from a request like
+this one, and the agent wrote its own scripts:
 
 ```text
 $shaka Study the review comments on this repository's PRs from the last four
