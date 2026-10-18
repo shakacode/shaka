@@ -17,7 +17,8 @@ module Shaka
     # Four spaces, or a tab after fewer, indent a code block.
     INDENTED = /\A(?: {4}| {0,3}\t)/
     # A heading, a thematic break, or a setext underline ends a paragraph on its own line.
-    ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|(?:[-*_][ \t]*){3,}\z|(?:=+|-+)[ \t]*\z)/
+    ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|([-*_])(?:[ \t]*\1){2,}[ \t]*\z|(?:=+|-+)[ \t]*\z)/
+    LIST_MARKER = /\A(?:[-+*]|\d{1,9}[.)])[ \t]+/
 
     module_function
 
@@ -82,8 +83,15 @@ module Shaka
         return inside_fence?(line) if @fence
         return true if @code_may_start && line.match?(INDENTED)
 
-        @fence_indent = indent(line)
-        @fence = line.lstrip[FENCE, :marker]
+        opens_fence?(line)
+      end
+
+      # A fence may follow a list marker on the same line; its closer then aligns with the item.
+      def opens_fence?(line)
+        text = line.lstrip
+        marker = text[LIST_MARKER].to_s
+        @fence_indent = indent(line) + marker.size
+        @fence = text.delete_prefix(marker)[FENCE, :marker]
         !@fence.nil?
       end
 

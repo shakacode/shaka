@@ -441,12 +441,18 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
               "- Item\n\n```\n    ```\nsecret_line = 1\n```\nDone.", "- Item\n\n      secret_line = 1\n\nDone.",
               "Notes\n\n* * *\n\n    secret_line = 1\n\nDone.", "# Error\n    secret_line = 1\nDone.",
               "Notes\n***\n    secret_line = 1\nDone.", "Title\n===\n    secret_line = 1\nDone.",
-              "Title\n--\n    secret_line = 1\nDone."]
+              "Title\n--\n    secret_line = 1\nDone.", "1. ```\n   secret_line = 1\n   ```\nDone."]
     comments = bodies.each_with_index.map { |body, id| issue_comment(id, 'ann', body) }
     rendered = describe(packet(issue_comments: comments))
 
     refute_includes rendered, 'secret'
     assert_equal bodies.size, rendered.scan(/Done\\\.”\]/).size
+  end
+
+  def test_a_rule_of_mixed_markers_is_text_and_an_indented_line_after_it_continues_the_paragraph
+    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', "Please keep\n*-*\n    this line.")]))
+
+    assert_includes rendered, '[“Please keep \\*\\-\\* this line\\.”]'
   end
 
   def test_a_fence_inside_an_indented_code_block_opens_nothing
