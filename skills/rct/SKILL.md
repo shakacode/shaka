@@ -28,20 +28,8 @@ Use native task/project tools and Git/GitHub reads to establish all of these fac
 - that the resolved project contains the selected Git root. An isolated worktree
   derived from that project is valid.
 
-Resolve an explicit native `projectId` through the native project list on the
-task's host. If that ID is absent from the list or its project does not contain
-the selected Git root (including a worktree derived from that project), stop as
-ambiguous. An invalid explicit association cannot use the fallback below.
-
-When `projectId` is null or omitted, resolve the task's native working directory
-and the selected checkout through Git to the same canonical repository root.
-Perform filesystem and Git resolution on the task's host. Require exactly one
-registered filesystem project with that host ID whose real path equals that
-canonical root. Compare resolved filesystem paths, not labels or textual path
-prefixes. Zero or multiple matches stop as ambiguous; a matching
-parent folder is insufficient for this fallback. Record the project's ID, path,
-and that it was resolved by path rather than explicitly attached to the task.
-This fallback does not change the task's saved project association.
+Follow the shared [Codex project verification procedure](../shaka/references/codex-tower-projects.md)
+to resolve the project and record the resolution method.
 
 The current Git root defines the RCT boundary. A parent folder or product may
 contain several related repositories, but one RCT never owns more than one. A

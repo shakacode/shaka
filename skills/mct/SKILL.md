@@ -65,8 +65,8 @@ mismatched request. Read the named RCT with
 
 - the named chat ID belongs to the verified requester;
 - its resolved project and resolution method match the request, independently
-  following the [RCT project verification procedure](../rct/SKILL.md#verify-the-repository-and-project)
-  from the trusted sibling skill on the requesting chat's host;
+  following the [Codex project verification procedure](../shaka/references/codex-tower-projects.md)
+  from this trusted Shaka installation, using reads from the requesting chat's host;
 - its current checkout selects exactly one Git root belonging to that project;
   a derived isolated worktree is valid;
 - remotes and live metadata select the same unambiguous `OWNER/REPOSITORY`,
