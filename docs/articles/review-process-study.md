@@ -72,8 +72,9 @@ PRs, 374 review loops, and 884 reviewer runs.
 | --- | ---: | ---: | ---: |
 | Codex | 452 | 86% | ~$0.09 |
 | Claude | 422 | 15% | ~$0.25 |
+| DeepSeek (optional trial) | 10 | 30% | unknown |
 
-Only 33 runs per reviewer recorded a cost, so the cost column is a small sample.
+Only 33 Codex and 33 Claude runs recorded a cost, so the cost column is a small sample.
 The ledger holds 792 distinct findings:
 
 | Reported by | Findings | Defects | Risks | Nits | Recorded fixed | Recorded dismissed |
