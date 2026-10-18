@@ -47,10 +47,11 @@ class UpdateCheckTest < Minitest::Test
 
   def test_manual_pull_reports_an_older_record_instead_of_an_update
     guidance = check('identical', head: PULLED).fetch('guidance')
-    assert_includes guidance, 'names aaaaaaa and the checkout is at bbbbbbb'
+    assert_includes guidance,
+                    'on official main, but its installation record names aaaaaaa and the checkout is at bbbbbbb'
     assert_includes guidance, '/installed\\ path/scripts/shaka install --update to record it'
-    assert_includes @calls.fetch(2).first, "repos/shakacode/shaka/compare/#{PULLED}...main"
-    assert_equal ['merge-base', '--is-ancestor', SHA, PULLED], @calls.fetch(3).first.drop(3)
+    assert_includes @calls.fetch(3).first, "repos/shakacode/shaka/compare/#{PULLED}...main"
+    assert_equal ['merge-base', '--is-ancestor', SHA, PULLED], @calls.fetch(2).first.drop(3)
   end
 
   def test_manual_pull_is_drift_until_newer_commits_make_it_an_update

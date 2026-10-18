@@ -13,14 +13,19 @@ module Shaka
 
       def current = answer('current', "This installed revision matches #{@target}.")
 
-      # install --update records only a pull: a HEAD whose history contains the recorded revision.
-      def drift(head, pulled)
-        state = "Your checkout #{@checkout} matches #{@target}, but its installation record names " \
-                "#{recorded[0, 7]} and the checkout is at #{head[0, 7]}."
-        return answer('drift', "#{state} Run #{Shellwords.escape(@helper)} install --update to record it.") if pulled
+      def drift(head)
+        answer('drift', "#{moved(head)} Run #{Shellwords.escape(@helper)} install --update to record it.")
+      end
 
-        answer('drift', "#{state} The branch history was rewritten, so `install --update` cannot record it; " \
-                        "see #{GUIDE}.", 'rewritten_history')
+      # install --update records only a pull: a HEAD whose history contains the recorded revision.
+      def rewritten(head)
+        answer('drift', "#{moved(head)} The branch history was rewritten, so `install --update` cannot " \
+                        "record it; see #{GUIDE}.", 'rewritten_history')
+      end
+
+      def moved(head)
+        "Your checkout #{@checkout} is on #{@target}, but its installation record names #{recorded[0, 7]} " \
+          "and the checkout is at #{head[0, 7]}."
       end
 
       # GitHub reports the comparison from the installed revision, so its ahead count is how far behind this is.
@@ -75,6 +80,7 @@ module Shaka
       end
 
       def unknown(reason, cause)
+        cause = "#{cause}." unless cause.end_with?('.')
         answer('unknown', "Could not verify update availability. #{cause} Continue the task and retry " \
                           "`update-check` later; manual update guidance: #{GUIDE}.", reason)
       end

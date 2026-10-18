@@ -86,7 +86,10 @@ module Shaka
       official = repository.casecmp?('shakacode/shaka') && @branch == 'main'
       @target = official ? 'official main' : "#{repository} #{@branch}"
       head = checkout_head
-      head == recorded || published?(head) ? github(repository, head) : local_commits
+      return github(repository, head) if head == recorded
+      return local_commits unless published?(head)
+
+      ancestor?(recorded, head) ? github(repository, head) : rewritten(head)
     end
 
     def github(repository, head)
@@ -126,7 +129,7 @@ module Shaka
 
     def comparison(status, ahead_by, head)
       case status
-      when 'identical' then head == recorded ? current : drift(head, ancestor?(recorded, head))
+      when 'identical' then head == recorded ? current : drift(head)
       when 'ahead' then available(ahead_by)
       when 'behind', 'diverged' then @checkout ? local_commits : custom
       else raise TypeError
