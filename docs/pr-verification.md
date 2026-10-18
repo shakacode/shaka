@@ -466,6 +466,8 @@ tested behavior, then refreshes affected evidence after code changes or explains
 which part still applies.
 After a later commit, the new comment covers every view the PR changes and repeats
 the earlier captures of views that stayed the same, so only the latest check stays open.
+Shaka posts the check, folds the earlier ones, and refuses a check that drops an earlier
+capture unless the agent marks it replaced.
 When a new comment replaces an earlier one, the agent folds the earlier one
 beneath a link to its replacement. Current evidence appears first; older captures
 stay one click away. When a capture cannot be published, the PR records the
