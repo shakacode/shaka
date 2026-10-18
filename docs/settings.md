@@ -898,7 +898,7 @@ chat titles: `SHOP PR #42 · Fix checkout`. The
 [repository catalog](repository-catalog.md) reports duplicate prefixes.
 
 Shared settings on the default branch supply the prefix. Without them, complete
-individual settings supply it. Incomplete individual settings use the default label.
+individual settings supply it. Incomplete or invalid individual settings use the default label.
 
 ## `version`
 

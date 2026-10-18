@@ -34,9 +34,7 @@ class PrefixIndividualSettingsTest < Minitest::Test
 
   def test_shared_settings_take_precedence_over_the_working_tree
     with_individual_settings('repo_prefix' => 'TEAM') do |root, _ref|
-      git!(root, 'add', '.agents')
-      git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'shared')
-      ref = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
+      ref = commit(root, '.agents')
       path = File.join(root, '.agents/shaka/config.yml')
       File.write(path, File.read(path).sub('TEAM', 'LOCAL'))
       assert_equal({ 'prefix' => 'TEAM', 'source' => 'seam' }, prefix(root, ref))
@@ -51,14 +49,18 @@ class PrefixIndividualSettingsTest < Minitest::Test
     Dir.mktmpdir('shaka-prefix-individual') do |root|
       git!(root, 'init', '--quiet')
       File.write(File.join(root, 'README.md'), "project\n")
-      git!(root, 'add', 'README.md')
-      git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'project')
-      ref = Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
+      ref = commit(root, 'README.md')
       FileUtils.mkdir_p(File.join(root, '.agents/shaka/bin'))
       create_new_commands(root)
       File.write(File.join(root, '.agents/shaka/config.yml'), YAML.dump(config.merge(extra)))
       yield root, ref
     end
+  end
+
+  def commit(root, path)
+    git!(root, 'add', path)
+    git!(root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', path)
+    Open3.capture2('git', '-C', root, 'rev-parse', 'HEAD').first.strip
   end
 
   def git!(root, *)
