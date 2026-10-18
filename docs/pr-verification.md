@@ -50,8 +50,9 @@ method is offered, return to the agent. For a squash merge, use the
 
 ## Answers for your next decision
 
-Start with the description for the outcome, open decisions, and steps besides
-merging. Follow the code walkthrough for implementation choices and alternatives.
+Start with the description for the outcome, open decisions, steps besides
+merging, and what the change is for and how it was proved. Follow the code
+walkthrough for implementation choices and alternatives.
 Then inspect the supporting evidence for the revision you are reviewing.
 A handoff should make clear whether the change is ready to merge or needs your
 input. You can approve the approach, request revisions, or settle an open question.
@@ -59,8 +60,10 @@ input. You can approve the approach, request revisions, or settle an open questi
 | Your question | Where to look |
 | --- | --- |
 | What changes for users? | The description, preview, and visual comparisons when applicable. |
+| What is it for, and what does it leave out? | **Intent** in the description: the problem, the scope, what was deliberately left out, and why the change is safe. A bug fix also names its **Root cause**, or says it was not found and the PR treats only the symptom. |
+| How carefully should I review it? | **Review effort** under Intent, from 1 (read the description) to 5 (review every line, reproduce it, and ask a second reviewer), based on what a mistake could reach. |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
-| How was it checked? | Validation results and independent review covering the current revision, including gaps. |
+| How was it checked? | **Verification** in the description: up to three checks, each with what ran, its outcome, and a link to the evidence or the command itself. **Not verified** names what went unproven and why that is acceptable. Independent review covers the current revision. |
 | Which skills contributed? | **Skills used** lists the reported skills, their contributions, and evidence labels. |
 | What did people say? | **Human comments** in the description: each comment a person wrote, its reply, and whether it is still open. |
 | What happened to concerns? | Review findings, replies, and recorded fixes or reasons for declining a suggestion. |
@@ -70,6 +73,30 @@ For example, a CSV export PR may use a simple download instead of a background
 job. The walkthrough should explain that choice; tests should exercise the
 export behavior. You can then judge whether the approach suits the expected
 volume and whether important cases are missing.
+
+## See a current PR
+
+These captures show real public PRs on October 14, 2026 (Hawaii time).
+Open each source to read the full record; its live state may have changed.
+
+### Start with the recommendation
+
+![PR description opening with Recommendation: Merge, a short Next action, and links to Code Walkthrough, Code Review, and Checkpoint.](img/pr-recommendation.webp)
+
+[PR #527](https://github.com/shakacode/shaka/pull/527) shows the recommendation
+above the summary and links to its supporting evidence. Newer descriptions put
+those links on the recommendation's line. Open **Checkpoint**
+before acting on the recommendation; the screenshot is a historical example,
+not approval to merge another commit.
+
+### Follow the review history
+
+![One Local Adversarial Review comment showing the reviewed revision, coverage limits, a table of four reviewed commits and finding dispositions, and collapsed reports.](img/pr-review-history.webp)
+
+[The review record on PR #539](https://github.com/shakacode/shaka/pull/539#issuecomment-6186181367)
+gathers several reviewed commits in one comment. The table shows findings and
+their dispositions; expandable sections keep the reports available. Read the
+coverage limits even when the outcome says no open findings.
 
 ## Check the latest changes
 
@@ -94,8 +121,11 @@ review, and integration, with their sources and revisions when available.
 **Corroborated** when it identifies a record confirming invocation or loading.
 Shaka checks metadata shape, not that record or instruction compliance.
 Contributions remain the agent's account, and completeness is unverified.
-Missing records show unknown coverage. Agents are instructed to withhold private
-skill identifiers; Ruby does not screen them.
+Missing records show unknown coverage. Shaka's own entries, from source
+`ShakaCode/shaka`, are not listed: every managed PR uses Shaka, and **Execution
+provenance** names the workflow version that ran.
+Agents are instructed to withhold private skill identifiers; Ruby does not screen
+them.
 
 ## See what people said
 
@@ -117,9 +147,10 @@ sections:
   a hidden tool marker such as `<!-- shaka:reply:… -->`, and a superseded
   walkthrough under Shaka's pointer also count as an agent's.
 - **Said** links to the comment. A comment of at most 12 words and 90 characters
-  appears in quotation marks, in the person's own words. A longer one is already
-  on the PR, so the agent summarizes it in one line, shown without quotation
-  marks. Shaka refuses to publish while a longer comment it shows has no summary.
+  appears in quotation marks, in the person's own words, without its code. A
+  longer one is already on the PR, so the agent summarizes it in one line, shown
+  without quotation marks; so is a short comment with a list beside code. Shaka
+  refuses to publish while a comment it summarizes has no summary.
 - **Response** links the agent post, or the trusted bot's post, that answered it.
 - **Status** is GitHub's resolved state for an inline thread, and the verdict for
   an approval, a request for changes, or a dismissed review. Any other comment
@@ -176,6 +207,32 @@ result.” Details can hold commands, tested commits, and a recording of the men
 
 Shaka uses your existing tests and validation commands, plus browser tools when
 needed. Required GitHub checks and approvals still apply.
+
+## Notes on the diff
+
+The walkthrough can also leave a few notes on the diff itself, written for you
+as the reviewer. Each note sits on the lines it is about and says how to read
+them: where to start, which lines change behavior, what to check closely, what
+to skim, or why the code took this approach. They are not findings to fix, and
+they do not replace explanations the code itself needs.
+
+For example, in a PR that stops duplicate refunds:
+
+> **Start here:** this check is the whole behavior change; the controller and
+> retry job only call it.
+
+> **Skim:** the rest of this file moves the old helper unchanged.
+
+Notes help most on a change of several files. Reviewers tend to read files in
+the order GitHub lists them and comment less on the later ones
+([Fregnan et al., 2022](https://arxiv.org/abs/2208.04259)), so a note can send
+you to the important part first. Understanding a change is usually harder than
+finding its defects
+([Bacchelli and Bird, 2013](https://www.microsoft.com/en-us/research/publication/expectations-outcomes-and-challenges-of-modern-code-review/)).
+
+When the agent publishes a walkthrough for a newer commit, it resolves the
+older walkthrough's notes. A note you replied to stays open, and the agent
+answers it like any review comment.
 
 ## When a diagram helps
 
@@ -257,7 +314,8 @@ overall task is finished.
 
 The current pre-merge checkpoint evaluates whether the result solves the original
 problem for its users and earns its maintenance cost. It considers actual scope,
-complexity, and simpler alternatives. Unexpected growth or repeated repairs can
+complexity, simpler alternatives, and whether the testing matches what a failure
+would reach. Unexpected growth or repeated repairs can
 prompt this review earlier. The code walkthrough explains what changed and how it works.
 
 The checkpoint recommends the next action for the PR and includes copyable
@@ -268,6 +326,15 @@ A checkpoint that recommends merging comes after the code walkthrough and any
 screenshots for the same commit, so you read the evidence before the recommendation
 and merge text. Shaka refuses to publish it until the walkthrough for that
 commit exists; your agent publishes the screenshots first.
+
+![Checkpoint for commit 1198b62 showing Recommendation: Merge, the next action, Reviewer verdict: Proceed, no unresolved concerns, and a copyable squash commit title.](img/pr-checkpoint.webp)
+
+[The checkpoint on PR #527](https://github.com/shakacode/shaka/pull/527#issuecomment-6184807134),
+captured October 14, 2026 (Hawaii time), separates the owner's recommendation
+from the reviewer's verdict. Current checkpoints show the owner's reason, the
+reviewer's conclusion, and any unresolved concerns. For **Merge**, a **Next** line appears
+only when merging waits on something the recommendation does not say. The reviewer's summary,
+token counts, and squash message sit in closed sections below.
 
 The checkpoint explains one conclusion:
 **Proceed**, **Simplify/reframe**, or **Do not merge**. Substantive unresolved concerns
@@ -282,16 +349,27 @@ preparation without this account's published ready review or explicit opt-out fo
 current commit. A new commit needs fresh evidence. The reviewer judges value; Ruby
 checks the published result and commit, not the judgment’s quality.
 
-Use **Recommended next action** for the proposal and **Recorded decision** for
+Use **Recommendation** for the proposal and **Recorded decision** for
 accepted guidance. Once a direction is chosen, the agent records that guidance
 and recoverable work state for a later return. This uses the existing
 [recovery procedure](working-with-shaka.md#revise-earlier-guidance-and-try-again),
 not an automatic Ruby snapshot or an extra human approval at every return point.
-The PR description shows the current checkpoint status and **Recommended next action**,
-with the commit they apply to and a link to the full report. Your agent summarizes
+The PR description opens with **Decisions to make** while you have questions to answer.
+Otherwise, below the line naming the AI that wrote it, it opens with the task owner's
+recommendation from the checkpoint published for that commit, such as
+**Recommendation: Merge**, or **No recommendation yet** before the owner has recorded one.
+Shaka reads the recommendation from the latest checkpoint for that commit each time the
+description is published; your agent republishes the description when the checkpoint
+changes. A checkpoint that holds only the reviewer's verdict shows it as **Reviewer
+recommendation** and leaves the description at **No recommendation yet**. Shaka refuses
+to show a recommendation made for an earlier commit, so the recommendation does not name
+one. Beside it, links open the walkthrough, the detailed code review when one was
+published, and the full checkpoint. Your agent adds a **Next** line when merging waits on
+something the recommendation does not say, such as another PR. The **Summary** follows.
+Your agent summarizes
 consequential decisions, questions or friction, and critical changes in a few lines.
 Supporting evidence appears below.
-The report keeps the **Evaluation** within the checkpoint. A recommendation becomes a
+The report keeps the **Reviewer verdict** within the checkpoint. A recommendation becomes a
 **Recorded decision** after the owner accepts it or acts under existing authority.
 Auto applies previously granted authority; a consequential unresolved choice still needs direction.
 Parsed identifiers and readiness rules remain unchanged.
@@ -381,8 +459,11 @@ that changes runtime behavior.
 When the PR has a preview deployment, it checks the preview too, or says why not.
 
 The agent uploads captures to the PR and verifies that you can open them; a local
-path is not shared evidence. It names the tested commit and behavior, then
-refreshes affected evidence after code changes or explains which part still applies.
+path is not shared evidence. Below the agent's 🤖 line, the comment opens with a
+**Verification for** heading that links the tested commit, so you can find it among
+review comments and see whether it matches the current head. The agent names the
+tested behavior, then refreshes affected evidence after code changes or explains
+which part still applies.
 When a new comment replaces an earlier one, the agent folds the earlier one
 beneath a link to its replacement. Current evidence appears first; older captures
 stay one click away. When a capture cannot be published, the PR records the

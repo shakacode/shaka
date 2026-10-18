@@ -32,11 +32,11 @@ class PrDescriptionAttributionTest < Minitest::Test
     end
   end
 
-  def test_credit_appears_once_between_summary_and_walkthrough
+  def test_credit_appears_once_at_the_end
     settings = Shaka::PublicationSettings.new(current: { 'pr_description.show_shaka_credit' => true })
     rendered = Shaka::Publication.description(description_content, nil, nil, settings)
     assert_equal 1, rendered.scan(CREDIT).size
-    assert_includes rendered, "#{SUMMARY}\n\n#{CREDIT}\n\n_Not published yet._"
+    assert rendered.end_with?("</details>\n\n#{CREDIT}\n"), rendered
   end
 
   def test_disabled_attribution_keeps_the_summary_and_other_evidence
@@ -111,7 +111,7 @@ class PrDescriptionCheckpointCommandTest < Minitest::Test
       Dir.mktmpdir do |dir|
         _output, error, status = run_description(dir, root:, ref: fixture_ref(root))
         assert_predicate status, :success?, error
-        assert_includes File.read(File.join(dir, 'published.md')), '**Status:** Direction needed'
+        assert_includes File.read(File.join(dir, 'published.md')), '**No recommendation yet**'
       end
     end
   end
@@ -128,8 +128,14 @@ class PrDescriptionCheckpointCommandTest < Minitest::Test
     end
   end
 
+  # A description with a checkpoint reads this account's published checkpoint; none is published here.
+  def fake_gh
+    super.sub('else abort', "when 'user' then puts JSON.generate('login' => 'agent')\n" \
+                            "when %r{issues/1/comments} then puts '[]'\nelse abort")
+  end
+
   def description_content
-    super.merge('checkpoint' => { 'head' => @checkpoint_head || ('c' * 40), 'status' => 'Direction needed',
+    super.merge('checkpoint' => { 'head' => @checkpoint_head || ('c' * 40),
                                   'next_action' => 'Justin: choose the next direction.' })
   end
 end

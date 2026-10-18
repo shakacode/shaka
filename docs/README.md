@@ -1,17 +1,21 @@
 # Documentation
 
+**PRs that are a delight to review.**
+
 Understand what your coding agent changed, why it chose the approach, and how
 the result was checked. Shaka presents the context you need to approve a change,
 request revisions, or resolve an open question. You choose who merges it.
 
-![A sandwich surrounds an agent loop for building, testing, and review. A human checkpoint routes the result toward revision or proceeding.](img/checkpoint-switchback.webp)
+![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
 
-Humans steer the outer loop. Agents build, test, and review inside it.
-At the [checkpoint](pr-verification.md#checkpoint), evaluate the result and decide what happens next.
-
-[View the full-size diagram](img/checkpoint-switchback.webp).
+The agent builds, verifies, and reviews, fixing what it can. Then you review one clear
+PR: what changed, how it was checked, and what is still open. At the
+[checkpoint](pr-verification.md#checkpoint), decide what happens next.
 
 ## Start here
+
+New to branches and pull requests? [Shaka in pictures](shaka-in-pictures.md)
+explains them and walks you through a practice task.
 
 1. [Install Shaka, configure your repository, and run a first task](getting-started.md).
 2. [Work with Shaka](working-with-shaka.md): choose a merge policy, give feedback,

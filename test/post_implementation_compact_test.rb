@@ -8,19 +8,20 @@ class PostImplementationCompactTest < Minitest::Test
   def test_routine_report_keeps_the_decision_visible_and_states_the_conclusion_once
     visible = routine_report.split('<details>', 2).first
 
-    assert_includes visible, '**Recommended next action:** Merge if CI passes'
-    assert_match(%r{\*\*Revision:\*\* \[`aaaaaaa`\]\(https://github.com/example/test/commit/a{40}\)}, visible)
-    assert_includes visible, "**Unresolved concerns:**\n\nNone."
+    assert_includes visible, '## Reviewer recommendation: Merge if CI passes'
+    assert_match(%r{# Checkpoint for \[`aaaaaaa`\]\(https://github.com/example/test/commit/a{40}\)}, visible)
+    assert_includes visible, '**Reviewer verdict:** Proceed, no unresolved concerns. ' \
+                             'The label is clearer and older notes remain readable.'
+    refute_includes visible, 'Unresolved concerns:'
     refute_includes visible, 'after required checks and approvals'
-    assert_includes visible, 'The label is clearer and older notes remain readable.'
     assert_includes visible, 'Complete the required approval.'
-    assert_equal 1, routine_report.scan('Evaluation:').size
+    assert_equal 1, routine_report.scan('Reviewer verdict:').size
   end
 
   def test_supporting_analysis_and_usage_remain_available_in_closed_details
     visible, details = routine_report.split('<details>', 2)
     ['Compatibility remains intact.', 'No new dependencies.',
-     'Documentation alone leaves the ambiguous label.', 'Ruby verified report shape'].each do |evidence|
+     'Documentation alone leaves the ambiguous label.', 'the reviewer judged value, not correctness'].each do |evidence|
       refute_includes visible, evidence
       assert_includes details, evidence
     end
@@ -36,8 +37,8 @@ class PostImplementationCompactTest < Minitest::Test
         visible = rendered(result, path).split('<details>', 2).first
 
         assert_includes visible, "**Unresolved concerns:**\n\n- Notes cannot be recovered.\n- Recovery is unverified."
-        refute_includes visible, '**Recommended next action:** Merge if CI passes'
-        assert_includes visible, "**Evaluation:** #{conclusion}\n\nThe approach needs attention."
+        refute_includes visible, '## Reviewer recommendation: Merge if CI passes'
+        assert_includes visible, "**Reviewer verdict:** #{conclusion}. The approach needs attention."
       end
     end
   end
@@ -50,8 +51,8 @@ class PostImplementationCompactTest < Minitest::Test
         visible = rendered(result, path).split('<details>', 2).first
 
         assert_includes visible, 'The provider could not complete this review.'
-        assert_match(/\*\*Revision:\*\* .*a{40}/, visible)
-        refute_includes visible, '**Recommended next action:** Merge if CI passes'
+        assert_match(/# Checkpoint for .*a{40}/, visible)
+        refute_includes visible, '## Reviewer recommendation: Merge if CI passes'
       end
     end
   end

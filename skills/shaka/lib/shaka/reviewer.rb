@@ -37,17 +37,19 @@ module Shaka
 
     def selection
       review = config.review
+      inventory = Doctor::CliInventory.new(root:, environment: ENV).call(review)
       result = ReviewerSelection.new(reviewers: review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS],
                                      implementers: identities(:implementers, required: true),
                                      unavailable: identities(:unavailable),
+                                     not_set_up: Doctor::CliInventory.not_set_up(inventory),
                                      count: @options.fetch(:count) { count(review) }).call
-      inventory = Doctor::CliInventory.new(root:, environment: ENV).call(review)
       result.merge('setup_notices' => Doctor::CliInventory.setup_notices(inventory))
     end
 
     # A task's --count wins; otherwise use the selected configuration's count.
     def count(review)
-      review.fetch(RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT, 1)
+      key = RepositoryConfig::ReviewSchema::LOCAL_REVIEW_COUNT
+      review.fetch(key) { Defaults.fetch('review', key) }
     end
 
     def identities(key, required: false)

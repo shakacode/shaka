@@ -44,6 +44,17 @@ past the [size limits](settings.md#mergelimits), or one that changes trust,
 authentication, releases, or other consequential areas, still comes back to you.
 See [choose a merge policy](working-with-shaka.md#choose-a-merge-policy).
 
+## Can I make sure the agent never merges?
+
+Under **Ask**, the agent merges only after you approve that PR's commit. To have
+a task end at the PR, say so in your prompt, for example `Open a PR and stop`.
+Ask relies on the agent following its instructions, and the agent acts with your
+GitHub permissions. To have GitHub block the merge, protect the base branch:
+require an approving review, and give no bypass to administrators or to any role,
+team, or app that includes your account. The agent opens PRs as you, so someone
+else then has to approve each one. An administrator can still change these rules,
+so the block holds only when the agent's account is not an administrator.
+
 ## Does a green review job mean the PR was reviewed?
 
 No. A job can pass without producing a review. The agent reads the report and
@@ -98,11 +109,12 @@ $shaka Add USER to this project's trusted GitHub actors.
 | What the local reviewer looks for and how it reports | [`review.prompt_file`](settings.md#reviewprompt_file), replacing Shaka's defaults |
 | Changes to Shaka's workflow | A [fork of Shaka](workflow.md#customize-the-instructions) |
 
-Keep `AGENTS.md` a regular file with the instructions in it; Shaka reads it from
-Git at the trusted commit. Recent Claude Code versions can read `AGENTS.md`
-directly, but not in every session, and not by default when a `CLAUDE.md` exists.
-To give Claude the same instructions every time, add a `CLAUDE.md` containing
-`@AGENTS.md` rather than a symlink. See Claude Code's
+Shaka reads `AGENTS.md` from Git at the trusted commit. When `AGENTS.md` is a
+symlink to another file in the repository, such as `CLAUDE.md`, Shaka reads that
+file at the same commit. Claude Code is a separate case: recent versions can read
+`AGENTS.md` directly, but not in every session, and not by default when a
+`CLAUDE.md` exists. To give Claude the same instructions every time, add a
+`CLAUDE.md` containing `@AGENTS.md`. See Claude Code's
 [AGENTS.md support](https://code.claude.com/docs/en/memory#agents-md).
 
 ## Can I customize the prompt Shaka gives its local reviewer?

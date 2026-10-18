@@ -11,6 +11,8 @@ Settings live in `.agents/shaka/config.yml`. Ask your agent to
 Browse [this repository’s configuration](https://github.com/shakacode/shaka/blob/main/.agents/shaka/config.yml) for a
 commented example with explicit defaults and repository-specific review choices.
 Optional choices without fixed defaults, such as the base branch and local reviewer models, stay commented.
+Its [README](https://github.com/shakacode/shaka/tree/main/.agents/shaka#readme) notes
+why its prompts and reviewer count differ from the defaults.
 
 ## Which settings apply?
 
@@ -23,7 +25,9 @@ settings with shared team settings.
 | Shared Shaka settings exist on the default branch | The default-branch configuration, including when reviewing a PR that changes it. |
 | No shared settings; individual setup is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
 
-Omitted optional values use Shaka's defaults. An explicit task choice takes
+Omitted optional values use Shaka's defaults, all listed in
+[Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
+An explicit task choice takes
 precedence where an option supports it, such as choosing Ask for one task.
 Each option below describes any such override. Individual settings govern
 delivery preferences, such as AI reviewers and writing limits; they cannot
@@ -197,8 +201,10 @@ A review of an earlier commit still counts in two cases:
   new review or a waiver instead.
 - **Ordinary Markdown since.** Every later change is ordinary Markdown. Agent
   instructions are not ordinary Markdown: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
-  `SKILL.md`, and files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or
-  `skills/` need a new review.
+  `SKILL.md`, any other Markdown file whose name starts with `agents`, `claude`,
+  `gemini`, or `skill` (such as `AGENTS.override.md` or `CLAUDE.local.md`), and
+  files under `.agents/`, `.claude/`, `.cursor/`, `.github/`, or `skills/` need a
+  new review.
 
 When no review applies, `merge` stops before merging. A maintainer can record a
 waiver reason when review was skipped on purpose, a later commit only fixed nits,
@@ -222,8 +228,9 @@ review:
   ci_review_wait: one
 ```
 
-The agent reads reports according to `ci_review_wait`; a green job alone does not
-prove review completed. GitHub's required merge checks are configured separately.
+The [hosted Claude review](configure-repository.md#add-hosted-claude-review) workflow
+Shaka ships produces `claude-review`. The agent reads reports according to
+`ci_review_wait`; a green job alone does not prove review completed. GitHub's required merge checks are configured separately.
 
 ## `review.ci_review_wait`
 
@@ -310,6 +317,10 @@ Shaka prefers a different provider from the one that implemented the change,
 then follows your list order among available reviewers. These settings choose
 the available choices; [`local_review_count`](#reviewlocal_review_count) chooses how
 many run. Listing three does not require all three to review every change.
+Each developer reviews with the listed reviewers their machine has: Shaka skips one
+whose CLI is not installed, or DeepSeek when `OPENROUTER_API_KEY` is not set, and
+names the skipped reviewer with setup steps. When none is set up, a fresh session
+of the model that wrote the change reviews it.
 
 ### Model and effort values
 
@@ -335,7 +346,9 @@ large diff sometimes consumed the completion budget without returning a report.
 ```
 
 Set `OPENROUTER_API_KEY` in the review process environment; keep it out of repository
-files. No separate reviewer CLI is needed. The adapter supports only this explicit
+files. If you load keys on demand, for example from your keychain, say so in your personal
+agent instructions: agents often start a fresh shell for each command, so the loader must run
+in the same command as the review. No separate reviewer CLI is needed. The adapter supports only this explicit
 [OpenRouter model](https://openrouter.ai/deepseek/deepseek-v4.1-flash); it refuses other
 models and unsupported effort values before sending a request. Omitted effort uses
 the provider default and remains UNKNOWN in Shaka's attestation.
@@ -417,6 +430,8 @@ with the account that should pay for reviews:
 
 Then list that provider in `local_review_agents`. The next review picks it, and the
 published review names it in its summary table instead of the fallback notice.
+When you set up Shaka with the CLI already installed, the agent offers it and
+records your choice, so no edit is needed.
 
 ## `review.local_review_count`
 
@@ -456,7 +471,8 @@ task.
 
 **Optional. Default: Shaka's [review instructions](../skills/shaka/config/review-prompt.md).**
 A Markdown file in your repository that replaces what the local reviewer looks for
-and how it reports. Copy the default to start.
+and how it reports. Copy the default to start, or see Shaka's own
+[review prompt](https://github.com/shakacode/shaka/blob/main/.agents/shaka/review-prompt.md).
 
 ```yaml
 review:
@@ -479,7 +495,8 @@ which has no `prompt_file` on its entry, uses `.agents/review-prompt.md`.
 ### Where Shaka reads a prompt file
 
 The [configuration source](#which-settings-apply) determines which `prompt_file`
-settings apply. This rule covers code-review, checkpoint, and opening prompts.
+settings apply. This rule covers code-review, checkpoint, and opening prompts, and
+[project guidance](#project_guidance) files.
 A settings preview reads each prompt at its selected commit. Without a preview:
 
 - **Shared team settings:** commit the prompt with the settings PR. Shaka uses
@@ -546,6 +563,83 @@ maintaining. The task owner supplies the original problem and evidence, resolves
 concerns, and establishes merge readiness. Final merge preparation
 requires a report for the current commit with no unresolved concerns, counting a concern
 you [accepted](pr-verification.md#checkpoint) as resolved, or an explicit opt-out.
+
+## `project_guidance`
+
+**Optional. Default: none.** Markdown files with your repository's own requirements,
+which the agent reads at the moment they apply instead of carrying them through every task.
+
+```yaml
+project_guidance:
+  pr_evidence: .agents/shaka/pr-evidence.md
+  merge_readiness: .agents/shaka/merge-readiness.md
+```
+
+- `pr_evidence`: read before the agent writes the PR description. For example, a
+  library can ask for a compatibility run against its oldest supported version, and
+  the agent reports that run in the description's verification.
+- `merge_readiness`: read before the [checkpoint](pr-verification.md#checkpoint).
+  For example, a data service can require a confirmed backfill plan. The agent lists
+  each requirement and its status, and an unmet one blocks the merge-ready claim.
+  Write standing rules for every PR here; a task's own acceptance criteria stay in
+  its issue or spec.
+
+When `pr_evidence` is set and your repository has a pull request template, the agent
+also reads that template and fills any of its sections Shaka's description does not
+already cover. The template gives the description its shape; the guide says what to
+run or check before writing it. Shaka looks for `pull_request_template.md` in `.github/`,
+the repository root, then `docs/`. With several templates, name the one to use as
+`pr_evidence`.
+
+Put anything a command can check in your [validate script](#standard-command-scripts)
+or CI, where a failure stops the PR. Keep the guides for judgment calls, such as
+whether a preview looks right, which the agent reports rather than proves.
+
+Set either one or both. Shaka reads the guides and the template from
+[the same place as prompt files](#where-shaka-reads-a-prompt-file), with the same file checks,
+so a PR cannot rewrite the requirements it is judged by. A PR that edits them is judged
+by the version already merged. Changing them makes earlier validation and review results
+for a PR out of date.
+
+The guides add requirements for the agent to follow; Shaka does not check them itself.
+The agent is told to ignore any guide text that would relax reviews, required checks, or
+[merge preference](#mergepreference); those stay enforced as before.
+
+### Example: Shaka's own PR evidence guide
+
+Shaka's repository has one rule only it needs. When a PR changes how Shaka renders a PR
+description, walkthrough, review comment, or checkpoint, the agent republishes that text
+on the same PR with the PR's code, so the maintainer reviews the real result.
+
+Each usual home was a worse fit:
+
+- **Shaka's own workflow:** few projects render PR text, so others would carry a rule
+  they never use.
+- **`AGENTS.md`:** agents read it in every session, and most sessions never touch rendering.
+- **The validate script:** a command cannot judge whether a new layout reads well.
+
+That left the PR evidence guide, which agents read just before writing the description:
+
+```yaml
+project_guidance:
+  pr_evidence: .agents/shaka/pr-evidence.md
+```
+
+[The guide](https://github.com/shakacode/shaka/blob/main/.agents/shaka/pr-evidence.md)
+has a shape worth copying. It opens with its condition, so the agent skips it in one line.
+It points to a longer procedure instead of repeating it, so the steps keep one home. It
+ends by saying where to report the result, or why there is none.
+
+The timing has a cost. By the time the agent reads the guide, it has already published
+the review comment and walkthrough, so the guide asks it to republish them, and the
+checkpoint later. A rule that must act before the description belongs in `AGENTS.md`.
+
+To write a guide for your repository, start from a miss you have already seen:
+
+```text
+$shaka Add PR evidence guidance: when a change alters email templates, attach
+rendered before and after screenshots.
+```
 
 <a id="opening_check"></a>
 
@@ -728,10 +822,12 @@ branches:
 | --- | --- |
 | `{login}` | Authenticated GitHub login |
 | `{host}` | Coding-agent slug, such as `codex` or `claude` |
-| `{issue}` | Issue, PR, or work-item number; required in the template |
+| `{issue}` | Issue, PR, or work-item number, or `ad-hoc` for a task with none; required in the template |
 | `{description}` | Short task description |
 
-For example: `alex-codex/42-fix-search`.
+For example: `alex-codex/42-fix-search`, or `alex-codex/ad-hoc-fix-search` when the
+task was given as a sentence. Before starting either one, the agent checks open PRs and
+branches for the same name and stops for a decision when another one already uses it.
 
 When a task comes from a tracker that offers a branch name, such as Linear's
 **Copy git branch name**, the agent uses that name instead of the template.
@@ -742,9 +838,9 @@ work item through that branch name. Git must accept the name as a branch name.
 
 **Optional. Default: `true`.**
 
-PR descriptions show *PR prepared with [Shaka](https://shaka.shakacode.com/).* below
-the opening summary. The credit helps readers discover the workflow that prepared
-the PR and try it on their own project.
+PR descriptions end with *PR prepared with [Shaka](https://shaka.shakacode.com/).*
+The credit helps readers discover the workflow that prepared the PR and try it on
+their own project.
 
 When Shaka is configured for a repository, the credit helps teammates discover its
 workflow. For private repositories, leave attribution enabled while introducing
@@ -794,8 +890,10 @@ pr_description:
 ```
 
 How much of a comment the list repeats is not a setting. The list quotes a comment
-only when it has at most 12 words and 90 characters. A longer one is already on
-the PR, so the list shows the agent's one-line summary and links to it.
+only when it has at most 12 words and 90 characters, leaving out any code. A longer
+one is already on the PR, so the list shows the agent's one-line summary and links
+to it. So does a short comment with a list beside code, where code is hard to tell
+from prose.
 
 ## `wip.include_checkout_path`
 
@@ -837,6 +935,9 @@ information elsewhere in a PR, and expandable sections on public PRs are public 
 Use 1–6 uppercase ASCII letters or digits, such as `repo_prefix: SHOP`, to label
 chat titles: `SHOP PR #42 · Fix checkout`. The
 [repository catalog](repository-catalog.md) reports duplicate prefixes.
+
+Shared settings on the default branch supply the prefix. Without them, complete
+individual settings supply it. Incomplete or invalid individual settings use the default label.
 
 ## `version`
 

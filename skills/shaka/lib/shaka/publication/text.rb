@@ -45,8 +45,22 @@ module Shaka
       text
     end
 
-    # Escaping a backslash before a pipe keeps a cell's own `\|` from ending the cell early.
-    def table_cell(text) = text.gsub(/[\\|]/) { |character| "\\#{character}" }
+    # Readers see a short commit; the link keeps the full SHA for anyone who needs it.
+    # Anything other than a full SHA, such as UNKNOWN, is shown as given.
+    def commit(sha, repository = nil)
+      return sha unless sha.to_s.match?(/\A\h{40}\z/)
+
+      short = "`#{sha[0, 7]}`"
+      repository ? "[#{short}](https://github.com/#{repository}/commit/#{sha})" : short
+    end
+
+    # GitHub needs `\|` for a pipe anywhere in a cell. Outside code, escaping each backslash too
+    # keeps a cell's own `\|` visible; inside a code span backslashes are already literal.
+    def table_cell(text)
+      text.gsub(/(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)|`+|[^`]+/m) do |part|
+        part.gsub(part.start_with?('`') ? '|' : /[\\|]/) { |character| "\\#{character}" }
+      end
+    end
 
     def checked(value, field)
       return value unless prose(value).match?(ESCAPE)

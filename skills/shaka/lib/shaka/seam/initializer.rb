@@ -37,6 +37,7 @@ module Shaka
         preflight_files(files)
         write_files(files)
         report_legacy_readme
+        report_auto_without_required_checks
         Configuration.worktree(root: @root)
       end
 
@@ -101,27 +102,29 @@ module Shaka
           'base_branch' => base_branch,
           'review' => review_policy,
           'merge' => merge_policy,
-          'branches' => { 'name' => '{login}-{host}/{issue}-{description}' },
+          'branches' => { 'name' => Defaults.fetch('branches', 'name') },
           'wip' => RepositoryConfig::DEFAULT_WIP
         }.compact
       end
 
       def merge_policy
-        { 'preference' => @options.fetch(:merge_preference, 'ask'),
+        { 'preference' => @options.fetch(:merge_preference) { Defaults.fetch('merge', 'preference') },
           RepositoryConfig::MergeSchema::REQUIRED_CHECKS => @options[:required_checks] }.compact
       end
 
       def review_policy
-        required_policy = required('review_policy')
+        { 'required' => required('review_policy'),
+          RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS => ci_review_jobs,
+          RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS => @options[:local_review_agents] }.compact
+      end
+
+      def ci_review_jobs
         names = @options[:ci_review_jobs]
-        if required_policy == 'none'
-          raise Error, '--ci-review-job must be omitted when review policy is none' if names
+        none = required('review_policy') == 'none'
+        raise Error, '--ci-review-job must be omitted when review policy is none' if none && names
+        raise Error, '--ci-review-job is required' unless none || names&.any?
 
-          return { 'required' => required_policy }
-        end
-        raise Error, '--ci-review-job is required' if names.nil? || names.empty?
-
-        { 'required' => required_policy, RepositoryConfig::ReviewSchema::CI_REVIEW_JOBS => names }
+        names
       end
 
       # Matches the wrapper `seam upgrade` produces from the old template, so upgraded

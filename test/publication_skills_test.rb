@@ -8,6 +8,7 @@ class PublicationSkillsTest < Minitest::Test
       { 'identity' => PublicationRegressionTest::IDENTITY, 'summary' => 'A summary.',
         'walkthrough' => PublicationRegressionTest::WALKTHROUGH, 'deployment' => 'none',
         'steps_besides_merging' => 'none', 'table' => PublicationRegressionTest::TABLE,
+        'intent' => INTENT, 'verification' => VERIFICATION,
         'provenance' => PUBLIC_PROVENANCE, 'usage' => PublicationRegressionTest::USAGE_OBJECT,
         'details' => [] }.merge(changes)
     )
@@ -38,6 +39,32 @@ class PublicationSkillsTest < Minitest::Test
       rendered = render('skills_used' => records)
       assert_includes rendered, 'No skill use recorded; coverage is UNKNOWN.'
     end
+  end
+
+  def test_shaka_rows_are_omitted_because_provenance_names_the_workflow_version
+    shaka = skill('name' => 'shaka', 'source' => 'ShakaCode/shaka', 'revision' => 'c6a2512')
+    rendered = render('skills_used' => [shaka, skill, shaka.merge('name' => 'Shaka', 'phase' => 'review')])
+
+    assert_includes rendered, '| pstack-investigate |'
+    refute_match(/\| shaka \|/i, rendered)
+  end
+
+  def test_shaka_only_reports_say_no_other_skill_was_reported
+    rendered = render('skills_used' => [skill('name' => 'shaka', 'source' => 'ShakaCode/shaka')])
+
+    assert_includes rendered, 'No skills besides Shaka were reported.'
+    refute_includes rendered, 'coverage is UNKNOWN'
+    refute_includes rendered, '| Skill |'
+  end
+
+  def test_a_same_named_skill_from_another_source_stays_listed
+    rendered = render('skills_used' => [skill('name' => 'shaka', 'source' => 'Example/fork')])
+
+    assert_includes rendered, '| shaka | Example/fork |'
+  end
+
+  def test_omitted_shaka_rows_are_still_validated
+    assert_raises(Shaka::Error) { render('skills_used' => [skill('name' => 'shaka', 'evidence' => 'verified')]) }
   end
 
   def test_corroboration_is_required_without_promoting_an_agent_report

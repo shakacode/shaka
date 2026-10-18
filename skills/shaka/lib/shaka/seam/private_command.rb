@@ -4,11 +4,14 @@ require 'json'
 require 'optparse'
 require_relative 'private_setup'
 require_relative 'check_report'
+require_relative 'policy_options'
 
 module Shaka
   class Seam
     # Parses local-only setup and recovery commands independently of trusted policy.
     class PrivateCommand
+      include PolicyOptions
+
       OPERATIONS = %w[setup check inspect list restore].freeze
 
       def self.run(arguments)
@@ -22,19 +25,24 @@ module Shaka
 
       def run
         operation = @arguments.shift
-        raise OptionParser::InvalidArgument, operation unless OPERATIONS.include?(operation)
+        return 0.tap { puts option_parser(nil) } if %w[-h --help].include?(operation)
 
-        parser = option_parser(operation)
-        parser.parse!(@arguments)
-        raise OptionParser::InvalidArgument, @arguments.join(' ') unless @arguments.empty?
-
-        root = File.realpath(@options.fetch(:root, Dir.pwd))
-        output = execute(operation, root)
+        output = execute(operation, parse(operation))
         puts JSON.pretty_generate(output)
         0
       end
 
       private
+
+      # Returns the repository root the operation acts on.
+      def parse(operation)
+        raise OptionParser::InvalidArgument, operation unless OPERATIONS.include?(operation)
+
+        option_parser(operation).parse!(@arguments)
+        raise OptionParser::InvalidArgument, @arguments.join(' ') unless @arguments.empty?
+
+        File.realpath(@options.fetch(:root, Dir.pwd))
+      end
 
       def execute(operation, root)
         return setup(root) if operation == 'setup'
@@ -78,6 +86,7 @@ module Shaka
 
       def add_setup_options(flags)
         flags.on('--ref SHA') { |value| @options[:ref] = value }
+        flags.on('--from ID') { |value| @options[:from] = value }
         add_command_options(flags)
         add_review_options(flags)
         flags.on('--base-branch BRANCH') { |value| @options[:base_branch] = value }
@@ -94,6 +103,7 @@ module Shaka
           @options[:review_policy] = value
         end
         flags.on('--ci-review-job NAME') { |value| (@options[:ci_review_jobs] ||= []) << value }
+        add_local_review_agent_flag(flags)
       end
     end
   end

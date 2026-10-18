@@ -112,6 +112,11 @@ than supplying their bodies.
 Restrict the CLI to read and search tools, and disable hooks, plugins, and MCP servers.
 `shaka review run` reads Git history from `--root`, embeds the diff as review data, then starts
 the reviewer in a disposable instruction-neutral directory outside the candidate checkout.
+Report `duration_ms` as elapsed runner setup, reviewer invocation and report validation;
+`started_at` is UTC and `timeout_seconds` is its validated deadline. With `--ledger`, retain
+terminal timing from the returned `attempt_log`; failed attempts remain separate from completed
+rounds. Report `timing_retention: not_retained` as a measurement gap. Keep missing durations UNKNOWN.
+
 DeepSeek/OpenRouter reviews have a 600-second deadline by default; CLI reviewers have 300 seconds.
 `--timeout-seconds 1..3600`
 sets a task-specific bound. A timeout returns `cli_failure` with a reason and requires cause
@@ -124,7 +129,8 @@ Candidate `AGENTS.md` and similar files are never loaded as host instructions by
 Codex receives `--skip-git-repo-check` for the neutral directory. Supply any trusted-base
 repository criteria with optional `--criteria-ref TRUSTED_SHA`: the helper reads root
 `AGENTS.md` and any nested `AGENTS.md` governing changed paths from that immutable commit,
-and embeds them in root-to-specific order as separately labeled review data. The criteria commit
+and embeds them in root-to-specific order as separately labeled review data, following symlinks
+within that commit. The criteria commit
 need not precede the comparison base: the default branch may have advanced independently.
 Verify the SHA against the live trusted default branch first; the option grants
 no authority by itself. The runner also reads the configured prompt file from that commit,
@@ -178,7 +184,7 @@ setting keeps installed skill descriptions out of the reviewer's instructions to
 description-based routing to an unrelated installed skill. The report is created outside the checkout.
 It does not use `--ephemeral`, so the session remains saved. `--json` reports its thread ID,
 and the result's `usage` names that saved session under `CODEX_HOME` (default `~/.codex`);
-run `shaka usage --host codex --file USAGE --commit HEAD --contribution review --all-turns`
+run `shaka usage --host codex --file USAGE --commit "$(git rev-parse HEAD)" --contribution review --all-turns`
 on it. A missing `usage` means the session file was not found, and review usage stays UNKNOWN.
 `codex exec review --base REF` cannot accept the custom review prompt, so the helper uses `exec`.
 
@@ -203,7 +209,7 @@ Apply the same failure-cause check before marking `claude` unavailable.
 The helper runs `claude -p --permission-mode plan --permission-prompts none --restricted
 --safe-mode --strict-mcp-config --effort EFFORT --output-format json -`. It rejects an error,
 empty result, or wrong-head attestation. `-p` prints and exits; JSON holds the review text and
-native token counters. Run `shaka usage --host claude-code --file PATH --commit HEAD
+native token counters. Run `shaka usage --host claude-code --file PATH --commit "$(git rev-parse HEAD)"
 --contribution review` on the corresponding Claude session. `--permission-mode plan` with
 `--permission-prompts none` withholds edits
 and denies anything that would prompt. `--restricted` removes command-running tools.
@@ -426,10 +432,14 @@ It also refuses one reviewer reading a commit twice, rounds of one commit listed
 fix recorded in the commit its round reviewed. A
 content file without a ledger gets only these checks: publishing does not read Git history, so
 use `--ledger` when fixes must be proven to follow and reach the reviewed head.
-Add `model`, `tokens`, and `cost` from native usage; a missing value renders `UNKNOWN`. Leave
-`cost` out unless the host reports a priced route. For a subscription session, put the
-`USD estimate` that `shaka usage` reports in `estimate` instead: the table marks it `est.` and
-the returned loop summary calls it an API-equivalent estimate, never a bill. When `shaka reviewer` did not return `different_provider`, add
+`review run` captures a redacted `usage_record` from supported native sources and keeps it
+with the ledger round. Supply the saved review results through description's `--review-result`
+inputs to include every ledger round in the canonical PR usage table automatically, even after
+temporary source cleanup. Retain saved results for description publication; keep the ledger
+for findings and reports.
+Legacy rounds without captured records still accept `model`, `tokens`, `cost`, and
+`estimate`; subscription estimates belong in `estimate`, never `cost`.
+When `shaka reviewer` did not return `different_provider`, add
 `fallback` with its `outcome` and one `attempts` entry per reviewer tried, copying each
 `reviewer`, `failure_stage`, and `reason` from its `shaka review run` result. Leave
 `attempts` empty when selection tried no other reviewer. The helper replaces each `reason`
@@ -457,28 +467,35 @@ published verbatim, so before posting it asks GitHub to render the comment and r
 unclosed code fence or a stray disclosure tag in a report would hide the attestation. The
 check cannot stop two reports that together imitate a round's layout, for example a reviewer
 steered by the PR it reads. The attestation and the summary table stay authoritative, because
-the helper writes both itself. It posts one `Local Adversarial Review` comment per reviewed
-commit, in ledger order. Each opens with the reviewed revision, a compact table of
-findings needing attention, and coverage limits. Each finding lists every reviewer
-that reported its ID. Explicitly fixed, dismissed, and accepted findings move into
-evidence history; legacy documented defects and risks remain visibly unassessed.
+the helper writes both itself. It posts one `Local Adversarial Review` comment for the whole
+loop. The comment opens with the newest reviewed revision, its outcome, a compact table of
+findings needing attention, and coverage limits, each shown once. A table of reviewed commits
+gives every reviewer's finding count and what became of those findings. Each finding lists
+every reviewer that reported its ID. Explicitly fixed, dismissed, and accepted findings move
+into evidence history; legacy documented defects and risks remain visibly unassessed.
 
-The closed evidence disclosure preserves all disposition explanations, decision records,
-coverage excerpts, execution metadata, and original reports. Coverage excerpts remain
+One closed disclosure holds finding details, disposition explanations, decision records,
+preserved triage, and execution metadata. Each reviewed commit then has its own closed
+disclosure with its subject, coverage excerpts, and original reports. Coverage excerpts remain
 attributed, unverified literal text. Missing or ambiguous coverage stays UNKNOWN.
-The last reviewer's attestation closes the comment, where `merge` reads it.
-A commit GitHub does not have, such as one a rebase replaced, is named without a link or subject.
-Each comment's key includes the full commit SHA, so republishing edits that commit's entry
-without overwriting other commits' reviews or the legacy loop comment. All comments are
-rendered and checked before any is posted; after a partial GitHub write failure, retry the
-same content file to update posted entries and finish the rest.
+The newest round's attestation closes the comment, where `merge` reads it.
+A commit GitHub does not have, such as one a rebase replaced before it was pushed, links to the pull
+request commit with the same subject, author date, and change; without one, it is named without a link or subject.
+
+Republishing the same ledger edits its comment in place; a fresh ledger gets its own comment
+and leaves reports it does not account for untouched. When reports would pass GitHub's
+65,536-character limit, the oldest commits' reports move into `earlier commits` continuation
+comments. One commit whose reports cannot fit any comment is refused: shorten its reports and
+publish again. All comments are rendered and checked before any is posted; after a partial
+GitHub write failure, retry the same content file to update posted entries and finish the rest.
 
 The result's `comments` lists the published entries, and `summary` gives totals across the loop
 and its outcome. Copy that summary into the PR description's review history details; native
 usage records still belong in `usage.records`.
 
 After every successful publication, `review publish` collapses older owned Shaka
-review comments just published from the ledger, using their returned comment IDs.
+review comments from the ledger: its continuation comments and any comment the earlier
+per-commit publisher posted for an earlier commit holding only the ledger's reports.
 Other reports, including legacy reports at the same revision, stay visible for explicit assessment.
 Cleanup also skips when the current PR head has no report in that publication.
 Its `cleanup` result lists confirmed edits, unavailable cleanup,
@@ -501,15 +518,16 @@ The standalone command also lists confirmed edits and unavailable cleanup. A fai
 edit returns a nonzero exit; inspect the failure before retrying.
 Without a visible owned current-head report, cleanup skips without failing. If the
 PR returns to a previously archived head, republish its report before cleanup.
-Both legacy and per-commit Shaka review keys are recognized. Cleanup works with
-the per-commit publisher and can run independently after publishing.
+Legacy, per-commit, and loop Shaka review keys are all recognized. Cleanup can run
+independently after publishing.
 
 After assessing completed CI feedback, also minimize obsolete bot review reports
 and notices with GitHub's native **outdated** disclosure. Read them with `shaka comments`
 at the current head first. Select reports that earlier commits have superseded and
-notices that no longer help the reader. Minimize a CodeRabbit review-limit notice
-when it contains no review findings; record `rate-limited; no review completed`
-in the existing review summary even when the notice concerns the current head. Carry
+notices that no longer help the reader. At any point, you may also minimize a bot
+comment that contains no review findings, such as a skipped-review, plan, upgrade,
+or status-only notice. For a CodeRabbit review-limit notice, record `rate-limited; no
+review completed` in the existing review summary even when it concerns the current head. Carry
 still-applicable findings into the current summary; leave current review reports
 and discussions with unaddressed material concerns visible. A different SHA alone
 does not establish that findings are resolved. The agent makes this assessment;
@@ -566,10 +584,9 @@ and inline threads from the pinned `claude[bot]` report author, address demonstr
 defects, and recheck fixes before merge.
 ```
 
-The [React on Rails review workflow](https://github.com/shakacode/react_on_rails/blob/e3d95bebc743ea9f9ab322f4b370667393c7627a/.github/workflows/claude-code-review.yml)
-is an example: it posts comments and inspects Claude's execution result because
-an unsuccessful review can otherwise report a successful action. Its separate
-`@claude` workflow is a different capability, not required by this ordinary path.
+The packaged [Claude review workflow](../config/claude-code-review.yml) is an example:
+it inspects Claude's execution result, because an unsuccessful review can otherwise report a
+successful action, and runs a short pass when the PR author published a local review of the head.
 
 When later evidence challenges a recommendation, including after merge, follow
 [record later review evidence](review-assessments.md). Assessments preserve the

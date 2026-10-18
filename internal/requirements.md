@@ -113,9 +113,9 @@ must cite that evidence before claiming the pilot's real-use acceptance.
 
 - **R19 — Keep Shaka gaps actionable.** Unless offers are skipped, the root task
   owner offers a public-source draft for a worthwhile, independently verified gap
-  outside the active request. Verify the fixed public repository identity and get
-  exact-query approval before searching; share candidate links and metadata for
-  inspection. Get separate approval for the exact issue text, repeat the search,
+  outside the active request. Verify the fixed public repository identity, show the
+  draft and query, then search without asking; share candidate links and metadata
+  for inspection. Get approval for the exact issue text, repeat the search,
   and return for review and approval if candidates change. File the unchanged draft
   only after candidates are cleared. Exclude private context; stop on identity
   mismatch, search failure or limit, or unresolved candidates. Never create an
@@ -203,7 +203,9 @@ GitHub applies the repository's rules to the account as configured; readiness ca
 change after the helper's last snapshot. When GitHub has no required checks configured
 on the base branch, as on a private repository on the GitHub Free plan, the trusted seam's
 `merge.required_checks` stands in for them and Shaka alone enforces it (maintainer decision
-on #235). Leave repository queue settings and armed
+on #235). When neither supplies a check, the helper merges only the exact head a user
+asked it to merge, or approved, under Ask. Ruby checks only that the confirmation names the merged head;
+the agent never confirms one under Auto (#551). Leave repository queue settings and armed
 auto-merges unchanged. The helper performs an immediate squash merge when the base has no
 queue. When the base has Merge Queue enabled, the helper lets GitHub's enqueue operation
 decide native queue eligibility for a `CLEAN`, `BEHIND`, or queue-policy `BLOCKED` expected

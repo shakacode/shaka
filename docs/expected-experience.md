@@ -27,6 +27,9 @@ Set up Shaka just for me. Go.
 Individual settings remain outside commits in a repository without team setup.
 They cover the same choices as shared settings: reviewers, custom code-review
 instructions, checkpoint choices, writing limits, opening instructions, and WIP preferences.
+When a later task starts in a new worktree, the agent copies your individual
+settings into it. Edits you made after setup come along while the earlier
+checkout still exists.
 
 The agent follows setup instructions to find existing commands and continue into
 your task. That is not proof of seamless first-user delivery. The
@@ -46,6 +49,13 @@ prompts, model choices, and [what you get](working-with-shaka.md#what-you-get).
 If a project has no usable checks, decide with the agent whether to add them or
 report limited verification. Routine tasks should not require editing configuration
 or PATH by hand.
+
+## Multiple reviewers per commit
+
+Start with one reviewer. For broader coverage, configure
+[multiple reviewers](settings.md#reviewlocal_review_count), such as Claude, Codex,
+or DeepSeek. Additional reviews cost more. The agent combines reviews before
+deciding how to respond, so overlapping findings are handled once.
 
 ## Understand the PR's settings and evidence
 

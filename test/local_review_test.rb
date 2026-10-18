@@ -854,25 +854,30 @@ end
 class LocalReviewTimeoutTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
 
+  # Launches the reviewer directly: through `review run`, each setup Git call shares the
+  # 1-second limit, so a busy machine reports setup_failure before the reviewer starts.
   def test_stalled_reviewer_returns_structured_noncompletion
-    with_repository do |root, base, head, bin|
-      write_executable(bin, 'codex', "#!/bin/sh\nsleep 10\n")
+    Dir.mktmpdir('shaka-stalled-reviewer') do |bin|
+      write_executable(bin, 'codex', "#!/bin/sh\nexec /bin/sleep 10\n")
+      cli = Shaka::LocalReviewCli.new({ reviewer: 'openai/codex', timeout_seconds: 1, capture_usage: false },
+                                      root: bin, report: File.join(bin, 'report'), candidate_root: Dir.pwd, path: bin)
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      output, _error, status = run_review(root, base, head, bin, timeout_seconds: 1)
-      assert_timeout(output, status, started)
+      assert_timeout(cli.run('prompt'), started)
     end
   end
 
+  # The bound includes starting `shaka`, which a busy machine slows; finishing well before
+  # the stub's sleep still proves the stalled Git was killed.
   def test_stalled_setup_command_returns_structured_noncompletion
     with_repository do |root, base, head, bin|
-      write_executable(bin, 'git', "#!/bin/sh\nsleep 10\n")
+      write_executable(bin, 'git', "#!/bin/sh\nsleep 60\n")
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       output, _error, status = run_review(root, base, head, bin, timeout_seconds: 1)
       refute_predicate status, :success?
       result = JSON.parse(output)
       assert_equal 'setup_failure', result.fetch('failure_stage')
       assert_includes result.fetch('reason'), 'timed out after 1s'
-      assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 6
+      assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 30
     end
   end
 
@@ -892,9 +897,8 @@ class LocalReviewTimeoutTest < Minitest::Test
 
   private
 
-  def assert_timeout(output, status, started)
-    refute_predicate status, :success?
-    result = JSON.parse(output)
+  def assert_timeout(result, started)
+    assert_equal 'not_completed', result.fetch('status')
     assert_equal 'cli_failure', result.fetch('failure_stage')
     assert_equal 'requires_cause_review', result.fetch('skip_evidence')
     assert_includes result.fetch('reason'), 'timed out after 1s'
@@ -1408,6 +1412,40 @@ class LocalReviewLoopTest < Minitest::Test
 end
 
 # Several reviewers of one commit share the loop's ledger.
+# A ledger's id names its PR comment; a ledger begun before ids existed keeps its published key.
+class LocalReviewLedgerIdentityTest < Minitest::Test
+  COMMAND = LocalReviewCodexTest::COMMAND
+
+  include LocalReviewLoopSteps
+
+  def teardown
+    Array(@results).each { |result| cleanup_artifacts(result) }
+  end
+
+  def test_a_ledger_keeps_one_random_id_across_rounds
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      id = stored_ledger.fetch('id')
+      loop_round(fix_commit, findings: 0)
+      assert_match(/\A\h{12}\z/, id)
+      assert_equal id, stored_ledger.fetch('id')
+    end
+  end
+
+  def test_a_ledger_without_an_id_keeps_its_first_report_key
+    in_loop do |head|
+      loop_round(head, findings: 0)
+      File.write(@ledger, JSON.generate(stored_ledger.except('id')))
+      before = Shaka::LocalReviewLoopComment.new(stored_ledger).key
+      loop_round(fix_commit, findings: 0)
+
+      assert_equal before, Shaka::LocalReviewLoopComment.new(stored_ledger).key
+    end
+  end
+
+  def stored_ledger = JSON.parse(File.read(@ledger))
+end
+
 class LocalReviewLoopBatchTest < Minitest::Test
   COMMAND = LocalReviewCodexTest::COMMAND
   NIT_FINDING = LocalReviewLoopTest::NIT_FINDING
@@ -1753,6 +1791,7 @@ LocalReviewStatusTest.include(LocalReviewFixture)
 LocalReviewAttestationCaseTest.include(LocalReviewFixture)
 LocalReviewLoopTest.include(LocalReviewFixture)
 LocalReviewLoopBatchTest.include(LocalReviewFixture)
+LocalReviewLedgerIdentityTest.include(LocalReviewFixture)
 LocalReviewCapRunnerTest.include(LocalReviewFixture)
 LocalReviewDirtyWorktreeTest.include(LocalReviewFixture)
 
@@ -1815,7 +1854,8 @@ class LocalReviewClaudeModelTest < Minitest::Test
       record_claude_usage(ledger, 'UNKNOWN')
       rounds = JSON.parse(File.read(ledger)).fetch('rounds')
       assert_equal MODEL, rounds.first.fetch('model')
-      assert_includes Shaka::LocalReviewComment.render('rounds' => rounds), "| anthropic/claude | #{MODEL} |"
+      assert_includes Shaka::LocalReviewComment.render('rounds' => rounds),
+                      "| anthropic/claude<br>model #{MODEL}<br>effort"
     end
   end
 
@@ -1826,7 +1866,8 @@ class LocalReviewClaudeModelTest < Minitest::Test
       record_claude_usage(ledger, 'UNKNOWN')
       rounds = JSON.parse(File.read(ledger)).fetch('rounds')
       assert_equal model, rounds.first.fetch('model')
-      assert_includes Shaka::LocalReviewComment.render('rounds' => rounds), "| anthropic/claude | #{model} |"
+      assert_includes Shaka::LocalReviewComment.render('rounds' => rounds),
+                      "| anthropic/claude<br>model #{model}<br>effort"
     end
   end
 

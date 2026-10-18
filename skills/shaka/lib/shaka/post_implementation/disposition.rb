@@ -6,7 +6,7 @@ require_relative 'publication'
 module Shaka
   # The task owner's shipping recommendation, separate from the reviewer's verification.
   module PostImplementationDisposition
-    RECOMMENDATIONS = ['Merge', 'Revise before merge', 'Reconsider approach', 'Do not merge'].freeze
+    RECOMMENDATIONS = PostImplementationReport::RECOMMENDATIONS
 
     module_function
 
@@ -51,8 +51,11 @@ module Shaka
       text_fields!(content)
     end
 
+    # Merge already says what happens next, so its next_action is optional; any other value needs one.
     def text_fields!(content)
       %w[reason next_action].each do |key|
+        next if key == 'next_action' && merge?(content) && content[key].nil?
+
         raise Error, "PR disposition #{key} must be non-empty text" unless
           PostImplementationReport.text?(content[key])
       end
@@ -71,17 +74,22 @@ module Shaka
       @state = PostImplementationDisposition.merge?(disposition) ? 'ready' : 'blocked'
       @summary = disposition.fetch('reason')
       verification = report.fetch('summary', report.fetch('reasons').first)
-      ["**Recommended next action:** #{disposition.fetch('recommendation')}", @summary,
-       "**Next action:** #{disposition.fetch('next_action')}",
-       "**Evaluation:** #{report.fetch('conclusion')}", verification,
-       evidence_lines(report, disposition.fetch('accepted_concerns')),
-       supporting_analysis(report, verification)].join("\n\n")
+      ["## Recommendation: #{disposition.fetch('recommendation')}", @summary, *next_line(disposition),
+       evidence_lines(report, disposition),
+       supporting_analysis(report, verification, lead: "Reviewer summary: #{verification}")].join("\n\n")
     end
 
-    def evidence_lines(report, accepted)
+    def next_line(disposition)
+      disposition['next_action'] ? ["**Next:** #{disposition['next_action']}"] : []
+    end
+
+    # The owner's reason leads, so the visible verdict states only the conclusion and any open concerns.
+    # The hidden disposition line, rendered above the attestation, lets a description read this recommendation.
+    def evidence_lines(report, disposition)
+      accepted = disposition.fetch('accepted_concerns')
+      @disposition_line = PostImplementationEvidence.disposition(disposition.fetch('recommendation'))
       open = report.merge('concerns' => PostImplementationDisposition.unresolved(report, accepted))
-      [concern_section(open), *accepted_section(accepted),
-       'Required checks, reviews, and merge authority still apply.'].join("\n\n")
+      [verdict(open, nil), *accepted_section(accepted)].join("\n\n")
     end
 
     def accepted_section(accepted)

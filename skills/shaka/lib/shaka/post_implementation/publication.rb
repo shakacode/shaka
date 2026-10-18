@@ -6,12 +6,14 @@ require_relative '../usage/codex_usage'
 require_relative '../usage/claude_usage'
 require_relative 'evidence'
 require_relative 'publisher_identity'
+require_relative 'execution_text'
 require_relative '../github/squash_comment'
 
 module Shaka
   # Presents the checkpoint's action without confusing configuration with observations.
   class PostImplementationPublication
     include PostImplementationPublisherIdentity
+    include PostImplementationExecutionText
 
     attr_reader :state
 
@@ -19,15 +21,18 @@ module Shaka
 
     ACTIONS = {
       'Proceed' => ['Merge if CI passes', 'Complete technical validation and required approvals.'],
-      'Simplify/reframe' => ['Revise before merging.', 'Revise the approach, then revalidate and review.'],
-      'Do not merge' => ['Do not merge; decide whether to close or replace.',
+      'Simplify/reframe' => ['Revise before merge', 'Revise the approach, then revalidate and review.'],
+      'Do not merge' => ['Do not merge; decide whether to close or replace',
                          'Bring the close-or-replace decision to the maintainer.']
     }.freeze
+    SCOPE = 'Ruby checked this report\'s format and commit; the reviewer judged value, not correctness. ' \
+            'Required checks, reviews, and merge authority still apply.'
 
     def initialize(result, head:, repository:, message: nil)
       @result = result
       @head = head
       @message = message
+      @repository = repository
       @revision = "[`#{head[0, 7]}`](https://github.com/#{repository}/commit/#{head})"
       @usage = native_usage
       @configuration = @usage.last&.fetch('configuration') || []
@@ -36,8 +41,8 @@ module Shaka
     def render
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      body += "\n\n#{SquashComment.body(@head, @message.call)}" if @state == 'ready'
-      "#{identity}\n\n# Checkpoint\n\n**Revision:** #{@revision}\n\n#{body}\n\n" +
+      body += "\n\n#{squash_details}" if @state == 'ready'
+      "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n#{"#{@disposition_line}\n" if @disposition_line}" +
         PostImplementationEvidence.attestation(@head, @state)
     end
 
@@ -70,29 +75,34 @@ module Shaka
       @state = PostImplementationReport.ready?(report) ? 'ready' : 'blocked'
       action, next_action = recommendation(report)
       summary = @summary = report.fetch('summary', report.fetch('reasons').first)
-      ["**Recommended next action:** #{action}",
-       "**Next action:** #{owner_action(report, next_action)}",
-       "**Evaluation:** #{report.fetch('conclusion')}", summary,
-       concern_section(report), supporting_analysis(report, summary)].join("\n\n")
+      ["## Reviewer recommendation: #{action}", "**Next:** #{owner_action(report, next_action)}",
+       verdict(report, summary), supporting_analysis(report, summary)].join("\n\n")
     end
 
-    def concern_section(report)
+    # One paragraph states the verdict and its evidence; the concern list follows only when there is one.
+    # Only a ready verdict says no concerns remain, so a blocking verdict never reads as clear to merge.
+    def verdict(report, summary)
+      verdict = PostImplementationReport.ready?(report) ? 'Proceed, no unresolved concerns' : report.fetch('conclusion')
       items = report.fetch('concerns')
-      "**Unresolved concerns:**\n\n#{items.empty? ? 'None.' : items.map { |item| "- #{item}" }.join("\n")}"
+      list = "\n\n**Unresolved concerns:**\n\n#{items.map { |item| "- #{item}" }.join("\n")}" unless items.empty?
+      "**Reviewer verdict:** #{verdict}.#{" #{summary}" if summary}#{list}"
     end
 
-    def supporting_analysis(report, summary)
-      ["<details>\n<summary>Supporting analysis and execution details</summary>",
+    def squash_details
+      "<details>\n<summary>Squash commit message</summary>\n\n#{SquashComment.body(@head, @message.call)}\n</details>"
+    end
+
+    # A lead paragraph, such as the reviewer summary an owner decision moves out of view, opens the details.
+    def supporting_analysis(report, summary, lead: nil)
+      ["<details>\n<summary>Supporting analysis and execution details</summary>", *lead,
        *report.fetch('reasons').reject { |reason| reason == summary },
        "Alternative considered: #{report.fetch('alternative')}",
-       execution_evidence, "Prompt: #{@result.fetch('prompt_source')}.", usage_text,
-       'Ruby verified report shape and head binding. The reviewer judged value; the task owner handles concerns ' \
-       'and merge readiness. This does not attest to technical review.', '</details>'].join("\n\n")
+       "#{execution_evidence} · prompt: #{prompt_text}", usage_text, SCOPE, '</details>'].join("\n\n")
     end
 
     def recommendation(report)
       if report['conclusion'] == 'Proceed' && !report['concerns'].empty?
-        return ['Resolve concerns before merging.', 'Resolve substantive concerns, then repeat affected review.']
+        return ['Resolve concerns before merging', 'Resolve substantive concerns, then repeat affected review.']
       end
 
       ACTIONS.fetch(report.fetch('conclusion'))
@@ -105,22 +115,15 @@ module Shaka
     end
 
     def incomplete_body
-      action, next_action = if @result['status'] == 'opted_out'
-                              ['Checkpoint opted out; no product review completed.',
-                               'Verify opt-out authority and remaining gates.']
-                            else
-                              ['Review not completed; readiness remains blocked.',
-                               'Resolve the execution failure and rerun the checkpoint.']
-                            end
-      "**Recommended next action:** #{action}\n\n#{summary}\n\n" \
-        "**Next action:** #{next_action}\n\n" \
+      heading, next_action = if @result['status'] == 'opted_out'
+                               ['Checkpoint opted out; no product review completed',
+                                'Verify opt-out authority and remaining gates.']
+                             else
+                               ['Checkpoint not completed; readiness remains blocked',
+                                'Resolve the execution failure and rerun the checkpoint.']
+                             end
+      "## #{heading}\n\n#{summary}\n\n**Next:** #{next_action}\n\n" \
         "<details>\n<summary>Execution details</summary>\n\n#{execution_evidence}\n\n#{usage_text}\n\n</details>"
-    end
-
-    def usage_text
-      return 'Native usage: UNKNOWN (no readable provider record).' if @usage.empty?
-
-      "```json\n#{JSON.pretty_generate(@usage)}\n```"
     end
 
     def native_usage

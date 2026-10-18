@@ -89,6 +89,17 @@ class ValidateWorkflowTest < Minitest::Test
     FileUtils.remove_entry(root) if root && File.exist?(root)
   end
 
+  def test_documentation_fast_path_rejects_an_unresolved_anchor
+    root = validation_fixture
+    File.write(File.join(root, 'docs/guide.md'), "# Guide\nSee [setup](#set-up).\n")
+    output, status = run_local_validation(root)
+
+    refute_predicate status, :success?
+    assert_includes output, 'docs/guide.md -> #set-up (missing anchor)'
+  ensure
+    FileUtils.remove_entry(root) if root && File.exist?(root)
+  end
+
   def test_local_validation_rejects_staged_whitespace_hidden_by_the_working_tree
     root = validation_fixture
     guide = File.join(root, 'docs/guide.md')
@@ -133,6 +144,7 @@ class ValidateWorkflowTest < Minitest::Test
     File.write(File.join(root, 'docs/new.md'), "New\n")
     fake_git = install_failing_git(root, 'ls-files --others', 2, 'inventory failed', occurrence: 2)
     output, status = run_local_validation(root, { 'PATH' => "#{fake_git}:#{ENV.fetch('PATH')}" })
+    assert_fake_git_ran(root)
     refute_predicate status, :success?
     assert_includes output, 'inventory failed'
   ensure
@@ -145,6 +157,7 @@ class ValidateWorkflowTest < Minitest::Test
     fake_git = install_failing_git(root, 'diff --no-index', 1, 'Could not access untracked document')
     output, status = run_local_validation(root, { 'PATH' => "#{fake_git}:#{ENV.fetch('PATH')}" })
 
+    assert_fake_git_ran(root)
     refute_predicate status, :success?
     assert_includes output, 'Could not access untracked document'
   ensure
@@ -286,6 +299,10 @@ class ValidateWorkflowTest < Minitest::Test
     git(root, 'commit', '-qm', 'Initial')
   end
 
+  def assert_fake_git_ran(root)
+    assert_path_exists File.join(root, '.git/fake-git-counter'), 'The fake git never ran; check PATH inside the script.'
+  end
+
   # rubocop:disable-next Metrics/MethodLength
   def install_failing_git(root, command, status, message, occurrence: 1)
     directory = File.join(root, '.git/fake-bin')
@@ -309,8 +326,9 @@ class ValidateWorkflowTest < Minitest::Test
     directory
   end
 
+  # A developer's BASH_ENV can put the real git ahead of a fake one on PATH.
   def run_local_validation(root, environment = {}, chdir: root)
-    Open3.capture2e({ 'SHAKA_BASE_REF' => 'HEAD' }.merge(environment),
+    Open3.capture2e({ 'BASH_ENV' => nil, 'SHAKA_BASE_REF' => 'HEAD' }.merge(environment),
                     File.join(root, '.agents/shaka/bin/validate'), chdir:)
   end
 
