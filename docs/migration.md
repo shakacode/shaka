@@ -9,6 +9,6 @@ Update my Shaka installation.
 
 Start a new chat after updating.
 
-An installation from your own fork updates only from your fork. Bring in Shaka's
-changes first, as [install your own fork](manual-installation.md#install-your-own-fork)
-describes.
+An installation from your own fork updates that fork's branch. It does not
+pull upstream by itself. Bring upstream changes in by
+[syncing the fork](fork-and-hack.md#keep-your-fork-current) first.
