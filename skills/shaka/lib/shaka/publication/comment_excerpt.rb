@@ -16,7 +16,8 @@ module Shaka
     FENCE = /\A(?<marker>`{3,}(?=[^`]*\z)|~{3,})/
     # Four spaces, or a tab after fewer, indent a code block.
     INDENTED = /\A(?: {4}| {0,3}\t)/
-    HEADING = /\A {0,3}\#{1,6}(?:\s|\z)/
+    # A heading, a thematic break, or a setext underline ends a paragraph on its own line.
+    ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|(?:[-*_][ \t]*){3,}\z|=+[ \t]*\z)/
 
     module_function
 
@@ -59,9 +60,9 @@ module Shaka
     end
 
     # Follows which lines of a comment GitHub renders as code. A fence may be indented, as in a
-    # list item, and only a run of the same character at least as long, indented at most three
-    # spaces more, closes it. An indented line is code unless it continues a paragraph; list depth
-    # is not measured, so an indented paragraph of a list item is hidden too.
+    # list item, and only a run of the same character at least as long, indented no deeper than
+    # its opener or three spaces, closes it. An indented line is code unless it continues a
+    # paragraph; list depth is not measured, so an indented paragraph of a list item is hidden too.
     class CodeLines
       def initialize
         @fence = nil
@@ -71,7 +72,7 @@ module Shaka
 
       def code?(line)
         code = in_code?(line)
-        @code_may_start = code || line.strip.empty? || line.match?(HEADING)
+        @code_may_start = code || line.strip.empty? || line.chomp.match?(ENDS_PARAGRAPH)
         code
       end
 
@@ -88,12 +89,12 @@ module Shaka
 
       # A line inside a fence is code, and may close it.
       def inside_fence?(line)
-        closes = indent(line) <= @fence_indent + 3 && line.strip.match?(/\A#{@fence}#{@fence[0]}*\z/)
+        closes = indent(line) <= [@fence_indent, 3].max && line.strip.match?(/\A#{@fence}#{@fence[0]}*\z/)
         @fence = nil if closes
         true
       end
 
-      def indent(line) = line[/\A */].size
+      def indent(line) = line[/\A[ \t]*/].gsub("\t", '    ').size
     end
   end
 end

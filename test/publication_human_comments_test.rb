@@ -426,24 +426,26 @@ class PublicationHumanCommentQuotationTest < Minitest::Test
     assert_includes rendered, '[“Please change this line\\.”]'
   end
 
-  def test_a_closing_fence_indented_four_spaces_more_than_its_opener_does_not_close_it
-    body = "Run:\n```\n    ```\nsecret_line = 1\n```\nThanks."
-    rendered = describe(packet(issue_comments: [issue_comment(1, 'ann', body)]))
-
-    assert_includes rendered, '[“Run\\: Thanks\\.”]'
-  end
-
-  def test_code_in_a_list_or_after_a_rule_or_heading_is_hidden
+  def test_a_closing_fence_indented_deeper_than_its_opener_and_three_spaces_does_not_close_it
     rendered = describe(packet(issue_comments: [
-                                 issue_comment(1, 'ann', "1. Step:\n    ```\n    secret_line = 1\n    ```\nDone."),
-                                 issue_comment(2, 'ann', "- Item\n\n```\n    ```\nsecret_line = 1\n```\nDone."),
-                                 issue_comment(3, 'ann', "- Item\n\n      secret_line = 1\n\nDone."),
-                                 issue_comment(4, 'ann', "Notes\n\n* * *\n\n    secret_line = 1\n\nDone."),
-                                 issue_comment(5, 'ann', "# Error\n    secret_line = 1\nDone.")
+                                 issue_comment(1, 'ann', "Run:\n```\n    ```\nsecret_line = 1\n```\nThanks."),
+                                 issue_comment(2, 'ann', "Run:\n   ```\n    ```\nsecret_line = 1\n```\nThanks.")
                                ]))
 
     refute_includes rendered, 'secret'
-    assert_equal 5, rendered.scan(/Done\\\.”\]/).size
+    assert_equal 2, rendered.scan('[“Run\\: Thanks\\.”]').size
+  end
+
+  def test_code_in_a_list_or_after_a_rule_or_heading_is_hidden
+    bodies = ["1. Step:\n    ```\n    secret_line = 1\n    ```\nDone.",
+              "- Item\n\n```\n    ```\nsecret_line = 1\n```\nDone.", "- Item\n\n      secret_line = 1\n\nDone.",
+              "Notes\n\n* * *\n\n    secret_line = 1\n\nDone.", "# Error\n    secret_line = 1\nDone.",
+              "Notes\n***\n    secret_line = 1\nDone.", "Title\n===\n    secret_line = 1\nDone."]
+    comments = bodies.each_with_index.map { |body, id| issue_comment(id, 'ann', body) }
+    rendered = describe(packet(issue_comments: comments))
+
+    refute_includes rendered, 'secret'
+    assert_equal bodies.size, rendered.scan(/Done\\\.”\]/).size
   end
 
   def test_a_fence_inside_an_indented_code_block_opens_nothing
