@@ -107,8 +107,10 @@ When the user requests a fork, create or select it on GitHub and install it as t
 dedicated checkout in [official installation](official-installation.md), not a
 retained copy. Clone it into the installation directory, set `origin` to their fork
 and `upstream` to `https://github.com/shakacode/shaka.git`, and inspect both remotes
-before updating. Create and push a dedicated branch, such as `mine`, so the fork's
-`main` can match upstream. Then run `bin/install --directory DIR --repository URL
+before updating. When Shaka is already installed there, do not clone or install a
+second checkout: rename its `origin` to `upstream` and add the fork as `origin`.
+Create and push a dedicated branch, such as `mine`, so the fork's `main` can match
+upstream. Then run `bin/install --directory DIR --repository URL
 --branch BRANCH --agent HOST`, where `URL` is the exact `origin` URL and `BRANCH`
 is that dedicated branch.
 
