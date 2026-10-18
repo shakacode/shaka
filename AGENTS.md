@@ -65,13 +65,13 @@ is the reusable default.
   description, walkthrough, review comment, or checkpoint, show the result on that PR.
   The maintainer authorizes this one exception to the skill's rule against running a
   branch-provided helper. It applies only as written in the default-branch
-  `AGENTS.md`, and only when `gh pr view` reports `isCrossRepository` false and
-  `gh api repos/OWNER/REPO/collaborators/AUTHOR/permission` reports `admin`,
-  `maintain`, or `write`. After the installed helper's last publication for a reviewed
-  head, inspect the diff, then republish that artifact with `skills/shaka/scripts/shaka`
-  from a detached worktree of that head. Then run the installed `handoff`, and for a
-  review comment confirm its last line is still the `REVIEWED` attestation. If a check
-  fails, publish the artifact again with the installed helper and say so on the PR.
+  `AGENTS.md`, and only when `gh pr view` reports `isCrossRepository` false: only
+  accounts with write access can push such a branch. Otherwise, skip the republish.
+  After the installed helper's last publication for a reviewed head, inspect the diff,
+  then republish that artifact with `skills/shaka/scripts/shaka` from a detached
+  worktree of that head. Then run the installed `handoff`, and for a review comment
+  confirm its last line is still the `REVIEWED` attestation. If either check fails,
+  publish the artifact again with the installed helper and say so on the PR.
   Repeat after each new head. Every other command, including seam, evidence, review,
   and merge, stays with the installed helper.
 
