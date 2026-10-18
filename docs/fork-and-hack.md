@@ -47,6 +47,8 @@ matches the clone's `origin` exactly and stops with
 Using `FORK_URL` for both keeps them equal; for SSH, set it to your SSH URL.
 
 From now on, `install --update` follows your fork's `mine`, not Shaka's `main`.
+The commands below reuse `FORK_URL` and `SHAKA_DIR`; set them again in a new
+terminal.
 
 ## Hack on it
 

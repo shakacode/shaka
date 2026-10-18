@@ -109,7 +109,8 @@ retained copy. Clone it into the installation directory, set `origin` to their f
 and `upstream` to `https://github.com/shakacode/shaka.git`, and inspect both remotes
 before updating. Create and push a dedicated branch, such as `mine`, so the fork's
 `main` can match upstream. Then run `bin/install --directory DIR --repository URL
---branch mine --agent HOST`, where `URL` is the exact `origin` URL.
+--branch BRANCH --agent HOST`, where `URL` is the exact `origin` URL and `BRANCH`
+is that dedicated branch.
 
 For updates, fetch upstream and inspect the diff. Fast-forward when possible;
 otherwise preserve fork changes while merging or rebasing on a feature branch.
