@@ -61,6 +61,12 @@ is the reusable default.
   persist; do not ask again.
 - Preserve user changes. Pull/rebase before edits when a branch has an upstream;
   for a new branch start from the freshly fetched base. Do not reset others' work.
+- When a PR changes how Shaka renders something it publishes on a PR, such as the
+  description, walkthrough, review comment, or checkpoint, show the change on that PR.
+  Publish with the installed helper as usual. Then, once the local review of the
+  head is complete, republish that artifact with the candidate checkout's
+  `skills/shaka/scripts/shaka`. Use the candidate only for that republish; seam,
+  evidence, review-run, and merge commands stay with the installed helper.
 
 ## Skill architecture and review
 
