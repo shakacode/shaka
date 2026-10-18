@@ -61,10 +61,14 @@ module UiCheckFixture
     UiCheckFixture.row(id, "#{BYLINE}#{marker}\n# Verification\n\n#{images}\n", login:)
   end
 
-  def publish(github, body:, captures: [], retire: [], nonce: 'feedf00d')
-    Shaka::UiCheck::Publisher.new(github, nonce:)
-                             .call(head: HEAD, content: { 'identity' => IDENTITY, 'body' => body,
-                                                          'captures' => captures, 'retire' => retire })
+  # Optional content keys (captures, retire, earlier) pass through as given.
+  def publish(github, body:, nonce: 'feedf00d', **optional)
+    content = { 'identity' => IDENTITY, 'body' => body }.merge(optional.transform_keys(&:to_s))
+    Shaka::UiCheck::Publisher.new(github, nonce:).call(head: HEAD, content:)
+  end
+
+  def legacy_check(id, name, login: 'ada')
+    UiCheckFixture.row(id, "#{BYLINE}**UI check at bbbbbbb**\n\n![View](#{asset(name)})\n", login:)
   end
 
   def with_capture
@@ -129,6 +133,22 @@ class UiCheckPublisherTest < Minitest::Test
 
     assert_equal [3], result['collapsed']
     assert_equal other, github.comments[1]
+  end
+
+  def test_a_named_check_posted_before_the_command_must_be_carried_and_is_folded
+    github = GitHub.new([legacy_check(1, 'examples')])
+    assert_raises(Shaka::Error) { publish(github, body: 'Homepage only.', earlier: [1]) }
+
+    result = publish(github, body: "Examples unchanged: ![Examples](#{asset('examples')})", earlier: [1])
+    assert_equal [1], result['collapsed']
+  end
+
+  def test_naming_another_writers_comment_refuses_before_posting
+    github = GitHub.new([legacy_check(1, 'examples', login: 'someone-else')])
+    error = assert_raises(Shaka::Error) { publish(github, body: 'Checked.', earlier: [1]) }
+
+    assert_includes error.message, 'not this account'
+    assert_empty github.posts
   end
 
   def test_a_moved_head_or_unreadable_capture_refuses_before_posting

@@ -28,7 +28,8 @@ Publish them with the saved helper's
 `ui-check OWNER/REPO NUMBER --head SHA --content-file PATH` (GitHub CLI 2.99 or later). The
 content JSON holds `identity`, the Explain writer fields; `body`, the verification note;
 `captures`, each `PATH#ALT TEXT` (a video takes its path alone, since it has no alt text);
-and optional `retire`. Reference a capture in `body` as `![ALT](PATH)` to place it; an
+and optional `retire` and `earlier`. List in `earlier` the comment IDs of this PR's open UI
+checks posted before this command, which it cannot recognize alone. Reference a capture in `body` as `![ALT](PATH)` to place it; an
 unreferenced one is appended. The command adds the writer line and the heading that links
 the head, confirms each capture uploaded, and folds this account's earlier UI checks.
 Label captures with the tested revision.

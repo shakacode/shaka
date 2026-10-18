@@ -21,7 +21,7 @@ module Shaka
         verify_head(head)
         captures = PublicationText.list(content['captures'], 'captures')
         Captures.paths(captures)
-        earlier = open_checks
+        earlier = open_checks(PublicationText.list(content['earlier'], 'earlier'))
         body = body(head, content)
         check_carried(earlier, body, PublicationText.list(content['retire'], 'retire'))
         @github.verify_rendering(body)
@@ -48,19 +48,28 @@ module Shaka
       end
 
       # Folded checks already point at a newer one, so only open checks can still hold evidence.
-      def open_checks
+      # Checks posted before this command carry no marker, so the agent names them.
+      def open_checks(selected)
         @account = @github.viewer_login
         raise Error, 'Authenticated GitHub login is unavailable.' unless @account.is_a?(String) && !@account.empty?
 
-        @github.issue_comments.select { |comment| own_check?(comment) && !folded?(comment['body']) }
+        comments = @github.issue_comments
+        named = selected.map { |id| named_check(comments, id) }
+        (comments.select { |comment| own_check?(comment) } | named).reject { |comment| folded?(comment['body']) }
       end
+
+      def named_check(comments, id)
+        comment = comments.find { |row| row['id'] == id }
+        return comment if comment && own?(comment)
+
+        raise Error, "Earlier UI check #{id} is not this account's AI-authored comment on this PR."
+      end
+
+      def own?(comment) = comment.dig('user', 'login') == @account && comment['body'].to_s.start_with?('🤖 ')
 
       def folded?(body) = body.sub(EvidenceHistory::KEY, '').start_with?("#{EvidenceHistory::MARKER} ")
 
-      def own_check?(comment)
-        comment.dig('user', 'login') == @account && comment['body'].to_s.start_with?('🤖 ') &&
-          comment['body'].to_s.match?(MARKER)
-      end
+      def own_check?(comment) = own?(comment) && comment['body'].to_s.match?(MARKER)
 
       def check_carried(earlier, body, retired)
         missing = Captures.missing(earlier.flat_map { |comment| Captures.urls(comment['body']) }.uniq, body, retired)
@@ -82,7 +91,8 @@ module Shaka
       # gh rewrites a referenced file to its upload and appends the rest, so each capture adds a URL.
       def confirm_uploads(published, submitted, captures)
         added = Captures.urls(published['body']) - Captures.urls(submitted)
-        local = Captures.paths(captures).select { |path| published['body'].include?("](#{path})") }
+        local = captures.map { |capture| capture.split('#', 2).first }
+                        .select { |path| published['body'].include?("](#{path})") }
         return published if added.length >= captures.length && local.empty?
 
         raise Error, "UI check #{published['html_url']} is missing uploaded captures; inspect and edit it."
