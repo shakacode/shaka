@@ -230,6 +230,17 @@ class GitHubReplyTest < Minitest::Test
     assert_equal MANAGED, github.description(body: BODY)['body']
   end
 
+  def test_a_number_that_is_not_a_pull_request_is_refused_before_any_comment_is_touched
+    github = client(response({}, status: 1))
+    assert_raises(Shaka::Error) { github.reply(body: BODY, key: 'fix-1') }
+    assert_equal 1, @calls.size
+  end
+end
+
+# Reviewer reports are quoted verbatim, so only the text around them gets the escape check.
+class GitHubVerbatimReplyTest < Minitest::Test
+  include PublicationFixtures
+
   # https://github.com/shakacode/shaka/issues/646: a reviewer report's backtick closed its code span
   # early, so GitHub showed a literal `\n` outside code and the whole review comment was refused.
   def test_a_verbatim_report_may_render_an_escape_outside_code
@@ -253,10 +264,14 @@ class GitHubReplyTest < Minitest::Test
     assert_equal 5, @calls.size
   end
 
-  def test_a_number_that_is_not_a_pull_request_is_refused_before_any_comment_is_touched
-    github = client(response({}, status: 1))
-    assert_raises(Shaka::Error) { github.reply(body: BODY, key: 'fix-1') }
-    assert_equal 1, @calls.size
+  def test_an_empty_or_repeated_verbatim_text_cannot_hide_surrounding_text
+    github = client(pull_response(''), viewer_response, response([]), html_response('<p>ok</p>'),
+                    html_response('<p>Shaka \\n quoted</p>'))
+    assert_raises(Shaka::Error) do
+      github.reply(body: "#{BODY}\nquoted\n\nShaka \\n quoted\n", key: 'review', verbatim: ['', 'quoted'])
+    end
+    checked = JSON.parse(@calls[4].last)['text']
+    assert_equal [false, true], [checked.include?("\nquoted\n"), checked.include?('Shaka \\n quoted')]
   end
 end
 

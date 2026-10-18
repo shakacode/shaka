@@ -56,9 +56,10 @@ module Shaka
     # A body GitHub will not render correctly must never reach the pull request. Each `verbatim`
     # text, such as a reviewer report, is published as written, so only the text around it gets
     # the escape and table checks; the caller checks how the whole rendering keeps its structure.
+    # Each text stands in for its first occurrence only, so a copy in surrounding text stays checked.
     def verify_rendering(body, verbatim: [])
       html = markdown(body)
-      checked = verbatim.reduce(body) { |text, quoted| text.gsub(quoted) { VERBATIM } }
+      checked = verbatim.reject(&:empty?).reduce(body) { |text, quoted| text.sub(quoted) { VERBATIM } }
       RenderedProse.check!(checked, checked == body ? html : markdown(checked))
       html
     end
