@@ -106,8 +106,9 @@ terminal outside it.
 When the user requests a fork, create or select it on GitHub and clone it into the
 installation directory. Set `origin` to their fork and `upstream` to
 `https://github.com/shakacode/shaka.git`; inspect both remotes before updating.
-Run the same `bin/install` command against that checkout, adding `--repository`
-with the exact `origin` URL and `--branch` for a branch other than `main`.
+Create and push a dedicated branch, such as `mine`, so the fork's `main` can match
+upstream. Run the same `bin/install` command against that checkout, adding
+`--repository` with the exact `origin` URL and `--branch` with that branch.
 
 For updates, fetch upstream and inspect the diff. Fast-forward when possible;
 otherwise preserve fork changes while merging or rebasing on a feature branch.
