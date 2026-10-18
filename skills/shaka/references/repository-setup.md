@@ -135,9 +135,9 @@ and standard script; keep those definitions there.
    If the user wants no required checks, continue with merge preference `ask` and
    say that Auto merge needs at least one.
    [Offer local reviewers](#offer-local-reviewers) for `seam init`.
-   When the user wants hosted Claude review, during setup or later, and no CI review
-   job exists, copy the packaged [Claude review workflow](../config/claude-code-review.yml)
-   to `.github/workflows/claude-code-review.yml` and pass `--ci-review-job claude-review`.
+   When the user wants hosted Claude review and no CI review job exists, copy the
+   packaged [Claude review workflow](../config/claude-code-review.yml) to
+   `.github/workflows/claude-code-review.yml` and pass `--ci-review-job claude-review`.
    Record the `CLAUDE_CODE_OAUTH_TOKEN` repository secret as a before-merge step besides
    merging. Offer the same template to replace an existing Claude review workflow that
    lacks its `depth` step.

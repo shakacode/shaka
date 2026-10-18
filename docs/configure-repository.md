@@ -72,8 +72,13 @@ Claude makes a short pass for serious bugs the local reviewers missed. Every oth
 PR gets a full review. Both report only issues Claude can tie to a concrete failure,
 so routine pushes stay quiet.
 
+During [setup](#set-up), the agent offers it. For a repository that already uses
+Shaka, ask:
+
 ```text
-$shaka Add the hosted Claude review workflow.
+$shaka Add the hosted Claude review workflow from
+https://github.com/shakacode/shaka/blob/main/skills/shaka/config/claude-code-review.yml
+and list claude-review as a CI review job.
 ```
 
 The agent adds the workflow and lists the `CLAUDE_CODE_OAUTH_TOKEN` repository

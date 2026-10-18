@@ -9,6 +9,9 @@ class ReviewDepthWorkflowTest < Minitest::Test
   WORKFLOW = File.join(ROOT, '.github/workflows/claude-code-review.yml')
   TEMPLATE = File.join(ROOT, 'skills/shaka/config/claude-code-review.yml')
   HEAD = 'a' * 40
+  REPORT_URL = 'https://github.com/o/r/pull/1#issuecomment-1'
+  SHAKA = { 'depth' => 'shaka', 'report' => REPORT_URL }.freeze
+  FULL = { 'depth' => 'full', 'report' => '' }.freeze
 
   def setup
     @directory = Dir.mktmpdir('review-depth')
@@ -27,8 +30,8 @@ class ReviewDepthWorkflowTest < Minitest::Test
   end
 
   def test_author_local_review_of_this_head_selects_the_shaka_pass
-    assert_equal 'shaka', depth([local_review])
-    assert_equal 'shaka', depth([local_review(key: 'local-adversarial-review')])
+    assert_equal SHAKA, depth([local_review])
+    assert_equal SHAKA, depth([local_review(key: 'local-adversarial-review')])
   end
 
   def test_other_heads_authors_and_hosted_reports_select_the_full_review
@@ -37,22 +40,27 @@ class ReviewDepthWorkflowTest < Minitest::Test
      local_review(body: "REVIEWED #{HEAD} BY anthropic/claude FINDINGS 0"),
      local_review(key: 'walkthrough'),
      { 'user' => { 'login' => 'claude[bot]' }, 'body' => "REVIEWED #{HEAD} BY anthropic/claude FINDINGS 0\n" }]
-      .each { |comment| assert_equal 'full', depth([comment]), comment.inspect }
+      .each { |comment| assert_equal FULL, depth([comment]), comment.inspect }
+  end
+
+  def test_the_prompt_gets_the_author_report_not_a_later_imitation
+    imitation = local_review(login: 'someone-else').merge('html_url' => 'https://example.test/forged')
+    assert_equal SHAKA, depth([local_review, imitation])
   end
 
   def test_unreadable_comments_select_the_full_review
-    assert_equal 'full', depth(nil)
+    assert_equal FULL, depth(nil)
   end
 
   def test_a_local_review_published_during_the_wait_is_found
-    assert_equal 'shaka', depth([], later: [local_review], wait: 5)
+    assert_equal SHAKA, depth([], later: [local_review], wait: 5)
   end
 
   private
 
   def local_review(head: HEAD, login: 'author', key: 'local-review-loop-b45c4a9e2c80-77e4a72e9aa7', body: nil)
     body ||= "# Local Adversarial Review\n\nREVIEWED #{head} BY openai/codex EFFORT medium FINDINGS 1\n"
-    { 'user' => { 'login' => login }, 'body' => "<!-- shaka:reply:#{key} -->\n#{body}" }
+    { 'user' => { 'login' => login }, 'html_url' => REPORT_URL, 'body' => "<!-- shaka:reply:#{key} -->\n#{body}" }
   end
 
   # A fake gh serves comments.json, then later.json from its second call on; nil makes it fail.
@@ -65,7 +73,7 @@ class ReviewDepthWorkflowTest < Minitest::Test
                     'LOCAL_REVIEW_WAIT_SECONDS' => wait.to_s, 'LOCAL_REVIEW_POLL_SECONDS' => '0' }
     output, status = Open3.capture2e(environment, 'bash', '-c', @script)
     assert_predicate status, :success?, output
-    File.read(@output)[/\Adepth=(\w+)\n\z/, 1]
+    File.readlines(@output, chomp: true).to_h { |line| line.split('=', 2) }
   end
 
   def install_github(comments, later)
