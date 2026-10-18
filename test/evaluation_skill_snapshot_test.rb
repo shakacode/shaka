@@ -48,6 +48,18 @@ class EvaluationSkillSnapshotTest < Minitest::Test
     assert_equal expected, read['harbor_digest']
   end
 
+  def test_read_permissions_affect_package_identity
+    before = read
+    File.chmod(0o600, File.join(@root, 'references/guide.md'))
+    refute_equal before['skill_package_digest'], read['skill_package_digest']
+  end
+
+  def test_directory_traversal_permissions_affect_package_identity
+    before = read
+    File.chmod(0o700, File.join(@root, 'references'))
+    refute_equal before['skill_package_digest'], read['skill_package_digest']
+  end
+
   def test_symlink_to_external_helper_never_claims_complete_capture
     File.symlink(File.join(@root, 'SKILL.md'), File.join(@root, 'references/link'))
     assert_empty read

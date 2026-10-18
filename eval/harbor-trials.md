@@ -87,7 +87,8 @@ hosted reviewers are `N/A` for this tier 2 API.
 
 Package capture requires a self-contained skill tree with all loaded guides and
 helpers inside it. Symlinks leave package identity unknown. The reader hashes
-every file, including hidden files and executable bits, reads Git commit and
+every file, including hidden files, and file/directory permissions and ownership.
+It reads Git commit and
 modified state, and hashes workflow/enforcement files separately. An archive can
 supply content but has unknown Git identity. Capture must match before and after
 launch, and Harbor's single-skill lock must match the source and content digest.

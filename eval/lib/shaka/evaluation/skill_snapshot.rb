@@ -13,7 +13,7 @@ module Shaka
       def read(root)
         root = File.realpath(root)
         rows = tree(root)
-        raise ArgumentError unless rows.any? { it.first == 'SKILL.md' }
+        raise ArgumentError unless rows.any? { |path, hash, _| path == 'SKILL.md' && hash }
 
         identity(root, rows)
       rescue SystemCallError, IOError, ArgumentError
@@ -29,11 +29,13 @@ module Shaka
 
       def row(root, path)
         file = File.join(root, path)
-        return if File.directory?(file)
+        stat = File.stat(file)
+        controls = [stat.mode & 0o7777, stat.uid, stat.gid]
+        return [path, nil, *controls] if stat.directory?
 
         raise ArgumentError unless File.file?(file)
 
-        [path, Digest::SHA256.file(file).hexdigest, File.stat(file).mode & 0o111]
+        [path, Digest::SHA256.file(file).hexdigest, *controls]
       end
 
       def identity(root, rows)
@@ -45,7 +47,7 @@ module Shaka
       end
 
       # Harbor 0.24.0 skills.py: sorted relative paths, NUL, hex content hash, NUL.
-      def harbor_digest(rows) = digest(rows.map { |path, hash, _| "#{path}\0#{hash}\0" }.join)
+      def harbor_digest(rows) = digest(rows.filter_map { |path, hash, _| "#{path}\0#{hash}\0" if hash }.join)
       def digest(bytes) = "sha256:#{Digest::SHA256.hexdigest(bytes)}"
 
       def file_digest(root, path)
