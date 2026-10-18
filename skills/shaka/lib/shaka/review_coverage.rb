@@ -33,6 +33,7 @@ module Shaka
       providers.empty? ? setting(review, COUNT) : providers.size
     end
 
+    # A review setting, or its packaged default.
     def self.setting(review, key) = review.fetch(key) { Defaults.fetch('review', key) }
 
     # The entries selection chooses from: for each covered provider, its first listed entry that
@@ -117,7 +118,7 @@ module Shaka
     end
 
     def self.provider(id) = id.split('/').first.downcase
-    private_class_method :setting, :providers!, :name?, :listed_reasons, :reason, :listed, :reasons, :gap_text,
+    private_class_method :providers!, :name?, :listed_reasons, :reason, :listed, :reasons, :gap_text,
                          :provider
   end
 end

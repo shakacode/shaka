@@ -51,10 +51,25 @@ module Shaka
         return ['Repository configuration unavailable; reviewer readiness is not assessed.'] unless review
 
         configured = entries.select { |entry| entry[:configured] }
-        lines = warnings(configured, ReviewCoverage.count(review))
+        lines = warnings(configured, review)
         lines.concat(CliInventory.setup_notices(configured).map { |notice| notice.fetch('summary') })
         lines << 'Some CLI lookups could not be checked.' if entries.any? { |entry| entry[:unchecked] }
         lines
+      end
+
+      # Coverage names the providers that must review, so a count of other providers does not satisfy it.
+      def shortfall(providers, review)
+        covered = ReviewCoverage.names(ReviewCoverage.setting(review, ReviewCoverage::KEY))
+        unless covered.empty?
+          return (covered - providers.map(&:downcase)).map do |name|
+            "No configured reviewer is installed for covered provider #{name}."
+          end
+        end
+
+        count = ReviewCoverage.count(review)
+        return [] unless providers.size < count
+
+        ["#{providers.size} provider#{'s' unless providers.one?} available; #{count} reviewers requested."]
       end
 
       def guidance(entries, warnings)
@@ -64,13 +79,11 @@ module Shaka
         lines.empty? ? nil : lines.join("\n    ")
       end
 
-      def warnings(entries, count)
+      def warnings(entries, review)
         return [] if entries.empty?
 
         providers = entries.select { |entry| entry[:installed] }.map { |entry| entry[:provider] }.uniq
-        lines = []
-        lines << "#{providers.size} provider#{'s' unless providers.one?} available; #{count} reviewers requested." if
-          providers.size < count
+        lines = shortfall(providers, review)
         if providers == [@provider]
           lines << "Only the current host's provider (#{@provider}) is available; no different-provider CLI was found."
         end

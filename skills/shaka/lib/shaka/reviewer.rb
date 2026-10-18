@@ -52,7 +52,7 @@ module Shaka
     def count(review)
       return ReviewCoverage.count(review) unless @options.key?(:count)
       raise OptionParser::InvalidArgument, "--count does not apply while review.#{ReviewCoverage::KEY} is set" unless
-        ReviewCoverage.names(setting(review, ReviewCoverage::KEY)).empty?
+        ReviewCoverage.names(covered(review)).empty?
 
       @options[:count]
     end
@@ -60,14 +60,14 @@ module Shaka
     def candidates(review, skipped)
       entries = review[RepositoryConfig::ReviewSchema::LOCAL_REVIEW_AGENTS] || []
       usable = ->(entry) { skipped.none? { |other| key(other) == key(entry) } }
-      ReviewCoverage.candidates(entries, setting(review, ReviewCoverage::KEY), usable)
+      ReviewCoverage.candidates(entries, covered(review), usable)
     end
 
     def key(entry) = entry.values_at('provider', 'model_family').map(&:downcase)
 
-    def coverage(review, selection) = ReviewCoverage.coverage(setting(review, ReviewCoverage::KEY), selection)
+    def coverage(review, selection) = ReviewCoverage.coverage(covered(review), selection)
 
-    def setting(review, key) = review.fetch(key) { Defaults.fetch('review', key) }
+    def covered(review) = ReviewCoverage.setting(review, ReviewCoverage::KEY)
 
     def identities(key, required: false)
       values = @options.fetch(key, [])
