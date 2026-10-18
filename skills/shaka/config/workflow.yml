@@ -509,8 +509,8 @@ phases:
         or unclosed text refuses publication.
         `notes` lists reviewer notes, each with `path`, `from`, `to` or `block` as a code
         link takes them, and a Markdown `body`. The helper posts each one as an inline comment of
-        the walkthrough review on those lines. Supply notes for a change to several files; a
-        smaller change may omit them. Before writing notes or answering a note
+        the walkthrough review on those lines. Supply notes when the change touches three or
+        more files; a smaller change may omit them. Before writing notes or answering a note
         thread, read [walkthrough notes](<{{package_root}}/skills/shaka/references/walkthrough-notes.md>).
         The helper always renders a Code Walkthrough link above the summary: the COMMENT review
         URL when `walkthrough` is supplied, otherwise `_Not published yet._`. Do not bury that URL
