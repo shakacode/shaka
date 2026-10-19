@@ -98,33 +98,34 @@ history that diverged from the recorded branch. To read an update before you
 apply it, run `git fetch` in the checkout and compare `HEAD` with the recorded
 branch, which is `origin/main` unless you chose another.
 
-## Keep development in another clone
+## Develop Shaka in a separate clone
 
-The installed checkout should only follow its recorded branch. Branches,
-worktrees, and commits there are what later stop updates. The installer refuses
-a checkout that has linked worktrees or local branches besides the recorded one.
-It also refuses a checkout that is itself a linked worktree. Worktrees are usually
-deleted once their branch merges, which would break every skill link.
-`install --verify` and `install --update` warn when they appear later and still succeed.
+Your coding agent runs Shaka straight from the folder you installed, so keep
+that folder for Shaka alone. If you also work on Shaka, do it in a second clone.
 
-To move Shaka out of a clone you also develop in, give it a checkout of its own
-and move every skill link there in one step:
+The installer stops when the folder:
+
+- is a Git worktree. Worktrees are often deleted after their branch merges, and
+  Shaka would disappear with it.
+- has other branches or worktrees. `install --verify` and `install --update`
+  only warn about these.
+
+### Move Shaka out of a clone you develop in
+
+Run this from the clone you develop in. It makes a fresh clone for Shaka and
+points your coding agents at it:
 
 ```bash
 "$OLD_CLONE/bin/install" --directory ~/.local/share/shaka/source --take-over
 ```
 
-`--take-over` finds the registered checkout your skill links point at, clones its
-repository and branch into the new directory, and switches every host it
-registered. It renames the old checkout's installation record so that checkout
-stops claiming the links, and leaves its files, branches, and worktrees alone.
-If switching a link or changing either record fails, every link points back at
-the old checkout. If putting one back fails too, the installer names each path
-it could not restore. Run the command from the old clone as shown; from another
-clone, add `--skills-dir DIR` for links in a custom skills directory.
+Your old clone keeps its files, branches, and worktrees; it only stops being
+the installed copy. If the move fails partway, your agents keep using the old
+clone, and the installer lists anything it could not put back. When you run the
+command from a different clone and your skills live in a custom folder, add
+`--skills-dir DIR`.
 
-Only a process killed outright, such as by `kill -9`, in the instant between
-renaming the old record and saving the new one leaves no checkout registered.
-To recover, rename the newest `.git/shaka-install.retired-*.json` in the old
-checkout back to `.git/shaka-install.json`, then run the same `--take-over`
-command again.
+If the installer is force-stopped (`kill -9`) at the wrong moment, no clone
+counts as installed. To fix it, rename the newest
+`.git/shaka-install.retired-*.json` in the old clone to
+`.git/shaka-install.json`, then run the command again.
