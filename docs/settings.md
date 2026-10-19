@@ -861,6 +861,9 @@ branches:
 | `{issue}` | Issue, PR, or work-item number, or `ad-hoc` for a task with none; required in the template |
 | `{description}` | Short task description |
 
+The settings check fills each placeholder with a sample value and refuses a template
+whose result Git would not accept as a branch name, such as one with a space or `..`.
+
 For example: `alex-codex/42-fix-search`, or `alex-codex/ad-hoc-fix-search` when the
 task was given as a sentence. Before starting either one, the agent checks open PRs and
 branches for the same name and stops for a decision when another one already uses it.
