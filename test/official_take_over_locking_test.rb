@@ -10,11 +10,8 @@ class OfficialTakeOverLockingTest < Minitest::Test
   # Each runs from a checkout that owns some links, so each finds the other as the owner.
   def test_opposite_take_overs_finish
     install_opposite_owners
-    pids = [@root, @second].map do |directory|
-      Process.spawn({ 'HOME' => @home }, RbConfig.ruby, @installer, '--directory', directory, '--take-over',
-                    %i[out err] => File::NULL)
-    end
-    assert_equal [true, true], finished(pids)
+    pids = [@root, @second].map { |directory| spawn_installer('--directory', directory, '--take-over') }
+    assert_equal [true, true], finished(pids), installer_logs
   end
 
   # A take-over waiting for one checkout lock must not hold the other, or two opposite ones deadlock.
@@ -22,12 +19,11 @@ class OfficialTakeOverLockingTest < Minitest::Test
     install_opposite_owners
     File.open(File.join(@second, '.git/.shaka-install.lock'), File::RDWR) do |lock|
       lock.flock(File::LOCK_EX)
-      pid = Process.spawn({ 'HOME' => @home }, RbConfig.ruby, @installer, '--directory', @root, '--take-over',
-                          %i[out err] => File::NULL)
+      pid = spawn_installer('--directory', @root, '--take-over')
       sleep 3
       assert File.open(File.join(@root, '.git/.shaka-install.lock'), File::RDWR) { |own| own.flock(File::LOCK_EX | File::LOCK_NB) }
       lock.flock(File::LOCK_UN)
-      assert_equal [true], finished([pid])
+      assert_equal [true], finished([pid]), installer_logs
     end
   end
 
@@ -40,7 +36,7 @@ class OfficialTakeOverLockingTest < Minitest::Test
       lock.flock(File::LOCK_UN)
       Process.wait(pid)
     end
-    assert_predicate $CHILD_STATUS, :success?
+    assert_predicate $CHILD_STATUS, :success?, installer_logs
     assert_links_point_at(@second)
   end
 
@@ -57,12 +53,19 @@ class OfficialTakeOverLockingTest < Minitest::Test
 
   # Returns once the take-over has recorded its Ruby, just before it takes the host locks.
   def spawn_take_over
-    pid = Process.spawn({ 'HOME' => @home }, RbConfig.ruby, @installer, '--directory', @second, '--take-over',
-                        %i[out err] => File::NULL)
+    pid = spawn_installer('--directory', @second, '--take-over')
     wait_for { File.exist?(File.join(@second, '.git/shaka-ruby')) }
     sleep 1
     pid
   end
+
+  # Keeps each child's output so a failure on another machine shows why the installer stopped.
+  def spawn_installer(*)
+    log = File.join(@directory, "installer-#{Dir.glob(File.join(@directory, 'installer-*.log')).size}.log")
+    Process.spawn({ 'HOME' => @home }, RbConfig.ruby, @installer, *, %i[out err] => log)
+  end
+
+  def installer_logs = Dir.glob(File.join(@directory, 'installer-*.log')).map { |log| File.read(log) }.join("\n")
 
   # Exit success of each process, or a failed assertion after a minute so a deadlock cannot hang the suite.
   def finished(pids)
