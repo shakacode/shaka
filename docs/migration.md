@@ -26,16 +26,16 @@ Upgrade this repository's Shaka configuration layout.
 Your agent first shows a read-only preview. It lists every file to move, each
 script to repair, repository-local symlinks, CI and guide references to update,
 and anything that blocks the upgrade. Nothing changes until you approve the whole
-preview and every blocker is resolved. If files change after the preview, the
-agent previews again.
+preview. The upgrade command refuses to apply while any blocker remains, or when
+files changed after the preview; the agent then previews again.
 
 The upgrade keeps your settings, script modes, and command arguments. Repaired
 scripts find the repository root with Git instead of counting parent directories.
-Unrelated tools in `.agents/bin/` stay where they are. The upgrade runs none of
-your repository's scripts, so check the result and run your validation before
+Unrelated tools in `.agents/bin/` stay where they are. The upgrade command runs
+none of your repository's scripts, so check the result and run your validation before
 committing. Merge it in its own PR; until then, Shaka keeps reading settings from
 your default branch.
 
 If the upgrade is interrupted, ask your agent to recover it. Recovery restores
-only the files that upgrade recorded. A file you edited since the interruption is
-left for you to repair.
+only the files that upgrade recorded. It refuses to overwrite a file you edited
+after the interruption, so you repair that file by hand.
