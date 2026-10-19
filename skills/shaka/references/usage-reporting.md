@@ -111,7 +111,7 @@ per configuration. Configured and routed models remain distinct.
 | Codex | Input includes cache reads; cached input must not be added again. Cache writes have their own field. | Reasoning is part of output. Routed model is unknown. |
 | Claude Code | Input excludes cache reads and writes; all three are separate amounts. | Reasoning is part of output. Configured model and native total are unknown. |
 | Cursor | Input includes cache reads and writes; rows show the subsets. | Reasoning, native total, and parent-chat subagent usage are unknown or absent. |
-| OpenCode | Input excludes cache reads and writes. | Native total sums input, output, reasoning, cache reads, and cache writes. |
+| OpenCode | Input excludes cache reads and writes. | Native total sums input, output, reasoning, cache reads, and cache writes; OpenCode 2 omits it, so it is unknown. |
 | Pi | Input excludes cache reads and writes. | Native total is copied. Reasoning, when recorded, is part of output. |
 
 Reports are **PARTIAL** while sources omit active work, reviewers, subagents, or
@@ -198,17 +198,20 @@ description unchanged.
 ## What the OpenCode reader includes
 
 Name a session with `--host opencode --session ses_ID`; find it with
-`opencode session list`. The reader also accepts `OPENCODE_SESSION_ID` from a
-wrapper or plugin, or saved exports through repeated `--file` options.
+`opencode session list`. The reader also accepts `OPENCODE_SESSION_ID`, which
+OpenCode 2 sets in the tool environment, or saved exports through repeated `--file` options.
 
-The reader runs `opencode export` and keeps per-message metadata, never message
-parts containing transcript text. OpenCode 1.18.31 truncates piped JSON, so export
-is redirected to a temporary file before parsing.
+The reader runs `opencode export`. When that fails, as on OpenCode 2, which removed
+it, the reader runs `opencode api get /api/experimental/session/ID/export`. It keeps
+per-message metadata, never message parts or content containing transcript text.
+Both commands truncate piped JSON, so output is redirected to a temporary file before parsing.
 
-A turn is a user message. Assistant messages join it through `parentID`. The
+A turn is a user message. Assistant messages join it through `parentID`; an
+OpenCode 2 export has none, so each joins the nearest earlier user message. The
 default selects the latest user turn; `--all-turns` includes responses with
 identified turns. Rows use the export's provider, session model as configured
-model, response model as routed model, and response variant as effort.
+model, response model as routed model, and response variant as effort. OpenCode 2
+exports report no version, so the source version is unknown.
 
 A 49-response session from 1.18.31 matched an independent aggregate for response
 count, all five token categories, total, interval, and version. Missing configured
