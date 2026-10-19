@@ -32,8 +32,12 @@ module Shaka
         warn "Shaka update check not cached: #{e.message}"
       end
 
+      # False when the time cannot be saved: a notice that cannot be limited to once a day is not shown.
       def noticed(entry, checkout, home:, now: Time.now)
         write(home, entry.merge('checkout' => checkout, 'noticed_at' => now.utc.iso8601))
+        true
+      rescue SystemCallError
+        false
       end
 
       def fresh?(time, now)

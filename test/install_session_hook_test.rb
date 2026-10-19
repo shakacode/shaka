@@ -28,6 +28,20 @@ class InstallSessionHookTest < Minitest::Test
     assert_equal UNRELATED, settings
   end
 
+  def test_installing_another_host_keeps_the_hook
+    install_with_hook
+    output, status = invoke('--agent', 'codex')
+    assert_predicate status, :success?, output
+    assert_equal [helper_command], shaka_commands
+  end
+
+  def test_user_hooks_that_only_mention_a_helper_are_not_shaka_hooks
+    helper = '/opt/skills/shaka/scripts/shaka'
+    ["echo #{helper} update-check", "#{helper} update-check --verbose", 'shaka update-check', "#{helper} doctor"]
+      .each { |command| refute Shaka::Install::SessionHook.owned?('command' => command), command }
+    assert Shaka::Install::SessionHook.owned?('command' => '/a\ b/skills/shaka/scripts/shaka update-check')
+  end
+
   def test_flag_needs_the_claude_host
     output, status = invoke('--repository', @remote, '--agent', 'codex', '--session-hook')
     refute_predicate status, :success?
@@ -92,8 +106,8 @@ class InstallSessionHookTest < Minitest::Test
   end
 
   def shaka_commands
-    settings.dig('hooks', 'SessionStart').flat_map { it['hooks'] }.map { it['command'] }
-            .grep(Shaka::Install::SessionHook::OWNED)
+    settings.dig('hooks', 'SessionStart').flat_map { it['hooks'] }
+            .select { Shaka::Install::SessionHook.owned?(it) }.map { it['command'] }
   end
 
   def without_shaka

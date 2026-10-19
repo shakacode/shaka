@@ -11,15 +11,23 @@ module Shaka
     # so its answer reaches the chat without relying on the agent. Other settings stay unchanged.
     class SessionHook
       SETTINGS = '.claude/settings.json'
-      # Any Shaka checkout's hook matches, so a reinstall from a moved checkout replaces the old entry.
-      OWNED = %r{skills/shaka/scripts/shaka update-check\z}
+      # Any Shaka checkout's helper matches, so a reinstall from a moved checkout replaces the old entry.
+      HELPER = %r{\A/.*/skills/shaka/scripts/shaka\z}
 
-      # Each installation chooses again, so installing without --session-hook removes an earlier hook.
+      # Each Claude Code installation chooses again, so installing it without --session-hook removes an earlier hook.
       # The hook runs the helper behind the Claude Code skill link, which the installation just set.
       def self.choose(enabled, home: Dir.home)
         skill = File.realpath(File.join(home, Official::HOSTS.fetch('claude'), 'shaka')) if enabled
         change = new(skill && File.join(skill, 'scripts/shaka'), home:).apply(enabled)
         puts change if change
+      end
+
+      # Only the exact command the installer writes: a Shaka helper path followed by update-check.
+      def self.owned?(hook)
+        words = Shellwords.split(hook['command']) if hook.is_a?(Hash) && hook['command'].is_a?(String)
+        words&.size == 2 && words.first.match?(HELPER) && words.last == 'update-check'
+      rescue ArgumentError
+        false
       end
 
       def initialize(helper, home: Dir.home)
@@ -81,7 +89,7 @@ module Shaka
         replace_groups(settings, kept)
       end
 
-      def owned?(hook) = hook.is_a?(Hash) && hook['command'].is_a?(String) && hook['command'].match?(OWNED)
+      def owned?(hook) = self.class.owned?(hook)
 
       def replace_groups(settings, groups)
         hooks = settings['hooks']

@@ -95,7 +95,7 @@ prints one line naming the linked one. Set `SHAKA_NOTICES=off` to silence both.
 
 To run `update-check` whenever a Claude Code chat starts, add `--session-hook`
 to `bin/install --agent claude`. That adds one `SessionStart` hook to
-`~/.claude/settings.json`; installing again without the flag removes it.
+`~/.claude/settings.json`; installing with `--agent claude` again without the flag removes it.
 
 When an update is due, finish active Shaka chats, fetch and apply it, then start a new chat:
 

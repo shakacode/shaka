@@ -63,8 +63,7 @@ module Shaka
       return if UpdateCheck::Cache.fresh?(entry['noticed_at'], @now)
 
       line = update_line(entry)
-      UpdateCheck::Cache.noticed(entry, @root, home: @home, now: @now) if line
-      line
+      line if line && UpdateCheck::Cache.noticed(entry, @root, home: @home, now: @now)
     end
 
     def update_line(entry)

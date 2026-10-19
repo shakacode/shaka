@@ -119,7 +119,7 @@ module Shaka
         else
           Official.new(@source, @options)
                   .run(@actions.first || :install)
-          SessionHook.choose(@options[:session_hook]) if @actions.empty?
+          SessionHook.choose(@options[:session_hook]) if @actions.empty? && @options[:agents].include?('claude')
         end
       end
     end

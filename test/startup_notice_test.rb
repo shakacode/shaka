@@ -27,6 +27,15 @@ class StartupNoticeTest < Minitest::Test
     assert_nil notice(now: NOW + 180)
   end
 
+  def test_a_notice_that_cannot_be_recorded_is_not_shown
+    directory = File.dirname(Shaka::UpdateCheck::Cache.path(@home))
+    FileUtils.mkdir_p(directory)
+    File.chmod(0o500, directory)
+    assert_nil notice
+  ensure
+    File.chmod(0o700, directory)
+  end
+
   def test_settled_answers_stay_quiet
     %w[current recent custom unknown].each do |status|
       remember(status, at: NOW)
