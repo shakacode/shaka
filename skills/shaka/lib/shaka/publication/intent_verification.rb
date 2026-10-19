@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative 'text'
 require_relative 'verification_gates'
+require_relative 'review_effort_floor'
 
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
@@ -27,27 +28,39 @@ module Shaka
     module_function
 
     # The verdict binds the validation and review results; nil when description received none.
-    def render(content, verdict = nil)
+    # Changed paths set the review-effort floor; without a pull request there is none.
+    def render(content, verdict = nil, changed_paths = nil)
       checks_allowed = content['wip'].nil? ? CHECKS : (0..CHECKS.max)
       gate_line = VerificationGates.line(verdict, content['review'])
-      [intent(object(content, 'intent')), verification(object(content, 'verification'), checks_allowed, gate_line)]
+      floor = changed_paths && ReviewEffortFloor.for(changed_paths)
+      [intent(object(content, 'intent'), floor),
+       verification(object(content, 'verification'), checks_allowed, gate_line)]
     end
 
-    def intent(spec)
+    def intent(spec, floor)
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
       unless spec[ROOT_CAUSE].nil?
         lines.insert(1, "**Root cause:** #{PublicationText.single_line(spec[ROOT_CAUSE], "intent #{ROOT_CAUSE}")}")
       end
-      "## Intent\n\n#{[*lines, review_effort(spec['review_effort'])].join("\n\n")}"
+      "## Intent\n\n#{[*lines, review_effort(spec['review_effort'], floor)].join("\n\n")}"
     end
 
-    def review_effort(effort)
+    def review_effort(effort, floor)
       zone = REVIEW_EFFORT[effort] if effort.is_a?(Integer)
       raise Error, 'Publication intent review_effort must be a whole number from 1 to 5.' unless zone
 
-      "**Review effort:** #{effort} of 5, #{zone}"
+      line = "**Review effort:** #{effort} of 5, #{zone}"
+      return line unless floor && floor['level'] > 1
+
+      reason = "#{floor['reason']} (`#{floor['path']}`)"
+      if effort < floor['level']
+        raise Error, "Publication intent review_effort #{effort} is below this PR's floor of #{floor['level']}: " \
+                     "it #{reason}. Rate it #{floor['level']} or higher."
+      end
+
+      "#{line} Floor #{floor['level']}: #{reason}."
     end
 
     def verification(spec, allowed, gate_line)

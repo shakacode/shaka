@@ -61,7 +61,7 @@ input. You can approve the approach, request revisions, or settle an open questi
 | --- | --- |
 | What changes for users? | The description, preview, and visual comparisons when applicable. |
 | What is it for, and what does it leave out? | **Intent** in the description: the problem, the scope, what was deliberately left out, and why the change is safe. A bug fix also names its **Root cause**, or says it was not found and the PR treats only the symptom. |
-| How carefully should I review it? | **Review effort** under Intent, from 1 (read the description) to 5 (review every line, reproduce it, and ask a second reviewer), based on what a mistake could reach. |
+| How carefully should I review it? | **Review effort** under Intent, from 1 (read the description) to 5 (review every line, reproduce it, and ask a second reviewer), based on what a mistake could reach. Shaka sets a minimum from the files the PR changes and names the file that set it. A PR that changes code or agent instructions gets at least 2. One that changes a workflow, merge, authentication, trust, or release file gets at least 4. |
 | Why this approach? | The walkthrough, linked code, alternatives, and maintenance-cost assessment. |
 | How was it checked? | **Verification** in the description. Its first line, written by Shaka from the recorded results, says whether repository validation passed and who reviewed the current revision. Up to three checks follow, each showing what ran against this change's behavior, its outcome, and a link to the evidence or the command itself. **Not verified** names what went unproven and why that is acceptable. |
 | Which skills contributed? | **Skills used** lists the reported skills, their contributions, and evidence labels. |

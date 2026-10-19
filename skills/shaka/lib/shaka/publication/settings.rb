@@ -23,11 +23,12 @@ module Shaka
     end
 
     def self.prepare(root:, ref:, pull:, options:, github:)
-      FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
+      changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
       current = current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref
-      new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:)
+      new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
+          changed_paths:)
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -36,10 +37,9 @@ module Shaka
       raise Error, 'Settings publication requires --ref and --root' unless ref && options[:root]
 
       verdict = Evidence::Verification.new(root:, ref:, repository:, head: pull.dig('head', 'sha'), paths:).run
-      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review' unless
-        verdict['status'] == 'ready'
+      return verdict if verdict['status'] == 'ready'
 
-      verdict
+      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review'
     end
 
     def self.current_settings(root:, ref:, repository:, required: false)
@@ -49,11 +49,10 @@ module Shaka
       end
     rescue Error, SystemCallError
       raise if required
-
-      nil
     end
 
-    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil)
+    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil, changed_paths: nil)
+      @changed_paths = changed_paths
       @repository = repository
       @verdict = verdict
       @current = current
@@ -82,8 +81,8 @@ module Shaka
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
-    # The bound results Verification reports, or nil when description received none.
-    attr_reader :verdict
+    # The bound results Verification reports and the PR's changed paths; nil when not read.
+    attr_reader :verdict, :changed_paths
 
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \
