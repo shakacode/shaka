@@ -82,12 +82,12 @@ module Shaka
         end
       end
 
-      # A failure in any host, or in the record changes, puts every host's links back.
+      # A failure or an interrupt in any host, or in the record changes, puts every host's links back.
       def move_links(links)
         previous = []
         links.each_with_index { |entry, index| previous[index] = entry.switch_locked(@checkout.root) }
         yield
-      rescue StandardError
+      rescue StandardError, SignalException
         previous.each_with_index.reverse_each { |links_before, index| links[index].restore_locked(links_before) }
         warn "Take-over failed; links point at #{@owner.root} again" unless previous.empty?
         raise
@@ -107,7 +107,7 @@ module Shaka
 
       def restore_record_on_failure(retired, record)
         yield
-      rescue StandardError
+      rescue StandardError, SignalException
         begin
           File.rename(retired, record)
         rescue SystemCallError => e

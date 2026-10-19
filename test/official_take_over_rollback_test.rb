@@ -19,14 +19,17 @@ class OfficialTakeOverRollbackTest < Minitest::Test
     File.chmod(0o755, File.join(@root, '.git'))
   end
 
-  def test_a_failed_save_puts_back_the_old_record_and_links
-    install_two_hosts
+  # Ctrl-C raises Interrupt, which is not a StandardError; both must roll back.
+  def test_a_failed_or_interrupted_save_puts_back_the_old_record_and_links
     record = File.join(@root, '.git/shaka-install.json')
+    install_two_hosts
     before = File.binread(record)
-    assert_rolled_back(*Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, '-r', failing_save, @installer,
-                                        '--directory', @second, '--take-over'))
-    assert_equal before, File.binread(record)
-    assert_empty Dir.glob(File.join(@root, '.git/shaka-install.retired-*.json'))
+    %w[Errno::EIO Interrupt].each do |error|
+      assert_rolled_back(*Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, '-r', failing_save(error), @installer,
+                                          '--directory', @second, '--take-over'))
+      assert_equal before, File.binread(record)
+      assert_empty Dir.glob(File.join(@root, '.git/shaka-install.retired-*.json'))
+    end
   end
 
   # Each runs from a checkout that owns some links, so each finds the other as the owner.
@@ -111,11 +114,11 @@ class OfficialTakeOverRollbackTest < Minitest::Test
   end
 
   # Loads the copied Checkout, then makes saving the new record fail after the links switch.
-  def failing_save
-    path = File.join(@directory, 'failing_save.rb')
+  def failing_save(error)
+    path = File.join(@directory, "failing_save_#{error.delete(':')}.rb")
     File.write(path, <<~RUBY)
       require #{File.join(@source, 'lib/shaka/install/checkout.rb').inspect}
-      Shaka::Install::Checkout.prepend(Module.new { def save(*) = raise(Errno::EIO, 'injected save failure') })
+      Shaka::Install::Checkout.prepend(Module.new { def save(*) = raise(#{error}) })
     RUBY
     path
   end
