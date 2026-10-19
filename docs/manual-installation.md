@@ -120,5 +120,11 @@ registered. It renames the old checkout's installation record so that checkout
 stops claiming the links, and leaves its files, branches, and worktrees alone.
 If switching a link or changing either record fails, every link points back at
 the old checkout. If putting one back fails too, the installer names each path
-it could not restore. For links in a
-custom skills directory, add `--skills-dir DIR` so it can find them.
+it could not restore. Run the command from the old clone as shown; from another
+clone, add `--skills-dir DIR` for links in a custom skills directory.
+
+Only a process killed outright, such as by `kill -9`, in the instant between
+renaming the old record and saving the new one leaves no checkout registered.
+To recover, rename the newest `.git/shaka-install.retired-*.json` in the old
+checkout back to `.git/shaka-install.json`, then run the same `--take-over`
+command again.
