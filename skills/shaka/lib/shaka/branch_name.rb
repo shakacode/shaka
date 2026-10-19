@@ -12,6 +12,8 @@ module Shaka
   # it. A qualified `refs/heads/main` names a ref rather than the branch GitHub targets.
   # Git looks a short name up as `refs/NAME` before `refs/heads/NAME`, so a branch named
   # `heads/main`, `tags/v1`, or `remotes/origin/main` resolves to that other ref instead.
+  # Those prefixes are refused by shape. A branch named like an existing tag, or `stash`
+  # beside `refs/stash`, collides only where that ref exists, which a name check cannot see.
   # And a name that collides with one of Git's own root refs resolves to that ref wherever a
   # revision is expected, so `git diff FETCH_HEAD...HEAD` would compare against something
   # other than the branch. Root refs are `@` and the unslashed all-uppercase names Git keeps
