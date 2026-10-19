@@ -77,10 +77,16 @@ module OpencodeUsageFixture
     output
   end
 
+  # OpenCode 1.x has `export`; the stub records any `api` call it should never receive.
   def stub_opencode(directory, document)
     executable = File.join(directory, 'opencode')
     export = write_export(directory, document, name: 'stub-export.json')
-    File.write(executable, "#!/bin/sh\ncat #{export}\n")
+    File.write(executable, <<~SH)
+      #!/bin/sh
+      [ "$1" = --version ] && { echo 1.18.31; exit 0; }
+      [ "$1" = api ] && { touch #{File.join(directory, 'api-called')}; exit 1; }
+      cat #{export}
+    SH
     File.chmod(0o755, executable)
   end
 
@@ -186,6 +192,16 @@ class OpencodeUsageTest < Minitest::Test
     end
   end
 
+  def test_a_failed_1x_export_never_tries_the_v2_api
+    Dir.mktmpdir do |directory|
+      stub_opencode(directory, latest_fixture)
+      File.delete(File.join(directory, 'stub-export.json'))
+      output = report('--host', 'opencode', '--session', SESSION, environment: stub_environment(directory))
+      assert_includes output, 'OpenCode export failed'
+      refute_path_exists File.join(directory, 'api-called')
+    end
+  end
+
   def test_openai_provider_responses_are_never_priced_from_cache_inclusive_rates
     Dir.mktmpdir do |directory|
       priced = assistant_message('resp-new', NEW_USER, 1_789_660_287_053, 1_789_660_292_357,
@@ -247,6 +263,7 @@ module OpencodeV2UsageFixture
     route = "/api/experimental/session/#{SESSION}/export"
     File.write(executable, <<~SH)
       #!/bin/sh
+      [ "$1" = --version ] && { echo opencode v2.0.32; exit 0; }
       [ "$1 $2 $3" = "api get #{route}" ] || exit 1
       cat #{export}
     SH

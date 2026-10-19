@@ -3,7 +3,7 @@
 require 'json'
 require 'time'
 require 'tmpdir'
-require_relative 'opencode_v2_layout'
+require_relative 'opencode_v2'
 require_relative 'response_count'
 
 module Shaka
@@ -38,14 +38,12 @@ module Shaka
 
     private
 
-    # OpenCode 2 (observed on 2.0.32) removed `opencode export` and serves the session
-    # through its API instead. Trying export first keeps the tested 1.x path unchanged.
     def export(session)
       unless session.is_a?(String) && session.match?(SESSION)
         return [unreadable('Pass an OpenCode session with --session ID.'), nil]
       end
 
-      document = opencode('export', session) || opencode('api', 'get', "/api/experimental/session/#{session}/export")
+      document = run_export(*OpencodeV2.export_command(session))
       return [unreadable('OpenCode export failed for the selected session.'), nil] if document.nil?
 
       extract(document)
@@ -56,7 +54,7 @@ module Shaka
     # Both commands truncate their JSON when stdout is a pipe, so redirect to a file
     # first. capture3 cannot take an `out:` redirect, hence system with an argument
     # vector instead of shell interpolation.
-    def opencode(*)
+    def run_export(*)
       Dir.mktmpdir('shaka-opencode-export') do |directory|
         target = File.join(directory, 'export.json')
         return nil unless system('opencode', *, out: target, err: File::NULL)
@@ -135,7 +133,7 @@ module Shaka
 
     def parse(raw)
       record = JSON.parse(raw.to_s)
-      record.is_a?(Hash) ? OpencodeV2Layout.normalize(record) : unreadable
+      record.is_a?(Hash) ? OpencodeV2.normalize(record) : unreadable
     rescue JSON::ParserError, EncodingError
       unreadable
     end

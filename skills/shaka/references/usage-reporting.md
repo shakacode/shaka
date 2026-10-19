@@ -201,8 +201,8 @@ Name a session with `--host opencode --session ses_ID`; find it with
 `opencode session list`. The reader also accepts `OPENCODE_SESSION_ID`, which
 OpenCode 2 sets in the tool environment, or saved exports through repeated `--file` options.
 
-The reader runs `opencode export`. When that fails, as on OpenCode 2, which removed
-it, the reader runs `opencode api get /api/experimental/session/ID/export`. It keeps
+The reader runs `opencode export`, or `opencode api get /api/experimental/session/ID/export`
+when `opencode --version` reports 2 or later, because OpenCode 2 removed `export`. It keeps
 per-message metadata, never message parts or content containing transcript text.
 Both commands truncate piped JSON, so output is redirected to a temporary file before parsing.
 
