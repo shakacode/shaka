@@ -155,7 +155,7 @@ class TrialReportTest < TrialReportFixture
   def test_publishes_public_links_in_other_github_url_forms
     result = report('private_result' => true,
                     'summary' => 'See www.github.com/team/project, http://WWW.GitHub.com:80/team/project, ' \
-                                 'and https://github.com:443/team/project/pull/7.')
+                                 'https://github.com:443/team/project/pull/7, and https://github.com/team/project/.')
     assert_includes result['body'], 'www.github.com/team/project'
     assert_includes @looked_up, 'repos/team/project'
   end

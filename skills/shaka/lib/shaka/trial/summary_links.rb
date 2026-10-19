@@ -57,9 +57,9 @@ module Shaka
         Array(segments[1, 2]).join('/')
       end
 
-      # Trimming sentence punctuation must not hide a final . or .. segment.
+      # Trimming sentence punctuation must not hide a final .. segment; a final . stays in the same place.
       def trailing_dot_segment?(path, full)
-        path.end_with?('/') && full[path.length] == '.'
+        path.end_with?('/') && full[path.length, 2] == '..'
       end
 
       def default_port?(link)
