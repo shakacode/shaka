@@ -61,7 +61,8 @@ module Shaka
     end
 
     # Later helper calls repeat a registered checkout's answer from this cache instead of the network.
-    def remember(result) = (Cache.record(@checkout, result) if @checkout)
+    # A failed check is not saved, so a check that keeps failing still earns the daily reminder.
+    def remember(result) = (Cache.record(@checkout, result) if @checkout && result['status'] != 'unknown')
 
     def result
       return answer('uninstalled', 'Use the official installer to receive update guidance.') if

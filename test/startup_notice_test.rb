@@ -66,6 +66,20 @@ class StartupNoticeTest < Minitest::Test
     assert_equal 'drift', JSON.parse(File.read(cache)).dig('result', 'status')
   end
 
+  def test_a_failed_check_is_not_saved_so_the_reminder_continues
+    check = Shaka::UpdateCheck.new(source: {}, branch: 'main', helper: 'h', checkout: @root)
+    with_home { check.remember(answer('unknown')) }
+    refute_path_exists Shaka::UpdateCheck::Cache.path(@home)
+    assert_match(/not checked/, notice)
+  end
+
+  def test_a_checkout_reached_through_a_link_shares_its_entry
+    linked = File.join(@directory, 'linked checkout')
+    File.symlink(@root, linked)
+    Shaka::UpdateCheck::Cache.record(linked, answer('available'), home: @home, now: NOW)
+    assert_equal 'shaka: available guidance', notice(now: NOW + 60)
+  end
+
   # update-check writes under the root the notice reads, so its answers are this helper's own.
   def test_update_check_and_the_notice_name_the_same_checkout
     assert_equal Shaka::UpdateCheck::ROOT, Shaka::StartupNotice::ROOT

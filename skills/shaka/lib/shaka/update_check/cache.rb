@@ -13,12 +13,15 @@ module Shaka
 
       module_function
 
+      # The real path, so a checkout reached through a link or /var on macOS keeps one entry.
+      def key(checkout) = File.realpath(checkout)
+
       def path(home) = File.join(home, '.local', 'share', 'shaka', 'update-check.json')
 
       # The entry for this checkout, or an empty one when the file is missing, unreadable, or another checkout's.
       def read(checkout, home:)
         entry = JSON.parse(File.read(path(home)))
-        entry.is_a?(Hash) && entry['checkout'] == checkout ? entry : {}
+        entry.is_a?(Hash) && entry['checkout'] == key(checkout) ? entry : {}
       rescue SystemCallError, JSON::ParserError
         {}
       end
@@ -27,14 +30,14 @@ module Shaka
       def record(checkout, result, home: nil, now: Time.now)
         home ||= Dir.home
         noticed = read(checkout, home:).slice('noticed_at')
-        write(home, { 'checkout' => checkout, 'checked_at' => now.utc.iso8601, 'result' => result, **noticed })
+        write(home, { 'checkout' => key(checkout), 'checked_at' => now.utc.iso8601, 'result' => result, **noticed })
       rescue SystemCallError, ArgumentError => e
         warn "Shaka update check not cached: #{e.message}"
       end
 
       # False when the time cannot be saved: a notice that cannot be limited to once a day is not shown.
       def noticed(entry, checkout, home:, now: Time.now)
-        write(home, entry.merge('checkout' => checkout, 'noticed_at' => now.utc.iso8601))
+        write(home, entry.merge('checkout' => key(checkout), 'noticed_at' => now.utc.iso8601))
         true
       rescue SystemCallError
         false
