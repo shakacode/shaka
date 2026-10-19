@@ -112,11 +112,11 @@ The installer stops when the folder:
 
 ### Move Shaka out of a clone you develop in
 
-Run this from the clone you develop in. It makes a fresh clone for Shaka and
+Run this inside the clone you develop in. It makes a fresh clone for Shaka and
 points your coding agents at it:
 
 ```bash
-"$OLD_CLONE/bin/install" --directory ~/.local/share/shaka/source --take-over
+./bin/install --directory ~/.local/share/shaka/source --take-over
 ```
 
 Your old clone keeps its files, branches, and worktrees; it only stops being
