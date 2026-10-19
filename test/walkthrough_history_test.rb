@@ -303,8 +303,9 @@ class WalkthroughHistoryNotesTest < Minitest::Test
 
   def publish_over_noted(*tail, notes: [NOTE])
     prior = review_record(7, collapsed(PRIOR))
+    pages = notes.each_slice(100).map { |page| response(page) }
     github = client(*publish_responses(snapshot_response), response([prior]), response({ 'login' => 'ada' }),
-                    review_response(body: collapsed(PRIOR)), response(notes), *tail)
+                    review_response(body: collapsed(PRIOR)), *pages, *tail)
     github.walkthrough(head: HEAD, body: WALKTHROUGH)
   end
 
@@ -316,6 +317,13 @@ class WalkthroughHistoryNotesTest < Minitest::Test
   end
 
   # A reply from the publishing account may be the person who owns it, so any reply keeps a note open.
+  def test_a_note_past_the_first_page_is_resolved
+    notes = Array.new(100) { |index| NOTE.merge('id' => 1000 + index) } << NOTE
+    published = publish_over_noted(thread_response('ada'), resolved_response, notes:)
+
+    assert_equal ['PRRT_1'], published.dig('earlier_walkthroughs', 'resolved_notes')
+  end
+
   def test_a_note_with_any_reply_stays_open
     [thread_response('ada', 'grace'), thread_response('ada', 'ada')].each do |thread|
       published = publish_over_noted(thread)
