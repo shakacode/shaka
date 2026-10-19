@@ -44,7 +44,7 @@ class OfficialTakeOverLockingTest < Minitest::Test
 
   # The first checkout owns the Codex link and the second owns the Claude link.
   def install_opposite_owners
-    git('clone', '-q', @remote, @second)
+    git('clone', '-q', '--branch', 'main', @remote, @second)
     [[@root, 'codex'], [@second, 'claude']].each do |directory, agent|
       output, status = invoke('--directory', directory, '--repository', @remote, '--agent', agent)
       assert_predicate status, :success?, output
