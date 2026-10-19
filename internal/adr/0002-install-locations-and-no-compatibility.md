@@ -32,6 +32,11 @@ Issue #683 lists every reachable install state and the step that fixes each one.
    every host link would break. It also refuses a checkout that hosts linked
    worktrees or local branches other than the registered branch, and
    `install --verify` warns when they appear later. Develop in a separate clone.
+
+   The refusals in decisions 1 and 2 stay fixed, with no override. A source
+   checkout in any of those states breaks the install, and before 1.0 there is
+   no migration out of it. The `AGENTS.md` rule on fixed behavior allows this
+   as keeping an install out of a state that breaks it.
 3. **Automatic updates are opt-in.** Updating the single source checkout can change
    files that open chats are reading. Scheduled updates stay opt-in until each revision
    gets its own folder.
