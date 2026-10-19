@@ -33,7 +33,7 @@ class PublicationReviewEffortFloorTest < Minitest::Test
 
   def test_trust_merge_authentication_and_release_paths_have_a_floor_of_four
     ['.github/workflows/ci.yml', '.agents/shaka/trusted-github-actors.yml', 'skills/shaka/lib/shaka/merge.rb',
-     'lib/oauth/callback.rb', 'script/releases.sh', 'CODEOWNERS'].each do |path|
+     'lib/oauth/callback.rb', 'script/releases.sh', 'CODEOWNERS', 'docs/CODEOWNERS'].each do |path|
       assert_equal 4, floor(path)['level'], path
     end
   end
@@ -61,6 +61,16 @@ class PublicationReviewEffortFloorTest < Minitest::Test
   def test_a_rating_at_or_above_the_floor_renders_the_floor_reason
     assert_includes render([WORKFLOW], 3), '**Review effort:** 3 of 5, tempo: read the walkthrough and the diff. ' \
                                            "Floor 2: changes agent instructions (`#{WORKFLOW}`)."
+  end
+
+  # A filename is PR-controlled; a backtick, newline, or comment marker could reshape the description.
+  def test_a_filename_outside_the_plain_set_is_withheld
+    ["lib/x`\n\n## Injected.rb", 'lib/<!-- shaka:end -->.rb'].each do |path|
+      rendered = render([path], 2)
+      assert_includes rendered, 'Floor 2: changes code or configuration (a file whose name is withheld).'
+      refute_includes rendered, 'Injected'
+      refute_includes rendered, '<!-- shaka:end -->.rb'
+    end
   end
 
   def test_no_floor_text_without_a_floor_or_without_a_pull_request

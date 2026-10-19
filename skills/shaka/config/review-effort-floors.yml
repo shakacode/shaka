@@ -13,6 +13,7 @@ floors:
       - .github/actions/**/*
       - CODEOWNERS
       - .github/CODEOWNERS
+      - docs/CODEOWNERS
       - .agents/shaka/**/*
     words: [auth, authentication, authorization, oauth, merge, release, trust, trusted,
             permission, secret, credential, token]

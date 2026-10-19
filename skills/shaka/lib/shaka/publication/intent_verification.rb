@@ -21,6 +21,7 @@ module Shaka
       5 => 'all out: review every line, reproduce it, and ask a second reviewer.'
     }.freeze
     CHECKS = (1..3)
+    SAFE_PATH = %r{\A[\w.@+/ -]+\z}
     # A link opens the evidence and a code span names what ran; plain prose names neither.
     # GitHub also renders a link whose address sits in angle brackets.
     EVIDENCE = %r{\]\(https?://[^)\s]+\)|\]\(<https?://[^>\s]+>\)|`[^`]+`}
@@ -54,7 +55,7 @@ module Shaka
       line = "**Review effort:** #{effort} of 5, #{zone}"
       return line unless floor && floor['level'] > 1
 
-      reason = "#{floor['reason']} (`#{floor['path']}`)"
+      reason = "#{floor['reason']} (#{floor_path(floor['path'])})"
       if effort < floor['level']
         raise Error, "Publication intent review_effort #{effort} is below this PR's floor of #{floor['level']}: " \
                      "it #{reason}. Rate it #{floor['level']} or higher."
@@ -62,6 +63,9 @@ module Shaka
 
       "#{line} Floor #{floor['level']}: #{reason}."
     end
+
+    # A changed filename comes from the PR author, so only a plain one reaches the description.
+    def floor_path(path) = path.match?(SAFE_PATH) ? "`#{path}`" : 'a file whose name is withheld'
 
     def verification(spec, allowed, gate_line)
       not_verified = PublicationText.single_line(spec['not_verified'], 'verification not_verified')
@@ -93,6 +97,6 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :review_effort, :verification, :checks, :evidenced, :object
+    private_class_method :intent, :review_effort, :floor_path, :verification, :checks, :evidenced, :object
   end
 end
