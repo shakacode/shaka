@@ -264,7 +264,11 @@ phases:
         complete. For an asynchronous check, wait for completion
         and inspect its final exit status and output before reporting a pass; a running session or
         partial green output is not a completed check. Recover missing completion evidence or report
-        it as unknown.
+        it as unknown. Keep the task open while local validation or local review runs: wait in the
+        foreground or through a host feature that resumes this session when the command exits.
+        When the turn ends first and no PR exists yet, end it with one line naming the running check,
+        saying the task is unfinished, and giving the host's Shaka invocation with the task link or
+        description as the resume prompt.
       - Never defer always-on required, security, or trust checks.
       - Record commands, results, and the tested revision. After committing, use `shaka evidence bind
         --root DIR --ref TRUSTED_SHA --repository OWNER/REPO --head SHA --result PATH` for each
@@ -508,9 +512,11 @@ phases:
         at the first later line containing `to`, or with `block: true` at the bare `end` or `}`
         closing that line's indentation, and otherwise links the one line. Missing, ambiguous,
         or unclosed text refuses publication.
-        Optional `notes` lists reviewer notes, each with `path`, `from`, `to` or `block` as a code
+        `notes` lists reviewer notes, each with `path`, `from`, `to` or `block` as a code
         link takes them, and a Markdown `body`. The helper posts each one as an inline comment of
-        the walkthrough review on those lines. Before writing notes or answering a note
+        the walkthrough review on those lines. Supply notes when the change touches three or
+        more files, unless walkthrough notes says to publish without them; a smaller change
+        may omit them. Before writing notes or answering a note
         thread, read [walkthrough notes](<{{package_root}}/skills/shaka/references/walkthrough-notes.md>).
         The helper always renders a Code Walkthrough link above the summary: the COMMENT review
         URL when `walkthrough` is supplied, otherwise `_Not published yet._`. Do not bury that URL
