@@ -5,6 +5,7 @@ require_relative 'checkout_drift'
 require_relative 'checkout_git'
 require_relative 'checkout_validation'
 require_relative 'directory_safety'
+require_relative 'locations'
 require_relative 'package'
 
 module Shaka
@@ -17,7 +18,7 @@ module Shaka
       include CheckoutValidation
 
       REPOSITORY = 'https://github.com/shakacode/shaka.git'
-      RECORD = 'shaka-install.json'
+      RECORD = Locations::RECORD
       attr_reader :root, :record
 
       def initialize(directory, repository: nil, branch: nil)

@@ -85,24 +85,34 @@ class StartupNoticeTest < Minitest::Test
     assert_equal Shaka::UpdateCheck::ROOT, Shaka::StartupNotice::ROOT
   end
 
-  def test_session_start_output_is_plain_text_for_the_chat
-    render = Shaka::UpdateCheck::Notice.method(:render)
-    assert_equal "Shaka update check (drift): drift guidance\n", render.call(answer('drift'), ['--session-start'])
-    assert_equal '', render.call(answer('current'), ['--session-start'])
-    assert_equal answer('current'), JSON.parse(render.call(answer('current'), []))
+  # A new chat hears the saved answer every time it starts, so this path has no daily limit.
+  def test_session_start_reports_the_saved_answer_as_plain_text
+    remember('drift', at: NOW)
+    2.times { assert_equal "Shaka update check: drift guidance\n", session_start(now: NOW + 60) }
+    remember('current', at: NOW)
+    assert_empty session_start(now: NOW + 60)
+    assert_match(/\AShaka update check: Shaka has not checked/, session_start(now: NOW + (2 * 24 * 3600)))
+    assert_empty session_start(now: NOW, root: checkout('development', registered: false))
   end
 
-  def test_cached_notice_runs_no_command
+  def test_cached_notice_and_session_start_run_no_command
     remember('available', at: Time.now)
-    script = 'warn "shaka: " + Shaka::StartupNotice.new(home: Dir.home, root: ARGV[0]).line'
-    _output, error, status = Open3.capture3({ 'HOME' => @home, 'PATH' => fake_commands }, RbConfig.ruby, '-I',
-                                            LIBRARY, '-rshaka/startup_notice', '-e', script, @root)
+    script = 'warn "shaka: " + Shaka::StartupNotice.new(home: Dir.home, root: ARGV[0]).line; ' \
+             'Shaka::StartupNotice.session_start(root: ARGV[0])'
+    output, error, status = Open3.capture3({ 'HOME' => @home, 'PATH' => fake_commands }, RbConfig.ruby, '-I',
+                                           LIBRARY, '-rshaka/startup_notice', '-e', script, @root)
     assert_predicate status, :success?, error
-    assert_equal "shaka: available guidance\n", error
+    assert_equal ["shaka: available guidance\n", "Shaka update check: available guidance\n"], [error, output]
     refute_path_exists ran
   end
 
   private
+
+  def session_start(now:, root: @root)
+    output = StringIO.new
+    Shaka::StartupNotice.session_start(output:, home: @home, root:, now:)
+    output.string
+  end
 
   def with_home
     previous = Dir.home

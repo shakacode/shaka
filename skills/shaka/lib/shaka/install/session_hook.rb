@@ -8,8 +8,8 @@ require_relative 'refusal'
 
 module Shaka
   module Install
-    # Adds or removes the Claude Code SessionStart hook that runs update-check when a chat starts,
-    # so its answer reaches the chat without relying on the agent. Other settings stay unchanged.
+    # Adds or removes the Claude Code SessionStart hook that reports the saved update-check answer when
+    # a chat starts, so it reaches the chat without relying on the agent. Other settings stay unchanged.
     class SessionHook
       SETTINGS = '.claude/settings.json'
       # Any Shaka checkout's helper matches, so a reinstall from a moved checkout replaces the old entry.

@@ -2,9 +2,8 @@
 
 require 'shellwords'
 require 'time'
-require_relative 'install/official'
+require_relative 'install/locations'
 require_relative 'update_check/cache'
-require_relative 'update_check/notice'
 
 module Shaka
   # Prints at most one stderr line when a helper call starts: a host link names a different
@@ -15,7 +14,7 @@ module Shaka
     ROOT = File.expand_path('../../../..', __dir__)
     # update-check prints its own answer, and install reports the installation it changes.
     SKIPPED = %w[install update-check].freeze
-    ACTIONABLE = UpdateCheck::Notice::ACTIONABLE
+    ACTIONABLE = %w[available drift].freeze
 
     def self.call(arguments, env: ENV, output: $stderr)
       return if env[VARIABLE] == 'off' || arguments.empty? || SKIPPED.include?(arguments.first)
@@ -26,6 +25,16 @@ module Shaka
       output.puts("shaka: notice skipped: #{e.message}")
     end
 
+    # Claude Code adds a SessionStart hook's plain-text output to the new chat, but not a JSON answer.
+    # Only the saved answer is read, so a new chat never waits on the network.
+    def self.session_start(output: $stdout, home: nil, root: ROOT, now: Time.now)
+      line = new(home: home || Dir.home, root:, now:).saved_update
+      output.puts("Shaka update check: #{line}") if line
+      0
+    rescue StandardError
+      0
+    end
+
     def initialize(home:, root: ROOT, now: Time.now)
       @home = home
       @root = root
@@ -33,6 +42,9 @@ module Shaka
     end
 
     def line = other_installation || update
+
+    # What the saved answer asks of a registered checkout, without the once-a-day limit.
+    def saved_update = (update_line(UpdateCheck::Cache.read(@root, home: @home)) if registered?)
 
     private
 
@@ -50,7 +62,7 @@ module Shaka
     end
 
     def host_links
-      Install::Official::HOSTS.values.filter_map do |directory|
+      Install::Locations::HOSTS.values.filter_map do |directory|
         link = File.join(@home, directory, 'shaka')
         [link, File.realpath(link)] if File.symlink?(link) && File.exist?(link)
       end
@@ -58,7 +70,7 @@ module Shaka
 
     # Only a registered checkout has update answers; one notice at most per day.
     def update
-      return unless File.file?(File.join(@root, '.git', Install::Checkout::RECORD))
+      return unless registered?
 
       entry = UpdateCheck::Cache.read(@root, home: @home)
       return if UpdateCheck::Cache.fresh?(entry['noticed_at'], @now)
@@ -66,6 +78,8 @@ module Shaka
       line = update_line(entry)
       line if line && UpdateCheck::Cache.noticed(entry, @root, home: @home, now: @now)
     end
+
+    def registered? = File.file?(File.join(@root, '.git', Install::Locations::RECORD))
 
     def update_line(entry)
       result = entry['result']

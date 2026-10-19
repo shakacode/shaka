@@ -4,6 +4,7 @@ require 'json'
 require 'shellwords'
 require 'tmpdir'
 require_relative 'doctor/installation_identity'
+require_relative 'startup_notice'
 require_relative 'update_check/cache'
 require_relative 'update_check/launch'
 require_relative 'update_check/messages'
@@ -22,10 +23,11 @@ module Shaka
     COMMIT = /\A[0-9a-f]{40}\z/
 
     def self.run(arguments)
-      return usage(arguments) unless arguments.empty? || arguments == [Notice::SESSION_START]
+      return StartupNotice.session_start if arguments == [Notice::SESSION_START]
+      return usage(arguments) unless arguments.empty?
 
       check = installed
-      print Notice.render(result = check.result, arguments)
+      puts JSON.generate(result = check.result)
       check.remember(result)
       0
     rescue Shaka::Error, JSON::ParserError, KeyError, SystemCallError => e

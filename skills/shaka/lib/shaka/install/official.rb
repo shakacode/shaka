@@ -2,6 +2,7 @@
 
 require 'shellwords'
 require_relative 'checkout'
+require_relative 'locations'
 require_relative 'official_links'
 require_relative 'direct_source'
 require_relative 'link_lock'
@@ -14,8 +15,7 @@ module Shaka
       include LinkLock
       include RubyRecord
 
-      HOSTS = { 'codex' => '.agents/skills', 'claude' => '.claude/skills', 'cursor' => '.cursor/skills',
-                'opencode' => '.config/opencode/skills' }.freeze
+      HOSTS = Locations::HOSTS
       def initialize(source, options)
         selected = options[:directory] || registered_source(source) || File.join(Dir.home, '.agents/shaka')
         @checkout = Checkout.new(selected, **options.slice(:repository, :branch))

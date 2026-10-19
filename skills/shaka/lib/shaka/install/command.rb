@@ -48,7 +48,7 @@ module Shaka
         options.on('--with-mct') { @options[:names] << 'mct' }
         options.on('--with-rct') { @options[:names] << 'rct' }
         options.on('--with-claude-towers') { @options[:names].push('mct-claude', 'rct-claude') }
-        options.on('--session-hook', 'Run update-check when a Claude Code chat starts') do
+        options.on('--session-hook', 'Report the saved update check when a Claude Code chat starts') do
           @options[:session_hook] = true
         end
         options.on('--managed', 'Explicit managed copy (normally use a PR trial)') { @options[:managed] = true }
