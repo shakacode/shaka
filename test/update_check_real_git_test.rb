@@ -7,6 +7,11 @@ require 'open3'
 class UpdateCheckRealGitTest < Minitest::Test
   include UpdateCheckSupport
 
+  # A suite started from a Git hook inherits GIT_DIR and friends, which would point these commands at the
+  # caller's repository; the test Git config in GIT_CONFIG_GLOBAL stays.
+  REPOSITORY_ENV = %w[GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY]
+                   .to_h { |key| [key, nil] }.freeze
+
   def test_manual_pull_of_a_real_checkout_reads_head_from_disk
     Dir.mktmpdir('shaka-update-pull') do |checkout|
       recorded = commit(checkout, 'first')
@@ -43,7 +48,7 @@ class UpdateCheckRealGitTest < Minitest::Test
 
   def git(directory, *arguments)
     command = ['git', '-C', directory, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', *arguments]
-    output, status = Open3.capture2(*command)
+    output, status = Open3.capture2(REPOSITORY_ENV, *command)
     raise "git #{arguments.first} failed" unless status.success?
 
     output.strip
