@@ -135,6 +135,12 @@ class TrialReportTest < TrialReportFixture
     assert_empty calls
   end
 
+  def test_html_character_references_stay_inert_in_the_published_summary
+    result = report('private_result' => true, 'summary' => 'See [notes](https://github&#46;com/acme/secret)')
+    assert_includes result['body'], 'github&amp;#46;com'
+    refute_includes @looked_up, 'repos/acme/secret'
+  end
+
   def test_publishes_public_links_in_other_github_url_forms
     result = report('private_result' => true,
                     'summary' => 'See www.github.com/team/project, http://WWW.GitHub.com:80/team/project, ' \
