@@ -85,8 +85,12 @@ module Shaka
       end
 
       def roll_back(links, previous)
-        links.zip(previous).reverse_each { |entry, links_before| entry.restore_locked(links_before) }
         restore_owner_record
+        links.zip(previous).reverse_each do |entry, links_before|
+          entry.restore_locked(links_before)
+        rescue SystemCallError, IOError => e
+          warn "Could not restore links in #{entry.lock_directory}: #{e.message}"
+        end
         warn "Take-over failed; links point at #{@owner.root} again"
       end
 
