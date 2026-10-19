@@ -74,6 +74,7 @@ module Shaka
           @root = File.realpath(@root)
           clone if Dir.empty?(@root)
         end
+        refuse_linked_worktree
         verify_directories
       end
 

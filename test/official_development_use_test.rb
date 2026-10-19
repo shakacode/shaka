@@ -17,6 +17,18 @@ class OfficialDevelopmentUseTest < Minitest::Test
     refute File.symlink?(@destination)
   end
 
+  def test_every_action_refuses_a_source_that_is_a_linked_worktree
+    worktree = File.join(@directory, 'worktree')
+    git('-C', @root, 'worktree', 'add', '-q', '--detach', worktree)
+    [['--repository', @remote, '--skills-dir', @skills_dir], ['--verify'], ['--update']].each do |flags|
+      output, status = invoke('--directory', worktree, *flags)
+      refute_predicate status, :success?
+      assert_includes output, 'is a linked worktree of'
+      assert_includes output, 'git clone '
+    end
+    refute File.symlink?(@destination)
+  end
+
   def test_reinstalling_a_registered_checkout_with_a_branch_names_take_over
     official_install
     git('-C', @root, 'branch', 'topic')

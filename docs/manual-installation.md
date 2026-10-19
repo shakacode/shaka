@@ -103,6 +103,8 @@ branch, which is `origin/main` unless you chose another.
 The installed checkout should only follow its recorded branch. Branches,
 worktrees, and commits there are what later stop updates. The installer refuses
 a checkout that has linked worktrees or local branches besides the recorded one.
+It also refuses a checkout that is itself a linked worktree. Worktrees are usually
+deleted once their branch merges, which would break every skill link.
 `install --verify` and `install --update` warn when they appear later and still succeed.
 
 To move Shaka out of a clone you also develop in, give it a checkout of its own

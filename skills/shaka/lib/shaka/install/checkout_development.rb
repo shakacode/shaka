@@ -19,6 +19,18 @@ module Shaka
         warn "Warning: #{detail} Pulls, branches, and commits there stop updates. #{development_next_step}"
       end
 
+      # A worktree disappears when its branch merges, taking every host link with it, so no action proceeds.
+      def refuse_linked_worktree
+        return unless File.file?(File.join(@root, '.git'))
+
+        git_directory, common = git('rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir').split("\n")
+        return if git_directory == common
+
+        raise ArgumentError, "Installation checkout #{@root} is a linked worktree of #{File.dirname(common)}. " \
+                             "Install from a separate clone: git clone #{@repository || Checkout::REPOSITORY} " \
+                             "#{SOURCE_EXAMPLE} && #{SOURCE_EXAMPLE}/bin/install --directory #{SOURCE_EXAMPLE}"
+      end
+
       private
 
       def development_uses
