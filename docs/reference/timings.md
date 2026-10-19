@@ -15,8 +15,8 @@ Here is an example:
 | Between checkpoints | 2026-10-18 19:36 | 2026-10-18 21:54 | 2h 18m |
 | Waiting on a person: merge approval | 2026-10-18 21:54 | 2026-10-18 23:15 (merged) | 1h 21m |
 
-The section's title adds up both kinds of time, for example
-`Timings · 4h 18m between checkpoints · 11h 2m waiting on a person in 2 waits`.
+The section opens with totals for both kinds of time, for example
+`Totals: 4h 18m between checkpoints · 11h 2m waiting on a person in 2 waits`.
 The first total includes the time before the PR opened.
 
 ## What each stretch means
@@ -43,7 +43,7 @@ adds a label when it stops for you and removes it when work resumes.
 - Every labeled wait counts, however short. A wait of a few seconds can be a
   quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The
-  title's totals still include every stretch.
+  totals still include every stretch.
 - The description shows timings as of its last update. The agent asks for your
   merge approval after that update, so when you merge on GitHub yourself, the
   final wait appears only if the agent updates the description again.

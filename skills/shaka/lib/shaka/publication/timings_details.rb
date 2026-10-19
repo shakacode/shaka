@@ -30,20 +30,21 @@ module Shaka
 
     def detail
       # The reason can quote gh output, so it stays out of the public body.
-      return { 'summary' => "#{SUMMARY} · unavailable", 'body' => UNAVAILABLE } if @timeline.key?('unavailable')
+      return { 'summary' => SUMMARY, 'body' => UNAVAILABLE } if @timeline.key?('unavailable')
 
       rows = TimingStretches.new(@timeline, @now).rows
-      body = [table(rows.last(MAX_ROWS)), omitted(rows), LEGEND, GUIDE].compact.join("\n\n")
-      { 'summary' => summary(rows), 'body' => body }
+      body = [totals(rows), table(rows.last(MAX_ROWS)), omitted(rows), LEGEND, GUIDE].compact.join("\n\n")
+      # A collapsed summary counts as visible description prose, so the totals stay inside.
+      { 'summary' => SUMMARY, 'body' => body }
     end
 
     private
 
-    def summary(rows)
+    def totals(rows)
       waited = rows.select { |row| row[:wait] }
       parts = ["#{duration(total(rows.reject { |row| row[:wait] }))} between checkpoints"]
       parts << "#{duration(total(waited))} waiting on a person in #{count(waited.size)}" unless waited.empty?
-      "#{SUMMARY} · #{parts.join(' · ')}"
+      "**Totals:** #{parts.join(' · ')}"
     end
 
     def omitted(rows)

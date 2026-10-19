@@ -27,7 +27,14 @@ class TimingsDetailsTest < Minitest::Test
                   ['Waiting on a person: answer', '1h 0m'], ['Between checkpoints', '30m'],
                   ['Waiting on a person: merge approval', '11h 40m']], lengths(detail)
     assert_includes rows(detail).last[2], 'merged'
-    assert_includes detail['summary'], '1h 10m between checkpoints · 12h 40m waiting on a person in 2 waits'
+    assert_includes detail['body'], '1h 10m between checkpoints · 12h 40m waiting on a person in 2 waits'
+  end
+
+  # A collapsed summary counts toward the description's visible word limit.
+  def test_the_summary_is_one_word_and_the_totals_open_the_body
+    detail = Shaka::TimingsDetails.new(timeline(merged: at(60))).detail
+    assert_equal 'Timings', detail['summary']
+    assert detail['body'].start_with?('**Totals:** 1h 0m between checkpoints')
   end
 
   def test_an_open_wait_runs_until_this_update
@@ -50,7 +57,7 @@ class TimingsDetailsTest < Minitest::Test
     detail = Shaka::TimingsDetails.new(timeline(labels:, merged: at(30))).detail
     assert_equal [['Between checkpoints', '10m'], ['Waiting on a person: merge approval', '<1m'],
                   ['Between checkpoints', '19m']], lengths(detail)
-    assert_includes detail['summary'], 'in 1 wait'
+    assert_includes detail['body'], 'in 1 wait'
   end
 
   def test_overlapping_labels_are_one_wait_until_the_last_comes_off
@@ -73,7 +80,8 @@ class TimingsDetailsTest < Minitest::Test
 
   def test_an_unavailable_timeline_is_noted_without_publishing_the_raw_error
     detail = Shaka::TimingsDetails.new({ 'unavailable' => 'gh: HTTP 502 from api.github.com' }).detail
-    assert_includes detail['summary'], 'unavailable'
+    assert_equal 'Timings', detail['summary']
+    assert_includes detail['body'], 'did not supply'
     refute_includes detail['body'], 'HTTP 502'
   end
 
@@ -87,7 +95,7 @@ class TimingsDetailsTest < Minitest::Test
     detail = Shaka::TimingsDetails.new(timeline(labels: answered(40), merged: at(400))).detail
     assert_equal Shaka::TimingsDetails::MAX_ROWS, rows(detail).size
     assert_includes detail['body'], 'of 80 stretches'
-    assert_includes detail['summary'], '3h 20m waiting on a person in 40 waits'
+    assert_includes detail['body'], '3h 20m waiting on a person in 40 waits'
   end
 
   def test_a_just_opened_wait_shows_although_it_is_under_a_minute
