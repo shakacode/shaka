@@ -862,7 +862,8 @@ branches:
 | `{description}` | Short task description |
 
 The settings check fills each placeholder with a sample value and refuses a template
-whose result Git would not accept as a branch name, such as one with a space or `..`.
+whose result is not a plain branch name: one Git rejects, such as a name with a space
+or `..`, or a full ref such as `refs/heads/{issue}`.
 
 For example: `alex-codex/42-fix-search`, or `alex-codex/ad-hoc-fix-search` when the
 task was given as a sentence. Before starting either one, the agent checks open PRs and
