@@ -14,6 +14,23 @@ module OfficialTakeOverSupport
 
   private
 
+  def take_over_with(patch)
+    Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, '-r', patch, @installer, '--directory', @second, '--take-over')
+  end
+
+  # Loads a copied installer file, then prepends the given method to inject a failure.
+  def checkout_patch(method) = patch('checkout.rb', 'Checkout', method)
+  def links_patch(method) = patch('links.rb', 'Links', method)
+
+  def patch(file, klass, method)
+    path = File.join(@directory, "patch_#{method.hash.abs}.rb")
+    File.write(path, <<~RUBY)
+      require #{File.join(@source, 'lib/shaka/install', file).inspect}
+      Shaka::Install::#{klass}.prepend(Module.new { #{method} })
+    RUBY
+    path
+  end
+
   def wait_for
     deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 60
     sleep 0.1 until yield || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline

@@ -70,7 +70,7 @@ module Shaka
       def move(targets, links)
         recorded = identity(targets)
         record_ruby
-        with_host_locks(links) { move_links(links) { retire_owner { @checkout.save(targets, recorded) } } }
+        with_host_locks(links) { move_links(links) { @checkout.save(targets, recorded) } }
       end
 
       def take_over_targets
@@ -82,39 +82,48 @@ module Shaka
         end
       end
 
-      # A failure or an interrupt in any host, or in the record changes, puts every host's links back.
-      def move_links(links)
-        previous = []
-        links.each_with_index { |entry, index| previous[index] = entry.switch_locked(@checkout.root) }
-        yield
+      # Until the new record is saved, a failure or an interrupt puts every host's links and the old record back.
+      # The saved record is the commit point: after it, the take-over stands and nothing is undone.
+      def move_links(links, &)
+        previous = links.map(&:snapshot)
+        before = new_record_bytes
+        links.each { |entry| entry.switch_locked(@checkout.root) }
+        retire_owner(&)
       rescue StandardError, SignalException
-        previous.each_with_index.reverse_each { |links_before, index| links[index].restore_locked(links_before) }
-        warn "Take-over failed; links point at #{@owner.root} again" unless previous.empty?
+        raise unless new_record_bytes == before
+
+        links.zip(previous).reverse_each { |entry, links_before| entry.restore_locked(links_before) }
+        restore_owner_record
+        warn "Take-over failed; links point at #{@owner.root} again"
         raise
       end
 
+      def new_record_bytes
+        path = File.join(@checkout.root, '.git', Checkout::RECORD)
+        File.binread(path) if File.exist?(path)
+      end
+
       # Renames the previous record so its checkout stops claiming the links; the checkout itself stays.
-      def retire_owner(&)
-        record = File.join(@owner.root, '.git', Checkout::RECORD)
+      def retire_owner
         stamp = Time.now.utc.strftime('%Y%m%dT%H%M%SZ')
         retired = File.join(@owner.root, '.git', "shaka-install.retired-#{stamp}.json")
         raise ArgumentError, "Retired installation record already exists: #{retired}" if File.exist?(retired)
 
-        File.rename(record, retired)
-        restore_record_on_failure(retired, record, &)
+        @retired = retired
+        File.rename(owner_record, retired)
+        yield
         puts "Retired previous installation record: #{retired}"
       end
 
-      def restore_record_on_failure(retired, record)
-        yield
-      rescue StandardError, SignalException
-        begin
-          File.rename(retired, record)
-        rescue SystemCallError => e
-          warn "Could not restore #{record} from #{retired}: #{e.message}"
-        end
-        raise
+      def restore_owner_record
+        return unless @retired && File.exist?(@retired) && !File.exist?(owner_record)
+
+        File.rename(@retired, owner_record)
+      rescue SystemCallError => e
+        warn "Could not restore #{owner_record} from #{@retired}: #{e.message}"
       end
+
+      def owner_record = File.join(@owner.root, '.git', Checkout::RECORD)
     end
   end
 end

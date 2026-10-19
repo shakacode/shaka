@@ -27,12 +27,13 @@ module Shaka
       # The caller holds this directory's lock, so it can restore the links before anyone else changes them.
       def switch_locked(target)
         preflight(target)
-        previous = @names.to_h { |name| [name, old_target(name)] }
-        switch_links(target, previous)
-        previous
+        switch_links(target, snapshot)
       end
 
-      def restore_locked(previous) = restore_links(@names, previous)
+      def snapshot = @names.to_h { |name| [name, old_target(name)] }
+
+      # Restores only links that differ from the snapshot, so a host that never switched is left alone.
+      def restore_locked(previous) = restore_links(@names.reject { old_target(it) == previous[it] }, previous)
 
       private
 
