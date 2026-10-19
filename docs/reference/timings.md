@@ -40,8 +40,8 @@ adds a label when it stops for you and removes it when work resumes.
   wait the agent did not mark with a label.
 - The timeline starts at the first commit, so work before that is not counted.
   A rebase can move that date; when it falls after the PR opened, the first row is omitted.
-- A finished wait shorter than a minute is the agent relabeling the PR, so it
-  counts as time between checkpoints.
+- Every labeled wait counts, however short. A wait of a few seconds can be a
+  quick reply or the agent relabeling the PR; the label history cannot tell them apart.
 - When a PR has waited many times, the table shows the latest 30 stretches. The
   title's totals still include every stretch.
 - The description shows timings as of its last update. The agent asks for your

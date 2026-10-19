@@ -6,8 +6,6 @@ module Shaka
   # Divides a pull request's life into the time between checkpoints and each wait on a person.
   class TimingStretches
     BETWEEN = 'Between checkpoints'
-    # The agent relabels a pull request while it hands off, so a shorter wait is not a person's.
-    SHORTEST_WAIT = 60
     WAITS = Attention::LABELS.to_h { |state, label| [label, state == 'merge' ? 'merge approval' : state] }.freeze
 
     def initialize(timeline, now)
@@ -59,8 +57,7 @@ module Shaka
         apply(event, at)
       end
       close_open_wait
-      # A wait still open is a person's however short, since the agent has stopped for them.
-      @found.select { |wait| wait[:ending] == 'still waiting' || wait[:to] - wait[:from] >= SHORTEST_WAIT }
+      @found
     end
 
     def close_open_wait

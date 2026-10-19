@@ -43,12 +43,14 @@ class TimingsDetailsTest < Minitest::Test
     assert_includes rows(detail).last[2], 'this update'
   end
 
-  def test_a_relabel_under_a_minute_counts_as_time_between_checkpoints
+  # A label on for seconds may be a quick reply or the agent relabeling; the history cannot tell, so it shows.
+  def test_a_wait_under_a_minute_still_counts_as_a_wait
     labels = [{ 'name' => 'awaiting-merge-approval', 'added' => true, 'at' => at(10) },
               { 'name' => 'awaiting-merge-approval', 'added' => false, 'at' => at(10) + 22 }]
     detail = Shaka::TimingsDetails.new(timeline(labels:, merged: at(30))).detail
-    assert_equal [['Between checkpoints', '30m']], lengths(detail)
-    refute_includes detail['summary'], 'waiting'
+    assert_equal [['Between checkpoints', '10m'], ['Waiting on a person: merge approval', '<1m'],
+                  ['Between checkpoints', '19m']], lengths(detail)
+    assert_includes detail['summary'], 'in 1 wait'
   end
 
   def test_overlapping_labels_are_one_wait_until_the_last_comes_off
