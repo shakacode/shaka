@@ -69,7 +69,8 @@ class InstallSessionHookTest < Minitest::Test
     write_settings('{ not json')
     hook = Shaka::Install::SessionHook.new('/opt/skills/shaka/scripts/shaka', home: @home)
     error = assert_raises(ArgumentError) { hook.apply(true) }
-    assert_includes error.message, "#{settings_path} is not valid JSON"
+    assert_includes error.message, 'Claude Code settings are not valid JSON'
+    assert_includes error.message, "Found: #{settings_path}"
     assert_includes error.message, 'rerun bin/install without --session-hook'
     assert_nil hook.apply(false)
     assert_equal '{ not json', File.read(settings_path)

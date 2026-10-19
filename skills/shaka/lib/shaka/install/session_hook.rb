@@ -4,6 +4,7 @@ require 'fileutils'
 require 'json'
 require 'shellwords'
 require_relative 'official'
+require_relative 'refusal'
 
 module Shaka
   module Install
@@ -57,9 +58,9 @@ module Shaka
         settings = JSON.parse(File.read(@path))
         return settings if settings.is_a?(Hash) && hooks_shape?(settings['hooks'])
 
-        refuse('does not hold a JSON object with a hooks object') if strict
+        refuse('do not hold a JSON object with a hooks object') if strict
       rescue JSON::ParserError => e
-        refuse("is not valid JSON (#{e.message.lines.first.strip})") if strict
+        refuse("are not valid JSON (#{e.message.lines.first.strip})") if strict
       end
 
       def hooks_shape?(hooks)
@@ -67,8 +68,8 @@ module Shaka
       end
 
       def refuse(problem)
-        raise ArgumentError, "Claude Code settings #{@path} #{problem}. Fix that file, " \
-                             'or rerun bin/install without --session-hook.'
+        raise ArgumentError, Refusal.message("Claude Code settings #{problem}", @path,
+                                             'fix that file, or rerun bin/install without --session-hook')
       end
 
       def owned_commands(settings)

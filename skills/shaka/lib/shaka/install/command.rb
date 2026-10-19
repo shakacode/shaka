@@ -7,7 +7,7 @@ require_relative 'session_hook'
 
 module Shaka
   module Install
-    # One entry point for the official checkout and explicit retained-copy operations.
+    # One entry point for the official checkout and explicit managed-copy operations.
     class Command
       VALUES = { '--directory DIR' => :directory, '--repository URL' => :repository,
                  '--branch NAME' => :branch, '--skills-dir DIR' => :skills_dir,
@@ -51,7 +51,7 @@ module Shaka
         options.on('--session-hook', 'Run update-check when a Claude Code chat starts') do
           @options[:session_hook] = true
         end
-        options.on('--managed', 'Explicit retained copy (normally use a PR trial)') { @options[:managed] = true }
+        options.on('--managed', 'Explicit managed copy (normally use a PR trial)') { @options[:managed] = true }
       end
 
       def actions(options)
