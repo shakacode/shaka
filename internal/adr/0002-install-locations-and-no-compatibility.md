@@ -33,10 +33,13 @@ Issue #683 lists every reachable install state and the step that fixes each one.
    worktrees or local branches other than the registered branch, and
    `install --verify` warns when they appear later. Develop in a separate clone.
 
-   The refusals in decisions 1 and 2 stay fixed, with no override. A source
-   checkout in any of those states breaks the install, and before 1.0 there is
-   no migration out of it. The `AGENTS.md` rule on fixed behavior allows this
-   as keeping an install out of a state that breaks it.
+   The refusals in decisions 1 and 2 stay fixed, with no override. A worktree
+   checkout loses every link when its branch merges. Developing in the source
+   checkout produced the drift in the Context, which left every install action
+   failing. An install under `~/.agents/` has no supported path once decision 5
+   lands. Before 1.0 there is no migration out of any of these states, so the
+   `AGENTS.md` rule on fixed behavior allows the refusals as keeping an install
+   out of a state that breaks it.
 3. **Automatic updates are opt-in.** Updating the single source checkout can change
    files that open chats are reading. Scheduled updates stay opt-in until each revision
    gets its own folder.
