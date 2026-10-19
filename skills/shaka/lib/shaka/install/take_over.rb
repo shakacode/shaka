@@ -74,7 +74,9 @@ module Shaka
       end
 
       def take_over_targets
-        recorded = (@checkout.record&.fetch('targets') || []) + @owner.read_record.fetch('targets')
+        owner = @owner.read_record or
+          raise ArgumentError, "#{@owner.root} is no longer registered; run bin/install --take-over again"
+        recorded = (@checkout.record&.fetch('targets') || []) + owner.fetch('targets')
         recorded.group_by { |target| target.fetch('directory') }.map do |directory, entries|
           { 'directory' => directory, 'names' => entries.flat_map { |target| target.fetch('names') }.uniq }
         end

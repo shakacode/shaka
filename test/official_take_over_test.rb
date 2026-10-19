@@ -28,6 +28,16 @@ class OfficialTakeOverTest < Minitest::Test
     File.chmod(0o755, git_directory)
   end
 
+  # Another take-over can retire the owner after this one found it and before it took the locks.
+  def test_take_over_refuses_an_owner_retired_meanwhile
+    install_two_hosts
+    output, status = Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, '-r', retire_owner_first, @installer,
+                                     '--directory', @second, '--take-over')
+    refute_predicate status, :success?
+    assert_includes output, 'is no longer registered'
+    assert_links_point_at(@root)
+  end
+
   def test_take_over_without_another_owner_refuses
     output, status = invoke('--directory', @second, '--take-over')
     refute_predicate status, :success?
@@ -43,6 +53,16 @@ class OfficialTakeOverTest < Minitest::Test
   end
 
   private
+
+  def retire_owner_first
+    path = File.join(@directory, 'retire_owner_first.rb')
+    File.write(path, <<~RUBY)
+      require #{File.join(@source, 'lib/shaka/install/official.rb').inspect}
+      retire = Module.new { def take_over = File.rename("\#{@owner.root}/.git/shaka-install.json", "\#{@owner.root}/x") && super }
+      Shaka::Install::Official.prepend(retire)
+    RUBY
+    path
+  end
 
   def assert_retired_and_registered
     refute_path_exists File.join(@root, '.git/shaka-install.json')
