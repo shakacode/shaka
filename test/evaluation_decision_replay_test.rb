@@ -32,7 +32,7 @@ class EvaluationDecisionReplayTest < Minitest::Test
     saved = saved_harbor_record
     assert_equal '9.8.7', saved.dig('fingerprint', 'host_cli_version')
     fields = %w[fixture_ruby_version fixture_lockfile_hash local_reviewer_cli_versions judge_model_id
-                judge_prompt_hash]
+                judge_prompt_hash pinned_actions hosted_reviewer]
     assert_empty saved['judge']
     assert_equal ['N/A'], saved.fetch('fingerprint').values_at(*fields).uniq
     assert_empty Shaka::Evaluation::RunRecord.errors(saved)
@@ -56,6 +56,16 @@ class EvaluationDecisionReplayTest < Minitest::Test
     assert_equal 0, saved_harbor_record['score']
     assert_equal 'FAIL', saved_harbor_record.dig('outcome', 'state')
     assert_equal 0, budget.snapshot['pending']
+  end
+
+  def test_invalid_utf8_json_answer_is_failed_and_settled
+    setup_harbor
+    export_answer("{\"actions\":[\"handoff\"],\"reason\":\"\xff\"}".b)
+    account = budget
+    assert_equal 'complete', decision_run(account)['status']
+    assert_equal 0, saved_harbor_record['score']
+    assert_equal '1.0', account.snapshot['monthly_dollars']
+    assert_equal 0, account.snapshot['pending']
   end
 
   def test_native_failure_overrides_a_correct_decision

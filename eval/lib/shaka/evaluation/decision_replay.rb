@@ -40,7 +40,7 @@ module Shaka
         path = File.join(File.realpath(directory), 'verifier/decision.json')
         return unless File.file?(path) && File.realpath(path) == path
 
-        source = File.read(path, MAX_BYTES + 1, encoding: 'UTF-8')
+        source = File.binread(path, MAX_BYTES + 1).force_encoding(Encoding::UTF_8)
         JSON.parse(source) if source.bytesize <= MAX_BYTES && source.valid_encoding?
       rescue SystemCallError, JSON::ParserError
         nil

@@ -15,12 +15,14 @@ module EvaluationDecisionFixture
     end
   end
 
-  def export_decision(value)
+  def export_decision(value) = export_answer(JSON.generate(value))
+
+  def export_answer(source)
     path = File.join(@bin, 'harbor')
     script = File.read(path).sub(/^exit\(mode.*\n?\z/, '')
     script << <<~CODE
       FileUtils.mkdir_p(File.join(trial, 'verifier'))
-      File.write(File.join(trial, 'verifier/decision.json'), #{JSON.generate(value).inspect})
+      File.binwrite(File.join(trial, 'verifier/decision.json'), #{source.dump})
       exit(mode == 'exit' ? 1 : 0)
     CODE
     File.write(path, script)
