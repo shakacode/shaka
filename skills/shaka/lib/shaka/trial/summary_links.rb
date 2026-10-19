@@ -14,6 +14,8 @@ module Shaka
                 (?<path>/\S*)}ix
       # Sentence punctuation and Markdown closers that end a link without belonging to it.
       LINK_END = /[.,;:!?)\]`"'*_~]+\z/
+      # The same ending from its first closer, which a Markdown destination or quote ends at.
+      CLOSER_END = /[)\]`"'][.,;:!?)\]`"'*_~]*\z/
 
       module_function
 
@@ -26,7 +28,18 @@ module Shaka
         raise Error, 'Write each GitHub link in the summary as https://github.com/OWNER/REPO.' if
           mentions_github?(remainder) || links.any? { |link| mentions_github?(link[:path]) }
 
-        links.map { |link| repository(link) }
+        links.flat_map { |link| link_repositories(link) }.uniq
+      end
+
+      # A bare autolink drops trailing punctuation, but a Markdown destination keeps what precedes its
+      # closing bracket or quote, so both readings are checked.
+      def link_repositories(link)
+        raise Error, 'GitHub links in the summary must use the default port.' unless default_port?(link)
+
+        full = link[:path]
+        paths = [full.sub(LINK_END, '')]
+        paths << full.sub(CLOSER_END, '') if full.match?(CLOSER_END)
+        paths.uniq.map { |path| repository(path, full) }
       end
 
       # Markdown drops backslash escapes; browsers decode percent escapes, fold compatibility characters,
@@ -36,13 +49,10 @@ module Shaka
                            .gsub(/\p{Default_Ignorable_Code_Point}/, '').downcase.include?('github.com')
       end
 
-      def repository(link)
-        raise Error, 'GitHub links in the summary must use the default port.' unless default_port?(link)
-
-        path = link[:path].sub(LINK_END, '')
+      def repository(path, full)
         segments = path_segments(path)
         raise Error, 'GitHub links in the summary must not contain . or .. path segments.' if
-          segments.intersect?(%w[. ..]) || trailing_dot_segment?(path, link[:path])
+          segments.intersect?(%w[. ..]) || trailing_dot_segment?(path, full)
 
         Array(segments[1, 2]).join('/')
       end

@@ -138,6 +138,14 @@ class TrialReportTest < TrialReportFixture
     assert_empty calls
   end
 
+  def test_checks_the_repository_a_markdown_destination_keeps
+    ['See [notes](https://github.com/team/project_)', 'See [notes](https://github.com/team/project.)'].each do |summary|
+      assert_raises(Shaka::Error, summary) { report('private_result' => true, 'summary' => summary) }
+    end
+    assert_equal 2, (@looked_up & %w[repos/team/project_ repos/team/project.]).size
+    assert_empty calls
+  end
+
   def test_html_character_references_stay_inert_in_the_published_summary
     result = report('private_result' => true, 'summary' => 'See [notes](https://github&#46;com/acme/secret)')
     assert_includes result['body'], 'github&amp;#46;com'
@@ -149,7 +157,7 @@ class TrialReportTest < TrialReportFixture
                     'summary' => 'See www.github.com/team/project, http://WWW.GitHub.com:80/team/project, ' \
                                  'and https://github.com:443/team/project/pull/7.')
     assert_includes result['body'], 'www.github.com/team/project'
-    assert_equal 3, @looked_up.count('repos/team/project')
+    assert_includes @looked_up, 'repos/team/project'
   end
 
   def test_rejects_a_revision_outside_the_candidate_pr
