@@ -1,6 +1,7 @@
 # 0002: Install locations and no backward compatibility
 
-Status: accepted on 2026-10-18.
+Status: accepted on 2026-10-18; not yet implemented. Each decision ships
+through its sub-issue of #683, and until then the installer behaves as before.
 Date: 2026-10-18. Tracks [issue #683](https://github.com/shakacode/shaka/issues/683).
 
 ## Context
@@ -29,8 +30,8 @@ Issue #683 lists every reachable install state and the step that fixes each one.
 2. **Worktrees are refused.** The installer refuses a source checkout that is
    itself a linked worktree, because a worktree is deleted when its branch merges and
    every host link would break. It also refuses a checkout that hosts linked
-   worktrees or extra local branches, and verify warns when they appear later.
-   Develop in a separate clone.
+   worktrees or local branches other than the registered branch, and verify warns
+   when they appear later. Develop in a separate clone.
 3. **Automatic updates are opt-in.** Updating the single source checkout can change
    files that open chats are reading. Scheduled updates stay opt-in until each revision
    gets its own folder.
