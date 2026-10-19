@@ -12,6 +12,9 @@ module Shaka
     # Publishes tester feedback, not an automatic adoption or merge decision.
     class Report
       RESULT = %r{\Ahttps://github\.com/([\w-]+/[\w.-]+)/pull/([1-9]\d*)\z}
+      # A github.com link with an optional scheme, www., and port, not continuing another host or address.
+      SUMMARY_LINK = %r{(?<![\w.@/:-])(?:(?:(?<scheme>https?):)?//)?(?:www\.)?github\.com(?::(?<port>\d+))?
+                        (?<path>/[^\s)<>\[\]`"|]*)}ix
 
       def initialize(url, content, github: nil, results: nil)
         @url = url
@@ -80,12 +83,40 @@ module Shaka
         raise Error, 'Result PR must record the exact Shaka revision in its workflow provenance.'
       end
 
+      # Every GitHub mention must be a link this check can read; anything else is refused unchecked.
       def verify_summary_links
-        @summary.scan(%r{https?://github\.com/[^\s)<>\[\]`"|]+}i).each do |url|
-          path = URI::DEFAULT_PARSER.unescape(URI.parse(url.sub(/[.,;:!?]+\z/, '')).path)
-          repository = Array(path.split('/')[1, 2]).join('/')
-          public_repository!(repository)
+        links = []
+        remainder = @summary.gsub(SUMMARY_LINK) do
+          links << Regexp.last_match
+          ' '
         end
+        raise Error, 'Write each GitHub link in the summary as https://github.com/OWNER/REPO.' if
+          mentions_github?(remainder)
+
+        links.map { |link| summary_repository(link) }.each { |repository| public_repository!(repository) }
+      end
+
+      # Browsers decode percent escapes and fold compatibility characters in a host, so the search does too.
+      def mentions_github?(text)
+        URI::DEFAULT_PARSER.unescape(text).scrub('').unicode_normalize(:nfkc).downcase.include?('github.com')
+      end
+
+      def summary_repository(link)
+        raise Error, 'GitHub links in the summary must use the default port.' unless default_port?(link)
+        raise Error, 'GitHub links in the summary must not contain . or .. path segments.' if
+          path_segments(link[:path]).intersect?(%w[. ..])
+
+        Array(path_segments(link[:path].sub(/[.,;:!?]+\z/, ''))[1, 2]).join('/')
+      end
+
+      def default_port?(link)
+        link[:port].nil? || link[:port].to_i == (link[:scheme]&.downcase == 'http' ? 80 : 443)
+      end
+
+      def path_segments(path)
+        URI::DEFAULT_PARSER.unescape(URI.parse("https://github.com#{path}").path).split('/')
+      rescue URI::InvalidURIError
+        raise Error, 'Supply full GitHub repository URLs in the summary.'
       end
 
       def public_repository!(repository)
