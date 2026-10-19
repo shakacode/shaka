@@ -85,13 +85,16 @@ module Shaka
       end
 
       def roll_back(links, previous)
-        restore_owner_record
+        failed = !restore_owner_record
         links.zip(previous).reverse_each do |entry, links_before|
-          entry.restore_locked(links_before)
+          failed = true unless entry.restore_locked(links_before).empty?
         rescue SystemCallError, IOError => e
           warn "Could not restore links in #{entry.lock_directory}: #{e.message}"
+          failed = true
         end
-        warn "Take-over failed; links point at #{@owner.root} again"
+        return warn("Take-over failed; links point at #{@owner.root} again") unless failed
+
+        warn 'Take-over failed and could not undo every step; repair the paths named above by hand'
       end
 
       # Renames the previous record so its checkout stops claiming the links; the checkout itself stays.
@@ -105,12 +108,15 @@ module Shaka
         yield
       end
 
+      # Returns false when the old record stays retired.
       def restore_owner_record
-        return unless @retired && File.exist?(@retired) && !File.exist?(owner_record)
+        return true unless @retired && File.exist?(@retired) && !File.exist?(owner_record)
 
         File.rename(@retired, owner_record)
+        true
       rescue SystemCallError => e
         warn "Could not restore #{owner_record} from #{@retired}: #{e.message}"
+        false
       end
 
       def owner_record = File.join(@owner.root, '.git', Checkout::RECORD)

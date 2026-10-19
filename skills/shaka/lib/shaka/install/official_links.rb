@@ -32,6 +32,11 @@ module Shaka
 
       def lock_directory = File.realpath(@skills_dir)
 
+      def snapshot = @names.to_h { |name| [name, old_target(name)] }
+
+      # Restores only links that differ from the snapshot, so a host that never switched is left alone.
+      def restore_locked(previous) = restore_links(@names.reject { old_target(it) == previous[it] }, previous)
+
       def existing_names
         current = Package::ALLOWED.select { |name| File.symlink?(destination(name)) && owned?(name) }
         return current unless codex?

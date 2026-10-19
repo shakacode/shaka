@@ -30,6 +30,15 @@ class OfficialTakeOverRollbackTest < Minitest::Test
     end
   end
 
+  def test_a_failed_restore_is_reported_and_the_other_host_still_restored
+    install_two_hosts
+    output, status = take_over_with(failing_save_and_claude_restore)
+    refute_predicate status, :success?
+    assert_includes output, 'could not undo every step'
+    assert_includes output, 'Input/output error'
+    assert_equal File.join(File.realpath(@root), 'skills/shaka'), File.realpath(@destination)
+  end
+
   def test_an_interrupt_while_switching_a_host_puts_every_link_back
     install_two_hosts
     before = File.binread(File.join(@root, '.git/shaka-install.json'))
@@ -51,6 +60,15 @@ class OfficialTakeOverRollbackTest < Minitest::Test
   end
 
   private
+
+  def failing_save_and_claude_restore
+    save = checkout_patch('def save(*) = raise(Errno::EIO)')
+    restore = patch('official_links.rb', 'OfficialLinks',
+                    "def restore_locked(*) = @skills_dir.include?('.claude') ? raise(Errno::EACCES) : super")
+    path = File.join(@directory, 'failing_restore.rb')
+    File.write(path, "require #{save.inspect}\nrequire #{restore.inspect}\n")
+    path
+  end
 
   def assert_rolled_back(output, status)
     refute_predicate status, :success?

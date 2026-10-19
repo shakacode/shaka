@@ -27,13 +27,8 @@ module Shaka
       # The caller holds this directory's lock, so it can restore the links before anyone else changes them.
       def switch_locked(target)
         preflight(target)
-        switch_links(target, snapshot)
+        switch_links(target, @names.to_h { |name| [name, old_target(name)] })
       end
-
-      def snapshot = @names.to_h { |name| [name, old_target(name)] }
-
-      # Restores only links that differ from the snapshot, so a host that never switched is left alone.
-      def restore_locked(previous) = restore_links(@names.reject { old_target(it) == previous[it] }, previous)
 
       private
 
@@ -49,11 +44,14 @@ module Shaka
         end
       end
 
+      # Returns the names it could not restore, after warning about each one.
       def restore_links(changed, previous)
-        changed.reverse_each do |name|
+        changed.reverse.select do |name|
           restore(name, previous[name])
+          false
         rescue SystemCallError, IOError => e
           warn "Could not restore #{destination(name)}: #{e.message}"
+          true
         end
       end
 
