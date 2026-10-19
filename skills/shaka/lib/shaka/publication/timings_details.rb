@@ -7,12 +7,13 @@ module Shaka
   # Renders the time between checkpoints and how long each checkpoint waited on a person.
   class TimingsDetails
     SUMMARY = 'Timings'
+    UNAVAILABLE = 'GitHub did not supply the timeline; the next update tries again.'
     OPEN = ['still waiting', 'this update'].freeze
     GUIDE = '[Understand the timings](https://shaka.shakacode.com/docs/reference/timings).'
-    LEGEND = 'Times are UTC wall-clock time, nights and weekends included. A wait starts when an ' \
-             'attention label goes on and ends when it comes off or the pull request merges, so it ' \
-             "includes the agent's restart. Time between checkpoints is agent work, checks, and any wait no " \
-             'label marked. Waits under a minute count as time between checkpoints.'
+    LEGEND = 'Times are UTC wall-clock time. A wait runs from when an attention label goes on until it ' \
+             'comes off or the pull request merges or closes.'
+    # Thirty rows keep the body far below GitHub's size limit however often a pull request waits.
+    MAX_ROWS = 30
 
     def self.refuse_free_form!(items)
       return unless items.any? { |item| item.is_a?(Hash) && item['summary'].to_s.strip.match?(/\Atimings\b/i) }
@@ -28,12 +29,12 @@ module Shaka
     end
 
     def detail
-      reason = @timeline['unavailable']
-      return { 'summary' => "#{SUMMARY} · unavailable", 'body' => "GitHub did not supply the timeline: #{reason}" } if
-        reason
+      # The reason can quote gh output, so it stays out of the public body.
+      return { 'summary' => "#{SUMMARY} · unavailable", 'body' => UNAVAILABLE } if @timeline.key?('unavailable')
 
       rows = TimingStretches.new(@timeline, @now).rows
-      { 'summary' => summary(rows), 'body' => [table(rows), LEGEND, GUIDE].join("\n\n") }
+      body = [table(rows.last(MAX_ROWS)), omitted(rows), LEGEND, GUIDE].compact.join("\n\n")
+      { 'summary' => summary(rows), 'body' => body }
     end
 
     private
@@ -43,6 +44,12 @@ module Shaka
       parts = ["#{duration(total(rows.reject { |row| row[:wait] }))} between checkpoints"]
       parts << "#{duration(total(waited))} waiting on a person in #{count(waited.size)}" unless waited.empty?
       "#{SUMMARY} · #{parts.join(' · ')}"
+    end
+
+    def omitted(rows)
+      return if rows.size <= MAX_ROWS
+
+      "Showing the latest #{MAX_ROWS} of #{rows.size} stretches; the totals include all of them."
     end
 
     def count(waits) = waits == 1 ? '1 wait' : "#{waits} waits"

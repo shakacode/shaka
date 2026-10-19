@@ -69,10 +69,28 @@ class TimingsDetailsTest < Minitest::Test
     assert_equal ['Between checkpoints'], rows(detail).map(&:first)
   end
 
-  def test_an_unavailable_timeline_says_why_instead_of_blocking_publication
-    detail = Shaka::TimingsDetails.new({ 'unavailable' => 'GraphQL failed.' }).detail
+  def test_an_unavailable_timeline_is_noted_without_publishing_the_raw_error
+    detail = Shaka::TimingsDetails.new({ 'unavailable' => 'gh: HTTP 502 from api.github.com' }).detail
     assert_includes detail['summary'], 'unavailable'
-    assert_includes detail['body'], 'GraphQL failed.'
+    refute_includes detail['body'], 'HTTP 502'
+  end
+
+  def answered(waits)
+    (0...waits).flat_map do |index|
+      [label('awaiting-answer', index * 10), label('awaiting-answer', (index * 10) + 5, added: false)]
+    end
+  end
+
+  def test_only_the_latest_rows_show_while_the_totals_count_every_stretch
+    detail = Shaka::TimingsDetails.new(timeline(labels: answered(40), merged: at(400))).detail
+    assert_equal Shaka::TimingsDetails::MAX_ROWS, rows(detail).size
+    assert_includes detail['body'], 'of 80 stretches'
+    assert_includes detail['summary'], '3h 20m waiting on a person in 40 waits'
+  end
+
+  def test_a_just_opened_wait_shows_although_it_is_under_a_minute
+    detail = Shaka::TimingsDetails.new(timeline(labels: [label('awaiting-answer', 30)]), now: at(30)).detail
+    assert_equal ['Waiting on a person: answer', '<1m so far'], rows(detail).last.values_at(0, 3)
   end
 
   def test_a_hand_written_timings_item_is_refused

@@ -11,7 +11,7 @@ module Shaka
       query($owner: String!, $name: String!, $number: Int!, $cursor: String) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $number) {
-            createdAt mergedAt closedAt
+            state createdAt mergedAt closedAt
             commits(first: 1) { nodes { commit { committedDate } } }
             timelineItems(first: 100, after: $cursor, itemTypes: [LABELED_EVENT, UNLABELED_EVENT]) {
               pageInfo { hasNextPage endCursor }
@@ -26,6 +26,15 @@ module Shaka
       }
     GRAPHQL
     MAX_PAGES = 10
+
+    # Publishing decisions adds or drops awaiting-answer just after the body is written, so the body shows it now.
+    def self.with_decisions(timeline, content, now = Time.now.utc)
+      decisions = content['decisions']
+      return timeline unless decisions.is_a?(Array) && timeline.key?('labels')
+
+      event = { 'name' => Attention::LABELS.fetch('answer'), 'added' => !decisions.empty?, 'at' => now }
+      timeline.merge('labels' => [*timeline['labels'], event])
+    end
 
     def initialize(github)
       @github = github
@@ -78,7 +87,8 @@ module Shaka
         'opened' => Time.iso8601(pull.fetch('createdAt')),
         'first_commit' => first && Time.iso8601(first),
         'merged' => pull['mergedAt'] && Time.iso8601(pull['mergedAt']),
-        'closed' => pull['closedAt'] && Time.iso8601(pull['closedAt']),
+        # A reopened pull request keeps its old closedAt.
+        'closed' => pull['state'] == 'CLOSED' ? Time.iso8601(pull['closedAt']) : nil,
         'labels' => events.sort_by { |event| event['at'] }
       }
     end

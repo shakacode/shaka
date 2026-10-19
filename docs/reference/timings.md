@@ -39,13 +39,15 @@ adds a label when it stops for you and removes it when work resumes.
   wait the agent did not mark with a label.
 - The timeline starts at the first commit, so work before that is not counted.
   A rebase can move that date; when it falls after the PR opened, the first row is omitted.
-- Waits shorter than a minute are the agent relabeling the PR, so they count as
-  time between checkpoints.
-- The description shows timings as of its last update. If you merge the PR on
-  GitHub yourself, the final wait still reads `still waiting` with its time
-  marked `so far` until the agent updates the description again.
+- A finished wait shorter than a minute is the agent relabeling the PR, so it
+  counts as time between checkpoints.
+- When a PR has waited many times, the table shows the latest 30 stretches. The
+  title's totals still include every stretch.
+- The description shows timings as of its last update. The agent asks for your
+  merge approval after that update, so when you merge on GitHub yourself, the
+  final wait appears only if the agent updates the description again.
 
-If GitHub cannot supply the timeline, the section says so and gives the
-reason; the rest of the description still publishes.
+If GitHub cannot supply the timeline, the section says so and the rest of the
+description still publishes. The next update tries again.
 
 [Usage and cost](usage-and-cost.md) explains the section beside it.

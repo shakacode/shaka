@@ -24,7 +24,8 @@ class PullTimelineTest < Minitest::Test
   end
 
   def page(nodes, next_cursor: nil)
-    { 'createdAt' => '2026-10-18T08:00:00Z', 'mergedAt' => '2026-10-18T09:00:00Z', 'closedAt' => nil,
+    { 'state' => 'MERGED', 'createdAt' => '2026-10-18T08:00:00Z', 'mergedAt' => '2026-10-18T09:00:00Z',
+      'closedAt' => '2026-10-18T09:00:00Z',
       'commits' => { 'nodes' => [{ 'commit' => { 'committedDate' => '2026-10-18T07:30:00Z' } }] },
       'timelineItems' => { 'pageInfo' => { 'hasNextPage' => !next_cursor.nil?, 'endCursor' => next_cursor },
                            'nodes' => nodes } }
@@ -50,6 +51,21 @@ class PullTimelineTest < Minitest::Test
     timeline = read([page([])])
     assert_equal [Time.utc(2026, 10, 18, 7, 30), Time.utc(2026, 10, 18, 9)],
                  timeline.values_at('first_commit', 'merged')
+  end
+
+  def test_a_reopened_pull_request_is_not_read_as_closed
+    reopened = page([]).merge('state' => 'OPEN', 'mergedAt' => nil)
+    assert_nil read([reopened])['closed']
+  end
+
+  def test_publishing_decisions_starts_or_ends_the_answer_wait_now
+    now = Time.utc(2026, 10, 18, 10)
+    timeline = { 'labels' => [] }
+    started = Shaka::PullTimeline.with_decisions(timeline, { 'decisions' => ['Which base?'] }, now)['labels']
+    ended = Shaka::PullTimeline.with_decisions(timeline, { 'decisions' => [] }, now)['labels']
+    assert_equal([['awaiting-answer', true, now]], started.map { |event| event.values_at('name', 'added', 'at') })
+    assert_equal([false], ended.map { |event| event['added'] })
+    assert_same timeline, Shaka::PullTimeline.with_decisions(timeline, {}, now)
   end
 
   def test_a_failed_read_is_reported_as_unavailable

@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
+require_relative '../attention'
+
 module Shaka
   # Divides a pull request's life into the time between checkpoints and each wait on a person.
   class TimingStretches
     BETWEEN = 'Between checkpoints'
     # The agent relabels a pull request while it hands off, so a shorter wait is not a person's.
     SHORTEST_WAIT = 60
-    WAITS = { 'awaiting-answer' => 'answer', 'awaiting-merge-approval' => 'merge approval',
-              'awaiting-resume' => 'resume' }.freeze
+    WAITS = Attention::LABELS.to_h { |state, label| [label, state == 'merge' ? 'merge approval' : state] }.freeze
 
     def initialize(timeline, now)
       @timeline = timeline
@@ -58,7 +59,8 @@ module Shaka
         apply(event, at)
       end
       close_open_wait
-      @found.select { |wait| wait[:to] - wait[:from] >= SHORTEST_WAIT }
+      # A wait still open is a person's however short, since the agent has stopped for them.
+      @found.select { |wait| wait[:ending] == 'still waiting' || wait[:to] - wait[:from] >= SHORTEST_WAIT }
     end
 
     def close_open_wait
@@ -87,7 +89,7 @@ module Shaka
     end
 
     def close(wait, at, ending)
-      labels = wait[:names].map { |name| WAITS.fetch(name) }.join(' and ')
+      labels = wait[:names].map { |name| WAITS.fetch(name, name) }.join(' and ')
       { name: "Waiting on a person: #{labels}", from: wait[:from], to: at, ending:, wait: true }
     end
   end
