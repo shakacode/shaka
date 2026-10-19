@@ -47,6 +47,14 @@ class PullTimelineTest < Minitest::Test
     assert_equal [['awaiting-answer', true], ['awaiting-answer', false]], labels
   end
 
+  def test_events_in_the_same_second_keep_github_order
+    swap = [event('UnlabeledEvent', 'awaiting-answer', '10'), event('LabeledEvent', 'awaiting-merge-approval', '10'),
+            event('UnlabeledEvent', 'awaiting-resume', '10'), event('LabeledEvent', 'awaiting-resume', '10')]
+    names = read([page(swap)])['labels'].map { |label| label.values_at('name', 'added') }
+    assert_equal [['awaiting-answer', false], ['awaiting-merge-approval', true],
+                  ['awaiting-resume', false], ['awaiting-resume', true]], names
+  end
+
   def test_reports_the_first_commit_and_the_merge
     timeline = read([page([])])
     assert_equal [Time.utc(2026, 10, 18, 7, 30), Time.utc(2026, 10, 18, 9)],

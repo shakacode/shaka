@@ -89,7 +89,8 @@ module Shaka
         'merged' => pull['mergedAt'] && Time.iso8601(pull['mergedAt']),
         # A reopened pull request keeps its old closedAt.
         'closed' => pull['state'] == 'CLOSED' ? Time.iso8601(pull['closedAt']) : nil,
-        'labels' => events.sort_by { |event| event['at'] }
+        # GitHub lists the timeline in order; sort_by is unstable and would reorder events within one second.
+        'labels' => events
       }
     end
   end
