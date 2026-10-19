@@ -22,10 +22,10 @@ module Shaka
     COMMIT = /\A[0-9a-f]{40}\z/
 
     def self.run(arguments)
-      return usage(arguments) unless arguments.empty?
+      return usage(arguments) unless arguments.empty? || arguments == [Notice::SESSION_START]
 
       check = installed
-      puts JSON.generate(result = check.result)
+      puts Notice.render(result = check.result, arguments)
       check.remember(result)
       0
     rescue Shaka::Error, JSON::ParserError, KeyError, SystemCallError => e
@@ -34,7 +34,7 @@ module Shaka
     end
 
     def self.usage(arguments)
-      puts 'Usage: shaka update-check (read-only, advisory; 15-second network deadline)'
+      puts 'Usage: shaka update-check [--session-start] (read-only, advisory; 15-second network deadline)'
       arguments == ['--help'] ? 0 : 1
     end
 

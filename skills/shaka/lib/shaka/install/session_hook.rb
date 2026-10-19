@@ -22,16 +22,18 @@ module Shaka
         puts change if change
       end
 
-      # Only the exact command the installer writes: a Shaka helper path followed by update-check.
+      ARGUMENTS = %w[update-check --session-start].freeze
+
+      # Only the exact command the installer writes: a Shaka helper path followed by ARGUMENTS.
       def self.owned?(hook)
         words = Shellwords.split(hook['command']) if hook.is_a?(Hash) && hook['command'].is_a?(String)
-        words&.size == 2 && words.first.match?(HELPER) && words.last == 'update-check'
+        words&.first&.match?(HELPER) && words.drop(1) == ARGUMENTS
       rescue ArgumentError
         false
       end
 
       def initialize(helper, home: Dir.home)
-        @command = "#{Shellwords.escape(helper)} update-check" if helper
+        @command = [helper, *ARGUMENTS].shelljoin if helper
         @path = File.join(home, SETTINGS)
       end
 

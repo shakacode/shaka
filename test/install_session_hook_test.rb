@@ -37,9 +37,10 @@ class InstallSessionHookTest < Minitest::Test
 
   def test_user_hooks_that_only_mention_a_helper_are_not_shaka_hooks
     helper = '/opt/skills/shaka/scripts/shaka'
-    ["echo #{helper} update-check", "#{helper} update-check --verbose", 'shaka update-check', "#{helper} doctor"]
+    start = 'update-check --session-start'
+    ["echo #{helper} #{start}", "#{helper} update-check", "#{helper} #{start} -v", "shaka #{start}", "#{helper} doctor"]
       .each { |command| refute Shaka::Install::SessionHook.owned?('command' => command), command }
-    assert Shaka::Install::SessionHook.owned?('command' => '/a\ b/skills/shaka/scripts/shaka update-check')
+    assert Shaka::Install::SessionHook.owned?('command' => "/a\\ b/skills/shaka/scripts/shaka #{start}")
   end
 
   def test_flag_needs_the_claude_host
@@ -61,7 +62,7 @@ class InstallSessionHookTest < Minitest::Test
   def test_reinstall_from_a_moved_checkout_replaces_the_old_command
     Shaka::Install::SessionHook.new('/old/skills/shaka/scripts/shaka', home: @home).apply(true)
     Shaka::Install::SessionHook.new('/new place/skills/shaka/scripts/shaka', home: @home).apply(true)
-    assert_equal ['/new\\ place/skills/shaka/scripts/shaka update-check'], shaka_commands
+    assert_equal ['/new\\ place/skills/shaka/scripts/shaka update-check --session-start'], shaka_commands
   end
 
   def test_unreadable_settings_refuse_the_flag_and_stay_untouched_without_it
@@ -102,7 +103,7 @@ class InstallSessionHookTest < Minitest::Test
   end
 
   def helper_command
-    "#{File.realpath(File.join(@home, '.agents/shaka'))}/skills/shaka/scripts/shaka update-check"
+    "#{File.realpath(File.join(@home, '.agents/shaka'))}/skills/shaka/scripts/shaka update-check --session-start"
   end
 
   def shaka_commands
@@ -112,7 +113,7 @@ class InstallSessionHookTest < Minitest::Test
 
   def without_shaka
     copy = settings
-    copy['hooks']['SessionStart'].reject! { |group| group['hooks'].any? { it['command'].end_with?('update-check') } }
+    copy['hooks']['SessionStart'].reject! { |group| group['hooks'].any? { Shaka::Install::SessionHook.owned?(it) } }
     copy
   end
 end

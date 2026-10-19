@@ -66,6 +66,18 @@ class StartupNoticeTest < Minitest::Test
     assert_equal 'drift', JSON.parse(File.read(cache)).dig('result', 'status')
   end
 
+  # update-check writes under the root the notice reads, so its answers are this helper's own.
+  def test_update_check_and_the_notice_name_the_same_checkout
+    assert_equal Shaka::UpdateCheck::ROOT, Shaka::StartupNotice::ROOT
+  end
+
+  def test_session_start_output_is_plain_text_for_the_chat
+    result = answer('available')
+    assert_equal 'Shaka update check (available): available guidance',
+                 Shaka::UpdateCheck::Notice.render(result, ['--session-start'])
+    assert_equal result, JSON.parse(Shaka::UpdateCheck::Notice.render(result, []))
+  end
+
   def test_cached_notice_runs_no_command
     remember('available', at: Time.now)
     script = 'warn "shaka: " + Shaka::StartupNotice.new(home: Dir.home, root: ARGV[0]).line'

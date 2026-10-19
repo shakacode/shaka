@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'time'
 
 module Shaka
@@ -8,6 +9,8 @@ module Shaka
     module Notice
       COMMITS = 3
       SECONDS = 24 * 60 * 60
+      # Claude Code adds a SessionStart hook's plain-text output to the new chat, but not a JSON answer.
+      SESSION_START = '--session-start'
       GUIDANCE = "Shaka suggests updating once it is #{COMMITS} commits or a day behind.".freeze
 
       # A usable count below the threshold waits unless the oldest missing commit is a day old.
@@ -17,6 +20,12 @@ module Shaka
         now - Time.iso8601(oldest.to_s) < SECONDS
       rescue ArgumentError
         true
+      end
+
+      def self.render(result, arguments)
+        return JSON.generate(result) if arguments.empty?
+
+        "Shaka update check (#{result['status']}): #{result['guidance']}"
       end
     end
   end
