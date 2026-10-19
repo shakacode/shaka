@@ -9,6 +9,7 @@ require_relative '../lib/shaka/call_log'
 Shaka::CallLog.start(ARGV.dup)
 
 require_relative '../lib/shaka/github'
+require_relative '../lib/shaka/github/pull_timeline'
 require_relative '../lib/shaka/attention'
 require_relative '../lib/shaka/pr_watch/command'
 require_relative '../lib/shaka/handoff'
@@ -116,6 +117,17 @@ rescue Shaka::Error, SystemCallError
 end
 
 # Links and the recommendation come from GitHub evidence for the head, not from the agent.
+# Returns the description body with the content and usage records it carried from the pull request.
+def rendered_description(described, github, pull, workflow_version, options)
+  root = options.fetch(:root)
+  carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
+  settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
+  timeline = Shaka::PullTimeline.new(github).call
+  rendered = Shaka::Publication.description(carried, workflow_version, pull, settings, timeline)
+  Shaka::DecisionLabels.guard(github, carried, pull['body'])
+  [rendered, carried, usage_records]
+end
+
 def resolved_description(content, github, options)
   content = Shaka::LocalReviewUsage.attach(content, options[:review])
   resolved = Shaka::CheckpointRecommendation.resolve(Shaka::DeploymentLink.resolve(content, github), github)
@@ -297,10 +309,8 @@ begin
                described = resolved_description(attributed, github, options)
                usage_records = carried = nil
                published = github.description(prose:) do |pull|
-                 carried, usage_records = Shaka::UsageRecords.carry_from(described, pull)
-                 settings = Shaka::PublicationSettings.prepare(root:, ref: options[:ref], pull:, options:, github:)
-                 rendered = Shaka::Publication.description(carried, workflow_version, pull, settings)
-                 Shaka::DecisionLabels.guard(github, carried, pull['body'])
+                 rendered, carried, usage_records = rendered_description(described, github, pull, workflow_version,
+                                                                         options.merge(root:))
                  rendered
                end
                attention = Shaka::DecisionLabels.sync(github, carried)
