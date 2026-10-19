@@ -96,10 +96,10 @@ module Shaka
         links.map { |link| summary_repository(link) }.each { |repository| public_repository!(repository) }
       end
 
-      # Browsers decode percent escapes, fold compatibility characters, map ideographic full stops,
-      # and drop invisible characters in a host, so the search does too.
+      # Markdown drops backslash escapes; browsers decode percent escapes, fold compatibility characters,
+      # map ideographic full stops, and drop invisible characters in a host. The search does all of that.
       def mentions_github?(text)
-        URI::DEFAULT_PARSER.unescape(text).scrub('').unicode_normalize(:nfkc).tr('。', '.')
+        URI::DEFAULT_PARSER.unescape(text.delete('\\')).scrub('').unicode_normalize(:nfkc).tr('。', '.')
                            .gsub(/\p{Default_Ignorable_Code_Point}/, '').downcase.include?('github.com')
       end
 
