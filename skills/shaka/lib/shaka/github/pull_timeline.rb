@@ -27,13 +27,17 @@ module Shaka
     GRAPHQL
     MAX_PAGES = 10
 
-    # Publishing decisions adds or drops awaiting-answer just after the body is written, so the body shows it now.
+    # Publishing decisions changes the labels just after the body is written, so the body shows that change now:
+    # an answer wait replaces every other attention label, and no decisions drop only the answer label.
     def self.with_decisions(timeline, content, now = Time.now.utc)
       decisions = content['decisions']
       return timeline unless decisions.is_a?(Array) && timeline.key?('labels')
 
-      event = { 'name' => Attention::LABELS.fetch('answer'), 'added' => !decisions.empty?, 'at' => now }
-      timeline.merge('labels' => [*timeline['labels'], event])
+      answer = Attention::LABELS.fetch('answer')
+      dropped = decisions.empty? ? [answer] : Attention::LABELS.values - [answer]
+      events = dropped.map { |name| { 'name' => name, 'added' => false, 'at' => now } }
+      events << { 'name' => answer, 'added' => true, 'at' => now } unless decisions.empty?
+      timeline.merge('labels' => [*timeline['labels'], *events])
     end
 
     def initialize(github)

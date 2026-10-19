@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'shaka/github/pull_timeline'
+require 'shaka/publication/timing_stretches'
 
 # The timeline comes from one paged GraphQL read, and a failed read becomes a reason rather than an error.
 class PullTimelineTest < Minitest::Test
@@ -71,9 +72,18 @@ class PullTimelineTest < Minitest::Test
     timeline = { 'labels' => [] }
     started = Shaka::PullTimeline.with_decisions(timeline, { 'decisions' => ['Which base?'] }, now)['labels']
     ended = Shaka::PullTimeline.with_decisions(timeline, { 'decisions' => [] }, now)['labels']
-    assert_equal([['awaiting-answer', true, now]], started.map { |event| event.values_at('name', 'added', 'at') })
-    assert_equal([false], ended.map { |event| event['added'] })
+    assert_equal(['awaiting-answer', true, now], started.last.values_at('name', 'added', 'at'))
+    assert_equal([['awaiting-answer', false]], ended.map { |event| event.values_at('name', 'added') })
     assert_same timeline, Shaka::PullTimeline.with_decisions(timeline, {}, now)
+  end
+
+  def test_an_answer_wait_ends_the_resume_wait_it_replaces
+    opened = Time.utc(2026, 10, 18, 8)
+    resume = { 'name' => 'awaiting-resume', 'added' => true, 'at' => opened + 600 }
+    timeline = { 'opened' => opened, 'labels' => [resume] }
+    projected = Shaka::PullTimeline.with_decisions(timeline, { 'decisions' => ['Which base?'] }, opened + 3600)
+    names = Shaka::TimingStretches.new(projected, opened + 3600).rows.map { |row| row[:name] }
+    assert_equal ['Between checkpoints', 'Waiting on a person: resume', 'Waiting on a person: answer'], names
   end
 
   def test_a_failed_read_is_reported_as_unavailable

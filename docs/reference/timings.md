@@ -17,6 +17,7 @@ Here is an example:
 
 The section's title adds up both kinds of time, for example
 `Timings · 4h 18m between checkpoints · 11h 2m waiting on a person in 2 waits`.
+The first total includes the time before the PR opened.
 
 ## What each stretch means
 
