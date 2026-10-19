@@ -21,12 +21,13 @@ module Shaka
         origin = git('config', '--get', 'remote.origin.url')
         return if origin == @repository
 
+        expected = Refusal.url(@repository)
         raise ArgumentError, Refusal.message(
           'Installation origin differs from the expected repository',
-          "#{@root} has origin #{origin}; expected #{@repository}",
-          Refusal.decide('which repository this installation follows', "to keep #{@repository}",
-                         Refusal.command('git', '-C', @root, 'remote', 'set-url', 'origin', @repository)),
-          note: "To install #{origin} instead, rerun bin/install with --repository and that URL"
+          "#{@root} has origin #{Refusal.url(origin)}; expected #{expected}",
+          Refusal.decide('which repository this installation follows', "to keep #{expected}",
+                         Refusal.command('git', '-C', @root, 'remote', 'set-url', 'origin', expected)),
+          note: "To install #{Refusal.url(origin)} instead, rerun bin/install with --repository and that URL"
         )
       end
 

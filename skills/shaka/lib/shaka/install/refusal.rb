@@ -25,7 +25,10 @@ module Shaka
         list.size > PATH_LIMIT ? "#{shown} and #{list.size - PATH_LIMIT} more" : shown
       end
 
-      def branch(repository, branch) = "the registered branch (origin/#{branch} of #{repository})"
+      def branch(repository, branch) = "the registered branch (origin/#{branch} of #{url(repository)})"
+
+      # Refusals are read by agents and pasted into PRs, so an HTTP URL's credentials never appear in one.
+      def url(value) = value.to_s.sub(%r{\A(https?://)[^/@]*@}i, '\\1')
 
       # Names the installation whose checkout holds a skill link's target, from that checkout's own record.
       def owner(target)

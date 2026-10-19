@@ -49,6 +49,13 @@ class OfficialInstallRefusalTest < Minitest::Test
     assert_succeeds('--update')
   end
 
+  def test_origin_credentials_never_appear_in_the_refusal
+    official_install
+    git('-C', @root, 'remote', 'set-url', 'origin', 'https://user:secret-token@example.com/other.git')
+    output = refusal('--update', 'has origin https://example.com/other.git')
+    refute_includes output, 'secret-token'
+  end
+
   def test_rewritten_origin_says_the_installation_is_unchanged
     official_install
     before = git('-C', @root, 'rev-parse', 'HEAD').strip
