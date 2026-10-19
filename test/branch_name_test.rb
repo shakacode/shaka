@@ -7,7 +7,7 @@ require 'shaka/branch_name'
 class BranchNameTest < Minitest::Test
   def test_rejects_names_git_resolves_through_refs_first
     with_git_repository(ignorecase: false) do |root|
-      %w[heads/main tags/v1 remotes/origin/main].each do |value|
+      %w[heads/main tags/v1 remotes/origin/main Heads/main REFS/heads/main].each do |value|
         error = assert_raises(Shaka::Error) { explicit!(value, root) }
 
         assert_includes error.message, 'base_branch must be a branch name, not a qualified ref'

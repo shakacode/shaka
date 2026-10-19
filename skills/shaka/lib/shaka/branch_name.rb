@@ -12,7 +12,8 @@ module Shaka
   # it. A qualified `refs/heads/main` names a ref rather than the branch GitHub targets.
   # Git looks a short name up as `refs/NAME` before `refs/heads/NAME`, so a branch named
   # `heads/main`, `tags/v1`, or `remotes/origin/main` resolves to that other ref instead.
-  # Those prefixes are refused by shape. A branch named like an existing tag, or `stash`
+  # Those prefixes are refused by shape in any case, because a case-insensitive filesystem
+  # also finds `refs/heads/main` for `Heads/main`. A branch named like an existing tag, or `stash`
   # beside `refs/stash`, collides only where that ref exists, which a name check cannot see.
   # And a name that collides with one of Git's own root refs resolves to that ref wherever a
   # revision is expected, so `git diff FETCH_HEAD...HEAD` would compare against something
@@ -29,7 +30,7 @@ module Shaka
     # A NUL reaches here from a hand-edited seam through YAML, and Open3 answers it with an
     # ArgumentError the callers do not rescue, so it is refused before Git is spawned.
     CONTROL = /[[:cntrl:]]/
-    QUALIFIED = %r{\A(?:refs|heads|tags|remotes)/}
+    QUALIFIED = %r{\A(?:refs|heads|tags|remotes)/}i
     ROOT_REF = /\A(?:@|[A-Z][A-Z0-9_]*)\z/
     CASELESS_ROOT_REF = /\A(?:[A-Z_-]*_HEAD|HEAD|AUTO_MERGE|BISECT_EXPECTED_REV|
                            NOTES_MERGE_PARTIAL|NOTES_MERGE_REF|MERGE_AUTOSTASH)\z/xi
