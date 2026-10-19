@@ -16,10 +16,11 @@ module Shaka
       HELPER = %r{\A/.*/skills/shaka/scripts/shaka\z}
 
       # Each Claude Code installation chooses again, so installing it without --session-hook removes an earlier hook.
-      # The hook runs the helper behind the Claude Code skill link, which the installation just set.
+      # The hook runs the helper through the Claude Code skill link, so it follows the link when
+      # another checkout takes the installation over.
       def self.choose(enabled, home: Dir.home)
-        skill = File.realpath(File.join(home, Official::HOSTS.fetch('claude'), 'shaka')) if enabled
-        change = new(skill && File.join(skill, 'scripts/shaka'), home:).apply(enabled)
+        helper = File.join(home, Official::HOSTS.fetch('claude'), 'shaka/scripts/shaka') if enabled
+        change = new(helper, home:).apply(enabled)
         puts change if change
       end
 
@@ -31,6 +32,20 @@ module Shaka
         words&.first&.match?(HELPER) && words.drop(1) == ARGUMENTS
       rescue ArgumentError
         false
+      end
+
+      def self.validate(options)
+        return if !options[:session_hook] || options[:agents].include?('claude')
+
+        raise ArgumentError, '--session-hook requires --agent claude'
+      end
+
+      # Refuses unreadable settings before the installation changes anything, then sets or removes
+      # the hook once a Claude Code installation succeeds. Maintenance leaves the hook as it is.
+      def self.around(options, maintenance)
+        new(nil).send(:read, strict: true) if options[:session_hook]
+        yield
+        choose(options[:session_hook]) if !maintenance && options[:agents].include?('claude')
       end
 
       def initialize(helper, home: Dir.home)

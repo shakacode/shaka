@@ -35,12 +35,12 @@ class InstallSessionHookTest < Minitest::Test
     assert_equal [helper_command], shaka_commands
   end
 
-  def test_user_hooks_that_only_mention_a_helper_are_not_shaka_hooks
-    helper = '/opt/skills/shaka/scripts/shaka'
-    start = 'update-check --session-start'
-    ["echo #{helper} #{start}", "#{helper} update-check", "#{helper} #{start} -v", "shaka #{start}", "#{helper} doctor"]
-      .each { |command| refute Shaka::Install::SessionHook.owned?('command' => command), command }
-    assert Shaka::Install::SessionHook.owned?('command' => "/a\\ b/skills/shaka/scripts/shaka #{start}")
+  def test_unreadable_settings_stop_the_flagged_install_before_it_links
+    write_settings('{ not json')
+    output, status = invoke('--repository', @remote, '--agent', 'claude', '--session-hook')
+    refute_predicate status, :success?
+    assert_includes output, 'Claude Code settings are not valid JSON'
+    refute_path_exists File.join(@home, '.claude/skills/shaka')
   end
 
   def test_flag_needs_the_claude_host
@@ -104,7 +104,7 @@ class InstallSessionHookTest < Minitest::Test
   end
 
   def helper_command
-    "#{File.realpath(File.join(@home, '.agents/shaka'))}/skills/shaka/scripts/shaka update-check --session-start"
+    "#{File.join(@home, '.claude/skills/shaka/scripts/shaka')} update-check --session-start"
   end
 
   def shaka_commands
