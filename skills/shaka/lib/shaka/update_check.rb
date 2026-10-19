@@ -4,6 +4,7 @@ require 'json'
 require 'shellwords'
 require 'tmpdir'
 require_relative 'doctor/installation_identity'
+require_relative 'update_check/cache'
 require_relative 'update_check/launch'
 require_relative 'update_check/messages'
 require_relative 'update_check/notice'
@@ -23,7 +24,9 @@ module Shaka
     def self.run(arguments)
       return usage(arguments) unless arguments.empty?
 
-      puts JSON.generate(installed.result)
+      check = installed
+      puts JSON.generate(result = check.result)
+      check.remember(result)
       0
     rescue Shaka::Error, JSON::ParserError, KeyError, SystemCallError => e
       warn "Shaka update check unavailable: #{e.class}. See #{GUIDE} and retry."
@@ -56,6 +59,9 @@ module Shaka
       @checkout = checkout
       @runner = runner
     end
+
+    # Later helper calls repeat a registered checkout's answer from this cache instead of the network.
+    def remember(result) = (Cache.record(@checkout, result) if @checkout)
 
     def result
       return answer('uninstalled', 'Use the official installer to receive update guidance.') if
