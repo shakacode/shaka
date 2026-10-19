@@ -5,7 +5,7 @@ require_relative 'checkout'
 require_relative 'official_links'
 require_relative 'direct_source'
 require_relative 'link_lock'
-require_relative 'official_ruby'
+require_relative 'ruby_record'
 require_relative 'take_over'
 require_relative 'take_over_owner'
 
@@ -14,7 +14,7 @@ module Shaka
     # Keeps the official skill in one dedicated checkout, separate from PR trial packages.
     class Official
       include LinkLock
-      include OfficialRuby
+      include RubyRecord
       include TakeOver
       include TakeOverOwner
 
@@ -130,7 +130,7 @@ module Shaka
       def verify(targets, identity: true)
         targets.each { |target| links_for(target).verify(@checkout.root) }
         verify_identity(targets) if identity
-        verify_ruby
+        verify_ruby(targets)
         puts "Verified Shaka installation: #{@checkout.root} (#{@checkout.revision[0, 7]})"
       end
     end

@@ -4,6 +4,7 @@ require 'fileutils'
 require_relative 'package'
 require_relative 'link_lock'
 require_relative 'directory_safety'
+require_relative 'link_refusal'
 
 module Shaka
   module Install
@@ -11,6 +12,7 @@ module Shaka
     class Links
       include LinkLock
       include DirectorySafety
+      include LinkRefusal
 
       def initialize(skills_dir, managed, source, names)
         @skills_dir = skills_dir
@@ -34,14 +36,10 @@ module Shaka
 
       def switch_links(target, previous)
         changed = []
-        begin
-          @names.each do |name|
-            switch_and_record(name, target, changed)
-          end
-        rescue SystemCallError, IOError => e
-          restore_links(changed, previous)
-          raise e
-        end
+        @names.each { |name| switch_and_record(name, target, changed) }
+      rescue SystemCallError, IOError
+        restore_links(changed, previous)
+        raise
       end
 
       # Returns the names it could not restore, after warning about each one.
@@ -74,7 +72,8 @@ module Shaka
           next unless File.exist?(destination(name)) || File.symlink?(destination(name))
           next if owned?(name)
 
-          raise ArgumentError, "Refusing existing destination: #{destination(name)}"
+          path = destination(name)
+          raise ArgumentError, existing_refusal("Refusing existing destination: #{path}", name, move_aside(path))
         end
       end
 
