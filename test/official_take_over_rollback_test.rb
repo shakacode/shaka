@@ -38,10 +38,11 @@ class OfficialTakeOverRollbackTest < Minitest::Test
     assert_equal before, File.binread(File.join(@root, '.git/shaka-install.json'))
   end
 
-  # Once the new record is saved the take-over stands, so a late interrupt must not move links back.
+  # A Ctrl-C while the records change waits until both are done, then the take-over stands.
   def test_an_interrupt_after_the_new_record_is_saved_keeps_the_take_over
     install_two_hosts
-    output, status = take_over_with(checkout_patch('def save(*) = super.tap { raise Interrupt }'))
+    interrupt = "def save(*) = super.tap { system('kill', '-INT', Process.pid.to_s) && sleep(1) }"
+    output, status = take_over_with(checkout_patch(interrupt))
     refute_predicate status, :success?
     refute_includes output, 'links point at'
     assert_links_point_at(@second)

@@ -1,41 +1,12 @@
 # frozen_string_literal: true
 
+require 'English'
+
 module Shaka
   module Install
     # Moves every host link from the registered checkout that owns them to this one, as one step.
     module TakeOver
       private
-
-      # The checkout whose `shaka` links the host skills directories point at, other than this one.
-      def owning_checkout(selected, skills_dir)
-        directories = skills_dir ? [skills_dir] : host_directories
-        owners = link_owners(directories) - [Checkout.new(selected).root]
-        return Checkout.new(owners.first).tap(&:verify_directories) if owners.size == 1
-        raise ArgumentError, no_owner_message(directories) if owners.empty?
-
-        raise ArgumentError, "Several registered checkouts own Shaka links (#{owners.join(', ')}); " \
-                             'a person must choose which to keep'
-      end
-
-      def host_directories = Official::HOSTS.values.map { |path| File.join(Dir.home, path) }
-
-      def no_owner_message(directories)
-        "No other registered checkout owns the Shaka links in #{directories.join(', ')}; " \
-          'run bin/install without --take-over'
-      end
-
-      def link_owners(directories)
-        directories.filter_map { |directory| link_owner(File.join(directory, 'shaka')) }.uniq
-      end
-
-      def link_owner(link)
-        return unless File.symlink?(link)
-
-        owner = File.dirname(File.realpath(link), 2)
-        owner if File.file?(File.join(owner, '.git', Checkout::RECORD))
-      rescue Errno::ENOENT, Errno::ELOOP
-        nil
-      end
 
       # A take-over clones the repository and branch the previous checkout follows unless told otherwise.
       def source_options(options)
@@ -83,24 +54,40 @@ module Shaka
       end
 
       # Until the new record is saved, a failure or an interrupt puts every host's links and the old record back.
-      # The saved record is the commit point: after it, the take-over stands and nothing is undone.
+      # Signals wait while the records change and while rolling back, so neither step is left half done.
       def move_links(links, &)
         previous = links.map(&:snapshot)
-        before = new_record_bytes
         links.each { |entry| entry.switch_locked(@checkout.root) }
-        retire_owner(&)
+        commit(&)
+        puts "Retired previous installation record: #{@retired}"
       rescue StandardError, SignalException
-        raise unless new_record_bytes == before
+        raise if @committed
 
-        links.zip(previous).reverse_each { |entry, links_before| entry.restore_locked(links_before) }
-        restore_owner_record
-        warn "Take-over failed; links point at #{@owner.root} again"
+        deferring_signals { roll_back(links, previous) }
         raise
       end
 
-      def new_record_bytes
-        path = File.join(@checkout.root, '.git', Checkout::RECORD)
-        File.binread(path) if File.exist?(path)
+      def commit(&)
+        deferring_signals do
+          retire_owner(&)
+          @committed = true
+        end
+      end
+
+      # Holds Ctrl-C and SIGTERM until the block finishes, then raises the first one that arrived.
+      def deferring_signals
+        pending = nil
+        previous = %w[INT TERM].to_h { |name| [name, trap(name) { pending ||= name }] }
+        yield
+      ensure
+        previous.each { |name, handler| trap(name, handler || 'DEFAULT') }
+        raise SignalException, pending if pending && !$ERROR_INFO
+      end
+
+      def roll_back(links, previous)
+        links.zip(previous).reverse_each { |entry, links_before| entry.restore_locked(links_before) }
+        restore_owner_record
+        warn "Take-over failed; links point at #{@owner.root} again"
       end
 
       # Renames the previous record so its checkout stops claiming the links; the checkout itself stays.
@@ -112,7 +99,6 @@ module Shaka
         @retired = retired
         File.rename(owner_record, retired)
         yield
-        puts "Retired previous installation record: #{retired}"
       end
 
       def restore_owner_record

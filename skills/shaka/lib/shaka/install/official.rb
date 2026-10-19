@@ -7,6 +7,7 @@ require_relative 'direct_source'
 require_relative 'link_lock'
 require_relative 'official_ruby'
 require_relative 'take_over'
+require_relative 'take_over_owner'
 
 module Shaka
   module Install
@@ -15,6 +16,7 @@ module Shaka
       include LinkLock
       include OfficialRuby
       include TakeOver
+      include TakeOverOwner
 
       HOSTS = { 'codex' => '.agents/skills', 'claude' => '.claude/skills', 'cursor' => '.cursor/skills',
                 'opencode' => '.config/opencode/skills' }.freeze
@@ -22,7 +24,7 @@ module Shaka
       def initialize(source, options)
         selected = options[:directory] || (source if options[:take_over]) || registered_source(source) ||
                    File.join(Dir.home, '.agents/shaka')
-        @owner = owning_checkout(selected, options[:skills_dir]) if options[:take_over]
+        @owner = owning_checkout(selected, options[:skills_dir], registered_source(source)) if options[:take_over]
         @checkout = Checkout.new(selected, **source_options(options))
         @agents = options.fetch(:agents)
         @skills_dir = options[:skills_dir]

@@ -16,6 +16,18 @@ class OfficialTakeOverTest < Minitest::Test
     assert_predicate status, :success?, output
   end
 
+  # The refusal for a registered development clone prints this command; links in a custom directory still move.
+  def test_the_printed_command_moves_links_in_a_custom_skills_directory
+    official_install
+    git('-C', @root, 'branch', 'topic')
+    output, = invoke
+    command = output[/--directory \S+ --take-over/]
+    refute_nil command, output
+    output, status = invoke('--directory', @second, '--take-over')
+    assert_predicate status, :success?, output
+    assert_equal File.join(File.realpath(@second), 'skills/shaka'), File.realpath(@destination)
+  end
+
   def test_take_over_refuses_an_owner_other_accounts_can_write
     install_two_hosts
     git_directory = File.join(@root, '.git')
