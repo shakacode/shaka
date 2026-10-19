@@ -25,7 +25,7 @@ module Shaka
       return usage(arguments) unless arguments.empty? || arguments == [Notice::SESSION_START]
 
       check = installed
-      puts Notice.render(result = check.result, arguments)
+      print Notice.render(result = check.result, arguments)
       check.remember(result)
       0
     rescue Shaka::Error, JSON::ParserError, KeyError, SystemCallError => e

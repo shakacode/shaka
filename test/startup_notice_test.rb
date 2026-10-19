@@ -72,10 +72,10 @@ class StartupNoticeTest < Minitest::Test
   end
 
   def test_session_start_output_is_plain_text_for_the_chat
-    result = answer('available')
-    assert_equal 'Shaka update check (available): available guidance',
-                 Shaka::UpdateCheck::Notice.render(result, ['--session-start'])
-    assert_equal result, JSON.parse(Shaka::UpdateCheck::Notice.render(result, []))
+    render = Shaka::UpdateCheck::Notice.method(:render)
+    assert_equal "Shaka update check (drift): drift guidance\n", render.call(answer('drift'), ['--session-start'])
+    assert_equal '', render.call(answer('current'), ['--session-start'])
+    assert_equal answer('current'), JSON.parse(render.call(answer('current'), []))
   end
 
   def test_cached_notice_runs_no_command

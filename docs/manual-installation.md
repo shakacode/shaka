@@ -94,7 +94,8 @@ A command run from a different Shaka checkout than your skill links point to
 prints one line naming the linked one. Set `SHAKA_NOTICES=off` to silence both.
 
 To run `update-check` whenever a Claude Code chat starts, add `--session-hook`
-to `bin/install --agent claude`. That adds one `SessionStart` hook to
+to `bin/install --agent claude`. The new chat then hears about an update or a
+moved checkout without the agent running the check. That adds one `SessionStart` hook to
 `~/.claude/settings.json`; installing with `--agent claude` again without the flag removes it.
 
 When an update is due, finish active Shaka chats, fetch and apply it, then start a new chat:

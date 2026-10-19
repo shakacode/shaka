@@ -4,6 +4,7 @@ require 'shellwords'
 require 'time'
 require_relative 'install/official'
 require_relative 'update_check/cache'
+require_relative 'update_check/notice'
 
 module Shaka
   # Prints at most one stderr line when a helper call starts: a host link names a different
@@ -14,7 +15,7 @@ module Shaka
     ROOT = File.expand_path('../../../..', __dir__)
     # update-check prints its own answer, and install reports the installation it changes.
     SKIPPED = %w[install update-check].freeze
-    ACTIONABLE = %w[available drift].freeze
+    ACTIONABLE = UpdateCheck::Notice::ACTIONABLE
 
     def self.call(arguments, env: ENV, output: $stderr)
       return if env[VARIABLE] == 'off' || arguments.empty? || SKIPPED.include?(arguments.first)
