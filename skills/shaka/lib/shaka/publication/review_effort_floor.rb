@@ -32,11 +32,16 @@ module Shaka
 
     def self.word?(rule, path)
       words = Array(rule['words']).flat_map { |word| [word, "#{word}s"] }
-      path.downcase.split(/[^a-z0-9]+/).intersect?(words) && !glob?(rule['words_except'], path)
+      tokens(path).intersect?(words) && !glob?(rule['words_except'], path)
+    end
+
+    # CamelCase names split like snake_case ones: AuthService and HTTPAuth both hold auth.
+    def self.tokens(path)
+      path.gsub(/([a-z0-9])([A-Z])|([A-Z])([A-Z][a-z])/, '\\1\\3 \\2\\4').downcase.split(/[^a-z0-9]+/)
     end
 
     def self.glob?(globs, path) = Array(globs).any? { |glob| File.fnmatch?(glob, path, GLOB) }
 
-    private_class_method :match?, :word?, :glob?
+    private_class_method :match?, :word?, :tokens, :glob?
   end
 end
