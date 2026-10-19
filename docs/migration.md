@@ -36,6 +36,6 @@ none of your repository's scripts, so check the result and run your validation b
 committing. Merge it in its own PR; until then, Shaka keeps reading settings from
 your default branch.
 
-If the upgrade is interrupted, ask your agent to recover it. Recovery restores
-only the files that upgrade recorded. It refuses to overwrite a file you edited
-after the interruption, so you repair that file by hand.
+If the upgrade is interrupted, ask your agent to recover it. The recovery command
+restores only the files that upgrade recorded. It refuses to overwrite a file you
+edited after the interruption, so you repair that file by hand.
