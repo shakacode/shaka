@@ -28,7 +28,12 @@ module Shaka
       def branch(repository, branch) = "the registered branch (origin/#{branch} of #{url(repository)})"
 
       # Refusals are read by agents and pasted into PRs, so an HTTP URL's credentials never appear in one.
-      def url(value) = value.to_s.sub(%r{\A(https?://)[^/@]*@}i, '\\1')
+      # The placeholder stays visible, so a reader knows to supply them before running a printed command.
+      # Matching to the last @ before the path covers passwords that themselves contain @.
+      def url(value)
+        value.to_s.sub(%r{\A(https?://)[^/]*@}i, '\\1CREDENTIALS@')
+             .sub(%r{\A([a-z][a-z0-9+.-]*://)[^/@]*:[^/]*@}i, '\\1CREDENTIALS@')
+      end
 
       # Names the installation whose checkout holds a skill link's target, from that checkout's own record.
       def owner(target)
