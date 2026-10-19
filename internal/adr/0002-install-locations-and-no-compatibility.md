@@ -24,14 +24,14 @@ Issue #683 lists every reachable install state and the step that fixes each one.
 
 ## Decisions
 
-1. **New installs live in `~/.local/share/shaka/source`.** `.agents/shaka` is the
+1. **New installs default to `~/.local/share/shaka/source`.** `.agents/shaka` is the
    settings location only. The installer refuses `~/.agents/shaka` and any directory
    under `~/.agents/` as an install directory.
 2. **Worktrees are refused.** The installer refuses a source checkout that is
    itself a linked worktree, because a worktree is deleted when its branch merges and
    every host link would break. It also refuses a checkout that hosts linked
-   worktrees or local branches other than the registered branch, and verify warns
-   when they appear later. Develop in a separate clone.
+   worktrees or local branches other than the registered branch, and
+   `install --verify` warns when they appear later. Develop in a separate clone.
 3. **Automatic updates are opt-in.** Updating the single source checkout can change
    files that open chats are reading. Scheduled updates stay opt-in until each revision
    gets its own folder.
