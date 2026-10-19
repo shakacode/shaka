@@ -91,14 +91,16 @@ module Shaka
           ' '
         end
         raise Error, 'Write each GitHub link in the summary as https://github.com/OWNER/REPO.' if
-          mentions_github?(remainder)
+          mentions_github?(remainder) || links.any? { |link| mentions_github?(link[:path]) }
 
         links.map { |link| summary_repository(link) }.each { |repository| public_repository!(repository) }
       end
 
-      # Browsers decode percent escapes and fold compatibility characters in a host, so the search does too.
+      # Browsers decode percent escapes, fold compatibility characters, map ideographic full stops,
+      # and drop invisible characters in a host, so the search does too.
       def mentions_github?(text)
-        URI::DEFAULT_PARSER.unescape(text).scrub('').unicode_normalize(:nfkc).downcase.include?('github.com')
+        URI::DEFAULT_PARSER.unescape(text).scrub('').unicode_normalize(:nfkc).tr('。', '.')
+                           .gsub(/\p{Default_Ignorable_Code_Point}/, '').downcase.include?('github.com')
       end
 
       def summary_repository(link)

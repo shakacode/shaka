@@ -124,7 +124,10 @@ class TrialReportTest < TrialReportFixture
   def test_refuses_github_mentions_outside_a_checked_link
     ['Hosted on github.com.', 'See https://gist.github.com/team/project', 'See https://github.com\\acme\\secret',
      'See https://github.com:8443/team/project', 'See https://user@github.com/team/project',
-     'See https://github%2Ecom/team/project', "See https://\uFF47ithub.com/team/project"].each do |summary|
+     'See https://github%2Ecom/team/project', "See https://\uFF47ithub.com/team/project",
+     "See https://github\u3002com/acme/secret", "See https://git\u00ADhub.com/acme/secret",
+     'See https://github.com/team/project?next=https://github.com/acme/secret',
+     'See https://github.com/team/project#https://www.github.com/acme/secret'].each do |summary|
       assert_raises(Shaka::Error, summary) { report('private_result' => true, 'summary' => summary) }
     end
     assert_empty calls
