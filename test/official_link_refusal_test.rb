@@ -85,7 +85,7 @@ class OfficialLinkRefusalTest < Minitest::Test
 
   def second_install(directory, skills_dir)
     clone = File.join(@directory, 'second-source')
-    git('clone', '-q', @remote, clone) unless File.directory?(clone)
+    git('clone', '-q', '-b', 'main', @remote, clone) unless File.directory?(clone)
     Open3.capture2e({ 'HOME' => @home }, RbConfig.ruby, File.join(clone, 'bin/install'),
                     '--directory', directory, '--repository', @remote, '--skills-dir', skills_dir)
   end

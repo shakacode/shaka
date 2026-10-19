@@ -65,7 +65,7 @@ class OfficialInstallRefusalTest < Minitest::Test
 
   def rewrite_origin
     clone = File.join(@directory, 'rewrite')
-    git('clone', '-q', @remote, clone)
+    git('clone', '-q', '-b', 'main', @remote, clone)
     git('-C', clone, '-c', 'user.name=T', '-c', 'user.email=t@x', 'commit', '--amend', '-qm', 'rewritten')
     git('-C', clone, 'push', '--force', '-q', 'origin', 'main')
   end
