@@ -33,6 +33,10 @@ module Shaka
         unknown('branch_moved', "#{@target} no longer contains checkout commit #{head[0, 7]}.")
       end
 
+      def recent(count)
+        answer('recent', "#{lag(count)} #{Notice::GUIDANCE}").merge('commits_behind' => count)
+      end
+
       # GitHub reports the comparison from the installed revision, so its ahead count is how far behind this is.
       def available(ahead_by)
         count = ahead_by if ahead_by.is_a?(Integer) && ahead_by.positive?

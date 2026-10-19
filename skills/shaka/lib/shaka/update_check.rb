@@ -6,6 +6,7 @@ require 'tmpdir'
 require_relative 'doctor/installation_identity'
 require_relative 'update_check/launch'
 require_relative 'update_check/messages'
+require_relative 'update_check/notice'
 
 module Shaka
   # Advisory comparison with the registered origin branch; never changes an installation.
@@ -92,13 +93,14 @@ module Shaka
     def github(repository, head)
       endpoint = "repos/#{repository}/compare/#{head}...#{@branch}"
       output, error, ok = @runner.call(['gh', 'api', '--hostname', 'github.com', endpoint, '--jq',
-                                        '{status: .status, ahead_by: .ahead_by}'], Dir.tmpdir)
+                                        '{status: .status, ahead_by: .ahead_by, ' \
+                                        'oldest: .commits[0].commit.committer.date}'], Dir.tmpdir)
       return request_failed(error) unless ok
 
       response = JSON.parse(output)
       raise TypeError unless response.is_a?(Hash)
 
-      comparison(response['status'], response['ahead_by'], head)
+      comparison(response, head)
     end
 
     def checkout_head
@@ -124,10 +126,12 @@ module Shaka
 
     def git(*arguments) = @runner.call(['git', '-C', @checkout, *arguments], @checkout)
 
-    def comparison(status, ahead_by, head)
-      case status
+    # Only an upstream lag waits for the notice threshold; a moved checkout needs action now.
+    def comparison(response, head)
+      ahead_by = response['ahead_by']
+      case response['status']
       when 'identical' then head == recorded ? current : drift(head)
-      when 'ahead' then available(ahead_by)
+      when 'ahead' then Notice.wait?(ahead_by, response['oldest']) ? recent(ahead_by) : available(ahead_by)
       when 'behind', 'diverged' then @checkout ? branch_moved(head) : custom
       else raise TypeError
       end

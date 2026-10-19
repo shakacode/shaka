@@ -16,7 +16,8 @@ module UpdateCheckSupport
   def check(status, **options)
     @options = DEFAULTS.merge(options)
     @calls = []
-    @github = @options[:github] || [JSON.generate({ 'status' => status, 'ahead_by' => @options[:ahead_by] }), '', true]
+    @github = @options[:github] || [JSON.generate({ 'status' => status, 'ahead_by' => @options[:ahead_by],
+                                                    'oldest' => '2020-01-01T00:00:00Z' }), '', true]
     Shaka::UpdateCheck.new(source: @options[:source], branch: @options[:branch], checkout: @options[:checkout],
                            helper: '/installed path/scripts/shaka', runner: method(:answer)).result
   end
