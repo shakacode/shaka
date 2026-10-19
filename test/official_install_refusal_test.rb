@@ -43,7 +43,8 @@ class OfficialInstallRefusalTest < Minitest::Test
   def test_changed_origin_names_both_urls_and_set_url_clears_it
     official_install
     git('-C', @root, 'remote', 'set-url', 'origin', 'https://example.com/other.git')
-    output = refusal('--update', 'has origin https://example.com/other.git', "expected #{@remote}")
+    output = refusal('--update', 'has origin https://example.com/other.git', "expected #{@remote}",
+                     'a person must decide which repository this installation follows')
     run_next(output)
     assert_succeeds('--update')
   end

@@ -32,8 +32,9 @@ module Shaka
         entries = skill_paths.to_h { |path| [path, File.lstat(path)] }
         writable = entries.select { |_, entry| entry.mode.anybits?(0o022) }.keys
         foreign = entries.reject { |_, entry| trusted_owner?(entry) }.keys
-        refuse_writable(writable) unless writable.empty?
+        # Ownership comes first: chmod cannot fix a file another account owns.
         refuse_foreign(foreign) unless foreign.empty?
+        refuse_writable(writable) unless writable.empty?
       end
 
       def skills_root = File.join(@root, 'skills')
