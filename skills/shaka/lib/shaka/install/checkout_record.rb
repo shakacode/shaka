@@ -9,6 +9,7 @@ module Shaka
       # Another account must not be able to replace the checkout or its record.
       def verify_directories
         verify_safe_directory(@root, 'Installation directory')
+        refuse_linked_worktree
         verify_safe_directory(File.join(@root, '.git'), 'Installation Git directory')
       end
 
