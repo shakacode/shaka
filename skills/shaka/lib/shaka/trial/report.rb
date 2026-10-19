@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'uri'
 require 'digest'
 require_relative '../public_comments/bounded_list'
 require_relative 'reference'
+require_relative 'summary_links'
 require_relative '../github'
 require_relative '../publication/text'
 
@@ -12,9 +12,6 @@ module Shaka
     # Publishes tester feedback, not an automatic adoption or merge decision.
     class Report
       RESULT = %r{\Ahttps://github\.com/([\w-]+/[\w.-]+)/pull/([1-9]\d*)\z}
-      # A github.com link with an optional scheme, www., and port, not continuing another host or address.
-      SUMMARY_LINK = %r{(?<![\w.@/:-])(?:(?:(?<scheme>https?):)?//)?(?:www\.)?github\.com(?::(?<port>\d+))?
-                        (?<path>/[^\s)<>\[\]`"|]*)}ix
 
       def initialize(url, content, github: nil, results: nil)
         @url = url
@@ -83,42 +80,8 @@ module Shaka
         raise Error, 'Result PR must record the exact Shaka revision in its workflow provenance.'
       end
 
-      # Every GitHub mention must be a link this check can read; anything else is refused unchecked.
       def verify_summary_links
-        links = []
-        remainder = @summary.gsub(SUMMARY_LINK) do
-          links << Regexp.last_match
-          ' '
-        end
-        raise Error, 'Write each GitHub link in the summary as https://github.com/OWNER/REPO.' if
-          mentions_github?(remainder) || links.any? { |link| mentions_github?(link[:path]) }
-
-        links.map { |link| summary_repository(link) }.each { |repository| public_repository!(repository) }
-      end
-
-      # Markdown drops backslash escapes; browsers decode percent escapes, fold compatibility characters,
-      # map ideographic full stops, and drop invisible characters in a host. The search does all of that.
-      def mentions_github?(text)
-        URI::DEFAULT_PARSER.unescape(text.delete('\\')).scrub('').unicode_normalize(:nfkc).tr('。', '.')
-                           .gsub(/\p{Default_Ignorable_Code_Point}/, '').downcase.include?('github.com')
-      end
-
-      def summary_repository(link)
-        raise Error, 'GitHub links in the summary must use the default port.' unless default_port?(link)
-        raise Error, 'GitHub links in the summary must not contain . or .. path segments.' if
-          path_segments(link[:path]).intersect?(%w[. ..])
-
-        Array(path_segments(link[:path].sub(/[.,;:!?]+\z/, ''))[1, 2]).join('/')
-      end
-
-      def default_port?(link)
-        link[:port].nil? || link[:port].to_i == (link[:scheme]&.downcase == 'http' ? 80 : 443)
-      end
-
-      def path_segments(path)
-        URI::DEFAULT_PARSER.unescape(URI.parse("https://github.com#{path}").path).split('/')
-      rescue URI::InvalidURIError
-        raise Error, 'Supply full GitHub repository URLs in the summary.'
+        SummaryLinks.repositories(@summary).each { |repository| public_repository!(repository) }
       end
 
       def public_repository!(repository)

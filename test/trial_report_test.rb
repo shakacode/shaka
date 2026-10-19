@@ -115,7 +115,10 @@ class TrialReportTest < TrialReportFixture
   def test_refuses_dot_segments_that_change_the_linked_repository
     ['https://github.com/team/project/../../acme/secret/pull/1',
      'https://github.com/team/project/%2e%2e/%2E%2E/acme/secret',
-     '[notes](https://github.com/team/project/\\.\\./\\.\\./acme/secret)'].each do |summary|
+     '[notes](https://github.com/team/project/\\.\\./\\.\\./acme/secret)',
+     '[notes](https://github.com/team/project|/../../acme/secret)',
+     'See https://github.com/team/project)/../../acme/secret', 'See [notes](https://github.com/team/project/..)',
+     '[notes](https://github.com/team/project"/../../acme/secret)'].each do |summary|
       assert_raises(Shaka::Error, summary) { report('private_result' => true, 'summary' => summary) }
     end
     assert_empty(@looked_up.grep(%r{\Arepos/(team/project|acme/secret)\z}))
