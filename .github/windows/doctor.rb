@@ -9,8 +9,10 @@ class WindowsDoctor < WindowsSession
     record('doctor through the shaka helper') { helper }
     record('bounded command answers') { short_command }
     record('bounded command reaches its deadline') { deadline }
-    record('doctor command tests') { ruby_tests('test/doctor_command_test.rb') }
-    puts "WINDOWS doctor-orphan: #{orphan_label}"
+    record('orphaned descendant is stopped') { orphan_descendant }
+    record('doctor command tests') do
+      ruby_tests('test/doctor_command_test.rb', 'test/doctor_command_windows_test.rb')
+    end
     self
   end
 
@@ -44,14 +46,6 @@ class WindowsDoctor < WindowsSession
     raise "command succeeded: out=#{out.inspect} err=#{err.inspect}" if ok
     raise "returned in #{format('%.2f', elapsed)}s, before the 0.4s deadline" if elapsed < 0.4
     raise "still running after #{format('%.2f', elapsed)}s" if elapsed > 8
-  end
-
-  def orphan_label
-    orphan_descendant
-    'PASS'
-  rescue StandardError => e
-    puts "#{e.class}: #{e.message}"
-    'FAIL'
   end
 
   def orphan_descendant
