@@ -7,7 +7,7 @@ class WindowsSuite < WindowsSession
   def call
     workers = ENV.fetch('SHAKA_TEST_WORKERS', '2')
     puts "suite workers=#{workers}"
-    command = shell_command(bundle_command, 'exec', RbConfig.ruby, 'bin/run-tests')
+    command = [bundle_command, 'exec', RbConfig.ruby, 'bin/run-tests']
     @ok = system(suite_env(workers), *command, chdir: root) == true
     self
   end
