@@ -116,7 +116,7 @@ module Shaka
       return if stray.empty?
 
       raise Error, "#{id == 'usage' ? 'Usage' : "Finding #{id}"} names #{stray.join(', ')}, which did not review " \
-                   "#{last_head}."
+                   "#{@record_head || last_head}."
     end
 
     # Usage for one reviewer's round: under `usage` by reviewer, or at the top level for one round.
