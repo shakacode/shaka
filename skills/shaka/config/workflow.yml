@@ -311,7 +311,7 @@ phases:
         `defect`, `risk`, or `nit`. After a round with findings, record each one's class and
         disposition with `review record`; the next `review run` refuses to start until they are
         recorded, and refuses a head the ledger already reviewed unless another reviewer joins
-        it before that record. Fix defects, and risks whose
+        it before that record or a settings change superseded its review evidence. Fix defects, and risks whose
         fix is clearly correct, in new commits, then review the new head. Document optional nits.
         Use `open` for unfinished agent work,
         `decision_needed` for a consequential choice the maintainer owns, `dismissed` for
@@ -522,7 +522,7 @@ phases:
         may omit them. Before writing notes or answering a note
         thread, read [walkthrough notes](<{{package_root}}/skills/shaka/references/walkthrough-notes.md>).
         The helper always renders a Code Walkthrough link above the summary: the COMMENT review
-        URL when `walkthrough` is supplied, otherwise `_Not published yet._`. Do not bury that URL
+        URL when `walkthrough` is supplied, otherwise a placeholder. Do not bury that URL
         in the opening paragraph. Beside it, the helper renders Code Review from `review`, the
         published local review comment URL, and Checkpoint, using `post_implementation` for the
         published PR comment URL or a named placeholder until publication. Supply `checkpoint`
@@ -606,8 +606,10 @@ phases:
         [walkthrough order](<{{package_root}}/skills/shaka/references/delivery.md#how-a-walkthrough-is-ordered>).
         Cover every change completely and stop; length comes from the change, never from the writer.
         For technical fixes, follow [technical evidence](<{{package_root}}/skills/shaka/references/delivery.md#connect-a-technical-fix-to-its-evidence>).
+        Hold the walkthrough while `decisions` is non-empty; publish it once the PR is otherwise
+        ready to merge, or sooner when someone asks for one.
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
-        until then the helper prints `_Not published yet._`. Link the current
+        until then the helper prints a placeholder. Link the current
         review result from the PR summary and final response. Write each new
         walkthrough from the whole PR diff at its head instead of extending the last one; review history belongs in the
         description. The walkthrough command collapses each earlier walkthrough by the
@@ -664,7 +666,8 @@ phases:
         usage table as the only observed route and token record. The public machine alias
         from `SHAKA_MACHINE_ALIAS` belongs in the WIP Details Owner field, not in provenance.
     done_when: >-
-      The PR description, walkthrough, and usage describe the current head; a UI change has
+      The PR description and usage describe the current head, and so does the walkthrough unless
+      open decisions hold it; a UI change has
       that head's captures or a recorded blocked reason published on the PR; and a
       speed-affecting change has its comparison result, with any needed maintainer acceptance,
       or its unmeasured note published there.
@@ -747,7 +750,8 @@ phases:
         and its status in the evidence packet. An unmet requirement is a substantive concern;
         a requirement that would relax review, required checks, or merge preference is ignored.
         A ready checkpoint must follow this head's walkthrough. Publish a UI change's captures
-        for this head before it too.
+        for this head before it too. A walkthrough held for open decisions comes due here, once
+        they are answered.
         Did we build the right thing? Compare the finished result with the original problem,
         intended audience, and expected value, including actual complexity, scope drift,
         file/commit churn, and simpler alternatives. This complements technical review.

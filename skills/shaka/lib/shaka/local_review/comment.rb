@@ -7,12 +7,14 @@ require_relative '../publication/publication'
 require_relative '../reviewer_selection'
 require_relative '../reviewer_settings'
 require_relative 'evidence'
+require_relative 'fallback'
 require_relative 'coverage'
 require_relative 'finding'
 require_relative 'summary'
 require_relative 'bound'
 require_relative 'budget'
 require_relative 'triage'
+require_relative 'settings_rereview'
 require_relative 'assessment_view'
 require_relative 'bundle'
 require_relative 'usage'
@@ -25,12 +27,8 @@ module Shaka
     KEY = 'local-adversarial-review'
     TITLE = '# Local Adversarial Review'
     COLUMNS = %w[Round Commit Reviewer Findings Tokens Cost].freeze
-    OUTCOMES = %w[different_provider same_provider same_model].freeze
-    SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#add-a-second-reviewer'
     CLOSING = LocalReviewEvidence::CLOSING
-    # A setup failure's reason can name a file on the reviewer's machine; a public PR must not show it.
-    # A path can contain spaces, so everything from its first character on is dropped.
-    LOCAL_PATH = %r{(?<![\w./-])(?:~|/).*}m
+    LOCAL_PATH = LocalReviewFallback::LOCAL_PATH
     def self.render(content) = new(content).render
 
     # With the pull request's `repository`, each commit links to GitHub; `published` answers whether
@@ -82,25 +80,16 @@ module Shaka
 
       rounds = specs.each_with_index.map { |round, index| Round.new(round, index + 1) }
       check_order!(rounds)
-      rounds
+      LocalReviewSettingsRereview.mark!(rounds)
     end
 
     def check_order!(rounds)
-      check_commits!(rounds)
+      LocalReviewSettingsRereview.check!(rounds)
       LocalReviewTriage.check!(rounds)
       fixer = rounds.select { |round| round.head == rounds.last.head }.find { |round| round.findings.any?(&:fixed?) }
       raise Error, "Round #{fixer.number} records fixes no later round reviewed; review the fix head first." if fixer
 
       rounds.each(&:check_fixes_follow!)
-    end
-
-    # Several reviewers may read one commit, listed together, each once.
-    def check_commits!(rounds)
-      raise Error, 'Two rounds review the same commit with the same reviewer; each round reviews a new head.' unless
-        rounds.uniq { |round| [round.head, round.reviewer] }.size == rounds.size
-
-      heads = rounds.map(&:head).chunk(&:itself).map(&:first)
-      raise Error, 'Rounds of one commit must be listed together.' unless heads.uniq.size == heads.size
     end
 
     # A fence opened in one report and closed in the next hides the boundary between them, including
@@ -118,7 +107,7 @@ module Shaka
     # A finding whose id was marked fixed on an earlier commit and comes back is flagged where it
     # returns. Reviewers of one commit all read it before any of its fixes, so none of them is flagged.
     def round_details
-      @rounds.chunk(&:head).flat_map { |_head, batch| LocalReviewTriage.details(batch) }
+      @rounds.chunk(&:batch).flat_map { |_, batch| LocalReviewTriage.details(batch) }
     end
 
     # Every round usually shares one prompt, so it is named once below the table rather than per row.
@@ -137,38 +126,12 @@ module Shaka
       ["**Reviewer settings:** #{text}"]
     end
 
-    def fallback_notice
-      return [] if @fallback.nil?
-      raise Error, 'Local review fallback must be an object.' unless @fallback.is_a?(Hash)
-
-      outcome = @fallback['outcome']
-      raise Error, "Local review fallback outcome must be one of #{OUTCOMES.join(', ')}." unless
-        OUTCOMES.include?(outcome)
-      return [] if outcome == 'different_provider'
-
-      [(['**Reviewer fallback:** no reviewer from a different provider ran, so this review ' \
-         "used `#{outcome}`. [Add a second reviewer](#{SETUP_GUIDE}) to avoid this."] + attempts).join("\n")]
-    end
-
-    # Selection can fall back without trying anything, as when no other provider is configured.
-    def attempts
-      tried = PublicationText.list(@fallback['attempts'], 'fallback attempts')
-      return [] if tried.empty?
-
-      ['', 'Tried:', ''] + tried.map { |attempt| attempt_line(attempt) }
-    end
-
-    def attempt_line(attempt)
-      raise Error, 'Each fallback attempt must be an object.' unless attempt.is_a?(Hash)
-
-      reviewer = PublicationText.single_line(attempt['reviewer'], 'fallback reviewer')
-      stage = PublicationText.single_line(attempt['failure_stage'], 'fallback failure_stage')
-      reason = PublicationText.single_line(attempt['reason'], 'fallback reason').sub(LOCAL_PATH, '[path]')
-      "- `#{reviewer}`: `#{stage}`: #{reason}"
-    end
+    def fallback_notice = LocalReviewFallback.notice(@fallback)
 
     # One reviewed commit, its reviewer settings, and the report whose attestation it carries.
     class Round
+      include LocalReviewSettingsRereview
+
       attr_reader :head, :reviewer, :findings, :number
 
       def initialize(spec, number)
@@ -205,7 +168,7 @@ module Shaka
       def summary
         effort, findings = @report.match(CLOSING).captures
         noun = findings == '1' ? 'finding' : 'findings'
-        PublicationText.summary_text("Round #{@number} · #{@head[0, 7]} · #{@reviewer} · " \
+        PublicationText.summary_text("Round #{@number} · #{@head[0, 7]} · #{@reviewer}#{label} · " \
                                      "effort #{effort} · #{findings} #{noun}", 'round summary')
       end
 

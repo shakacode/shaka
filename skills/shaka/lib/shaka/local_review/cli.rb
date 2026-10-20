@@ -48,9 +48,13 @@ module Shaka
     def process_exit_reason(status)
       return status.message if status.is_a?(LocalReviewProcess::CleanupError)
       return "timed out after #{@options.fetch(:timeout_seconds)}s" if status.nil?
-      return "output drain timed out after 2s (process exited #{status.process_status.exitstatus})" if
+      return "output drain timed out after 2s (process #{exit_description(status.process_status)})" if
         status.is_a?(LocalReviewProcess::DrainTimeout)
 
+      exit_description(status)
+    end
+
+    def exit_description(status)
       status.signaled? ? "killed by signal #{status.termsig}" : "exited #{status.exitstatus}"
     end
 

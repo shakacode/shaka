@@ -29,14 +29,14 @@ class GitHubUnprotectedCheckListTest < Minitest::Test
   def test_checks_keep_the_gh_error_when_rate_limited
     stderr = "gh: API rate limit exceeded (HTTP 403)\n"
     error = assert_raises(Shaka::Error) { client(['', stderr, STATUS.new(1)]).checks }
-    assert_equal 'gh pr 42 failed (exit 1).', error.message
+    assert_equal 'gh pr 42 failed (exit 1, HTTP 403).', error.message
     assert_equal 403, error.http_status
   end
 
   def test_required_checks_keep_the_status_when_rate_limited
     stderr = "gh: API rate limit exceeded (HTTP 403)\n"
     error = assert_raises(Shaka::Error) { client(['', stderr, STATUS.new(1)]).required_checks }
-    assert_match(/Required-check evidence is unavailable/, error.message)
+    assert_match(/\ARequired-check evidence is unavailable \(HTTP 403\);/, error.message)
     assert_equal 403, error.http_status
   end
 
