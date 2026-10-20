@@ -123,9 +123,9 @@ start with its current model and effort settings. It handles routine work and
 asks when a missing choice, access problem, or consequential decision needs you.
 
 In its first reply, the agent shows a short start check. It lists where Shaka is
-installed and whether the task uses team settings or your individual settings.
-It also confirms that Ruby, the GitHub CLI, and repository access work, and gives
-a next step for each problem.
+installed, and whether this checkout's settings are committed team settings or
+individual settings kept out of Git. It also confirms that Ruby, the GitHub CLI,
+and repository access work, and gives a next step for each problem.
 
 For a different outcome, choose an example:
 
