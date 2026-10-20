@@ -33,7 +33,7 @@ class WindowsSession
 
   def bundle_command
     bindir = RbConfig::CONFIG.fetch('bindir')
-    names = %w[bundle bundle.cmd bundle.bat bundle.exe]
+    names = windows? ? %w[bundle.bat bundle.cmd bundle.exe] : %w[bundle]
     names.map { |name| File.join(bindir, name) }.find { |path| File.file?(path) } || 'bundle'
   end
 
@@ -96,16 +96,9 @@ class WindowsSession
     raise "tests failed: #{file}" unless status.success?
   end
 
-  def test_command(file) = shell_command(bundle_command, 'exec', RbConfig.ruby, '-Itest', file)
+  def test_command(file) = [bundle_command, 'exec', RbConfig.ruby, '-Itest', file]
 
   def test_env = { 'BUNDLE_GEMFILE' => File.join(root, 'Gemfile') }
-
-  # Windows runs `bundle` through a .bat file, which CreateProcess will not start.
-  def shell_command(*argv)
-    return argv unless windows?
-
-    ['cmd.exe', '/d', '/c', argv.map { |arg| %("#{arg}") }.join(' ')]
-  end
 
   def windows? = RUBY_PLATFORM.match?(/mswin|mingw/)
 
