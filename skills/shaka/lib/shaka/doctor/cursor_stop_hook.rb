@@ -56,14 +56,13 @@ module Shaka
         command.scan(/"([^"]*)"|'([^']*)'|(\S+)/).map { |quoted, single, bare| quoted || single || bare }
       end
 
-      def ruby?(token)
-        File.basename(token).match?(RUBY)
-      end
+      def ruby?(token) = path_name(token).match?(RUBY)
 
       # Windows runs the `.cmd` launcher. Its basename is the hook name without that extension.
-      def hook_name?(token)
-        File.basename(token).sub(EXTENSION, '') == NAME
-      end
+      # Split on both separators: File.basename on Linux only treats `/` as one.
+      def hook_name?(token) = path_name(token).sub(EXTENSION, '') == NAME
+
+      def path_name(token) = token.to_s.split(%r{[\\/]}).last.to_s
     end
   end
 end
