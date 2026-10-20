@@ -949,9 +949,9 @@ set it. When the agent rates lower, Shaka refuses to publish and asks for at lea
 
 By default:
 
-- **4** for GitHub Actions workflows, `CODEOWNERS`, `.agents/shaka/`, and code whose name contains
+- **4** for GitHub Actions workflows, `CODEOWNERS`, `.agents/shaka/`, and code whose path contains
   auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
-  or credential. Docs and other Markdown files with those words in their names don't count.
+  or credential as a folder or file name word. Docs and other Markdown files don't count.
 - **2** for agent instructions (`AGENTS.md`, `CLAUDE.md`, `SKILL.md`, `skills/`, `.agents/`,
   `.claude/`, `.cursor/`) and for any other file except Markdown, `docs/`, and images.
 - **1** otherwise.
@@ -974,12 +974,13 @@ match a changed file:
 | Key | Matches a file when |
 | --- | --- |
 | `paths` | A glob matches its path. `**/` spans folders. |
-| `words` | A word, or the word plus s, appears in its name. `AuthService.ts` and `auth_token.rb` both contain auth. |
+| `words` | A word, or the word plus s, appears in a folder or file name on its path. `AuthService.ts`, `auth_token.rb`, and `lib/oauth/x.rb` all match. |
 | `words_except` | Not a match by itself. It stops `words` from matching these globs. |
 | `all_except` | None of these globs match its path. |
 
-The highest matching floor applies, and a renamed file counts under both names. Shaka reads the
-list from your default branch, so a PR cannot lower its own floor.
+The highest matching floor applies, and a renamed file counts under both names. An empty list,
+`[]`, turns floors off. Shaka reads the list from the same settings as every other setting here,
+never from the PR's own branch, so a PR cannot lower its own floor.
 
 ## `wip.include_checkout_path`
 
