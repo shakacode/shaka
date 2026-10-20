@@ -98,10 +98,13 @@ module Shaka
 
         finding('B8', "recorded Ruby #{recorded || 'is missing'}#{' is unavailable' if recorded}; " \
                       'run the next command with Ruby 3.4 or later first on PATH',
-                command: installer)
+                command: ruby_step)
       rescue SystemCallError => e
-        finding('B8', "recorded Ruby cannot be read: #{e.message}", command: installer)
+        finding('B8', "recorded Ruby cannot be read: #{e.message}", command: ruby_step)
       end
+
+      # A plain install refuses a checkout used for development; an update only warns, and also records Ruby.
+      def ruby_step = development_uses.empty? ? installer : "#{installer} --update"
 
       # The installer's own check, so status and installation agree on what counts as development.
       # Moving development out fixes nothing broken, so it ranks after the install's own problems.

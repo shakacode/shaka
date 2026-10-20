@@ -80,6 +80,16 @@ class InstallStatusEntryTest < Minitest::Test
     assert_equal File.join(File.realpath(root), 'skills/rct'), File.realpath(File.join(@home, '.claude/skills/rct'))
   end
 
+  # A plain install refuses development use, so the missing-Ruby step for such a checkout is an update.
+  def test_the_ruby_step_works_while_the_checkout_hosts_development
+    root = clone_to(default_path)
+    run_install(root, '--directory', root, '--repository', @remote)
+    git('-C', root, 'worktree', 'add', '-q', File.join(@directory, 'feature'))
+    File.write(File.join(root, '.git/shaka-ruby'), "/nonexistent/ruby\n")
+    run_next(status(root), 'B8')
+    refute_includes status(root)['findings'].map { |item| item['id'] }, 'B8'
+  end
+
   def test_the_documented_helper_reports_a_state
     output, process = Open3.capture2e(environment, File.join(REPOSITORY, 'skills/shaka/scripts/shaka'),
                                       'install', '--status', '--json')

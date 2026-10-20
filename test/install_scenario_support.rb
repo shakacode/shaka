@@ -41,6 +41,13 @@ module InstallScenarioSupport
     assert_predicate process, :success?, output
   end
 
+  # Runs the next command a status report names, after checking which state named it.
+  def run_next(report, state)
+    assert_equal state, report['state']
+    output, process = Open3.capture2e(environment, 'sh', '-c', report['next_command'])
+    assert_predicate process, :success?, output
+  end
+
   def run_status(root, *flags)
     Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), '--status', *flags)
   end
