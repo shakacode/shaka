@@ -33,11 +33,9 @@ class WindowsCursor < WindowsSession
   end
 
   def launch_cmd(cmd, dir)
-    payload = File.join(dir, 'payload.bin')
     usage = File.join(dir, 'usage')
-    File.binwrite(payload, bom_bytes)
     FileUtils.mkdir_p(usage)
-    record_payload(['cmd.exe', '/d', '/c', "\"#{cmd}\" < \"#{payload}\""], nil, usage)
+    record_payload(['cmd.exe', '/d', '/c', cmd.tr('/', '\\')], bom_bytes, usage)
   end
 
   def recognize_launcher

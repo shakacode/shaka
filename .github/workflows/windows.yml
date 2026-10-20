@@ -51,9 +51,9 @@ jobs:
         continue-on-error: true
         run: ruby bin/windows-exercise cursor
 
-      # Full Minitest suite. Failures here are Windows gaps, not a hidden skip.
-      # Narrow WindowsSuite once a run shows which files still depend on Unix
-      # process groups, symlinks, or shell tools, and list those files here.
+      # Full Minitest suite. On Windows the suite cannot start until test_helper
+      # finds git.exe; that lookup is part of pull request 748. Other failures
+      # are gaps to list here once a run gets past that load error.
       - name: Test suite
         continue-on-error: true
         env:
