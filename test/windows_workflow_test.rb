@@ -49,6 +49,11 @@ class WindowsWorkflowTest < Minitest::Test
     assert(exercise_steps.all? { |step| step['continue-on-error'] == true })
   end
 
+  def test_names_the_suite_file_windows_ruby_cannot_load
+    assert_includes File.read(@path), 'test/local_evaluation_probe_container_test.rb'
+    assert_includes File.read(@path), 'pty'
+  end
+
   def test_keeps_checkout_bytes_so_shebangs_stay_what_git_stored
     first = @steps.first
     checkout = @steps.index { |step| step['uses'].to_s.start_with?('actions/checkout@') }
