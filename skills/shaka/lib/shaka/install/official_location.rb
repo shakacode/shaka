@@ -15,7 +15,7 @@ module Shaka
 
       # Runs before anything touches the destination, so a refused --directory leaves no folder behind.
       def refuse_settings_location(selected, source, options)
-        root = SettingsLocation.real(selected) || File.expand_path(selected)
+        root = SettingsLocation.resolved(selected)
         return unless SettingsLocation.inside?(root, Dir.home)
 
         state = "Installation checkout is under #{File.join(Dir.home, Locations::SETTINGS)}, where Shaka keeps " \
@@ -25,10 +25,17 @@ module Shaka
         raise ArgumentError, Refusal.message(state, root, fresh_command(source, options))
       end
 
+      # An unreadable record names no custom folder; the take-over itself reports the record problem.
+      def recorded(root)
+        Checkout.new(root).read_record
+      rescue ArgumentError
+        nil
+      end
+
       def registered?(root) = File.file?(File.join(root, '.git', Checkout::RECORD))
 
       def old_install(state, root)
-        command = SettingsLocation.take_over(root, Dir.home)
+        command = SettingsLocation.take_over(root, Dir.home, recorded(root))
         Refusal.message("#{state}; this location is no longer supported", root,
                         command || SettingsLocation.decision(Dir.home),
                         note: 'The take-over leaves this checkout in place; delete it afterward')
@@ -39,7 +46,7 @@ module Shaka
         towers = @names.filter_map { |name| SettingsLocation::TOWERS[name] }.uniq
         Refusal.command(File.join(source, 'bin/install'), '--directory', SettingsLocation.default_directory(Dir.home),
                         *selections(options), *@agents.flat_map { |agent| ['--agent', agent] }, *towers,
-                        *('--take-over' if options[:take_over]))
+                        *('--take-over' if options[:take_over]), *('--session-hook' if options[:session_hook]))
       end
 
       def selections(options)

@@ -10,11 +10,22 @@ class OfficialSettingsLocationTest < Minitest::Test
     %w[.agents/shaka .agents/anything].each do |entry|
       directory = File.join(@home, entry)
       output, process = install(@root, '--directory', directory, '--repository', @remote, '--agent', 'claude',
-                                '--with-rct')
+                                '--with-rct', '--session-hook')
       refute_predicate process, :success?
-      assert_includes output, "where Shaka keeps settings, not source. Found: #{directory}. Next: #{fresh_command}"
+      assert_includes output, "where Shaka keeps settings, not source. Found: #{canonical(directory)}. " \
+                              "Next: #{fresh_command}"
       refute_path_exists directory
     end
+  end
+
+  # A folder the installer would create through a link to the settings folder is refused too.
+  def test_a_missing_folder_behind_a_link_to_the_settings_path_is_refused
+    FileUtils.mkdir_p(File.join(@home, '.agents'))
+    File.symlink(File.join(@home, '.agents'), File.join(@home, 'alias'))
+    output, process = install(@root, '--directory', File.join(@home, 'alias/new-source'), '--repository', @remote)
+    refute_predicate process, :success?
+    assert_includes output, 'where Shaka keeps settings'
+    refute_path_exists File.join(@home, '.agents/new-source')
   end
 
   def test_an_install_at_the_old_default_refuses_every_action
@@ -57,6 +68,17 @@ class OfficialSettingsLocationTest < Minitest::Test
     assert_equal 'A5', status(default_path)['state']
   end
 
+  # The default install cannot find the old checkout's links in a custom folder unless the step names it.
+  def test_an_install_at_the_default_takes_over_a_custom_skills_folder
+    root = old_location_install('--skills-dir', @skills_dir)
+    run_install(clone_to(default_path), '--directory', default_path, '--repository', @remote, '--agent', 'codex')
+    output, = install(root)
+    step = output[/Next: (.+)$/, 1]
+    assert_includes step, "--take-over --skills-dir #{Shellwords.escape(@skills_dir)}"
+    run_step(step)
+    assert_equal File.join(File.realpath(default_path), 'skills/shaka'), File.realpath(@destination)
+  end
+
   def test_an_update_names_where_everything_is
     root = clone_to(default_path)
     run_install(root, '--directory', root, '--repository', @remote, '--skills-dir', @skills_dir)
@@ -79,7 +101,7 @@ class OfficialSettingsLocationTest < Minitest::Test
 
   def fresh_command
     "#{Shellwords.escape(File.join(@root, 'bin/install'))} --directory #{Shellwords.escape(default_path)} " \
-      "--repository #{Shellwords.escape(@remote)} --agent claude --with-rct"
+      "--repository #{Shellwords.escape(@remote)} --agent claude --with-rct --session-hook"
   end
 
   def run_step(step)

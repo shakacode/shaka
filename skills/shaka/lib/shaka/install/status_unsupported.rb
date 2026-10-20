@@ -14,6 +14,9 @@ module Shaka
                'folders, and towers you use (one bin/install run per host whose towers differ); ' \
                'see official-installation.md.'.freeze
 
+      SETTINGS_DETAIL = "the source checkout sits under ~/#{Locations::SETTINGS}, where Shaka keeps settings; " \
+                        'move its links to a checkout at '.freeze
+
       def initialize(inventory)
         @inventory = inventory
       end
@@ -29,12 +32,12 @@ module Shaka
 
       # A registered checkout under the settings folder in HOME.
       def settings_location
-        @inventory.checkouts.keys.select { |root| SettingsLocation.inside?(root, @inventory.home) }.map do |root|
-          command = SettingsLocation.take_over(root, @inventory.home)
-          detail = "the source checkout sits under ~/#{Locations::SETTINGS}, where Shaka keeps settings; " \
-                   "move its links to a checkout at #{@inventory.default_directory}"
-          StatusStates.finding('E1', root, detail,
-                               command:, decision: (SettingsLocation.decision(@inventory.home) unless command))
+        home = @inventory.home
+        old = @inventory.checkouts.values.select { |checkout| SettingsLocation.inside?(checkout.root, home) }
+        old.map do |checkout|
+          command = SettingsLocation.take_over(checkout.root, home, checkout.record)
+          StatusStates.finding('E1', checkout.root, SETTINGS_DETAIL + @inventory.default_directory,
+                               command:, decision: (SettingsLocation.decision(home) unless command))
         end
       end
 
