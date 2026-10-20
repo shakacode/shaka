@@ -4,6 +4,7 @@ require_relative '../public_comments/bounded_list'
 require_relative '../walkthrough/history'
 
 module Shaka
+  # Adds the walkthrough fact to the handoff report.
   class Handoff
     # Finds the commit the current walkthrough explains, counting only evidence this account controls.
     class Walkthrough
@@ -35,5 +36,30 @@ module Shaka
         commit if commit.is_a?(String) && WalkthroughText.revision(review['body']) == commit
       end
     end
+
+    # Reports whether the walkthrough explains the live head, and whether a missing or older one is owed.
+    module WalkthroughFact
+      private
+
+      def walkthrough_fact(live)
+        revision = Walkthrough.new(@github).revision
+        unless revision
+          return owe('no walkthrough', 'Publish a walkthrough before asking for merge.') if merge_requested?
+
+          return note('no walkthrough', 'No walkthrough yet; one is required before merge.')
+        end
+        return "walkthrough #{revision[0, SHORT]}" if revision == live
+
+        fact = "walkthrough #{revision[0, SHORT]}"
+        return note(fact, "The walkthrough explains #{revision}; publish one after the decisions.") if deciding?
+
+        owe(fact, "The walkthrough explains #{revision}; publish one for #{live}.")
+      end
+
+      # An answer may change the code, so the next walkthrough waits for it; a merge request never does.
+      def deciding? = !merge_requested? && @labels.any? { |label| label.casecmp?('awaiting-answer') }
+    end
+
+    include WalkthroughFact
   end
 end

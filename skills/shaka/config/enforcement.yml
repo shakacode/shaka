@@ -624,8 +624,8 @@ rules:
       `handoff` reads live GitHub state and exits 2 while the PR lacks exactly one attention
       label (or, with `--woken-by`, still carries one), holds `awaiting-merge-approval` with required checks not passing
       or without this account's checkpoint and squash message for the live head, or has a walkthrough
-      or WIP Details for an older head. Nothing runs it when a turn ends unless the host wires it
-      into a stop hook.
+      for an older head outside an `awaiting-answer` wait, or WIP Details for an older head. Nothing
+      runs it when a turn ends unless the host wires it into a stop hook.
   - id: required-checks
     phase: finish
     quote: Never accept missing, failed, pending, or stale required checks
