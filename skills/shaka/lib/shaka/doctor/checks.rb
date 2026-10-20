@@ -10,6 +10,7 @@ require_relative 'check'
 require_relative 'machine_alias'
 require_relative 'usage_source'
 require_relative 'reviewer_clis'
+require_relative 'settings_source'
 
 module Shaka
   class Doctor
@@ -29,11 +30,15 @@ module Shaka
       end
 
       def call
-        seam = repository_seam
-        [ruby_runtime, github_cli, repository_access, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
+        seam, *basics = brief
+        [*basics, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
          MachineAlias.new(@environment, host_name: @system.host_name).call,
          UsageSourceCheck.new(host: @host, system: @system).call]
       end
+
+      # What a task start needs: whose settings the checkout holds, and whether the helper's own
+      # prerequisites and the repository work. Reviewer and usage setup stay in the full report.
+      def brief = [repository_seam, ruby_runtime, github_cli, repository_access]
 
       private
 
@@ -116,9 +121,7 @@ module Shaka
 
       def setting_status(notices) = notices.any? { |n| n.fetch('severity') == 'failed' } ? 'failed' : 'degraded'
 
-      def known_settings
-        check('Reviewer settings', 'healthy', 'no reviewer model or effort notice')
-      end
+      def known_settings = check('Reviewer settings', 'healthy', 'no reviewer model or effort notice')
 
       def setting_summary(notices) = notices.map { |notice| notice.fetch('summary') }.join(' ')
 
@@ -137,7 +140,7 @@ module Shaka
         return missing_seam unless Configuration.contract_entry?(@root)
 
         config = Configuration.worktree(root: @root)
-        check('Repository seam', 'healthy', "#{config.config_path} loads and validates in this working tree")
+        check('Repository seam', 'healthy', SettingsSource.new(@root, @system.runner).summary(config.config_path))
       rescue Shaka::Error, SystemCallError => e
         check('Repository seam', 'failed', "repository configuration is not usable: #{first_line(e.message)}",
               guidance: 'Repair the contract, or let `shaka seam init` rewrite a valid one.')

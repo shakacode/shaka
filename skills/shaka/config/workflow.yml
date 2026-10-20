@@ -32,6 +32,8 @@ phases:
         Confirm the destination's live owner and visibility with
         `gh repo view OWNER/REPO --json owner,visibility,defaultBranchRef` before publishing
         there; the same call reports the default branch the plan step needs.
+      - Run the saved helper's `doctor --brief --root ROOT` and show its output to the user in
+        your first reply.
       - Ask for a missing issue number, URL, or description. Resolve bare issue numbers against
         the verified repository. After intake, confirm the task matches the checkout; if it does
         not, resolve the target checkout, reread its trusted instructions, and reassess

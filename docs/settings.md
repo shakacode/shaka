@@ -25,6 +25,10 @@ settings with shared team settings.
 | Shared Shaka settings exist on the default branch | The default-branch configuration, including when reviewing a PR that changes it. |
 | No shared settings; individual setup is configured | Your local `.agents/shaka/config.yml`, kept out of Git. |
 
+The agent's [start check](getting-started.md#3-start-a-task) names the settings it
+found, such as `team settings committed in this checkout` or `individual settings
+kept out of Git`. `$shaka doctor` reports the same line at any time.
+
 Omitted optional values use Shaka's defaults, all listed in
 [Shaka's defaults file](https://github.com/shakacode/shaka/blob/main/skills/shaka/config/defaults.yml).
 An explicit task choice takes
