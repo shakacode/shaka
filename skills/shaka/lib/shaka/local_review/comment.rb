@@ -7,6 +7,7 @@ require_relative '../publication/publication'
 require_relative '../reviewer_selection'
 require_relative '../reviewer_settings'
 require_relative 'evidence'
+require_relative 'fallback'
 require_relative 'coverage'
 require_relative 'finding'
 require_relative 'summary'
@@ -26,12 +27,8 @@ module Shaka
     KEY = 'local-adversarial-review'
     TITLE = '# Local Adversarial Review'
     COLUMNS = %w[Round Commit Reviewer Findings Tokens Cost].freeze
-    OUTCOMES = %w[different_provider same_provider same_model].freeze
-    SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/settings.md#add-a-second-reviewer'
     CLOSING = LocalReviewEvidence::CLOSING
-    # A setup failure's reason can name a file on the reviewer's machine; a public PR must not show it.
-    # A path can contain spaces, so everything from its first character on is dropped.
-    LOCAL_PATH = %r{(?<![\w./-])(?:~|/).*}m
+    LOCAL_PATH = LocalReviewFallback::LOCAL_PATH
     def self.render(content) = new(content).render
 
     # With the pull request's `repository`, each commit links to GitHub; `published` answers whether
@@ -129,35 +126,7 @@ module Shaka
       ["**Reviewer settings:** #{text}"]
     end
 
-    def fallback_notice
-      return [] if @fallback.nil?
-      raise Error, 'Local review fallback must be an object.' unless @fallback.is_a?(Hash)
-
-      outcome = @fallback['outcome']
-      raise Error, "Local review fallback outcome must be one of #{OUTCOMES.join(', ')}." unless
-        OUTCOMES.include?(outcome)
-      return [] if outcome == 'different_provider'
-
-      [(['**Reviewer fallback:** no reviewer from a different provider ran, so this review ' \
-         "used `#{outcome}`. [Add a second reviewer](#{SETUP_GUIDE}) to avoid this."] + attempts).join("\n")]
-    end
-
-    # Selection can fall back without trying anything, as when no other provider is configured.
-    def attempts
-      tried = PublicationText.list(@fallback['attempts'], 'fallback attempts')
-      return [] if tried.empty?
-
-      ['', 'Tried:', ''] + tried.map { |attempt| attempt_line(attempt) }
-    end
-
-    def attempt_line(attempt)
-      raise Error, 'Each fallback attempt must be an object.' unless attempt.is_a?(Hash)
-
-      reviewer = PublicationText.single_line(attempt['reviewer'], 'fallback reviewer')
-      stage = PublicationText.single_line(attempt['failure_stage'], 'fallback failure_stage')
-      reason = PublicationText.single_line(attempt['reason'], 'fallback reason').sub(LOCAL_PATH, '[path]')
-      "- `#{reviewer}`: `#{stage}`: #{reason}"
-    end
+    def fallback_notice = LocalReviewFallback.notice(@fallback)
 
     # One reviewed commit, its reviewer settings, and the report whose attestation it carries.
     class Round
