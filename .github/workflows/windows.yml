@@ -51,9 +51,12 @@ jobs:
         continue-on-error: true
         run: ruby bin/windows-exercise cursor
 
-      # Full Minitest suite. On Windows the suite cannot start until test_helper
-      # finds git.exe; that lookup is part of pull request 748. Other failures
-      # are gaps to list here once a run gets past that load error.
+      # Minitest suite except files the step prints as "WINDOWS suite gap".
+      # test/local_evaluation_probe_container_test.rb needs pty, which Windows
+      # Ruby does not ship. Loading it makes bin/run-tests report 0 runs.
+      # The suite also cannot start until test_helper finds git.exe; that
+      # lookup is part of pull request 748. Tests that spawn an extensionless
+      # shebang directly still get Errno::ENOEXEC from CreateProcess.
       - name: Test suite
         continue-on-error: true
         env:
