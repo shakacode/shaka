@@ -122,11 +122,6 @@ Replace the example with a small outcome or an issue link. `Go` lets the agent
 start with its current model and effort settings. It handles routine work and
 asks when a missing choice, access problem, or consequential decision needs you.
 
-In its first reply, the agent shows a short start check. It lists where Shaka is
-installed, and whether this checkout's settings are committed team settings or
-individual settings kept out of Git. It also confirms that Ruby, the GitHub CLI,
-and repository access work, and gives a next step for each problem.
-
 For a different outcome, choose an example:
 
 - [Plan before implementing](working-with-shaka.md#get-a-plan-before-implementing).
