@@ -9,6 +9,12 @@ a real-work trial, a focused comparison, or a full isolated evaluation. Use the
 by [PR #367](https://github.com/shakacode/shaka/pull/367); post authorized feedback
 on the candidate PR instead of duplicating each trial here.
 
+Each eval report ships with an article under [`docs/articles/`](../docs/articles/)
+in the same PR, listed under Articles in `docs/sidebars.json`. The report keeps the
+full evidence; the article states the main results, limits, method, findings and
+how to rerun it for a reader new to Shaka. Follow the
+[review process study](../docs/articles/review-process-study.md) for its shape.
+
 This index links comparison reports and harness attempts. It prevents a harness failure from being mistaken for a
 successful skill evaluation or repeated without a changed hypothesis.
 Prepared tier 1 tasks can use the [native decision replay API](decision-replays.md)

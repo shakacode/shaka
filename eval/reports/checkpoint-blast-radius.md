@@ -1,5 +1,7 @@
 # Checkpoint verification against blast radius, #421
 
+A reader-facing summary is the [article](../../docs/articles/checkpoint-sentence-eval.md).
+
 Issue [#421](https://github.com/shakacode/shaka/issues/421)'s
 [order of work](https://github.com/shakacode/shaka/issues/421#issuecomment-6205960445)
 asks whether the checkpoint sentence added by [#547](https://github.com/shakacode/shaka/pull/547)
