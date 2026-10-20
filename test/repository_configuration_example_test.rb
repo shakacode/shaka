@@ -10,6 +10,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   POLICY_KEYS = %w[
     required ci_review_jobs local_review_agents local_review_count post_implementation prompt_file provider_coverage
+    review_effort_floors
   ].freeze
 
   def setup
@@ -22,6 +23,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
 
   def test_example_includes_effective_default_sections
     @defaults.except('version', 'commands', 'paths', 'review', 'merge').each do |section, defaults|
+      defaults = defaults.except('review_effort_floors') if section == 'pr_description'
       assert_equal defaults, example_section(section), "Update the #{section} example when defaults change"
     end
   end
@@ -50,6 +52,12 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     end
   end
 
+  # This repository adds its own floors ahead of the shipped ones and keeps every shipped floor.
+  def test_example_floors_keep_every_shipped_floor
+    floors = @example.fetch('pr_description').fetch('review_effort_floors')
+    assert_equal Shaka::Defaults.fetch('pr_description', 'review_effort_floors'), floors.last(3)
+  end
+
   def test_review_deadline_defaults_applied_outside_repository_config
     %w[anthropic/claude openai/codex xai/grok deepseek/openrouter].each do |reviewer|
       options = { reviewer: }
@@ -64,7 +72,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   def example_section(section)
     case section
     when 'opening_check' then @example.fetch('pr_description').fetch(section)
-    when 'pr_description' then @example.fetch(section).except('opening_check')
+    when 'pr_description' then @example.fetch(section).except('opening_check', 'review_effort_floors')
     else @example.fetch(section)
     end
   end

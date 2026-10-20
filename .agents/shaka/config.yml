@@ -62,6 +62,25 @@ pr_description:
   show_shaka_credit: true # Default: a small Shaka link under the PR summary.
   show_human_comments: true # Default: list comments people wrote on the PR.
   max_human_comments: 20 # Default: how many of those comments to list.
+  # The lowest review effort a PR may claim, from the files it changes. This list replaces the
+  # default one: the first floor is this repository's addition, the rest are the defaults.
+  review_effort_floors:
+    - level: 4
+      reason: changes evidence or settings checks
+      paths: [skills/shaka/lib/shaka/evidence/**/*, skills/shaka/lib/shaka/seam/**/*]
+    - level: 4
+      reason: changes trust, merge, authentication, or release paths
+      paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS,
+              .agents/shaka/**/*]
+      words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
+              credential]
+      words_except: ['**/*.md', docs/**/*]
+    - level: 2
+      reason: changes agent instructions
+      paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
+    - level: 2
+      reason: changes code or configuration
+      all_except: ['**/*.md', docs/**/*, '**/*.{png,jpg,jpeg,gif,svg,webp}']
   opening_check:
     enabled: true # Default: check that the PR description's first sentence leads with the outcome.
     effort: low # Default.

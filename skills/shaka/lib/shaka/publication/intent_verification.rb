@@ -3,7 +3,6 @@
 require_relative '../error'
 require_relative 'text'
 require_relative 'verification_gates'
-require_relative 'review_effort_floor'
 
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
@@ -29,11 +28,10 @@ module Shaka
     module_function
 
     # The verdict binds the validation and review results; nil when description received none.
-    # Changed paths set the review-effort floor; without a pull request there is none.
-    def render(content, verdict = nil, changed_paths = nil)
+    # The floor comes from the PR's changed paths; without a pull request there is none.
+    def render(content, verdict = nil, floor = nil)
       checks_allowed = content['wip'].nil? ? CHECKS : (0..CHECKS.max)
       gate_line = VerificationGates.line(verdict, content['review'])
-      floor = changed_paths && ReviewEffortFloor.for(changed_paths)
       [intent(object(content, 'intent'), floor),
        verification(object(content, 'verification'), checks_allowed, gate_line)]
     end

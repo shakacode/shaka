@@ -1,22 +1,19 @@
 # frozen_string_literal: true
 
-require 'yaml'
-require_relative '../error'
+require_relative '../defaults'
 
 module Shaka
   # The lowest review effort a description may claim, computed from the paths its PR changes,
   # so an agent's own rating cannot tell a reviewer to skip code that reaches every task.
   class ReviewEffortFloor
-    PATH = File.expand_path('../../../config/review-effort-floors.yml', __dir__)
     GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH
     NONE = { 'level' => 1 }.freeze
 
-    def self.rules
-      @rules ||= YAML.safe_load_file(PATH, permitted_classes: [], aliases: false).fetch('floors')
-    end
+    def self.defaults = Defaults.fetch('pr_description', 'review_effort_floors')
 
     # Returns the highest matching floor with its reason and the first path that set it, or NONE.
-    def self.for(paths, rules = self.rules)
+    # Rules come from the trusted repository settings, or the shipped defaults when unread.
+    def self.for(paths, rules = defaults)
       matches = rules.filter_map do |rule|
         path = paths.find { |candidate| match?(rule, candidate) }
         rule.merge('path' => path) if path

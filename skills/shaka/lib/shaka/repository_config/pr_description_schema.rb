@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'opening_schema'
+require_relative 'review_effort_floor_schema'
 require_relative 'validation'
 
 module Shaka
@@ -15,10 +16,12 @@ module Shaka
 
       def validate
         mapping!(@description, 'pr_description')
-        keys!(@description, [], %w[show_shaka_credit show_human_comments max_human_comments opening_check],
-              'pr_description')
+        keys!(@description, [], %w[show_shaka_credit show_human_comments max_human_comments opening_check
+                                   review_effort_floors], 'pr_description')
         validate_credit
         validate_human_comments
+        ReviewEffortFloorSchema.new(@description['review_effort_floors']).validate if
+          @description.key?('review_effort_floors')
         return unless @description.key?('opening_check')
 
         OpeningSchema.new(@description['opening_check'], label: 'pr_description.opening_check').validate

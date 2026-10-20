@@ -16,7 +16,8 @@ class PublicationReviewEffortFloorTest < Minitest::Test
   def render(paths, effort)
     intent = INTENT.merge('review_effort' => effort)
     content = PublicationRegressionTest.new(name).description_content('intent' => intent)
-    Shaka::Publication.description(content, nil, nil, Shaka::PublicationSettings.new(changed_paths: paths))
+    floor = paths && Shaka::ReviewEffortFloor.for(paths)
+    Shaka::Publication.description(content, nil, nil, Shaka::PublicationSettings.new(review_effort_floor: floor))
   end
 
   def test_docs_images_and_readmes_have_no_floor
