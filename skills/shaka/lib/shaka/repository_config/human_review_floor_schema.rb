@@ -4,13 +4,13 @@ require_relative 'validation'
 
 module Shaka
   class RepositoryConfig
-    # Validates the review-effort floors a repository sets for its PR descriptions.
-    class ReviewEffortFloorSchema
+    # Validates the human review floors a repository sets for its PR descriptions.
+    class HumanReviewFloorSchema
       include Validation
 
-      LABEL = 'pr_description.review_effort_floors'
-      MATCHERS = %w[paths words all_except].freeze
-      LISTS = [*MATCHERS, 'words_except'].freeze
+      LABEL = 'pr_description.human_review_floors'
+      MATCHERS = %w[paths words].freeze
+      LISTS = [*MATCHERS, 'except'].freeze
 
       def initialize(floors)
         @floors = floors
@@ -29,7 +29,7 @@ module Shaka
         keys!(floor, %w[level reason], LISTS, label)
         enum!(floor['level'], (1..5).to_a, "#{label}.level must be a whole number from 1 to 5")
         string!(floor['reason'], "#{label}.reason")
-        raise Error, "#{label} needs paths, words, or all_except" unless floor.keys.intersect?(MATCHERS)
+        raise Error, "#{label} needs paths or words" unless floor.keys.intersect?(MATCHERS)
 
         (floor.keys & LISTS).each { |key| validate_list(floor[key], "#{label}.#{key}") }
       end

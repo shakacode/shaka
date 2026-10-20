@@ -11,8 +11,8 @@ class ReviewEffortFloorSettingTest < Minitest::Test
   EVIDENCE = [{ 'level' => 4, 'reason' => 'changes evidence checks', 'paths' => ['lib/evidence/**/*'] }].freeze
 
   def test_a_repository_list_replaces_the_shipped_floors
-    with_repository('pr_description' => { 'review_effort_floors' => EVIDENCE }) do |root|
-      floors = Shaka::RepositoryConfig.load(root:).pr_description.fetch('review_effort_floors')
+    with_repository('pr_description' => { 'human_review_floors' => EVIDENCE }) do |root|
+      floors = Shaka::RepositoryConfig.load(root:).pr_description.fetch('human_review_floors')
 
       assert_equal 4, Shaka::ReviewEffortFloor.for(['lib/evidence/bind.rb'], floors)['level']
       assert_equal 1, Shaka::ReviewEffortFloor.for(['.github/workflows/ci.yml'], floors)['level']
@@ -28,17 +28,17 @@ class ReviewEffortFloorSettingTest < Minitest::Test
     floor = { 'level' => 2, 'reason' => 'x', 'paths' => ['a'] }
     ['all', [floor.merge('level' => 6)], [floor.except('reason')], [floor.except('paths')],
      [floor.merge('paths' => [])], [floor.merge('glob' => ['b'])]].each do |floors|
-      section = { 'review_effort_floors' => floors }
+      section = { 'human_review_floors' => floors }
       with_repository('pr_description' => section) do |root|
         error = assert_raises(Shaka::Error) { Shaka::RepositoryConfig.load(root:) }
-        assert_includes error.message, 'pr_description.review_effort_floors'
+        assert_includes error.message, 'pr_description.human_review_floors'
       end
     end
   end
 
   # The candidate branch cannot lower its own floor: description reads the trusted commit.
   def test_description_reads_floors_from_the_trusted_commit
-    with_repository('pr_description' => { 'review_effort_floors' => EVIDENCE }) do |root|
+    with_repository('pr_description' => { 'human_review_floors' => EVIDENCE }) do |root|
       system('git', '-C', root, 'init', '--quiet', exception: true)
       git(root, 'add', '-A')
       commit(root)
@@ -55,7 +55,7 @@ class ReviewEffortFloorSettingTest < Minitest::Test
   def lower_floors_in_candidate(root)
     path = File.join(root, '.agents/agent-workflow.yml')
     config = YAML.safe_load_file(path)
-    config['pr_description']['review_effort_floors'] = [EVIDENCE.first.merge('level' => 1)]
+    config['pr_description']['human_review_floors'] = [EVIDENCE.first.merge('level' => 1)]
     File.write(path, YAML.dump(config))
     git(root, 'add', '-A')
     commit(root)

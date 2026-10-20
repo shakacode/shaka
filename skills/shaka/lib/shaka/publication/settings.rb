@@ -46,7 +46,7 @@ module Shaka
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
         config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        [current, config.pr_description['review_effort_floors']]
+        [current, config.pr_description['human_review_floors']]
       end
     rescue Error, SystemCallError
       raise if required

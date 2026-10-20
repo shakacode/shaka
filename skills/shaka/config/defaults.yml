@@ -30,23 +30,26 @@ pr_description:
   show_shaka_credit: true # Show a quiet Shaka website credit below the PR summary.
   show_human_comments: true # List the comments people wrote on the PR.
   max_human_comments: 20 # Rows that list shows, open comments first.
-  # The lowest review effort a PR may claim, from the paths it changes; the highest match applies.
-  # A path matches through a `paths` glob, a name word in `words` (or the word plus s) unless a
-  # `words_except` glob matches, or by matching none of the `all_except` globs.
-  review_effort_floors:
+  # The lowest human review effort a PR may claim, from the files it changes. A file matches a
+  # floor through a `paths` glob or a folder or file name word in `words`, unless an `except`
+  # glob matches it. The PR's floor is the highest level any changed file matches.
+  human_review_floors:
+    - level: 5
+      reason: changes Shaka's repository configuration
+      paths: [.agents/shaka/**/*]
     - level: 4
       reason: changes trust, merge, authentication, or release paths
-      paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS,
-              .agents/shaka/**/*]
+      paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
       words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
               credential]
-      words_except: ['**/*.md', docs/**/*]
+      except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
     - level: 2
       reason: changes agent instructions
       paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
     - level: 2
       reason: changes code or configuration
-      all_except: ['**/*.md', docs/**/*, '**/*.{png,jpg,jpeg,gif,svg,webp}']
+      paths: ['**/*']
+      except: ['**/*.md', docs/**/*, '**/*.{png,jpg,jpeg,gif,svg,webp}']
   opening_check:
     enabled: true # Check the PR opening before publication.
     effort: low # Independent of the code-review effort.

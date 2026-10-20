@@ -9,7 +9,7 @@ module Shaka
     GLOB = File::FNM_PATHNAME | File::FNM_EXTGLOB | File::FNM_DOTMATCH
     NONE = { 'level' => 1 }.freeze
 
-    def self.defaults = Defaults.fetch('pr_description', 'review_effort_floors')
+    def self.defaults = Defaults.fetch('pr_description', 'human_review_floors')
 
     # Returns the highest matching floor with its reason and the first path that set it, or NONE.
     # Rules come from the trusted repository settings, or the shipped defaults when unread.
@@ -21,15 +21,14 @@ module Shaka
       matches.max_by { |rule| rule['level'] } || NONE
     end
 
+    # `except` removes a file from its own floor only; another floor can still match it.
     def self.match?(rule, path)
-      return true if glob?(rule['paths'], path) || word?(rule, path)
-
-      !rule['all_except'].nil? && !glob?(rule['all_except'], path)
+      (glob?(rule['paths'], path) || word?(rule, path)) && !glob?(rule['except'], path)
     end
 
     def self.word?(rule, path)
       words = Array(rule['words']).flat_map { |word| [word, "#{word}s"] }
-      tokens(path).intersect?(words) && !glob?(rule['words_except'], path)
+      tokens(path).intersect?(words)
     end
 
     # CamelCase names split like snake_case ones: AuthService and HTTPAuth both hold auth.

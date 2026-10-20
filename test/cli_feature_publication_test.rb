@@ -31,15 +31,14 @@ class CliFeaturePublicationTest < Minitest::Test
     end
   end
 
-  # Repository configuration sets merge authority, so its review effort floor is 4.
+  # Repository configuration sets merge authority, so its review effort floor is 5.
   def assert_migration_body(dir, root)
-    content = description_content.merge('intent' => INTENT.merge('review_effort' => 4))
+    content = description_content.merge('intent' => INTENT.merge('review_effort' => 5))
     _output, error, status = publish(dir, root, '--publication-flow', 'migration', content:)
     assert_predicate status, :success?, error
     body = File.read(File.join(dir, 'published.md'))
     assert_includes body, 'UNKNOWN: rerun missing evidence'
-    assert_includes body, 'Floor 4: changes trust, merge, authentication, or release paths ' \
-                          '(`.agents/shaka/config.yml`).'
+    assert_includes body, "Floor 5: changes Shaka's repository configuration (`.agents/shaka/config.yml`)."
   end
 
   def test_result_flags_bind_actual_results_and_refuse_missing_review

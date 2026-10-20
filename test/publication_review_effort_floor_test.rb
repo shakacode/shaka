@@ -33,11 +33,23 @@ class PublicationReviewEffortFloorTest < Minitest::Test
   end
 
   def test_trust_merge_authentication_and_release_paths_have_a_floor_of_four
-    ['.github/workflows/ci.yml', '.agents/shaka/trusted-github-actors.yml', 'skills/shaka/lib/shaka/merge.rb',
+    ['.github/workflows/ci.yml', 'skills/shaka/lib/shaka/merge.rb',
      'lib/oauth/callback.rb', 'script/releases.sh', 'CODEOWNERS', 'docs/CODEOWNERS', 'src/AuthService.ts',
      'app/MergeQueue.java', 'lib/OAuthCallback.kt', 'lib/HTTPAuth.rb'].each do |path|
       assert_equal 4, floor(path)['level'], path
     end
+  end
+
+  def test_shaka_configuration_has_a_floor_of_five
+    assert_equal 5, floor('.agents/shaka/config.yml')['level']
+  end
+
+  # except removes a file from its own floor only: a guide about merging under skills/ escapes the
+  # trust floor's Markdown exception yet still matches the agent-instructions floor.
+  def test_except_removes_a_file_from_its_own_floor_only
+    result = floor('skills/shaka/references/merge.md')
+
+    assert_equal [2, 'changes agent instructions'], result.values_at('level', 'reason')
   end
 
   # A word inside a longer name, such as auth in author, is not that word, and a guide

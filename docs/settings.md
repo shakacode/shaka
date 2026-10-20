@@ -938,49 +938,58 @@ one is already on the PR, so the list shows the agent's one-line summary and lin
 to it. So does a short comment with a list beside code, where code is hard to tell
 from prose.
 
-## `pr_description.review_effort_floors`
+## `pr_description.human_review_floors`
 
-**Optional. Default: the list below.**
+**Optional. Default: the floors below.**
 
-Each PR description rates how carefully to review it, from 1 (read the description) to 5.
-Shaka sets a minimum from the files the PR changes, so a change to code your agent runs on
-every task cannot be rated as a docs change. The description names the floor and the file that
-set it. When the agent rates lower, Shaka refuses to publish and asks for at least the floor.
+Every PR description says how much human review the change needs, from 1 (read the
+description) to 5 (review every line, reproduce it, and ask a second reviewer). Shaka sets a
+minimum from the files the PR changes, so an agent can't rate a risky change as light reading.
+The description names the floor and the file that set it.
+
+What deserves close review depends on your project, so set these floors for each repository.
+The easiest way is to ask your agent:
+
+> Help me choose Shaka's human review floors for this repository. Look at our folders and
+> recent PRs, ask me which changes I review most carefully, and open a settings PR.
+
+Your agent knows the matching rules and checks its proposal against your recent PRs. You
+decide what matters; for example, a project whose guides are read by its customers may want
+every `docs/` change reviewed at 5.
 
 By default:
 
-- **4** for GitHub Actions workflows, `CODEOWNERS`, `.agents/shaka/`, and code whose path contains
-  auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
-  or credential as a folder or file name word. Docs and other Markdown files don't count.
-- **2** for agent instructions (`AGENTS.md`, `CLAUDE.md`, `SKILL.md`, `skills/`, `.agents/`,
-  `.claude/`, `.cursor/`) and for any other file except Markdown, `docs/`, and images.
-- **1** otherwise.
+| Floor | Changed file |
+| --- | --- |
+| 5 | Shaka's settings in `.agents/shaka/` |
+| 4 | GitHub Actions workflows, `CODEOWNERS`, and code named for auth, merge, release, trust, permissions, secrets, or credentials |
+| 2 | Agent instructions, such as `AGENTS.md`, `SKILL.md`, and `skills/`, and any other code or configuration |
+| 1 | Markdown docs and images |
 
-Your list replaces the default one, so copy the default list from Shaka's `defaults.yml` and
-change it. For example, a repository that wants its evidence checks reviewed at 4:
+The PR's floor is the highest one any of its files reaches. A PR changing a guide and a GitHub
+Actions workflow needs at least 4.
+
+Each floor lists the files it covers, and can list exceptions that leave a file out of that floor
+only. For example, the default floor 4 covers `docs/merge-guide.md` by its name but excepts
+Markdown, so the guide falls to the next floor that covers it, or to 1. The same guide under
+`skills/` still gets 2 from the agent-instructions floor.
+
+Your list replaces the default one. This repository adds two floors ahead of the defaults:
 
 ```yaml
 pr_description:
-  review_effort_floors:
+  human_review_floors:
+    - level: 5
+      reason: changes docs for Shaka's users
+      paths: [docs/**/*]
     - level: 4
-      reason: changes evidence checks
-      paths: [lib/evidence/**/*]
-    # ...the default floors you keep
+      reason: changes evidence or settings checks
+      paths: [skills/shaka/lib/shaka/evidence/**/*, skills/shaka/lib/shaka/seam/**/*]
+    # ...followed by the default floors
 ```
 
-Each floor has a `level` from 1 to 5, a `reason` the description shows, and at least one way to
-match a changed file:
-
-| Key | Matches a file when |
-| --- | --- |
-| `paths` | A glob matches its path. `**/` spans folders. |
-| `words` | A word, or the word plus s, appears in a folder or file name on its path. `AuthService.ts`, `auth_token.rb`, and `lib/oauth/x.rb` all match. |
-| `words_except` | Not a match by itself. It stops `words` from matching these globs. |
-| `all_except` | None of these globs match its path. |
-
-The highest matching floor applies, and a renamed file counts under both names. An empty list,
-`[]`, turns floors off. Shaka reads the list from the same settings as every other setting here,
-never from the PR's own branch, so a PR cannot lower its own floor.
+Shaka reads the floors from the same settings as everything else on this page, never from the
+PR's own branch, so a PR can't lower its own floor. An empty list, `[]`, turns floors off.
 
 ## `wip.include_checkout_path`
 
