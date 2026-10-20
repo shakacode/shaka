@@ -40,17 +40,17 @@ class DoctorBriefTest < Minitest::Test
   end
 
   def test_individual_settings_are_named_as_kept_out_of_git
-    report, = brief(git: { 'cat-file' => false, 'check-ignore' => true })
+    report, = brief(git: { 'rev-parse' => false, 'check-ignore' => true })
     assert_includes report, '[HEALTHY] Repository seam — individual settings kept out of Git: '
   end
 
   def test_uncommitted_shared_settings_are_named
-    report, = brief(git: { 'cat-file' => false, 'check-ignore' => false })
+    report, = brief(git: { 'rev-parse' => false, 'check-ignore' => false })
     assert_includes report, 'settings not committed yet: '
   end
 
   def test_the_full_report_names_the_settings_source_too
-    report, = doctor(runner: git_runner('cat-file' => false, 'check-ignore' => true))
+    report, = doctor(runner: git_runner('rev-parse' => false, 'check-ignore' => true))
     assert_includes report, '[HEALTHY] Repository seam — individual settings kept out of Git: '
   end
 

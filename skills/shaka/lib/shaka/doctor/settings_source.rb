@@ -13,7 +13,7 @@ module Shaka
       def summary(path) = "#{describe(path)}: #{path} loads and validates in this working tree"
 
       def describe(path)
-        return 'team settings committed in this checkout' if git?('cat-file', '-e', "HEAD:./#{path}")
+        return 'team settings committed in this checkout' if git?('rev-parse', '--verify', '--quiet', "HEAD:./#{path}")
         return 'individual settings kept out of Git' if git?('check-ignore', '--quiet', '--', path)
 
         'settings not committed yet'
