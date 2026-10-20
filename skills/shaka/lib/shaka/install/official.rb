@@ -4,6 +4,7 @@ require 'shellwords'
 require_relative 'checkout'
 require_relative 'locations'
 require_relative 'official_links'
+require_relative 'official_location'
 require_relative 'direct_source'
 require_relative 'link_lock'
 require_relative 'ruby_record'
@@ -15,6 +16,7 @@ module Shaka
     # Keeps the official skill in one dedicated checkout, separate from PR trial packages.
     class Official
       include LinkLock
+      include OfficialLocation
       include RubyRecord
       include TakeOver
       include TakeOverOwner
@@ -22,13 +24,13 @@ module Shaka
       HOSTS = Locations::HOSTS
 
       def initialize(source, options)
-        selected = options[:directory] || (source if options[:take_over]) || registered_source(source) ||
-                   File.join(Dir.home, '.agents/shaka')
-        @owner = owning_checkout(selected, options[:skills_dir], registered_source(source)) if options[:take_over]
-        @checkout = Checkout.new(selected, **source_options(options))
+        selected = selected_directory(source, options)
         @agents = options.fetch(:agents)
         @skills_dir = options[:skills_dir]
         @names = options.fetch(:names).uniq
+        refuse_settings_location(selected, source, options)
+        @owner = owning_checkout(selected, options[:skills_dir], registered_source(source)) if options[:take_over]
+        @checkout = Checkout.new(selected, **source_options(options))
       end
 
       def run(action)
@@ -37,6 +39,7 @@ module Shaka
         return verify(targets_for(action)) if action == :verify
 
         @owner ? take_over : with_lock(File.join(@checkout.root, '.git')) { install(action) }
+        location_summary
         update_reminder
       end
 

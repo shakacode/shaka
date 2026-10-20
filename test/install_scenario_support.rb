@@ -30,6 +30,29 @@ module InstallScenarioSupport
   end
 
   def default_path = File.join(@home, '.local/share/shaka/source')
+  def old_path = File.join(@home, '.agents/shaka')
+
+  # A registered checkout at the old default, ~/.agents/shaka, which the installer no longer creates:
+  # install elsewhere, then move the checkout, its record, and its links there.
+  def old_location_install(*)
+    staging = clone_to(File.join(@directory, 'staging'))
+    run_install(staging, '--directory', staging, '--repository', @remote, *)
+    move_to_old_path(File.realpath(staging))
+    old_path
+  end
+
+  def move_to_old_path(staging)
+    FileUtils.mkdir_p(File.dirname(old_path))
+    File.rename(staging, old_path)
+    rewrite_record.fetch('targets').each { |target| relink(target, staging) }
+  end
+
+  def rewrite_record
+    path = File.join(old_path, '.git/shaka-install.json')
+    record = JSON.parse(File.read(path)).merge('directory' => File.realpath(old_path))
+    File.write(path, JSON.pretty_generate(record))
+    record
+  end
 
   def clone_to(path)
     git('clone', '-q', @remote, path)
@@ -89,6 +112,16 @@ module InstallScenarioSupport
     return File.realpath(path) if File.exist?(path)
 
     File.join(canonical(File.dirname(path)), File.basename(path))
+  end
+
+  def relink(target, staging)
+    target['names'].each do |name|
+      link = File.join(target['directory'], name)
+      next unless File.symlink?(link) && File.readlink(link).start_with?(staging)
+
+      File.unlink(link)
+      File.symlink(File.join(File.realpath(old_path), 'skills', name), link)
+    end
   end
 
   def snapshot

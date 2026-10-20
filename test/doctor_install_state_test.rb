@@ -9,13 +9,13 @@ class DoctorInstallStateTest < Minitest::Test
 
   def test_a_healthy_install_names_its_state
     report, = doctor
-    assert_includes report, '[HEALTHY] Install state — A1 Default install, one host at /home/.agents/shaka'
+    assert_includes report, '[HEALTHY] Install state — A1 Default install, one host at /home/.local/share/shaka/source'
   end
 
   def test_an_orphan_record_names_the_next_command
     orphan = lambda do
       { 'state' => 'C1', 'title' => 'Orphan installation record', 'severity' => 'attention',
-        'location' => '/home/.agents/shaka', 'detail' => 'this record owns nothing',
+        'location' => '/home/.local/share/shaka/source', 'detail' => 'this record owns nothing',
         'next_command' => 'mv record record.retired' }
     end
     report, blocked = doctor(installation_status: orphan)

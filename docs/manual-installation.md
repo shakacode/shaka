@@ -32,10 +32,11 @@ arguments, paths, or task text. Set `SHAKA_CALL_LOG=off` to stop recording.
 ## Install
 
 Clone the source. To install somewhere else, such as `~/agent-tools/shaka`,
-change `SHAKA_DIR` on the first line:
+change `SHAKA_DIR` on the first line. Keep it out of `~/.agents/`, which holds
+settings; the installer refuses any folder there:
 
 ```bash
-SHAKA_DIR="$HOME/.agents/shaka"
+SHAKA_DIR="$HOME/.local/share/shaka/source"
 umask 022
 mkdir -p "$(dirname "$SHAKA_DIR")"
 git clone https://github.com/shakacode/shaka.git "$SHAKA_DIR"
@@ -62,6 +63,11 @@ Each one adds this link:
 Pi has no option of its own; it loads the shared skill linked for `codex`.
 `bin/install --help` lists the remaining options.
 
+When it finishes, the installer prints where everything lives: the source
+checkout and its commit, each skills folder it linked, and your settings. The
+source checkout is not configuration. Settings live in each project's
+`.agents/shaka/` folder and in `~/.agents/trusted-github-actors.yml`.
+
 Start a new chat and look for **Shaka**. [Coding agents](coding-agents.md) shows
 how to start a task in each one. Then continue with
 [setup](getting-started.md#2-choose-individual-or-team-setup).
@@ -78,7 +84,7 @@ Check the installation at any time, using the directory you installed into.
 This command changes nothing in the checkout or your skill links:
 
 ```bash
-"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --verify
 ```
 
 It confirms that the checkout comes from the recorded origin, has no local
@@ -89,7 +95,7 @@ agents use, ask for the installation state. It also changes nothing and works
 offline:
 
 ```bash
-"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --status
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --status
 ```
 
 It names the state, where it found it, and the one command for you to run next,
@@ -101,6 +107,10 @@ or the decision you need to make. For example:
 - When your links point into a linked Git worktree, which disappears when its
   branch is cleaned up, it names the command that reinstalls Shaka into
   `~/.local/share/shaka/source`, or what to decide when one command cannot.
+- When Shaka is installed at the old default, `~/.agents/shaka`, it names the
+  command that clones Shaka into `~/.local/share/shaka/source` and moves your
+  links there. Every install action names the same command until you run it.
+  The old checkout stays where it is; delete it once the new one works.
 
 Below the state it lists the links, checkouts, and PR trials it found.
 `shaka doctor` reports the same state.
@@ -123,7 +133,7 @@ installing with `--agent claude` again without the flag removes it.
 When an update is due, finish active Shaka chats, fetch and apply it, then start a new chat:
 
 ```bash
-"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --update
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update
 ```
 
 The update stops without changing the checkout when it finds local changes or

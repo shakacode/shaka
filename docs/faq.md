@@ -100,6 +100,17 @@ their links for you to read. To change the allowlist, ask:
 $shaka Add USER to this project's trusted GitHub actors.
 ```
 
+## Where is Shaka installed, and is that my configuration?
+
+New installs put the Shaka source in `~/.local/share/shaka/source`. That
+checkout is not configuration, and you never edit it. Your settings live in
+each project's `.agents/shaka/` folder and in `~/.agents/trusted-github-actors.yml`.
+
+Older installs used `~/.agents/shaka`, which looked like settings. The installer
+now refuses that location and prints one command that clones Shaka into the new
+default and moves your skill links there. Run it, then delete the old checkout.
+The same message appears from `install --status`.
+
 ## Where do I put project rules?
 
 | What | Where |

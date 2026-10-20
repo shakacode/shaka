@@ -8,9 +8,9 @@ class InstallStatusEntryTest < Minitest::Test
 
   REPOSITORY = File.expand_path('..', __dir__)
 
-  # The installer's current default still counts as a default location until #680 moves it.
-  def test_the_current_installer_default_is_a_default_install
-    root = clone_to(File.join(@home, '.agents/shaka'))
+  # A clone at the default location needs no --directory to become a default install.
+  def test_the_installer_default_is_a_default_install
+    root = clone_to(default_path)
     git('-C', root, 'remote', 'set-url', 'origin', OFFICIAL)
     run_install(root)
     assert_equal 'A1', status(root)['state']

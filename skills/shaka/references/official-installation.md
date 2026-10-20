@@ -12,12 +12,15 @@ repositories your agent will edit:
 
 ```bash
 umask 022
-mkdir -p "$HOME/.agents"
-git clone https://github.com/shakacode/shaka.git "$HOME/.agents/shaka"
-"$HOME/.agents/shaka/bin/install" --agent codex
+mkdir -p "$HOME/.local/share/shaka"
+git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/source"
+"$HOME/.local/share/shaka/source/bin/install" --agent codex
 ```
 
-Default: `~/.agents/shaka`; respect chosen locations with `--directory DIR`.
+Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
+The installer refuses `~/.agents/` and every directory under it, where settings live. An install
+registered there refuses every action; run the take-over command its message names, then tell the user
+the old checkout can be deleted. Never delete it for them.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
 Every action refuses a checkout that is itself a linked worktree; reinstall from a separate clone as its message says.
@@ -61,9 +64,9 @@ starts; installing with `--agent claude` and without the flag removes that hook.
 Use the registered helper with your chosen path:
 
 ```bash
-"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --verify
-"$HOME/.agents/shaka/skills/shaka/scripts/shaka" update-check
-"$HOME/.agents/shaka/skills/shaka/scripts/shaka" install --update
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --verify
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" update-check
+"$HOME/.local/share/shaka/source/skills/shaka/scripts/shaka" install --update
 ```
 
 Verification checks checkout identity, cleanliness, links, and Ruby without changes.
