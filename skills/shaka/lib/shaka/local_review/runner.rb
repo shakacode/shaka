@@ -149,9 +149,11 @@ module Shaka
     end
 
     # Keeps the command's own reason, such as Git's "fatal: bad revision", without the checkout or home path.
+    # A HOME of "/" or "" would rewrite every slash or character, so only a real home directory is redacted.
     def stderr_line(stderr)
-      line = stderr.to_s.scrub.lines.map(&:strip).find { |text| !text.empty? }.to_s
-      line = line.gsub(root, '<checkout>').gsub(Dir.home, '~')
+      line = stderr.to_s.scrub.lines.map(&:strip).find { |text| !text.empty? }.to_s.gsub(root, '<checkout>')
+      home = ENV.fetch('HOME', '')
+      line = line.gsub(home, '~') if home.length > 1
       line.length > 200 ? "#{line[0, 200]}..." : line
     end
   end
