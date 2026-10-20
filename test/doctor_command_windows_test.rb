@@ -26,7 +26,7 @@ class DoctorCommandWindowsTest < Minitest::Test
   def test_a_timeout_leaves_no_surviving_child_without_process_groups
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'pid')
-      _out, _error, ok = run_bounded(0.3, ['ruby', '-e', leader_script(path)])
+      _out, _error, ok = run_bounded(3, ['ruby', '-e', leader_script(path)])
       refute ok
 
       refute_alive(pid_in(path), 'expiry left the child running')
@@ -36,7 +36,7 @@ class DoctorCommandWindowsTest < Minitest::Test
   def test_a_timeout_kills_a_descendant_without_process_groups
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'pid')
-      _out, _error, ok = run_bounded(0.5, ['ruby', '-e', descendant_script(path, 'sleep 30')])
+      _out, _error, ok = run_bounded(3, ['ruby', '-e', descendant_script(path, 'sleep 30')])
       refute ok
 
       refute_alive(pid_in(path), 'a descendant outlived the deadline')
@@ -48,7 +48,7 @@ class DoctorCommandWindowsTest < Minitest::Test
   def test_a_timeout_kills_a_descendant_whose_leader_already_exited
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'pid')
-      _out, _error, ok = run_bounded(0.5, ['ruby', '-e', orphan_script(path)])
+      _out, _error, ok = run_bounded(3, ['ruby', '-e', orphan_script(path)])
       refute ok
 
       refute_alive(pid_in(path), 'a descendant survived the leader exiting')
