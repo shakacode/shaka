@@ -62,7 +62,7 @@ class HandoffSquashMessageTest < Minitest::Test
     assert owed?(result, "squash commit message for #{HEAD}")
   end
 
-  def test_a_pr_not_awaiting_merge_reads_no_comments
+  def test_a_pr_not_awaiting_merge_owes_no_squash_message
     assert_empty handoff(comments: nil)['owed']
   end
 

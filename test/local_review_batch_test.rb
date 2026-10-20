@@ -24,10 +24,10 @@ module LocalReviewLedgerSteps
 
   private
 
-  def ledger = Shaka::LocalReviewLedger.new(@path)
+  def ledger(settings = nil) = Shaka::LocalReviewLedger.new(@path).tap { |ledger| ledger.settings = settings }
 
-  def append(head, reviewer, findings:)
-    ledger.append!(base: BASE, round: round_entry(head, reviewer, findings))
+  def append(head, reviewer, findings:, settings: nil)
+    ledger(settings).append!(base: BASE, round: round_entry(head, reviewer, findings))
   end
 
   def round_entry(head, reviewer, findings)
@@ -35,6 +35,13 @@ module LocalReviewLedgerSteps
   end
 
   def record(findings, **extra) = ledger.record!({ 'findings' => findings }.merge(extra.transform_keys(&:to_s)))
+
+  # Two reviewers read one commit, record a finding, then read it again under changed settings.
+  def review_twice
+    %w[openai/codex anthropic/claude].each { |reviewer| append(EARLIER, reviewer, findings: 1, settings: 'a' * 64) }
+    record([NIT.merge('reviewers' => { 'openai/codex' => '1', 'anthropic/claude' => '1' })])
+    %w[openai/codex anthropic/claude].each { |reviewer| append(EARLIER, reviewer, findings: 0, settings: 'c' * 64) }
+  end
 
   def fixed(reviewers)
     numbers = reviewers.to_h { |reviewer| [reviewer, '1'] }
@@ -124,6 +131,51 @@ class LocalReviewBatchLedgerTest < Minitest::Test
 
     error = assert_raises(Shaka::Error) { ledger.append!(base: 'f' * 40, round:) }
     assert_includes error.message, 'use a new ledger'
+  end
+
+  # Break caught: a settings re-review joined the earlier batch on its commit, so recording it
+  # rewrote findings that batch had already triaged.
+  def test_a_settings_rereview_is_a_new_batch_on_the_same_commit
+    review_twice
+
+    assert_equal [3, 4], ledger.record!({ 'findings' => [] })
+    assert_equal([1, 1, 0, 0], ledger.rounds.map { |round| round.fetch('findings').size })
+  end
+
+  # Break caught: a third batch under the first settings would have split that batch's rounds apart.
+  def test_a_settings_rereview_cannot_return_to_earlier_settings
+    review_twice
+    ledger.record!({ 'findings' => [] })
+
+    error = assert_raises(Shaka::Error) { append(EARLIER, 'openai/codex', findings: 0, settings: 'a' * 64) }
+    assert_includes error.message, 'reviewed under other settings'
+  end
+
+  # Break caught: a later record of the commit reaches only its newest batch, stranding an open finding.
+  def test_a_settings_rereview_waits_for_open_findings_to_be_settled
+    append(EARLIER, 'openai/codex', findings: 1, settings: 'a' * 64)
+    record([NIT.merge('disposition' => 'open')])
+
+    error = assert_raises(Shaka::Error) { append(EARLIER, 'openai/codex', findings: 0, settings: 'c' * 64) }
+    assert_includes error.message, 'Settle finding F1'
+  end
+
+  # Break caught: a re-review of a commit whose recorded fix is in a later commit could never publish.
+  def test_a_settings_rereview_waits_for_a_recorded_fix_to_be_reviewed
+    append(EARLIER, 'openai/codex', findings: 1, settings: 'a' * 64)
+    record([fixed(['openai/codex'])])
+
+    error = assert_raises(Shaka::Error) { append(EARLIER, 'openai/codex', findings: 0, settings: 'c' * 64) }
+    assert_includes error.message, 'review its fix'
+  end
+
+  # Break caught: a reviewer without recorded settings joined a batch with them, or the reverse,
+  # and split one commit's triage in two.
+  def test_reviewers_of_one_commit_share_their_settings
+    append(EARLIER, 'openai/codex', findings: 0)
+
+    error = assert_raises(Shaka::Error) { append(EARLIER, 'anthropic/claude', findings: 0, settings: 'a' * 64) }
+    assert_includes error.message, 'reviewed under other settings'
   end
 
   # Break caught: two reviewers finishing together each wrote the ledger they had read, losing a round.
