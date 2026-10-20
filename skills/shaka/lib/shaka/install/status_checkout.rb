@@ -29,6 +29,13 @@ module Shaka
       def helper = command(File.join(@root, 'skills/shaka/scripts/shaka'))
       def installer = command(File.join(@root, 'bin/install'))
 
+      # bin/install refuses a checkout that hosts development, so steps that run it wait for that move.
+      def development?
+        development_uses.any?
+      rescue ArgumentError
+        false
+      end
+
       # Git reads a writable checkout's config, which can name commands to run, so an unsafe
       # checkout gets no Git read at all, as the installer refuses it before any Git command.
       def findings
@@ -104,7 +111,7 @@ module Shaka
       end
 
       # A plain install refuses a checkout used for development; an update only warns, and also records Ruby.
-      def ruby_step = development_uses.empty? ? installer : "#{installer} --update"
+      def ruby_step = development? ? "#{installer} --update" : installer
 
       # The installer's own check, so status and installation agree on what counts as development.
       # Moving development out fixes nothing broken, so it ranks after the install's own problems.

@@ -56,7 +56,9 @@ module Shaka
         hosts = hosts(selection['directories'].uniq)
         return StatusStates.finding(id, root, detail, decision: DECIDE) unless hosts && command?(selection)
 
-        StatusStates.finding(id, root, detail, command: command(selection, @inventory.links_to(root), hosts))
+        steps = command(selection, @inventory.links_to(root), hosts)
+        StatusStates.finding(id, root, "#{detail}. If the last step fails, rerun it: #{steps.split(' && ').last}",
+                             command: steps)
       end
 
       def command(selection, links, hosts)

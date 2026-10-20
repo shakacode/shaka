@@ -34,7 +34,7 @@ module Shaka
       end
 
       def link(checkout, path, name)
-        return finding('B9', path, 'link is missing', command: checkout.installer) unless present?(path)
+        return missing(checkout, path) unless present?(path)
         return finding('B9', path, 'is not a link', decision: 'Move this path aside, then rerun bin/install.') unless
           File.symlink?(path)
 
@@ -57,6 +57,13 @@ module Shaka
         finding('C1', checkout.root, "no link this record names reaches it (#{path} is #{describe(path)}); " \
                                      'another registered checkout serves the hosts',
                 command: "mv #{record} #{record}.retired-$(date -u +%Y%m%dT%H%M%SZ)")
+      end
+
+      def missing(checkout, path)
+        return finding('B9', path, 'link is missing', command: checkout.installer) unless checkout.development?
+
+        finding('B9', path, 'link is missing, and bin/install refuses this checkout while it hosts development',
+                decision: "Move the development out first (the C3 step), then run #{checkout.installer}.")
       end
 
       def exact?(checkout, path, name)

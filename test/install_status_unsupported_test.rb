@@ -14,6 +14,12 @@ class InstallStatusUnsupportedTest < Minitest::Test
     assert_equal tower_in(default_path), File.realpath(File.join(@home, '.claude/skills/rct'))
   end
 
+  # The links go before the install runs, so the detail names the step to rerun if the install fails.
+  def test_the_reinstall_names_the_step_to_rerun
+    worktree_links('.claude/skills' => %w[shaka])
+    assert_includes status(@root)['detail'], "rerun it: #{Shellwords.escape(File.join(default_path, 'bin/install'))}"
+  end
+
   # One command would give every host the union of their towers, so differing hosts get a decision.
   def test_hosts_with_different_towers_get_a_decision
     worktree_links('.claude/skills' => %w[shaka], '.agents/skills' => %w[shaka rct])

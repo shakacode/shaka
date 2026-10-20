@@ -48,7 +48,8 @@ class InstallScenariosTest < Minitest::Test
     git('-C', root, 'worktree', 'add', '-q', File.join(@directory, 'feature'))
     File.unlink(File.join(@home, '.agents/skills/shaka'))
     report = status(root)
-    assert_equal 'B9', report['state']
+    assert_equal ['B9', nil], report.values_at('state', 'next_command')
+    assert_includes report['decision'], 'Move the development out first'
     assert_includes report['findings'].map { |item| item['id'] }, 'C3'
   end
 
