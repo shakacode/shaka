@@ -109,10 +109,26 @@ module Shaka
         uses = development_uses
         return if uses.empty?
 
-        finding('C3', "source checkout is also used for development (#{uses.join('; ')})",
-                command: "#{installer} --directory #{CheckoutDevelopment::SOURCE_EXAMPLE} --take-over")
+        finding('C3', "source checkout is also used for development (#{uses.join('; ')})", **development_step)
           .merge('rank' => 'C3-development')
       rescue ArgumentError
+        nil
+      end
+
+      # --take-over cannot move the hosts to the checkout they already use.
+      def development_step
+        target = CheckoutDevelopment::SOURCE_EXAMPLE
+        unless @root == real(File.expand_path(target))
+          return { command: "#{installer} --directory #{target} --take-over" }
+        end
+
+        { decision: 'Move these worktrees and branches to a separate development clone; this checkout already sits ' \
+                    'where a fresh Shaka checkout would go.' }
+      end
+
+      def real(path)
+        File.realpath(path)
+      rescue SystemCallError
         nil
       end
 

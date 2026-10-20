@@ -69,6 +69,17 @@ class InstallStatusEntryTest < Minitest::Test
     assert_includes report['detail'], "#{File.realpath(copy)}, which is not a registered checkout"
   end
 
+  # A bare bin/install keeps the recorded hosts and towers, so the B9 step restores the link it names.
+  def test_the_missing_link_step_keeps_recorded_selections
+    root = default_install('--agent', 'claude', '--with-rct')
+    File.unlink(File.join(@home, '.claude/skills/rct'))
+    report = status(root)
+    assert_equal 'B9', report['state']
+    output, process = Open3.capture2e(environment, 'sh', '-c', report['next_command'])
+    assert_predicate process, :success?, output
+    assert_equal File.join(File.realpath(root), 'skills/rct'), File.realpath(File.join(@home, '.claude/skills/rct'))
+  end
+
   def test_the_documented_helper_reports_a_state
     output, process = Open3.capture2e(environment, File.join(REPOSITORY, 'skills/shaka/scripts/shaka'),
                                       'install', '--status', '--json')
