@@ -14,10 +14,21 @@ class InstallStatusUnsupportedTest < Minitest::Test
     assert_equal tower_in(default_path), File.realpath(File.join(@home, '.claude/skills/rct'))
   end
 
-  # The links go before the install runs, so the detail names the step to rerun if the install fails.
   def test_the_reinstall_names_the_step_to_rerun
     worktree_links('.claude/skills' => %w[shaka])
-    assert_includes status(@root)['detail'], "rerun it: #{Shellwords.escape(File.join(default_path, 'bin/install'))}"
+    assert_includes status(@root)['detail'], "then rerun: #{Shellwords.escape(File.join(default_path, 'bin/install'))}"
+  end
+
+  # The links go before the install runs, so a failed install puts them back.
+  def test_a_failed_reinstall_restores_the_old_links
+    worktree_links('.claude/skills' => %w[shaka])
+    link = File.join(@home, '.claude/skills/shaka')
+    before = File.realpath(link)
+    report = status(@root)
+    File.chmod(0o775, File.dirname(link))
+    _output, process = Open3.capture2e(environment, 'sh', '-c', report['next_command'])
+    refute_predicate process, :success?
+    assert_equal before, File.realpath(link)
   end
 
   # One command would give every host the union of their towers, so differing hosts get a decision.

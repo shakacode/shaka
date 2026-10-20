@@ -4,10 +4,10 @@ require_relative '../install/status'
 
 module Shaka
   class Doctor
-    # Everything doctor reaches outside its own process, in one place so a test can state
-    # the machine it describes instead of inheriting the one it runs on.
     PACKAGE_ROOT = File.expand_path('../../../../..', __dir__)
 
+    # Everything doctor reaches outside its own process, in one place so a test can state
+    # the machine it describes instead of inheriting the one it runs on.
     System = Struct.new(:runner, :usage_source, :host_name, :ruby_version, :cursor_stop_hook, :executable,
                         :installation_status, keyword_init: true) do
       def self.default

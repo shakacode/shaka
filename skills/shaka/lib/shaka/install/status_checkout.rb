@@ -29,9 +29,10 @@ module Shaka
       def helper = command(File.join(@root, 'skills/shaka/scripts/shaka'))
       def installer = command(File.join(@root, 'bin/install'))
 
-      # bin/install refuses a checkout that hosts development, so steps that run it wait for that move.
+      # bin/install refuses a checkout that hosts development, so steps that run it wait for that move. The
+      # safety check comes first: Git reads a writable checkout's config, which can name commands.
       def development?
-        development_uses.any?
+        unsafe.nil? && development_uses.any?
       rescue ArgumentError
         false
       end

@@ -100,7 +100,7 @@ or the decision you need to make. For example:
   use, it names the command that renames that record aside.
 - When your links point into a linked Git worktree, which disappears when its
   branch is cleaned up, it names the command that reinstalls Shaka into
-  `~/.local/share/shaka/source`.
+  `~/.local/share/shaka/source`, or what to decide when one command cannot.
 
 Below the state it lists the links, checkouts, and PR trials it found.
 `shaka doctor` reports the same state.
