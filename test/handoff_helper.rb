@@ -19,7 +19,11 @@ class HandoffFakeGitHub
     @pull = pull
   end
 
-  def snapshot = { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42 }
+  def snapshot
+    { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42,
+      'author' => { 'login' => @pull.fetch(:author, 'shaka-agent') } }
+  end
+
   def required_checks = @pull[:checks]
   def configured_required_checks = []
   def viewer_login = @pull.fetch(:viewer, 'shaka-agent')
@@ -42,7 +46,7 @@ class HandoffFakeGitHub
   def api_list(path)
     return @pull[:labels].map { |name| { 'name' => name } } if path.start_with?(HandoffFakeGitHub::LABELS)
     return @pull[:reviews] if path.start_with?(HandoffFakeGitHub::REVIEWS)
-    return @pull[:comments] if path.start_with?(HandoffFakeGitHub::COMMENTS)
+    return Array(@pull[:comments]) if path.start_with?(HandoffFakeGitHub::COMMENTS)
 
     raise "unexpected list #{path}"
   end
@@ -90,15 +94,28 @@ module HandoffFixtures
 
   STATES = { 'pass' => 'SUCCESS', 'pending' => 'PENDING', 'skipping' => 'SKIPPED' }.freeze
 
-  # A review thread opened by a reviewer, with later comments from each login in replies.
-  # A login ending in [bot] is a Bot author, which GraphQL names without the suffix.
-  def self.thread(id, resolved: false, replies: [])
-    comments = ['reviewer', *replies].each_with_index.map do |login, index|
+  AGENT_POST = "🤖 Claude Code · Anthropic · claude-opus-5-5 · medium\n\nDone."
+  PERSON_POST = 'Please rename this.'
+
+  # A review thread opened by opener, with later comments from each login in replies. A login
+  # ending in [bot] is a Bot author, which GraphQL names without the suffix. A shaka-agent login
+  # posts as the agent unless given as [login, body].
+  def self.thread(id, resolved: false, replies: [], opener: 'reviewer')
+    comments = [opener, *replies].each_with_index.map do |login, index|
+      login, body = login.is_a?(Array) ? login : [login, post(login)]
       author = { '__typename' => login.end_with?('[bot]') ? 'Bot' : 'User', 'login' => login.delete_suffix('[bot]') }
-      { 'fullDatabaseId' => "#{id.delete('^0-9')}#{index + 1}", 'author' => author }
+      { 'fullDatabaseId' => "#{id.delete('^0-9')}#{index + 1}", 'author' => author, 'body' => body }
     end
     page = { 'nodes' => comments, 'pageInfo' => { 'hasNextPage' => false } }
     { 'id' => id, 'isResolved' => resolved, 'comments' => page }
+  end
+
+  def self.post(login) = login.start_with?('shaka-agent') ? AGENT_POST : PERSON_POST
+
+  # A conversation comment as REST lists it.
+  def self.comment(id, body = PERSON_POST, author: 'shaka-agent')
+    { 'id' => id, 'user' => { 'login' => author }, 'body' => body,
+      'html_url' => "https://github.com/owner/repo/pull/42#issuecomment-#{id}" }
   end
 
   def self.check(bucket) = { 'name' => 'validate', 'state' => STATES.fetch(bucket), 'bucket' => bucket }
@@ -113,6 +130,7 @@ module HandoffHarness
   def walkthrough(...) = HandoffFixtures.walkthrough(...)
   def check(bucket) = HandoffFixtures.check(bucket)
   def thread(...) = HandoffFixtures.thread(...)
+  def comment(...) = HandoffFixtures.comment(...)
 
   def description(wip = WIP) = HandoffFixtures.description(wip)
 
