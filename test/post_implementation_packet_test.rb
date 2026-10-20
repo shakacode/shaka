@@ -66,6 +66,15 @@ class PostImplementationPacketTest < Minitest::Test
     end
   end
 
+  def test_only_what_the_reviewer_reads_counts_toward_the_packet_limit
+    @packet = CHECKPOINT_CONTENT.merge('usage' => { 'note' => 'x' * 150_000 })
+    with_repository do |root, base, head, bin|
+      fake_checkpoint(bin, head)
+      assert_predicate run_checkpoint(root, base, head, bin)[1], :success?
+    end
+    assert_refused_before_invocation(own('evidence' => ['x' * 150_000]))
+  end
+
   def test_checkpoint_evidence_reaches_the_reviewer
     @packet = own('evidence' => ['Growth: +40 words'])
     with_repository do |root, base, head, bin|

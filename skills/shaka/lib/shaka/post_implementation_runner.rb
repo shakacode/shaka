@@ -103,9 +103,13 @@ module Shaka
 
     def packet
       path = packet_path
-      raise Error, 'Checkpoint content exceeds 100 KB' if File.size(path) > 100_000
+      # Description content carries usage records the reviewer never sees, so only the packet keeps the 100 KB cap.
+      raise Error, 'Checkpoint content exceeds 1 MB' if File.size(path) > 1_000_000
 
-      PostImplementationPacket.build(JSON.parse(File.read(path, encoding: 'UTF-8')))
+      packet = PostImplementationPacket.build(JSON.parse(File.read(path, encoding: 'UTF-8')))
+      raise Error, 'Checkpoint packet exceeds 100 KB' if JSON.generate(packet).bytesize > 100_000
+
+      packet
     rescue JSON::ParserError => e
       raise Error, "Malformed checkpoint content: #{e.message}"
     end
