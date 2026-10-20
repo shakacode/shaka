@@ -58,10 +58,10 @@ module Shaka
         owe(fact, "The walkthrough explains #{revision}; publish one for #{live}.")
       end
 
-      # An answer may change the code, so the next walkthrough waits for it; a merge request never does.
-      # `attention --state answer` can set the label alone, so the description must list the decisions too.
+      # An answer may change the code, so the next walkthrough waits for the decisions the description lists,
+      # as its links line says. The label can drift from that list, and a merge request never waits.
       def deciding?
-        return false if merge_requested? || @labels.none? { |label| label.casecmp?('awaiting-answer') }
+        return false if merge_requested?
 
         body = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")['body'].to_s
         DecisionLabels.asks_for_decisions?(Publishing.managed_region(body.gsub("\r\n", "\n")).to_s)
