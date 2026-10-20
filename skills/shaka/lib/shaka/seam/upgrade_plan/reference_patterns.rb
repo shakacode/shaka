@@ -5,14 +5,16 @@ module Shaka
     class UpgradePlan
       # Recognizes exact command paths and broader references needing explicit repair.
       module ReferencePatterns
+        include WholeDirectoryGlobs
+
         private
 
         def command_directory_reference?(line)
           line.match?(directory_pattern(PATHS::COMMAND_DIRECTORY, "(?:/(?![[:alnum:]_-])|#{directory_end})"))
         end
 
-        def layout_glob_reference?(line)
-          line.match?(directory_pattern(PATHS::DIRECTORY, '/(?:\\*|\\?)'))
+        def layout_glob_reference?(line, path = nil)
+          without_whole_directory_globs(line, path).match?(directory_pattern(PATHS::DIRECTORY, '/(?:\\*|\\?)'))
         end
 
         def directory_pattern(path, ending)
@@ -27,8 +29,9 @@ module Shaka
           Regexp.new("(?:#{bare}|#{variable}|#{parent}|#{absolute}|#{url})#{ending}")
         end
 
-        def directory_reference?(line)
-          command_directory_reference?(line) || layout_glob_reference?(line) || normalized_internal_reference?(line)
+        def directory_reference?(line, path = nil)
+          command_directory_reference?(line) || layout_glob_reference?(line, path) ||
+            normalized_internal_reference?(line)
         end
 
         def normalized_internal_reference?(line)
