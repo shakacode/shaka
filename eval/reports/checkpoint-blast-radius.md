@@ -59,7 +59,7 @@ Nothing was added to plant an omission.
 | Case | PR | Squash commit | Why it fits |
 | --- | --- | --- | --- |
 | Bug in a shared caller | [#695](https://github.com/shakacode/shaka/pull/695) | `4b382e53` | `github/check_list.rb` feeds `pr`, `pr watch`, `handoff` and `merge`. |
-| Irreversible external side effect | [#552](https://github.com/shakacode/shaka/pull/552) | `b7ee4555` | Lets `shaka merge` submit with no required checks; reverting Shaka cannot undo a merge. |
+| Irreversible external side effect | [#552](https://github.com/shakacode/shaka/pull/552) | `b7ee4555` | Lets `shaka merge` merge on a branch that requires no checks; reverting Shaka cannot undo a merge. |
 | Trivial edit | [#635](https://github.com/shakacode/shaka/pull/635) | `4aad9844` | Two Markdown tagline lines. |
 
 ### Scoring

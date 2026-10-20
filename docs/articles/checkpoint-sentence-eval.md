@@ -24,8 +24,9 @@ checkpoint called the effect unknown. This study measured it.
 - The sentence changed what reviewers wrote, consistently. With it, every run on
   the two code PRs said whether a revert undoes the change. Without it, none did.
 - On a merge-path PR, it surfaced a real untested decision. All 5 runs with the
-  sentence noted that the agent, not Ruby, decides when to skip required checks,
-  and that nothing tested that decision. None of the 5 runs without it did.
+  sentence noted that the agent, not Ruby, decides when to merge a commit that
+  has no required checks, and that nothing tested that decision. None of the 5
+  runs without it did.
 - It kept a docs edit cheap. All 10 runs said Proceed with no concerns. Reports
   with the sentence were 14 to 16 percent longer.
 - One cost showed up: on a shared-helper PR, 2 of 5 runs with the sentence said
@@ -65,7 +66,7 @@ checkpoint called the effect unknown. This study measured it.
   | Case | PR | Why it fits |
   | --- | --- | --- |
   | Bug in a shared helper | [#695](https://github.com/shakacode/shaka/pull/695) | `check_list.rb` feeds `pr`, `pr watch`, `handoff` and `merge`. |
-  | Irreversible side effect | [#552](https://github.com/shakacode/shaka/pull/552) | Lets `shaka merge` submit with no required checks. A revert cannot undo a merge. |
+  | Irreversible side effect | [#552](https://github.com/shakacode/shaka/pull/552) | Lets `shaka merge` merge a PR on a branch that requires no checks. A revert cannot undo a merge. |
   | Trivial edit | [#635](https://github.com/shakacode/shaka/pull/635) | Two tagline lines in Markdown. |
 
 - **Packets:** each repeats the PR's published problem, scope, safety claim,
