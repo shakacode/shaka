@@ -42,8 +42,8 @@ For example, a Codex row with 100,000 input tokens and 80,000 cached input
 tokens has 20,000 uncached input tokens. A Claude row with 20,000 input tokens
 and 80,000 cached input tokens describes the same input quantities.
 Do not add a Codex row's cached input to its input again.
-OpenCode's native total includes input, output, reasoning, and cache tokens;
-Cursor's native total is unreported.
+OpenCode's native total includes input, output, reasoning, and cache tokens,
+but OpenCode 2 does not report one; Cursor's native total is unreported.
 
 ## How estimates are priced
 

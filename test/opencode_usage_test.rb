@@ -202,6 +202,17 @@ class OpencodeUsageTest < Minitest::Test
     end
   end
 
+  def test_an_unreadable_version_keeps_the_1x_export
+    Dir.mktmpdir do |directory|
+      stub_opencode(directory, latest_fixture)
+      executable = File.join(directory, 'opencode')
+      File.write(executable, File.read(executable).sub('echo 1.18.31; exit 0', 'exit 1'))
+      output = report('--host', 'opencode', '--session', SESSION, environment: stub_environment(directory))
+      assert_includes output, ROW
+      refute_path_exists File.join(directory, 'api-called')
+    end
+  end
+
   def test_openai_provider_responses_are_never_priced_from_cache_inclusive_rates
     Dir.mktmpdir do |directory|
       priced = assistant_message('resp-new', NEW_USER, 1_789_660_287_053, 1_789_660_292_357,
