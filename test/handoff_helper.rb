@@ -72,12 +72,12 @@ module HandoffFixtures
   USAGE = { 'note' => 'Native usage is PARTIAL.',
             'records' => [USAGE_RECORD.merge('columns' => [USAGE_COLUMN])] }.freeze
 
-  def self.rendered(wip = WIP)
+  def self.rendered(wip = WIP, extra = {})
     Shaka::Publication.description(
-      'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE, 'deployment' => 'none',
-      'steps_besides_merging' => 'none',
-      'intent' => INTENT, 'verification' => VERIFICATION,
-      'provenance' => PROVENANCE, 'usage' => USAGE, 'details' => [], 'wip' => wip
+      { 'identity' => IDENTITY, 'summary' => 'A summary.', 'table' => TABLE, 'deployment' => 'none',
+        'steps_besides_merging' => 'none',
+        'intent' => INTENT, 'verification' => VERIFICATION,
+        'provenance' => PROVENANCE, 'usage' => USAGE, 'details' => [], 'wip' => wip }.merge(extra)
     )
   end
 
@@ -103,7 +103,9 @@ module HandoffFixtures
 
   def self.check(bucket) = { 'name' => 'validate', 'state' => STATES.fetch(bucket), 'bucket' => bucket }
 
-  def self.description(wip = WIP) = "#{Shaka::Publishing::OPEN_MARK}\n#{rendered(wip)}#{Shaka::Publishing::CLOSE_MARK}"
+  def self.description(wip = WIP, extra = {})
+    "#{Shaka::Publishing::OPEN_MARK}\n#{rendered(wip, extra)}#{Shaka::Publishing::CLOSE_MARK}"
+  end
 end
 
 # Runs handoff against a fake PR whose defaults owe nothing, so each test changes one fact.
@@ -114,7 +116,7 @@ module HandoffHarness
   def check(bucket) = HandoffFixtures.check(bucket)
   def thread(...) = HandoffFixtures.thread(...)
 
-  def description(wip = WIP) = HandoffFixtures.description(wip)
+  def description(wip = WIP, extra = {}) = HandoffFixtures.description(wip, extra)
 
   def handoff(expected: HEAD, woken_by: nil, post_implementation: nil, **pull)
     defaults = { state: 'OPEN', head: HEAD, labels: ['awaiting-resume'], body: description,

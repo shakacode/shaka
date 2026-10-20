@@ -44,6 +44,6 @@ module Shaka
       decisions
     end
 
-    private_class_method :asks_for_decisions?, :list
+    private_class_method :list
   end
 end

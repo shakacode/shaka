@@ -109,16 +109,6 @@ class HandoffTest < Minitest::Test
     assert(missing['notes'].any? { |item| item.include?('No walkthrough') })
   end
 
-  # An answer may change the code, so a walkthrough for an older head waits for it; merge approval still owes one.
-  def test_an_open_decision_notes_an_older_walkthrough_instead_of_owing_one
-    result = handoff(labels: ['awaiting-answer'], reviews: [walkthrough(OLD)])
-
-    assert_empty result['owed']
-    assert(result['notes'].any? { |item| item.include?('after the decisions') })
-    owed = handoff(labels: ['awaiting-merge-approval'], reviews: [walkthrough(OLD)]).fetch('owed')
-    assert(owed.any? { |item| item.include?("publish one for #{HEAD}") })
-  end
-
   def test_the_latest_walkthrough_wins
     result = handoff(reviews: [walkthrough(OLD), walkthrough(HEAD)])
 

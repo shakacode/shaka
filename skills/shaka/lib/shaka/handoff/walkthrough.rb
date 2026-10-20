@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require_relative '../decision_labels'
 require_relative '../public_comments/bounded_list'
+require_relative '../publication/publishing'
 require_relative '../walkthrough/history'
 
 module Shaka
@@ -57,7 +59,13 @@ module Shaka
       end
 
       # An answer may change the code, so the next walkthrough waits for it; a merge request never does.
-      def deciding? = !merge_requested? && @labels.any? { |label| label.casecmp?('awaiting-answer') }
+      # `attention --state answer` can set the label alone, so the description must list the decisions too.
+      def deciding?
+        return false if merge_requested? || @labels.none? { |label| label.casecmp?('awaiting-answer') }
+
+        body = @github.api("repos/#{@github.repository}/pulls/#{@github.number}")['body'].to_s
+        DecisionLabels.asks_for_decisions?(Publishing.managed_region(body.gsub("\r\n", "\n")).to_s)
+      end
     end
 
     include WalkthroughFact
