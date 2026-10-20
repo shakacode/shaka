@@ -529,6 +529,16 @@ class LocalReviewStdoutFailureTest < Minitest::Test
     end
   end
 
+  # A background child keeps stdout open, so the drain times out after the reviewer is killed.
+  def test_drain_timeout_after_signal_names_the_signal
+    with_repository do |root, base, head, bin|
+      write_executable(bin, 'codex', "#!/bin/sh\n(sleep 10 &)\nkill -KILL $$\n")
+      output, _error, status = run_review(root, base, head, bin)
+      refute_predicate status, :success?
+      assert_includes JSON.parse(output).fetch('reason'), 'output drain timed out after 2s (process killed by signal 9)'
+    end
+  end
+
   def test_silent_reviewer_failure_has_no_empty_diagnostic_artifact
     with_repository do |root, base, head, bin|
       write_executable(bin, 'codex', "#!/bin/sh\nexit 3\n")
