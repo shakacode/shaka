@@ -109,7 +109,7 @@ each project's `.agents/shaka/` folder and in `~/.agents/trusted-github-actors.y
 Older installs used `~/.agents/shaka`, which looked like settings. The installer
 now refuses that location and prints one command that clones Shaka into the new
 default and moves your skill links there. Run it, then delete the old checkout.
-The same message appears from `install --status`.
+`install --status` names the same command.
 
 ## Where do I put project rules?
 

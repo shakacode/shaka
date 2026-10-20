@@ -7,7 +7,8 @@ module Shaka
   module Install
     # The settings folder in HOME holds Shaka settings, so a source checkout there is refused with the one
     # command that moves its links to a checkout in the default location. Nothing is migrated: the old
-    # checkout stays for the user.
+    # checkout stays for the user. The refusal is fixed, with no override: ADR 0002 keeps an install out of
+    # a location that has no supported path once compatibility code is removed.
     module SettingsLocation
       TOWERS = { 'rct' => '--with-rct', 'mct' => '--with-mct', 'mct-claude' => '--with-claude-towers',
                  'rct-claude' => '--with-claude-towers' }.freeze
@@ -24,9 +25,12 @@ module Shaka
       end
 
       # The registered checkout's own installer clones its recorded origin and branch into the default
-      # location and moves every host link there. An occupied default location needs a person instead.
+      # location and moves every host link there. An install already registered at the default location
+      # takes the links over itself; any other occupied default location needs a person.
       def take_over(root, home)
         target = default_directory(home)
+        return Refusal.command(File.join(target, 'bin/install'), '--take-over') if
+          File.file?(File.join(target, '.git', Locations::RECORD))
         return if File.exist?(target) && !(File.directory?(target) && Dir.empty?(target))
 
         Refusal.command(File.join(root, 'bin/install'), '--directory', target, '--take-over')

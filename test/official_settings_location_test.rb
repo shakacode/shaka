@@ -37,6 +37,26 @@ class OfficialSettingsLocationTest < Minitest::Test
     assert_path_exists File.join(root, 'skills/shaka')
   end
 
+  # The old checkout's own installer finds the links it owns in a custom skills folder too.
+  def test_the_take_over_moves_links_in_a_custom_skills_folder
+    root = old_location_install('--skills-dir', @skills_dir)
+    output, process = Open3.capture2e(environment, 'sh', '-c', take_over(root))
+    assert_predicate process, :success?, output
+    assert_equal File.join(File.realpath(default_path), 'skills/shaka'), File.realpath(@destination)
+  end
+
+  # A fresh default install alongside the old one takes over the links the old checkout still owns.
+  def test_an_install_already_at_the_default_takes_the_links_over
+    root = old_location_install('--agent', 'claude')
+    run_install(clone_to(default_path), '--directory', default_path, '--repository', @remote, '--agent', 'codex')
+    output, process = install(root)
+    refute_predicate process, :success?
+    step = "#{Shellwords.escape(File.join(default_path, 'bin/install'))} --take-over"
+    assert_includes output, "Next: #{step}"
+    run_step(step)
+    assert_equal 'A5', status(default_path)['state']
+  end
+
   def test_an_update_names_where_everything_is
     root = clone_to(default_path)
     run_install(root, '--directory', root, '--repository', @remote, '--skills-dir', @skills_dir)
@@ -60,6 +80,11 @@ class OfficialSettingsLocationTest < Minitest::Test
   def fresh_command
     "#{Shellwords.escape(File.join(@root, 'bin/install'))} --directory #{Shellwords.escape(default_path)} " \
       "--repository #{Shellwords.escape(@remote)} --agent claude --with-rct"
+  end
+
+  def run_step(step)
+    output, process = Open3.capture2e(environment, 'sh', '-c', step)
+    assert_predicate process, :success?, output
   end
 
   def install(root, *) = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), *)
