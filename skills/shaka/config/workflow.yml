@@ -808,9 +808,10 @@ phases:
         Ask approval of it, is that confirmation. A confirmation carries to the head a clean rebase produces, or a
         conflict resolution that changes no behavior the walkthrough describes. Any other new
         commit needs a new confirmation.
-      - `merge` also refuses a head whose checkpoint judged its verification `inadequate`. That
-        refusal switches Auto to Ask the same way, and `--adequacy-confirmed-head SHA` follows the
-        limits confirmation rule. The verdict leaves readiness and the Ask handoff unchanged.
+      - `merge` also refuses a head whose checkpoint verdict on verification is `inadequate` or
+        `cannot judge`. That refusal switches Auto to Ask the same way, and
+        `--adequacy-confirmed-head SHA` follows the limits confirmation rule. The verdict leaves
+        readiness and the Ask handoff unchanged.
       - In Ask mode, after that refresh, the walkthrough, and required gates, finish remaining
         agent-owned work in this turn. If anything other than merge remains, report that blocker and
         stop. If merge is the only remaining action, refresh the WIP Details note for this GitHub merge

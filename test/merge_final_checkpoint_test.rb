@@ -24,7 +24,7 @@ class MergeFinalCheckpointTest < Minitest::Test
 
   def test_inadequate_verification_stops_an_unconfirmed_agent_merge
     error = assert_raises(Shaka::Error) { merge_with_adequacy('inadequate') }
-    assert_includes error.message, 'verification inadequate'
+    assert_includes error.message, 'verification for this head is inadequate'
     assert_empty @client.mutations
   end
 
@@ -37,8 +37,17 @@ class MergeFinalCheckpointTest < Minitest::Test
     assert_equal 'MERGED', merge_with_adequacy('inadequate', confirmed: HEAD)['state']
   end
 
-  def test_only_inadequate_verification_stops_the_merge
-    assert_equal 'MERGED', merge_with_adequacy('cannot judge')['state']
+  def test_a_verdict_that_cannot_judge_the_verification_also_stops_the_merge
+    error = assert_raises(Shaka::Error) { merge_with_adequacy('cannot judge') }
+    assert_includes error.message, 'is cannot judge'
+    assert_empty @client.mutations
+  end
+
+  def test_verification_judged_adequate_merges
+    ['adequate', 'adequate with accepted gaps'].each do |verdict|
+      setup
+      assert_equal 'MERGED', merge_with_adequacy(verdict)['state']
+    end
   end
 
   def publish_during_last_snapshot(comment)

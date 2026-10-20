@@ -4,6 +4,7 @@ require_relative 'error'
 require_relative 'reviewer_selection'
 require_relative 'merge_review_comparison'
 require_relative 'merge_tree_proof'
+require_relative 'post_implementation_report'
 
 module Shaka
   # Finds the published local-review attestation an agent-driven merge relies on.
@@ -18,7 +19,7 @@ module Shaka
     EARLIER_CANDIDATES = 5
 
     # adequacy_confirmed_head names the head a user approved although the checkpoint judged its verification
-    # inadequate; like a limits confirmation, any other head needs a new decision.
+    # inadequate or could not judge it; like a limits confirmation, any other head needs a new decision.
     def initialize(github, required: nil, waiver: nil, root: nil, checkpoint: nil, adequacy_confirmed_head: nil) # rubocop:disable Metrics/ParameterLists
       @github = github
       @adequacy_confirmed_head = adequacy_confirmed_head
@@ -29,13 +30,14 @@ module Shaka
     end
 
     # Product evidence is read again after technical evidence and the last native snapshot.
-    # Inadequate verification stops only this agent merge: readiness and the Ask handoff stay as published.
+    # Such a verdict stops only this agent merge: readiness and the Ask handoff stay as published.
     def final_check(head)
       @checkpoint&.call(head)&.tap do |evidence|
-        next unless evidence['verification_adequacy'] == 'inadequate' && @adequacy_confirmed_head != head
+        verdict = evidence['verification_adequacy']
+        next unless PostImplementationReport::STOPS_AGENT_MERGE.include?(verdict) && @adequacy_confirmed_head != head
 
-        raise Error, 'The checkpoint judged verification inadequate for this head; hand it to the user as Ask, ' \
-                     'or pass --adequacy-confirmed-head for a head the user approved'
+        raise Error, "The checkpoint verdict on verification for this head is #{verdict}; hand it to the user " \
+                     'as Ask, or pass --adequacy-confirmed-head for a head the user approved'
       end
     end
 

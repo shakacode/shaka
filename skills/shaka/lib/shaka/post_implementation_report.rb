@@ -9,8 +9,11 @@ module Shaka
     CONCLUSIONS = ['Proceed', 'Simplify/reframe', 'Do not merge'].freeze
     # The task owner's dispositions, shared by the owner's checkpoint comment and the description headline.
     RECOMMENDATIONS = ['Merge', 'Revise before merge', 'Reconsider approach', 'Do not merge'].freeze
-    # Whether the verification proves the intent; only inadequate stops an agent merge, never readiness.
+    # Whether the verification proves the intent. The last two stop an agent merge, never readiness.
     ADEQUACY = ['adequate', 'adequate with accepted gaps', 'inadequate', 'cannot judge'].freeze
+    # Fixed because Ruby acts on the parsed verdict, and no maintainer has a use for Auto merging past
+    # verification that failed or could not be judged; Ask leaves the decision to the maintainer.
+    STOPS_AGENT_MERGE = ['inadequate', 'cannot judge'].freeze
     ADEQUACY_FIELDS = %w[verdict weakest_claim next_check].freeze
 
     module_function
