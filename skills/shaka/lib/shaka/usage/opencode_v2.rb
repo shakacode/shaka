@@ -44,9 +44,13 @@ module Shaka
       end
     end
 
+    # A compaction that reports tokens is a billed model call, as 1.x recorded it with an
+    # assistant message, so it counts as a response.
     def info(message, turn)
       model = message['model'].is_a?(Hash) ? message['model'] : {}
-      { 'role' => message['type'], 'id' => message['id'], 'parentID' => turn, 'time' => message['time'],
+      billed = message['type'] == 'compaction' && message['tokens'].is_a?(Hash)
+      { 'role' => billed ? 'assistant' : message['type'], 'id' => message['id'], 'parentID' => turn,
+        'time' => message['time'],
         'tokens' => message['tokens'], 'providerID' => model['providerID'], 'modelID' => model['id'],
         'variant' => model['variant'] }
     end

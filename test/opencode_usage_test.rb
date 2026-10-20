@@ -255,6 +255,16 @@ module OpencodeV2UsageFixture
       'content' => [{ 'type' => 'text', 'text' => 'SENSITIVE-REPLY' }] }
   end
 
+  # A running compaction has no tokens yet; completed and failed ones report them.
+  def v2_compaction(identity, message_tokens = nil)
+    compaction = { 'type' => 'compaction', 'id' => identity, 'status' => message_tokens ? 'completed' : 'running',
+                   'time' => { 'created' => 1_789_660_292_358 }, 'summary' => 'SENSITIVE-SUMMARY' }
+    return compaction unless message_tokens
+
+    model = { 'id' => 'routed-model', 'providerID' => 'opencode', 'variant' => 'medium' }
+    compaction.merge('tokens' => message_tokens.except('total'), 'model' => model)
+  end
+
   def v2_fixture
     { 'data' => { 'info' => { 'id' => SESSION, 'model' => { 'id' => 'session-model' } },
                   'messages' => [
@@ -314,6 +324,18 @@ class OpencodeV2UsageTest < Minitest::Test
       output = report('--host', 'opencode', '--file', write_export(directory, document), '--all-turns')
       assert_includes output, '| Input | 1375 |'
       assert_includes output, 'Unreadable or unidentifiable records'
+    end
+  end
+
+  def test_counts_a_billed_compaction_in_its_turn
+    Dir.mktmpdir do |directory|
+      document = v2_fixture
+      document['data']['messages'].push(v2_compaction('compaction-new', tokens(25, 100, 50)),
+                                        v2_compaction('compaction-running'))
+      output = report('--host', 'opencode', '--file', write_export(directory, document))
+      assert_includes output, '2 responses'
+      assert_metric output, 'Input', 500
+      refute_includes output, 'SENSITIVE'
     end
   end
 

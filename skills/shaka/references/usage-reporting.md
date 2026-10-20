@@ -207,7 +207,8 @@ per-message metadata, never message parts or content containing transcript text.
 Both commands truncate piped JSON, so output is redirected to a temporary file before parsing.
 
 A turn is a user message. Assistant messages join it through `parentID`; an
-OpenCode 2 export has none, so each joins the nearest earlier user message. The
+OpenCode 2 export has none, so each joins the nearest earlier user message. An
+OpenCode 2 compaction that reports tokens counts as a response. The
 default selects the latest user turn; `--all-turns` includes responses with
 identified turns. Rows use the export's provider, session model as configured
 model, response model as routed model, and response variant as effort. OpenCode 2
