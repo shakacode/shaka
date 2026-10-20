@@ -52,12 +52,16 @@ jobs:
         run: ruby bin/windows-exercise cursor
 
       # Each test file runs on its own. A file still running after 90s is
-      # killed and printed as a WINDOWS suite gap, so one stuck file cannot
-      # hide the rest or consume the job. test/local_evaluation_probe_container_test.rb
-      # cannot load: it requires pty, which Windows Ruby does not ship.
-      # test_helper raises "git executable not found" until pull request 748
-      # looks up git.exe; the suite stops after the first file that hits that.
-      # Tests that spawn an extensionless shebang directly still get Errno::ENOEXEC.
+      # killed and printed as a WINDOWS suite gap. On current main, test_helper
+      # raises "git executable not found" until pull request 748 looks up
+      # git.exe, and the suite stops after the first file that hits that.
+      # A windows-latest run that includes that lookup (actions run 39495412891)
+      # then finished 172 files and failed 205. The repeated causes were
+      # Errno::ENOEXEC spawning an extensionless shebang, ArgumentError from
+      # pgroup, harbor paths rejected unless they start with "/", File.open
+      # on a directory in the budget ledger, ENAMETOOLONG under the install
+      # home, and require pty in test/local_evaluation_probe_container_test.rb.
+      # Five private trial files were still running at 90s.
       - name: Test suite
         continue-on-error: true
         env:
