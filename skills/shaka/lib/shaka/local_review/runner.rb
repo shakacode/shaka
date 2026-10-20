@@ -87,6 +87,17 @@ module Shaka
 
   # Adds checkout-specific guards used by the full local review runner.
   module LocalReviewPathGuard
+    # A subprocess that exited unsuccessfully; callers can tell "not an ancestor" from other failures.
+    class CommandFailed < Shaka::Error
+      attr_reader :exit_status
+
+      def initialize(command, status, detail)
+        @exit_status = status.exitstatus
+        reason = status.signaled? ? "signal #{status.termsig}" : "exit #{status.exitstatus}"
+        super("#{command} failed (#{reason})#{": #{detail}" unless detail.empty?}")
+      end
+    end
+
     private
 
     def validate_path!
@@ -128,17 +139,22 @@ module Shaka
 
     def capture(*arguments)
       timeout = @options.fetch(:timeout_seconds)
-      stdout, _stderr, status = LocalReviewProcess.capture(arguments, stdin_data: nil, chdir: root, timeout: timeout)
+      stdout, stderr, status = LocalReviewProcess.capture(arguments, stdin_data: nil, chdir: root, timeout: timeout)
       raise Shaka::Error, "#{arguments.first} timed out after #{timeout}s" unless status
       raise Shaka::Error, "#{arguments.first} output drain timed out after 2s" if
         status.is_a?(LocalReviewProcess::DrainTimeout)
-
-      unless status.success?
-        exit_reason = status.signaled? ? "signal #{status.termsig}" : "exit #{status.exitstatus}"
-        raise Shaka::Error, "#{arguments.first} failed (#{exit_reason})"
-      end
+      raise LocalReviewPathGuard::CommandFailed.new(arguments.first, status, stderr_line(stderr)) unless status.success?
 
       stdout
+    end
+
+    # Keeps the command's own reason, such as Git's "fatal: bad revision", without the checkout or home path.
+    # A HOME of "/" or "" would rewrite every slash or character, so only a real home directory is redacted.
+    def stderr_line(stderr)
+      line = stderr.to_s.scrub.lines.map(&:strip).find { |text| !text.empty? }.to_s.gsub(root, '<checkout>')
+      home = ENV.fetch('HOME', '')
+      line = line.gsub(home, '~') if home.length > 1
+      line.length > 200 ? "#{line[0, 200]}..." : line
     end
   end
 
@@ -152,6 +168,7 @@ module Shaka
       return yield unless @options[:ledger]
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
+      @ledger.settings = @options[:ledger_settings]
       @max_rounds = RepositoryConfig::ReviewLimit.from(effective_review || {})
       prompt = start_ledger(&)
       @started = true
@@ -189,8 +206,8 @@ module Shaka
     # `--is-ancestor` exits 1 only for "not an ancestor"; a timeout or unknown object keeps its own message.
     def contains!(commit, descendant)
       capture(git_executable, '-C', root, 'merge-base', '--is-ancestor', commit, descendant)
-    rescue Shaka::Error => e
-      raise unless e.message.end_with?('failed (exit 1)')
+    rescue LocalReviewPathGuard::CommandFailed => e
+      raise unless e.exit_status == 1
 
       raise Shaka::Error, "#{descendant} does not build on #{commit}, which the ledger reviewed or records as " \
                           'a fix; fix the history or use a new ledger.'
@@ -228,17 +245,24 @@ module Shaka
 
     # Earlier rounds reach the reviewer as data: each finding's class and disposition, never the
     # author's note, so the reviewer checks the fixes without anchoring on the author's reasons.
+    # A settings re-review of the first reviewed head has findings but no earlier commit.
     def prior_rounds(marker)
       previous = @ledger&.previous_head(head)
-      return '' unless previous
+      findings = @ledger ? @ledger.prior_findings.map(&:prompt_line) : []
+      return '' unless previous || findings.any?
 
-      findings = @ledger.prior_findings.map(&:prompt_line)
-      commits = capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{previous}..#{head}", '--')
       'PRIOR ROUNDS: Earlier local rounds reviewed this change. Confirm each fix below resolves its finding, ' \
         'and report it again with the same id if not. Do not raise documented findings again unless the ' \
         "change made them worse. Then review the full diff fresh.\n\n--- BEGIN PRIOR ROUND DATA #{marker} ---\n" \
         "Findings:\n#{findings.empty? ? 'none' : findings.join("\n")}\n\n" \
-        "Commits since #{previous}:\n#{commits}--- END PRIOR ROUND DATA #{marker} ---\n\n"
+        "#{commits_since(previous)}--- END PRIOR ROUND DATA #{marker} ---\n\n"
+    end
+
+    def commits_since(previous)
+      return "Commits since the earlier review: none; it reviewed #{head} under other settings.\n" unless previous
+
+      "Commits since #{previous}:\n" \
+        "#{capture(git_executable, '-C', root, 'log', '--format=%h %s', "#{previous}..#{head}", '--')}"
     end
   end
 

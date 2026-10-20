@@ -21,7 +21,7 @@ module Shaka
     query($owner: String!, $name: String!, $number: Int!) {
       repository(owner: $owner, name: $name) {
         pullRequest(number: $number) {
-          id number url state isDraft headRefOid baseRefName merged mergeCommit { oid }
+          id number url state isDraft author { login } headRefOid baseRefName merged mergeCommit { oid }
           mergeStateStatus reviewDecision viewerCanMergeAsAdmin
           changedFiles additions deletions commits { totalCount }
           isInMergeQueue isMergeQueueEnabled autoMergeRequest { enabledAt }

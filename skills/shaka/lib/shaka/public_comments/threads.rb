@@ -15,7 +15,7 @@ module Shaka
                 nodes {
                   id isResolved
                   comments(first: 100) {
-                    nodes { fullDatabaseId author { __typename login } }
+                    nodes { fullDatabaseId body author { __typename login } }
                     pageInfo { hasNextPage }
                   }
                 }
@@ -35,11 +35,16 @@ module Shaka
       # deleted account.
       attr_reader :truncated, :anonymous
 
+      # Each thread's comments in order as login and body, so a caller can tell who spoke last.
+      # A comment whose author GitHub did not name has a nil login.
+      attr_reader :posts
+
       def initialize(github)
         @github = github
         @authors = {}
         @truncated = []
         @anonymous = []
+        @posts = {}
       end
 
       def call
@@ -76,13 +81,9 @@ module Shaka
         pull['reviewThreads'] if pull.is_a?(Hash)
       end
 
-      def valid_page?(page)
-        page.is_a?(Hash) && boolean?(page['hasNextPage'])
-      end
+      def valid_page?(page) = page.is_a?(Hash) && boolean?(page['hasNextPage'])
 
-      def boolean?(value)
-        [true, false].include?(value)
-      end
+      def boolean?(value) = [true, false].include?(value)
 
       def advance_cursor(cursor, page)
         next_cursor = page['endCursor']
@@ -97,6 +98,7 @@ module Shaka
         meta, comments = normalize_thread(row)
         threads << meta
         record_authors(meta['thread_id'], comments)
+        @posts[meta['thread_id']] = comments.map { |comment| [author_login(comment['author']), comment['body']] }
         @truncated << meta['thread_id'] if row.dig('comments', 'pageInfo', 'hasNextPage')
         comments.each { |comment| index_comment(comment, meta, index) }
       end
