@@ -87,6 +87,17 @@ module Shaka
 
   # Adds checkout-specific guards used by the full local review runner.
   module LocalReviewPathGuard
+    # A subprocess that exited unsuccessfully; callers can tell "not an ancestor" from other failures.
+    class CommandFailed < Shaka::Error
+      attr_reader :exit_status
+
+      def initialize(command, status, detail)
+        @exit_status = status.exitstatus
+        reason = status.signaled? ? "signal #{status.termsig}" : "exit #{status.exitstatus}"
+        super("#{command} failed (#{reason})#{": #{detail}" unless detail.empty?}")
+      end
+    end
+
     private
 
     def validate_path!
@@ -128,17 +139,20 @@ module Shaka
 
     def capture(*arguments)
       timeout = @options.fetch(:timeout_seconds)
-      stdout, _stderr, status = LocalReviewProcess.capture(arguments, stdin_data: nil, chdir: root, timeout: timeout)
+      stdout, stderr, status = LocalReviewProcess.capture(arguments, stdin_data: nil, chdir: root, timeout: timeout)
       raise Shaka::Error, "#{arguments.first} timed out after #{timeout}s" unless status
       raise Shaka::Error, "#{arguments.first} output drain timed out after 2s" if
         status.is_a?(LocalReviewProcess::DrainTimeout)
-
-      unless status.success?
-        exit_reason = status.signaled? ? "signal #{status.termsig}" : "exit #{status.exitstatus}"
-        raise Shaka::Error, "#{arguments.first} failed (#{exit_reason})"
-      end
+      raise LocalReviewPathGuard::CommandFailed.new(arguments.first, status, stderr_line(stderr)) unless status.success?
 
       stdout
+    end
+
+    # Keeps the command's own reason, such as Git's "fatal: bad revision", without the checkout or home path.
+    def stderr_line(stderr)
+      line = stderr.to_s.scrub.lines.map(&:strip).find { |text| !text.empty? }.to_s
+      line = line.gsub(root, '<checkout>').gsub(Dir.home, '~')
+      line.length > 200 ? "#{line[0, 200]}..." : line
     end
   end
 
@@ -183,8 +197,8 @@ module Shaka
     # `--is-ancestor` exits 1 only for "not an ancestor"; a timeout or unknown object keeps its own message.
     def contains!(commit, descendant)
       capture(git_executable, '-C', root, 'merge-base', '--is-ancestor', commit, descendant)
-    rescue Shaka::Error => e
-      raise unless e.message.end_with?('failed (exit 1)')
+    rescue LocalReviewPathGuard::CommandFailed => e
+      raise unless e.exit_status == 1
 
       raise Shaka::Error, "#{descendant} does not build on #{commit}, which the ledger reviewed or records as " \
                           'a fix; fix the history or use a new ledger.'
