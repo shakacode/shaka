@@ -146,23 +146,29 @@ module Shaka
   module LocalReviewRounds
     private
 
-    def open_ledger
-      return unless @options[:ledger]
+    # Returns the block's prompt, built before the start spends a budget slot, so a setup
+    # failure such as a missing base commit leaves the ledger unchanged.
+    def open_ledger(&)
+      return yield unless @options[:ledger]
 
       @ledger = LocalReviewLedger.new(@options[:ledger], root:)
       @max_rounds = RepositoryConfig::ReviewLimit.from(effective_review || {})
-      start_ledger
+      prompt = start_ledger(&)
       @started = true
       @snapshot = @ledger.snapshot(head)
+      prompt
     end
 
     def start_ledger
       budget = { limit: @options[:max_review_executions].to_i, reason: @options[:budget_reason] } if
         @options[:max_review_executions]
+      prompt = nil
       @ledger.start!(base: @options[:base], head:, reviewer: @options[:reviewer], max_rounds: @max_rounds, budget:) do
         check_history! if @ledger.last_head
+        prompt = yield
       end
       @max_rounds = @ledger.max_rounds(@max_rounds)
+      prompt
     end
 
     # The next round must hold the last reviewed head and each fix the last batch records, and each
@@ -287,8 +293,7 @@ module Shaka
       git_executable
       validate!
       validate_tempdir!
-      open_ledger
-      run_report(review_prompt)
+      run_report(open_ledger { review_prompt })
     rescue Shaka::Error, SystemCallError, JSON::ParserError => e
       setup_failure(e)
     end

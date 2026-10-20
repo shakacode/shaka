@@ -283,7 +283,8 @@ including its five existing reviews. Keep merge policy ask. Go.
 The agent records that total and your reason in the existing task ledger. It replaces
 the repository round cap for that ledger alone. Repeating the same total adds no slots.
 Each reviewer start counts, including failed launches and additional reviewers of the
-same commit. The PR shows consumed starts and the selected total; repository settings
+same commit. A setup failure before the reviewer launches, such as a base commit missing
+from the checkout, does not count. The PR shows consumed starts and the selected total; repository settings
 and other tasks retain their existing limits. Ruby enforces the supplied budget;
 the agent verifies your authorization.
 

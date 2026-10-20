@@ -96,7 +96,25 @@ class LocalReviewBudgetTest < Minitest::Test
     end
   end
 
+  def test_setup_failure_before_launch_keeps_the_slot_for_the_corrected_run
+    in_loop do |head|
+      options = { max_review_executions: 1, budget_reason: 'One review' }
+      2.times { assert_unlaunched_setup_failure(head, options) }
+      refute stored.key?('task_budget') if File.exist?(@ledger)
+
+      loop_round(head, findings: 0, **options)
+      assert_budget(1, 1)
+    end
+  end
+
   private
+
+  def assert_unlaunched_setup_failure(head, options)
+    missing_base = '1234567890abcdef1234567890abcdef12345678'
+    result = JSON.parse(run_review(@root, missing_base, head, @bin, options.merge(ledger: @ledger)).first)
+    assert_equal 'setup_failure', result.fetch('failure_stage')
+    refute result.fetch('attempted')
+  end
 
   def assert_exhausted(head)
     FileUtils.rm(@trace)
