@@ -22,7 +22,7 @@ checkpoint called the effect unknown. This study measured it.
 ## Main results
 
 - The sentence changed what reviewers wrote, consistently. With it, every run on
-  the two code PRs said what a revert undoes. Without it, none did.
+  the two code PRs said whether a revert undoes the change. Without it, none did.
 - On a merge-path PR, it surfaced a real untested decision. All 5 runs with the
   sentence noted that the agent, not Ruby, decides when to skip required checks,
   and that nothing tested that decision. None of the 5 runs without it did.
@@ -73,7 +73,7 @@ checkpoint called the effect unknown. This study measured it.
 - **Isolation:** both arms ran the real runner on a checkout of the PR's merge
   commit, with the same packet, diff, settings and AGENTS.md. Only
   `--prompt-file` differed.
-- **Scoring:** criteria per case, such as "says what a revert does" or "names a
+- **Scoring:** criteria per case, such as "says whether a revert undoes it" or "names a
   path that was not exercised". Reports were read with the arm hidden.
 
 ## Findings
@@ -84,7 +84,7 @@ checkpoint called the effect unknown. This study measured it.
   - #695: 5 of 5 runs with the sentence named a consuming command left untested
     end to end. 0 of 5 without it did.
   - #552: 5 of 5 said no live GitHub merge had run. 0 of 5 without it did.
-  - Every run with the sentence said what a revert does. No run without it did.
+  - Every run with the sentence said whether a revert undoes the change. No run without it did.
 - **Partial overlap:** 4 of 5 runs without the sentence repeated the packet's own
   note that no live rate limit was triggered. They added no path of their own.
 - **Evidence:** the result tables in the
@@ -142,7 +142,7 @@ checkpoint called the effect unknown. This study measured it.
 ## Rerun it
 
 The [report](https://github.com/shakacode/shaka/blob/main/eval/reports/checkpoint-blast-radius.md)
-lists the commits, prompt hashes and settings. The
+lists the commits, the unpublished settings commit, prompt hashes and settings. The
 [fixture folder](https://github.com/shakacode/shaka/tree/main/eval/fixtures/checkpoint_blast_radius)
 holds the packets, the four prompt versions, all 30 reports, the criteria, the
 blind key and the scores.

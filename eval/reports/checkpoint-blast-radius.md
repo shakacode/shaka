@@ -10,7 +10,7 @@ reports. The reviewer is asked whether verification is proportionate to what a f
 would reach and whether a revert undoes it, and to name paths nobody exercised.
 
 The sentence changed behavior in a consistent direction. On both code PRs, every run
-with it said what a revert undoes; none without it did. On the merge-path PR, every run
+with it said whether a revert undoes the change; none without it did. On the merge-path PR, every run
 with it said no live GitHub merge had run; none without it did. On the shared-caller PR,
 every run with it said no consuming command had been exercised end to end; none without
 it did, although four of the five runs without it repeated the packet's note that no live rate limit was
@@ -31,7 +31,7 @@ Each run used the real runner, a detached checkout at the PR's squash commit, th
 squash parent as base, and the same packet for both arms. Observed routed model is
 UNKNOWN. No GitHub mutation happened.
 
-`--ref` named a local, unpushed commit on top of `main` at
+`--ref` named a local, unpublished commit, `3787b9c4423e4e6a9e15e54174916f1068228ce3`, on top of `main` at
 `2363e217b6034b4b684ef88f2a29ddda458d870f` that added the [four prompt files](../fixtures/checkpoint_blast_radius/prompts).
 Both arms therefore read the same AGENTS.md criteria and settings and differed only by
 `--prompt-file`. Each "before" file is the current prompt with the #547 or #549
@@ -85,7 +85,7 @@ Counts are runs meeting the criterion, out of the runs in that cell.
 | Names the consuming commands a failure reaches | 3/3 | 3/3 | 2/2 | 2/2 |
 | Names a specific unexercised path: commands end to end, live rate limit, GraphQL message or exit 8 | 3/3 | 3/3 | 1/2 | 2/2 |
 | Post hoc: names a consuming command as not exercised end to end | 0/3 | 3/3 | 0/2 | 2/2 |
-| Says what a revert does | 0/3 | 3/3 | 0/2 | 2/2 |
+| Says whether a revert undoes the change | 0/3 | 3/3 | 0/2 | 2/2 |
 | Found: HTTP status never reaches users | 3/3 | 1/3 | 2/2 | 2/2 |
 | Conclusion Proceed | 0/3 | 2/3 | 0/2 | 0/2 |
 
@@ -129,7 +129,7 @@ ran before #547 merged and concluded Proceed with no concerns.
 | Proceed with no concerns | 3/3 | 3/3 | 2/2 | 2/2 |
 | Asks for no extra verification | 3/3 | 3/3 | 2/2 | 2/2 |
 | Post hoc: notes the rendered page was not checked | 0/3 | 3/3 | 0/2 | 2/2 |
-| Mean words in summary, reasons, concerns, alternative and next action | 130 | 151 | 97 | 111 |
+| Mean words in summary, reasons, concerns, alternative and next action (concerns included, unlike criterion T3) | 130 | 151 | 97 | 111 |
 
 The docs edit stayed brief and unblocked. The added sentence about the rendered page
 not being checked is accurate but does not change the decision. Growth stayed within
@@ -145,8 +145,8 @@ the 25 percent bound fixed beforehand (+16 and +14 percent).
 | Built-in after | 6 | 35 | 106,279 | 1,088 | 0.0579 |
 
 The 30 runs cost $1.78 API-equivalent on a subscription. Token differences reflect how
-much source each run chose to read, not the prompt length. Visible words on the
-merge-path PR grew from 242 to 345, about 43 percent, with this repository's prompt, because those reports now carry a concern.
+much source each run chose to read, not the prompt length. Visible words, counting
+concerns, on the merge-path PR grew from 242 to 345, about 43 percent, with this repository's prompt, because those reports now carry a concern.
 
 ## What this does and does not show
 

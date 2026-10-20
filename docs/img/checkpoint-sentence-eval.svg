@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 452" role="img" aria-labelledby="t d">
 <title id="t">Checkpoint reports with and without the blast-radius sentence</title>
-<desc id="d">Runs out of five per arm, both prompts pooled. Shared-caller PR #695: said what a revert does, 0 without and 5 with; named an untested consuming command, 0 and 5; found that the HTTP status never reaches users, 5 and 3. Merge-path PR #552: said a revert cannot undo a merge, 0 and 5; said no live GitHub merge ran, 0 and 5; flagged the untested consent decision, 0 and 5; concluded Simplify/reframe, 0 and 3. Docs edit #635: Proceed with no concerns, 5 and 5.</desc>
+<desc id="d">Runs out of five per arm, both prompts pooled. Shared-caller PR #695: said whether a revert undoes it, 0 without and 5 with; named an untested consuming command, 0 and 5; found that the HTTP status never reaches users, 5 and 3. Merge-path PR #552: said a revert cannot undo a merge, 0 and 5; said no live GitHub merge ran, 0 and 5; flagged the untested consent decision, 0 and 5; concluded Simplify/reframe, 0 and 3. Docs edit #635: Proceed with no concerns, 5 and 5.</desc>
 <style>
 .bg{fill:#fff;stroke:#d9e0e7}
 text{font-family:ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#0f1724}
@@ -39,7 +39,7 @@ text{fill:#e6edf5}
 <line class="grid" x1="700" y1="52" x2="700" y2="430"/>
 </g>
 <text class="g" x="24" y="66">Shared caller, #695</text>
-<text class="s" x="384" y="90" text-anchor="end">Said what a revert does</text>
+<text class="s" x="384" y="90" text-anchor="end">Said whether a revert undoes it</text>
 <rect class="wo" x="400" y="80" width="2" height="9"/><text class="n m" x="408" y="89">0</text>
 <rect class="wi" x="400" y="91" width="300" height="9"/><text class="n" x="706" y="100">5</text>
 <text class="s" x="384" y="124" text-anchor="end">Named an untested consuming command</text>
