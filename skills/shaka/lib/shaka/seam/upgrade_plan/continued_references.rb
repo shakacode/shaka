@@ -5,6 +5,9 @@ module Shaka
     class UpgradePlan
       # Conservatively blocks old paths split across shell physical lines.
       module ContinuedReferences
+        # Markdown is not executed, so its quotes and escapes cannot join a path or alias a directory.
+        MARKDOWN_PATH = /\.(?:md|markdown|mdx)\z/i
+
         private
 
         def scan_complex_references(path, text)
@@ -100,10 +103,9 @@ module Shaka
           @blockers << "#{path}: aliased old-layout directory needs explicit repair"
         end
 
-        # Markdown is not executed, so a variable assigned the old directory there is not an alias.
         def alias_reference?(text, path = nil)
           return true if bare_directory_dependency?(text)
-          return false if path.to_s.match?(/\.(?:md|markdown|mdx)\z/i)
+          return false if markdown_path?(path)
 
           assignment = %r{\b[A-Za-z_]\w*\s*[+?:]?=[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}(?=/|[^[:alnum:]_.-]|$)}o
           mapping = %r{\b[A-Za-z_]\w*\s*:[ \t]+[^\r\n]*#{Regexp.escape(PATHS::DIRECTORY)}/?(?=[ \t\r\n#'";]|$)}o
@@ -118,11 +120,15 @@ module Shaka
         end
 
         def shell_fragmented_reference?(text, path = nil)
+          return false if markdown_path?(path)
+
           joined = normalize_shell_fragments(text)
           return false if joined == text
 
           matching_paths(joined).any? || directory_reference?(joined, path)
         end
+
+        def markdown_path?(path) = path.to_s.match?(MARKDOWN_PATH)
 
         def normalize_shell_fragments(text)
           joined = text.gsub(/\\\r?\n/, '').delete(%q('"))

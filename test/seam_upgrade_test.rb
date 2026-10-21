@@ -376,6 +376,32 @@ class SeamUpgradeHiddenIndexReviewTest < Minitest::Test
     end
   end
 
+  def test_markdown_apostrophe_keeps_ordinary_reference_handling
+    with_repository do |root|
+      File.write(File.join(root, 'notes.md'), "Don't edit .agents/bin/test; it's \"generated\".\n")
+      commit_fixture(root, 'prose with apostrophe')
+      preview = report(root)
+      assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
+      apply_upgrade(root)
+      assert_equal "Don't edit .agents/shaka/bin/test; it's \"generated\".\n", File.read(File.join(root, 'notes.md'))
+    end
+  end
+
+  def test_quoted_shell_fragment_in_workflow_still_blocks
+    with_repository do |root|
+      write_tracked(root, '.github/workflows/ci.yml', "run: exec .age'nts'/bin/test\n")
+      assert_includes report(root).fetch('blockers').join, 'fragmented old-layout reference'
+    end
+  end
+
+  def test_markdown_shell_fragment_is_not_joined
+    source = "Run it:\n\n```sh\nexec .age'nts'/bin/test\n```\n"
+    with_repository do |root|
+      write_tracked(root, 'guide.md', source)
+      assert_equal 'ready', report(root).fetch('status')
+    end
+  end
+
   def test_escaped_character_inside_legacy_command_blocks
     with_repository do |root|
       File.write(File.join(root, 'ci.sh'), "#!/bin/sh\nexec .agents/bin/tes\\t\n")
