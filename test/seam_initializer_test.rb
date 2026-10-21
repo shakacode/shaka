@@ -5,6 +5,7 @@ require 'fileutils'
 require 'json'
 require 'yaml'
 require 'shaka/merge_limits'
+require 'shaka/merge_review_floor'
 require 'shaka/version'
 
 module SeamInitializerTestHelpers
@@ -57,7 +58,8 @@ module SeamInitializerTestHelpers
     assert_equal %w[main ask], [config.fetch('base_branch'), config.dig('merge', 'preference')]
     assert_equal %w[base_branch branches commands merge opening_check paths pr_description
                     prose_limits review version wip], config.keys.sort
-    assert_equal({ 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS }, config.fetch('merge'))
+    assert_equal({ 'preference' => 'ask', 'limits' => Shaka::MergeLimits::DEFAULTS,
+                   'auto_max_review_floor' => Shaka::MergeReviewFloor::DEFAULT }, config.fetch('merge'))
     assert_includes File.read(File.join(root, CONTRACT)), GENERATED_MARKER
     wrapper_files(root).each { |path| assert_generated_wrapper(path) }
   end
