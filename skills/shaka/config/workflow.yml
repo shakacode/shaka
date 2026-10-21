@@ -252,9 +252,9 @@ phases:
         recommendation, await required answers before dependent work, and continue independent work
         meanwhile. Retain decisions in the task or PR within its privacy; silence is not approval.
         If another agent edits the change, agree on file ownership or take turns. Helper workers
-        inside one delivery own exclusive files or worktrees and never publish or merge. A delivery
-        agent that a control tower starts for one whole task owns that task and may publish its
-        PR, but never merges.
+        inside one delivery own exclusive files or worktrees and never publish or merge. A background
+        delivery agent that a control tower starts for one whole task owns that task and may
+        publish its PR, but never merges.
       - Before changing behavior, identify its triggering state and the fact the fix's safety depends on.
         Use the repo's test and browser tools to reproduce through the real caller or integration boundary before editing
         production code; label a lower-fidelity probe. Observe a meaningful failure, make the smallest
