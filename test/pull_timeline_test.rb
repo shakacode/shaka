@@ -27,7 +27,7 @@ class PullTimelineTest < Minitest::Test
   def page(nodes, next_cursor: nil)
     { 'state' => 'MERGED', 'createdAt' => '2026-10-18T08:00:00Z', 'mergedAt' => '2026-10-18T09:00:00Z',
       'closedAt' => '2026-10-18T09:00:00Z',
-      'commits' => { 'nodes' => [{ 'commit' => { 'committedDate' => '2026-10-18T07:30:00Z' } }] },
+      'firstCommit' => { 'nodes' => [{ 'commit' => { 'committedDate' => '2026-10-18T07:30:00Z' } }] },
       'timelineItems' => { 'pageInfo' => { 'hasNextPage' => !next_cursor.nil?, 'endCursor' => next_cursor },
                            'nodes' => nodes } }
   end
@@ -40,7 +40,7 @@ class PullTimelineTest < Minitest::Test
 
   # The measured steps match call-log records to these commits and their trees.
   def test_reports_each_commit_and_its_tree
-    commit = { 'oid' => 'a' * 40, 'committedDate' => '2026-10-18T07:30:00Z', 'tree' => { 'oid' => 'b' * 40 } }
+    commit = { 'oid' => 'a' * 40, 'tree' => { 'oid' => 'b' * 40 } }
     pull = page([]).merge('commits' => { 'nodes' => [{ 'commit' => commit }, nil] })
     assert_equal [{ 'oid' => 'a' * 40, 'tree' => 'b' * 40 }], read([pull])['commits']
   end

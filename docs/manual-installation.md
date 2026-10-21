@@ -27,8 +27,8 @@ It refuses a checkout or skills directory that other accounts can write to.
 
 Afterward, each Shaka command adds a line to a timing log at
 `~/.local/state/shaka/calls.jsonl`. The log holds no paths or task text. It names
-only the repository, issue or PR number, commit, and reviewer model a command was
-given. The file stays on your machine, but a PR's description lists the PR's own
+only the repository, issue or PR number, commit, reviewer model, and, for a
+validation run, the hash of the files it tested. The file stays on your machine, but a PR's description lists the PR's own
 validation, review, and checkpoint times from it, as
 [Understanding PR timings](reference/timings.md) describes. Set
 `SHAKA_CALL_LOG=off` to stop recording.

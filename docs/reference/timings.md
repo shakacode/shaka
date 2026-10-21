@@ -83,6 +83,9 @@ Limits:
   updates the description afterward.
 - A rebase replaces the PR's commits. Steps logged against the old commits stay
   listed only if an update published them before the rebase.
+- Only the PR's latest 100 commits are matched.
+- On a PR from a fork, whose author can edit its description, earlier updates'
+  steps are not kept. Only steps logged on the machine making the update appear.
 - The table shows the latest 30 steps, and the description keeps the latest 50.
 
 [Usage and cost](usage-and-cost.md) explains the section beside it.

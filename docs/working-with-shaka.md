@@ -396,7 +396,7 @@ your machine at `~/.local/state/shaka/calls.jsonl`: one line per helper command 
 its name, start time, duration, and exit status. When the command names them, the line
 also records the repository, issue or PR number, and commit. A review or product
 checkpoint line adds the reviewer's provider, model, and effort. For example, a line
-for local validation shows which commit was tested, how long it took, and whether it
+for local validation records a hash of the files it tested, how long it took, and whether it
 passed. `shaka work` leaves no line, because it hands the terminal to your coding agent.
 The log records no paths or task text, and Shaka never uploads the file. A PR's description
 does list that PR's validation, review, and checkpoint lines, as

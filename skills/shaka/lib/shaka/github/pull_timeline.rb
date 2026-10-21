@@ -12,7 +12,8 @@ module Shaka
         repository(owner: $owner, name: $name) {
           pullRequest(number: $number) {
             state createdAt mergedAt closedAt
-            commits(first: 100) { nodes { commit { oid committedDate tree { oid } } } }
+            firstCommit: commits(first: 1) { nodes { commit { committedDate } } }
+            commits(last: 100) { nodes { commit { oid tree { oid } } } }
             timelineItems(first: 100, after: $cursor, itemTypes: [LABELED_EVENT, UNLABELED_EVENT]) {
               pageInfo { hasNextPage endCursor }
               nodes {
@@ -86,8 +87,7 @@ module Shaka
     end
 
     def timeline(pull, events)
-      commits = commits(pull)
-      first = commits.first&.fetch('committedDate', nil)
+      first = pull.dig('firstCommit', 'nodes', 0, 'commit', 'committedDate')
       {
         'opened' => Time.iso8601(pull.fetch('createdAt')),
         'first_commit' => first && Time.iso8601(first),
@@ -96,8 +96,9 @@ module Shaka
         'closed' => pull['state'] == 'CLOSED' ? Time.iso8601(pull['closedAt']) : nil,
         # GitHub lists the timeline in order; sort_by is unstable and would reorder events within one second.
         'labels' => events,
-        # Each commit and its tree, so the measured steps can tell which call-log records are this pull request's.
-        'commits' => commits.map { |commit| { 'oid' => commit['oid'], 'tree' => commit.dig('tree', 'oid') } }
+        # The latest commits and their trees, so the measured steps can tell which call-log records are this
+        # pull request's.
+        'commits' => commits(pull).map { |commit| { 'oid' => commit['oid'], 'tree' => commit.dig('tree', 'oid') } }
       }
     end
 

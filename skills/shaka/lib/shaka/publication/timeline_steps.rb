@@ -25,11 +25,17 @@ module Shaka
 
     module_function
 
-    # Adds the steps to the timeline the timings section renders.
-    def attach(timeline, github, body, env: ENV)
+    # Adds the steps to the timeline the timings section renders. A fork's author can edit its
+    # body, so steps carried there are not republished; this machine's own log still counts.
+    def attach(timeline, github, pull, env: ENV)
       fresh = logged(CallLog.path(env), github.repository, Array(timeline['commits']),
                      Doctor::MachineAlias.publishable(env))
-      timeline.merge('steps' => merge(carried(body), fresh))
+      timeline.merge('steps' => merge(same_repository?(pull) ? carried(pull['body']) : [], fresh))
+    end
+
+    def same_repository?(pull)
+      head, base = %w[head base].map { |side| pull.dig(side, 'repo', 'full_name') }
+      head.is_a?(String) && head == base
     end
 
     # Steps are sorted by start time, and a step both carried and logged again appears once.
@@ -49,7 +55,7 @@ module Shaka
       return [] if path.nil? || commits.empty?
 
       records = run_lines(path).filter_map { |line| parse(line) }
-      records.select(&owned_by(repository, commits)).map { |record| step(record, machine) }
+      records.select(&owned_by(repository, commits)).filter_map { |record| step(record, machine) }
     rescue SystemCallError, IOError
       []
     end

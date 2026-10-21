@@ -47,7 +47,7 @@ class TimelineStepsTest < Minitest::Test
   end
 
   def test_unreadable_lines_and_a_missing_log_are_skipped
-    assert_equal 1, logged('not json', '[1]', "\xFF".b, review).size
+    assert_equal 1, logged('not json', '[1]', "\xFF".b, review(duration_ms: nil), review(at: 'soon'), review).size
     assert_empty Shaka::TimelineSteps.logged('/nonexistent/calls.jsonl', REPOSITORY, COMMITS, 'm5')
     assert_empty logged(review, commits: [])
   end
@@ -88,17 +88,36 @@ class TimelineStepsTest < Minitest::Test
     Dir.mktmpdir do |directory|
       log = File.join(directory, 'calls.jsonl')
       File.write(log, "#{JSON.generate(review)}\n")
-      steps = attached(log, body(logged(validation)))
+      steps = attached(log, pull(body(logged(validation))))
 
       assert_equal(['evidence run', 'review run'], steps.map { |step| step['command'] })
       refute steps.last.key?('machine')
     end
   end
 
+  # A fork's author can edit its body, so only this machine's own log counts there.
+  def test_a_fork_carries_no_steps_from_its_body
+    Dir.mktmpdir do |directory|
+      log = File.join(directory, 'calls.jsonl')
+      File.write(log, "#{JSON.generate(review)}\n")
+      fork = pull(body(logged(validation)), head: 'someone/widgets')
+
+      assert_equal ['review run'], commands(attached(log, fork))
+      assert_equal ['review run'], commands(attached(log, fork.merge('head' => nil)))
+    end
+  end
+
   private
 
-  def attached(log, body)
+  def commands(steps) = steps.map { |step| step['command'] }
+
+  def pull(body, head: REPOSITORY)
+    { 'body' => body, 'head' => { 'repo' => { 'full_name' => head } },
+      'base' => { 'repo' => { 'full_name' => REPOSITORY } } }
+  end
+
+  def attached(log, pull)
     env = { 'SHAKA_CALL_LOG' => log, 'SHAKA_MACHINE_ALIAS' => nil }
-    Shaka::TimelineSteps.attach({ 'commits' => COMMITS }, GitHub.new(REPOSITORY), body, env:)['steps']
+    Shaka::TimelineSteps.attach({ 'commits' => COMMITS }, GitHub.new(REPOSITORY), pull, env:)['steps']
   end
 end

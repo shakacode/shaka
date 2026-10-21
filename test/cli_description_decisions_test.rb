@@ -162,7 +162,9 @@ DESCRIPTION_GH = <<~'RUBY'
                  'label' => { 'name' => 'awaiting-answer' } }
       items = { 'pageInfo' => { 'hasNextPage' => false }, 'nodes' => [waited] }
       commits = JSON.parse(ENV.fetch('PR_COMMITS', '[]'))
-      pull = { 'createdAt' => '2026-10-18T08:00:00Z', 'commits' => { 'nodes' => commits }, 'timelineItems' => items }
+      first = commits.first(1).map { |node| { 'commit' => node['commit'].slice('committedDate') } }
+      pull = { 'createdAt' => '2026-10-18T08:00:00Z', 'firstCommit' => { 'nodes' => first },
+               'commits' => { 'nodes' => commits }, 'timelineItems' => items }
       puts JSON.generate('data' => { 'repository' => { 'pullRequest' => pull } })
     else
       state = ENV.fetch('PR_STATE', 'OPEN')
