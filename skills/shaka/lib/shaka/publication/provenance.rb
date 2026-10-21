@@ -20,7 +20,7 @@ module Shaka
     end
 
     def detail
-      { 'summary' => 'Execution provenance', 'body' => table }
+      { 'summary' => 'Shaka version, model, and effort', 'body' => table }
     end
 
     # The values a provenance history entry compares, as the table renders them.

@@ -907,9 +907,9 @@ pr_description:
 ```
 
 The setting applies to PR descriptions. Walkthroughs and replies do not carry this
-credit. Hiding it keeps verification, execution provenance, and usage visible in
-their existing sections. Shaka also omits the credit when repository settings
-cannot be read.
+credit. Hiding it keeps verification, the Shaka version and model, and usage
+visible in their existing sections. Shaka also omits the credit when repository
+settings cannot be read.
 
 ## `pr_description.show_human_comments`
 
