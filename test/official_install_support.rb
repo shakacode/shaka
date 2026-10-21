@@ -32,6 +32,14 @@ module OfficialInstallSupport
     git('-C', @root, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-qm', 'fixture')
   end
 
+  # Where the source checkout, each host's skills folder, and the settings are; the source is not configuration.
+  def assert_location_summary(output, source, folders)
+    revision = git('-C', source, 'rev-parse', '--short=7', 'HEAD').strip
+    assert_includes output, "Source checkout: #{source} at #{revision} (Shaka source, not configuration)\n" \
+                            "Skills folders: #{folders.join(', ')}\n" \
+                            "Settings: each project's .agents/shaka/ and ~/.agents/trusted-github-actors.yml\n"
+  end
+
   def assert_refusal(message)
     output, status = invoke('--update')
     refute_predicate status, :success?
