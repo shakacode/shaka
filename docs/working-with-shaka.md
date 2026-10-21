@@ -93,8 +93,9 @@ State the stopping point in your prompt.
 $shaka Plan CSV export for the orders page. Planning only.
 ```
 
-For work that needs several PRs, Shaka keeps the plan in the original issue. Give
-a new chat the same task link to continue.
+For work that needs several PRs, Shaka keeps the plan in the original issue,
+asking first if it needs permission to write there. Give a new chat the same task
+link to continue.
 
 ### Review an existing PR
 
@@ -150,6 +151,11 @@ checks, independent review, its PR format, and your merge policy. Shaka's
 instructions tell the agent not to let another skill relax a check or approve a
 merge; code does not enforce this.
 
+Examples are [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md),
+which turn an idea into a spec and tickets, and
+[pstack](https://github.com/cursor/plugins/tree/main/pstack), whose poteto mode
+applies engineering principles and parallel workers:
+
 ```text
 $shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N. Go.
 ```
@@ -161,15 +167,13 @@ $shaka Fix https://github.com/OWNER/REPO/issues/N in poteto mode. You may use
 subagents for swarm and arena. Go.
 ```
 
-Examples are [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md),
-[pstack](https://github.com/cursor/plugins/tree/main/pstack),
-[Ponytail](https://github.com/DietrichGebert/ponytail), and
-[Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills).
-pstack, Ponytail, and Addy Osmani's skills have not been tried on a full Shaka
-delivery. Try a new pack on one task you would merge anyway, then ask:
+pstack, [Ponytail](https://github.com/DietrichGebert/ponytail), and
+[Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills) have not
+been tried on a full Shaka delivery. Try a new pack on one task you would merge
+anyway, then ask:
 
 ```text
-Which SKILL instructions did you follow, and where did they conflict with Shaka?
+Which instructions from that pack did you follow, and where did they conflict with Shaka?
 ```
 
 ## Review a session for improvements
