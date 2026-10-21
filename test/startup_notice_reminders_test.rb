@@ -52,10 +52,10 @@ class StartupNoticeRemindersTest < Minitest::Test
     assert_nil reminder(repository: nil, now: NOW + Shaka::UpdateCheck::Cache::SECONDS + 1)
   end
 
-  # Doctor itself reports the settings and records its run, so its own call gets neither reminder.
-  def test_doctor_gets_neither_reminder
+  # Doctor reports the settings itself, and seam is the setup already under way.
+  def test_doctor_and_setup_get_neither_reminder
     FileUtils.rm_f(Shaka::StartupNotice::Marks.doctor_path(@home))
-    assert_nil reminder(command: 'doctor')
+    %w[doctor seam].each { |command| assert_nil reminder(command:), command }
   end
 
   def test_an_update_notice_comes_first_and_the_reminder_waits_for_the_next_call

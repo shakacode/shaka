@@ -113,20 +113,16 @@ completes, removing both optional wrappers is a supported private choice.
 
 Declining both setups leaves the repository without settings; the task keeps its
 publication flow. Run each step as the workflow describes, leaving out `--ref` and
-`--settings-ref` where a command accepts that. Without settings:
+`--settings-ref` where a command accepts that, such as `description`, `walkthrough`,
+`pr`, and `review run`. Pass `post-implementation run` the default-branch commit as `--ref`.
+Commands that need settings refuse; replace each one where a substitute exists:
 
-- These run: `claim`, `evidence guard`, `review run` without `--settings-ref`,
-  `review record`, `review publish`, `description` and `walkthrough` without `--ref`,
-  `comments`, `reply`, `resolve`, `attention`, `pr` without `--ref`, `usage`, and
-  `post-implementation run` with `--ref` set to the default-branch commit.
-- These refuse: `seam check`, `reviewer`, `guidance`, `evidence run`, `evidence bind`,
-  `evidence verify`, `pr watch`, `handoff`, `squash-message`, and `merge`.
+- Validate with the project's own test and lint commands and cite them in `verification`.
+- Pick the reviewer by hand from the [reviewer order](review.md#choose-a-local-reviewer).
+- The user merges through GitHub's merge control.
 
-Validate with the project's own test and lint commands and cite them in `verification`
-checks. Pick the reviewer by hand from the [reviewer order](review.md#choose-a-local-reviewer).
-When a command not listed here refuses for missing settings, record it and continue.
-Name every refused step in the description's `not_verified` line and in the final report.
-The user merges through GitHub's merge control.
+Record each refusal and continue. Name every refused step in the description's
+`not_verified` line and in the final report.
 
 ## Publish team configuration
 
