@@ -18,19 +18,25 @@ module Shaka
       floor = MergeReviewFloor.from(seam)
       return unless seam&.merge&.fetch('preference') == 'ask' && floor.holds_any?
 
-      reason = hold(seam, floor, github, pull, head)
-      return "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reason}." if reason
+      reasons = [limits_hold(seam, pull), floor_hold(floor, github, head)].compact
+      unless reasons.empty?
+        return "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reasons.join('; ')}."
+      end
 
       "#{LABEL} with `merge.preference: auto`, the agent would merge this PR."
     end
 
-    def hold(seam, floor, github, pull, head)
+    def limits_hold(seam, pull)
       exceeded = MergeLimits.new(seam.merge.fetch('limits')).exceeded(pull)
-      return "it is past `merge.limits` (#{exceeded.join(', ')})" unless exceeded.empty?
+      "it is past `merge.limits` (#{exceeded.join(', ')})" unless exceeded.empty?
+    rescue Error
+      'Shaka could not read its size from GitHub'
+    end
 
+    def floor_hold(floor, github, head)
       floor.hold(floor.paths(github, head))
     rescue Error
-      'Shaka could not read its size or changed files from GitHub'
+      'Shaka could not read its changed files from GitHub'
     end
   end
 end

@@ -831,7 +831,7 @@ phases:
         file it names and hand the PR back. Label that handoff `awaiting-merge-approval` with
         `attention --state merge`, because the user's confirmation of the head approves its
         merge. Pass `--limits-confirmed-head SHA` only for a head the
-        user confirmed in this task after seeing the counts or that file; asking you to merge a named head, or an
+        user confirmed in this task after seeing the counts and any file it names; asking you to merge a named head, or an
         Ask approval of it, is that confirmation. A confirmation carries to the head a clean rebase produces, or a
         conflict resolution that changes no behavior the walkthrough describes. Any other new
         commit needs a new confirmation.

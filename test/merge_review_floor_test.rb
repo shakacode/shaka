@@ -93,6 +93,13 @@ class MergeReviewFloorTest < Minitest::Test
     assert_held(/SKILL\.md sets review floor 3/)
   end
 
+  def test_a_pr_past_limits_and_above_the_floor_names_both
+    @client.snapshots = [snapshot.merge('changedFiles' => 30)]
+    @client.files += [INSTRUCTIONS]
+
+    assert_held(%r{changed_files 30 > 29.* Also: skills/shaka/SKILL\.md sets review floor 3})
+  end
+
   def test_confirmation_of_the_current_head_merges_above_the_floor
     @client.files += [INSTRUCTIONS]
 

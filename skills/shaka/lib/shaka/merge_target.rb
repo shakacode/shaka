@@ -33,8 +33,7 @@ module Shaka
         raise Error, "PR targets #{pull['baseRefName'].inspect}, not the validated base #{@base.inspect}"
       end
 
-      @limits.verify!(pull, @head)
-      @review_floor.verify!(github, @head)
+      gates!(pull, github)
     end
 
     # The size and changed files are rechecked so what gates submission comes from the last read;
@@ -44,8 +43,20 @@ module Shaka
         raise Error, 'PR base changed; refresh verification and walkthrough'
       end
 
-      @limits.verify!(current, @head)
-      @review_floor.verify!(github, @head)
+      gates!(current, github)
+    end
+
+    private
+
+    # One confirmation passes both gates, so a refusal names every reason the user would be confirming.
+    def gates!(pull, github)
+      reasons = [-> { @limits.verify!(pull, @head) }, -> { @review_floor.verify!(github, @head) }].filter_map do |gate|
+        gate.call
+        nil
+      rescue Error => e
+        e.message
+      end
+      raise Error, reasons.join(' Also: ') unless reasons.empty?
     end
   end
 end

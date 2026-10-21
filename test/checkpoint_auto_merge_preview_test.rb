@@ -54,12 +54,18 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   def test_counts_merge_limits
     files = (1..30).map { |n| "lib/f#{n}.rb" }
 
-    assert_includes body_for(files), 'would hand this PR back: it is past `merge.limits` (changed_files 30 > 29)'
+    assert_includes body_for(files), 'would hand this PR back: it is past `merge.limits` (changed_files 30 > 29).'
+  end
+
+  def test_names_both_limits_and_the_held_file
+    files = [*(1..29).map { |n| "lib/f#{n}.rb" }, 'skills/shaka/SKILL.md']
+
+    assert_includes body_for(files), '(changed_files 30 > 29); skills/shaka/SKILL.md sets review floor 3'
   end
 
   def test_an_unreadable_file_list_is_named_plainly
     assert_includes body_for(%w[lib/fix.rb], changed_files: 2),
-                    'would hand this PR back: Shaka could not read its size or changed files from GitHub.'
+                    'would hand this PR back: Shaka could not read its changed files from GitHub.'
   end
 
   def test_no_preview_under_auto_or_at_the_top_floor
