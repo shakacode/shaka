@@ -20,7 +20,8 @@ git clone https://github.com/shakacode/shaka.git "$HOME/.local/share/shaka/sourc
 Default: `~/.local/share/shaka/source`; respect chosen locations with `--directory DIR`.
 The installer refuses `~/.agents/` and every directory under it, where settings live. An install
 registered there refuses every action; run the take-over command its message names, then tell the user
-the old checkout can be deleted. Never delete it for them.
+the old checkout can be deleted. Never delete it for them. When the message names a decision instead, show it
+to the user; never move the default location's contents yourself.
 Use the registered helper to preserve an existing installation’s chosen path; the default applies to new installations.
 Keep it for direct links and develop separately. `~/agent-tools/shaka` is an optional example.
 Every action refuses a checkout that is itself a linked worktree; reinstall from a separate clone as its message says.

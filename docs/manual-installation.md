@@ -111,7 +111,9 @@ or the decision you need to make. For example:
 - When Shaka is installed at the old default, `~/.agents/shaka`, it names the
   command that clones Shaka into `~/.local/share/shaka/source` and moves your
   links there. Every install action names the same command until you run it.
-  The old checkout stays where it is; delete it once the new one works.
+  If `~/.local/share/shaka/source` already holds something else, it says what to
+  move aside instead. The old checkout stays where it is; delete it once the new
+  one works.
 
 Below the state it lists the links, checkouts, and PR trials it found.
 `shaka doctor` reports the same state.

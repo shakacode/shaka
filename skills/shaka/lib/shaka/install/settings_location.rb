@@ -66,10 +66,14 @@ module Shaka
       def custom_folder(record, home)
         return [] unless record
 
-        hosts = Locations::HOSTS.values.map { |directory| File.join(home, directory) }
-        custom = record.fetch('targets').map { |target| target.fetch('directory') } - hosts
+        hosts = Locations::HOSTS.values.flat_map { |directory| spellings(File.join(home, directory)) }
+        custom = record.fetch('targets').map { |target| target.fetch('directory') }
+                       .reject { |directory| spellings(directory).intersect?(hosts) }
         custom.empty? ? [] : ['--skills-dir', custom.first]
       end
+
+      # A host folder can be recorded through a symbolic link to HOME, so both forms name it.
+      def spellings(path) = [File.expand_path(path), real(path)].compact
 
       def decision(home)
         "a person must decide what to do with #{default_directory(home)}, which already exists; move it aside, " \
