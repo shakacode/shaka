@@ -212,8 +212,8 @@ Each delivery's branch and PR have one writer: the session or delivery agent tha
 owns them. The tower does not push to an owned PR, including in response to CI or
 review events; it relays the event to the owner. Before relaying a maintainer
 decision, ask the owner for its current state, because the maintainer may already
-have answered there. When the owner's review ledger needs a human decision recorded
-in its own session, ask the maintainer to answer there instead of relaying it.
+have answered there. When a chip session's review ledger needs a human decision
+recorded in that session, ask the maintainer to answer there instead of relaying it.
 When a delivery agent has stopped, as it does when the tower chat ends, recheck
 ownership and offer a chip that resumes its PR; that session becomes the owner.
 
