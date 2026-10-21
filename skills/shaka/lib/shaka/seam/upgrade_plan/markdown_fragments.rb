@@ -15,8 +15,9 @@ module Shaka
           # Quotes and list items can hold code, so their markers are removed before a line is classified.
           CONTAINER = /\A(?:[ \t]*(?:>|[-+*](?=[ \t])|\d{1,9}[.)](?=[ \t])))+[ \t]?/
           INDENTED = /\A(?: {4}|[ \t]*\t)/
-          # A heading, a thematic break, or a setext underline ends a paragraph, so indented code may follow.
-          ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|([-*_])(?:[ \t]*\1){2,}[ \t]*\r?$|(?:=+|-+)[ \t]*\r?$)/
+          # Only a top-level line of plain text opens a paragraph. After any other line, such as a heading,
+          # a rule, a link definition, HTML, or a quote or list line, an indented line stays code.
+          PARAGRAPH = /\A {0,3}[[:alnum:]`(]/
 
           def initialize
             @fence = nil
@@ -30,8 +31,7 @@ module Shaka
             return true if !@paragraph && line.match?(INDENTED)
 
             @fence = line[FENCE, 1]
-            # Stripping a `* ` marker would hide a `* * *` break, so both spellings are checked.
-            @paragraph = @fence.nil? && line.match?(/\S/) && [raw, line].none?(ENDS_PARAGRAPH)
+            @paragraph = @fence.nil? && line == raw && raw.match?(PARAGRAPH)
             !@fence.nil?
           end
 
