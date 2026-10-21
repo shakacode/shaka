@@ -8,6 +8,8 @@ require 'rbconfig'
 # startup time and made local validation several times slower than the tests themselves.
 class TestRubyChildrenTest < Minitest::Test
   def test_a_spawned_ruby_does_not_load_bundler
+    skip 'Only a run under bundle exec has a Bundler environment to inherit' unless defined?(Bundler)
+
     output, status = Open3.capture2e(RbConfig.ruby, '-e', 'print defined?(Bundler).inspect')
     assert_predicate status, :success?, output
 

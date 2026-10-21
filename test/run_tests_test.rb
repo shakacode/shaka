@@ -62,8 +62,10 @@ class RunTestsTest < Minitest::Test
     RUBY
   end
 
+  # bin/validate starts the runner under bundle exec, so its workers load the bundle's Minitest.
   def run_tests(files, workers:)
-    env = { 'MARKER' => @marker, 'SHAKA_TEST_WORKERS' => workers.to_s }
-    Open3.capture2e(env, RbConfig.ruby, RUNNER, *files)
+    env = { 'MARKER' => @marker, 'SHAKA_TEST_WORKERS' => workers.to_s,
+            'BUNDLE_GEMFILE' => File.expand_path('../Gemfile', __dir__) }
+    Open3.capture2e(env, 'bundle', 'exec', RbConfig.ruby, RUNNER, *files)
   end
 end
