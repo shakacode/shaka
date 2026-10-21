@@ -194,7 +194,7 @@ class MergeSquashMessageTest < Minitest::Test
   def test_a_merge_queue_that_copies_the_description_gets_the_message_there_before_enqueueing
     result = enqueue_with('PR_BODY')
 
-    assert_equal 'applied_through_description', result.fetch('squash_message')
+    assert_equal 'body_applied_through_description', result.fetch('squash_message')
     assert_equal 'https://example.test/c/parked', result.fetch('parked_description')
     assert_equal [[:describe, 'B'], :mutation], @client.events
     assert_equal 'merge_queue', result.fetch('submission')

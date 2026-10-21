@@ -4,91 +4,25 @@ require_relative 'test_helper'
 require 'json'
 require 'shaka/github'
 require 'shaka/publication/squash_message'
+require_relative 'queued_description_fake'
 
-# A merge queue that copies the PR description writes whatever the description holds when the PR
-# enters the queue, so Shaka's merge parks the description and the next publication restores it.
-class QueuedDescriptionTest < Minitest::Test
-  STATUS = Struct.new(:exitstatus)
-  HEAD = 'a' * 40
+# A pull request whose description holds Shaka's region and CodeRabbit's summary.
+module QueuedDescriptionFixtures
   REGION = "<!-- shaka:begin -->\nOld summary.\n<!-- shaka:end -->"
   CODERABBIT = "<!-- coderabbit -->\nSummary by CodeRabbit"
 
-  # One pull request and its comments, answering each gh call by path and method.
-  class Fake
-    attr_accessor :body, :title, :queued, :edit_while_parking
-    attr_reader :comments, :deleted
-
-    def initialize(body)
-      @body = body
-      @title = 'Old title'
-      @queued = false
-      @comments = []
-      @deleted = []
-    end
-
-    def call(argv, stdin_data:)
-      path = argv[2]
-      method = argv.include?('--method') ? argv[argv.index('--method') + 1] : 'GET'
-      input = stdin_data.to_s.empty? ? {} : JSON.parse(stdin_data)
-      answer(path, method, input)
-    end
-
-    def comment(id, body, login = 'shaka-agent')
-      @comments << { 'id' => id, 'body' => body, 'user' => { 'login' => login } }
-    end
-
-    private
-
-    def answer(path, method, input)
-      return ok('login' => 'shaka-agent') if path == 'user'
-      return ok('data' => { 'repository' => { 'pullRequest' => { 'isInMergeQueue' => @queued } } }) if path == 'graphql'
-      return ['<p>ok</p>', '', STATUS.new(0)] if path == 'markdown'
-      return method == 'PATCH' ? edit(input) : ok(pull) if path == 'repos/owner/repo/pulls/42'
-
-      listing(path, method, input)
-    end
-
-    # The comment list, a new comment, or a deletion; only the first page holds comments.
-    def listing(path, method, input)
-      return delete(path) if method == 'DELETE'
-      return post(input['body']) if method == 'POST'
-
-      ok(path.end_with?('page=1') ? @comments : [])
-    end
-
-    def pull
-      { 'body' => @body, 'title' => @title, 'comments' => @comments.length,
-        'head' => { 'sha' => HEAD }, 'base' => { 'sha' => 'b' * 40 } }
-    end
-
-    def edit(input)
-      @body = input['body'] if input.key?('body')
-      @title = input['title'] if input.key?('title')
-      ok(pull)
-    end
-
-    def post(body)
-      @body = edit_while_parking if edit_while_parking
-      comment(100 + @comments.length, body)
-      ok(@comments.last.merge('html_url' => "https://example.test/c/#{@comments.last['id']}"))
-    end
-
-    def delete(path)
-      id = path[/\d+\z/].to_i
-      @deleted << id
-      @comments.reject! { |comment| comment['id'] == id }
-      ['', '', STATUS.new(0)]
-    end
-
-    def ok(value) = [JSON.generate(value), '', STATUS.new(0)]
-  end
-
   def setup
-    @fake = Fake.new("#{REGION}\n\n#{CODERABBIT}")
+    @fake = QueuedDescriptionFake.new("#{REGION}\n\n#{CODERABBIT}")
     @github = Shaka::GitHub.new('owner/repo', 42, runner: @fake.method(:call))
   end
 
   def prepared = Shaka::SquashMessage.new({ 'title' => 'New title', 'body' => 'What changed and why.' }, number: 42)
+end
+
+# A merge queue that copies the PR description writes whatever the description holds when the PR
+# enters the queue, so Shaka's merge parks the description and the next publication restores it.
+class QueuedDescriptionTest < Minitest::Test
+  include QueuedDescriptionFixtures
 
   def test_the_description_holds_the_prepared_message_and_the_rest_waits_in_a_comment
     url = @github.queue_description(prepared)
@@ -183,6 +117,39 @@ class QueuedDescriptionTest < Minitest::Test
     @github.description(body: "New summary.\n")
 
     assert_equal "<!-- shaka:begin -->\nNew summary.\n<!-- shaka:end -->\n\n#{CODERABBIT}", @fake.body
+  end
+end
+
+# Parking fails safe: a description it cannot vouch for is not published over or lost.
+class QueuedDescriptionSafetyTest < Minitest::Test
+  include QueuedDescriptionFixtures
+
+  # Another account's parking comment is not trusted, but its PR may still be queued with the message.
+  def test_a_queued_description_without_a_region_is_never_published_over
+    @fake.body = 'What changed and why.'
+    @fake.comment(7, 'Another account parked this.', 'someone')
+    @fake.queued = true
+
+    assert_raises(Shaka::Error) { @github.description(body: "New summary.\n") }
+    assert_equal 'What changed and why.', @fake.body
+  end
+
+  def test_a_damaged_parking_comment_names_itself
+    @github.queue_description(prepared)
+    @fake.comments.first['body'] = @fake.comments.first['body'].sub(/<!-- body \S+ -->/, '<!-- body AAAA -->')
+
+    error = assert_raises(Shaka::Error) { @github.description(body: "New summary.\n") }
+
+    assert_match(/Parking comment 100 is damaged/, error.message)
+  end
+
+  def test_a_failed_write_takes_the_parking_comment_back
+    @fake.refuse_edit = true
+
+    assert_raises(Shaka::Error) { @github.queue_description(prepared) }
+
+    assert_empty @fake.comments
+    assert_equal "#{REGION}\n\n#{CODERABBIT}", @fake.body
   end
 
   # Only this account's comment may decide what the description becomes.

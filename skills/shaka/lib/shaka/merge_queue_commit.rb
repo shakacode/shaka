@@ -34,9 +34,14 @@ module Shaka
     # description gets the prepared message there first. Answers what the merge result reports.
     def self.describe(github, message)
       return {} unless new(read(github)).copies_description?
-      raise Error, 'This merge queue copies the PR description into its commit; pass --squash-message.' unless message
+      unless message
+        raise Error, 'This merge queue copies the PR description into its commit; pass --squash-message ' \
+                     'with the prepared title and body.'
+      end
 
-      { 'squash_message' => 'applied_through_description', 'parked_description' => github.queue_description(message) }
+      # The queue takes the commit title from its own title setting, so only the body is applied.
+      { 'squash_message' => 'body_applied_through_description',
+        'parked_description' => github.queue_description(message) }
     end
 
     # A token that cannot read repository settings still gets the instruction to enqueue.

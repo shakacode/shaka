@@ -26,9 +26,11 @@ module Shaka
       body = current['body'].to_s
       earlier = parked_around(body)
       parking = park(whole(body, earlier), message.prose)
-      unchanged_since_parking(current, parking)
-      release_parked(earlier)
-      confirmed(api(pull_path, method: 'PATCH', fields: { body: message.prose }), message.prose)
+      unparking_on_failure(parking) do
+        check_unchanged(current)
+        release_parked(earlier)
+        confirmed(api(pull_path, method: 'PATCH', fields: { body: message.prose }), message.prose)
+      end
       parking['html_url']
     end
 
@@ -37,17 +39,18 @@ module Shaka
     # The pull request as publication should read it, with the parked description in place of a
     # queued commit message, and the parking comments to delete once the restored body is stored.
     # Restoring while the PR is queued would let a rebuilt queue commit copy the whole description.
+    # A queued description without Shaka's region may be one another account parked, so it is
+    # never published over. A PR without comments has nothing parked, so its comments go unread.
     def unparked(current)
       body = current['body'].to_s
-      # A PR without comments has nothing parked, so its comments go unread.
-      comments = current['comments'].to_i.zero? ? [] : parked_around(body)
-      return [current, []] if comments.empty?
+      return [current, []] if body.include?(Publishing::OPEN_MARK) || current['comments'].to_i.zero?
       if snapshot['isInMergeQueue'] == true
-        raise Error, 'The PR is in the merge queue and its description holds the prepared commit message; ' \
+        raise Error, 'The PR is in the merge queue and its description may hold the prepared commit message; ' \
                      'publish the description after the PR merges or leaves the queue.'
       end
 
-      [current.merge('body' => whole(body, comments)), comments]
+      comments = parked_descriptions
+      [comments.empty? ? current : current.merge('body' => whole(body, comments)), comments]
     end
 
     # This account's parking comments, when the description has no Shaka region to hold.
@@ -59,8 +62,15 @@ module Shaka
       return body if parked.empty?
 
       encoded, queued = parked.last['body'].to_s.gsub("\r\n", "\n").match(PARKED).captures
-      text = Zlib::Inflate.inflate(encoded.unpack1('m0')).force_encoding(Encoding::UTF_8)
+      text = inflate(encoded, parked.last)
       digest(body) == queued || body.strip.empty? ? text : "#{text}\n\n#{body}"
+    end
+
+    def inflate(encoded, comment)
+      Zlib::Inflate.inflate(encoded.unpack1('m0')).force_encoding(Encoding::UTF_8)
+    rescue ArgumentError, Zlib::Error
+      raise Error, "Parking comment #{comment['html_url'] || comment['id']} is damaged; restore the description " \
+                   'from it by hand, then delete it.'
     end
 
     # The whole description, compressed, and a digest of the message written in its place.
@@ -73,10 +83,10 @@ module Shaka
       confirmed(posted, text)
     end
 
-    # An edit that landed while the comment was posted is in neither copy, so the swap stops and
-    # takes back a comment that no longer matches the description.
-    def unchanged_since_parking(current, parking)
-      check_unchanged(current)
+    # An edit that landed while the comment was posted is in neither copy, and a failed write leaves
+    # the description in place, so either way the swap stops and takes its comment back.
+    def unparking_on_failure(parking)
+      yield
     rescue Error
       release_parked([parking])
       raise
