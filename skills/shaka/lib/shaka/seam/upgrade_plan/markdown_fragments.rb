@@ -15,7 +15,8 @@ module Shaka
           # Quotes and list items can hold code, so their markers are removed before a line is classified.
           CONTAINER = /\A(?:[ \t]*(?:>|[-+*](?=[ \t])|\d{1,9}[.)](?=[ \t])))+[ \t]?/
           INDENTED = /\A(?: {4}|[ \t]*\t)/
-          HEADING = /\A {0,3}\#{1,6}(?:\s|\z)/
+          # A heading, a thematic break, or a setext underline ends a paragraph, so indented code may follow.
+          ENDS_PARAGRAPH = /\A {0,3}(?:\#{1,6}(?:\s|\z)|([-*_])(?:[ \t]*\1){2,}[ \t]*\r?$|(?:=+|-+)[ \t]*\r?$)/
 
           def initialize
             @fence = nil
@@ -29,7 +30,7 @@ module Shaka
             return true if !@paragraph && line.match?(INDENTED)
 
             @fence = line[FENCE, 1]
-            @paragraph = @fence.nil? && line.match?(/\S/) && !line.match?(HEADING)
+            @paragraph = @fence.nil? && line.match?(/\S/) && !line.match?(ENDS_PARAGRAPH)
             !@fence.nil?
           end
 
