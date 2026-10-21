@@ -39,6 +39,10 @@ module Shaka
 
         def relative_reference_file?(path) = !relative_mapping(path).empty?
 
+        def relative_reference?(path, text)
+          relative_mapping(path).keys.any? { |spelling| text.match?(relative_pattern(spelling)) }
+        end
+
         # Maps each spelling to [new spelling, old path]. A bare command name is prose, so only
         # spellings with a slash and the two YAML names beside their old files count.
         def relative_mapping(path)

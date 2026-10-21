@@ -48,6 +48,21 @@ class SeamUpgradeRelativeReferenceTest < Minitest::Test
     end
   end
 
+  def test_sibling_command_in_old_command_directory_blocks
+    with_repository do |root|
+      write_tracked(root, '.agents/bin/README.md', "Run `./test` here.\n")
+      assert_blocked_with(root, 'invocation-relative path')
+    end
+  end
+
+  def test_indexed_relative_reference_hidden_by_unstaged_edit_blocks
+    with_repository do |root|
+      path = write_tracked(root, '.agents/notes.md', "[policy](agent-workflow.yml)\n")
+      File.write(path, "No policy link.\n")
+      assert_blocked_with(root, 'differs from worktree')
+    end
+  end
+
   def test_nested_file_keeps_its_own_yaml_name
     with_repository do |root|
       write_tracked(root, '.agents/custom/agent-workflow.yml', "own: true\n")

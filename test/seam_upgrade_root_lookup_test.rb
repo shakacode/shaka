@@ -47,11 +47,21 @@ class SeamUpgradeRootLookupTest < Minitest::Test
     end
   end
 
-  def test_unrecognized_root_reports_the_exact_replacement
+  def test_root_lookup_under_another_name_reports_the_exact_replacement
     with_repository do |root|
-      write_wrapper(root, 'setup', %(#!/bin/sh\nset -eu\nrepo_root=$(realpath "$0/../../..")\n))
-      commit_fixture(root, 'unrecognized root')
+      write_wrapper(root, 'setup', %(#!/bin/sh\nset -eu\nrepo_root="$(cd "$(dirname "$0")/../.." && pwd)"\n))
+      commit_fixture(root, 'renamed root')
       assert_blocked_with(root, "repo_root=#{Shaka::Seam::UpgradePlan::GIT_ROOT.delete_prefix('root=')}")
+    end
+  end
+
+  def test_other_parent_paths_get_no_replacement
+    [%(assets="$(dirname "$0")/../../assets"), %(cd "$(dirname "$0")/../.." && make)].each do |line|
+      with_repository do |root|
+        write_wrapper(root, 'setup', "#!/bin/sh\nset -eu\n#{line}\n")
+        commit_fixture(root, 'other parent path')
+        assert_blocked_with(root, 'ambiguous repository-root calculation; repair it explicitly')
+      end
     end
   end
 

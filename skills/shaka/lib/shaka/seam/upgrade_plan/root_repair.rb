@@ -61,10 +61,9 @@ module Shaka
           [result, 'custom Ruby root discovery']
         end
 
-        def shell_root_pattern
-          lookup = "#{script_parent}|\"#{script_parent}\"|#{changed_parent}|\"#{changed_parent}\""
-          /^(?<indent>[ \t]*)(?<assignment>root=)(?:#{lookup})[ \t]*$/
-        end
+        def shell_root_pattern = /^(?<indent>[ \t]*)(?<assignment>root=)(?:#{root_lookup})[ \t]*$/
+
+        def root_lookup = "#{script_parent}|\"#{script_parent}\"|#{changed_parent}|\"#{changed_parent}\""
 
         def inline_root_pattern = /^(?<indent>[ \t]*)cd (?:-P )?(?:-- )?"#{script_parent}"[ \t]*$/
 
@@ -89,10 +88,10 @@ module Shaka
         end
 
         def root_replacement(text, line)
-          name = line[/\A([A-Za-z_]\w*)=/, 1]
+          name = line[/\A([A-Za-z_]\w*)=(?:#{root_lookup})\z/, 1]
           return "#{name}=#{GIT_ROOT.delete_prefix('root=')}" if name
 
-          %(#{GIT_ROOT}; cd "$root") if line.start_with?('cd ') && !text.match?(ROOT_VARIABLE)
+          %(#{GIT_ROOT}; cd "$root") if line.match?(inline_root_pattern) && !text.match?(ROOT_VARIABLE)
         end
 
         def ambiguous_root?(text)
