@@ -21,7 +21,7 @@ module Shaka
           @references << { 'path' => path, 'kind' => 'relative old-layout reference',
                            'paths' => found.map { |old| mapping.fetch(old).last } }
           return historical_reference(path, line) if historical_line?(path, line)
-          return block_relative_reference(path, found, line) if executable
+          return block_relative_reference(path, found, line) if executable || relative_glob?(line, found)
 
           replace_relative(line, found, mapping)
         end
@@ -35,6 +35,11 @@ module Shaka
         def block_relative_reference(path, found, line)
           @blockers << "#{path}: relative old-layout reference #{found.join(', ')} needs explicit repair"
           line
+        end
+
+        # Helper tools stay in the old command directory, so a pattern over it has no single new home.
+        def relative_glob?(line, found)
+          found.any? { |spelling| spelling.end_with?('/') && line.match?(relative_pattern(spelling, '[*?\\[]')) }
         end
 
         def relative_reference_file?(path) = !relative_mapping(path).empty?
@@ -74,8 +79,8 @@ module Shaka
           target.end_with?('/') ? "#{relative}/" : relative
         end
 
-        def relative_pattern(spelling)
-          ending = spelling.end_with?('/') ? '(?![[:alnum:]_.-])' : path_end
+        def relative_pattern(spelling, ending = nil)
+          ending ||= spelling.end_with?('/') ? '(?![[:alnum:]_.-])' : path_end
           Regexp.new("(?<![[:alnum:]_./-])(?<lead>\\./)?#{Regexp.escape(spelling)}#{ending}")
         end
       end

@@ -15,10 +15,17 @@ module Shaka
 
             return [text.sub(OLD_ROOT, GIT_ROOT), 'recognized shell root discovery']
           end
+          repaired, kind = custom_root(text)
+          return [nil, nil] if ambiguous_root?(repaired)
+
+          [repaired, kind]
+        end
+
+        # A second parent-relative line would still resolve from the old depth after the move.
+        def custom_root(text)
           shell = shell_root_lookup(text)
           return custom_shell_root(shell) if shell
           return custom_ruby_root(text) if text.match?(ruby_root_pattern)
-          return [nil, nil] if ambiguous_root?(text)
 
           [text, nil]
         end

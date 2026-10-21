@@ -63,6 +63,14 @@ class SeamUpgradeRelativeReferenceTest < Minitest::Test
     end
   end
 
+  def test_relative_command_directory_glob_blocks
+    with_repository do |root|
+      write_tracked(root, '.agents/bin/helper.sh', "#!/bin/sh\nexit 0\n")
+      write_tracked(root, '.agents/notes.md', "Lint bin/*.sh before release.\n")
+      assert_blocked_with(root, '.agents/notes.md: relative old-layout reference bin/')
+    end
+  end
+
   def test_nested_file_keeps_its_own_yaml_name
     with_repository do |root|
       write_tracked(root, '.agents/custom/agent-workflow.yml', "own: true\n")
