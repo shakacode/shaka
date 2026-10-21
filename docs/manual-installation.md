@@ -1,7 +1,7 @@
 # Install Shaka manually
 
 Run the installation yourself when you want to read what will run before it
-runs. You need Ruby 3.4 or later, Git, and an authenticated
+runs. You need Ruby 3.4 or later, Git 2.41 or later, and an authenticated
 [GitHub CLI](https://cli.github.com/). To let your coding agent do this instead,
 use the [installation prompt](getting-started.md).
 
@@ -125,7 +125,15 @@ saved in `~/.local/share/shaka/update-check.json`. Any later Shaka command reads
 that file, without a network request, and prints one line to standard error at
 most once a day when it says to update, says the checkout moved, or is missing or over a day old.
 A command run from a different Shaka checkout than your skill links point to
-prints one line naming the linked one. Set `SHAKA_NOTICES=off` to silence both.
+prints one line naming the linked one.
+
+Two more reminders show at most once a day. A command run in a repository with no
+Shaka settings names the missing file and the two setup choices, so a first task
+starts by choosing [individual or team setup](getting-started.md#2-choose-individual-or-team-setup).
+Until `shaka doctor` has run on your machine, a command suggests running it. Doctor
+records each run in `~/.local/share/shaka/doctor-ran`, and the reminder times are
+kept in `~/.local/share/shaka/notices.json`. Set `SHAKA_NOTICES=off` to silence every
+notice; doctor then records nothing.
 
 To have each new Claude Code chat start with the saved answer, add `--session-hook`
 to `bin/install --agent claude`. The chat then hears about an update, a moved

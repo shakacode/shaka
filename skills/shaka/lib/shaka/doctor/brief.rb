@@ -5,11 +5,13 @@ require_relative 'check'
 require_relative 'checks'
 require_relative 'installation_identity'
 require_relative 'system'
+require_relative '../startup_notice'
 
 module Shaka
   class Doctor
     # The task-start check: where this Shaka runs from, whose settings the checkout holds, and
-    # whether Ruby, gh, and the repository work. Read-only, like the full report.
+    # whether Ruby, gh, and the repository work. Like the full report, it writes only the mark
+    # that doctor has run.
     class Brief
       include Check
 
@@ -21,6 +23,7 @@ module Shaka
         root = File.realpath(options.fetch(:root, Dir.pwd))
         brief = new(checks: Checks.new(root:, host: nil, environment: ENV, system: System.default).brief)
         puts brief.report
+        StartupNotice::Marks.doctor_ran
         brief.blocked? ? 1 : 0
       end
 

@@ -25,7 +25,7 @@ module ConfigurationBoundaryFileIO
     seam/upgrade_plan/symlink_chain.rb seam/private_recovery/exclusion.rb seam/upgrader.rb seam/upgrader/filesystem.rb
     seam/private_recovery/seed.rb seam/private_seed.rb ui_check.rb install/refusal.rb install/ruby_record.rb
     install/status_checkout.rb install/status_inventory.rb install/checkout_record.rb install/take_over.rb
-    update_check/cache.rb install/session_hook.rb ruby_requirement.rb
+    update_check/cache.rb install/session_hook.rb ruby_requirement.rb startup_notice/marks.rb
     evidence/machine_facts.rb
   ].freeze
 end

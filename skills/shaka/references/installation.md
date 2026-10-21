@@ -12,7 +12,7 @@ this repository.
 
 ## Prerequisites
 
-You need Ruby 3.4, Git, an authenticated [GitHub CLI](https://cli.github.com/), and
+You need Ruby 3.4, Git 2.41 or later, an authenticated [GitHub CLI](https://cli.github.com/), and
 a [supported coding agent](installation.md#development-environment-details).
 
 ```bash

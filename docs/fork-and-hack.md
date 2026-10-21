@@ -14,7 +14,7 @@ or its helper, everywhere you use it.
 ## Fork and install
 
 You need the same tools as a [manual installation](manual-installation.md):
-Ruby 3.4 or later, Git, and an authenticated
+Ruby 3.4 or later, Git 2.41 or later, and an authenticated
 [GitHub CLI](https://cli.github.com/).
 
 **Ask your agent:**
