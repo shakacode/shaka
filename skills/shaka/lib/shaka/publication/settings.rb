@@ -7,6 +7,7 @@ require_relative 'feature_guard'
 require_relative '../opening_publication'
 require_relative 'settings_table'
 require_relative 'run_summary'
+require_relative 'review_effort_floor'
 
 module Shaka
   # Consumes existing results; never stores a second receipt or rewrites an earlier one.
@@ -22,11 +23,12 @@ module Shaka
     end
 
     def self.prepare(root:, ref:, pull:, options:, github:)
-      FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
+      changed_paths = FeaturePublication.check(github:, pull:, flow: options.fetch(:publication_flow, 'feature'))
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
-      current = current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref
-      new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:)
+      current, floors = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
+      new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
+          review_effort_floor: ReviewEffortFloor.for(changed_paths, floors))
     end
 
     def self.verify(root:, ref:, repository:, pull:, options:)
@@ -35,24 +37,24 @@ module Shaka
       raise Error, 'Settings publication requires --ref and --root' unless ref && options[:root]
 
       verdict = Evidence::Verification.new(root:, ref:, repository:, head: pull.dig('head', 'sha'), paths:).run
-      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review' unless
-        verdict['status'] == 'ready'
+      return verdict if verdict['status'] == 'ready'
 
-      verdict
+      raise Error, 'Settings evidence is missing or stale; rerun affected validation/review'
     end
 
+    # Returns the public settings snapshot and the trusted review-effort floors.
     def self.current_settings(root:, ref:, repository:, required: false)
       OpeningPublication.with_safe_path(root:, select_gh: false) do |candidate_root|
-        _config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
-        current
+        config, _settings, _kind, current = Evidence::Inputs.capture(root: candidate_root, ref:, repository:)
+        [current, config.pr_description['human_review_floors']]
       end
     rescue Error, SystemCallError
       raise if required
-
-      nil
     end
 
-    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil)
+    def initialize(verdict: nil, current: nil, location_diagnostic: MISSING_REF, repository: nil,
+                   review_effort_floor: nil)
+      @review_effort_floor = review_effort_floor
       @repository = repository
       @verdict = verdict
       @current = current
@@ -81,8 +83,8 @@ module Shaka
       rows.is_a?(Integer) && rows.positive? ? rows : RepositoryConfig::DEFAULT_PR_DESCRIPTION.fetch('max_human_comments')
     end
 
-    # The bound results Verification reports, or nil when description received none.
-    attr_reader :verdict
+    # The bound results Verification reports and the floor the changed paths set; nil when not read.
+    attr_reader :verdict, :review_effort_floor
 
     NOTE = 'Local files remain local. This reports operation settings and cannot restore them. ' \
            'It does not prove earlier checks ran. Private merge.preference grants no Auto authority. ' \

@@ -948,6 +948,63 @@ one is already on the PR, so the list shows the agent's one-line summary and lin
 to it. So does a short comment with a list beside code, where code is hard to tell
 from prose.
 
+## `pr_description.human_review_floors`
+
+**Optional. Default: the floors below.**
+
+Every PR description says how much human review the change needs, from 1 (read the
+description) to 5 (review every line, reproduce it, and ask a second reviewer). Shaka sets a
+minimum from the files the PR changes, so an agent can't rate a risky change as light reading.
+The description names the floor and the file that set it.
+
+What deserves close review depends on your project, so set these floors for each repository.
+The easiest way is to ask your agent:
+
+> Help me choose Shaka's human review floors for this repository. Look at our folders and
+> recent PRs, ask me which changes I review most carefully, and open a settings PR.
+
+Your agent knows the matching rules and checks its proposal against your recent PRs. You
+decide what matters; for example, a project whose guides are read by its customers may want
+every `docs/` change reviewed at 5.
+
+In [a study of 309 PRs in this repository](articles/one-shot-pr-study.md), people asked for
+changes on many docs and agent-instruction PRs and on no PR that changed only code and tests.
+So by default agent instructions sit above code. Docs stay at 1 because who reads them differs
+by project; set them higher when they reach your users, as this repository does.
+
+| Floor | Changed file |
+| --- | --- |
+| 5 | Shaka's settings in `.agents/shaka/` |
+| 4 | GitHub Actions workflows, `CODEOWNERS`, and code named for auth, merge, release, trust, permissions, secrets, or credentials |
+| 3 | Agent instructions, such as `AGENTS.md`, `SKILL.md`, and `skills/` |
+| 2 | Any other code or configuration |
+| 1 | Markdown docs and images |
+
+The PR's floor is the highest one any of its files reaches. A PR changing a guide and a GitHub
+Actions workflow needs at least 4.
+
+Each floor lists the files it covers, and can list exceptions that leave a file out of that floor
+only. For example, the default floor 4 covers `docs/merge-guide.md` by its name but excepts
+Markdown, so the guide falls to the next floor that covers it, or to 1. The same guide under
+`skills/` still gets 3 from the agent-instructions floor.
+
+Your list replaces the default one. This repository adds two floors ahead of the defaults:
+
+```yaml
+pr_description:
+  human_review_floors:
+    - level: 5
+      reason: changes docs for Shaka's users
+      paths: [docs/**/*]
+    - level: 4
+      reason: changes evidence or settings checks
+      paths: [skills/shaka/lib/shaka/evidence/**/*, skills/shaka/lib/shaka/seam/**/*]
+    # ...followed by the default floors
+```
+
+Shaka reads the floors from the same settings as everything else on this page, never from the
+PR's own branch, so a PR can't lower its own floor. An empty list, `[]`, turns floors off.
+
 ## `wip.include_checkout_path`
 
 **Optional. Default: `true`.**

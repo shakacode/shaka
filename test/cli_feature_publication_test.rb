@@ -27,12 +27,18 @@ class CliFeaturePublicationTest < Minitest::Test
     with_checkout do |root, ref|
       @head = ref
       @files = [{ 'filename' => '.agents/shaka/config.yml' }]
-      Dir.mktmpdir do |dir|
-        _output, error, status = publish(dir, root, '--publication-flow', 'migration')
-        assert_predicate status, :success?, error
-        assert_includes File.read(File.join(dir, 'published.md')), 'UNKNOWN: rerun missing evidence'
-      end
+      Dir.mktmpdir { |dir| assert_migration_body(dir, root) }
     end
+  end
+
+  # Repository configuration sets merge authority, so its review effort floor is 5.
+  def assert_migration_body(dir, root)
+    content = description_content.merge('intent' => INTENT.merge('review_effort' => 5))
+    _output, error, status = publish(dir, root, '--publication-flow', 'migration', content:)
+    assert_predicate status, :success?, error
+    body = File.read(File.join(dir, 'published.md'))
+    assert_includes body, 'UNKNOWN: rerun missing evidence'
+    assert_includes body, "Floor 5: changes Shaka's repository configuration (`.agents/shaka/config.yml`)."
   end
 
   def test_result_flags_bind_actual_results_and_refuse_missing_review

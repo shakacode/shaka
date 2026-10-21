@@ -151,6 +151,8 @@ and standard script; keep those definitions there.
    branch has no seam yet, follow [the first setup PR](#review-and-merge-the-first-setup-pr)
    path to review it before publishing and hand it to the maintainer. A migration
    keeps the normal workflow gates. Merge before relying on the new policy.
+6. After the setup PR merges, offer to choose the repository's
+   [human review floors](human-review-floors.md); until then the shipped floors apply.
 
 For a repository whose commands and review job match this example, the initializer
 is:
