@@ -13,9 +13,9 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     required ci_review_jobs local_review_agents local_review_count post_implementation prompt_file provider_coverage
     human_review_floors auto_max_review_floor
   ].freeze
-  # The only files this repository removes from a shipped floor: its own code and tests leave the
-  # agent-instructions floor so merge.auto_max_review_floor can merge them.
-  FLOOR_EXEMPTIONS = { 'changes agent instructions' => %w[skills/shaka/lib/**/* test/**/*] }.freeze
+  # The only files this repository removes from a shipped floor: its Ruby library code leaves the
+  # agent-instructions floor so merge.auto_max_review_floor can merge it.
+  FLOOR_EXEMPTIONS = { 'changes agent instructions' => %w[skills/shaka/lib/**/*.rb] }.freeze
   # Where this repository's floors put its files; Auto merges only those at 2 or below.
   FLOOR_LEVELS = {
     'skills/shaka/lib/shaka/doctor/checks.rb' => 2, 'test/doctor_test.rb' => 2,
@@ -23,7 +23,8 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     'skills/shaka/SKILL.md' => 3,
     'skills/shaka/lib/shaka/required_checks.rb' => 4, 'skills/shaka/lib/shaka/merge_review_floor.rb' => 4,
     'skills/shaka/lib/shaka/publication/review_effort_floor.rb' => 4,
-    'skills/shaka/lib/shaka/repository_config/merge_schema.rb' => 4, 'docs/settings.md' => 5
+    'skills/shaka/lib/shaka/repository_config/merge_schema.rb' => 4, 'docs/settings.md' => 5,
+    'skills/shaka/lib/AGENTS.md' => 3, 'test/AGENTS.md' => 3
   }.freeze
 
   def setup
