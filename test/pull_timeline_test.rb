@@ -38,6 +38,13 @@ class PullTimelineTest < Minitest::Test
 
   def read(pages) = Shaka::PullTimeline.new(FakeGitHub.new(pages)).call
 
+  # The measured steps match call-log records to these commits and their trees.
+  def test_reports_each_commit_and_its_tree
+    commit = { 'oid' => 'a' * 40, 'committedDate' => '2026-10-18T07:30:00Z', 'tree' => { 'oid' => 'b' * 40 } }
+    pull = page([]).merge('commits' => { 'nodes' => [{ 'commit' => commit }, nil] })
+    assert_equal [{ 'oid' => 'a' * 40, 'tree' => 'b' * 40 }], read([pull])['commits']
+  end
+
   def test_reads_every_page_and_keeps_only_attention_labels
     github = FakeGitHub.new([page([event('LabeledEvent', 'documentation', '01'),
                                    event('LabeledEvent', 'awaiting-answer', '10')], next_cursor: 'c1'),

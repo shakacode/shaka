@@ -1,0 +1,104 @@
+# frozen_string_literal: true
+
+require_relative 'test_helper'
+require 'json'
+require 'tmpdir'
+require 'shaka/publication/timeline_steps'
+
+# A pull request's measured steps come from this machine's call log and from the body's earlier updates.
+class TimelineStepsTest < Minitest::Test
+  REPOSITORY = 'acme/widgets'
+  HEAD = 'a' * 40
+  TREE = 'b' * 40
+  COMMITS = [{ 'oid' => HEAD, 'tree' => TREE }].freeze
+  GitHub = Struct.new(:repository)
+
+  def record(**fields)
+    { 'at' => '2026-10-21T09:00:00Z', 'exit' => 0, 'duration_ms' => 60_000 }.merge(fields.transform_keys(&:to_s))
+  end
+
+  def validation(**) = record(command: 'evidence run', check: 'validate', repository: REPOSITORY, tree: TREE, **)
+  def review(**) = record(command: 'review run', head: HEAD, provider: 'openai', **)
+
+  def logged(*records, commits: COMMITS, machine: 'm5')
+    Dir.mktmpdir do |directory|
+      path = File.join(directory, 'calls.jsonl')
+      File.write(path, records.map { |entry| entry.is_a?(String) ? "#{entry}\n" : "#{JSON.generate(entry)}\n" }.join)
+      Shaka::TimelineSteps.logged(path, REPOSITORY, commits, machine)
+    end
+  end
+
+  def body(steps) = "<!-- shaka:begin -->\n#{Shaka::TimelineSteps.hidden(steps)}\n<!-- shaka:end -->\n"
+
+  def test_a_validation_matches_by_tree_and_a_review_or_checkpoint_by_head
+    checkpoint = record(command: 'post-implementation run', head: HEAD, provider: 'openai', model: 'gpt-6.1-sol',
+                        effort: 'medium')
+    steps = logged(validation, review, checkpoint)
+
+    assert_equal(['evidence run', 'review run', 'post-implementation run'], steps.map { |step| step['command'] })
+    assert_equal %w[gpt-6.1-sol medium m5], steps.last.values_at('model', 'effort', 'machine')
+  end
+
+  def test_other_repositories_commits_checks_and_commands_are_left_out
+    other = 'c' * 40
+    steps = logged(validation(repository: 'acme/other'), validation(tree: other), validation(check: 'setup'),
+                   review(head: other), record(command: 'claim', number: 712), review(repository: 'acme/other'))
+    assert_empty steps
+  end
+
+  def test_unreadable_lines_and_a_missing_log_are_skipped
+    assert_equal 1, logged('not json', '[1]', "\xFF".b, review).size
+    assert_empty Shaka::TimelineSteps.logged('/nonexistent/calls.jsonl', REPOSITORY, COMMITS, 'm5')
+    assert_empty logged(review, commits: [])
+  end
+
+  def test_carried_steps_come_back_and_a_step_logged_again_appears_once
+    fresh = logged(validation, review)
+    merged = Shaka::TimelineSteps.merge(Shaka::TimelineSteps.carried(body(fresh)), fresh)
+
+    assert_equal fresh, merged
+  end
+
+  def test_steps_sort_by_start_and_keep_the_newest
+    steps = (1..60).map { |minute| logged(review(at: format('2026-10-21T10:%02d:00Z', minute % 60))) }
+    merged = Shaka::TimelineSteps.merge(*steps.reverse)
+
+    assert_equal Shaka::TimelineSteps::MAX_STEPS, merged.size
+    assert_equal merged.sort_by { |step| step['at'] }, merged
+  end
+
+  # The body is editable, so a carried step is checked again and an unsafe value never renders.
+  def test_carried_steps_with_bad_fields_are_dropped_or_cleaned
+    good = logged(review).first
+    bad = [good.merge('id' => 'x'), good.merge('command' => 'claim'), good.merge('duration_ms' => -1),
+           good.merge('at' => 'yesterday'), good.merge('check' => 'validate'), 'text']
+    cleaned = good.merge('id' => 'f' * 16, 'model' => 'a | b', 'machine' => '<script>')
+    carried = Shaka::TimelineSteps.carried(body([*bad, cleaned]))
+
+    assert_equal [good.merge('id' => 'f' * 16).except('machine')], carried
+  end
+
+  def test_only_the_managed_region_is_read
+    line = Shaka::TimelineSteps.hidden(logged(review))
+    assert_empty Shaka::TimelineSteps.carried("#{line}\n<!-- shaka:begin -->\n<!-- shaka:end -->\n")
+    assert_empty Shaka::TimelineSteps.carried("<!-- shaka:begin -->\n<!-- timeline-steps [oops -->\n<!-- shaka:end -->")
+  end
+
+  def test_attach_adds_carried_and_logged_steps_to_the_timeline
+    Dir.mktmpdir do |directory|
+      log = File.join(directory, 'calls.jsonl')
+      File.write(log, "#{JSON.generate(review)}\n")
+      steps = attached(log, body(logged(validation)))
+
+      assert_equal(['evidence run', 'review run'], steps.map { |step| step['command'] })
+      refute steps.last.key?('machine')
+    end
+  end
+
+  private
+
+  def attached(log, body)
+    env = { 'SHAKA_CALL_LOG' => log, 'SHAKA_MACHINE_ALIAS' => nil }
+    Shaka::TimelineSteps.attach({ 'commits' => COMMITS }, GitHub.new(REPOSITORY), body, env:)['steps']
+  end
+end

@@ -398,7 +398,9 @@ also records the repository, issue or PR number, and commit. A review or product
 checkpoint line adds the reviewer's provider, model, and effort. For example, a line
 for local validation shows which commit was tested, how long it took, and whether it
 passed. `shaka work` leaves no line, because it hands the terminal to your coding agent.
-The log records no paths or task text, and Shaka never uploads it. Delete the file whenever
+The log records no paths or task text, and Shaka never uploads the file. A PR's description
+does list that PR's validation, review, and checkpoint lines, as
+[Understanding PR timings](reference/timings.md) describes. Delete the file whenever
 you like. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to a path to keep the
 log elsewhere.
 

@@ -5,14 +5,14 @@ require_relative '../error'
 require_relative '../attention'
 
 module Shaka
-  # Reads when the pull request opened, waited on a person, and closed, for the description's timings.
+  # Reads when the pull request opened, waited on a person, and closed, and its commits, for the description's timings.
   class PullTimeline
     QUERY = <<~GRAPHQL
       query($owner: String!, $name: String!, $number: Int!, $cursor: String) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $number) {
             state createdAt mergedAt closedAt
-            commits(first: 1) { nodes { commit { committedDate } } }
+            commits(first: 100) { nodes { commit { oid committedDate tree { oid } } } }
             timelineItems(first: 100, after: $cursor, itemTypes: [LABELED_EVENT, UNLABELED_EVENT]) {
               pageInfo { hasNextPage endCursor }
               nodes {
@@ -86,7 +86,8 @@ module Shaka
     end
 
     def timeline(pull, events)
-      first = pull.dig('commits', 'nodes', 0, 'commit', 'committedDate')
+      commits = commits(pull)
+      first = commits.first&.fetch('committedDate', nil)
       {
         'opened' => Time.iso8601(pull.fetch('createdAt')),
         'first_commit' => first && Time.iso8601(first),
@@ -94,8 +95,12 @@ module Shaka
         # A reopened pull request keeps its old closedAt.
         'closed' => pull['state'] == 'CLOSED' ? Time.iso8601(pull['closedAt']) : nil,
         # GitHub lists the timeline in order; sort_by is unstable and would reorder events within one second.
-        'labels' => events
+        'labels' => events,
+        # Each commit and its tree, so the measured steps can tell which call-log records are this pull request's.
+        'commits' => commits.map { |commit| { 'oid' => commit['oid'], 'tree' => commit.dig('tree', 'oid') } }
       }
     end
+
+    def commits(pull) = Array(pull.dig('commits', 'nodes')).filter_map { |node| node['commit'] if node.is_a?(Hash) }
   end
 end

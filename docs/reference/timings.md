@@ -51,4 +51,38 @@ adds a label when it stops for you and removes it when work resumes.
 If GitHub cannot supply the timeline, the section says so and the rest of the
 description still publishes. The next update tries again.
 
+## Measured steps
+
+Below the stretches, the section lists how long each validation run, local
+review, and product checkpoint took. Each row also shows whether the step passed,
+the reviewer's provider, model, and effort, and the machine alias that ran it.
+For example:
+
+| Step | Started | Time | Result | Model | Machine |
+| --- | --- | ---: | --- | --- | --- |
+| Validation: validate | 2026-10-18 08:05 | 13m | passed | — | m5 |
+| Local review | 2026-10-18 08:20 | 58s | passed | openai · gpt-6.1-sol · medium | m5 |
+
+Above the table, a totals line such as
+`Measured steps: Validation 13m (1 run) · Local review 58s (1 run)` adds up each kind of step.
+
+The steps come from Shaka's timing log on the machine that ran them. A step
+belongs to the PR when it reviewed one of the PR's commits, or, for a validation
+run, when it tested exactly the files a commit holds. Each description update keeps
+the steps earlier updates published, so steps from another session or machine
+stay listed. The machine column reads `UNKNOWN` when `SHAKA_MACHINE_ALIAS` is
+not set; setting it is described in [Getting started](../getting-started.md).
+
+Limits:
+
+- A step overlaps the stretches above. A validation run during a wait, for
+  example, appears in both.
+- A validation run of files never committed, such as a failing run before a
+  fix, is not listed.
+- A step logged on a machine is listed only when a session on that machine
+  updates the description afterward.
+- A rebase replaces the PR's commits. Steps logged against the old commits stay
+  listed only if an update published them before the rebase.
+- The table shows the latest 30 steps, and the description keeps the latest 50.
+
 [Usage and cost](usage-and-cost.md) explains the section beside it.
