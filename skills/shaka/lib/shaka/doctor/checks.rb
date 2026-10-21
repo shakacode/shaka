@@ -5,12 +5,13 @@ require 'rubygems/version'
 require_relative '../error'
 require_relative '../ruby_requirement'
 require_relative '../configuration'
-require_relative '../reviewer_settings'
 require_relative 'check'
+require_relative 'configured_reviewers'
 require_relative 'machine_alias'
 require_relative 'usage_source'
 require_relative 'reviewer_clis'
 require_relative 'installation_state'
+require_relative 'settings_source'
 
 module Shaka
   class Doctor
@@ -30,11 +31,15 @@ module Shaka
       end
 
       def call
-        seam = repository_seam
-        [ruby_runtime, github_cli, repository_access, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
+        seam, *basics = brief
+        [*basics, seam, reviewer_settings(seam), @reviewer_clis.call(seam),
          MachineAlias.new(@environment, host_name: @system.host_name).call,
          UsageSourceCheck.new(host: @host, system: @system).call, InstallationState.new(system: @system).call]
       end
+
+      # What a task start needs: whose settings the checkout holds, and whether the helper's own
+      # prerequisites and the repository work. Reviewer and usage setup stay in the full report.
+      def brief = [repository_seam, ruby_runtime, github_cli, repository_access]
 
       private
 
@@ -110,27 +115,15 @@ module Shaka
               guidance: 'Repair the repository seam, then run doctor again.')
       end
 
-      def configured_notices
-        config = Configuration.worktree(root: @root)
-        Array(config.review['local_review_agents']).flat_map { |entry| notices_for(entry) }
-      end
+      def configured_notices = ConfiguredReviewers.notices(Configuration.worktree(root: @root))
 
       def setting_status(notices) = notices.any? { |n| n.fetch('severity') == 'failed' } ? 'failed' : 'degraded'
 
-      def known_settings
-        check('Reviewer settings', 'healthy', 'no reviewer model or effort notice')
-      end
+      def known_settings = check('Reviewer settings', 'healthy', 'no reviewer model or effort notice')
 
       def setting_summary(notices) = notices.map { |notice| notice.fetch('summary') }.join(' ')
 
       def setting_guidance(notices) = notices.map { |notice| notice.fetch('guidance') }.uniq.join(' ')
-
-      def notices_for(entry)
-        return [] unless entry.is_a?(Hash)
-
-        identity = entry.values_at('provider', 'model_family').join('/').downcase
-        ReviewerSettings.notices(identity, model: entry['model'], effort: entry['effort'])
-      end
 
       # This reads the working tree. Doctor takes no authority from the seam, and the workflow
       # revalidates policy from a trusted ref.
@@ -138,7 +131,7 @@ module Shaka
         return missing_seam unless Configuration.contract_entry?(@root)
 
         config = Configuration.worktree(root: @root)
-        check('Repository seam', 'healthy', "#{config.config_path} loads and validates in this working tree")
+        check('Repository seam', 'healthy', SettingsSource.new(@root, @system.runner).summary(config.config_path))
       rescue Shaka::Error, SystemCallError => e
         check('Repository seam', 'failed', "repository configuration is not usable: #{first_line(e.message)}",
               guidance: 'Repair the contract, or let `shaka seam init` rewrite a valid one.')

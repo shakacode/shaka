@@ -11,7 +11,11 @@ module Shaka
     end
 
     def self.from_gh(message, stderr)
-      new(message, http_status: stderr[/\(HTTP (\d{3})\)/, 1]&.to_i)
+      new(message, http_status: http_status_in(stderr))
+    end
+
+    def self.http_status_in(stderr)
+      stderr[/\(HTTP (\d{3})\)/, 1]&.to_i
     end
   end
 end

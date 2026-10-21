@@ -6,6 +6,7 @@ require_relative 'error'
 require_relative 'usage/usage'
 require_relative 'doctor/bounded_command'
 require_relative 'doctor/checks'
+require_relative 'doctor/brief'
 require_relative 'local_review/path_guard'
 require_relative 'doctor/system'
 require_relative 'doctor/cursor_stop_hook'
@@ -24,6 +25,7 @@ module Shaka
     RUNNER = BoundedCommand.new(timeout: TIMEOUT)
 
     extend Command
+    include Check
 
     def self.run(arguments)
       options = {}
@@ -32,6 +34,7 @@ module Shaka
       return help(parser) if options[:help]
 
       return report_installation(arguments, options) if options[:installation_json]
+      return Brief.run(arguments, options) if options[:brief]
 
       report(arguments, options)
     rescue OptionParser::ParseError, SystemCallError, Shaka::Error => e
@@ -136,12 +139,6 @@ module Shaka
       return 'ambiguous' if @host.nil?
 
       @stated ? @host : "#{@host} (detected)"
-    end
-
-    def render(item)
-      lines = ["[#{item.fetch(:status).upcase}] #{item.fetch(:name)} — #{item.fetch(:summary)}"]
-      lines << "    Next: #{item[:guidance]}" if item[:guidance]
-      lines.join("\n")
     end
 
     def next_step
