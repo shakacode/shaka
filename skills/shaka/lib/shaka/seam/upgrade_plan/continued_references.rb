@@ -42,12 +42,22 @@ module Shaka
           @blockers << "#{path}: bare old-layout directory needs explicit repair"
         end
 
+        # Markdown prose names the old directory and its commands without running them, so pairing the two
+        # applies only to its code. A change into the old directory blocks even in prose: agents follow it.
         def bare_directory_dependency?(text, path = nil)
-          text = markdown_code(text) if markdown_document?(text, path)
-          pattern = /(?<![\w-])(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-])/o
+          return shell_directory_dependency?(text) unless markdown_document?(text, path)
+
+          text.match?(old_directory_change) || shell_directory_dependency?(markdown_code(text))
+        end
+
+        def shell_directory_dependency?(text)
           [text, normalize_shell_fragments(text)].any? do |source|
-            source.match?(pattern) || legacy_directory_command_pair?(source)
+            source.match?(old_directory_change) || legacy_directory_command_pair?(source)
           end
+        end
+
+        def old_directory_change
+          /(?<![\w-])(?:(?:cd|pushd)\s+|chdir\s*\()[^\n]*?#{Regexp.escape(PATHS::DIRECTORY)}(?![\w.-])/o
         end
 
         def legacy_directory_command_pair?(text)

@@ -37,7 +37,10 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
   MARKDOWN_CODE = {
     'fenced sh' => "Setup:\n\n```sh\ncd .agents\nbin/validate\n```\n",
     'fenced bash' => "Setup:\n\n~~~bash\ncd .agents && bin/validate\n~~~\n",
-    'indented' => "Setup:\n\n    cd .agents\n    bin/validate\n"
+    'indented' => "Setup:\n\n    cd .agents\n    bin/validate\n",
+    'quoted fence' => "> Setup:\n>\n> ```sh\n> cd .agents\n> bin/validate\n> ```\n",
+    'list fence' => "1. ```sh\n   cd .agents\n   bin/validate\n   ```\n",
+    'inline code' => "Run `cd .agents && bin/validate` before pushing.\n"
   }.freeze
 
   def test_shell_code_in_markdown_still_blocks

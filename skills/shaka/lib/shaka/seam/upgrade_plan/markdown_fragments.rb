@@ -8,6 +8,8 @@ module Shaka
         MARKDOWN_PATH = /\.(?:md|markdown|mdx)\z/i
         REMOVED_OR_KEPT = /(\\\r?\n|['"]|\\(?=[^\r\n]))|./m
         FENCE = /\A[ \t]*(`{3,}|~{3,})/
+        # Quotes and list items can hold code, so their markers are removed before a line is classified.
+        CONTAINER = /\A(?:[ \t]*(?:>|[-+*](?=[ \t])|\d{1,9}[.)](?=[ \t])))+[ \t]?/
         INDENTED = /\A(?: {4}|[ \t]*\t)/
 
         private
@@ -63,7 +65,7 @@ module Shaka
 
         def markdown_code_lines(text)
           fence = nil
-          text.lines.map do |line|
+          text.lines.map { |line| line.sub(CONTAINER, '') }.map do |line|
             if fence
               fence = nil if line.match?(/\A[ \t]*#{fence[0]}{#{fence.length},}[ \t]*$/)
               true
