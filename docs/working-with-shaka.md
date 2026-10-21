@@ -84,8 +84,8 @@ Design PR first; wait for my approval before implementing.
 ```
 
 Approve the design in chat, or name a teammate whose approving GitHub review of
-the design PR counts. Merging the design PR follows your usual merge choice. A small or fully specified task starts directly, with no
-extra question.
+the design PR counts. Merging the design PR follows your usual merge choice. A
+small or fully specified task starts directly, with no extra question.
 
 ### Review an existing PR
 
