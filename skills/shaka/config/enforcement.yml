@@ -220,6 +220,14 @@ rules:
       prose is admitted, and the rule is about what an agent does with prose it has read, which
       no command observes. The consequence is the reason it matters: a base read out of
       candidate text chooses which repository's code the setup and validation commands run.
+  - id: design-approval-before-implementation
+    phase: plan
+    quote: do not make implementation edits until the user approves the design
+    enforced_by: agent
+    note: >-
+      Nothing records whether a task chose to agree on the design first or whether the user
+      approved it, so no
+      command refuses an implementation edit or commit made before that approval.
   - id: pr-targets-the-validated-base
     phase: plan
     quote: >-
