@@ -9,17 +9,22 @@ module Shaka
     QUERY = <<~GRAPHQL
       query($owner: String!, $name: String!, $number: Int!) {
         repository(owner: $owner, name: $name) {
-          squashMergeCommitTitle squashMergeCommitMessage
+          squashMergeCommitTitle squashMergeCommitMessage mergeCommitTitle mergeCommitMessage
           pullRequest(number: $number) { mergeQueue { configuration { mergeMethod } } }
         }
       }
     GRAPHQL
-    TITLES = { 'PR_TITLE' => 'the PR title',
+    # The defaults each queue method reads, and the GitHub setting that chooses them. A rebase writes no message.
+    STYLES = {
+      'SQUASH' => { verb: 'squashes with', fields: %w[squashMergeCommitTitle squashMergeCommitMessage],
+                    setting: 'Allow squash merging', api: 'squash_merge_commit_message' },
+      'MERGE' => { verb: 'creates a merge commit with', fields: %w[mergeCommitTitle mergeCommitMessage],
+                   setting: 'Allow merge commits', api: 'merge_commit_message' }
+    }.freeze
+    TITLES = { 'PR_TITLE' => 'the PR title', 'MERGE_MESSAGE' => "GitHub's default merge message",
                'COMMIT_OR_PR_TITLE' => 'the commit title for a one-commit PR, otherwise the PR title' }.freeze
     BODIES = { 'PR_BODY' => 'the whole PR description', 'COMMIT_MESSAGES' => 'the branch commit messages',
-               'BLANK' => 'an empty body' }.freeze
-    SETTING = '**Settings → General → Pull Requests → Allow squash merging** to **Default to pull request title** ' \
-              '(`squash_merge_commit_message`)'
+               'PR_TITLE' => 'the PR title', 'BLANK' => 'an empty body' }.freeze
 
     # nil when the PR's base has no merge queue, so the caller keeps the prepared message.
     def self.for(github, pull) = (new(read(github)) if pull['isMergeQueueEnabled'] == true)
@@ -34,9 +39,8 @@ module Shaka
 
     def initialize(repository)
       @method = repository.dig('pullRequest', 'mergeQueue', 'configuration', 'mergeMethod')
-      @title = TITLES[repository['squashMergeCommitTitle']]
-      @body = BODIES[repository['squashMergeCommitMessage']]
-      @description = repository['squashMergeCommitMessage'] == 'PR_BODY'
+      @style = STYLES[@method || 'SQUASH']
+      @title, @body = repository.values_at(*@style[:fields]) if @style
     end
 
     def checkpoint_section
@@ -51,24 +55,23 @@ module Shaka
 
     private
 
-    def squash? = [nil, 'SQUASH'].include?(@method)
-
     def outcome
-      return "It uses the #{@method.downcase} merge method and the repository's settings for it." unless squash?
-      unless @title || @body
+      return 'It rebases the branch commits onto the base, keeping their own messages.' if @method == 'REBASE'
+      unless TITLES[@title] || BODIES[@body]
         return "This account could not read the queue's commit defaults; check **Settings → General → Pull Requests**."
       end
 
-      lead = @method ? 'It squashes with' : 'If the queue squashes, it uses'
-      "#{lead} #{@title || "the repository's default title"} as the title and " \
-        "#{@body || "the repository's default body"} as the body."
+      lead = @method ? "It #{@style[:verb]}" : 'If the queue squashes, it uses'
+      "#{lead} #{TITLES.fetch(@title, "the repository's default title")} as the title and " \
+        "#{BODIES.fetch(@body, "the repository's default body")} as the body."
     end
 
     def warning
-      return unless squash? && @description
+      return unless @body == 'PR_BODY'
 
-      "That puts this description, including Shaka's sections and WIP Details, into git history. " \
-        "To keep it out, set #{SETTING}."
+      "That puts this description, including Shaka's sections and WIP Details, into git history. To keep it out, " \
+        "set **Settings → General → Pull Requests → #{@style[:setting]}** to **Default to pull request title** " \
+        "(`#{@style[:api]}`)."
     end
   end
 end

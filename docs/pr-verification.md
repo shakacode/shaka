@@ -535,9 +535,10 @@ General → Pull Requests → Allow squash merging** to **Default to pull reques
 
 A merge queue offers no message box and ignores any message, so the checkpoint
 prepares none when the PR's base branch has one. It tells you to add the PR to the
-queue and says what the queue will write, which comes from the same repository setting.
+queue and says what the queue will write, which comes from the repository's setting
+for the queue's merge method: squash merging or merge commits.
 
-With **Default to pull request title and description**, the queue copies the whole PR
-description into git history, including Shaka's sections and **WIP Details**, so the
-checkpoint warns you. Choose **Default to pull request title** to keep the commit to
-the PR title.
+When that setting is **Default to pull request title and description**, the queue copies
+the whole PR description into git history, including Shaka's sections and **WIP Details**,
+so the checkpoint warns you. Choose **Default to pull request title** to keep the commit
+to the PR title.

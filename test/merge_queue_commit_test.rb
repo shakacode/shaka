@@ -24,8 +24,9 @@ class MergeQueueCommitTest < Minitest::Test
     end
   end
 
-  def settings(title: 'PR_TITLE', body: 'PR_BODY', method: 'SQUASH')
+  def settings(title: 'PR_TITLE', body: 'PR_BODY', method: 'SQUASH', merge: %w[MERGE_MESSAGE PR_TITLE])
     { 'squashMergeCommitTitle' => title, 'squashMergeCommitMessage' => body,
+      'mergeCommitTitle' => merge.first, 'mergeCommitMessage' => merge.last,
       'pullRequest' => { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => method } } } }
   end
 
@@ -56,11 +57,27 @@ class MergeQueueCommitTest < Minitest::Test
     end
   end
 
-  def test_a_queue_that_does_not_squash_names_its_method_without_squash_defaults
+  def test_a_merge_commit_queue_reads_the_merge_commit_defaults
     text = commit(settings(method: 'MERGE')).checkpoint_section
 
-    assert_includes text, 'merge method'
-    refute_includes text, 'PR description'
+    assert_includes text, "It creates a merge commit with GitHub's default merge message as the title and the PR title"
+    refute_includes text, 'WIP Details'
+  end
+
+  # A merge commit can copy the description too, through its own setting.
+  def test_a_merge_commit_description_default_warns_and_names_its_own_setting
+    text = commit(settings(method: 'MERGE', body: 'BLANK', merge: %w[PR_TITLE PR_BODY])).checkpoint_section
+
+    assert_includes text, 'WIP Details'
+    assert_includes text, '**Settings → General → Pull Requests → Allow merge commits**'
+    assert_includes text, '`merge_commit_message`'
+  end
+
+  def test_a_rebase_queue_writes_no_new_message
+    text = commit(settings(method: 'REBASE')).checkpoint_section
+
+    assert_includes text, 'rebases the branch commits'
+    refute_includes text, 'WIP Details'
   end
 
   def test_unreadable_settings_say_so_instead_of_failing_the_publication
