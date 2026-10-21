@@ -103,6 +103,22 @@ $shaka Plan CSV export for the orders page. Planning only.
 For work that needs several PRs, the agent keeps the plan in the issue. It asks
 first if it needs permission. A new chat continues from the same link.
 
+### Agree on a design before implementing
+
+When a task leaves design choices open, Shaka offers to agree on the design first.
+It writes the design in the issue. If your repository keeps architecture decision
+records (ADRs), it opens a design PR instead. It writes no code until you approve.
+
+To ask up front:
+
+```text
+$shaka https://github.com/OWNER/REPO/issues/N
+Agree on the design first. Wait for my approval before implementing.
+```
+
+Add `Use a design PR.` to get one in any repository. Approve the design in chat.
+For a design PR, you can also name a teammate whose approving review counts.
+
 ### Review an existing PR
 
 ```text
