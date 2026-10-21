@@ -21,8 +21,9 @@ Prefer to run the commands yourself? Follow [manual installation](manual-install
 
 The agent checks for Ruby 3.4 or later, Git 2.41 or later, and an authenticated GitHub CLI.
 It installs one dedicated checkout outside your projects and links the skill
-directly into it. The default location is `~/.agents/shaka`; you can
-choose another directory, such as `~/agent-tools/shaka`.
+directly into it. The default location is `~/.local/share/shaka/source`; you can
+choose another directory, such as `~/agent-tools/shaka`, outside `~/.agents/`,
+which holds settings.
 
 The installer adds a `shaka` link and an empty lock file to your coding agent's
 skills folder, such as `~/.claude/skills` for Claude Code. Your agent finds Shaka

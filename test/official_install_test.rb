@@ -21,11 +21,12 @@ class OfficialInstallTest < Minitest::Test
     assert_predicate status, :success?, output
     assert_includes output, 'Keep Shaka updated:'
     assert_includes output, 'install --update'
-    source = File.realpath(File.join(@home, '.agents/shaka'))
+    source = File.realpath(File.join(@home, '.local/share/shaka/source'))
     %w[.agents .claude .cursor].each do |host|
       assert_equal File.join(source, 'skills/shaka'), File.readlink(File.join(@home, host, 'skills/shaka'))
     end
     assert_empty git('-C', source, 'status', '--porcelain')
+    assert_location_summary(output, source, %w[.agents .claude .cursor].map { File.join(@home, it, 'skills') })
   end
 
   def test_update_advances_same_checkout_and_preserves_links

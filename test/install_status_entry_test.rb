@@ -1,0 +1,125 @@
+# frozen_string_literal: true
+
+require_relative 'install_scenario_support'
+
+# Status reached the way people and doctor reach it, and what it must never print.
+class InstallStatusEntryTest < Minitest::Test
+  include InstallScenarioSupport
+
+  REPOSITORY = File.expand_path('..', __dir__)
+
+  # A clone at the default location needs no --directory to become a default install.
+  def test_the_installer_default_is_a_default_install
+    root = clone_to(default_path)
+    git('-C', root, 'remote', 'set-url', 'origin', OFFICIAL)
+    run_install(root)
+    assert_equal 'A1', status(root)['state']
+  end
+
+  TOKEN_URL = 'https://someone:s3cr@t-token@example.com/shaka.git'
+
+  # A refused update must change nothing, including the recorded Ruby while it still works.
+  def test_a_refused_update_keeps_a_working_recorded_ruby
+    root = default_install
+    record = File.join(root, '.git/shaka-ruby')
+    other = File.join(@directory, 'other-ruby')
+    File.write(other, "#!/bin/sh\n")
+    File.chmod(0o755, other)
+    File.write(record, "#{other}\n")
+    File.write(File.join(root, 'notes.txt'), 'draft')
+    _output, process = Open3.capture2e(environment, RbConfig.ruby, File.join(root, 'bin/install'), '--update')
+    refute_predicate process, :success?
+    assert_equal "#{other}\n", File.read(record)
+  end
+
+  # A plain SSH login is no secret, so status keeps it and still offers the origin command.
+  def test_an_ssh_login_is_not_a_credential
+    root = default_install
+    git('-C', root, 'remote', 'set-url', 'origin', 'ssh://git@example.com/shaka.git')
+    report = status(root)
+    assert_equal 'B5', report['state']
+    assert_includes report['detail'], 'ssh://git@example.com/shaka.git'
+    refute_nil report['next_command']
+  end
+
+  # The token holds an @, so redaction must strip up to the last @ before the path, as git does.
+  def test_an_origin_token_is_never_printed
+    root = default_install
+    git('-C', root, 'remote', 'set-url', 'origin', TOKEN_URL)
+    output = status_text(root)
+    assert_equal 'B5', JSON.parse(output)['state']
+    refute_match(/s3cr|t-token/, output)
+  end
+
+  def test_a_recorded_token_is_never_printed
+    root = default_install
+    git('-C', root, 'remote', 'set-url', 'origin', TOKEN_URL)
+    record = File.join(root, '.git/shaka-install.json')
+    File.write(record, JSON.generate(JSON.parse(File.read(record)).merge('repository' => TOKEN_URL)))
+    output = status_text(root)
+    assert_equal 'A5', JSON.parse(output)['state']
+    refute_match(/s3cr|t-token/, output)
+  end
+
+  # A PR trial runs its own helper on purpose, so status from inside one is not an unregistered clone.
+  def test_a_helper_inside_a_pr_trial_is_not_unregistered
+    default_install
+    trial = clone_to(File.join(@home, '.local/share/shaka/pr-trials/123-example'))
+    refute_equal 'A9', status(trial)['state']
+  end
+
+  # A copy an older installer made is unsupported, not absent: status says where the links point.
+  def test_links_into_an_unregistered_copy_are_named
+    copy = File.join(@directory, 'old copy')
+    FileUtils.mkdir_p(File.join(copy, 'skills/shaka'))
+    FileUtils.mkdir_p(File.join(@home, '.claude/skills'))
+    File.symlink(File.join(copy, 'skills/shaka'), File.join(@home, '.claude/skills/shaka'))
+    report = status(@root)
+    assert_equal 'none', report['state']
+    assert_includes report['detail'], "#{File.realpath(copy)}, which is not a registered checkout"
+  end
+
+  # A bare bin/install keeps the recorded hosts and towers, so the B9 step restores the link it names.
+  def test_the_missing_link_step_keeps_recorded_selections
+    root = default_install('--agent', 'claude', '--with-rct')
+    File.unlink(File.join(@home, '.claude/skills/rct'))
+    report = status(root)
+    assert_equal 'B9', report['state']
+    output, process = Open3.capture2e(environment, 'sh', '-c', report['next_command'])
+    assert_predicate process, :success?, output
+    assert_equal File.join(File.realpath(root), 'skills/rct'), File.realpath(File.join(@home, '.claude/skills/rct'))
+  end
+
+  # A plain install refuses development use, so the missing-Ruby step for such a checkout is an update.
+  def test_the_ruby_step_works_while_the_checkout_hosts_development
+    root = clone_to(default_path)
+    run_install(root, '--directory', root, '--repository', @remote)
+    git('-C', root, 'worktree', 'add', '-q', File.join(@directory, 'feature'))
+    File.write(File.join(root, '.git/shaka-ruby'), "/nonexistent/ruby\n")
+    run_next(status(root), 'B8')
+    refute_includes status(root)['findings'].map { |item| item['id'] }, 'B8'
+  end
+
+  def test_the_documented_helper_reports_a_state
+    output, process = Open3.capture2e(environment, File.join(REPOSITORY, 'skills/shaka/scripts/shaka'),
+                                      'install', '--status', '--json')
+    assert_predicate process, :success?, output
+    assert_equal 'none', JSON.parse(output)['state']
+  end
+
+  def test_doctor_reads_status_for_its_own_package
+    script = 'require "shaka/doctor"; puts Shaka::Doctor::System.default.installation_status.call.fetch("location")'
+    output, process = Open3.capture2e(environment, RbConfig.ruby, '-I', File.join(REPOSITORY, 'skills/shaka/lib'),
+                                      '-e', script)
+    assert_predicate process, :success?, output
+    assert_equal File.realpath(REPOSITORY), output.strip
+  end
+
+  private
+
+  def status_text(root)
+    output, process = run_status(root, '--json')
+    assert_predicate process, :success?, output
+    output
+  end
+end
