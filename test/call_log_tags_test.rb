@@ -102,7 +102,7 @@ class CallLogTagsTest < Minitest::Test
   def test_tag_drops_unknown_keys_long_values_and_invalid_text
     before = Shaka::CallLog.tags.dup
     Shaka::CallLog.tag(task: 'private', model: "m#{'x' * 100}", effort: "hi\xFFgh", provider: :openai, number: nil)
-    assert_nil Shaka::CallLog.tag(nil)
+    Shaka::CallLog.tag(model: 'gpt'.encode('UTF-16LE'), effort: 'high'.encode('UTF-16BE'))
     assert_equal before, Shaka::CallLog.tags
   end
 

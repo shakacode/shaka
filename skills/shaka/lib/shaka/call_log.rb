@@ -49,15 +49,12 @@ module Shaka
       end
     end
 
-    # Adds each value that has its key's shape to this call's record and drops the rest,
-    # including text in an invalid encoding, so tagging never changes a command's result.
+    # Adds each value that has its key's shape to this call's record and drops the rest.
     def tag(values)
       values.each do |key, value|
         text = shaped(key.to_s, value)
         tags[key.to_s] = key.to_s == 'number' ? text.to_i : text if text
       end
-      nil
-    rescue StandardError
       nil
     end
 
@@ -67,9 +64,13 @@ module Shaka
     def shaped(key, value)
       text = value.is_a?(Integer) ? value.to_s : value
       pattern = TAGS[key]
-      return unless pattern && text.is_a?(String) && text.length <= MAX_TAG_LENGTH && text.valid_encoding?
+      text if pattern && matchable?(text) && text.match?(pattern)
+    end
 
-      text if text.match?(pattern)
+    # Refuses every String that `match?` raises on, an invalid or ASCII-incompatible
+    # encoding, so a value given by a command never changes that command's result.
+    def matchable?(text)
+      text.is_a?(String) && text.length <= MAX_TAG_LENGTH && text.valid_encoding? && text.encoding.ascii_compatible?
     end
 
     def tags = (@tags ||= {})
