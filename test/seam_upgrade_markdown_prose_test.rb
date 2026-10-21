@@ -37,6 +37,16 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     end
   end
 
+  def test_indented_paragraph_continuation_is_rewritten
+    with_repository do |root|
+      path = write_tracked(root, 'ledger.md', "Wrappers live in\n    `.agents/bin/`.\n")
+      preview = report(root)
+      assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
+      apply_upgrade(root)
+      assert_equal "Wrappers live in\n    `.agents/shaka/bin/`.\n", File.read(path)
+    end
+  end
+
   def test_computed_command_directory_in_prose_still_blocks
     with_repository do |root|
       write_tracked(root, 'ledger.md', "Add `$PWD/.agents/bin` to PATH.\n")

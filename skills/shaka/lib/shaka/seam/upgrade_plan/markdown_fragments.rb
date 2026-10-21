@@ -8,10 +8,38 @@ module Shaka
       module MarkdownFragments
         MARKDOWN_PATH = /\.(?:md|markdown|mdx)\z/i
         REMOVED_OR_KEPT = /(\\\r?\n|['"]|\\(?=[^\r\n]))|./m
-        FENCE = /\A[ \t]*(`{3,}|~{3,})/
-        # Quotes and list items can hold code, so their markers are removed before a line is classified.
-        CONTAINER = /\A(?:[ \t]*(?:>|[-+*](?=[ \t])|\d{1,9}[.)](?=[ \t])))+[ \t]?/
-        INDENTED = /\A(?: {4}|[ \t]*\t)/
+
+        # Follows which Markdown lines are fenced or indented code. Doubtful lines count as code.
+        class CodeLines
+          FENCE = /\A[ \t]*(`{3,}|~{3,})/
+          # Quotes and list items can hold code, so their markers are removed before a line is classified.
+          CONTAINER = /\A(?:[ \t]*(?:>|[-+*](?=[ \t])|\d{1,9}[.)](?=[ \t])))+[ \t]?/
+          INDENTED = /\A(?: {4}|[ \t]*\t)/
+          HEADING = /\A {0,3}\#{1,6}(?:\s|\z)/
+
+          def initialize
+            @fence = nil
+            @paragraph = false
+          end
+
+          # An indented line continues an open paragraph rather than starting code.
+          def code?(raw)
+            line = raw.sub(CONTAINER, '')
+            return inside_fence?(line) if @fence
+            return true if !@paragraph && line.match?(INDENTED)
+
+            @fence = line[FENCE, 1]
+            @paragraph = @fence.nil? && line.match?(/\S/) && !line.match?(HEADING)
+            !@fence.nil?
+          end
+
+          private
+
+          def inside_fence?(line)
+            @fence = nil if line.match?(/\A[ \t]*#{@fence[0]}{#{@fence.length},}[ \t]*\r?$/)
+            true
+          end
+        end
 
         private
 
@@ -72,16 +100,8 @@ module Shaka
         end
 
         def markdown_code_lines(text)
-          fence = nil
-          text.lines.map { |line| line.sub(CONTAINER, '') }.map do |line|
-            if fence
-              fence = nil if line.match?(/\A[ \t]*#{fence[0]}{#{fence.length},}[ \t]*\r?$/)
-              true
-            else
-              fence = line[FENCE, 1]
-              !fence.nil? || line.match?(INDENTED)
-            end
-          end
+          code = CodeLines.new
+          text.lines.map { |line| code.code?(line) }
         end
 
         # Prose names the old command directory as a place, so it is rewritten like a command path.
