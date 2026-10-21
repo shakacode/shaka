@@ -49,7 +49,7 @@ these still come back to you:
 - trust, authentication, release, and other consequential changes;
 - anything your repository's rules or required approvals block.
 
-Merging does not publish a package or deploy a release.
+Merging does not by itself publish a package or deploy a release.
 
 ## Give feedback
 
@@ -303,8 +303,8 @@ reviewer, or approve a merge.
 | Its own delivery | AI Hero `implement-spec`, pstack Shipping, Babysit, Orchestrate, and Autopilot playbooks | A separate orchestrator that cannot run inside Shaka. Try it as its own experiment. |
 
 Shaka takes its settings, such as reviewers and merge rules, from your default
-branch. Rule files and check scripts a skill changes on the branch are part of
-the change under review. If a skill you named is not installed, the agent says
+branch. Rule files a skill writes are part of the change under review. Your
+check scripts run from the branch, so review changes to them like any other code. If a skill you named is not installed, the agent says
 so, continues the work that does not need it, and asks about the rest. It does
 not install software for you. This is agent guidance, not enforced by code.
 

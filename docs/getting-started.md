@@ -91,7 +91,8 @@ $shaka Probe this project's configured reviewers.
 ```
 
 The agent sends each reviewer one short prompt, which may use quota or cost money,
-and reports which ones answered.
+and reports which ones answered. It keeps your settings, explains any failure,
+and asks how to proceed.
 
 ## 3. Start a task
 
