@@ -36,10 +36,14 @@ Go.
 
 ![A ready PR follows Ask, where you merge or approve it, or Auto, where the agent merges. A PR that is too large or risky returns to you under Auto.](img/merge-policy.svg)
 
-For Auto, add `Use merge policy auto` to your prompt. Large or risky changes still
-come back to you; see [size limits](settings.md#mergelimits).
+For Auto, add `Use merge policy auto` to your prompt. Large PRs, and changes to
+trust, authentication, or releases, still come back to you; see
+[size limits](settings.md#mergelimits).
 
 ## Give feedback
+
+<a id="on-github-or-in-chat"></a>
+<a id="in-your-editor"></a>
 
 Comment on the PR and paste the link into the chat, or say in chat what's wrong.
 
@@ -60,13 +64,15 @@ See [checkpoints](pr-verification.md#checkpoint).
 
 ## Find PRs waiting on you
 
+<a id="squash-with-a-useful-commit-message"></a>
+
 Search your PR list on GitHub:
 
 | Search | What to do |
 | --- | --- |
 | `is:open label:awaiting-answer` | Answer **Decisions to make** in the description, or submit or discard your own pending review. |
 | `is:open label:awaiting-merge-approval` | Merge with the checkpoint's [commit message](pr-verification.md#squash-merge-details), add the PR to your [merge queue](pr-verification.md#merge-queues), or tell the agent to merge. |
-| `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into the owning chat. |
+| `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into a chat. |
 
 A label doesn't wake a chat. See [approval details](pr-verification.md#approval-and-attention-labels).
 
@@ -88,6 +94,8 @@ Say where to stop.
 ```text
 $shaka Plan CSV export for the orders page. Planning only.
 ```
+
+<a id="keep-a-plan-across-chats"></a>
 
 For work that needs several PRs, the agent keeps the plan in the issue, asking
 first if it needs permission. A new chat continues from the same link.
@@ -145,6 +153,9 @@ the PR, and keeps your merge policy. The agent won't let another skill skip a
 check or approve a merge. Your check scripts run from the PR branch, so review
 changes to them like other code; see the [trust model](workflow.md#trust-model).
 
+<a id="hand-over-a-spec-and-tickets"></a>
+<a id="what-each-kind-of-skill-can-do"></a>
+
 [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md)
 turn an idea into a spec and tickets:
 
@@ -154,6 +165,8 @@ $shaka Deliver the spec in https://github.com/OWNER/REPO/issues/N. Go.
 
 Tickets stay open unless you add "Close each ticket when its PR merges."
 
+<a id="use-a-technique-skill-during-delivery"></a>
+
 [pstack](https://github.com/cursor/plugins/tree/main/pstack)'s poteto mode adds
 engineering principles and parallel workers:
 
@@ -161,6 +174,8 @@ engineering principles and parallel workers:
 $shaka Fix https://github.com/OWNER/REPO/issues/N in poteto mode. You may use
 subagents for swarm and arena. Go.
 ```
+
+<a id="try-a-new-skill-pack-with-shaka"></a>
 
 pstack, [Ponytail](https://github.com/DietrichGebert/ponytail), and
 [Addy Osmani's agent skills](https://github.com/addyosmani/agent-skills) haven't
