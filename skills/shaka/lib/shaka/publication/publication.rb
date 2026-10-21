@@ -145,7 +145,7 @@ module Shaka
       spec = @content.fetch('provenance') do
         raise Error, 'Publication description requires execution provenance.'
       end
-      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version)
+      execution = ExecutionProvenance.new(spec, workflow_version: @workflow_version, pull: @pull)
       return [details_block(execution.detail)] unless @pull
 
       history = ProvenanceHistory.carry(@pull, execution.entry)

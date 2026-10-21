@@ -663,7 +663,9 @@ phases:
         uses `UNKNOWN`.
       - Description provenance has exactly eight flat keys: `task_source`, `initial_prompt`,
         `requested_model`, `requested_effort`, `recommended_model`, `recommended_effort`,
-        `active_model`, and `active_effort`. `initial_prompt` is `EXCLUDED`; the other values use
+        `active_model`, and `active_effort`, plus an optional `task_number` that the
+        [usage guide](<{{package_root}}/skills/shaka/references/usage-reporting.md#pr-execution-provenance>) defines.
+        `initial_prompt` is `EXCLUDED`; the other values use
         allowlisted text or `UNKNOWN`, except that either requested field uses JSON `null`
         when intake establishes the user did not specify that setting. Carry the request
         from intake separately from the recommendation and active settings; a model selected

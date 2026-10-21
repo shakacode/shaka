@@ -70,6 +70,14 @@ class ProvenanceHistoryTest < Minitest::Test
     refute_includes rendered, 'Provenance history'
   end
 
+  def test_a_description_links_its_task_without_adding_a_history_entry
+    publish(HEADS[0])
+    rendered = publish(HEADS[1], 'task_source' => 'issue', 'task_number' => 7)
+
+    assert_includes rendered, '| Task source | issue [#7](https://github.com/owner/repo/issues/7) |'
+    assert_empty history_rows(rendered)
+  end
+
   def test_each_workflow_or_route_change_adds_one_entry_with_its_head
     STEPS.each_with_index do |(routes, commit, modified), index|
       publish(HEADS[index], version: workflow(commit, modified:), **routes)

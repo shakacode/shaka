@@ -45,7 +45,7 @@ class PrDescriptionAttributionTest < Minitest::Test
     refute_includes rendered, CREDIT
     assert_includes rendered, SUMMARY
     assert_includes rendered, 'Checkpoint'
-    assert_includes rendered, 'Shaka version, model, and effort'
+    assert_includes rendered, 'Execution details'
   end
 
   def test_unavailable_settings_do_not_override_an_opt_out

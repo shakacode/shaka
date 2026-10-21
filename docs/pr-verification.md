@@ -123,8 +123,8 @@ review, and integration, with their sources and revisions when available.
 Shaka checks metadata shape, not that record or instruction compliance.
 Contributions remain the agent's account, and completeness is unverified.
 Missing records show unknown coverage. Shaka's own entries, from source
-`ShakaCode/shaka`, are not listed: every managed PR uses Shaka, and **Shaka
-version, model, and effort** names the workflow version that ran.
+`ShakaCode/shaka`, are not listed: every managed PR uses Shaka, and **Execution
+details** names the workflow version that ran.
 Agents are instructed to withhold private skill identifiers; Ruby does not screen
 them.
 

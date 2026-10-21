@@ -338,6 +338,10 @@ history marker still records `Not specified`. A model-only or effort-only reques
 keeps the row and renders the absent component as `Not specified`. Unknown request
 evidence keeps the row too. All eight keys remain required.
 
+Add the optional integer `task_number` when `task_source` is `issue` or `pull_request`
+and that issue or PR is in the PR's own repository; the helper links it in the Task
+source row. Omit it for a task in another repository or tracker, which may be private.
+
 Carry those values from intake; recommendations and host settings do not establish
 a user request. Unrecoverable prior intake stays `UNKNOWN`, and old history is not
 reclassified. Recommended and active fields accept allowlisted strings or `UNKNOWN`,

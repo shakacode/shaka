@@ -355,7 +355,7 @@ class PublicationProvenanceRequirementTest < Minitest::Test
                 'usage' => PublicationRegressionTest::USAGE_OBJECT, 'details' => [], 'steps_besides_merging' => 'none' }
     rendered = Shaka::Publication.description(content)
 
-    assert_includes rendered, '<summary>Shaka version, model, and effort</summary>'
+    assert_includes rendered, '<summary>Execution details</summary>'
     refute_includes rendered, '| Machine alias |'
     assert_includes rendered, '| User-requested model / effort | gpt-5.6-terra / medium |'
     refute_includes rendered, '| Initial prompt |'
