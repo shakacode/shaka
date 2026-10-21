@@ -151,7 +151,9 @@ first, then the integration that needs it."
 Name another skill in your prompt, and Shaka still delivers the result: your
 checks, independent review, its PR format, and your merge policy. Shaka's
 instructions tell the agent not to let another skill relax a check or approve a
-merge; code does not enforce this.
+merge; code does not enforce this. Shaka reads its settings from your default
+branch, but your check scripts run from the PR branch, so review changes to them
+like any other code. See the [trust model](workflow.md#trust-model).
 
 Examples are [AI Hero's skills](https://www.aihero.dev/skills-changelog-v13-implement-spec-pr-retro-and-glossary-md),
 which turn an idea into a spec and tickets, and
