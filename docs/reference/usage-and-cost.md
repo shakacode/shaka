@@ -17,6 +17,9 @@ cover part of a session, omit tools, or lack attribution to individual commits.
 | Reasoning | Tokens reported as reasoning. This can be a subset of output; do not add it again. |
 | Cache writes | Input stored in the prompt cache for reuse. |
 
+Implementation rows come first, then review, integration, and shared planning,
+each sorted alphabetically by report name.
+
 A column with no measured value is omitted. `—` means unreported, never zero.
 `+` marks a minimum when some usage or cost is unreported. Token counts are
 rounded for readability: `45.3M` means about 45.3 million tokens. The stored

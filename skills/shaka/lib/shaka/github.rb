@@ -2,6 +2,7 @@
 
 require 'json'
 require 'open3'
+require_relative 'call_log'
 require_relative 'error'
 require_relative 'publication/publishing'
 require_relative 'prose_limits'
@@ -21,7 +22,7 @@ module Shaka
     query($owner: String!, $name: String!, $number: Int!) {
       repository(owner: $owner, name: $name) {
         pullRequest(number: $number) {
-          id number url state isDraft headRefOid baseRefName merged mergeCommit { oid }
+          id number url state isDraft author { login } headRefOid baseRefName merged mergeCommit { oid }
           mergeStateStatus reviewDecision viewerCanMergeAsAdmin
           changedFiles additions deletions commits { totalCount }
           isInMergeQueue isMergeQueueEnabled autoMergeRequest { enabledAt }
@@ -69,7 +70,7 @@ module Shaka
       end
 
       @repository = repository
-      @number = positive_integer(number)
+      @number = positive_integer(number).tap { CallLog.first_tag(repository:, number: it) }
       @runner = runner || ->(argv, stdin_data:) { Open3.capture3(*argv, stdin_data: stdin_data) }
     end
 

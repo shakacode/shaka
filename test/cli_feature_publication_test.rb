@@ -27,12 +27,18 @@ class CliFeaturePublicationTest < Minitest::Test
     with_checkout do |root, ref|
       @head = ref
       @files = [{ 'filename' => '.agents/shaka/config.yml' }]
-      Dir.mktmpdir do |dir|
-        _output, error, status = publish(dir, root, '--publication-flow', 'migration')
-        assert_predicate status, :success?, error
-        assert_includes File.read(File.join(dir, 'published.md')), 'UNKNOWN: rerun missing evidence'
-      end
+      Dir.mktmpdir { |dir| assert_migration_body(dir, root) }
     end
+  end
+
+  # Repository configuration sets merge authority, so its review effort floor is 5.
+  def assert_migration_body(dir, root)
+    content = description_content.merge('intent' => INTENT.merge('review_effort' => 5))
+    _output, error, status = publish(dir, root, '--publication-flow', 'migration', content:)
+    assert_predicate status, :success?, error
+    body = File.read(File.join(dir, 'published.md'))
+    assert_includes body, 'UNKNOWN: rerun missing evidence'
+    assert_includes body, "Floor 5: changes Shaka's repository configuration (`.agents/shaka/config.yml`)."
   end
 
   def test_result_flags_bind_actual_results_and_refuse_missing_review
@@ -79,8 +85,10 @@ class CliFeaturePublicationTest < Minitest::Test
     _output, error, status = publish(dir, root, *arguments)
     assert_predicate status, :success?, error
     linked = %r{\[`\h{7}`\]\(https://github\.com/[^)]+/commit/\h{40}\)}
-    assert_match(%r{\| Before push: validation \| trusted/team at #{linked} \| validate \|},
-                 File.read(File.join(dir, 'published.md')))
+    body = File.read(File.join(dir, 'published.md'))
+    assert_match(%r{\| Before push: validation \| trusted/team at #{linked} \| validate: \d+s[^|]* \|}, body)
+    assert_includes body, '**Validation and review:** `validate` passed (exit 0); ' \
+                          "local review by openai/codex (host-reported) at `#{@head[0, 7]}`."
   end
 
   def assert_missing_review(dir, root, arguments)

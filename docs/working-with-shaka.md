@@ -243,7 +243,10 @@ over, confirm the previous one has stopped or handed off; a timestamp cannot pro
 
 To recover after a crash or in a new chat, paste the **Next action** from WIP Details,
 such as `$shaka https://github.com/OWNER/REPO/pull/N`. The agent checks the live PR
-before continuing. If no PR exists, supply the original task and checkout.
+before continuing. It owes an answer to each open review thread it has not
+answered or where someone other than a bot commented after its answer. It also
+owes one to each PR comment from the PR's author or the agent's account that no
+agent reply links, even when you post from the account the agent uses. If no PR exists, supply the original task and checkout.
 See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
 
 ## Split a large change
@@ -390,10 +393,12 @@ fix costs to maintain. It should change nothing until you pick, for example
 
 The agent can also measure which steps were slow. Shaka's helper keeps a timing log on
 your machine at `~/.local/state/shaka/calls.jsonl`: one line per helper command with
-its name, start time, duration, and exit status. For example, a line for local
-validation shows how long that run took and whether it passed. `shaka work` leaves no
-line, because it hands the terminal to your coding agent. The log records no
-arguments, paths, or task text, and Shaka never uploads it. Delete the file whenever
+its name, start time, duration, and exit status. When the command names them, the line
+also records the repository, issue or PR number, and commit. A review or product
+checkpoint line adds the reviewer's provider, model, and effort. For example, a line
+for local validation shows which commit was tested, how long it took, and whether it
+passed. `shaka work` leaves no line, because it hands the terminal to your coding agent.
+The log records no paths or task text, and Shaka never uploads it. Delete the file whenever
 you like. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to a path to keep the
 log elsewhere.
 
@@ -422,6 +427,12 @@ them. A session paused for checks can resume with the Shaka prompt and PR URL in
 its next action. Return answers to the chat unless the handoff names active
 automatic follow-up.
 
+When the agent uses your GitHub account, a review you started and never submitted
+also shows up as `awaiting-answer` while the agent still needs to post a walkthrough.
+GitHub shows that review only to you and refuses the walkthrough while it is open, so
+submit or discard it. A PR already waiting for merge keeps its label, and the handoff
+mentions the review.
+
 The agent creates and manages these labels, leaving at most one on a PR. It clears
 the wait when work resumes and prepares a new handoff after validation and review.
 A label does not wake a chat or prove that checks and approvals passed. The
@@ -438,4 +449,5 @@ for Ask authority, required GitHub approvals, and branch updates.
 
 When you choose a manual squash merge through GitHub, use the agent's prepared
 message for the commit in the handoff. See [squash merge details](pr-verification.md#squash-merge-details)
-to find it and copy it into GitHub's merge boxes.
+to find it and copy it into GitHub's merge boxes. A repository with a merge queue
+writes its own message, so you add the PR to the queue; see [merge queues](pr-verification.md#merge-queues).

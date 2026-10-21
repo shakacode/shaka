@@ -9,11 +9,13 @@ require_relative '../configuration/wrapper_template'
 require_relative 'upgrade_plan/inventory'
 require_relative 'upgrade_plan/command_repair'
 require_relative 'upgrade_plan/root_repair'
+require_relative 'upgrade_plan/whole_directory_globs'
 require_relative 'upgrade_plan/reference_patterns'
 require_relative 'upgrade_plan/symlink_chain'
 require_relative 'upgrade_plan/reference_dependencies'
 require_relative 'upgrade_plan/indexed_references'
 require_relative 'upgrade_plan/private_tools'
+require_relative 'upgrade_plan/markdown_fragments'
 require_relative 'upgrade_plan/continued_references'
 require_relative 'upgrade_plan/references'
 
@@ -37,6 +39,7 @@ module Shaka
       include ReferenceDependencies
       include IndexedReferences
       include PrivateTools
+      include MarkdownFragments
       include ContinuedReferences
       include References
 

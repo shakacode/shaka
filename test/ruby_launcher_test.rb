@@ -71,7 +71,27 @@ class RubyLauncherTest < Minitest::Test
     end
   end
 
+  # A skill copied by hand or by a skills tool has no installer to rerun, and its launcher
+  # used whatever ruby the project put first on PATH.
+  def test_a_copied_skill_on_an_old_ruby_points_at_the_installer_guide
+    output, status = Open3.capture2e(RbConfig.ruby, '-W0', '-e', OLD_RUBY, File.join(copied_skill, 'scripts/shaka.rb'),
+                                     '--help', chdir: project)
+    refute_predicate status, :success?, output
+    assert_includes output, 'this Ruby is 3.3.7. This copy of Shaka was not set up by its installer'
+    assert_includes output, 'docs/getting-started.md#1-install-shaka'
+    refute_includes output, 'Rerun bin/install'
+  end
+
   private
+
+  # A copy inside a project that has an installer of its own, which is not Shaka's.
+  def copied_skill
+    copy = File.join(@directory, 'agent', 'skills', 'shaka')
+    FileUtils.mkdir_p([File.dirname(copy), File.join(@directory, 'agent', 'bin')])
+    FileUtils.cp_r(File.expand_path('../skills/shaka', __dir__), copy)
+    File.write(File.join(@directory, 'agent', 'bin', 'install'), "#!/bin/sh\necho project installer\n")
+    copy
+  end
 
   def install_full_skill
     replace_fixture_with_full_skill
