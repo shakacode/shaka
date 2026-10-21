@@ -28,8 +28,9 @@ local coding-agent chat logs. No chat text is quoted.
   People gave feedback on 13% of the docs and instruction PRs the agent rated 1
   or 2.
 - On 28 PRs (9%), the agent changed the PR after a review bot reported a problem.
-  An automatic merge has to keep waiting for `claude-review`, the hosted review
-  that runs on each push.
+  The hosted Claude review, which runs on GitHub after each push, reported on 22
+  of them; CodeRabbit or the Codex connector reported on others. An automatic
+  merge should still wait for the hosted review.
 - The data cannot separate the implementing model from the week it worked in.
   OpenAI models wrote most of the early PRs, when the maintainer commented most.
 
@@ -50,8 +51,8 @@ local coding-agent chat logs. No chat text is quoted.
   feedback.
 - **A person's chat request:** a message the maintainer typed in the agent's chat
   after the ready point, on a PR whose content then changed. The agent read each
-  one and dropped requests such as "resolve conflicts" or "merge it", and talk
-  about other work in the same chat.
+  one and dropped requests to resolve conflicts or to merge, and talk about other
+  work in the same chat.
 
 | Outcome | PRs | Share |
 | --- | ---: | ---: |
@@ -64,15 +65,16 @@ local coding-agent chat logs. No chat text is quoted.
 One-shot PRs merged a median of 1.8 hours after the ready point. PRs with a
 person's feedback merged a median of 15.6 hours after it.
 
-Chat logs cover 136 of the 201 one-shot PRs. In none of them did a chat request
-change the PR. In about 7, the maintainer asked for related work, and the agent
-put it in a follow-up issue or PR.
+Chat logs cover 136 of the 201 one-shot PRs. In 7 of them, the maintainer asked
+in chat for more work, and the agent put it in a follow-up issue or PR instead of
+changing this one.
 
 ## What the PR changed
 
 "Docs for people" means `docs/` and `README.md`. "Agent instructions" means the
 skill's reference files, `SKILL.md`, `workflow.yml`, packaged prompts, and
-`AGENTS.md`.
+`AGENTS.md`. "Shaka settings" means the files under `.agents/shaka/`, such as
+`config.yml` and the review prompts.
 
 | What the PR changed | PRs | One-shot | Person's feedback | Bot finding | Other change |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -105,8 +107,9 @@ skill's reference files, `SKILL.md`, `workflow.yml`, packaged prompts, and
 
 ## The agent's own rating
 
-From 2026-10-03, agents rated each PR's review effort from 1 to 5 in its
-description; 106 PRs here have a rating.
+PR descriptions began carrying the agent's own review-effort rating, from 1 to
+5, around 2026-10-15; earlier descriptions have none. 106 PRs here have a
+rating, and 105 of them reached the ready point from 2026-10-15 on.
 
 | Agent's rating | PRs | Docs or instruction PRs with a person's feedback | Other PRs with a person's feedback |
 | --- | ---: | ---: | ---: |
@@ -117,9 +120,9 @@ description; 106 PRs here have a rating.
 - People gave feedback on docs and instruction PRs at every rating, and on no
   other PR at any rating. This supports computing a minimum rating from the
   changed paths, as [#757](https://github.com/shakacode/shaka/pull/757) proposes.
-- The rated PRs drew feedback 10% of the time, against 18% for all PRs that
-  reached the ready point in the same weeks. Compare the rating rule below with
-  the path rules with that difference in mind.
+- In those last days, people gave feedback on 10% of rated PRs and 8% of all
+  PRs, the lowest rate in the window. The rating rule below covers only those
+  days, so compare it with the path rules with that in mind.
 
 ## What people asked for
 
@@ -190,9 +193,10 @@ names the agent that wrote the description, which is usually the implementer.
 - Rules about which files changed did better than rules about size or the
   agent's rating.
 - The second rule is the widest the data supports. It includes 4 PRs that touched
-  trust code, 1 that touched merge code, and 11 that touched settings or install
-  code. None drew a person's feedback, but that few PRs cannot show such changes
-  are safe. Keeping them for a person stays a policy choice.
+  trust code, 1 that touched merge code, and 11 that touched code that reads
+  settings or installs Shaka. None drew a person's feedback, but that few PRs
+  cannot show such changes are safe. Keeping them for a person stays a policy
+  choice.
 - 3 of those 73 PRs changed after a review bot's finding, so an automatic merge
   must still wait for the hosted review.
 
@@ -202,7 +206,9 @@ proposes computing a minimum review effort from the changed paths. These results
 suggest they could become one setting. Each path would get a level of human
 review from 0 to 5, and a PR would merge automatically only at level 0. Here,
 code and tests would sit at 0, agent instructions above it, and docs for people
-and Shaka settings at the top.
+at the top. 20 PRs touched Shaka settings, and 11 of them drew feedback, but most
+also changed docs or instructions. Placing settings at the top is a policy choice
+as much as a finding.
 
 ## Run the same study on your repository
 
