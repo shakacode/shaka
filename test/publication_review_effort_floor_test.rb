@@ -24,11 +24,15 @@ class PublicationReviewEffortFloorTest < Minitest::Test
     assert_equal 1, floor('docs/settings.md', 'README.md', 'docs/images/flow.svg')['level']
   end
 
-  def test_agent_instructions_and_code_have_a_floor_of_two
-    { WORKFLOW => 'changes agent instructions', 'AGENTS.md' => 'changes agent instructions',
-      'nested/CLAUDE.md' => 'changes agent instructions', 'lib/report.rb' => 'changes code or configuration',
-      'test/report_test.rb' => 'changes code or configuration' }.each do |path, reason|
-      assert_equal({ 'level' => 2, 'reason' => reason, 'path' => path }, floor(path).slice('level', 'reason', 'path'))
+  # People asked for changes on agent-instruction PRs and on no code-only PR (#785).
+  def test_agent_instructions_have_a_floor_of_three_and_code_of_two
+    { WORKFLOW => 3, 'AGENTS.md' => 3, 'nested/CLAUDE.md' => 3 }.each do |path, level|
+      assert_equal({ 'level' => level, 'reason' => 'changes agent instructions', 'path' => path },
+                   floor(path).slice('level', 'reason', 'path'))
+    end
+    %w[lib/report.rb test/report_test.rb].each do |path|
+      assert_equal({ 'level' => 2, 'reason' => 'changes code or configuration', 'path' => path },
+                   floor(path).slice('level', 'reason', 'path'))
     end
   end
 
@@ -49,7 +53,7 @@ class PublicationReviewEffortFloorTest < Minitest::Test
   def test_except_removes_a_file_from_its_own_floor_only
     result = floor('skills/shaka/references/merge.md')
 
-    assert_equal [2, 'changes agent instructions'], result.values_at('level', 'reason')
+    assert_equal [3, 'changes agent instructions'], result.values_at('level', 'reason')
   end
 
   # A word inside a longer name, such as auth in author, is not that word, and a guide
@@ -68,13 +72,14 @@ class PublicationReviewEffortFloorTest < Minitest::Test
   def test_a_rating_below_the_floor_is_refused_with_the_floor_and_its_reason
     error = assert_raises(Shaka::Error) { render([WORKFLOW], 1) }
 
-    assert_includes error.message, "review_effort 1 is below this PR's floor of 2: it changes agent instructions " \
-                                   "(`#{WORKFLOW}`). Rate it 2 or higher."
+    assert_includes error.message, "review_effort 1 is below this PR's floor of 3: it changes agent instructions " \
+                                   "(`#{WORKFLOW}`). Rate it 3 or higher."
   end
 
   def test_a_rating_at_or_above_the_floor_renders_the_floor_reason
-    assert_includes render([WORKFLOW], 3), '**Review effort:** 3 of 5, tempo: read the walkthrough and the diff. ' \
-                                           "Floor 2: changes agent instructions (`#{WORKFLOW}`)."
+    assert_includes render([WORKFLOW], 4),
+                    '**Review effort:** 4 of 5, threshold: read every line and run it yourself. ' \
+                    "Floor 3: changes agent instructions (`#{WORKFLOW}`)."
   end
 
   # A filename is PR-controlled; a backtick, newline, or comment marker could reshape the description.

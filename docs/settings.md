@@ -967,13 +967,16 @@ Your agent knows the matching rules and checks its proposal against your recent 
 decide what matters; for example, a project whose guides are read by its customers may want
 every `docs/` change reviewed at 5.
 
-By default:
+By default, Shaka follows [a study of 309 PRs in this repository](articles/one-shot-pr-study.md):
+people asked for changes on many docs and agent-instruction PRs and on no PR that changed only
+code and tests.
 
 | Floor | Changed file |
 | --- | --- |
 | 5 | Shaka's settings in `.agents/shaka/` |
 | 4 | GitHub Actions workflows, `CODEOWNERS`, and code named for auth, merge, release, trust, permissions, secrets, or credentials |
-| 2 | Agent instructions, such as `AGENTS.md`, `SKILL.md`, and `skills/`, and any other code or configuration |
+| 3 | Agent instructions, such as `AGENTS.md`, `SKILL.md`, and `skills/` |
+| 2 | Any other code or configuration |
 | 1 | Markdown docs and images |
 
 The PR's floor is the highest one any of its files reaches. A PR changing a guide and a GitHub
@@ -982,7 +985,7 @@ Actions workflow needs at least 4.
 Each floor lists the files it covers, and can list exceptions that leave a file out of that floor
 only. For example, the default floor 4 covers `docs/merge-guide.md` by its name but excepts
 Markdown, so the guide falls to the next floor that covers it, or to 1. The same guide under
-`skills/` still gets 2 from the agent-instructions floor.
+`skills/` still gets 3 from the agent-instructions floor.
 
 Your list replaces the default one. This repository adds two floors ahead of the defaults:
 

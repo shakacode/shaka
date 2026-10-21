@@ -81,7 +81,7 @@ pr_description:
       words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
               credential]
       except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
-    - level: 2
+    - level: 3
       reason: changes agent instructions
       paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
     - level: 2
