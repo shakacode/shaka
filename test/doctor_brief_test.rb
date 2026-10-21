@@ -11,6 +11,7 @@ class DoctorBriefTest < Minitest::Test
   INSTALLED = { 'version' => '0.1.0', 'package_id' => 'p',
                 'source' => { 'kind' => 'revision', 'revision' => '2363e217b6034b4b684ef88f2a29ddda458d870f' } }.freeze
   COPIED = { 'version' => '0.1.0', 'package_id' => nil, 'source' => { 'kind' => 'uninstalled' } }.freeze
+  PATH = '.agents/shaka/config.yml'
 
   def test_a_ready_installation_lists_the_installation_settings_and_basic_checks
     report, blocked = brief(identity: INSTALLED)
@@ -40,17 +41,23 @@ class DoctorBriefTest < Minitest::Test
   end
 
   def test_individual_settings_are_named_as_kept_out_of_git
-    report, = brief(git: { 'rev-parse' => false, 'check-ignore' => true })
+    report, = brief(git: { 'rev-parse' => ['', false], 'status' => ["!! #{PATH}\n", true] })
     assert_includes report, '[HEALTHY] Repository seam — individual settings kept out of Git: '
   end
 
   def test_uncommitted_shared_settings_are_named
-    report, = brief(git: { 'rev-parse' => false, 'check-ignore' => false })
+    report, = brief(git: { 'rev-parse' => ['', false], 'status' => ["?? #{PATH}\n", true] })
     assert_includes report, 'settings not committed yet: '
   end
 
+  # A Git that cannot answer names no source, rather than calling the settings uncommitted.
+  def test_settings_source_is_left_unnamed_when_git_fails
+    report, = brief(git: { 'rev-parse' => ['', false], 'status' => ['', false] })
+    assert_includes report, "[HEALTHY] Repository seam — #{PATH} loads and validates in this working tree"
+  end
+
   def test_the_full_report_names_the_settings_source_too
-    report, = doctor(runner: git_runner('rev-parse' => false, 'check-ignore' => true))
+    report, = doctor(runner: git_runner('rev-parse' => ['', false], 'status' => ["!! #{PATH}\n", true]))
     assert_includes report, '[HEALTHY] Repository seam — individual settings kept out of Git: '
   end
 
@@ -85,7 +92,8 @@ class DoctorBriefTest < Minitest::Test
     lambda do |argv, chdir = nil|
       next gh.call(argv, chdir) unless argv.first == 'git'
 
-      ['', '', git.fetch(argv[1], true)]
+      output, answered = git.fetch(argv[1], ['', true])
+      [output, '', answered]
     end
   end
 

@@ -32,6 +32,20 @@ class DoctorSettingsSourceTest < Minitest::Test
     assert_equal 'individual settings kept out of Git', describe
   end
 
+  def test_an_untracked_file_is_not_yet_committed
+    assert_equal 'settings not committed yet', describe
+  end
+
+  def test_no_source_is_named_outside_a_repository
+    FileUtils.rm_rf(File.join(@root, '.git'))
+    assert_nil describe
+  end
+
+  def test_no_source_is_named_when_git_cannot_start
+    missing = ->(*) { raise Errno::ENOENT, 'git' }
+    assert_nil Shaka::Doctor::SettingsSource.new(@root, missing).describe(PATH)
+  end
+
   private
 
   def describe = Shaka::Doctor::SettingsSource.new(@root, Shaka::Doctor::RUNNER).describe(PATH)

@@ -10,22 +10,31 @@ module Shaka
         @runner = runner
       end
 
-      def summary(path) = "#{describe(path)}: #{path} loads and validates in this working tree"
+      def summary(path)
+        loads = "#{path} loads and validates in this working tree"
+        source = describe(path)
+        source ? "#{source}: #{loads}" : loads
+      end
 
+      # Nil when Git cannot answer, such as outside a repository or through a symlinked path,
+      # so the line names no source rather than guessing one.
       def describe(path)
-        return 'team settings committed in this checkout' if git?('rev-parse', '--verify', '--quiet', "HEAD:./#{path}")
-        return 'individual settings kept out of Git' if git?('check-ignore', '--quiet', '--', path)
+        return 'team settings committed in this checkout' if committed?(path)
 
-        'settings not committed yet'
+        output, _error, answered = git('status', '--porcelain', '--ignored', '--untracked-files=all', '--', path)
+        return unless answered
+
+        output.start_with?('!!') ? 'individual settings kept out of Git' : 'settings not committed yet'
       end
 
       private
 
-      # A Git that cannot run leaves the source unnamed rather than failing the settings check.
-      def git?(*arguments)
-        @runner.call(['git', *arguments], @root)[2]
+      def committed?(path) = git('rev-parse', '--verify', '--quiet', "HEAD:./#{path}")[2]
+
+      def git(*arguments)
+        @runner.call(['git', *arguments], @root)
       rescue SystemCallError
-        false
+        ['', '', false]
       end
     end
   end
