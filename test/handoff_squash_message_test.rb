@@ -129,3 +129,40 @@ class HandoffEvaluationMessageTest < Minitest::Test
     assert_predicate(awaiting([archived])['owed'], :any?)
   end
 end
+
+# A merge queue takes no message, so an Ask handoff on a queue base owes none and says what the queue writes.
+class HandoffMergeQueueTest < Minitest::Test
+  include HandoffHarness
+
+  SETTINGS = { 'squashMergeCommitTitle' => 'PR_TITLE', 'squashMergeCommitMessage' => 'PR_BODY',
+               'pullRequest' => { 'mergeQueue' => { 'configuration' => { 'mergeMethod' => 'SQUASH' } } } }.freeze
+
+  def awaiting_merge(**pull)
+    handoff(labels: ['awaiting-merge-approval'], queue: true, queue_settings: SETTINGS, **pull)
+  end
+
+  def test_a_queue_base_owes_no_squash_message
+    result = awaiting_merge
+
+    assert_empty result['owed']
+    assert_includes result['status'], 'merge queue'
+    refute_includes result['status'], 'no squash message'
+  end
+
+  def test_a_queue_base_tells_the_agent_what_the_queue_writes
+    note = awaiting_merge['notes'].find { |item| item.start_with?('Merge queue:') }
+
+    assert_includes note, 'add the PR to the merge queue'
+    assert_includes note, 'the whole PR description'
+  end
+
+  def test_a_queue_base_still_owes_the_checkpoint
+    assert(awaiting_merge(post_implementation: {})['owed'].any? { |item| item.include?('Checkpoint') })
+  end
+
+  def test_a_base_without_a_queue_still_owes_the_message
+    result = handoff(labels: ['awaiting-merge-approval'], queue: false)
+
+    assert(result['owed'].any? { |item| item.include?('squash commit message') })
+  end
+end
