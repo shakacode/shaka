@@ -25,8 +25,12 @@ links before invoking or publishing.
 shaka post-implementation run --root DIR --base BASE_SHA --head HEAD_SHA \
   --ref TRUSTED_DEFAULT_SHA --content-file packet.json > checkpoint.json
 shaka post-implementation publish OWNER/REPO NUMBER --content-file checkpoint.json \
-  --squash-message message.json
+  --squash-message message.json --root DIR --ref TRUSTED_DEFAULT_SHA
 ```
+
+With `--ref`, a ready checkpoint on a repository whose trusted `merge.preference` is `ask` and
+whose `merge.auto_max_review_floor` is below 5 adds one line saying whether Auto would have
+merged the PR, from `merge.limits` and the floors.
 
 For a ready result, supply `message.json` with the same `title` and plain-text `body`
 used by `merge --squash-message`, as defined in the workflow's publication commands.

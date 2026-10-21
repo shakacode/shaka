@@ -20,6 +20,14 @@ module Shaka
       raise Error, "#{SETTING} must be a whole number from 1 to 5"
     end
 
+    # seam is the trusted RepositoryConfig; without one the top level applies and nothing is held.
+    def self.from(seam, confirmed_head: nil)
+      return new(confirmed_head:) unless seam
+
+      new(seam.merge.fetch('auto_max_review_floor'), floors: seam.pr_description['human_review_floors'],
+                                                     confirmed_head:)
+    end
+
     # floors are the trusted pr_description.human_review_floors; nil applies the shipped ones.
     # confirmed_head names the head a user approved, as for merge limits.
     def initialize(max = DEFAULT, floors: nil, confirmed_head: nil)

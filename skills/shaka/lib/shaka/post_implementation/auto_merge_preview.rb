@@ -1,0 +1,36 @@
+# frozen_string_literal: true
+
+require_relative '../error'
+require_relative '../merge_limits'
+require_relative '../merge_review_floor'
+
+module Shaka
+  # Tells a maintainer on Ask whether Auto would have merged a ready PR, so they can try
+  # merge.auto_max_review_floor on real PRs before switching to auto.
+  module AutoMergePreview
+    LABEL = '**Auto merge preview:**'
+
+    module_function
+
+    # seam is the trusted RepositoryConfig; pull is the snapshot with GitHub's size counts.
+    # Returns nil unless the repository is on Ask with a floor below the top level.
+    def line(seam, github, pull, head)
+      floor = MergeReviewFloor.from(seam)
+      return unless seam&.merge&.fetch('preference') == 'ask' && floor.holds_any?
+
+      reason = hold(seam, floor, github, pull, head)
+      return "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reason}." if reason
+
+      "#{LABEL} with `merge.preference: auto`, the agent would merge this PR."
+    end
+
+    def hold(seam, floor, github, pull, head)
+      exceeded = MergeLimits.new(seam.merge.fetch('limits')).exceeded(pull)
+      return "it is past `merge.limits` (#{exceeded.join(', ')})" unless exceeded.empty?
+
+      floor.hold(floor.paths(github, head))
+    rescue Error
+      'Shaka could not read its size or changed files from GitHub'
+    end
+  end
+end

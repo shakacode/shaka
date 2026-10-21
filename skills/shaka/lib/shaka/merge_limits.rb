@@ -34,13 +34,18 @@ module Shaka
     def verify!(pull, head)
       return verify_confirmation!(head) if @confirmed_head
 
-      exceeded = counts(pull).filter_map do |key, count|
-        "#{key.delete_prefix('max_')} #{count} > #{@limits.fetch(key)}" if count > @limits.fetch(key)
-      end
+      exceeded = exceeded(pull)
       return if exceeded.empty?
 
       raise Error, "PR exceeds merge limits (#{exceeded.join(', ')}); hand it to the user as Ask, " \
                    'or pass --limits-confirmed-head for a head the user confirmed'
+    end
+
+    # Each limit the PR is past, such as "files 30 > 29"; raises when GitHub did not report the size.
+    def exceeded(pull)
+      counts(pull).filter_map do |key, count|
+        "#{key.delete_prefix('max_')} #{count} > #{@limits.fetch(key)}" if count > @limits.fetch(key)
+      end
     end
 
     private

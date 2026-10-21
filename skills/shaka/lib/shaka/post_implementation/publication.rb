@@ -29,10 +29,12 @@ module Shaka
     SCOPE = 'Ruby checked this report\'s format and commit; the reviewer judged value, not correctness. ' \
             'Required checks, reviews, and merge authority still apply.'
 
-    def initialize(result, head:, repository:, message: nil)
+    # message and auto_merge are called only for a ready checkpoint; auto_merge returns a line or nil.
+    def initialize(result, head:, repository:, message: nil, auto_merge: nil)
       @result = result
       @head = head
       @message = message
+      @auto_merge = auto_merge
       @repository = repository
       @revision = "[`#{head[0, 7]}`](https://github.com/#{repository}/commit/#{head})"
       @usage = native_usage
@@ -42,7 +44,7 @@ module Shaka
     def render
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      body += "\n\n#{merge_text}" if @state == 'ready'
+      body += "\n\n#{[*@auto_merge&.call, merge_text].join("\n\n")}" if @state == 'ready'
       "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n#{"#{@disposition_line}\n" if @disposition_line}" +
         PostImplementationEvidence.attestation(@head, @state)
     end

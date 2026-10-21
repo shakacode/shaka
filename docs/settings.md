@@ -182,9 +182,9 @@ A PR that changes Shaka's settings in `.agents/shaka/` always comes back to you 
 below 5, whatever floors you set. If Shaka cannot read the PR's complete list of changed files
 from GitHub, the PR comes back too.
 
-Try a number before you switch to `auto`. While `preference` is still `ask`, the agent tells
-you whether Auto would have merged each PR it hands you, such as
-`Auto would merge this PR by its paths.`
+Try a number before you switch to `auto`. While `preference` is still `ask`, each ready
+checkpoint comment on a PR says whether Auto would have merged it, counting `merge.limits` too:
+`Auto merge preview: with merge.preference: auto, the agent would merge this PR.`
 
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
 something after merge, so the agent hands those PRs back on its own judgment.
