@@ -70,7 +70,7 @@ pr_description:
   # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
   # files it changes. This list replaces the default one. Ours adds the first two floors and the
   # validation and install floor, names merge-gate and trust code in the trust floor, and
-  # exempts Shaka's own code and tests from the agent-instructions floor, so
+  # exempts Shaka's Ruby library code from the agent-instructions floor, so
   # auto_max_review_floor can tell them apart. The rest are the defaults.
   human_review_floors:
     - level: 5
@@ -100,7 +100,7 @@ pr_description:
     - level: 3
       reason: changes agent instructions
       paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
-      except: [skills/shaka/lib/**/*, test/**/*]
+      except: ['skills/shaka/lib/**/*.rb']
     - level: 2
       reason: changes code or configuration
       paths: ['**/*']
