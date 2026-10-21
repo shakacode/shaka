@@ -2,26 +2,49 @@
 
 **PRs that are a delight to review.**
 
-Understand what your coding agent changed, why it chose the approach, and how
-the result was checked. Shaka presents the context you need to approve a change,
-request revisions, or resolve an open question. You choose who merges it.
+Give your coding agent a task. Shaka has it build the change, test it, and get
+an independent review. Then it hands you one pull request (PR) that is quick to
+judge.
 
 ![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
 
-The agent builds, verifies, and reviews, fixing what it can. Then you review one clear
-PR: what changed, how it was checked, and what is still open. At the
-[checkpoint](pr-verification.md#checkpoint), decide what happens next.
+## Why use Shaka
 
-## Start here
+- **See the outcome first.** The PR description opens with what changed, why,
+  what it leaves out, and why it is safe.
+- **See the proof.** Each check says what ran and how it turned out. Anything
+  unproven is listed as a gap, not passed off as done.
+- **Read the code with a guide.** A code walkthrough explains each choice and
+  links to the exact lines.
+- **Skip what you do not need.** Usage, detailed checks, and history sit in
+  collapsed sections.
+- **Keep the merge decision.** By default the agent hands the ready PR back to you.
 
-New to branches and pull requests? [Shaka in pictures](shaka-in-pictures.md)
-explains them and walks you through a practice task.
+[PR verification](pr-verification.md#read-a-pr-for-your-decision) shows where each
+answer lives in a PR.
 
-1. [Install Shaka, configure your repository, and run a first task](getting-started.md).
-2. [Work with Shaka](working-with-shaka.md): choose a merge policy, give feedback,
-   and resume unfinished work.
-3. Use the [practical tips](working-with-shaka.md#useful-tips) or [FAQ](faq.md)
-   when you want to plan first, pick settings, or understand a pause.
+<a id="start-here"></a>
+
+## What to do first
+
+1. Ask your coding agent: `Install Shaka from https://github.com/shakacode/shaka.`
+2. Open a chat in your project and give it a small fix you can recognize:
+
+   ```text
+   $shaka Fix search when the query contains an apostrophe. Go.
+   ```
+
+   Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
+3. Read the PR it returns and decide whether to merge.
+
+[Start here](getting-started.md) covers setup choices. New to branches and pull
+requests? [Shaka in pictures](shaka-in-pictures.md) explains them with a practice task.
+
+## Learn as you go
+
+1. [Working with Shaka](working-with-shaka.md): merge policy, feedback, waiting
+   PRs, and other kinds of tasks.
+2. [FAQ](faq.md): planning first, picking settings, or understanding a pause.
 
 <a id="configure-and-understand"></a>
 

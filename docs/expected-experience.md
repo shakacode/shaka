@@ -31,21 +31,17 @@ When a later task starts in a new worktree, the agent copies your individual
 settings into it. Edits you made after setup come along while the earlier
 checkout still exists.
 
-The agent follows setup instructions to find existing commands and continue into
-your task. That is not proof of seamless first-user delivery. The
+The agent finds your existing commands and continues into your task. A genuine
+first run by a new user has not yet been evaluated; the
 [earlier acceptance report](https://github.com/shakacode/shaka/issues/277#issuecomment-5904859759)
-records a maintainer-led feature PR with interventions on an earlier installation.
-That evaluation predates #420; newer delivery support still needs a genuine new-user run.
+records a maintainer-led PR on an older installation.
 
-[Merged #425](https://github.com/shakacode/shaka/pull/425) subsequently added independent
-opening-check choices, including individual settings. [Merged #426](https://github.com/shakacode/shaka/pull/426)
-added [settings previews](settings.md#preview-settings-before-adopting-them) for one task.
-That settings preview differs from [trying another Shaka implementation](trying-pr-versions.md).
+To try repository settings for one task before adopting them, use a
+[settings preview](settings.md#preview-settings-before-adopting-them). Trying an
+unmerged change to Shaka itself is different: see [try a Shaka PR](trying-pr-versions.md).
 
 ## Run an ordinary task
 
-The [working guide](working-with-shaka.md#give-it-an-outcome) now covers task
-prompts, model choices, and [what you get](working-with-shaka.md#what-you-get).
 If a project has no usable checks, decide with the agent whether to add them or
 report limited verification. Routine tasks should not require editing configuration
 or PATH by hand.
