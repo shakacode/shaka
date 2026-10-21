@@ -28,17 +28,29 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
   include PostImplementationPublicationFixture
   include RepositoryConfigTestHelpers
 
-  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, changed_files: nil)
+  def body_for(files, merge: { 'preference' => 'ask', 'auto_max_review_floor' => 2 }, changed_files: nil, verdict: nil)
     with_repository('merge' => merge) do |root|
       trust!(root)
       with_result do |result, path|
-        github = PreviewGitHub.new('a' * 40)
-        github.files = files
+        change_verdict(result, verdict) if verdict
+        github = PreviewGitHub.new('a' * 40).tap { |client| client.files = files }
         github.changed_files = changed_files
         publish_at(root, result, path, github)
         return github.bodies.first.first
       end
     end
+  end
+
+  def change_verdict(result, verdict)
+    report = JSON.parse(File.read(result['report']))
+    adequacy = ADEQUACY.merge('verdict' => verdict)
+    File.write(result['report'], JSON.generate(report.merge('verification_adequacy' => adequacy)))
+  end
+
+  def test_a_verdict_that_stops_auto_hands_the_pr_back
+    assert_includes body_for(%w[lib/fix.rb], verdict: 'cannot judge'),
+                    "would hand this PR back: the checkpoint's verdict on its verification is cannot judge."
+    refute_includes body_for(%w[lib/fix.rb], verdict: 'adequate with accepted gaps'), 'hand this PR back'
   end
 
   def test_says_code_at_the_floor_passes_without_promising_a_merge

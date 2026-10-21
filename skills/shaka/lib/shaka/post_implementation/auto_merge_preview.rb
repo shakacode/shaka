@@ -3,6 +3,7 @@
 require_relative '../error'
 require_relative '../merge_limits'
 require_relative '../merge_review_floor'
+require_relative '../post_implementation_report'
 
 module Shaka
   # Tells a maintainer on Ask whether Auto would have merged a ready PR, so they can try
@@ -12,19 +13,24 @@ module Shaka
 
     module_function
 
-    # seam is the trusted RepositoryConfig; pull is the snapshot with GitHub's size counts.
-    # Returns nil unless the repository is on Ask with a floor below the top level.
-    def line(seam, github, pull, head)
+    # seam is the trusted RepositoryConfig; pull is the snapshot with GitHub's size counts; verdict is the
+    # checkpoint's verification verdict. Returns nil unless the repository is on Ask with a floor below the top level.
+    def line(seam, github, pull, head, verdict = nil)
       floor = MergeReviewFloor.from(seam)
       return unless seam&.merge&.fetch('preference') == 'ask' && floor.holds_any?
 
-      reasons = [limits_hold(seam, pull), floor_hold(floor, github, head)].compact
+      reasons = [limits_hold(seam, pull), floor_hold(floor, github, head), verdict_hold(verdict)].compact
       unless reasons.empty?
         return "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reasons.join('; ')}."
       end
 
       "#{LABEL} this PR passes the review floor and size checks Auto applies; the agent would still " \
         'judge its risk and compatibility before merging.'
+    end
+
+    def verdict_hold(verdict)
+      "the checkpoint's verdict on its verification is #{verdict}" if
+        PostImplementationReport::STOPS_AGENT_MERGE.include?(verdict)
     end
 
     def limits_hold(seam, pull)

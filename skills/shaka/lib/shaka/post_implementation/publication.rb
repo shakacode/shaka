@@ -31,7 +31,8 @@ module Shaka
     SCOPE = 'Ruby checked this report\'s format and commit; the reviewer judged value, not correctness. ' \
             'Required checks, reviews, and merge authority still apply.'
 
-    # message and auto_merge are called only for a ready checkpoint; auto_merge returns a line or nil.
+    # message and auto_merge are called only for a ready checkpoint; auto_merge takes the verification
+    # verdict and returns a line or nil.
     def initialize(result, head:, repository:, message: nil, auto_merge: nil)
       @result = result
       @head = head
@@ -46,7 +47,7 @@ module Shaka
     def render
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      body += "\n\n#{[*@auto_merge&.call, merge_text].join("\n\n")}" if @state == 'ready'
+      body += "\n\n#{[*@auto_merge&.call(@adequacy&.fetch('verdict')), merge_text].join("\n\n")}" if @state == 'ready'
       "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n#{footer}"
     end
 
