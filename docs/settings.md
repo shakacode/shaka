@@ -183,8 +183,10 @@ below 5, whatever floors you set. If Shaka cannot read the PR's complete list of
 from GitHub, the PR comes back too.
 
 Try a number before you switch to `auto`. While `preference` is still `ask`, each ready
-checkpoint comment on a PR says whether Auto would have merged it, counting `merge.limits` too:
-`Auto merge preview: with merge.preference: auto, the agent would merge this PR.`
+checkpoint comment on a PR says whether it passes the floor and `merge.limits`, or names what
+would send it back, such as
+`Auto merge preview: with merge.preference: auto, the agent would hand this PR back: skills/shaka/SKILL.md sets review floor 3`.
+A PR that passes still gets the agent's own judgment of risk and compatibility under Auto.
 
 Floors only see file paths. They cannot tell that a PR removes a command or needs you to do
 something after merge, so the agent hands those PRs back on its own judgment.

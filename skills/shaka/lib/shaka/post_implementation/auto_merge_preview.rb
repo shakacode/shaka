@@ -23,7 +23,8 @@ module Shaka
         return "#{LABEL} with `merge.preference: auto`, the agent would hand this PR back: #{reasons.join('; ')}."
       end
 
-      "#{LABEL} with `merge.preference: auto`, the agent would merge this PR."
+      "#{LABEL} this PR passes the review floor and size checks Auto applies; the agent would still " \
+        'judge its risk and compatibility before merging.'
     end
 
     def limits_hold(seam, pull)

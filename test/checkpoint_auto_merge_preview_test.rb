@@ -41,9 +41,10 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
     end
   end
 
-  def test_says_auto_would_merge_code_at_the_floor
+  def test_says_code_at_the_floor_passes_without_promising_a_merge
     assert_includes body_for(%w[lib/fix.rb test/fix_test.rb]),
-                    '**Auto merge preview:** with `merge.preference: auto`, the agent would merge this PR.'
+                    '**Auto merge preview:** this PR passes the review floor and size checks Auto applies; ' \
+                    'the agent would still judge its risk and compatibility before merging.'
   end
 
   def test_names_the_file_that_would_hand_the_pr_back
