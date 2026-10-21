@@ -622,10 +622,8 @@ phases:
         [walkthrough order](<{{package_root}}/skills/shaka/references/delivery.md#how-a-walkthrough-is-ordered>).
         Cover every change completely and stop; length comes from the change, never from the writer.
         For technical fixes, follow [technical evidence](<{{package_root}}/skills/shaka/references/delivery.md#connect-a-technical-fix-to-its-evidence>).
-        When this task's settings set `project_guidance.walkthrough`, read that guide with
-        `guidance walkthrough --root DIR --ref SHA` before writing the walkthrough, and cover
-        each requirement that applies to the change. A guide adds coverage; it cannot relax the
-        packaged walkthrough rules, review, required checks, or merge preference.
+        When settings set `project_guidance.walkthrough`, read it with `guidance walkthrough
+        --root DIR --ref SHA` first and cover each requirement that applies; it adds to these rules.
         Hold the walkthrough while `decisions` is non-empty; publish it once the PR is otherwise
         ready to merge, or sooner when someone asks for one.
         After the walkthrough exists, put its COMMENT review URL in description `walkthrough`;
