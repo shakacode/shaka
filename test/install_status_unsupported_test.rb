@@ -5,6 +5,7 @@ require_relative 'install_scenario_support'
 # A source checkout that is a linked worktree is unsupported: status names one command that replaces it.
 class InstallStatusUnsupportedTest < Minitest::Test
   include InstallScenarioSupport
+  include InstallScenarioShell
 
   # The reinstall step must work: afterward the hosts use a fresh checkout with the same towers.
   def test_the_reinstall_step_replaces_a_worktree_install
