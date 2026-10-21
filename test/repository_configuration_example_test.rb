@@ -19,7 +19,8 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   # Where this repository's floors put its files; Auto merges only those at 2 or below.
   FLOOR_LEVELS = {
     'skills/shaka/lib/shaka/doctor/checks.rb' => 2, 'test/doctor_test.rb' => 2,
-    'skills/shaka/lib/shaka/install/links.rb' => 3, 'bin/validate' => 3, 'skills/shaka/SKILL.md' => 3,
+    'skills/shaka/lib/shaka/install/links.rb' => 3, 'bin/validate' => 3, '.rubocop.yml' => 3,
+    'skills/shaka/SKILL.md' => 3,
     'skills/shaka/lib/shaka/required_checks.rb' => 4, 'skills/shaka/lib/shaka/merge_review_floor.rb' => 4,
     'skills/shaka/lib/shaka/publication/review_effort_floor.rb' => 4,
     'skills/shaka/lib/shaka/repository_config/merge_schema.rb' => 4, 'docs/settings.md' => 5
