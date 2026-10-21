@@ -121,7 +121,8 @@ phases:
         observable. Otherwise, satisfy every native GitHub required check, approval, review
         thread, and queue rule before submission.
       - If the seam is missing and neither mode was requested, explain private use and shared
-        team settings. Ask which to prepare before generating configuration.
+        team settings. Ask which to prepare before generating configuration. When the user
+        declines both, follow [work without settings](<{{package_root}}/skills/shaka/references/repository-setup.md#work-without-settings>).
       - For requested team setup when the seam is missing, follow
         [team setup](<{{package_root}}/skills/shaka/references/repository-setup.md#publish-team-configuration>)
         with the saved helper's `seam init`. Never guess checks or

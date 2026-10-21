@@ -140,8 +140,10 @@ module Shaka
       def missing_seam
         paths = [Configuration::Paths::CONTRACT, Configuration::Paths::NEW_CONTRACT].join(' or ')
         check('Repository seam', 'failed', "this root has no #{paths} regular file",
-              guidance: 'Ask your coding agent: Configure this repository for Shaka using its existing checks ' \
-                        'and merge policy ask. Or point `--root` at the checkout you meant.')
+              guidance: 'Choose a setup before the task. For a private trial in this clone, ask your coding ' \
+                        'agent: Set up Shaka just for me. For team settings in a setup PR, ask: Configure this ' \
+                        'repository for Shaka using its existing checks and merge policy ask. Or point `--root` ' \
+                        'at the checkout you meant.')
       end
 
       # A command that cannot even launch is this check's answer, never an aborted report.
