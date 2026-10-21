@@ -70,21 +70,23 @@ agent has stopped. Shaka reads the plan and checks the PRs before continuing.
 
 When a task leaves design choices open, such as several parts that depend on one
 design or more than one reasonable approach, Shaka names those choices while planning
-and offers a design PR first. That PR holds an architecture decision record (ADR) or
-design document. Shaka waits for your approval before writing any code, then builds
-and reviews the implementation against the design you approved.
+and offers to agree on the design first. It writes the design in the issue or tracker
+item, or in a design PR holding an architecture decision record (ADR) when your
+repository keeps ADRs. Shaka waits for your approval before writing any code, then
+builds and reviews the implementation against the design you approved.
 
-Choose it when a wrong design would waste the implementation: for example, a Docker
-build that should become several independent builds running in parallel. To ask up
-front:
+Choose it when a wrong design would waste the implementation: for example, a feature
+whose API, storage, and screens all depend on one data model. To ask up front:
 
 ```text
 $shaka https://github.com/OWNER/REPO/issues/N
-Design PR first; wait for my approval before implementing.
+Agree on the design first; wait for my approval before implementing.
 ```
 
-Approve the design in chat, or name a teammate whose approving GitHub review of
-the design PR counts. Merging the design PR follows your usual merge choice. A
+Add `Use a design PR.` when you want one in any repository.
+
+Approve the design in chat. For a design PR, you can also name a teammate whose
+approving GitHub review counts, and merging it follows your usual merge choice. A
 small or fully specified task starts directly, with no extra question.
 
 ### Review an existing PR

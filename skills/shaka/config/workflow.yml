@@ -174,10 +174,10 @@ phases:
         [planning guide](<{{package_root}}/skills/shaka/references/delivery.md#say-what-the-work-is-worth>).
       - When that assessment finds design choices the request leaves open, such as several
         components that depend on one design or more than one reasonable approach, name those
-        choices and offer a design PR first beside implementing directly, with a recommendation,
-        even after a start instruction. A small or fully specified task, or a request that
-        already chooses, gets no new question. When the user picks the design PR, follow
-        [design PR first](<{{package_root}}/skills/shaka/references/delivery.md#design-pr-first>),
+        choices and offer to agree on the design first beside implementing directly, with a
+        recommendation, even after a start instruction. A small or fully specified task, or a
+        request that already chooses, gets no new question. When the user chooses to agree first,
+        follow [agree on the design first](<{{package_root}}/skills/shaka/references/delivery.md#agree-on-the-design-first>),
         and do not make implementation edits until the user approves the design.
       - For a planning-only request, include the rendered recommendation in a compact execution
         prompt with the usage report. Follow

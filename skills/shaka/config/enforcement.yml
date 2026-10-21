@@ -225,7 +225,8 @@ rules:
     quote: do not make implementation edits until the user approves the design
     enforced_by: agent
     note: >-
-      Nothing records which design PR a task chose or whether the user approved it, so no
+      Nothing records whether a task chose to agree on the design first or whether the user
+      approved it, so no
       command refuses an implementation edit or commit made before that approval.
   - id: pr-targets-the-validated-base
     phase: plan

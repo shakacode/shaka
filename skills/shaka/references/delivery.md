@@ -208,22 +208,25 @@ architecture decision record (ADR) using the project's conventions. An ADR recor
 the decision, alternatives, and consequences; a design document can hold detailed
 implementation analysis. Keep execution order, progress, and the document link in
 the work item. Recommend either only when the detail warrants it; use the tracker
-alone for a compact plan. When the user chose a design PR first, that PR holds the
-document instead.
+alone for a compact plan.
 
-### Design PR first
+### Agree on the design first
 
-When the user picks a design PR in Plan, deliver the ADR or design document as its
-own PR before any implementation PR, following the task's PR split. It states the
-open choices, the chosen design with its alternatives and consequences, and how the
-components fit together. After publishing it, stop and wait for the user to approve
-the design in chat, or for an approving review of the design PR, as `comments` reports
-it, from a GitHub login the user named in this task as a design approver. Merging it
-still follows the task's merge preference. Record the approval as a human attention checkpoint. If the
-user asks for changes, revise the design PR and wait again. Start implementation on
-its own branch. Summarize and link the approved design in that PR's description, and
-pass the description to every local review round with `--description-file`, so the
-reviewer compares the code with the design rather than with its own.
+When the user chooses to agree on the design first in Plan, write down the open
+choices, the chosen design with its alternatives and consequences, and how the
+components fit together. Put it in the work item as the current plan. Use a design
+PR holding an ADR or design document instead when the repository keeps ADRs or the
+user asks for one, and deliver it before any implementation PR. Without permission
+to write the work item, ask for it or offer the design PR.
+
+Then stop and wait for the user to approve the design in chat, or, for a design PR,
+for an approving review as `comments` reports it from a GitHub login the user named
+in this task as a design approver. Merging a design PR still follows the task's
+merge preference. Record the approval as a human attention checkpoint. If the user
+asks for changes, revise the design and wait again. Summarize and link the approved
+design in the implementation PR's description, and pass the description to every
+local review round with `--description-file`, so the reviewer compares the code with
+the design rather than with its own.
 
 Before implementing a material correction, update the current plan with what
 changed, why, and every affected PR, including one already awaiting review. Mark
