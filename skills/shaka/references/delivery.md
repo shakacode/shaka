@@ -216,7 +216,8 @@ When the user chooses to agree on the design first in Plan, write down the open
 choices, the chosen design with its alternatives and consequences, and how the
 components fit together. Put it in the work item as the current plan. Use a design
 PR holding an ADR or design document instead when the repository keeps ADRs or the
-user asks for one, and deliver it before any implementation PR. Without permission
+user asks for one, and deliver it as the first PR of the task's split, with the
+implementation PR following on its own branch. Without permission
 to write the work item, ask for it or offer the design PR.
 
 Then stop and wait for the user to approve the design in chat, or, for a design PR,
