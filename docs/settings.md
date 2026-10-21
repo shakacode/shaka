@@ -618,7 +618,9 @@ project_guidance:
 
 - `pr_evidence`: read before the agent writes the PR description. For example, a
   library can ask for a compatibility run against its oldest supported version, and
-  the agent reports that run in the description's verification.
+  the agent reports that run in the description's verification. Shaka also shows the
+  guide to the agent each time it publishes the description, so a skipped read still
+  surfaces it.
 - `merge_readiness`: read before the [checkpoint](pr-verification.md#checkpoint).
   For example, a data service can require a confirmed backfill plan. The agent lists
   each requirement and its status, and an unmet one blocks the merge-ready claim.
