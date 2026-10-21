@@ -5,6 +5,13 @@ require 'tmpdir'
 require 'open3'
 require 'fileutils'
 
+# The helpers and fakes the tests spawn need only Ruby's standard library. Under bundle exec
+# RUBYOPT and BUNDLER_SETUP make each one load Bundler, several times its own startup.
+# BUNDLE_* settings stay, so a test's own bundle exec still finds the bundle.
+if defined?(Bundler)
+  %w[RUBYOPT RUBYLIB].each { |key| ENV[key] = Bundler.original_env[key] }
+  ENV.delete('BUNDLER_SETUP')
+end
 # Helper calls the tests spawn stay out of the developer's own call log.
 ENV['SHAKA_CALL_LOG'] = 'off'
 # This checkout is not the developer's linked installation, so every spawned call would say so.
