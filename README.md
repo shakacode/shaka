@@ -1,11 +1,13 @@
 # Shaka
 
-**PRs that are a delight to review.**
+**Review the intent and the evidence, not every line.**
 
-Shaka guides your coding agent through implementation, verification, independent
-review, and PR delivery. Get a clear handoff: what changed, what was checked,
-and what needs your decision—with the context to approve the change, request
-revisions, or resolve an open question.
+Give your coding agent a task. Shaka guides it through implementation,
+verification, independent review, and PR delivery. Each PR says why the change
+exists, what it leaves out, and why it is safe. It lists the checks that prove
+the change, linked to their results, and names what was not verified. A
+review-effort rating tells you when the code needs reading too. Then you approve
+the change, request revisions, or resolve an open question.
 
 ![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](docs/img/task-to-pr.svg)
 

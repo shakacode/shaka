@@ -1,10 +1,12 @@
 # Documentation
 
-**PRs that are a delight to review.**
+**Review the intent and the evidence, not every line.**
 
-Understand what your coding agent changed, why it chose the approach, and how
-the result was checked. Shaka presents the context you need to approve a change,
-request revisions, or resolve an open question. You choose who merges it.
+Each PR says why the change exists, what it leaves out, and why it is safe. It
+lists the checks that prove the change, linked to their results, and names what
+was not verified. A review-effort rating tells you when the code needs reading
+too. See [what a PR answers](pr-verification.md#answers-for-your-next-decision).
+You choose who merges it.
 
 ![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
 
