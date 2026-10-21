@@ -16,7 +16,7 @@ class PublicationReviewEffortFloorTest < Minitest::Test
   def render(paths, effort)
     intent = INTENT.merge('review_effort' => effort)
     content = PublicationRegressionTest.new(name).description_content('intent' => intent)
-    floor = paths && Shaka::ReviewEffortFloor.for(paths)
+    floor = paths && Shaka::ReviewEffortFloor.for(paths, Shaka::ReviewEffortFloor.defaults)
     Shaka::Publication.description(content, nil, nil, Shaka::PublicationSettings.new(review_effort_floor: floor))
   end
 
@@ -85,6 +85,16 @@ class PublicationReviewEffortFloorTest < Minitest::Test
       refute_includes rendered, 'Injected'
       refute_includes rendered, '<!-- shaka:end -->.rb'
     end
+  end
+
+  # A repository's floors can be stricter, so falling back to the shipped ones must show.
+  def test_unread_repository_floors_are_named_in_the_line
+    content = PublicationRegressionTest.new(name).description_content
+    floor = Shaka::ReviewEffortFloor.for(['docs/a.md'])
+    rendered = Shaka::Publication.description(content, nil, nil,
+                                              Shaka::PublicationSettings.new(review_effort_floor: floor))
+
+    assert_includes rendered, "Shaka's shipped floors applied because this repository's settings were not read."
   end
 
   def test_no_floor_text_without_a_floor_or_without_a_pull_request

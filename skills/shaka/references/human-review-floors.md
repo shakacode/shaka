@@ -37,9 +37,16 @@ Read this only when a maintainer asks to choose, change, or explain
    does not remove a file the same floor's `paths` was meant to cover; a broader `except`
    silently drops it to a lower floor.
 5. Before proposing, compute the floor for the changed files of about ten recent merged PRs
-   with `Shaka::ReviewEffortFloor.for(paths, floors)` from the installed helper's `lib`, and
-   show the maintainer each PR's number, its current rating, and the new floor. Point out
-   PRs the list would hold at 4 or 5 and ask whether that matches their intent.
+   and show the maintainer each PR's number, its current rating, and the new floor. Save the
+   draft list as YAML (`FLOORS`) and run, with the installed helper's `lib` as `LIB`:
+
+   ```bash
+   gh pr view NUMBER --json files --jq '.files[].path' |
+     ruby -I "$LIB" -ryaml -rshaka/publication/review_effort_floor \
+       -e 'p Shaka::ReviewEffortFloor.for(STDIN.read.split("\n"), YAML.safe_load_file(ARGV[0]))' FLOORS
+   ```
+
+   Point out PRs the list would hold at 4 or 5 and ask whether that matches their intent.
 6. Publish the change as its own settings PR through the migration flow, and list the
    `shaka install --update` step for every installation as an after-merge step when the
    repository did not set this key before.

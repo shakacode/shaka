@@ -30,9 +30,8 @@ pr_description:
   show_shaka_credit: true # Show a quiet Shaka website credit below the PR summary.
   show_human_comments: true # List the comments people wrote on the PR.
   max_human_comments: 20 # Rows that list shows, open comments first.
-  # The lowest human review effort a PR may claim, from the files it changes. A file matches a
-  # floor through a `paths` glob or a folder or file name word in `words`, unless an `except`
-  # glob matches it. The PR's floor is the highest level any changed file matches.
+  # The lowest human review effort a PR may claim, from the files it changes.
+  # Matching rules: skills/shaka/references/human-review-floors.md.
   human_review_floors:
     - level: 5
       reason: changes Shaka's repository configuration

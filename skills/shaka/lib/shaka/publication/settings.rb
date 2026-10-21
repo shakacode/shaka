@@ -26,7 +26,7 @@ module Shaka
       repository = github.repository
       verdict = verify(root:, ref:, repository:, pull:, options:)
       current, floors = (current_settings(root:, ref:, repository:, required: !verdict.nil?) if ref)
-      review_effort_floor = ReviewEffortFloor.for(changed_paths, floors || ReviewEffortFloor.defaults)
+      review_effort_floor = ReviewEffortFloor.for(changed_paths, floors)
       new(verdict:, current:, location_diagnostic: ref ? UNAVAILABLE_SETTINGS : MISSING_REF, repository:,
           review_effort_floor:)
     end

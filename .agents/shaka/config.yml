@@ -62,8 +62,9 @@ pr_description:
   show_shaka_credit: true # Default: a small Shaka link under the PR summary.
   show_human_comments: true # Default: list comments people wrote on the PR.
   max_human_comments: 20 # Default: how many of those comments to list.
-  # The lowest human review effort a PR may claim, from the files it changes. This list replaces
-  # the default one: the first two floors are this repository's, the rest are the defaults.
+  # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
+  # files it changes. This list replaces the default one: the first two floors are this
+  # repository's, the rest are the defaults.
   human_review_floors:
     - level: 5
       reason: changes docs for Shaka's users

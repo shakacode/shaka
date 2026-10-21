@@ -12,8 +12,14 @@ module Shaka
     def self.defaults = Defaults.fetch('pr_description', 'human_review_floors')
 
     # Returns the highest matching floor with its reason and the first path that set it, or NONE.
-    # Rules come from the trusted repository settings, or the shipped defaults when unread.
-    def self.for(paths, rules = defaults)
+    # Rules come from the trusted repository settings; nil means they were not read, so the
+    # shipped defaults apply and the result says so.
+    def self.for(paths, rules = nil)
+      floor = highest(paths, rules || defaults)
+      rules ? floor : floor.merge('shipped' => true)
+    end
+
+    def self.highest(paths, rules)
       matches = rules.filter_map do |rule|
         path = paths.find { |candidate| match?(rule, candidate) }
         rule.merge('path' => path) if path
@@ -38,6 +44,6 @@ module Shaka
 
     def self.glob?(globs, path) = Array(globs).any? { |glob| File.fnmatch?(glob, path, GLOB) }
 
-    private_class_method :match?, :word?, :tokens, :glob?
+    private_class_method :highest, :match?, :word?, :tokens, :glob?
   end
 end

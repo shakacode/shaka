@@ -51,7 +51,16 @@ module Shaka
       raise Error, 'Publication intent review_effort must be a whole number from 1 to 5.' unless zone
 
       line = "**Review effort:** #{effort} of 5, #{zone}"
-      return line unless floor && floor['level'] > 1
+      return line unless floor
+
+      [line, *floor_text(effort, floor), *(SHIPPED if floor['shipped'])].join(' ')
+    end
+
+    # The repository's floors can be stricter, so a description that never read them says so.
+    SHIPPED = "Shaka's shipped floors applied because this repository's settings were not read."
+
+    def floor_text(effort, floor)
+      return [] unless floor['level'] > 1
 
       reason = "#{floor['reason']} (#{floor_path(floor['path'])})"
       if effort < floor['level']
@@ -59,7 +68,7 @@ module Shaka
                      "it #{reason}. Rate it #{floor['level']} or higher."
       end
 
-      "#{line} Floor #{floor['level']}: #{reason}."
+      ["Floor #{floor['level']}: #{reason}."]
     end
 
     # A changed filename comes from the PR author, so only a plain one reaches the description.
@@ -95,6 +104,6 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :review_effort, :floor_path, :verification, :checks, :evidenced, :object
+    private_class_method :intent, :review_effort, :floor_text, :floor_path, :verification, :checks, :evidenced, :object
   end
 end
