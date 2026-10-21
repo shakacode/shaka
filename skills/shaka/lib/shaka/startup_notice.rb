@@ -2,24 +2,30 @@
 
 require 'shellwords'
 require 'time'
+require_relative 'configuration/layout'
 require_relative 'install/locations'
 require_relative 'update_check/cache'
+require_relative 'startup_notice/marks'
 
 module Shaka
   # Prints at most one stderr line when a helper call starts: a host link names a different
-  # installation, or the cached update check says this installation needs attention. It reads
-  # local files only, never the network, and a failure never changes the command's result.
+  # installation, the cached update check says this installation needs attention, the
+  # repository has no Shaka settings, or doctor has never run on this machine. It reads local
+  # files only, never the network, and a failure never changes the command's result.
   class StartupNotice
     VARIABLE = 'SHAKA_NOTICES'
     ROOT = File.expand_path('../../../..', __dir__)
     # update-check prints its own answer, and install reports the installation it changes.
     SKIPPED = %w[install update-check].freeze
+    # Doctor reports settings and its own run, and seam is the setup the settings reminder asks for.
+    QUIET = %w[doctor seam].freeze
     ACTIONABLE = %w[available drift].freeze
+    SETUP_GUIDE = 'https://github.com/shakacode/shaka/blob/main/docs/getting-started.md#2-choose-individual-or-team-setup'
 
     def self.call(arguments, env: ENV, output: $stderr)
       return if env[VARIABLE] == 'off' || arguments.empty? || SKIPPED.include?(arguments.first)
 
-      line = new(home: Dir.home).line
+      line = new(home: Dir.home, repository: repository(arguments), command: arguments.first).line
       output.puts("shaka: #{line}") if line
     rescue StandardError => e
       output.puts("shaka: notice skipped: #{e.message}")
@@ -35,13 +41,30 @@ module Shaka
       0
     end
 
-    def initialize(home:, root: ROOT, now: Time.now)
+    # The checkout a call works in: its --root, or the current directory, up to the nearest .git.
+    def self.repository(arguments)
+      index = arguments.index('--root')
+      given = index ? arguments[index + 1] : arguments.find { it.start_with?('--root=') }&.delete_prefix('--root=')
+      directory = File.expand_path(given || Dir.pwd)
+      loop do
+        return File.realpath(directory) if File.exist?(File.join(directory, '.git'))
+        return if File.dirname(directory) == directory
+
+        directory = File.dirname(directory)
+      end
+    end
+
+    def initialize(home:, root: ROOT, now: Time.now, repository: nil, command: nil)
       @home = home
       @root = root
       @now = now
+      @repository = repository
+      @command = command
     end
 
-    def line = other_installation || update
+    def line
+      other_installation || update || (missing_settings || doctor_unrun unless QUIET.include?(@command))
+    end
 
     # What the saved answer asks of a registered checkout, without the once-a-day limit.
     def saved_update = (update_line(UpdateCheck::Cache.read(@root, home: @home)) if registered?)
@@ -79,13 +102,43 @@ module Shaka
       line if line && UpdateCheck::Cache.noticed(entry, @root, home: @home, now: @now)
     end
 
+    # Private trial settings sit in the working tree like team settings, so either silences this.
+    def missing_settings
+      return if @repository.nil? || settings?
+
+      reminder("settings #{@repository}",
+               "#{@repository} has no Shaka settings (#{Configuration::Layout::NEW.contract}). Unless the user " \
+               "already chose, ask for a private trial in this clone or team setup: #{SETUP_GUIDE}. " \
+               'Declining setup skips settings, not the publication steps.')
+    end
+
+    def settings?
+      [Configuration::Layout::LEGACY, Configuration::Layout::NEW].any? do |layout|
+        Configuration::Layout.entry?(File.join(@repository, layout.contract))
+      end
+    end
+
+    def doctor_unrun
+      return if Marks.doctor_ran?(@home)
+
+      reminder('doctor', 'Shaka doctor has not run on this machine. ' \
+                         "Run #{Shellwords.escape(helper)} doctor --brief --root DIR to check this setup.")
+    end
+
+    def reminder(key, text)
+      return if Marks.shown_today?(key, home: @home, now: @now)
+
+      text if Marks.show(key, home: @home, now: @now)
+    end
+
+    def helper = File.join(@root, 'skills/shaka/scripts/shaka')
+
     def registered? = File.file?(File.join(@root, '.git', Install::Locations::RECORD))
 
     def update_line(entry)
       result = entry['result']
       unless result.is_a?(Hash) && UpdateCheck::Cache.fresh?(entry['checked_at'], @now)
-        helper = Shellwords.escape(File.join(@root, 'skills/shaka/scripts/shaka'))
-        return "Shaka has not checked for updates in the last day. Run #{helper} update-check."
+        return "Shaka has not checked for updates in the last day. Run #{Shellwords.escape(helper)} update-check."
       end
 
       result['guidance'] if ACTIONABLE.include?(result['status'])
