@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../usage/usage_record_carry'
 require_relative 'usage_pricing'
 
 module Shaka
@@ -42,6 +43,7 @@ module Shaka
     # A non-breaking hyphen keeps names such as claude-opus-5-5 on one line.
     NO_BREAK_HYPHEN = "\u2011"
     ROUTE = %w[host label provider model routed effort].freeze
+    ORDER = UsageRecordCarry::CONTRIBUTIONS
     LEGEND = [
       [:unreported?, '— not reported'],
       [:minimum?, '+ some usage not reported, so the amount is a minimum'],
@@ -90,8 +92,17 @@ module Shaka
     def report_rows(columns)
       groups = columns.group_by { |column| column.values_at(*ROUTE) }.values
       shared = groups.map { |group| group.first['label'] }.tally.reject { |_label, count| count == 1 }
-      groups.map { |group| [row_label(group, shared), sums(group)] }
+      ordered(groups.map { |group| [row_label(group, shared), sums(group), rank(group.first)] })
     end
+
+    # Rows follow the contribution order, implementation first, then the label.
+    # A legacy local review estimate has no label.
+    def ordered(rows)
+      rows.sort_by { |label, _amounts, order| [order, label.to_s] }.map { |label, amounts| [label, amounts] }
+    end
+
+    # The local review summary builds rows from columns alone, without a contribution.
+    def rank(column) = ORDER.index(column['contribution']) || ORDER.size
 
     def row_label(group, shared)
       label = group.first['label']

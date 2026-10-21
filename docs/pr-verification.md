@@ -42,7 +42,8 @@ commit for your decision.
 When you choose to merge through GitHub, compare its current commit with the
 agent's chat handoff before using the offered control. If they differ, or no allowed merge
 method is offered, return to the agent. For a squash merge, use the
-[prepared commit message](#squash-merge-details).
+[prepared commit message](#squash-merge-details). A merge queue takes no message, so
+add the PR to the queue instead.
 
 <a id="read-a-pr-for-your-decision"></a>
 
@@ -205,6 +206,14 @@ For example: “The menu stays reachable on narrow screens. The regression test
 failed before the fix and passes now; desktop and mobile screenshots show the
 result.” Details can hold commands, tested commits, and a recording of the menu.
 
+Local validation shows how long it ran and on what kind of machine, such as
+`validate: 27m on m5 (Apple M5 Max, 18 cores, 128 GB RAM, 3 GB free, load 140→450)`
+under **Shaka settings used**. When you compare runs across machines, the
+hardware and the load at start and end help you judge whether a slow run met a
+busy machine or slower hardware. They are context, not proof of the cause. Only
+the CPU model, these counts, and your machine alias are published, never the
+machine's own name, your user name, or paths.
+
 Shaka uses your existing tests and validation commands, plus browser tools when
 needed. Required GitHub checks and approvals still apply.
 
@@ -319,8 +328,9 @@ would reach. Unexpected growth or repeated repairs can
 prompt this review earlier. The code walkthrough explains what changed and how it works.
 
 The checkpoint recommends the next action for the PR and includes copyable
-squash commit title and body blocks when it recommends merging. Required checks,
-reviews, and your Ask or Auto choice still apply.
+squash commit title and body blocks when it recommends merging. When the base branch
+has a [merge queue](#merge-queues), it says what the queue will write instead.
+Required checks, reviews, and your Ask or Auto choice still apply.
 
 A checkpoint that recommends merging comes after the code walkthrough and any
 screenshots for the same commit, so you read the evidence before the recommendation
@@ -523,9 +533,20 @@ was explicitly skipped, the agent publishes a separate squash-message comment.
 Check that the message covers the commit in the handoff, then paste its title and
 body into GitHub's squash merge boxes. The agent refreshes the message when the
 commit changes. When the agent submits an authorized merge, it supplies that
-message itself. A merge queue uses the repository default instead; the prepared
-message does not change that default.
+message itself.
 
 GitHub fills those boxes from a repository setting, by default with every branch
 commit's title. To start from the PR title and an empty body instead, set **Settings →
 General → Pull Requests → Allow squash merging** to **Default to pull request title**.
+
+### Merge queues
+
+A merge queue offers no message box and ignores any message, so the checkpoint
+prepares none when the PR's base branch has one. It tells you to add the PR to the
+queue and says what the queue will write, which comes from the repository's setting
+for the queue's merge method: squash merging or merge commits.
+
+When that setting is **Default to pull request title and description**, the queue copies
+the whole PR description into git history, including Shaka's sections and **WIP Details**,
+so the checkpoint warns you. Choose **Default to pull request title** to keep the commit
+to the PR title.

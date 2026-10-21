@@ -393,10 +393,12 @@ fix costs to maintain. It should change nothing until you pick, for example
 
 The agent can also measure which steps were slow. Shaka's helper keeps a timing log on
 your machine at `~/.local/state/shaka/calls.jsonl`: one line per helper command with
-its name, start time, duration, and exit status. For example, a line for local
-validation shows how long that run took and whether it passed. `shaka work` leaves no
-line, because it hands the terminal to your coding agent. The log records no
-arguments, paths, or task text, and Shaka never uploads it. Delete the file whenever
+its name, start time, duration, and exit status. When the command names them, the line
+also records the repository, issue or PR number, and commit. A review or product
+checkpoint line adds the reviewer's provider, model, and effort. For example, a line
+for local validation shows which commit was tested, how long it took, and whether it
+passed. `shaka work` leaves no line, because it hands the terminal to your coding agent.
+The log records no paths or task text, and Shaka never uploads it. Delete the file whenever
 you like. Set `SHAKA_CALL_LOG=off` to stop recording, or set it to a path to keep the
 log elsewhere.
 
@@ -441,4 +443,5 @@ for Ask authority, required GitHub approvals, and branch updates.
 
 When you choose a manual squash merge through GitHub, use the agent's prepared
 message for the commit in the handoff. See [squash merge details](pr-verification.md#squash-merge-details)
-to find it and copy it into GitHub's merge boxes.
+to find it and copy it into GitHub's merge boxes. A repository with a merge queue
+writes its own message, so you add the PR to the queue; see [merge queues](pr-verification.md#merge-queues).
