@@ -15,8 +15,9 @@ module Shaka
     GUIDE = '[Understand the timings](https://shaka.shakacode.com/docs/reference/timings).'
     LEGEND = 'Times are UTC wall-clock time. A wait runs from when an attention label goes on until it ' \
              'comes off or the pull request merges or closes.'
-    STEPS_LEGEND = 'Each measured step is a helper run recorded on the machine that ran it; a step ' \
-                   'can overlap the stretches above.'
+    STEPS_LEGEND = 'Each measured step is a helper run recorded on the machine that ran it. A step ' \
+                   'logged on a machine that never updated this description is missing, so the totals ' \
+                   'can be partial. A step can overlap the stretches above.'
     # Thirty rows keep the body far below GitHub's size limit however often a pull request waits.
     MAX_ROWS = 30
 
@@ -35,13 +36,14 @@ module Shaka
 
     def detail
       steps = Array(@timeline['steps'])
+      dropped = @timeline.fetch('dropped_steps', 0)
       # The reason can quote gh output, so it stays out of the public body.
       unavailable = @timeline.key?('unavailable')
       parts = unavailable ? [UNAVAILABLE] : stretches
-      parts.concat(measured(steps)) unless steps.empty?
+      parts.concat(measured(steps, dropped)) unless steps.empty?
       parts << GUIDE unless unavailable
       # The hidden line lets the next update, from any session, keep these steps.
-      parts << TimelineSteps.hidden(steps) unless steps.empty?
+      parts << TimelineSteps.hidden(steps, dropped) unless steps.empty?
       # A collapsed summary counts as visible description prose, so the totals stay inside.
       { 'summary' => SUMMARY, 'body' => parts.compact.join("\n\n") }
     end
@@ -53,11 +55,17 @@ module Shaka
       [totals(rows), table(rows.last(MAX_ROWS)), omitted(rows), LEGEND]
     end
 
-    def measured(steps)
-      shown = steps.last(MAX_ROWS)
+    def measured(steps, dropped)
       lines = ['| Step | Started | Time | Result | Model | Machine |', '| --- | --- | ---: | --- | --- | --- |']
-      lines.concat(shown.map { |step| "| #{step_cells(step).join(' | ')} |" })
-      [step_totals(steps), lines.join("\n"), STEPS_LEGEND]
+      lines.concat(steps.last(MAX_ROWS).map { |step| "| #{step_cells(step).join(' | ')} |" })
+      [step_totals(steps), lines.join("\n"), steps_omitted(steps.size, dropped), STEPS_LEGEND]
+    end
+
+    def steps_omitted(kept, dropped)
+      notes = []
+      notes << "Showing the latest #{MAX_ROWS} of #{kept} steps." if kept > MAX_ROWS
+      notes << "The totals cover the latest #{kept}; #{dropped} older steps are no longer kept." if dropped.positive?
+      notes.join(' ') unless notes.empty?
     end
 
     def step_totals(steps)

@@ -37,6 +37,15 @@ class TimingsMeasuredStepsTest < Minitest::Test
     assert_equal STEPS, carried(body)
   end
 
+  def test_hidden_rows_and_dropped_steps_are_disclosed_and_carried
+    many = (1..35).map { |index| STEPS.last.merge('id' => format('%016x', index)) }
+    body = Shaka::TimingsDetails.new({ 'unavailable' => 'x', 'steps' => many, 'dropped_steps' => 4 }).detail['body']
+
+    assert_includes body, 'Showing the latest 30 of 35 steps. ' \
+                          'The totals cover the latest 35; 4 older steps are no longer kept.'
+    assert_equal [many, 4], Shaka::TimelineSteps.read("<!-- shaka:begin -->\n#{body}\n<!-- shaka:end -->")
+  end
+
   # The measured steps find a validation run by this tree, which equals the commit's tree once the work is committed.
   def test_a_validation_run_records_the_tree_it_tested
     before = Shaka::CallLog.tags.dup

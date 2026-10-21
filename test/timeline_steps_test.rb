@@ -28,7 +28,7 @@ class TimelineStepsTest < Minitest::Test
     end
   end
 
-  def body(steps) = "<!-- shaka:begin -->\n#{Shaka::TimelineSteps.hidden(steps)}\n<!-- shaka:end -->\n"
+  def body(steps, dropped: 0) = region(Shaka::TimelineSteps.hidden(steps, dropped))
 
   def test_a_validation_matches_by_tree_and_a_review_or_checkpoint_by_head
     checkpoint = record(command: 'post-implementation run', head: HEAD, provider: 'openai', model: 'gpt-6.1-sol',
@@ -59,12 +59,13 @@ class TimelineStepsTest < Minitest::Test
     assert_equal fresh, merged
   end
 
-  def test_steps_sort_by_start_and_keep_the_newest
-    steps = (1..60).map { |minute| logged(review(at: format('2026-10-21T10:%02d:00Z', minute % 60))) }
-    merged = Shaka::TimelineSteps.merge(*steps.reverse)
+  # Older steps beyond the cap are counted, so the section and later reports know the history is partial.
+  def test_attach_keeps_the_newest_steps_sorted_and_counts_the_rest
+    carried = pull(body(logged(validation), dropped: 3))
+    timeline = with_log(*reviews_at_each_minute) { |log| attach(log, carried) }
+    starts = timeline['steps'].map { |step| step['at'] }
 
-    assert_equal Shaka::TimelineSteps::MAX_STEPS, merged.size
-    assert_equal merged.sort_by { |step| step['at'] }, merged
+    assert_equal [Shaka::TimelineSteps::MAX_STEPS, 14, starts.sort], [starts.size, timeline['dropped_steps'], starts]
   end
 
   # The body is editable, so a carried step is checked again and an unsafe value never renders.
@@ -81,7 +82,8 @@ class TimelineStepsTest < Minitest::Test
   def test_only_the_managed_region_is_read
     line = Shaka::TimelineSteps.hidden(logged(review))
     assert_empty Shaka::TimelineSteps.carried("#{line}\n<!-- shaka:begin -->\n<!-- shaka:end -->\n")
-    assert_empty Shaka::TimelineSteps.carried("<!-- shaka:begin -->\n<!-- timeline-steps [oops -->\n<!-- shaka:end -->")
+    assert_empty Shaka::TimelineSteps.carried(region('<!-- timeline-steps {oops} -->'))
+    assert_equal [[], 0], Shaka::TimelineSteps.read(region('<!-- timeline-steps {"dropped":-2} -->'))
   end
 
   def test_attach_adds_carried_and_logged_steps_to_the_timeline
@@ -116,8 +118,22 @@ class TimelineStepsTest < Minitest::Test
       'base' => { 'repo' => { 'full_name' => REPOSITORY } } }
   end
 
-  def attached(log, pull)
+  def attached(log, pull) = attach(log, pull)['steps']
+
+  def reviews_at_each_minute = (0..59).map { |minute| review(at: format('2026-10-21T10:%02d:00Z', minute)) }
+
+  def region(line) = "<!-- shaka:begin -->\n#{line}\n<!-- shaka:end -->"
+
+  def with_log(*records)
+    Dir.mktmpdir do |directory|
+      log = File.join(directory, 'calls.jsonl')
+      File.write(log, records.map { |entry| "#{JSON.generate(entry)}\n" }.join)
+      yield log
+    end
+  end
+
+  def attach(log, pull)
     env = { 'SHAKA_CALL_LOG' => log, 'SHAKA_MACHINE_ALIAS' => nil }
-    Shaka::TimelineSteps.attach({ 'commits' => COMMITS }, GitHub.new(REPOSITORY), pull, env:)['steps']
+    Shaka::TimelineSteps.attach({ 'commits' => COMMITS }, GitHub.new(REPOSITORY), pull, env:)
   end
 end

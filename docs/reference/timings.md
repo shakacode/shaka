@@ -79,13 +79,14 @@ Limits:
   example, appears in both.
 - A validation run of files never committed, such as a failing run before a
   fix, is not listed.
-- A step logged on a machine is listed only when a session on that machine
-  updates the description afterward.
 - A rebase replaces the PR's commits. Steps logged against the old commits stay
   listed only if an update published them before the rebase.
 - Only the PR's latest 100 commits are matched.
 - On a PR from a fork, whose author can edit its description, earlier updates'
   steps are not kept. Only steps logged on the machine making the update appear.
 - The table shows the latest 30 steps, and the description keeps the latest 50.
+  The section notes either cut, and the totals then cover only the steps kept.
+- A step logged on a machine that never updated the description afterward is
+  missing, so treat the totals as what was recorded, not the whole task.
 
 [Usage and cost](usage-and-cost.md) explains the section beside it.

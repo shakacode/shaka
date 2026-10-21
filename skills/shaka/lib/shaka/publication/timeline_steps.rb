@@ -18,19 +18,23 @@ module Shaka
               'post-implementation run' => 'Product checkpoint' }.freeze
     # Validation runs that time the candidate; setup and the hosted CI trigger do not.
     CHECKS = %w[validate validate_local test].freeze
-    HIDDEN = /^<!-- timeline-steps (\[.*\]) -->$/
+    HIDDEN = /^<!-- timeline-steps (\{.*\}) -->$/
     # The newest steps are kept, so the carried line stays a small part of GitHub's body limit.
     MAX_STEPS = 50
     ID = /\A[0-9a-f]{16}\z/
 
     module_function
 
-    # Adds the steps to the timeline the timings section renders. A fork's author can edit its
-    # body, so steps carried there are not republished; this machine's own log still counts.
+    # Adds the steps to the timeline the timings section renders, with how many older ones are no
+    # longer kept. A fork's author can edit its body, so steps carried there are not republished;
+    # this machine's own log still counts.
     def attach(timeline, github, pull, env: ENV)
       fresh = logged(CallLog.path(env), github.repository, Array(timeline['commits']),
                      Doctor::MachineAlias.publishable(env))
-      timeline.merge('steps' => merge(same_repository?(pull) ? carried(pull['body']) : [], fresh))
+      carried, dropped = same_repository?(pull) ? read(pull['body']) : [[], 0]
+      steps = merge(carried, fresh)
+      kept = steps.last(MAX_STEPS)
+      timeline.merge('steps' => kept, 'dropped_steps' => dropped + steps.size - kept.size)
     end
 
     def same_repository?(pull)
@@ -39,16 +43,24 @@ module Shaka
     end
 
     # Steps are sorted by start time, and a step both carried and logged again appears once.
-    def merge(*lists) = lists.flatten.uniq { |step| step['id'] }.sort_by { |step| step['at'] }.last(MAX_STEPS)
+    def merge(*lists) = lists.flatten.uniq { |step| step['id'] }.sort_by { |step| step['at'] }
 
-    def hidden(steps) = "<!-- timeline-steps #{JSON.generate(steps)} -->"
+    # The dropped count travels with the steps, so a later reader knows the history is partial.
+    def hidden(steps, dropped = 0) = "<!-- timeline-steps #{JSON.generate('steps' => steps, 'dropped' => dropped)} -->"
+
+    def carried(body) = read(body).first
 
     # Only the helper's own region is read, so a step quoted elsewhere in the body is not carried.
-    def carried(body)
+    def read(body)
       line = Publishing.managed_region(body).to_s[HIDDEN, 1]
-      line ? Array(JSON.parse(line)).filter_map { |step| checked(step) } : []
+      data = line ? JSON.parse(line) : {}
+      return [[], 0] unless data.is_a?(Hash)
+
+      dropped = data['dropped']
+      dropped = 0 unless dropped.is_a?(Integer) && dropped.positive?
+      [Array(data['steps']).filter_map { |step| checked(step) }, dropped]
     rescue JSON::ParserError
-      []
+      [[], 0]
     end
 
     def logged(path, repository, commits, machine)
