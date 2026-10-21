@@ -39,11 +39,11 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
 
   def test_indented_paragraph_continuation_is_rewritten
     with_repository do |root|
-      path = write_tracked(root, 'ledger.md', "Wrappers live in\n    `.agents/bin/`.\n")
+      path = write_tracked(root, 'ledger.md', "Wrappers live\n    in the directory\n    `.agents/bin/`.\n")
       preview = report(root)
       assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
       apply_upgrade(root)
-      assert_equal "Wrappers live in\n    `.agents/shaka/bin/`.\n", File.read(path)
+      assert_equal "Wrappers live\n    in the directory\n    `.agents/shaka/bin/`.\n", File.read(path)
     end
   end
 
@@ -81,6 +81,15 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
       with_repository do |root|
         write_tracked(root, 'guide.md', "#{opening}    export PATH=\".agents/bin:$PATH\"\n")
         assert_blocked_with(root, 'old command-directory reference')
+      end
+    end
+  end
+
+  def test_rejected_fence_opener_does_not_hide_later_code
+    ["```x```\n\n", "Setup\n    ```\n\n"].each do |opening|
+      with_repository do |root|
+        write_tracked(root, 'guide.md', "#{opening}```\nWORKDIR=.agents\nrun bin/validate\n```\n")
+        assert_blocked_with(root, 'bare old-layout directory')
       end
     end
   end

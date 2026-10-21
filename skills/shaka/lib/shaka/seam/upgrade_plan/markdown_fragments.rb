@@ -11,7 +11,8 @@ module Shaka
 
         # Follows which Markdown lines are fenced or indented code. Doubtful lines count as code.
         class CodeLines
-          FENCE = /\A[ \t]*(`{3,}|~{3,})/
+          # A fence starts at most three spaces in, and a backtick fence's info text holds no backtick.
+          FENCE = /\A {0,3}(`{3,}(?=[^`]*\z)|~{3,})/
           # Quotes and list items can hold code, so their markers are removed before a line is classified.
           CONTAINER = /\A(?:[ \t]*(?:>|[-+*](?=[ \t])|\d{1,9}[.)](?=[ \t])))+[ \t]?/
           INDENTED = /\A(?: {4}|[ \t]*\t)/
@@ -31,14 +32,17 @@ module Shaka
             return true if !@paragraph && line.match?(INDENTED)
 
             @fence = line[FENCE, 1]
-            @paragraph = @fence.nil? && line == raw && raw.match?(PARAGRAPH)
+            @paragraph = @fence.nil? && line == raw && paragraph_text?(raw)
             !@fence.nil?
           end
 
           private
 
+          # Plain text opens a paragraph, and an indented line inside one continues it.
+          def paragraph_text?(raw) = raw.match?(PARAGRAPH) || (@paragraph && raw.match?(INDENTED))
+
           def inside_fence?(line)
-            @fence = nil if line.match?(/\A[ \t]*#{@fence[0]}{#{@fence.length},}[ \t]*\r?$/)
+            @fence = nil if line.match?(/\A {0,3}#{@fence[0]}{#{@fence.length},}[ \t]*\r?$/)
             true
           end
         end
