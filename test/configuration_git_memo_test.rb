@@ -2,6 +2,9 @@
 
 require_relative 'test_helper'
 require 'shaka/configuration'
+require 'fileutils'
+require 'open3'
+require 'tmpdir'
 
 class ConfigurationGitMemoTest < Minitest::Test
   MEMO = Shaka::Configuration::GitMemo
@@ -40,6 +43,20 @@ class ConfigurationGitMemoTest < Minitest::Test
     assert_equal([false, true, true], results.map { |result| result.last.success? })
   end
 
+  def test_missing_layout_is_read_again_after_the_commit_arrives
+    Dir.mktmpdir do |directory|
+      source, root = %w[source root].map { |name| File.join(directory, name) }
+      sha = commit_contract(source)
+      FileUtils.mkdir_p(root)
+      git(root, 'init', '--quiet')
+      assert_nil Shaka::Configuration::Layout.commit(root:, sha:, allow_missing: true)
+
+      git(root, 'fetch', '--quiet', source, sha)
+      assert_equal Shaka::Configuration::Layout::NEW,
+                   Shaka::Configuration::Layout.commit(root:, sha:, allow_missing: true)
+    end
+  end
+
   def test_layout_with_a_bounded_runner_reads_git_every_time
     calls = 0
     runner = lambda do |*|
@@ -49,5 +66,23 @@ class ConfigurationGitMemoTest < Minitest::Test
     2.times { Shaka::Configuration::Layout.commit(root: '/repo', sha: SHA, allow_missing: true, git: runner) }
 
     assert_equal 4, calls
+  end
+
+  private
+
+  def commit_contract(source)
+    FileUtils.mkdir_p(File.join(source, '.agents/shaka'))
+    File.write(File.join(source, '.agents/shaka/config.yml'), "version: 1\n")
+    git(source, 'init', '--quiet')
+    git(source, 'add', '.')
+    git(source, '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'contract')
+    git(source, 'rev-parse', 'HEAD').strip
+  end
+
+  def git(root, *)
+    output, error, status = Open3.capture3('git', '-C', root, *)
+    raise error unless status.success?
+
+    output
   end
 end

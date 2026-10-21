@@ -70,7 +70,17 @@ module Shaka
         return commit_layout(root, sha, allow_missing, git) unless UNBOUNDED_GIT.include?(git)
 
         # The key names the runner, because the private source runs Git without inherited Git variables.
-        GitMemo.commit([:layout, git, root, sha, allow_missing], sha) { commit_layout(root, sha, allow_missing, git) }
+        # A missing contract is kept only once the commit itself is local, so a commit fetched later is read again.
+        keep = ->(chosen) { chosen || local_commit?(root, sha, git) }
+        GitMemo.commit([:layout, git, root, sha, allow_missing], sha, keep:) do
+          commit_layout(root, sha, allow_missing, git)
+        end
+      end
+
+      def self.local_commit?(root, sha, git)
+        GitMemo.capture([:commit_object, git, root, sha], sha) do
+          git.call('-C', root, 'cat-file', '-e', "#{sha}^{commit}")
+        end.last.success?
       end
 
       def self.commit_layout(root, sha, allow_missing, git)
@@ -82,6 +92,8 @@ module Shaka
         validate_commit!(root, sha, chosen, git) if chosen
         chosen
       end
+
+      private_class_method :local_commit?, :commit_layout
 
       def self.validate_commit!(root, sha, chosen, git)
         entry = TrustedPathResolver.new(root:, sha:, git:).entry(chosen.contract)
