@@ -8,15 +8,14 @@ module Shaka
   module FeaturePublication
     module_function
 
+    # Returns the changed paths, both names of a rename, which also set the review-effort floor.
     def check(github:, pull:, flow:)
       unless Configuration::FeatureGuard::FLOWS.include?(flow)
         raise Error, 'Publication flow must be feature, setup, or migration'
       end
-      return unless flow == 'feature'
 
-      files = files(github, pull)
-      paths = files.flat_map { |file| [file['filename'], file['previous_filename']].compact }
-      return unless paths.any? { |path| Configuration::FeatureGuard.configuration?(path) }
+      paths = files(github, pull).flat_map { |file| [file['filename'], file['previous_filename']].compact }
+      return paths unless flow == 'feature' && paths.any? { |path| Configuration::FeatureGuard.configuration?(path) }
 
       raise Error, 'Feature PR contains Shaka configuration changes; use a separate setup/migration PR. ' \
                    'Private paths are REDACTED.'

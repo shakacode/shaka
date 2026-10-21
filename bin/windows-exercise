@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../.github/windows/doctor'
+require_relative '../.github/windows/commands'
+require_relative '../.github/windows/cursor'
+require_relative '../.github/windows/suite'
+
+$stdout.sync = true
+$stderr.sync = true
+
+root = File.expand_path(ARGV[1] || File.join(__dir__, '..'))
+section = ARGV.fetch(0)
+puts "ruby #{RUBY_DESCRIPTION}"
+puts "platform #{RUBY_PLATFORM}"
+puts "root #{root}"
+
+runner = case section
+         when 'doctor' then WindowsDoctor.new(root).call
+         when 'commands' then WindowsCommands.new(root).call
+         when 'cursor' then WindowsCursor.new(root).call
+         when 'suite' then WindowsSuite.new(root).call
+         else
+           warn "unknown section: #{section}"
+           nil
+         end
+
+ok = runner&.ok? || false
+puts(ok ? "WINDOWS #{section}: PASS" : "WINDOWS #{section}: FAIL")
+exit(ok ? 0 : 1)

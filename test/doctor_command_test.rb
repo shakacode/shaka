@@ -10,6 +10,11 @@ require_relative 'doctor_command_helper'
 class DoctorCommandTest < Minitest::Test
   include DoctorCommandHelper
 
+  def setup
+    super
+    skip 'needs a process group, which this platform cannot create' unless Shaka::Doctor::BoundedCommand.process_groups?
+  end
+
   def test_a_command_that_never_answers_returns_at_its_deadline
     elapsed, (out, error, ok) = timed { run_bounded(0.2, %w[sleep 30]) }
 
@@ -30,22 +35,6 @@ class DoctorCommandTest < Minitest::Test
       assert_raises(Errno::ESRCH, 'expiry must reap the child it owns before returning') do
         Process.kill(0, pid_in(path))
       end
-    end
-  end
-
-  # SIGKILL cannot be made to fail from a test, so the signal is neutralized instead: without
-  # a bound on the join, this waits the child's full thirty seconds.
-  def test_expiry_returns_even_when_the_signal_does_not_land
-    Dir.mktmpdir do |dir|
-      path = File.join(dir, 'pid')
-      command = UnkillableCommand.new(timeout: 0.2)
-      elapsed, (_out, _error, ok) = timed { command.call(['sh', '-c', "echo $$ > #{path}; sleep 30"]) }
-
-      refute ok
-      assert_operator elapsed, :>=, Shaka::Doctor::BoundedCommand::GRACE
-      assert_operator elapsed, :<, Shaka::Doctor::BoundedCommand::GRACE + 3, 'the cleanup join was unbounded'
-    ensure
-      kill_group_and_wait(pid_in(path))
     end
   end
 
@@ -149,5 +138,37 @@ class DoctorCommandTest < Minitest::Test
   # checks.rb turns SystemCallError into that check's answer, so it must still arrive.
   def test_a_command_that_cannot_launch_raises_for_its_caller
     assert_raises(SystemCallError) { run_bounded(10, ['definitely-not-a-command-4f2d']) }
+  end
+end
+
+# SIGKILL cannot be made to fail from a test, so the signal is neutralized instead: without
+# a bound on the join, this waits the child's full thirty seconds.
+class DoctorCommandSignalTest < Minitest::Test
+  include DoctorCommandHelper
+
+  def setup
+    super
+    skip 'needs a process group, which this platform cannot create' unless Shaka::Doctor::BoundedCommand.process_groups?
+  end
+
+  def test_expiry_returns_even_when_the_signal_does_not_land
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'pid')
+      command = UnkillableCommand.new(timeout: 0.2)
+      elapsed, ok = signal_miss(command, path)
+
+      refute ok
+      assert_operator elapsed, :>=, Shaka::Doctor::BoundedCommand::GRACE
+      assert_operator elapsed, :<, Shaka::Doctor::BoundedCommand::GRACE + 3, 'the cleanup join was unbounded'
+    ensure
+      kill_group_and_wait(pid_in(path))
+    end
+  end
+
+  private
+
+  def signal_miss(command, path)
+    elapsed, (_out, _error, ok) = timed { command.call(['sh', '-c', "echo $$ > #{path}; sleep 30"]) }
+    [elapsed, ok]
   end
 end

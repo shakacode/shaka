@@ -30,6 +30,25 @@ pr_description:
   show_shaka_credit: true # Show a quiet Shaka website credit below the PR summary.
   show_human_comments: true # List the comments people wrote on the PR.
   max_human_comments: 20 # Rows that list shows, open comments first.
+  # The lowest human review effort a PR may claim, from the files it changes.
+  # Matching rules: skills/shaka/references/human-review-floors.md.
+  human_review_floors:
+    - level: 5
+      reason: changes Shaka's repository configuration
+      paths: [.agents/shaka/**/*]
+    - level: 4
+      reason: changes trust, merge, authentication, or release paths
+      paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
+      words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
+              credential]
+      except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
+    - level: 3
+      reason: changes agent instructions
+      paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
+    - level: 2
+      reason: changes code or configuration
+      paths: ['**/*']
+      except: ['**/*.md', docs/**/*, '**/*.{png,jpg,jpeg,gif,svg,webp}']
   opening_check:
     enabled: true # Check description and walkthrough openings after publication.
     effort: low # Independent of the code-review effort.

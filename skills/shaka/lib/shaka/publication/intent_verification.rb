@@ -2,6 +2,7 @@
 
 require_relative '../error'
 require_relative 'text'
+require_relative 'verification_gates'
 
 module Shaka
   # Renders what a pull request is for and how it was proved, so a maintainer can decide whether to trust it.
@@ -19,36 +20,64 @@ module Shaka
       5 => 'all out: review every line, reproduce it, and ask a second reviewer.'
     }.freeze
     CHECKS = (1..3)
+    SAFE_PATH = %r{\A[\w.@+/ -]+\z}
     # A link opens the evidence and a code span names what ran; plain prose names neither.
-    EVIDENCE = %r{\]\(https?://[^)\s]+\)|`[^`]+`}
+    # GitHub also renders a link whose address sits in angle brackets.
+    EVIDENCE = %r{\]\(https?://[^)\s]+\)|\]\(<https?://[^>\s]+>\)|`[^`]+`}
 
     module_function
 
-    def render(content)
+    # The verdict binds the validation and review results; nil when description received none.
+    # The floor comes from the PR's changed paths; without a pull request there is none.
+    def render(content, verdict = nil, floor = nil)
       checks_allowed = content['wip'].nil? ? CHECKS : (0..CHECKS.max)
-      [intent(object(content, 'intent')), verification(object(content, 'verification'), checks_allowed)]
+      gate_line = VerificationGates.line(verdict, content['review'])
+      [intent(object(content, 'intent'), floor),
+       verification(object(content, 'verification'), checks_allowed, gate_line)]
     end
 
-    def intent(spec)
+    def intent(spec, floor)
       lines = INTENT.map do |field, label|
         "**#{label}:** #{PublicationText.single_line(spec[field], "intent #{field}")}"
       end
       unless spec[ROOT_CAUSE].nil?
         lines.insert(1, "**Root cause:** #{PublicationText.single_line(spec[ROOT_CAUSE], "intent #{ROOT_CAUSE}")}")
       end
-      "## Intent\n\n#{[*lines, review_effort(spec['review_effort'])].join("\n\n")}"
+      "## Intent\n\n#{[*lines, review_effort(spec['review_effort'], floor)].join("\n\n")}"
     end
 
-    def review_effort(effort)
+    def review_effort(effort, floor)
       zone = REVIEW_EFFORT[effort] if effort.is_a?(Integer)
       raise Error, 'Publication intent review_effort must be a whole number from 1 to 5.' unless zone
 
-      "**Review effort:** #{effort} of 5, #{zone}"
+      line = "**Review effort:** #{effort} of 5, #{zone}"
+      return line unless floor
+
+      [line, *floor_text(effort, floor), *(SHIPPED if floor['shipped'])].join(' ')
     end
 
-    def verification(spec, allowed)
+    # The repository's floors can be stricter, so a description that never read them says so.
+    SHIPPED = "Shaka's shipped floors applied because this repository's settings were not read."
+
+    def floor_text(effort, floor)
+      return [] unless floor['level'] > 1
+
+      reason = "#{floor['reason']} (#{floor_path(floor['path'])})"
+      if effort < floor['level']
+        raise Error, "Publication intent review_effort #{effort} is below this PR's floor of #{floor['level']}: " \
+                     "it #{reason}. Rate it #{floor['level']} or higher."
+      end
+
+      ["Floor #{floor['level']}: #{reason}."]
+    end
+
+    # A changed filename comes from the PR author, so only a plain one reaches the description.
+    def floor_path(path) = path.match?(SAFE_PATH) ? "`#{path}`" : 'a file whose name is withheld'
+
+    def verification(spec, allowed, gate_line)
       not_verified = PublicationText.single_line(spec['not_verified'], 'verification not_verified')
-      ['## Verification', *checks(spec['checks'], allowed), "**Not verified:** #{not_verified}"].join("\n\n")
+      ['## Verification', gate_line, *checks(spec['checks'], allowed), "**Not verified:** #{not_verified}"]
+        .join("\n\n")
     end
 
     # An unfinished draft may have run nothing yet; Not verified then says why.
@@ -75,6 +104,6 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :review_effort, :verification, :checks, :evidenced, :object
+    private_class_method :intent, :review_effort, :floor_text, :floor_path, :verification, :checks, :evidenced, :object
   end
 end
