@@ -311,7 +311,7 @@ rules:
   - id: delivery-agents-do-not-merge
     phase: implement
     quote: but never merges
-    rule: A delivery agent that owns one task may publish its PR but never merges.
+    rule: A delivery agent that a control tower starts for one task may publish its PR but never merges.
     enforced_by: agent
     note: >-
       A delivery agent runs with its tower's credentials, so nothing distinguishes its merge
