@@ -9,14 +9,12 @@ module Shaka
 
         def reference_text(path, stat)
           absolute = File.join(@root, path)
-          return unless inspect_reference_file?(path, stat, absolute) || contains_layout_reference?(absolute)
+          required = inspect_reference_file?(path, stat, absolute) || contains_layout_reference?(absolute)
+          return unless required || relative_reference_file?(path)
 
           text = File.binread(absolute).force_encoding(Encoding::UTF_8)
-          unless text.valid_encoding? && !text.include?("\0")
-            raise Error, "#{path}: undecodable old-layout reference; repair it explicitly"
-          end
-
-          text
+          return text if text.valid_encoding? && !text.include?("\0")
+          raise Error, "#{path}: undecodable old-layout reference; repair it explicitly" if required
         end
 
         def dirty_overlap
