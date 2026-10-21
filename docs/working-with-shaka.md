@@ -63,11 +63,29 @@ When a task needs several PRs or a detailed plan, Shaka saves the steps and
 important decisions in the original issue or tracker item. It updates the plan
 as the work changes. If it needs permission to write there, Shaka asks.
 
-For larger design decisions, Shaka may suggest a separate document linked from
-the task.
-
 To pick up the work in a new chat, give Shaka the same task link after the previous
 agent has stopped. Shaka reads the plan and checks the PRs before continuing.
+
+### Agree on a design before implementing
+
+When a task leaves design choices open, such as several parts that depend on one
+design or more than one reasonable approach, Shaka names those choices while planning
+and offers a design PR first. That PR holds an architecture decision record (ADR) or
+design document. Shaka waits for your approval before writing any code, then builds
+and reviews the implementation against the design you approved.
+
+Choose it when a wrong design would waste the implementation: for example, a Docker
+build that should become several independent builds running in parallel. To ask up
+front:
+
+```text
+$shaka https://github.com/OWNER/REPO/issues/N
+Design PR first; wait for my approval before implementing.
+```
+
+Approve in chat or with an approving GitHub review. Merging the design PR follows
+your usual merge choice. A small or fully specified task starts directly, with no
+extra question.
 
 ### Review an existing PR
 
