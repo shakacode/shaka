@@ -32,9 +32,20 @@ module Shaka
       fresh = logged(CallLog.path(env), github.repository, Array(timeline['commits']),
                      Doctor::MachineAlias.publishable(env))
       carried, dropped = same_repository?(pull) ? read(pull['body']) : [[], 0]
-      steps = merge(carried, fresh)
+      kept, dropped = retain(merge(carried, unseen(fresh, carried, dropped)), dropped)
+      timeline.merge('steps' => kept, 'dropped_steps' => dropped)
+    end
+
+    def retain(steps, dropped)
       kept = steps.last(MAX_STEPS)
-      timeline.merge('steps' => kept, 'dropped_steps' => dropped + steps.size - kept.size)
+      [kept, dropped + steps.size - kept.size]
+    end
+
+    # A logged step older than every kept one was already counted as dropped, so it is not counted again.
+    def unseen(fresh, carried, dropped)
+      return fresh unless dropped.positive? && carried.any?
+
+      fresh.reject { |step| step['at'] < carried.first['at'] }
     end
 
     def same_repository?(pull)

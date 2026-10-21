@@ -4,31 +4,11 @@ require_relative 'test_helper'
 require 'json'
 require 'tmpdir'
 require 'shaka/publication/timeline_steps'
+require_relative 'support/timeline_steps_fixture'
 
 # A pull request's measured steps come from this machine's call log and from the body's earlier updates.
 class TimelineStepsTest < Minitest::Test
-  REPOSITORY = 'acme/widgets'
-  HEAD = 'a' * 40
-  TREE = 'b' * 40
-  COMMITS = [{ 'oid' => HEAD, 'tree' => TREE }].freeze
-  GitHub = Struct.new(:repository)
-
-  def record(**fields)
-    { 'at' => '2026-10-21T09:00:00Z', 'exit' => 0, 'duration_ms' => 60_000 }.merge(fields.transform_keys(&:to_s))
-  end
-
-  def validation(**) = record(command: 'evidence run', check: 'validate', repository: REPOSITORY, tree: TREE, **)
-  def review(**) = record(command: 'review run', head: HEAD, provider: 'openai', **)
-
-  def logged(*records, commits: COMMITS, machine: 'm5')
-    Dir.mktmpdir do |directory|
-      path = File.join(directory, 'calls.jsonl')
-      File.write(path, records.map { |entry| entry.is_a?(String) ? "#{entry}\n" : "#{JSON.generate(entry)}\n" }.join)
-      Shaka::TimelineSteps.logged(path, REPOSITORY, commits, machine)
-    end
-  end
-
-  def body(steps, dropped: 0) = region(Shaka::TimelineSteps.hidden(steps, dropped))
+  include TimelineStepsFixture
 
   def test_a_validation_matches_by_tree_and_a_review_or_checkpoint_by_head
     checkpoint = record(command: 'post-implementation run', head: HEAD, provider: 'openai', model: 'gpt-6.1-sol',
@@ -66,6 +46,16 @@ class TimelineStepsTest < Minitest::Test
     starts = timeline['steps'].map { |step| step['at'] }
 
     assert_equal [Shaka::TimelineSteps::MAX_STEPS, 14, starts.sort], [starts.size, timeline['dropped_steps'], starts]
+  end
+
+  # The log still holds the dropped steps, so an update with no new runs must not count them again.
+  def test_an_unchanged_log_does_not_grow_the_dropped_count
+    counts = with_log(*reviews_at_each_minute) do |log|
+      first = attach(log, pull(''))
+      second = attach(log, pull(body(first['steps'], dropped: first['dropped_steps'])))
+      [first, second].map { |timeline| timeline['dropped_steps'] }
+    end
+    assert_equal [10, 10], counts
   end
 
   # The body is editable, so a carried step is checked again and an unsafe value never renders.
@@ -107,33 +97,5 @@ class TimelineStepsTest < Minitest::Test
       assert_equal ['review run'], commands(attached(log, fork))
       assert_equal ['review run'], commands(attached(log, fork.merge('head' => nil)))
     end
-  end
-
-  private
-
-  def commands(steps) = steps.map { |step| step['command'] }
-
-  def pull(body, head: REPOSITORY)
-    { 'body' => body, 'head' => { 'repo' => { 'full_name' => head } },
-      'base' => { 'repo' => { 'full_name' => REPOSITORY } } }
-  end
-
-  def attached(log, pull) = attach(log, pull)['steps']
-
-  def reviews_at_each_minute = (0..59).map { |minute| review(at: format('2026-10-21T10:%02d:00Z', minute)) }
-
-  def region(line) = "<!-- shaka:begin -->\n#{line}\n<!-- shaka:end -->"
-
-  def with_log(*records)
-    Dir.mktmpdir do |directory|
-      log = File.join(directory, 'calls.jsonl')
-      File.write(log, records.map { |entry| "#{JSON.generate(entry)}\n" }.join)
-      yield log
-    end
-  end
-
-  def attach(log, pull)
-    env = { 'SHAKA_CALL_LOG' => log, 'SHAKA_MACHINE_ALIAS' => nil }
-    Shaka::TimelineSteps.attach({ 'commits' => COMMITS }, GitHub.new(REPOSITORY), pull, env:)
   end
 end
