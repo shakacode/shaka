@@ -27,6 +27,16 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     end
   end
 
+  def test_prose_after_crlf_fence_is_rewritten
+    with_repository do |root|
+      path = write_tracked(root, 'ledger.md', "```text\r\nexample\r\n```\r\nWrappers live in `.agents/bin/`.\r\n")
+      preview = report(root)
+      assert_equal 'ready', preview.fetch('status'), preview.fetch('blockers').join("\n")
+      apply_upgrade(root)
+      assert_includes File.read(path), 'Wrappers live in `.agents/shaka/bin/`.'
+    end
+  end
+
   def test_computed_command_directory_in_prose_still_blocks
     with_repository do |root|
       write_tracked(root, 'ledger.md', "Add `$PWD/.agents/bin` to PATH.\n")

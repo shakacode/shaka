@@ -75,7 +75,7 @@ module Shaka
           fence = nil
           text.lines.map { |line| line.sub(CONTAINER, '') }.map do |line|
             if fence
-              fence = nil if line.match?(/\A[ \t]*#{fence[0]}{#{fence.length},}[ \t]*$/)
+              fence = nil if line.match?(/\A[ \t]*#{fence[0]}{#{fence.length},}[ \t]*\r?$/)
               true
             else
               fence = line[FENCE, 1]
