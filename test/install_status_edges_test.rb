@@ -71,8 +71,9 @@ class InstallStatusEdgesTest < Minitest::Test
     git('-C', root, 'switch', '-q', '--detach')
     commit(root, 'detached work')
     kept = git('-C', root, 'rev-parse', 'HEAD').strip
+    short = git('-C', root, 'rev-parse', '--short', 'HEAD').strip
     run_next(status(root), 'B4')
-    assert_equal kept, git('-C', root, 'rev-parse', "kept-#{kept[0, 7]}").strip
+    assert_equal kept, git('-C', root, 'rev-parse', "kept-#{short}").strip
   end
 
   def test_a_branch_without_its_tracking_branch_is_named
