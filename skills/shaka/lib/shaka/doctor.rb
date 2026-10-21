@@ -13,10 +13,12 @@ require_relative 'doctor/cursor_stop_hook'
 require_relative 'doctor/installation_identity'
 require_relative 'doctor/command'
 require_relative 'doctor/reviewer_probe'
+require_relative 'startup_notice'
 
 module Shaka
   # Reports whether this machine can run the workflow and publish a complete pull request.
-  # Read-only: it inspects the environment and changes no repository and no setting.
+  # It changes no repository and no setting; its one write is the mark outside every repository
+  # that tells the startup notice doctor has run here.
   class Doctor
     SEVERITY = { 'healthy' => 0, 'degraded' => 1, 'failed' => 2 }.freeze
     # Long enough that a slow network answer is not mistaken for a hang, short enough that a
@@ -49,6 +51,7 @@ module Shaka
       subject = new(root: File.realpath(options.fetch(:root, Dir.pwd)), host: options[:host],
                     probe: probe_options(options))
       puts subject.report
+      StartupNotice::Marks.doctor_ran
       subject.blocked? ? 1 : 0
     end
 

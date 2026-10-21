@@ -16,6 +16,8 @@ module StartupNoticeSupport
     @directory = Dir.mktmpdir('startup-notice')
     @home = File.join(@directory, 'home')
     @root = checkout('installed', registered: true)
+    # Doctor has run here, so only the reminder a test sets up can show.
+    Shaka::StartupNotice::Marks.doctor_ran(env: {}, home: @home, now: NOW)
   end
 
   def teardown
