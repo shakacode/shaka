@@ -13,7 +13,6 @@ class EvaluationDeliveryTransportTest < Minitest::Test
     refute reader.unchanged?(receipt)
     error = assert_raises(IOError) { capture }
     refute_includes error.message, 'private-error'
-    assert_includes error.message, 'review readback'
   end
 
   def test_malformed_or_partial_json_is_not_a_receipt

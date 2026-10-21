@@ -22,7 +22,7 @@ module Shaka
         raise ArgumentError, 'Expected native review IDs and the declared actor' unless valid
 
         expected = @expected.merge('node_id' => node_id, 'review_id' => review_id.to_s, 'actor' => actor)
-        row = DeliveryReview.read(native_review(node_id), expected)
+        row = DeliveryReview.read(@api.graphql(DeliveryReview::QUERY, { 'id' => node_id }), expected)
         { 'review' => row, 'readback_finished_at' => Process.clock_gettime(Process::CLOCK_MONOTONIC) }
       end
 
@@ -36,12 +36,6 @@ module Shaka
       end
 
       private
-
-      def native_review(node_id)
-        @api.graphql(DeliveryReview::QUERY, { 'id' => node_id })
-      rescue IOError
-        raise IOError, 'Delivery review readback unavailable'
-      end
 
       def valid_identity?(repository, number, head)
         repository.is_a?(String) && %r{\A[\w-]+/[\w.-]+\z}.match?(repository) &&
