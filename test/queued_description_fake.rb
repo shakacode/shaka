@@ -7,7 +7,7 @@ class QueuedDescriptionFake
   STATUS = Struct.new(:exitstatus)
   HEAD = 'a' * 40
 
-  attr_accessor :body, :title, :queued, :edit_while_parking, :refuse_edit
+  attr_accessor :body, :title, :queued, :edit_while_parking, :refuse_edit, :fail_after_edit
   attr_reader :comments, :deleted
 
   def initialize(body)
@@ -55,6 +55,9 @@ class QueuedDescriptionFake
 
   def edit(input)
     return ['', 'HTTP 422', STATUS.new(1)] if refuse_edit
+
+    @body = input['body'] if fail_after_edit && input.key?('body')
+    return ['', 'HTTP 502', STATUS.new(1)] if fail_after_edit
 
     @body = input['body'] if input.key?('body')
     @title = input['title'] if input.key?('title')

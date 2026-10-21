@@ -26,11 +26,10 @@ module Shaka
       body = current['body'].to_s
       earlier = parked_around(body)
       parking = park(whole(body, earlier), message.prose)
-      unparking_on_failure(parking) do
-        check_unchanged(current)
-        confirmed(api(pull_path, method: 'PATCH', fields: { body: message.prose }), message.prose)
-      end
-      # The earlier copies go only once the new one holds the description and the message is in place.
+      unparking_on_failure(parking) { check_unchanged(current) }
+      # A failed write may still have landed, so its parked copy stays; an unwritten description keeps
+      # its region, and a comment beside a region is never read. Earlier copies go once this one is in place.
+      confirmed(api(pull_path, method: 'PATCH', fields: { body: message.prose }), message.prose)
       release_parked(earlier)
       parking['html_url']
     end
@@ -90,8 +89,8 @@ module Shaka
       confirmed(posted, text)
     end
 
-    # An edit that landed while the comment was posted is in neither copy, and a failed write leaves
-    # the description in place, so either way the swap stops and takes its comment back.
+    # An edit that landed while the comment was posted is in neither copy, so the swap stops before
+    # writing and takes its comment back.
     def unparking_on_failure(parking)
       yield
     rescue Error

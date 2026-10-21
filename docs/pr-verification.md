@@ -546,8 +546,9 @@ repository's setting for its merge method chooses, under **Settings → General 
 Requests**, and the checkpoint says what that will be.
 
 With any setting but **Pull request title and description**, add the PR to the queue
-yourself. **Pull request title** commits the PR title alone. **Default message** and
-**Pull request title and commit details** commit the branch commit messages under a title.
+yourself. In a squash queue, **Pull request title** commits the PR title alone, and
+**Default message** and **Pull request title and commit details** commit the branch commit
+messages under a title.
 
 With **Pull request title and description**, the queue copies the PR description into the
 commit, so ask the agent to merge instead. It puts the prepared commit message in the

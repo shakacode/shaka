@@ -163,13 +163,25 @@ class QueuedDescriptionSafetyTest < Minitest::Test
     assert_equal 'What changed and why.', @fake.body
   end
 
-  def test_a_failed_write_takes_the_parking_comment_back
+  # A refused write leaves the description and its region, so the parked copy beside it is never read.
+  def test_a_refused_write_leaves_the_description_publishable
     @fake.refuse_edit = true
-
     assert_raises(Shaka::Error) { @github.queue_description(prepared) }
 
-    assert_empty @fake.comments
-    assert_equal "#{REGION}\n\n#{CODERABBIT}", @fake.body
+    @fake.refuse_edit = false
+    @github.description(body: "New summary.\n")
+    assert_equal "<!-- shaka:begin -->\nNew summary.\n<!-- shaka:end -->\n\n#{CODERABBIT}", @fake.body
+  end
+
+  # A write that landed but reported failure must not cost the only parked copy.
+  def test_a_write_that_landed_despite_an_error_keeps_the_parked_copy
+    @fake.fail_after_edit = true
+    assert_raises(Shaka::Error) { @github.queue_description(prepared) }
+
+    @fake.fail_after_edit = false
+    assert_equal 'What changed and why.', @fake.body
+    @github.description(body: "New summary.\n")
+    assert_equal "<!-- shaka:begin -->\nNew summary.\n<!-- shaka:end -->\n\n#{CODERABBIT}", @fake.body
   end
 
   # Only this account's comment may decide what the description becomes.
