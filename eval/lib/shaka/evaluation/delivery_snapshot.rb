@@ -41,18 +41,21 @@ module Shaka
       end
 
       def read
-        Timeout.timeout(@seconds) { snapshot }
+        api = @api.start_deadline
+        result = snapshot(api)
+        api.seconds_left
+        result
       rescue KeyError, TypeError, NoMethodError, ArgumentError, JSON::ParserError, Timeout::Error
         unavailable
       end
 
       private
 
-      def snapshot
-        initial = read_pull
-        checks = read_checks
-        blobs = read_blobs(initial.fetch('files').fetch('nodes'))
-        final = read_pull
+      def snapshot(api)
+        initial = read_pull(api)
+        checks = read_checks(api)
+        blobs = read_blobs(initial.fetch('files').fetch('nodes'), api)
+        final = read_pull(api)
         unavailable unless initial.values_at('baseRefOid', 'files') == final.values_at('baseRefOid', 'files')
         { 'pull' => final.except('files', 'changedFiles', 'headRepository'), 'checks' => checks, 'blobs' => blobs,
           'changed_files' => blobs.filter_map { |path, blob| [path, blob['lines']] if blob.key?('lines') }.to_h,
@@ -74,14 +77,14 @@ module Shaka
         name.is_a?(String) && !name.strip.empty? && app.is_a?(Integer) && app.positive?
       end
 
-      def graphql(query, variables)
-        response = JSON.parse(@api.graphql(query, variables))
+      def graphql(query, variables, api)
+        response = JSON.parse(api.graphql(query, variables))
         unavailable if response.key?('errors')
         response.fetch('data')
       end
 
-      def read_pull
-        repository = graphql(QUERY, @variables).fetch('repository')
+      def read_pull(api)
+        repository = graphql(QUERY, @variables, api).fetch('repository')
         unavailable unless repository.fetch('nameWithOwner').casecmp?(@repository)
         pull = repository.fetch('pullRequest')
         unavailable unless pull_identity?(pull) && complete_files?(pull) && pull_state?(pull)

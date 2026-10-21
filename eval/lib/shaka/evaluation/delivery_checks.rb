@@ -6,10 +6,10 @@ module Shaka
     module DeliveryChecks
       private
 
-      def read_checks
+      def read_checks(api)
         @checks.values.uniq.flat_map do |app|
           path = "repos/#{@repository}/commits/#{@head}/check-runs?per_page=100&filter=latest&app_id=#{app}"
-          result = JSON.parse(@api.get(path))
+          result = JSON.parse(api.get(path))
           observed = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           rows = result.fetch('check_runs')
           unavailable unless rows.is_a?(Array) && rows.size <= 100 && result.fetch('total_count') == rows.size

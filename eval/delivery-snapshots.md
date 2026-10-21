@@ -31,9 +31,12 @@ binary files supply no line bounds. Missing or truncated text cannot qualify.
 Blob expressions use the full head and literal paths as GraphQL variables.
 This is a bounded sequence of observations, not an atomic GitHub snapshot.
 
-Each complete read has a maximum 30-second deadline. The shared GitHub transport
-limits each response to 1 MiB, discards stderr, terminates its subprocess group
-and reaps the child. The reader refuses more than 100 changed files or 100 latest
+Requests share a maximum 30-second monotonic budget. Each request timer finishes
+before subprocess cleanup; no outer asynchronous timer interrupts that cleanup.
+Budget expiry is checked between requests and after cleanup, so cleanup may finish
+after the budget expires. The shared transport limits each response to 1 MiB,
+discards stderr, terminates its subprocess group and reaps the child.
+The reader refuses more than 100 changed files or 100 latest
 check runs per declared App; it does not silently accept pagination. Same-repository
 fixture PRs are supported; fork heads are refused.
 

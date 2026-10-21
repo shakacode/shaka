@@ -8,14 +8,29 @@ module Shaka
   module Evaluation
     # Bounded read-only GitHub transport shared by protected delivery readers.
     class DeliveryGitHub
-      def initialize(github:, seconds: 30)
-        unless github.is_a?(String) && github.start_with?('/') && seconds.is_a?(Numeric) &&
-               seconds.finite? && seconds.positive? && seconds <= 30
+      def initialize(github:, seconds: 30, deadline: nil)
+        unless valid_transport?(github, seconds)
           raise ArgumentError, 'Expected an absolute GitHub CLI and a bounded read deadline'
         end
 
         @gh = File.realpath(github)
         @seconds = seconds
+        @deadline = deadline
+        raise ArgumentError, 'Expected a finite monotonic deadline' unless valid_deadline?(deadline)
+      end
+
+      def start_deadline
+        self.class.new(github: @gh, seconds: @seconds,
+                       deadline: Process.clock_gettime(Process::CLOCK_MONOTONIC) + @seconds)
+      end
+
+      def seconds_left
+        return @seconds unless @deadline
+
+        remaining = @deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        raise IOError, 'Delivery GitHub read unavailable' unless remaining.positive?
+
+        [remaining, @seconds].min
       end
 
       def graphql(query, variables)
@@ -26,7 +41,17 @@ module Shaka
 
       private
 
+      def valid_transport?(github, seconds)
+        github.is_a?(String) && github.start_with?('/') && seconds.is_a?(Numeric) &&
+          seconds.finite? && seconds.positive? && seconds <= 30
+      end
+
+      def valid_deadline?(deadline)
+        deadline.nil? || (deadline.is_a?(Numeric) && deadline.finite?)
+      end
+
       def capture(arguments, request)
+        seconds_left
         argv = [@gh, 'api', '--hostname', 'github.com', *arguments]
         Open3.popen3({ 'GH_PROMPT_DISABLED' => '1' }, *argv, pgroup: true) do |input, stdout, stderr, process|
           read_process(input, stdout, stderr, process, request)
@@ -37,7 +62,7 @@ module Shaka
 
       def read_process(input, stdout, stderr, process, request)
         errors = Thread.new { IO.copy_stream(stderr, File::NULL) }
-        Timeout.timeout(@seconds) { answer(input, stdout, process, request) }
+        Timeout.timeout(seconds_left) { answer(input, stdout, process, request) }
       ensure
         terminate(process.pid)
         errors&.join

@@ -6,17 +6,17 @@ module Shaka
     module DeliveryBlobs
       private
 
-      def read_blobs(files)
+      def read_blobs(files, api)
         paths = files.reject { it.fetch('changeType') == 'DELETED' }.map { it.fetch('path') }
         return {} if paths.empty?
 
         variables = paths.each_with_index.to_h { |path, index| ["p#{index}", "#{@head}:#{path}"] }
-        data = blob_data(variables)
+        data = blob_data(variables, api)
         paths.each_with_index.to_h { |path, index| [path, normalize_blob(data.fetch("b#{index}"))] }
       end
 
-      def blob_data(variables)
-        graphql(blob_query(variables), @variables.slice('owner', 'name').merge(variables)).fetch('repository')
+      def blob_data(variables, api)
+        graphql(blob_query(variables), @variables.slice('owner', 'name').merge(variables), api).fetch('repository')
       end
 
       def blob_query(variables)
