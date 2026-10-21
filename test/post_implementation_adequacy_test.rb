@@ -17,7 +17,7 @@ class PostImplementationAdequacyTest < Minitest::Test
   end
 
   def comment(body, head: HEAD)
-    { 'user' => { 'login' => 'test-author' },
+    { 'id' => 1, 'created_at' => '2026-10-01T00:00:00Z', 'user' => { 'login' => 'test-author' },
       'body' => "<!-- shaka:reply:post-implementation-#{head[0, 7]}-abc12345 -->\n#{body}" \
                 "#{Shaka::PostImplementationEvidence.attestation(head, 'ready')}" }
   end
