@@ -3,9 +3,9 @@
 **Review the intent and the evidence, not every line.**
 
 Each PR says why the change exists, what it leaves out, and why it is safe. It
-lists the checks that prove the change, linked to their results, and names what
-was not verified. A review-effort rating tells you when the code needs reading
-too. See [what a PR answers](pr-verification.md#answers-for-your-next-decision).
+lists the checks that prove the change, each with a link to its result or the
+command that ran, and names any claim left unproven. A review-effort rating
+tells you when the code needs reading too. See [what a PR answers](pr-verification.md#answers-for-your-next-decision).
 You choose who merges it.
 
 ![You give a task. The agent builds, verifies, and reviews. You review one clear PR with a walkthrough, check and review results, and the decisions left for you.](img/task-to-pr.svg)
