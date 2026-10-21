@@ -45,13 +45,17 @@ review:
   #   model_family: grok
 
 merge:
-  preference: ask # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
+  # Required; setup suggests ask: you merge on GitHub. auto lets the agent merge.
+  # Ours: auto, so small tested code fixes merge without a click; the floor below holds the rest.
+  preference: auto
   # required_checks: [validate] # Default: none; use when GitHub requires no checks.
   limits: # Defaults. A larger PR needs your confirmation before the agent merges it.
     max_changed_files: 29
     max_changed_lines: 999 # Additions plus deletions.
     max_commits: 9
-  auto_max_review_floor: 5 # Default: auto may merge a PR at any human review floor (below).
+  # Default: 5, any human review floor (below). Ours: 2, so the agent merges code and tests
+  # and hands back docs, agent instructions, and settings, merge, trust, and install code.
+  auto_max_review_floor: 2
 
 branches:
   name: '{login}-{host}/{issue}-{description}' # Default branch-name template.
@@ -64,27 +68,37 @@ pr_description:
   show_human_comments: true # Default: list comments people wrote on the PR.
   max_human_comments: 20 # Default: how many of those comments to list.
   # Default: Shaka's shipped floors. The lowest human review effort a PR may claim, from the
-  # files it changes. This list replaces the default one: the first two floors are this
-  # repository's, the rest are the defaults.
+  # files it changes. This list replaces the default one. Ours adds the first two floors and the
+  # install floor, names merge and trust code in the trust floor, and exempts Shaka's own code
+  # and tests from the agent-instructions floor, so auto_max_review_floor can tell them apart.
+  # The rest are the defaults.
   human_review_floors:
     - level: 5
       reason: changes docs for Shaka's users
       paths: [docs/**/*]
     - level: 4
       reason: changes evidence or settings checks
-      paths: [skills/shaka/lib/shaka/evidence/**/*, skills/shaka/lib/shaka/seam/**/*]
+      paths: ['skills/shaka/lib/shaka/{evidence,seam,repository_config,configuration}/**/*',
+              'skills/shaka/lib/shaka/{seam,repository_config,configuration}.rb']
     - level: 5
       reason: changes Shaka's repository configuration
       paths: [.agents/shaka/**/*]
     - level: 4
       reason: changes trust, merge, authentication, or release paths
-      paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS]
+      paths: [.github/workflows/**/*, .github/actions/**/*, CODEOWNERS, .github/CODEOWNERS, docs/CODEOWNERS,
+              'skills/shaka/lib/shaka/{required_checks,ci_review_wait,review_coverage,public_comments}.rb',
+              skills/shaka/lib/shaka/public_comments/**/*]
       words: [auth, authentication, authorization, oauth, merge, release, trust, trusted, permission, secret,
               credential]
       except: ['**/*.md', '**/*.{png,jpg,jpeg,gif,svg,webp}']
     - level: 3
+      reason: changes install, update, or GitHub code
+      paths: [bin/install, 'skills/shaka/lib/shaka/{installer,update_check,github}.rb',
+              'skills/shaka/lib/shaka/{install,update_check,github}/**/*']
+    - level: 3
       reason: changes agent instructions
       paths: ['**/AGENTS.md', '**/CLAUDE.md', '**/SKILL.md', skills/**/*, .agents/**/*, .claude/**/*, .cursor/**/*]
+      except: [skills/shaka/lib/**/*, test/**/*]
     - level: 2
       reason: changes code or configuration
       paths: ['**/*']

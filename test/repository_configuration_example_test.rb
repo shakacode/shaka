@@ -10,7 +10,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   POLICY_KEYS = %w[
     required ci_review_jobs local_review_agents local_review_count post_implementation prompt_file provider_coverage
-    human_review_floors
+    human_review_floors auto_max_review_floor
   ].freeze
 
   def setup
@@ -33,7 +33,7 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   end
 
   def test_example_merge_defaults_match_without_changing_repository_choices
-    policy_keys = %w[preference required_checks]
+    policy_keys = %w[preference required_checks auto_max_review_floor]
     assert_equal @defaults.fetch('merge').except(*policy_keys), @example.fetch('merge').except(*policy_keys)
   end
 
@@ -52,11 +52,11 @@ class RepositoryConfigurationExampleTest < Minitest::Test
     end
   end
 
-  # This repository adds its own floors ahead of the shipped ones and keeps every shipped floor.
+  # This repository adds its own floors and paths, and exempts its own code from the instruction
+  # floor, but keeps every shipped floor's level, reason, and paths.
   def test_example_floors_keep_every_shipped_floor
     floors = @example.fetch('pr_description').fetch('human_review_floors')
-    shipped = Shaka::Defaults.fetch('pr_description', 'human_review_floors')
-    assert_equal shipped, floors.last(shipped.size)
+    Shaka::Defaults.fetch('pr_description', 'human_review_floors').each { |shipped| assert_floor_kept(shipped, floors) }
   end
 
   def test_review_deadline_defaults_applied_outside_repository_config
@@ -69,6 +69,13 @@ class RepositoryConfigurationExampleTest < Minitest::Test
   end
 
   private
+
+  def assert_floor_kept(shipped, floors)
+    floor = floors.find { |candidate| candidate.values_at('level', 'reason') == shipped.values_at('level', 'reason') }
+    assert floor, "Keep the shipped floor: #{shipped['reason']}"
+    assert_empty shipped.fetch('paths', []) - floor.fetch('paths', []), shipped['reason']
+    assert_equal shipped.fetch('words', []), floor.fetch('words', []), shipped['reason']
+  end
 
   def example_section(section)
     case section
