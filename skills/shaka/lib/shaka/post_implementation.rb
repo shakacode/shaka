@@ -88,10 +88,13 @@ module Shaka
     end
 
     # Settings come from the trusted default branch, never the PR; without --ref there is no preview.
+    # The preview is advisory, so unreadable settings leave it out instead of blocking the checkpoint.
     def trusted_seam
       return unless @options[:criteria_ref]
 
       TrustedConfigSource.from_ref(root: @options[:root] || Dir.pwd, ref: @options[:criteria_ref])
+    rescue Error, SystemCallError
+      nil
     end
 
     def merge_safeguard(github, head, publication, published)

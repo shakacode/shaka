@@ -75,6 +75,16 @@ class CheckpointAutoMergePreviewTest < Minitest::Test
     end
   end
 
+  def test_unreadable_settings_leave_the_preview_out_and_still_publish
+    with_result do |result, path|
+      github = PreviewGitHub.new('a' * 40)
+      github.files = %w[lib/fix.rb]
+      Dir.mktmpdir { |empty| publish_at(empty, result, path, github) }
+
+      refute_includes github.bodies.first.first, 'Auto merge preview'
+    end
+  end
+
   private
 
   def trust!(root)
