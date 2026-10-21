@@ -22,6 +22,9 @@ Read this only when a maintainer asks to choose, change, or explain
 - A renamed file counts under both names. The PR's floor is the highest level any changed
   file matches; the first matching file is the one the description names.
 - A rating below the floor refuses publication. Ruby never raises the rating itself.
+- `merge` reads the same list. When `merge.auto_max_review_floor` is below 5, it refuses a PR
+  whose floor is above that setting unless the user confirmed the head, so lowering a floor can
+  let Auto merge those files.
 
 ## Propose floors
 

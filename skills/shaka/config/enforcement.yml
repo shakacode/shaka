@@ -709,7 +709,9 @@ rules:
     enforced_by: agent
     note: >-
       `MergeLimits#verify!` refuses a PR over the trusted limits or with unreported counts, and
-      refuses a confirmation that names a head other than the one being merged. It cannot tell
+      refuses a confirmation that names a head other than the one being merged.
+      `MergeReviewFloor#verify!` refuses a PR with a changed file above the trusted
+      `merge.auto_max_review_floor` unless the flag names the head being merged. It cannot tell
       whether a user confirmed that head, or whether a rebase changed behavior, so passing the
       flag honestly is the agent's alone. The scan does not reach this rule, which restricts
       with "only for".
