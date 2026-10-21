@@ -65,6 +65,16 @@ class InstallStatusEdgesTest < Minitest::Test
     assert_equal "chmod go-w #{Shellwords.escape(File.realpath(root))}", report['next_command']
   end
 
+  # Commits made on a detached HEAD go on a branch before the switch, so the step strands nothing.
+  def test_a_detached_head_with_commits_keeps_them
+    root = default_install
+    git('-C', root, 'switch', '-q', '--detach')
+    commit(root, 'detached work')
+    kept = git('-C', root, 'rev-parse', 'HEAD').strip
+    run_next(status(root), 'B4')
+    assert_equal kept, git('-C', root, 'rev-parse', "kept-#{kept[0, 7]}").strip
+  end
+
   def test_a_branch_without_its_tracking_branch_is_named
     root = default_install
     git('-C', root, 'branch', '-q', '--unset-upstream')
