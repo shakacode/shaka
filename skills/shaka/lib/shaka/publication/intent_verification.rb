@@ -31,7 +31,7 @@ module Shaka
     # The floor comes from the PR's changed paths; without a pull request there is none.
     def render(content, verdict = nil, floor = nil)
       checks_allowed = content['wip'].nil? ? CHECKS : (0..CHECKS.max)
-      gate_line = VerificationGates.line(verdict, content['review'])
+      gate_line = VerificationGates.render(verdict, content['review'])
       [intent(object(content, 'intent'), floor),
        verification(object(content, 'verification'), checks_allowed, gate_line)]
     end
@@ -75,9 +75,16 @@ module Shaka
     def floor_path(path) = path.match?(SAFE_PATH) ? "`#{path}`" : 'a file whose name is withheld'
 
     def verification(spec, allowed, gate_line)
-      not_verified = PublicationText.single_line(spec['not_verified'], 'verification not_verified')
-      ['## Verification', gate_line, *checks(spec['checks'], allowed), "**Not verified:** #{not_verified}"]
+      ['## Verification', gate_line, *checks(spec['checks'], allowed), *not_verified(spec['not_verified'])]
         .join("\n\n")
+    end
+
+    # The agent still answers, but a reader learns nothing from being told no claim went unproven.
+    PROVED = /\Anothing\.?\z/i
+
+    def not_verified(value)
+      text = PublicationText.single_line(value, 'verification not_verified')
+      text.match?(PROVED) ? [] : ["**Not verified:** #{text}"]
     end
 
     # An unfinished draft may have run nothing yet; Not verified then says why.
@@ -104,6 +111,7 @@ module Shaka
       spec
     end
 
-    private_class_method :intent, :review_effort, :floor_text, :floor_path, :verification, :checks, :evidenced, :object
+    private_class_method :intent, :review_effort, :floor_text, :floor_path, :verification, :not_verified, :checks,
+                         :evidenced, :object
   end
 end
