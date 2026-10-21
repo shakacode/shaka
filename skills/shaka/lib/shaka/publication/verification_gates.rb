@@ -9,14 +9,40 @@ module Shaka
 
     module_function
 
+    # A reader needs to see a failure or a missing result; a routine run folds behind its summary.
+    # A completed review may still have reported findings, so the summary claims only that it ran.
+    def render(verdict, review_url = nil)
+      text = line(verdict, review_url)
+      return text unless routine?(verdict)
+
+      summary = "Validation passed; local review completed at #{short_head(verdict)}"
+      "<details>\n<summary>#{summary}</summary>\n\n#{text}\n\n</details>"
+    end
+
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.
     def line(verdict, review_url = nil)
       return UNKNOWN unless verdict
 
-      validation, reviews = %w[validation review].map do |kind|
+      validation, reviews = results(verdict)
+      "#{LABEL} #{[*validations(validation), review(reviews, review_url)].join('; ')} at `#{short_head(verdict)}`."
+    end
+
+    # Only a ready verdict reaches publication. A host-reported review rests on its attestation
+    # alone, so it stays visible with the reviewers' names.
+    def routine?(verdict)
+      return false unless verdict
+
+      validation, reviews = results(verdict)
+      validation.map { |result| result['exit_code'] }.uniq == [0] &&
+        reviews.map { |result| result['status'] }.uniq == ['completed']
+    end
+
+    def short_head(verdict) = verdict['head'][0, 7]
+
+    def results(verdict)
+      %w[validation review].map do |kind|
         Array(verdict.dig('checks', kind)).map { |entry| entry['original'] }
       end
-      "#{LABEL} #{[*validations(validation), review(reviews, review_url)].join('; ')} at `#{verdict['head'][0, 7]}`."
     end
 
     def validations(results)
@@ -35,6 +61,6 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :validations, :review
+    private_class_method :routine?, :short_head, :results, :validations, :review
   end
 end

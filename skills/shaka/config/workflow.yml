@@ -511,8 +511,9 @@ phases:
         from `--validation-result` and `--review-result`, so leave those out of `checks`.
         `verification` lists 1 to 3 `checks`, each proof of this PR's own claim: what was run
         against the changed behavior and its outcome, citing a link or the command. Its
-        `not_verified` line names what went unproven and why that is
-        acceptable, or `Nothing.` when every claim was proved. An unfinished PR may list no checks
+        `not_verified` line names a claim this PR makes that went unproven and why that is
+        acceptable; work outside the change's scope stays out. Write `Nothing.` when every claim
+        was proved, and the helper omits the line. An unfinished PR may list no checks
         yet. The helper renders both after the links and refuses a check with neither a Markdown
         link nor a code span; it cannot tell whether the check ran.
         Link walkthrough code through optional `code_links`, which maps a name to `path`, `from`
