@@ -22,6 +22,22 @@
 
 - Replace every slot with concrete task facts and actual evidence.
 
+## Review evidence
+
+- Put the current-head recommendation, main reason, and next action before analysis.
+- Name model settings with their provenance; a configured model is not proof of a served model.
+- Name the user benefit, scope, and unfinished verification when they affect the decision.
+- Distinguish verified results, a recommendation to merge, and permission to merge.
+  Keep unresolved blockers visible.
+- State whether a simpler alternative revises this PR or replaces it.
+- Supporting usage and history can remain collapsed.
+- State a risk as who or what is affected and what they would see fail: “API
+  clients get a 500 until the cache warms,” not “medium blast radius.”
+- State what reverting a commit restores and what it leaves:
+  - Reverting code does not restore deleted or rewritten stored data.
+  - It does not undo outside effects such as sent email, charges, or published packages.
+  - Name each such effect and how to recover from it, or that it cannot be recovered.
+
 ## Point readers to the code
 
 - The diff already shows what changed. Say why, flag what needs a close look, and link to it.

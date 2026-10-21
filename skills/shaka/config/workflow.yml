@@ -473,7 +473,7 @@ phases:
       - Before publishing the PR description, walkthrough, or final response, self-edit each summary
         following [the publication procedure](<{{package_root}}/skills/shaka/references/publication.md>):
         lead with the outcome its reader notices, keep one main idea per sentence, put each condition
-        beside the behavior it limits, and prefer a clear subject and active verb over diff-shaped
+        before the behavior it limits, and prefer a clear subject and active verb over diff-shaped
         phrasing. Keep exact commands, identifiers, domain terms, risks, and evidence. Skip chatbot
         wrappers and inflated significance. A reply leads with the decision and uses the thread's
         shared context.

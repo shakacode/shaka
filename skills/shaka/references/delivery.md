@@ -342,7 +342,7 @@ before the step that needs it, and say where a reviewer should look hardest.
 Explain unfamiliar terms on first use. Distinguish mechanical moves and generated
 output from behavior changes. Cover purpose, choices, validation, risks, and
 rollback consequences where they fit; avoid a heading for every checklist item.
-State each risk and rollback as the [writing guidance](writing.md) describes.
+State each risk and rollback as the [review evidence rules](publication.md#review-evidence) describe.
 Cover the change completely, then stop.
 
 ### Connect a technical fix to its evidence
@@ -369,7 +369,8 @@ or accept it; technical confidence does not grant merge consent. Scale detail to
   branch's own history: "was removed" or "now rejects" about an earlier commit
   on the branch goes stale and means nothing to a reader of the diff.
 - Give each paragraph one idea and lead with it. Split a paragraph past about
-  four sentences, and keep most sentences under 25 words.
+  four sentences, and keep sentences within the length the
+  [shared writing rules](writing.md#plain-language-and-organization) set.
 - Use a list for parallel items, such as the guarantees a guard provides: one
   per bullet, each linked to its code. Keep reasoning in prose.
 - Add one small visual when control passes through three or more components,
