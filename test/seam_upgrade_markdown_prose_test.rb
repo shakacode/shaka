@@ -37,17 +37,17 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     end
   end
 
-  def test_quoted_fence_line_inside_fence_stays_code
-    with_repository do |root|
-      write_tracked(root, 'guide.md', "```text\n> ```\nexport PATH=\".agents/bin:$PATH\"\n```\n")
-      assert_blocked_with(root, 'old command-directory reference')
-    end
-  end
+  COMMAND_DIRECTORY_CODE = ["Add `$PWD/.agents/bin` to PATH.\n",
+                            "```sh\nexport PATH=\".agents/bin:$PATH\"\n```\n",
+                            "```text\n> ```\nexport PATH=\".agents/bin:$PATH\"\n```\n",
+                            "> ```sh\n> > ```\n> export PATH=\".agents/bin:$PATH\"\n> ```\n"].freeze
 
-  def test_computed_command_directory_in_prose_still_blocks
-    with_repository do |root|
-      write_tracked(root, 'ledger.md', "Add `$PWD/.agents/bin` to PATH.\n")
-      assert_blocked_with(root, 'old command-directory reference')
+  def test_computed_or_fenced_command_directory_still_blocks
+    COMMAND_DIRECTORY_CODE.each do |source|
+      with_repository do |root|
+        write_tracked(root, 'guide.md', source)
+        assert_blocked_with(root, 'old command-directory reference')
+      end
     end
   end
 
@@ -58,6 +58,8 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
     'quoted fence' => "> Setup:\n>\n> ```sh\n> cd .agents\n> bin/validate\n> ```\n",
     'list fence' => "1. ```sh\n   cd .agents\n   bin/validate\n   ```\n",
     'inline code' => "Run `cd .agents && bin/validate` before pushing.\n",
+    'quoted inline' => "Run `cd .age\"nts\" && bin/validate`.\n",
+    'wrapped' => "Run `bin/validate` from\n`.agents`.\n",
     'inline env' => "Run `env -C .agents bin/validate`.\n",
     'same line' => "Run `bin/validate` from `.agents`.\n"
   }.freeze
@@ -89,13 +91,6 @@ class SeamUpgradeMarkdownProseTest < Minitest::Test
         write_tracked(root, 'guide.md', "#{opening}```\nWORKDIR=.agents\nrun bin/validate\n```\n")
         assert_blocked_with(root, 'bare old-layout directory')
       end
-    end
-  end
-
-  def test_fenced_command_directory_still_blocks
-    with_repository do |root|
-      write_tracked(root, 'guide.md', "```sh\nexport PATH=\".agents/bin:$PATH\"\n```\n")
-      assert_blocked_with(root, 'old command-directory reference')
     end
   end
 

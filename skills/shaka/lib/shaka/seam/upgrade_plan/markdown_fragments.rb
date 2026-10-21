@@ -20,26 +20,32 @@ module Shaka
 
           def initialize
             @fence = nil
-            @contained = false
+            @prefix = ''
           end
 
-          # A top-level fence closes only on an unmarked line, so a quoted fence inside it stays content.
           def code?(raw)
             line = raw.sub(CONTAINER, '')
-            return inside_fence?(@contained ? line : raw) if @fence
+            return inside_fence?(raw) if @fence
             return true if line.match?(INDENTED)
 
             @fence = line[FENCE, 1]
-            @contained = line != raw
+            @prefix = marker_columns(raw[0, raw.length - line.length])
             !@fence.nil?
           end
 
           private
 
-          def inside_fence?(line)
-            @fence = nil if line.match?(/\A {0,3}#{@fence[0]}{#{@fence.length},}[ \t]*\r?$/)
+          # A fence closes only behind its opener's own quote markers, so a quoted fence line inside it stays
+          # content. List markers count as the spaces that continue their item.
+          def inside_fence?(raw)
+            rest = raw[@prefix.length..].to_s
+            closes = marker_columns(raw[0, @prefix.length]) == @prefix &&
+                     rest.match?(/\A {0,3}#{@fence[0]}{#{@fence.length},}[ \t]*\r?$/)
+            @fence = nil if closes
             true
           end
+
+          def marker_columns(prefix) = prefix.gsub(/[-+*]|\d{1,9}[.)]/) { |marker| ' ' * marker.length }
         end
 
         private
@@ -82,9 +88,9 @@ module Shaka
         end
 
         # Markdown prose can name the old directory and a command paragraphs apart, so outside code the two
-        # block only on one line, where agents may follow them as an instruction.
+        # block only within one paragraph, where agents may follow them as an instruction.
         def markdown_directory_dependency?(text)
-          text.each_line.any? { |line| line.match?(old_directory_change) || legacy_directory_command_pair?(line) } ||
+          text.split(/\n(?:[ \t]*\r?\n)+/).any? { |paragraph| shell_directory_dependency?(paragraph) } ||
             shell_directory_dependency?(markdown_code(text))
         end
 
