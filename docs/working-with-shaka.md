@@ -140,6 +140,7 @@ a background export. Planning only.
 ```
 
 The agent returns the scope, tradeoffs, and a prompt you can use to start delivery.
+It stops before editing code.
 
 ### Keep a plan across chats
 
