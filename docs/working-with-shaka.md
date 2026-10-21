@@ -1,8 +1,8 @@
 # Working with Shaka
 
 Read this after your first task. It covers the choices only you can make and the
-prompts for other work. For anything else, ask the agent. Some agent behavior here
-is enforced by code and the rest follows Shaka's instructions; see
+prompts for other work. For anything else, ask the agent. Code enforces the merge
+checks; the rest of the agent behavior here follows Shaka's instructions. See
 [what is enforced](workflow.md#what-is-enforced).
 
 Examples use `$shaka` from Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode
@@ -38,9 +38,9 @@ Go.
 
 ![A ready PR follows Ask, where you merge or approve it, or Auto, where the agent merges. A PR that is too large or risky returns to you under Auto.](img/merge-policy.svg)
 
-For Auto, add `Use merge policy auto` to your prompt. Large PRs, and changes to
-trust, authentication, or releases, still come back to you; see
-[size limits](settings.md#mergelimits).
+For Auto, add `Use merge policy auto` to your prompt. Large PRs
+([size limits](settings.md#mergelimits)) and changes to trust, authentication, or
+releases still come back to you.
 
 ## Give feedback
 
