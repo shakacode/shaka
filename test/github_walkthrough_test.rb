@@ -70,6 +70,13 @@ class GitHubWalkthroughTest < Minitest::Test
     assert_equal Shaka::PendingReview::MESSAGE, error.message
   end
 
+  def test_a_failed_pending_review_lookup_leaves_githubs_refusal
+    github = client(snapshot_response, files_response, *gate_responses, html_response,
+                    response({}, status: 1, http_status: 422), response({}, status: 1))
+    error = assert_raises(Shaka::Error) { github.walkthrough(head: HEAD, body: WALKTHROUGH) }
+    assert_includes error.message, 'gh api repos/owner/repo/pulls/42/reviews failed'
+  end
+
   def test_another_accounts_pending_review_leaves_githubs_refusal
     pending = [{ 'id' => 9, 'state' => 'PENDING', 'user' => { 'login' => 'someone-else' } }]
     github = client(snapshot_response, files_response, *gate_responses, html_response,

@@ -57,15 +57,19 @@ module Shaka
 
     def open_facts(snapshot, live)
       checks = snapshot['requiredChecks']
-      [attention_fact(checks), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
+      [attention_fact(checks, live), checks_fact(checks, snapshot['requiredChecksUnavailable']), threads_fact,
        comment_fact(snapshot), walkthrough_fact(live), checkpoint_fact(live), squash_fact(snapshot, live),
        wip_fact(live)].compact
     end
 
     # An unsubmitted review by this account outranks every other wait, because only its author can see it.
-    def attention_fact(checks)
+    # GitHub refuses only a new review beside it, so a merge wait with a current walkthrough just names it.
+    def attention_fact(checks, live)
       @labels = Attention.new(@github).current
-      walkthrough_reader.pending? ? pending_review_fact : label_fact(checks)
+      return label_fact(checks) unless walkthrough_reader.pending?
+      return note(label_fact(checks), PendingReview::MESSAGE) if merge_requested? && walkthrough_reader.revision == live
+
+      pending_review_fact
     end
 
     # One label names the one decision the PR waits on, so a missing label hides the PR from its searches.

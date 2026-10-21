@@ -64,11 +64,20 @@ class HandoffWalkthroughTest < Minitest::Test
     refute_includes result['status'], 'unsubmitted review'
   end
 
-  # GitHub would refuse a walkthrough beside the unsubmitted review, so a merge wait gives way to the answer.
-  def test_an_unsubmitted_review_on_a_merge_wait_owes_the_answer_label
-    owed = handoff(labels: ['awaiting-merge-approval'], reviews: [walkthrough(HEAD), PENDING]).fetch('owed')
+  # GitHub would refuse the new walkthrough a merge wait owes, so that wait gives way to the answer.
+  def test_an_unsubmitted_review_on_a_merge_wait_with_an_old_walkthrough_owes_the_answer_label
+    owed = handoff(labels: ['awaiting-merge-approval'], reviews: [walkthrough(OLD), PENDING]).fetch('owed')
 
     asked = owed.find { |item| item.include?(Shaka::PendingReview::MESSAGE) }
     assert_includes asked, '`attention --state answer` first'
+  end
+
+  # A merge needs no new review, so a recorded merge wait keeps its label and only names the draft.
+  def test_an_unsubmitted_review_leaves_a_ready_merge_wait_in_place
+    result = handoff(labels: ['awaiting-merge-approval'], reviews: [walkthrough(HEAD), PENDING])
+
+    refute(result['owed'].any? { |item| item.include?(Shaka::PendingReview::MESSAGE) })
+    assert_includes result['status'], 'awaiting-merge-approval'
+    assert_includes result['notes'], Shaka::PendingReview::MESSAGE
   end
 end
