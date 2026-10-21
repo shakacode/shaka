@@ -301,11 +301,21 @@ rules:
       boundary, and #131 names it.
   - id: workers-do-not-publish
     phase: implement
-    quote: Delegated workers own exclusive files or worktrees and never publish or merge.
+    quote: >-
+      Helper workers inside one delivery own exclusive files or worktrees and never publish or
+      merge.
     enforced_by: agent
     note: >-
       A delegated worker runs with the same credentials as its owner, so nothing distinguishes
       its publication from the owning task's.
+  - id: delivery-agents-do-not-merge
+    phase: implement
+    quote: but never merges
+    rule: A delivery agent that owns one task may publish its PR but never merges.
+    enforced_by: agent
+    note: >-
+      A delivery agent runs with its tower's credentials, so nothing distinguishes its merge
+      from the tower's or the maintainer's.
   - id: no-deferred-required-checks
     phase: verify
     quote: Never defer always-on required, security, or trust checks.
