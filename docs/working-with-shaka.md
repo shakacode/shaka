@@ -257,6 +257,11 @@ Details and sends its resume prompt, for example `$shaka https://github.com/OWNE
 Do the same if the recorded expiry has passed without a renewed handoff. Leaving a GitHub comment alone does not
 resume the agent in this case.
 
+If you work on more than one machine, name each one so the **Owner** in WIP
+Details shows which machine holds the chat: set `SHAKA_MACHINE_ALIAS` in your
+shell profile to a short name such as `mini`. PRs may be public, so do not use
+the machine's own name; `$shaka doctor` suggests one that differs from it.
+
 The Chat link works when the owning chat is reachable. In Codex,
 `codex://threads/...` opens the original conversation. Before another agent takes
 over, confirm the previous one has stopped or handed off; a timestamp cannot prove it.

@@ -53,12 +53,6 @@ The diagnostic changes no settings. It exits with status 1 when any check report
 FAILED; read the full report, since piping it through another command can hide
 that status.
 
-Set `SHAKA_MACHINE_ALIAS` in your shell profile to a short name such as `mini`.
-An unfinished PR shows it as the owner, so you can tell which machine holds the
-work, and local validation results name it as the machine that ran them; without
-it, the owner reads UNKNOWN. PRs may be public, so do not use the
-machine's own name.
-
 Give the agent a task when you are ready.
 
 <a id="2-choose-private-trial-or-team-setup"></a>
