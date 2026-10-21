@@ -38,14 +38,28 @@ module Shaka
 
       # The registered checkout's own installer clones its recorded origin and branch into the default
       # location and moves every host link there. An install already registered at the default location
-      # takes the links over itself; any other occupied default location needs a person.
+      # takes the links over itself when it follows the same origin and branch; any other occupied default
+      # location needs a person.
       def take_over(root, home, record)
         target = default_directory(home)
-        return Refusal.command(File.join(target, 'bin/install'), '--take-over', *custom_folder(record, home)) if
-          File.file?(File.join(target, '.git', Locations::RECORD))
+        if File.file?(File.join(target, '.git', Locations::RECORD))
+          return unless same_source?(target, record)
+
+          return Refusal.command(File.join(target, 'bin/install'), '--take-over', *custom_folder(record, home))
+        end
         return if File.exist?(target) && !(File.directory?(target) && Dir.empty?(target))
 
         Refusal.command(File.join(root, 'bin/install'), '--directory', target, '--take-over')
+      end
+
+      # A take-over keeps the old checkout's origin and branch, which the default install refuses to change.
+      def same_source?(target, record)
+        return true unless record
+
+        current = Checkout.new(target).read_record
+        current && %w[repository branch].all? { |key| current[key] == record[key] }
+      rescue ArgumentError
+        false
       end
 
       # The default install finds the old checkout through its links; a custom folder has to be named.

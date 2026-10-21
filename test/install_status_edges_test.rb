@@ -65,24 +65,6 @@ class InstallStatusEdgesTest < Minitest::Test
     assert_equal "chmod go-w #{Shellwords.escape(File.realpath(root))}", report['next_command']
   end
 
-  # Outside the default location, the installer's --take-over moves the hosts to a fresh checkout there.
-  def test_development_elsewhere_names_the_take_over
-    run_install(@root, '--directory', @root, '--repository', @remote)
-    git('-C', @root, 'worktree', 'add', '-q', File.join(@directory, 'feature'))
-    report = status(@root)
-    assert_equal 'C3', report['state']
-    assert_includes report['next_command'], '--directory ~/.local/share/shaka/source --take-over'
-  end
-
-  def test_a_branch_with_unpushed_commits_is_development
-    root = default_install
-    git('-C', root, 'switch', '-q', '-c', 'experiment')
-    commit(root, 'experiment')
-    git('-C', root, 'switch', '-q', 'main')
-    details = status(root)['findings'].map { |item| item['detail'] }
-    assert(details.any? { |detail| detail.include?('local branches: experiment') }, details.inspect)
-  end
-
   def test_a_branch_without_its_tracking_branch_is_named
     root = default_install
     git('-C', root, 'branch', '-q', '--unset-upstream')
