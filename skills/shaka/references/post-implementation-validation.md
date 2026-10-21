@@ -39,6 +39,9 @@ walkthrough for the head is published. It places copyable title
 and body blocks in the checkpoint and preserves branch co-author trailers.
 Blocked, failed, and opted-out results need no message and display no merge text.
 For an authorized opt-out, keep the standalone `squash-message` command for the Ask handoff.
+When the PR's base has a merge queue, the ready checkpoint needs no message: it tells the
+person to add the PR to the queue and states what the queue will write, warning when the
+repository default copies the whole PR description. A supplied message is not rendered.
 Repeat publication after any head change; a recommendation supplies no merge consent.
 
 After publication, set description `post_implementation` to the returned PR comment URL

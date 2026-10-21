@@ -9,6 +9,7 @@ require_relative 'adequacy'
 require_relative 'publisher_identity'
 require_relative 'execution_text'
 require_relative '../github/squash_comment'
+require_relative '../merge_queue_commit'
 
 module Shaka
   # Presents the checkpoint's action without confusing configuration with observations.
@@ -42,10 +43,9 @@ module Shaka
     def render
       @state = @result['status'] == 'opted_out' ? 'opted_out' : 'not_completed'
       body = @result['status'] == 'completed' ? completed_body : incomplete_body
-      body += "\n\n#{squash_details}" if @state == 'ready'
-      markers = [PostImplementationAdequacy.marker(@adequacy), @disposition_line].compact.sum('') { "#{it}\n" }
-      "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n#{markers}" +
-        PostImplementationEvidence.attestation(@head, @state)
+      body += "\n\n#{merge_text}" if @state == 'ready'
+      footer = PostImplementationAdequacy.footer(@adequacy, @disposition_line, @head, @state)
+      "#{identity}\n\n# Checkpoint for #{@revision}\n\n#{body}\n\n#{footer}"
     end
 
     private
@@ -92,8 +92,11 @@ module Shaka
       "**Reviewer verdict:** #{verdict}.#{" #{summary}" if summary}#{list}"
     end
 
-    def squash_details
-      "<details>\n<summary>Squash commit message</summary>\n\n#{SquashComment.body(@head, @message.call)}\n</details>"
+    def merge_text
+      message = @message.call
+      return message.checkpoint_section if message.is_a?(MergeQueueCommit)
+
+      "<details>\n<summary>Squash commit message</summary>\n\n#{SquashComment.body(@head, message)}\n</details>"
     end
 
     # A lead paragraph, such as the reviewer summary an owner decision moves out of view, opens the details.

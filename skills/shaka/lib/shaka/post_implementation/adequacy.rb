@@ -12,7 +12,11 @@ module Shaka
         "- Weakest claim: #{adequacy.fetch('weakest_claim')}\n- Next check: #{adequacy.fetch('next_check')}"
     end
 
-    # Lets merge and the description read the verdict without trusting free text.
-    def marker(adequacy) = adequacy && PostImplementationEvidence.adequacy(adequacy.fetch('verdict'))
+    # The verdict marker lets merge and the description read the verdict without trusting free text. It sits
+    # above the owner's disposition line and the attestation, which close the comment.
+    def footer(adequacy, disposition_line, head, state)
+      verdict = adequacy && PostImplementationEvidence.adequacy(adequacy.fetch('verdict'))
+      [verdict, disposition_line].compact.sum('') { "#{it}\n" } + PostImplementationEvidence.attestation(head, state)
+    end
   end
 end
