@@ -84,7 +84,8 @@ A label doesn't wake a chat. See [approval details](pr-verification.md#approval-
 Comment on any open PR. Wait for an answer before merging.
 
 A comment wakes the agent only while automatic follow-up is on. The handoff says
-whether it is, and **WIP Details** shows when it expires. After that, or after a
+whether it is, and **WIP Details** shows when it expires. Keep the owning chat open
+until then. After that, or after a
 crash, paste **WIP Details → Next action** into a chat, such as
 `$shaka https://github.com/OWNER/REPO/pull/N`. Make sure the previous agent has
 stopped first. See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
@@ -102,7 +103,7 @@ $shaka Plan CSV export for the orders page. Planning only.
 <a id="keep-a-plan-across-chats"></a>
 
 For work that needs several PRs, the agent keeps the plan in the issue. It asks
-first if it needs permission. A new chat continues from the same link.
+first if it needs permission. Once the previous agent stops, a new chat continues from the same link.
 
 ### Agree on a design before implementing
 
