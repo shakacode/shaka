@@ -967,9 +967,10 @@ Your agent knows the matching rules and checks its proposal against your recent 
 decide what matters; for example, a project whose guides are read by its customers may want
 every `docs/` change reviewed at 5.
 
-By default, Shaka follows [a study of 309 PRs in this repository](articles/one-shot-pr-study.md):
-people asked for changes on many docs and agent-instruction PRs and on no PR that changed only
-code and tests.
+In [a study of 309 PRs in this repository](articles/one-shot-pr-study.md), people asked for
+changes on many docs and agent-instruction PRs and on no PR that changed only code and tests.
+So by default agent instructions sit above code. Docs stay at 1 because who reads them differs
+by project; set them higher when they reach your users, as this repository does.
 
 | Floor | Changed file |
 | --- | --- |
