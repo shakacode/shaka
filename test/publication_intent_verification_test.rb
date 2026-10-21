@@ -17,10 +17,17 @@ class PublicationIntentVerificationTest < Minitest::Test
              "**Leaves out:** #{INTENT['leaves_out']}\n\n**Safe because:** #{INTENT['safe_because']}\n\n" \
              '**Review effort:** 2 of 5, easy: skim the diff.'
     verification = "## Verification\n\n#{Shaka::VerificationGates::UNKNOWN}\n\n" \
-                   "- #{VERIFICATION['checks'].first}\n\n" \
-                   "**Not verified:** #{VERIFICATION['not_verified']}"
+                   "- #{VERIFICATION['checks'].first}\n\n"
     assert_includes rendered, intent
     assert_includes rendered, verification
+  end
+
+  # https://github.com/shakacode/shaka/issues/777: a line saying no claim went unproven told the reader nothing.
+  def test_not_verified_appears_only_for_a_claim_that_went_unproven
+    refute_includes render, '**Not verified:**'
+
+    gap = 'The live rate limit was not triggered; the test replays its stderr.'
+    assert_includes render('verification' => VERIFICATION.merge('not_verified' => gap)), "**Not verified:** #{gap}"
   end
 
   def test_intent_and_verification_follow_the_links_and_precede_every_section

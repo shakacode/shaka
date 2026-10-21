@@ -29,7 +29,20 @@ class PublicationVerificationGatesTest < Minitest::Test
 
     line = '**Validation and review:** `validate` passed (exit 0); local review by anthropic/claude, ' \
            "openai/codex (host-reported) ([attestation](#{url})) at `abcdef1`."
-    assert_includes rendered, "## Verification\n\n#{line}\n\n- #{VERIFICATION['checks'].first}"
+    assert_includes rendered, line
+  end
+
+  # https://github.com/shakacode/shaka/issues/777: a reader looks for what failed, so a routine pass folds.
+  def test_passing_results_fold_behind_a_summary
+    folded = "## Verification\n\n<details>\n<summary>Validation and review passed at abcdef1</summary>\n\n" \
+             '**Validation and review:**'
+    assert_includes render(bound), folded
+  end
+
+  def test_a_failure_or_a_missing_review_stays_visible
+    [bound(validation: [VALIDATE.merge('exit_code' => 1)]), bound(review: [])].each do |settings|
+      assert_includes render(settings), "## Verification\n\n**Validation and review:**"
+    end
   end
 
   # Binding accepts any completed run, so a failed validate must not read as a pass.
