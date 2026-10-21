@@ -54,10 +54,12 @@ FAILED; read the full report, since piping it through another command can hide
 that status.
 
 Set `SHAKA_MACHINE_ALIAS` in your shell profile to a short name such as `mini`.
+The guided welcome suggests one that differs from this machine's name and gives
+you the line to add; ask the agent if you want it to edit your profile.
 An unfinished PR shows it as the owner, so you can tell which machine holds the
 work, and local validation results name it as the machine that ran them; without
-it, the owner reads UNKNOWN. PRs may be public, so do not use the
-machine's own name.
+it, the owner reads UNKNOWN and doctor reports it as degraded. PRs may be public,
+so do not use the machine's own name.
 
 Give the agent a task when you are ready.
 
