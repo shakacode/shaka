@@ -87,7 +87,7 @@ module Shaka
 
         # Names a replacement only where following it keeps the script's other variables intact.
         def root_repair_hint(text)
-          line = text.lines.find { |candidate| candidate.include?('../..') }&.strip
+          line = (known_root(text).first || text).lines.find { |candidate| candidate.include?('../..') }&.strip
           lookup = root_replacement(text, line) if line && shebang_command(text.lines.first.to_s) != 'ruby'
           return 'repair it explicitly' unless lookup
 

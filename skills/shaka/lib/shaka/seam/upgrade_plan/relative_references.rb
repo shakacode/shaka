@@ -41,7 +41,7 @@ module Shaka
         # while a tracked tool stays there, has no single new home. A Markdown note is not a tool.
         def split_directory?(line, found)
           found.any? do |spelling|
-            spelling.end_with?('/') && (retained_command_file? || line.match?(relative_pattern(spelling, '[*?\\[]')))
+            line.match?(relative_pattern(spelling, '[*?\\[]')) || (spelling.end_with?('/') && retained_command_file?)
           end
         end
 

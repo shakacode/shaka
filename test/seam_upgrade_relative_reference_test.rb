@@ -71,6 +71,13 @@ class SeamUpgradeRelativeReferenceTest < Minitest::Test
     end
   end
 
+  def test_relative_command_prefix_glob_blocks
+    with_repository do |root|
+      write_tracked(root, '.agents/notes.md', "Lint bin/test* before release.\n")
+      assert_blocked_with(root, '.agents/notes.md: relative old-layout reference bin/test')
+    end
+  end
+
   def test_command_directory_link_blocks_while_a_helper_stays
     with_repository do |root|
       write_tracked(root, '.agents/bin/helper.sh', "#!/bin/sh\nexit 0\n")

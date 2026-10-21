@@ -60,7 +60,7 @@ class SeamUpgradeRootLookupTest < Minitest::Test
       with_repository do |root|
         write_wrapper(root, 'setup', %(#!/bin/sh\nset -eu\n#{line}\ncd "$root/../.."\n))
         commit_fixture(root, 'second parent path')
-        assert_blocked_with(root, 'ambiguous repository-root')
+        assert_blocked_with(root, 'ambiguous repository-root calculation; repair it explicitly')
       end
     end
   end
