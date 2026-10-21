@@ -1,11 +1,9 @@
 # Start here
 
-Give your coding agent a task. Shaka has it build, test, and get an independent
-review, then hands you a pull request you can judge. Start with a small fix in a
-project you know.
+Start with a small fix in a project you know.
 
-Examples use `$shaka` in Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode;
-in Pi, load the installed Shaka skill. See [coding agents](coding-agents.md).
+Examples use `$shaka` in Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode.
+In Pi, load the installed Shaka skill. See [coding agents](coding-agents.md).
 
 <a id="getting-started"></a>
 
@@ -17,11 +15,11 @@ Ask your coding agent:
 Install Shaka from https://github.com/shakacode/shaka.
 ```
 
-Prefer to run the commands yourself? Follow [manual installation](manual-installation.md).
-Don't install the `shaka` gem; it only reserves the name. If the `shaka`
-command isn't found, start a new chat.
+To run the commands yourself, follow [manual installation](manual-installation.md).
+Don't install the `shaka` gem. It only reserves the name.
 
-Then check your setup and follow what it says:
+If the `shaka` command isn't found, start a new chat. Then check your setup and
+follow what it says:
 
 ```text
 $shaka doctor
@@ -40,7 +38,8 @@ set Shaka up just for you or for your team.
   [repository setup](configure-repository.md).
 
 To check that your AI accounts can run the chosen reviewers, ask
-`$shaka Probe this project's configured reviewers.` Each probe may use quota or cost money.
+`$shaka Probe this project's configured reviewers.` Each probe may use quota or
+cost money.
 
 ## 3. Start a task
 

@@ -3,13 +3,13 @@
 **PRs that are a delight to review.**
 
 Give your coding agent a task. Shaka has it build, test, and get an independent
-review, then hands you a pull request (PR) you can judge quickly.
+review. You get one pull request (PR) you can judge quickly.
 
 ## Why use Shaka
 
 - **Outcome first.** The PR opens with what changed, why, what it leaves out, and
   why it's safe.
-- **Proof.** Each check says what ran and what happened; **Not verified** lists
+- **Proof.** Each check says what ran and what happened. **Not verified** lists
   the rest.
 - **A guide to the code.** A walkthrough explains each choice and links to the lines.
 - **Less to read.** Detail you can skip is collapsed.
@@ -47,7 +47,7 @@ See [where each answer lives](pr-verification.md#read-a-pr-for-your-decision).
 
 ## Set up when you need to
 
-Ask the agent to handle configuration. These guides explain your choices:
+The agent handles setup. These guides explain the choices:
 
 - [Repository setup](configure-repository.md) — reuse your checks and review the setup PR.
 - [Choose your settings](settings-guide.md) — common choices and prompts for your agent.
