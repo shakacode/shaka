@@ -100,7 +100,7 @@ $shaka Fix search when the query contains an apostrophe. Go.
 ```
 
 Replace the example with a small outcome or an issue link. `Go` starts with your
-agent's current model and effort. The agent asks only when a decision needs you.
+agent's current model and effort. The agent asks when it needs a choice or access from you.
 
 For a different outcome, choose an example:
 

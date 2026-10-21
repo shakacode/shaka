@@ -82,9 +82,12 @@ To go back:
 $shaka Return to C2. Use the simpler approach.
 ```
 
-The agent keeps the rejected attempt and restores the work from that point. It
-cannot undo deployments or other outside effects. Recovery uses Git and task
-records rather than saved snapshots, so ask what it can restore before rewinding.
+The agent keeps the rejected attempt and restores the work from that point. If
+the saved state is incomplete or another writer is active, it explains that
+first. The replacement still gets validation and review, and deployments or other
+outside effects are not undone. Recovery uses Git and task records rather than
+saved snapshots and has not been evaluated in real use, so ask what it can
+restore before rewinding.
 See [recovery limits](expected-experience.md#resume-or-change-your-checkout).
 
 ## Find PRs waiting on you
@@ -117,7 +120,8 @@ The handoff says whether **automatic follow-up** is active. When it is, the agen
 watches the PR and responds to new comments; keep its chat unarchived. When the
 handoff says **Automatic feedback intake unavailable**, a comment alone does not
 wake the agent. The person it names opens **WIP Details → Chat link** and sends the
-resume prompt, for example `$shaka https://github.com/OWNER/REPO/pull/N`.
+resume prompt, for example `$shaka https://github.com/OWNER/REPO/pull/N`. Do
+the same when the expiry in WIP Details has passed without a renewed handoff.
 
 After a crash or in a new chat, paste **WIP Details → Next action**. The agent
 checks the live PR before continuing. Without a PR, give it the original task and
