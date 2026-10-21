@@ -9,12 +9,14 @@ module Shaka
 
     module_function
 
-    # A reader needs to see a failure or a missing result; a routine pass folds behind its summary.
+    # A reader needs to see a failure or a missing result; a routine run folds behind its summary.
+    # A completed review may still have reported findings, so the summary claims only that it ran.
     def render(verdict, review_url = nil)
       text = line(verdict, review_url)
-      return text unless passed?(verdict)
+      return text unless routine?(verdict)
 
-      "<details>\n<summary>Validation and review passed at #{verdict['head'][0, 7]}</summary>\n\n#{text}\n\n</details>"
+      summary = "Validation passed; local review completed at #{short_head(verdict)}"
+      "<details>\n<summary>#{summary}</summary>\n\n#{text}\n\n</details>"
     end
 
     # Binding accepts a completed run whatever its exit, so the exit code decides the wording here.
@@ -22,16 +24,18 @@ module Shaka
       return UNKNOWN unless verdict
 
       validation, reviews = results(verdict)
-      "#{LABEL} #{[*validations(validation), review(reviews, review_url)].join('; ')} at `#{verdict['head'][0, 7]}`."
+      "#{LABEL} #{[*validations(validation), review(reviews, review_url)].join('; ')} at `#{short_head(verdict)}`."
     end
 
     # Only a ready verdict reaches publication, so every listed review completed or was reported.
-    def passed?(verdict)
+    def routine?(verdict)
       return false unless verdict
 
       validation, reviews = results(verdict)
       validation.any? && reviews.any? && validation.all? { |result| result['exit_code']&.zero? }
     end
+
+    def short_head(verdict) = verdict['head'][0, 7]
 
     def results(verdict)
       %w[validation review].map do |kind|
@@ -55,6 +59,6 @@ module Shaka
       url ? "#{text} ([attestation](#{url}))" : text
     end
 
-    private_class_method :passed?, :results, :validations, :review
+    private_class_method :routine?, :short_head, :results, :validations, :review
   end
 end

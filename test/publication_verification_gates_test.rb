@@ -32,9 +32,11 @@ class PublicationVerificationGatesTest < Minitest::Test
     assert_includes rendered, line
   end
 
-  # https://github.com/shakacode/shaka/issues/777: a reader looks for what failed, so a routine pass folds.
-  def test_passing_results_fold_behind_a_summary
-    folded = "## Verification\n\n<details>\n<summary>Validation and review passed at abcdef1</summary>\n\n" \
+  # https://github.com/shakacode/shaka/issues/777: a reader looks for what failed, so a routine run folds.
+  # A completed review can still report findings, so the summary does not call it a pass.
+  def test_a_passing_validation_and_completed_review_fold_behind_a_summary
+    folded = "## Verification\n\n<details>\n" \
+             "<summary>Validation passed; local review completed at abcdef1</summary>\n\n" \
              '**Validation and review:**'
     assert_includes render(bound), folded
   end
