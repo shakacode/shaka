@@ -21,7 +21,7 @@ class HandoffFakeGitHub
 
   def snapshot
     { 'state' => @pull[:state], 'headRefOid' => @pull[:head], 'number' => 42,
-      'author' => { 'login' => @pull.fetch(:author, 'shaka-agent') } }
+      'author' => { 'login' => @pull.fetch(:author, 'shaka-agent') }, 'isMergeQueueEnabled' => @pull[:queue] }
   end
 
   def required_checks = @pull[:checks]
@@ -29,7 +29,8 @@ class HandoffFakeGitHub
   def viewer_login = @pull.fetch(:viewer, 'shaka-agent')
   def issue_comments = @pull[:comments]
 
-  def graphql(_query, **)
+  def graphql(query, **)
+    return { 'repository' => @pull.fetch(:queue_settings) } if query.include?('squashMergeCommitMessage')
     raise Shaka::Error, 'GraphQL failed or returned missing data.' if @pull[:threads] == :unreadable
 
     page = { 'nodes' => @pull.fetch(:threads, []), 'pageInfo' => { 'hasNextPage' => false } }

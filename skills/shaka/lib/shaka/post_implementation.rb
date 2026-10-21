@@ -8,6 +8,7 @@ require_relative 'post_implementation/disposition'
 require_relative 'post_implementation/merge_warning'
 require_relative 'github'
 require_relative 'handoff/walkthrough'
+require_relative 'merge_queue_commit'
 require_relative 'publication/squash_message'
 
 module Shaka
@@ -65,16 +66,18 @@ module Shaka
       result = publication_result
       github = @github || GitHub.new(*@arguments)
       head = result.fetch('head')
-      live = github.snapshot.values_at('state', 'headRefOid')
+      pull = github.snapshot
+      live = pull.values_at('state', 'headRefOid')
       raise Error, 'Checkpoint is not for the live open PR head' unless live == ['OPEN', head]
 
-      published = publish_body(github, result, head)
+      published = publish_body(github, result, head, pull)
       published.merge('earlier_checkpoints' => PostImplementationHistory.new(github).collapse(published))
+               .merge(@queue && @options[:squash_message] ? { 'squash_message' => 'not_applied_merge_queue' } : {})
     end
 
-    def publish_body(github, result, head)
+    def publish_body(github, result, head, pull)
       renderer = result.key?('disposition') ? PostImplementationDispositionPublication : PostImplementationPublication
-      message = -> { ready_message(github, head) }
+      message = -> { ready_message(github, head, pull) }
       publication = renderer.new(result, head:, repository: @arguments.first, message:)
       published = github.reply(body: publication.render, key: "#{KEY}-#{head[0, 7]}-#{result.fetch('execution_id')}")
       safeguard = merge_safeguard(github, head, publication, published)
@@ -88,12 +91,14 @@ module Shaka
     end
 
     # A ready checkpoint closes the PR's reports, so the walkthrough it follows has to be there already.
-    def ready_message(github, head)
+    # A merge queue takes no message, so its checkpoint says what the queue writes instead.
+    def ready_message(github, head, pull)
       unless Handoff::Walkthrough.new(github).revision == head
         raise Error, "Ready checkpoint follows this account's walkthrough for #{head}; publish the walkthrough first."
       end
 
-      squash_message(github)
+      @queue = MergeQueueCommit.for(github, pull)
+      @queue || squash_message(github)
     end
 
     def squash_message(github)
