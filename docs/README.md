@@ -30,7 +30,8 @@ See [where each answer lives](pr-verification.md#read-a-pr-for-your-decision).
    $shaka Fix search when the query contains an apostrophe. Go.
    ```
 
-   Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode.
+   Use `$shaka` in Codex and `/shaka` in Claude Code, Cursor, or OpenCode
+   ([other agents](coding-agents.md)).
 3. Read the PR and decide whether to merge.
 
 [Start here](getting-started.md) covers setup. New to pull requests? Try

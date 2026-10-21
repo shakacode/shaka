@@ -4,7 +4,8 @@ Read this after your first task. It covers the choices only you can make and the
 prompts for other work. For anything else, ask the agent. The agent behavior
 described here comes from Shaka's instructions; code does not enforce it.
 
-Examples use `$shaka` from Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode.
+Examples use `$shaka` from Codex. Use `/shaka` in Claude Code, Cursor, or OpenCode
+([other agents](coding-agents.md)).
 
 ## What you get
 
@@ -71,7 +72,7 @@ Search your PR list on GitHub:
 | Search | What to do |
 | --- | --- |
 | `is:open label:awaiting-answer` | Answer **Decisions to make** in the description, or submit or discard your own pending review. |
-| `is:open label:awaiting-merge-approval` | Merge with the checkpoint's [commit message](pr-verification.md#squash-merge-details), add the PR to your [merge queue](pr-verification.md#merge-queues), or tell the agent to merge. |
+| `is:open label:awaiting-merge-approval` | Merge with the checkpoint's [commit message](pr-verification.md#squash-merge-details), add the PR to your [merge queue](pr-verification.md#merge-queues), or tell the agent to merge that commit. |
 | `is:open label:awaiting-resume` | Paste **WIP Details → Next action** into a chat. |
 
 A label doesn't wake a chat. See [approval details](pr-verification.md#approval-and-attention-labels).
@@ -194,8 +195,8 @@ $shaka retrospective
 
 The agent lists what would have helped, and waits for you to pick what to fix. It
 may read Shaka's local timing log, `~/.local/state/shaka/calls.jsonl`, which holds
-no paths or task text and is never uploaded. Set `SHAKA_CALL_LOG=off` to stop it,
-or to a path to move it.
+no paths or task text and is never uploaded. Set `SHAKA_CALL_LOG=off` to stop recording,
+or to a path to move the log.
 
 ## Suggest improvements to Shaka
 
