@@ -427,6 +427,12 @@ them. A session paused for checks can resume with the Shaka prompt and PR URL in
 its next action. Return answers to the chat unless the handoff names active
 automatic follow-up.
 
+When the agent uses your GitHub account, a review you started and never submitted
+also shows up as `awaiting-answer` while the agent still needs to post a walkthrough.
+GitHub shows that review only to you and refuses the walkthrough while it is open, so
+submit or discard it. A PR already waiting for merge keeps its label, and the handoff
+mentions the review.
+
 The agent creates and manages these labels, leaving at most one on a PR. It clears
 the wait when work resumes and prepares a new handoff after validation and review.
 A label does not wake a chat or prove that checks and approvals passed. The

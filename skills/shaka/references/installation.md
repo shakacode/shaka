@@ -269,6 +269,17 @@ preserving existing hooks:
 }
 ```
 
+On Windows, use the launcher instead. Cursor cannot run the extensionless script, and the hook
+process may not have `ruby` on its PATH. The launcher finds `ruby.exe` from the user or machine PATH.
+If that search fails, it writes `cursor-usage-hook: ruby.exe was not found` to standard error and exits
+with status 1.
+
+```json
+{
+  "command": "skills/shaka/scripts/cursor-usage-hook.cmd"
+}
+```
+
 Start a new chat after changing hooks. User-level hooks run from `~/.cursor`, so
 this relative path reaches the installed skill. The hook saves aggregate usage
 fields; it does not save prompt text. When this conversation already published a
