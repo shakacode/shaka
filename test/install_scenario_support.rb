@@ -41,6 +41,17 @@ module InstallScenarioSupport
     assert_predicate process, :success?, output
   end
 
+  # Runs the block while the Claude skills folder has the given mode, which the installer may refuse.
+  def with_host_mode(mode)
+    host = File.join(@home, '.claude/skills')
+    File.chmod(mode, host)
+    yield
+  ensure
+    File.chmod(0o755, host)
+  end
+
+  def succeeds?(command) = Open3.capture2e(environment, 'sh', '-c', command).last.success?
+
   # Runs the next command a status report names, after checking which state named it.
   def run_next(report, state)
     assert_equal state, report['state']

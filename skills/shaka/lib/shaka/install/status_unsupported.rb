@@ -56,21 +56,20 @@ module Shaka
         hosts = hosts(selection['directories'].uniq)
         return StatusStates.finding(id, root, detail, decision: DECIDE) unless hosts && command?(selection)
 
-        install = install_step(selection, hosts)
-        StatusStates.finding(id, root, "#{detail}. If the install step fails, the old links come back; fix what it " \
-                                       "names, then rerun: #{install}",
-                             command: command(selection, @inventory.links_to(root), install))
+        rerun = recovery(@inventory.links_to(root), install_step(selection, hosts))
+        clone = "git clone #{escape('--branch', 'main', repository(selection), @inventory.default_directory)}"
+        StatusStates.finding(id, root, "#{detail}. If the install fails, the old links come back; fix what it names, " \
+                                       "then rerun everything after the clone: #{rerun}",
+                             command: "#{clone} && #{rerun}")
       end
 
       # The old links go first, because the installer refuses links another checkout owns. If removing
-      # them or the install fails, the command puts every old link back, so the hosts keep a working Shaka.
-      def command(selection, links, install)
-        steps = ["git clone #{escape('--branch', 'main', repository(selection), @inventory.default_directory)}"]
-        return (steps << install).join(' && ') if links.empty?
+      # them or the install fails, the block puts every old link back, so the hosts keep a working Shaka.
+      def recovery(links, install)
+        return install if links.empty?
 
         removal = "rm -f -- #{escape(*links.map { |link| link['path'] })}"
-        steps << "{ { #{removal} && #{install}; } || { #{restore(links)}; false; }; }"
-        steps.join(' && ')
+        "{ { #{removal} && #{install}; } || { #{restore(links)}; false; }; }"
       end
 
       def restore(links) = links.map { |link| "ln -sfn #{escape(link['target'], link['path'])}" }.join('; ')

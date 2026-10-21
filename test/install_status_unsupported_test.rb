@@ -14,9 +14,13 @@ class InstallStatusUnsupportedTest < Minitest::Test
     assert_equal tower_in(default_path), File.realpath(File.join(@home, '.claude/skills/rct'))
   end
 
-  def test_the_reinstall_names_the_step_to_rerun
+  # After a failed install puts the old links back, the rerun the detail names finishes the reinstall.
+  def test_the_named_rerun_finishes_a_failed_reinstall
     worktree_links('.claude/skills' => %w[shaka])
-    assert_includes status(@root)['detail'], "then rerun: #{Shellwords.escape(File.join(default_path, 'bin/install'))}"
+    report = status(@root)
+    refute with_host_mode(0o775) { succeeds?(report['next_command']) }
+    assert succeeds?(report['detail'].split('then rerun everything after the clone: ', 2).last)
+    assert_equal 'A5', status(default_path)['state']
   end
 
   # The links go before the install runs, so a failed install puts them back.
