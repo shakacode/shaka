@@ -14,6 +14,7 @@ class SeamUpgradeRelativeReferenceTest < Minitest::Test
 
   def test_generated_pointer_names_the_new_layout
     with_repository do |root|
+      write_tracked(root, '.agents/bin/README.md', "Wrappers live here.\n")
       path = write_tracked(root, '.agents/shaka.md', README.readme_source(Shaka::Configuration::Layout::LEGACY))
       preview = report(root)
       assert_includes preview.fetch('references').map { |item| item.fetch('kind') }, 'relative old-layout reference'
@@ -65,8 +66,15 @@ class SeamUpgradeRelativeReferenceTest < Minitest::Test
 
   def test_relative_command_directory_glob_blocks
     with_repository do |root|
-      write_tracked(root, '.agents/bin/helper.sh', "#!/bin/sh\nexit 0\n")
       write_tracked(root, '.agents/notes.md', "Lint bin/*.sh before release.\n")
+      assert_blocked_with(root, '.agents/notes.md: relative old-layout reference bin/')
+    end
+  end
+
+  def test_command_directory_link_blocks_while_a_helper_stays
+    with_repository do |root|
+      write_tracked(root, '.agents/bin/helper.sh', "#!/bin/sh\nexit 0\n")
+      write_tracked(root, '.agents/notes.md', "[tools](bin/)\n")
       assert_blocked_with(root, '.agents/notes.md: relative old-layout reference bin/')
     end
   end

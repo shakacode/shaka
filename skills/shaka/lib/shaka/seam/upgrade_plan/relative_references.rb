@@ -21,7 +21,7 @@ module Shaka
           @references << { 'path' => path, 'kind' => 'relative old-layout reference',
                            'paths' => found.map { |old| mapping.fetch(old).last } }
           return historical_reference(path, line) if historical_line?(path, line)
-          return block_relative_reference(path, found, line) if executable || relative_glob?(line, found)
+          return block_relative_reference(path, found, line) if executable || split_directory?(line, found)
 
           replace_relative(line, found, mapping)
         end
@@ -37,9 +37,19 @@ module Shaka
           line
         end
 
-        # Helper tools stay in the old command directory, so a pattern over it has no single new home.
-        def relative_glob?(line, found)
-          found.any? { |spelling| spelling.end_with?('/') && line.match?(relative_pattern(spelling, '[*?\\[]')) }
+        # Helper tools stay in the old command directory, so a pattern over it, or any mention of it
+        # while a tracked tool stays there, has no single new home. A Markdown note is not a tool.
+        def split_directory?(line, found)
+          found.any? do |spelling|
+            spelling.end_with?('/') && (retained_command_file? || line.match?(relative_pattern(spelling, '[*?\\[]')))
+          end
+        end
+
+        def retained_command_file?
+          moved = @moves.map { |move| move.fetch('from') }
+          @tracked_reference_paths.keys.any? do |path|
+            path.start_with?("#{PATHS::COMMAND_DIRECTORY}/") && !moved.include?(path) && !markdown_path?(path)
+          end
         end
 
         def relative_reference_file?(path) = !relative_mapping(path).empty?

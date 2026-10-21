@@ -56,11 +56,12 @@ class SeamUpgradeRootLookupTest < Minitest::Test
   end
 
   def test_second_parent_path_after_a_repaired_root_blocks
-    with_repository do |root|
-      source = %(#!/bin/sh\nset -eu\nroot=$(cd "$(dirname "$0")/../.." && pwd)\ncd "$root/../.."\n)
-      write_wrapper(root, 'setup', source)
-      commit_fixture(root, 'second parent path')
-      assert_blocked_with(root, 'ambiguous repository-root')
+    [%(root=$(cd "$(dirname "$0")/../.." && pwd)), SeamUpgradeFixture::ROOT_LINE].each do |line|
+      with_repository do |root|
+        write_wrapper(root, 'setup', %(#!/bin/sh\nset -eu\n#{line}\ncd "$root/../.."\n))
+        commit_fixture(root, 'second parent path')
+        assert_blocked_with(root, 'ambiguous repository-root')
+      end
     end
   end
 

@@ -9,20 +9,20 @@ module Shaka
 
         private
 
+        # A second parent-relative line would still resolve from the old depth after the move.
         def repair_root(text)
+          repaired, kind = known_root(text)
+          return [nil, nil] if repaired.nil? || ambiguous_root?(repaired)
+
+          [repaired, kind]
+        end
+
+        def known_root(text)
           if text.include?(OLD_ROOT)
             return [nil, nil] unless exits_on_error?(text, text.index(OLD_ROOT))
 
             return [text.sub(OLD_ROOT, GIT_ROOT), 'recognized shell root discovery']
           end
-          repaired, kind = custom_root(text)
-          return [nil, nil] if ambiguous_root?(repaired)
-
-          [repaired, kind]
-        end
-
-        # A second parent-relative line would still resolve from the old depth after the move.
-        def custom_root(text)
           shell = shell_root_lookup(text)
           return custom_shell_root(shell) if shell
           return custom_ruby_root(text) if text.match?(ruby_root_pattern)
