@@ -159,10 +159,11 @@ module PrivateDeliveryFixture
     File.write(path, JSON.generate(pull))
   end
 
-  def invoke(command, *, exit_code: 0, error: nil)
+  def invoke(command, *, exit_code: 0, error: nil, env: {})
     positional = command == 'reviewer' ? [] : ['owner/repo', '1']
-    output, stderr, status = Open3.capture3({ 'PATH' => "#{@state}:#{ReviewerCliStubs.path}", 'HOME' => @state },
-                                            COMMAND, command, *positional, '--root', @root, '--ref', @ref, *)
+    environment = { 'PATH' => "#{@state}:#{ReviewerCliStubs.path}", 'HOME' => @state }.merge(env)
+    output, stderr, status = Open3.capture3(environment, COMMAND, command, *positional,
+                                            '--root', @root, '--ref', @ref, *)
     assert_equal exit_code, status.exitstatus, stderr
     assert_includes stderr, error if error
     JSON.parse(output) unless output.empty?

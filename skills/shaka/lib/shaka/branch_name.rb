@@ -2,6 +2,7 @@
 
 require 'open3'
 require_relative 'error'
+require_relative 'configuration/git_memo'
 
 module Shaka
   # Asks Git whether a configured or requested branch name unambiguously names a branch.
@@ -39,12 +40,20 @@ module Shaka
       spawnable!(value, label)
       raise Error, "#{label} must be a branch name, not a Git root ref" if caseless_root_ref?(value, root)
 
+      output = Configuration::GitMemo.fetch([:branch_name, root, value]) { formatted!(value, label, root) }
+      raise Error, "#{label} must be an explicit branch name" unless output == value
+
+      output
+    end
+
+    # Git expands only shorthand such as `@{-1}` from checkout state, and an expanded name is refused either way.
+    def self.formatted!(value, label, root)
       output, _error, status = Open3.capture3('git', '-C', root, 'check-ref-format', '--branch', value)
       raise Error, "#{label} must be a valid Git branch name" unless status.success?
-      raise Error, "#{label} must be an explicit branch name" unless output.strip == value
 
       output.strip
     end
+    private_class_method :formatted!
 
     def self.spawnable!(value, label)
       raise Error, "#{label} must be a non-empty string" unless value.is_a?(String) && !value.strip.empty?

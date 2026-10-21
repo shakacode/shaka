@@ -2,6 +2,7 @@
 
 require 'json'
 require 'tempfile'
+require_relative 'git_memo'
 require_relative 'private_git_paths'
 
 module Shaka
@@ -13,7 +14,7 @@ module Shaka
 
       def initialize(root:)
         @root = File.realpath(root)
-        @directory = git('rev-parse', '--absolute-git-dir').strip
+        @directory = GitMemo.fetch([:git_dir, @root]) { git('rev-parse', '--absolute-git-dir').strip }
         @path = File.join(@directory, 'shaka-settings-preview.json')
       end
 

@@ -8,6 +8,10 @@ require_relative '../lib/shaka/call_log'
 
 Shaka::CallLog.start(ARGV.dup)
 
+require_relative '../lib/shaka/configuration/git_memo'
+
+Shaka::Configuration::GitMemo.enable
+
 require_relative '../lib/shaka/startup_notice'
 
 Shaka::StartupNotice.call(ARGV)
