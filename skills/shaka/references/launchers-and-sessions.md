@@ -44,6 +44,7 @@ issue. Hosts differ in how the agent renames its own chat:
 | Codex desktop | The native task rename tool, as the RCT skill uses it. |
 | Claude Code terminal CLI | No agent tool. Use the `Chat name:` line. |
 | Pi | With the [optional naming extension](installation.md#pi), call `shaka_session_name` with `name` to rename, then without arguments to read back the actual title. Without it, use the `Chat name:` line. |
+| OpenCode 2 | In the shell tool, run `opencode api session.update --param sessionID="$OPENCODE_SESSION_ID" -d '{"title":"TITLE"}'`, then read the title back with `opencode api session.get --param sessionID="$OPENCODE_SESSION_ID"`. If `OPENCODE_SESSION_ID` is empty, use the `Chat name:` line. |
 | Other hosts | Use a rename tool only when the host offers one. Otherwise, use the `Chat name:` line. |
 
 The app asks the user to approve a rename when the user chose the current title. Treat a
