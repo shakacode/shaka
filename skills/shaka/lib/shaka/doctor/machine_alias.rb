@@ -49,8 +49,11 @@ module Shaka
 
       private
 
+      # Most people work on one machine, where the Owner field has nothing to tell apart, so an
+      # unset alias is a working setup. The hint stays for whoever later adds a second machine.
       def unset
-        check('Machine alias', 'degraded', "#{VARIABLE} is unset; WIP Owner will read UNKNOWN", guidance: guidance)
+        check('Machine alias', 'healthy', "#{VARIABLE} is unset; WIP Owner will read UNKNOWN",
+              guidance: "Needed only on more than one machine. #{guidance}")
       end
 
       def unpublishable

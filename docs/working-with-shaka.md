@@ -162,8 +162,9 @@ Ask for separate PRs, such as "Update React first, then the code that needs it."
   `Use Sol, medium effort. Go.` A prompt can't switch models.
 - **Keep public PRs public-safe.** If paths or chat links should be hidden, tell
   the agent before it publishes.
-- **Name your machine.** Set `SHAKA_MACHINE_ALIAS` to a short public name, such as
-  `mini`. Unfinished PRs then show where the work is.
+- **Name your machines.** If you work on more than one, set `SHAKA_MACHINE_ALIAS`
+  to a short public name, such as `mini`. WIP Details then shows which machine
+  holds the chat. `$shaka doctor` suggests a name.
 
 ## Combine Shaka with other skills
 

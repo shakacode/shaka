@@ -8,6 +8,7 @@ class ExecutionProvenanceTest < Minitest::Test
                         'requested_model' => 'gpt-5.6-terra', 'requested_effort' => 'medium',
                         'recommended_model' => 'gpt-5.6-terra', 'recommended_effort' => 'medium',
                         'active_model' => 'gpt-5.6-terra', 'active_effort' => 'medium' }.freeze
+  PULL = { 'base' => { 'repo' => { 'full_name' => 'shakacode/shaka' } } }.freeze
   PARTIAL_REQUESTS = [
     [nil, 'high', 'Not specified / high'],
     ['gpt-6.1-sol', nil, 'gpt-6.1-sol / Not specified'],
@@ -34,7 +35,7 @@ class ExecutionProvenanceTest < Minitest::Test
                                                  upstream: true)
     body = Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, workflow_version: version).detail.fetch('body')
 
-    assert_includes body, "| Workflow version | [`aaaaaaa`](https://github.com/shakacode/shaka/commit/#{'a' * 40}) |"
+    assert_includes body, "| Shaka skill version | [`aaaaaaa`](https://github.com/shakacode/shaka/commit/#{'a' * 40}) |"
   end
 
   def test_refuses_an_agent_supplied_workflow_version
@@ -74,6 +75,32 @@ class ExecutionProvenanceTest < Minitest::Test
         assert_raises(Shaka::Error) { Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE.merge(field => value)).detail }
       end
       assert_raises(Shaka::Error) { Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE.except(field)).detail }
+    end
+  end
+
+  def test_links_a_task_in_the_same_repository
+    spec = PUBLIC_PROVENANCE.merge('task_source' => 'issue', 'task_number' => 778)
+    body = Shaka::ExecutionProvenance.new(spec, pull: PULL).detail.fetch('body')
+
+    assert_includes body, '| Task source | issue [#778](https://github.com/shakacode/shaka/issues/778) |'
+    pull = spec.merge('task_source' => 'pull_request')
+    assert_includes Shaka::ExecutionProvenance.new(pull, pull: PULL).detail.fetch('body'),
+                    '| Task source | pull_request [#778](https://github.com/shakacode/shaka/pull/778) |'
+    assert_includes Shaka::ExecutionProvenance.new(spec).detail.fetch('body'), '| Task source | issue #778 |'
+  end
+
+  def test_names_the_task_source_alone_without_a_task_number
+    assert_includes Shaka::ExecutionProvenance.new(PUBLIC_PROVENANCE, pull: PULL).detail
+                                              .fetch('body'), '| Task source | description |'
+  end
+
+  def test_refuses_a_task_number_that_cannot_name_an_issue_or_pull_request
+    invalid = [['description', 778], ['issue', '778'], ['issue', 0], ['issue', 'https://example.com/778']]
+    invalid.each do |source, number|
+      spec = PUBLIC_PROVENANCE.merge('task_source' => source, 'task_number' => number)
+      error = assert_raises(Shaka::Error) { Shaka::ExecutionProvenance.new(spec).detail }
+
+      assert_includes error.message, 'task_number'
     end
   end
 

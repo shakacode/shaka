@@ -15,7 +15,7 @@ module PostImplementationFixture
     instructions = trace.fetch('prompt').split('--- BEGIN PACKET DATA', 2).first
     directory = File.expand_path('../../skills/shaka/references', __dir__)
     guide = File.read(File.join(directory, 'writing.md'), encoding: 'UTF-8')
-    assert_includes instructions, guide[/^## Plain language and organization\n.*?(?=^## )/m].strip
+    assert_includes instructions, guide[/^## Plain language and organization\n.*?(?=^## |\z)/m].strip
     refute_includes instructions, '## Review evidence'
     refute_includes instructions, File.read(File.join(directory, 'publication.md'), encoding: 'UTF-8')
     trace
