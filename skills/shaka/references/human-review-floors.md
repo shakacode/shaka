@@ -13,7 +13,8 @@ Read this only when a maintainer asks to choose, change, or explain
   `paths` or `words`; `except` is optional.
 - A file matches a floor when a `paths` glob matches it, or when one of `words`, or the word
   plus a trailing s, is a folder or file name token on its path, and no `except` glob matches
-  it. Tokens split on punctuation and CamelCase, so `AuthService.ts`, `auth_token.rb`, and
+  it. Words match in any case; write each as one token of letters and digits, since a word
+  containing punctuation never matches. Tokens split on punctuation and CamelCase, so `AuthService.ts`, `auth_token.rb`, and
   `lib/oauth/x.rb` all hold auth.
 - `except` removes a file from its own floor only. Another floor can still match it.
 - Globs use `File.fnmatch` with `FNM_PATHNAME`, `FNM_EXTGLOB`, and `FNM_DOTMATCH`: `**/` spans

@@ -33,7 +33,7 @@ module Shaka
     end
 
     def self.word?(rule, path)
-      words = Array(rule['words']).flat_map { |word| [word, "#{word}s"] }
+      words = Array(rule['words']).flat_map { |word| [word.downcase, "#{word.downcase}s"] }
       tokens(path).intersect?(words)
     end
 

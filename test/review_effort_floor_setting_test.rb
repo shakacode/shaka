@@ -19,6 +19,13 @@ class ReviewEffortFloorSettingTest < Minitest::Test
     end
   end
 
+  # Paths are compared in lowercase, so a word a maintainer capitalizes must still match.
+  def test_floor_words_match_whatever_their_case
+    floors = [{ 'level' => 4, 'reason' => 'changes deploys', 'words' => ['Deploy'] }]
+
+    assert_equal 4, Shaka::ReviewEffortFloor.for(['script/deploy_app.sh'], floors)['level']
+  end
+
   # A lexer's token.rb is ordinary code, so token is not a trust word by default.
   def test_the_shipped_floors_hold_token_at_two
     assert_equal 2, Shaka::ReviewEffortFloor.for(['lib/token.rb'])['level']
